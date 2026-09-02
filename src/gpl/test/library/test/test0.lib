@@ -323,6 +323,71 @@ library (test0) {
     }
   }
 
+  cell (MBLATCH2) {
+    area : 0.5000;
+
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : "VDD";
+    }
+    pg_pin (VSS) {
+      pg_type : primary_ground;
+      voltage_name : "VSS";
+    }
+    pg_pin (VBB) {
+      pg_type : pwell;
+      voltage_name : "VBB";
+    }
+    pg_pin (VPP) {
+      pg_type : nwell;
+      voltage_name : "VPP";
+    }
+
+    leakage_power () {
+      value : 1000.000;
+      related_pg_pin : VDD;
+    }
+
+    bundle (Q) {
+      members (Q0, Q1);
+      direction : "output";
+      function : "IQ";
+
+      pin (Q0) {
+        min_capacitance : 1e-06;
+        max_capacitance : 0.2;
+      }
+      pin (Q1) {
+        min_capacitance : 1e-06;
+        max_capacitance : 0.2;
+      }
+    }
+
+    pin (G) {
+      direction : "input";
+      clock : true;
+      capacitance : 1.0;
+    }
+
+    bundle (D) {
+      members (D0, D1);
+      direction : "input";
+      nextstate_type : "data";
+
+      pin (D0) {
+        capacitance : 0.002;
+      }
+      pin (D1) {
+        capacitance : 0.002;
+      }
+    }
+
+    latch_bank (IQ,IQN,2) {
+      enable : "G";
+      data_in : "D";
+    }
+  }
+
   cell (MBFF2CLPS) {
     area : 0.5000;
 

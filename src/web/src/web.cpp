@@ -5,6 +5,10 @@
 
 #include <netinet/in.h>
 
+#include <algorithm>
+#include <cctype>
+#include <charconv>
+#include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
@@ -14,11 +18,13 @@
 #include <fstream>
 #include <functional>
 #include <ios>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -31,9 +37,11 @@
 #include "boost/beast/websocket.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
+#include "color.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -47,6 +55,7 @@
 #include "utl/Logger.h"
 #include "web_assets.h"
 #include "web_chart.h"
+#include "web_gif.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -80,11 +89,200 @@ static std::vector<unsigned char> serialize_response(
 }
 
 //------------------------------------------------------------------------------
-// HTTP request handler (serves embedded static assets)
+// HTTP request handler (serves embedded static assets + image downloads)
 //------------------------------------------------------------------------------
 
+namespace {
+
+// Sanitize a client-supplied download filename before it goes into the
+// Content-Disposition header: drop directory components, keep only
+// [A-Za-z0-9._-] (replacing the rest with '_'), cap the length, and fall back
+// to a default when empty.  Prevents header injection via quotes/CRLF.
+std::string sanitizeFilename(std::string name)
+{
+  const auto slash = name.find_last_of("/\\");
+  if (slash != std::string::npos) {
+    name.erase(0, slash + 1);
+  }
+  constexpr std::size_t kMaxLen = 128;
+  if (name.size() > kMaxLen) {
+    name.resize(kMaxLen);
+  }
+  for (char& c : name) {
+    const bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9') || c == '.' || c == '_'
+                    || c == '-';
+    if (!ok) {
+      c = '_';
+    }
+  }
+  if (name.empty()) {
+    name = "layout.png";
+  }
+  return name;
+}
+
+// Parse an integer that must span the whole string_view (no trailing garbage),
+// exception-free.  Returns false on any malformed/partial input.
+template <typename T>
+bool parseIntExact(std::string_view s, T& out, int base = 10)
+{
+  const char* const first = s.data();
+  const char* const last = first + s.size();
+  const auto res = std::from_chars(first, last, out, base);
+  return res.ec == std::errc{} && res.ptr == last;
+}
+
+// Percent-decode a URL query value (e.g. the JSON `vis` payload).
+std::string urlDecode(std::string_view s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '%' && i + 2 < s.size()) {
+      int value = 0;
+      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
+        out.push_back(static_cast<char>(value));
+        i += 2;
+        continue;
+      }
+      // Not valid hex: keep the literal '%'.
+    }
+    out.push_back(s[i] == '+' ? ' ' : s[i]);
+  }
+  return out;
+}
+
+// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
+std::map<std::string, std::string> parseQuery(std::string_view target)
+{
+  std::map<std::string, std::string> params;
+  const auto qpos = target.find('?');
+  if (qpos == std::string_view::npos) {
+    return params;
+  }
+  const std::string_view qs = target.substr(qpos + 1);
+  std::size_t start = 0;
+  while (start < qs.size()) {
+    std::size_t amp = qs.find('&', start);
+    if (amp == std::string_view::npos) {
+      amp = qs.size();
+    }
+    const std::string_view kv = qs.substr(start, amp - start);
+    const std::size_t eq = kv.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(std::string(kv.substr(0, eq)),
+                     urlDecode(kv.substr(eq + 1)));
+    }
+    start = amp + 1;
+  }
+  return params;
+}
+
+// Parse "x0,y0,x1,y1" (DBU) into a Rect.  Returns false on malformed input.
+bool parseBbox(const std::string& s, odb::Rect& out)
+{
+  const std::string_view sv(s);
+  int v[4];
+  int idx = 0;
+  std::size_t start = 0;
+  while (idx < 4) {
+    const std::size_t comma = sv.find(',', start);
+    const std::string_view tok
+        = sv.substr(start,
+                    comma == std::string_view::npos ? std::string_view::npos
+                                                    : comma - start);
+    if (!parseIntExact(tok, v[idx++])) {
+      return false;
+    }
+    if (comma == std::string_view::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+  if (idx != 4) {
+    return false;
+  }
+  out = odb::Rect(std::min(v[0], v[2]),
+                  std::min(v[1], v[3]),
+                  std::max(v[0], v[2]),
+                  std::max(v[1], v[3]));
+  return true;
+}
+
+// Render the layout image requested by /download/image into `res`.
+void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
+                         std::string_view target,
+                         http::response<http::string_body>& res)
+{
+  if (!generator) {
+    res.result(http::status::not_found);
+    res.body() = "No design loaded.";
+    return;
+  }
+  const auto params = parseQuery(target);
+  const auto type_it = params.find("type");
+  const std::string type = type_it == params.end() ? "entire" : type_it->second;
+
+  odb::Rect region;  // zero-area => entire die (renderImagePng default)
+  if (type == "visible") {
+    const auto bbox_it = params.find("bbox");
+    if (bbox_it == params.end() || !parseBbox(bbox_it->second, region)) {
+      res.result(http::status::bad_request);
+      res.body() = "Missing or malformed bbox.";
+      return;
+    }
+  }
+
+  // Respect the session's layer visibility: the frontend sends the same
+  // visibility payload it uses for tiles as a JSON `vis` query param.
+  TileVisibility vis;
+  const auto vis_it = params.find("vis");
+  if (vis_it != params.end()) {
+    // Non-throwing parse: a malformed vis falls back to defaults (all visible).
+    std::error_code ec;
+    const boost::json::value parsed = boost::json::parse(vis_it->second, ec);
+    if (!ec && parsed.is_object()) {
+      vis.parseFromJson(parsed.as_object());
+    }
+  }
+
+  // Background color (RRGGBB hex) so the saved image matches the viewer's
+  // background; absent => transparent.
+  Color bg{};  // {0,0,0,0}
+  const auto bg_it = params.find("bg");
+  unsigned rgb = 0;
+  if (bg_it != params.end() && bg_it->second.size() == 6
+      && parseIntExact(bg_it->second, rgb, 16)) {
+    bg = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+               .b = static_cast<unsigned char>(rgb & 0xFF),
+               .a = 255};
+  }
+  // Malformed/absent bg: keep transparent.
+
+  const std::vector<unsigned char> png = generator->renderImagePng(
+      region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
+  if (png.empty()) {
+    res.result(http::status::internal_server_error);
+    res.body() = "Image render failed.";
+    return;
+  }
+
+  const auto fname_it = params.find("filename");
+  const std::string filename = sanitizeFilename(
+      fname_it == params.end() ? "layout.png" : fname_it->second);
+  res.set(http::field::content_type, "image/png");
+  res.set(http::field::content_disposition,
+          "attachment; filename=\"" + filename + "\"");
+  res.body().assign(reinterpret_cast<const char*>(png.data()), png.size());
+}
+
+}  // namespace
+
 static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req)
+    http::request<http::string_body>&& req,
+    const std::shared_ptr<TileGenerator>& generator)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -93,14 +291,29 @@ static http::response<http::string_body> handle_request(
   res.set(http::field::access_control_allow_origin, "*");
 
   if (req.method() == http::verb::get) {
-    const std::string file_path = assetPathFromTarget(req.target());
-    const auto* asset = findEmbeddedAsset(file_path);
-    if (asset) {
-      res.set(http::field::content_type, asset->content_type);
-      res.body() = std::string(asset->content());
+    // The route match uses the path alone; the download handler needs the
+    // raw target because its parameters live in the query string.
+    const std::string target(req.target());
+    const std::string file_path = assetPathFromTarget(target);
+
+    if (file_path == "/download/image") {
+      handleImageDownload(generator, target, res);
     } else {
-      res.result(http::status::not_found);
-      res.body() = "Resource not found.";
+      const auto* asset = findEmbeddedAsset(file_path);
+      if (asset) {
+        res.set(http::field::content_type, asset->content_type);
+        // The assets are compiled into the binary, so their URLs carry no
+        // version and never change.  Without this a browser is free to
+        // heuristically cache them, and a tab reloaded against a rebuilt
+        // OpenROAD keeps running the old JavaScript -- the change appears
+        // to have done nothing until someone thinks to hard-reload.  They
+        // are served from memory, so re-fetching them costs nothing.
+        res.set(http::field::cache_control, "no-store");
+        res.body() = std::string(asset->content());
+      } else {
+        res.result(http::status::not_found);
+        res.body() = "Resource not found.";
+      }
     }
   } else {
     res.result(http::status::not_found);
@@ -131,6 +344,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   ClockTreeHandler clock_tree_handler_;
   TileHandler tile_handler_;
   DRCHandler drc_handler_;
+  EditHandler edit_handler_;
 
   // Registration-based request dispatcher (replaces parse/dispatch switches)
   RequestDispatcher dispatcher_;
@@ -213,6 +427,49 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
     resp.payload.assign(json.begin(), json.end());
     queue_response(resp);
   }
+
+  // Destroying any selectable object (via trigger_action or a Tcl
+  // command) leaves the session's stored gui::Selected wrappers holding
+  // dangling odb pointers.  Raise the staleness flag — handlers drop the
+  // whole selection state via consumeStaleSelection() before the next
+  // dereference — and tell the client once so it clears its inspector.
+  // Deliberately coarse: destroys are rare interactive events and
+  // membership testing against indirect references (e.g. an ITerm of a
+  // destroyed inst) is error-prone.
+  void invalidateSelection()
+  {
+    if (state_.selection_stale.exchange(true)) {
+      return;  // already pending (debounces mass deletes)
+    }
+    WebSocketResponse resp;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"selection_invalidated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  // Moving an object does not dangle any pointer, so the selection stands --
+  // but every shape derived from the old placement is now wrong.  This fires
+  // in all sessions, which is what makes another client's set_property edit
+  // reach this one's cached highlight-group rectangles.
+  void inDbPostMoveInst(odb::dbInst*) override
+  {
+    state_.highlight_geometry_stale = true;
+  }
+  void inDbInstSwapMasterAfter(odb::dbInst*) override
+  {
+    state_.highlight_geometry_stale = true;
+  }
+
+  void inDbInstDestroy(odb::dbInst*) override { invalidateSelection(); }
+  void inDbNetDestroy(odb::dbNet*) override { invalidateSelection(); }
+  void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }
+  void inDbBTermDestroy(odb::dbBTerm*) override { invalidateSelection(); }
+  void inDbBlockageDestroy(odb::dbBlockage*) override { invalidateSelection(); }
+  void inDbObstructionDestroy(odb::dbObstruction*) override
+  {
+    invalidateSelection();
+  }
 };
 
 WebSocketSession::WebSocketSession(
@@ -234,6 +491,7 @@ WebSocketSession::WebSocketSession(
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
       drc_handler_(generator),
+      edit_handler_(generator, tcl_eval),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator)),
       viewer_hook_(viewer_hook),
@@ -254,6 +512,22 @@ WebSocketSession::WebSocketSession(
     tile_handler_.initializeHeatMaps(state_);
   }
 
+  // DB-mutating requests (set_property) notify every connected client so
+  // all views re-render.  Fire-and-forget; safe from any thread.
+  select_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
+    if (hook != nullptr) {
+      hook->sessions().broadcast(j);
+    }
+  });
+
+  // Labels are global, not per-session, so one client's edit changes what
+  // every client should be drawing.
+  tile_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
+    if (hook != nullptr) {
+      hook->sessions().broadcast(j);
+    }
+  });
+
   // Register all handler request types with the dispatcher.
   select_handler_.registerRequests(dispatcher_);
   tcl_handler_.registerRequests(dispatcher_);
@@ -261,6 +535,7 @@ WebSocketSession::WebSocketSession(
   clock_tree_handler_.registerRequests(dispatcher_);
   tile_handler_.registerRequests(dispatcher_);
   drc_handler_.registerRequests(dispatcher_);
+  edit_handler_.registerRequests(dispatcher_);
 
   // Free function handler
   dispatcher_.add("list_dir",
@@ -334,6 +609,46 @@ WebSocketSession::WebSocketSession(
         root["charts"] = std::move(charts);
         std::string s = boost::json::serialize(root);
         resp.payload.assign(s.begin(), s.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Client continuously syncs its full display-controls state here so the
+  // Tcl save_display_controls command can persist it to a file.  Runs
+  // inline (no net::post) — it only touches the mutex-guarded cache.
+  dispatcher_.add(
+      "set_display_state",
+      WebSocketRequest::kSetDisplayState,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        if (viewer_hook_ != nullptr) {
+          if (auto* state = req.json.if_contains("state")) {
+            viewer_hook_->setDisplayState(boost::json::serialize(*state));
+          }
+        }
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = R"({"ok":1})";
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Serves the current custom-UI registry (Tcl-registered menu items /
+  // toolbar buttons) to a client on connect.  Live updates arrive later as
+  // {"type":"custom_ui",...} server-push broadcasts from WebViewerHook.
+  dispatcher_.add(
+      "custom_ui",
+      WebSocketRequest::kCustomUi,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = viewer_hook_ != nullptr
+                                     ? viewer_hook_->customUiJson()
+                                     : R"({"type":"custom_ui","menu":[],)"
+                                       R"("toolbar":[]})";
+        resp.payload.assign(json.begin(), json.end());
         return resp;
       },
       /*run_inline=*/true);
@@ -496,6 +811,39 @@ void WebSocketSession::do_read()
       });
 }
 
+namespace {
+
+// Run a request handler, converting any exception into an error response.
+//
+// Handlers run either on the read thread or on a bare io_context thread, and
+// neither has a try/catch above it: the threads run io_context::run() directly
+// (see createAndRunListener), so an exception escaping a handler unwinds out of
+// the thread function and calls std::terminate -- the whole openroad process
+// dies, taking the design with it.  A malformed request must cost the client
+// one error response, never the session.
+//
+// The obvious offender is a field whose JSON type is wrong -- boost::json's
+// as_int64()/as_string() throw rather than return an error.  See
+// parseTileCoords() in request_handler.h for why a careful client cannot avoid
+// this on its own.
+WebSocketResponse invoke_handler(const RequestDispatcher::HandleFn& handle,
+                                 const WebSocketRequest& req,
+                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  // `handle` returns by value, so on a throw `resp` is still the untouched
+  // default -- no partial payload to clear.
+  try {
+    resp = handle(req, state);
+  } catch (const std::exception& e) {
+    resp = errorResponse(req.id, std::string("server error: ") + e.what());
+  }
+  resp.request_type = req.raw_type;
+  return resp;
+}
+
+}  // namespace
+
 void WebSocketSession::on_read(beast::error_code ec)
 {
   if (ec) {
@@ -519,19 +867,16 @@ void WebSocketSession::on_read(beast::error_code ec)
   const auto* entry = dispatcher_.find(req.type);
   if (entry != nullptr) {
     if (entry->run_inline) {
-      auto resp = entry->handle(req, state_);
-      resp.request_type = req.raw_type;
-      queue_response(resp);
+      queue_response(invoke_handler(entry->handle, req, state_));
     } else {
       auto handle = entry->handle;
-      net::post(websocket_.get_executor(),
-                [self = std::move(self),
-                 req = std::move(req),
-                 handle = std::move(handle)]() {
-                  auto resp = handle(req, self->state_);
-                  resp.request_type = req.raw_type;
-                  self->queue_response(resp);
-                });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self),
+           req = std::move(req),
+           handle = std::move(handle)]() {
+            self->queue_response(invoke_handler(handle, req, self->state_));
+          });
     }
   } else {
     // Unknown type -- return an error so the client knows the request
@@ -633,10 +978,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   beast::flat_buffer buffer_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
+  std::shared_ptr<TileGenerator> generator_;
   utl::Logger* logger_;
 
  public:
-  HttpSession(Tcp::socket&& socket, utl::Logger* logger);
+  HttpSession(Tcp::socket&& socket,
+              std::shared_ptr<TileGenerator> generator,
+              utl::Logger* logger);
 
   void run() { do_read(); }
 
@@ -651,8 +999,12 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void do_close();
 };
 
-HttpSession::HttpSession(Tcp::socket&& socket, utl::Logger* logger)
-    : stream_(std::move(socket)), logger_(logger)
+HttpSession::HttpSession(Tcp::socket&& socket,
+                         std::shared_ptr<TileGenerator> generator,
+                         utl::Logger* logger)
+    : stream_(std::move(socket)),
+      generator_(std::move(generator)),
+      logger_(logger)
 {
 }
 
@@ -689,7 +1041,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_)));
+      handle_request(std::move(req_), generator_));
   do_write();
 }
 
@@ -812,7 +1164,8 @@ void DetectSession::on_read(beast::error_code ec)
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(stream_.release_socket(), logger_);
+    auto s = std::make_shared<HttpSession>(
+        stream_.release_socket(), generator_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -950,6 +1303,23 @@ WebServer::WebServer(odb::dbDatabase* db,
 {
 }
 
+void WebServer::setThreadCount(int num_threads)
+{
+  num_threads_ = num_threads;
+  if (generator_) {
+    generator_->setThreadCount(num_threads);
+  }
+}
+
+TileGenerator& WebServer::ensureGenerator()
+{
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    generator_->setThreadCount(num_threads_);
+  }
+  return *generator_;
+}
+
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
 // pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
@@ -1045,10 +1415,7 @@ void WebServer::saveReport(const std::string& filename,
                            const int max_hold)
 {
   // Create/init the tile generator.
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
-  generator_->eagerInit();
+  ensureGenerator().eagerInit();
 
   odb::dbBlock* block = generator_->getBlock();
   if (!block) {
@@ -1286,6 +1653,66 @@ import * as THREE from 'https://esm.sh/three@0.160.0';
   logger_->info(utl::WEB, 32, "Saved timing report to {}", filename);
 }
 
+namespace {
+// Nearest-neighbor resample of a top-down RGBA8 buffer into a dw x dh canvas,
+// preserving aspect ratio (fit + center, black letterbox) — matches the Qt
+// GUI's QImage::scaled(..., KeepAspectRatio).  Used to fit later GIF frames
+// into the dimensions locked by the first frame without distortion.
+std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
+                                        int sw,
+                                        int sh,
+                                        int dw,
+                                        int dh)
+{
+  // Opaque-black background (GIF ignores alpha, so use RGB black + full alpha).
+  std::vector<unsigned char> dst(4UL * dw * dh, 0);
+  for (size_t i = 3; i < dst.size(); i += 4) {
+    dst[i] = 255;
+  }
+  if (sw <= 0 || sh <= 0) {
+    return dst;
+  }
+  // Largest integer size that fits in dw x dh while preserving aspect.
+  const double scale
+      = std::min(static_cast<double>(dw) / sw, static_cast<double>(dh) / sh);
+  const int fw = std::clamp(static_cast<int>(std::lround(sw * scale)), 1, dw);
+  const int fh = std::clamp(static_cast<int>(std::lround(sh * scale)), 1, dh);
+  const int off_x = (dw - fw) / 2;
+  const int off_y = (dh - fh) / 2;
+  for (int y = 0; y < fh; ++y) {
+    const int sy = std::min(sh - 1, y * sh / fh);
+    for (int x = 0; x < fw; ++x) {
+      const int sx = std::min(sw - 1, x * sw / fw);
+      const size_t s = (static_cast<size_t>(sy) * sw + sx) * 4;
+      const size_t d = (static_cast<size_t>(off_y + y) * dw + (off_x + x)) * 4;
+      for (int c = 0; c < 4; ++c) {
+        dst[d + c] = src[s + c];
+      }
+    }
+  }
+  return dst;
+}
+
+// Parse the visibility JSON produced by the Tcl layer (shared by saveImage
+// and gifAddFrame).
+TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
+{
+  TileVisibility vis;
+  if (!vis_json.empty()) {
+    try {
+      boost::json::value v = boost::json::parse(vis_json);
+      if (auto* obj = v.if_object()) {
+        vis.parseFromJson(*obj);
+      }
+    } catch (const std::exception& e) {
+      logger->warn(
+          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+    }
+  }
+  return vis;
+}
+}  // namespace
+
 void WebServer::saveImage(const std::string& filename,
                           const int x0,
                           const int y0,
@@ -1296,25 +1723,397 @@ void WebServer::saveImage(const std::string& filename,
                           const std::string& vis_json)
 {
   // Create generator on demand (server may not be running).
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
-  generator_->eagerInit();
+  ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  TileVisibility vis;
-  if (!vis_json.empty()) {
-    try {
-      boost::json::value v = boost::json::parse(vis_json);
-      if (auto* obj = v.if_object()) {
-        vis.parseFromJson(*obj);
+  const TileVisibility vis = parseVis(vis_json, logger_);
+  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
+namespace {
+
+// Parse a color given as "#rgb", "#rrggbb", or a small set of names.
+// Defaults to opaque white on empty/unknown input.
+Color parseColorString(const std::string& s)
+{
+  Color c{.r = 255, .g = 255, .b = 255, .a = 255};
+  if (s.empty()) {
+    return c;
+  }
+  std::string lower;
+  lower.reserve(s.size());
+  for (char ch : s) {
+    lower.push_back(static_cast<char>(std::tolower(ch)));
+  }
+  static const std::map<std::string, Color> kNamed = {
+      {"white", {255, 255, 255, 255}},
+      {"black", {0, 0, 0, 255}},
+      {"red", {255, 0, 0, 255}},
+      {"green", {0, 255, 0, 255}},
+      {"blue", {0, 0, 255, 255}},
+      {"yellow", {255, 255, 0, 255}},
+      {"cyan", {0, 255, 255, 255}},
+      {"magenta", {255, 0, 255, 255}},
+  };
+  const auto it = kNamed.find(lower);
+  if (it != kNamed.end()) {
+    return it->second;
+  }
+  if (lower[0] == '#') {
+    lower.erase(0, 1);
+  }
+  auto hex = [](const std::string& h) {
+    return static_cast<unsigned char>(std::strtol(h.c_str(), nullptr, 16));
+  };
+  if (lower.size() == 6) {
+    c.r = hex(lower.substr(0, 2));
+    c.g = hex(lower.substr(2, 2));
+    c.b = hex(lower.substr(4, 2));
+  } else if (lower.size() == 3) {
+    c.r = hex(std::string(2, lower[0]));
+    c.g = hex(std::string(2, lower[1]));
+    c.b = hex(std::string(2, lower[2]));
+  }
+  return c;
+}
+
+}  // namespace
+
+// Push the current label set to every connected client.  Labels sit outside
+// ODB, so no design-change callback fires for them and a Tcl-driven edit
+// would otherwise leave every open browser showing the old set.  A no-op
+// before serve(), where there is nobody to tell.
+void WebServer::broadcastLabels()
+{
+  if (!viewer_hook_ || !generator_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "labels_changed";
+  msg["labels"] = generator_->labelsJson();
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+}
+
+std::string WebServer::addLabel(const int x,
+                                const int y,
+                                const std::string& text,
+                                const std::string& anchor,
+                                const std::string& color,
+                                const int size,
+                                const std::string& name)
+{
+  ensureGenerator();
+  // Reject an unknown anchor rather than silently centring the label, which
+  // reads as "the option did nothing".  Qt's add_label errors the same way
+  // (GUI-45); listing the choices saves a trip to the manual over a typo.
+  const std::string anchor_name = anchor.empty() ? "center" : anchor;
+  if (!isValidAnchor(anchor_name)) {
+    std::string choices;
+    for (const std::string& n : anchorNames()) {
+      if (!choices.empty()) {
+        choices += ", ";
       }
-    } catch (const std::exception& e) {
-      logger_->warn(
-          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+      choices += n;
+    }
+    logger_->error(utl::WEB,
+                   58,
+                   "Anchor not recognized: {}. Expected one of: {}.",
+                   anchor_name,
+                   choices);
+  }
+  const std::string result = generator_->addLabel(
+      {x, y}, text, parseColorString(color), size, anchor_name, name);
+  if (result.empty()) {
+    logger_->warn(utl::WEB, 57, "Label name '{}' already exists.", name);
+  } else {
+    broadcastLabels();
+  }
+  return result;
+}
+
+void WebServer::deleteLabel(const std::string& name)
+{
+  if (generator_ && generator_->deleteLabel(name)) {
+    broadcastLabels();
+  }
+}
+
+void WebServer::clearLabels()
+{
+  if (generator_) {
+    generator_->clearLabels();
+    broadcastLabels();
+  }
+}
+
+void WebServer::saveDisplayControls(const std::string& filename)
+{
+  if (!viewer_hook_) {
+    logger_->error(utl::WEB, 51, "Web server is not running.");
+    return;
+  }
+  const std::string state = viewer_hook_->getDisplayState();
+  if (state.empty()) {
+    logger_->warn(utl::WEB,
+                  44,
+                  "No display state has been received from a client yet; "
+                  "open the web viewer before saving.");
+    return;
+  }
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->error(utl::WEB, 45, "Cannot open {} for writing.", filename);
+    return;
+  }
+  out << state;
+  // Opening the file succeeding says nothing about the write: a full disk or a
+  // quota surfaces only here, and reporting success would leave a truncated
+  // file behind.  close() flushes, so check after it.
+  out.close();
+  if (!out) {
+    logger_->error(
+        utl::WEB, 53, "Failed writing display controls to {}.", filename);
+    return;
+  }
+  logger_->info(utl::WEB, 46, "Saved display controls to {}.", filename);
+}
+
+void WebServer::restoreDisplayControls(const std::string& filename)
+{
+  if (!viewer_hook_) {
+    logger_->error(utl::WEB, 47, "Web server is not running.");
+    return;
+  }
+  std::ifstream in(filename);
+  if (!in) {
+    logger_->error(utl::WEB, 48, "Cannot open {}.", filename);
+    return;
+  }
+  const std::string state((std::istreambuf_iterator<char>(in)),
+                          std::istreambuf_iterator<char>());
+  boost::json::value parsed;
+  try {
+    parsed = boost::json::parse(state);
+  } catch (const std::exception& e) {
+    logger_->error(utl::WEB,
+                   49,
+                   "Invalid display-controls JSON in {}: {}",
+                   filename,
+                   e.what());
+    return;
+  }
+  // Validate the shape here, at the file boundary, so the client can trust
+  // what it is handed: it writes these values straight into document.cookie,
+  // where a ';' would inject cookie attributes, and a JSON number or boolean
+  // would silently change a key's meaning.  Rejecting loudly beats a restore
+  // that half-applies.
+  const auto* root = parsed.if_object();
+  const auto* entries_value
+      = root != nullptr ? root->if_contains("entries") : nullptr;
+  const boost::json::object* entries
+      = entries_value != nullptr ? entries_value->if_object() : nullptr;
+  if (entries == nullptr) {
+    logger_->error(utl::WEB,
+                   52,
+                   "Invalid display-controls state in {}: expected an "
+                   "\"entries\" object.",
+                   filename);
+    return;
+  }
+  // One error site for every way an entry can be unusable, so the reason is
+  // carried as text rather than burning a message id per case.  error() does
+  // not return, so reporting at the point of detection needs no loop-carried
+  // state.
+  for (const auto& [key, value] : *entries) {
+    const char* reason = nullptr;
+    if (!value.is_string()) {
+      reason = "is not a string";
+    } else if (const std::string_view text = value.get_string();
+               text.find_first_of(";\r\n") != std::string_view::npos) {
+      // Cookie delimiters would let the file forge attributes on the cookies
+      // the client writes these into.  No legitimate value carries them: the
+      // cookie-backed ones are URI-encoded by their writers, the rest is JSON.
+      reason = "contains a ';', CR or LF";
+    }
+    if (reason != nullptr) {
+      logger_->error(utl::WEB,
+                     54,
+                     "Invalid display-controls state in {}: entry \"{}\" {}.",
+                     filename,
+                     std::string(key),
+                     reason);
     }
   }
-  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+
+  boost::json::object msg;
+  msg["type"] = "restore_display_state";
+  msg["state"] = std::move(parsed);
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+  logger_->info(utl::WEB, 50, "Restored display controls from {}.", filename);
+}
+
+void WebServer::setDisplayState(std::string json)
+{
+  if (viewer_hook_) {
+    viewer_hook_->setDisplayState(std::move(json));
+  }
+}
+
+// One open animated-GIF stream.  Defined here (not in web.h) so the public
+// header stays free of the GifEncoder type.
+struct WebGif
+{
+  std::string filename;
+  GifEncoder encoder;
+  int width = -1;
+  int height = -1;
+  int frame_count = 0;
+};
+
+namespace {
+// Resolve a GIF stream by key (default = most-recent).  Reports the resolved
+// index via *out_idx and returns nullptr when the key is out of range or the
+// slot was closed; the caller logs the error (with a literal message id).
+WebGif* resolveGif(std::vector<std::unique_ptr<WebGif>>& gifs,
+                   std::optional<int> key,
+                   int* out_idx)
+{
+  const int idx = key.value_or(static_cast<int>(gifs.size()) - 1);
+  *out_idx = idx;
+  if (idx < 0 || idx >= static_cast<int>(gifs.size()) || !gifs[idx]) {
+    return nullptr;
+  }
+  return gifs[idx].get();
+}
+}  // namespace
+
+int WebServer::gifStart(const std::string& filename)
+{
+  if (filename.empty()) {
+    logger_->error(utl::WEB, 69, "GIF filename is empty.");
+    return -1;
+  }
+  auto gif = std::make_unique<WebGif>();
+  gif->filename = filename;
+  gifs_.push_back(std::move(gif));
+  return static_cast<int>(gifs_.size()) - 1;
+}
+
+void WebServer::gifAddFrame(std::optional<int> key,
+                            const odb::Rect& region,
+                            const int width_px,
+                            const double dbu_per_pixel,
+                            std::optional<int> delay,
+                            const std::string& vis_json)
+{
+  int idx = 0;
+  WebGif* gif = resolveGif(gifs_, key, &idx);
+  if (gif == nullptr) {
+    logger_->error(utl::WEB, 70, "No active GIF for key {}.", idx);
+    return;
+  }
+
+  // Create generator on demand (server may not be running).  eagerInit()
+  // rebuilds the spatial index, so run it only once per stream (first frame);
+  // the design is static across a GIF's frames.
+  ensureGenerator();
+  if (gif->frame_count == 0) {
+    generator_->eagerInit();
+  }
+
+  const TileVisibility vis = parseVis(vis_json, logger_);
+  int w = 0;
+  int h = 0;
+  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
+      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &w, &h);
+  if (rgba.empty()) {
+    return;  // renderImageBuffer already logged the error.
+  }
+
+  const int d = delay.value_or(kDefaultGifDelay);
+  if (gif->frame_count == 0) {
+    // First frame locks the GIF dimensions.
+    gif->width = w;
+    gif->height = h;
+    if (!gif->encoder.begin(gif->filename, w, h, d)) {
+      logger_->error(
+          utl::WEB, 71, "Failed to open GIF file {}.", gif->filename);
+      gifs_[idx].reset();
+      return;
+    }
+  } else if (w != gif->width || h != gif->height) {
+    // Later frames are scaled to match the first (like gui's QImage::scaled).
+    rgba = resampleRgba(rgba, w, h, gif->width, gif->height);
+  }
+
+  if (!gif->encoder.addFrame(rgba, gif->width, gif->height, d)) {
+    logger_->error(utl::WEB, 72, "Failed to write GIF frame.");
+    return;
+  }
+  ++gif->frame_count;
+}
+
+void WebServer::gifEnd(std::optional<int> key)
+{
+  int idx = 0;
+  WebGif* gif = resolveGif(gifs_, key, &idx);
+  if (gif == nullptr) {
+    logger_->error(utl::WEB, 73, "No active GIF for key {}.", idx);
+    return;
+  }
+  if (gif->frame_count == 0) {
+    logger_->warn(
+        utl::WEB, 74, "GIF {} has no frames; nothing written.", gif->filename);
+    gifs_[idx].reset();
+    return;
+  }
+  gif->encoder.end();
+  logger_->info(utl::WEB,
+                75,
+                "Saved animated GIF ({} frames) to {}.",
+                gif->frame_count,
+                gif->filename);
+  gifs_[idx].reset();
+}
+
+std::string WebServer::addToolbarButton(const std::string& name,
+                                        const std::string& text,
+                                        const std::string& script,
+                                        const std::string& icon,
+                                        const std::string& tooltip,
+                                        const bool toggle,
+                                        const std::string& script_off,
+                                        const bool echo)
+{
+  // Ensure the hook exists even when called from a startup script before
+  // serve() (initLogger() is idempotent and creates viewer_hook_).
+  initLogger();
+  return viewer_hook_->addToolbarButton(
+      logger_, name, text, script, icon, tooltip, toggle, script_off, echo);
+}
+
+void WebServer::removeToolbarButton(const std::string& name)
+{
+  initLogger();
+  viewer_hook_->removeToolbarButton(name);
+}
+
+std::string WebServer::addMenuItem(const std::string& name,
+                                   const std::string& path,
+                                   const std::string& text,
+                                   const std::string& script,
+                                   const std::string& shortcut,
+                                   const bool echo)
+{
+  initLogger();
+  return viewer_hook_->addMenuItem(
+      logger_, name, path, text, script, shortcut, echo);
+}
+
+void WebServer::removeMenuItem(const std::string& name)
+{
+  initLogger();
+  viewer_hook_->removeMenuItem(name);
 }
 
 ListenerHandle createAndRunListener(

@@ -161,29 +161,17 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |       2312 |        54 |      1142
-        1 |       2286 |        50 |      1120
-        2 |       2286 |        50 |      1120
-        3 |       2280 |        48 |      1116
-        4 |       2280 |        48 |      1116
-        5 |       2280 |        48 |      1116
-        6 |       2280 |        48 |      1116
-[WARNING DPL-0700] Negotiation phase 1: violations stuck at 2280 for 3 consecutive iterations.
-Using old diamond search for 48 remaining illegal cells.
-diamond recovery: recovered 44/48 stuck cells.
-Negotiation phase 2: isolation point active, 1000 iterations.
-      400 |        220 |         4 |       108
-      403 |        220 |         4 |       108
-[WARNING DPL-0702] Negotiation phase 2: violations stuck at 220 for 3 consecutive iterations. Using diamond search for 4 remaining illegal cells.
-diamond recovery: recovered 0/4 stuck cells.
-[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 4
+        0 |        167 |        95 |        72
+        1 |          2 |         2 |         0
+        2 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 2.
 Placement Analysis
 ---------------------------------
-total displacement       7500.3 u
+total displacement       7502.8 u
 average displacement        2.1 u
-max displacement          138.7 u
+max displacement          144.5 u
 original HPWL          289884.5 u
-legalized HPWL         290402.1 u
+legalized HPWL         290364.1 u
 delta HPWL                    0 %
 
 Clock clk

@@ -1,0 +1,21 @@
+[WARNING STA-1171] gt2n_data/gt2_6t_w31_svt_tt_0p7v25c.lib.gz line 58, default_fanout_load is 0.0.
+[INFO ODB-0227] LEF file: gt2n_data/gt2_tech.lef, created 51 layers, 19 vias
+[INFO ODB-0227] LEF file: gt2n_data/gt2_6t_w31_svt.lef, created 72 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 465 components and 2093 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 930 connections.
+[INFO ODB-0133]     Created 382 nets and 1163 connections.
+[INFO PSM-0040] All shapes on net vdd are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : vdd
+Corner           : default
+Total power      : 1.10e-04 W
+Supply voltage   : 7.00e-01 V
+Worstcase voltage: 7.00e-01 V
+Average voltage  : 7.00e-01 V
+Average IR drop  : 4.12e-05 V
+Worstcase IR drop: 1.62e-04 V
+Percentage drop  : 0.02 %
+######################################

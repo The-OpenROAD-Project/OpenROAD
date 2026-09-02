@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -34,6 +35,8 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridY yl,
                  GridX xh,
                  GridY yh) override;
+  void clearDiamondSearch(const Node* cell) override;
+  void clearAllDiamondSearches() override;
   void redrawAndPause() override;
   const odb::dbInst* getDebugInstance() const override
   {
@@ -59,8 +62,8 @@ class Graphics : public gui::Renderer, public DplObserver
                                      int illegal_count,
                                      int illegal_site_count) override;
   void addNegotiationPhase2Marker(int iter) override;
-  void setCurrentIterMovers(
-      const std::unordered_set<odb::dbInst*>& movers) override;
+  void addCurrentIterMover(odb::dbInst* inst) override;
+  void clearCurrentIterMovers() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
@@ -73,7 +76,35 @@ class Graphics : public gui::Renderer, public DplObserver
   odb::dbBlock* block_ = nullptr;
   bool paint_pixels_;
   bool paint_negotiation_pixels_;
-  std::vector<odb::Rect> searched_;
+
+  std::mutex state_mutex_;
+
+  // One row of a diamond search region, in dbu.
+  struct RowSpan
+  {
+    int y_lo;
+    int y_hi;
+    int x_lo;
+    int x_hi;
+  };
+
+  // Most recent diamond search of one cell: the x range tried in each row, not
+  // a box per candidate, so a 200k-candidate search costs one span per row.
+  struct DiamondSearch
+  {
+    std::vector<RowSpan> rows;                        // sorted by y_lo
+    odb::Rect last;                                   // last candidate tried
+    std::vector<std::vector<odb::Point>> boundaries;  // union of |rows|, cached
+    bool boundaries_valid = false;
+  };
+
+  // An entry means a search for that cell has started; binSearch() ignores
+  // cells without one.
+  std::unordered_map<const odb::dbInst*, DiamondSearch> searched_diamond_;
+
+  // Row span capacity kept between searches.
+  static constexpr size_t kMaxRetainedRows = 64;
+  static constexpr int kSearchOutlineWidth = 3;
 
   // NegotiationLegalizer grid snapshot for rendering
   std::vector<NegotiationPixelState> negotiation_pixels_;

@@ -98,9 +98,10 @@ void Design::writeDb(std::ostream& stream)
   getOpenRoad()->writeDb(stream);
 }
 
-void Design::writeDb(const std::string& file_name)
+void Design::writeDb(const std::string& file_name,
+                     std::optional<int> compression_level)
 {
-  getOpenRoad()->writeDb(file_name.c_str());
+  getOpenRoad()->writeDb(file_name.c_str(), compression_level);
 }
 
 void Design::writeDef(const std::string& file_name)

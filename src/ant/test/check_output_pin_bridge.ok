@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: ant_check.lef, created 14 layers, 30 vias, 3 library cells
+[INFO ODB-0128] Design: output_pin_bridge
+[INFO ODB-0131]     Created 3 components and 18 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 3 connections.
+Net: n1
+  Pin:   u2/A (sky130_fd_sc_ms__buf_1)
+    Layer: li1
+      Partial area ratio:   34.28
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:   34.28
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:   26.83
+      Required ratio:   10.24 (Side area) (VIOLATED)
+      Cumulative area ratio:   26.83
+      Required ratio:    0.00 (Cumulative side area) 
+
+
+  Pin:   u3/A (sky130_fd_sc_ms__buf_1)
+    Layer: li1
+      Partial area ratio:   34.28
+      Required ratio:    0.00 (Gate area) 
+      Cumulative area ratio:   34.28
+      Required ratio:    0.00 (Cumulative area) 
+      Partial area ratio:   26.83
+      Required ratio:   10.24 (Side area) (VIOLATED)
+      Cumulative area ratio:   26.83
+      Required ratio:    0.00 (Cumulative side area) 
+
+
+
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 2 pin violations.
+violation count = 1
+Net n1 violations: 1

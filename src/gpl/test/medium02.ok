@@ -8,6 +8,7 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 589.950 589.400 ) um
+[INFO GPL-0016] Core area:                  335286.616 um^2
 [INFO GPL-0036] Movable instances area:      56546.014 um^2
 [INFO GPL-0037] Total instances area:        56986.510 um^2
 [INFO GPL-0035] Pin density area adjust:      4805.857 um^2
@@ -18,9 +19,8 @@
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                  39218
 [INFO GPL-0011] Number of pins:                 118496
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 600.080 599.800 ) um
-[INFO GPL-0013] Core BBox: ( 10.070 11.200 ) ( 589.950 589.400 ) um
-[INFO GPL-0016] Core area:                  335286.616 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 600.080 599.800 ) um
+[INFO GPL-0013] Placement BBox: ( 10.070 11.200 ) ( 589.950 589.400 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                335286.616 um^2
 [INFO GPL-0017] Fixed instances area:          440.496 um^2
@@ -121,5 +121,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.2290
 [INFO GPL-1009]     - For 50% usage of free space: 0.3664
 [INFO GPL-1014] Final placement area: 61351.87 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 635873.30
 No differences found.
 final hpwl: 1511129098

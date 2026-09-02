@@ -8,8 +8,10 @@ COMPULSORY_TESTS = [
     "ant_check",
     "ant_report",
     "check_api1",
+    "check_disjoint_stubs",
     "check_drt1",
     "check_grt1",
+    "check_output_pin_bridge",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -40,6 +42,9 @@ filegroup(
                 "merged_spacing.lef",
                 "sw130_random.def",
             ],
+            "check_disjoint_stubs": [
+                "ant_check.lef",
+            ],
             "check_drt1": [
                 "merged_spacing.lef",
                 "sw130_random.def",
@@ -49,6 +54,9 @@ filegroup(
                 "sky130hs/sky130hs_tt.lib",
                 "sky130hs/sky130hs_std_cell.lef",
                 "sky130hs/sky130hs.tlef",
+            ],
+            "check_output_pin_bridge": [
+                "ant_check.lef",
             ],
             "no-check_grt1": [
                 "gcd_sky130.def",

@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <deque>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -83,6 +84,9 @@ class GCell
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
 
+  // IO pin virtual cells (concurrent IO placement).
+  GCell(odb::dbBTerm* bterm, int cx, int cy, int dx, int dy);
+
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -137,6 +141,8 @@ class GCell
 
   bool isInstance() const;
   bool isFiller() const;
+  bool isIOPin() const { return bterm_ != nullptr; }
+  odb::dbBTerm* getBTerm() const { return bterm_; }
   bool isMacroInstance() const;
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
@@ -146,6 +152,7 @@ class GCell
 
  private:
   std::vector<Instance*> insts_;
+  odb::dbBTerm* bterm_ = nullptr;
   std::vector<GPin*> gPins_;
   int lx_ = 0;
   int ly_ = 0;
@@ -778,6 +785,7 @@ struct NesterovBaseVars
 
   const bool isSetBinCnt;
   const bool useUniformTargetDensity;
+  bool placeIosMode = false;
   bool isMaxPhiCoefChanged = false;  // not user config
   const float targetDensity;
   const int binCntX;
@@ -1042,6 +1050,7 @@ class NesterovBase
   ~NesterovBase();
 
   GCell& getFillerGCell(size_t index);
+  GCell& getIoPinGCell(size_t index);
 
   NesterovBaseCommon* getNbc() { return nbc_.get(); }
 
@@ -1260,6 +1269,8 @@ class NesterovBase
   std::pair<int, int> calculatePlacementPerturbationOffset(
       int dbu_per_micron) const;
 
+  void updateDbIoPins();
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
@@ -1407,6 +1418,8 @@ class NesterovBase
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
   void appendParallelVectors();
+  // Point whichever storage owns nb_gcells_[nb_index] back at nb_index.
+  void rebindHandleIndex(size_t nb_index);
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1437,6 +1450,89 @@ class NesterovBase
   bool reprint_iter_header_ = false;
 
   void initFillerGCells();
+
+  // concurrent IO pin placement (-place_ios)
+  std::vector<GCell> ioPinStor_;
+  std::vector<odb::Point> io_last_written_pos_;
+  odb::dbTechLayer* io_hor_layer_ = nullptr;
+  odb::dbTechLayer* io_ver_layer_ = nullptr;
+  // define_pin_shape_pattern grid, used by pins with a 2D up: region.
+  odb::dbTechLayer* io_top_layer_ = nullptr;
+  int io_top_pin_width_ = 0;
+  int io_top_pin_height_ = 0;
+
+  // ioPinStor_ index -> nb_gcells_ index, kept up to date by
+  // rebindHandleIndex so callbacks may reorder nb_gcells_ freely.
+  std::vector<size_t> io_stor_index_to_nb_index_;
+  size_t ioNbPos(size_t io_index) const
+  {
+    return io_stor_index_to_nb_index_[io_index];
+  }
+
+  static constexpr size_t kNoMirrorPartner = std::numeric_limits<size_t>::max();
+  std::vector<std::pair<uint32_t, uint32_t>> io_mirror_pairs_;
+  std::vector<size_t> io_master_to_follower_;
+  std::vector<char> io_is_follower_;
+  std::vector<FloatPoint> io_follower_wl_grad_;
+
+  enum class DieEdge : uint8_t
+  {
+    kLeft,
+    kRight,
+    kBottom,
+    kTop
+  };
+  static bool isHorizontalEdge(DieEdge edge)
+  {
+    return edge == DieEdge::kBottom || edge == DieEdge::kTop;
+  }
+
+  struct PerimSegment
+  {
+    DieEdge edge;
+    float lo;
+    float hi;
+  };
+  std::vector<PerimSegment> io_free_segments_;
+  std::vector<std::vector<PerimSegment>> io_constraint_segments_;
+  // A 2D up: region is an area on the top-layer grid, not a perimeter
+  // interval, so these pins are clamped to the box instead of projected.
+  std::vector<std::optional<odb::Rect>> io_box_constraints_;
+
+  void initIoPinGCells();
+  void pickIoPinDummyLayers();
+  void pickIoPinTopLayerGrid();
+  void initIoConstraints();
+  static std::vector<PerimSegment> mirrorSegments(
+      const std::vector<PerimSegment>& segs);
+  static std::vector<PerimSegment> intersectSegments(
+      const std::vector<PerimSegment>& a,
+      const std::vector<PerimSegment>& b);
+  bool rectToPerimSegment(const odb::Rect& r, PerimSegment& seg) const;
+  void seedIoPinGCell(size_t io_index);
+  size_t ioIndexOf(const GCellHandle& handle) const;
+  FloatPoint projectOntoSegment(const PerimSegment& seg,
+                                float x,
+                                float y) const;
+  const PerimSegment* nearestSegment(const std::vector<PerimSegment>& segs,
+                                     float x,
+                                     float y,
+                                     FloatPoint* projection) const;
+  const std::vector<PerimSegment>& ioLocus(size_t io_index) const;
+  FloatPoint projectIoPin(size_t io_index, float x, float y) const;
+  DieEdge ioEdgeOnLocus(size_t io_index, int cx, int cy) const;
+
+  FloatPoint mirrorOfIoPin(size_t master_io, const FloatPoint& p) const;
+  void applyMirrorConstraints(std::vector<FloatPoint>& coordi) const;
+  bool isMirrorFollower(size_t io_index) const
+  {
+    return io_index < io_is_follower_.size() && io_is_follower_[io_index];
+  }
+  bool isIoBoxConstrained(size_t io_index) const
+  {
+    return io_index < io_box_constraints_.size()
+           && io_box_constraints_[io_index].has_value();
+  }
 };
 
 inline std::vector<Bin>& NesterovBase::getBins()
@@ -1460,12 +1556,22 @@ class biNormalParameters
 class GCellHandle
 {
  public:
+  // Tags the ioPinStor_ index space, which is independent of fillerStor_.
+  struct IoPinStorage
+  {
+    NesterovBase* nb;
+  };
+
   GCellHandle(NesterovBaseCommon* nbc, size_t idx)
       : storage_(nbc), storage_index_(idx)
   {
   }
 
   GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
+  {
+  }
+
+  GCellHandle(IoPinStorage io, size_t idx) : storage_(io), storage_index_(idx)
   {
   }
 
@@ -1484,6 +1590,11 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
+  bool isIoPinStorage() const
+  {
+    return std::holds_alternative<IoPinStorage>(storage_);
+  }
+
   void updateHandle(NesterovBaseCommon* nbc, size_t new_index)
   {
     storage_ = nbc;
@@ -1499,12 +1610,16 @@ class GCellHandle
   size_t getStorageIndex() const { return storage_index_; }
 
  private:
-  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
+  using StorageVariant
+      = std::variant<NesterovBaseCommon*, NesterovBase*, IoPinStorage>;
 
   GCell& getGCell() const
   {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
       return std::get<NesterovBaseCommon*>(storage_)->getGCell(storage_index_);
+    }
+    if (std::holds_alternative<IoPinStorage>(storage_)) {
+      return std::get<IoPinStorage>(storage_).nb->getIoPinGCell(storage_index_);
     }
     return std::get<NesterovBase*>(storage_)->getFillerGCell(storage_index_);
   }

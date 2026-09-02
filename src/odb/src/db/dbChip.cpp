@@ -286,6 +286,12 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
     stream >> *obj.marker_categories_tbl_;
   }
   // User Code Begin >>
+  // Chip names were introduced in kSchemaChipExtended, so older databases
+  // leave name_ null.  Give them an empty name, matching the default of
+  // dbChip::create, so that dbChip::getName never hands out a null pointer.
+  if (!obj.getDatabase()->isSchema(kSchemaChipExtended)) {
+    obj.name_ = safe_strdup("");
+  }
   stream >> *obj.block_tbl_;
   stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;

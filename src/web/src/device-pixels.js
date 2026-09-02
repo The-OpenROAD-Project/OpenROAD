@@ -15,9 +15,10 @@
 // exact) and why they reproduce on both the merged-canvas and the legacy <img>
 // path — this is the browser's layout, not anything either path draws.
 //
-// Overlapping the tiles instead would be worse: routing layers render at 0.7
-// opacity, so an overlapping strip blends twice and a dark seam becomes a bright
-// one. They have to abut exactly, which is what landing on the grid gives.
+// Overlapping the tiles instead would be worse: routing-layer pixels are
+// semi-transparent, so an overlapping strip blends twice and a dark seam becomes
+// a bright one. They have to abut exactly, which is what landing on the grid
+// gives.
 //
 // Why this measures the DOM rather than patching Leaflet: leaflet-src.js keeps
 // setTransform/setPosition as closure-local functions and only publishes

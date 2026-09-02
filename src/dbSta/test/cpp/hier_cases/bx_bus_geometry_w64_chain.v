@@ -1,0 +1,77 @@
+// TOP: top
+// TECH: nangate45
+// TARGETS: width_64, whole_bus_connect, depth_1
+// CLUE: Width-64 bus through one child with per-bit inverters; probes wide-bus round trip and bus-shape preservation.
+module sub (a, y);
+  input [63:0] a;
+  output [63:0] y;
+  INV_X1 g0 (.A(a[63]), .ZN(y[63]));
+  INV_X1 g1 (.A(a[62]), .ZN(y[62]));
+  INV_X1 g2 (.A(a[61]), .ZN(y[61]));
+  INV_X1 g3 (.A(a[60]), .ZN(y[60]));
+  INV_X1 g4 (.A(a[59]), .ZN(y[59]));
+  INV_X1 g5 (.A(a[58]), .ZN(y[58]));
+  INV_X1 g6 (.A(a[57]), .ZN(y[57]));
+  INV_X1 g7 (.A(a[56]), .ZN(y[56]));
+  INV_X1 g8 (.A(a[55]), .ZN(y[55]));
+  INV_X1 g9 (.A(a[54]), .ZN(y[54]));
+  INV_X1 g10 (.A(a[53]), .ZN(y[53]));
+  INV_X1 g11 (.A(a[52]), .ZN(y[52]));
+  INV_X1 g12 (.A(a[51]), .ZN(y[51]));
+  INV_X1 g13 (.A(a[50]), .ZN(y[50]));
+  INV_X1 g14 (.A(a[49]), .ZN(y[49]));
+  INV_X1 g15 (.A(a[48]), .ZN(y[48]));
+  INV_X1 g16 (.A(a[47]), .ZN(y[47]));
+  INV_X1 g17 (.A(a[46]), .ZN(y[46]));
+  INV_X1 g18 (.A(a[45]), .ZN(y[45]));
+  INV_X1 g19 (.A(a[44]), .ZN(y[44]));
+  INV_X1 g20 (.A(a[43]), .ZN(y[43]));
+  INV_X1 g21 (.A(a[42]), .ZN(y[42]));
+  INV_X1 g22 (.A(a[41]), .ZN(y[41]));
+  INV_X1 g23 (.A(a[40]), .ZN(y[40]));
+  INV_X1 g24 (.A(a[39]), .ZN(y[39]));
+  INV_X1 g25 (.A(a[38]), .ZN(y[38]));
+  INV_X1 g26 (.A(a[37]), .ZN(y[37]));
+  INV_X1 g27 (.A(a[36]), .ZN(y[36]));
+  INV_X1 g28 (.A(a[35]), .ZN(y[35]));
+  INV_X1 g29 (.A(a[34]), .ZN(y[34]));
+  INV_X1 g30 (.A(a[33]), .ZN(y[33]));
+  INV_X1 g31 (.A(a[32]), .ZN(y[32]));
+  INV_X1 g32 (.A(a[31]), .ZN(y[31]));
+  INV_X1 g33 (.A(a[30]), .ZN(y[30]));
+  INV_X1 g34 (.A(a[29]), .ZN(y[29]));
+  INV_X1 g35 (.A(a[28]), .ZN(y[28]));
+  INV_X1 g36 (.A(a[27]), .ZN(y[27]));
+  INV_X1 g37 (.A(a[26]), .ZN(y[26]));
+  INV_X1 g38 (.A(a[25]), .ZN(y[25]));
+  INV_X1 g39 (.A(a[24]), .ZN(y[24]));
+  INV_X1 g40 (.A(a[23]), .ZN(y[23]));
+  INV_X1 g41 (.A(a[22]), .ZN(y[22]));
+  INV_X1 g42 (.A(a[21]), .ZN(y[21]));
+  INV_X1 g43 (.A(a[20]), .ZN(y[20]));
+  INV_X1 g44 (.A(a[19]), .ZN(y[19]));
+  INV_X1 g45 (.A(a[18]), .ZN(y[18]));
+  INV_X1 g46 (.A(a[17]), .ZN(y[17]));
+  INV_X1 g47 (.A(a[16]), .ZN(y[16]));
+  INV_X1 g48 (.A(a[15]), .ZN(y[15]));
+  INV_X1 g49 (.A(a[14]), .ZN(y[14]));
+  INV_X1 g50 (.A(a[13]), .ZN(y[13]));
+  INV_X1 g51 (.A(a[12]), .ZN(y[12]));
+  INV_X1 g52 (.A(a[11]), .ZN(y[11]));
+  INV_X1 g53 (.A(a[10]), .ZN(y[10]));
+  INV_X1 g54 (.A(a[9]), .ZN(y[9]));
+  INV_X1 g55 (.A(a[8]), .ZN(y[8]));
+  INV_X1 g56 (.A(a[7]), .ZN(y[7]));
+  INV_X1 g57 (.A(a[6]), .ZN(y[6]));
+  INV_X1 g58 (.A(a[5]), .ZN(y[5]));
+  INV_X1 g59 (.A(a[4]), .ZN(y[4]));
+  INV_X1 g60 (.A(a[3]), .ZN(y[3]));
+  INV_X1 g61 (.A(a[2]), .ZN(y[2]));
+  INV_X1 g62 (.A(a[1]), .ZN(y[1]));
+  INV_X1 g63 (.A(a[0]), .ZN(y[0]));
+endmodule
+module top (x, z);
+  input [63:0] x;
+  output [63:0] z;
+  sub s (.a(x), .y(z));
+endmodule

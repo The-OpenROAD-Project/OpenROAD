@@ -20,3 +20,10 @@ catch {
   place_tapcells -master CORNER_TOPLEFT_LEGACY -distance 20
 } error
 puts $error
+
+# A macro master sizes the minimum row width/height, so it would cut away
+# every row instead of being rejected. See issue #11223.
+catch {
+  cut_rows -endcap_master fakeram45_64x7 -halo_width_x 5 -halo_width_y 5
+} error
+puts $error

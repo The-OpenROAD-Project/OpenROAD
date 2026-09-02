@@ -586,8 +586,7 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
                                       const int& init_y,
                                       const int& final_x,
                                       const int& final_y,
-                                      const int& layer_level,
-                                      odb::dbNet* db_net)
+                                      const int& layer_level)
 {
   // Create vias (at the start and end of the jumper)
   for (int layer = layer_level; layer < layer_level + 2; layer++) {
@@ -597,24 +596,18 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
   // Create segment in upper layer (jumper)
   route.emplace_back(
       init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2, true);
-  // Reducing usage in the layer level
-  grouter_->updateResources(
-      init_x, init_y, final_x, final_y, layer_level, -1, db_net);
-  // Increasing usage in the layer level + 2
-  grouter_->updateResources(
-      init_x, init_y, final_x, final_y, layer_level + 2, 1, db_net);
-  // Update FastRoute Tree Edges
-  grouter_->updateFastRouteGridsLayer(
-      init_x, init_y, final_x, final_y, layer_level, layer_level + 2, db_net);
 }
 
-void RepairAntennas::addJumperToRoute(GRoute& route,
-                                      const int& seg_id,
-                                      const int& jumper_init_pos,
-                                      const int& jumper_final_pos,
-                                      const int& layer_level,
+// Scalar params are by value: references would dangle once the route
+// vector reallocates during the jumper appends below.
+bool RepairAntennas::addJumperToRoute(GRoute& route,
+                                      const int seg_id,
+                                      const int jumper_init_pos,
+                                      const int jumper_final_pos,
+                                      const int layer_level,
                                       odb::dbNet* db_net)
 {
+  const int route_size_before = route.size();
   const int seg_init_x = route[seg_id].init_x;
   const int seg_init_y = route[seg_id].init_y;
   const bool is_horizontal = (seg_init_x != route[seg_id].final_x);
@@ -635,14 +628,34 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
     jumper_init_x = seg_init_x;
     jumper_final_x = seg_init_x;
   }
+  // Accept the jumper only if its full geometry fits the per-edge headroom;
+  // demand committed since the position was selected may have consumed it.
+  if (!jumperFits(jumper_init_pos,
+                  jumper_final_pos,
+                  seg_init_x,
+                  seg_init_y,
+                  is_horizontal,
+                  layer_level,
+                  db_net)) {
+    debugPrint(logger_,
+               GRT,
+               "repair_antennas",
+               1,
+               "net {} jumper at ({}, {})-({}, {}) rejected for capacity",
+               db_net->getConstName(),
+               jumper_init_x,
+               jumper_init_y,
+               jumper_final_x,
+               jumper_final_y);
+    return false;
+  }
   // Add vias and jumper in the position
   addJumperAndVias(route,
                    jumper_init_x,
                    jumper_init_y,
                    jumper_final_x,
                    jumper_final_y,
-                   layer_level,
-                   db_net);
+                   layer_level);
   // Divide segment (new segment is added before jumper insertion)
   route.push_back(GSegment(seg_init_x,
                            seg_init_y,
@@ -653,40 +666,43 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
   // old segment is reduced (after jumper)
   route[seg_id].init_x = jumper_final_x;
   route[seg_id].init_y = jumper_final_y;
+  // Notify the router only now, after the split, so it sees a route whose
+  // lower-layer segments no longer span the jumper window.
+  if (!grouter_->updateJumperedRoute(jumper_init_x,
+                                     jumper_init_y,
+                                     jumper_final_x,
+                                     jumper_final_y,
+                                     layer_level,
+                                     layer_level + 2,
+                                     db_net)) {
+    // The router rejected the jumpered route; undo the split and recommit
+    // the original route's demand.
+    route.resize(route_size_before);
+    route[seg_id].init_x = seg_init_x;
+    route[seg_id].init_y = seg_init_y;
+    grouter_->restoreNetDemand(db_net);
+    return false;
+  }
+  return true;
 }
 
-void RepairAntennas::addJumper(GRoute& route,
-                               const int& segment_id,
-                               const int& jumper_pos,
-                               odb::dbNet* db_net)
+// The jumper wire lives two layers above the segment; map the span
+// position to endpoints and query the router's headroom for the whole
+// geometry (wire plus both via stacks).
+bool RepairAntennas::jumperFits(const int init_pos,
+                                const int final_pos,
+                                const int seg_init_x,
+                                const int seg_init_y,
+                                const bool is_horizontal,
+                                const int layer_level,
+                                odb::dbNet* db_net)
 {
-  odb::dbTech* tech = db_->getTech();
-  const int segment_layer_level = route[segment_id].init_layer;
-  odb::dbTechLayer* segment_layer = tech->findRoutingLayer(segment_layer_level);
-  const bool is_horizontal
-      = segment_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-
-  if (is_horizontal) {
-    // Get start and final X position of jumper
-    const int jumper_start_x = jumper_pos;
-    const int jumper_final_x = jumper_start_x + jumper_size_;
-    addJumperToRoute(route,
-                     segment_id,
-                     jumper_start_x,
-                     jumper_final_x,
-                     segment_layer_level,
-                     db_net);
-  } else {
-    // Get start and final Y position jumper
-    const int jumper_start_y = jumper_pos;
-    const int jumper_final_y = jumper_start_y + jumper_size_;
-    addJumperToRoute(route,
-                     segment_id,
-                     jumper_start_y,
-                     jumper_final_y,
-                     segment_layer_level,
-                     db_net);
-  }
+  return grouter_->hasJumperResources(is_horizontal ? init_pos : seg_init_x,
+                                      is_horizontal ? seg_init_y : init_pos,
+                                      is_horizontal ? final_pos : seg_init_x,
+                                      is_horizontal ? seg_init_y : final_pos,
+                                      layer_level + 2,
+                                      db_net);
 }
 
 int RepairAntennas::getSegmentsPerLayer(
@@ -845,7 +861,8 @@ void RepairAntennas::findJumperCandidatePositions(
     const int& final_y,
     const odb::Point& parent_pos,
     const bool& is_horizontal,
-    std::vector<int>& candidate_positions)
+    std::vector<int>& candidate_positions,
+    std::vector<std::pair<int, int>>& free_windows)
 {
   // One tile size of distance from init or segment end
   const int jumper_dist = 1;
@@ -863,6 +880,12 @@ void RepairAntennas::findJumperCandidatePositions(
       candidate_positions.push_back(
           getJumperPosition(init_y, final_y, parent_pos.y()));
     }
+    // Keep the window bounds so selectJumperPosition can derive tile-aligned
+    // fallbacks if every parent-nearest candidate is rejected.
+    const int lo = (is_horizontal ? init_x : init_y) + jumper_dist * tile_size_;
+    const int hi = (is_horizontal ? final_x : final_y) - jumper_size_
+                   - jumper_dist * tile_size_;
+    free_windows.emplace_back(lo, hi);
   }
 }
 
@@ -886,28 +909,6 @@ static void getViaPosition(LayerToSegmentNodeVector& segment_graph,
       }
     }
   }
-}
-
-int RepairAntennas::getBestPosition(const std::vector<int>& candidate_positions,
-                                    const bool& is_horizontal,
-                                    const odb::Point& parent_pos)
-{
-  int jumper_position = -1;
-  // Find best position of the position candidates
-  int min_dist = -1, dist;
-  for (const int& pos : candidate_positions) {
-    // Get distance
-    if (is_horizontal) {
-      dist = std::abs((pos + tile_size_) - parent_pos.x());
-    } else {
-      dist = std::abs((pos + tile_size_) - parent_pos.y());
-    }
-    if (min_dist == -1 || dist < min_dist) {
-      min_dist = dist;
-      jumper_position = pos;
-    }
-  }
-  return jumper_position;
 }
 
 bool RepairAntennas::findPosToJumper(const GRoute& route,
@@ -945,6 +946,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
 
   // Save best positions to add jumper
   std::vector<int> candidate_positions;
+  std::vector<std::pair<int, int>> free_windows;
   // Iterate all position of segment
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
     // Check if the position has resources available
@@ -960,7 +962,8 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                    pos_y,
                                    parent_pos,
                                    is_horizontal,
-                                   candidate_positions);
+                                   candidate_positions,
+                                   free_windows);
       last_block_x = pos_x;
       last_block_y = pos_y;
     }
@@ -978,11 +981,77 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                  seg_final_y,
                                  parent_pos,
                                  is_horizontal,
-                                 candidate_positions);
+                                 candidate_positions,
+                                 free_windows);
   }
-  jumper_position
-      = getBestPosition(candidate_positions, is_horizontal, parent_pos);
-  return (jumper_position != -1);
+  jumper_position = selectJumperPosition(candidate_positions,
+                                         free_windows,
+                                         is_horizontal,
+                                         parent_pos,
+                                         seg_init_x,
+                                         seg_init_y,
+                                         layer_level,
+                                         db_net);
+  return jumper_position != -1;
+}
+
+// Probe positions closest to the parent first and return the first whose
+// whole jumper fits the per-edge headroom; once every parent-nearest
+// candidate fails, retry with the windows' tile-aligned fallbacks.
+int RepairAntennas::selectJumperPosition(
+    std::vector<int>& candidate_positions,
+    const std::vector<std::pair<int, int>>& free_windows,
+    const bool is_horizontal,
+    const odb::Point& parent_pos,
+    const int seg_init_x,
+    const int seg_init_y,
+    const int layer_level,
+    odb::dbNet* db_net)
+{
+  const int target = is_horizontal ? parent_pos.x() : parent_pos.y();
+  const auto select_position = [&](std::vector<int>& positions) {
+    std::stable_sort(
+        positions.begin(), positions.end(), [&](const int lhs, const int rhs) {
+          return std::abs(lhs + tile_size_ - target)
+                 < std::abs(rhs + tile_size_ - target);
+        });
+    for (const int pos : positions) {
+      if (jumperFits(pos,
+                     pos + jumper_size_,
+                     seg_init_x,
+                     seg_init_y,
+                     is_horizontal,
+                     layer_level,
+                     db_net)) {
+        return pos;
+      }
+      debugPrint(logger_,
+                 GRT,
+                 "repair_antennas",
+                 1,
+                 "net {} jumper candidate at {} rejected for capacity",
+                 db_net->getConstName(),
+                 pos);
+    }
+    return -1;
+  };
+  int jumper_position = select_position(candidate_positions);
+  if (jumper_position == -1) {
+    // Expand the windows into tile-aligned fallbacks, skipping the
+    // candidates already rejected above.
+    std::vector<int> fallback_positions;
+    for (const auto& [lo, hi] : free_windows) {
+      for (int pos = lo; pos <= hi; pos += tile_size_) {
+        if (std::find(
+                candidate_positions.begin(), candidate_positions.end(), pos)
+            == candidate_positions.end()) {
+          fallback_positions.push_back(pos);
+        }
+      }
+    }
+    jumper_position = select_position(fallback_positions);
+  }
+  return jumper_position;
 }
 
 static odb::Point findSegmentPos(const GSegment& seg)
@@ -1111,18 +1180,20 @@ int RepairAntennas::addJumperOnSegments(
       if (seg_len < smaller_seg_size_) {
         break;
       }
-      if (last_pos_aux != -1) {
-        // Avoid overlap with last jumper position
-        const int dist = abs(last_pos_aux - pos_it);
-        if (dist > jumper_size_) {
-          addJumper(route, seg_it.first, pos_it, db_net);
-          jumper_by_net++;
-        }
-      } else {
-        addJumper(route, seg_it.first, pos_it, db_net);
-        jumper_by_net++;
+      // Skip candidates overlapping the last inserted jumper
+      if (last_pos_aux != -1
+          && std::abs(last_pos_aux - pos_it) <= jumper_size_) {
+        continue;
       }
-      last_pos_aux = pos_it;
+      if (addJumperToRoute(route,
+                           seg_it.first,
+                           pos_it,
+                           pos_it + jumper_size_,
+                           route[seg_it.first].init_layer,
+                           db_net)) {
+        jumper_by_net++;
+        last_pos_aux = pos_it;
+      }
     }
   }
   return jumper_by_net;

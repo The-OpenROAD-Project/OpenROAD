@@ -59,6 +59,7 @@ void HungarianMatching::createMatrix()
   for (int idx : pin_indices_) {
     IOPin& io_pin = netlist_->getIoPin(idx);
     if (!io_pin.isInGroup()) {
+      const bool has_mirror = io_pin.getBTerm()->hasMirroredBTerm();
       bool is_mirrored = false;
       std::vector<int> larger_costs;
       int slot_index = 0;
@@ -73,7 +74,11 @@ void HungarianMatching::createMatrix()
         const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
         const int hpwl = io_net_hpwl + mirrored_cost;
         larger_costs.push_back(std::max(io_net_hpwl, mirrored_cost));
-        hungarian_matrix_[slot_index][pin_index] = hpwl;
+        // avoid slots whose mirrored slot cannot receive the mirrored pin
+        hungarian_matrix_[slot_index][pin_index]
+            = has_mirror && isMirroredSlotBlocked(slot_pos, slots_[i].layer)
+                  ? hungarian_fail_
+                  : hpwl;
         is_mirrored = is_mirrored || mirrored_cost != 0;
         slot_index++;
       }
@@ -82,6 +87,9 @@ void HungarianMatching::createMatrix()
         std::vector<uint8_t> rank = getTieBreakRank(larger_costs);
         for (int idx = 0; idx < slot_index; idx++) {
           const int hpwl = hungarian_matrix_[idx][pin_index];
+          if (hpwl == hungarian_fail_) {
+            continue;
+          }
           if ((hpwl >> 24) != 0) {
             logger_->critical(utl::PPL, 210, "Cost for pin exceeds 24 bits.");
           }
@@ -161,7 +169,7 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   mirrored_pin.setPlaced();
   assignment.push_back(mirrored_pin);
   int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
-  if (slot_index < 0 || slots_[slot_index].used) {
+  if (slot_index < 0 || !slots_[slot_index].isAvailable()) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
     logger_->error(
@@ -346,6 +354,14 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
 
   hungarian_matrix_.clear();
   assignment_.clear();
+}
+
+bool HungarianMatching::isMirroredSlotBlocked(const odb::Point& pos,
+                                              int layer) const
+{
+  const int slot_index
+      = getSlotIdxByPosition(core_->getMirroredPosition(pos), layer);
+  return slot_index < 0 || !slots_[slot_index].isAvailable();
 }
 
 int HungarianMatching::getSlotIdxByPosition(const odb::Point& position,

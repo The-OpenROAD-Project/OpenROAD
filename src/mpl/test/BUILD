@@ -37,7 +37,8 @@ COMPULSORY_TESTS = [
     "io_constraints8",
     "io_constraints9",
     "io_pads1",
-    "keep_clustering_data",
+    "keep_clustering_data1",
+    "keep_clustering_data2",
     "macro_only",
     "macros_without_pins1",
     "mixed_ios1",
@@ -45,6 +46,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "place_macro_right_angle_rotation",
     "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
 ]
@@ -189,9 +191,13 @@ filegroup(
                     "testcases/io_pads1.def",
                     "testcases/macro_only.lef",
                 ],
-                "keep_clustering_data": [
+                "keep_clustering_data1": [
                     "Nangate45/Nangate45_fast.lib",
                     "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "keep_clustering_data2": [
+                    "testcases/keep_clustering_data2.v",
                     "testcases/macro_only.lef",
                 ],
                 "macro_only": [
@@ -228,6 +234,10 @@ filegroup(
                 "orientation_improve3": [
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
+                ],
+                "place_macro_right_angle_rotation": [
+                    "testcases/place_macro_right_angle_rotation.def",
+                    "testcases/place_macro_right_angle_rotation.lef",
                 ],
                 "placement_blockages1": [
                     "testcases/macro_only.lef",

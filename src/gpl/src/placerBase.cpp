@@ -326,11 +326,11 @@ Pin::Pin(odb::dbITerm* iTerm) : Pin()
   updateCoordi(iTerm);
 }
 
-Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger) : Pin()
+Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger, bool placeIosMode) : Pin()
 {
   setBTerm();
   term_ = bTerm;
-  updateCoordi(bTerm, logger);
+  updateCoordi(bTerm, logger, placeIosMode);
 }
 
 std::string Pin::getName() const
@@ -502,12 +502,16 @@ void Pin::updateCoordi(odb::dbITerm* iTerm)
 //
 // for BTerm, offset* will hold bbox info.
 //
-void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
+void Pin::updateCoordi(odb::dbBTerm* bTerm,
+                       utl::Logger* logger,
+                       bool placeIosMode)
 {
   Rect bbox = bTerm->getBBox();
   if (bbox.isInverted()) {
-    logger->error(
-        GPL, 326, "{} toplevel port is not placed.", bTerm->getConstName());
+    if (!placeIosMode) {
+      logger->error(
+          GPL, 326, "{} toplevel port is not placed.", bTerm->getConstName());
+    }
   }
 
   // Just center
@@ -727,6 +731,7 @@ PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
     : padLeft(options.padLeft),
       padRight(options.padRight),
       skipIoMode(options.skipIoMode),
+      placeIosMode(options.placeIosMode),
       disablePinDensityAdjust(options.disablePinDensityAdjust)
 {
 }
@@ -805,8 +810,8 @@ void PlacerBaseCommon::init()
   instStor_.reserve(db_insts.size());
   insts_.reserve(instStor_.size());
   for (dbInst* db_inst : db_insts) {
-    auto type = db_inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock()) {
+    // Same ignore criteria as DPL
+    if (!db_inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
 
@@ -950,7 +955,7 @@ void PlacerBaseCommon::init()
 
       if (!pbVars_.skipIoMode) {
         for (dbBTerm* bTerm : db_net->getBTerms()) {
-          Pin temp_pin(bTerm, log_);
+          Pin temp_pin(bTerm, log_, pbVars_.placeIosMode);
           temp_pin.setNet(temp_net_ptr);
           pinStor_.push_back(temp_pin);
         }

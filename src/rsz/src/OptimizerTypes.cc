@@ -268,6 +268,9 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   target.scene = endpoint_path != nullptr
                      ? endpoint_path->scene(resizer.staState())
                      : nullptr;
+  target.min_max = endpoint_path != nullptr
+                       ? endpoint_path->minMax(resizer.staState())
+                       : resizer.maxAnalysisMode();
   target.driver_pin = target.driver_path != nullptr
                           ? target.driver_path->pin(resizer.staState())
                           : nullptr;
@@ -330,12 +333,17 @@ const sta::Scene* Target::activeScene(const Resizer& resizer) const
 
 const sta::MinMax* Target::minMax(const Resizer& resizer) const
 {
+  // Prefer the value cached at construction: endpoint_path may be stale here
+  // (an earlier move in the sequence can invalidate it), and dereferencing it
+  // for the tag/min-max would then crash.
+  if (min_max != nullptr) {
+    return min_max;
+  }
   if (endpoint_path == nullptr) {
     return resizer.maxAnalysisMode();
   }
-
-  const sta::MinMax* min_max = endpoint_path->minMax(resizer.staState());
-  return min_max != nullptr ? min_max : resizer.maxAnalysisMode();
+  const sta::MinMax* path_min_max = endpoint_path->minMax(resizer.staState());
+  return path_min_max != nullptr ? path_min_max : resizer.maxAnalysisMode();
 }
 
 const sta::Path* Target::driverPath(const Resizer&) const

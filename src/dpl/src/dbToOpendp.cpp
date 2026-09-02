@@ -278,11 +278,29 @@ void Opendp::createNetwork()
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "cell_init",
+                 2,
+                 "Skipping instance {} with master {} of type {} (not core "
+                 "auto placeable)",
+                 inst->getName(),
+                 inst->getMaster()->getName(),
+                 inst->getMaster()->getType().getString());
       continue;
     }
     if (inst->isFixed()
         && !bboxIntersectsOuterShell(inst->getBBox()->getBox(),
                                      row_outer_shell_rects)) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "cell_init",
+                 2,
+                 "Skipping fixed instance {} with master {} of type {} "
+                 "(outside outer shell)",
+                 inst->getName(),
+                 inst->getMaster()->getName(),
+                 inst->getMaster()->getType().getString());
       continue;
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());

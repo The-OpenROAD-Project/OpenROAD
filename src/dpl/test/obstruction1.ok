@@ -16,12 +16,12 @@
 [INFO DPL-0393]   height 1 row(s): 117 cells
 Placement Analysis
 ---------------------------------
-total displacement        120.9 u
+total displacement        115.4 u
 average displacement        1.0 u
-max displacement            2.3 u
+max displacement            2.1 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
-[INFO DPL-0001] Placed 19644 filler instances.
+[INFO DPL-0001] Placed 19647 filler instances.
 No differences found.

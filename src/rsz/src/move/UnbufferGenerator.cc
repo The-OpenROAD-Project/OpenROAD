@@ -87,9 +87,9 @@ bool resolveDriverContext(UnbufferSelectionContext& ctx)
   ctx.drvr_port = ctx.resizer.network()->libertyPort(ctx.drvr_pin);
   ctx.drvr_cell
       = ctx.drvr_port != nullptr ? ctx.drvr_port->libertyCell() : nullptr;
-  ctx.scene = ctx.target.endpoint_path->scene(ctx.resizer.sta());
+  ctx.scene = ctx.target.activeScene(ctx.resizer);
   ctx.slack_scene = ctx.scene;
-  ctx.min_max = ctx.target.endpoint_path->minMax(ctx.resizer.sta());
+  ctx.min_max = ctx.target.minMax(ctx.resizer);
   return ctx.drvr != nullptr && ctx.drvr_cell != nullptr
          && ctx.drvr_cell->isBuffer() && ctx.scene != nullptr
          && ctx.min_max != nullptr;

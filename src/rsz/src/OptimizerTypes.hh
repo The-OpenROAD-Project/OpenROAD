@@ -276,7 +276,11 @@ struct Target
   const sta::Path* driver_path{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
+  // scene and min_max are captured at construction (while endpoint_path is
+  // valid) so later moves in a repair sequence can read them after earlier
+  // commits have invalidated endpoint_path.  Access via activeScene()/minMax().
   const sta::Scene* scene{nullptr};
+  const sta::MinMax* min_max{nullptr};
 
   // === Prepared data for MT generation/estimation ==========================
   std::optional<ArcDelayState> arc_delay;

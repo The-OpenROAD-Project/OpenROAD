@@ -31,6 +31,14 @@ class MBFFTestPeer
   {
     return uut->IsValidTray(tray);
   }
+
+  static bool HaveSameMask(MBFF* uut, odb::dbInst* first, odb::dbInst* second)
+  {
+    const MBFF::Mask first_mask = uut->GetArrayMask(first, true);
+    const MBFF::Mask second_mask = uut->GetArrayMask(second, true);
+    return !(first_mask < second_mask) && !(second_mask < first_mask);
+  }
+
   static void ReadLibs(MBFF* uut) { uut->ReadLibs(); }
 };
 
@@ -131,7 +139,7 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
 {
   // Retreive masters, create a test cell, and assert that they are correctly
   // identified as either a tray or not a tray.
-  EXPECT_EQ(db_->findLib("test0")->getMasters().size(), 6);
+  EXPECT_EQ(db_->findLib("test0")->getMasters().size(), 7);
 
   EXPECT_FALSE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "INV")));
@@ -145,6 +153,19 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2CLPS")));
   EXPECT_TRUE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2SECLPS")));
+  EXPECT_TRUE(MBFFTestPeer::IsValidTray(
+      mbff_.get(), CreateTmpCell("test_tray", "test0", "MBLATCH2")));
+}
+
+TEST_F(MBFFTestFixture, RegisterAndLatchTraysUseDifferentMasks)
+{
+  // Given equivalent register-bank and latch-bank tray interfaces.
+  odb::dbInst* register_tray = CreateTmpCell("register_tray", "test0", "MBFF2");
+  odb::dbInst* latch_tray = CreateTmpCell("latch_tray", "test0", "MBLATCH2");
+
+  // Then their sequential behavior must keep them in separate candidate pools.
+  EXPECT_FALSE(
+      MBFFTestPeer::HaveSameMask(mbff_.get(), register_tray, latch_tray));
 }
 
 TEST_F(MBFFTestFixture, ReadLibsSuccessfullyProcessesTestCells)

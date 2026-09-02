@@ -43,6 +43,12 @@ PadPlacer::PadPlacer(utl::Logger* logger,
   addInstsOverlapCache(insts);
 }
 
+void PadPlacer::guiPause(const std::string& reason) const
+{
+  logger_->report("Pausing pad placement on {}: {}", row_->getName(), reason);
+  gui::Gui::get()->pause();
+}
+
 void PadPlacer::populateInstWidths()
 {
   const odb::dbTransform xform(row_->getOrient());
@@ -439,7 +445,7 @@ std::optional<odb::Polygon> PadPlacer::getMasterOutline(
     return odb::Polygon(master_obs.front());
   }
 
-  const auto overlaps = odb::Polygon::merge(master_obs);
+  const auto overlaps = odb::geom::mergePolygons(master_obs);
   if (overlaps.size() == 1) {
     return overlaps.front();
   }
@@ -663,7 +669,7 @@ void UniformPadPlacer::place()
     offset += target_spacing;
 
     if (gui_debug) {
-      gui::Gui::get()->pause();
+      guiPause(fmt::format("placed {} with uniform spacing", inst->getName()));
     }
   }
 }
@@ -798,7 +804,12 @@ void BumpAlignedPadPlacer::place()
       addInstanceObstructions(ginst);
 
       if (gui_debug) {
-        gui::Gui::get()->pause();
+        guiPause(
+            fmt::format("placed {} at {:.4f}um with a remaining spare gap "
+                        "of {:.4f}um",
+                        ginst->getName(),
+                        select_pos / dbus,
+                        max_travel / dbus));
       }
     }
 
@@ -1072,7 +1083,6 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::initialPoolMapping() const
 void PlacerPadPlacer::debugPause(const std::string& msg) const
 {
   if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
-    debugPrint(getLogger(), utl::PAD, "Pause", 1, msg);
     auto* gui = gui::Gui::get();
     gui->clearHighlights();
     for (const auto& [inst, iterms] : iterm_connections_) {
@@ -1082,7 +1092,7 @@ void PlacerPadPlacer::debugPause(const std::string& msg) const
         }
       }
     }
-    gui::Gui::get()->pause();
+    guiPause(msg);
   }
 }
 
@@ -1823,7 +1833,7 @@ void PlacerPadPlacer::debugCheckPlacement() const
     return;
   }
 
-  bool pause = false;
+  std::vector<odb::dbInst*> invalid;
   for (auto* inst : getInsts()) {
     if (checkInstancePlacement(inst)) {
       debugPrint(getLogger(),
@@ -1832,13 +1842,12 @@ void PlacerPadPlacer::debugCheckPlacement() const
                  1,
                  "Invalid placement for {}",
                  inst->getName());
-      pause = true;
+      invalid.push_back(inst);
     }
   }
 
-  if (pause && gui::Gui::enabled()) {
-    getLogger()->report("Pausing GUI due to invalid positions of pads");
-    gui::Gui::get()->pause();
+  if (!invalid.empty() && gui::Gui::enabled()) {
+    guiPause(fmt::format("invalid position(s) for {}", instNameList(invalid)));
   }
 }
 

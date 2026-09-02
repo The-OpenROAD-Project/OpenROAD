@@ -549,7 +549,11 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
       level_(0),
       subtree_visibility_(true)
 {
-  net_ = getNet(*clock_->pins().begin());
+  // A virtual clock has no pins; net_ stays null and ClockWidget::populate
+  // skips the tree. Dereferencing pins().begin() here would be UB.
+  if (!clock_->pins().empty()) {
+    net_ = getNet(*clock_->pins().begin());
+  }
 }
 
 std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility = false) const
@@ -853,12 +857,23 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
 
   std::vector<std::pair<const sta::Pin*, const sta::Pin*>> path;
 
+  if (drivers_.empty()) {
+    // No driver, so there is no root to walk towards.
+    return path;
+  }
+
   // looking for path to root
   const sta::Pin* root = drivers_.begin()->first;
 
   const sta::Pin* search_pin = pin;
   while (search_pin != root) {
     const auto& connections = pin_map[search_pin];
+
+    if (connections.empty()) {
+      // search_pin is not connected to anything in this tree, so the walk
+      // cannot reach the root.
+      break;
+    }
 
     for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);

@@ -1,0 +1,35 @@
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 2000
+  include:
+    - 3dic_cross_flop.3dbv
+
+Design:
+  name: "top"
+  external:
+    verilog_file: "3dic_cross_top.v"
+
+ChipletInst:
+  chipA:
+    reference: flop_chip_a
+  chipB:
+    reference: flop_chip_b
+
+Stack:
+  chipA:
+    loc: [0.0, 0.0]
+    z: 0.0
+    orient: R0
+  chipB:
+    loc: [0.0, 0.0]
+    z: 300.0
+    orient: MZ
+
+Connection:
+  bond_a_to_b:
+    top: chipB.regions.front_reg
+    bot: chipA.regions.front_reg
+  to_pkg:
+    top: chipA.regions.front_reg
+    bot: ~

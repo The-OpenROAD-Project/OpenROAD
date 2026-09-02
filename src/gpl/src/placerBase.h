@@ -121,7 +121,7 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
+  Pin(odb::dbBTerm* bTerm, utl::Logger* logger, bool placeIosMode = false);
   ~Pin();
 
   odb::dbITerm* getDbITerm() const;
@@ -188,7 +188,9 @@ class Pin
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
 
-  void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
+  void updateCoordi(odb::dbBTerm* bTerm,
+                    utl::Logger* logger,
+                    bool placeIosMode = false);
 };
 
 class Net
@@ -276,6 +278,7 @@ struct PlacerBaseVars
   const int padLeft;
   const int padRight;
   const bool skipIoMode;
+  const bool placeIosMode;
   const bool disablePinDensityAdjust;
 };
 

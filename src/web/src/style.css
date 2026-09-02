@@ -1,5 +1,11 @@
 /* ─── Theme Variables ─────────────────────────────────────────────────────── */
 
+/* --bg-map is black in both themes to match the Qt GUI's default background
+   (displayControls.cpp, background_color_ = Qt::black).  Layer shapes are drawn
+   semi-transparent (alpha 180/255), so the background shows through them and
+   any difference here shifts every rendered color away from the Qt GUI's.  It
+   remains user-settable through the Background control. */
+
 html[data-theme="dark"] {
     --bg-main: #1e1e1e;
     --bg-panel: #252525;
@@ -16,7 +22,7 @@ html[data-theme="dark"] {
     --bg-tooltip: rgba(30, 30, 30, 0.95);
     --bg-heatmap-legend: rgba(18, 20, 24, 0.88);
     --bg-rubber-band: rgba(255, 255, 255, 0.1);
-    --bg-map: #111;
+    --bg-map: #000;
 
     --fg-primary: #ccc;
     --fg-secondary: #aaa;
@@ -75,7 +81,7 @@ html[data-theme="light"] {
     --bg-tooltip: rgba(255, 255, 255, 0.95);
     --bg-heatmap-legend: rgba(255, 255, 255, 0.92);
     --bg-rubber-band: rgba(0, 120, 212, 0.15);
-    --bg-map: #111;
+    --bg-map: #000;
 
     --fg-primary: #1e1e1e;
     --fg-secondary: #444;
@@ -120,7 +126,13 @@ html[data-theme="light"] {
 
 /* ─── Ruler overlay ──────────────────────────────────────────────────────── */
 
-.ruler-mode-cursor {
+/* Placement-mode crosshair for the ruler and label tools.  Qualified with
+   .leaflet-container so it outranks that element's own `cursor: default
+   !important` below on specificity; a bare .ruler-mode-cursor ties it and
+   loses the source-order tiebreak.  .leaflet-dragging still wins over both,
+   so panning shows the grab cursor. */
+.leaflet-container.ruler-mode-cursor,
+.leaflet-container.label-mode-cursor {
     cursor: crosshair !important;
 }
 .ruler-label {
@@ -132,6 +144,22 @@ html[data-theme="light"] {
     white-space: nowrap;
     pointer-events: none;
     border: none;
+}
+
+/* Draggable handle for a user text label (2.12); the label text itself is
+   drawn server-side on the overlay tile. */
+.label-handle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ruler-label-bg, #00ffff);
+    border: 1px solid var(--fg-bright, #fff);
+    box-sizing: border-box;
+    cursor: move;
+}
+.label-handle-selected {
+    background: #ffff00;
+    border-color: #ffff00;
 }
 
 /* Rubber-band zoom overlay (right-click drag) */
@@ -153,9 +181,27 @@ html, body {
     color: var(--fg-primary);
 }
 
+/* The chrome above the panels is not a fixed height: the toolbar collapses
+   when no button is registered and appears when one is (see #toolbar:empty).
+   Stack it as a flex column and let #gl-container take whatever is left, so
+   the panels can never be pushed past the bottom of the window -- body is
+   overflow:hidden, so anything past it is simply unreachable. */
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+#menu-bar,
+#toolbar {
+    flex: none;
+}
+
 #gl-container {
-    width: 100vw;
-    height: calc(100vh - 24px);
+    flex: 1;
+    /* Without this a flex item refuses to shrink below its content's height,
+       which for GoldenLayout is whatever size it was last given. */
+    min-height: 0;
+    width: 100%;
 }
 
 /* Menu bar */
@@ -193,8 +239,28 @@ html, body {
     z-index: 10002;
     padding: 4px 0;
 }
-#menu-bar .menu-label.open .menu-dropdown {
+/* Only the top-level dropdown opens with its label; nested submenus
+   (deeper .menu-dropdown) are governed by the hover rule below. */
+#menu-bar .menu-label.open > .menu-dropdown {
     display: block;
+}
+/* Nested submenu: flies out to the right of its parent row on hover. */
+#menu-bar .menu-item.submenu-item {
+    position: relative;
+}
+#menu-bar .menu-dropdown.submenu {
+    top: -4px;
+    left: 100%;
+}
+#menu-bar .menu-item.submenu-item:hover > .menu-dropdown.submenu {
+    display: block;
+}
+#menu-bar .submenu-arrow {
+    margin-left: 24px;
+    color: var(--fg-muted);
+}
+#menu-bar .menu-item:hover > .submenu-arrow {
+    color: var(--fg-secondary);
 }
 #menu-bar .menu-item {
     display: flex;
@@ -229,6 +295,53 @@ html, body {
     margin: 4px 8px;
 }
 
+/* Toolbar (Tcl-registered custom buttons via create_toolbar_button) */
+#toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--bg-input);
+    z-index: 10000;
+}
+/* Collapse entirely when no buttons are registered. */
+#toolbar:empty {
+    display: none;
+}
+#toolbar .toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 10px;
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+#toolbar .toolbar-button:hover {
+    background: var(--bg-hover);
+}
+#toolbar .toolbar-button.active {
+    background: var(--bg-selected);
+    color: var(--fg-white);
+    border-color: var(--bg-selected);
+}
+#toolbar .toolbar-button .toolbar-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+#toolbar .toolbar-button .toolbar-icon img {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
 /* Modal dialog (Open/Save DB) */
 .modal-overlay {
     position: fixed;
@@ -240,6 +353,7 @@ html, body {
     justify-content: center;
 }
 .modal-dialog {
+    position: relative;
     background: var(--bg-header);
     border: 1px solid var(--border-strong);
     border-radius: 6px;
@@ -247,6 +361,24 @@ html, body {
     min-width: 400px;
     color: var(--fg-primary);
     font: 13px monospace;
+}
+.modal-dialog .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--fg-primary);
+    font-size: 18px;
+    line-height: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.modal-dialog .modal-close:hover {
+    opacity: 1;
 }
 .modal-dialog h3 {
     margin: 0 0 12px 0;
@@ -302,6 +434,69 @@ html, body {
     opacity: 0.5;
     cursor: default;
 }
+
+/* Search & navigation dialogs (Find / Go to) */
+.search-nav-dialog .sn-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+.search-nav-dialog .sn-row label {
+    width: 64px;
+    flex-shrink: 0;
+}
+.search-nav-dialog .sn-row .fb-path-input,
+.search-nav-dialog .sn-type {
+    flex: 1;
+}
+.search-nav-dialog .sn-check {
+    display: block;
+    margin: 8px 0 2px;
+}
+.modal-dialog .modal-error.info {
+    color: var(--fg-primary);
+}
+
+/* Editing-utility dialogs (Global Connect / Insert Buffer) */
+.gc-dialog, .buf-dialog { min-width: 520px; max-width: 680px; }
+.edit-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    font-size: 12px;
+}
+.edit-field > span { min-width: 96px; color: var(--fg-muted); }
+.edit-field input, .edit-field select { flex: 1; }
+.gc-table {
+    display: flex;
+    flex-direction: column;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--bg-input);
+    margin-bottom: 8px;
+}
+.gc-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.5fr 1fr 24px;
+    gap: 6px;
+    padding: 3px 6px;
+    align-items: center;
+    font-size: 12px;
+}
+.gc-row.gc-head { background: var(--bg-header); color: var(--fg-muted); font-weight: bold; }
+.gc-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-form { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--bg-input); padding-top: 8px; }
+.gc-invalid { outline: 1px solid var(--error); }
+.buf-pins {
+    flex: 1;
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--bg-input);
+    padding: 4px;
+}
+.buf-pin { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 0; }
 
 /* File browser dialog */
 .file-browser-dialog {
@@ -446,6 +641,13 @@ html, body {
 .leaflet-container {
     cursor: default !important;
 }
+/* "Fit" control button — inherits .leaflet-bar sizing from Leaflet's CSS. */
+.leaflet-control-fit a {
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 26px;
+    text-align: center;
+}
 .leaflet-dragging .leaflet-container {
     cursor: grabbing !important;
 }
@@ -549,28 +751,48 @@ html, body {
     pointer-events: none;
 }
 
-/* Scale bar (bottom-left, above coord bar) */
+/* Scale bar (bottom-left, above coord bar).  Content is an inline SVG
+   (bracket + ticks + 0/total labels) rebuilt by updateScaleBar. */
 #scale-bar {
     position: absolute;
     bottom: 26px;
     left: 4px;
     z-index: 900;
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
+    background: var(--bg-status);
+    color: var(--fg-secondary);  /* SVG strokes use currentColor */
+    border-radius: 3px;
+    padding: 1px 4px;
+    line-height: 0;  /* wrap the inline SVG snugly */
     pointer-events: none;
 }
-.scale-bar-line {
-    height: 8px;
-    min-width: 20px;
-    border: 2px solid white;
-    border-top: none;
-}
-.scale-bar-label {
-    color: white;
+/* Tick/label text drawn inside the scale-bar SVG. */
+.scale-bar-text {
+    fill: currentColor;
     font: 11px monospace;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-    line-height: 1;
+}
+
+/* Background color control in the Display Controls panel. */
+.bg-color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+.bg-color-row span {
+    flex: 1;
+}
+.bg-color-input {
+    width: 24px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--fg-muted);
+    background: none;
+    cursor: pointer;
+}
+.bg-color-reset {
+    font-size: 11px;
+    cursor: pointer;
 }
 
 /* Loading overlay */
@@ -802,7 +1024,59 @@ html, body {
     background: var(--bg-hover);
     color: var(--fg-bright);
 }
-
+.cm-item {
+    position: relative;
+    padding: 5px 12px;
+    padding-right: 24px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.cm-item:hover {
+    background: var(--bg-hover);
+    color: var(--fg-bright);
+}
+.cm-item.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+.cm-item.has-submenu::after {
+    content: '▶';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    opacity: 0.7;
+}
+.cm-submenu {
+    position: absolute;
+    left: 100%;
+    top: -5px;
+    display: none;
+    background: var(--bg-context);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    min-width: 160px;
+    padding: 4px 0;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+.cm-item.has-submenu:hover > .cm-submenu {
+    display: block;
+}
+.cm-submenu.flip-left {
+    left: auto;
+    right: 100%;
+}
+.cm-swatch {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 8px;
+    border: 1px solid var(--border-strong);
+    vertical-align: middle;
+    flex-shrink: 0;
+}
 /* Tcl Console */
 .tcl-console {
     display: flex;
@@ -981,10 +1255,269 @@ html, body {
     border-bottom: 1px dashed var(--fg-muted);
     padding: 0 2px;
 }
+.inspector-editable:hover::after {
+    content: ' \270E';
+    color: var(--fg-muted);
+    font-size: 10px;
+}
 .inspector-editable:focus {
     outline: none;
     border-bottom: 1px solid var(--fg-primary);
     background: var(--bg-input);
+}
+.inspector-editable:focus::after {
+    content: none;
+}
+.inspector-editor-select {
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    font: inherit;
+    max-width: 100%;
+}
+.inspector-edit-btn {
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.inspector-edit-btn:hover {
+    color: var(--fg-bright);
+}
+.inspector-btn-danger:hover {
+    background: #7a2020;
+    border-color: #a03030;
+    color: #fff;
+}
+.or-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+}
+.or-modal {
+    background: var(--bg-panel);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    min-width: 280px;
+    max-width: 420px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+.or-modal-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.or-modal-message {
+    color: var(--fg-secondary);
+    font-size: 12px;
+    margin-bottom: 14px;
+    word-break: break-all;
+}
+.or-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.or-modal-btn {
+    padding: 5px 14px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    cursor: pointer;
+}
+.or-modal-btn:hover {
+    background: var(--border);
+}
+.or-modal-btn-danger {
+    background: #7a2020;
+    border-color: #a03030;
+    color: #fff;
+}
+.or-modal-btn-danger:hover {
+    background: #942828;
+}
+.selection-browser {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 12px;
+    color: var(--fg-primary);
+}
+.sb-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: center;
+}
+.sb-tab {
+    padding: 3px 10px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-secondary);
+    cursor: pointer;
+}
+.sb-tab.active {
+    background: var(--accent);
+    color: #fff;
+}
+.sb-tool {
+    margin-left: auto;
+    padding: 3px 8px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    cursor: pointer;
+}
+.sb-tool + .sb-tool {
+    margin-left: 4px;
+}
+.sb-filter {
+    margin: 4px;
+    padding: 3px 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+}
+.sb-truncated {
+    padding: 2px 6px;
+    color: var(--fg-muted);
+    font-style: italic;
+}
+.sb-table-wrap {
+    flex: 1;
+    overflow: auto;
+}
+.sb-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.sb-table th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel);
+    text-align: left;
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--border-strong);
+}
+.sb-table th.sb-sortable {
+    cursor: pointer;
+}
+.sb-table td {
+    padding: 2px 6px;
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+.sb-row {
+    cursor: pointer;
+}
+.sb-row:hover {
+    background: var(--bg-hover, var(--bg-context));
+}
+.sb-chip {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    vertical-align: middle;
+}
+.sb-actions {
+    text-align: right;
+}
+.sb-row-btn {
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    padding: 0 3px;
+}
+.sb-row-btn:hover {
+    color: var(--fg-bright);
+}
+.sb-empty {
+    padding: 12px;
+    color: var(--fg-muted);
+}
+#highlight-picker {
+    position: fixed;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 6px;
+    z-index: 3000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.highlight-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 22px);
+    gap: 4px;
+}
+.highlight-swatch {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+}
+.highlight-swatch:hover {
+    outline: 2px solid var(--fg-primary);
+}
+.highlight-swatch.active {
+    outline: 2px solid var(--fg-bright);
+    outline-offset: 1px;
+}
+.highlight-remove {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 3px 6px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    cursor: pointer;
+    font-size: 11px;
+}
+.highlight-remove:hover {
+    background: var(--border);
+}
+#or-toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 60%;
+    padding: 8px 14px;
+    background: var(--bg-status);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+#or-toast.visible {
+    opacity: 1;
 }
 /* Holds the property rows so the column divider can be absolutely positioned
  * over their full height. */
@@ -1213,6 +1746,24 @@ html, body {
     color: var(--fg-muted);
     font-size: 12px;
 }
+
+.timing-cone-panel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--fg-primary);
+}
+.timing-cone-title { color: var(--fg-muted); }
+.timing-cone-panel label { font-size: 12px; }
+.timing-cone-depth-label { display: inline-flex; align-items: center; gap: 3px; }
+.timing-cone-depth { width: 42px; }
+.timing-cone-colormode { font-size: 12px; }
+.timing-cone-status { color: var(--fg-muted); flex: 1; min-width: 80px; }
 
 .timing-tab-bar {
     display: flex;

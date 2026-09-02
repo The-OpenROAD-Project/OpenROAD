@@ -6,9 +6,12 @@
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
-import { getCookie, setCookie } from './theme.js';
+import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
+         getThemeDefaultBgColor }
+    from './theme.js';
 import { isStaticMode, makeGroupHeader, attachGroupCollapse, beginSelection,
-         isCurrentSelection, onSelectionReset } from './ui-utils.js';
+         isCurrentSelection, onSelectionReset, isValidHexColor }
+    from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -97,10 +100,11 @@ export function populateDisplayControls(app, visibility, selectability,
     // memory budget, so the total is bounded no matter how many layers or
     // chiplets the design has.
     //
-    // Only the routing layers are merged.  _instances, _pins and _modules stay
-    // as their own panes: there are three of them, they carry no meaningful
-    // memory, and they have their own add/remove rules driven by Shapes and
-    // Module-view toggles which are not worth folding into the draw list.
+    // Only the routing layers are merged.  The pseudo layers (_instances,
+    // _pins, _modules and the Misc overlays below) stay as their own panes:
+    // there is a fixed handful of them, they carry no meaningful memory, and
+    // they have their own add/remove rules driven by the Shapes, Module-view
+    // and Misc toggles which are not worth folding into the draw list.
     const mergedLayerClass = app.mergeTiles ? app.MergedTileLayer : null;
     // Panes whose draw list changed during one tree update, refreshed once at
     // the end rather than per layer — a group toggle walks every node, and
@@ -117,20 +121,24 @@ export function populateDisplayControls(app, visibility, selectability,
     // A routing layer, as the tree sees it.  In legacy mode this IS the Leaflet
     // layer; in merged mode it is an adapter over one entry of a pane's draw
     // list, exposing the same three things the tree uses.
+    //
+    // Routing layers are drawn at full pane opacity.  The layer transparency is
+    // already baked into the tile: the server paints layer shapes with the
+    // palette alpha of 180/255 (tile_generator.cpp buildLayerColorMap), the same
+    // alpha displayControls.cpp gives the Qt GUI's brush.  Dimming the pane on
+    // top of that would apply the transparency a second time and render the
+    // layout darker than the Qt GUI.
     function makeRoutingLayer(name, zIndex) {
         if (!mergedLayerClass) {
             const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                opacity: 0.7,
+                opacity: 1,
                 zIndex,
             });
             layer._orShow = () => layer.addTo(app.map);
             layer._orHide = () => app.map.removeLayer(layer);
             return layer;
         }
-        // 0.7 matches the legacy per-layer pane opacity.  It is applied inside
-        // the merged canvas; the pane itself must stay opaque or every layer
-        // gets multiplied by 0.7 twice (see MERGED_PANE_OPACITY).
-        const item = { layer: name, opacity: 0.7, visible: false };
+        const item = { layer: name, opacity: 1, visible: false };
         return {
             _orItem: item,
             _orPane: null,
@@ -158,28 +166,47 @@ export function populateDisplayControls(app, visibility, selectability,
         };
     }
 
-    // Instance borders layer (always below routing layers)
-    const instancesLayer = new WebSocketTileLayer(app.websocketManager, '_instances', {
-        zIndex: 0,
-    });
-    instancesLayer.addTo(app.map);
-    app.allLayers.push(instancesLayer);
+    // Create a pseudo-layer tile layer and register it on the app.
+    // `appProp` names the app.<prop> slot (null = anonymous); `addToMap`
+    // attaches it immediately (layers whose toggle is default-ON).
+    function addPseudoLayer(name, appProp, zIndex, addToMap) {
+        const layer = new WebSocketTileLayer(app.websocketManager, name, {
+            zIndex,
+        });
+        if (addToMap) layer.addTo(app.map);
+        if (appProp) app[appProp] = layer;
+        app.allLayers.push(layer);
+        return layer;
+    }
 
+    // The initial attach state must follow `visibility`, which was already
+    // restored from the or_visibility cookie: a hardcoded attach leaves the
+    // checkbox (rendered from `visibility`) out of sync with the map until
+    // the first toggle runs redrawAllLayers.
+
+    // Instance borders layer (always below routing layers; no toggle)
+    addPseudoLayer('_instances', null, 0, true);
     // IO pin markers layer (between instances and routing layers)
-    const pinsLayer = new WebSocketTileLayer(app.websocketManager, '_pins', {
-        zIndex: 1,
-    });
-    pinsLayer.addTo(app.map);
-    app.pinsLayer = pinsLayer;
-    app.allLayers.push(pinsLayer);
+    addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
+    // Module coloring overlay (Module view)
+    addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
+    // Access-point markers overlay (Misc > Access Points)
+    addPseudoLayer(
+        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
+    // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
+    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
+    // GCell-grid lines overlay (topmost, GUI paint order)
+    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
 
-    // Module coloring overlay layer (between instances and routing layers)
-    const modulesLayer = new WebSocketTileLayer(app.websocketManager, '_modules', {
-        zIndex: 2,
-    });
-    // Don't add to map until "Module view" is enabled
-    app.modulesLayer = modulesLayer;
-    app.allLayers.push(modulesLayer);
+    // Region boundaries overlay (above access points, GUI paint order).
+    // Only created when the design has dbRegions — the layer is default-ON
+    // (Qt parity) and would otherwise issue per-viewport tile requests that
+    // always come back transparent.  (Regions created via Tcl mid-session
+    // need a page reload to appear.)
+    app.regionsLayer = null;
+    if (techData && techData.has_regions) {
+        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
+    }
 
     // --- Layers group (using CheckboxTreeModel) ---
 
@@ -578,6 +605,10 @@ export function populateDisplayControls(app, visibility, selectability,
             window.sessionStorage.setItem(
                 'or_hidden_layers', JSON.stringify(hiddenNodes));
         } catch (_) { /* ignore */ }
+        // or_hidden_layers is part of the saved display state; the chiplet
+        // mirror below only reaches the sync (via redrawAllLayers) when the
+        // visible-chiplet set changes, so push explicitly (rAF-coalesced).
+        app.syncDisplayState();
 
         // Mirror chiplet toggles into the Chiplets panel.  Toggling
         // wrapper_1 in the Layers tree must also remove its path from
@@ -634,6 +665,9 @@ export function populateDisplayControls(app, visibility, selectability,
             window.sessionStorage.setItem(
                 'or_nonselectable_layers', JSON.stringify(nonSel));
         } catch (_) { /* ignore */ }
+        // Selectability changes the rendering of nothing, so no redraw runs;
+        // push the saved display state explicitly.
+        app.syncDisplayState();
     });
     layerSelModel.addFromSpec(layerSelSpec);
 
@@ -1319,7 +1353,15 @@ export function populateDisplayControls(app, visibility, selectability,
         ]},
         { key: 'detailed', label: 'Detailed view' },
         { key: 'rulers', label: 'Rulers' },
+        { key: 'labels', label: 'Labels' },
         { key: 'scale_bar', label: 'Scale bar' },
+        { key: 'access_points', label: 'Access Points' },
+        { key: 'regions', label: 'Regions' },
+        { key: 'mfg_grid', label: 'Manufacturing grid' },
+        { key: 'gcell_grid', label: 'GCell grid' },
+        { key: 'flywires_only', label: 'Flywires only' },
+        { key: 'focused_nets_guides', label: 'Focused nets guides' },
+        { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
     // Developer overlays.  All three are plain leaves under a visKey-less
@@ -1335,6 +1377,44 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'debug', label: 'Tiles' },
     ]});
     visTree.render(app.displayControlsEl);
+
+    // Background color control (Qt GUI "Background" parity): a swatch that
+    // opens the native color picker + a reset-to-theme link.  The layout
+    // background is the CSS var --bg-map on the Leaflet container, so this
+    // is purely client-side (tiles are transparent).
+    const bgRow = document.createElement('div');
+    bgRow.className = 'bg-color-row';
+    const bgLabel = document.createElement('span');
+    bgLabel.textContent = 'Background';
+    const bgInput = document.createElement('input');
+    bgInput.type = 'color';
+    bgInput.className = 'bg-color-input';
+    bgInput.title = 'Layout background color';
+    const savedBg = getCookie('or_bg_color');
+    bgInput.value = isValidHexColor(savedBg) ? savedBg : getThemeDefaultBgColor();
+    // 'input' fires on every tick while dragging inside the picker: keep it
+    // to the cheap CSS-var preview.  Persistence (cookie), the 3D-viewer
+    // re-render and the server sync run once, on 'change' (picker closed).
+    bgInput.addEventListener('input', () => {
+        document.documentElement.style.setProperty('--bg-map', bgInput.value);
+    });
+    bgInput.addEventListener('change', () => {
+        setBackgroundColor(bgInput.value, app);
+    });
+    const bgReset = document.createElement('button');
+    bgReset.className = 'bg-color-reset';
+    bgReset.textContent = 'Reset';
+    bgReset.title = 'Reset background to the theme default';
+    bgReset.addEventListener('click', () => {
+        // resetBackgroundColor removes the inline --bg-map override, so
+        // the default read afterwards is the theme's own value.
+        resetBackgroundColor(app);
+        bgInput.value = getThemeDefaultBgColor();
+    });
+    bgRow.appendChild(bgLabel);
+    bgRow.appendChild(bgInput);
+    bgRow.appendChild(bgReset);
+    app.displayControlsEl.appendChild(bgRow);
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {

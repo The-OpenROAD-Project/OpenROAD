@@ -12,6 +12,14 @@ package(
     features = ["layering_check"],
 )
 
+# rule_scripts/ and calibration/ have no BUILD file of their own, so
+# they're part of this package; exported here so test/BUILD can depend
+# on them.
+exports_files([
+    "rule_scripts/UniversalFormat2FasterCap_923.py",
+    "calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+])
+
 cc_library(
     name = "rcx",
     srcs = [

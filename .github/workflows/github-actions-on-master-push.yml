@@ -68,9 +68,6 @@ jobs:
             | grep -E '(BUILD|WORKSPACE|\.bzl|\.bazel)$' \
             | xargs --no-run-if-empty ./buildifier -lint=fix
 
-          # Update the Bazel lock file (best-effort)
-          bazelisk mod deps --lockfile_mode=update || true
-
           # Run tclfmt on changed Tcl files
           echo "$changed" \
             | grep -E '\.tcl$' \

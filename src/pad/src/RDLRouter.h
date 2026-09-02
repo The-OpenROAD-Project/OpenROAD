@@ -55,6 +55,8 @@ struct DbITermPtrLess
 };
 
 class RDLRouter;
+class RDLNet;
+class RDLSegment;
 
 using GridGraph
     = boost::adjacency_list<boost::listS,
@@ -135,7 +137,7 @@ class RDLRouter
       = odb::PtrMap<odb::dbNet,
                     odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>>>;
 
-  using RDLRoutePtr = std::shared_ptr<RDLRoute>;
+  using RDLRoutePtr = std::shared_ptr<RDLNet>;
 
   RDLRouter(utl::Logger* logger,
             odb::dbBlock* block,
@@ -178,7 +180,7 @@ class RDLRouter
     return routing_targets_;
   }
   const std::vector<RDLRoutePtr>& getRoutes() const { return routes_; }
-  std::vector<RDLRoutePtr> getFailedRoutes() const;
+  std::vector<RDLSegment*> getFailedRoutes() const;
 
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
   void setRDLDebugNet(odb::dbNet* net) { debug_net_ = net; }
@@ -243,8 +245,7 @@ class RDLRouter
   GridGraphEdgeSet getVertexEdges(const GridGraphVertex& vertex) const;
 
   void buildIntialRouteSet();
-  int reportFailedRoutes(
-      const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routed_pairs) const;
+  int reportFailedRoutes() const;
   odb::PtrSet<odb::dbITerm> getRoutedTerms() const;
   int getRoutingTermCount() const;
 
@@ -283,7 +284,7 @@ class RDLRouter
 
   // Routing information
   NetRoutingTargetMap routing_targets_;
-  std::vector<RDLRoutePtr> routes_;
+  std::vector<std::shared_ptr<RDLNet>> routes_;
 
   // Debugging
   RDLGui* gui_;

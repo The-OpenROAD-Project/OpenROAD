@@ -1,6 +1,9 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    3dic_cross
+    3dic_get_cells
+    3dic_read_db
     block_sta1
     check_axioms
     clock_pin
@@ -46,6 +49,7 @@ or_integration_tests(
     report_cell_usage_modinsts
     report_cell_usage_modinsts_metrics
     report_cell_usage_physical_only
+    report_cell_usage_wide_columns
     report_json1
     report_timing_histogram
     report_logic_depth_histogram

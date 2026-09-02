@@ -16,6 +16,7 @@
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 #include "straps.h"
+#include "utl/Logger.h"
 #include "via.h"
 
 namespace pdn {
@@ -35,7 +36,8 @@ const gui::Painter::Color PDNRenderer::kRepairColor
 const gui::Painter::Color PDNRenderer::kRepairOutlineColor
     = gui::Painter::Color(gui::Painter::kYellow, 100);
 
-PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
+PDNRenderer::PDNRenderer(PdnGen* pdn, utl::Logger* logger)
+    : pdn_(pdn), logger_(logger)
 {
   addDisplayControl(kGridObsText, false);
   addDisplayControl(kInitialObsText, false);
@@ -291,8 +293,9 @@ void PDNRenderer::drawObjects(gui::Painter& painter)
   legend.draw(painter);
 }
 
-void PDNRenderer::pause()
+void PDNRenderer::pause(const std::string& reason)
 {
+  logger_->report("Pausing power grid debug view: {}", reason);
   gui::Gui::get()->pause();
 }
 

@@ -158,6 +158,8 @@ OpenROAD supports automated Design Space Exploration (DSE) tools and autotuners 
 * **Early RTL & Floorplan Exploration**: Fast feedback loops using custom project Tcl script snippets developed for a specific phase in a project.
 * **Late-Stage Pre-Tapeout Sweeps**: Full, unmodified flow runs through final parasitic extraction (`rcx`) to eke out a few percent improvement in timing and area via seed and parameter sweeps.
 
+For a comprehensive guide on DSE orchestration, managing expectations with optimization functions, early-stopping strategies, and framework inversion, see the [Design Space Exploration Guide](./DesignSpaceExploration.md).
+
 To support automated workflows, optimization passes must follow these guidelines for non-convergent ("doomed") runs:
 
 ### 1. Zero-Config Futility Guards
@@ -176,10 +178,6 @@ Small upstream variations (e.g., placement seed changes) cause large downstream 
 * Detailed routing (`drt`) and parasitic extraction (`rcx`) resolve local congestion and extract wire parasitics.
 
 Completing the flow allows autotuners to collect final metrics and extract actionable signals, even when an intermediate pass halts early.
-
-### 4. Custom DSE Signals
-If users require a different signal than the full flow (e.g., a signal that is directionally accurate when far from the target and highly accurate when closer), they should write their own `.py` or `.tcl` script. This provides full flexibility tailored to their specific use-case, design, and project phase without requiring OpenROAD to anticipate their requirements and goals. Users can easily combine existing scripts into a single OpenROAD process invocation or invoke various commands directly.
-
 
 ## Test
 
@@ -356,7 +354,7 @@ and targets tagged `no-lint` are skipped automatically.
 OpenROAD uses Doxygen style comments to generate documentation.
 See the generated documentation <a href="../doxygen_output/html/index.html">here</a>.
 Our preferred syntax for Doxygen comments can be found in this
-[file](../../src/odb/include/odb/odb.h). Also, do refer to the official Doxygen
+[file](../main/src/odb/include/odb/db.h). Also, do refer to the official Doxygen
 documentation for more information on what you can include in your Doxygen
 comments [here](https://www.doxygen.nl/manual/docblocks.html).
 

@@ -55,6 +55,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-routability_max_inflation_ratio",
            options.routabilityMaxInflationRatio);
+  checkKey(keys,
+           "-routability_min_congestion_for_inflation",
+           options.routabilityMinCongestionForInflation);
   checkKey(keys, "-pad_left", options.padLeft);
   checkKey(keys, "-pad_right", options.padRight);
   checkKey(keys,
@@ -97,6 +100,7 @@ static gpl::PlaceOptions getOptions(
     options.binGridCntY = options.binGridCntX;
   }
   checkFlag(flags, "-skip_io", [&](bool) { options.skipIo(); });
+  checkFlag(flags, "-place_ios", options.placeIosMode);
   return options;
 }
 
