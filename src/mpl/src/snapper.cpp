@@ -29,6 +29,37 @@ void Snapper::snapMacro()
 {
   snap(odb::dbTechLayerDir::VERTICAL);
   snap(odb::dbTechLayerDir::HORIZONTAL);
+  snapInsideCore();
+}
+
+void Snapper::snapInsideCore()
+{
+  const odb::Rect core = inst_->getBlock()->getCoreArea();
+  odb::Rect bbox = inst_->getBBox()->getBox();
+  const int manufacturing_grid
+      = inst_->getDb()->getTech()->getManufacturingGrid();
+
+  auto gridDistance = [manufacturing_grid](const int distance) {
+    return ((distance + manufacturing_grid - 1) / manufacturing_grid)
+           * manufacturing_grid;
+  };
+
+  int x_origin = inst_->getOrigin().x();
+  int y_origin = inst_->getOrigin().y();
+
+  if (bbox.xMin() < core.xMin()) {
+    x_origin += gridDistance(core.xMin() - bbox.xMin());
+  } else if (bbox.xMax() > core.xMax()) {
+    x_origin -= gridDistance(bbox.xMax() - core.xMax());
+  }
+
+  if (bbox.yMin() < core.yMin()) {
+    y_origin += gridDistance(core.yMin() - bbox.yMin());
+  } else if (bbox.yMax() > core.yMax()) {
+    y_origin -= gridDistance(bbox.yMax() - core.yMax());
+  }
+
+  inst_->setOrigin(x_origin, y_origin);
 }
 
 void Snapper::snap(const odb::dbTechLayerDir& target_direction)
