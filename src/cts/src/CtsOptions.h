@@ -280,6 +280,14 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool getObstructionAware() const { return obsAware_; }
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
+  void enableHoldAwareInsertionDelay(bool holdAware)
+  {
+    holdAwareInsertionDelay_ = holdAware;
+  }
+  bool holdAwareInsertionDelayEnabled() const
+  {
+    return holdAwareInsertionDelay_;
+  }
   void setBufferListInferred(bool inferred) { bufferListInferred_ = inferred; }
   bool isBufferListInferred() const { return bufferListInferred_; }
   void setSinkBufferInferred(bool inferred) { sinkBufferInferred_ = inferred; }
@@ -396,6 +404,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = true;
   bool insertionDelay_ = true;
+  bool holdAwareInsertionDelay_ = false;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;

@@ -21,6 +21,7 @@
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "cts/TritonCTS.h"
+#include "db_sta/dbSta.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -32,6 +33,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -211,12 +213,20 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         graph_.push_back(std::move(sinkNode));
         graph_[driverId].childrenIds.push_back(sinkId);
 
-        if (inst2builder_.find(sinkName) != inst2builder_.end()) {
-          auto builder = inst2builder_[sinkName];
-          float builerAvgArrival = computeAveSinkArrivals(builder);
-          worseDelay_ = std::max(worseDelay_, builerAvgArrival);
-          graph_[sinkId].arrival = builerAvgArrival;
-          continue;
+        auto builderIt = inst2builder_.find(sinkName);
+        if (builderIt != inst2builder_.end()) {
+          TreeBuilder* builder = builderIt->second;
+          // Hold relief needs a node per macro to avoid being averaged over
+          // the subtree, so only then is a macro tree walked down to its sinks.
+          const bool expandMacroTree
+              = options_->holdAwareInsertionDelayEnabled()
+                && builder->getTreeType() == TreeType::MacroTree;
+          if (!expandMacroTree) {
+            float builerAvgArrival = computeAveSinkArrivals(builder);
+            worseDelay_ = std::max(worseDelay_, builerAvgArrival);
+            graph_[sinkId].arrival = builerAvgArrival;
+            continue;
+          }
         }
 
         if (sink) {
@@ -225,27 +235,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
             float arrival
                 = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
-            float insDelay = 0.0;
-            sta::LibertyCell* libCell
-                = network_->libertyCell(network_->dbToSta(sinkInst));
-            odb::dbMTerm* mterm = sinkIterm->getMTerm();
-            if (libCell && mterm) {
-              sta::LibertyPort* libPort
-                  = libCell->findLibertyPort(mterm->getConstName());
-              if (libPort) {
-                const float rise = libPort->clkTreeDelay(
-                    0.0, sta::RiseFall::rise(), sta::MinMax::max());
-                const float fall = libPort->clkTreeDelay(
-                    0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-                if (rise != 0 || fall != 0) {
-                  insDelay = (rise + fall);
-                  if (rise != 0 && fall != 0) {
-                    insDelay /= 2.0;
-                  }
-                }
-              }
-            }
+            const float insDelay = sinkInsertionDelay(sinkIterm);
             worseDelay_ = std::max(worseDelay_, (arrival + insDelay));
             graph_[sinkId].arrival = arrival + insDelay;
             debugPrint(logger_,
@@ -326,6 +316,110 @@ float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
   return clkPathArrival;
 }
 
+float LatencyBalancer::sinkInsertionDelay(odb::dbITerm* clkIterm)
+{
+  sta::LibertyCell* libCell
+      = network_->libertyCell(network_->dbToSta(clkIterm->getInst()));
+  odb::dbMTerm* mterm = clkIterm->getMTerm();
+  if (!libCell || !mterm) {
+    return 0.0;
+  }
+  sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+  if (!libPort) {
+    return 0.0;
+  }
+
+  const float rise
+      = libPort->clkTreeDelay(0.0, sta::RiseFall::rise(), sta::MinMax::max());
+  const float fall
+      = libPort->clkTreeDelay(0.0, sta::RiseFall::fall(), sta::MinMax::max());
+  if (rise == 0 && fall == 0) {
+    return 0.0;
+  }
+
+  float insDelay = rise + fall;
+  if (rise != 0 && fall != 0) {
+    insDelay /= 2.0;
+  }
+
+  if (options_->holdAwareInsertionDelayEnabled()) {
+    insDelay -= holdInsertionDelayRelief(clkIterm, insDelay);
+  }
+
+  return insDelay;
+}
+
+// Crediting less insertion delay leaves the sink's internal clock later than
+// the rest of the tree: hold on the paths it launches gains the same amount
+// that hold on the paths it captures and setup on the paths it launches lose.
+// So the relief is bounded by whichever of those two has less slack to give.
+float LatencyBalancer::holdInsertionDelayRelief(odb::dbITerm* clkIterm,
+                                                float insDelay)
+{
+  sta::Slack holdOut = sta::INF;
+  sta::Slack setupOut = sta::INF;
+  sta::Slack holdIn = sta::INF;
+
+  for (odb::dbITerm* iterm : clkIterm->getInst()->getITerms()) {
+    if (iterm == clkIterm || iterm->getSigType() == odb::dbSigType::CLOCK
+        || !iterm->getNet()) {
+      continue;
+    }
+    sta::Pin* pin = network_->dbToSta(iterm);
+    if (!pin) {
+      continue;
+    }
+    if (iterm->isOutputSignal()) {
+      sta::Vertex* vertex = timingGraph_->pinDrvrVertex(pin);
+      if (vertex) {
+        holdOut
+            = std::min(holdOut, openSta_->slack(vertex, sta::MinMax::min()));
+        setupOut
+            = std::min(setupOut, openSta_->slack(vertex, sta::MinMax::max()));
+      }
+    } else if (iterm->isInputSignal()) {
+      sta::Vertex* vertex = timingGraph_->pinLoadVertex(pin);
+      if (vertex) {
+        holdIn = std::min(holdIn, openSta_->slack(vertex, sta::MinMax::min()));
+      }
+    }
+  }
+
+  if (holdOut >= 0.0) {
+    // Nothing to relieve
+    return 0.0;
+  }
+
+  const float headroom = std::min(holdIn, setupOut);
+  if (headroom <= 0.0) {
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               2,
+               "Sink {}: hold slack {:0.3e} on launched paths, but no headroom "
+               "to trade (hold in {:0.3e}, setup out {:0.3e})",
+               clkIterm->getName(),
+               holdOut,
+               holdIn,
+               setupOut);
+    return 0.0;
+  }
+
+  const float relief = std::min({-holdOut, headroom, insDelay});
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             2,
+             "Sink {}: giving up {:0.3e} of {:0.3e} insertion delay for hold "
+             "slack {:0.3e}",
+             clkIterm->getName(),
+             relief,
+             insDelay,
+             holdOut);
+
+  return relief;
+}
+
 float LatencyBalancer::computeAveSinkArrivals(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
@@ -369,29 +463,7 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         if (pin) {
           sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
           float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
-          // add insertion delay
-          float insDelay = 0.0;
-          sta::LibertyCell* libCell
-              = network_->libertyCell(network_->dbToSta(inst));
-          odb::dbMTerm* mterm = iterm->getMTerm();
-          if (libCell && mterm) {
-            sta::LibertyPort* libPort
-                = libCell->findLibertyPort(mterm->getConstName());
-            if (libPort) {
-              const float rise = libPort->clkTreeDelay(
-                  0.0, sta::RiseFall::rise(), sta::MinMax::max());
-              const float fall = libPort->clkTreeDelay(
-                  0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-              if (rise != 0 || fall != 0) {
-                insDelay = (rise + fall);
-                if (rise != 0 && fall != 0) {
-                  insDelay /= 2.0;
-                }
-              }
-            }
-          }
-          sumArrivals += (arrival + insDelay);
+          sumArrivals += (arrival + sinkInsertionDelay(iterm));
           numSinks++;
         }
       } else {

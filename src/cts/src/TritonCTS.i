@@ -247,6 +247,12 @@ set_insertion_delay(bool insDelay)
 }
 
 void
+set_hold_aware_insertion_delay(bool holdAware)
+{
+  getTritonCts()->getParms()->enableHoldAwareInsertionDelay(holdAware);
+}
+
+void
 set_sink_buffer_max_cap_derate(double derate)
 {
   getTritonCts()->getParms()->setSinkBufferMaxCapDerate(derate);
