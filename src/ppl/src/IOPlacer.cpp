@@ -461,7 +461,8 @@ bool IOPlacer::checkBlocked(Edge edge,
     if (blocked_interval.getLayer() == -1
         || blocked_interval.getLayer() == layer) {
       // polygon slots match all-layer intervals of any edge with the same
-      // orientation; layer shapes are point-tested via layer_blocked_shapes_
+      // orientation, still over-blocking their parallel edges; layer shapes
+      // are point-tested via layer_blocked_shapes_ instead
       if ((blocked_interval.getEdge() == edge
            || (edge == Edge::polygonEdge && blocked_interval.getLayer() == -1
                && hasVerticalPins(blocked_interval.getEdge()) == vertical_pin))
@@ -611,7 +612,10 @@ void IOPlacer::excludeBoundaryShape(const BlockingShape& shape,
 
   const bool vertical_pin
       = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-  if (!ver_layers_.empty() || !hor_layers_.empty()) {
+  // empty layer sets mean standalone place_pin, where every layer
+  // participates and polygon slots are never tested
+  const bool standalone_place_pin = ver_layers_.empty() && hor_layers_.empty();
+  if (!standalone_place_pin) {
     const std::set<int>& layers = vertical_pin ? ver_layers_ : hor_layers_;
     if (layers.find(layer) == layers.end()) {
       return;
@@ -622,10 +626,9 @@ void IOPlacer::excludeBoundaryShape(const BlockingShape& shape,
     return;
   }
   // polygon dies have slots on edges the bounding box cannot represent, so
-  // also block their slots with the padded shape itself. Empty layer sets
-  // mean standalone place_pin, which never tests polygon slots
+  // also block their slots with the padded shape itself
   const std::vector<odb::Line>& die_edges = core_->getDieAreaEdges();
-  if (die_edges.size() > 4 && (!ver_layers_.empty() || !hor_layers_.empty())) {
+  if (die_edges.size() > 4 && !standalone_place_pin) {
     for (const odb::Line& die_edge : die_edges) {
       if (boost::geometry::intersects(padded_box, die_edge)) {
         std::vector<odb::Rect>& shapes = layer_blocked_shapes_[layer];
@@ -2746,9 +2749,8 @@ void IOPlacer::reportHPWL()
                 static_cast<float>(getBlock()->dbuToMicrons(total_hpwl)));
 }
 
-// seeds the pin size caches with the size requested for one place_pin call
-// and drops every temporary blocking state on destruction, so an error
-// thrown during the placement search leaves nothing stale behind
+// blocking state for one place_pin call, seeded with the requested pin size
+// and dropped on destruction so errors leave nothing stale behind
 struct IOPlacer::ManualPinBlocking
 {
   ManualPinBlocking(IOPlacer* placer,
@@ -2757,6 +2759,9 @@ struct IOPlacer::ManualPinBlocking
                     const int height)
       : placer_(placer), num_intervals_(placer->excluded_intervals_.size())
   {
+    // an aborted place_pins run skips clear(), drop whatever it left
+    placer_->layer_fixed_pins_keepouts_.clear();
+    placer_->layer_blocked_shapes_.clear();
     placer_->pin_size_cache_.clear();
     const bool vertical_pin
         = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
@@ -2768,9 +2773,11 @@ struct IOPlacer::ManualPinBlocking
 
   ~ManualPinBlocking()
   {
+    // only the tail is erased, the head holds persistent user exclusions
     placer_->excluded_intervals_.erase(
         placer_->excluded_intervals_.begin() + num_intervals_,
         placer_->excluded_intervals_.end());
+    // the run flows rebuild these in initNetlist, so they are safe to wipe
     placer_->layer_fixed_pins_keepouts_.clear();
     placer_->layer_blocked_shapes_.clear();
     placer_->pin_size_cache_.clear();
@@ -2830,8 +2837,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     // block the fixed supply pins; fixed signal pin positions are explicit
     // user requests, like the position being placed now
     for (odb::dbBTerm* fixed_bterm : getBlock()->getBTerms()) {
-      if (fixed_bterm != bterm && fixed_bterm->getSigType().isSupply()
-          && fixed_bterm->getFirstPinPlacementStatus().isFixed()) {
+      if (fixed_bterm != bterm && fixed_bterm->getSigType().isSupply()) {
         addFixedPinKeepouts(fixed_bterm);
       }
     }
@@ -3318,6 +3324,10 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 void IOPlacer::addFixedPinKeepouts(odb::dbBTerm* bterm)
 {
   for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+    // multi bpin terms can mix placement statuses
+    if (!bterm_pin->getPlacementStatus().isFixed()) {
+      continue;
+    }
     for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
       odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
       if (tech_layer == nullptr || tech_layer->getRoutingLevel() == 0) {
