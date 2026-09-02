@@ -647,7 +647,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
          i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer != nullptr && currLayer->getType() != dbTechLayerType::CUT) {
+      if (currLayer == nullptr || currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
