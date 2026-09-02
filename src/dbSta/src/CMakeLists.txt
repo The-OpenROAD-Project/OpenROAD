@@ -28,6 +28,7 @@ target_link_libraries(dbSta_lib
     db
     OpenSTA
   PRIVATE
+    3dblox
     utl_lib
 )
 

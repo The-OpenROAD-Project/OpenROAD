@@ -6231,13 +6231,23 @@ PinSet* dbNetwork::drivers(const Net* net)
   PinSet* drvrs = new PinSet(this);
   net_drvr_pin_map_.insert({net, drvrs});
 
-  // 3DIC: a chip-net's drivers are its pins -- the bump pad iterms are
-  // bidirect (INOUT pads), so every one qualifies; without this branch
-  // findFlatDbNet returns null and the chip-net silently reports no drivers.
+  // 3DIC: classify the chip-net's pins by boundary direction (without this
+  // branch findFlatDbNet returns null and the chip-net silently reports no
+  // drivers). A stack port drives the net from outside iff it is an input;
+  // any other boundary pin (bump pad iterm, bump-less die bterm) drives it
+  // iff it outputs into the stack net -- passive bump pads are bidirect
+  // (INOUT pads), so they all still qualify.
   if (staToDbChipNet(net) != nullptr) {
     std::unique_ptr<NetPinIterator> pin_iter{pinIterator(net)};
     while (pin_iter->hasNext()) {
-      drvrs->insert(pin_iter->next());
+      const Pin* pin = pin_iter->next();
+      PortDirection* dir = direction(pin);
+      const bool is_driver = stackPortChipNet(pin) != nullptr
+                                 ? dir->isAnyInput()
+                                 : dir->isAnyOutput();
+      if (is_driver) {
+        drvrs->insert(pin);
+      }
     }
     return drvrs;
   }
