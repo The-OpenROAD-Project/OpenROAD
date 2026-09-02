@@ -451,8 +451,8 @@
     "https://bcr.bazel.build/modules/libxcb/1.17.0.bcr.2/MODULE.bazel": "83d6740822a296210c0c60cd429a892934bdb237f7135eaf395b370c05af32a5",
     "https://bcr.bazel.build/modules/libxcb/1.17.0.bcr.2/source.json": "58c8c30c5d0f6253c94d7a38ab95fd5174683d613d47b9114520da6acef52ae8",
     "https://bcr.bazel.build/modules/llvm/0.8.11/MODULE.bazel": "0f8c30b74be64f0e91764e925d0f562c70e8d85b6cea912f724d6b3753d6a33f",
-    "https://bcr.bazel.build/modules/llvm/0.8.19/MODULE.bazel": "8bebb1a93b755bfdd0d95bfa2863bcb818a2602cedcb37539b2dee5367091519",
-    "https://bcr.bazel.build/modules/llvm/0.8.19/source.json": "026abe19336fcae6d5f50e13da862f154a3538faca003670e9baa8694ef2ccd2",
+    "https://bcr.bazel.build/modules/llvm/0.8.18/MODULE.bazel": "56d507d49c02498731fa5a95fa48a778368f2d23c0f6184a578d057e58830458",
+    "https://bcr.bazel.build/modules/llvm/0.8.18/source.json": "ca45abf06bdd842e88acdda4a077038bbecddd3e90050951c2aff5f89b1b522e",
     "https://bcr.bazel.build/modules/m4/1.4.21.bcr.4/MODULE.bazel": "40fef4b9091aea8e97b76a5706b3490b8d731ba008b02a883751ee2abf84daf4",
     "https://bcr.bazel.build/modules/m4/1.4.21.bcr.4/source.json": "c4add456cedd43c0c0d1329bd52120f8eedb6191c6d8299448bce1ed81be60a4",
     "https://bcr.bazel.build/modules/mbedtls/3.6.0/MODULE.bazel": "8e380e4698107c5f8766264d4df92e36766248447858db28187151d884995a09",
@@ -2010,11 +2010,12 @@
     },
     "@@rules_rust+//crate_universe/private:internal_extensions.bzl%cu_nr": {
       "general": {
-        "bzlTransitiveDigest": "M3+VYcPrrC3vUPK7PyfvbkhYn8AjMIsq/rMwDxWzaLY=",
+        "bzlTransitiveDigest": "MEeEWDImsRlWXxn6hC7+nBKNrfeEtzpcjfNdt6VXTVo=",
         "usagesDigest": "dQ7SQZ7uSSL3vVKSMBKRxKJUm9OVrZZA+S1/QQfT570=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
+          "REPO_MAPPING:rules_cc+,bazel_features bazel_features+",
           "REPO_MAPPING:rules_cc+,bazel_skylib bazel_skylib+",
           "REPO_MAPPING:rules_cc+,bazel_tools bazel_tools",
           "REPO_MAPPING:rules_cc+,cc_compatibility_proxy rules_cc++compatibility_proxy+cc_compatibility_proxy",
