@@ -203,11 +203,11 @@ tcl_wrap_cc(
         "../../src/sta",
         "src",
     ],
-    # Bazel builds require the fork OpenSTA submodule (stock OpenSTA has
-    # no bazel support); CMake auto-detects via file probe instead.
-    swig_options = ["-DSTA_OPENROAD_FORK"],
     deps = [
         "//src/odb:swig",
+        # The OpenSTA submodule declares its own swig options (the fork's
+        # STA_OPENROAD_FORK define; stock OpenSTA would declare none).
+        "//src/sta:sta_swig_defs",
     ],
 )
 
