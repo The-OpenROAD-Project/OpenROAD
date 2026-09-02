@@ -352,7 +352,21 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // local service.  The server opens the browser at the same host:port it
   // reports, so a legitimate viewer always matches; a user who manually swaps
   // the loopback spelling (127.0.0.1 vs localhost) must use the reported one.
-  return authority == host;
+  //
+  // The comparison ignores case: a host is case-insensitive (RFC 3986 3.2.2)
+  // and a proxy or non-browser client may vary it, which would otherwise 403 a
+  // legitimate handshake.  Hosts are ASCII (IDNs arrive punycoded), so lower
+  // without std::tolower and its locale.
+  const auto ascii_lower = [](const char c) {
+    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+  };
+  return std::equal(authority.begin(),
+                    authority.end(),
+                    host.begin(),
+                    host.end(),
+                    [&ascii_lower](const char a, const char b) {
+                      return ascii_lower(a) == ascii_lower(b);
+                    });
 }
 
 WebSocketResponse errorResponse(const uint32_t id,

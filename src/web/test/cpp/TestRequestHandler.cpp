@@ -508,6 +508,15 @@ TEST(WebSocketOriginAllowed, SameOriginIsAllowed)
       webSocketOriginAllowed("http://localhost:8080", "localhost:8080"));
 }
 
+TEST(WebSocketOriginAllowed, SameOriginComparisonIsCaseInsensitive)
+{
+  // A host is case-insensitive; a proxy or client may vary its casing.
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://localhost:8080", "LocalHost:8080"));
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://LOCALHOST:8080", "localhost:8080"));
+}
+
 TEST(WebSocketOriginAllowed, DifferentLoopbackSpellingIsRejected)
 {
   // Strict same-origin: a loopback Origin whose spelling differs from the Host
