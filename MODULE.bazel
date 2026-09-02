@@ -225,7 +225,7 @@ git_override(
 ## without FHS paths (e.g. NixOS).
 ## Keep >= 0.8.14: earlier releases silently produce empty `bazel coverage`
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
-bazel_dep(name = "llvm", version = "0.8.14", dev_dependency = True)
+bazel_dep(name = "llvm", version = "0.8.19", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
