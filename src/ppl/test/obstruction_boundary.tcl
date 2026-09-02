@@ -29,6 +29,11 @@ set eff_width_rect {160400 295800 164400 296000}
 set eff_obs [odb::dbObstruction_create $block $metal2 {*}$eff_width_rect]
 $eff_obs setEffectiveWidth 2000
 
+# obstruction overriding the table spacing with a smaller value
+set override_rect {180000 292000 184000 296000}
+set override_obs [odb::dbObstruction_create $block $metal2 {*}$override_rect]
+$override_obs setMinSpacing 200
+
 # fill and slot only blockages allow routing metal, so pins may use them
 set blockage_rect {110000 292000 200000 296000}
 set fill_obs [odb::dbObstruction_create $block $metal2 {*}$blockage_rect]
@@ -63,5 +68,9 @@ puts "pin to min spacing obstruction violations:\
 puts "pin to effective width obstruction violations:\
   [count_rect_violations metal2 [list $eff_width_rect] \
   [$metal2 getSpacing 2000 2000]]"
+puts "pin to spacing override obstruction violations:\
+  [count_rect_violations metal2 [list $override_rect] 200]"
+puts "pins allowed within the table spacing of the override obstruction:\
+  [count_pins_in_rect 179460 292000 184540 296000]"
 puts "pins over the fill and slot blockages:\
   [count_pins_in_rect {*}$blockage_rect]"

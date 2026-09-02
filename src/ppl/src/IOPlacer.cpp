@@ -563,17 +563,21 @@ int IOPlacer::computeShapeSpacing(odb::dbTechLayer* tech_layer,
                                   const int pin_width,
                                   const int pin_length)
 {
+  // a DEF SPACING attribute replaces the layer rules entirely
+  if (shape.min_spacing >= 0) {
+    return shape.min_spacing;
+  }
   // the spacing rules use the width of the widest shape and the parallel
-  // run length between the shapes
-  const int shape_width = std::max({std::min(shape.rect.dx(), shape.rect.dy()),
-                                    shape.effective_width,
-                                    pin_width});
+  // run length between the shapes; DESIGNRULEWIDTH replaces the shape width
+  const int shape_width = std::max(
+      shape.effective_width >= 0 ? shape.effective_width
+                                 : std::min(shape.rect.dx(), shape.rect.dy()),
+      pin_width);
   const SpacingKey cache_key{
       tech_layer->getRoutingLevel(), shape_width, pin_length};
-  // shapes can require more than the layer rules (DEF SPACING attribute)
   const auto cached = spacing_cache_.find(cache_key);
   if (cached != spacing_cache_.end()) {
-    return std::max(cached->second, shape.min_spacing);
+    return cached->second;
   }
   // width-dependent rules require larger clearance to wide PDN shapes
   int spacing = tech_layer->getSpacing(shape_width, pin_length);
@@ -581,7 +585,7 @@ int IOPlacer::computeShapeSpacing(odb::dbTechLayer* tech_layer,
     spacing = tech_layer->getWidth();
   }
   spacing_cache_[cache_key] = spacing;
-  return std::max(spacing, shape.min_spacing);
+  return spacing;
 }
 
 odb::Rect IOPlacer::computePinKeepout(const BlockingShape& shape,
@@ -732,9 +736,11 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
       continue;
     }
     // obstructions can carry their own DEF spacing rules
-    const BlockingShape shape{obstruct_box->getBox(),
-                              obstruction->getMinSpacing(),
-                              obstruction->getEffectiveWidth()};
+    const BlockingShape shape{
+        obstruct_box->getBox(),
+        obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : -1,
+        obstruction->hasEffectiveWidth() ? obstruction->getEffectiveWidth()
+                                         : -1};
     excludeBoundaryShape(shape, tech_layer, die_area);
   }
 }
@@ -3197,9 +3203,11 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
     odb::dbBox* box = obstruction->getBBox();
     if (box->getTechLayer()->getRoutingLevel() == top_layer_level) {
-      obstructions.push_back({box->getBox(),
-                              obstruction->getMinSpacing(),
-                              obstruction->getEffectiveWidth()});
+      obstructions.push_back(
+          {box->getBox(),
+           obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : -1,
+           obstruction->hasEffectiveWidth() ? obstruction->getEffectiveWidth()
+                                            : -1});
     }
   }
 
@@ -3217,9 +3225,10 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
           if (box->getTechLayer()->getRoutingLevel() == top_layer_level) {
-            obstructions.push_back({box->getBox(),
-                                    pin->getMinSpacing(),
-                                    pin->getEffectiveWidth()});
+            obstructions.push_back(
+                {box->getBox(),
+                 pin->hasMinSpacing() ? pin->getMinSpacing() : -1,
+                 pin->hasEffectiveWidth() ? pin->getEffectiveWidth() : -1});
           }
         }
       }
@@ -3336,10 +3345,12 @@ void IOPlacer::addFixedPinKeepouts(odb::dbBTerm* bterm)
       // store the shapes padded, so the pins created near them keep the
       // min spacing carried by their own DEF rules
       layer_fixed_pins_keepouts_[tech_layer->getRoutingLevel()].push_back(
-          computePinKeepout({bpin_box->getBox(),
-                             bterm_pin->getMinSpacing(),
-                             bterm_pin->getEffectiveWidth()},
-                            tech_layer));
+          computePinKeepout(
+              {bpin_box->getBox(),
+               bterm_pin->hasMinSpacing() ? bterm_pin->getMinSpacing() : -1,
+               bterm_pin->hasEffectiveWidth() ? bterm_pin->getEffectiveWidth()
+                                              : -1},
+              tech_layer));
     }
   }
 }

@@ -56,12 +56,13 @@ struct PinSize
   int height = 0;
 };
 
-// a shape blocking pins, with the spacing rules it carries
+// a shape blocking pins, with the DEF SPACING and DESIGNRULEWIDTH overrides
+// it carries; -1 when the shape has none
 struct BlockingShape
 {
   odb::Rect rect;
-  int min_spacing = 0;
-  int effective_width = 0;
+  int min_spacing = -1;
+  int effective_width = -1;
 };
 
 // the arguments that select a spacing value in a layer spacing table

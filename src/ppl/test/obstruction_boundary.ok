@@ -12,4 +12,6 @@ Found 0 macro blocks.
 pin to obstruction violations: 0
 pin to min spacing obstruction violations: 0
 pin to effective width obstruction violations: 0
+pin to spacing override obstruction violations: 0
+pins allowed within the table spacing of the override obstruction: 2
 pins over the fill and slot blockages: 19
