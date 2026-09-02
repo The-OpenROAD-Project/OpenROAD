@@ -36,6 +36,10 @@ void IRShort::report(odb::dbNet* net, utl::Logger* logger, double dbu) const
 
 void IRShort::commit(odb::dbNet* net, odb::dbMarkerCategory* category) const
 {
+  if (category == nullptr) {
+    return;
+  }
+
   odb::dbMarker* marker = odb::dbMarker::create(category);
   if (marker == nullptr) {
     return;
@@ -73,7 +77,9 @@ void IRShortBPin::addSources(odb::dbMarker* marker) const
   // dbMarker is unable to name a dbBPin, so use the terminal it belongs to
   odb::dbBTerm* bterm = bpin_->getBTerm();
   marker->addSource(bterm);
-  marker->addSource(bterm->getNet());
+  if (odb::dbNet* net = bterm->getNet()) {
+    marker->addSource(net);
+  }
 }
 
 ////////////////////
@@ -114,7 +120,9 @@ std::string IRShortITerm::describe() const
 void IRShortITerm::addSources(odb::dbMarker* marker) const
 {
   marker->addSource(iterm_);
-  marker->addSource(iterm_->getNet());
+  if (odb::dbNet* net = iterm_->getNet()) {
+    marker->addSource(net);
+  }
 }
 
 ////////////////////
@@ -139,7 +147,9 @@ std::string IRShortObstruction::describe() const
 void IRShortObstruction::addSources(odb::dbMarker* marker) const
 {
   marker->addSource(obstruction_);
-  marker->addSource(obstruction_->getInstance());
+  if (odb::dbInst* inst = obstruction_->getInstance()) {
+    marker->addSource(inst);
+  }
 }
 
 ////////////////////
