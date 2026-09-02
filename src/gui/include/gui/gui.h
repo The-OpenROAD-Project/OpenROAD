@@ -61,6 +61,29 @@ using HighlightSet = std::array<SelectionSet, kNumHighlightSet>;
 using DBUToString = std::function<std::string(int, bool)>;
 using StringToDBU = std::function<int(const std::string&, bool*)>;
 
+struct PainterColor
+{
+  constexpr PainterColor() : r(0), g(0), b(0), a(255) {}
+  constexpr PainterColor(int r, int g, int b, int a = 255)
+      : r(r), g(g), b(b), a(a)
+  {
+  }
+  constexpr PainterColor(const PainterColor& color, int a)
+      : r(color.r), g(color.g), b(color.b), a(a)
+  {
+  }
+
+  int r;
+  int g;
+  int b;
+  int a;
+
+  constexpr bool operator==(const PainterColor& other) const
+  {
+    return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
+  }
+};
+
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
 // the clients.  Clients will only deal with this API and not Qt itself,
@@ -68,6 +91,8 @@ using StringToDBU = std::function<int(const std::string&, bool*)>;
 class Painter
 {
  public:
+  using Color = PainterColor;
+
   struct Font
   {
     Font(const std::string& name, int size) : name(name), size(size) {}
@@ -81,61 +106,38 @@ class Painter
     }
   };
 
-  struct Color
-  {
-    constexpr Color() : r(0), g(0), b(0), a(255) {}
-    constexpr Color(int r, int g, int b, int a = 255) : r(r), g(g), b(b), a(a)
-    {
-    }
-    constexpr Color(const Color& color, int a)
-        : r(color.r), g(color.g), b(color.b), a(a)
-    {
-    }
-
-    int r;
-    int g;
-    int b;
-    int a;
-
-    bool operator==(const Color& other) const
-    {
-      return (r == other.r) && (g == other.g) && (b == other.b)
-             && (a == other.a);
-    }
-  };
-
-  static inline const Color kBlack{0x00, 0x00, 0x00, 0xff};
-  static inline const Color kWhite{0xff, 0xff, 0xff, 0xff};
-  static inline const Color kDarkGray{0x80, 0x80, 0x80, 0xff};
-  static inline const Color kGray{0xa0, 0xa0, 0xa4, 0xff};
-  static inline const Color kLightGray{0xc0, 0xc0, 0xc0, 0xff};
-  static inline const Color kRed{0xff, 0x00, 0x00, 0xff};
-  static inline const Color kGreen{0x00, 0xff, 0x00, 0xff};
-  static inline const Color kBlue{0x00, 0x00, 0xff, 0xff};
-  static inline const Color kCyan{0x00, 0xff, 0xff, 0xff};
-  static inline const Color kMagenta{0xff, 0x00, 0xff, 0xff};
-  static inline const Color kYellow{0xff, 0xff, 0x00, 0xff};
-  static inline const Color kDarkRed{0x80, 0x00, 0x00, 0xff};
-  static inline const Color kDarkGreen{0x00, 0x80, 0x00, 0xff};
-  static inline const Color kDarkBlue{0x00, 0x00, 0x80, 0xff};
-  static inline const Color kDarkCyan{0x00, 0x80, 0x80, 0xff};
-  static inline const Color kDarkMagenta{0x80, 0x00, 0x80, 0xff};
-  static inline const Color kDarkYellow{0x80, 0x80, 0x00, 0xff};
-  static inline const Color kOrange{0xff, 0xa5, 0x00, 0xff};
-  static inline const Color kPurple{0x80, 0x00, 0x80, 0xff};
-  static inline const Color kLime{0xbf, 0xff, 0x00, 0xff};
-  static inline const Color kTeal{0x00, 0x80, 0x80, 0xff};
-  static inline const Color kPink{0xff, 0xc0, 0xcb, 0xff};
-  static inline const Color kBrown{0x8b, 0x45, 0x13, 0xff};
-  static inline const Color kIndigo{0x4b, 0x00, 0x82, 0xff};
-  static inline const Color kTurquoise{0x40, 0xe0, 0xd0, 0xff};
-  static inline const Color kTransparent{0x00, 0x00, 0x00, 0x00};
+  static inline constexpr Color kBlack{0x00, 0x00, 0x00, 0xff};
+  static inline constexpr Color kWhite{0xff, 0xff, 0xff, 0xff};
+  static inline constexpr Color kDarkGray{0x80, 0x80, 0x80, 0xff};
+  static inline constexpr Color kGray{0xa0, 0xa0, 0xa4, 0xff};
+  static inline constexpr Color kLightGray{0xc0, 0xc0, 0xc0, 0xff};
+  static inline constexpr Color kRed{0xff, 0x00, 0x00, 0xff};
+  static inline constexpr Color kGreen{0x00, 0xff, 0x00, 0xff};
+  static inline constexpr Color kBlue{0x00, 0x00, 0xff, 0xff};
+  static inline constexpr Color kCyan{0x00, 0xff, 0xff, 0xff};
+  static inline constexpr Color kMagenta{0xff, 0x00, 0xff, 0xff};
+  static inline constexpr Color kYellow{0xff, 0xff, 0x00, 0xff};
+  static inline constexpr Color kDarkRed{0x80, 0x00, 0x00, 0xff};
+  static inline constexpr Color kDarkGreen{0x00, 0x80, 0x00, 0xff};
+  static inline constexpr Color kDarkBlue{0x00, 0x00, 0x80, 0xff};
+  static inline constexpr Color kDarkCyan{0x00, 0x80, 0x80, 0xff};
+  static inline constexpr Color kDarkMagenta{0x80, 0x00, 0x80, 0xff};
+  static inline constexpr Color kDarkYellow{0x80, 0x80, 0x00, 0xff};
+  static inline constexpr Color kOrange{0xff, 0xa5, 0x00, 0xff};
+  static inline constexpr Color kPurple{0x80, 0x00, 0x80, 0xff};
+  static inline constexpr Color kLime{0xbf, 0xff, 0x00, 0xff};
+  static inline constexpr Color kTeal{0x00, 0x80, 0x80, 0xff};
+  static inline constexpr Color kPink{0xff, 0xc0, 0xcb, 0xff};
+  static inline constexpr Color kBrown{0x8b, 0x45, 0x13, 0xff};
+  static inline constexpr Color kIndigo{0x4b, 0x00, 0x82, 0xff};
+  static inline constexpr Color kTurquoise{0x40, 0xe0, 0xd0, 0xff};
+  static inline constexpr Color kTransparent{0x00, 0x00, 0x00, 0x00};
 
   static std::map<std::string, Color> colors();
   static Color stringToColor(const std::string& color, utl::Logger* logger);
   static std::string colorToString(const Color& color);
 
-  static inline const std::array<Painter::Color, kNumHighlightSet>
+  static inline constexpr std::array<Painter::Color, kNumHighlightSet>
       kHighlightColors{Color(Painter::kGreen, 100),
                        Color(Painter::kYellow, 100),
                        Color(Painter::kCyan, 100),
@@ -154,8 +156,8 @@ class Painter
                        Color(Painter::kTurquoise, 100)};
 
   // The color to highlight in
-  static inline const Color kHighlight = kYellow;
-  static inline const Color kPersistHighlight = kYellow;
+  static inline constexpr Color kHighlight = kYellow;
+  static inline constexpr Color kPersistHighlight = kYellow;
 
   virtual ~Painter() = default;
 
