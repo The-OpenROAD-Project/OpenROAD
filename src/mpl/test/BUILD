@@ -48,6 +48,7 @@ COMPULSORY_TESTS = [
     "orientation_improve3",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "snapper_core_bounds",
     "unfixed_cells_dont_fit_in_core",
 ]
 
@@ -243,6 +244,10 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
+                "snapper_core_bounds": [
+                    "testcases/orientation_improve1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
@@ -257,6 +262,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
+        check_log = False if test_name == "snapper_core_bounds" else True,
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
