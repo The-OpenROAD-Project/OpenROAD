@@ -71,11 +71,18 @@ int Tapcell::defaultDistance() const
 void Tapcell::checkPlaceable(odb::dbMaster* master,
                              const std::string& option) const
 {
-  if (master != nullptr && !master->isCoreAutoPlaceable()) {
+  if (master == nullptr) {
+    return;
+  }
+  // Block masters pass isCoreAutoPlaceable(), but they are macros, not core
+  // row cells: besides being unplaceable in a row, an endcap master's size
+  // sets the minimum row width and height used to cut the rows, so a macro
+  // sized master cuts away rows that should have been kept.
+  if (!master->isCoreAutoPlaceable() || master->isBlock()) {
     logger_->error(utl::TAP,
                    36,
-                   "Master {} with class {} given for {} cannot be placed in "
-                   "core rows and would be ignored by detailed placement.",
+                   "Master {} with class {} given for {} cannot be placed "
+                   "in core rows.",
                    master->getName(),
                    master->getType().getString(),
                    option);
