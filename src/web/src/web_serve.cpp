@@ -293,10 +293,13 @@ void WebServer::serve(int port)
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
+    logger_->info(utl::WEB, 1, "Server started on {}.", url);
+
+    // Open the url with the default browser
 #if defined(__APPLE__)
-    std::string open_cmd = "open " + url + " > /dev/null 2>&1";
+    std::string open_cmd = "open " + url + " > /dev/null";
 #elif defined(_WIN32)
-    std::string open_cmd = "start " + url + " > nul 2>&1";
+    std::string open_cmd = "start " + url + " > nul";
 #else
     // `setsid -f` forks the launcher into a new session, severing the
     // SIGHUP cascade from openroad's controlling pty.  Without this,
@@ -306,13 +309,15 @@ void WebServer::serve(int port)
     // redirect stdin from /dev/null so xdg-open never blocks on input
     // inherited from the pty.
     std::string open_cmd
-        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null 2>&1";
+        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null";
 #endif
     int ret = std::system(open_cmd.c_str());
-    (void) ret;
-
-    logger_->info(utl::WEB, 1, "Server started on {}.", url);
-
+    if (ret != 0) {
+      logger_->warn(utl::WEB,
+                    3,
+                    "Could not launch default browser (shell error {})",
+                    ret);
+    }
   } catch (std::exception const& e) {
     stop();
     logger_->error(utl::WEB, 2, "Server error : {}", e.what());
