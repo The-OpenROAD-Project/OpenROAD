@@ -875,7 +875,7 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
       if (search_obs.qbegin(
               bgi::intersects(via->getArea())
               && bgi::satisfies(
-                  [this, layer, &via](const ShapePtr& other) -> bool {
+                  [this, layer, via](const ShapePtr& other) -> bool {
                     if (other->shapeType() == Shape::kPadObs
                         && other->getNet() != nullptr
                         && other->getNet() == via->getNet()) {
