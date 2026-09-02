@@ -120,7 +120,8 @@ def hier_case_tests(
         top_overrides = {},
         expected_fail = {},
         data = [],
-        size = "small"):
+        size = "small",
+        tags = None):
     """A test target per netlist. Returns the generated labels.
 
     Args:
@@ -133,6 +134,7 @@ def hier_case_tests(
       data: shared inputs every case needs (the filegroups behind the
         inherited/ symlinks; not the manifest -- rows travel per case).
       size: bazel test size; a case is ~0.6s.
+      tags: tags for the generated test targets.
 
     Returns:
       The list of generated test target labels.
@@ -164,6 +166,7 @@ def hier_case_tests(
             ),
             runner = runner,
             size = size,
+            tags = tags,
             top_overrides = "" if not top else "%s=%s" % (file_name, top),
         )
         tests.append(":" + target)
