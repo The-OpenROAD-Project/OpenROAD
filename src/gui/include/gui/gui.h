@@ -78,7 +78,7 @@ struct PainterColor
   int b;
   int a;
 
-  bool operator==(const PainterColor& other) const
+  constexpr bool operator==(const PainterColor& other) const
   {
     return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
   }
@@ -256,7 +256,8 @@ class Painter
                           int y,
                           Anchor anchor,
                           const std::string& s,
-                          bool rotate_90) = 0;
+                          bool rotate_90)
+      = 0;
   void drawString(int x, int y, Anchor anchor, const std::string& s)
   {
     drawString(x, y, anchor, s, false);
@@ -264,14 +265,16 @@ class Painter
   virtual odb::Rect stringBoundaries(int x,
                                      int y,
                                      Anchor anchor,
-                                     const std::string& s) = 0;
+                                     const std::string& s)
+      = 0;
 
   virtual void drawRuler(int x0,
                          int y0,
                          int x1,
                          int y1,
                          bool euclidian,
-                         const std::string& label) = 0;
+                         const std::string& label)
+      = 0;
   void drawRuler(int x0, int y0, int x1, int y1, bool euclidian)
   {
     drawRuler(x0, y0, x1, y1, euclidian, "");
@@ -327,7 +330,8 @@ class Descriptor
   virtual bool isNet(const std::any& /* object */) const { return false; }
 
   virtual void visitAllObjects(
-      const std::function<void(const Selected&)>& func) const = 0;
+      const std::function<void(const Selected&)>& func) const
+      = 0;
 
   // A property is a name and a value.
   struct Property
