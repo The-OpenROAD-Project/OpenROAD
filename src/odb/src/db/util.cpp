@@ -239,8 +239,7 @@ void cutRows(dbBlock* block,
           effective_blockages.push_back(effective_blockage);
         };
   for (auto blockage : blockages) {
-    const bool is_inst = blockage->getOwnerType() == dbBoxOwner::INST;
-    if (is_inst) {
+    if (blockage->getOwnerType() == dbBoxOwner::INST) {
       dbInst* inst = static_cast<dbInst*>(blockage->getBoxOwner());
       odb::dbBox* halo = inst->getHalo();
       const odb::Rect transformed_halo = inst->getTransformedHalo();
