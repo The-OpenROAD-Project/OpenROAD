@@ -12,6 +12,7 @@ or_integration_tests(
     boundary_macros_separate2
     boundary_macros_tapcell
     cut_rows
+    cut_rows_asymmetric_halo
     cut_rows_halo
     cut_rows_l_macro
     cut_rows_min_step_bottom_left
