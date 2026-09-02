@@ -33,7 +33,7 @@ static odb::dbTechLayer* getImplant(dbMaster* master)
 
   for (auto obs : master->getObstructions()) {
     auto layer = obs->getTechLayer();
-    if (layer->getType() == odb::dbTechLayerType::IMPLANT) {
+    if (layer != nullptr && layer->getType() == odb::dbTechLayerType::IMPLANT) {
       return layer;
     }
   }

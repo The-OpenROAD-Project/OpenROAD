@@ -3077,7 +3077,7 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
        ++layerNum) {
     result.clear();
     const frLayer* layer = getTech()->getLayer(layerNum);
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (layer == nullptr || layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     const frMIdx zIdx = gridGraph_.getMazeZIdx(layerNum);

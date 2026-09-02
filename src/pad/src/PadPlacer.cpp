@@ -430,7 +430,7 @@ std::optional<odb::Polygon> PadPlacer::getMasterOutline(
   for (auto* obs : master->getObstructions()) {
     auto* layer = obs->getTechLayer();
     if (layer != nullptr) {
-      if (layer->getType() != odb::dbTechLayerType::OVERLAP) {
+      if (layer == nullptr || layer->getType() != odb::dbTechLayerType::OVERLAP) {
         continue;
       }
       master_obs.push_back(obs->getBox());

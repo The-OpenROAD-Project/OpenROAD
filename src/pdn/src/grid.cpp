@@ -870,6 +870,9 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   // remove vias with obstructions in their stack
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
+      if (layer == nullptr) {
+        continue;
+      }
       const auto& search_obs = search_obstructions[layer];
       if (search_obs.qbegin(
               bgi::intersects(via->getArea())

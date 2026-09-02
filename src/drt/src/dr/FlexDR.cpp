@@ -1899,7 +1899,7 @@ void FlexDR::reportGuideCoverage()
   std::ofstream file(router_cfg_->GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
-    if (layer->getType() == dbTechLayerType::ROUTING
+    if (layer != nullptr && layer->getType() == dbTechLayerType::ROUTING
         && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       file << layer->getName() << ",";
     }
@@ -1920,7 +1920,7 @@ void FlexDR::reportGuideCoverage()
   uint64_t totalArea = 0;
   uint64_t totalCoveredArea = 0;
   for (const auto& layer : getTech()->getLayers()) {
-    if (layer->getType() == dbTechLayerType::ROUTING
+    if (layer != nullptr && layer->getType() == dbTechLayerType::ROUTING
         && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       if (totalAreaByLayerNum[layer->getLayerNum()] == 0) {
         file << "NA,";
@@ -1950,7 +1950,7 @@ void FlexDR::fixMaxSpacing()
   parser.initSecondaryVias();
   std::vector<frVia*> lonely_vias;
   for (const auto& layer : getTech()->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
+    if (layer != nullptr && layer->getType() == odb::dbTechLayerType::CUT) {
       if (!layer->hasLef58MaxSpacingConstraints()) {
         continue;
       }

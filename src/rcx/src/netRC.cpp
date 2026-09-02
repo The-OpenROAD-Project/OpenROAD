@@ -160,7 +160,7 @@ double extMain::getViaResistance(dbTechVia* tvia)
 {
   for (dbBox* box : tvia->getBoxes()) {
     dbTechLayer* layer = box->getTechLayer();
-    if (layer->getType() == dbTechLayerType::CUT) {
+    if (layer != nullptr && layer->getType() == dbTechLayerType::CUT) {
       return layer->getResistance();
     }
   }

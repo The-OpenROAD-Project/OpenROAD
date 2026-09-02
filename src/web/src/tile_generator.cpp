@@ -1081,6 +1081,9 @@ enum class LayerGroup
 
 LayerGroup classifyLayer(odb::dbTechLayer* layer)
 {
+  if (layer == nullptr) {
+    return LayerGroup::kSkip;
+  }
   if (layer->getRoutingLevel() > 0
       || layer->getType() == odb::dbTechLayerType::CUT) {
     return LayerGroup::kRouting;
@@ -1394,6 +1397,9 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
   size_t metal = 0;
   size_t via = 0;
   for (odb::dbTechLayer* layer : tech->getLayers()) {
+    if (layer == nullptr) {
+      continue;
+    }
     Color c;
     if (layer->isBackside()) {
       c = random_color();
