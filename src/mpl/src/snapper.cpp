@@ -35,6 +35,10 @@ void Snapper::snapMacro()
 void Snapper::snapInsideCore()
 {
   const odb::Rect core = inst_->getBlock()->getCoreArea();
+  if (core.area() == 0) {
+    return;
+  }
+
   odb::Rect bbox = inst_->getBBox()->getBox();
   const int manufacturing_grid
       = inst_->getDb()->getTech()->getManufacturingGrid();
