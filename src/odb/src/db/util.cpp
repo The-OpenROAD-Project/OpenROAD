@@ -230,14 +230,17 @@ void cutRows(dbBlock* block,
 
   vector<Rect> effective_blockages;
   effective_blockages.reserve(blockages.size());
-  auto insert_blockage
-      = [&effective_blockages](const Rect& blockage, int halo_x, int halo_y) {
-          const Rect effective_blockage(blockage.xMin() - halo_x,
-                                        blockage.yMin() - halo_y,
-                                        blockage.xMax() + halo_x,
-                                        blockage.yMax() + halo_y);
-          effective_blockages.push_back(effective_blockage);
-        };
+  auto insert_blockage = [&effective_blockages](const Rect& blockage,
+                                                int halo_x_min,
+                                                int halo_x_max,
+                                                int halo_y_min,
+                                                int halo_y_max) {
+    const Rect effective_blockage(blockage.xMin() - halo_x_min,
+                                  blockage.yMin() - halo_y_min,
+                                  blockage.xMax() + halo_x_max,
+                                  blockage.yMax() + halo_y_max);
+    effective_blockages.push_back(effective_blockage);
+  };
   for (auto blockage : blockages) {
     if (blockage->getOwnerType() == dbBoxOwner::INST) {
       dbInst* inst = static_cast<dbInst*>(blockage->getBoxOwner());
@@ -257,21 +260,30 @@ void cutRows(dbBlock* block,
       }
 
       bool has_overlap = false;
-      const auto xform = inst->getTransform();
-      for (auto* box : inst->getMaster()->getObstructions()) {
-        if (box->getTechLayer() == overlap) {
-          has_overlap = true;
-          Rect box_rect = box->getBox();
-          xform.apply(box_rect);
-          insert_blockage(box_rect, use_halo_x_min, use_halo_y_min);
+      if (overlap != nullptr) {
+        const auto xform = inst->getTransform();
+        for (auto* box : inst->getMaster()->getObstructions()) {
+          if (box->getTechLayer() == overlap) {
+            has_overlap = true;
+            Rect box_rect = box->getBox();
+            xform.apply(box_rect);
+            insert_blockage(box_rect,
+                            use_halo_x_min,
+                            use_halo_x_max,
+                            use_halo_y_min,
+                            use_halo_y_max);
+          }
         }
       }
       if (!has_overlap) {
-        insert_blockage(
-            inst->getBBox()->getBox(), use_halo_x_min, use_halo_y_min);
+        insert_blockage(inst->getBBox()->getBox(),
+                        use_halo_x_min,
+                        use_halo_x_max,
+                        use_halo_y_min,
+                        use_halo_y_max);
       }
     } else {
-      insert_blockage(blockage->getBox(), halo_x, halo_y);
+      insert_blockage(blockage->getBox(), halo_x, halo_x, halo_y, halo_y);
     }
   }
 
