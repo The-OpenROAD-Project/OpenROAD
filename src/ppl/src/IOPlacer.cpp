@@ -636,8 +636,13 @@ void IOPlacer::excludeBoundaryShape(const BlockingShape& shape,
     for (const odb::Line& die_edge : die_edges) {
       if (boost::geometry::intersects(padded_box, die_edge)) {
         std::vector<odb::Rect>& shapes = layer_blocked_shapes_[layer];
-        // boundary via arrays produce near duplicate keepouts, skip them
-        if (shapes.empty() || !shapes.back().contains(padded_box)) {
+        // boundary via arrays produce near duplicate keepouts, keep the
+        // larger of consecutive nested shapes
+        if (shapes.empty()) {
+          shapes.push_back(padded_box);
+        } else if (padded_box.contains(shapes.back())) {
+          shapes.back() = padded_box;
+        } else if (!shapes.back().contains(padded_box)) {
           shapes.push_back(padded_box);
         }
         break;
