@@ -296,10 +296,17 @@ void WebServer::serve(int port)
     logger_->info(utl::WEB, 1, "Server started on {}.", url);
 
     // Open the url with the default browser
+    char tmp_filename[] = "/tmp/openroad-XXXXXX";
+    int fd = mkstemp(tmp_filename);
+    std::string errfile = "/dev/null";
+    if (fd != -1) {
+      errfile = tmp_filename;
+      close(fd);
+    }
 #if defined(__APPLE__)
-    std::string open_cmd = "open " + url + " > /dev/null";
+    std::string open_cmd = "open " + url + " > /dev/null 2> " + errfile;
 #elif defined(_WIN32)
-    std::string open_cmd = "start " + url + " > nul";
+    std::string open_cmd = "start " + url + " > nul 2> " + errfile;
 #else
     // `setsid -f` forks the launcher into a new session, severing the
     // SIGHUP cascade from openroad's controlling pty.  Without this,
@@ -308,15 +315,28 @@ void WebServer::serve(int port)
     // the pty master and SIGHUPs every process in the session.  Also
     // redirect stdin from /dev/null so xdg-open never blocks on input
     // inherited from the pty.
-    std::string open_cmd
-        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null";
+    // `setsid -w` waits for xdg-open to finish end so the return code
+    // can be forwarded to setsid
+    std::string open_cmd = "setsid -f -w xdg-open " + url
+                           + " < /dev/null > /dev/null 2> " + errfile;
 #endif
     int ret = std::system(open_cmd.c_str());
     if (ret != 0) {
+      std::ifstream err(errfile);
+      std::string errout = "";
+      if (err) {
+        std::ostringstream ss;
+        ss << err.rdbuf();
+        errout = "\n" + ss.str();
+      }
+      if (fd != -1) {
+        std::remove(errfile.c_str());
+      }
       logger_->warn(utl::WEB,
                     3,
-                    "Could not launch default browser (shell error {})",
-                    ret);
+                    "Could not launch default browser (shell error {}){}",
+                    ret,
+                    errout);
     }
   } catch (std::exception const& e) {
     stop();
