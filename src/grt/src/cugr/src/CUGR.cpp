@@ -51,7 +51,7 @@ using utl::GRT;
 namespace grt {
 
 // Sentinel demoteNonCriticalNets writes so a net sorts last; not a slack.
-static const float kDemotedSlack = std::ceil(std::numeric_limits<float>::max());
+constexpr float kDemotedSlack = std::numeric_limits<float>::max();
 
 namespace {
 
@@ -225,10 +225,8 @@ void CUGR::refreshParasiticsForDebug()
   if (estimator == nullptr) {
     return;
   }
-  // Mirror updateNetSlacks' parasitics half, so the slack reported for a stage
-  // is the one the next stage will act on. The dirty list is left intact and
-  // full_slack_update_done_ untouched, so the real refresh still runs and
-  // recomputes the same values.
+  // Mirrors updateNetSlacks' parasitics half, but leaves the dirty list and
+  // full_slack_update_done_ alone so the real refresh still runs.
   if (!full_slack_update_done_) {
     estimator->estimateAllGlobalRouteParasitics();
   } else {
@@ -928,84 +926,64 @@ void CUGR::setDebugNet(odb::dbNet* net, const int stage_mask)
 
 bool CUGR::hasTiming() const
 {
-  return sta_ != nullptr && sta_->getDbNetwork() != nullptr
-         && sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr;
+  return sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr;
 }
 
 void CUGR::reportDebugNetSlack(const GRNet* net,
                                const CugrStage stage,
                                const int iteration)
 {
-  // Checked up front so the parasitics re-extraction below is only paid for
-  // when the trace is actually being printed.
+  // Checked up front so the re-extraction below is only paid when printing.
   if (!logger_->debugCheck(GRT, "cugr_slack", 1)) {
     return;
   }
 
-  std::string stage_label = toString(stage);
-  if (iteration > 0) {
-    stage_label += " iteration " + std::to_string(iteration);
-  }
-
+  std::string detail;
   if (!hasTiming()) {
-    debugPrint(logger_,
-               GRT,
-               "cugr_slack",
-               1,
-               "net {}: after {}, slack unavailable (no timing)",
-               net->getName(),
-               stage_label);
-    return;
+    detail = "slack unavailable (no timing)";
+  } else {
+    // Every rerouted net, not just this one: its slack runs through them.
+    refreshParasiticsForDebug();
+    const float sta_slack = getNetSlack(net->getDbNet());
+    // What CUGR's ordering and critical-net decisions read.
+    const float cugr_slack = net->getSlack();
+    if (sta_slack >= sta::INF) {
+      detail = "no timing path";
+    } else if (critical_nets_percentage_ == 0) {
+      detail = fmt::format(
+          "slack = {:.2f} ps (cugr tracks no slack, -critical_nets_percentage "
+          "is 0)",
+          sta_slack * 1e12);
+    } else if (cugr_slack >= kDemotedSlack) {
+      detail = fmt::format(
+          "slack = {:.2f} ps (cugr entered stage demoted, sorts last)",
+          sta_slack * 1e12);
+    } else {
+      detail = fmt::format(
+          "slack = {:.2f} ps (cugr entered stage with {:.2f} ps, delta "
+          "{:.2f} ps)",
+          sta_slack * 1e12,
+          cugr_slack * 1e12,
+          (sta_slack - cugr_slack) * 1e12);
+    }
+    if (incremental_routing_) {
+      detail += " (parasitics not refreshed)";
+    }
   }
-  // Every net the stage rerouted must be freshened, not just the debug net:
-  // its slack runs through paths in those nets too.
-  refreshParasiticsForDebug();
 
-  const float sta_slack = getNetSlack(net->getDbNet());
-  if (sta_slack >= sta::INF) {
-    debugPrint(logger_,
-               GRT,
-               "cugr_slack",
-               1,
-               "net {}: after {}, no timing path",
-               net->getName(),
-               stage_label);
-    return;
-  }
-  // What CUGR's ordering and critical-net decisions actually read. It is
-  // refreshed at the start of each stage that marks critical nets, so at a
-  // stage's end it lags the live value by that stage's own rerouting.
-  const float cugr_slack = net->getSlack();
-  if (cugr_slack >= kDemotedSlack) {
-    // demoteNonCriticalNets replaced the slack with a sort-last sentinel, so
-    // CUGR holds no timing value for this net any more.
-    debugPrint(logger_,
-               GRT,
-               "cugr_slack",
-               1,
-               "net {}: after {}, slack = {:.2f} ps (cugr entered stage "
-               "demoted, sorts last)",
-               net->getName(),
-               stage_label,
-               sta_slack * 1e12);
-    return;
-  }
   debugPrint(logger_,
              GRT,
              "cugr_slack",
              1,
-             "net {}: after {}, slack = {:.2f} ps (cugr entered stage with "
-             "{:.2f} ps, delta {:.2f} ps)",
+             "net {}: after {}, {}",
              net->getName(),
-             stage_label,
-             sta_slack * 1e12,
-             cugr_slack * 1e12,
-             (sta_slack - cugr_slack) * 1e12);
+             stageLabel(stage, iteration),
+             detail);
 }
 
 void CUGR::debugNetTopology(const CugrStage stage, const int iteration)
 {
-  if (!debug_.isOn() || !debugStageEnabled(stage)) {
+  if (!debugStageEnabled(stage)) {
     return;
   }
   const auto it = db_net_map_.find(debug_.net);
@@ -1014,12 +992,6 @@ void CUGR::debugNetTopology(const CugrStage stage, const int iteration)
   }
   const GRNet* net = it->second;
 
-  // Built once: the slack report freshens parasitics from it, the renderer
-  // draws it.
-  GRoute route;
-  if (net->getRoutingTree() != nullptr) {
-    buildNetRoute(net, route);
-  }
   reportDebugNetSlack(net, stage, iteration);
 
   // The renderer is absent headless, and an unrouted net has nothing to draw.
@@ -1031,7 +1003,7 @@ void CUGR::debugNetTopology(const CugrStage stage, const int iteration)
   frame.stage = stage;
   frame.iteration = iteration;
   frame.gcell_size = design_->getGridlineSize();
-  frame.route = std::move(route);
+  buildNetRoute(net, frame.route);
   frame.pins.reserve(net->getNumPins());
   for (const auto& access_points : net->getPinAccessPoints()) {
     for (const GRPoint& point : access_points) {

@@ -172,8 +172,7 @@ class CUGR
   int totalOverflow();
   void saveCongestion();
 
-  // GUI stage-by-stage topology debug for one net (global_route_debug); the
-  // CUGR analog of FastRouteCore's AbstractFastRouteRenderer hooks.
+  // GUI stage-by-stage topology debug for one net (global_route_debug).
   void initDebugRenderer(std::unique_ptr<AbstractCugrRenderer> renderer);
   AbstractCugrRenderer* getDebugRenderer() const;
   // stage_mask holds one bit per CugrStage, in enum order.
@@ -255,8 +254,7 @@ class CUGR
   // neutral first PatternRoute.
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
-  // stage/iteration label the debug dump: iterativeRRR re-enters this stage,
-  // so the caller says which stage the reroute belongs to.
+  // iterativeRRR re-enters this stage, so the caller labels the debug dump.
   void mazeRoute(std::vector<int>& net_indices, CugrStage stage, int iteration);
 
   /**
@@ -288,8 +286,6 @@ class CUGR
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   // Append net's routing tree to route as GRoute segments.
   void buildNetRoute(const GRNet* net, GRoute& route) const;
-  // DBU center of gcell `index` along `dimension`: the single definition of
-  // the convention every routed segment and debug marker uses.
   int gridlineCenter(int dimension, int index) const;
   void printStatistics() const;
 
@@ -330,9 +326,6 @@ class CUGR
     std::unique_ptr<AbstractCugrRenderer> renderer;
     odb::dbNet* net = nullptr;
     int stage_mask = 0;
-    // The slack trace is logged, so a net selection alone is enough to make
-    // the hook do work; the renderer is only needed to draw.
-    bool isOn() const { return net != nullptr && stage_mask != 0; }
   };
   Debug debug_;
 
@@ -340,12 +333,11 @@ class CUGR
   {
     return (debug_.stage_mask & (1 << static_cast<int>(stage))) != 0;
   }
-  // Push the debug net's current tree to the renderer and pause the GUI.
+  // Stage-boundary hook: logs the net's slack, and draws/pauses under a GUI.
   void debugNetTopology(CugrStage stage, int iteration);
-  // Log the debug net's slack at a stage boundary (needs no GUI).
+  // The logging half of the hook; needs no GUI.
   void reportDebugNetSlack(const GRNet* net, CugrStage stage, int iteration);
-  // Bring parasitics to the state the next stage's refresh would produce, so
-  // the reported slack is the stage's result; no-op outside debug.
+  // Refresh parasitics as the next stage would, so the slack is current.
   void refreshParasiticsForDebug();
   // True if a liberty library is loaded, i.e. slacks are meaningful.
   bool hasTiming() const;

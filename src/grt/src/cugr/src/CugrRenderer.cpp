@@ -25,11 +25,7 @@ void CugrRenderer::drawAndPause(CugrDebugFrame frame)
   frame_ = std::move(frame);
 
   auto* gui = gui::Gui::get();
-  std::string status = std::string("CUGR: ") + toString(frame_.stage);
-  if (frame_.iteration > 0) {
-    status += " (iteration " + std::to_string(frame_.iteration) + ")";
-  }
-  gui->status(status);
+  gui->status("CUGR: " + stageLabel(frame_.stage, frame_.iteration));
   gui->redraw();
   gui->pause();
 }
@@ -37,8 +33,7 @@ void CugrRenderer::drawAndPause(CugrDebugFrame frame)
 void CugrRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   const int level = layer->getRoutingLevel();
-  // One pen/brush for the whole layer; setPen resets the width, so it goes
-  // first.
+  // setPen resets the width, so it goes before setPenWidth.
   painter.setPen(layer);
   painter.setBrush(layer);
   painter.setPenWidth(std::max(frame_.gcell_size / 8, 1));

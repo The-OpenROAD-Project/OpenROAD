@@ -313,8 +313,7 @@ class GlobalRouter
   void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
 
-  // CUGR stage-by-stage topology debug; the engine is chosen at global_route
-  // time, so these are set alongside the FastRoute ones.
+  // CUGR stage-by-stage topology debug (global_route_debug).
   void initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer);
   AbstractCugrRenderer* getDebugCugr() const;
   void setDebugCugrNet(odb::dbNet* net, int stage_mask);

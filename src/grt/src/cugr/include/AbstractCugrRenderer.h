@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include "grt/GRoute.h"
@@ -12,8 +13,7 @@
 
 namespace grt {
 
-// Stage boundaries of CUGR::route() a debug net topology can be dumped at.
-// The order is the stage-mask bit order shared with global_route_debug.
+// Stage boundaries of CUGR::route(), in stage-mask bit order.
 enum class CugrStage
 {
   patternRoute,
@@ -25,7 +25,6 @@ enum class CugrStage
 
 inline constexpr int kCugrStageCount = 5;
 
-// Stage label, shared by the GUI status bar and the logged slack trace.
 inline const char* toString(const CugrStage stage)
 {
   constexpr std::array<const char*, kCugrStageCount> kNames
@@ -35,6 +34,16 @@ inline const char* toString(const CugrStage stage)
          "maze route",
          "iterative RRR"};
   return kNames[static_cast<size_t>(stage)];
+}
+
+// Stage label shared by the GUI status bar and the logged slack trace.
+inline std::string stageLabel(const CugrStage stage, const int iteration)
+{
+  std::string label = toString(stage);
+  if (iteration > 0) {
+    label += " iteration " + std::to_string(iteration);
+  }
+  return label;
 }
 
 // One stage's snapshot of the debug net, in DBU with 1-based routing levels.
@@ -54,8 +63,7 @@ class AbstractCugrRenderer
  public:
   virtual ~AbstractCugrRenderer() = default;
 
-  // Draw the frame and block until the user continues. Taken by value so the
-  // caller can move a freshly built frame straight in.
+  // Draw the frame and block until the user continues.
   virtual void drawAndPause(CugrDebugFrame frame) = 0;
 };
 
