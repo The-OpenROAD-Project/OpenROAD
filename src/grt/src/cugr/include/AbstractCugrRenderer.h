@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <array>
-#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -23,17 +21,21 @@ enum class CugrStage
   iterativeRRR
 };
 
-inline constexpr int kCugrStageCount = 5;
-
 inline const char* toString(const CugrStage stage)
 {
-  constexpr std::array<const char*, kCugrStageCount> kNames
-      = {"pattern route",
-         "resistance-aware re-route",
-         "pattern route with detours",
-         "maze route",
-         "iterative RRR"};
-  return kNames[static_cast<size_t>(stage)];
+  switch (stage) {
+    case CugrStage::patternRoute:
+      return "pattern route";
+    case CugrStage::patternRouteResAware:
+      return "resistance-aware re-route";
+    case CugrStage::patternRouteWithDetours:
+      return "pattern route with detours";
+    case CugrStage::mazeRoute:
+      return "maze route";
+    case CugrStage::iterativeRRR:
+      return "iterative RRR";
+  }
+  return "unknown";
 }
 
 // Stage label shared by the GUI status bar and the logged slack trace.
