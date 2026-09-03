@@ -83,6 +83,16 @@ void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
 {
   debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
   for (const std::string& buffer : options_->getDlyBufferList()) {
+    if (db_->findMaster(buffer.c_str()) == nullptr) {
+      // Liberty only cell, it cannot be instantiated
+      debugPrint(logger_,
+                 CTS,
+                 "insertion delay",
+                 3,
+                 "{} : skipped, no master",
+                 buffer);
+      continue;
+    }
     const int64_t bufDelay = std::llround(
         techChar_->computeBufferDelay(buffer, buffer, extra_out_cap) * dpUnit_);
     if (bufDelay <= 0) {
@@ -548,7 +558,7 @@ DPResult LatencyBalancer::solveDP(int64_t target,
   int64_t w = bestW;
   int cur = bestJ;
   // dp holds the chain length, bounding the walk
-  for (int32_t left = dp[state(bestW, bestJ)]; cur != -1 && left > 0; left--) {
+  for (int32_t left = dp[state(bestW, bestJ)]; cur >= 0 && left > 0; left--) {
     result.buffers.push_back(dlyBuffers[cur]);
     const int32_t next = nxt[state(w, cur)];
     if (next == kDrivesSinks) {

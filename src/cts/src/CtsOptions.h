@@ -61,7 +61,10 @@ class CtsOptions : public odb::dbBlockCallBackObj
   {
     dlyBufferList_ = buffers;
   }
-  std::vector<std::string> getDlyBufferList() const { return dlyBufferList_; }
+  const std::vector<std::string>& getDlyBufferList() const
+  {
+    return dlyBufferList_;
+  }
   std::string getBufferListToString() const
   {
     std::ostringstream buffer_names;

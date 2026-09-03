@@ -3,13 +3,13 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 293 components and 1753 component-terminals.
 [INFO ODB-0133]     Created 6 nets and 298 connections.
-[DEBUG CTS-insertion delay] Delay buffer list = [
-[DEBUG CTS-insertion delay]   CLKBUF_X3
-[DEBUG CTS-insertion delay] ]
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
                     CLKBUF_X3
+[DEBUG CTS-insertion delay] Delay buffer list = [
+[DEBUG CTS-insertion delay]   CLKBUF_X3
+[DEBUG CTS-insertion delay] ]
 [INFO CTS-0049] Characterization buffer is CLKBUF_X3.
 [INFO CTS-0007] Net "clk" found for clock "clk".
 [INFO CTS-0011]  Clock net "clk" for macros has 4 sinks.

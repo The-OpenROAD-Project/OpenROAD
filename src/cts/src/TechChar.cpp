@@ -484,12 +484,14 @@ void TechChar::initCharacterization()
     logger_->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
 
-  createDelayBufList();
   // Announce root and sink buffers
   finalizeRootSinkBuffers();
 
   // Trim and sort buffer list in ascending order of max cap limit
   trimSortBufferList(masterVector);
+
+  // Runs after the buffer list sanity checks in trimSortBufferList
+  createDelayBufList();
 
   float maxBuffCap = 0.0;
   std::string bufMasterName;
