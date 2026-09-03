@@ -27,18 +27,38 @@ std::string stripSuffix(const std::string& target, const std::string& suffix)
   return target;
 }
 
-char pinDirection(odb::dbBTerm* bterm, utl::Logger* logger)
+odb::dbITerm* findBumpTerminal(odb::dbChipCapNode* cap_node,
+                               utl::Logger* logger)
 {
-  if (!bterm) {
-    logger->error(utl::RCX,
-                  490,
-                  "Could not determine the pin direction. The boundary "
-                  "terminal does not exist.");
+  odb::dbITerm* bump_terminal = nullptr;
+  odb::dbChipBump* chip_bump = cap_node->getChipBumpInst()->getChipBump();
+  odb::dbNet* net = chip_bump->getNet();
+
+  if (net) {
+    for (odb::dbITerm* iterm : chip_bump->getInst()->getITerms()) {
+      if (iterm->getNet() == net) {
+        bump_terminal = iterm;
+        break;
+      }
+    }
   }
 
+  if (!bump_terminal) {
+    logger->error(utl::RCX,
+                  535,
+                  "Inter-chip net {} lands on a bump with no terminal; "
+                  "cannot write its SPEF node.",
+                  cap_node->getChipNet()->getName());
+  }
+
+  return bump_terminal;
+}
+
+char pinDirection(odb::dbITerm* iterm)
+{
   char direction = 'B';
 
-  switch (bterm->getIoType().getValue()) {
+  switch (iterm->getIoType().getValue()) {
     case odb::dbIoType::INPUT:
       direction = 'I';
       break;
@@ -144,18 +164,9 @@ std::string MultiChipSpefWriter::bondNodeName(odb::dbChipCapNode* cap_node)
     }
   }
 
-  odb::dbBTerm* bterm = cap_node->getBTerm();
-
-  if (!bterm) {
-    logger_->error(utl::RCX,
-                   535,
-                   "Inter-chip net {} lands on a bump with no boundary "
-                   "terminal; cannot write its SPEF node.",
-                   chip_net->getName());
-  }
+  odb::dbITerm* iterm = findBumpTerminal(cap_node, logger_);
 
   std::string bond_node_name;
-
   for (odb::dbChipInst* chip_inst : chip_inst_path) {
     if (!bond_node_name.empty()) {
       bond_node_name += '/';
@@ -164,8 +175,8 @@ std::string MultiChipSpefWriter::bondNodeName(odb::dbChipCapNode* cap_node)
     bond_node_name += chip_inst->getName();
   }
 
-  bond_node_name += ':';
-  bond_node_name += bterm->getName();
+  bond_node_name += '/';
+  bond_node_name += iterm->getName(':');
 
   return bond_node_name;
 }
@@ -212,8 +223,10 @@ std::string MultiChipSpefWriter::chipNetSpefString(odb::dbChipNet* chip_net)
 
     out << "*CONN\n";
     for (odb::dbChipCapNode* cap_node : chip_net->getChipCapNodes()) {
+      odb::dbITerm* bump_terminal = findBumpTerminal(cap_node, logger_);
+
       out << "*I " << bondNodeName(cap_node) << " "
-          << pinDirection(cap_node->getBTerm(), logger_) << "\n";
+          << pinDirection(bump_terminal) << "\n";
     }
 
     out << "*RES\n";
