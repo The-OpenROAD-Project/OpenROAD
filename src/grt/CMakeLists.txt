@@ -56,6 +56,7 @@ target_sources(grt
     src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
+    src/cugr/src/CugrRenderer.cpp
 )
 
 target_include_directories(grt
@@ -63,6 +64,7 @@ target_include_directories(grt
     include
   PRIVATE
     src
+    src/cugr/include
 )
 
 target_link_libraries(grt
