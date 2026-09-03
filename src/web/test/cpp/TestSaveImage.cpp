@@ -111,6 +111,27 @@ class SaveImageTest : public tst::Nangate45Fixture
     return false;
   }
 
+  // True if any visible pixel isn't part of the always-on die/core outline,
+  // which getBounds() now guarantees is in every saved image.  Matches
+  // TileGeneratorTest::hasNonOutlinePixel: the outline is neutral gray
+  // (kOutlineGray) and alpha is NOT checked, because tiles are rasterized
+  // supersampled and decimated, so its edge pixels come back at partial
+  // coverage while the RGB stays 128,128,128.  Testing by colour rather than
+  // by carving out a border keeps the die edge itself in scope — that is
+  // where pin markers are drawn.
+  static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
+  {
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i + 3] == 0) {
+        continue;
+      }
+      if (rgba[i] != 128 || rgba[i + 1] != 128 || rgba[i + 2] != 128) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static size_t countNonTransparentPixels(
       const std::vector<unsigned char>& rgba)
   {
@@ -190,12 +211,13 @@ TEST_F(SaveImageTest, VisibilityStdcellsOff)
   const std::string path = tempPng("vis_off");
   TileVisibility vis;
   vis.stdcells = false;
-  // With stdcells hidden and no routing, the _instances layer should be empty.
+  // With stdcells hidden and no routing, the _instances layer holds nothing
+  // but the die outline, which Qt draws regardless of instance visibility.
   tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
 
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
 }
 
 TEST_F(SaveImageTest, VisibilityPinsOff_Markers)
@@ -278,8 +300,11 @@ TEST_F(SaveImageTest, EmptyDesign)
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
   EXPECT_EQ(w, 256u);
-  // Empty design should produce a transparent image.
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  // A design with no shapes still has a floorplan: the die outline is drawn
+  // and nothing else.
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "the die outline should still be drawn";
 }
 
 TEST_F(SaveImageTest, LargeWidthClamped)

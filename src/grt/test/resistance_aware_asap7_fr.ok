@@ -39,6 +39,6 @@
 [INFO ODB-0131]     Created 470 components and 2159 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
 baseline (no resistance-aware) WNS: -122.7 ps  TNS: -2957.2 ps
-resistance-aware               WNS: -122.3 ps  TNS: -2916.7 ps
+resistance-aware               WNS: -122.4 ps  TNS: -2923.9 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.
