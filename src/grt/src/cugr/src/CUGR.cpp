@@ -942,17 +942,22 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
   if (!hasTiming()) {
     detail = "slack unavailable (no timing)";
   } else {
-    // Every rerouted net, not just this one: its slack runs through them.
-    refreshParasiticsForDebug();
+    // Skipped where CUGR does no timing of its own: refreshing would then be
+    // the only extraction of the run and would move post-route timing.
+    const bool refreshed = critical_nets_percentage_ != 0;
+    if (refreshed) {
+      // Every rerouted net, not just this one: its slack runs through them.
+      refreshParasiticsForDebug();
+    }
     const float sta_slack = getNetSlack(net->getDbNet());
     // What CUGR's ordering and critical-net decisions read.
     const float cugr_slack = net->getSlack();
     if (sta_slack >= sta::INF) {
       detail = "no timing path";
-    } else if (critical_nets_percentage_ == 0) {
+    } else if (!refreshed) {
       detail = fmt::format(
-          "slack = {:.2f} ps (cugr tracks no slack, -critical_nets_percentage "
-          "is 0)",
+          "slack = {:.2f} ps (cugr tracks no slack at "
+          "-critical_nets_percentage 0)",
           sta_slack * 1e12);
     } else if (cugr_slack >= kDemotedSlack) {
       detail = fmt::format(
@@ -966,7 +971,7 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
           cugr_slack * 1e12,
           (sta_slack - cugr_slack) * 1e12);
     }
-    if (incremental_routing_) {
+    if (!refreshed || incremental_routing_) {
       detail += " (parasitics not refreshed)";
     }
   }

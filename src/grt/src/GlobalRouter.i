@@ -278,14 +278,10 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
 
 void set_cugr_debug_cmd(odb::dbNet* net, int stage_mask)
 {
-  // No stages requested: a FastRoute-only debug session needs no renderer.
-  if (stage_mask == 0) {
-    return;
-  }
-
   GlobalRouter* global_router = getGlobalRouter();
-  // Only the topology drawing needs a GUI; the slack trace is logged.
-  if (gui::Gui::enabled() && global_router->getDebugCugr() == nullptr) {
+  // No stages requested disarms; only the drawing needs a GUI and a renderer.
+  if (stage_mask != 0 && gui::Gui::enabled()
+      && global_router->getDebugCugr() == nullptr) {
     global_router->initDebugCugr(std::make_unique<CugrRenderer>());
   }
   global_router->setDebugCugrNet(net, stage_mask);

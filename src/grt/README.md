@@ -287,7 +287,9 @@ inactive.
 
 With `set_debug_level GRT cugr_slack 1` each selected stage also logs the debug
 net's slack: the stage's result, then in parentheses the cached slack CUGR
-ordered that stage with and the delta between them. This needs no GUI.
+ordered that stage with and the delta between them. This needs no GUI. The
+trace re-estimates parasitics to report a stage's result, so post-route timing
+can differ slightly from a run without it.
 
 ```tcl
 global_route_debug
