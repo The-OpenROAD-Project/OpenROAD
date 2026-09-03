@@ -69,6 +69,7 @@ class RoutingTracks;
 class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
+class AbstractCugrRenderer;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
@@ -311,6 +312,12 @@ class GlobalRouter
   void setDebugTree3D(bool tree3D);
   void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
+
+  // CUGR stage-by-stage topology debug; the engine is chosen at global_route
+  // time, so these are set alongside the FastRoute ones.
+  void initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer);
+  AbstractCugrRenderer* getDebugCugr() const;
+  void setDebugCugrNet(odb::dbNet* net, int stage_mask);
 
   void saveSttInputFile(Net* net);
 

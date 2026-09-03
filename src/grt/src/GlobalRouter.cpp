@@ -6635,6 +6635,18 @@ void GlobalRouter::setSttInputFilename(const char* file_name)
 {
   fastroute_->setSttInputFilename(file_name);
 }
+void GlobalRouter::initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer)
+{
+  cugr_->initDebugRenderer(std::move(renderer));
+}
+AbstractCugrRenderer* GlobalRouter::getDebugCugr() const
+{
+  return cugr_->getDebugRenderer();
+}
+void GlobalRouter::setDebugCugrNet(odb::dbNet* net, int stage_mask)
+{
+  cugr_->setDebugNet(net, stage_mask);
+}
 
 // For rsz::makeBufferedNetGlobalRoute so Pin/Net classes do not have to be
 // exported.

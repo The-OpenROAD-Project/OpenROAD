@@ -6,6 +6,7 @@
 #include "grt/GlobalRouter.h"
 #include "GrouteRenderer.h"
 #include "FastRouteRenderer.h"
+#include "CugrRenderer.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 
@@ -23,6 +24,8 @@ using sta::LibertyPort;
 %ignore grt::GlobalRouter::init;
 %ignore grt::GlobalRouter::initDebugFastRoute;
 %ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::initDebugCugr;
+%ignore grt::GlobalRouter::getDebugCugr;
 %ignore grt::GlobalRouter::setRenderer;
 
 %import <stl.i>
@@ -271,6 +274,23 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
   getGlobalRouter()->setDebugEdges3D(edges3D);
+}
+
+void set_cugr_debug_cmd(odb::dbNet* net, int stage_mask)
+{
+  // No stages requested means a FastRoute-only debug session; don't build a
+  // renderer that would only sit in the GUI as a no-op.
+  if (stage_mask == 0) {
+    return;
+  }
+
+  GlobalRouter* global_router = getGlobalRouter();
+  // The per-stage slack trace is logged, so the selection is honored headless;
+  // only the topology drawing needs a GUI.
+  if (gui::Gui::enabled() && global_router->getDebugCugr() == nullptr) {
+    global_router->initDebugCugr(std::make_unique<CugrRenderer>());
+  }
+  global_router->setDebugCugrNet(net, stage_mask);
 }
 
 void set_global_route_debug_stt_input_filename(const char* file_name)
