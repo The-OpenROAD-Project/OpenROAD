@@ -106,6 +106,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGCellTileSize",
+    srcs = ["TestGCellTileSize.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGDSIn",
     srcs = ["TestGDSIn.cpp"],
     data = ["//src/odb/test:regression_resources"],
@@ -125,6 +136,7 @@ cc_test(
     srcs = ["TestGeom.cpp"],
     deps = [
         "//src/odb/src/db",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

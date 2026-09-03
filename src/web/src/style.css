@@ -1,5 +1,11 @@
 /* ─── Theme Variables ─────────────────────────────────────────────────────── */
 
+/* --bg-map is black in both themes to match the Qt GUI's default background
+   (displayControls.cpp, background_color_ = Qt::black).  Layer shapes are drawn
+   semi-transparent (alpha 180/255), so the background shows through them and
+   any difference here shifts every rendered color away from the Qt GUI's.  It
+   remains user-settable through the Background control. */
+
 html[data-theme="dark"] {
     --bg-main: #1e1e1e;
     --bg-panel: #252525;
@@ -16,7 +22,7 @@ html[data-theme="dark"] {
     --bg-tooltip: rgba(30, 30, 30, 0.95);
     --bg-heatmap-legend: rgba(18, 20, 24, 0.88);
     --bg-rubber-band: rgba(255, 255, 255, 0.1);
-    --bg-map: #111;
+    --bg-map: #000;
 
     --fg-primary: #ccc;
     --fg-secondary: #aaa;
@@ -75,7 +81,7 @@ html[data-theme="light"] {
     --bg-tooltip: rgba(255, 255, 255, 0.95);
     --bg-heatmap-legend: rgba(255, 255, 255, 0.92);
     --bg-rubber-band: rgba(0, 120, 212, 0.15);
-    --bg-map: #111;
+    --bg-map: #000;
 
     --fg-primary: #1e1e1e;
     --fg-secondary: #444;

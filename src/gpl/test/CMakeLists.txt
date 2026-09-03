@@ -167,7 +167,32 @@ target_sources(mbff_test
   mbff_test.cpp
 )
 
-add_dependencies(build_and_test fft_test mbff_test)
+add_executable(placer_base_test
+  placer_base_test.cpp
+)
+
+target_include_directories(placer_base_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(placer_base_test PUBLIC
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+  tst
+)
+
+gtest_discover_tests(placer_base_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME placer_base_test_load_sentinel
+           COMMAND $<TARGET_FILE:placer_base_test> --gtest_list_tests)
+endif()
+
+add_dependencies(build_and_test fft_test mbff_test placer_base_test)
 
 # GPU FFT correctness test. Built only on ENABLE_GPU=ON: it links the GPU FFT
 # backend (src/gpl/src/gpu/gpuFftBackend.cpp) via gpl_lib and, with the default

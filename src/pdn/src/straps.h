@@ -115,9 +115,12 @@ class FollowPins : public Straps
   void checkLayerSpecifications() const override;
 
  private:
+  int row_height_;
+
   // search for the shape of the power pins in the standard cells to determine
   // the width if possible
   void determineWidth();
+  void determinePitch();
 };
 
 class PadDirectConnectionStraps : public Straps

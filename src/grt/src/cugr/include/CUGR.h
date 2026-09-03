@@ -35,6 +35,10 @@ class Logger;
 class ServiceRegistry;
 }  // namespace utl
 
+namespace est {
+class ParasiticsService;
+}  // namespace est
+
 namespace grt {
 
 class Design;
@@ -173,8 +177,15 @@ class CUGR
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
   void updateCriticalNets(const std::vector<int>& net_indices);
-  // Re-extract parasitics and refresh every net's slack from the routing.
+  // Refresh every net's slack; runs the full parasitics estimate once per
+  // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
+  // Collect nets a stage rerouted so the next slack sweep re-estimates
+  // their parasitics; call after the stage's reroute loop.
+  void collectReroutedNets(const std::vector<int>& net_indices);
+  // Re-estimate parasitics for the collected rerouted nets, then clear the
+  // set.
+  void updateReroutedParasitics(est::ParasiticsService& estimator);
   // Refresh the slack of the given nets from STA, without re-extracting
   // parasitics (incremental scope).
   void refreshNetSlacks(const std::vector<int>& net_indices);
@@ -324,6 +335,10 @@ class CUGR
 
   // Suppresses the global parasitics re-estimate during incremental routing.
   bool incremental_routing_ = false;
+  // True once route() has done its one full parasitics estimate.
+  bool full_slack_update_done_ = false;
+  // Nets rerouted since the last slack sweep re-estimated their parasitics.
+  std::vector<int> parasitics_dirty_nets_;
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;
 

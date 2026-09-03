@@ -95,6 +95,17 @@ void EstimateParasitics::estimateAllGlobalRouteParasitics()
   }
 }
 
+void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
+                                                     grt::GRoute& route)
+{
+  if (db_net == nullptr || route.empty()) {
+    return;
+  }
+  estimateGlobalRouteParasitics(db_net, route);
+  // Annotating parasitics alone leaves stale cached delays in the timer.
+  sta_->delaysInvalidFromFanin(db_network_->dbToSta(db_net));
+}
+
 void EstimateParasitics::initSteinerRenderer(
     std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)
 {
@@ -646,6 +657,9 @@ void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
                                                        grt::GRoute& route)
 {
+  if (route.empty()) {
+    return;
+  }
   initBlock();
   MakeWireParasitics builder(
       logger_, this, sta_, block_->getTech(), block_, global_router_);
@@ -1324,6 +1338,21 @@ void EstimateParasitics::setParasiticsSrc(ParasiticsSrc src)
 
 void EstimateParasitics::eraseParasitics(const sta::Net* net)
 {
+  // Deleting a dbNet only disconnects its parasitic network's pin nodes, and
+  // sta::Net* is the dbNet pointer, so once odb recycles the slot the next net
+  // inherits a driver-less network. Delete it, not just the invalid marker.
+  //
+  // deleteParasiticNetwork() and not deleteParasitics(): the latter resolves
+  // drivers(net), which by now has no driver and would cache an empty entry
+  // keyed on a dbNet about to be freed.
+  for (Scene* scene : scenes_) {
+    for (const sta::MinMax* mm : sta::MinMax::range()) {
+      Parasitics* parasitics = scene->parasitics(mm);
+      if (parasitics) {
+        parasitics->deleteParasiticNetwork(net);
+      }
+    }
+  }
   parasitics_invalid_.erase(net);
 }
 

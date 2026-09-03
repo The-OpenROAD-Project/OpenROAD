@@ -4,7 +4,6 @@
 #include "straps.h"
 
 #include <algorithm>
-#include <array>
 #include <cstdlib>
 #include <functional>
 #include <iterator>
@@ -17,7 +16,6 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
@@ -25,6 +23,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
 #include "pdn/PdnGen.hh"
 #include "renderer.h"
 #include "shape.h"
@@ -419,7 +418,7 @@ std::string Straps::getNetString() const
 ////
 
 FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
-    : Straps(grid, layer, width, 0)
+    : Straps(grid, layer, width, 0), row_height_(0)
 {
   if (getWidth() == 0) {
     // width not specified, so attempt to find it
@@ -427,22 +426,42 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 
   // set the pitch of the straps
-  auto rows = getDomain()->getRows();
-  if (!rows.empty()) {
-    auto* row = *rows.begin();
-    odb::Rect bbox = row->getBBox();
-    setPitch(2 * bbox.dy());
+  determinePitch();
+  if (getPitch() == 0 || row_height_ == 0) {
+    getLogger()->error(
+        utl::PDN, 190, "Unable to determine the pitch of the rows.");
+  }
+}
 
-    if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-      setDirection(odb::dbTechLayerDir::HORIZONTAL);
-    } else {
-      setDirection(odb::dbTechLayerDir::VERTICAL);
+void FollowPins::determinePitch()
+{
+  std::vector<odb::dbRow*> rows;
+  for (auto* row : getDomain()->getRows()) {
+    if (!row->getSite()->hasRowPattern()) {
+      rows.push_back(row);
     }
+  }
+  if (rows.empty()) {
+    return;
+  }
+
+  // find the row with the smallest height, as that is the standard cell row
+  const auto min_row = std::min_element(
+      rows.begin(), rows.end(), [](odb::dbRow* a, odb::dbRow* b) {
+        odb::dbSite* a_site = a->getSite();
+        odb::dbSite* b_site = b->getSite();
+        return a_site->getHeight() < b_site->getHeight();
+      });
+
+  auto* row = *min_row;
+  odb::Rect bbox = row->getBBox();
+  row_height_ = bbox.dy();
+  setPitch(2 * row_height_);
+
+  if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
+    setDirection(odb::dbTechLayerDir::HORIZONTAL);
   } else {
-    if (getPitch() == 0) {
-      getLogger()->error(
-          utl::PDN, 190, "Unable to determine the pitch of the rows.");
-    }
+    setDirection(odb::dbTechLayerDir::VERTICAL);
   }
 }
 
@@ -479,12 +498,60 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   odb::dbNet* power = getDomain()->getPower();
   odb::dbNet* ground = getDomain()->getGround();
 
+  const int double_height = 2 * row_height_;
+
   const int x_start = boundary.xMin();
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    odb::Rect bbox = row->getBBox();
-    const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
+    if (row->getSite()->hasRowPattern()) {
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Followpin",
+                 1,
+                 "Skipping row {} of hybrid site {}, its row pattern holds the "
+                 "rails",
+                 row->getName(),
+                 row->getSite()->getName());
+      continue;
+    }
+
+    const int site_height = row->getSite()->getHeight();
+
+    // A row a whole number of standard cell rows tall has a rail at each of
+    // those internal boundaries as well as at its own two edges.  A row whose
+    // height is not a multiple of the standard cell row -- the 9-track row of
+    // a 9-track/7-track hybrid pattern, say -- has no internal boundary, so
+    // stepping through it would put rails over the cells and never reach its
+    // upper edge.
+    const bool spans_whole_rows = site_height % row_height_ == 0;
+    const int rail_pitch = spans_whole_rows ? row_height_ : site_height;
+
+    // Only MX ("FS") and R180 ("S") invert the master's y-axis and therefore
+    // swap the power and ground rails; R0 ("N") and MY ("FN") leave them
+    // alone.  A row spanning an even number of standard cell rows carries the
+    // same net at both of its edges, so its orientation says nothing about
+    // which net that is.
+    const odb::dbOrientType orient = row->getOrient();
+    const bool is_right_side_up
+        = orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY;
+    const bool even_height_row = (site_height % double_height) == 0;
+    const bool start_with_power = even_height_row ? false : !is_right_side_up;
+
+    const odb::Rect bbox = row->getBBox();
+
+    debugPrint(getLogger(),
+               utl::PDN,
+               "Followpin",
+               1,
+               "Row {} ({}): {:.3f} to {:.3f}um, rail pitch {:.3f}um, starting "
+               "with {}",
+               row->getName(),
+               row->getSite()->getName(),
+               getBlock()->dbuToMicrons(bbox.yMin()),
+               getBlock()->dbuToMicrons(bbox.yMax()),
+               getBlock()->dbuToMicrons(rail_pitch),
+               start_with_power ? "power" : "ground");
 
     int x0 = bbox.xMin();
     if (x0 == core.xMin()) {
@@ -495,20 +562,17 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       x1 = x_end;
     }
 
-    const int power_y_bot
-        = (power_on_top ? bbox.yMax() : bbox.yMin()) - width / 2;
-    const int ground_y_bot
-        = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
-
-    auto power_strap = std::make_unique<FollowPinShape>(
-        layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
-    power_strap->addRow(row);
-    addShape(std::move(power_strap));
-
-    auto ground_strap = std::make_unique<FollowPinShape>(
-        layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
-    ground_strap->addRow(row);
-    addShape(std::move(ground_strap));
+    bool do_power = start_with_power;
+    for (int y = bbox.yMin(); y <= bbox.yMax(); y += rail_pitch) {
+      const int y_start = y - width / 2;
+      auto strap = std::make_unique<FollowPinShape>(
+          layer,
+          do_power ? power : ground,
+          odb::Rect(x0, y_start, x1, y_start + width));
+      strap->addRow(row);
+      addShape(std::move(strap));
+      do_power = !do_power;
+    }
   }
 }
 
@@ -2463,15 +2527,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     return {};
   }
 
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
   const auto grid_core = grid->getDomainBoundary();
 
   std::vector<Shape*> shapes_used;
-  Polygon90Set shape_set;
+  odb::geom::BoostPolygon90Set shape_set;
   for (const auto& shape : shapes) {
     if (shape->getNumberOfConnectionsAbove() != 0) {
       // shape already connected to something
@@ -2497,32 +2556,19 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
-    // determine bloat factor
-    const int bloat = grid_strap->getPitch();
-    const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
-    const int bloat_y = grid_strap->isHorizontal() ? bloat : 0;
-
-    const auto& min_corner = shape->getRect().ll();
-    const auto& max_corner = shape->getRect().ur();
-    std::array<Pt, 4> pts
-        = {Pt(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, max_corner.y() + bloat_y),
-           Pt(min_corner.x() - bloat_x, max_corner.y() + bloat_y)};
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
+    // bloat by the strap pitch across the strap, so neighboring straps merge
+    // and the gaps left between them are the channels
+    const odb::Rect bloated_shape = shape->getRect().bloat(
+        grid_strap->getPitch(),
+        grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
 
     shapes_used.push_back(shape.get());
-    shape_set.insert(poly);
+    shape_set.insert(odb::geom::toPolygon90(bloated_shape));
   }
 
   // get all possible channel rects
   std::set<odb::Rect> channels_rects;
-  std::vector<Rectangle> channel_set;
-  shape_set.get_rectangles(channel_set);
-  for (const auto& channel : channel_set) {
-    const odb::Rect area(xl(channel), yl(channel), xh(channel), yh(channel));
-
+  for (const odb::Rect& area : odb::geom::extractRectangles(shape_set)) {
     if (area.intersects(grid_core)) {
       channels_rects.insert(area.intersect(grid_core));
     }

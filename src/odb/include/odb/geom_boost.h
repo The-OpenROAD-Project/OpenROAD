@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <vector>
 
@@ -345,3 +346,210 @@ struct indexed_access<odb::Line, Index, Dimension>
 };
 
 }  // namespace boost::geometry::traits
+
+namespace odb::geom {
+
+//
+// Arbitrary angle boost polygon types.  These can hold a 45 degree edge, and
+// so are the only safe choice for anything derived from an Oct.  Native boost
+// types are used to avoid needing mutable access to odb::Polygon.
+//
+using BoostPolygon = boost::polygon::polygon_data<int>;
+using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
+
+//
+// Manhattan only boost polygon types.  Considerably cheaper than the
+// arbitrary angle set, but every edge must be axis aligned.
+//
+using BoostRectangle = boost::polygon::rectangle_data<int>;
+using BoostPolygon90 = boost::polygon::polygon_90_data<int>;
+using BoostPolygon90WithHoles = boost::polygon::polygon_90_with_holes_data<int>;
+using BoostPolygon90Set = boost::polygon::polygon_90_set_data<int>;
+
+// The odb shapes that enclose an area, and so can seed a polygon set.  This
+// is spelled out rather than deduced from getPoints() because odb::Line also
+// has getPoints() but bounds no area.
+template <typename T>
+concept AreaShape
+    = std::same_as<T, Rect> || std::same_as<T, Oct> || std::same_as<T, Polygon>;
+
+// The odb shapes that may be handed to the polygon_90 flavor of boost
+// polygon.  Oct is excluded: polygon_90_data stores only a compressed
+// alternating x/y coordinate list, so a 45 degree edge cannot be represented
+// and boost would silently build a different shape.  Polygon is accepted, but
+// it is the caller's responsibility to know it holds no 45 degree edges - one
+// constructed from an Oct does.
+template <typename T>
+concept ManhattanShape = std::same_as<T, Rect> || std::same_as<T, Polygon>;
+
+namespace detail {
+
+// Copy the vertices of a boost polygon into an odb Polygon.
+template <typename BoostPolygonType>
+Polygon toPolygon(const BoostPolygonType& boost_polygon)
+{
+  std::vector<Point> points;
+  points.reserve(boost_polygon.size());
+  for (const auto& pt : boost_polygon) {
+    points.emplace_back(pt.x(), pt.y());
+  }
+  return Polygon(points);
+}
+
+// Copy the polygons held by a polygon set into odb Polygons.  BoostPolygonType
+// selects which boost polygon flavor the set is asked to hand back.
+template <typename BoostPolygonType, typename BoostSetType>
+std::vector<Polygon> extractPolygons(const BoostSetType& polygon_set)
+{
+  std::vector<BoostPolygonType> output_polygons;
+  polygon_set.get(output_polygons);
+
+  std::vector<Polygon> result;
+  result.reserve(output_polygons.size());
+  for (const BoostPolygonType& boost_polygon : output_polygons) {
+    result.push_back(toPolygon(boost_polygon));
+  }
+
+  return result;
+}
+
+}  // namespace detail
+
+//
+// odb shapes -> boost
+//
+
+// Convert a Manhattan shape into a single boost polygon
+template <ManhattanShape T>
+BoostPolygon90 toPolygon90(const T& shape)
+{
+  const std::vector<Point> points = shape.getPoints();
+
+  BoostPolygon90 polygon;
+  polygon.set(points.begin(), points.end());
+
+  return polygon;
+}
+
+// Collect the shape into a polygon set.  insert() adds the shape without
+// running a boolean op; the set unions and normalizes lazily on first read.
+template <AreaShape T>
+BoostPolygonSet toPolygonSet(const T& shape)
+{
+  const std::vector<Point> points = shape.getPoints();
+
+  BoostPolygonSet polygon_set;
+  polygon_set.insert(BoostPolygon(points.begin(), points.end()));
+
+  return polygon_set;
+}
+
+// Collect the shapes into a single polygon set, which unions overlapping
+// shapes together.  insert() keeps this linear in the shape count; operator+=
+// would run a scanline boolean op per shape, making the build quadratic.
+template <AreaShape T>
+BoostPolygonSet toPolygonSet(const std::vector<T>& shapes)
+{
+  BoostPolygonSet polygon_set;
+  for (const T& shape : shapes) {
+    const std::vector<Point> points = shape.getPoints();
+    polygon_set.insert(BoostPolygon(points.begin(), points.end()));
+  }
+
+  return polygon_set;
+}
+
+// Collect the Manhattan shape into a polygon set
+template <ManhattanShape T>
+BoostPolygon90Set toPolygonSet90(const T& shape)
+{
+  using boost::polygon::operators::operator+=;
+
+  BoostPolygon90Set polygon_set;
+  polygon_set += toPolygon90(shape);
+
+  return polygon_set;
+}
+
+// Collect the Manhattan shapes into a single polygon set, which unions
+// overlapping shapes together
+template <ManhattanShape T>
+BoostPolygon90Set toPolygonSet90(const std::vector<T>& shapes)
+{
+  using boost::polygon::operators::operator+=;
+
+  BoostPolygon90Set polygon_set;
+  for (const T& shape : shapes) {
+    polygon_set += toPolygon90(shape);
+  }
+
+  return polygon_set;
+}
+
+//
+// boost -> odb shapes
+//
+
+// Convert a boost rectangle into an odb Rect
+inline Rect toRect(const BoostRectangle& rectangle)
+{
+  return Rect(boost::polygon::xl(rectangle),
+              boost::polygon::yl(rectangle),
+              boost::polygon::xh(rectangle),
+              boost::polygon::yh(rectangle));
+}
+
+// Extract the polygons held by a polygon set as odb polygons
+inline std::vector<Polygon> extractPolygons(const BoostPolygonSet& polygon_set)
+{
+  return detail::extractPolygons<BoostPolygon>(polygon_set);
+}
+
+inline std::vector<Polygon> extractPolygons(
+    const BoostPolygon90Set& polygon_set)
+{
+  return detail::extractPolygons<BoostPolygon90>(polygon_set);
+}
+
+// Decompose a polygon set into rectangles
+inline std::vector<Rect> extractRectangles(const BoostPolygon90Set& polygon_set)
+{
+  std::vector<Rect> rects;
+  polygon_set.get_rectangles(rects);
+
+  return rects;
+}
+
+// Decompose a polygon set into rectangles, slicing along the given
+// orientation.  Pass the non-preferred direction of the layer to get
+// rectangles that run in its preferred direction.
+inline std::vector<Rect> extractRectangles(
+    const BoostPolygon90Set& polygon_set,
+    const boost::polygon::orientation_2d& slicing_orientation)
+{
+  std::vector<Rect> rects;
+  polygon_set.get_rectangles(rects, slicing_orientation);
+
+  return rects;
+}
+
+// Bounding box of a boost polygon or polygon set.  An empty shape yields a
+// default constructed (zero area, origin) Rect.
+template <typename BoostShapeType>
+Rect getEnclosingRect(const BoostShapeType& shape)
+{
+  Rect rect;
+  boost::polygon::extents(rect, shape);
+
+  return rect;
+}
+
+// Merge a collection of shapes into a single set of polygons.  Overlapping
+// shapes are unioned together, and the result is decomposed back into polygons.
+template <AreaShape T>
+std::vector<Polygon> mergePolygons(const std::vector<T>& shapes)
+{
+  return extractPolygons(toPolygonSet(shapes));
+}
+
+}  // namespace odb::geom
