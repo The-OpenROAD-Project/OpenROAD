@@ -141,12 +141,13 @@
 [INFO CTS-0102]  Path depth 17 - 19
 [INFO CTS-0207]  Dummy loads inserted 40
 [INFO CTS-0033] Balancing latency for clock clk
-[INFO CTS-0036]  inserted 0 delay buffers
+[INFO CTS-0036]  inserted 1 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 1
 [INFO RSZ-0058] Using max wire length 693um.
-[INFO RSZ-0047] Found 58 long wires.
-[INFO RSZ-0048] Inserted 78 buffers in 58 nets.
+[INFO RSZ-0047] Found 59 long wires.
+[INFO RSZ-0048] Inserted 80 buffers in 59 nets.
 [INFO DPL-0006] Core area: 24399648.00 um^2
-[INFO DPL-0007] Movable instances area: 12350.11 um^2
+[INFO DPL-0007] Movable instances area: 12355.70 um^2
 [INFO DPL-0008] Fixed instances area within core: 20250000.00 um^2
 [INFO DPL-0009] Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
@@ -156,27 +157,27 @@
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 3287 cells
+[INFO DPL-0393]   height 1 row(s): 3290 cells
 [INFO DPL-0393]   height 215 row(s): 225 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |        167 |        95 |        72
+        0 |        168 |        96 |        72
         1 |          2 |         2 |         0
         2 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 2.
 Placement Analysis
 ---------------------------------
-total displacement       7502.8 u
-average displacement        2.1 u
+total displacement       7155.2 u
+average displacement        2.0 u
 max displacement          144.5 u
-original HPWL          289884.5 u
-legalized HPWL         290364.1 u
+original HPWL          291762.9 u
+legalized HPWL         292238.5 u
 delta HPWL                    0 %
 
 Clock clk
-   1.19 source latency inst_12_11/clk ^
-  -1.25 target latency inst_13_11/clk ^
+   1.16 source latency inst_12_11/clk ^
+  -1.22 target latency inst_13_11/clk ^
    0.00 CRPR
 --------------
   -0.06 setup skew

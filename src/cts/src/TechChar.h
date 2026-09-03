@@ -134,6 +134,7 @@ class TechChar
   TechChar(CtsOptions* options,
            odb::dbDatabase* db,
            sta::dbSta* sta,
+           rsz::Resizer* resizer,
            est::EstimateParasitics* estimate_parasitics,
            sta::dbNetwork* db_network,
            utl::Logger* logger);
@@ -171,7 +172,16 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
+  sta::ArcDelay computeBufferDelay(const std::string& driver,
+                                   const std::string& load,
+                                   double load_cap);
+  sta::ArcDelay computeBufferDelay(const std::string& driver,
+                                   const std::vector<odb::dbITerm*>& loads,
+                                   double load_cap);
+
  private:
+  friend class DelayBufListTest;
+
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
@@ -249,9 +259,14 @@ class TechChar
   // Characterization attributes
 
   void initCharacterization();
+  bool isClkDlyCell(const std::string& cellName);
+  bool isDlyCell(const std::string& cellName);
+  void createDelayBufList();
   void finalizeRootSinkBuffers();
   void trimSortBufferList(std::vector<std::string>& buffers);
   float getMaxCapLimit(const std::string& buf);
+  float getDrvrResistance(const std::string& buf);
+  float getinternalDelay(const std::string& buf);
   void collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
                                       sta::LibertyPort* input,
                                       sta::LibertyPort* output,
@@ -309,6 +324,7 @@ class TechChar
 
   CtsOptions* options_;
   odb::dbDatabase* db_;
+  rsz::Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* openSta_;
   std::unique_ptr<sta::dbSta> openStaChar_;

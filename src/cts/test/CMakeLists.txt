@@ -74,3 +74,32 @@ gtest_discover_tests(cts_unittest
 )
 
 add_dependencies(build_and_test cts_unittest)
+
+add_executable(TestDelayBufList cpp/TestDelayBufList.cc)
+target_include_directories(TestDelayBufList
+  PUBLIC
+    ${OPENROAD_HOME}/src/cts/src
+)
+
+target_link_libraries(TestDelayBufList
+    GTest::gtest
+    GTest::gtest_main
+    cts_lib
+    utl_lib
+    dbSta_lib
+    est_lib
+    rsz_lib
+    grt_lib
+    dpl_lib
+    stt_lib
+    OpenSTA
+    odb
+    tst_integrated_fixture
+    ${TCL_LIBRARY}
+)
+
+gtest_discover_tests(TestDelayBufList
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestDelayBufList)

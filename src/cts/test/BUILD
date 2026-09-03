@@ -264,6 +264,20 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestDelayBufList",
+    srcs = ["cpp/TestDelayBufList.cc"],
+    data = ["ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib"],
+    deps = [
+        "//src/cts",
+        "//src/dbSta:dbNetwork",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "cts_man_tcl_check",
     srcs = ["cts_man_tcl_check.py"],

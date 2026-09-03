@@ -24,10 +24,13 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -37,6 +40,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -47,11 +51,13 @@ using utl::CTS;
 TechChar::TechChar(CtsOptions* options,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
+                   rsz::Resizer* resizer,
                    est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
                    utl::Logger* logger)
     : options_(options),
       db_(db),
+      resizer_(resizer),
       estimate_parasitics_(estimate_parasitics),
       openSta_(sta),
       openStaChar_(nullptr),
@@ -478,6 +484,7 @@ void TechChar::initCharacterization()
     logger_->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
 
+  createDelayBufList();
   // Announce root and sink buffers
   finalizeRootSinkBuffers();
 
@@ -687,6 +694,245 @@ void TechChar::initCharacterization()
   }
 }
 
+sta::ArcDelay TechChar::computeBufferDelay(const std::string& driver,
+                                           const std::string& load,
+                                           double load_cap)
+{
+  sta::ArcDelay max_rise_delay = 0;
+
+  odb::dbMaster* driverMaster = db_->findMaster(driver.c_str());
+  sta::Cell* driverMasterCell = db_network_->dbToSta(driverMaster);
+  sta::LibertyCell* libertyDriverCell
+      = db_network_->libertyCell(driverMasterCell);
+  sta::LibertyPort *input, *output;
+  libertyDriverCell->bufferPorts(input, output);
+
+  odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
+  sta::Cell* loadMasterCell = db_network_->dbToSta(loadMaster);
+  sta::LibertyCell* libertyLoadCell = db_network_->libertyCell(loadMasterCell);
+  sta::LibertyPort *inputLoad, *outputLoad;
+  libertyLoadCell->bufferPorts(inputLoad, outputLoad);
+
+  load_cap += inputLoad->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+  for (sta::Scene* corner : openSta_->scenes()) {
+    const sta::Pvt* pvt
+        = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
+
+    for (sta::TimingArcSet* arc_set :
+         libertyDriverCell->sceneCell(corner, sta::MinMax::max())
+             ->timingArcSets(input, output)) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
+        sta::GateTimingModel* model
+            = dynamic_cast<sta::GateTimingModel*>(arc->model());
+        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
+        // Only look at rise-rise arcs
+        if (model != nullptr && in_rf == sta::RiseFall::rise()
+            && out_rf == sta::RiseFall::rise()) {
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
+          // Cycle the arc_slew through the gate delay calculator once more
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
+          // and once more
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
+
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
+        }
+      }
+    }
+  }
+
+  return max_rise_delay;
+}
+
+sta::ArcDelay TechChar::computeBufferDelay(
+    const std::string& driver,
+    const std::vector<odb::dbITerm*>& loads,
+    double load_cap)
+{
+  sta::ArcDelay max_rise_delay = 0;
+
+  odb::dbMaster* driverMaster = db_->findMaster(driver.c_str());
+  sta::Cell* driverMasterCell = db_network_->dbToSta(driverMaster);
+  sta::LibertyCell* libertyDriverCell
+      = db_network_->libertyCell(driverMasterCell);
+  sta::LibertyPort *input, *output;
+  libertyDriverCell->bufferPorts(input, output);
+
+  for (odb::dbITerm* load : loads) {
+    odb::dbMTerm* loadMasterTerm = load->getMTerm();
+    sta::Port* loadPin = db_network_->dbToSta(loadMasterTerm);
+    sta::LibertyPort* loadLibertyPort = db_network_->libertyPort(loadPin);
+    load_cap += loadLibertyPort->capacitance(sta::RiseFall::rise(),
+                                             sta::MinMax::max());
+  }
+
+  for (sta::Scene* corner : openSta_->scenes()) {
+    const sta::Pvt* pvt
+        = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
+
+    for (sta::TimingArcSet* arc_set :
+         libertyDriverCell->sceneCell(corner, sta::MinMax::max())
+             ->timingArcSets(input, output)) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
+        sta::GateTimingModel* model
+            = dynamic_cast<sta::GateTimingModel*>(arc->model());
+        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
+        // Only look at rise-rise arcs
+        if (model != nullptr && in_rf == sta::RiseFall::rise()
+            && out_rf == sta::RiseFall::rise()) {
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
+          // Cycle the arc_slew through the gate delay calculator once more
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
+          // and once more
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
+
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
+        }
+      }
+    }
+  }
+
+  return max_rise_delay;
+}
+
+bool TechChar::isClkDlyCell(const std::string& cellName)
+{
+  return (!cellName.empty() && (cellName.find("clkdly") != std::string::npos));
+}
+
+bool TechChar::isDlyCell(const std::string& cellName)
+{
+  return (!cellName.empty()
+          && (cellName.find("DEL") != std::string::npos
+              || cellName.find("DLY") != std::string::npos
+              || cellName.find("dlygate") != std::string::npos));
+}
+
+static bool containsIgnoreCase(const std::string& str,
+                               const std::string& substr)
+{
+  auto it = std::ranges::search(str, substr, [](char a, char b) {
+    return std::tolower(static_cast<unsigned char>(a))
+           == std::tolower(static_cast<unsigned char>(b));
+  });
+  return !it.empty();  // Check if subrange is non-empty
+}
+
+void TechChar::createDelayBufList()
+{
+  // Find porper delay buffers
+  std::vector<std::string> properDlyBuffers;
+  if (options_->isBufferListInferred()) {
+    const char* lib_name
+        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+    std::vector<std::string> footprintClkDly;
+    std::vector<std::string> footprintDly;
+    std::vector<std::string> nameClkDly;
+    std::vector<std::string> nameDly;
+    std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+        db_network_->libertyLibraryIterator());
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      // Filter by library name if provided.
+      if (lib_name != nullptr && strcmp(lib->name().c_str(), lib_name) != 0) {
+        continue;
+      }
+
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
+        if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
+            || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+          continue;
+        }
+        const std::string footprint = buffer->footprint();
+        if (isClkDlyCell(footprint)) {
+          footprintClkDly.push_back(std::string(buffer->name()));
+        }
+
+        if (isDlyCell(footprint)) {
+          footprintDly.push_back(std::string(buffer->name()));
+        }
+
+        if (containsIgnoreCase(buffer->name(), "CLKDLY")
+            || containsIgnoreCase(buffer->name(), "CLKDEL")) {
+          nameClkDly.push_back(std::string(buffer->name()));
+        }
+
+        if (containsIgnoreCase(buffer->name(), "DLY")
+            || containsIgnoreCase(buffer->name(), "DEL")) {
+          nameDly.push_back(std::string(buffer->name()));
+        }
+      }
+    }
+
+    if (!footprintClkDly.empty()) {
+      properDlyBuffers = footprintClkDly;
+      debugPrint(
+          logger_, CTS, "insertion delay", 1, "Using footprint for clkdly");
+    } else if (!nameClkDly.empty()) {
+      properDlyBuffers = nameClkDly;
+      debugPrint(logger_, CTS, "insertion delay", 1, "Using name for clkdly");
+    } else if (!footprintDly.empty()) {
+      properDlyBuffers = footprintDly;
+      debugPrint(logger_, CTS, "insertion delay", 1, "Using footprint for dly");
+    } else if (!nameDly.empty()) {
+      properDlyBuffers = nameDly;
+      debugPrint(logger_, CTS, "insertion delay", 1, "Using name for dly");
+    }
+  }
+
+  // Trim clk buffers and add to delay list
+  std::vector<std::string> delay_buffers;
+  float prevDrvrRes = -1;
+  float prevInternalDelay = -1;
+  std::vector<std::string> buffersDrvRes = options_->getBufferList();
+  // Sort buffers in ascending order of max cap limit
+  std::ranges::sort(
+      buffersDrvRes, [this](const std::string& buf1, const std::string& buf2) {
+        return (this->getDrvrResistance(buf1) < this->getDrvrResistance(buf2));
+      });
+
+  for (const std::string& buffer : buffersDrvRes) {
+    float drvrRes = getDrvrResistance(buffer);
+    float intrinsicDelay = getinternalDelay(buffer);
+
+    if (prevDrvrRes == -1) {
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+      delay_buffers.push_back(buffer);
+    } else if ((drvrRes - prevDrvrRes) / drvrRes > 0.1) {
+      delay_buffers.push_back(buffer);
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+    } else if (intrinsicDelay > prevInternalDelay) {
+      delay_buffers.pop_back();
+      delay_buffers.push_back(buffer);
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+    }
+  }
+
+  std::set<std::string> seen(delay_buffers.begin(), delay_buffers.end());
+  for (const auto& buf : properDlyBuffers) {
+    if (seen.insert(buf).second) {
+      delay_buffers.push_back(buf);
+    }
+  }
+  debugPrint(logger_, CTS, "insertion delay", 1, "Delay buffer list = [");
+  for (const std::string& buf : delay_buffers) {
+    debugPrint(logger_, CTS, "insertion delay", 1, "  {}", buf);
+  }
+  debugPrint(logger_, CTS, "insertion delay", 1, "]");
+
+  options_->setDlyBufferList(delay_buffers);
+}
+
 void TechChar::finalizeRootSinkBuffers()
 {
   // Sink info is not available yet, so defer adjustment till later
@@ -784,6 +1030,26 @@ float TechChar::getMaxCapLimit(const std::string& buf)
   bool maxCapExists = false;
   out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
   return maxCap;
+}
+
+float TechChar::getDrvrResistance(const std::string& buf)
+{
+  odb::dbMaster* master = db_->findMaster(buf.c_str());
+  sta::Cell* masterCell = db_network_->dbToSta(master);
+  sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  sta::LibertyPort *in, *out;
+  libCell->bufferPorts(in, out);
+  return out->driveResistance();
+}
+
+float TechChar::getinternalDelay(const std::string& buf)
+{
+  odb::dbMaster* master = db_->findMaster(buf.c_str());
+  sta::Cell* masterCell = db_network_->dbToSta(master);
+  sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  sta::LibertyPort *in, *out;
+  libCell->bufferPorts(in, out);
+  return out->intrinsicDelay(openSta_);
 }
 
 void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,

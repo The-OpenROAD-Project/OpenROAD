@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <ranges>
@@ -50,10 +52,14 @@ int LatencyBalancer::run()
                 33,
                 "Balancing latency for clock {}",
                 root_->getClock().getSdcName());
+  wireSegmentUnit_ = techChar_->getLengthUnit();
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());
-  bufferDelay_ = computeBufferDelay(0);
+  computeBuffersDelay(0);
+  if (buffersDelay_.empty()) {
+    return 0;
+  }
   balanceLatencies(0);
   logger_->info(CTS,
                 36,
@@ -73,51 +79,72 @@ void LatencyBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
-// This SHOULD return float. It would need to call LumpedCapDelayCalc::gateDelay
-// instead of accessing the models directly to get POCV parameters.
-sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
+void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
 {
-  odb::dbMaster* bufferMaster
-      = db_->findMaster(options_->getRootBuffer().c_str());
-  sta::Cell* bufferMasterCell = network_->dbToSta(bufferMaster);
-  sta::LibertyCell* buffer_cell = network_->libertyCell(bufferMasterCell);
-  sta::ArcDelay max_rise_delay = 0;
-
-  sta::LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  for (sta::Scene* corner : openSta_->scenes()) {
-    const sta::Pvt* pvt
-        = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
-
-    for (sta::TimingArcSet* arc_set :
-         buffer_cell->sceneCell(corner, sta::MinMax::max())
-             ->timingArcSets(input, output)) {
-      for (sta::TimingArc* arc : arc_set->arcs()) {
-        sta::GateTimingModel* model
-            = dynamic_cast<sta::GateTimingModel*>(arc->model());
-        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
-        // Only look at rise-rise arcs
-        if (model != nullptr && in_rf == sta::RiseFall::rise()
-            && out_rf == sta::RiseFall::rise()) {
-          double in_cap = input->capacitance(in_rf, sta::MinMax::max());
-          double load_cap = in_cap + extra_out_cap;
-          float arc_delay, arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
-          // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
-          // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
-
-          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
-            max_rise_delay = arc_delay;
-          }
-        }
-      }
+  debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
+  for (const std::string& buffer : options_->getDlyBufferList()) {
+    const int64_t bufDelay = std::llround(
+        techChar_->computeBufferDelay(buffer, buffer, extra_out_cap) * dpUnit_);
+    if (bufDelay <= 0) {
+      // A zero step would make the DP chain and its backtracking never advance
+      debugPrint(
+          logger_, CTS, "insertion delay", 3, "{} : skipped, no delay", buffer);
+      continue;
     }
+    debugPrint(logger_, CTS, "insertion delay", 3, "{} : {}", buffer, bufDelay);
+    dlyBuffers_.push_back(buffer);
+    buffersDelay_.push_back(bufDelay);
+  }
+  debugPrint(logger_, CTS, "insertion delay", 3, "]");
+
+  if (buffersDelay_.empty()) {
+    logger_->warn(CTS,
+                  180,
+                  "No delay buffer has a measurable delay at {} resolution; "
+                  "latency balancing is skipped.",
+                  1.0 / dpUnit_);
+  }
+}
+
+int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load,
+                                                double wl,
+                                                double& wireCap)
+{
+  wireCap = wl * capPerDBU_;
+  double totalCap = wireCap / 2.0;
+  double wireRes = wl * resPerDBU_;
+
+  if (!load.empty()) {
+    odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
+    sta::LibertyCell* libertyLoadCell
+        = network_->libertyCell(network_->dbToSta(loadMaster));
+    sta::LibertyPort *input, *output;
+    libertyLoadCell->bufferPorts(input, output);
+    totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   }
 
-  return max_rise_delay;
+  return wireRes * totalCap * dpUnit_;
+}
+
+int64_t LatencyBalancer::computeWireLumpedDelay(
+    const std::vector<odb::dbITerm*>& loads,
+    double extraLoadCap,
+    double wl,
+    double& wireCap)
+{
+  wireCap = wl * capPerDBU_;
+  double totalCap = wireCap / 2.0 + extraLoadCap;
+  double wireRes = wl * resPerDBU_;
+
+  for (odb::dbITerm* load : loads) {
+    odb::dbMTerm* loadMTerm = load->getMTerm();
+    sta::Port* loadPin = network_->dbToSta(loadMTerm);
+    sta::LibertyPort* loadPort = network_->libertyPort(loadPin);
+    totalCap
+        += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+  }
+
+  return wireRes * totalCap * dpUnit_;
 }
 
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
@@ -166,11 +193,19 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
 
     for (odb::dbITerm* sinkIterm : driverNet->getITerms()) {
       if (sinkIterm->getIoType() == odb::dbIoType::INPUT) {
-        if (!isSink(sinkIterm) && !propagateClock(sinkIterm)) {
+        odb::dbInst* sinkInst = sinkIterm->getInst();
+        const bool sink = isSink(sinkIterm);
+        if (!sink && !propagateClock(sinkIterm)) {
           continue;
         }
+        if (!sink) {
+          // Only propagating instances are traversed through their output net
+          odb::dbITerm* outTerm = sinkInst->getFirstOutput();
+          if (!outTerm || !outTerm->getNet()) {
+            continue;
+          }
+        }
         int sinkId = graph_.size();
-        odb::dbInst* sinkInst = sinkIterm->getInst();
         std::string sinkName = sinkInst->getName();
         GraphNode sinkNode = GraphNode(sinkId, sinkName, sinkIterm);
         graph_.push_back(std::move(sinkNode));
@@ -184,7 +219,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
           continue;
         }
 
-        if (isSink(sinkIterm)) {
+        if (sink) {
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
@@ -382,33 +417,276 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
   }
 }
 
-void LatencyBalancer::computeNumberOfDelayBuffers(int nodeId,
-                                                  int srcX,
-                                                  int srcY)
+DPResult LatencyBalancer::solveDP(int64_t target,
+                                  double wl,
+                                  const std::vector<odb::dbITerm*>& sinks,
+                                  const std::vector<std::string>& dlyBuffers,
+                                  double loadPinsHwpl)
 {
-  GraphNode* node = &graph_[nodeId];
-  if (node->arrival != 0.0) {
-    int numBuffers = (int) ((worseDelay_ - node->arrival) / bufferDelay_);
+  const size_t nBuffers = dlyBuffers.size();
 
-    // adjust buffer delay for wire cap
-    int sinkX, sinkY;
-    graph_[nodeId].inputTerm->getAvgXY(&sinkX, &sinkY);
-    float offsetX = (float) (sinkX - srcX) / (numBuffers + 1);
-    float offsetY = (float) (sinkY - srcY) / (numBuffers + 1);
-    auto newDelay = computeBufferDelay((std::abs(offsetX) + std::abs(offsetY))
-                                       * capPerDBU_);
-    numBuffers = (int) ((worseDelay_ - node->arrival) / newDelay);
-    if (node->childrenIds.empty()) {
+  int64_t maxBufDelay = 0;
+  // Buffers delay when driving sinks
+  double sinkWireCap = 0.0;
+  int64_t sinkWireDly = computeWireLumpedDelay(
+      sinks, loadPinsHwpl * capPerDBU_, wl, sinkWireCap);
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             5,
+             "Buffer driving sinks has {} wire dly",
+             sinkWireDly);
+  std::vector<int64_t> sinkDelay(nBuffers);
+  for (size_t j = 0; j < nBuffers; j++) {
+    int64_t delay
+        = std::llround(
+              techChar_->computeBufferDelay(
+                  dlyBuffers[j], sinks, sinkWireCap + loadPinsHwpl * capPerDBU_)
+              * dpUnit_)
+          + sinkWireDly;
+    sinkDelay[j] = delay;
+    maxBufDelay = std::max(maxBufDelay, delay);
+  }
+
+  // Buffer delay when buffer i drives buffer j
+  std::vector<std::vector<int64_t>> pairDelay(nBuffers,
+                                              std::vector<int64_t>(nBuffers));
+  for (size_t i = 0; i < nBuffers; i++) {
+    for (size_t j = 0; j < nBuffers; j++) {
+      double wireCap = 0.0;
+      int64_t wireDly = computeWireLumpedDelay(dlyBuffers[j], wl, wireCap);
       debugPrint(logger_,
                  CTS,
                  "insertion delay",
-                 3,
-                 "For node {}, isert {:2f} buffers",
-                 node->name,
-                 numBuffers);
+                 5,
+                 "Buffer {} driving {} has {} wire dly",
+                 dlyBuffers[i],
+                 dlyBuffers[j],
+                 wireDly);
+      int64_t delay = std::llround(techChar_->computeBufferDelay(
+                                       dlyBuffers[i], dlyBuffers[j], wireCap)
+                                   * dpUnit_)
+                      + wireDly;
+      pairDelay[i][j] = delay;
+      maxBufDelay = std::max(maxBufDelay, delay);
     }
-    node->nBuffInsert = numBuffers;
   }
+
+  // Allow overshooting the target by up to one buffer delay
+  const int64_t maxW = target + maxBufDelay;
+  constexpr int32_t kUnset = -1;
+  constexpr int32_t kDrivesSinks = -1;
+  constexpr int32_t kNoNext = -2;
+  // dp[w][j] flattened: chain length for weight w with leftmost buffer j
+  std::vector<int32_t> dp(static_cast<size_t>(maxW + 1) * nBuffers, kUnset);
+  std::vector<int32_t> nxt(static_cast<size_t>(maxW + 1) * nBuffers, kNoNext);
+  auto state = [nBuffers](int64_t w, size_t j) {
+    return static_cast<size_t>(w) * nBuffers + j;
+  };
+
+  // Base case: single buffer driving the sinks
+  for (size_t j = 0; j < nBuffers; j++) {
+    const int64_t bufDelay = sinkDelay[j];
+    if (bufDelay > 0 && bufDelay <= maxW) {
+      dp[state(bufDelay, j)] = 1;
+      nxt[state(bufDelay, j)] = kDrivesSinks;
+    }
+  }
+
+  // Extend leftward; positive steps make increasing w a valid order
+  for (int64_t w = 0; w <= maxW; w++) {
+    for (size_t j = 0; j < nBuffers; j++) {  // j = current leftmost buffer
+      const int32_t chainLen = dp[state(w, j)];
+      if (chainLen == kUnset) {
+        continue;
+      }
+
+      for (size_t i = 0; i < nBuffers; i++) {  // i = candidate new leftmost
+        const int64_t bufDelay = pairDelay[i][j];
+        const int64_t newWeight = w + bufDelay;
+        if (bufDelay <= 0 || newWeight > maxW) {
+          continue;
+        }
+
+        const size_t next = state(newWeight, i);
+        if (dp[next] == kUnset || chainLen + 1 < dp[next]) {
+          dp[next] = chainLen + 1;
+          nxt[next] = static_cast<int32_t>(j);
+        }
+      }
+    }
+  }
+
+  // Pick best solution
+  int64_t bestW = 0;
+  int bestJ = -1;
+  for (int64_t w = 0; w <= maxW; w++) {
+    for (size_t j = 0; j < nBuffers; j++) {
+      if (dp[state(w, j)] == kUnset) {
+        continue;
+      }
+      int64_t dist = std::abs(w - target);
+      int64_t bestDist = (bestJ == -1) ? std::numeric_limits<int64_t>::max()
+                                       : std::abs(bestW - target);
+
+      if (dist < bestDist
+          || (dist == bestDist && dp[state(w, j)] < dp[state(bestW, bestJ)])) {
+        bestW = w;
+        bestJ = static_cast<int>(j);
+      }
+    }
+  }
+
+  if (bestJ == -1) {
+    return {};
+  }
+
+  // Backtrack left → right: nxt[w][cur] is what cur drives
+  DPResult result;
+  result.achievedDelay = bestW;
+
+  int64_t w = bestW;
+  int cur = bestJ;
+  // dp holds the chain length, bounding the walk
+  for (int32_t left = dp[state(bestW, bestJ)]; cur != -1 && left > 0; left--) {
+    result.buffers.push_back(dlyBuffers[cur]);
+    const int32_t next = nxt[state(w, cur)];
+    if (next == kDrivesSinks) {
+      break;
+    }
+    w -= pairDelay[cur][next];
+    cur = next;
+  }
+
+  return result;
+}
+
+int LatencyBalancer::backtrackCount(const std::vector<int>& dp_elements,
+                                    const std::vector<int64_t>& bufDelays,
+                                    int64_t target)
+{
+  int n = 0;
+  int64_t w = target;
+  while (w > 0 && dp_elements[w] != -1) {
+    const int64_t bufDelay = bufDelays[dp_elements[w]];
+    if (bufDelay <= 0) {
+      // Would never reach w == 0
+      break;
+    }
+    n++;
+    w -= bufDelay;
+  }
+  return n;
+}
+
+std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
+    double delayNeeded,
+    int srcX,
+    int srcY,
+    const std::vector<odb::dbITerm*>& sinks)
+{
+  const int64_t target = std::llround(delayNeeded * dpUnit_);
+  debugPrint(logger_, CTS, "insertion delay", 2, "  target delay: {}", target);
+  if (target <= 0 || buffersDelay_.empty()) {
+    return {};
+  }
+  const std::vector<std::string>& dlyBuffers = dlyBuffers_;
+
+  // Compute initial best combinations of buffers to insert the target delay
+  std::vector<int64_t> dp(target + 1, 0);
+  std::vector<int> dp_elements(target + 1, -1);
+  for (int64_t w = 0; w <= target; w++) {
+    for (size_t i = 0; i < buffersDelay_.size(); i++) {
+      const int64_t bufDelay = buffersDelay_[i];
+      int64_t bestPrevWeight;
+      if (bufDelay > w) {
+        bestPrevWeight = 0;
+      } else {
+        bestPrevWeight = dp[w - bufDelay];
+      }
+
+      if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + bufDelay - w)) {
+        dp_elements[w] = static_cast<int>(i);
+        dp[w] = bestPrevWeight + bufDelay;
+      }
+    }
+  }
+
+  // No buffers to insert
+  if (!dp[target]) {
+    return {};
+  }
+
+  // Backtrack to find number of buffers that will be needed
+  int nBufs = backtrackCount(dp_elements, buffersDelay_, target);
+  debugPrint(
+      logger_, CTS, "insertion delay", 4, "Initial best = {}", dp[target]);
+  debugPrint(logger_, CTS, "insertion delay", 4, "Initial n bufs = {}", nBufs);
+
+  // Compute wiredelay and adjust buffers delay for wire cap
+  odb::Rect loadPinsBbox = odb::Rect();
+  loadPinsBbox.mergeInit();
+  for (odb::dbITerm* sinkInput : sinks) {
+    int x, y;
+    sinkInput->getAvgXY(&x, &y);
+    loadPinsBbox.merge({x, y});
+  }
+  double loadPinsHwpl = (loadPinsBbox.dx() + loadPinsBbox.dy()) / 2.0;
+
+  int prevNBufs = std::numeric_limits<int>::max();
+  int pass = 2;
+  DPResult dpResult;
+  std::vector<int> adjustedBuffersDelay;
+  while (nBufs < prevNBufs) {
+    double offsetX
+        = (double) (loadPinsBbox.xCenter() - srcX) / (double) (nBufs + 1);
+    double offsetY
+        = (double) (loadPinsBbox.yCenter() - srcY) / (double) (nBufs + 1);
+
+    double wl = std::abs(offsetX) + std::abs(offsetY);
+
+    // Compute best buffer combination with per-case wire delays
+    dpResult = solveDP(target, wl, sinks, dlyBuffers, loadPinsHwpl);
+
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               4,
+               "Pass {} best = {}",
+               pass,
+               dpResult.achievedDelay);
+
+    prevNBufs = nBufs;
+    nBufs = static_cast<int>(dpResult.buffers.size());
+    debugPrint(
+        logger_, CTS, "insertion delay", 4, "Pass {} n bufs = {}", pass, nBufs);
+    if (!nBufs) {
+      break;
+    }
+    pass++;
+  }
+
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             2,
+             "  Max achievable delay {}",
+             dpResult.achievedDelay);
+
+  std::stringstream tmp;
+  tmp << "[";
+  for (size_t i = 0; i < dpResult.buffers.size(); i++) {
+    if (i == 0) {
+      tmp << dpResult.buffers[i];
+    } else {
+      tmp << ", " << dpResult.buffers[i];
+    }
+  }
+  tmp << "]";
+
+  debugPrint(
+      logger_, CTS, "insertion delay", 2, "  using buffers {}", tmp.str());
+  return dpResult.buffers;
 }
 
 void LatencyBalancer::balanceLatencies(int nodeId)
@@ -417,13 +695,14 @@ void LatencyBalancer::balanceLatencies(int nodeId)
 
   // Compute number of buffer needed for leaf node
   if (node->childrenIds.empty()) {
+    node->dlyNeeded = worseDelay_ - node->arrival;
     return;
   }
 
   // If it is not a leaf node compute the amount of buffers needed for its
   // children
   std::vector<odb::dbITerm*> sinksInput;
-  int previouBufToInsert = 0;
+  double previouDlyNeeded = 0;
   int srcX, srcY;
   if (node->inputTerm == nullptr) {
     odb::dbNet* rootNet = root_->getTopInputNet();
@@ -435,61 +714,103 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     node->inputTerm->getAvgXY(&srcX, &srcY);
   }
 
-  double maxArrival = std::numeric_limits<double>::min();
-  std::map<int, std::vector<odb::dbITerm*>> buffersNeeded2Childern;
+  std::map<double, std::vector<odb::dbITerm*>> delayNeeded2Childern;
   for (int child : node->childrenIds) {
     balanceLatencies(child);
-    computeNumberOfDelayBuffers(child, srcX, srcY);
-    maxArrival = std::max(graph_[child].arrival, maxArrival);
-    buffersNeeded2Childern[graph_[child].nBuffInsert].push_back(
+    if (graph_[child].dlyNeeded == -1) {
+      continue;
+    }
+
+    delayNeeded2Childern[graph_[child].dlyNeeded].push_back(
         graph_[child].inputTerm);
   }
 
   // If the children need a different amount of buffers insert this difference
-  for (auto& [bufToInsert, children] :
-       std::ranges::reverse_view(buffersNeeded2Childern)) {
-    if (bufToInsert == -1) {
-      continue;
+  debugPrint(logger_, CTS, "insertion delay", 1, "at node {}", node->name);
+  for (auto& [dlyNeeded, children] :
+       std::ranges::reverse_view(delayNeeded2Childern)) {
+    if (logger_->debugCheck(CTS, "insertion delay", 2)) {
+      debugPrint(logger_, CTS, "insertion delay", 2, " sinks [");
+      for (auto c : children) {
+        debugPrint(logger_,
+                   CTS,
+                   "insertion delay",
+                   2,
+                   "{}, ",
+                   c->getInst()->getName());
+      }
+      debugPrint(logger_, CTS, "insertion delay", 2, "]");
+      ;
+      debugPrint(
+          logger_, CTS, "insertion delay", 2, " need {} delay", dlyNeeded);
     }
-
-    if (!previouBufToInsert) {
-      previouBufToInsert = bufToInsert;
+    if (!previouDlyNeeded) {
+      previouDlyNeeded = dlyNeeded;
       sinksInput.clear();
       sinksInput = std::move(children);
       continue;
     }
 
-    int numBuffers = previouBufToInsert - bufToInsert;
+    double dlyDiff = previouDlyNeeded - dlyNeeded;
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               3,
+               " previous delay = {}",
+               previouDlyNeeded);
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               3,
+               " Has a {} dly diff with previous",
+               dlyDiff);
+    std::vector<std::string> buffersMaster
+        = computeNumberOfDelayBuffers(dlyDiff, srcX, srcY, sinksInput);
+    if (!buffersMaster.size()) {
+      sinksInput.insert(sinksInput.end(), children.begin(), children.end());
+      debugPrint(logger_,
+                 CTS,
+                 "insertion delay",
+                 1,
+                 " Not possible to insert buffers");
+      continue;
+    }
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               2,
+               " dly buffers needed: {}",
+               buffersMaster.size());
     odb::dbITerm* delauBuffInput
-        = insertDelayBuffers(numBuffers, srcX, srcY, sinksInput);
+        = insertDelayBuffers(srcX, srcY, buffersMaster, sinksInput);
 
     sinksInput.clear();
     sinksInput = std::move(children);
     sinksInput.push_back(delauBuffInput);
 
-    previouBufToInsert = bufToInsert;
+    previouDlyNeeded = dlyNeeded;
   }
 
-  node->nBuffInsert = previouBufToInsert;
-  node->arrival = maxArrival;
+  node->dlyNeeded = previouDlyNeeded;
 }
 
 odb::dbITerm* LatencyBalancer::insertDelayBuffers(
-    int numBuffers,
     int srcX,
     int srcY,
+    const std::vector<std::string>& buffersMaster,
     const std::vector<odb::dbITerm*>& sinksInput)
 {
-  // get bbox of current load pins without driver output pin
-  odb::Rect loadPinsBbox = odb::Rect();
-  loadPinsBbox.mergeInit();
-  odb::dbNet* drivingNet = nullptr;
+  int numBuffers = buffersMaster.size();
   debugPrint(logger_,
              CTS,
              "insertion delay",
              3,
              "Inserting {} buffers for sinks:",
              numBuffers);
+  // get bbox of current load pins without driver output pin
+  odb::dbNet* drivingNet = nullptr;
+  odb::Rect loadPinsBbox = odb::Rect();
+  loadPinsBbox.mergeInit();
   for (odb::dbITerm* sinkInput : sinksInput) {
     if (drivingNet == nullptr) {
       drivingNet = sinkInput->getNet();
@@ -507,13 +828,14 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
 
   odb::dbInst* returnBuffer = nullptr;
 
-  for (int i = 0; i < numBuffers; i++) {
+  for (int i = 0; i < buffersMaster.size(); i++) {
+    odb::dbMaster* bufMaster = db_->findMaster(buffersMaster[i].c_str());
     // Set the location
     double locX = (double) (srcX + (offsetX * (i + 1))) / wireSegmentUnit_;
     double locY = (double) (srcY + (offsetY * (i + 1))) / wireSegmentUnit_;
     Point<double> bufferLoc(locX, locY);
     Point<double> legalBufferLoc
-        = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
+        = root_->legalizeOneBuffer(bufferLoc, bufMaster->getName());
 
     odb::Point loc{static_cast<int>(legalBufferLoc.getX() * wireSegmentUnit_),
                    static_cast<int>(legalBufferLoc.getY() * wireSegmentUnit_)};
@@ -524,8 +846,6 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
         = fmt::format("delaynet_{}_{}", delayBufIndex_, clkName);
     std::string newBufferName
         = fmt::format("delaybuf_{}_{}", delayBufIndex_++, clkName);
-    odb::dbMaster* bufferMaster
-        = db_->findMaster(options_->getRootBuffer().c_str());
 
     odb::dbInst* lastBuffer = nullptr;
 
@@ -539,7 +859,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     bool loads_on_different_nets = true;
     lastBuffer = drivingNet->insertBufferBeforeLoads(
         load_pins,
-        bufferMaster,
+        bufMaster,
         &loc,
         newBufferName.c_str(),
         newNetName.c_str(),
@@ -550,7 +870,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
                CTS,
                "insertion delay",
                1,
-               "new delay buffer {} is inserted at ({} {})",
+               "new delay buffer {} inserted at ({} {})",
                lastBuffer->getName(),
                loc.getX(),
                loc.getY());
