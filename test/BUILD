@@ -187,6 +187,7 @@ BIG_TESTS = [
     "aes_sky130hs",
     "gcd_sky130hd_fast_slow",
     "gcd_sky130hd",
+    "gcd_sky130hd_dummy_via",
     "gcd_sky130hs",
     "gcd_asap7",
     "aes_asap7",

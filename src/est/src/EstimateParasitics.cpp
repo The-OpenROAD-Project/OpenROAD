@@ -1101,7 +1101,8 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
 
     for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
       odb::dbTechLayer* cut_layer = tech->findLayer(layer_idx);
-      if (cut_layer == nullptr || cut_layer->getType() != odb::dbTechLayerType::CUT) {
+      if (cut_layer == nullptr
+          || cut_layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
       double res, cap;

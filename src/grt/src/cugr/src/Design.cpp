@@ -75,7 +75,8 @@ void Design::read()
 void Design::readLayers()
 {
   for (odb::dbTechLayer* tech_layer : tech_->getLayers()) {
-    if (tech_layer != nullptr && tech_layer->getType() == odb::dbTechLayerType::ROUTING
+    if (tech_layer != nullptr
+        && tech_layer->getType() == odb::dbTechLayerType::ROUTING
         && tech_layer->getRoutingLevel() <= max_routing_layer_) {
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid != nullptr) {
@@ -135,7 +136,8 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
       for (odb::dbBPin* bpin : db_bterm->getBPins()) {
         for (odb::dbBox* bpin_box : bpin->getBoxes()) {
           odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
-          if (tech_layer == nullptr || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          if (tech_layer == nullptr
+              || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
             continue;
           }
           // adjust layer idx to start with zero
@@ -157,7 +159,8 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
     for (odb::dbMPin* mpin : db_iterm->getMTerm()->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
         odb::dbTechLayer* tech_layer = box->getTechLayer();
-        if (tech_layer == nullptr || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+        if (tech_layer == nullptr
+            || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;
         }
 

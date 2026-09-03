@@ -4840,7 +4840,7 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   odb::dbTech* tech = db_->getTech();
   std::vector<std::pair<int, int>> pitches(tech->getRoutingLayerCount() + 1);
   for (auto const& [level, layer] : routing_layers_) {
-    if (layer != nullptr && layer->getType() != odb::dbTechLayerType::ROUTING) {
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::ROUTING) {
       continue;
     }
     if (level > max_layer && max_layer > -1) {

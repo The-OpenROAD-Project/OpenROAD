@@ -100,7 +100,8 @@ void avoidPinIntersection(
     for (odb::dbMPin* mterm : mterm->getMPins()) {
       for (odb::dbBox* box : mterm->getGeometry()) {
         odb::dbTechLayer* tech_layer = box->getTechLayer();
-        if (tech_layer == nullptr || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+        if (tech_layer == nullptr
+            || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;
         }
 

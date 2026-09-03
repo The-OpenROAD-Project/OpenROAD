@@ -426,7 +426,8 @@ bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
   for (odb::dbMPin* mpin : mterm->getMPins()) {
     for (odb::dbBox* box : mpin->getGeometry()) {
       odb::dbTechLayer* tech_layer = box->getTechLayer();
-      if (tech_layer != nullptr && tech_layer->getType() == odb::dbTechLayerType::ROUTING
+      if (tech_layer != nullptr
+          && tech_layer->getType() == odb::dbTechLayerType::ROUTING
           && (iterm_top_layer == nullptr
               || tech_layer->getRoutingLevel()
                      > iterm_top_layer->getRoutingLevel())) {
@@ -479,7 +480,8 @@ bool WireBuilder::checkGuideBTermConnection(const GuidePoint& guide_pt,
   for (odb::dbBPin* bpin : bterm->getBPins()) {
     for (odb::dbBox* bpin_box : bpin->getBoxes()) {
       odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
-      if (tech_layer != nullptr && tech_layer->getType() == odb::dbTechLayerType::ROUTING
+      if (tech_layer != nullptr
+          && tech_layer->getType() == odb::dbTechLayerType::ROUTING
           && (bterm_top_layer == nullptr
               || tech_layer->getRoutingLevel()
                      > bterm_top_layer->getRoutingLevel())) {
@@ -596,7 +598,8 @@ void WireBuilder::getBTermTopLayerRects(odb::dbBTerm* bterm,
   for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
     for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
       odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
-      if (tech_layer == nullptr || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+      if (tech_layer == nullptr
+          || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
         continue;
       }
       const int tech_layer_idx = tech_layer->getRoutingLevel();
@@ -625,7 +628,8 @@ void WireBuilder::getITermTopLayerRects(odb::dbITerm* iterm,
   for (odb::dbMPin* mterm : mterm->getMPins()) {
     for (odb::dbBox* box : mterm->getGeometry()) {
       odb::dbTechLayer* tech_layer = box->getTechLayer();
-      if (tech_layer == nullptr || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+      if (tech_layer == nullptr
+          || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
         continue;
       }
       const int tech_layer_idx = tech_layer->getRoutingLevel();
