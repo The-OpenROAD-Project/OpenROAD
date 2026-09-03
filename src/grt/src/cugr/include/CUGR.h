@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "AbstractCugrRenderer.h"
 #include "grt/GRoute.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"
@@ -171,6 +172,13 @@ class CUGR
   int totalOverflow();
   void saveCongestion();
 
+  // GUI stage-by-stage topology debug for one net (global_route_debug); the
+  // CUGR analog of FastRouteCore's AbstractFastRouteRenderer hooks.
+  void initDebugRenderer(std::unique_ptr<AbstractCugrRenderer> renderer);
+  AbstractCugrRenderer* getDebugRenderer() const;
+  // stage_mask holds one bit per CugrStage, in enum order.
+  void setDebugNet(odb::dbNet* net, int stage_mask);
+
  private:
   // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
@@ -186,6 +194,8 @@ class CUGR
   // Re-estimate parasitics for the collected rerouted nets, then clear the
   // set.
   void updateReroutedParasitics(est::ParasiticsService& estimator);
+  // Re-estimate every dirty net's parasitics, leaving the dirty list intact.
+  void refreshDirtyParasitics(est::ParasiticsService& estimator);
   // Refresh the slack of the given nets from STA, without re-extracting
   // parasitics (incremental scope).
   void refreshNetSlacks(const std::vector<int>& net_indices);
@@ -245,7 +255,9 @@ class CUGR
   // neutral first PatternRoute.
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
-  void mazeRoute(std::vector<int>& net_indices);
+  // stage/iteration label the debug dump: iterativeRRR re-enters this stage,
+  // so the caller says which stage the reroute belongs to.
+  void mazeRoute(std::vector<int>& net_indices, CugrStage stage, int iteration);
 
   /**
    * @brief Stage 5 — iterative rip-up and re-route.
@@ -276,6 +288,9 @@ class CUGR
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   // Append net's routing tree to route as GRoute segments.
   void buildNetRoute(const GRNet* net, GRoute& route) const;
+  // DBU center of gcell `index` along `dimension`: the single definition of
+  // the convention every routed segment and debug marker uses.
+  int gridlineCenter(int dimension, int index) const;
   void printStatistics() const;
 
   // Tile classification for debugCongestion2D.
@@ -308,6 +323,32 @@ class CUGR
    * `set_debug_level GRT rrr_2d 1`.
    */
   void debugCongestion2D() const;
+
+  // Per-stage GUI debug state; renderer stays null unless the GUI is up.
+  struct Debug
+  {
+    std::unique_ptr<AbstractCugrRenderer> renderer;
+    odb::dbNet* net = nullptr;
+    int stage_mask = 0;
+    // The slack trace is logged, so a net selection alone is enough to make
+    // the hook do work; the renderer is only needed to draw.
+    bool isOn() const { return net != nullptr && stage_mask != 0; }
+  };
+  Debug debug_;
+
+  bool debugStageEnabled(const CugrStage stage) const
+  {
+    return (debug_.stage_mask & (1 << static_cast<int>(stage))) != 0;
+  }
+  // Push the debug net's current tree to the renderer and pause the GUI.
+  void debugNetTopology(CugrStage stage, int iteration);
+  // Log the debug net's slack at a stage boundary (needs no GUI).
+  void reportDebugNetSlack(const GRNet* net, CugrStage stage, int iteration);
+  // Bring parasitics to the state the next stage's refresh would produce, so
+  // the reported slack is the stage's result; no-op outside debug.
+  void refreshParasiticsForDebug();
+  // True if a liberty library is loaded, i.e. slacks are meaningful.
+  bool hasTiming() const;
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
