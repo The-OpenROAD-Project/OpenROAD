@@ -918,10 +918,27 @@ AbstractCugrRenderer* CUGR::getDebugRenderer() const
   return debug_.renderer.get();
 }
 
-void CUGR::setDebugNet(odb::dbNet* net, const int stage_mask)
+void CUGR::setDebugNet(odb::dbNet* net, const CugrDebugStages& stages)
 {
   debug_.net = net;
-  debug_.stage_mask = stage_mask;
+  debug_.stages = stages;
+}
+
+bool CUGR::debugStageEnabled(const CugrStage stage) const
+{
+  switch (stage) {
+    case CugrStage::patternRoute:
+      return debug_.stages.pattern_route;
+    case CugrStage::patternRouteResAware:
+      return debug_.stages.res_aware;
+    case CugrStage::patternRouteWithDetours:
+      return debug_.stages.detours;
+    case CugrStage::mazeRoute:
+      return debug_.stages.maze;
+    case CugrStage::iterativeRRR:
+      return debug_.stages.rrr;
+  }
+  return false;
 }
 
 bool CUGR::hasTiming() const

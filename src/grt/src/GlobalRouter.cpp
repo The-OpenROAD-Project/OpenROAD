@@ -6643,9 +6643,10 @@ AbstractCugrRenderer* GlobalRouter::getDebugCugr() const
 {
   return cugr_->getDebugRenderer();
 }
-void GlobalRouter::setDebugCugrNet(odb::dbNet* net, int stage_mask)
+void GlobalRouter::setDebugCugrNet(odb::dbNet* net,
+                                   const CugrDebugStages& stages)
 {
-  cugr_->setDebugNet(net, stage_mask);
+  cugr_->setDebugNet(net, stages);
 }
 
 // For rsz::makeBufferedNetGlobalRoute so Pin/Net classes do not have to be

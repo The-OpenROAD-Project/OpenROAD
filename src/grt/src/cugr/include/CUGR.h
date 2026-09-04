@@ -175,8 +175,7 @@ class CUGR
   // GUI stage-by-stage topology debug for one net (global_route_debug).
   void initDebugRenderer(std::unique_ptr<AbstractCugrRenderer> renderer);
   AbstractCugrRenderer* getDebugRenderer() const;
-  // stage_mask holds one bit per CugrStage, in enum order.
-  void setDebugNet(odb::dbNet* net, int stage_mask);
+  void setDebugNet(odb::dbNet* net, const CugrDebugStages& stages);
 
  private:
   // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
@@ -325,14 +324,11 @@ class CUGR
   {
     std::unique_ptr<AbstractCugrRenderer> renderer;
     odb::dbNet* net = nullptr;
-    int stage_mask = 0;
+    CugrDebugStages stages;
   };
   Debug debug_;
 
-  bool debugStageEnabled(const CugrStage stage) const
-  {
-    return (debug_.stage_mask & (1 << static_cast<int>(stage))) != 0;
-  }
+  bool debugStageEnabled(CugrStage stage) const;
   // Stage-boundary hook: logs the net's slack, and draws/pauses under a GUI.
   void debugNetTopology(CugrStage stage, int iteration);
   // The logging half of the hook; needs no GUI.

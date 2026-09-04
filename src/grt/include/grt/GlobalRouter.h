@@ -70,6 +70,7 @@ class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
 class AbstractCugrRenderer;
+struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
@@ -316,7 +317,7 @@ class GlobalRouter
   // CUGR stage-by-stage topology debug (global_route_debug).
   void initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer);
   AbstractCugrRenderer* getDebugCugr() const;
-  void setDebugCugrNet(odb::dbNet* net, int stage_mask);
+  void setDebugCugrNet(odb::dbNet* net, const CugrDebugStages& stages);
 
   void saveSttInputFile(Net* net);
 

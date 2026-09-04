@@ -21,6 +21,21 @@ enum class CugrStage
   iterativeRRR
 };
 
+// Which stages global_route_debug selected; mirrors FastRoute's DebugSetting.
+struct CugrDebugStages
+{
+  bool pattern_route = false;
+  bool res_aware = false;
+  bool detours = false;
+  bool maze = false;
+  bool rrr = false;
+
+  bool any() const
+  {
+    return pattern_route || res_aware || detours || maze || rrr;
+  }
+};
+
 inline const char* toString(const CugrStage stage)
 {
   switch (stage) {

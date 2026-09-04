@@ -457,17 +457,11 @@ proc global_route_debug { args } {
   set tree2D [info exists flags(-tree2D)]
   set tree3D [info exists flags(-tree3D)]
   set edges3D [info exists flags(-edges3D)]
-  # One bit per CUGR stage; order must match the CugrStage enum.
-  set cugr_stage_flags {-cugr_pattern -cugr_res_aware -cugr_detours \
-                        -cugr_maze -cugr_rrr}
-  set cugr_stage_mask 0
-  set stage_bit 1
-  foreach stage_flag $cugr_stage_flags {
-    if { [info exists flags($stage_flag)] } {
-      set cugr_stage_mask [expr { $cugr_stage_mask | $stage_bit }]
-    }
-    set stage_bit [expr { $stage_bit << 1 }]
-  }
+  set cugr_pattern [info exists flags(-cugr_pattern)]
+  set cugr_res_aware [info exists flags(-cugr_res_aware)]
+  set cugr_detours [info exists flags(-cugr_detours)]
+  set cugr_maze [info exists flags(-cugr_maze)]
+  set cugr_rrr [info exists flags(-cugr_rrr)]
   set db_block [ord::get_db_block]
 
   if { [info exists keys(-net)] } {
@@ -476,7 +470,8 @@ proc global_route_debug { args } {
       utl::error GRT 231 "Net name not found."
     }
     grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D $edges3D
-    grt::set_cugr_debug_cmd $net $cugr_stage_mask
+    grt::set_cugr_debug_cmd $net $cugr_pattern $cugr_res_aware \
+      $cugr_detours $cugr_maze $cugr_rrr
     if { [info exists keys(-saveSttInput)] } {
       set file_name $keys(-saveSttInput)
       grt::set_global_route_debug_stt_input_filename $file_name

@@ -276,15 +276,21 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugEdges3D(edges3D);
 }
 
-void set_cugr_debug_cmd(odb::dbNet* net, int stage_mask)
+void set_cugr_debug_cmd(odb::dbNet* net,
+                        bool patternRoute,
+                        bool resAware,
+                        bool detours,
+                        bool maze,
+                        bool rrr)
 {
+  const CugrDebugStages stages{patternRoute, resAware, detours, maze, rrr};
   GlobalRouter* global_router = getGlobalRouter();
   // No stages requested disarms; only the drawing needs a GUI and a renderer.
-  if (stage_mask != 0 && gui::Gui::enabled()
+  if (stages.any() && gui::Gui::enabled()
       && global_router->getDebugCugr() == nullptr) {
     global_router->initDebugCugr(std::make_unique<CugrRenderer>());
   }
-  global_router->setDebugCugrNet(net, stage_mask);
+  global_router->setDebugCugrNet(net, stages);
 }
 
 void set_global_route_debug_stt_input_filename(const char* file_name)
