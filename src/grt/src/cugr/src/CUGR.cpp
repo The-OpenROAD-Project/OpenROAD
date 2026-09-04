@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "AbstractCugrRenderer.h"
 #include "Design.h"
 #include "GRNet.h"
 #include "GRTree.h"
@@ -48,6 +49,9 @@
 using utl::GRT;
 
 namespace grt {
+
+// Sentinel demoteNonCriticalNets writes so a net sorts last; not a slack.
+constexpr float kDemotedSlack = std::numeric_limits<float>::max();
 
 namespace {
 
@@ -188,7 +192,7 @@ void CUGR::collectReroutedNets(const std::vector<int>& net_indices)
       parasitics_dirty_nets_.end(), net_indices.begin(), net_indices.end());
 }
 
-void CUGR::updateReroutedParasitics(est::ParasiticsService& estimator)
+void CUGR::refreshDirtyParasitics(est::ParasiticsService& estimator)
 {
   std::ranges::sort(parasitics_dirty_nets_);
   const auto duplicates = std::ranges::unique(parasitics_dirty_nets_);
@@ -204,7 +208,30 @@ void CUGR::updateReroutedParasitics(est::ParasiticsService& estimator)
     buildNetRoute(net, route);
     estimator.updateGlobalRouteParasitics(net->getDbNet(), route);
   }
+}
+
+void CUGR::updateReroutedParasitics(est::ParasiticsService& estimator)
+{
+  refreshDirtyParasitics(estimator);
   parasitics_dirty_nets_.clear();
+}
+
+void CUGR::refreshParasiticsForDebug()
+{
+  if (incremental_routing_) {
+    return;
+  }
+  auto* estimator = service_registry_->find<est::ParasiticsService>();
+  if (estimator == nullptr) {
+    return;
+  }
+  // Mirrors updateNetSlacks' parasitics half, but leaves the dirty list and
+  // full_slack_update_done_ alone so the real refresh still runs.
+  if (!full_slack_update_done_) {
+    estimator->estimateAllGlobalRouteParasitics();
+  } else {
+    refreshDirtyParasitics(*estimator);
+  }
 }
 
 float CUGR::criticalSlackThreshold() const
@@ -234,8 +261,7 @@ void CUGR::demoteNonCriticalNets(const float slack_th)
     }
     if (gr_nets_[net_index]->getSlack() > slack_th
         && !gr_nets_[net_index]->isResAware()) {
-      gr_nets_[net_index]->setSlack(
-          std::ceil(std::numeric_limits<float>::max()));
+      gr_nets_[net_index]->setSlack(kDemotedSlack);
     }
   }
 }
@@ -530,6 +556,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree(),
                               gr_nets_[net_index]->getNdrCosts());
   }
+  debugNetTopology(CugrStage::patternRoute, 0);
 }
 
 void CUGR::patternRouteResAware(std::vector<int>& net_indices)
@@ -591,6 +618,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
   collectReroutedNets(res_aware_nets);
+  debugNetTopology(CugrStage::patternRouteResAware, 0);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -630,9 +658,12 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
   collectReroutedNets(net_indices);
+  debugNetTopology(CugrStage::patternRouteWithDetours, 0);
 }
 
-void CUGR::mazeRoute(std::vector<int>& net_indices)
+void CUGR::mazeRoute(std::vector<int>& net_indices,
+                     const CugrStage stage,
+                     const int iteration)
 {
   if (net_indices.empty()) {
     return;
@@ -692,6 +723,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid.step();
   }
   collectReroutedNets(net_indices);
+  debugNetTopology(stage, iteration);
 }
 
 void CUGR::route(bool incremental)
@@ -756,7 +788,7 @@ void CUGR::route(bool incremental)
   if (verbose_ && !net_indices.empty()) {
     logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
-  mazeRoute(net_indices);
+  mazeRoute(net_indices, CugrStage::mazeRoute, /* iteration */ 0);
   if (!incremental) {
     updateCongestedNets(net_indices);
   }
@@ -876,6 +908,136 @@ void CUGR::debugCongestion2D() const
              congestion.tiles_2d);
 }
 
+void CUGR::initDebugRenderer(std::unique_ptr<AbstractCugrRenderer> renderer)
+{
+  debug_.renderer = std::move(renderer);
+}
+
+AbstractCugrRenderer* CUGR::getDebugRenderer() const
+{
+  return debug_.renderer.get();
+}
+
+void CUGR::setDebugNet(odb::dbNet* net, const CugrDebugStages& stages)
+{
+  debug_.net = net;
+  debug_.stages = stages;
+}
+
+bool CUGR::debugStageEnabled(const CugrStage stage) const
+{
+  switch (stage) {
+    case CugrStage::patternRoute:
+      return debug_.stages.pattern_route;
+    case CugrStage::patternRouteResAware:
+      return debug_.stages.res_aware;
+    case CugrStage::patternRouteWithDetours:
+      return debug_.stages.detours;
+    case CugrStage::mazeRoute:
+      return debug_.stages.maze;
+    case CugrStage::iterativeRRR:
+      return debug_.stages.rrr;
+  }
+  return false;
+}
+
+bool CUGR::hasTiming() const
+{
+  return sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr;
+}
+
+void CUGR::reportDebugNetSlack(const GRNet* net,
+                               const CugrStage stage,
+                               const int iteration)
+{
+  // Checked up front so the re-extraction below is only paid when printing.
+  if (!logger_->debugCheck(GRT, "cugr_slack", 1)) {
+    return;
+  }
+
+  std::string detail;
+  if (!hasTiming()) {
+    detail = "slack unavailable (no timing)";
+  } else {
+    // Skipped where CUGR does no timing of its own: refreshing would then be
+    // the only extraction of the run and would move post-route timing.
+    const bool refreshed = critical_nets_percentage_ != 0;
+    if (refreshed) {
+      // Every rerouted net, not just this one: its slack runs through them.
+      refreshParasiticsForDebug();
+    }
+    const float sta_slack = getNetSlack(net->getDbNet());
+    // What CUGR's ordering and critical-net decisions read.
+    const float cugr_slack = net->getSlack();
+    if (sta_slack >= sta::INF) {
+      detail = "no timing path";
+    } else if (!refreshed) {
+      detail = fmt::format(
+          "slack = {:.2f} ps (cugr tracks no slack at "
+          "-critical_nets_percentage 0)",
+          sta_slack * 1e12);
+    } else if (cugr_slack >= kDemotedSlack) {
+      detail = fmt::format(
+          "slack = {:.2f} ps (cugr entered stage demoted, sorts last)",
+          sta_slack * 1e12);
+    } else {
+      detail = fmt::format(
+          "slack = {:.2f} ps (cugr entered stage with {:.2f} ps, delta "
+          "{:.2f} ps)",
+          sta_slack * 1e12,
+          cugr_slack * 1e12,
+          (sta_slack - cugr_slack) * 1e12);
+    }
+    if (!refreshed || incremental_routing_) {
+      detail += " (parasitics not refreshed)";
+    }
+  }
+
+  debugPrint(logger_,
+             GRT,
+             "cugr_slack",
+             1,
+             "net {}: after {}, {}",
+             net->getName(),
+             stageLabel(stage, iteration),
+             detail);
+}
+
+void CUGR::debugNetTopology(const CugrStage stage, const int iteration)
+{
+  if (!debugStageEnabled(stage)) {
+    return;
+  }
+  const auto it = db_net_map_.find(debug_.net);
+  if (it == db_net_map_.end() || it->second == nullptr) {
+    return;
+  }
+  const GRNet* net = it->second;
+
+  reportDebugNetSlack(net, stage, iteration);
+
+  // The renderer is absent headless, and an unrouted net has nothing to draw.
+  if (debug_.renderer == nullptr || net->getRoutingTree() == nullptr) {
+    return;
+  }
+
+  CugrDebugFrame frame;
+  frame.stage = stage;
+  frame.iteration = iteration;
+  frame.gcell_size = design_->getGridlineSize();
+  buildNetRoute(net, frame.route);
+  frame.pins.reserve(net->getNumPins());
+  for (const auto& access_points : net->getPinAccessPoints()) {
+    for (const GRPoint& point : access_points) {
+      frame.pins.emplace_back(gridlineCenter(0, point.x()),
+                              gridlineCenter(1, point.y()),
+                              point.getLayerIdx() + 1);
+    }
+  }
+
+  debug_.renderer->drawAndPause(std::move(frame));
+}
+
 void CUGR::iterativeRRR(std::vector<int>& net_indices)
 {
   // Gate on the integer overflow metric: sub-track overflow is left for
@@ -962,9 +1124,9 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     if (incremental_routing_) {
       // Incremental reroutes all dirty nets each iteration, not just congested.
       std::vector<int> reroute_set = incremental_candidates_;
-      mazeRoute(reroute_set);
+      mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
     } else {
-      mazeRoute(net_indices);
+      mazeRoute(net_indices, CugrStage::iterativeRRR, i);
     }
   }
   grid_graph_->setCostMultiplier(1.0);
@@ -1017,6 +1179,12 @@ void CUGR::write(const std::string& guide_file)
   fout.close();
 }
 
+int CUGR::gridlineCenter(const int dimension, const int index) const
+{
+  return grid_graph_->getGridline(dimension, index)
+         + design_->getGridlineSize() / 2;
+}
+
 void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
 {
   const auto& routing_tree = net->getRoutingTree();
@@ -1024,7 +1192,6 @@ void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
     return;
   }
 
-  const int half_gcell = design_->getGridlineSize() / 2;
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
         for (const auto& child : node->getChildren()) {
@@ -1038,10 +1205,10 @@ void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
             auto [min_y, max_y] = std::minmax({node->y(), child->y()});
 
             // convert to dbu
-            min_x = grid_graph_->getGridline(0, min_x) + half_gcell;
-            min_y = grid_graph_->getGridline(1, min_y) + half_gcell;
-            max_x = grid_graph_->getGridline(0, max_x) + half_gcell;
-            max_y = grid_graph_->getGridline(1, max_y) + half_gcell;
+            min_x = gridlineCenter(0, min_x);
+            min_y = gridlineCenter(1, min_y);
+            max_x = gridlineCenter(0, max_x);
+            max_y = gridlineCenter(1, max_y);
 
             route.emplace_back(min_x,
                                min_y,
@@ -1056,8 +1223,8 @@ void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
                 = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
             for (int layer_idx = bottom_layer; layer_idx < top_layer;
                  layer_idx++) {
-              const int x = grid_graph_->getGridline(0, node->x()) + half_gcell;
-              const int y = grid_graph_->getGridline(1, node->y()) + half_gcell;
+              const int x = gridlineCenter(0, node->x());
+              const int y = gridlineCenter(1, node->y());
 
               route.emplace_back(
                   x, y, layer_idx + 1, x, y, layer_idx + 2, true);
