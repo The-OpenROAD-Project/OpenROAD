@@ -171,6 +171,17 @@ dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
         "Cannot create chip bump. Inst {} already has an associated chip bump",
         inst->getName());
   }
+  // Downstream code (net hookup, bpin creation, face inference) assumes a
+  // bump cell exposes exactly one pin.
+  dbMaster* master = inst->getMaster();
+  if (master->getMTermCount() != 1) {
+    logger->error(utl::ODB,
+                  558,
+                  "Bump cell {} has {} pins; bump cells are expected to have "
+                  "exactly one pin",
+                  master->getName(),
+                  master->getMTermCount());
+  }
 
   _dbChipBump* obj = _chip_region->chip_bump_tbl_->create();
   obj->inst_ = _inst->getOID();

@@ -86,6 +86,7 @@ class CheckerFixture : public tst::DbFixture
   static constexpr const char* logical_connectivity_category
       = "Logical Connectivity";
   static constexpr const char* bump_alignment_category = "Bump Alignment";
+  static constexpr const char* bump_layer_category = "Bump layer mismatch";
 };
 
 }  // namespace odb
