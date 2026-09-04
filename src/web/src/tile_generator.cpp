@@ -2439,6 +2439,42 @@ void TileGenerator::outlineRectInTile(std::vector<unsigned char>& image,
   }
 }
 
+void TileGenerator::outlinePolygonInTile(std::vector<unsigned char>& image,
+                                         const odb::Polygon& polygon,
+                                         const Color& c,
+                                         const TileFrame& frame) const
+{
+  const auto& points = polygon.getPoints();
+  if (points.size() < 2) {
+    return;
+  }
+
+  const odb::Rect& tile = frame.cull;
+  const int dim = bufferDim(image);
+  const int width = hairlineCss(frame);
+  for (std::size_t i = 0; i < points.size(); ++i) {
+    const odb::Point& p0 = points[i];
+    const odb::Point& p1 = points[(i + 1) % points.size()];
+    const int x_min = std::min(p0.x(), p1.x());
+    const int x_max = std::max(p0.x(), p1.x());
+    const int y_min = std::min(p0.y(), p1.y());
+    const int y_max = std::max(p0.y(), p1.y());
+    if (x_max < tile.xMin() || tile.xMax() < x_min || y_max < tile.yMin()
+        || tile.yMax() < y_min) {
+      continue;
+    }
+
+    drawLine(image,
+             toPxXd(p0.x(), frame),
+             toPxYd(p0.y(), frame, dim),
+             toPxXd(p1.x(), frame),
+             toPxYd(p1.y(), frame, dim),
+             c,
+             width,
+             dim);
+  }
+}
+
 /* static */
 void TileGenerator::drawOrientationTag(std::vector<unsigned char>& image,
                                        odb::dbInst* inst,
@@ -3086,18 +3122,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // on the _instances pass for all designs (Qt draws it always;
       // scoping to _instances keeps tech-layer tiles transparent).
       if (draw_die_outline || instances_only) {
-        const odb::Rect die = block->getDieArea();
-        if (die.area() > 0) {
-          outlineRectInTile(image_buffer, die, kOutlineGray, frame);
+        const odb::Polygon die = block->getDieAreaPolygon();
+        if (!die.getPoints().empty()) {
+          outlinePolygonInTile(image_buffer, die, kOutlineGray, frame);
         }
       }
       // Core area outline (Qt drawChip draws it right after the die).
-      // Unset core -> empty polygon -> mergeInit()-inverted rect, so
-      // check min<max explicitly rather than area()>0.
       if (instances_only) {
-        const odb::Rect core = block->getCoreArea();
-        if (core.xMin() < core.xMax() && core.yMin() < core.yMax()) {
-          outlineRectInTile(image_buffer, core, kOutlineGray, frame);
+        const odb::Polygon core = block->getCoreAreaPolygon();
+        if (!core.getPoints().empty()) {
+          outlinePolygonInTile(image_buffer, core, kOutlineGray, frame);
         }
       }
 

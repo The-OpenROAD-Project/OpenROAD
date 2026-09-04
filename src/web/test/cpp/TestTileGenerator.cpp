@@ -2724,6 +2724,54 @@ TEST_F(TileGeneratorTest, DieAndCoreOutlinesOnInstancesLayer)
       << "Expected die + core vertical edges crossing the same row";
 }
 
+TEST_F(TileGeneratorTest, PolygonFloorplanOutlineFollowsDiagonalEdge)
+{
+  const odb::Polygon die({odb::Point(0, 0),
+                          odb::Point(4000, 0),
+                          odb::Point(4000, 3000),
+                          odb::Point(2500, 4000),
+                          odb::Point(0, 4000)});
+  block_->setDieArea(die);
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  unsigned w = 0, h = 0;
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+  ASSERT_GT(w, 0u);
+  ASSERT_GT(h, 0u);
+
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const auto grayNear = [&](double x, double y) {
+    const int cx = colOf(bounds, w, static_cast<int>(x));
+    const int cy = rowOf(bounds, w, h, static_cast<int>(y));
+    for (int yy = std::max(cy - 2, 0);
+         yy <= std::min(cy + 2, static_cast<int>(h) - 1);
+         ++yy) {
+      for (int xx = std::max(cx - 2, 0);
+           xx <= std::min(cx + 2, static_cast<int>(w) - 1);
+           ++xx) {
+        const size_t i = 4UL * (static_cast<size_t>(yy) * w + xx);
+        if (pixels[i + 3] > 0 && pixels[i] == 128 && pixels[i + 1] == 128
+            && pixels[i + 2] == 128) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // The slanted edge runs from (4000,3000) to (2500,4000).  A rectangular
+  // renderer would leave all of these points empty.
+  for (const double t : {0.2, 0.5, 0.8}) {
+    SCOPED_TRACE(t);
+    EXPECT_TRUE(grayNear(4000.0 - 1500.0 * t, 3000.0 + 1000.0 * t));
+  }
+}
+
 TEST_F(TileGeneratorTest, NoOutlineOnTechLayerTiles)
 {
   // Guard against the regression that motivated the original multi-die-only

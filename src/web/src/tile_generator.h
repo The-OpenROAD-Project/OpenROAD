@@ -1006,6 +1006,11 @@ class TileGenerator
                          const odb::Rect& r,
                          const Color& c,
                          const TileFrame& frame) const;
+  // Draw polygon edges clamped to the tile (die/core outlines).
+  void outlinePolygonInTile(std::vector<unsigned char>& image,
+                            const odb::Polygon& polygon,
+                            const Color& c,
+                            const TileFrame& frame) const;
   // Diagonal across the master's origin corner, so a flipped or rotated
   // instance reads as such.  Mirrors RenderThread::drawInstanceOutlines();
   // callers gate on the master height, as Qt does.
