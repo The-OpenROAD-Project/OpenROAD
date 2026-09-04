@@ -3322,17 +3322,19 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   }
 
   const int max_routing_layer = block->getMaxRoutingLayer();
+  frLayer* top_layer = nullptr;
   if (max_routing_layer > 0) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(max_routing_layer);
-    frLayer* layer = fr_tech->getLayer(tech_layer->getName());
-    if (layer) {
-      router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
-    } else {
+    top_layer = fr_tech->getLayer(tech_layer->getName());
+    if (!top_layer) {
       logger_->warn(utl::DRT,
                     273,
                     "topRoutingLayer {} not found.",
                     tech_layer->getName());
     }
+  }
+  if (top_layer) {
+    router_cfg_->TOP_ROUTING_LAYER = top_layer->getLayerNum();
   } else {
     for (frLayerNum layer_num = fr_tech->getTopLayerNum();
          layer_num >= fr_tech->getBottomLayerNum();
