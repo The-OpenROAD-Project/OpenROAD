@@ -144,6 +144,18 @@ class lefTechLayerCutEnclosureRuleParser
                    odb::dbTechLayerCutEnclosureRule* rule,
                    odb::dbTechLayer* layer);
 };
+
+class lefTechLayerCutEnclosureTableRuleParser
+{
+ public:
+  lefTechLayerCutEnclosureTableRuleParser(lefinReader*);
+  void parse(const std::string&, odb::dbTechLayer*);
+
+ private:
+  lefinReader* lefin_;
+  void checkCutClass(const std::string& val, odb::dbTechLayer* layer);
+};
+
 class lefTechLayerEolExtensionRuleParser
 {
  public:
