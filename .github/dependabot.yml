@@ -9,6 +9,10 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
+    # v3 greets returning contributors as first-timers (actions/first-interaction#369).
+    ignore:
+      - dependency-name: "actions/first-interaction"
+        update-types: ["version-update:semver-major"]
     groups:
       actions:
         patterns:
