@@ -2848,17 +2848,8 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
-  if (db_inst->isDoNotTouch()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setDoNotTouch(false);
-  }
-  if (db_inst->isFixed()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  if (db_inst == nullptr) {
+    return false;
   }
 
   sta::LibertyPort* input_port = nullptr;
@@ -2870,19 +2861,12 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Net* output_net = db_network_->net(output_pin);
   odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
   odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
-  if ((input_db_net != nullptr && input_db_net->isDoNotTouch())
-      || (output_db_net != nullptr && output_db_net->isDoNotTouch())) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    if (input_db_net != nullptr) {
-      input_db_net->setDoNotTouch(false);
-    }
-    if (output_db_net != nullptr) {
-      output_db_net->setDoNotTouch(false);
-    }
+  if (honor_dont_touch_fixed
+      && (db_inst == nullptr || db_inst->isDoNotTouch() || db_inst->isFixed()
+          || (input_db_net != nullptr && input_db_net->isDoNotTouch())
+          || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
+    return false;
   }
-
   const bool out_net_ports = db_network_->hasPort(output_net);
   sta::Net* removed = nullptr;
   odb::dbNet* db_net_survivor = nullptr;
@@ -2901,9 +2885,39 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   if (!sdc->isConstrained(input_pin) && !sdc->isConstrained(output_pin)
       && (removed == nullptr || !sdc->isConstrained(removed))
       && !sdc->isConstrained(buffer)) {
-    return db_net_removed == nullptr
-           || (db_net_survivor != nullptr
-               && db_net_survivor->canMergeNet(db_net_removed));
+    bool can_merge_nets = db_net_removed == nullptr;
+    if (!can_merge_nets && db_net_survivor != nullptr) {
+      if (honor_dont_touch_fixed) {
+        can_merge_nets = db_net_survivor->canMergeNet(db_net_removed);
+      } else {
+        // The legacy override clears the candidate nets and buffer instance
+        // before checking the remaining instances on the removed net.
+        can_merge_nets = true;
+        for (odb::dbITerm* iterm : db_net_removed->getITerms()) {
+          odb::dbInst* inst = iterm->getInst();
+          if (inst != nullptr && inst != db_inst && inst->isDoNotTouch()) {
+            can_merge_nets = false;
+            break;
+          }
+        }
+      }
+    }
+    if (!can_merge_nets) {
+      return false;
+    }
+    if (db_inst->isDoNotTouch()) {
+      db_inst->setDoNotTouch(false);
+    }
+    if (db_inst->isFixed()) {
+      db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+    if (input_db_net != nullptr) {
+      input_db_net->setDoNotTouch(false);
+    }
+    if (output_db_net != nullptr) {
+      output_db_net->setDoNotTouch(false);
+    }
+    return true;
   }
 
   return false;
