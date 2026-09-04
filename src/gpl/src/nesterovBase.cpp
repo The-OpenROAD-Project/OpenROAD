@@ -4450,11 +4450,13 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     } else {
       log_->info(
           GPL, 1001, "Global placement finished at iteration {}", final_iter);
+      log_->metric("gpl__convergence__iteration", final_iter);
       if (npVars_->routability_driven_mode) {
         log_->info(GPL,
                    1017,
                    "Routability mode iteration count: {}",
                    routability_gpl_iter_count);
+        log_->metric("gpl__routability__iteration", routability_gpl_iter_count);
       }
     }
 
@@ -4465,6 +4467,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                  1005,
                  "Routability final weighted congestion: {:.4f}",
                  rb->getRudyAverage());
+      log_->metric("gpl__routability__congestion", rb->getRudyAverage());
     }
 
     log_->info(GPL,

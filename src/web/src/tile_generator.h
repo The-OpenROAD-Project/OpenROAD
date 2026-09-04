@@ -850,13 +850,16 @@ class TileGenerator
   // as given and only its (in-bounds) result is rounded.  Converting an oblique
   // DBU segment through the clamped toPxX/toPxY instead would saturate each
   // axis on its own and rotate the segment — use toPxXd/toPxYd here.
+  // `dim` is the side of the buffer, as in setPixel/drawFilledRect; pass it on
+  // the hot paths so the clip bound and every step skip bufferDim()'s sqrt.
   static void drawLine(std::vector<unsigned char>& image,
                        double x0,
                        double y0,
                        double x1,
                        double y1,
                        const Color& c,
-                       int width = 3);
+                       int width = 3,
+                       int dim = -1);
 
   void computePinLabelMargin();
 
@@ -1003,6 +1006,14 @@ class TileGenerator
                          const odb::Rect& r,
                          const Color& c,
                          const TileFrame& frame) const;
+  // Diagonal across the master's origin corner, so a flipped or rotated
+  // instance reads as such.  Mirrors RenderThread::drawInstanceOutlines();
+  // callers gate on the master height, as Qt does.
+  static void drawOrientationTag(std::vector<unsigned char>& image,
+                                 odb::dbInst* inst,
+                                 const TileFrame& frame,
+                                 int dim,
+                                 int stroke);
   mutable std::mutex heatmap_mutex_;
   mutable std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>>
       heatmaps_;
