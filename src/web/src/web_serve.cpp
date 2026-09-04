@@ -329,14 +329,14 @@ void WebServer::serve(int port)
         ss << err.rdbuf();
         errout = "\n" + ss.str();
       }
-      if (fd != -1) {
-        std::remove(errfile.c_str());
-      }
       logger_->warn(utl::WEB,
                     3,
                     "Could not launch default browser (shell error {}){}",
                     ret,
                     errout);
+    }
+    if (fd != -1) {
+      std::remove(errfile.c_str());
     }
   } catch (std::exception const& e) {
     stop();
