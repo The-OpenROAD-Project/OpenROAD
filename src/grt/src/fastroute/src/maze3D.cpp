@@ -720,6 +720,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   if (enable_resistance_aware_) {
     updateSlacks();
+    // Final maze route 3D call will increase nets percentage
+    if (!is_fixed_nets_percentage_) {
+      res_aware_nets_percentage_ = kFinalResAwareNetsPercentage;
+    }
     netpinOrderInc();
     // More flexible during repair stages
     setDetourPenalty(is_incremental_grt_ ? kLowDetourPenalty
@@ -728,9 +732,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   // Don't need to reroute every net during first GRT run, let it for the
   // incremental optimizations
-  const int endIND = (enable_resistance_aware_ && is_incremental_grt_)
-                         ? tree_order_pv_.size()
-                         : tree_order_pv_.size() * 0.9;
+  const int endIND = enable_resistance_aware_ ? tree_order_pv_.size()
+                                              : tree_order_pv_.size() * 0.9;
   const int max_reroute_iter
       = (is_incremental_grt_ && enable_resistance_aware_) ? 5 : 0;
 
@@ -751,6 +754,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     // Enable resistance aware routing only if the net needs it
     if (enable_resistance_aware_) {
       resistance_aware_ = net->isResAware();
+      // Don't reroute nets with positive slack
+      if (!is_incremental_grt_ && net->getSlack() >= 0) {
+        continue;
+      }
     }
 
     int enlarge = expand;
