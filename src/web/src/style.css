@@ -1747,7 +1747,7 @@ body {
     font-size: 12px;
 }
 
-/* Clock/data key for the schematic timing-path overlay. Hidden unless a path
+/* Timing-path key for the schematic. Hidden unless a path
    is drawn, so it costs no toolbar space the rest of the time. */
 .schematic-timing-legend {
     display: flex;
@@ -1755,7 +1755,7 @@ body {
     gap: 10px;
     flex-shrink: 0;
 }
-/* Beats the display:flex above. */
+/* Preserve the hidden attribute. */
 .schematic-timing-legend[hidden] { display: none; }
 
 .schematic-timing-legend-item,
@@ -2218,8 +2218,31 @@ body {
 
 /* ─── Schematic Widget ────────────────────────────────────────────────────── */
 
-/* netlistsvg renders dark strokes/text on white fills — invert for dark mode */
-html[data-theme="dark"] .schematic-widget svg {
+.schematic-svg-container.schematic-empty > svg { visibility: hidden; }
+.schematic-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 24px;
+    color: var(--fg-muted);
+    font-size: 13px;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* Invert normal netlistsvg geometry, but leave timing colors unfiltered so
+   they match the layout path colors. */
+html[data-theme="dark"] .schematic-svg-container svg path:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg rect:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg circle:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg ellipse:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg line:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg polyline:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg polygon:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg text:not(.schematic-timing-node) {
     filter: invert(1) hue-rotate(180deg);
 }
 

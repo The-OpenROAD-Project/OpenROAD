@@ -4178,39 +4178,114 @@ TEST_F(SchematicHandlerTest, GateKeepsMasterNameAndRealPins)
   EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
 }
 
-TEST_F(SchematicHandlerTest, GatePortsPreserveSymbolPinOrder)
-{
-  // The frontend rewrites real Liberty pins to skin pids (A/B/Y); this verifies
-  // the backend still emits that mapping for non-Yosys cell pins.
-  makeGate("NAND2_X1", "g_nand", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
-
-  boost::json::object cells = fullCells();
-  auto& cell = cells.at("g_nand").as_object();
-
-  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "nand");
-  auto& gate_ports = cell.at("gate_ports").as_object();
-  EXPECT_EQ(std::string(gate_ports.at("A1").as_string()), "A1");
-  EXPECT_EQ(std::string(gate_ports.at("A2").as_string()), "A2");
-  EXPECT_EQ(std::string(gate_ports.at("Y").as_string()), "ZN");
-}
-
-TEST_F(SchematicHandlerTest, DffGetsRegisterKindAndGatePorts)
+TEST_F(SchematicHandlerTest, RegistersGetKindAndGatePorts)
 {
   makeGate(
       "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate(
+      "DFF_X1", "g_dff_dangling", {{"d2", "D"}, {"clk2", "CK"}, {"q2", "Q"}});
+  makeGate(
+      "DFFR_X1",
+      "g_dffr",
+      {{"d", "D"}, {"clk", "CK"}, {"rst", "RN"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate(
+      "DFFS_X1",
+      "g_dffs",
+      {{"d", "D"}, {"clk", "CK"}, {"set", "SN"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate("DFFRS_X1",
+           "g_dffrs",
+           {{"d", "D"},
+            {"clk", "CK"},
+            {"rst", "RN"},
+            {"set", "SN"},
+            {"q", "Q"},
+            {"qn", "QN"}});
 
   boost::json::object cells = fullCells();
-  auto& cell = cells.at("g_dff").as_object();
+  auto check = [&](const char* inst, const char* kind, const char* control) {
+    auto& cell = cells.at(inst).as_object();
+    EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), kind);
+    auto& ports = cell.at("gate_ports").as_object();
+    EXPECT_EQ(std::string(ports.at("D").as_string()), "D");
+    EXPECT_EQ(std::string(ports.at("CK").as_string()), "CK");
+    EXPECT_EQ(std::string(ports.at("Q").as_string()), "Q");
+    EXPECT_EQ(std::string(ports.at("QN").as_string()), "QN");
+    if (control != nullptr) {
+      EXPECT_EQ(std::string(ports.at(control).as_string()), control);
+    }
+  };
+  check("g_dff", "dff", nullptr);
+  check("g_dff_dangling", "dff", nullptr);
+  EXPECT_TRUE(cells.at("g_dff_dangling")
+                  .as_object()
+                  .at("connections")
+                  .as_object()
+                  .contains("QN"));
+  check("g_dffr", "dffr", "RN");
+  check("g_dffs", "dffs", "SN");
+  EXPECT_FALSE(cells.at("g_dffrs").as_object().contains("gate_kind"));
+}
 
-  EXPECT_EQ(std::string(cell.at("type").as_string()), "DFF_X1");
-  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "dff");
-  auto& gate_ports = cell.at("gate_ports").as_object();
-  EXPECT_EQ(std::string(gate_ports.at("D").as_string()), "D");
-  EXPECT_EQ(std::string(gate_ports.at("CK").as_string()), "CK");
-  EXPECT_EQ(std::string(gate_ports.at("Q").as_string()), "Q");
-  EXPECT_EQ(std::string(gate_ports.at("QN").as_string()), "QN");
-  EXPECT_FALSE(
-      cell.at("attributes").as_object().contains("openroad_symbol_type"));
+TEST_F(SchematicHandlerTest, RegistersWithBidirectionalSignalsStayBoxes)
+{
+  auto make_unsupported_register =
+      [&](const char* lib_name, const char* inst_name, odb::dbIoType io_type) {
+        odb::dbLib* test_lib
+            = odb::dbLib::create(getDb(), lib_name, getDb()->getTech());
+        odb::dbMaster* master = odb::dbMaster::create(test_lib, "DFF_X1");
+        master->setWidth(1000);
+        master->setHeight(1000);
+        master->setType(odb::dbMasterType::CORE);
+        odb::dbMTerm::create(
+            master, "D", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+        odb::dbMTerm::create(
+            master, "CK", odb::dbIoType::INPUT, odb::dbSigType::CLOCK);
+        odb::dbMTerm::create(
+            master, "Q", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+        odb::dbMTerm::create(
+            master, "QN", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+        odb::dbMTerm::create(master, "EXTRA", io_type, odb::dbSigType::SIGNAL);
+        master->setFrozen();
+
+        // Link this synthetic LEF master to Nangate45's DFF_X1 Liberty cell.
+        sta_->getDbNetwork()->readLefAfter(test_lib);
+        makeInst(block_, master, inst_name, {});
+      };
+
+  make_unsupported_register(
+      "dff_inout_lib", "g_dff_inout", odb::dbIoType::INOUT);
+  make_unsupported_register(
+      "dff_feedthru_lib", "g_dff_feedthru", odb::dbIoType::FEEDTHRU);
+
+  boost::json::object cells = fullCells();
+  for (const char* inst : {"g_dff_inout", "g_dff_feedthru"}) {
+    auto& cell = cells.at(inst).as_object();
+    EXPECT_FALSE(cell.contains("gate_kind")) << inst;
+    EXPECT_TRUE(cell.at("connections").as_object().contains("EXTRA")) << inst;
+  }
+}
+
+TEST_F(SchematicHandlerTest, SchematicPathUsesRequestedInstances)
+{
+  makeGate("BUF_X1", "g_buf", {{"i", "A"}, {"o", "Z"}});
+  makeGate("INV_X1", "g_inv", {{"i", "A"}, {"o", "ZN"}});
+
+  WebSocketRequest req;
+  req.id = 2;
+  req.type = WebSocketRequest::kSchematicPath;
+  req.json = parseObj(R"({"inst_names":["g_buf","missing"]})");
+  auto resp = handler_->handleSchematicPath(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  boost::json::value json = boost::json::parse(payloadStr(resp));
+  const auto& cells = json.as_object()
+                          .at("modules")
+                          .as_object()
+                          .at("top")
+                          .as_object()
+                          .at("cells")
+                          .as_object();
+  EXPECT_EQ(cells.size(), 1);
+  EXPECT_TRUE(cells.contains("g_buf"));
 }
 
 TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)

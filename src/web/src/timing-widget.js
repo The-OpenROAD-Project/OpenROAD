@@ -20,6 +20,10 @@ export class TimingWidget {
         // Default to sorting by slack, matching the Qt GUI.
         this._sortCol = 'slack';
         this._sortAscending = true;
+        // Options that produced the path indices currently shown in the table.
+        // These deliberately change only when a complete report is committed.
+        this._reportOptions = { unconstrained: false };
+        this._updateGeneration = 0;
 
         this._build();
     }
@@ -42,15 +46,11 @@ export class TimingWidget {
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
 
-        // "Unconstrained" mirrors the Qt GUI's TimingControlsDialog checkbox.
-        // Without it, a design with no SDC yields zero path ends and the
-        // table reads as empty rather than as unconstrained.
+        // Mirrors the Qt timing dialog for designs without SDC constraints.
         this._unconstrainedBox = document.createElement('input');
         this._unconstrainedBox.type = 'checkbox';
         this._unconstrainedLabel = document.createElement('label');
         this._unconstrainedLabel.className = 'timing-unconstrained';
-        // The input is nested inside the label, so clicking the text toggles
-        // it without needing a document-unique id to point `for` at.
         this._unconstrainedLabel.title =
             'Include paths that have no timing constraint.\n' +
             'Designs without an SDC report no paths otherwise.';
@@ -58,8 +58,7 @@ export class TimingWidget {
         this._unconstrainedLabel.appendChild(
             document.createTextNode('Unconstrained'));
         if (isStaticMode(this._app)) {
-            // Static reports are pre-rendered server-side; there is no server
-            // to re-query, so the control would be inert.
+            // Static reports cannot re-query timing data.
             this._unconstrainedLabel.style.display = 'none';
         }
 
@@ -392,13 +391,12 @@ export class TimingWidget {
         this._clearTimingHighlight();
     }
 
-    // The server re-derives the path list for timing_highlight, so every
-    // request that carries a path index has to send the same value.
     _unconstrained() {
         return this._unconstrainedBox.checked;
     }
 
     async update() {
+        const generation = ++this._updateGeneration;
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
         const unconstrained = this._unconstrained();
@@ -407,21 +405,32 @@ export class TimingWidget {
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100, unconstrained }),
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100, unconstrained }),
             ]);
+            if (generation !== this._updateGeneration) {
+                return false;
+            }
             // Copy the arrays: in static mode the response is a shared
             // cached object whose path order must keep matching the
             // server-side overlay indices, so it must not be sorted.
             this._setupPaths = [...(setupData.paths || [])];
             this._holdPaths = [...(holdData.paths || [])];
+            this._reportOptions = { unconstrained };
             this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
             this._renderDetailTable();
             this._clearTimingHighlight();
+            return true;
         } catch (e) {
-            console.error('Timing fetch failed:', e);
+            if (generation === this._updateGeneration) {
+                console.error('Timing fetch failed:', e);
+            }
+            return false;
+        } finally {
+            if (generation === this._updateGeneration) {
+                this._updateBtn.disabled = false;
+                this._updateBtn.textContent = 'Update';
+            }
         }
-        this._updateBtn.disabled = false;
-        this._updateBtn.textContent = 'Update';
     }
 
     // Sort both path lists by the current sort column/order. Paths are
@@ -454,7 +463,7 @@ export class TimingWidget {
         const tip = this._headerTooltip;
         tip.textContent = text;
         tip.style.display = 'block';
-        // position: fixed — viewport coordinates, offset from the cursor
+        // position: fixed - viewport coordinates, offset from the cursor
         // and clamped so the tooltip stays inside the viewport.
         const left = Math.min(e.clientX + 12,
                               window.innerWidth - tip.offsetWidth - 8);
@@ -486,9 +495,7 @@ export class TimingWidget {
             .then(() => this._refreshOverlay());
     }
 
-    // Mirror the selected path onto the schematic view, when that panel
-    // exists. The node list sent is whichever the detail table is showing, so
-    // the schematic draws exactly the cells the user can see listed.
+    // Keep the schematic aligned with the detail table's visible path leg.
     _showPathOnSchematic(path) {
         const schematic = this._app.schematicWidget;
         if (schematic) {
@@ -504,18 +511,13 @@ export class TimingWidget {
                                               : path.data_nodes) || [];
     }
 
-    // Re-send the current path after a detail-tab switch, so the schematic
-    // follows the table between data path and capture path.
+    // Follow detail-tab switches between data and capture paths.
     _refreshSchematicForDetailTab() {
-        const path = this._selectedPath();
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        const path = paths[this._selectedPathIndex];
         if (path) {
             this._showPathOnSchematic(path);
         }
-    }
-
-    _selectedPath() {
-        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
-        return paths[this._selectedPathIndex];
     }
 
     _selectPathRow(idx) {
@@ -536,7 +538,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-            unconstrained: this._unconstrained(),
+            unconstrained: this._reportOptions.unconstrained,
         }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
     }
@@ -631,7 +633,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-            unconstrained: this._unconstrained(),
+            unconstrained: this._reportOptions.unconstrained,
             pin_name: nodes[idx].pin,
         }).then(() => this._refreshOverlay());
     }

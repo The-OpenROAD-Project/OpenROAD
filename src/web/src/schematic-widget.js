@@ -14,19 +14,17 @@ import {
     copyPngToClipboard,
 } from './image-export.js';
 
-// Marks every element belonging to the timing-path overlay, so a redraw can
-// remove them all without disturbing the selection highlight.
+// Marks elements restyled for the timing path, so a redraw can restore them
+// without disturbing the selection highlight.
 const TIMING_OVERLAY_CLASS = 'schematic-timing-node';
 
-// How clock and data cells on a timing path are drawn. Follows the layout
-// overlay's convention (collectTimingPathShapes: cyan clock, red data) so a
-// path reads the same way in both views, softened for the schematic's
-// background. The dash patterns repeat the distinction independently of hue,
-// so it survives grayscale printing and color vision deficiency.
+// Exact timing-path colors used by the layout overlay.
 const TIMING_NODE_STYLE = {
-    clock: { color: '#00b8d4', dash: '1 3', label: 'clock' },
-    data: { color: '#d32f2f', dash: '4 2', label: 'data' },
+    launch: { color: '#00ffff', label: 'launch' },
+    data: { color: '#ff0000', label: 'data' },
+    capture: { color: '#00ff00', label: 'capture' },
 };
+const TIMING_STYLE_PROPS = ['stroke', 'fill'];
 
 function svgEl(tag, attrs) {
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -102,6 +100,7 @@ export class SchematicWidget {
 
         // ── SVG viewport (overflow hidden; pan/zoom via CSS transform) ──────
         this.svgContainer = document.createElement('div');
+        this.svgContainer.className = 'schematic-svg-container';
         this.svgContainer.style.cssText =
             'flex:1; overflow:hidden; position:relative; cursor:grab; background:var(--bg-main);';
         this.element.appendChild(this.svgContainer);
@@ -133,6 +132,7 @@ export class SchematicWidget {
         // Store the unmodified server netlist so view toggles and double-click
         // expansion can rerender or merge from the same schematic state.
         this._currentNetlist = null;
+        this._renderGeneration = 0;
 
         // Pan/zoom state
         this._scale = 1;
@@ -150,6 +150,8 @@ export class SchematicWidget {
         // the detail-table list on display (data path or capture path).
         this._timingPath = null;
         this._timingNodes = [];
+        this._timingIsCapturePath = false;
+        this._timingRequestId = 0;
         this._timingLegend = this._buildTimingLegend();
 
         // Map from SVG element id → ODB instance name.
@@ -269,10 +271,17 @@ export class SchematicWidget {
             return Promise.resolve(false);
         }
 
+        const previousSelectedInstanceName
+            = this.appState.selectedInstanceName || null;
         this.appState.selectedInstanceName = snapshot.selectedInstanceName;
         return Promise.resolve(this.renderNetlist(this._cloneJson(snapshot.netlist)))
             .then((didRender) => {
                 if (didRender === false) {
+                    if (this.appState.selectedInstanceName
+                        === snapshot.selectedInstanceName) {
+                        this.appState.selectedInstanceName
+                            = previousSelectedInstanceName;
+                    }
                     this._schematicHistory.push(snapshot);
                     this._setBackButtonEnabled();
                     return false;
@@ -349,12 +358,7 @@ export class SchematicWidget {
         return byClass ? this._closestGroup(byClass) : null;
     }
 
-    // Replaces the previous "walk up to the first <g> whose id is a known
-    // instance" lookup, which only worked for netlistsvg's generic boxes.
-    // Skin symbols put the cell id on a class of each child shape rather than
-    // on the group id, and their outlines are open paths with no fill, so a
-    // click inside a gate hit nothing at all. Resolving id *or* class token,
-    // plus the transparent hit rect from _addCellHitTarget, covers both.
+    // Skin symbols expose the cell id on child classes instead of the group id.
     _cellHitFromTarget(target) {
         if (!this._svgEl) {
             return null;
@@ -404,33 +408,51 @@ export class SchematicWidget {
         }
     }
 
-    // ── Timing path overlay ──────────────────────────────────────────────────
+    // ── Timing path styling ──────────────────────────────────────────────────
 
     // Show a timing path on the schematic. `path` is a TimingPathSummary from
     // the server's timing_report; `nodes` is the node list actually on display
     // in the timing panel's detail table (data path or capture path), which
-    // defaults to the data path. Passing null clears the overlay.
+    // defaults to the data path. Passing null clears the styling.
     //
     // The path drives what is drawn: the schematic is rebuilt from exactly the
-    // instances the detail table lists, then annotated with the order badges.
+    // instances the detail table lists, then colored in place.
     // Driven by TimingWidget row selection and detail-tab switching.
     showTimingPath(path, nodes) {
-        this._timingPath = path || null;
-        this._timingNodes = path ? (nodes || path.data_nodes || []) : [];
+        const requestId = ++this._timingRequestId;
+        const nextPath = path || null;
+        const nextNodes = nextPath ? (nodes || nextPath.data_nodes || []) : [];
+        this._timingPath = nextPath;
+        this._timingNodes = nextNodes;
+        this._timingIsCapturePath = nextPath !== null
+            && nextNodes === nextPath.capture_nodes;
         if (!this._timingPath) {
             this._applyTimingPath();
+            const cells = this._topModule(this._currentNetlist)?.cells;
+            if (cells) {
+                const count = Object.keys(cells).length;
+                this.setStatus(`${count} cell${count !== 1 ? 's' : ''}`);
+            } else {
+                this.setStatus(
+                    'Select an instance in the layout to view its schematic.');
+            }
             return Promise.resolve(false);
         }
-        return this._loadPathSchematic();
+        return this._loadPathSchematic(requestId);
     }
 
     // Fetch and render a schematic containing only this path's instances.
-    // Falls back to annotating whatever is already on screen when the server
-    // is unreachable or the path has no instances to draw.
-    _loadPathSchematic() {
+    // Show an explicit empty state when there is nothing to draw; if the
+    // server is unavailable, fall back to styling the current schematic.
+    _loadPathSchematic(requestId) {
         const order = this._timingPathInstances(this._timingNodes);
         const wm = this.appState.websocketManager;
-        if (order.length === 0 || !wm || !this._netlistsvgReady) {
+        if (order.length === 0) {
+            this._showTimingEmptyState(this._timingEmptyStateMessage());
+            return Promise.resolve(false);
+        }
+        if (!wm || !this._netlistsvgReady) {
+            this._clearTimingEmptyState();
             this._applyTimingPath();
             return Promise.resolve(false);
         }
@@ -441,31 +463,76 @@ export class SchematicWidget {
             inst_names: order.map(e => e.inst),
         })
             .then(netlist => {
+                if (requestId !== this._timingRequestId) return false;
                 const cells = netlist?.modules?.top?.cells;
                 if (!cells || Object.keys(cells).length === 0) {
-                    this.setStatus('No schematic cells found for this path.');
+                    this._showTimingEmptyState(
+                        'No schematic cells found for this timing path.');
                     return false;
                 }
-                // Keep the pre-path view reachable through Back. Snapshotted
-                // here rather than before the request so the deep copy is
-                // skipped when the request fails — renderNetlist below is what
-                // replaces _currentNetlist, so this still runs pre-mutation.
-                this._pushSchematicHistory(this._currentSchematicSnapshot());
-                // renderNetlist re-applies the overlay once the SVG exists.
-                return this.renderNetlist(netlist);
+                const previousSnapshot = this._currentSchematicSnapshot();
+                // renderNetlist re-applies timing styling once the SVG exists.
+                return this.renderNetlist(
+                    netlist,
+                    () => requestId === this._timingRequestId)
+                    .then(didRender => {
+                        if (didRender) {
+                            // Keep the pre-path view reachable through Back.
+                            this._pushSchematicHistory(previousSnapshot);
+                        }
+                        return didRender;
+                    });
             })
             .catch(err => {
+                if (requestId !== this._timingRequestId) return false;
                 console.error('schematic_path failed:', err);
-                // Still annotate whatever happens to be on screen.
+                // Still style whatever happens to be on screen.
+                this._clearTimingEmptyState();
                 this._applyTimingPath();
                 this.setStatus(`Path schematic error: ${err}`);
                 return false;
             });
     }
 
-    // Collapse the path's pin nodes to instances, keeping first-seen order so
-    // the badges follow the direction of the path. `inst` is supplied by the
-    // server; block ports have none and are skipped.
+    _timingEmptyStateMessage() {
+        return this._timingIsCapturePath
+            ? 'No capture path for this output endpoint.'
+            : 'No schematic cells to display for this timing path.';
+    }
+
+    // Keep the last SVG available for restoration, but do not present it as
+    // the selected path while there is no timing geometry to display.
+    _showTimingEmptyState(message, invalidateRender = true) {
+        if (invalidateRender) {
+            // Supersede any netlistsvg layout that started before this state.
+            this._renderGeneration++;
+        }
+        if (this._svgEl) {
+            this._clearTimingStyles();
+            this._svgEl.setAttribute('aria-hidden', 'true');
+        }
+        this.svgContainer.classList.add('schematic-empty');
+        let emptyState = this.svgContainer.querySelector(
+            '.schematic-empty-state');
+        if (!emptyState) {
+            emptyState = document.createElement('div');
+            emptyState.className = 'schematic-empty-state';
+            emptyState.setAttribute('role', 'status');
+            this.svgContainer.appendChild(emptyState);
+        }
+        emptyState.textContent = message;
+        this._timingLegend.hidden = true;
+        this.setStatus(message);
+    }
+
+    _clearTimingEmptyState() {
+        this.svgContainer.querySelector('.schematic-empty-state')?.remove();
+        this.svgContainer.classList.remove('schematic-empty');
+        this._svgEl?.removeAttribute('aria-hidden');
+    }
+
+    // Collapse the path's pin nodes to instances, keeping first-seen order.
+    // `inst` is supplied by the server; block ports have none and are skipped.
     _timingPathInstances(nodes) {
         const order = [];
         const indexOf = new Map();
@@ -487,37 +554,43 @@ export class SchematicWidget {
     }
 
     _applyTimingPath() {
-        if (!this._svgEl) {
-            return;
-        }
-        for (const el of this._svgEl.querySelectorAll(`.${TIMING_OVERLAY_CLASS}`)) {
-            el.remove();
-        }
-
         const path = this._timingPath;
         if (!path) {
+            if (this._svgEl) {
+                this._clearTimingStyles();
+            }
+            this._clearTimingEmptyState();
             this._timingLegend.hidden = true;
             return;
         }
+        if (!this._svgEl) {
+            this._timingLegend.hidden = true;
+            return;
+        }
+        this._clearTimingStyles();
 
         const order = this._timingPathInstances(this._timingNodes);
+        if (order.length === 0) {
+            // A render that deliberately refreshed the hidden backing SVG may
+            // still finish its deferred fit; it is not stale.
+            this._showTimingEmptyState(this._timingEmptyStateMessage(), false);
+            return;
+        }
+        this._clearTimingEmptyState();
 
         let shown = 0;
-        order.forEach((entry, idx) => {
+        order.forEach((entry) => {
             const group = this._cellGroupForInstance(entry.inst);
-            if (group && this._decorateTimingCell(group, idx + 1, entry.isClock)) {
+            if (group && this._styleTimingCell(group, entry)) {
                 shown++;
             }
         });
+        const wiresShown = this._styleTimingWires();
 
-        // The key explains the outlines, so it earns its space only when some
-        // outline was actually drawn.
-        this._timingLegend.hidden = shown === 0;
+        this._timingLegend.hidden = shown === 0 && wiresShown === 0;
 
         const slack = `slack ${fmtTime(path.slack)}`;
-        if (order.length === 0) {
-            this.setStatus(`Timing path (${slack}) has no instances to show.`);
-        } else if (shown === 0) {
+        if (shown === 0) {
             this.setStatus(
                 `Timing path (${slack}): none of its ${order.length} cells are `
                 + 'in this schematic — refresh from a cell on the path.');
@@ -534,14 +607,12 @@ export class SchematicWidget {
         for (const style of Object.values(TIMING_NODE_STYLE)) {
             const item = document.createElement('span');
             item.className = 'schematic-timing-legend-item';
-            // The swatch is drawn with the overlay's own stroke, so it is a
-            // literal sample of the outline rather than a copy of it.
             const swatch = svgEl('svg',
                 { width: 14, height: 10, 'aria-hidden': 'true' });
-            swatch.appendChild(svgEl('rect', {
-                x: 1, y: 1, width: 12, height: 8, fill: 'none',
+            swatch.appendChild(svgEl('line', {
+                x1: 1, y1: 5, x2: 13, y2: 5,
                 stroke: style.color, 'stroke-width': 2,
-                'stroke-dasharray': style.dash,
+                'stroke-linecap': 'round',
             }));
             item.append(swatch, style.label);
             legend.appendChild(item);
@@ -549,44 +620,124 @@ export class SchematicWidget {
         return legend;
     }
 
-    // Draw the outline and order badge for one cell on the path.
-    _decorateTimingCell(cellGroup, order, isClock) {
-        let bb;
-        try {
-            bb = cellGroup.getBBox();
-        } catch (_) {
-            // getBBox throws on hidden elements.
-            return false;
+    // Styling is applied to existing netlistsvg shapes, so save inline styles
+    // before overriding them and restore exactly those values on clear.
+    _clearTimingStyles() {
+        for (const el of this._svgEl.querySelectorAll(`.${TIMING_OVERLAY_CLASS}`)) {
+            for (const prop of TIMING_STYLE_PROPS) {
+                const attr = `data-openroad-timing-${prop}`;
+                if (!el.hasAttribute(attr)) continue;
+                const value = el.getAttribute(attr);
+                if (value) el.style.setProperty(prop, value);
+                else el.style.removeProperty(prop);
+                el.removeAttribute(attr);
+            }
+            el.classList.remove(TIMING_OVERLAY_CLASS);
         }
-
-        const style = isClock ? TIMING_NODE_STYLE.clock : TIMING_NODE_STYLE.data;
-        const pad = 5;
-        // pointer-events none: must not steal clicks from the cell hit target.
-        const shared = {
-            class: TIMING_OVERLAY_CLASS, 'pointer-events': 'none',
-        };
-
-        cellGroup.appendChild(svgEl('rect', {
-            ...shared,
-            x: bb.x - pad, y: bb.y - pad,
-            width: bb.width + pad * 2, height: bb.height + pad * 2,
-            fill: 'none', stroke: style.color, 'stroke-width': 2,
-            'stroke-dasharray': style.dash, rx: 3,
-        }));
-
-        const badge = svgEl('text', {
-            ...shared,
-            x: bb.x - pad, y: bb.y - pad - 2,
-            fill: style.color, 'font-size': 8, 'font-weight': 'bold',
-        });
-        badge.textContent = String(order);
-        cellGroup.appendChild(badge);
-
-        return true;
     }
 
-    // The walk that used to be inline here lives in _cellHitFromTarget now, so
-    // double-click expansion resolves a click the same way this does.
+    _styleTimingElement(el, style, fill = null) {
+        if (!el.classList.contains(TIMING_OVERLAY_CLASS)) {
+            for (const prop of TIMING_STYLE_PROPS) {
+                el.setAttribute(
+                    `data-openroad-timing-${prop}`,
+                    el.style.getPropertyValue(prop));
+            }
+            el.classList.add(TIMING_OVERLAY_CLASS);
+        }
+        el.style.setProperty('stroke', style.color);
+        if (fill !== null) {
+            el.style.setProperty('fill', fill);
+        }
+    }
+
+    _isTimingShape(el) {
+        const tag = el.tagName && el.tagName.toLowerCase();
+        return ['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'].includes(tag)
+            && el.id !== '_schematic_highlight'
+            && !el.hasAttribute('data-openroad-hit-target');
+    }
+
+    // Skin symbols mark body shapes with the cell id class; generic boxes may
+    // only have useful descendants, so fall back to geometric children.
+    _styleTimingCell(cellGroup, entry) {
+        const cellId = 'cell_' + entry.inst;
+        let shapes = Array.from(cellGroup.querySelectorAll(
+            `.${CSS.escape(cellId)}, .${CSS.escape(entry.inst)}`))
+            .filter(el => this._isTimingShape(el));
+        if (shapes.length === 0) {
+            shapes = Array.from(cellGroup.querySelectorAll(
+                'path,rect,circle,ellipse,line,polyline,polygon'))
+                .filter(el => this._isTimingShape(el));
+        }
+        const style = this._timingIsCapturePath
+            ? TIMING_NODE_STYLE.capture
+            : (entry.isClock ? TIMING_NODE_STYLE.launch : TIMING_NODE_STYLE.data);
+        shapes.forEach(el => this._styleTimingElement(el, style));
+        return shapes.length > 0;
+    }
+
+    _localPinName(node) {
+        if (!node || typeof node.pin !== 'string') return null;
+        if (node.inst && node.pin.startsWith(`${node.inst}/`)) {
+            return node.pin.slice(node.inst.length + 1);
+        }
+        const slash = node.pin.lastIndexOf('/');
+        return slash >= 0 ? node.pin.slice(slash + 1) : node.pin;
+    }
+
+    _nodeBit(top, node) {
+        if (!top || !node) return null;
+        let bits = null;
+        if (node.inst) {
+            const cell = top.cells && top.cells[node.inst];
+            const pin = this._localPinName(node);
+            bits = cell && cell.connections && cell.connections[pin];
+        } else {
+            const port = top.ports && top.ports[node.pin];
+            bits = port && port.bits;
+        }
+        return Array.isArray(bits) && bits.length === 1 && Number.isInteger(bits[0])
+            ? bits[0]
+            : null;
+    }
+
+    // Reconstruct the rendered net class from schematic JSON bits instead of
+    // adding a backend request just for wire coloring.
+    _timingNetStyles() {
+        const top = this._topModule(this._currentNetlist);
+        const styles = new Map();
+        for (let i = 0; i + 1 < this._timingNodes.length; i++) {
+            const bit = this._nodeBit(top, this._timingNodes[i]);
+            if (bit !== null && bit === this._nodeBit(top, this._timingNodes[i + 1])) {
+                styles.set(bit, this._timingIsCapturePath
+                    ? TIMING_NODE_STYLE.capture
+                    : (this._timingNodes[i].clk
+                        ? TIMING_NODE_STYLE.launch
+                        : TIMING_NODE_STYLE.data));
+            }
+        }
+        return styles;
+    }
+
+    _styleTimingWires() {
+        let shown = 0;
+        for (const [bit, style] of this._timingNetStyles()) {
+            for (const el of this._svgEl.querySelectorAll(
+                `.${CSS.escape('net_' + bit)}`)) {
+                const tag = el.tagName && el.tagName.toLowerCase();
+                if (tag === 'line' || tag === 'path' || tag === 'polyline') {
+                    this._styleTimingElement(el, style);
+                    shown++;
+                } else if (tag === 'circle') {
+                    this._styleTimingElement(el, style, style.color);
+                    shown++;
+                }
+            }
+        }
+        return shown;
+    }
+
     _handleSelectClick(e) {
         if (!this._svgEl) return;
 
@@ -627,8 +778,7 @@ export class SchematicWidget {
         return this._expandFromInstance(name, previousSnapshot);
     }
 
-    // Returns a promise so callers can wait for the inspect to land. It used to
-    // return nothing, which left double-click expansion nothing to wait on.
+    // Back waits for the restored inspector selection.
     _fetchInspect(instName) {
         const wm = this.appState.websocketManager;
         if (!wm) return Promise.resolve(false);
@@ -777,9 +927,7 @@ export class SchematicWidget {
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
-    // Returns a promise resolving to whether a schematic was drawn. The bare
-    // `return` this used to do gave callers no way to sequence anything after
-    // the render, which double-click expansion and the tests both need.
+    // Resolve to whether a schematic was drawn so callers can sequence updates.
     refresh() {
         const instName = this.appState.selectedInstanceName;
         if (!instName) {
@@ -861,16 +1009,16 @@ export class SchematicWidget {
 
         const { faninDepth, fanoutDepth } = this._schematicDepths();
         const readyPromise = wm.readyPromise || Promise.resolve();
-        // Capture the netlist the user requested expansion against, so that
-        // a schematic swap while the websocket request is in flight can't
-        // cause us to merge the response into (and overwrite) a different
-        // netlist.
+        // Drop the cone if another render replaces its expansion base.
         const baseNetlistAtRequest = this._currentNetlist;
 
         return readyPromise.then(() =>
             wm.request({ type: 'schematic_cone', inst_name: instName,
                          fanin_depth: faninDepth, fanout_depth: fanoutDepth })
                 .then(data => {
+                    if (this._currentNetlist !== baseNetlistAtRequest) {
+                        return false;
+                    }
                     const cells = data.modules && data.modules.top && data.modules.top.cells;
                     if (!cells || Object.keys(cells).length === 0) {
                         this.setStatus('No cells found for selected instance.');
@@ -879,7 +1027,9 @@ export class SchematicWidget {
                     const netlist = baseNetlistAtRequest
                         ? this._mergeSchematicNetlists(baseNetlistAtRequest, data)
                         : data;
-                    return Promise.resolve(this.renderNetlist(netlist))
+                    return Promise.resolve(this.renderNetlist(
+                        netlist,
+                        () => this._currentNetlist === baseNetlistAtRequest))
                         .then((didRender) => {
                             if (didRender === false) {
                                 return false;
@@ -964,6 +1114,8 @@ export class SchematicWidget {
         const added = this._cloneJson(addedNetlist);
         const addedCloneTop = this._topModule(added);
         this._ensureSchematicTopFields(addedCloneTop);
+        const addedBits = new Set();
+        this._collectSchematicBits(addedCloneTop, addedBits);
 
         const usedBits = new Set();
         this._collectSchematicBits(mergedTop, usedBits);
@@ -1006,6 +1158,13 @@ export class SchematicWidget {
             });
         }
 
+        // Anonymous dangling bits also need rebasing to avoid false connections.
+        for (const bit of addedBits) {
+            if (bit > 1 && !bitRemap.has(bit)) {
+                bitRemap.set(bit, allocateBit());
+            }
+        }
+
         for (const [portName, port] of Object.entries(addedCloneTop.ports)) {
             if (Object.prototype.hasOwnProperty.call(mergedTop.ports, portName)) {
                 continue;
@@ -1035,12 +1194,9 @@ export class SchematicWidget {
         return this.controls.querySelector('#schematic-view-style').value !== 'boxes';
     }
 
-    // Render used to always canonicalize. The Boxes view needs the untouched
-    // netlist instead, because canonicalizeForSkin rewrites pin names to skin
-    // port ids and drops power pins -- fine under a gate symbol, but a generic
-    // box is supposed to show the cell's real pins.
-    _netlistForView(yosysJson) {
-        return this._isSymbolView() ? canonicalizeForSkin(yosysJson) : yosysJson;
+    // Box view keeps real pin names; canonicalization rewrites them for symbols.
+    _netlistForView(yosysJson, symbolView = this._isSymbolView()) {
+        return symbolView ? canonicalizeForSkin(yosysJson) : yosysJson;
     }
 
     setStatus(msg) {
@@ -1126,31 +1282,24 @@ export class SchematicWidget {
             return;
         }
 
-        // Map both id forms back to the real ODB instance name. The old code
-        // probed the SVG and kept whichever id it found, but a skin symbol
-        // carries the name on a child's class rather than the group id, so the
-        // probe came up empty and the cell was left unclickable.
+        // Skin and generic cells expose different id forms.
         const prefixed = 'cell_' + instName;
         this._svgIdToInstName.set(prefixed, instName);
         this._svgIdToInstName.set(instName, instName);
         this._addCellHitTarget(group, prefixed);
     }
 
-    async renderNetlist(yosysJson) {
+    async renderNetlist(yosysJson, isCurrent = null) {
+        const generation = ++this._renderGeneration;
+        const symbolView = this._isSymbolView();
+        const isLatestRender = () => generation === this._renderGeneration;
+        const callerIsCurrent = () => !isCurrent || isCurrent();
         try {
             this.setStatus('Rendering…');
-            // Keep the original netlist for view toggles and cone expansion.
-            this._currentNetlist = yosysJson;
-
-            // Debug aid: the last netlist rendered is exposed so it can be
-            // captured for the offline render preview tool
-            // (src/web/test/visual). In DevTools:
-            //   copy(JSON.stringify(window.__lastSchematic))
-            if (typeof window !== 'undefined') window.__lastSchematic = yosysJson;
 
             // Rewrite recognised logic gates to skin types so netlistsvg can
             // place and route the upstream symbols natively.
-            const renderJson = this._netlistForView(yosysJson);
+            const renderJson = this._netlistForView(yosysJson, symbolView);
 
             // netlistsvg.render() is Promise-based in v1.x (async ELK layout),
             // but older versions used a callback: render(skin, json, done).
@@ -1172,6 +1321,12 @@ export class SchematicWidget {
             if (typeof svgString !== 'string' || !svgString.includes('<svg')) {
                 throw new Error('render() did not return a valid SVG string');
             }
+            // Drop renders superseded while netlistsvg was running.
+            if (!isLatestRender() || !callerIsCurrent()) return false;
+
+            // Commit the netlist only after its SVG is ready.
+            this._currentNetlist = yosysJson;
+            if (typeof window !== 'undefined') window.__lastSchematic = yosysJson;
 
             // Inject SVG into the viewport
             this._selectedCell = null;
@@ -1180,7 +1335,6 @@ export class SchematicWidget {
             this.svgContainer.innerHTML = svgString;
             this._svgEl = this.svgContainer.querySelector('svg');
             this._scopeSkinStyles();
-            const symbolView = this._isSymbolView();
             if (symbolView) {
                 // Only create the label elements here. Placing them needs real
                 // text metrics, which the browser has not computed yet, so the
@@ -1211,13 +1365,17 @@ export class SchematicWidget {
             this._scale = 1;
             this._panX = 0;
             this._panY = 0;
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                if (symbolView) {
-                    this._layoutInstanceLabels(renderJson);
-                    this._padSvgToContent();
-                }
-                this.fitView();
-            }));
+            requestAnimationFrame(() => {
+                if (!isLatestRender()) return;
+                requestAnimationFrame(() => {
+                    if (!isLatestRender()) return;
+                    if (symbolView) {
+                        this._layoutInstanceLabels(renderJson);
+                        this._padSvgToContent();
+                    }
+                    this.fitView();
+                });
+            });
 
             const cellCount = Object.keys(cells).length;
             this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
@@ -1227,8 +1385,10 @@ export class SchematicWidget {
             this._applyTimingPath();
             return true;
         } catch (err) {
-            console.error('NetlistSVG render failed:', err);
-            this.setStatus(`Render error: ${err.message || err}`);
+            if (isLatestRender() && callerIsCurrent()) {
+                console.error('NetlistSVG render failed:', err);
+                this.setStatus(`Render error: ${err.message || err}`);
+            }
             return false;
         }
     }
@@ -1240,43 +1400,13 @@ export class SchematicWidget {
             || el.getAttributeNS(netlistsvgNS, attrName);
     }
 
-    _openRoadPortLabelMap(cell) {
-        const labels = new Map();
-        if (!cell.port_labels
-            || typeof cell.port_labels !== 'object'
-            || Array.isArray(cell.port_labels)) {
-            return labels;
-        }
-
-        for (const [symbolPort, realPort] of Object.entries(cell.port_labels)) {
-            labels.set(symbolPort, realPort);
-        }
-        return labels;
-    }
-
     _isInstanceLabel(label) {
         return label.getAttribute('data-openroad-label') === 'instance'
             || this._svgSkinAttribute(label, 'attribute') === 'ref';
     }
 
-    _textAnchorForLabel(label) {
-        if (label.style.textAnchor) return label.style.textAnchor;
-        const textAnchor = label.getAttribute('text-anchor');
-        if (textAnchor) return textAnchor;
-        if (label.classList.contains('inputPortLabel')) return 'end';
-        if (label.classList.contains('nodelabel')) return 'middle';
-        return 'start';
-    }
-
     _stylePortLabel(label, fontSize = 10) {
-        const anchor = this._textAnchorForLabel(label);
-        label.style.fill = '#000';
-        label.style.stroke = 'none';
         label.style.fontSize = `${fontSize}px`;
-        label.style.fontFamily = '"Courier New", monospace';
-        label.style.fontWeight = 'bold';
-        label.style.textAnchor = anchor;
-        label.setAttribute('text-anchor', anchor);
         label.style.pointerEvents = 'none';
     }
 
@@ -1391,40 +1521,23 @@ export class SchematicWidget {
         return true;
     }
 
-    _normalizeSchematicPortText() {
-        if (!this._svgEl) return;
-
-        for (const label of this._svgEl.querySelectorAll('text')) {
-            if (this._isInstanceLabel(label)) continue;
-            this._stylePortLabel(label);
-        }
-    }
-
     _updateOpenRoadPortLabels(group, cell) {
-        const labels = this._openRoadPortLabelMap(cell);
+        const labels = cell.port_labels || {};
         const dirs = cell.port_directions || {};
-        for (const normalizedPort of labels.keys()) {
+        for (const normalizedPort of Object.keys(labels)) {
             this._ensureOpenRoadPortLabelElement(group, normalizedPort);
         }
 
         for (const label of group.querySelectorAll('text[data-openroad-port]')) {
             const normalizedPort = label.getAttribute('data-openroad-port');
-            label.textContent = labels.get(normalizedPort) || normalizedPort;
+            label.textContent = labels[normalizedPort] || normalizedPort;
             this._positionOpenRoadPortLabel(
                 group, label, normalizedPort, dirs[normalizedPort]);
             this._stylePortLabel(label, 5);
         }
     }
 
-    // The OpenROAD skin supplies geometry/ports; real instance and Liberty
-    // pin names are added after render.
-    //
-    // Supersedes _applyPinLabels, which positioned each label straight from the
-    // port's s:x/s:y attributes. That holds only when the marker sits directly
-    // under the cell group; the register symbols nest their pins inside
-    // translated helper groups, so those labels landed at the wrong offset.
-    // _portMarkerPosition now accumulates the parent transforms instead, and
-    // instance names are placed here too rather than left to the skin.
+    // Register pin markers are nested, so label placement accumulates transforms.
     _ensureOpenRoadSymbolLabels(netlist) {
         if (!this._svgEl) return;
 
@@ -1432,8 +1545,6 @@ export class SchematicWidget {
                     && netlist.modules.top.cells || {};
         const svgNS = 'http://www.w3.org/2000/svg';
         const netlistsvgNS = 'https://github.com/nturley/netlistsvg';
-
-        this._normalizeSchematicPortText();
 
         for (const [instName, cell] of Object.entries(cells)) {
             if (!cell.port_labels) continue;
@@ -1457,9 +1568,6 @@ export class SchematicWidget {
             label.setAttribute('class', 'nodelabel');
             label.setAttribute('data-openroad-label', 'instance');
             label.setAttribute('pointer-events', 'none');
-            label.setAttribute('style',
-                'fill:#000;stroke:none;font-size:10px;font-weight:bold;'
-                + 'font-family:"Courier New",monospace;text-anchor:middle;');
             group.appendChild(label);
         }
     }
@@ -1913,13 +2021,8 @@ export function scopeCssSelector(selectorText, scope) {
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
 //
-// The server tags recognised combinational and register cells with `gate_kind`
-// (and/nand/or/nor/xor/xnor/not/buf, aoi/oai with `gate_terms`, or a
-// dff/dffr/dffs register).  Before
-// rendering we rewrite those cells to the canonical gate types drawn by the
-// custom skin (openroad_skin.svg) and remap their pins to the symbol's port ids
-// (A, B, …, Y).  netlistsvg then renders proper gate symbols and routes the
-// wires to the symbol-defined port positions — no overlay or alignment needed.
+// The server tags recognised combinational and register cells with `gate_kind`.
+// Rewrite them to the custom skin's types and port ids before rendering.
 
 // gate_kind -> skin symbol type (a Yosys primitive alias the skin recognises).
 const SKIN_SIMPLE_TYPE = {
@@ -1963,63 +2066,6 @@ function normalizedPortMap(cell) {
     return Object.keys(map).length > 0 ? map : null;
 }
 
-function isDffFamilyType(cell) {
-    const type = cell && cell.type;
-    if (typeof type !== 'string') return false;
-    const upper = type.toUpperCase();
-    return upper.startsWith('DFF')
-        || upper.includes('_DFF')
-        || upper.includes('$DFF');
-}
-
-// Some rendered cones contain DFF-shaped cells without backend gate_kind.  Use
-// the DFF skin when the visible D/clock/Q pins are present; for DFF-family cell
-// names, ignore extra input controls such as enables so the shape still reads as
-// a flip-flop instead of a plain box.  Keep this name-gated so unrelated cells
-// retain netlistsvg's generic-box fallback.
-function inferredRegisterPortMap(cell) {
-    const conns = cell && cell.connections;
-    const dirs = cell && cell.port_directions;
-    if (!conns || !dirs) return null;
-
-    const hasPort = (port) => Object.prototype.hasOwnProperty.call(conns, port);
-    const isInput = (port) => hasPort(port) && dirs[port] === 'input';
-    const isOutput = (port) => hasPort(port) && dirs[port] === 'output';
-    const clock = ['CK', 'CLK', 'C'].find((port) => isInput(port));
-    if (!isInput('D') || !clock || (!isOutput('Q') && !isOutput('QN'))) {
-        return null;
-    }
-
-    const reset = isInput('RN') ? 'RN' : null;
-    const set = isInput('SN') ? 'SN' : null;
-    if (reset && set) return null;
-
-    const allowed = new Set(['D', clock, 'Q', 'QN']);
-    if (reset) allowed.add(reset);
-    if (set) allowed.add(set);
-    const allowExtraInputs = isDffFamilyType(cell);
-    for (const port of Object.keys(conns)) {
-        if (allowed.has(port)) continue;
-        if (dirs[port] === 'input' && allowExtraInputs) {
-            continue;
-        }
-        if (dirs[port] === 'input' || dirs[port] === 'output') {
-            return null;
-        }
-    }
-
-    const ports = { D: 'D', CK: clock };
-    if (reset) ports.RN = reset;
-    if (set) ports.SN = set;
-    if (isOutput('Q')) ports.Q = 'Q';
-    if (isOutput('QN')) ports.QN = 'QN';
-
-    return {
-        kind: reset ? 'dffr' : (set ? 'dffs' : 'dff'),
-        ports,
-    };
-}
-
 function skinPidForGatePort(symbolPort) {
     const inputMatch = /^A([1-6])$/.exec(symbolPort);
     if (inputMatch) return PID_LETTERS[Number(inputMatch[1]) - 1] || symbolPort;
@@ -2034,14 +2080,7 @@ function skinPidForGatePort(symbolPort) {
 // whose computed type has no symbol — are returned unchanged so they render as
 // a labelled generic box with their real pin names.
 export function canonicalizeCell(cell) {
-    // A cell with no `gate_kind` gets one more chance as a register, since the
-    // backend only tags combinational cells and flops would otherwise fall
-    // through to a generic box.
-    const inferredRegister = cell && !cell.gate_kind
-        ? inferredRegisterPortMap(cell)
-        : null;
-    const kind = cell && (cell.gate_kind
-        || (inferredRegister && inferredRegister.kind));
+    const kind = cell && cell.gate_kind;
     if (!kind) return cell;
 
     const dirs = cell.port_directions || {};
@@ -2054,8 +2093,7 @@ export function canonicalizeCell(cell) {
 
     let type;
     const pidOf = {};  // real pin name -> symbol port id
-    const gatePorts = normalizedPortMap(cell)
-        || (inferredRegister && inferredRegister.ports);
+    const gatePorts = normalizedPortMap(cell);
     const mapGatePorts = () => {
         for (const [symbolPort, realPort] of Object.entries(gatePorts || {})) {
             pidOf[realPort] = skinPidForGatePort(symbolPort);

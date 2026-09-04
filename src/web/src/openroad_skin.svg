@@ -2,13 +2,8 @@
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xmlns:s="https://github.com/nturley/netlistsvg"
   width="800" height="760">
-  <!-- OpenROAD custom netlistsvg skin.
-       Based on netlistsvg's default.svg, with two changes:
-       (1) every logic-gate symbol carries an s:attribute="ref" label so the
-           instance name renders on the gate, and
-       (2) added a buffer symbol and compound AOI/OAI gate symbols.
-       The web schematic viewer rewrites cell types to the canonical names used
-       here (see canonicalizeForSkin in schematic-widget.js). -->
+  <!-- OpenROAD's netlistsvg skin adds missing gate/register symbols and
+       instance labels. canonicalizeForSkin maps cells to these types. -->
   <s:properties>
     <s:layoutEngine
       org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers="35"
@@ -38,9 +33,7 @@ text {
 .splitjoinBody {
   fill:#000;
 }
-/* Make the (otherwise hollow) gate bodies clickable over their whole area so
-   select mode works when clicking inside a symbol, not just on its outline.
-   'all' makes the interior a pointer target regardless of fill. */
+/* Open gate bodies need their interior to receive clicks. */
 path, rect, circle, polygon {
   pointer-events: all;
 }
@@ -171,11 +164,8 @@ path, rect, circle, polygon {
     <g s:x="24" s:y="10" s:pid="Y"/>
   </g>
 
-  <!-- dff. Grown from 30x40 and re-pinned: the backend now reports QN, which
-       the old symbol had no port for, so an inverted output was dropped from
-       the drawing. D/CLK/Q moved to make room for the second output. -->
+  <!-- Wider DFF body adds QN without overlapping D/clock pins. -->
   <g s:type="dff" transform="translate(350,150)" s:width="46" s:height="44">
-    <s:alias val="dff"/>
     <s:alias val="$dff"/>
     <s:alias val="$_DFF_"/>
     <s:alias val="$_DFF_P_"/>
@@ -194,7 +184,6 @@ path, rect, circle, polygon {
 
   <!-- Reset/set DFF variants are not in upstream netlistsvg's skin. -->
   <g s:type="dffr" transform="translate(480,150)" s:width="50" s:height="54">
-    <s:alias val="dffr"/>
     <s:alias val="$dffr"/>
     <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffr</text>
 
@@ -212,7 +201,6 @@ path, rect, circle, polygon {
   </g>
 
   <g s:type="dffs" transform="translate(550,150)" s:width="50" s:height="54">
-    <s:alias val="dffs"/>
     <s:alias val="$dffs"/>
     <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffs</text>
 

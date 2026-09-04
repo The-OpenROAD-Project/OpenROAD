@@ -28,6 +28,16 @@ function createMockApp(responses = {}) {
     };
 }
 
+function deferred() {
+    let resolve;
+    let reject;
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, resolve, reject };
+}
+
 function makePath(slack, endPin, extra = {}) {
     return {
         start_clk: 'clk', end_clk: 'clk',
@@ -360,14 +370,15 @@ describe('TimingWidget unconstrained paths', () => {
             r => r.type === 'timing_report' && r.unconstrained === true));
     });
 
-    // The server re-derives the path list to resolve path_index, so a
-    // highlight sent while unconstrained paths are shown must say so or it
-    // resolves against a different list.
-    it('carries the flag on timing_highlight so indices stay in sync', () => {
-        const app = createMockApp();
+    it('carries the loaded report flag on timing_highlight', async () => {
+        const app = createMockApp({
+            timing_report: (msg) => ({
+                paths: msg.is_setup ? [makePath(0.0, 'a'), makePath(0.1, 'b')] : [],
+            }),
+        });
         const widget = new TimingWidget(app, () => {});
         widget._unconstrainedBox.checked = true;
-        widget.showPaths('setup', [makePath(0.0, 'a'), makePath(0.1, 'b')]);
+        await widget.update();
         app.requests.length = 0;
 
         widget._selectPathRow(1);
@@ -376,15 +387,16 @@ describe('TimingWidget unconstrained paths', () => {
         assert.equal(highlight.unconstrained, true);
     });
 
-    it('carries the flag on detail-row highlights too', () => {
-        const app = createMockApp();
+    it('carries the loaded report flag on detail-row highlights too', async () => {
+        const path = makePath(0.0, 'a', {
+            data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
+        });
+        const app = createMockApp({
+            timing_report: (msg) => ({ paths: msg.is_setup ? [path] : [] }),
+        });
         const widget = new TimingWidget(app, () => {});
         widget._unconstrainedBox.checked = true;
-        widget.showPaths('setup', [
-            makePath(0.0, 'a', {
-                data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
-            }),
-        ]);
+        await widget.update();
         widget._selectPathRow(0);
         app.requests.length = 0;
 
@@ -393,6 +405,85 @@ describe('TimingWidget unconstrained paths', () => {
         const highlight = app.requests.find(r => r.type === 'timing_highlight');
         assert.equal(highlight.unconstrained, true);
         assert.equal(highlight.pin_name, 'u1/A');
+    });
+
+    it('uses the displayed report options while a refetch is pending', async () => {
+        const pending = [];
+        const app = createMockApp({
+            timing_report: () => {
+                const request = deferred();
+                pending.push(request);
+                return request.promise;
+            },
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'old')]);
+        widget._unconstrainedBox.checked = true;
+
+        const update = widget.update();
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+        pending.forEach(request => request.resolve({ paths: [] }));
+        await update;
+    });
+
+    it('keeps the displayed report options after a refetch fails', async () => {
+        const app = createMockApp({
+            timing_report: () => Promise.reject(new Error('failed')),
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'old')]);
+        widget._unconstrainedBox.checked = true;
+
+        assert.equal(await widget.update(), false);
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+    });
+
+    it('does not let an older report response replace a newer one', async () => {
+        const reports = [];
+        const app = createMockApp({
+            timing_report: (msg) => {
+                const request = deferred();
+                reports.push({ msg, request });
+                return request.promise;
+            },
+        });
+        const widget = new TimingWidget(app, () => {});
+
+        widget._unconstrainedBox.checked = true;
+        const older = widget.update();
+        widget._unconstrainedBox.checked = false;
+        const newer = widget.update();
+
+        for (const report of reports.filter(r => !r.msg.unconstrained)) {
+            report.request.resolve({
+                paths: report.msg.is_setup ? [makePath(0.0, 'newer')] : [],
+            });
+        }
+        assert.equal(await newer, true);
+        for (const report of reports.filter(r => r.msg.unconstrained)) {
+            report.request.resolve({
+                paths: report.msg.is_setup ? [makePath(0.0, 'older')] : [],
+            });
+        }
+        assert.equal(await older, false);
+
+        const endPin = widget._pathTable.querySelector('tbody tr')
+            .cells[TimingWidget.PATH_COLS.length - 1].textContent;
+        assert.equal(endPin, 'newer');
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+        assert.equal(widget._updateBtn.disabled, false);
+        assert.equal(widget._updateBtn.textContent, 'Update');
     });
 });
 
@@ -435,8 +526,6 @@ describe('TimingWidget schematic hand-off', () => {
         assert.equal(app.schematicPaths[0].end_pin, 'b');
     });
 
-    // The schematic draws the cells the detail table lists, so the widget has
-    // to send whichever node list is on display.
     function pathWithBothLegs() {
         return makePath(-0.1, 'a', {
             data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],

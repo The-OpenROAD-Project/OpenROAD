@@ -3529,8 +3529,7 @@ struct GateClass
   // "dff"/"dffr"/"dffs" for supported registers, or "" when the cell is not a
   // recognised schematic gate.
   std::string kind;
-  // Symbol port id -> real Liberty/dbMTerm pin name, used by the viewer to
-  // route skin symbols while keeping the design's original pin labels.
+  // Register symbol port id -> real Liberty/dbMTerm pin name.
   std::map<std::string, std::string> ports;
   // For "aoi"/"oai" only: the input pin names of each first-level term (e.g.
   // AOI21 -> {{"A"}, {"B1", "B2"}}).  A one-pin term is a literal fed straight
@@ -3605,7 +3604,6 @@ static std::vector<std::vector<std::string>> classifyAoiOai(
   return groups;
 }
 
-// Check that every connected signal pin is represented by the chosen symbol.
 static bool usesExactlyIterms(const std::vector<odb::dbITerm*>& connected,
                               const std::vector<odb::dbITerm*>& symbol_iterms)
 {
@@ -3623,7 +3621,6 @@ static bool usesExactlyIterms(const std::vector<odb::dbITerm*>& connected,
   return true;
 }
 
-// Return the Liberty port for a direct port expression.
 static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
 {
   if (expr != nullptr && expr->op() == sta::FuncExpr::Op::port) {
@@ -3632,7 +3629,6 @@ static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
   return nullptr;
 }
 
-// Return the Liberty port for an active-low expression, e.g. !RN.
 static sta::LibertyPort* activeLowPortExpr(const sta::FuncExpr* expr)
 {
   if (expr != nullptr && expr->op() == sta::FuncExpr::Op::not_) {
@@ -3641,11 +3637,9 @@ static sta::LibertyPort* activeLowPortExpr(const sta::FuncExpr* expr)
   return nullptr;
 }
 
-// Find the connected instance terminal matching a Liberty port.
-static odb::dbITerm* findConnectedItermForPort(
-    const std::vector<odb::dbITerm*>& iterms,
-    const sta::LibertyPort* port,
-    sta::dbNetwork* network)
+static odb::dbITerm* findItermForPort(const std::vector<odb::dbITerm*>& iterms,
+                                      const sta::LibertyPort* port,
+                                      sta::dbNetwork* network)
 {
   if (port == nullptr) {
     return nullptr;
@@ -3688,6 +3682,37 @@ static bool outputPortReferencesState(sta::LibertyPort* output_port,
          && function->hasPort(state_port);
 }
 
+static bool addRegisterOutputs(const std::vector<odb::dbITerm*>& signal_outputs,
+                               sta::Sequential* sequential,
+                               sta::dbNetwork* network,
+                               GateClass& result)
+{
+  odb::dbITerm* output = nullptr;
+  odb::dbITerm* output_inv = nullptr;
+  for (odb::dbITerm* output_iterm : signal_outputs) {
+    sta::LibertyPort* output_port
+        = network->libertyPort(network->dbToSta(output_iterm));
+    if (outputPortReferencesState(output_port, sequential->output())) {
+      output = output_iterm;
+    } else if (outputPortReferencesState(output_port,
+                                         sequential->outputInv())) {
+      output_inv = output_iterm;
+    }
+  }
+
+  std::vector<odb::dbITerm*> symbol_outputs;
+  if (output != nullptr) {
+    symbol_outputs.push_back(output);
+    result.ports["Q"] = output->getMTerm()->getName();
+  }
+  if (output_inv != nullptr) {
+    symbol_outputs.push_back(output_inv);
+    result.ports["QN"] = output_inv->getMTerm()->getName();
+  }
+  return !symbol_outputs.empty()
+         && usesExactlyIterms(signal_outputs, symbol_outputs);
+}
+
 // Classify DFF-like sequentials that match OpenROAD's register symbols.
 // Unsupported cells fall back to generic boxes.
 static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
@@ -3696,35 +3721,35 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
     return {};
   }
 
-  // Exactly one sequential: multi-bit and statetable cells have no symbol.
-  // This subsumes the deprecated hasSequentials(), which is only true when
-  // sequentials() is non-empty or a statetable is present.
+  // Multi-bit and statetable cells have no matching symbol.
   sta::LibertyCell* cell = network->libertyCell(inst);
   if (cell == nullptr || cell->sequentials().size() != 1) {
     return {};
   }
 
-  // Ignore supplies and unconnected pins; only visible signal wiring matters.
-  std::vector<odb::dbITerm*> connected_inputs;
-  std::vector<odb::dbITerm*> connected_outputs;
+  // Every signal pin must fit the symbol so no dangling connection is hidden.
+  std::vector<odb::dbITerm*> signal_inputs;
+  std::vector<odb::dbITerm*> signal_outputs;
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getSigType().isSupply() || iterm->getNet() == nullptr) {
+    if (iterm->getSigType().isSupply()) {
       continue;
     }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      connected_inputs.push_back(iterm);
+      signal_inputs.push_back(iterm);
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      connected_outputs.push_back(iterm);
+      signal_outputs.push_back(iterm);
+    } else {
+      return {};
     }
   }
 
-  if (connected_inputs.empty() || connected_outputs.empty()) {
+  if (signal_inputs.empty() || signal_outputs.empty()) {
     return {};
   }
 
   // All connected outputs must refer to the same Liberty register definition.
   sta::Sequential* sequential = nullptr;
-  for (odb::dbITerm* output_iterm : connected_outputs) {
+  for (odb::dbITerm* output_iterm : signal_outputs) {
     sta::LibertyPort* output_port
         = network->libertyPort(network->dbToSta(output_iterm));
     sta::Sequential* output_seq = sequentialForOutputPort(cell, output_port);
@@ -3742,10 +3767,10 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   }
 
   // Require direct data and clock ports.
-  odb::dbITerm* data = findConnectedItermForPort(
-      connected_inputs, simplePortExpr(sequential->data()), network);
-  odb::dbITerm* clock = findConnectedItermForPort(
-      connected_inputs, simplePortExpr(sequential->clock()), network);
+  odb::dbITerm* data = findItermForPort(
+      signal_inputs, simplePortExpr(sequential->data()), network);
+  odb::dbITerm* clock = findItermForPort(
+      signal_inputs, simplePortExpr(sequential->clock()), network);
   if (data == nullptr || clock == nullptr) {
     return {};
   }
@@ -3753,10 +3778,8 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   // Support one active-low async control: reset or set, not both.
   sta::LibertyPort* clear_port = activeLowPortExpr(sequential->clear());
   sta::LibertyPort* preset_port = activeLowPortExpr(sequential->preset());
-  odb::dbITerm* clear
-      = findConnectedItermForPort(connected_inputs, clear_port, network);
-  odb::dbITerm* preset
-      = findConnectedItermForPort(connected_inputs, preset_port, network);
+  odb::dbITerm* clear = findItermForPort(signal_inputs, clear_port, network);
+  odb::dbITerm* preset = findItermForPort(signal_inputs, preset_port, network);
   if ((sequential->clear() != nullptr
        && (clear_port == nullptr || clear == nullptr))
       || (sequential->preset() != nullptr
@@ -3774,35 +3797,7 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   if (preset != nullptr) {
     symbol_inputs.push_back(preset);
   }
-  if (!usesExactlyIterms(connected_inputs, symbol_inputs)) {
-    return {};
-  }
-
-  // Map the connected outputs to Q/QN.
-  odb::dbITerm* output = nullptr;
-  odb::dbITerm* output_inv = nullptr;
-  for (odb::dbITerm* output_iterm : connected_outputs) {
-    sta::LibertyPort* output_port
-        = network->libertyPort(network->dbToSta(output_iterm));
-    if (outputPortReferencesState(output_port, sequential->output())) {
-      output = output_iterm;
-    } else if (outputPortReferencesState(output_port,
-                                         sequential->outputInv())) {
-      output_inv = output_iterm;
-    }
-  }
-  if (output == nullptr && output_inv == nullptr) {
-    return {};
-  }
-
-  std::vector<odb::dbITerm*> symbol_outputs;
-  if (output != nullptr) {
-    symbol_outputs.push_back(output);
-  }
-  if (output_inv != nullptr) {
-    symbol_outputs.push_back(output_inv);
-  }
-  if (!usesExactlyIterms(connected_outputs, symbol_outputs)) {
+  if (!usesExactlyIterms(signal_inputs, symbol_inputs)) {
     return {};
   }
 
@@ -3817,11 +3812,8 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   if (preset != nullptr) {
     result.ports["SN"] = preset->getMTerm()->getName();
   }
-  if (output != nullptr) {
-    result.ports["Q"] = output->getMTerm()->getName();
-  }
-  if (output_inv != nullptr) {
-    result.ports["QN"] = output_inv->getMTerm()->getName();
+  if (!addRegisterOutputs(signal_outputs, sequential, network, result)) {
+    return {};
   }
   return result;
 }
@@ -3894,8 +3886,6 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
   // Single input: buffer (Y = A) or inverter (Y = !A).
   if (func->op() == sta::FuncExpr::Op::port) {
     result.kind = inverting ? "not" : "buf";
-    result.ports["A"] = func->port()->name();
-    result.ports["Y"] = out_port->name();
     return result;
   }
 
@@ -3915,28 +3905,17 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
       }
     }
     if (all_ports && operands.size() >= 2) {
-      // Each case used to return here. They break instead so the shared pin
-      // mapping below runs for every gate kind -- returning early would emit
-      // gate_kind with no gate_ports, leaving the symbol's pins unlabelled.
       switch (top) {
         case sta::FuncExpr::Op::and_:
           result.kind = inverting ? "nand" : "and";
-          break;
+          return result;
         case sta::FuncExpr::Op::or_:
           result.kind = inverting ? "nor" : "or";
-          break;
+          return result;
         default:  // xor_
           result.kind = inverting ? "xnor" : "xor";
-          break;
+          return result;
       }
-      for (size_t i = 0; i < operands.size(); ++i) {
-        sta::LibertyPort* port = operands[i]->port();
-        if (port != nullptr) {
-          result.ports["A" + std::to_string(i + 1)] = port->name();
-        }
-      }
-      result.ports["Y"] = out_port->name();
-      return result;
     }
   }
 
@@ -3948,8 +3927,6 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
     std::vector<std::vector<std::string>> terms
         = classifyAoiOai(func, func->op());
     if (!terms.empty()) {
-      // No `ports` map: the viewer derives AOI/OAI symbol port ids from the
-      // term grouping instead, so a lone output entry here would go unread.
       result.kind = (func->op() == sta::FuncExpr::Op::or_) ? "aoi" : "oai";
       result.terms = std::move(terms);
     }
@@ -3976,10 +3953,7 @@ static void emitSchematicCell(boost::json::object& cells,
   cell["attributes"] = boost::json::object{};
   cell["parameters"] = boost::json::object{};
 
-  // Was a single const classifyGate() call. Registers are tried first because
-  // classifyGate rejects any sequential cell outright, so a flop would other-
-  // wise fall through to a generic box. The result is no longer const only so
-  // the combinational path can reuse the variable.
+  // Registers need classification before classifyGate rejects sequentials.
   GateClass gate = classifyRegister(network, inst);
   if (gate.kind.empty()) {
     gate = classifyGate(network, inst);
@@ -4035,12 +4009,7 @@ static void emitSchematicCell(boost::json::object& cells,
   cells[inst->getName()] = std::move(cell);
 }
 
-// Assemble the Yosys-format netlist JSON that every schematic request returns.
-//
-// `net_to_id` decides which nets are wired: a pin whose net is absent gets a
-// synthetic dangling id from emitSchematicCell.  The full-block request passes
-// its own map so that nets touching no instance at all (a port-to-port
-// feedthrough) still appear; the overload below covers everyone else.
+// The full-block request supplies all nets to preserve port-only feedthroughs.
 template <typename InstRange>
 static boost::json::object buildSchematicNetlist(
     const InstRange& insts,
@@ -4081,8 +4050,7 @@ static boost::json::object buildSchematicNetlist(
   return root;
 }
 
-// Wire exactly the nets that touch `insts`.  Pins on any other net render as
-// short dangling stubs, which is what both the cone and a timing path want.
+// Cone/path requests wire only nets touching their selected instances.
 template <typename InstRange>
 static boost::json::object buildSchematicNetlist(const InstRange& insts,
                                                  sta::dbNetwork* network)
@@ -4225,10 +4193,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
   return resp;
 }
 
-// Build a schematic from an explicit list of instances — the cells of one
-// timing path.  Names that resolve to no instance (block ports on the path)
-// are skipped rather than treated as an error, since the caller derives them
-// from pins it does not filter.
+// Pin-derived path names can include block ports, so unknown names are skipped.
 WebSocketResponse SelectHandler::handleSchematicPath(
     const WebSocketRequest& req)
 {

@@ -334,7 +334,7 @@ correct netlist, just drawn as generic boxes.
 | Field         | Type     | Description                                          |
 | ------------- | -------- | ---------------------------------------------------- |
 | `gate_kind`   | `string` | `and`/`nand`/`or`/`nor`/`xor`/`xnor`/`not`/`buf` for simple gates, `aoi`/`oai` for compound and/or-invert gates, `dff`/`dffr`/`dffs` for registers. Absent when the cell is not recognised. |
-| `gate_ports`  | `object` | Symbol port id → real Liberty pin name (e.g. `{"A1": "A", "Y": "ZN"}`), letting the viewer route the skin symbol while still labelling the design's own pin names. Emitted for simple gates and registers. |
+| `gate_ports`  | `object` | Register symbol port id → real Liberty pin name (e.g. `{"CK": "CK", "Q": "Q"`), letting the viewer route the skin symbol while still labelling the design's own pin names. |
 | `gate_terms`  | `array`  | `aoi`/`oai` only: the input pin names of each first-level term (AOI21 → `[["A"], ["B1", "B2"]]`). A one-pin term feeds the second-level gate directly. The viewer derives the symbol port ids from this grouping, so no `gate_ports` is sent. |
 
 ### `schematic_full`
@@ -349,7 +349,7 @@ cells of one timing path, as listed in the timing panel's detail table.
 
 | Field        | Type       | Required | Description                              |
 | ------------ | ---------- | :------: | ---------------------------------------- |
-| `inst_names` | `string[]` |    ✓     | Instance names to include, in path order. |
+| `inst_names` | `string[]` |    ✓     | Instance names to include. |
 
 Names that match no instance are skipped rather than erroring, so callers
 may pass pin-derived names that include block ports. Capped at 400
