@@ -375,6 +375,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   QAction* show_poly_decomp_view_;
   QAction* default_ruler_style_;
   QAction* default_mouse_wheel_zoom_;
+  QAction* arrow_keys_scroll_accel_;
   QAction* arrow_keys_scroll_step_dialog_;
   QAction* font_;
   QAction* global_connect_;

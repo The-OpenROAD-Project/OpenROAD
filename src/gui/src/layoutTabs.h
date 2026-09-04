@@ -44,6 +44,7 @@ class LayoutTabs : public QTabWidget
              std::function<bool()> using_poly_decomp_view,
              std::function<bool()> show_ruler_as_euclidian,
              std::function<bool()> default_mouse_wheel_zoom,
+             std::function<bool()> arrow_keys_scroll_accel,
              std::function<int()> arrow_keys_scroll_step,
              QWidget* parent = nullptr);
 
@@ -135,6 +136,7 @@ class LayoutTabs : public QTabWidget
   std::function<bool()> using_poly_decomp_view_;
   std::function<bool()> show_ruler_as_euclidian_;
   std::function<bool()> default_mouse_wheel_zoom_;
+  std::function<bool()> arrow_keys_scroll_accel_;
   std::function<int()> arrow_keys_scroll_step_;
   utl::Logger* logger_;
   bool command_executing_ = false;
