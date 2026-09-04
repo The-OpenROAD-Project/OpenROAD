@@ -25,6 +25,7 @@
 #include "odb/geom.h"
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
+#include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 
 namespace web {
@@ -4340,6 +4341,19 @@ TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 {
   EXPECT_EQ(getDb()->getDbuPerMicron(), 2000u);
   EXPECT_EQ(dbuPrecision(getDb()->getDbuPerMicron()), 4);
+}
+
+TEST(TimingPathShapesTest, NullBlockProducesNoGeometry)
+{
+  TimingPathSummary path;
+  path.data_nodes = {{.pin_name = "top/input"}, {.pin_name = "top/output"}};
+  std::vector<ColoredRect> rects;
+  std::vector<FlightLine> lines;
+
+  collectTimingPathShapes(nullptr, path, rects, lines);
+
+  EXPECT_TRUE(rects.empty());
+  EXPECT_TRUE(lines.empty());
 }
 
 }  // namespace

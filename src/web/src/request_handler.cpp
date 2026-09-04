@@ -4358,7 +4358,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
-        if (!pin_name.empty()) {
+        if (block && !pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
           auto [iterm, bterm] = resolvePin(block, pin_name);
 
