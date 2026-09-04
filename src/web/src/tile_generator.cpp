@@ -6446,6 +6446,12 @@ void collectTimingPathShapes(odb::dbBlock* block,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines)
 {
+  // A 3DBlox top chip can be a hierarchy-only chip with no dbBlock.  Timing
+  // paths still exist in STA, but there is no block geometry to resolve.
+  if (!block) {
+    return;
+  }
+
   static const Color kLaunchClkColor{
       .r = 0, .g = 255, .b = 255, .a = 180};                            // Cyan
   static const Color kSignalColor{.r = 255, .g = 0, .b = 0, .a = 180};  // Red
