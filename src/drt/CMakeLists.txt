@@ -153,7 +153,7 @@ target_compile_options(drt
 if(ENABLE_TESTS)
   enable_testing()
 
-  foreach(test_name gcTest taTest)
+  foreach(test_name frRegionQueryTest gcTest taTest)
     add_executable(${test_name}
       ${FLEXROUTE_HOME}/test/${test_name}.cpp
       ${FLEXROUTE_HOME}/test/fixture.cpp
