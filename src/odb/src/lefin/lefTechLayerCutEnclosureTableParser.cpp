@@ -32,7 +32,7 @@ void lefTechLayerCutEnclosureTableRuleParser::checkCutClass(
 }
 
 void lefTechLayerCutEnclosureTableRuleParser::parse(const std::string& s,
-                                                     odb::dbTechLayer* layer)
+                                                    odb::dbTechLayer* layer)
 {
   qi::rule<std::string::const_iterator, space_type> cut_class_rule
       = -(lit("CUTCLASS") >> _string)[boost::bind(
@@ -74,10 +74,10 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(const std::string& s,
                && first == last;
   if (!valid) {
     lefin_->warning(603,
-                     "parse mismatch in layer property LEF58_ENCLOSURETABLE "
-                     "for layer {} :\"{}\"",
-                     layer->getName(),
-                     s);
+                    "parse mismatch in layer property LEF58_ENCLOSURETABLE "
+                    "for layer {} :\"{}\"",
+                    layer->getName(),
+                    s);
   }
 }
 
