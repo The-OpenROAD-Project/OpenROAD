@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: _4bitadder
+[INFO ODB-0130]     Created 18 pins.
+[INFO ODB-0131]     Created 19 components and 109 component-terminals.
+[INFO ODB-0133]     Created 32 nets and 62 connections.
+[INFO DFT-0015] Starting 2-Opt with initial total chain wire length 59.78um
+[INFO DFT-0016] Concluded 2-Opt with total chain wire length 52.42um.
+No differences found.
