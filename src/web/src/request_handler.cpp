@@ -5933,7 +5933,7 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
       odb::dbTech* tech = block->getTech();
       if (tech) {
         for (odb::dbTechLayer* layer : tech->getLayers()) {
-          if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+          if (layer && layer->getType() == odb::dbTechLayerType::ROUTING) {
             const int pitch = layer->getPitch();
             if (pitch > 0) {
               min_box_ = pitch;

@@ -52,7 +52,7 @@ void lefout::insertObstruction(dbTechLayer* layer,
                                const Rect& rect,
                                ObstructionMap& obstructions) const
 {
-  if (layer->getType() == odb::dbTechLayerType::CUT) {
+  if (layer == nullptr || layer->getType() == odb::dbTechLayerType::CUT) {
     return;
   }
 
@@ -1051,6 +1051,9 @@ void lefout::writeSameNetRule(std::ostream& out, dbTechSameNetRule* rule)
 
 void lefout::writeLayer(std::ostream& out, dbTechLayer* layer)
 {
+  if (layer == nullptr) {
+    return;
+  }
   std::string name;
   if (use_alias_ && layer->hasAlias()) {
     name = layer->getAlias();

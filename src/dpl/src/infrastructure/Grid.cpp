@@ -148,7 +148,9 @@ void Grid::markBlocked(odb::dbBlock* block)
   const odb::Rect core = getCore();
   auto addBlockedLayers
       = [&](odb::Rect wire_rect, odb::dbTechLayer* tech_layer) {
-          if (tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+          if (tech_layer == nullptr
+              || tech_layer->getType()
+                     != odb::dbTechLayerType::Value::ROUTING) {
             return;
           }
           auto routing_level = tech_layer->getRoutingLevel();
