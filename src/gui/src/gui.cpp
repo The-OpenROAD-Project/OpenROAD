@@ -277,6 +277,16 @@ void Gui::unregisterRenderer(Renderer* renderer)
   redraw();
 }
 
+void Gui::setRendererPaintingEnabled(Renderer* renderer, bool enabled)
+{
+  if (enabled) {
+    renderers_.insert(renderer);
+  } else {
+    renderers_.erase(renderer);
+  }
+  redraw();
+}
+
 void Gui::redraw()
 {
   if (main_window != nullptr) {

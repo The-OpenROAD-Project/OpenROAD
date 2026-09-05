@@ -788,6 +788,12 @@ class Gui
   void registerRenderer(Renderer* renderer);
   void unregisterRenderer(Renderer* renderer);
 
+  // Adds/removes a renderer from the active paint set only, leaving any
+  // DisplayControls entries it owns in place. Used by widgets whose
+  // renderer's controls should stay scriptable (e.g. via
+  // gui::set_display_controls) even while the owning widget is hidden.
+  void setRendererPaintingEnabled(Renderer* renderer, bool enabled);
+
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
   Selected makeSelected(const std::any& object);
