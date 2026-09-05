@@ -23,6 +23,10 @@ or_integration_tests(
     clone_hier
     eliminate_dead_logic1
     eliminate_dead_logic2
+    eco_round_trip
+    repair_timing_eco
+    repair_hold_eco
+    repair_timing_closure
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1

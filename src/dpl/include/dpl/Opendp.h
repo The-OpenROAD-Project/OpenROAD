@@ -119,6 +119,21 @@ class Opendp
                          bool disable_window_extension = false);
   void reportLegalizationStats() const;
 
+  // OpenROAD-fork: eco-legalize
+  // Incrementally legalize only the cells touched by an ECO (resized,
+  // inserted, moved) plus any cells that physically overlap them, leaving every
+  // other placed cell pinned at its exact coordinates.  This is the placement
+  // companion to repair_timing_eco: it snaps the ECO cells to site and resolves
+  // local overlaps with the existing diamond-search legalizer using a bounded
+  // window so untouched regions stay put.  Returns the number of cells that
+  // were (re-)legalized.  max_displacement_* are in sites; 0 selects a small
+  // ECO-appropriate default.  This entry point is additive and does not change
+  // detailedPlacement() behavior.
+  int ecoLegalizePlacement(const std::vector<odb::dbInst*>& eco_insts,
+                           int max_displacement_x,
+                           int max_displacement_y,
+                           bool verbose);
+
   void setPaddingGlobal(int left, int right);
   void setPadding(odb::dbMaster* master, int left, int right);
   void setPadding(odb::dbInst* inst, int left, int right);
@@ -331,6 +346,13 @@ class Opendp
   dbMasterSeq filterFillerMasters(const dbMasterSeq& filler_masters) const;
   MasterByImplant splitByImplant(const dbMasterSeq& filler_masters);
   void setInitialGridCells();
+  // OpenROAD-fork: eco-legalize
+  // Paint the grid for an ECO-scoped incremental legalization: every legal
+  // placed cell that is NOT in the unplace set keeps its pixels (pinned), while
+  // cells in the unplace set are unplaced so place() will re-legalize only
+  // them.  Returns the set of cells left unplaced (to be legalized).
+  std::unordered_set<Node*> setEcoGridCells(
+      const std::unordered_set<Node*>& eco_cells);
   void setGridCells();
   dbMasterSeq& gapFillers(odb::dbTechLayer* implant,
                           GridX gap,
