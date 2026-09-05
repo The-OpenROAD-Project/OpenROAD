@@ -1,0 +1,29 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+module top (in1,
+    out1,
+    vccd1,
+    vccd2,
+    vssd1,
+    vssd2);
+ input in1;
+ output out1;
+ inout vccd1;
+ inout vccd2;
+ inout vssd1;
+ inout vssd2;
+
+ wire vdpwr;
+ wire vgnd;
+
+ BUF_X1 u1 (.A(in1),
+    .Z(out1));
+ assign vccd1 = vdpwr;
+ assign vccd2 = vdpwr;
+ assign vssd1 = vgnd;
+ assign vssd2 = vgnd;
+endmodule
