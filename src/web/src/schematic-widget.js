@@ -28,9 +28,9 @@ export class SchematicWidget {
             'padding:4px 8px; background:var(--bg-header); border-bottom:1px solid var(--border);' +
             'flex-shrink:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
         this.controls.innerHTML =
-            '<label style="font-size:12px;">Fanin</label>' +
+            '<label style="font-size:var(--fs-12);">Fanin</label>' +
             '<input id="schematic-fanin-depth"  type="number" value="1" min="0" max="10" style="width:40px;">' +
-            '<label style="font-size:12px;">Fanout</label>' +
+            '<label style="font-size:var(--fs-12);">Fanout</label>' +
             '<input id="schematic-fanout-depth" type="number" value="1" min="0" max="10" style="width:40px;">' +
             '<button id="schematic-refresh">Refresh</button>' +
             '<button id="schematic-fit">Fit</button>' +

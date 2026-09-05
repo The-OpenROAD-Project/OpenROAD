@@ -163,6 +163,9 @@ struct WebSocketRequest
     kGlobalConnectApply,
     kBufferInfo,
     kInsertBuffer,
+    kPolyDecomp,
+    kRendererControls,
+    kSetRendererControl,
     kUnknown
   };
 
@@ -231,6 +234,13 @@ struct SessionState
   // driver->sink lines instead of their routed wire/guides (GUI
   // isFlywireHighlightOnly() parity).
   bool flywires_only = false;
+  // Last Options > "Show polygon decomposition" value this session derived
+  // its highlight shapes under.  The setting itself is server-global (it
+  // lives in gui::Gui, where the ITerm/MTerm descriptors read it); this copy
+  // exists only so the overlay handler can spot that the shapes it holds
+  // predate a change and re-derive them, exactly as it does for
+  // flywires_only.
+  bool poly_decomp = false;
   // Which selection the highlight_* vectors were derived from, or kNone while
   // they hold nothing.  A flywires_only flip has to re-derive them from the
   // SAME source: the multi-selection normally, but a single object when the

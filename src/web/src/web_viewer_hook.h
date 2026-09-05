@@ -8,8 +8,10 @@
 #include <condition_variable>
 #include <cstddef>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -97,6 +99,31 @@ class WebViewerHook : public gui::HeadlessViewer
   void redraw() override;
   void pause(int timeout_ms) override;
   bool isPaused() const override;
+
+  // Per-renderer display controls (issue #10619, the Qt DisplayControls rows
+  // built by registerRenderer from Renderer::getDisplayControls()).
+  //
+  // gui::Renderer::checkDisplayControl composes the path "Group/Name" and
+  // routes it here through Gui::checkDisplayControlsVisible when there is no
+  // Qt window.  The base class answers "everything visible", which made every
+  // sub-control read as on: FlexDRGraphics registers ten of them, six
+  // defaulting to off, and the web drew them all.  Backing them with a real
+  // map is what gives the web the same filtering Qt has.
+  //
+  // Renderers query these from the render threads, so the map is mutex
+  // guarded.  A path that was never set falls back to `default_value`, which
+  // the registry seeds from each control's own initial visibility.
+  bool checkDisplayControlVisible(const std::string& name) override;
+  void setDisplayControlVisible(const std::string& name, bool value) override;
+
+  // Seed a control's value the first time its renderer is seen, without
+  // clobbering a value the user has since chosen.
+  void seedDisplayControlVisible(const std::string& name, bool value);
+
+  // True the first time this renderer is offered for seeding.  Lets the
+  // render path skip the whole walk on every tile after the first: the
+  // controls a renderer declares are fixed once it has registered.
+  bool markRendererSeeded(const void* renderer);
 
   // Release any blocked placer thread.  Called by the DEBUG_CONTINUE
   // request handler.
@@ -243,6 +270,29 @@ class WebViewerHook : public gui::HeadlessViewer
   std::vector<CustomMenuItem> custom_menu_items_;
   int next_button_id_ = 0;
   int next_menu_id_ = 0;
+
+  // Per-renderer display controls, keyed by the "Group/Name" path
+  // gui::Renderer::checkDisplayControl builds.  Read from render threads.
+  mutable std::mutex renderer_controls_mutex_;
+  std::map<std::string, bool> renderer_control_visible_;
+  std::set<const void*> seeded_renderers_;
 };
+
+// Installs each registered renderer's own control defaults into `hook`, once
+// per renderer.  Defined in web.cpp, which may reach gui::Gui.
+void seedRendererControls(WebViewerHook* hook);
+
+// Serialized per-renderer display controls for the `renderer_controls`
+// request; see the definition in web.cpp for what is included and why the
+// heat maps are not.  Seeds each control's default into `hook` on the way.
+std::string rendererControlsJson(WebViewerHook* hook);
+
+// Applies Qt's mutual-exclusivity rule after a per-renderer control is
+// switched on: the siblings it names, within its own group, go off ("" names
+// every sibling), as DisplayControls::itemChanged does.  Defined in web.cpp,
+// which may reach gui::Gui — this header must not, so that the targets which
+// link only the hook stay free of it.
+void applyRendererControlExclusivity(WebViewerHook* hook,
+                                     const std::string& path);
 
 }  // namespace web

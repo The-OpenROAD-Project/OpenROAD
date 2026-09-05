@@ -1269,6 +1269,11 @@ static boost::json::object serializeHeatMap(gui::HeatMapDataSource& source,
   o["alpha_min"] = source.getColorAlphaMinimum();
   o["alpha_max"] = source.getColorAlphaMaximum();
   o["bounds"] = bboxArray(source.getBounds());
+  // Qt's HeatMapSetup shows this checkbox only for sources that name it
+  // (getSelectionFilterLabel() non-empty), so the label doubles as the
+  // "offer the control" flag.
+  o["selection_filter_label"] = source.getSelectionFilterLabel();
+  o["use_selected_only"] = source.useSelectedOnly();
 
   boost::json::array options;
   for (const auto& option : source.getMapSettings()) {
@@ -5115,13 +5120,25 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     //    would redraw from live here, so they have to be rebuilt on this
     //    side or the highlight stays at the old placement;
     //  - debug renderers are active — instance positions change between
-    //    frames, so the highlight must track the moving instance.
+    //    frames, so the highlight must track the moving instance;
+    //  - Options > "Show polygon decomposition" flipped, which changes the
+    //    shapes an ITerm/MTerm highlight draws.  The setting is
+    //    server-global (it lives in gui::Gui, where the descriptors read it)
+    //    but travels on the request like flywires_only, so this file stays
+    //    free of gui::Gui -- the deliberate layering that lets the web
+    //    library link without the gui one.  The client is told the value by
+    //    the poly_decomp handler's reply and its broadcast, so a stale
+    //    request can only delay a re-derivation to the next tile, never
+    //    change what is drawn.
     const bool flywires_only = jsonOr(req.json, "flywires_only", false);
     const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+    const bool poly_decomp = jsonOr(req.json, "poly_decomp", false);
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
-      const bool flipped = (flywires_only != state.flywires_only);
+      const bool flipped = (flywires_only != state.flywires_only)
+                           || (poly_decomp != state.poly_decomp);
       state.flywires_only = flywires_only;
+      state.poly_decomp = poly_decomp;
       const bool live
           = state.highlight_source != SessionState::HighlightSource::kNone;
       // exchange() once: both the selection and the group shapes below are
@@ -5259,20 +5276,23 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
         = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
     resp.type = WebSocketResponse::kPng;
-    resp.payload = gen_->generateOverlayTile(z,
-                                             x,
-                                             y,
-                                             rects,
-                                             polys,
-                                             colored,
-                                             lines,
-                                             route_guide_ptr,
-                                             has_vis_layers,
-                                             vis_layers,
-                                             dpr,
-                                             tile_px,
-                                             colored_polys,
-                                             labels);
+    resp.payload
+        = gen_->generateOverlayTile(z,
+                                    x,
+                                    y,
+                                    rects,
+                                    polys,
+                                    colored,
+                                    lines,
+                                    route_guide_ptr,
+                                    has_vis_layers,
+                                    vis_layers,
+                                    dpr,
+                                    tile_px,
+                                    colored_polys,
+                                    labels,
+                                    debug_renderers,
+                                    jsonOr(req.json, "debug_live", false));
 
     // The selection highlight the client draws over the layer tiles comes from
     // here, so the shape counts say whether a "missing" highlight was never
@@ -5650,6 +5670,10 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
     if (option == "rebuild") {
       source.destroyMap();
       source.ensureMap();
+    } else if (option == "use_selected_only") {
+      // Not one of getSettings()' entries: Qt's dialog drives the setter
+      // directly, which invalidates the map on its own.
+      source.setUseSelectedOnly(req.json.at("value").as_bool());
     } else {
       auto settings = source.getSettings();
       auto setting_itr = settings.find(option);
