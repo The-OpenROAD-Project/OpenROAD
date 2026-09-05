@@ -15,6 +15,7 @@
 #include <cstring>
 #include <deque>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <ios>
@@ -42,6 +43,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "css_inliner.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -49,6 +51,7 @@
 #include "odb/dbChipCallBackObj.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
+#include "sta/StringUtil.hh"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -1391,23 +1394,167 @@ WebServer::~WebServer()
 extern const std::string_view kReportCSS;
 extern const std::string_view kReportJS;
 
-static std::string base64Encode(const std::vector<unsigned char>& data)
+static std::string base64Encode(const std::string_view data)
 {
   static const char kChars[]
       = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const size_t size = data.size();
+  const auto byte = [data](const size_t i) {
+    return static_cast<unsigned>(static_cast<unsigned char>(data[i]));
+  };
   std::string result;
-  result.reserve((data.size() + 2) / 3 * 4);
-  for (size_t i = 0; i < data.size(); i += 3) {
-    const unsigned b0 = data[i];
-    const unsigned b1 = (i + 1 < data.size()) ? data[i + 1] : 0;
-    const unsigned b2 = (i + 2 < data.size()) ? data[i + 2] : 0;
+  result.reserve((size + 2) / 3 * 4);
+  for (size_t i = 0; i < size; i += 3) {
+    const unsigned b0 = byte(i);
+    const unsigned b1 = (i + 1 < size) ? byte(i + 1) : 0;
+    const unsigned b2 = (i + 2 < size) ? byte(i + 2) : 0;
     result += kChars[b0 >> 2];
     result += kChars[((b0 & 3) << 4) | (b1 >> 4)];
-    result
-        += (i + 1 < data.size()) ? kChars[((b1 & 0xF) << 2) | (b2 >> 6)] : '=';
-    result += (i + 2 < data.size()) ? kChars[b2 & 0x3F] : '=';
+    result += (i + 1 < size) ? kChars[((b1 & 0xF) << 2) | (b2 >> 6)] : '=';
+    result += (i + 2 < size) ? kChars[b2 & 0x3F] : '=';
   }
   return result;
+}
+
+static std::string base64Encode(const std::vector<unsigned char>& data)
+{
+  return base64Encode(std::string_view(
+      reinterpret_cast<const char*>(data.data()), data.size()));
+}
+
+// ── Inlining the vendored libraries into the saved report ──
+// The report is one file, opened with no server behind it, so every asset the
+// viewer loads is inlined here as a data: URI (issue #11065).
+
+std::string resolveAssetPath(const std::string_view base_dir,
+                             const std::string_view reference)
+{
+  // generic_string(), not string(): the result is a key into the asset table,
+  // whose paths are always '/'-separated whatever the host uses.
+  return (std::filesystem::path(base_dir) / std::filesystem::path(reference))
+      .lexically_normal()
+      .generic_string();
+}
+
+const EmbeddedAsset* ReportAssets::find(const std::string_view path)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset(path);
+  if (!asset) {
+    // A miss is a binary built with the wrong asset list, not bad input.
+    logger_->warn(utl::WEB, 77, "Missing embedded asset {}.", path);
+    missing_ = true;
+  }
+  return asset;
+}
+
+// data: URI for an embedded asset, for use as a src or href in the report.
+static std::string assetDataUri(const std::string_view path,
+                                ReportAssets& assets)
+{
+  const EmbeddedAsset* asset = assets.find(path);
+  if (!asset) {
+    return "";
+  }
+  return std::string("data:") + asset->content_type + ";base64,"
+         + base64Encode(asset->content());
+}
+
+size_t findUrlToken(const std::string_view css, const size_t from)
+{
+  // Driven off the '(' so the scan is a memchr and not a byte loop.
+  for (size_t paren = from;
+       (paren = css.find('(', paren)) != std::string_view::npos;
+       ++paren) {
+    if (paren < 3) {
+      continue;
+    }
+    const size_t at = paren - 3;
+    if (at < from || !sta::stringBeginEqual(css.substr(at), "url")) {
+      continue;
+    }
+    const char before = at > 0 ? css[at - 1] : ' ';
+    if (std::isalnum(static_cast<unsigned char>(before)) == 0 && before != '_'
+        && before != '-') {
+      return at;
+    }
+  }
+  return std::string_view::npos;
+}
+
+std::string inlineStylesheetUrls(const std::string_view css,
+                                 const std::string_view base_dir,
+                                 ReportAssets& assets)
+{
+  std::string result;
+  size_t pos = 0;
+  while (true) {
+    const size_t open = findUrlToken(css, pos);
+    if (open == std::string_view::npos) {
+      break;
+    }
+    // A quoted reference may hold a parenthesis, so its closing quote bounds
+    // the token; an unquoted one ends at the ')'.
+    const size_t first = css.find_first_not_of(" \t\r\n", open + 4);
+    if (first == std::string_view::npos) {
+      break;
+    }
+    size_t close = std::string_view::npos;
+    std::string_view reference;
+    if (css[first] == '"' || css[first] == '\'') {
+      const size_t quote = css.find(css[first], first + 1);
+      if (quote == std::string_view::npos) {
+        break;
+      }
+      close = css.find(')', quote + 1);
+      reference = css.substr(first + 1, quote - first - 1);
+    } else {
+      close = css.find(')', first);
+      if (close == std::string_view::npos) {
+        break;
+      }
+      reference = css.substr(first, close - first);
+      while (!reference.empty()
+             && std::isspace(static_cast<unsigned char>(reference.back()))
+                    != 0) {
+        reference.remove_suffix(1);
+      }
+    }
+    if (close == std::string_view::npos) {
+      break;
+    }
+
+    // Fragment-only references (url(#default#VML)) and anything already
+    // inlined are left alone.
+    if (reference.empty() || reference.front() == '#'
+        || reference.starts_with("data:")) {
+      result += css.substr(pos, close + 1 - pos);
+      pos = close + 1;
+      continue;
+    }
+
+    result += css.substr(pos, open - pos);
+    result += "url(\"";
+    result += assetDataUri(resolveAssetPath(base_dir, reference), assets);
+    result += "\")";
+    pos = close + 1;
+  }
+  result += css.substr(pos);
+  return result;
+}
+
+// data: URI for an embedded stylesheet, with its own references inlined
+// against the directory it is served from.
+static std::string stylesheetDataUri(const std::string_view path,
+                                     ReportAssets& assets)
+{
+  const EmbeddedAsset* asset = assets.find(path);
+  if (!asset) {
+    return "";
+  }
+  const std::string_view base_dir = path.substr(0, path.rfind('/') + 1);
+  return "data:text/css;base64,"
+         + base64Encode(
+             inlineStylesheetUrls(asset->content(), base_dir, assets));
 }
 
 void WebServer::saveReport(const std::string& filename,
@@ -1428,6 +1575,7 @@ void WebServer::saveReport(const std::string& filename,
     logger_->error(utl::WEB, 31, "Cannot open file: {}", filename);
     return;
   }
+  ReportAssets assets(logger_);
 
   // ── Serialize JSON cache responses ──
 
@@ -1544,20 +1692,44 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head — leaflet, golden-layout and three, inlined as data: URIs so the
+  // file opens with no server and no network.  elk and netlistsvg are left out:
+  // they are 2.8 MB for a schematic panel that needs the server anyway, and the
+  // widget already stands down when it does not find them.  The stylesheets
+  // stay <link> elements rather than <style> blocks because theme.js switches
+  // themes through their `disabled` property, by id.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
+<link rel="stylesheet" href=")"
+      << stylesheetDataUri("/third-party/leaflet/leaflet.css", assets) << R"("/>
+<script src=")"
+      << assetDataUri("/third-party/leaflet/leaflet.js", assets)
+      << R"("></script>
+<link rel="stylesheet" href=")"
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/goldenlayout-base.css", assets)
+      << R"("/>
+<link rel="stylesheet" id="gl-theme-dark" href=")"
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/themes/"
+             "goldenlayout-dark-theme.css",
+             assets)
+      << R"("/>
+<link rel="stylesheet" id="gl-theme-light" href=")"
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/themes/"
+             "goldenlayout-light-theme.css",
+             assets)
+      << R"(" disabled/>
 <style>
-)" << kReportCSS
+)" <<  // style.css has no url() today, so this rewrites nothing; it is here
+      // so that adding one cannot quietly ship a reference the report cannot
+      // resolve.
+      inlineStylesheetUrls(kReportCSS, "/", assets)
       << R"(
 </style>
 </head>
@@ -1639,9 +1811,20 @@ window.__STATIC_CACHE__ = {
   }
 };
 </script>
+<script type="importmap">
+{
+  "imports": {
+    "three": ")"
+      << assetDataUri("/third-party/three/three.module.min.js", assets) << R"(",
+    "golden-layout": ")"
+      << assetDataUri("/third-party/golden-layout/golden-layout.esm.js", assets)
+      << R"("
+  }
+}
+</script>
 <script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import { GoldenLayout, LayoutConfig } from 'golden-layout';
+import * as THREE from 'three';
 )" << kReportJS
       << R"(
 </script>
@@ -1650,6 +1833,20 @@ import * as THREE from 'https://esm.sh/three@0.160.0';
 )";
 
   out.close();
+
+  if (assets.missing()) {
+    // The warnings above name what was missed; no one is told this was saved.
+    // The error below is the one that has to come out, so a removal that fails
+    // must not throw over it.
+    std::error_code remove_error;
+    std::filesystem::remove(filename, remove_error);
+    logger_->error(utl::WEB,
+                   78,
+                   "Not saving {}: the binary was built with an incomplete "
+                   "asset list.",
+                   filename);
+    return;
+  }
   logger_->info(utl::WEB, 32, "Saved timing report to {}", filename);
 }
 

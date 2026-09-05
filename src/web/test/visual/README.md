@@ -11,8 +11,9 @@ The viewer renders gates natively via netlistsvg: the server tags cells with a
 skin draws, and netlistsvg lays them out. This tool serves `src/` directly, so
 it picks up edits to `openroad_skin.svg` and `schematic-widget.js` immediately.
 
-This is a developer tool, not part of CI: it needs a local Chrome and loads the
-netlistsvg JS bundle from its CDN (same as the viewer itself).
+This is a developer tool, not part of CI: it needs a local Chrome. elk and
+netlistsvg come from `src/web/third-party`, the same copies the viewer serves,
+so no network access is needed.
 
 ## Setup (one-time)
 

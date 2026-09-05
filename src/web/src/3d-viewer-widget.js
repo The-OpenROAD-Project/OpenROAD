@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import * as THREE from 'https://esm.sh/three@0.160.0';
+// Resolved by the import map in index.html to the vendored copy under
+// third-party/, which the OpenROAD binary serves (issue #11065).
+import * as THREE from 'three';
 
 import {getThemeColors, setCookie} from './theme.js';
 import {downloadUrl, copyPngToClipboard} from './image-export.js';
