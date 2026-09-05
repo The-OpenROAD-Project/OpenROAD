@@ -462,6 +462,28 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
+### Set Halo
+
+This command provides a unified interface for setting halos for instances. Supports hard and soft halos.
+
+```tcl
+set_halo
+    -halo {left bottom [right top]}
+    [-instance instance]
+    [-apply_to_all_macros]
+    [-soft]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `halo` | (required) Halo values for each side. Left and bottom are used for right and top if the latter are omitted. |
+| `instance` | (optional): Instance associated with the halo. This or `apply_to_all_macros` is required.  |
+| `apply_to_all_macros` | (optional): Apply to all macros in the design. This or `instance` is required. |
+| `soft` | (optional): Mark the halo as soft, hard otherwise.
+
+
 ### Report 3DIC Summary
 
 Prints a structural summary of a 3DIC (3DBlox) design loaded via `read_3dbx`:
