@@ -16,6 +16,7 @@ add_library(rmp_lib
     Restructure.cpp
     annealing_strategy.cpp
     delay_optimization_strategy.cpp
+    emap_strategy.cpp
     genetic_strategy.cpp
     gia.cpp
     slack_tuning_strategy.cpp
@@ -54,6 +55,8 @@ target_include_directories(rmp_lib
 )
 
 target_link_libraries(rmp_lib
+  PRIVATE
+    ${MOCKTURTLE_LIBRARY}
   PUBLIC
     odb
     dbSta_lib
@@ -62,9 +65,10 @@ target_link_libraries(rmp_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
-    absl::synchronization
-    absl::hash
     absl::city
+    absl::hash
+    absl::random_random
+    absl::synchronization
 )
 
 target_link_libraries(rmp

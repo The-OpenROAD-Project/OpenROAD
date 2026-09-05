@@ -27,7 +27,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@abseil-cpp//absl/container:flat_hash_map",
-        "@fmt",
+        "@spdlog",
     ],
 )
 

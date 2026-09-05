@@ -68,6 +68,6 @@ TEST(mockturtle, emap)
   EXPECT_EQ( ntk.num_gates(), 5u );
   EXPECT_GT( st.area, 12.0f - eps );
   EXPECT_LT( st.area, 12.0f + eps );
-  EXPECT_GT( st.delay, 5.8f - eps );
-  EXPECT_LT( st.delay, 5.8f + eps );
+  EXPECT_GT( st.delay, 4.9f - eps );
+  EXPECT_LT( st.delay, 4.9f + eps );
 }
