@@ -16,6 +16,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -560,6 +561,13 @@ class TileGenerator
   // `collectChiplets` is kept for tests and one-shot callers.
   const std::vector<ChipletNode>& chiplets() const;
 
+  // The distinct blocks holding the design's geometry: every chiplet's block,
+  // deduplicated (one node per dbChipInst, so a master placed N times reports
+  // the same block N times) and never null.  Empty means nothing is loaded --
+  // a 3DBlox top chip owns no block of its own, so getBlock() alone is not a
+  // usable "is there a design" test.
+  std::vector<odb::dbBlock*> blocks() const;
+
   // Monotonic counter, bumped every time chiplets() rebuilds its cache.
   // Caches derived from the chiplet list poll this to notice a hierarchy
   // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
@@ -1040,8 +1048,11 @@ class TileGenerator
 
 struct TimingPathSummary;
 
-std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
-                                                   const std::string& pin_name);
+// Resolve a (possibly "<chip-inst>/"-prefixed) pin name against the chiplets,
+// returning the owning node so the caller can transform the pin's geometry.
+std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& pin_name);
 
 void collectNetShapes(odb::dbNet* net,
                       odb::dbITerm* drv_iterm,
@@ -1050,9 +1061,10 @@ void collectNetShapes(odb::dbNet* net,
                       odb::dbBTerm* snk_bterm,
                       const Color& color,
                       std::vector<ColoredRect>& rects,
-                      std::vector<FlightLine>& lines);
+                      std::vector<FlightLine>& lines,
+                      const odb::dbTransform& xfm);
 
-void collectTimingPathShapes(odb::dbBlock* block,
+void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);

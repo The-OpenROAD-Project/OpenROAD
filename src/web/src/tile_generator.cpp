@@ -1101,6 +1101,18 @@ const std::vector<ChipletNode>& TileGenerator::chiplets() const
   return chiplets_cache_;
 }
 
+std::vector<odb::dbBlock*> TileGenerator::blocks() const
+{
+  std::vector<odb::dbBlock*> out;
+  std::unordered_set<odb::dbBlock*> seen;
+  for (const ChipletNode& node : chiplets()) {
+    if (node.block && seen.insert(node.block).second) {
+      out.push_back(node.block);
+    }
+  }
+  return out;
+}
+
 uint64_t TileGenerator::chipletsGeneration() const
 {
   // Refresh first so the counter reflects the live hierarchy rather than
@@ -5143,30 +5155,29 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
     const std::vector<ColoredRect>& rects,
     const std::vector<FlightLine>& lines) const
 {
-  odb::dbBlock* block = getBlock();
-  if (!block || (rects.empty() && lines.empty())) {
+  if (rects.empty() && lines.empty()) {
     return {};
   }
 
-  // Same area computation as renderLayerPng.
-  odb::Rect area = block->getDieArea();
-  if (area.dx() == 0 || area.dy() == 0) {
-    area = block->getBBox()->getBox();
+  // Frame on getBounds() exactly: the viewer stretches this image over that
+  // rect (serializeBoundsResponse -> app.fitBounds in main.js), so a die-area
+  // frame or a cosmetic margin -- what saveImage uses -- lands the overlay off
+  // the tiles.  getBounds() also covers 3DBlox, where the top owns no block.
+  const odb::Rect bounds = getBounds();
+  if (bounds.dx() == 0 || bounds.dy() == 0) {
+    return {};
   }
-  const int margin = area.maxDXDY() * 5 / 100;
-  area.bloat(margin, area);
 
   if (width_px <= 0) {
     width_px = 1024;
   }
-  const double scale = static_cast<double>(width_px) / area.dx();
-  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
-  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
+  const double scale = static_cast<double>(width_px) / bounds.dx();
+  const int final_w = static_cast<int>(std::ceil(bounds.dx() * scale));
+  const int final_h = static_cast<int>(std::ceil(bounds.dy() * scale));
   if (final_w <= 0 || final_h <= 0) {
     return {};
   }
 
-  const odb::Rect bounds = getBounds();
   const double max_dxdy = bounds.maxDXDY();
   const int z = std::max(0,
                          static_cast<int>(std::ceil(
@@ -5175,21 +5186,15 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
   const double tile_dbu_size = max_dxdy / num_tiles;
   const double tile_scale = kTileSizeInPixel / tile_dbu_size;
 
-  const int tx_min = std::max(
-      0, static_cast<int>((area.xMin() - bounds.xMin()) / tile_dbu_size));
-  const int ty_min = std::max(
-      0, static_cast<int>((area.yMin() - bounds.yMin()) / tile_dbu_size));
-  const int tx_max
-      = std::min(num_tiles - 1,
-                 static_cast<int>(
-                     std::ceil((area.xMax() - bounds.xMin()) / tile_dbu_size)));
-  const int ty_max
-      = std::min(num_tiles - 1,
-                 static_cast<int>(
-                     std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
+  // The tile grid is anchored on bounds' lower-left, so the frame starts at
+  // tile (0,0) and only the upper bound needs computing.
+  const int tx_max = std::min(
+      num_tiles - 1, static_cast<int>(std::ceil(bounds.dx() / tile_dbu_size)));
+  const int ty_max = std::min(
+      num_tiles - 1, static_cast<int>(std::ceil(bounds.dy() / tile_dbu_size)));
 
-  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
-  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  const int tile_span_w = (tx_max + 1) * kTileSizeInPixel;
+  const int tile_span_h = (ty_max + 1) * kTileSizeInPixel;
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
   // Render on _instances layer with all visibility off so only overlays draw.
@@ -5233,9 +5238,9 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
   vis.placement_blockages = false;
   vis.routing_obstructions = false;
 
-  for (int ty = ty_min; ty <= ty_max; ++ty) {
-    for (int tx = tx_min; tx <= tx_max; ++tx) {
-      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+  for (int ty = 0; ty <= ty_max; ++ty) {
+    for (int tx = 0; tx <= tx_max; ++tx) {
+      const int out_ox = tx * kTileSizeInPixel;
       const int out_oy = (ty_max - ty) * kTileSizeInPixel;
       const int leaflet_y = num_tiles - 1 - ty;
 
@@ -5257,13 +5262,9 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
     }
   }
 
-  // Crop and resample.
-  const int crop_x = static_cast<int>(
-      (area.xMin() - bounds.xMin() - tx_min * tile_dbu_size) * tile_scale);
-  const int crop_y_bottom = static_cast<int>(
-      (area.yMin() - bounds.yMin() - ty_min * tile_dbu_size) * tile_scale);
-  const int crop_y
-      = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
+  // Crop and resample.  The frame starts at the grid origin in x, but the tile
+  // span is measured from the top, so y still needs the design's offset.
+  const int crop_y = tile_span_h - static_cast<int>(bounds.dy() * tile_scale);
 
   std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
   for (int fy = 0; fy < final_h; ++fy) {
@@ -5275,7 +5276,7 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
         = &output[static_cast<size_t>(sy) * tile_span_w * 4];
     unsigned char* dst_row = &final_buf[static_cast<size_t>(fy) * final_w * 4];
     for (int fx = 0; fx < final_w; ++fx) {
-      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
+      const int sx = static_cast<int>(fx * tile_scale / scale);
       if (sx >= 0 && sx < tile_span_w) {
         copyRGBA(&dst_row[fx * 4], &src_row[sx * 4]);
       }
@@ -6365,14 +6366,53 @@ void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
 // Timing path highlight shape collection
 //------------------------------------------------------------------------------
 
-std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
-                                                   const std::string& pin_name)
+std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& pin_name)
 {
-  odb::dbITerm* iterm = block->findITerm(pin_name.c_str());
-  if (iterm) {
-    return {iterm, nullptr};
+  const std::string_view pin_view(pin_name);
+
+  // Prefixed pass first.  Hierarchical instance names contain '/' too, so an
+  // earlier chiplet can match the whole name and claim a pin that names a
+  // later one.
+  bool prefix_matched = false;
+  for (const ChipletNode& node : chiplets) {
+    // Only a chip-inst contributes a path component: the root node's name is
+    // its block's, which never prefixes a pin name.
+    if (node.inst == nullptr || !node.block
+        || pin_view.size() <= node.name.size()
+        || !pin_view.starts_with(node.name)
+        || pin_view[node.name.size()] != '/') {
+      continue;
+    }
+    prefix_matched = true;
+    const char* local = pin_name.c_str() + node.name.size() + 1;
+    if (odb::dbITerm* iterm = node.block->findITerm(local)) {
+      return {iterm, nullptr, &node};
+    }
+    if (odb::dbBTerm* bterm = node.block->findBTerm(local)) {
+      return {nullptr, bterm, &node};
+    }
   }
-  return {nullptr, block->findBTerm(pin_name.c_str())};
+  if (prefix_matched) {
+    // The prefix named a chiplet; do not let another one claim the pin.
+    return {nullptr, nullptr, nullptr};
+  }
+
+  for (const ChipletNode& node : chiplets) {
+    if (!node.block) {
+      continue;
+    }
+    if (odb::dbITerm* iterm = node.block->findITerm(pin_name.c_str())) {
+      return {iterm, nullptr, &node};
+    }
+    if (odb::dbBTerm* bterm = node.block->findBTerm(pin_name.c_str())) {
+      return {nullptr, bterm, &node};
+    }
+    // Unprefixed: first match wins, so it is ambiguous between chiplets
+    // holding same-named instances.
+  }
+  return {nullptr, nullptr, nullptr};
 }
 
 static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
@@ -6386,24 +6426,54 @@ static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
   return nullptr;
 }
 
-static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
+// False when the pin has no location at all: a null terminal, or a bterm with
+// no dbBPin (an unplaced port).
+static bool getPinLocation(odb::dbITerm* iterm,
+                           odb::dbBTerm* bterm,
+                           odb::Point& out)
 {
   if (iterm) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
-      return {x, y};
+      out = {x, y};
+      return true;
     }
     // Fallback to instance center
     odb::Rect bbox = iterm->getInst()->getBBox()->getBox();
-    return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
+    out = {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
+    return true;
   }
   if (bterm) {
     for (odb::dbBPin* bpin : bterm->getBPins()) {
       odb::Rect r = bpin->getBBox();
-      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+      out = {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+      return true;
     }
   }
-  return {0, 0};
+  return false;
+}
+
+// Flight line between two pins, each transformed by its own chiplet.  Both ends
+// must have a location: drawing from a pin that has none would put the line off
+// at the die corner.
+static void addFlightLine(odb::dbITerm* a_iterm,
+                          odb::dbBTerm* a_bterm,
+                          const odb::dbTransform& a_xfm,
+                          odb::dbITerm* b_iterm,
+                          odb::dbBTerm* b_bterm,
+                          const odb::dbTransform& b_xfm,
+                          const Color& color,
+                          std::vector<FlightLine>& lines)
+{
+  odb::Point p1;
+  odb::Point p2;
+  if (!getPinLocation(a_iterm, a_bterm, p1)
+      || !getPinLocation(b_iterm, b_bterm, p2)) {
+    return;
+  }
+  a_xfm.apply(p1);
+  b_xfm.apply(p2);
+  lines.push_back({p1, p2, color});
 }
 
 void collectNetShapes(odb::dbNet* net,
@@ -6413,7 +6483,8 @@ void collectNetShapes(odb::dbNet* net,
                       odb::dbBTerm* snk_bterm,
                       const Color& color,
                       std::vector<ColoredRect>& rects,
-                      std::vector<FlightLine>& lines)
+                      std::vector<FlightLine>& lines,
+                      const odb::dbTransform& xfm)
 {
   odb::dbWire* wire = net->getWire();
   if (wire) {
@@ -6425,23 +6496,25 @@ void collectNetShapes(odb::dbNet* net,
         odb::dbShape::getViaBoxes(shape, via_boxes);
         for (const auto& vbox : via_boxes) {
           odb::dbTechLayer* layer = vbox.getTechLayer();
-          rects.push_back(
-              {vbox.getBox(), color, layer ? layer->getName() : ""});
+          odb::Rect r = vbox.getBox();
+          xfm.apply(r);
+          rects.push_back({r, color, layer ? layer->getName() : ""});
         }
       } else {
         odb::dbTechLayer* layer = shape.getTechLayer();
-        rects.push_back({shape.getBox(), color, layer ? layer->getName() : ""});
+        odb::Rect r = shape.getBox();
+        xfm.apply(r);
+        rects.push_back({r, color, layer ? layer->getName() : ""});
       }
     }
   } else {
-    // Unrouted: draw flight line between driver and sink
-    odb::Point p1 = getPinLocation(drv_iterm, drv_bterm);
-    odb::Point p2 = getPinLocation(snk_iterm, snk_bterm);
-    lines.push_back({p1, p2, color});
+    // Unrouted: the net is one chiplet's, so both ends share its transform.
+    addFlightLine(
+        drv_iterm, drv_bterm, xfm, snk_iterm, snk_bterm, xfm, color, lines);
   }
 }
 
-void collectTimingPathShapes(odb::dbBlock* block,
+void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines)
@@ -6454,22 +6527,56 @@ void collectTimingPathShapes(odb::dbBlock* block,
 
   // Track nets already collected to avoid duplicates
   odb::PtrSet<odb::dbNet> seen_nets;
+  // Same, for flight lines: the common clock is walked by both passes below.
+  std::set<std::pair<const void*, const void*>> seen_pin_pairs;
 
   auto process_nodes = [&](const std::vector<TimingNode>& nodes,
                            const Color& clk_color,
                            const Color& data_color) {
     for (size_t i = 0; i + 1 < nodes.size(); i++) {
-      auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
-      auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
+      auto [a_iterm, a_bterm, a_node] = resolvePin(chiplets, nodes[i].pin_name);
+      auto [b_iterm, b_bterm, b_node]
+          = resolvePin(chiplets, nodes[i + 1].pin_name);
 
       odb::dbNet* net_a = getNetFromPin(a_iterm, a_bterm);
       odb::dbNet* net_b = getNetFromPin(b_iterm, b_bterm);
+      const bool same_net = net_a != nullptr && net_a == net_b;
+      const Color& c = nodes[i].is_clock ? clk_color : data_color;
 
-      // Only draw when consecutive pins are on the same net (wire segment)
-      if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {
-        const Color& c = nodes[i].is_clock ? clk_color : data_color;
-        collectNetShapes(
-            net_a, a_iterm, a_bterm, b_iterm, b_bterm, c, rects, lines);
+      if (same_net) {
+        // A wire segment, drawn in the owning chiplet's frame.
+        if (seen_nets.insert(net_a).second) {
+          collectNetShapes(net_a,
+                           a_iterm,
+                           a_bterm,
+                           b_iterm,
+                           b_bterm,
+                           c,
+                           rects,
+                           lines,
+                           a_node->world_xfm);
+        }
+      } else if (a_node && b_node && a_node != b_node) {
+        // Crosses chiplets: no net holds the connection, so draw it directly.
+        // Within one chiplet a net-less pair is just a cell's own input to
+        // output arc, which is not a connection to draw.
+        const void* a_key = a_iterm ? static_cast<const void*>(a_iterm)
+                                    : static_cast<const void*>(a_bterm);
+        const void* b_key = b_iterm ? static_cast<const void*>(b_iterm)
+                                    : static_cast<const void*>(b_bterm);
+        const std::less<const void*> ptr_less;
+        const auto key = ptr_less(a_key, b_key) ? std::pair(a_key, b_key)
+                                                : std::pair(b_key, a_key);
+        if (seen_pin_pairs.insert(key).second) {
+          addFlightLine(a_iterm,
+                        a_bterm,
+                        a_node->world_xfm,
+                        b_iterm,
+                        b_bterm,
+                        b_node->world_xfm,
+                        c,
+                        lines);
+        }
       }
     }
   };
