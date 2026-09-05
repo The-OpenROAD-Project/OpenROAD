@@ -8838,6 +8838,18 @@ class dbModNet : public dbObject
   bool isConnected(const dbModNet* other) const;
 
   ///
+  /// Returns true if this dbModNet is connected to an INPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToInputPort() const;
+
+  ///
+  /// Returns true if this dbModNet is connected to an OUTPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToOutputPort() const;
+
+  ///
   /// Returns the next dbModNets in the fanin of this dbModNet.
   /// Traverses up to parent inputs or down to child outputs.
   ///
