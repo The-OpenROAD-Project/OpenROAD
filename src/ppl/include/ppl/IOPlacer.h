@@ -56,6 +56,15 @@ struct PinSize
   int height = 0;
 };
 
+// a shape blocking pins, with the DEF SPACING and DESIGNRULEWIDTH overrides
+// it carries; -1 when the shape has none
+struct BlockingShape
+{
+  odb::Rect rect;
+  int min_spacing = -1;
+  int effective_width = -1;
+};
+
 // the arguments that select a spacing value in a layer spacing table
 struct SpacingKey
 {
@@ -146,6 +155,9 @@ class IOPlacer
   static Edge getEdge(const std::string& edge);
 
  private:
+  // temporary blocking state used by one place_pin call
+  struct ManualPinBlocking;
+
   void checkPinPlacement();
   bool checkPinConstraints();
   bool checkMirroredPins();
@@ -250,14 +262,15 @@ class IOPlacer
   int roundUpToEvenMfgGrid(int dim);
   PinSize computePinSize(int layer);
   int computeShapeSpacing(odb::dbTechLayer* tech_layer,
-                          const odb::Rect& shape,
+                          const BlockingShape& shape,
                           int pin_width,
                           int pin_length);
-  odb::Rect computePinKeepout(const odb::Rect& box,
+  odb::Rect computePinKeepout(const BlockingShape& shape,
                               odb::dbTechLayer* tech_layer);
+  void addFixedPinKeepouts(odb::dbBTerm* bterm);
   void forEachSpecialNetShape(
       const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback);
-  void excludeBoundaryShape(const odb::Rect& box,
+  void excludeBoundaryShape(const BlockingShape& shape,
                             odb::dbTechLayer* tech_layer,
                             const odb::Rect& die_area);
   void getBlockedRegions();
@@ -307,6 +320,8 @@ class IOPlacer
   FallbackPins fallback_pins_;
   // fixed pin shapes padded by the pin size and spacing, per layer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_keepouts_;
+  // padded boundary shapes blocking polygon die slots, per layer
+  std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
   // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
