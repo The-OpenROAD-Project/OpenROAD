@@ -73,6 +73,7 @@ or_integration_tests(
     regions3
     report_failures
     row_boundary_filter
+    row_site_mismatch
     simple01
     simple02
     simple03

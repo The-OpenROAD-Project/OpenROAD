@@ -733,6 +733,20 @@ void Grid::examineRows(odb::dbBlock* block)
                      site->getName(),
                      site->getWidth());
     }
+
+    // Rows with a site spacing smaller than the site width have overlapping
+    // sites and produce more sites than the grid can represent, which would
+    // otherwise overflow the pixel grid during markHopeless().
+    const int site_width = site->getWidth();
+    if (row->getSiteCount() > 1 && row->getSpacing() < site_width) {
+      logger_->error(DPL,
+                     52,
+                     "Row {} has site spacing ({}) smaller than the site "
+                     "width ({}); the row's sites overlap.",
+                     row->getName(),
+                     row->getSpacing(),
+                     site_width);
+    }
   });
 
   if (!hasHybridRows() && !has_non_hybrid_rows) {
