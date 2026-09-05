@@ -33,7 +33,7 @@ export class TimingWidget {
         toolbar.className = 'timing-toolbar';
 
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
         if (isStaticMode(this._app)) {
             this._updateBtn.style.display = 'none';
@@ -87,7 +87,7 @@ export class TimingWidget {
         // Column-header tooltip (custom div, like the charts/clock-tree
         // tooltips, rather than the easy-to-miss native title tooltip).
         this._headerTooltip = document.createElement('div');
-        this._headerTooltip.className = 'timing-header-tooltip';
+        this._headerTooltip.className = 'or-tooltip or-tooltip-fixed';
         el.appendChild(this._headerTooltip);
 
         this.element = el;
@@ -245,11 +245,11 @@ export class TimingWidget {
         panel.append(sync.input, sync.lbl);
 
         this._coneApplyBtn = document.createElement('button');
-        this._coneApplyBtn.className = 'timing-btn';
+        this._coneApplyBtn.className = 'or-btn';
         this._coneApplyBtn.textContent = 'Cone';
         this._coneApplyBtn.title = 'Show the timing cone for the selected instance';
         this._coneClearBtn = document.createElement('button');
-        this._coneClearBtn.className = 'timing-btn';
+        this._coneClearBtn.className = 'or-btn';
         this._coneClearBtn.textContent = 'Clear';
         panel.append(this._coneApplyBtn, this._coneClearBtn);
 
@@ -493,6 +493,7 @@ export class TimingWidget {
         for (const col of TimingWidget.PATH_COLS) {
             const th = document.createElement('th');
             th.classList.add('sortable');
+            if (col.num) th.classList.add('num');
             th.textContent = col.label +
                 (col.key === this._sortCol ? (this._sortAscending ? ' ▲' : ' ▼') : '');
             if (col.tooltip) {
@@ -508,6 +509,11 @@ export class TimingWidget {
         this._pathTable.appendChild(thead);
 
         const tbody = document.createElement('tbody');
+        // Scale for the slack bars: the largest magnitude in the table, so a
+        // bar reads as "how bad relative to the worst path shown".  Guard the
+        // zero case so a table of exactly-zero slacks does not divide by it.
+        const worstSlack = paths.reduce(
+            (m, p) => Math.max(m, Math.abs(Number(p.slack) || 0)), 0);
         paths.forEach((p, idx) => {
             const tr = document.createElement('tr');
             if (idx === this._selectedPathIndex) tr.classList.add('selected');
@@ -515,7 +521,18 @@ export class TimingWidget {
                 const td = document.createElement('td');
                 const v = p[col.key];
                 td.textContent = col.time ? fmtTime(v) : v;
-                if (col.key === 'slack' && p.slack < 0) td.classList.add('slack-negative');
+                if (col.num) td.classList.add('num');
+                if (col.key === 'slack') {
+                    const slack = Number(p.slack);
+                    if (slack < 0) td.classList.add('slack-negative');
+                    if (Number.isFinite(slack) && worstSlack > 0) {
+                        td.classList.add('slack-cell',
+                                         slack < 0 ? 'slack-under' : 'slack-over');
+                        td.style.setProperty(
+                            '--slack-frac',
+                            String(Math.abs(slack) / worstSlack));
+                    }
+                }
                 tr.appendChild(td);
             }
             tr.style.cursor = 'pointer';
@@ -585,6 +602,7 @@ export class TimingWidget {
         const hr = document.createElement('tr');
         for (const col of TimingWidget.DETAIL_COLS) {
             const th = document.createElement('th');
+            if (TimingWidget.DETAIL_NUM_COLS.has(col)) th.classList.add('num');
             th.textContent = col;
             hr.appendChild(th);
         }
@@ -604,11 +622,14 @@ export class TimingWidget {
                 fmtTime(n.slew),
                 fmtTime(n.load),
             ];
-            for (const v of vals) {
+            vals.forEach((v, col) => {
                 const td = document.createElement('td');
+                if (TimingWidget.DETAIL_NUM_COLS.has(TimingWidget.DETAIL_COLS[col])) {
+                    td.classList.add('num');
+                }
                 td.textContent = v;
                 tr.appendChild(td);
-            }
+            });
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', () => this._selectDetailRow(idx));
             tbody.appendChild(tr);
@@ -636,24 +657,31 @@ export function fmtTime(v) {
 
 // Path table columns: label, path field to display/sort by, time formatting,
 // and header tooltip (tooltips match the Qt GUI's TimingPathsModel).
+// `time` formats the value through fmtTime; `num` is the display hint -- a
+// numeric column is right-aligned with tabular figures so a column of values
+// lines up on the decimal point.  Every time column is numeric; the counts are
+// too, and the clock and pin names are not.
 TimingWidget.PATH_COLS = [
     { label: 'Clock', key: 'end_clk' },
-    { label: 'Required', key: 'required', time: true },
-    { label: 'Arrival', key: 'arrival', time: true },
-    { label: 'Slack', key: 'slack', time: true },
-    { label: 'Skew', key: 'skew', time: true,
+    { label: 'Required', key: 'required', time: true, num: true },
+    { label: 'Arrival', key: 'arrival', time: true, num: true },
+    { label: 'Slack', key: 'slack', time: true, num: true },
+    { label: 'Skew', key: 'skew', time: true, num: true,
       tooltip: 'The difference in arrival times between\n' +
                'source and destination clock pins of a macro/register,\n' +
                'adjusted for CRPR and subtracting a clock period.\n' +
                'Setup and hold times account for internal clock delays.' },
-    { label: 'Logic Delay', key: 'path_delay', time: true,
+    { label: 'Logic Delay', key: 'path_delay', time: true, num: true,
       tooltip: 'Path delay from instances (excluding buffers and consecutive '
                + 'inverter pairs)' },
-    { label: 'Logic Depth', key: 'logic_depth',
+    { label: 'Logic Depth', key: 'logic_depth', num: true,
       tooltip: 'Path instances (excluding buffers and consecutive inverter '
                + 'pairs)' },
-    { label: 'Fanout', key: 'fanout' },
+    { label: 'Fanout', key: 'fanout', num: true },
     { label: 'Start', key: 'start_pin' },
     { label: 'End', key: 'end_pin' },
 ];
 TimingWidget.DETAIL_COLS = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
+// Which of the above hold numbers (see PATH_COLS' `num`).
+TimingWidget.DETAIL_NUM_COLS
+    = new Set(['Fanout', 'Time', 'Delay', 'Slew', 'Load']);

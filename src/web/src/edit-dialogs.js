@@ -48,7 +48,7 @@ function showError(errorDiv, msg) {
 function addButton(parent, label, { primary = false } = {}) {
     const btn = document.createElement('button');
     btn.textContent = label;
-    if (primary) btn.className = 'primary';
+    btn.className = 'or-btn' + (primary ? ' or-btn-primary' : '');
     parent.appendChild(btn);
     return btn;
 }
@@ -112,6 +112,7 @@ export function showGlobalConnectDialog(app) {
                     row.innerHTML = `<span>${esc(r.inst)}</span><span>${esc(r.pin)}</span>`
                         + `<span>${esc(r.net)}</span><span>${esc(r.region || 'All')}</span>`;
                     const del = document.createElement('button');
+                    del.className = 'or-btn or-btn-sm or-btn-icon';
                     del.textContent = '✕';
                     del.title = 'Delete rule';
                     del.addEventListener('click', () => {

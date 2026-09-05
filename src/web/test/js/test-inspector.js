@@ -72,7 +72,7 @@ describe('Inspector focus nets', () => {
     describe('updateInspector toolbar buttons', () => {
         it('shows focus button for Net type', () => {
             panel.updateInspector(netData('clk'));
-            const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
+            const btns = app.inspectorEl.querySelectorAll('.or-btn-icon');
             // Should have back + zoom + focus buttons
             assert.ok(btns.length >= 3, `expected >=3 buttons, got ${btns.length}`);
             const focusBtn = Array.from(btns).find(b => b.title === 'Focus net');
@@ -81,7 +81,7 @@ describe('Inspector focus nets', () => {
 
         it('does not show focus button for non-Net type', () => {
             panel.updateInspector(instData('buf1'));
-            const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
+            const btns = app.inspectorEl.querySelectorAll('.or-btn-icon');
             // Should have back + zoom buttons, no focus button
             assert.equal(btns.length, 2);
             const focusBtn = Array.from(btns).find(b => b.title === 'Focus net');
@@ -91,7 +91,7 @@ describe('Inspector focus nets', () => {
         it('shows de-focus button when net is already focused', () => {
             app.focusNets.add('clk');
             panel.updateInspector(netData('clk'));
-            const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
+            const btns = app.inspectorEl.querySelectorAll('.or-btn-icon');
             const defocusBtn = Array.from(btns).find(b => b.title === 'De-focus net');
             assert.ok(defocusBtn, 'de-focus button should be present');
         });
@@ -99,14 +99,14 @@ describe('Inspector focus nets', () => {
         it('shows clear button when any nets are focused', () => {
             app.focusNets.add('data');
             panel.updateInspector(netData('clk'));
-            const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
+            const btns = app.inspectorEl.querySelectorAll('.or-btn-icon');
             const clearBtn = Array.from(btns).find(b => b.title === 'Clear focus nets');
             assert.ok(clearBtn, 'clear button should be present');
         });
 
         it('does not show clear button when no nets are focused', () => {
             panel.updateInspector(netData('clk'));
-            const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
+            const btns = app.inspectorEl.querySelectorAll('.or-btn-icon');
             const clearBtn = Array.from(btns).find(b => b.title === 'Clear focus nets');
             assert.equal(clearBtn, undefined, 'clear button should not be present');
         });
@@ -115,7 +115,7 @@ describe('Inspector focus nets', () => {
     describe('toggleFocusNet via button click', () => {
         it('adds net to focusNets on focus click', async () => {
             panel.updateInspector(netData('clk'));
-            const focusBtn = Array.from(app.inspectorEl.querySelectorAll('.inspector-btn'))
+            const focusBtn = Array.from(app.inspectorEl.querySelectorAll('.or-btn-icon'))
                 .find(b => b.title === 'Focus net');
             focusBtn.click();
             // Let promises settle
@@ -132,7 +132,7 @@ describe('Inspector focus nets', () => {
         it('removes net from focusNets on de-focus click', async () => {
             app.focusNets.add('clk');
             panel.updateInspector(netData('clk'));
-            const defocusBtn = Array.from(app.inspectorEl.querySelectorAll('.inspector-btn'))
+            const defocusBtn = Array.from(app.inspectorEl.querySelectorAll('.or-btn-icon'))
                 .find(b => b.title === 'De-focus net');
             assert.ok(defocusBtn, 'de-focus button should be present');
             defocusBtn.click();
@@ -150,7 +150,7 @@ describe('Inspector focus nets', () => {
             app.focusNets.add('data');
             panel.updateInspector(netData('clk'));
             const clearBtn = Array.from(
-                app.inspectorEl.querySelectorAll('.inspector-btn')
+                app.inspectorEl.querySelectorAll('.or-btn-icon')
             ).find(b => b.title === 'Clear focus nets');
             assert.ok(clearBtn);
             clearBtn.click();
@@ -212,7 +212,7 @@ describe('Inspector focus nets', () => {
                 selection_index: 1,
             });
             const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
-            const prevBtn = nav.querySelectorAll('.inspector-btn')[0];
+            const prevBtn = nav.querySelectorAll('.or-btn-icon')[0];
             prevBtn.click();
             assert.equal(app._requests.length, 1);
             assert.equal(app._requests[0].type, 'select_prev');
@@ -225,7 +225,7 @@ describe('Inspector focus nets', () => {
                 selection_index: 0,
             });
             const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
-            const btns = nav.querySelectorAll('.inspector-btn');
+            const btns = nav.querySelectorAll('.or-btn-icon');
             const nextBtn = btns[btns.length - 1];
             nextBtn.click();
             assert.equal(app._requests.length, 1);
@@ -256,7 +256,7 @@ describe('Inspector focus nets', () => {
                 selection_index: 0,
             });
             const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
-            const btns = nav.querySelectorAll('.inspector-btn');
+            const btns = nav.querySelectorAll('.or-btn-icon');
             btns[btns.length - 1].click();
 
             await new Promise(r => setTimeout(r, 0));
@@ -512,7 +512,7 @@ describe('Inspector focus nets', () => {
             assert.ok(modal.textContent.includes('cannot be undone'));
             assert.equal(app._requests.length, 0, 'nothing sent before confirm');
 
-            const confirmBtn = modal.querySelector('.or-modal-btn-danger');
+            const confirmBtn = modal.querySelector('.or-btn-danger');
             confirmBtn.click();
             await new Promise(r => setTimeout(r, 0));
 
@@ -529,7 +529,7 @@ describe('Inspector focus nets', () => {
             await new Promise(r => setTimeout(r, 0));
 
             const modal = document.querySelector('.or-modal');
-            const cancelBtn = modal.querySelector('.or-modal-btn');
+            const cancelBtn = modal.querySelector('.or-btn');
             cancelBtn.click();
             await new Promise(r => setTimeout(r, 0));
 
