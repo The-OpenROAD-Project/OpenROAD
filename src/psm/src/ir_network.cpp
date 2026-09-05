@@ -4,7 +4,6 @@
 #include "ir_network.h"
 
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <fstream>
 #include <iterator>
@@ -165,27 +164,11 @@ void IRNetwork::recoverMemory()
              connections_.capacity());
 }
 
-IRNetwork::Polygon90 IRNetwork::rectToPolygon(const odb::Rect& rect) const
+IRNetwork::LayerMap<odb::geom::BoostPolygon90Set>
+IRNetwork::generatePolygonsFromBox(odb::dbBox* box,
+                                   const odb::dbTransform& transform) const
 {
-  using Pt = Polygon90::point_type;
-
-  std::array<Pt, 4> pts = {Pt(rect.xMin(), rect.yMin()),
-                           Pt(rect.xMax(), rect.yMin()),
-                           Pt(rect.xMax(), rect.yMax()),
-                           Pt(rect.xMin(), rect.yMax())};
-
-  Polygon90 poly;
-  poly.set(pts.begin(), pts.end());
-  return poly;
-}
-
-IRNetwork::LayerMap<IRNetwork::Polygon90Set> IRNetwork::generatePolygonsFromBox(
-    odb::dbBox* box,
-    const odb::dbTransform& transform) const
-{
-  using boost::polygon::operators::operator+=;
-
-  LayerMap<Polygon90Set> shapes_by_layer;
+  LayerMap<odb::geom::BoostPolygon90Set> shapes_by_layer;
 
   if (box->isVia()) {
     // handle as via
@@ -198,12 +181,12 @@ IRNetwork::LayerMap<IRNetwork::Polygon90Set> IRNetwork::generatePolygonsFromBox(
         // via box
       } else {
         // enclosure box
-        Polygon90Set& shapes = shapes_by_layer[layer];
+        odb::geom::BoostPolygon90Set& shapes = shapes_by_layer[layer];
 
         odb::Rect rect = shape.getBox();
         transform.apply(rect);
 
-        shapes += rectToPolygon(rect);
+        shapes.insert(odb::geom::toPolygon90(rect));
       }
     }
   } else {
@@ -214,45 +197,41 @@ IRNetwork::LayerMap<IRNetwork::Polygon90Set> IRNetwork::generatePolygonsFromBox(
       // Only collect shapes on routing layers
       odb::Rect rect = box->getBox();
       transform.apply(rect);
-      shapes_by_layer[layer] += rectToPolygon(rect);
+      shapes_by_layer[layer].insert(odb::geom::toPolygon90(rect));
     }
   }
 
   return shapes_by_layer;
 }
 
-IRNetwork::LayerMap<IRNetwork::Polygon90Set>
+IRNetwork::LayerMap<odb::geom::BoostPolygon90Set>
 IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
 {
-  using boost::polygon::operators::operator+=;
-
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from SWire: {}");
 
-  LayerMap<Polygon90Set> shapes_by_layer;
+  LayerMap<odb::geom::BoostPolygon90Set> shapes_by_layer;
 
   for (odb::dbSBox* box : wire->getWires()) {
     for (const auto& [layer, polygon] :
          generatePolygonsFromBox(box, odb::dbTransform())) {
-      shapes_by_layer[layer] += polygon;
+      shapes_by_layer[layer].insert(polygon);
     }
   }
 
   return shapes_by_layer;
 }
 
-IRNetwork::LayerMap<IRNetwork::Polygon90Set>
+IRNetwork::LayerMap<odb::geom::BoostPolygon90Set>
 IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
 {
-  using boost::polygon::operators::operator+=;
-
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
 
   odb::dbTechLayer* front_base = getTech()->firstFrontsideRoutingLayer();
   odb::dbTechLayer* back_base = getTech()->firstBacksideRoutingLayer();
 
-  LayerMap<Polygon90Set> shapes_by_layer;
+  LayerMap<odb::geom::BoostPolygon90Set> shapes_by_layer;
   bool floorplan_asseted = false;
   for (auto* iterm : net_->getITerms()) {
     auto* inst = iterm->getInst();
@@ -330,7 +309,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
         }
 
         for (const auto& [layer, shapes] : pin_shapes) {
-          shapes_by_layer[layer] += shapes;
+          shapes_by_layer[layer].insert(shapes);
         }
 
         if (geom->isVia()) {
@@ -381,22 +360,20 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   return shapes_by_layer;
 }
 
-IRNetwork::LayerMap<IRNetwork::Polygon90Set>
+IRNetwork::LayerMap<odb::geom::BoostPolygon90Set>
 IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 {
-  using boost::polygon::operators::operator+=;
-
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from BTerms: {}");
 
-  LayerMap<Polygon90Set> shapes_by_layer;
+  LayerMap<odb::geom::BoostPolygon90Set> shapes_by_layer;
 
   for (auto* bterm : net_->getBTerms()) {
     for (auto* bpin : bterm->getBPins()) {
       for (odb::dbBox* geom : bpin->getBoxes()) {
         for (const auto& [layer, shapes] :
              generatePolygonsFromBox(geom, odb::dbTransform())) {
-          shapes_by_layer[layer] += shapes;
+          shapes_by_layer[layer].insert(shapes);
         }
 
         if (geom->isVia()) {
@@ -424,14 +401,12 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 
 void IRNetwork::processPolygonToRectangles(
     odb::dbTechLayer* layer,
-    const IRNetwork::Polygon90& polygon,
+    const odb::geom::BoostPolygon90WithHoles& polygon,
     const IRNetwork::TerminalTree& terminals,
     std::vector<std::unique_ptr<Shape>>& new_shapes,
     std::vector<std::unique_ptr<Node>>& new_nodes,
     std::map<Shape*, std::set<Node*>>& terminal_connections)
 {
-  using boost::polygon::operators::operator+=;
-
   auto get_layer_orientation
       = [](odb::dbTechLayer* layer) -> boost::polygon::orientation_2d_enum {
     switch (layer->getDirection().getValue()) {
@@ -445,8 +420,8 @@ void IRNetwork::processPolygonToRectangles(
     return boost::polygon::orientation_2d_enum::VERTICAL;
   };
 
-  Polygon90Set shape_poly_set;
-  shape_poly_set += polygon;
+  odb::geom::BoostPolygon90Set shape_poly_set;
+  shape_poly_set.insert(polygon);
 
   std::vector<odb::Rect> search_rect_shapes;
   shape_poly_set.get_rectangles(search_rect_shapes,
@@ -515,35 +490,34 @@ IRNetwork::TerminalTree IRNetwork::getTerminalTree(
 
 void IRNetwork::generateRoutingLayerShapesAndNodes()
 {
-  using boost::polygon::operators::operator+=;
-
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes: {}");
 
-  LayerMap<Polygon90Set> shapes_by_layer;
+  LayerMap<odb::geom::BoostPolygon90Set> shapes_by_layer;
 
   // Collect wires
   for (odb::dbSWire* wire : net_->getSWires()) {
     for (const auto& [layer, shapes] : generatePolygonsFromSWire(wire)) {
-      shapes_by_layer[layer] += shapes;
+      shapes_by_layer[layer].insert(shapes);
     }
   }
 
   std::vector<TerminalNode*> terminals;
   // Collect ITerms
   for (const auto& [layer, shapes] : generatePolygonsFromITerms(terminals)) {
-    shapes_by_layer[layer] += shapes;
+    shapes_by_layer[layer].insert(shapes);
   }
 
   // Collect BTerms
   for (const auto& [layer, shapes] : generatePolygonsFromBTerms(terminals)) {
-    shapes_by_layer[layer] += shapes;
+    shapes_by_layer[layer].insert(shapes);
   }
 
   const TerminalTree terminal_nodes = getTerminalTree(terminals);
 
   // Simplify shapes
-  std::vector<std::pair<odb::dbTechLayer*, Polygon90>> all_poly_shapes;
+  std::vector<std::pair<odb::dbTechLayer*, odb::geom::BoostPolygon90WithHoles>>
+      all_poly_shapes;
   for (auto& [layer, shapes] : shapes_by_layer) {
     const utl::DebugScopedTimer layer_timer(
         logger_,
@@ -553,7 +527,7 @@ void IRNetwork::generateRoutingLayerShapesAndNodes()
         fmt::format("Convert shapes to polygons shapes on {}: {{}}",
                     layer->getName()));
 
-    std::vector<Polygon90> shape_polygons;
+    std::vector<odb::geom::BoostPolygon90WithHoles> shape_polygons;
     shapes.get_polygons(shape_polygons);
 
     debugPrint(logger_,
