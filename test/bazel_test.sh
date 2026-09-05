@@ -7,6 +7,17 @@ export TEST_NAME=$(basename "$TEST_FILE" .$TEST_EXT)
 [ -n "$OPENROAD_EXE" ] && export OPENROAD_EXE=$(realpath $OPENROAD_EXE)
 export RESULTS_DIR="${TEST_UNDECLARED_OUTPUTS_DIR}/results"
 export REGRESSION_TEST=$(realpath $REGRESSION_TEST)
+if [ -n "${ASAN_PRELOAD:-}" ]; then
+	resolved_preload=""
+	old_ifs="${IFS}"
+	IFS=:
+	for runtime in ${ASAN_PRELOAD}; do
+		runtime=$(realpath "${runtime}")
+		resolved_preload="${resolved_preload:+${resolved_preload}:}${runtime}"
+	done
+	IFS="${old_ifs}"
+	export ASAN_PRELOAD="${resolved_preload}"
+fi
 if [ -n "${TEST_SRCDIR:-}" ]; then
 	export BAZEL_TEST=1
 	# Tests cd into their source directory, so importing a shared helper
