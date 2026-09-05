@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <queue>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -205,6 +206,9 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(BundledNetList& nets);
+  std::string buildClusterPlacementErrorTable(
+      const std::vector<float>& utilization_list,
+      const std::set<int>& skipped_utilization_indices) const;
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
