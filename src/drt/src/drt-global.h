@@ -83,6 +83,10 @@ struct RouterConfiguration
   frUInt4 VIACOST = 4;
   // new cost used
   frUInt4 GRIDCOST = 2;
+  // Multiplier applied to GRIDCOST on non-preferred-direction edges when
+  // routing a watermark net.  Higher values more strongly suppress
+  // wrong-way jogs, tightening the "limit way" watermark constraint.
+  float WATERMARK_WRONGWAY_MULT = 100.0f;
   frUInt4 ROUTESHAPECOST = 8;
   frUInt4 MARKERCOST = 32;
   frUInt4 MARKERBLOATWIDTH = 1;  // unused

@@ -1054,6 +1054,14 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
   net_in->setAutoTaperEnabled(db_net->isAutoTaperEnabled());
+  // Routing watermark: the wmk module tags watermark nets with a
+  // boolean dbProperty.  Mirror the flag onto the frNet so the detailed
+  // router can recognize it cheaply during maze search.
+  if (auto* wm_prop = odb::dbBoolProperty::find(db_net, "watermark")) {
+    if (wm_prop->getValue()) {
+      net_in->setIsWatermark(true);
+    }
+  }
   updateNetRouting(net_in.get(), db_net);
   net_in->setType(db_net->getSigType());
   frNet* raw_net_in = net_in.get();

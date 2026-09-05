@@ -67,6 +67,7 @@ using std::string;
   X(dpl)                                 \
   X(exa)                                 \
   X(web)                                 \
+  X(wmk)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \

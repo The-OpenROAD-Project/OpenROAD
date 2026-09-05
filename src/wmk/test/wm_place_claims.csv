@@ -1,0 +1,7 @@
+kind,id,tile_tx,tile_ty,row_y_dbu,A_name,B_name,C_name,target_bit,target_perm,orig_order,wm_order,hpwl_delta_dbu,disp_max_dbu,satisfied,skipped_reason
+pair,_276_|_277_,0,0,0,_276_,_277_,,0,,,,0,0,True,
+pair,_278_|_279_,0,0,0,_278_,_279_,,0,,,,0,0,True,
+pair,_280_|_281_,0,0,0,_280_,_281_,,0,,,,0,0,True,
+pair,_282_|_283_,0,0,0,_282_,_283_,,0,,,,0,0,True,
+pair,_284_|_285_,0,0,0,_284_,_285_,,0,,,,0,0,False,
+pair,_286_|_287_,0,0,0,_286_,_287_,,0,,,,0,0,False,hpwl_reject

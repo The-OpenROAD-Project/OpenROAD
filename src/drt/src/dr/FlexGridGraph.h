@@ -955,6 +955,22 @@ class FlexGridGraph
 
   void setNDR(frNonDefaultRule* ndr) { ndr_ = ndr; }
 
+  // Per-net multiplier applied to the grid cost, used to implement the
+  // routing watermark of Kahng et al., "Robust IP Watermarking Methodologies
+  // for Physical Design" (ISPD'98): watermark nets pay a strongly inflated
+  // cost for the edges getCosts charges GRIDCOST on, which covers wrong-way
+  // edges and off-track preferred-direction edges alike.  This approximates
+  // the IC Craftsman "limit way = 1" rule.  A value of 1.0 (the default)
+  // leaves the router's behavior unchanged.
+  void setWrongWayWatermarkMultiplier(float m)
+  {
+    wrong_way_watermark_multiplier_ = m;
+  }
+  float getWrongWayWatermarkMultiplier() const
+  {
+    return wrong_way_watermark_multiplier_;
+  }
+
   void setDstTaperBox(frBox3D* t) { dstTaperBox_ = t; }
 
   frCost getCosts(frMIdx gridX,
@@ -1145,6 +1161,9 @@ class FlexGridGraph
       = nullptr;  // std::pair<layer1area, layer2area>
   // ndr related
   frNonDefaultRule* ndr_ = nullptr;
+  // Watermark: multiplier for the grid cost on the net currently being
+  // routed.  1.0 = no change.  See setWrongWayWatermarkMultiplier().
+  float wrong_way_watermark_multiplier_ = 1.0f;
   const frBox3D* dstTaperBox_
       = nullptr;  // taper box for the current dest pin in the search
 
