@@ -18,6 +18,9 @@ or_integration_tests(
     check_power_grid_ok_disconnected
     check_power_grid_require_bterms_fail
     check_power_grid_require_bterms_pass
+    check_power_grid_short
+    check_power_grid_short_iterms
+    check_power_grid_short_obstructions
     corners
     corners_assign_power
     gcd_all_vss_source_res

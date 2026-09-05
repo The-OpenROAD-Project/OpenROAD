@@ -1,0 +1,82 @@
+# Two abutted standard cell rows sharing a single metal1 VDD followpin,
+# strapped up to metal3 through via1/via2 so the net under test carries
+# vias as well as wires.
+#
+# The VDD rail (metal1, y = 2.715um - 2.885um) is deliberately overlapped
+# by objects that do not belong to VDD:
+#   metal1 FILL                       dbFill   x = 2.000um - 2.300um
+#   metal1 pin of net in1             dbBTerm  x = 2.500um - 2.700um
+#   metal1 VSS stripe                 dbSWire  x = 3.115um - 3.285um
+#   via1 on that VSS stripe           dbSWire  x = 3.115um - 3.285um
+#   metal1 route of net in2           dbWire   x = 3.700um - 4.100um
+#   via1 on that route                dbWire   x = 4.230um - 4.370um
+#   45 degree metal1 octagon on out1  dbITerm  x = 4.500um - 5.500um
+#
+# The metal2 fill and the objects placed clear of the rail are controls:
+# they must not be reported.
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN short_objects ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 17100 13000 ) ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 0 2800 N DO 45 BY 1 STEP 380 0 ;
+ROW ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 0 5600 FS DO 45 BY 1 STEP 380 0 ;
+VIAS 2 ;
+    - via1_pg + RECT metal1 ( -170 -170 ) ( 170 170 )
+      + RECT via1 ( -70 -70 ) ( 70 70 )
+      + RECT metal2 ( -170 -170 ) ( 170 170 ) ;
+    - via2_pg + RECT metal2 ( -170 -170 ) ( 170 170 )
+      + RECT via2 ( -70 -70 ) ( 70 70 )
+      + RECT metal3 ( -170 -170 ) ( 170 170 ) ;
+END VIAS
+COMPONENTS 9 ;
+    - u1 INV_X1 + PLACED ( 0 2800 ) N ;
+    - u2 INV_X1 + PLACED ( 760 2800 ) N ;
+    - u3 INV_X1 + PLACED ( 1520 2800 ) N ;
+    - u4 INV_X1 + PLACED ( 2280 2800 ) N ;
+    - u5 INV_X1 + PLACED ( 0 5600 ) FS ;
+    - u6 INV_X1 + PLACED ( 760 5600 ) FS ;
+    - u7 INV_X1 + PLACED ( 1520 5600 ) FS ;
+    - u8 INV_X1 + PLACED ( 2280 5600 ) FS ;
+    - pad1 OCT_PAD + PLACED ( 9000 4800 ) N ;
+END COMPONENTS
+PINS 3 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal1 ( -200 -170 ) ( 200 170 ) + PLACED ( 5200 5600 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal1 ( -200 -170 ) ( 200 170 ) + PLACED ( 5200 7000 ) N ;
+    - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL
+      + LAYER metal1 ( -200 -170 ) ( 200 170 ) + PLACED ( 5200 4200 ) N ;
+END PINS
+FILLS 3 ;
+    - LAYER metal1 RECT ( 4000 5500 ) ( 4600 5900 ) ;
+    - LAYER metal1 RECT ( 4000 6400 ) ( 4600 6800 ) ;
+    - LAYER metal2 RECT ( 3200 5500 ) ( 3600 5900 ) ;
+END FILLS
+SPECIALNETS 2 ;
+    - VDD ( * VDD ) + USE POWER
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 0 5600 ) ( 17100 5600 )
+      NEW metal1 0 + SHAPE STRIPE ( 12000 5600 ) via1_pg
+      NEW metal1 0 + SHAPE STRIPE ( 15000 5600 ) via1_pg
+      NEW metal2 340 + SHAPE STRIPE ( 12000 5600 ) ( 12000 11400 )
+      NEW metal2 340 + SHAPE STRIPE ( 15000 5600 ) ( 15000 11400 )
+      NEW metal2 0 + SHAPE STRIPE ( 12000 11400 ) via2_pg
+      NEW metal2 0 + SHAPE STRIPE ( 15000 11400 ) via2_pg
+      NEW metal3 340 + SHAPE STRIPE ( 11000 11400 ) ( 16000 11400 ) ;
+    - VSS ( * VSS ) + USE GROUND
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 0 2800 ) ( 17100 2800 )
+      NEW metal1 340 + SHAPE FOLLOWPIN ( 0 8400 ) ( 17100 8400 )
+      NEW metal1 340 + SHAPE STRIPE ( 6400 2800 ) ( 6400 8400 )
+      NEW metal1 0 + SHAPE STRIPE ( 6400 5600 ) via1_pg
+      NEW metal2 340 + SHAPE STRIPE ( 6400 5600 ) ( 6400 9000 ) ;
+END SPECIALNETS
+NETS 3 ;
+    - in1 ( PIN in1 ) ( u1 A ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( u2 A ) + USE SIGNAL
+      + ROUTED metal1 ( 7400 5600 ) ( 8200 * )
+        NEW metal1 ( 8600 5600 ) via1_0
+        NEW metal2 ( 8600 5600 ) ( 8600 9000 ) ;
+    - out1 ( PIN out1 ) ( u1 ZN ) ( pad1 PAD ) + USE SIGNAL ;
+END NETS
+END DESIGN
