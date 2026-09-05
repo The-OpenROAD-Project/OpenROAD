@@ -6,6 +6,8 @@
 [INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef, created 13 layers, 60 vias
 [INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO RSZ-0027] Inserted 19 gf180mcu_fd_sc_mcu9t5v0__buf_1 input buffers.
+[INFO RSZ-0028] Inserted 26 gf180mcu_fd_sc_mcu9t5v0__buf_1 output buffers.
 ********************************************************************************
 Buffer Report:
 There are 20 buffers that are not marked as dont-use, multi-voltage
