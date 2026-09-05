@@ -414,6 +414,7 @@ class Opendp
   int negotiation_debug_start_ = 0;
   bool incremental_ = false;
   bool use_diamond_legalizer_ = false;
+  int total_moves_ = 0;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

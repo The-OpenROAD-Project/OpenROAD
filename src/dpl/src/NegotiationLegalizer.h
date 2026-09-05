@@ -131,6 +131,7 @@ class NegotiationLegalizer
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
+  [[nodiscard]] int totalMoves() const { return total_moves_; }
   [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
  private:
@@ -305,6 +306,7 @@ class NegotiationLegalizer
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool disable_window_extension_{false};
+  int total_moves_{0};
 
   // Stuck-cell tallies for the current runNegotiation call. Reset at the
   // start of runNegotiation and printed at the end. The per-height maps are

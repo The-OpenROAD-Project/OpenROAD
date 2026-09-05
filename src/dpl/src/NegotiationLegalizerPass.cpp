@@ -427,6 +427,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     logger_->report("Pause after negotiation iteration {}.", iter);
     debug_observer_->redrawAndPause();
   }
+  total_moves_ += moves_count;
   return totalViolations;
 }
 
