@@ -1446,7 +1446,7 @@ void WebServer::saveReport(const std::string& filename,
     filters = boost::json::serialize(
         serializeChartFilters(report.getChartFilters()));
   } else {
-    logger_->warn(utl::WEB, 30, "No STA data — timing sections will be empty.");
+    logger_->warn(utl::WEB, 30, "No STA data - timing sections will be empty.");
     setup_json = boost::json::serialize(serializeTimingPaths({}));
     hold_json = setup_json;
     hist_setup = boost::json::serialize(serializeSlackHistogram({}));
