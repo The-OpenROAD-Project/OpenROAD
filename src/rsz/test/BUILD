@@ -103,6 +103,7 @@ TESTS = [
     "repair_hold8",
     "repair_hold9",
     "repair_hold9_verbose",
+    "repair_hold_clock_as_data",
     "repair_hold_multi_output_load",
     "repair_setup_max_iter",
     "repair_setup1",

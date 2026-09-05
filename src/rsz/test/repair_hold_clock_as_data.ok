@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 5 components and 24 component-terminals.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+=== r2/D hold slack (min) before repair: real cross-domain violation ===
+(clk1 ^) r -0.59:2.55 f ---:---
+(clk1 v) r ---:--- f 0.42:1.54
+[INFO RSZ-0046] Found 1 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.587 |  -0.587 | r2/D
+    final |       0 |      24 |            0 |  +167.4% |   0.016 |   0.000 | r2/D
+--------------------------------------------------------------------------------------
+[INFO RSZ-0032] Inserted 24 hold buffers.
+=== r2/D hold slack (min) after repair: must be detected and fixed ===
+(clk1 ^) r 0.02:1.95 f ---:---
+(clk1 v) r ---:--- f 1.01:0.95
