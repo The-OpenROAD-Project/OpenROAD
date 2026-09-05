@@ -96,6 +96,24 @@ filegroup(
 )
 
 filegroup(
+    name = "dynamic_node_runtime_fixture",
+    srcs = [
+        "design/nangate45/dynamic_node_top_wrap/dynamic_node_top_wrap.def",
+        "design/nangate45/dynamic_node_top_wrap/dynamic_node_top_wrap.sdc",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "ibex_runtime_fixture",
+    srcs = [
+        "design/nangate45/ibex_core/ibex_core.def",
+        "design/nangate45/ibex_core/ibex_core.sdc",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "test_resources",
     # overly broad glob, could be refined later, but
     # symlinks are cheap and OpenROAD binary changes, the common

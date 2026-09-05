@@ -281,6 +281,36 @@ filegroup(
 )
 
 filegroup(
+    name = "gf180_jpeg_runtime_fixture",
+    srcs = [
+        "gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef",
+        "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
+        "gf180/gf180mcu_fd_sc_mcu9t5v0__tt_025C_5v00.lib.gz",
+        "gf180/setRC.tcl",
+        "jpeg.sdc",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gcd_asap7_runtime_fixture",
+    srcs = [
+        "gcd.sdc",
+        "gcd_asap7_placed.def",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gcd_nangate45_runtime_fixture",
+    srcs = [
+        "gcd_nangate45.sdc",
+        "gcd_nangate45_placed.def",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "test_resources",
     # overly broad glob, could be refined later, but
     # symlinks are cheap and OpenROAD binary changes, the common

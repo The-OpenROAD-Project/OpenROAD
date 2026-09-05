@@ -57,6 +57,12 @@ COMPULSORY_TESTS = [
 ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
+    name = "gf180_jpeg_runtime_fixture",
+    srcs = ["gf180/jpeg.def"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
     # but at least it is not a glob of everything and there are
