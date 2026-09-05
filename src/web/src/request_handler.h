@@ -319,6 +319,17 @@ struct SessionState
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
+// True if a WebSocket handshake carrying this Origin/Host may be accepted.
+// Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
+// Origin header and JavaScript cannot forge it, so a cross-site page opening
+// ws://localhost:<port> is rejected here before it can drive tcl_eval.
+//
+// An absent Origin is allowed: browsers always send it on a WS handshake, so
+// its absence marks a non-browser client (local tooling, tests), which a
+// loopback bind (F-02) is what keeps local.  A present Origin is accepted only
+// when its authority equals the Host header (strict same-origin).
+bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
+
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
 // (boost::system::system_error) when the key is present but the JSON type
