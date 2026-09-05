@@ -55,6 +55,8 @@ class Shape
     kShape,
     kGridObs,
     kBlockObs,
+    // obstruction of a pad cell, which the pad's own net may overlap
+    kPadObs,
     kMacroObs,
     kObs,
     kFixed
