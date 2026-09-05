@@ -131,6 +131,12 @@ report_cts_metrics()
 }
 
 void
+report_clock_tree(bool report_power)
+{
+  getTritonCts()->reportClockTree(report_power);
+}
+
+void
 set_tree_buf(const char* buffer)
 {
   getTritonCts()->getParms()->setTreeBuffer(buffer);
@@ -190,6 +196,12 @@ void
 set_num_static_layers(unsigned num)
 {
   getTritonCts()->getParms()->setNumStaticLayers(num);
+}
+
+void
+set_num_max_leaf_sinks(unsigned num)
+{
+  getTritonCts()->getParms()->setNumMaxLeafSinks(num);
 }
 
 void
@@ -344,6 +356,12 @@ unsigned
 get_num_static_layers()
 {
   return getTritonCts()->getParms()->getNumStaticLayers();
+}
+
+unsigned
+get_num_max_leaf_sinks()
+{
+  return getTritonCts()->getParms()->getNumMaxLeafSinks();
 }
 
 std::string
