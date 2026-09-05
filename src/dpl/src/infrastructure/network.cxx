@@ -88,20 +88,34 @@ Pin* Network::addPin(odb::dbITerm* term)
 
   auto node = getNode(term->getInst());
   if (node != nullptr) {
-    for (auto pin : term->getMTerm()->getMPins()) {
-      for (auto box : pin->getGeometry()) {
-        auto layer = box->getTechLayer();
-        if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
-          continue;
+    // The set of routing layers a pin touches depends only on the mterm
+    // geometry, which is identical for every instance of a master.  Compute
+    // the bitmask once per mterm and reuse it; previously this walked all pin
+    // geometry for every iterm, which scaled with total pins and dominated
+    // createNetwork() on large designs.
+    auto cache_it = mterm_layers_.find(mTerm);
+    uint8_t mask;
+    if (cache_it != mterm_layers_.end()) {
+      mask = cache_it->second;
+    } else {
+      mask = 0;
+      for (auto pin : mTerm->getMPins()) {
+        for (auto box : pin->getGeometry()) {
+          auto layer = box->getTechLayer();
+          if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+            continue;
+          }
+          const int level = layer->getRoutingLevel();
+          if (level > 3) {
+            continue;
+          }
+          mask |= static_cast<uint8_t>(1 << level);
+          mask |= static_cast<uint8_t>(1 << (level + 1));  // via access above
         }
-        if (layer->getRoutingLevel() > 3) {
-          continue;
-        }
-        node->addUsedLayer(layer->getRoutingLevel());
-        node->addUsedLayer(layer->getRoutingLevel()
-                           + 1);  // for via access from above
       }
+      mterm_layers_[mTerm] = mask;
     }
+    node->orUsedLayers(mask);
   }
   return ptr;
 }
@@ -134,8 +148,14 @@ void Network::addEdge(odb::dbNet* net)
   Edge* edge = uedge.get();
   ////////////////////////
   net_to_edge_idx_[net] = id;
-  // Name of edge.
-  setEdgeName(id, net->getName());
+  // Record the backing net so the edge name can be derived lazily.  This is a
+  // cheap pointer append; materializing net->getName() up front (a std::string
+  // allocation per net) measurably dominated createNetwork() on large designs,
+  // and Network::getEdgeName() has no eager callers.
+  if (static_cast<int>(edge_to_net_.size()) <= id) {
+    edge_to_net_.resize(id + 1, nullptr);
+  }
+  edge_to_net_[id] = net;
 
   for (auto iterm : net->getITerms()) {
     if (!iterm->getInst()->getMaster()->isCoreAutoPlaceable()) {
@@ -511,10 +531,12 @@ void Network::clear()
   pins_.clear();
   blockages_.clear();
   edgeNames_.clear();
+  edge_to_net_.clear();
   inst_to_node_idx_.clear();
   term_to_node_idx_.clear();
   master_to_idx_.clear();
   net_to_edge_idx_.clear();
+  mterm_layers_.clear();
   cells_cnt_ = 0;
   terminals_cnt_ = 0;
 }
