@@ -4383,6 +4383,98 @@ TEST(DbuFormatTest, NoScaleFallsBackToRawDbu)
   EXPECT_EQ(dbuToMicronString(12345, -1.0), "12345");
 }
 
+// Heat-map bins tile the plane, so every pixel belongs to exactly one bin.
+// Rounding each bin's edges outward handed the pixels on a shared edge to both
+// neighbours, and each was composited twice: a lattice of darker seams over the
+// whole map, and — because a doubled pixel mixes two ramp entries — a tile
+// colour count far past the 256 the ramp holds.  Every bin here carries the
+// same value, so one colour is the whole of a correctly drawn tile.
+TEST_F(TileGeneratorTest, HeatMapBinsDoNotOverlapOnSharedEdges)
+{
+  // A cell spanning the design populates every bin, so the tile is full of
+  // shared bin edges.
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide)));
+  // Below 255 a second composite lands on a different colour than the first.
+  heatmap_->setColorAlpha(150);
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba = decodePng(
+      tile_gen_->generateHeatMapTile(*heatmap_, 0, 0, 0), width, height);
+  ASSERT_TRUE(hasNonTransparentPixel(rgba));
+
+  std::set<std::array<unsigned char, 4>> colors;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (rgba[i + 3] != 0) {
+      colors.insert({rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]});
+    }
+  }
+  EXPECT_EQ(colors.size(), 1u)
+      << "a pixel covered by two bins blends the bin colour with itself";
+}
+
+// A layer with nothing in the tile encodes to bytes that depend only on the
+// tile's size, so every such tile is the same image and is served from one
+// shared encoding.  Checked through two different empty layers: a cache keyed
+// on anything but the size would hand back different bytes for them.
+TEST_F(TileGeneratorTest, EmptyTilesShareOneTransparentEncoding)
+{
+  makeTileGen();
+
+  const std::vector<unsigned char> metal1
+      = tile_gen_->generateTile("metal1", 0, 0, 0);
+  const std::vector<unsigned char> metal2
+      = tile_gen_->generateTile("metal2", 0, 0, 0);
+  EXPECT_EQ(metal1, metal2);
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba = decodePng(metal1, width, height);
+  EXPECT_EQ(width, static_cast<unsigned>(kTileSize));
+  EXPECT_EQ(height, static_cast<unsigned>(kTileSize));
+  EXPECT_FALSE(hasNonTransparentPixel(rgba));
+}
+
+// Tiles are encoded from a palette when they hold few enough colours, which has
+// to reproduce them exactly — a shifted or quantized colour would put the web
+// viewer's layers out of step with the Qt GUI's.  The drawn pixels here must be
+// the layer's own colour, unchanged.
+TEST_F(TileGeneratorTest, IndexedEncodingPreservesTheLayerColour)
+{
+  placeInst("BUF_X16", "buf", 0, 0);
+  makeTileGen();
+  fitDieToContent();
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  const auto& colors = tile_gen_->getLayerColorMap(getDb()->getTech());
+  const auto entry = colors.find(metal1);
+  ASSERT_NE(entry, colors.end());
+  const Color expected = entry->second;
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba
+      = decodePng(tile_gen_->generateTile("metal1", 0, 0, 0), width, height);
+  ASSERT_TRUE(hasNonTransparentPixel(rgba));
+
+  std::set<std::array<unsigned char, 4>> colors_seen;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (rgba[i + 3] != 0) {
+      colors_seen.insert({rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]});
+    }
+  }
+  ASSERT_FALSE(colors_seen.empty());
+  // The tile carries the die outline and the instance's pin shapes too, so
+  // only require that the layer's own colour survives the round trip intact:
+  // a palette that shifted or quantized it would leave this exact tuple absent.
+  const std::array<unsigned char, 4> layer_color{
+      expected.r, expected.g, expected.b, expected.a};
+  EXPECT_TRUE(colors_seen.contains(layer_color))
+      << "the layer colour must reach the client unchanged";
+}
+
 // The scale the tests above model is the one the fixture's tech actually has.
 TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 {
