@@ -9,6 +9,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
+#include "dbProperty.h"
 #include "dbScanChain.h"
 #include "dbScanListScanInstItr.h"
 #include "dbScanPartition.h"
@@ -75,6 +76,12 @@ void _dbScanList::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
+void dbScanList::destroy(dbScanList* obj)
+{
+  _dbScanPartition* _parent = (_dbScanPartition*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->scan_lists_->destroy((_dbScanList*) obj);
+}
 // User Code Begin dbScanListPublicMethods
 dbSet<dbScanInst> dbScanList::getScanInsts() const
 {

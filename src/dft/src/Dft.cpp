@@ -96,7 +96,13 @@ void Dft::writeToOdb()
   odb::dbBlock* db_block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = db_block->getDft();
 
-  db_dft->reset();
+  // Remove all existing scan-chains and pins from database
+  for (auto chain : db_dft->getScanChains()) {
+    odb::dbScanChain::destroy(chain);
+  }
+  for (auto pin : db_dft->getScanPins()) {
+    odb::dbScanPin::destroy(pin);
+  }
 
   for (const auto& chain : scan_chains_) {
     odb::dbScanChain* db_sc = odb::dbScanChain::create(db_dft);

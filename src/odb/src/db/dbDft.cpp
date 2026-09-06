@@ -117,19 +117,16 @@ bool dbDft::isScanInserted() const
   return obj->scan_inserted_;
 }
 
+dbSet<dbScanPin> dbDft::getScanPins() const
+{
+  _dbDft* obj = (_dbDft*) this;
+  return dbSet<dbScanPin>(obj, obj->scan_pins_);
+}
+
 dbSet<dbScanChain> dbDft::getScanChains() const
 {
   _dbDft* obj = (_dbDft*) this;
   return dbSet<dbScanChain>(obj, obj->scan_chains_);
-}
-
-void dbDft::reset()
-{
-  _dbDft* obj = (_dbDft*) this;
-  obj->scan_inserted_ = false;
-
-  obj->scan_pins_->clear();
-  obj->scan_chains_->clear();
 }
 
 }  // namespace odb
