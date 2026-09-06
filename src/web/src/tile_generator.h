@@ -566,6 +566,12 @@ class TileGenerator
   // the chiplet cache, so the value returned reflects the live hierarchy.
   uint64_t chipletsGeneration() const;
 
+  // True when `png` came back from generateTile (or any of the other tile
+  // entry points) carrying nothing: the layer had no geometry in that tile.
+  // Callers send those as an empty response instead of the image, so the
+  // client neither decodes them nor holds a bitmap for them.
+  static bool isBlankTilePng(const std::vector<unsigned char>& png);
+
   std::vector<unsigned char> generateTile(
       const std::string& layer,
       int z,

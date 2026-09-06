@@ -28,7 +28,7 @@ binary frame with the following layout:
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |
 | 0..3  | `id`     | `uint32` big-endian | Request correlator (see *Correlation*). |
-| 4     | `type`   | `uint8`             | Payload type: `0=JSON`, `1=PNG`, `2=Error`. |
+| 4     | `type`   | `uint8`             | Payload type: `0=JSON`, `1=PNG`, `2=Error`, `3=Empty`. |
 | 5..7  | reserved | `uint8 × 3`         | Must be zero.                         |
 | 8..   | `payload`| bytes               | UTF-8 JSON, PNG-encoded image, or UTF-8 error string. |
 
@@ -46,6 +46,13 @@ binary frame with the following layout:
 - `1 = PNG` — body is a raw PNG file. Used by `tile` and `heatmap_tile`.
 - `2 = Error` — body is a UTF-8 plain-text error message. Surfaces in
   the server log as `WEB-0043` (see *Error contract* below).
+- `3 = Empty` — the tile is blank: the renderer drew nothing in it. The
+  body is zero-length. Returned by `tile`, `overlay_tile` and
+  `heatmap_tile` in place of a fully transparent PNG, which would still
+  cost the client a decode and a full-size bitmap. Most tiles in a
+  viewport are this: every layer with no geometry where the user is
+  looking. A client must treat it as "draw nothing here" and, on a
+  refresh, must release any image the tile was previously holding.
 
 ## Request envelope
 
@@ -118,7 +125,8 @@ Render a single 256×256 PNG tile of the layout.
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
 
-**Response:** PNG image (frame type `1`).
+**Response:** PNG image (frame type `1`), or frame type `3` with no body
+when the layer has nothing to draw in this tile.
 
 ### `bounds`
 
@@ -643,7 +651,8 @@ Render one tile for the active heat map (or a specified one).
 | `x`    | `int`    |    ✓     | Tile column. |
 | `y`    | `int`    |    ✓     | Tile row. |
 
-**Response:** PNG (frame type `1`).
+**Response:** PNG (frame type `1`), or frame type `3` with no body when
+the heat map has no populated bin in this tile.
 
 ---
 

@@ -58,6 +58,31 @@ describe('WebSocketManager', () => {
             assert.deepEqual(result, { status: 'ok', value: 123 });
         });
 
+        it('resolves an empty tile response as null', async () => {
+            // Payload type 3 is a tile the server drew nothing into.  It has
+            // to resolve, and it has to resolve to null rather than to an
+            // empty Blob: every tile consumer keys "draw nothing" off null,
+            // and a Blob would be decoded into a full-size bitmap.
+            const mgr = new WebSocketManager('ws://fake');
+            const promise = new Promise((resolve, reject) => {
+                mgr.pending.set(11, { resolve, reject });
+            });
+            mgr.handleMessage(buildFrame(11, 3, new Uint8Array(0)));
+            assert.equal(await promise, null);
+        });
+
+        it('settles an unknown payload type instead of hanging', async () => {
+            // A server newer than this client must not leave a tile promise
+            // pending forever -- Leaflet keeps such a tile hidden and its load
+            // event never completes.
+            const mgr = new WebSocketManager('ws://fake');
+            const promise = new Promise((resolve, reject) => {
+                mgr.pending.set(12, { resolve, reject });
+            });
+            mgr.handleMessage(buildFrame(12, 99, new Uint8Array(0)));
+            assert.equal(await promise, null);
+        });
+
         it('resolves PNG response as Blob', async () => {
             // Blob is not available in Node 18 test runner without setup,
             // but handleMessage uses `new Blob(...)` which exists in Node 18.

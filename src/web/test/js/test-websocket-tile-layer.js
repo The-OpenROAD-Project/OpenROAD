@@ -385,6 +385,66 @@ describe('the layer body must resolve every name it references', () => {
         assert.equal(layer._clampZoom(5), 5);
     });
 
+    // A blank tile arrives as a null payload (frame type 3).  The element has
+    // to end up holding no image -- that is the whole point of the empty
+    // response, no decode and no bitmap -- and it still has to be handed back
+    // to Leaflet, which keeps a tile hidden until done() is called and never
+    // gets the load event that would otherwise call it.
+    async function emptyTile(makeLayer) {
+        const saved = globalThis.document;
+        const el = {
+            setAttribute() {},
+            removeAttribute(name) { delete el[name]; },
+        };
+        globalThis.document = { createElement: () => el };
+        try {
+            const layer = makeLayer();
+            layer.getTileSize = () => ({ x: 240, y: 240 });
+            let done_with = undefined;
+            let done_calls = 0;
+            const tile = layer.createTile({ x: 1, y: 2, z: 3 }, (err, t) => {
+                done_calls++;
+                done_with = { err, t };
+            });
+            // Let the resolved request promise run.
+            await Promise.resolve();
+            await Promise.resolve();
+            return { tile, done_with, done_calls };
+        } finally {
+            globalThis.document = saved;
+        }
+    }
+
+    const nullManager = () => ({
+        nextId: 1,
+        request: () => Promise.resolve(null),
+        cancel() {},
+    });
+
+    it('completes an empty layer tile without giving it an image', async () => {
+        const { tile, done_with, done_calls } = await emptyTile(() => {
+            const Layer = createWebSocketTileLayer(
+                { stdcells: true }, new Set(['metal1']), null, null, null);
+            return new Layer(nullManager(), 'metal1', {});
+        });
+        assert.equal(done_calls, 1);
+        assert.equal(done_with.err, null);
+        assert.equal(done_with.t, tile);
+        assert.equal(tile.src, undefined);
+    });
+
+    it('completes an empty overlay tile without giving it an image',
+       async () => {
+        const { tile, done_with, done_calls } = await emptyTile(() => {
+            const Overlay = createOverlayTileLayer({}, null);
+            return new Overlay(nullManager(), {});
+        });
+        assert.equal(done_calls, 1);
+        assert.equal(done_with.err, null);
+        assert.equal(done_with.t, tile);
+        assert.equal(tile.src, undefined);
+    });
+
     it('builds the overlay layer class too', () => {
         assert.doesNotThrow(() => createOverlayTileLayer({}, null));
     });

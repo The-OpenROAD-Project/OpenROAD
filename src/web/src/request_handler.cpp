@@ -1327,6 +1327,25 @@ WebSocketResponse TileHandler::serializeTech(const uint32_t id,
   return resp;
 }
 
+// Send a tile the renderer drew nothing into as an empty response.  Most of
+// the tiles in a viewport are that: every layer with no geometry where the user
+// is looking, and the highlight overlay whenever nothing is selected.  The
+// transparent PNG they would otherwise carry still decodes to a full-size
+// bitmap on the client, which is what the decoded-image budget in tile-merge.js
+// is spent on.
+//
+// Applied in the handlers rather than in the generator so every other caller of
+// the tile entry points -- save_image, the GIF recorder, the tests -- keeps
+// getting an image back.
+static void markEmptyIfBlank(WebSocketResponse& resp)
+{
+  if (resp.type == WebSocketResponse::kPng
+      && TileGenerator::isBlankTilePng(resp.payload)) {
+    resp.type = WebSocketResponse::kEmpty;
+    resp.payload.clear();
+  }
+}
+
 WebSocketResponse TileHandler::renderTile(
     const uint32_t id,
     const std::string& layer,
@@ -5020,7 +5039,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     if (gen_->tileCacheGet(cache_key, cached)) {
       WebSocketResponse resp;
       resp.id = req.id;
-      resp.type = WebSocketResponse::kPng;
+      // An empty cache entry is a tile the renderer drew nothing into; it is
+      // stored that way so a blank tile costs an LRU slot and not the bytes of
+      // a transparent PNG nobody will decode.
+      resp.type = cached.empty() ? WebSocketResponse::kEmpty
+                                 : WebSocketResponse::kPng;
       resp.payload = std::move(cached);
       debugPrint(gen_->getLogger(),
                  utl::WEB,
@@ -5056,7 +5079,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       nullptr,
                                       dpr,
                                       tile_px);
-  if (cacheable && resp.type == WebSocketResponse::kPng) {
+  markEmptyIfBlank(resp);
+  // An empty payload under kPng is a failed encode, not a blank tile; caching
+  // it would make the next hit read back as kEmpty and hide the failure.
+  const bool worth_caching
+      = resp.type == WebSocketResponse::kEmpty
+        || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
+  if (cacheable && worth_caching) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
 
@@ -5273,6 +5302,7 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                              tile_px,
                                              colored_polys,
                                              labels);
+    markEmptyIfBlank(resp);
 
     // The selection highlight the client draws over the layer tiles comes from
     // here, so the shape counts say whether a "missing" highlight was never
@@ -5719,6 +5749,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       source = source_itr->second;
     }
     resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
+    markEmptyIfBlank(resp);
     debugPrint(gen_->getLogger(),
                utl::WEB,
                "tile",

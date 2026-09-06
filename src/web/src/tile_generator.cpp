@@ -211,16 +211,27 @@ std::vector<unsigned char> encodeIndexedPng(const IndexedImage& indexed,
 // std::map keeps its nodes put, so the returned pointer stays valid after the
 // lock is released -- the same contract getLanczos2Taps() relies on.  Null when
 // the size is not worth caching or lodepng fails.
+std::mutex& blankPngMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
+std::map<std::pair<unsigned, unsigned>, std::vector<unsigned char>>&
+blankPngCache()
+{
+  static std::map<std::pair<unsigned, unsigned>, std::vector<unsigned char>>
+      cache;
+  return cache;
+}
+
 const std::vector<unsigned char>* blankPng(const unsigned w, const unsigned h)
 {
   if (w > kMaxIndexedDim || h > kMaxIndexedDim) {
     return nullptr;
   }
-  static std::mutex mutex;
-  static std::map<std::pair<unsigned, unsigned>, std::vector<unsigned char>>
-      cache;
-
-  const std::lock_guard<std::mutex> lock(mutex);
+  const std::lock_guard<std::mutex> lock(blankPngMutex());
+  auto& cache = blankPngCache();
   const std::pair<unsigned, unsigned> key{w, h};
   auto it = cache.find(key);
   if (it == cache.end()) {
@@ -232,6 +243,27 @@ const std::vector<unsigned char>* blankPng(const unsigned w, const unsigned h)
     it = cache.emplace(key, std::move(png)).first;
   }
   return &it->second;
+}
+
+// True when `png` is one of the blank encodings handed out above.
+//
+// An exact test, not a heuristic: encodeImagePng() returns the one shared
+// buffer for every fully transparent tile of a given size, so equality with a
+// cached blank means the renderer drew nothing.  The cache holds one entry per
+// tile size in play — a handful — so the scan is shorter than a size lookup
+// would be, and it spares the caller having to know the tile's dimensions.
+bool isBlankPng(const std::vector<unsigned char>& png)
+{
+  if (png.empty()) {
+    return false;
+  }
+  const std::lock_guard<std::mutex> lock(blankPngMutex());
+  for (const auto& [size, blank] : blankPngCache()) {
+    if (png == blank) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Encode an RGBA image as PNG, picking the cheapest representation that
@@ -2336,6 +2368,11 @@ odb::dbTech* TileGenerator::getTech() const
     return *techs.begin();
   }
   return nullptr;
+}
+
+bool TileGenerator::isBlankTilePng(const std::vector<unsigned char>& png)
+{
+  return isBlankPng(png);
 }
 
 std::vector<unsigned char> TileGenerator::generateTile(

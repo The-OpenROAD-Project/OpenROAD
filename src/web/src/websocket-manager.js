@@ -268,6 +268,17 @@ export class WebSocketManager {
             }
         } else if (type === 1) {
             handler.resolve(new Blob([payload], { type: 'image/png' }));
+        } else if (type === 3) {
+            // A tile the server drew nothing into. Resolving null rather than
+            // a transparent PNG is the point: no Blob, no decode, and no
+            // full-size bitmap held for an image with nothing in it. Every
+            // tile consumer already treats a null payload as "draw nothing".
+            handler.resolve(null);
+        } else {
+            // An unrecognised payload type must still settle the promise, or
+            // the tile it belongs to hangs unresolved forever and Leaflet
+            // never reveals it. A server newer than this client lands here.
+            handler.resolve(null);
         }
     }
 
