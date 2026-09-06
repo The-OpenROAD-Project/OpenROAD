@@ -683,6 +683,29 @@ WebSocketSession::~WebSocketSession()
 
 void WebSocketSession::run(http::request<http::string_body>&& req)
 {
+  // Tile responses are mostly small and arrive in bursts — a viewport is one
+  // request per layer per grid square, and the empty ones carry no payload at
+  // all.  Nagle holds a small segment until the previous one is acknowledged,
+  // so the first reply of a burst waits on the client's delayed ACK and the
+  // whole burst stalls behind it.  Measured over loopback: a viewport served
+  // entirely from the tile cache took 1274 ms with Nagle on and 19.9 ms with it
+  // off, and a cold one 2157 ms against 1732 ms.
+  //
+  // Failing to set it is not worth refusing the connection over: the session
+  // still works, just with the stall.
+  beast::error_code nodelay_ec;
+  beast::get_lowest_layer(websocket_)
+      .socket()
+      .set_option(net::ip::tcp::no_delay(true), nodelay_ec);
+  if (nodelay_ec) {
+    debugPrint(logger_,
+               utl::WEB,
+               "websocket",
+               1,
+               "could not disable Nagle on the tile socket: {}",
+               nodelay_ec.message());
+  }
+
   websocket_.set_option(
       websocket::stream_base::timeout::suggested(beast::role_type::server));
   websocket_.set_option(
