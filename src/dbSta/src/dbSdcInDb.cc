@@ -16,6 +16,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -256,19 +257,28 @@ bool nativeCovers(const std::string& text, std::string& offender)
 }
 
 ////////////////////////////////////////////////////////////////
-// sta::writeSdc only writes to a file. Round-trip through a temporary one
-// until an ostream overload exists upstream in OpenSTA.
+// sta::writeSdc only writes to a named file, so the text goes through a
+// temporary one until an ostream overload exists upstream in OpenSTA.
+//
+// utl::ScopedTemporaryFile is not usable here: it hands out only a FILE*
+// (its path is private and hard-wired under /tmp), and it logs an INFO
+// line on every construction, which write_db must not do. This is the
+// same mkstemp discipline without either.
 
 class TempSdcFile
 {
  public:
   TempSdcFile()
   {
-    path_ = std::filesystem::temp_directory_path()
-            / ("openroad-sdc-" + std::to_string(::getpid()) + "-"
-               + std::to_string(
-                   reinterpret_cast<uintptr_t>(static_cast<void*>(this)))
-               + ".sdc");
+    std::string pattern
+        = (std::filesystem::temp_directory_path() / "openroad-sdc-XXXXXX")
+              .string();
+    const int fd = ::mkstemp(pattern.data());
+    if (fd < 0) {
+      throw std::runtime_error("could not create a temporary .sdc file");
+    }
+    ::close(fd);
+    path_ = pattern;
   }
   ~TempSdcFile()
   {

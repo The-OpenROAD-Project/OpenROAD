@@ -557,15 +557,17 @@ void OpenRoad::write3Dbx(const std::string& filename)
 // It is retained for a while for backward compatibility.
 bool OpenRoad::readDb(const char* filename, bool hierarchy, bool restore_sdc)
 {
+  bool restored = false;
   try {
     utl::InStreamHandler handler(filename, true);
     readDb(handler.getStream());
+    // Only a database that read completely has constraints worth
+    // restoring; a failed read errors out above and never gets here.
+    if (restore_sdc) {
+      restored = restoreSdcFromDb();
+    }
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
-  }
-  bool restored = false;
-  if (restore_sdc) {
-    restored = restoreSdcFromDb();
   }
   // treat this as a hierarchical network.
   if (hierarchy || db_->hasHierarchy()) {

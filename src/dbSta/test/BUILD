@@ -97,6 +97,7 @@ ALL_TESTS = [
     "sdc_in_db4",
     "sdc_in_db5",
     "sdc_in_db6",
+    "sdc_in_db7",
     "sta_to_db1",
     "sta_to_db1_hier",
     "write_sdc1",
