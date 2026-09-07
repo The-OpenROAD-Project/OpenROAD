@@ -712,6 +712,14 @@ void dbTable<T, page_size>::readBlock(dbIStream& stream,
 
   uint32_t class_cnt;
   stream >> class_cnt;
+  // Sizes an allocation, so it is bounded by what writeBlock can emit.
+  if (class_cnt > kMaxLengthClasses) {
+    db_->getLogger()->error(utl::ODB,
+                            481,
+                            "Table block claims {} record lengths, at most {}",
+                            class_cnt,
+                            kMaxLengthClasses);
+  }
   std::vector<uint32_t> classes(class_cnt);
   for (uint32_t i = 0; i < class_cnt; ++i) {
     stream >> classes[i];
@@ -735,6 +743,13 @@ void dbTable<T, page_size>::readBlock(dbIStream& stream,
     for (uint32_t i = 0; i < alloc_cnt; ++i) {
       unsigned char index;
       stream >> index;
+      if (index >= class_cnt) {
+        db_->getLogger()->error(utl::ODB,
+                                482,
+                                "Table block slot names record length {} of {}",
+                                index,
+                                class_cnt);
+      }
       lengths[i] = classes[index];
     }
   }
@@ -854,6 +869,13 @@ void dbTable<T, page_size>::readBlocks(dbIStream& stream)
   for (uint32_t page = 0; page < page_cnt_;) {
     uint32_t pages;
     stream >> pages;
+    // This count comes from the file and bounds the loop: zero would spin
+    // forever, and too large would walk off the page table.
+    if (pages == 0 || pages > page_cnt_ - page) {
+      db_->getLogger()->error(
+          utl::ODB, 480, "Table block claims {} pages at page {} of {}",
+          pages, page, page_cnt_);
+    }
     readBlock(stream, page, pages);
     page += pages;
   }

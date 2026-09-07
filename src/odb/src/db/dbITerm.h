@@ -5,8 +5,8 @@
 
 #include <cstdint>
 #include <cstring>
-#include <utility>
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "boost/container/flat_map.hpp"
@@ -76,7 +76,7 @@ struct _dbITermFields
   std::vector<dbId<_dbITerm>> prev_net_iterm;
   std::vector<dbId<_dbITerm>> next_modnet_iterm;
   std::vector<dbId<_dbITerm>> prev_modnet_iterm;
-  std::vector<_dbMTerm*> mterm;  // not saved - cached pointer
+  std::vector<_dbMTerm*> mterm;         // not saved - cached pointer
   std::vector<uint32_t> sta_vertex_id;  // not saved
 
   // Access points are the one field most slots do not have: before pin
@@ -129,8 +129,8 @@ class _dbITerm : public _dbObject
   }
   uint32_t slot() const { return getOID() - getObjectPage()->page_addr_; }
 
-#define ODB_ITERM_COLUMN(name, type)                     \
-  type& name() { return columns()->name[slot()]; }       \
+#define ODB_ITERM_COLUMN(name, type)               \
+  type& name() { return columns()->name[slot()]; } \
   const type& name() const { return columns()->name[slot()]; }
 
   ODB_ITERM_COLUMN(flags, dbITermFlags)
@@ -169,8 +169,6 @@ class _dbITerm : public _dbObject
   void initFields();
   void clearFields();
 };
-
-
 
 // A slot's columns are default-constructed with its page and reset when it
 // is freed, so allocating one has nothing left to initialize. This is what

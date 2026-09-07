@@ -410,8 +410,8 @@ cc_test(
     ],
     deps = [
         "//src/odb/src/db",
-        "//src/utl",
         "//src/odb/test/cpp/helper",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

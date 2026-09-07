@@ -474,8 +474,9 @@ void dbITerm::disconnect()
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net
       = iterm->net() == 0 ? nullptr : block->net_tbl_->getPtr(iterm->net());
-  _dbModNet* mod_net_impl
-      = iterm->mnet() == 0 ? nullptr : block->modnet_tbl_->getPtr(iterm->mnet());
+  _dbModNet* mod_net_impl = iterm->mnet() == 0
+                                ? nullptr
+                                : block->modnet_tbl_->getPtr(iterm->mnet());
   dbModNet* mod_net = (dbModNet*) mod_net_impl;
 
   if (net && net->flags_.dont_touch) {
