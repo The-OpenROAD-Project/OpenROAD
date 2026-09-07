@@ -96,7 +96,7 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
     int i = sorted_x[sxi], j;
     // upper left
     j = ynext_w_smallx[i];
-    while (~j) {
+    while (j >= 0) {
       neighbors[j].push_back(i);
       neighbors[i].push_back(j);
       curx_yprev_w_largex[j] = i;
