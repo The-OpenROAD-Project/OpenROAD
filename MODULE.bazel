@@ -36,7 +36,7 @@ bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_go", version = "0.61.1")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
 bazel_dep(name = "rules_pycross", version = "0.8.1")
-bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_python", version = "2.3.2")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
@@ -119,6 +119,27 @@ bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 # direct bazel_dep rather than a single_version_override so the pin propagates
 # to downstream consumers via MVS (overrides only apply in the root module).
 bazel_dep(name = "freetype", version = "2.13.3.bcr.2")
+
+# icu is transitive (qt-bazel -> icu). The BCR overlay patches
+# u_getDataDirectory() to locate icudt*.dat via
+# rules_cc::cc::runfiles::Runfiles::Rlocation(), but Runfiles::Create()
+# returns nullptr whenever no runfiles tree is reachable and the overlay
+# dereferences it unconditionally. A binary that a bazel/install.sh-style
+# step copies out of bazel-bin loses its .runfiles directory, so the first
+# locale-aware compare (QCollator, std::locale, ...) anywhere in the process
+# segfaults -- e.g. QFileDialog listing a directory, or a sortable Qt list/
+# table. Every icu version currently in the BCR carries the same unchecked
+# dereference (76.1.bcr.4, 78.2.bcr.2, ...), so a version bump alone would
+# not help; the patch null-checks Runfiles::Create()'s result and falls
+# through to the "" default instead of crashing.
+single_version_override(
+    module_name = "icu",
+    patch_strip = 1,
+    patches = [
+        "//bazel/icu-patches:0001-putil-null-check-bazel-runfiles-before-dereference.patch",
+    ],
+    version = "76.1.bcr.3",
+)
 
 # gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
 # libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
@@ -204,7 +225,7 @@ git_override(
 ## without FHS paths (e.g. NixOS).
 ## Keep >= 0.8.14: earlier releases silently produce empty `bazel coverage`
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
-bazel_dep(name = "llvm", version = "0.8.14", dev_dependency = True)
+bazel_dep(name = "llvm", version = "0.8.18", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
@@ -382,6 +403,9 @@ osx.frameworks(names = [
     "UniformTypeIdentifiers",
 ])
 
+rules_python_config = use_extension("@rules_python//python/extensions:config.bzl", "config")
+rules_python_config.explicit_init_py(default = True)
+
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     ignore_root_user_error = True,
@@ -396,7 +420,6 @@ pip.parse(
     ],
     hub_name = "openroad-pip",
     python_version = "3.13",
-    quiet = True,
     requirements_lock = "//bazel:requirements_lock_3_13.txt",
 )
 use_repo(pip, "openroad-pip")

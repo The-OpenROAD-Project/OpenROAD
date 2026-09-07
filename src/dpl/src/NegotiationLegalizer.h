@@ -84,11 +84,6 @@ struct NegCell
   bool fixed{false};
   int fence_id{-1};   // -1 → default region
   bool legal{false};  // updated each negotiation iteration
-
-  [[nodiscard]] int displacement() const
-  {
-    return std::abs(x - init_x) + std::abs(y - init_y);
-  }
 };
 
 // ---------------------------------------------------------------------------
@@ -132,7 +127,7 @@ class NegotiationLegalizer
     disable_window_extension_ = disable;
   }
 
-  // Metrics (valid after legalize())
+  // Metrics (valid after legalize()), in site widths on both axes.
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
@@ -143,6 +138,7 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
+  void initialSnap();
   void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
                                      // GUI updates)
   void pushNegotiationPixels();
@@ -166,6 +162,21 @@ class NegotiationLegalizer
                                        double abort_bound) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double targetCostFromDisp(int disp) const;
+  // A row is several site widths tall (7.4x on nangate45), so adding raw row
+  // and site counts would price a row jump like a single site step.
+  [[nodiscard]] int rowDispInSites(int y_from, int y_to) const
+  {
+    const int dy_dbu = std::abs(row_y_dbu_[y_to] - row_y_dbu_[y_from]);
+    return (dy_dbu + site_width_ / 2) / site_width_;
+  }
+  // The one definition of displacement: site widths on both axes. Pass the
+  // cell's own x/y for how far it has moved.
+  [[nodiscard]] int displacementInSites(const NegCell& cell,
+                                        int at_x,
+                                        int at_y) const
+  {
+    return std::abs(at_x - cell.init_x) + rowDispInSites(cell.init_y, at_y);
+  }
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
@@ -268,6 +279,10 @@ class NegotiationLegalizer
   std::vector<FenceRegion> fences_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
+  // Per-row y origins from Grid::gridYToDbu, so hybrid (non-uniform) row
+  // heights are exact.  Monotone in y, which findBestLocation's wavefront
+  // relies on.  One extra entry for the core top edge (index grid_h_).
+  std::vector<int> row_y_dbu_;
 
   // Per-pixel "already bumped this call" marker for updateHistoryCosts().
   std::vector<uint32_t> hist_seen_stamp_;
