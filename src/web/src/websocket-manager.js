@@ -59,6 +59,9 @@ export class WebSocketManager {
         // id arrives — even a stale one for a cancelled request.
         this._inFlight = 0;
         this._inFlightIds = new Set();
+        // Payload types this build does not know, so handleMessage can report
+        // each one once instead of once per message (see there).
+        this._unknownPayloadTypes = new Set();
         this._maxInFlight = DEFAULT_MAX_IN_FLIGHT; // updated by server "config"
         this._lastRecvAt = 0;     // perf.now() of the last message of any kind
         this._bufStuckSince = 0;  // liveness: when bufferedAmount got stuck
@@ -278,6 +281,17 @@ export class WebSocketManager {
             // An unrecognised payload type must still settle the promise, or
             // the tile it belongs to hangs unresolved forever and Leaflet
             // never reveals it. A server newer than this client lands here.
+            //
+            // Reported once per type rather than per message: the cause is a
+            // version mismatch, so every tile in the viewport arrives this way
+            // and a warning each would bury the first one.
+            if (!this._unknownPayloadTypes.has(type)) {
+                this._unknownPayloadTypes.add(type);
+                console.warn(
+                    `Unrecognized websocket payload type ${type}; treating `
+                    + 'those responses as empty. The server is likely newer '
+                    + 'than this page — reload to pick up the current client.');
+            }
             handler.resolve(null);
         }
     }

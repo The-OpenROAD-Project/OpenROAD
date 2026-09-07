@@ -71,6 +71,37 @@ describe('WebSocketManager', () => {
             assert.equal(await promise, null);
         });
 
+        it('warns once per unknown payload type, not once per message',
+           async () => {
+            // A version mismatch makes every tile in the viewport arrive with
+            // the same unknown type, so a warning each would bury the first.
+            const mgr = new WebSocketManager('ws://fake');
+            const warnings = [];
+            const saved = console.warn;
+            console.warn = (msg) => warnings.push(msg);
+            try {
+                for (let i = 0; i < 5; i++) {
+                    const id = 200 + i;
+                    const promise = new Promise((resolve, reject) => {
+                        mgr.pending.set(id, { resolve, reject });
+                    });
+                    mgr.handleMessage(buildFrame(id, 99, new Uint8Array(0)));
+                    assert.equal(await promise, null);
+                }
+                // A second unknown type is its own report.
+                const promise = new Promise((resolve, reject) => {
+                    mgr.pending.set(300, { resolve, reject });
+                });
+                mgr.handleMessage(buildFrame(300, 98, new Uint8Array(0)));
+                assert.equal(await promise, null);
+            } finally {
+                console.warn = saved;
+            }
+            assert.equal(warnings.length, 2);
+            assert.match(warnings[0], /99/);
+            assert.match(warnings[1], /98/);
+        });
+
         it('settles an unknown payload type instead of hanging', async () => {
             // A server newer than this client must not leave a tile promise
             // pending forever -- Leaflet keeps such a tile hidden and its load

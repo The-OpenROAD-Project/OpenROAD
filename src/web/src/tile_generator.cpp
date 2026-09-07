@@ -150,6 +150,9 @@ bool buildIndexedImage(const std::vector<unsigned char>& rgba,
   slot_index.fill(-1);
 
   out.palette.clear();
+  // The palette is bounded by kMaxPaletteColors and the growth happens inside
+  // the pixel loop, so take the one allocation up front.
+  out.palette.reserve(kMaxPaletteColors);
   out.index.resize(pixels);
   for (size_t i = 0; i < pixels; ++i) {
     uint32_t word;
