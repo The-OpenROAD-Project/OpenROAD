@@ -468,7 +468,7 @@ This command provides a unified interface for setting halos for instances. Suppo
 
 ```tcl
 set_halo
-    -halo {left bottom [right top]}
+    -halo size|{width height}|{left bottom right top}
     [-instance instance]
     [-apply_to_all_macros]
     [-soft]

@@ -1088,13 +1088,15 @@ proc create_obstruction { args } {
   return $obstruction
 }
 
-sta::define_cmd_args "set_halo" { [-instance instance] \
--halo halo \
-[-soft] }
+sta::define_cmd_args "set_halo" { \
+                  -halo halo \
+                  [-instance instance] \
+                  [-soft] \
+                  [-apply_to_all_macros] }
 
 proc set_halo { args } {
   sta::parse_key_args "set_halo" args \
-    keys {-instance -halo} flags {-soft -apply_to_all_macros}
+    keys {-halo -instance} flags {-soft -apply_to_all_macros}
 
   sta::check_argc_eq0 "set_halo" $args
 
