@@ -76,7 +76,7 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
     int i = sorted_y[syi];
     int xi = pts[i].getX();
     int j = sorted_y[syi - 1];
-    while ((~j) && pts[j].getX() > xi) {
+    while (j >= 0 && pts[j].getX() > xi) {
       j = yprev_w_smallx[j];
     }
     yprev_w_smallx[i] = j;
