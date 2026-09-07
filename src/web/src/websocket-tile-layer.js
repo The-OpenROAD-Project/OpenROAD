@@ -4,7 +4,7 @@
 // Leaflet tile layer that fetches tiles via WebSocket.
 
 import {
-    buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
+    BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
     tileSizeFields, withDeviceExactTileSize,
 } from './tile-request.js';
 
@@ -31,31 +31,22 @@ export function buildTileRequest(coords, layerName, ctx) {
 // metadata arrives, is reflected in tile requests without rebuilding
 // the layer.  When null or absent the field is omitted and the server
 // renders every chiplet (default).
-// Point an <img> tile at a payload, or clear it when the payload is null.
+// Point an <img> tile at a payload, or at the blank tile when the payload is
+// null.
 //
 // Null is an empty tile (payload type 3): the server drew nothing there.  The
-// element keeps its place in the grid but holds no image, so the browser
-// decodes nothing and no bitmap counts against the budget tile-merge.js is
-// bounding.  Clearing matters on a refresh too -- a tile that had content
-// before an edit removed it must drop the decode it is still holding.
-//
-// The tile has to be marked done either way: Leaflet keeps a tile hidden until
-// done() is called, and with no src the load event that normally calls it never
-// fires.  The callback is stashed on the element rather than passed in, because
-// a refresh landing before the first load still has to be able to complete the
-// handshake and Leaflet's tile record does not carry it.
+// element keeps its place in the grid holding a 1x1 transparent GIF instead of
+// a tile-sized transparent PNG, so the browser decodes 4 bytes and no bitmap
+// worth the name counts against the budget tile-merge.js is bounding.  See
+// BLANK_TILE for why it is not simply left with no src.  Reassigning matters on
+// a refresh too -- a tile that had content before an edit removed it must drop
+// the decode it is still holding.
 function applyTilePayload(tile, data) {
     if (tile.src && tile.src.startsWith('blob:')) {
         URL.revokeObjectURL(tile.src);
     }
     if (data == null) {
-        tile.removeAttribute('src');
-        if (!tile._tileDone) {
-            tile._tileDone = true;
-            if (tile._orDone) {
-                tile._orDone(null, tile);
-            }
-        }
+        tile.src = BLANK_TILE;
         return;
     }
     tile.src = (typeof data === 'string') ? data : URL.createObjectURL(data);
@@ -90,7 +81,6 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             // Set up onload/onerror BEFORE any src assignment so that
             // refreshTiles() can set tile.src and still trigger done().
             tile._tileDone = false;
-            tile._orDone = done;
             tile.onload = () => {
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
@@ -210,7 +200,6 @@ export function createOverlayTileLayer(visibility, app) {
             tile.setAttribute('role', 'presentation');
 
             tile._tileDone = false;
-            tile._orDone = done;
             tile.onload = () => {
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);

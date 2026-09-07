@@ -47,7 +47,7 @@ const { buildMapOptions } = await import('../../src/ui-utils.js');
 const { floorClampZoom, buildTileRequest, currentDpr,
         createWebSocketTileLayer, createOverlayTileLayer }
     = await import('../../src/websocket-tile-layer.js');
-const { TILE_SIZE_CSS, buildTileRequestFor, watchDevicePixelRatio }
+const { BLANK_TILE, TILE_SIZE_CSS, buildTileRequestFor, watchDevicePixelRatio }
     = await import('../../src/tile-request.js');
 const { WebSocketManager } = await import('../../src/websocket-manager.js');
 
@@ -55,6 +55,35 @@ const { WebSocketManager } = await import('../../src/websocket-manager.js');
 // number of device pixels has a fractional PITCH, so its boundaries cannot all
 // sit on the device grid however the panes are placed, and the browser
 // antialiases the rest into their neighbours.
+describe('BLANK_TILE', () => {
+    // What every empty tile in the viewport holds, stretched over the whole
+    // tile by the <img>.  If it is not transparent the layout disappears under
+    // a wash of its one pixel, and most tiles in a viewport are empty.
+    //
+    // A 1x1 GIF is only transparent if it carries a Graphic Control Extension
+    // that says so.  The widely pasted "blank gif" has no such block and is
+    // opaque; this decodes the data URI and checks for one rather than trusting
+    // the string to look right.
+    it('is a 1x1 GIF that actually declares a transparent colour', () => {
+        const prefix = 'data:image/gif;base64,';
+        assert.ok(BLANK_TILE.startsWith(prefix));
+        const b = Buffer.from(BLANK_TILE.slice(prefix.length), 'base64');
+
+        assert.equal(b.subarray(0, 6).toString('latin1'), 'GIF89a');
+        assert.equal(b.readUInt16LE(6), 1, 'width');
+        assert.equal(b.readUInt16LE(8), 1, 'height');
+
+        // Skip the global colour table to reach the first block.
+        const packed = b[10];
+        const gct_entries = (packed & 0x80) ? 2 ** ((packed & 0x07) + 1) : 0;
+        const block = 13 + 3 * gct_entries;
+
+        assert.equal(b[block], 0x21, 'an extension block must come first');
+        assert.equal(b[block + 1], 0xF9, 'and it must be the graphic control');
+        assert.equal(b[block + 3] & 0x01, 1, 'with the transparency flag set');
+    });
+});
+
 describe('TILE_SIZE_CSS', () => {
     // Every ratio seen in the wild: display scaling (125/150/166/175/200/250%),
     // and those combined with the browser zoom steps that produce eighths and
@@ -385,11 +414,15 @@ describe('the layer body must resolve every name it references', () => {
         assert.equal(layer._clampZoom(5), 5);
     });
 
-    // A blank tile arrives as a null payload (frame type 3).  The element has
-    // to end up holding no image -- that is the whole point of the empty
-    // response, no decode and no bitmap -- and it still has to be handed back
-    // to Leaflet, which keeps a tile hidden until done() is called and never
-    // gets the load event that would otherwise call it.
+    // A blank tile arrives as a null payload (frame type 3).  The element must
+    // hold the 1x1 BLANK_TILE and not a tile-sized image -- that is the whole
+    // point of the empty response -- and it must not be left with no src at
+    // all: Chrome paints the empty replaced element, which drew a grey grid
+    // over the layout, one cell per tile, since most tiles are empty.
+    //
+    // Holding a real image is also what completes the tile: Leaflet keeps a
+    // tile hidden until done() is called, and BLANK_TILE's load event is what
+    // calls it.
     async function emptyTile(makeLayer) {
         const saved = globalThis.document;
         const el = {
@@ -409,6 +442,11 @@ describe('the layer body must resolve every name it references', () => {
             // Let the resolved request promise run.
             await Promise.resolve();
             await Promise.resolve();
+            // The fake element has no image pipeline, so stand in for the
+            // browser and fire the load that a real src assignment would.
+            if (tile.onload) {
+                tile.onload();
+            }
             return { tile, done_with, done_calls };
         } finally {
             globalThis.document = saved;
@@ -421,28 +459,30 @@ describe('the layer body must resolve every name it references', () => {
         cancel() {},
     });
 
-    it('completes an empty layer tile without giving it an image', async () => {
+    it('gives an empty layer tile the blank image, not an absent src',
+       async () => {
         const { tile, done_with, done_calls } = await emptyTile(() => {
             const Layer = createWebSocketTileLayer(
                 { stdcells: true }, new Set(['metal1']), null, null, null);
             return new Layer(nullManager(), 'metal1', {});
         });
+        assert.equal(tile.src, BLANK_TILE);
+        assert.ok(BLANK_TILE.startsWith('data:image/'),
+                  'the blank tile has to be a real image the browser can load');
         assert.equal(done_calls, 1);
         assert.equal(done_with.err, null);
         assert.equal(done_with.t, tile);
-        assert.equal(tile.src, undefined);
     });
 
-    it('completes an empty overlay tile without giving it an image',
-       async () => {
+    it('gives an empty overlay tile the blank image too', async () => {
         const { tile, done_with, done_calls } = await emptyTile(() => {
             const Overlay = createOverlayTileLayer({}, null);
             return new Overlay(nullManager(), {});
         });
+        assert.equal(tile.src, BLANK_TILE);
         assert.equal(done_calls, 1);
         assert.equal(done_with.err, null);
         assert.equal(done_with.t, tile);
-        assert.equal(tile.src, undefined);
     });
 
     it('builds the overlay layer class too', () => {

@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
+    BLANK_TILE, tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
     watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -384,9 +384,6 @@ const WebSocketTileLayer = createWebSocketTileLayer(
         app,
     }, { dpr: currentDpr });
 })();
-const BLANK_TILE
-    = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
 const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
