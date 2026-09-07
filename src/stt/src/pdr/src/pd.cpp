@@ -64,10 +64,10 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
   std::iota(sorted_x, sorted_x + pt_count, 0);
   std::iota(sorted_y, sorted_y + pt_count, 0);
   std::sort(sorted_x, sorted_x + pt_count, [&pts] (int i, int j) {
-    return pts[i].getX() < pts[j].getX();
+    return std::tie(pts[i].getX(), pts[i].getY()) < std::tie(pts[j].getX(), pts[j].getY());
   });
   std::sort(sorted_y, sorted_y + pt_count, [&pts] (int i, int j) {
-    return pts[i].getY() < pts[j].getY();
+    return std::tie(pts[i].getY(), pts[i].getX()) < std::tie(pts[j].getY(), pts[j].getX());
   });
 
   // x left to right
