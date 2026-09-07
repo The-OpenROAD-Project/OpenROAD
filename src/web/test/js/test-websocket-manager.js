@@ -86,14 +86,14 @@ describe('WebSocketManager', () => {
                         mgr.pending.set(id, { resolve, reject });
                     });
                     mgr.handleMessage(buildFrame(id, 99, new Uint8Array(0)));
-                    assert.equal(await promise, null);
+                    await assert.rejects(promise);
                 }
                 // A second unknown type is its own report.
                 const promise = new Promise((resolve, reject) => {
                     mgr.pending.set(300, { resolve, reject });
                 });
                 mgr.handleMessage(buildFrame(300, 98, new Uint8Array(0)));
-                assert.equal(await promise, null);
+                await assert.rejects(promise);
             } finally {
                 console.warn = saved;
             }
@@ -102,16 +102,24 @@ describe('WebSocketManager', () => {
             assert.match(warnings[1], /98/);
         });
 
-        it('settles an unknown payload type instead of hanging', async () => {
-            // A server newer than this client must not leave a tile promise
-            // pending forever -- Leaflet keeps such a tile hidden and its load
-            // event never completes.
+        it('rejects an unknown payload type rather than hanging', async () => {
+            // A server newer than this client must not leave a promise pending
+            // forever -- Leaflet keeps such a tile hidden and its load event
+            // never completes.  It must not resolve null either: only type 3
+            // means "blank tile", and the JSON callers on this same manager
+            // would read the null as data.
             const mgr = new WebSocketManager('ws://fake');
             const promise = new Promise((resolve, reject) => {
                 mgr.pending.set(12, { resolve, reject });
             });
-            mgr.handleMessage(buildFrame(12, 99, new Uint8Array(0)));
-            assert.equal(await promise, null);
+            const saved = console.warn;
+            console.warn = () => {};
+            try {
+                mgr.handleMessage(buildFrame(12, 99, new Uint8Array(0)));
+                await assert.rejects(promise, /Unsupported websocket payload/);
+            } finally {
+                console.warn = saved;
+            }
         });
 
         it('resolves PNG response as Blob', async () => {

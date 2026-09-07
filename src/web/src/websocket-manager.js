@@ -99,6 +99,7 @@ export class WebSocketManager {
         mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
         mgr._inFlight = 0;
         mgr._inFlightIds = new Set();
+        mgr._unknownPayloadTypes = new Set();
         mgr._maxInFlight = DEFAULT_MAX_IN_FLIGHT;
         mgr._lastRecvAt = 0;
         mgr.reconnectDelay = 0;
@@ -282,17 +283,24 @@ export class WebSocketManager {
             // the tile it belongs to hangs unresolved forever and Leaflet
             // never reveals it. A server newer than this client lands here.
             //
+            // Rejected rather than resolved with null: only type 3 carries
+            // "blank tile", and this manager is shared with the JSON endpoints,
+            // whose callers would read the null as data — `tech` and `bounds`
+            // dereference the reply directly. A tile caller catches and leaves
+            // the tile blank, which is what it does for any dropped request.
+            //
             // Reported once per type rather than per message: the cause is a
-            // version mismatch, so every tile in the viewport arrives this way
-            // and a warning each would bury the first one.
+            // version mismatch, so every reply arrives this way and a warning
+            // each would bury the first one.
             if (!this._unknownPayloadTypes.has(type)) {
                 this._unknownPayloadTypes.add(type);
                 console.warn(
-                    `Unrecognized websocket payload type ${type}; treating `
-                    + 'those responses as empty. The server is likely newer '
-                    + 'than this page — reload to pick up the current client.');
+                    `Unrecognized websocket payload type ${type}. The server `
+                    + 'is likely newer than this page — reload to pick up the '
+                    + 'current client.');
             }
-            handler.resolve(null);
+            handler.reject(
+                new Error(`Unsupported websocket payload type ${type}`));
         }
     }
 
