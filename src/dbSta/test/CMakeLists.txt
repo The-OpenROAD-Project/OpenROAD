@@ -71,6 +71,7 @@ or_integration_tests(
     sdc_in_db6
     sdc_in_db7
     sdc_in_db8
+    sdc_in_db9
     sta_to_db1
     sta_to_db1_hier
     write_sdc1

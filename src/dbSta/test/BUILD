@@ -99,6 +99,7 @@ ALL_TESTS = [
     "sdc_in_db6",
     "sdc_in_db7",
     "sdc_in_db8",
+    "sdc_in_db9",
     "sta_to_db1",
     "sta_to_db1_hier",
     "write_sdc1",
@@ -293,6 +294,10 @@ filegroup(
                 "sdc_in_db_restore.tcl",
             ],
             "sdc_in_db6": [
+                "reg1.v",
+                "sdc_in_db_restore.tcl",
+            ],
+            "sdc_in_db9": [
                 "reg1.v",
                 "sdc_in_db_restore.tcl",
             ],

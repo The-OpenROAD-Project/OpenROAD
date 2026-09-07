@@ -33,12 +33,14 @@
 #include "sta/ClockInsertion.hh"
 #include "sta/ClockLatency.hh"
 #include "sta/ExceptionPath.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/PortDelay.hh"
 #include "sta/RiseFallMinMax.hh"
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
+#include "sta/Variables.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -147,116 +149,366 @@ const MinMaxAll* decodeMinMaxAll(char c)
 }
 
 ////////////////////////////////////////////////////////////////
-// The completeness oracle.
+// Completeness: does the native form cover everything this Sdc holds?
 //
-// write_sdc is the one place that enumerates everything an Sdc can hold,
-// and its output is what read_sdc would reproduce. So the question "does
-// the native form cover this Sdc?" is answered by scanning the command
-// vocabulary of that text: every logical line must be a command the
-// native encoder handles, in a form it handles. Anything else -- a
-// generated clock, a derate, a disable, a comment -- sends the whole Sdc
-// to the text fallback. Nothing is ever dropped.
+// Mirrors WriteSdc category by category (writeTiming, writeEnvironment,
+// writeDesignRules, writeVariables): whatever write_sdc would emit that
+// the native encoder does not represent sends the whole Sdc to the text
+// fallback, so nothing is ever dropped. Everything is asked of the Sdc
+// through its public accessors. Most categories answer in O(1) or
+// O(ports); the ones the Sdc keeps only in per-object maps with no
+// enumerator (pin clock uncertainty, propagated clock pins, data checks,
+// pin capacitance limits, latch borrow limits, min pulse widths, net
+// loads and voltages, instance and net derating, clock senses) are
+// asked object by object in one pass over the leaf pins, each a hash
+// lookup in a map that is almost always empty.
+//
+// One thing the public Sdc API cannot see at all: a clock sense set with
+// set_clock_sense -positive or -negative (only -stop_propagation is
+// queryable, via clkStopPropagation). That construct is not detected.
 
-std::vector<std::string> logicalLines(const std::string& text)
+class Coverage
 {
-  std::vector<std::string> lines;
-  std::string current;
-  std::istringstream in(text);
-  std::string line;
-  while (std::getline(in, line)) {
-    if (!line.empty() && line.back() == '\\') {
-      line.pop_back();
-      current += line;
-      current += ' ';
-      continue;
-    }
-    current += line;
-    lines.push_back(current);
-    current.clear();
+ public:
+  Coverage(dbSta* sta, Sdc* sdc)
+      : sta_(sta), network_(sta->getDbNetwork()), sdc_(sdc)
+  {
   }
-  if (!current.empty()) {
-    lines.push_back(current);
-  }
-  return lines;
-}
 
-std::vector<std::string_view> tokenize(std::string_view line)
-{
-  std::vector<std::string_view> tokens;
-  size_t i = 0;
-  while (i < line.size()) {
-    while (i < line.size()
-           && std::isspace(static_cast<unsigned char>(line[i]))) {
-      i++;
+  // Returns true if the native form covers the Sdc; otherwise names the
+  // first construct it does not.
+  bool check(std::string& offender)
+  {
+    const bool ok = checkVariables() && checkClocks() && checkExceptions()
+                    && checkClockGroups() && checkDisables()
+                    && checkEnvironment() && checkDesignRules()
+                    && checkGlobalDerating() && checkPorts() && checkPins();
+    if (!ok) {
+      offender = offender_;
     }
-    const size_t start = i;
-    while (i < line.size()
-           && !std::isspace(static_cast<unsigned char>(line[i]))) {
-      i++;
-    }
-    if (i > start) {
-      tokens.push_back(line.substr(start, i - start));
-    }
+    return ok;
   }
-  return tokens;
-}
 
-bool contains(std::string_view line, std::string_view needle)
-{
-  return line.find(needle) != std::string_view::npos;
-}
-
-// Returns true if every command in the write_sdc text is one the native
-// encoder covers; otherwise names the first offender.
-bool nativeCovers(const std::string& text, std::string& offender)
-{
-  static const std::set<std::string_view> kPlain = {
-      "current_design",
-      "create_clock",
-      "set_clock_latency",
-      "set_clock_transition",
-      "set_input_delay",
-      "set_output_delay",
-      "set_false_path",
-      "set_max_delay",
-      "set_min_delay",
-      "set_multicycle_path",
-      "group_path",
-      "set_clock_groups",
-      "set_case_analysis",
-      "set_logic_one",
-      "set_logic_zero",
-      "set_logic_dc",
-  };
-  for (const std::string& line : logicalLines(text)) {
-    const std::vector<std::string_view> tokens = tokenize(line);
-    if (tokens.empty() || tokens[0][0] == '#') {
-      continue;
-    }
-    const std::string_view cmd = tokens[0];
-    bool covered = false;
-    if (contains(line, " -comment ")) {
-      covered = false;
-    } else if (kPlain.count(cmd) != 0) {
-      covered = true;
-    } else if (cmd == "set_propagated_clock") {
-      covered = contains(line, "[get_clocks");
-    } else if (cmd == "set_clock_uncertainty") {
-      // The clock form ends in a bare clock name; the pin form and the
-      // inter-clock form are not enumerable from the Sdc.
-      covered = !contains(line, "-from") && !contains(line, "[get_");
-    } else if (cmd == "set_max_fanout" || cmd == "set_min_fanout"
-               || cmd == "set_max_transition" || cmd == "set_max_capacitance"
-               || cmd == "set_min_capacitance") {
-      covered = contains(line, "[current_design]");
-    }
-    if (!covered) {
-      offender = line;
-      return false;
-    }
+ private:
+  bool fail(const char* what)
+  {
+    offender_ = what;
+    return false;
   }
-  return true;
-}
+
+  bool checkVariables()
+  {
+    const Variables* variables = sta_->variables();
+    if (variables->propagateAllClocks()) {
+      return fail("set sta_propagate_all_clocks");
+    }
+    if (variables->presetClrArcsEnabled()) {
+      return fail("set sta_preset_clear_arcs_enabled");
+    }
+    return true;
+  }
+
+  bool checkClocks()
+  {
+    for (Clock* clk : sdc_->clocks()) {
+      if (clk->isGenerated()) {
+        return fail("create_generated_clock");
+      }
+      if (!clk->comment().empty()) {
+        return fail("create_clock -comment");
+      }
+    }
+    if (sdc_->haveClkSlewLimits()) {
+      return fail("set_max_transition -clock_path");
+    }
+    for (const Clock* src : sdc_->clocks()) {
+      for (const Clock* tgt : sdc_->clocks()) {
+        for (const RiseFall* src_rf : RiseFall::range()) {
+          for (const RiseFall* tgt_rf : RiseFall::range()) {
+            for (const MinMax* setup_hold : MinMax::range()) {
+              float value;
+              bool exists;
+              sdc_->clockUncertainty(
+                  src, src_rf, tgt, tgt_rf, setup_hold, value, exists);
+              if (exists) {
+                return fail("set_clock_uncertainty -from -to");
+              }
+            }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  bool checkExceptions()
+  {
+    for (ExceptionPath* exception : sdc_->exceptions()) {
+      if (!exception->comment().empty()) {
+        return fail("exception -comment");
+      }
+    }
+    return true;
+  }
+
+  bool checkClockGroups()
+  {
+    for (const auto& [name, clk_groups] : sdc_->clockGroupsNameMap()) {
+      if (!clk_groups->comment().empty()) {
+        return fail("set_clock_groups -comment");
+      }
+    }
+    return true;
+  }
+
+  bool checkDisables()
+  {
+    if (!sdc_->disabledPins()->empty() || !sdc_->disabledPorts()->empty()
+        || !sdc_->disabledLibPorts()->empty() || !sdc_->disabledEdges()->empty()
+        || !sdc_->disabledCellPorts()->empty()
+        || !sdc_->disabledInstancePorts()->empty()) {
+      return fail("set_disable_timing");
+    }
+    return true;
+  }
+
+  bool checkEnvironment()
+  {
+    for (const MinMax* mm : MinMax::range()) {
+      if (sdc_->operatingConditions(mm) != nullptr) {
+        return fail("set_operating_conditions");
+      }
+      if (sdc_->wireload(mm) != nullptr) {
+        return fail("set_wire_load_model");
+      }
+      float value;
+      bool exists;
+      sdc_->voltage(mm, value, exists);
+      if (exists) {
+        return fail("set_voltage");
+      }
+    }
+    if (sdc_->wireloadMode() != WireloadMode::unknown) {
+      return fail("set_wire_load_mode");
+    }
+    if (!sdc_->netResistances().empty()) {
+      return fail("set_resistance");
+    }
+    return true;
+  }
+
+  bool checkDesignRules()
+  {
+    if (sdc_->maxArea() != 0.0) {
+      return fail("set_max_area");
+    }
+    if (sdc_->maxDynamicPower() != 0.0) {
+      return fail("set_max_dynamic_power");
+    }
+    if (sdc_->maxLeakagePower() != 0.0) {
+      return fail("set_max_leakage_power");
+    }
+    return true;
+  }
+
+  // The derating factors are reachable only through a pin; the top
+  // instance has no instance or cell factors, so one of its pins reports
+  // the global ones. Anything set to exactly 1.0 is invisible here, and
+  // is equally invisible to write_sdc, which does not write it either.
+  bool checkGlobalDerating()
+  {
+    Pin* pin = anyTopPin();
+    if (pin == nullptr) {
+      return true;
+    }
+    return checkInstanceDerating(pin, "set_timing_derate")
+           && checkNetDerating(pin, "set_timing_derate");
+  }
+
+  bool checkInstanceDerating(const Pin* pin, const char* what)
+  {
+    for (const TimingDerateCellType type :
+         {TimingDerateCellType::cell_delay, TimingDerateCellType::cell_check}) {
+      for (const PathClkOrData clk_data :
+           {PathClkOrData::clk, PathClkOrData::data}) {
+        for (const RiseFall* rf : RiseFall::range()) {
+          for (const EarlyLate* early_late : EarlyLate::range()) {
+            if (sdc_->timingDerateInstance(pin, type, clk_data, rf, early_late)
+                != 1.0) {
+              return fail(what);
+            }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  bool checkNetDerating(const Pin* pin, const char* what)
+  {
+    for (const PathClkOrData clk_data :
+         {PathClkOrData::clk, PathClkOrData::data}) {
+      for (const RiseFall* rf : RiseFall::range()) {
+        for (const EarlyLate* early_late : EarlyLate::range()) {
+          if (sdc_->timingDerateNet(pin, clk_data, rf, early_late) != 1.0) {
+            return fail(what);
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  Pin* anyTopPin()
+  {
+    Pin* pin = nullptr;
+    InstancePinIterator* pin_iter
+        = network_->pinIterator(network_->topInstance());
+    if (pin_iter->hasNext()) {
+      pin = pin_iter->next();
+    }
+    delete pin_iter;
+    return pin;
+  }
+
+  bool checkPorts()
+  {
+    Cell* top = network_->cell(network_->topInstance());
+    CellPortIterator* port_iter = network_->portIterator(top);
+    bool ok = true;
+    while (ok && port_iter->hasNext()) {
+      Port* port = port_iter->next();
+      ok = checkPort(port);
+      if (ok && network_->isBus(port)) {
+        PortMemberIterator* member_iter = network_->memberIterator(port);
+        while (ok && member_iter->hasNext()) {
+          ok = checkPort(member_iter->next());
+        }
+        delete member_iter;
+      }
+    }
+    delete port_iter;
+    return ok;
+  }
+
+  bool checkPort(Port* port)
+  {
+    if (sdc_->hasPortExtCap(port)) {
+      return fail("set_load [get_ports]");
+    }
+    if (sdc_->findInputDrive(port) != nullptr) {
+      return fail("set_driving_cell/set_drive/set_input_transition");
+    }
+    for (const MinMax* mm : MinMax::range()) {
+      float value;
+      bool exists;
+      sdc_->slewLimit(port, mm, value, exists);
+      if (exists) {
+        return fail("set_max_transition [get_ports]");
+      }
+      sdc_->capacitanceLimit(port, mm, value, exists);
+      if (exists) {
+        return fail("set_max_capacitance [get_ports]");
+      }
+      sdc_->fanoutLimit(port, mm, value, exists);
+      if (exists) {
+        return fail("set_max_fanout [get_ports]");
+      }
+    }
+    return true;
+  }
+
+  // One pass over every leaf pin for the per-object maps.
+  bool checkPins()
+  {
+    bool ok = true;
+    InstancePinIterator* top_pins
+        = network_->pinIterator(network_->topInstance());
+    while (ok && top_pins->hasNext()) {
+      ok = checkPin(top_pins->next());
+    }
+    delete top_pins;
+
+    LeafInstanceIterator* inst_iter = network_->leafInstanceIterator();
+    while (ok && inst_iter->hasNext()) {
+      Instance* inst = inst_iter->next();
+      InstancePinIterator* pin_iter = network_->pinIterator(inst);
+      bool first = true;
+      while (ok && pin_iter->hasNext()) {
+        Pin* pin = pin_iter->next();
+        ok = checkPin(pin);
+        if (ok && first) {
+          ok = checkInstanceDerating(pin, "set_timing_derate [get_cells]");
+          first = false;
+        }
+      }
+      delete pin_iter;
+    }
+    delete inst_iter;
+    return ok;
+  }
+
+  bool checkPin(Pin* pin)
+  {
+    if (sdc_->clockUncertainties(pin) != nullptr) {
+      return fail("set_clock_uncertainty [get_pins]");
+    }
+    if (sdc_->isPropagatedClock(pin)) {
+      return fail("set_propagated_clock [get_pins]");
+    }
+    if (sdc_->dataChecksFrom(pin) != nullptr
+        || sdc_->dataChecksTo(pin) != nullptr) {
+      return fail("set_data_check");
+    }
+    float value;
+    bool exists;
+    for (const MinMax* mm : MinMax::range()) {
+      sdc_->capacitanceLimit(pin, mm, value, exists);
+      if (exists) {
+        return fail("set_max_capacitance [get_pins]");
+      }
+    }
+    sdc_->latchBorrowLimit(pin, nullptr, nullptr, value, exists);
+    if (exists) {
+      return fail("set_max_time_borrow");
+    }
+    for (const RiseFall* hi_low : RiseFall::range()) {
+      sdc_->minPulseWidth(pin, nullptr, hi_low, value, exists);
+      if (exists) {
+        return fail("set_min_pulse_width");
+      }
+    }
+    if (sdc_->clkStopPropagation(pin, nullptr)) {
+      return fail("set_clock_sense -stop_propagation");
+    }
+    for (const Clock* clk : sdc_->clocks()) {
+      if (sdc_->clkStopPropagation(pin, clk)) {
+        return fail("set_clock_sense -stop_propagation");
+      }
+    }
+    const Net* net = network_->net(pin);
+    if (net != nullptr) {
+      if (sdc_->hasNetWireCap(net)) {
+        return fail("set_load [get_nets]");
+      }
+      for (const MinMax* mm : MinMax::range()) {
+        sdc_->voltage(net, mm, value, exists);
+        if (exists) {
+          return fail("set_voltage [get_nets]");
+        }
+      }
+      if (!checkNetDerating(pin, "set_timing_derate [get_nets]")) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  dbSta* sta_;
+  dbNetwork* network_;
+  Sdc* sdc_;
+  std::string offender_;
+};
 
 ////////////////////////////////////////////////////////////////
 // sta::writeSdc only writes to a named file, so the text goes through a
@@ -717,6 +969,27 @@ class NativeEncoder
 
 ////////////////////////////////////////////////////////////////
 // Native decoder.
+
+std::vector<std::string_view> tokenize(std::string_view line)
+{
+  std::vector<std::string_view> tokens;
+  size_t i = 0;
+  while (i < line.size()) {
+    while (i < line.size()
+           && std::isspace(static_cast<unsigned char>(line[i]))) {
+      i++;
+    }
+    const size_t start = i;
+    while (i < line.size()
+           && !std::isspace(static_cast<unsigned char>(line[i]))) {
+      i++;
+    }
+    if (i > start) {
+      tokens.push_back(line.substr(start, i - start));
+    }
+  }
+  return tokens;
+}
 
 class ParseError : public std::exception
 {
@@ -1227,40 +1500,17 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
   if (!network->isLinked() || network->defaultLibertyLibrary() == nullptr) {
     return;
   }
-  const Sdc* sdc = sta->cmdSdc();
+  Sdc* sdc = sta->cmdSdc();
   if (sdc == nullptr) {
     return;
   }
 
-  // write_sdc enumerates everything the Sdc holds; its text is both the
-  // completeness oracle for the native form and the fallback payload.
-  std::string text;
-  try {
-    TempSdcFile temp;
-    sta->writeSdc(sdc,
-                  temp.path().string(),
-                  /* leaf */ false,
-                  /* native */ true,
-                  /* digits */ 4,
-                  /* gzip */ false,
-                  /* no_timestamp */ true);
-    text = temp.read();
-  } catch (const std::exception& e) {
-    // Capturing constraints must never break write_db. A flow that cannot
-    // write its constraints still gets the same .odb it got before.
-    logger->warn(utl::STA,
-                 3008,
-                 "could not store timing constraints in the database: {}",
-                 e.what());
-    return;
-  }
-  if (text.empty()) {
-    return;
-  }
-
+  // Decide from the Sdc itself whether the native form covers it. Only
+  // when it does not is write_sdc run, for the text payload.
   std::string native;
   std::string offender;
-  if (nativeCovers(text, offender)) {
+  Coverage coverage(sta, sdc);
+  if (coverage.check(offender)) {
     NativeEncoder encoder(sta, block, sdc);
     native = encoder.encode(offender);
     if (native == std::string(kNativeHeader) + "\n") {
@@ -1272,6 +1522,8 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
       return;
     }
   }
+
+  std::string text;
   if (native.empty()) {
     debugPrint(logger,
                utl::STA,
@@ -1279,9 +1531,33 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
                1,
                "storing constraints as text: native form does not cover: {}",
                offender);
+    try {
+      TempSdcFile temp;
+      sta->writeSdc(sdc,
+                    temp.path().string(),
+                    /* leaf */ false,
+                    /* native */ true,
+                    /* digits */ 4,
+                    /* gzip */ false,
+                    /* no_timestamp */ true);
+      text = temp.read();
+    } catch (const std::exception& e) {
+      // Capturing constraints must never break write_db. A flow that
+      // cannot write its constraints still gets the same .odb it got
+      // before.
+      logger->warn(utl::STA,
+                   3008,
+                   "could not store timing constraints in the database: {}",
+                   e.what());
+      return;
+    }
+    if (text.empty()) {
+      return;
+    }
   }
+
   setProperty(block, kNativeProperty, native);
-  setProperty(block, kTextProperty, native.empty() ? text : std::string());
+  setProperty(block, kTextProperty, text);
 }
 
 SdcInDb::Kind SdcInDb::kind(odb::dbBlock* block)
