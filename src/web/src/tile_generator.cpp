@@ -4880,7 +4880,12 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
 
   const double num_tiles_at_zoom = pow(2, z);
   if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
-    return {};
+    // Off the grid: an empty tile, not an empty result.  Returning no bytes at
+    // all would put a zero-length body behind a PNG frame, which the client can
+    // only fail to decode; the blank encoding is what every other tile entry
+    // point hands back for "nothing here", and the handler turns it into an
+    // empty response from there.
+    return encodeImagePng(image_buffer, dim, dim);
   }
 
   y = num_tiles_at_zoom - 1 - y;

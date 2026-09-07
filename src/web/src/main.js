@@ -441,7 +441,11 @@ const HeatMapTileLayer = L.GridLayer.extend({
             // display.
             ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
-            tile.src = URL.createObjectURL(blob);
+            // A null payload is an empty response: the heat map has no
+            // populated bin in this tile, or the tile is off the grid.  The
+            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
+            // is decoded and onload still fires to complete the tile.
+            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
         }).catch(() => {
             tile.src = BLANK_TILE;
         });
@@ -472,7 +476,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
                 }
-                tile.src = URL.createObjectURL(blob);
+                // Null means the tile is empty now; assigning BLANK_TILE also
+                // drops whatever image it was holding, which matters when a
+                // refresh follows an edit that emptied a bin.
+                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
             }).catch(() => {
                 tile.src = BLANK_TILE;
             });

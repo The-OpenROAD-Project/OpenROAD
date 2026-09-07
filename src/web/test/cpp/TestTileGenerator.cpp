@@ -4475,6 +4475,33 @@ TEST_F(TileGeneratorTest, IndexedEncodingPreservesTheLayerColour)
       << "the layer colour must reach the client unchanged";
 }
 
+// Off-grid coordinates are an empty tile, not an empty result.  Returning no
+// bytes put a zero-length body behind a PNG frame on the wire, which a client
+// can only fail to decode; every tile entry point owes its caller a decodable
+// image for "nothing here".
+TEST_F(TileGeneratorTest, OffGridHeatMapTileIsStillADecodablePng)
+{
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
+
+  struct Coord
+  {
+    int z, x, y;
+  };
+  for (const Coord& c : {Coord{0, -1, 0}, Coord{0, 3, 7}, Coord{2, 9999, 0}}) {
+    const std::vector<unsigned char> png
+        = tile_gen_->generateHeatMapTile(*heatmap_, c.z, c.x, c.y);
+    ASSERT_FALSE(png.empty()) << "z/x/y=" << c.z << "/" << c.x << "/" << c.y;
+
+    unsigned width = 0;
+    unsigned height = 0;
+    const std::vector<unsigned char> rgba = decodePng(png, width, height);
+    EXPECT_EQ(width, static_cast<unsigned>(kTileSize));
+    EXPECT_EQ(height, static_cast<unsigned>(kTileSize));
+    EXPECT_FALSE(hasNonTransparentPixel(rgba));
+  }
+}
+
 // The scale the tests above model is the one the fixture's tech actually has.
 TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 {
