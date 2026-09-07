@@ -132,6 +132,7 @@ struct RouteBaseVars
   const float maxDensity;
   const float ignoreEdgeRatio;
   const float minCongestionForInflation;
+  const float maxInflationTotal;
 
   // targetRC metric coefficients.
   const float rcK1, rcK2, rcK3, rcK4;
@@ -202,6 +203,16 @@ class RouteBase
   // needs to revert back to have the minimized RC values.
   // minRcInflationSize_ will store
   // GCell's width and height
+  // Relative improvement in the congestion metric that counts as progress.
+  static constexpr float kMinRcImprovement = 0.005f;
+
+  // Passes the inflation budget is rationed across, so the loop keeps its
+  // feedback instead of spending the whole allowance on its first reading.
+  static constexpr int kBudgetPasses = 6;
+
+  // Movable area before any routability inflation, the base for the budget.
+  int64_t original_movable_area_ = 0;
+
   float minRc_ = 1e30;
   std::vector<float> minRcTargetDensity_;
   int min_RC_violated_cnt_ = 0;
@@ -213,6 +224,11 @@ class RouteBase
   void revertToMinCongestion();
 
   void updateTileInflationRatio(Tile* tile, float ratio) const;
+
+  // Trim the tiles' inflated ratios so this iteration's added area fits the
+  // remaining inflation budget.
+  // True when it had to trim, which means the budget is now spent.
+  bool scaleInflationToBudget();
 
   // debug reports on the tiles' inflation ratios
   void debugInflationRatioStats() const;

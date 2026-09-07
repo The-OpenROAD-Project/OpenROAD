@@ -224,6 +224,7 @@ RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
       maxDensity(options.routabilityMaxDensity),
       ignoreEdgeRatio(0.8),
       minCongestionForInflation(options.routabilityMinCongestionForInflation),
+      maxInflationTotal(options.routabilityMaxInflationTotal),
       rcK1(options.routabilityRcK1),
       rcK2(options.routabilityRcK2),
       rcK3(options.routabilityRcK3),
@@ -299,6 +300,10 @@ void RouteBase::init()
 
   tg_->setLogger(log_);
   nbc_->resizeMinRcCellSize();
+
+  for (const auto& nb : nbVec_) {
+    original_movable_area_ += nb->getNesterovInstsArea();
+  }
 }
 
 void RouteBase::getGrtResult()
@@ -384,6 +389,75 @@ static float getUsageCapacityRatio(Tile* tile,
 
   // return usage (used routing track + blockage) / total capacity
   return static_cast<float>(curUse) / curCap;
+}
+
+// Trim the tiles' inflated ratios so the area this iteration would add fits
+// the remaining budget.
+bool RouteBase::scaleInflationToBudget()
+{
+  if (original_movable_area_ <= 0) {
+    return false;
+  }
+  const double budget = original_movable_area_ * rbVars_.maxInflationTotal;
+  const double spent = getTotalInflation();
+
+  // Ration the budget across passes rather than letting one pass take it all.
+  //
+  // The loop's worth is its feedback: measure congestion, inflate, re-place,
+  // measure again. Each pass re-targets the area at where the congestion
+  // actually moved to. Spending the whole allowance at once throws that away -
+  // the area is placed according to the single earliest and least informed
+  // reading, taken when the placement is still barely spread. Measured on one
+  // design: one pass spending +34.93% of the movable area left 424 congested
+  // global-route edges, where seven passes spending +30.17% left none.
+  const double per_pass = budget / kBudgetPasses;
+  const double allowed = std::min(per_pass, budget - spent);
+
+  double wanted = 0;
+  for (const auto& nb : nbVec_) {
+    for (const auto& gCellHandle : nb->getGCells()) {
+      if (!gCellHandle->isStdInstance()) {
+        continue;
+      }
+      const int idxX
+          = std::min((gCellHandle->dCx() - tg_->lx()) / tg_->tileSizeX(),
+                     tg_->tileCntX() - 1);
+      const int idxY
+          = std::min((gCellHandle->dCy() - tg_->ly()) / tg_->tileSizeY(),
+                     tg_->tileCntY() - 1);
+      const size_t index = (static_cast<size_t>(idxY) * tg_->tileCntX()) + idxX;
+      if (index >= tg_->tiles().size()) {
+        continue;
+      }
+      const Tile* tile = tg_->tiles()[index];
+      if (tile->inflatedRatio() <= 1.0) {
+        continue;
+      }
+      const double area = static_cast<double>(gCellHandle->dx())
+                          * static_cast<double>(gCellHandle->dy());
+      wanted += area * (tile->inflatedRatio() - 1.0);
+    }
+  }
+
+  if (wanted <= 0 || wanted <= allowed) {
+    // Fits in this pass's ration; the budget is spent only once the total is.
+    return spent + wanted >= budget;
+  }
+
+  const double scale = std::max(0.0, allowed / wanted);
+  for (auto& tile : tg_->tiles()) {
+    if (tile->inflatedRatio() > 1.0) {
+      tile->setInflatedRatio(1.0 + scale * (tile->inflatedRatio() - 1.0));
+    }
+  }
+  log_->info(GPL,
+             98,
+             "Routability inflation trimmed to {:.2f}% of what this iteration "
+             "asked for; {:.2f}% of the {:.2f}% budget still unspent.",
+             100.0 * scale,
+             100.0 * (budget - spent - allowed) / original_movable_area_,
+             100.0 * rbVars_.maxInflationTotal);
+  return spent + allowed >= budget;
 }
 
 // Set the tile's inflation ratio from its congestion 'ratio', if the tile is
@@ -632,7 +706,11 @@ std::pair<bool, bool> RouteBase::routability(
   }
 
   // saving solutions when minRc happen.
-  if ((minRc_ - curRc) > 0.001) {
+  //
+  // Require a real improvement, not a rounding-level one. An absolute epsilon
+  // on a metric of order 1 lets the loop keep buying a fourth decimal place
+  // for the price of a full Nesterov re-run from the snapshot.
+  if ((minRc_ - curRc) > minRc_ * kMinRcImprovement) {
     is_min_rc_ = true;
     log_->info(GPL,
                48,
@@ -670,6 +748,20 @@ std::pair<bool, bool> RouteBase::routability(
       tile->setInflatedRatio(1.0);
     }
   }
+
+  // Scale this iteration's inflation to fit what is left of the budget.
+  //
+  // The area a cell gains is proportional to (ratio - 1), so scaling that term
+  // scales the whole iteration's delta by the same factor. Without it the
+  // budget is a trip-wire rather than a budget: a single pass can want several
+  // times the whole allowance - one design's first pass asked for +45.7% of
+  // the movable area against a 15% ceiling - and checking only afterwards lets
+  // it through.
+  // Having to trim is the signal that the budget is spent: the accumulated
+  // total lands a hair under the ceiling, so testing the total against it
+  // would never fire and the loop would keep re-running Nesterov for
+  // iterations that add nothing.
+  const bool budget_spent = scaleInflationToBudget();
 
   // inflate cells and remove fillers
   std::vector<double> prev_white_space_area(nbVec_.size());
@@ -863,7 +955,16 @@ std::pair<bool, bool> RouteBase::routability(
   // reset
   resetRoutabilityResources();
 
-  return std::make_pair(true, true);
+  if (budget_spent) {
+    log_->info(GPL,
+               97,
+               "Total routability inflation {:.2f}% of the movable area "
+               "spent the {:.2f}% budget, ending routability.",
+               100.0 * getTotalInflation() / original_movable_area_,
+               100.0 * rbVars_.maxInflationTotal);
+  }
+
+  return std::make_pair(!budget_spent, true);
 }
 
 void RouteBase::updateRudyAverage(bool verbose)

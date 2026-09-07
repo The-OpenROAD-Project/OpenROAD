@@ -99,6 +99,12 @@ struct PlaceOptions
   float routabilityMaxInflationRatio = 3;
   float routabilityMinCongestionForInflation = 0.95;
 
+  // Ceiling on the artificial area routability may add, as a fraction of the
+  // movable area it started from. Inflation is the only thing in the loop that
+  // grows the design, and past some point the density penalty is handed more
+  // area than the floorplan can absorb.
+  float routabilityMaxInflationTotal = 0.30;
+
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
   float routabilityRcK2 = 1.0;

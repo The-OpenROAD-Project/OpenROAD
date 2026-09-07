@@ -520,6 +520,8 @@ void PlaceOptions::validate(utl::Logger* logger)
       "routability_inflation_ratio_coef", routabilityInflationRatioCoef, 416);
   val.check_positive(
       "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
+  val.check_positive(
+      "routability_max_inflation_total", routabilityMaxInflationTotal, 422);
   val.check_non_negative(
       "routability_rc_coefficients k1", routabilityRcK1, 418);
   val.check_non_negative(
