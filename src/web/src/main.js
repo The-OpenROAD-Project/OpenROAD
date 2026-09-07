@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
+    BLANK_TILE, tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
     watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -384,9 +384,6 @@ const WebSocketTileLayer = createWebSocketTileLayer(
         app,
     }, { dpr: currentDpr });
 })();
-const BLANK_TILE
-    = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
 const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
@@ -441,7 +438,11 @@ const HeatMapTileLayer = L.GridLayer.extend({
             // display.
             ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
-            tile.src = URL.createObjectURL(blob);
+            // A null payload is an empty response: the heat map has no
+            // populated bin in this tile, or the tile is off the grid.  The
+            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
+            // is decoded and onload still fires to complete the tile.
+            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
         }).catch(() => {
             tile.src = BLANK_TILE;
         });
@@ -458,6 +459,12 @@ const HeatMapTileLayer = L.GridLayer.extend({
             const coords = tileInfo.coords;
             const active = this._appState.activeHeatMap;
             if (!active) {
+                // Release the decode before dropping it: turning the heat map
+                // off walks every tile on screen, so skipping this strands one
+                // object URL per tile.
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
                 tile.src = BLANK_TILE;
                 continue;
             }
@@ -472,7 +479,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
                 }
-                tile.src = URL.createObjectURL(blob);
+                // Null means the tile is empty now; assigning BLANK_TILE also
+                // drops whatever image it was holding, which matters when a
+                // refresh follows an edit that emptied a bin.
+                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
             }).catch(() => {
                 tile.src = BLANK_TILE;
             });
