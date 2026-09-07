@@ -72,7 +72,7 @@ uint32_t dbModuleModNetITermItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbITerm* _iterm = iterm_tbl_->getPtr(id);
-  return _iterm->next_modnet_iterm_;
+  return _iterm->next_modnet_iterm();
   // User Code End next
 }
 

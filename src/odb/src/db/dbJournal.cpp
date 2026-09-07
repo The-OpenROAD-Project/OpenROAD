@@ -1275,7 +1275,7 @@ void dbJournal::redo_updateITermField()
     case _dbITerm::kFlags: {
       uint32_t prev_flags;
       log_.pop(prev_flags);
-      uint32_t* flags = (uint32_t*) &iterm->flags_;
+      uint32_t* flags = (uint32_t*) &iterm->flags();
       log_.pop(*flags);
       debugPrint(logger_,
                  utl::ODB,

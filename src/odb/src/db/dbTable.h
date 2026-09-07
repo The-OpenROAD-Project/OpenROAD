@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 
 #include "boost/integer/static_log2.hpp"
 #include "dbCore.h"
@@ -21,6 +22,51 @@ class dbTablePage final : public dbObjectPage
  public:
   char objects_[1];
 };
+
+// Opt-in, per slot type, to writing this table's pages field-major (see
+// dbTable::writeBlock). Nothing about the in-memory layout changes: the same
+// bytes are written in a different order, so ids, free lists and iteration
+// order are untouched, and only the byte stream moves. Tables opt in one at
+// a time because the win is proportional to how much of the artifact they
+// are, and because a smaller change is a reviewable one.
+//
+// A slot type opts in by declaring `static constexpr bool kFieldMajorTable
+// = true;`. It has to be a member of the type rather than a specialization
+// of a trait: dbTable<T> is instantiated in whichever translation unit
+// happens to serialize the block, and a specialization declared in T's own
+// header is not necessarily visible there, so the writer and the reader
+// could be instantiated with different answers -- which is a silently
+// corrupt file, and was exactly the first bug this code had.
+template <class T>
+constexpr bool dbFieldMajorTable()
+{
+  if constexpr (requires { T::kFieldMajorTable; }) {
+    return T::kFieldMajorTable;
+  } else {
+    return false;
+  }
+}
+
+// Opt-in, per slot type, to storing the table's fields as arrays -- one per
+// field, page_size entries each, owned by the page -- instead of inside the
+// slots. A slot keeps only what dbObject needs to be an address the public
+// API can hand out and to find its page; everything else moves to a column,
+// reached through an accessor that returns a reference, so a call site says
+// `iterm->net()` where it said `iterm->net_`.
+//
+// A type opts in the same way it opts into the field-major file format:
+// `static constexpr bool kSoaTable = true;`, plus the columns themselves and
+// the initFields/clearFields pair dbTable calls in place of running a
+// constructor or destructor over slot storage.
+template <class T>
+constexpr bool dbSoaTable()
+{
+  if constexpr (requires { T::kSoaTable; }) {
+    return T::kSoaTable;
+  } else {
+    return false;
+  }
+}
 
 template <class T, uint32_t page_size /* = 128 */>
 class dbTable final : public dbObjectTable, public dbIterator
@@ -81,13 +127,47 @@ class dbTable final : public dbObjectTable, public dbIterator
  private:
   void resizePageTbl();
   void newPage();
-  void pushQ(uint32_t& Q, _dbFreeObject* e);
-  _dbFreeObject* popQ(uint32_t& Q);
+  // The free list, in whichever storage this table uses: the slot bytes a
+  // _dbFreeObject overlays, or two columns that mean nothing while a slot
+  // is free. Everything above these three works the same either way.
+  uint32_t freeNext(T* t) const;
+  uint32_t freePrev(T* t) const;
+  void setFreeLinks(T* t, uint32_t next, uint32_t prev);
+
+  void pushQ(uint32_t& Q, T* t);
+  T* popQ(uint32_t& Q);
   void findTop();
   void findBottom();
 
   void readPage(dbIStream& stream, dbTablePage* page);
   void writePage(dbOStream& stream, const dbTablePage* page) const;
+
+  // Field-major form of the same bytes, a group of pages at a time. The
+  // group -- not the page -- is the unit, because a page is as small as 128
+  // slots and the compression a field-major layout buys grows with the run
+  // length. Enlarging the page instead would renumber every object, since
+  // an id is `page_addr | slot`.
+  // A block whose records are nearly all distinct lengths gets columns one
+  // byte wide, which buys nothing and costs a header entry each; past this
+  // many classes the block is written verbatim instead. The bound is on
+  // pointlessness, not on cost -- the writer buckets records by length, so
+  // many classes are not themselves expensive.
+  static constexpr size_t kMaxLengthClasses = 64;
+
+  static constexpr uint32_t kSlotsPerBlock = 8192;
+  static constexpr uint32_t kPagesPerBlock
+      = (kSlotsPerBlock / page_size) ? (kSlotsPerBlock / page_size) : 1;
+
+  // Records are sized by sizeof(T) for the purpose of choosing a boundary;
+  // a type whose records carry a heap payload will overrun this, which is
+  // why the bound is generous rather than tight.
+  static constexpr uint64_t kMaxBlockBytes = 4u << 20;
+
+  uint32_t blockPages(uint32_t first_page) const;
+  void writeBlocks(dbOStream& stream) const;
+  void readBlocks(dbIStream& stream);
+  void writeBlock(dbOStream& stream, uint32_t first_page, uint32_t pages) const;
+  void readBlock(dbIStream& stream, uint32_t first_page, uint32_t pages);
 
   _dbFreeObject* getFreeObj(dbId<T> id);
 

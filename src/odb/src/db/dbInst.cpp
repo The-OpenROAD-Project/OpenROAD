@@ -70,7 +70,7 @@ class sortITerm
   {
     _dbITerm* iterm1 = block_->iterm_tbl_->getPtr(it1);
     _dbITerm* iterm2 = block_->iterm_tbl_->getPtr(it2);
-    return iterm1->flags_.mterm_idx < iterm2->flags_.mterm_idx;
+    return iterm1->flags().mterm_idx < iterm2->flags().mterm_idx;
   }
 };
 
@@ -1280,10 +1280,10 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   uint32_t i;
   for (i = 0; i < cnt; ++i) {
     _dbITerm* it = block->iterm_tbl_->getPtr(inst->iterms_[i]);
-    uint32_t old_idx = it->flags_.mterm_idx;
+    uint32_t old_idx = it->flags().mterm_idx;
     uint32_t new_idx = idx_map[old_idx];
-    it->flags_.mterm_idx = new_idx;
-    it->mterm_ = new_master->mterm_tbl_->getPtr(new_inst_hdr->mterms_[new_idx]);
+    it->flags().mterm_idx = new_idx;
+    it->mterm() = new_master->mterm_tbl_->getPtr(new_inst_hdr->mterms_[new_idx]);
   }
 
   // 2) reorder the iterms vector
@@ -1386,9 +1386,9 @@ dbInst* dbInst::create(dbBlock* block_,
   for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->iterm_tbl_->create();
     inst_impl->iterms_[i] = iterm->getOID();
-    iterm->flags_.mterm_idx = i;
-    iterm->inst_ = inst_impl->getOID();
-    iterm->mterm_ = master->mterm_tbl_->getPtr(inst_hdr->mterms_[i]);
+    iterm->flags().mterm_idx = i;
+    iterm->inst() = inst_impl->getOID();
+    iterm->mterm() = master->mterm_tbl_->getPtr(inst_hdr->mterms_[i]);
   }
 
   _dbBox* box = block->box_tbl_->create();

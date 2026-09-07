@@ -246,6 +246,10 @@ class dbObjectPage
   dbObjectTable* table_;
   uint32_t page_addr_;
   uint32_t alloc_cnt_;
+  // The page's columns, for a table that stores its fields as arrays; null
+  // for a table that stores them in the slots. Owned by dbTable, which is
+  // what creates and destroys pages.
+  void* fields_ = nullptr;
 };
 
 ///////////////////////////////////////////////////////////////

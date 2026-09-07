@@ -288,6 +288,16 @@ class dbIStream
     return *this;
   }
 
+  // Bulk counterpart to dbOStream::writeBytes. A field-major table block
+  // moves whole columns, and a column is contiguous by construction, so it
+  // wants one call rather than one per byte.
+  void readBytes(std::span<char> bytes)
+  {
+    if (!bytes.empty()) {
+      f_.read(bytes.data(), (std::streamsize) bytes.size());
+    }
+  }
+
   dbIStream& operator>>(char*& c)
   {
     int l;

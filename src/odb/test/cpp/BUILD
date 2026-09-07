@@ -402,3 +402,17 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "TestSoaTable",
+    srcs = [
+        "TestSoaTable.cpp",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
