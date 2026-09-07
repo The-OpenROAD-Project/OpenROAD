@@ -6,6 +6,7 @@
 #include <tcl.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
@@ -19,6 +20,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -549,10 +551,16 @@ class NativeEncoder
     }
   }
 
+  // The Sdc keeps these in pointer-ordered sets; the record must not
+  // depend on where the heap put things, so walk them by object id.
   template <typename PortDelaySet>
   void encodePortDelays(const PortDelaySet& delays, char record)
   {
-    for (PortDelay* delay : delays) {
+    std::vector<PortDelay*> sorted(delays.begin(), delays.end());
+    std::sort(sorted.begin(), sorted.end(), [&](PortDelay* a, PortDelay* b) {
+      return portDelayKey(a) < portDelayKey(b);
+    });
+    for (PortDelay* delay : sorted) {
       const ClockEdge* clk_edge = delay->clkEdge();
       writeRiseFallMinMax(delay->delays(), [&] {
         out_ << record << ' ' << pinRef(delay->pin()) << ' ';
@@ -569,12 +577,27 @@ class NativeEncoder
     }
   }
 
+  std::tuple<ObjectId, int, int, ObjectId> portDelayKey(PortDelay* delay)
+  {
+    const ClockEdge* clk_edge = delay->clkEdge();
+    return {network_->id(delay->pin()),
+            clk_edge ? clk_edge->clock()->index() : -1,
+            clk_edge ? clk_edge->transition()->index() : -1,
+            delay->refPin() ? network_->id(delay->refPin()) : 0};
+  }
+
   void encodeExceptions()
   {
+    // Same order write_sdc uses: by kind, then by the objects named.
+    std::vector<ExceptionPath*> sorted;
     for (ExceptionPath* exception : sdc_->exceptions()) {
       if (exception->isFilter() || exception->isLoop()) {
         continue;  // write_sdc skips these too: they are search state.
       }
+      sorted.push_back(exception);
+    }
+    std::sort(sorted.begin(), sorted.end(), ExceptionPathLess(network_));
+    for (ExceptionPath* exception : sorted) {
       if (!exception->comment().empty()) {
         unsupported("exception -comment");
         return;
@@ -625,7 +648,12 @@ class NativeEncoder
 
   void encodeLogicValues(const LogicValueMap& values, char record)
   {
-    for (const auto& [pin, value] : values) {
+    std::vector<std::pair<const Pin*, LogicValue>> sorted(values.begin(),
+                                                          values.end());
+    std::sort(sorted.begin(), sorted.end(), [&](const auto& a, const auto& b) {
+      return network_->id(a.first) < network_->id(b.first);
+    });
+    for (const auto& [pin, value] : sorted) {
       out_ << record << ' ' << pinRef(pin) << ' '
            << static_cast<unsigned>(value) << '\n';
     }
