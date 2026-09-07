@@ -92,6 +92,8 @@ ALL_TESTS = [
     "sta4",
     "sta5",
     "sdc_in_db1",
+    "sdc_in_db10",
+    "sdc_in_db11",
     "sdc_in_db2",
     "sdc_in_db3",
     "sdc_in_db4",
@@ -279,13 +281,26 @@ filegroup(
                 "sdc_in_db.v",
                 "sdc_in_db_common.tcl",
             ],
+            "sdc_in_db10": [
+                "sdc_in_db.odb",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db_restore.tcl",
+            ],
+            "sdc_in_db11": [
+                "sdc_in_db.v",
+                "sdc_in_db4.sdc",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db_rename.tcl",
+                "sdc_in_db_restore.tcl",
+            ],
             "sdc_in_db2": [
                 "sdc_in_db_common.tcl",
                 "sdc_in_db.odb",
             ],
             "sdc_in_db3": [
-                "sdc_in_db_common.tcl",
                 "sdc_in_db.odb",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db_restore.tcl",
             ],
             "sdc_in_db4": [
                 "sdc_in_db_common.tcl",

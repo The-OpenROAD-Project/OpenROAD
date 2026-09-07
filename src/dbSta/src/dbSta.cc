@@ -462,6 +462,16 @@ void dbSta::saveSdcToDb()
   SdcInDb::save(this, block);
 }
 
+void dbSta::clearSdcInDb()
+{
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return;
+  }
+  SdcInDb::clear(block);
+}
+
 bool dbSta::restoreSdcFromDb()
 {
   odb::dbChip* chip = db_->getChip();

@@ -409,10 +409,10 @@ write_3dbx_cmd(const char *filename)
 }
 
 void
-read_db_cmd(const char *filename, bool hierarchy, bool restore_sdc)
+read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDb(filename, hierarchy, restore_sdc);
+  ord->readDb(filename, hierarchy);
 }
 
 // "native", "text" or "none": which form of timing constraints the
@@ -425,14 +425,15 @@ sdc_in_db_kind()
 }
 
 void
-write_db_cmd(const char *filename, int compression_level = -1)
+write_db_cmd(const char *filename, int compression_level = -1,
+             bool store_sdc = false)
 {
   OpenRoad *ord = getOpenRoad();
   std::optional<int> comp_level;
   if (compression_level != -1) {
     comp_level = compression_level;
   }
-  ord->writeDb(filename, comp_level);
+  ord->writeDb(filename, comp_level, store_sdc);
 }
 
 void

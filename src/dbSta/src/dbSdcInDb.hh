@@ -21,6 +21,17 @@ class dbSta;
 // .sdc goes with which .odb -- a guess that can be wrong. Storing the
 // constraints in the block makes an .odb self-describing.
 //
+// The opt-in is on the producer: `write_db -sdc` stores the current
+// constraints in the block. A reader has nothing to remember: `read_db`
+// restores whatever the block carries whenever the design is linked with
+// liberty, which is the only situation in which constraints mean
+// anything, and leaves the record alone otherwise. So an unmodified flow
+// writes .odb files without constraints and behaves exactly as before,
+// and an odb-only tool (no liberty, no STA) never pays for a restore and
+// carries the record through unchanged. `write_db` without -sdc on a
+// linked design removes any record the block carried, because the caller
+// chose not to store, and a record written before an edit could be stale.
+//
 // Two encodings live under block properties, and a block carries at most
 // one of them:
 //
@@ -29,7 +40,11 @@ class dbSta;
 //                   a linear walk that calls the Sta constraint makers
 //                   directly: no Tcl, no name lookup, no pattern match.
 //                   This is what a flow pays at every stage boundary, so
-//                   it is the form that has to be fast.
+//                   it is the form that has to be fast. The record names
+//                   the objects it refers to and carries a digest of their
+//                   names, so a record that no longer matches the design
+//                   is rejected instead of being applied to the wrong
+//                   objects.
 //
 //   sta.sdc         The write_sdc text, replayed through the Tcl
 //                   interpreter. Used only when the Sdc holds a construct
@@ -54,9 +69,12 @@ class SdcInDb
   // Store the current constraints in the block. A block without a linked,
   // constrained design is left untouched.
   static void save(dbSta* sta, odb::dbBlock* block);
-  // Restore the constraints stored in the block. Returns the kind that was
-  // found; kNone means the block carries no constraints and nothing was
-  // done.
+  // Remove any stored constraints from the block.
+  static void clear(odb::dbBlock* block);
+  // Restore the constraints stored in the block, if the design is linked
+  // with liberty. Returns the kind that was restored; kNone means nothing
+  // was done, because the block carries no constraints or because there
+  // is no timing network to restore them into (the record is left as is).
   static Kind restore(dbSta* sta, odb::dbBlock* block);
   // Which encoding the block carries, without restoring it.
   static Kind kind(odb::dbBlock* block);

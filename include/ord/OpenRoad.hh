@@ -239,17 +239,18 @@ class OpenRoad
   void check3DBlox();
 
   void readDb(std::istream& stream);
-  // Restore the timing constraints stored in the .odb, if any.
-  // Returns true if constraints were found and applied.
+  // Restore the timing constraints stored in the .odb, if it carries any
+  // and the design is linked with liberty. Returns true if any were.
   bool restoreSdcFromDb();
-  // With restore_sdc, the constraints the .odb carries are restored; an
-  // .odb that carries none is read exactly as without the flag.
-  void readDb(const char* filename,
-              bool hierarchy = false,
-              bool restore_sdc = false);
+  // A complete read restores the constraints the .odb carries into a
+  // linked design; without liberty the record is left in the block.
+  void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);
+  // With store_sdc, the current constraints are stored in the block;
+  // without it a linked design's block is written with none.
   void writeDb(const char* filename,
-               std::optional<int> compression_level = std::nullopt);
+               std::optional<int> compression_level = std::nullopt,
+               bool store_sdc = false);
 
   void setThreadCount(int threads, bool print_info = true);
   void setThreadCount(const char* threads, bool print_info = true);

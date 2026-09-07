@@ -47,7 +47,79 @@ namespace sta {
 
 namespace {
 
-constexpr std::string_view kNativeHeader = "sdc-in-odb 1";
+constexpr std::string_view kNativeMagic = "sdc-in-odb";
+constexpr std::string_view kNativeVersion = "1";
+
+// The objects a record refers to, by kind letter and odb id, in canonical
+// order: what the digest is computed over.
+using ObjectRef = std::pair<char, uint32_t>;
+using ObjectRefs = std::set<ObjectRef>;
+
+// Full name of a referenced object in the block, or empty if there is no
+// such object: the identity the digest binds the record to.
+std::string objectName(odb::dbBlock* block, const ObjectRef& ref)
+{
+  const auto [kind, id] = ref;
+  switch (kind) {
+    case 'b':
+      if (odb::dbBTerm* bterm = odb::dbBTerm::getBTerm(block, id)) {
+        return bterm->getName();
+      }
+      break;
+    case 'i':
+      if (odb::dbITerm* iterm = odb::dbITerm::getITerm(block, id)) {
+        return iterm->getName('/');
+      }
+      break;
+    case 'm':
+      if (odb::dbModITerm* moditerm = odb::dbModITerm::getModITerm(block, id)) {
+        return moditerm->getParent()->getName() + std::string("/")
+               + moditerm->getName();
+      }
+      break;
+    case 'I':
+      if (odb::dbInst* inst = odb::dbInst::getInst(block, id)) {
+        return inst->getName();
+      }
+      break;
+    case 'N':
+      if (odb::dbNet* net = odb::dbNet::getNet(block, id)) {
+        return net->getName();
+      }
+      break;
+    default:
+      break;
+  }
+  return {};
+}
+
+// 64-bit FNV-1a over "<kind><id>=<name>\n" for every referenced object.
+uint64_t objectsDigest(odb::dbBlock* block, const ObjectRefs& refs)
+{
+  uint64_t hash = 0xcbf29ce484222325ULL;
+  auto mix = [&hash](std::string_view bytes) {
+    for (const unsigned char c : bytes) {
+      hash ^= c;
+      hash *= 0x100000001b3ULL;
+    }
+  };
+  for (const ObjectRef& ref : refs) {
+    mix(std::string_view(&ref.first, 1));
+    mix(std::to_string(ref.second));
+    mix("=");
+    mix(objectName(block, ref));
+    mix("\n");
+  }
+  return hash;
+}
+
+std::string hexDigest(uint64_t digest)
+{
+  char buf[32];
+  std::snprintf(
+      buf, sizeof(buf), "%016llx", static_cast<unsigned long long>(digest));
+  return buf;
+}
 
 ////////////////////////////////////////////////////////////////
 // Shared encoding helpers.
@@ -591,10 +663,10 @@ class NativeEncoder
   }
 
   // Returns the encoding, or an empty string with `offender` set if the
-  // Sdc holds something the native form does not represent.
-  std::string encode(std::string& offender)
+  // Sdc holds something the native form does not represent. `empty` is
+  // set when the Sdc holds no constraints at all.
+  std::string encode(std::string& offender, bool& empty)
   {
-    out_ << kNativeHeader << '\n';
     encodeClocks();
     encodeClockLatencies();
     encodeClockInsertions();
@@ -609,7 +681,20 @@ class NativeEncoder
       offender = offender_;
       return {};
     }
-    return out_.str();
+    const std::string records = out_.str();
+    empty = records.empty();
+    // Header: magic, version, digest of the referenced objects' names;
+    // then the references themselves so the restore can recompute the
+    // digest before it applies a single record.
+    std::ostringstream head;
+    head << kNativeMagic << ' ' << kNativeVersion << ' '
+         << hexDigest(objectsDigest(block_, refs_)) << '\n';
+    head << "O " << refs_.size();
+    for (const ObjectRef& ref : refs_) {
+      head << ' ' << ref.first << ref.second;
+    }
+    head << '\n';
+    return head.str() + records;
   }
 
  private:
@@ -628,17 +713,28 @@ class NativeEncoder
       unsupported("pin without an odb object");
       return "-";
     }
+    char kind;
     switch (obj->getObjectType()) {
       case odb::dbBTermObj:
-        return "b" + std::to_string(obj->getId());
+        kind = 'b';
+        break;
       case odb::dbITermObj:
-        return "i" + std::to_string(obj->getId());
+        kind = 'i';
+        break;
       case odb::dbModITermObj:
-        return "m" + std::to_string(obj->getId());
+        kind = 'm';
+        break;
       default:
         unsupported("pin of unsupported odb type");
         return "-";
     }
+    return ref(kind, obj->getId());
+  }
+
+  std::string ref(char kind, uint32_t id)
+  {
+    refs_.insert({kind, id});
+    return std::string(1, kind) + std::to_string(id);
   }
 
   std::string instRef(const Instance* inst)
@@ -650,7 +746,7 @@ class NativeEncoder
       unsupported("hierarchical instance in an exception");
       return "-";
     }
-    return std::to_string(db_inst->getId());
+    return ref('I', db_inst->getId());
   }
 
   std::string netRef(const Net* net)
@@ -662,7 +758,7 @@ class NativeEncoder
       unsupported("hierarchical net in an exception");
       return "-";
     }
-    return std::to_string(db_net->getId());
+    return ref('N', db_net->getId());
   }
 
   void writePins(const PinSet* pins)
@@ -963,6 +1059,7 @@ class NativeEncoder
   odb::dbBlock* block_;
   const Sdc* sdc_;
   std::ostringstream out_;
+  ObjectRefs refs_;
   bool ok_ = true;
   std::string offender_;
 };
@@ -999,6 +1096,16 @@ class ParseError : public std::exception
 
  private:
   std::string what_;
+};
+
+// The record refers to objects that are not the ones it was written for.
+class StaleRecord : public std::exception
+{
+ public:
+  const char* what() const noexcept override
+  {
+    return "referenced objects have changed";
+  }
 };
 
 class Tokens
@@ -1051,9 +1158,18 @@ class NativeDecoder
   {
     std::istringstream in(text);
     std::string line;
-    if (!std::getline(in, line) || line != kNativeHeader) {
+    if (!std::getline(in, line)) {
+      throw ParseError("empty record");
+    }
+    Tokens header(line);
+    if (header.next() != kNativeMagic || header.next() != kNativeVersion) {
       throw ParseError("unrecognized header");
     }
+    const std::string digest(header.next());
+    if (!std::getline(in, line)) {
+      throw ParseError("truncated record");
+    }
+    checkDigest(Tokens(line), digest);
     while (std::getline(in, line)) {
       if (line.empty()) {
         continue;
@@ -1136,6 +1252,29 @@ class NativeDecoder
   }
 
  private:
+  // Recompute the digest over the objects the record names, as they are
+  // in this block, before anything is applied.
+  void checkDigest(Tokens tokens, const std::string& expected)
+  {
+    if (tokens.nextChar() != 'O') {
+      throw ParseError("missing object list");
+    }
+    ObjectRefs refs;
+    const size_t count = tokens.nextCount();
+    for (size_t i = 0; i < count; i++) {
+      const std::string_view ref = tokens.next();
+      if (ref.size() < 2) {
+        throw ParseError("malformed object reference");
+      }
+      refs.insert({ref[0],
+                   static_cast<uint32_t>(std::strtoul(
+                       std::string(ref.substr(1)).c_str(), nullptr, 10))});
+    }
+    if (hexDigest(objectsDigest(block_, refs)) != expected) {
+      throw StaleRecord();
+    }
+  }
+
   Clock* clock(const std::string& name)
   {
     Clock* clk = sdc_->findClock(name);
@@ -1191,8 +1330,11 @@ class NativeDecoder
 
   Instance* instance(std::string_view ref)
   {
+    if (ref.size() < 2 || ref[0] != 'I') {
+      throw ParseError("malformed instance reference " + std::string(ref));
+    }
     const uint32_t id = static_cast<uint32_t>(
-        std::strtoul(std::string(ref).c_str(), nullptr, 10));
+        std::strtoul(std::string(ref.substr(1)).c_str(), nullptr, 10));
     odb::dbInst* inst = odb::dbInst::getInst(block_, id);
     if (inst == nullptr) {
       throw ParseError("no instance for reference " + std::string(ref));
@@ -1202,8 +1344,11 @@ class NativeDecoder
 
   Net* net(std::string_view ref)
   {
+    if (ref.size() < 2 || ref[0] != 'N') {
+      throw ParseError("malformed net reference " + std::string(ref));
+    }
     const uint32_t id = static_cast<uint32_t>(
-        std::strtoul(std::string(ref).c_str(), nullptr, 10));
+        std::strtoul(std::string(ref.substr(1)).c_str(), nullptr, 10));
     odb::dbNet* db_net = odb::dbNet::getNet(block_, id);
     if (db_net == nullptr) {
       throw ParseError("no net for reference " + std::string(ref));
@@ -1512,8 +1657,9 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
   Coverage coverage(sta, sdc);
   if (coverage.check(offender)) {
     NativeEncoder encoder(sta, block, sdc);
-    native = encoder.encode(offender);
-    if (native == std::string(kNativeHeader) + "\n") {
+    bool empty = false;
+    native = encoder.encode(offender, empty);
+    if (empty) {
       // A linked design with no constraints at all. Store nothing, so
       // read_db -sdc reports that the .odb carries none and a flow falls
       // back to its .sdc file.
@@ -1560,6 +1706,12 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
   setProperty(block, kTextProperty, text);
 }
 
+void SdcInDb::clear(odb::dbBlock* block)
+{
+  setProperty(block, kNativeProperty, {});
+  setProperty(block, kTextProperty, {});
+}
+
 SdcInDb::Kind SdcInDb::kind(odb::dbBlock* block)
 {
   if (block == nullptr) {
@@ -1590,6 +1742,13 @@ const char* SdcInDb::kindName(Kind kind)
 SdcInDb::Kind SdcInDb::restore(dbSta* sta, odb::dbBlock* block)
 {
   utl::Logger* logger = sta->getLogger();
+  // Constraints only mean something to a timing network: without liberty
+  // there is nothing to restore them into, and the record stays in the
+  // block for a later reader that has one.
+  Network* network = sta->getDbNetwork();
+  if (!network->isLinked() || network->defaultLibertyLibrary() == nullptr) {
+    return Kind::kNone;
+  }
   const Kind found = kind(block);
   switch (found) {
     case Kind::kNone:
@@ -1600,6 +1759,11 @@ SdcInDb::Kind SdcInDb::restore(dbSta* sta, odb::dbBlock* block)
       try {
         NativeDecoder decoder(sta, block);
         decoder.decode(text);
+      } catch (const StaleRecord&) {
+        logger->error(utl::STA,
+                      3012,
+                      "the timing constraints stored in the database do not "
+                      "match the design.");
       } catch (const ParseError& e) {
         logger->error(utl::STA,
                       3010,

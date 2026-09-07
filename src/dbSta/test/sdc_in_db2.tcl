@@ -1,8 +1,8 @@
-# read_db -sdc restores the constraints stored in the .odb. No .sdc file is
-# read here: the design arrives constrained.
+# read_db restores the constraints the .odb carries into a linked design.
+# No .sdc file is read here: the design arrives constrained.
 source "sdc_in_db_common.tcl"
 load_libs
-read_db -sdc sdc_in_db.odb
+read_db sdc_in_db.odb
 
 check "stored form" { ord::sdc_in_db_kind } native
 check "clocks restored" { lsort [lmap clk [all_clocks] { get_name $clk }] } {clk1 clk2}

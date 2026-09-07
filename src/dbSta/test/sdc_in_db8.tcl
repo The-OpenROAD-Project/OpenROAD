@@ -9,9 +9,9 @@ read_sdc sdc_in_db4.sdc
 set a [make_result_file sdc_in_db8_a.odb]
 set b [make_result_file sdc_in_db8_b.odb]
 set c [make_result_file sdc_in_db8_c.odb]
-write_db $a
+write_db -sdc $a
 set record_a [native_record]
-write_db $b
+write_db -sdc $b
 set record_b [native_record]
 
 set ::env(SDC_IN_DB_ODB) $a

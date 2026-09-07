@@ -6,7 +6,7 @@ load_design sdc_in_db.v
 read_sdc sdc_in_db9.sdc
 
 set odb [make_result_file sdc_in_db9.odb]
-write_db $odb
+write_db -sdc $odb
 check "stored form" { ord::sdc_in_db_kind } text
 set before [make_result_file sdc_in_db9_before.sdc]
 write_sdc -no_timestamp $before

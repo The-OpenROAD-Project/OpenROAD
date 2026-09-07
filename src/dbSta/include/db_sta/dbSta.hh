@@ -167,6 +167,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   // restoreSdcFromDb() brings them back and returns whether any were
   // found; sdcInDbKind() reports "native", "text" or "none".
   void saveSdcToDb();
+  void clearSdcInDb();
   bool restoreSdcFromDb();
   const char* sdcInDbKind();
 

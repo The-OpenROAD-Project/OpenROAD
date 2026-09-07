@@ -6,7 +6,7 @@ load_design sdc_in_db.v
 read_sdc sdc_in_db4.sdc
 
 set odb [make_result_file sdc_in_db4.odb]
-write_db $odb
+write_db -sdc $odb
 check "stored form" { ord::sdc_in_db_kind } native
 set before [make_result_file sdc_in_db4_before.sdc]
 write_sdc -no_timestamp $before

@@ -64,6 +64,8 @@ or_integration_tests(
     sta4
     sta5
     sdc_in_db1
+    sdc_in_db10
+    sdc_in_db11
     sdc_in_db2
     sdc_in_db3
     sdc_in_db4
