@@ -27,6 +27,12 @@ endif
 # Define variables
 PANDOC = pandoc
 GROFF ?= groff
+# Interpreter for the man page generation scripts, which need Python >= 3.7
+# (`from __future__ import annotations`). Distributions still shipping an older
+# /usr/bin/python3 (RHEL 8 has 3.6) need this pointed at a newer one;
+# //docs:man_pages overrides it with the interpreter from the Bazel Python
+# toolchain so the Bazel build does not depend on the host's python3 at all.
+PYTHON ?= python3
 # Roff snippet injected into every man page to remap Pandoc's Courier-based
 # code/verbatim fonts on devices that lack them, silencing troff "cannot
 # select font" warnings (see the file for details).
@@ -87,7 +93,7 @@ all: doc web cat
 # md/man1 is checked in and must survive.
 preprocess:
 	rm -rf $(SRC_DIR)/$(MAN2) $(SRC_DIR)/$(MAN3)
-	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
+	./src/scripts/link_readmes.sh && $(PYTHON) src/scripts/md_roff_compat.py
 
 # Target to generate all man pages
 doc: $(MAN1_PAGES) $(MAN2_PAGES) $(MAN3_PAGES)
