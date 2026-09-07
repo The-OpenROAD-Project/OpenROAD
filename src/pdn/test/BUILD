@@ -217,7 +217,6 @@ filegroup(
         "gf180/gf180mcu_fd_io.lef",
         "gf180/gf180mcu_fd_sc_mcu7t5v0.lef",
         "gf180_data/floorplan.def",
-        "gf180_data/gf180mcu_fd_io.lef",
         "gf180_hybrid/adjusted_sc9.lef",
         "gf180_hybrid/floorplan.def",
         "gf180_hybrid/floorplan_rowpattern.def",
