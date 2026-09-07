@@ -1149,7 +1149,7 @@ proc set_halo { args } {
       }
     }
   } else {
-    utl::error ODB 561 "Requires -instance of -apply_to_all_macros."
+    utl::error ODB 561 "Requires -instance {instance} or -apply_to_all_macros."
   }
 }
 
