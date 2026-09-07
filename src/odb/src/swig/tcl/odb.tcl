@@ -1105,11 +1105,16 @@ proc set_halo { args } {
   }
 
   set length [llength $halo]
-  if { $length != 2 && $length != 4 } {
-    utl::error ODB 557 "Halo must have 2 or 4 values."
+  if { $length != 1 && $length != 2 && $length != 4 } {
+    utl::error ODB 557 "Halo must have 1, 2 or 4 values."
   }
 
-  if { $length == 2 } {
+  if { $length == 1 } {
+    lassign $halo left
+    set bottom $left
+    set right $left
+    set top $left
+  } elseif { $length == 2 } {
     lassign $halo left bottom
     set right $left
     set top $bottom
