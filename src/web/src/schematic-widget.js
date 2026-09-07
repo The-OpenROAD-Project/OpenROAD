@@ -32,15 +32,15 @@ export class SchematicWidget {
             '<input id="schematic-fanin-depth"  type="number" value="1" min="0" max="10" style="width:40px;">' +
             '<label style="font-size:12px;">Fanout</label>' +
             '<input id="schematic-fanout-depth" type="number" value="1" min="0" max="10" style="width:40px;">' +
-            '<button id="schematic-refresh">Refresh</button>' +
-            '<button id="schematic-fit">Fit</button>' +
-            '<button id="schematic-zoom-in"  title="Zoom in">+</button>'  +
-            '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
-            '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
-            '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
-            '<button id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
-            '<button id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
-            '<button id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-refresh">Refresh</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-fit">Fit</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-zoom-in"  title="Zoom in">+</button>'  +
+            '<button class="or-btn or-btn-sm" id="schematic-zoom-out" title="Zoom out">−</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
             '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>';
         this.element.appendChild(this.controls);
 

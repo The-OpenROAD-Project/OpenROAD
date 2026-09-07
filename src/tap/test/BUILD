@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "cut_rows_min_step_top_left",
     "cut_rows_min_step_top_right",
     "cut_rows_min_width",
+    "cut_rows_short_core",
     "cut_rows_with_endcaps",
     "disallow_one_site_gaps",
     "disallow_one_site_gaps2",
@@ -158,6 +159,7 @@ filegroup(
             "cut_rows_min_step_bottom_right": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_left": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_right": ["cut_rows_min_step.def"],
+            "cut_rows_short_core": [],
             "disallow_one_site_gaps2": [
                 "disallow_one_site_gaps.def",
                 "disallow_one_site_gaps.defok",
