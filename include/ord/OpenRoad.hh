@@ -242,9 +242,9 @@ class OpenRoad
   // Restore the timing constraints stored in the .odb, if any.
   // Returns true if constraints were found and applied.
   bool restoreSdcFromDb();
-  // With restore_sdc, returns whether the .odb carried constraints;
-  // without it, always false.
-  bool readDb(const char* filename,
+  // With restore_sdc, the constraints the .odb carries are restored; an
+  // .odb that carries none is read exactly as without the flag.
+  void readDb(const char* filename,
               bool hierarchy = false,
               bool restore_sdc = false);
   void writeDb(std::ostream& stream);

@@ -408,11 +408,11 @@ write_3dbx_cmd(const char *filename)
   ord->write3Dbx(filename);
 }
 
-bool
+void
 read_db_cmd(const char *filename, bool hierarchy, bool restore_sdc)
 {
   OpenRoad *ord = getOpenRoad();
-  return ord->readDb(filename, hierarchy, restore_sdc);
+  ord->readDb(filename, hierarchy, restore_sdc);
 }
 
 // "native", "text" or "none": which form of timing constraints the

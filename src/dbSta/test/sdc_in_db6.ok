@@ -25,4 +25,4 @@ stored form: none
   snl_or02x1
   snl_tbufx1
   snl_xor2x1
-read_db -sdc returned 0, stored form: none
+after read_db -sdc, stored form: none

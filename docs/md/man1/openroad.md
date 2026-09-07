@@ -93,11 +93,11 @@ OpenROAD binary.
 - read_db [-sdc] filename
 
   - Read OpenDB (.odb) database files. With -sdc, also restore the timing
-    constraints stored in the database by write_db, so the design arrives
-    constrained without reading a separate .sdc file. Returns 1 if the
-    database carried constraints and 0 if it carried none, so a script can
-    fall back to read_sdc. ord::sdc_in_db_kind reports which form the
-    current block carries: native, text or none.
+    constraints the database carries, stored by write_db, so the design
+    arrives constrained without reading a separate .sdc file; a database
+    that carries none is read as without the flag. ord::sdc_in_db_kind
+    reports which form the current block carries (native, text or none),
+    so a script can decide afterwards whether to read an .sdc instead.
 
 - write_db filename
 

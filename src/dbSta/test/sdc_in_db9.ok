@@ -26,7 +26,7 @@ stored form: text
   snl_tbufx1
   snl_xor2x1
 [INFO STA-3011] Restored the timing constraints stored in the database (text form).
-read_db -sdc returned 1, stored form: text
+after read_db -sdc, stored form: text
 ###############################################################################
 # Created by write_sdc
 ###############################################################################

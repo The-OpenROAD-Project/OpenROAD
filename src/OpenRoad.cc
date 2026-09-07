@@ -555,16 +555,15 @@ void OpenRoad::write3Dbx(const std::string& filename)
 
 // TODO: bool hierarchy should be removed in the future.
 // It is retained for a while for backward compatibility.
-bool OpenRoad::readDb(const char* filename, bool hierarchy, bool restore_sdc)
+void OpenRoad::readDb(const char* filename, bool hierarchy, bool restore_sdc)
 {
-  bool restored = false;
   try {
     utl::InStreamHandler handler(filename, true);
     readDb(handler.getStream());
     // Only a database that read completely has constraints worth
     // restoring; a failed read errors out above and never gets here.
     if (restore_sdc) {
-      restored = restoreSdcFromDb();
+      restoreSdcFromDb();
     }
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
@@ -582,7 +581,6 @@ bool OpenRoad::readDb(const char* filename, bool hierarchy, bool restore_sdc)
     // we cannot rely on orders to do this during stream in
     sta->getDbNetwork()->setHierarchy();
   }
-  return restored;
 }
 
 void OpenRoad::readDb(std::istream& stream)
