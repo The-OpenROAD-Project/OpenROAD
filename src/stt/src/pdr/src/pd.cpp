@@ -104,7 +104,7 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
     }
     // lower left
     j = yprev_w_smallx[i];
-    while (~j) {
+    while (j >= 0) {
       neighbors[j].push_back(i);
       neighbors[i].push_back(j);
       curx_ynext_w_largex[j] = i;
