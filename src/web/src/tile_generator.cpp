@@ -92,11 +92,6 @@ inline void copyRGBA(unsigned char* dst, const Color& src)
   std::memcpy(dst, &src, sizeof(uint32_t));
 }
 
-inline void zeroRGBA(unsigned char* dst)
-{
-  std::memset(dst, 0, 4);
-}
-
 bool anyNonZero(std::span<const unsigned char> data)
 {
   // OR-reduce 64-byte (cache-line) blocks eight u64 at a time; the compiler
