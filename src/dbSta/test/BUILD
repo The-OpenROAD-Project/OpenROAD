@@ -276,34 +276,44 @@ filegroup(
                 "example1.lef",
             ],
             "sdc_in_db1": [
-                "hier1.sdc",
-                "hier1.v",
+                "sdc_in_db.v",
+                "sdc_in_db_common.tcl",
             ],
             "sdc_in_db2": [
+                "sdc_in_db_common.tcl",
                 "sdc_in_db.odb",
             ],
             "sdc_in_db3": [
+                "sdc_in_db_common.tcl",
                 "sdc_in_db.odb",
             ],
             "sdc_in_db4": [
-                "reg1.v",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db.v",
                 "sdc_in_db_restore.tcl",
             ],
             "sdc_in_db5": [
-                "reg1.v",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db.v",
                 "sdc_in_db_restore.tcl",
             ],
             "sdc_in_db6": [
-                "reg1.v",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db.v",
                 "sdc_in_db_restore.tcl",
             ],
+            "sdc_in_db7": [
+                "sdc_in_db_common.tcl",
+            ],
             "sdc_in_db8": [
-                "reg1.v",
+                "sdc_in_db.v",
+                "sdc_in_db_common.tcl",
                 "sdc_in_db4.sdc",
                 "sdc_in_db_rewrite.tcl",
             ],
             "sdc_in_db9": [
-                "reg1.v",
+                "sdc_in_db_common.tcl",
+                "sdc_in_db.v",
                 "sdc_in_db_restore.tcl",
             ],
             "sdc_names1": [

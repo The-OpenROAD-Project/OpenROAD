@@ -1,4 +1,2 @@
-[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
-[ERROR ORD-0054] odb file sdc_in_db7-empty.odb is invalid: ios_base::clear: unspecified iostream_category error
-read_db failed: ORD-0054
-stored form: none
+Summary 3 / 3 (100% pass)
+pass

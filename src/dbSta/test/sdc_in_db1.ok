@@ -1,26 +1,2 @@
-[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
-[WARNING ORD-2056] The following 11 liberty cell(s) do not have LEF masters and will be marked as dont-use:
-  snl_ff2x1
-  snl_invx2
-  snl_lenqnx1
-  snl_lqx1
-  snl_mux21x1
-  snl_nand02x1
-  snl_nand02x2
-  snl_oa012x1
-  snl_or02x1
-  snl_tbufx1
-  snl_xor2x1
-stored form: native
-sdc-in-odb 1
-C clk1 0x1.5798eep-27 0 2 0x0p+0 0x1.5798eep-28 1 b1
-C clk2 0x1.5798eep-26 0 2 0x0p+0 0x1.5798eep-27 1 b2
-I b3 clk2 r - 0 0 r n 0x1.5798eep-27
-I b3 clk2 r - 0 0 r x 0x1.5798eep-27
-I b3 clk2 r - 0 0 f n 0x1.5798eep-27
-I b3 clk2 r - 0 0 f x 0x1.5798eep-27
-O b4 clk2 r - 0 0 r n 0x1.5798eep-27
-O b4 clk2 r - 0 0 r x 0x1.5798eep-27
-O b4 clk2 r - 0 0 f n 0x1.5798eep-27
-O b4 clk2 r - 0 0 f x 0x1.5798eep-27
-
+Summary 5 / 5 (100% pass)
+pass
