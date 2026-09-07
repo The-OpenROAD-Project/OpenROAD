@@ -462,6 +462,12 @@ const HeatMapTileLayer = L.GridLayer.extend({
             const coords = tileInfo.coords;
             const active = this._appState.activeHeatMap;
             if (!active) {
+                // Release the decode before dropping it: turning the heat map
+                // off walks every tile on screen, so skipping this strands one
+                // object URL per tile.
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
                 tile.src = BLANK_TILE;
                 continue;
             }

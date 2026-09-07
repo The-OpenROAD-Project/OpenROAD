@@ -531,6 +531,15 @@ class TileGenerator
   // overlay tiles and save_image for every client — mirrors the Qt GUI.
   // addLabel returns the label's name (auto-generated "label<N>" when `name`
   // is empty; a clashing name is rejected and "" is returned).
+  //
+  // A label's font height in CSS px is clamped to [0, kMaxLabelSize] on the way
+  // in (0 = unspecified, take the renderer's default).  Every other font height
+  // is a constant scaled by the quantized device pixel ratio, so this is the
+  // one a caller can make large enough to matter — it reaches GlyphCache, which
+  // rasterizes 95 glyphs at that height and keeps them for the life of the
+  // process.
+  static constexpr int kMaxLabelSize = 256;
+
   std::string addLabel(const odb::Point& pos,
                        const std::string& text,
                        const Color& color,

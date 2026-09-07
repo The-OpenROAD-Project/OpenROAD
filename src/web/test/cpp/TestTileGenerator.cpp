@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <numbers>
 #include <set>
@@ -4499,6 +4500,102 @@ TEST_F(TileGeneratorTest, OffGridHeatMapTileIsStillADecodablePng)
     EXPECT_EQ(width, static_cast<unsigned>(kTileSize));
     EXPECT_EQ(height, static_cast<unsigned>(kTileSize));
     EXPECT_FALSE(hasNonTransparentPixel(rgba));
+  }
+}
+
+// isBlankTilePng() has to recognize a blank image at whatever size the caller
+// rendered it, not just at the tile size.  The static report leans on that: it
+// filters blank layer tiles and blank timing-path overlays through the same
+// call, and the overlays are rendered at twice the tile size.  The byte
+// threshold this replaced was derived for a 256 px tile (a transparent one is
+// exactly 102 bytes) and could not see a blank 512 px overlay, which is 125.
+TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
+{
+  // Nothing placed, so metal1 has no geometry to draw; the die outline still
+  // puts content on _instances.
+  makeTileGen();
+
+  // 1 and 2 give 256 px and 512 px -- the tile size the report filters at and
+  // the overlay size it filters at, whose blank encodings are 102 and 125
+  // bytes.  A single threshold cannot separate content from blank across both.
+  for (const double dpr : {1.0, 2.0}) {
+    const std::vector<unsigned char> blank = tile_gen_->generateTile(
+        "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, nullptr, dpr);
+    ASSERT_FALSE(blank.empty()) << "dpr=" << dpr;
+    unsigned width = 0;
+    unsigned height = 0;
+    const std::vector<unsigned char> rgba = decodePng(blank, width, height);
+    ASSERT_FALSE(hasNonTransparentPixel(rgba)) << "dpr=" << dpr;
+    EXPECT_TRUE(TileGenerator::isBlankTilePng(blank))
+        << "a blank " << width << " px image must read as blank";
+
+    const std::vector<unsigned char> drawn
+        = tile_gen_->generateTile("_instances",
+                                  0,
+                                  0,
+                                  0,
+                                  {},
+                                  {},
+                                  {},
+                                  {},
+                                  {},
+                                  nullptr,
+                                  nullptr,
+                                  nullptr,
+                                  dpr);
+    ASSERT_FALSE(drawn.empty()) << "dpr=" << dpr;
+    EXPECT_FALSE(TileGenerator::isBlankTilePng(drawn))
+        << "a " << width << " px image with the die outline on it is not blank";
+  }
+
+  // An encode that failed carries no bytes; that is not a blank image, and a
+  // caller that treated it as one would swallow the failure.
+  EXPECT_FALSE(TileGenerator::isBlankTilePng({}));
+}
+
+// A heat-map bin is converted to pixels whole, not clipped to the tile first --
+// that is what keeps the bin lattice identical in every tile the bin crosses.
+// So the bin's far edge in tile pixels grows with zoom without bound, and deep
+// enough it passes what an int holds.  Casting that is undefined, and what it
+// did in practice was wrap to a negative span and drop the bin: the map went
+// blank exactly where it was most magnified.
+TEST_F(TileGeneratorTest, DeepZoomKeepsABinLargerThanTheIntPixelRange)
+{
+  // Every bin populated, so whichever one the tile lands in is drawn.
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide)));
+
+  constexpr int kZoom = 27;
+  const double num_tiles = std::pow(2, kZoom);
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = bounds.maxDXDY() / num_tiles;
+
+  // The tile over the die centre, which is interior to the bin grid -- the
+  // corner tiles at this zoom sit in the pin-label margin, outside every bin.
+  const int centre = kSeamDieSide / 2;
+  const int tx = static_cast<int>((centre - bounds.xMin()) / tile_dbu);
+  const int ty_up = static_cast<int>((centre - bounds.yMin()) / tile_dbu);
+  const int ty = static_cast<int>(num_tiles) - 1 - ty_up;
+
+  // The die centre is the centre of the middle bin of the 3x3 grid, so each of
+  // that bin's edges is half a bin from the tile -- which is the distance the
+  // conversion has to survive.  Assert the premise: without it, a zoom that
+  // stopped short of the overflow would make this test pass for no reason.
+  constexpr double kBinDbu = 30000.0;  // setGridSizes(15, 15) at 2000 dbu/um
+  const double edge_px = (kBinDbu / 2) * kTileSize / tile_dbu;
+  ASSERT_GT(edge_px, static_cast<double>(std::numeric_limits<int>::max()))
+      << "the zoom is not deep enough to exercise the clamp";
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba = decodePng(
+      tile_gen_->generateHeatMapTile(*heatmap_, kZoom, tx, ty), width, height);
+
+  // The tile is a speck inside one bin, so the bin covers all of it.
+  ASSERT_EQ(rgba.size(), static_cast<size_t>(kTileSize) * kTileSize * 4);
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    ASSERT_NE(rgba[i + 3], 0)
+        << "pixel " << i / 4 << " of a tile wholly inside a bin is unpainted";
   }
 }
 

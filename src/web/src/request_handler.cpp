@@ -1337,7 +1337,8 @@ WebSocketResponse TileHandler::serializeTech(const uint32_t id,
 // Applied in the handlers rather than in the generator so every other caller of
 // the tile entry points -- save_image, the GIF recorder, the tests -- keeps
 // getting an image back.
-static void markEmptyIfBlank(WebSocketResponse& resp)
+namespace {
+void markEmptyIfBlank(WebSocketResponse& resp)
 {
   if (resp.type == WebSocketResponse::kPng
       && TileGenerator::isBlankTilePng(resp.payload)) {
@@ -1345,6 +1346,7 @@ static void markEmptyIfBlank(WebSocketResponse& resp)
     resp.payload.clear();
   }
 }
+}  // namespace
 
 WebSocketResponse TileHandler::renderTile(
     const uint32_t id,
@@ -5376,12 +5378,17 @@ LabelFields parseLabelFields(const boost::json::object& obj)
   if (!isValidAnchor(anchor)) {
     throw std::runtime_error("anchor not recognized: " + anchor);
   }
-  return {.pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
-                            static_cast<int>(obj.at("y").as_int64())),
-          .text = std::string(obj.at("text").as_string()),
-          .size = static_cast<int>(jsonOr<int64_t>(obj, "size", 0)),
-          .anchor = anchor,
-          .color = parseLabelColor(obj)};
+  return {
+      .pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
+                        static_cast<int>(obj.at("y").as_int64())),
+      .text = std::string(obj.at("text").as_string()),
+      // Bounded by addLabel/updateLabel, which the Tcl entry point reaches
+      // too; narrowed here only so a colossal int64 does not wrap on the
+      // way.
+      .size = static_cast<int>(std::clamp<int64_t>(
+          jsonOr<int64_t>(obj, "size", 0), 0, TileGenerator::kMaxLabelSize)),
+      .anchor = anchor,
+      .color = parseLabelColor(obj)};
 }
 
 }  // namespace

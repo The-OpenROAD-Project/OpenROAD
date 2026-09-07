@@ -127,6 +127,11 @@ constexpr size_t kMaxPaletteColors = 256;
 // scan.
 constexpr unsigned kMaxIndexedDim = 4096;
 
+// The indexed path packs a pixel's four bytes into one word and unpacks the
+// word back through Color, so the two have to be those same four bytes.
+static_assert(sizeof(Color) == 4);
+static_assert(std::is_trivially_copyable_v<Color>);
+
 // An image reduced to a palette and one byte per pixel.
 struct IndexedImage
 {
@@ -279,19 +284,22 @@ bool isBlankPng(const std::vector<unsigned char>& png)
 // alpha levels.  Richer images -- heat maps, dense pin labels, save_image
 // output -- fall through to RGBA, having paid only for a scan that stops at the
 // 257th colour.
+//
+// `error`, when given, receives the lodepng code behind an empty result so the
+// caller can report why the encode failed rather than only that it did.
 std::vector<unsigned char> encodeImagePng(
     const std::vector<unsigned char>& rgba,
     const unsigned w,
-    const unsigned h)
+    const unsigned h,
+    unsigned* error = nullptr)
 {
-  const size_t pixels = static_cast<size_t>(w) * h;
-  if (pixels == 0 || rgba.size() != pixels * 4) {
-    std::vector<unsigned char> png;
-    lodepng::encode(png, rgba, w, h);
-    return png;
+  if (error != nullptr) {
+    *error = 0;
   }
+  const size_t pixels = static_cast<size_t>(w) * h;
+  const bool well_formed = pixels != 0 && rgba.size() == pixels * 4;
 
-  if (w <= kMaxIndexedDim && h <= kMaxIndexedDim) {
+  if (well_formed && w <= kMaxIndexedDim && h <= kMaxIndexedDim) {
     IndexedImage indexed;
     if (buildIndexedImage(rgba, pixels, indexed)) {
       // A single all-zero colour is the blank tile: hand back the shared
@@ -311,8 +319,17 @@ std::vector<unsigned char> encodeImagePng(
     }
   }
 
+  // Whatever sent us here -- too many colours, an oversized image, a malformed
+  // buffer, an indexed encode lodepng would not take -- RGBA is the encoding
+  // that always applies, so its failure is the one worth reporting.
   std::vector<unsigned char> png;
-  lodepng::encode(png, rgba, w, h);
+  const unsigned rgba_error = lodepng::encode(png, rgba, w, h);
+  if (rgba_error != 0) {
+    png.clear();
+    if (error != nullptr) {
+      *error = rgba_error;
+    }
+  }
   return png;
 }
 
@@ -2413,10 +2430,16 @@ std::vector<unsigned char> TileGenerator::generateTile(
   // than assuming the requested one, which is 0 when the client did not name
   // it.
   const int rendered_px = bufferDim(image_buffer);
+  unsigned encode_error = 0;
   std::vector<unsigned char> png_data
-      = encodeImagePng(image_buffer, rendered_px, rendered_px);
-  if (png_data.empty()) {
-    logger_->report("PNG encoder error on tile {} {}/{}/{}", layer, z, x, y);
+      = encodeImagePng(image_buffer, rendered_px, rendered_px, &encode_error);
+  if (encode_error != 0) {
+    logger_->report("PNG encoder error on tile {} {}/{}/{}: {}",
+                    layer,
+                    z,
+                    x,
+                    y,
+                    lodepng_error_text(encode_error));
   }
 
   if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
@@ -4749,6 +4772,20 @@ std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
   return ptr;
 }
 
+namespace {
+
+// Clamp before the cast, for the reason toPxX() clamps: a bin is not clipped to
+// the tile before it is converted (see heatMapBinSpan), so a bin far larger
+// than the tile it crosses reaches a pixel edge past what an int holds, and
+// casting that is undefined.  Anything this far outside the tile floors to the
+// same empty-or-full span the exact value would.
+constexpr double kMaxBinPx = 1.0e7;
+
+int binPixelFloor(const double px)
+{
+  return static_cast<int>(std::floor(std::clamp(px, -kMaxBinPx, kMaxBinPx)));
+}
+
 // Half-open pixel span [lo, hi) of one heat-map bin along one axis, clamped to
 // a `limit`-pixel tile.
 //
@@ -4763,18 +4800,23 @@ std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
 // Rounding is anchored on the bin grid rather than on the clipped rect, so the
 // lattice is the same in every tile a bin crosses and the seam does not
 // reappear at tile boundaries.  A bin narrower than a pixel still gets one, so
-// zooming out drops no bins from the map.
-static std::pair<int, int> heatMapBinSpan(const double px_lo,
-                                          const double px_hi,
-                                          const int limit)
+// zooming out drops no bins from the map; that is the one place the
+// one-bin-per-pixel property above gives way, since a whole run of sub-pixel
+// bins then shares a pixel and composites into it — but a map that dense reads
+// as a wash of colour rather than as a lattice, which is what the property was
+// protecting.
+std::pair<int, int> heatMapBinSpan(const double px_lo,
+                                   const double px_hi,
+                                   const int limit)
 {
-  const int lo = static_cast<int>(std::floor(px_lo));
-  int hi = static_cast<int>(std::floor(px_hi));
+  const int lo = binPixelFloor(px_lo);
+  int hi = binPixelFloor(px_hi);
   if (hi <= lo) {
     hi = lo + 1;
   }
   return {std::max(0, lo), std::min(limit, hi)};
 }
+}  // namespace
 
 void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
                                 gui::HeatMapDataSource& source,
@@ -4898,10 +4940,13 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
 
   drawHeatMap(image_buffer, source, frame);
 
-  std::vector<unsigned char> png_data = encodeImagePng(image_buffer, dim, dim);
-  if (png_data.empty()) {
-    logger_->report("PNG encoder error on a {} heat map tile.",
-                    source.getName());
+  unsigned encode_error = 0;
+  std::vector<unsigned char> png_data
+      = encodeImagePng(image_buffer, dim, dim, &encode_error);
+  if (encode_error != 0) {
+    logger_->report("PNG encoder error on a {} heat map tile: {}",
+                    source.getName(),
+                    lodepng_error_text(encode_error));
   }
   return png_data;
 }
@@ -5335,10 +5380,12 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
   }
 
   // Encode to PNG.
+  unsigned encode_error = 0;
   std::vector<unsigned char> png_data
-      = encodeImagePng(final_buf, final_w, final_h);
-  if (png_data.empty()) {
-    logger_->error(utl::WEB, 23, "PNG encode error.");
+      = encodeImagePng(final_buf, final_w, final_h, &encode_error);
+  if (encode_error != 0) {
+    logger_->error(
+        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(encode_error));
     return {};
   }
   if (out_width) {
@@ -6414,6 +6461,25 @@ std::vector<unsigned char> TileGenerator::renderLabelTile(
 // User text labels (2.12) — global design annotations
 //------------------------------------------------------------------------------
 
+namespace {
+// A label's font height in CSS px, bounded on the way in.  0 keeps its meaning
+// of "unspecified", which drawTextLabels() reads as its own default.
+//
+// Bounded because the size reaches GlyphCache, which rasterizes all 95
+// printable ASCII glyphs at that height and holds the result for the life of
+// the process: every other font height in the renderer is a constant scaled by
+// the quantized device pixel ratio, so this is the one a caller can make
+// arbitrarily large.  Applied where the label is stored rather than at either
+// entry point, so the Tcl command and the websocket request are bounded by the
+// same line and labelsJson() reports back the size that will actually be drawn.
+// The ceiling is taller than a whole tile at the maximum ratio, well past any
+// legible label.
+int boundLabelSize(const int size)
+{
+  return std::clamp(size, 0, TileGenerator::kMaxLabelSize);
+}
+}  // namespace
+
 std::string TileGenerator::addLabel(const odb::Point& pos,
                                     const std::string& text,
                                     const Color& color,
@@ -6441,8 +6507,12 @@ std::string TileGenerator::addLabel(const odb::Point& pos,
     // GUI-44).
     return "";
   }
-  labels_.push_back(
-      {pos, text, color, size, anchor.empty() ? "center" : anchor, label_name});
+  labels_.push_back({pos,
+                     text,
+                     color,
+                     boundLabelSize(size),
+                     anchor.empty() ? "center" : anchor,
+                     label_name});
   return label_name;
 }
 
@@ -6471,7 +6541,7 @@ bool TileGenerator::updateLabel(const std::string& name,
       l.pos = pos;
       l.text = text;
       l.color = color;
-      l.size = size;
+      l.size = boundLabelSize(size);
       l.anchor = anchor.empty() ? "center" : anchor;
       return true;
     }

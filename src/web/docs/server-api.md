@@ -111,6 +111,22 @@ simply listening on the WebSocket; there's no opt-in.
 
 ## Tile rendering
 
+### Tile sizing
+
+`tile`, `overlay_tile` and `heatmap_tile` all accept the same two optional
+sizing fields, and a client that draws them on top of one another must send
+the same values to all three — a highlight rendered at a different pixel
+count is rescaled by the browser and no longer sits on the shape it
+highlights.
+
+| Field     | Type    | Default | Description |
+| --------- | ------- | :-----: | ----------- |
+| `dpr`     | `float` |   `1`   | The display's device pixel ratio. Clamped to `[1, 3]` and rounded to two decimals; the server and `tile-request.js` must quantize identically. |
+| `tile_px` | `int`   |    —    | The exact device-pixel side the client will display the tile in. Clamped to `[32, 2048]`. Absent or unusable means "not specified", and the server renders `256 × dpr`. |
+
+Sent explicitly rather than derived from `dpr`, because a tile's CSS box is
+only a whole number of device pixels when `tileSize × dpr` is an integer.
+
 ### `tile`
 
 Render a single 256×256 PNG tile of the layout.
@@ -127,6 +143,30 @@ Render a single 256×256 PNG tile of the layout.
 
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when the layer has nothing to draw in this tile.
+
+### `overlay_tile`
+
+Render one tile of the highlight overlay — selection, hover, timing paths,
+DRC markers, route guides, flight lines and user labels — on a transparent
+background, on the same tile grid as `tile`. Kept separate from the layer
+tiles so a selection change repaints one pane instead of re-rendering every
+layer's geometry.
+
+| Field                 | Type       | Required | Description |
+| --------------------- | ---------- | :------: | ----------- |
+| `z`                   | `int`      |    ✓     | Leaflet tile zoom level, as for `tile`. |
+| `x`                   | `int`      |    ✓     | Tile column at zoom `z`. |
+| `y`                   | `int`      |    ✓     | Tile row at zoom `z`. |
+| `visible_layers`      | `string[]` |    —     | Tech layers currently visible. Consulted so route guides respect layer visibility; omitted means draw guides on every layer. |
+| `highlight_selected`  | `bool`     |    —     | Default `true`. Draws the current selection's rects, polygons *and* flywires. Turning it off draws none of the three; hover and the timing shapes are separate states and are unaffected. |
+| `flywires_only`       | `bool`     |    —     | Default `false`. Reduce a selection's highlight to its flight lines. Latched in the session: flipping it re-derives the highlights in place, so the change takes effect without re-selecting — but never resurrects highlights an explicit clear removed. |
+| `focused_nets_guides` | `bool`     |    —     | Default `false`. Draw route guides for the focused nets. |
+| `draw_labels`         | `bool`     |    —     | Default `true`. Draw user labels (`add_label`). |
+| `debug_renderers`     | `bool`     |    —     | Default `false`. Debug renderers are active, so the highlight must be re-derived every frame to track instances that move between them. |
+
+**Response:** PNG image (frame type `1`), or frame type `3` with no body
+when nothing is highlighted in this tile — which is the usual case, since
+the overlay holds nothing at all until something is selected.
 
 ### `bounds`
 
