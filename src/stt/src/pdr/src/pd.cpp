@@ -52,9 +52,8 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
 
   vector<Neighbors> neighbors(pt_count);
 
-  data.reserve(pt_count * 6);
-  data.resize(pt_count * 4, -1);
   data.resize(pt_count * 6);
+  std::fill_n(data.begin(), pt_count * 4, -1);
   int *yprev_w_smallx = &data[0];
   int *ynext_w_smallx = &data[pt_count];
   int *curx_yprev_w_largex = &data[pt_count * 2];
