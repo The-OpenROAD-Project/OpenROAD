@@ -1187,12 +1187,17 @@ NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
 
 ////////////////////////////////////////////////
 // NesterovPlaceVars
-NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
+NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
+                                     int64_t design_hpwl)
     : maxNesterovIter(options.nesterovPlaceMaxIter),
       initDensityPenalty(options.initDensityPenaltyFactor),
       initWireLengthCoef(options.initWireLengthCoef),
       targetOverflow(options.overflow),
-      referenceHpwl(options.referenceHpwl),
+      referenceHpwl(options.referenceHpwl > 0
+                        ? options.referenceHpwl
+                        : std::max(kReferenceHpwlFloor,
+                                   kReferenceHpwlFraction
+                                       * static_cast<float>(design_hpwl))),
       routability_end_overflow(options.routabilityCheckOverflow),
       routability_snapshot_overflow(options.routabilitySnapshotOverflow),
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),

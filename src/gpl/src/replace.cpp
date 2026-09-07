@@ -354,7 +354,10 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   }
 
   if (!np_) {
-    NesterovPlaceVars npVars(options);
+    // The controller's proportional band is set by referenceHpwl, so it has to
+    // be on the design's own scale. Resolve the default from the HPWL the
+    // initial placement produced.
+    NesterovPlaceVars npVars(options, nbc_->getHpwl());
 
     npVars.debug = gui_debug_;
     npVars.debug_pause_iterations = gui_debug_pause_iterations_;
@@ -497,7 +500,7 @@ void PlaceOptions::validate(utl::Logger* logger)
   val.check_range("overflow", overflow, 0.0f, 1.0f, 406);
   val.check_non_negative("pad_left", padLeft, 407);
   val.check_non_negative("pad_right", padRight, 408);
-  val.check_positive("reference_hpwl", referenceHpwl, 409);
+  val.check_non_negative("reference_hpwl", referenceHpwl, 409);
 
   val.check_non_negative("initial_place_max_iter", initialPlaceMaxIter, 410);
   val.check_positive("initial_place_max_fanout", initialPlaceMaxFanout, 411);

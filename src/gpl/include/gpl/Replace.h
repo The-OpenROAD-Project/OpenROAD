@@ -80,7 +80,11 @@ struct PlaceOptions
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
   float initWireLengthCoef = 0.25;
-  float referenceHpwl = 446000000;
+  // Scale the density-penalty controller measures a wirelength change
+  // against, in DBU. The controller eases the penalty ramp in proportion to
+  // (delta HPWL / referenceHpwl), so a fixed value only suits designs whose
+  // HPWL happens to be near it. 0 derives it from the design's own HPWL.
+  float referenceHpwl = 0;
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;

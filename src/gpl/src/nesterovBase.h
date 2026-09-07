@@ -826,7 +826,8 @@ struct NesterovBaseVars
 
 struct NesterovPlaceVars
 {
-  NesterovPlaceVars(const PlaceOptions& options);
+  // design_hpwl resolves referenceHpwl when the option is left at 0.
+  NesterovPlaceVars(const PlaceOptions& options, int64_t design_hpwl = 0);
 
   int maxNesterovIter;
   static constexpr int maxBackTrack = 10;
@@ -836,6 +837,16 @@ struct NesterovPlaceVars
   static constexpr float minPreconditioner = 1.0;  // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
   const float referenceHpwl;                       // refDeltaHpwl
+
+  // Floor for a derived referenceHpwl, the value this was hard-coded to
+  // before it was derived at all. Designs at or below this scale keep exactly
+  // the controller they had.
+  static constexpr float kReferenceHpwlFloor = 446000000.0f;
+
+  // Fraction of the design's HPWL a derived referenceHpwl spans. A wirelength
+  // change of this size is what pulls the penalty ramp from its maximum to its
+  // minimum, so it sets the controller's headroom before it saturates.
+  static constexpr float kReferenceHpwlFraction = 1.0f;
   const float routability_end_overflow;
   const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
