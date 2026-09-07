@@ -37,8 +37,13 @@ set ::env(SDC_IN_DB_RECORD) [make_result_file sdc_in_db8_c.native]
 exec $argv0 -no_init -no_splash -exit sdc_in_db_rewrite.tcl
 set record_c [file_bytes $::env(SDC_IN_DB_RECORD)]
 
-puts "record, second write_db same process: [verdict [expr {$record_a eq $record_b}]]"
-puts "record, write_db after restore in a fresh process: [verdict [expr {$record_a eq $record_c}]]"
-puts ".odb, second write_db same process: [verdict [expr {[file_bytes $a] eq [file_bytes $b]}]]"
-puts ".odb, write_db after restore in a fresh process: [verdict [expr {[file_bytes $a] eq [file_bytes $c]}]]"
+set odb_a [file_bytes $a]
+set same_record_b [expr { $record_a eq $record_b }]
+set same_record_c [expr { $record_a eq $record_c }]
+set same_odb_b [expr { $odb_a eq [file_bytes $b] }]
+set same_odb_c [expr { $odb_a eq [file_bytes $c] }]
+puts "record, second write_db same process: [verdict $same_record_b]"
+puts "record, write_db after restore in a fresh process: [verdict $same_record_c]"
+puts ".odb, second write_db same process: [verdict $same_odb_b]"
+puts ".odb, write_db after restore in a fresh process: [verdict $same_odb_c]"
 puts "record lines: [llength [split [string trim $record_a] \n]]"

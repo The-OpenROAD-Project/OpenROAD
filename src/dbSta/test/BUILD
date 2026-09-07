@@ -297,14 +297,14 @@ filegroup(
                 "reg1.v",
                 "sdc_in_db_restore.tcl",
             ],
-            "sdc_in_db9": [
-                "reg1.v",
-                "sdc_in_db_restore.tcl",
-            ],
             "sdc_in_db8": [
                 "reg1.v",
                 "sdc_in_db4.sdc",
                 "sdc_in_db_rewrite.tcl",
+            ],
+            "sdc_in_db9": [
+                "reg1.v",
+                "sdc_in_db_restore.tcl",
             ],
             "sdc_names1": [
                 "hier1.def",
