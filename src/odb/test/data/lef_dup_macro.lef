@@ -1,0 +1,75 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.001 ;
+
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  WIDTH 0.1 ;
+  PITCH 0.2 ;
+END metal1
+
+SITE core
+  CLASS CORE ;
+  SYMMETRY Y ;
+  SIZE 0.2 BY 1 ;
+END core
+
+# First definition -- this is the one that must survive.
+MACRO DUP
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1 BY 1 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.1 0.1 0.2 0.2 ;
+    END
+  END A
+END DUP
+
+# Duplicate definition -- must be reported and dropped, not merged into the
+# frozen master above.
+MACRO DUP
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 2 BY 2 ;
+  PIN A
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.1 0.1 0.2 0.2 ;
+    END
+  END A
+  PIN B
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.5 0.5 0.6 0.6 ;
+    END
+  END B
+END DUP
+
+MACRO AFTER_DUP
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1 BY 1 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.1 0.1 0.2 0.2 ;
+    END
+  END A
+END AFTER_DUP
+
+END LIBRARY
