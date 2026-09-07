@@ -256,8 +256,10 @@ proc read_db { args } {
   }
   # -sdc restores the timing constraints stored in the .odb by write_db,
   # rather than requiring a separate .sdc file to be read alongside it.
+  # Returns 1 if the .odb carried constraints and they were restored, 0
+  # if it carried none, so a flow can fall back to read_sdc.
   set restore_sdc [info exists flags(-sdc)]
-  ord::read_db_cmd $filename $hierarchy $restore_sdc
+  return [ord::read_db_cmd $filename $hierarchy $restore_sdc]
 }
 
 sta::define_cmd_args "write_db" {[-compression level] filename}

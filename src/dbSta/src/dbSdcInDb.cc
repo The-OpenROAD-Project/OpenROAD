@@ -1225,6 +1225,14 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
   if (nativeCovers(text, offender)) {
     NativeEncoder encoder(sta, block, sdc);
     native = encoder.encode(offender);
+    if (native == std::string(kNativeHeader) + "\n") {
+      // A linked design with no constraints at all. Store nothing, so
+      // read_db -sdc reports that the .odb carries none and a flow falls
+      // back to its .sdc file.
+      setProperty(block, kNativeProperty, {});
+      setProperty(block, kTextProperty, {});
+      return;
+    }
   }
   if (native.empty()) {
     debugPrint(logger,
