@@ -254,7 +254,7 @@ proc read_db { args } {
   if { ![file readable $filename] } {
     utl::error "ORD" 8 "$filename is not readable."
   }
-  # -sdc replays the timing constraints stored in the .odb by write_db,
+  # -sdc restores the timing constraints stored in the .odb by write_db,
   # rather than requiring a separate .sdc file to be read alongside it.
   set restore_sdc [info exists flags(-sdc)]
   ord::read_db_cmd $filename $hierarchy $restore_sdc

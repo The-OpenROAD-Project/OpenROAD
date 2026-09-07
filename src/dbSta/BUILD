@@ -27,6 +27,8 @@ cc_library(
 cc_library(
     name = "dbSta",
     srcs = [
+        "src/dbSdcInDb.cc",
+        "src/dbSdcInDb.hh",
         "src/dbSta.cc",
     ],
     hdrs = [

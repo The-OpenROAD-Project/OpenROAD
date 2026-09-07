@@ -415,6 +415,15 @@ read_db_cmd(const char *filename, bool hierarchy, bool restore_sdc)
   ord->readDb(filename, hierarchy, restore_sdc);
 }
 
+// "native", "text" or "none": which form of timing constraints the
+// current block carries (see dbSta::sdcInDbKind).
+const char *
+sdc_in_db_kind()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getSta()->sdcInDbKind();
+}
+
 void
 write_db_cmd(const char *filename, int compression_level = -1)
 {

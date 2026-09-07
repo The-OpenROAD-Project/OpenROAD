@@ -239,7 +239,7 @@ class OpenRoad
   void check3DBlox();
 
   void readDb(std::istream& stream);
-  // Replay the timing constraints stored in the .odb, if any.
+  // Restore the timing constraints stored in the .odb, if any.
   // Returns true if constraints were found and applied.
   bool restoreSdcFromDb();
   void readDb(const char* filename,

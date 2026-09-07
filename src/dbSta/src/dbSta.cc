@@ -34,6 +34,7 @@
 #include "DmpCeffLambertWDelayCalc.hh"
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
+#include "dbSdcInDb.hh"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/PtrSetMap.h"
@@ -449,143 +450,33 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
 }
 
 ////////////////////////////////////////////////////////////////
-//
-// Timing constraints in odb.
-//
-// .odb already subsumes the netlist, tech, placement, routing and even
-// dont_touch. Timing constraints are the conspicuous omission, so a flow
-// must carry a matching .sdc next to every .odb and then work out which
-// .sdc goes with which .odb -- a guess that can be wrong. Storing the
-// constraints in the block makes an .odb self-describing.
-//
-// The payload is a dbStringProperty, opaque to odb, so no odb -> sta
-// dependency is created and an older OpenROAD binary still reads the file
-// (it simply ignores the property). The constraints are captured with
-// write_sdc, whose fidelity is already relied on by flows that
-// canonicalize their constraints between stages.
-
-namespace {
-
-// sta::writeSdc only writes to a file. Round-trip through a temporary one
-// until an ostream overload exists upstream in OpenSTA.
-class TempSdcFile
-{
- public:
-  TempSdcFile()
-  {
-    path_ = std::filesystem::temp_directory_path()
-            / ("openroad-sdc-" + std::to_string(::getpid()) + "-"
-               + std::to_string(
-                   reinterpret_cast<uintptr_t>(static_cast<void*>(this)))
-               + ".sdc");
-  }
-  ~TempSdcFile()
-  {
-    std::error_code ec;
-    std::filesystem::remove(path_, ec);
-  }
-  TempSdcFile(const TempSdcFile&) = delete;
-  TempSdcFile& operator=(const TempSdcFile&) = delete;
-
-  const std::filesystem::path& path() const { return path_; }
-
-  std::string read() const
-  {
-    std::ifstream in(path_, std::ios::binary);
-    if (!in) {
-      return {};
-    }
-    std::ostringstream buf;
-    buf << in.rdbuf();
-    return buf.str();
-  }
-
- private:
-  std::filesystem::path path_;
-};
-
-}  // namespace
+// Timing constraints in odb: see dbSdcInDb.hh.
 
 void dbSta::saveSdcToDb()
 {
   odb::dbChip* chip = db_->getChip();
-  if (chip == nullptr) {
-    return;
-  }
-  odb::dbBlock* block = chip->getBlock();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
   if (block == nullptr) {
     return;
   }
-  // A pure-odb flow (no liberty, no linked network) has no constraints to
-  // save. Skip quietly: write_db must behave exactly as it did before for
-  // the flows that never had constraints in the first place.
-  if (!network_->isLinked() || network_->defaultLibertyLibrary() == nullptr) {
-    return;
-  }
-  const Sdc* sdc = cmdSdc();
-  if (sdc == nullptr) {
-    return;
-  }
-
-  std::string text;
-  try {
-    TempSdcFile temp;
-    writeSdc(sdc,
-             temp.path().string(),
-             /* leaf */ false,
-             /* native */ true,
-             /* digits */ 4,
-             /* gzip */ false,
-             /* no_timestamp */ true);
-    text = temp.read();
-  } catch (const std::exception& e) {
-    // Capturing constraints must never break write_db. A flow that cannot
-    // write its constraints still gets the same .odb it got before.
-    logger_->warn(utl::STA,
-                  3008,
-                  "could not store timing constraints in the database: {}",
-                  e.what());
-    return;
-  }
-  if (text.empty()) {
-    return;
-  }
-
-  odb::dbProperty* existing = odb::dbProperty::find(block, kSdcProperty);
-  if (existing != nullptr) {
-    odb::dbProperty::destroy(existing);
-  }
-  odb::dbStringProperty::create(block, kSdcProperty, text.c_str());
+  SdcInDb::save(this, block);
 }
 
 bool dbSta::restoreSdcFromDb()
 {
   odb::dbChip* chip = db_->getChip();
-  if (chip == nullptr) {
-    return false;
-  }
-  odb::dbBlock* block = chip->getBlock();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
   if (block == nullptr) {
     return false;
   }
-  odb::dbStringProperty* prop
-      = odb::dbStringProperty::find(block, kSdcProperty);
-  if (prop == nullptr) {
-    return false;
-  }
+  return SdcInDb::restore(this, block) != SdcInDb::Kind::kNone;
+}
 
-  // read_sdc is `source`; the stored text is replayed the same way so that
-  // every sdc command goes through exactly the code path it would have
-  // taken had the constraints been read from a file.
-  const std::string text = prop->getValue();
-  if (Tcl_Eval(tcl_interp_, text.c_str()) != TCL_OK) {
-    logger_->error(utl::STA,
-                   3009,
-                   "error replaying the timing constraints stored in the "
-                   "database: {}",
-                   Tcl_GetStringResult(tcl_interp_));
-  }
-  return true;
+const char* dbSta::sdcInDbKind()
+{
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  return SdcInDb::kindName(SdcInDb::kind(block));
 }
 
 ////////////////////////////////////////////////////////////////

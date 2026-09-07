@@ -162,19 +162,13 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   float slack(const odb::dbNet* net, const MinMax* min_max);
 
-  // Timing constraints in odb.
-  //
-  // .odb already subsumes the netlist, tech, placement, routing and even
-  // dont_touch; timing constraints are the conspicuous omission, which is
-  // why a flow has to carry a matching .sdc alongside every .odb and infer
-  // which pairs with which. saveSdcToDb() stores the constraints in the
-  // block so an .odb is self-describing; restoreSdcFromDb() replays them.
-  //
-  // The payload is opaque to odb, so no odb -> sta dependency is created.
+  // Timing constraints in odb (see dbSdcInDb.hh). saveSdcToDb() stores the
+  // current constraints in the block so an .odb is self-describing;
+  // restoreSdcFromDb() brings them back and returns whether any were
+  // found; sdcInDbKind() reports "native", "text" or "none".
   void saveSdcToDb();
   bool restoreSdcFromDb();
-  // Name of the dbStringProperty holding the constraints.
-  static constexpr const char* kSdcProperty = "sta.sdc";
+  const char* sdcInDbKind();
 
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
