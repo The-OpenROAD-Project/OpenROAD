@@ -10,6 +10,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -43,6 +44,30 @@ struct TclEvaluator;
 class TimingReport;
 class WebViewerHook;
 struct WebGif;  // defined in web.cpp; holds a GifEncoder + frame dimensions
+
+// How a `web_server -bind` / `-web_bind` address must be treated.  The viewer
+// runs Tcl commands, so binding anywhere but loopback hands a shell to whoever
+// can reach the port (issue #11167).
+enum class BindAddressKind
+{
+  kInvalid,
+  kLoopback,
+  kExposed
+};
+
+// Classify a bind address.  IP literals only: there is no name resolution, so
+// "localhost" is kInvalid — the contract the commands document.  Callers that
+// reach serve() from C++ (Main.cc) must check this first: serve() reports a
+// bad address with utl::error, which throws.
+BindAddressKind classifyBindAddress(std::string_view address);
+
+// What serve() binds to when the caller passes no address.  Owned here so the
+// Tcl and command-line front ends cannot drift apart on the security default.
+inline constexpr const char* kDefaultBindAddress = "127.0.0.1";
+
+// Shared by every "that address is not usable" message, so they cannot drift.
+inline constexpr const char* kBindAddressHint
+    = "expected an IP literal such as 127.0.0.1 or ::1";
 
 // Returned by createAndRunListener: a shutdown callback and the actual
 // port the listener bound to (useful when the caller passes port 0).
@@ -90,10 +115,11 @@ class WebServer
   // generator.
   void setThreadCount(int num_threads);
 
-  // Start the web server on the given port.  Launches background
-  // I/O threads and returns immediately.  A second call is a no-op if
-  // the server is already running.
-  void serve(int port);
+  // Start the web server on the given port, listening on `bind_address` — an
+  // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
+  // Launches background I/O threads and returns immediately.  A second call is
+  // a no-op if the server is already running.
+  void serve(int port, const std::string& bind_address);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }

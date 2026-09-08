@@ -26,6 +26,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -52,6 +53,7 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/web.h"
 
 namespace web {
 
@@ -320,6 +322,28 @@ std::string assetPathFromTarget(const std::string_view target)
     return "/index.html";
   }
   return path;
+}
+
+BindAddressKind classifyBindAddress(const std::string_view address)
+{
+  // make_address parses IP literals only — it never resolves a name, so
+  // "localhost" lands here as invalid rather than silently binding somewhere.
+  boost::system::error_code ec;
+  const auto parsed = boost::asio::ip::make_address(address, ec);
+  if (ec) {
+    return BindAddressKind::kInvalid;
+  }
+  // is_loopback() covers 127.0.0.0/8 and ::1, but not ::ffff:127.0.0.1 — an
+  // IPv4 bind wearing a v6 literal, which would otherwise be reported as
+  // exposed.  Unwrap those and judge them by their IPv4 half.  Everything
+  // else, the unspecified 0.0.0.0/:: included, is reachable off-machine.
+  bool loopback = parsed.is_loopback();
+  if (parsed.is_v6() && parsed.to_v6().is_v4_mapped()) {
+    loopback = boost::asio::ip::make_address_v4(boost::asio::ip::v4_mapped,
+                                                parsed.to_v6())
+                   .is_loopback();
+  }
+  return loopback ? BindAddressKind::kLoopback : BindAddressKind::kExposed;
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
