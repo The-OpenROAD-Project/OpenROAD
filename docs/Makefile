@@ -25,7 +25,10 @@ export LC_ALL := $(UTF8_LOCALE)
 endif
 
 # Define variables
-PANDOC = pandoc
+# //docs:man_pages overrides PANDOC with the statically linked pandoc from the
+# pypandoc-binary wheel (pinned in bazel/requirements.in), so the Bazel build
+# does not depend on the host having pandoc, or on which version it has.
+PANDOC ?= pandoc
 GROFF ?= groff
 # Interpreter for the man page generation scripts, which need Python >= 3.7
 # (`from __future__ import annotations`). Distributions still shipping an older
