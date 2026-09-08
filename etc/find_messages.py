@@ -9,6 +9,7 @@
 
 import argparse
 import glob
+import io
 import os
 import re
 import sys
@@ -112,11 +113,30 @@ def scan_dir(path, files, msgs):
             scan_file(path, file_name, msgs)
 
 
+# Messages are read as UTF-8, so write them back out as UTF-8 rather than in
+# whatever encoding the ambient locale selects. TextIOWrapper.reconfigure()
+# needs Python 3.7 and Rocky 8 ships 3.6, so rewrap the underlying binary
+# buffer there instead. sys.__stdout__ keeps the replaced wrapper alive, so it
+# is not collected out from under the buffer the two share. A stream with
+# neither -- an io.StringIO a caller substituted, say -- encodes nothing and so
+# needs nothing done to it.
+def write_output_as_utf8():
+    for name in ("stdout", "stderr"):
+        stream = getattr(sys, name)
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+        elif hasattr(stream, "buffer"):
+            wrapper = io.TextIOWrapper(
+                stream.buffer,
+                encoding="utf-8",
+                line_buffering=stream.line_buffering,
+            )
+            setattr(sys, name, wrapper)
+
+
 def main():
-    # Messages are read as UTF-8, so write them back out as UTF-8 rather than
-    # in whatever encoding the ambient locale selects.
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stderr.reconfigure(encoding="utf-8")
+    write_output_as_utf8()
 
     args = parse_args()
 
