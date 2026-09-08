@@ -104,6 +104,13 @@ struct PlaceOptions
   // grows the design, and past some point the density penalty is handed more
   // area than the floorplan can absorb.
   float routabilityMaxInflationTotal = 0.30;
+  // Wirelength weight applied to the nets that put the most wire into the
+  // congested tiles, and the share of those nets that gets weighted. A net
+  // deposits demand in proportion to its own length, so pulling the worst
+  // offenders shorter takes demand out of the region they cross - unlike
+  // inflating cells, which adds wirelength everywhere. 1.0 turns it off.
+  float routabilityNetWeightMax = 1.5;
+  float routabilityCongestedNetsPercentage = 1.0;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;

@@ -521,7 +521,14 @@ void PlaceOptions::validate(utl::Logger* logger)
   val.check_positive(
       "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
   val.check_positive(
-      "routability_max_inflation_total", routabilityMaxInflationTotal, 422);
+      "routability_max_inflation_total", routabilityMaxInflationTotal, 426);
+  val.check_positive(
+      "routability_net_weight_max", routabilityNetWeightMax, 427);
+  val.check_range("routability_congested_nets_percentage",
+                  routabilityCongestedNetsPercentage,
+                  0.0f,
+                  100.0f,
+                  428);
   val.check_non_negative(
       "routability_rc_coefficients k1", routabilityRcK1, 418);
   val.check_non_negative(
