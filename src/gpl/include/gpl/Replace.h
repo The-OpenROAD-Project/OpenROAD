@@ -108,8 +108,14 @@ struct PlaceOptions
   // congested tiles, and the share of those nets that gets weighted. A net
   // deposits demand in proportion to its own length, so pulling the worst
   // offenders shorter takes demand out of the region they cross - unlike
-  // inflating cells, which adds wirelength everywhere. 1.0 turns it off.
-  float routabilityNetWeightMax = 1.5;
+  // inflating cells, which adds wirelength everywhere.
+  //
+  // Off by default at 1.0. The weight multiplies onto the timing weight, so a
+  // net can be pulled for congestion and criticality at once, and shortening a
+  // net packs its cells tighter into the region that was already congested.
+  // Measured on the flow tests it costs setup slack and clock skew without
+  // buying congestion back, so it stays opt-in until it earns its default.
+  float routabilityNetWeightMax = 1.0;
   float routabilityCongestedNetsPercentage = 1.0;
 
   // routability RC metric coefficients
