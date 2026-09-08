@@ -132,8 +132,8 @@ class Shape
   // true if shape can be modified (cut or shortened) by trimming
   virtual bool isModifiable() const;
 
-  void clearVias() { vias_.clear(); }
-  void addVia(const ViaPtr& via) { vias_.push_back(via); }
+  void clearVias();
+  void addVia(const ViaPtr& via);
   const std::vector<ViaPtr>& getVias() const { return vias_; }
   void removeVia(const ViaPtr& via);
 
@@ -243,6 +243,10 @@ class Shape
   GridComponent* grid_component_;
 
   std::vector<ViaPtr> vias_;
+  // Kept in step with vias_ by addVia()/clearVias(); a via's layers are
+  // fixed by its Connect, so the counts never go stale.
+  int connections_above_ = 0;
+  int connections_below_ = 0;
   std::set<odb::Rect> iterm_connections_;
   std::set<odb::Rect> bterm_connections_;
 
