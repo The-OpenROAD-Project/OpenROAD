@@ -9,7 +9,6 @@ namespace mpl {
 struct Channel
 {
   Channel() = default;
-  Channel(int size) : width(size), height(size) {}
   Channel(int width, int height) : width(width), height(height) {}
 
   int width{0};
