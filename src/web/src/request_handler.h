@@ -186,7 +186,12 @@ struct WebSocketResponse
   {
     kJson = 0,
     kPng = 1,
-    kError = 2
+    kError = 2,
+    // A tile the renderer drew nothing into.  Carries no payload: sending the
+    // transparent PNG instead would make the client decode it and hold a
+    // full-size bitmap for an image with nothing in it, and most of the tiles
+    // in a viewport are this one.
+    kEmpty = 3
   };
 
   uint32_t id = 0;

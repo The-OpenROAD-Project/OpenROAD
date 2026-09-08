@@ -83,16 +83,16 @@ export class SchematicWidget {
             '<option value="symbols">Standard symbols</option>' +
             '<option value="boxes">Boxes</option>' +
             '</select>' +
-            '<button id="schematic-refresh">Refresh</button>' +
-            '<button id="schematic-back" title="Go back to previous schematic" disabled>Back</button>' +
-            '<button id="schematic-fit">Fit</button>' +
-            '<button id="schematic-zoom-in"  title="Zoom in">+</button>'  +
-            '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
-            '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
-            '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
-            '<button id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
-            '<button id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
-            '<button id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-refresh">Refresh</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-back" title="Go back to previous schematic" disabled>Back</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-fit">Fit</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-zoom-in"  title="Zoom in">+</button>'  +
+            '<button class="or-btn or-btn-sm" id="schematic-zoom-out" title="Zoom out">−</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
+            '<button class="or-btn or-btn-sm" id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
             '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>' +
             // Only meaningful while a timing path is drawn.
             '<span id="schematic-timing-legend" class="schematic-timing-legend" hidden></span>';
