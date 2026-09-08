@@ -113,6 +113,11 @@ def scan_dir(path, files, msgs):
 
 
 def main():
+    # Messages are read as UTF-8, so write them back out as UTF-8 rather than
+    # in whatever encoding the ambient locale selects.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
     args = parse_args()
 
     # "tool id" -> "file:line message"
