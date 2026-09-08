@@ -44,7 +44,7 @@ puts "### swap bc1 to inv_chain ###"
 #set_debug_level ODB replace_design 1
 set_debug_level ODB replace_design_check_sanity 1
 replace_hier_module bc1 inv_chain
-global_placement -skip_nesterov_place -incremental
+global_placement -skip_nesterov_place -incremental -density uniform
 detailed_placement
 report_cell_usage bc1
 report_net u1z -digits 3
@@ -59,7 +59,7 @@ run_equivalence_test replace_hier_mod1 \
 
 puts "### swap bc1 back to buffer_chain ###"
 replace_hier_module bc1 buffer_chain
-global_placement -skip_nesterov_place -incremental
+global_placement -skip_nesterov_place -incremental -density uniform
 detailed_placement
 report_cell_usage bc1
 report_net u1z -digits 3
@@ -74,7 +74,7 @@ run_equivalence_test replace_hier_mod1 \
 
 puts "### swap bc1 back to inv_chain ###"
 replace_hier_module bc1 inv_chain
-global_placement -skip_nesterov_place -incremental
+global_placement -skip_nesterov_place -incremental -density uniform
 detailed_placement
 report_cell_usage bc1
 report_net u1z -digits 3
