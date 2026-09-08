@@ -261,15 +261,24 @@ void cutRows(dbBlock* block,
         = min_row_height + rows.begin()->getSite()->getHeight() - 1;
     // Core top/bottom edges are added as
     // sentinel obstruction bands so slivers between a blockage and the
-    // core boundary are captured by the same pair scan.
+    // core boundary are captured by the same pair scan. A sentinel is only
+    // ever paired with a real blockage: pairing the two sentinels with each
+    // other measures the core height itself, which would mark the whole core
+    // narrow - and so cut away every row - on a core shorter than
+    // min_region_height.
     const Rect core = block->getCoreArea();
-    effective_blockages.emplace_back(
-        core.xMin(), core.yMax(), core.xMax(), core.yMax() + 1);
-    effective_blockages.emplace_back(
-        core.xMin(), core.yMin() - 1, core.xMax(), core.yMin());
+    vector<Rect> bands = effective_blockages;
+    const size_t blockage_count = bands.size();
+    bands.emplace_back(core.xMin(), core.yMax(), core.xMax(), core.yMax() + 1);
+    bands.emplace_back(core.xMin(), core.yMin() - 1, core.xMax(), core.yMin());
 
-    for (const auto& below : effective_blockages) {
-      for (const auto& above : effective_blockages) {
+    for (size_t i = 0; i < bands.size(); i++) {
+      for (size_t j = 0; j < bands.size(); j++) {
+        if (i >= blockage_count && j >= blockage_count) {
+          continue;
+        }
+        const Rect& below = bands[i];
+        const Rect& above = bands[j];
         if (below.yMax() >= above.yMin()) {
           continue;
         }

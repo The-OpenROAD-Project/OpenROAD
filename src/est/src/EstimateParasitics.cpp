@@ -95,6 +95,17 @@ void EstimateParasitics::estimateAllGlobalRouteParasitics()
   }
 }
 
+void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
+                                                     grt::GRoute& route)
+{
+  if (db_net == nullptr || route.empty()) {
+    return;
+  }
+  estimateGlobalRouteParasitics(db_net, route);
+  // Annotating parasitics alone leaves stale cached delays in the timer.
+  sta_->delaysInvalidFromFanin(db_network_->dbToSta(db_net));
+}
+
 void EstimateParasitics::initSteinerRenderer(
     std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)
 {
@@ -646,6 +657,9 @@ void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
                                                        grt::GRoute& route)
 {
+  if (route.empty()) {
+    return;
+  }
   initBlock();
   MakeWireParasitics builder(
       logger_, this, sta_, block_->getTech(), block_, global_router_);

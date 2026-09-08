@@ -192,7 +192,10 @@ _install_yosys() {
                 if [[ ! -f "${cmake_bin}" ]]; then
                     cmake_bin="cmake"
                 fi
-                _execute "Configuring Yosys..." "${cmake_bin}" -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${yosys_prefix}" .
+                # CMAKE_PACKAGE_ROOT_ARGS already has bison/swig/boost paths
+                # here; pass them to Yosys too, or its CMake may pick a
+                # system copy instead.
+                _execute "Configuring Yosys..." "${cmake_bin}" -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${yosys_prefix}" ${CMAKE_PACKAGE_ROOT_ARGS} .
                 _execute "Building Yosys..." "${cmake_bin}" --build build -j "${NUM_THREADS}"
                 _execute "Installing Yosys..." "${cmake_bin}" --build build --target install
             fi
