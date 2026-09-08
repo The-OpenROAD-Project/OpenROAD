@@ -112,6 +112,12 @@ int Shape::getNumberOfConnections() const
   return vias_.size() + iterm_connections_.size() + bterm_connections_.size();
 }
 
+void Shape::removeVias(const std::set<Via*>& vias)
+{
+  std::erase_if(
+      vias_, [&vias](const ViaPtr& via) { return vias.contains(via.get()); });
+}
+
 int Shape::getNumberOfConnectionsBelow() const
 {
   int connections = 0;

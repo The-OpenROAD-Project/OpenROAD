@@ -134,6 +134,8 @@ class Shape
 
   void clearVias() { vias_.clear(); }
   void addVia(const ViaPtr& via) { vias_.push_back(via); }
+  // Drop the given vias from this shape.
+  void removeVias(const std::set<Via*>& vias);
   const std::vector<ViaPtr>& getVias() const { return vias_; }
   void removeVia(const ViaPtr& via);
 

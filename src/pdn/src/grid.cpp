@@ -946,6 +946,27 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
+  // Drop the vias this grid made last time from the shapes they attach to.
+  // They are about to be replaced, and a shape that kept them would hold
+  // every earlier generation's vias: findRepairChannels would count stale
+  // connections, and the lists (and the vias they keep alive) grew with
+  // every repair pass -- on a large die, to tens of gigabytes.
+  {
+    std::set<Via*> old_vias;
+    std::set<Shape*> touched;
+    for (const auto& via : vias_) {
+      old_vias.insert(via.get());
+      for (const auto& shape : {via->getLowerShape(), via->getUpperShape()}) {
+        if (shape != nullptr) {
+          touched.insert(shape.get());
+        }
+      }
+    }
+    for (Shape* shape : touched) {
+      shape->removeVias(old_vias);
+    }
+  }
+
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
