@@ -613,6 +613,15 @@ pygments==2.20.0 \
     #   rich
     #   sphinx
     #   sphinx-tabs
+pypandoc-binary==1.17 \
+    --hash=sha256:2f439dcd211183bb3460253ca4511101df6e1acf4a01f45f5617e1fa2ad24279 \
+    --hash=sha256:734726dc618ef276343e272e1a6b4567e59c2ef9ef41d5533042deac3b0531f1 \
+    --hash=sha256:76fae066cd2d7e78fb97f0ec8e9e36f437b07187b689b0b415ca18216f8f898a \
+    --hash=sha256:9ada156cb980cd54fd6534231788e668c00dbb591cbd24f0be0bd86812eb8788 \
+    --hash=sha256:d6b620b21c9374e3e48aabd518492bf0776b148442ee28816f6aaf52da3d4387 \
+    --hash=sha256:f6e6d3e4cfafbe23189a08db3d41f8def260bacd6e7e382bceadab7ba1f17da6 \
+    --hash=sha256:fcfd28f347ed998dda28823fc6bc24f9310e7fdf3ddceaf925bf0563a100ab5b
+    # via -r bazel/requirements.in
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
