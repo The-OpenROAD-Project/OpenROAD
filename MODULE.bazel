@@ -55,6 +55,7 @@ single_version_override(
 )
 
 BOOST_VERSION = "1.89.0.bcr.2"
+
 BOOST_CONTEXT_VERSION = "1.89.0.bcr.3"
 
 # boost::icl's exclusive_less_than comparator violates strict weak ordering
