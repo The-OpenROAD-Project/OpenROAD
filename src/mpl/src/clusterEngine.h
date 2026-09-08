@@ -227,6 +227,8 @@ class ClusteringEngine
   bool isValidNet(odb::dbNet* net);
 
   HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
+  HardMacro::Halo buildPinAwareHalo(odb::dbInst* inst,
+                                    int minimum_spacing) const;
   int getMinimumSpacing() const;
   bool isEquidistantDifferentDirections(
       std::pair<int, Boundary> candidate,

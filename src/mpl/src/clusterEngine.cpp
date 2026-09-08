@@ -2160,66 +2160,7 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     const HardMacro::Halo inst_halo(inst->getHalo());
     halo = halo.flooredToHalo(inst_halo);
   } else if (pin_aware_channels_) {
-    HardMacro::Halo min_halo(minimum_spacing);
-
-    odb::dbMaster* master = inst->getMaster();
-
-    for (odb::dbMTerm* mterm : master->getMTerms()) {
-      if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
-        continue;
-      }
-
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        for (odb::dbBox* box : mpin->getGeometry()) {
-          odb::Rect pin_rect = box->getBox();
-
-          std::vector<std::pair<int, Boundary>> dist_to_boundary{
-              {pin_rect.xMin(), Boundary::L},
-              {pin_rect.yMin(), Boundary::B},
-              {master->getWidth() - pin_rect.xMax(), Boundary::R},
-              {master->getHeight() - pin_rect.yMax(), Boundary::T}};
-
-          std::ranges::sort(dist_to_boundary);
-
-          Boundary closest = dist_to_boundary[0].second;
-
-          auto& candidate = dist_to_boundary[0];
-          auto& second_candidate = dist_to_boundary[1];
-
-          // When a pin is equally distant from two or more edges (i.e. in the
-          // corner) the pin's layer direction is used to choose between
-          // candidates
-          if (isEquidistantDifferentDirections(candidate, second_candidate)) {
-            auto direction
-                = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
-            if (direction == odb::dbTechLayerDir::VERTICAL) {
-              closest = isVertical(candidate.second) ? second_candidate.second
-                                                     : candidate.second;
-            } else {
-              closest = isVertical(candidate.second) ? candidate.second
-                                                     : second_candidate.second;
-            }
-          }
-
-          switch (closest) {
-            case Boundary::B:
-              min_halo.bottom = halo.bottom;
-              break;
-            case Boundary::L:
-              min_halo.left = halo.left;
-              break;
-            case Boundary::T:
-              min_halo.top = halo.top;
-              break;
-            case Boundary::R:
-              min_halo.right = halo.right;
-              break;
-          }
-        }
-      }
-    }
-
-    halo = min_halo;
+    halo = buildPinAwareHalo(inst, minimum_spacing);
   }
 
   // Adjust halo orientation for fixed macros here, since those
@@ -2235,6 +2176,74 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
   }
 
   return halo;
+}
+
+HardMacro::Halo ClusteringEngine::buildPinAwareHalo(odb::dbInst* inst,
+                                                    int minimum_spacing) const
+{
+  HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  HardMacro::Halo min_halo(minimum_spacing);
+
+  odb::dbMaster* master = inst->getMaster();
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::Rect pin_rect = box->getBox();
+
+        std::vector<std::pair<int, Boundary>> dist_to_boundary{
+            {pin_rect.xMin(), Boundary::L},
+            {pin_rect.yMin(), Boundary::B},
+            {master->getWidth() - pin_rect.xMax(), Boundary::R},
+            {master->getHeight() - pin_rect.yMax(), Boundary::T}};
+
+        std::ranges::sort(dist_to_boundary);
+
+        Boundary closest = dist_to_boundary[0].second;
+
+        auto& candidate = dist_to_boundary[0];
+        auto& second_candidate = dist_to_boundary[1];
+
+        // When a pin is equally distant from two or more edges (i.e. in the
+        // corner) the pin's layer direction is used to choose between
+        // candidates
+        if (isEquidistantDifferentDirections(candidate, second_candidate)) {
+          auto direction
+              = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+          if (direction == odb::dbTechLayerDir::VERTICAL) {
+            closest = isVertical(candidate.second) ? second_candidate.second
+                                                   : candidate.second;
+          } else {
+            closest = isVertical(candidate.second) ? candidate.second
+                                                   : second_candidate.second;
+          }
+        }
+
+        switch (closest) {
+          case Boundary::B:
+            min_halo.bottom = halo.bottom;
+            break;
+          case Boundary::L:
+            min_halo.left = halo.left;
+            break;
+          case Boundary::T:
+            min_halo.top = halo.top;
+            break;
+          case Boundary::R:
+            min_halo.right = halo.right;
+            break;
+        }
+      }
+    }
+  }
+
+  return min_halo;
 }
 
 int ClusteringEngine::getMinimumSpacing() const
