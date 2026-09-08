@@ -45,7 +45,10 @@ check_placement
 # region_placement violations).
 #
 # Deliberately no .ok/.defok diff: those goldens recorded placer output rather
-# than test intent and were a steady source of merge conflicts.
+# than test intent and were a steady source of merge conflicts. They are still
+# in the tree, unread by anything, only so that this test's conversion does not
+# conflict with the in-flight PRs that regenerate them; deleting them is a
+# follow-up (#11281).
 set block [ord::get_db_block]
 foreach { domain llx lly urx ury } {
   PD_AES_1 30 30 650 490
