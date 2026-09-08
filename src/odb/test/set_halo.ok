@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
+[INFO ODB-0128] Design: set_halo_test
+[INFO ODB-0131]     Created 3 components and 8 component-terminals.
+Test 1: Uniform halo (1 value)...
+Test 2: Width/height halo (2 values) with -soft...
+Test 3: Explicit left/bottom/right/top halo (4 values)...
+Test 4: -apply_to_all_macros...
+Test 5: Testing error handling...
+[ERROR ODB-0556] -halo is required.
+Expected error caught: ODB-0556
+[ERROR ODB-0557] Halo must have 1, 2 or 4 values.
+Expected error caught: ODB-0557
+[ERROR ODB-0558] Halo values must be non-negative.
+Expected error caught: ODB-0558
+[ERROR ODB-0561] Requires -instance {instance} or -apply_to_all_macros.
+Expected error caught: ODB-0561
+[ERROR ODB-0559] Couldn't find a macro named non_existent.
+Expected error caught: ODB-0559
+[ERROR ODB-0560] BUF1 is not a macro.
+Expected error caught: ODB-0560
+No differences found.
+pass
