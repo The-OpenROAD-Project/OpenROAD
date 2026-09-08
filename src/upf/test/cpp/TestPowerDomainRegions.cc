@@ -129,9 +129,9 @@ TEST_F(PowerDomainRegions, InstancesGroupedByModule)
   EXPECT_EQ(group1->getRegion(), block_->findRegion("PD_AES_1"));
   EXPECT_EQ(group2->getRegion(), block_->findRegion("PD_AES_2"));
 
-  EXPECT_EQ(group1->getInsts().size(), 1u);
+  ASSERT_EQ(group1->getInsts().size(), 1u);
   EXPECT_EQ(*group1->getInsts().begin(), aes1_inst_);
-  EXPECT_EQ(group2->getInsts().size(), 1u);
+  ASSERT_EQ(group2->getInsts().size(), 1u);
   EXPECT_EQ(*group2->getInsts().begin(), aes2_inst_);
 
   // An instance of the top module belongs to the top domain, which has no
