@@ -1,4 +1,4 @@
-# Test if halos are correctly generated using 2 when using miniumum channel arguments.
+# Test if channels are correctly generated when using two arguments for miniumum channel.
 source "helpers.tcl"
 
 read_lef "./Nangate45/Nangate45.lef"

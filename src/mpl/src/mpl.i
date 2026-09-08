@@ -138,8 +138,7 @@ set_min_channel(float width,
                 float height)
 {
   odb::dbBlock* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
-  getMacroPlacer()->setMinChannelSize(block->micronsToDbu(width),
-                                block->micronsToDbu(height));
+  getMacroPlacer()->setMinChannelSize(block->micronsToDbu(width), block->micronsToDbu(height));
 }
 
 void
