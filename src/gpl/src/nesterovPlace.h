@@ -115,6 +115,10 @@ class NesterovPlace
                       float route_snapshot_WlCoefY,
                       int& routability_driven_count,
                       float& curA);
+  // True when the per-iteration cell displacement has come off its peak in
+  // every region, i.e. the placement is close to where it is going.
+  bool isPlacementSettled() const;
+
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,

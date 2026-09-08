@@ -1238,6 +1238,16 @@ class NesterovBase
   float getStoredPhiCoef() const { return phiCoef_; }
   float getStoredStepLength() const { return stepLength_; }
   float getStoredCoordiDistance() const { return coordiDistance_; }
+
+  // True once the cells have stopped moving as fast as they were: the
+  // per-iteration displacement has come down from its peak.
+  //
+  // Routability measures where wire will be from where the cells are, so it
+  // needs a placement close to where it is going. That is a statement about
+  // motion, not about density, and overflow does not capture it: the same
+  // overflow can sit at very different displacements depending on how fast
+  // the penalty schedule happens to be ramping.
+  bool isSettled() const;
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
@@ -1411,6 +1421,16 @@ class NesterovBase
   float stepLength_ = 0;
   float coordiDistance_ = 0;
   float gradDistance_ = 0;
+
+  // Largest per-iteration displacement seen so far, the yardstick isSettled()
+  // measures the current one against.
+  float peak_coordi_distance_ = 0;
+
+  // Fraction of its own peak the per-iteration displacement must fall to for
+  // the placement to count as settled. A ratio rather than a length, so it
+  // carries no bin size, no DBU constant, and no dependence on the penalty
+  // schedule's rate.
+  static constexpr float kSettleFraction = 0.6f;
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.

@@ -4271,6 +4271,8 @@ void NesterovBase::updateNextIter(const int iter)
   densityPenalty_ *= phiCoef;
   prev_hpwl_ = hpwl;
 
+  peak_coordi_distance_ = std::max(peak_coordi_distance_, coordiDistance_);
+
   if (iter > 50 && minSumOverflow_ > sum_overflow_unscaled_) {
     minSumOverflow_ = sum_overflow_unscaled_;
     hpwlWithMinSumOverflow_ = prev_hpwl_;
@@ -4550,6 +4552,20 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
   }
 
   return false;
+}
+
+// Displacement is not monotone over a run: it is small while the penalty is
+// still weak, peaks as the cells spread, and falls again as the placement
+// settles. So "settled" cannot mean "small" - it has to mean "down from the
+// peak". The quiet opening stretch also reads as settled by that test, which
+// is harmless because every caller conjoins this with an overflow gate that
+// the opening stretch cannot pass.
+bool NesterovBase::isSettled() const
+{
+  if (peak_coordi_distance_ <= 0) {
+    return false;
+  }
+  return coordiDistance_ <= kSettleFraction * peak_coordi_distance_;
 }
 
 bool NesterovBase::checkDivergence()
