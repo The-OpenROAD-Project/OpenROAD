@@ -325,6 +325,10 @@ class RepairChannelStraps : public Straps
   odb::Rect obs_check_area_;
 
   bool invalid_ = false;
+  // Set when continueRepairs() could change neither width nor spacing:
+  // the strap has run out of options, whatever isAtEndOfRepairOptions()
+  // computes from the current values.
+  bool repair_options_exhausted_ = false;
 
   // search for the right width, spacing, and offset to connect to the channel
   void determineParameters(const Shape::ObstructionTreeMap& obstructions);
