@@ -170,6 +170,7 @@ PY_TESTS = [
         data = [
             ":test_resources",
         ],
+        tags = ["py"],
         deps = [
             ":helpers",
             "//python/openroad:openroadpy",
@@ -235,7 +236,10 @@ py_test(
     name = "gpl_man_tcl_check",
     srcs = ["gpl_man_tcl_check.py"],
     data = ["//src/gpl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

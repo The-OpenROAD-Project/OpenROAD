@@ -202,7 +202,10 @@ py_test(
     name = "tap_man_tcl_check",
     srcs = ["tap_man_tcl_check.py"],
     data = ["//src/tap:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
