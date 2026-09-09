@@ -185,6 +185,31 @@ SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
 [deleted]
 ```
 
+## Run tests with the [thread sanitizer](https://github.com/google/sanitizers/wiki/threadsanitizercppmanual):
+
+    bazelisk test --config=tsan src/...
+
+Or to get an instrumented binary to run under ORFS:
+
+    bazelisk build --config=tsan :openroad
+
+The first `--config=tsan` invocation builds compiler-rt's tsan runtime from
+source, so expect a few minutes before any OpenROAD source is compiled.
+
+Instrumented code runs roughly 5-15x slower and uses far more memory, so
+prefer the smallest design that reproduces the race. Adjust the runtime via
+`TSAN_OPTIONS`, e.g. to keep going past the first report and get the second
+stack of a lock-order inversion:
+
+    bazelisk test --config=tsan --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" src/...
+
+`drt`, `gpl`, `grt` and `ant` parallelize with OpenMP. The `@openmp` runtime
+is instrumented along with everything else under `--config=tsan`, but it is
+not built with OpenMP's TSan annotations (`LIBOMP_TSAN_SUPPORT`), so races
+reported inside `__kmp_*` frames are likely artifacts of the barrier
+implementation rather than OpenROAD bugs. Confirm a finding by checking that
+both stacks land in OpenROAD code.
+
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
     OPENROAD_EXE=$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan

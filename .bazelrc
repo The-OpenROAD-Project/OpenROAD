@@ -136,6 +136,25 @@ build:asan --linkopt=-fsanitize=address
 # ASan intercepts cleanly.
 build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
 
+# Settings for --config=tsan thread sanitizer build
+build:tsan --strip=never
+# hermetic-llvm's own sanitizer switch, rather than a bare -fsanitize=thread
+# copt: the toolchain builds compiler-rt's tsan runtime from source and links
+# it, which a plain driver flag cannot find under the zero sysroot. The flag
+# is scoped to the target configuration, so exec-config tools (swig, bison,
+# ...) keep building uninstrumented. @llvm is a dev_dependency, so this
+# resolves only when OpenROAD is the root module.
+build:tsan --@llvm//config:tsan=true
+build:tsan --copt=-DTHREAD_SANITIZER
+build:tsan --copt=-O1
+build:tsan --copt=-g
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:tsan --copt=-gz=zlib
+build:tsan --linkopt=-gz=zlib
+# TCMalloc replaces the allocator TSan needs to intercept; use the system
+# allocator instead, as --config=asan does.
+build:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
+
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
 build:profile --copt -g --host_copt -g
