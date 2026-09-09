@@ -901,11 +901,10 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // Remove overlapping vias and keep largest
-  Via::ViaTree overlapping_via_tree;
-  for (const auto& via : vias) {
-    overlapping_via_tree.insert(via);
-  }
+  // Remove overlapping vias and keep largest. Build the tree in one go:
+  // the packing constructor is far cheaper than inserting millions of
+  // vias one at a time, and nothing queries the tree while it is built.
+  Via::ViaTree overlapping_via_tree(vias.begin(), vias.end());
   for (const auto& via : vias) {
     if (via->isFailed()) {
       continue;
@@ -968,9 +967,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   }
 
   // build via tree
-  vias_.clear();
+  vias_ = Via::ViaTree(vias.begin(), vias.end());
   for (auto& via : vias) {
-    vias_.insert(via);
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }

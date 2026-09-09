@@ -57,14 +57,14 @@ class tmg_rc_sh
   dbTechNonDefaultRule* rule_{nullptr};
 };
 
-struct tmg_rc
+struct WireSection
 {
-  tmg_rc(const int from_idx,
-         const int to_idx,
-         const tmg_rc_sh& shape,
-         const bool is_vertical,
-         const int width,
-         const int default_ext)
+  WireSection(const int from_idx,
+              const int to_idx,
+              const tmg_rc_sh& shape,
+              const bool is_vertical,
+              const int width,
+              const int default_ext)
       : from_idx(from_idx),
         to_idx(to_idx),
         shape(shape),
@@ -73,7 +73,8 @@ struct tmg_rc
         default_ext(default_ext)
   {
   }
-  const int from_idx;  // index to _ptV
+
+  const int from_idx;  // index to wire_points_
   int to_idx;
   tmg_rc_sh shape;
   const bool is_vertical;
@@ -81,17 +82,18 @@ struct tmg_rc
   const int default_ext;
 };
 
-struct tmg_rcpt
+struct WirePoint
 {
-  tmg_rcpt(int x, int y, dbTechLayer* layer) : x(x), y(y), layer(layer) {}
+  WirePoint(int x, int y, dbTechLayer* layer) : x(x), y(y), layer(layer) {}
+
   const int x;  // nominal point
   const int y;
   dbTechLayer* const layer;
   int tindex{-1};  // index to _termV
-  tmg_rcpt* next_for_term{nullptr};
-  tmg_rcpt* t_alt{nullptr};
-  tmg_rcpt* next_for_clear{nullptr};
-  tmg_rcpt* sring{nullptr};
+  WirePoint* next_for_term{nullptr};
+  WirePoint* t_alt{nullptr};
+  WirePoint* next_for_clear{nullptr};
+  WirePoint* sring{nullptr};
   int dbwire_id{-1};
   bool fre{false};
   bool jct{false};
@@ -105,8 +107,8 @@ struct tmg_rcterm
   tmg_rcterm(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
   dbITerm* const iterm;
   dbBTerm* const bterm;
-  tmg_rcpt* pt;        // list of points
-  tmg_rcpt* first_pt;  // first point in dfs
+  WirePoint* pt;        // list of points
+  WirePoint* first_pt;  // first point in dfs
 };
 
 struct tmg_rcshort
@@ -159,12 +161,18 @@ class tmg_conn
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
   bool isConnected() { return connected_; }
-  int ptDist(int fr, int to) const;
-  const tmg_rcpt& pt(const int index) const { return ptV_[index]; }
+  int distance(int fr, int to) const;
+  const WirePoint& wirePoint(const int point_index) const
+  {
+    return wire_points_[point_index];
+  }
   void checkConnOrdered();
 
  private:
-  tmg_rcpt& pt(const int index) { return ptV_[index]; }
+  WirePoint& wirePoint(const int point_index)
+  {
+    return wire_points_[point_index];
+  }
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void findConnections();
@@ -173,19 +181,19 @@ class tmg_conn
   void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
-  tmg_rcpt* allocPt(int x, int y, dbTechLayer* layer);
-  void addRc(const dbShape& s,
-             int from_idx,
-             int to_idx,
-             dbTechNonDefaultRule* rule = nullptr);
-  void addRc(int k,
-             const tmg_rc_sh& s,
-             int from_idx,
-             int to_idx,
-             int xmin,
-             int ymin,
-             int xmax,
-             int ymax);
+  WirePoint* addWirePoint(int x, int y, dbTechLayer* layer);
+  void addWireSection(const dbShape& s,
+                      int from_idx,
+                      int to_idx,
+                      dbTechNonDefaultRule* rule = nullptr);
+  void addWireSection(int k,
+                      const tmg_rc_sh& s,
+                      int from_idx,
+                      int to_idx,
+                      int xmin,
+                      int ymin,
+                      int xmax,
+                      int ymax);
   void addITerm(dbITerm* iterm);
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
@@ -203,13 +211,17 @@ class tmg_conn
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
   int isVisited(int j) const;
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
-  int getExtension(int ipt, const tmg_rc* rc);
-  int addPoint(int ipt, const tmg_rc* rc);
-  int addPoint(int from_idx, int ipt, const tmg_rc* rc);
-  int addPointIfExt(int ipt, const tmg_rc* rc);
-  tmg_rc* addRcPatch(int from_idx, int to_idx);
+  int getExtension(int ipt, const WireSection* wire_section);
+  int addPoint(int ipt, const WireSection* wire_section);
+  int addPoint(int from_idx, int ipt, const WireSection* wire_section);
+  int addPointIfExt(int ipt, const WireSection* wire_section);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
+
+  dbNet* net_;
+
+  std::vector<WireSection> wire_sections_;
+  std::vector<WirePoint> wire_points_;
 
   int slicedTilePinCnt_;
   int stbtx1_[200];
@@ -219,12 +231,9 @@ class tmg_conn
   dbBTerm* slicedTileBTerm_[200];
   std::unique_ptr<tmg_conn_search> search_;
   std::unique_ptr<tmg_conn_graph> graph_;
-  std::vector<tmg_rc> rcV_;
-  std::vector<tmg_rcpt> ptV_;
   std::vector<tmg_rcterm> termV_;
   std::vector<tmg_rcterm*> tstackV_;
   std::vector<tmg_rcshort> shortV_;
-  dbNet* net_;
   bool hasSWire_;
   bool connected_;
   dbWireEncoder encoder_;
@@ -236,7 +245,7 @@ class tmg_conn
   std::array<tmg_connect_shape, 32>* csV_;
   std::vector<int> csNV_;
   int csN_;
-  tmg_rcpt* first_for_clear_;
+  WirePoint* first_for_clear_;
 
   int last_id_;
   int firstSegmentAfterVia_;
