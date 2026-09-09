@@ -172,6 +172,13 @@ build:ubsan --linkopt=-gz=zlib
 # fill up with reports nobody reads. Trap instead, so the run fails.
 build:ubsan --copt=-fno-sanitize-recover=all
 build:ubsan --test_env=UBSAN_OPTIONS=print_stacktrace=1
+# Third-party UB is not actionable here, the same stance .bazelrc already takes
+# for warnings with --per_file_copt=.*external/.*@-w. As with that flag this
+# only covers compiling third-party *source* files, not third-party headers
+# inlined into OpenROAD translation units; suppressing those needs an
+# -fsanitize-ignorelist, which the toolchain would have to declare as a compile
+# input for us.
+build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
 # UBSan does not replace the allocator, so unlike asan/tsan this config keeps
 # TCMalloc.
 

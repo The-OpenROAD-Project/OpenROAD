@@ -244,6 +244,34 @@ with a copt, which is preferable to disabling the config wholesale:
 
     bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fno-sanitize=vptr src/...
 
+### Known findings
+
+A `--config=ubsan --test_tag_filters=-py src/...` sweep is not clean yet. As of
+this writing 36 of 3980 tests fail, in two groups.
+
+Third-party UB reached through headers that are inlined into OpenROAD
+translation units, 24 tests:
+
+| Origin | Check | Tests |
+| --- | --- | --- |
+| `boost.geometry` `strategies/cartesian/intersection.hpp` | `undefined-behavior` | 19, via `pad::RDLRouter::isEdgeObstructed` |
+| `coin-or-lemon` `lemon/network_simplex.h` | `signed-integer-overflow` | 5, in `cts` |
+
+`--per_file_copt=.*external/.*@-fno-sanitize=all` above exempts third-party
+*source* files, which is why abc, tcl and bliss no longer report. It cannot
+exempt a third-party *header* compiled as part of our own translation unit --
+the same limitation the `-w` per_file_copt has. Doing that needs an
+`-fsanitize-ignorelist`, which has to be declared as a compile action input,
+so it belongs in the toolchain rather than in this file.
+
+OpenROAD's own UB, 11 tests, to be fixed separately:
+
+| Site | Check | Tests |
+| --- | --- | --- |
+| `src/rcx/src/netRC.cpp:374`, `:1575`, `:1576` | `load of value` | 8 |
+| `src/odb/include/odb/geom.h:373` | `signed-integer-overflow` | 2 |
+| `src/grt/src/cugr/src/geo.h:111` | `signed-integer-overflow` | 1 |
+
 ## Sanitizers and the Python extension modules
 
 `--config=tsan` and `--config=ubsan` cover the C++ and Tcl tests, which run
@@ -273,6 +301,15 @@ hermetic-llvm block it today:
 Fixing this belongs upstream in hermetic-llvm. Until then, skip them with
 `--test_tag_filters=-py`; the Tcl tests cover the same C++ code paths as their
 Python counterparts.
+
+The Tcl tests do get instrumented. `test/regression.bzl` normally takes the
+`openroad` binary from the exec configuration, to avoid building it twice when
+it is also used as a build tool by bazel-orfs. The sanitizer configs only
+instrument the target configuration, so under `//bazel:sanitizer_build` the
+rule takes the binary from there instead. Only the binary under test moves;
+swig, bison and the other exec-configuration tools stay uninstrumented, and
+because exactly one of the two attributes is ever set `openroad` is still
+built once.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 

@@ -8,6 +8,16 @@ Also provides doc_check_test for lightweight Python-only
 documentation tests that do not require the OpenROAD binary,
 and messages_txt for generating messages.txt from source files."""
 
+# The binary under test comes from exactly one of the two openroad attrs; the
+# macro below leaves the other unset. See //bazel:sanitizer_build.
+def _openroad_target(ctx):
+    return ctx.attr.openroad_sanitized or ctx.attr.openroad
+
+def _openroad_executable(ctx):
+    if ctx.attr.openroad_sanitized:
+        return ctx.executable.openroad_sanitized
+    return ctx.executable.openroad
+
 def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
@@ -40,7 +50,7 @@ exec "{bazel_test_sh}" "$@"
             TEST_NAME_BAZEL = ctx.attr.test_name,
             TEST_FILE = ctx.file.test_file.short_path,
             TEST_TYPE = test_type,
-            OPENROAD_EXE = ctx.executable.openroad.short_path,
+            OPENROAD_EXE = _openroad_executable(ctx).short_path,
             REGRESSION_TEST = ctx.file.regression_test.short_path,
             TEST_GOLDEN_FILE = ctx.file.golden_file.short_path if ctx.file.golden_file else "",
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
@@ -62,7 +72,7 @@ exec "{bazel_test_sh}" "$@"
         ctx.file.test_file,
         ctx.file.bazel_test_sh,
         ctx.file.regression_test,
-        ctx.executable.openroad,
+        _openroad_executable(ctx),
     ] + ctx.files.data
     if ctx.file.golden_file:
         runfiles_files.append(ctx.file.golden_file)
@@ -71,7 +81,7 @@ exec "{bazel_test_sh}" "$@"
         executable = test_script,
         runfiles = ctx.runfiles(
             files = runfiles_files,
-        ).merge_all(data_runfiles + [ctx.attr.openroad[DefaultInfo].default_runfiles]),
+        ).merge_all(data_runfiles + [_openroad_target(ctx)[DefaultInfo].default_runfiles]),
     )
 
 regression_rule_test = rule(
@@ -106,13 +116,20 @@ regression_rule_test = rule(
             allow_single_file = True,
         ),
         "openroad": attr.label(
-            doc = "The OpenROAD executable.",
+            doc = "The OpenROAD executable, exec configuration.",
             executable = True,
             # Avoid building OpenROAD twice with "bazelisk test -c opt ..."
             #
             # OpenROAD is used to build more stuff in bazel-orfs,
             # hence we want the "exec" (host) configuration.
             cfg = "exec",
+        ),
+        "openroad_sanitized": attr.label(
+            doc = "The OpenROAD executable, target configuration. Set instead " +
+                  "of `openroad` under a sanitizer config, whose " +
+                  "instrumentation only applies to the target configuration.",
+            executable = True,
+            cfg = "target",
         ),
         "regression_test": attr.label(
             doc = "The regression test script.",
@@ -383,7 +400,17 @@ def regression_test(
             test_type = effective_test_type,
             data = test_data,
             bazel_test_sh = "//test:bazel_test.sh",
-            openroad = "//:openroad",
+            # Only one of these is ever set, so openroad is still built
+            # once. Under a sanitizer config it has to come from the target
+            # configuration to be instrumented at all.
+            openroad = select({
+                "//bazel:sanitizer_build": None,
+                "//conditions:default": "//:openroad",
+            }),
+            openroad_sanitized = select({
+                "//bazel:sanitizer_build": "//:openroad",
+                "//conditions:default": None,
+            }),
             regression_test = "//test:regression_test.sh",
             # top showed me 50-400mByte of usage, so "enormous" for
             # long running tests, but the OpenROAD tests are generally
