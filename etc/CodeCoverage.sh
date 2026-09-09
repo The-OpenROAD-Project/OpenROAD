@@ -6,7 +6,7 @@ cd "$(dirname $(readlink -f $0))/../"
 
 _help() {
     cat <<EOF
-usage: $0 [dynamic]
+usage: $0 [dynamic|test]
        $0 static <TOKEN>
        $0 static-bazel <TOKEN>
 
@@ -127,6 +127,9 @@ target="${1:-dynamic}"
 case "${target}" in
     dynamic )
         _lcov
+        ;;
+    test )
+        bazelisk test //etc:code_coverage_test
         ;;
     static | static-bazel )
         if [[ $# -ne 2 ]]; then
