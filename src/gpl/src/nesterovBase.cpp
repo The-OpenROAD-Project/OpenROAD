@@ -4577,9 +4577,16 @@ bool NesterovBase::checkDivergence()
     log_->warn(GPL, 323, "Divergence detected between consecutive iterations");
   }
 
-  // Check if both overflow and HPWL increase
-  if (minSumOverflow_ < 0.2f && prev_reported_overflow_unscaled_ > 0
-      && prev_reported_hpwl_ > 0) {
+  // Check if both overflow and HPWL increase.
+  //
+  // This holds at any overflow. It used to be gated on the descent having
+  // reached 0.2, which was standing in for "not across a routability revert" -
+  // a revert resets minSumOverflow_, so the gate stayed shut until overflow
+  // came back down. revertToSnapshot() now clears the reported baseline
+  // itself, so the gate is no longer load bearing, and a design whose overflow
+  // stalls above 0.2 is no longer left with divergence detection switched off
+  // for the rest of the run.
+  if (prev_reported_overflow_unscaled_ > 0 && prev_reported_hpwl_ > 0) {
     float overflow_change
         = sum_overflow_unscaled_ - prev_reported_overflow_unscaled_;
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
@@ -4635,6 +4642,14 @@ bool NesterovBase::revertToSnapshot()
 #endif
 
   isDiverged_ = false;
+
+  // A revert moves overflow and HPWL discontinuously, so the reported values
+  // carried over from before it describe a placement that no longer exists.
+  // Divergence is a claim about a trend, and there is no trend across a jump:
+  // clear the baseline so the next comparison starts from where the revert
+  // landed.
+  prev_reported_hpwl_ = 0;
+  prev_reported_overflow_unscaled_ = 0;
 
   return true;
 }
