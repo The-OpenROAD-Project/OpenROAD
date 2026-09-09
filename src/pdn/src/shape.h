@@ -135,7 +135,6 @@ class Shape
   void clearVias();
   void addVia(const ViaPtr& via);
   const std::vector<ViaPtr>& getVias() const { return vias_; }
-  void removeVia(const ViaPtr& via);
 
   void addITermConnection(const odb::Rect& iterm)
   {
