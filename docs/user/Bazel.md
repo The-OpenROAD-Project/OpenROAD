@@ -211,9 +211,26 @@ report and get the second stack of a lock-order inversion:
 `drt`, `gpl`, `grt` and `ant` parallelize with OpenMP. The `@openmp` runtime
 is instrumented along with everything else under `--config=tsan`, but it is
 not built with OpenMP's TSan annotations (`LIBOMP_TSAN_SUPPORT`), so races
-reported inside `__kmp_*` frames are likely artifacts of the barrier
-implementation rather than OpenROAD bugs. Confirm a finding by checking that
-both stacks land in OpenROAD code.
+reported inside `__kmp_*` frames are artifacts of the barrier implementation
+rather than OpenROAD bugs. Confirm a finding by checking that both stacks land
+in OpenROAD code.
+
+### Known findings
+
+A `--config=tsan --test_tag_filters=-py src/...` sweep reports 36 of 3980
+tests failing, and the OpenMP artifacts above are almost all of it:
+
+| Origin | Tests |
+| --- | --- |
+| `@openmp` `runtime/src/kmp_runtime.cpp`, `kmp_wait_release.h` | 33, across `drt`, `grt`, `ram`, `rcx`, `gpl` |
+| `src/sta/graph/Graph.cc:1288` | 1, via `rmp` |
+| `boost::asio` `scheduler.ipp:187` | 1, in `dst` |
+
+Silencing the OpenMP group means building `@openmp` with
+`LIBOMP_TSAN_SUPPORT`, which is a change to that module rather than something
+this repo can pass as a flag. The remaining two are real: the `dst` one is a
+test that destroys a stack `io_context` while its thread still runs it, and
+the OpenSTA one is upstream.
 
 `--test_tag_filters=-py` skips the Python tests; see "Sanitizers and the
 Python extension modules" below for why.
