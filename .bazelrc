@@ -29,10 +29,19 @@ build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
 # Default to optimized build (-c opt)
 build -c opt
 
-# Settings for --config=opt build: Enable -O3 and Full-LTO for performance
+# Settings for --config=opt build: -O3 plus ThinLTO via the toolchain's thin_lto
+# feature. Bazel splits the LTO work into per-object actions that run in parallel
+# and are cached individually, instead of one monolithic link that is redone
+# whenever any input changes. Do not add raw -flto/-flto=thin flags next to it.
+# Test binaries do not need cross-module inlining: with the two extra lines they
+# link shared non-LTO native objects (one backend per object, shared by every test)
+# instead of each getting its own LTO index and shard set. The feature only applies
+# to statically linked tests, hence --dynamic_mode=off. Declared in the toolchain by
+# bazel/llvm-patches.
 build:opt --copt=-O3
-build:opt --copt=-flto
-build:opt --linkopt=-flto
+build:opt --features=thin_lto
+build:opt --features=thin_lto_linkstatic_tests_use_shared_nonlto_backends
+build:opt --dynamic_mode=off
 
 # Needed for floating point stability in FFT (fft_test will check this).
 # See also https://kristerw.github.io/2021/11/09/fp-contract/
