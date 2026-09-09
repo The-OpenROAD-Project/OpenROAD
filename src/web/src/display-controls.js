@@ -1706,7 +1706,7 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         const rebuild = document.createElement('button');
-        rebuild.className = 'heatmap-rebuild';
+        rebuild.className = 'or-btn or-btn-sm heatmap-rebuild';
         rebuild.textContent = 'Rebuild data';
         rebuild.addEventListener('click', () => {
             sendHeatMapUpdate({

@@ -683,6 +683,29 @@ WebSocketSession::~WebSocketSession()
 
 void WebSocketSession::run(http::request<http::string_body>&& req)
 {
+  // Tile responses are mostly small and arrive in bursts — a viewport is one
+  // request per layer per grid square, and the empty ones carry no payload at
+  // all.  Nagle holds a small segment until the previous one is acknowledged,
+  // so the first reply of a burst waits on the client's delayed ACK and the
+  // whole burst stalls behind it.  Measured over loopback: a viewport served
+  // entirely from the tile cache took 1274 ms with Nagle on and 19.9 ms with it
+  // off, and a cold one 2157 ms against 1732 ms.
+  //
+  // Failing to set it is not worth refusing the connection over: the session
+  // still works, just with the stall.
+  beast::error_code nodelay_ec;
+  beast::get_lowest_layer(websocket_)
+      .socket()
+      .set_option(net::ip::tcp::no_delay(true), nodelay_ec);
+  if (nodelay_ec) {
+    debugPrint(logger_,
+               utl::WEB,
+               "websocket",
+               1,
+               "could not disable Nagle on the tile socket: {}",
+               nodelay_ec.message());
+  }
+
   websocket_.set_option(
       websocket::stream_base::timeout::suggested(beast::role_type::server));
   websocket_.set_option(
@@ -1483,9 +1506,14 @@ void WebServer::saveReport(const std::string& filename,
   const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
-  // A 256x256 fully-transparent RGBA PNG is exactly 102 bytes with lodepng.
-  // Any tile with visible content will be larger.
-  constexpr size_t kEmptyPngSize = 102;
+  // An image the renderer drew nothing into.  Asked of the encoding rather than
+  // of its size: the tile entry points hand back one shared buffer per size for
+  // a fully transparent image, so this is exact, where a byte threshold has to
+  // be re-derived whenever the encoder changes.  An empty vector is a failed
+  // encode, not a blank image, and is dropped either way.
+  auto is_blank = [](const std::vector<unsigned char>& png) {
+    return png.empty() || TileGenerator::isBlankTilePng(png);
+  };
 
   // All layers to cache tiles for.
   std::vector<std::string> all_layers;
@@ -1503,7 +1531,7 @@ void WebServer::saveReport(const std::string& filename,
       for (int tx = 0; tx < num_tiles; ++tx) {
         auto png = generator_->generateTile(
             layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
-        if (png.size() > kEmptyPngSize) {
+        if (!is_blank(png)) {
           std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
           tile_entries.emplace_back(std::move(key), base64Encode(png));
@@ -1525,10 +1553,16 @@ void WebServer::saveReport(const std::string& filename,
       collectTimingPathShapes(block, path, rects, lines);
       const int overlay_px = 256 * (1 << kZ);
       auto png = generator_->renderOverlayPng(overlay_px, rects, lines);
-      if (png.size() > kEmptyPngSize) {
-        overlays.push_back(base64Encode(png));
-      } else {
+      // An empty string is the report's "this path has no overlay" marker.  A
+      // path with no shapes at all already renders to no bytes, but one whose
+      // shapes all fall outside the die area renders to a blank image, and the
+      // size threshold this replaced could not see that: it was derived for a
+      // 256 px tile (transparent, exactly 102 bytes) and these are 512 px,
+      // where a blank one is 125.
+      if (is_blank(png)) {
         overlays.emplace_back();
+      } else {
+        overlays.push_back(base64Encode(png));
       }
     }
     return overlays;

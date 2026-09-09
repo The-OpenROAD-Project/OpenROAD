@@ -112,28 +112,35 @@ int Shape::getNumberOfConnections() const
   return vias_.size() + iterm_connections_.size() + bterm_connections_.size();
 }
 
+void Shape::clearVias()
+{
+  vias_.clear();
+  connections_above_ = 0;
+  connections_below_ = 0;
+}
+
+void Shape::addVia(const ViaPtr& via)
+{
+  vias_.push_back(via);
+  // Count on the way in rather than by rescanning the via list on every
+  // query. RepairChannelStraps::findRepairChannels asks every strap and
+  // followpin shape for its connections above, and on a large die a rail
+  // carries thousands of vias: the rescan was over 90% of pdngen's runtime.
+  if (via->getLowerLayer() == layer_) {
+    connections_above_++;
+  } else if (via->getUpperLayer() == layer_) {
+    connections_below_++;
+  }
+}
+
 int Shape::getNumberOfConnectionsBelow() const
 {
-  int connections = 0;
-  for (const auto& via : vias_) {
-    if (via->getUpperLayer() == layer_) {
-      connections++;
-    }
-  }
-
-  return connections;
+  return connections_below_;
 }
 
 int Shape::getNumberOfConnectionsAbove() const
 {
-  int connections = 0;
-  for (const auto& via : vias_) {
-    if (via->getLowerLayer() == layer_) {
-      connections++;
-    }
-  }
-
-  return connections;
+  return connections_above_;
 }
 
 bool Shape::isValid() const

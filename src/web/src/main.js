@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
+    BLANK_TILE, tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
     watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -24,8 +24,9 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
          buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
-         formatDbu, formatDistance, isCurrentSelection, isStaticMode,
-         maxUsefulZoom, parseDbu, rafCoalesce, showToast, unitLabel }
+         decorateTabIcons, formatDbu, formatDistance, isCurrentSelection,
+         isStaticMode, maxUsefulZoom, parseDbu, rafCoalesce, showToast,
+         unitLabel }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -49,6 +50,10 @@ import { captureLayout } from './capture.js';
 const statusDiv = document.getElementById('websocket-status');
 let disconnectTimeout = null;
 const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
+// Outstanding tile requests are normal while panning; this many at once means
+// the server is not keeping up, which is worth a number rather than just the
+// progress line.
+const PENDING_BACKLOG = 20;
 
 function updateStatus() {
     const isConnected = app.websocketManager && app.websocketManager.isConnected;
@@ -70,21 +75,33 @@ function updateStatus() {
             }, DISCONNECT_DELAY_MS);
         }
     } else {
-        // Connected - clear timeout and show pending indicator if needed
         if (disconnectTimeout) {
             clearTimeout(disconnectTimeout);
             disconnectTimeout = null;
         }
-        
-        if (pendingCount === 0) {
-            statusDiv.style.display = 'none';
-        } else {
-            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+        // Ordinary tile traffic is the progress line's job.  The count only
+        // earns space on screen once the queue is long enough to be the
+        // explanation for a viewer that feels stuck.
+        if (pendingCount > PENDING_BACKLOG) {
+            statusDiv.innerHTML = '<div class="or-hud or-hud-top-right '
+                + `pending-indicator">pending: ${pendingCount}</div>`;
             statusDiv.style.display = 'block';
-            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
-            statusDiv.querySelector('.pending-indicator').style.color = color;
+        } else {
+            statusDiv.style.display = 'none';
         }
     }
+    setTileProgress(pendingCount);
+}
+
+// Show the tile-request line while requests are outstanding.  A no-op when the
+// Layout panel is closed, which is the only place the line lives.
+function setTileProgress(pendingCount) {
+    const el = app.tileProgressEl;
+    if (!el) return;
+    el.classList.toggle('active', pendingCount > 0);
+    // The count is worth keeping for anyone diagnosing a slow server, just not
+    // worth a chip on screen.
+    el.title = pendingCount > 0 ? `${pendingCount} tile requests pending` : '';
 }
 
 // ─── Component Factories ────────────────────────────────────────────────────
@@ -384,9 +401,6 @@ const WebSocketTileLayer = createWebSocketTileLayer(
         app,
     }, { dpr: currentDpr });
 })();
-const BLANK_TILE
-    = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
 const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
@@ -441,7 +455,11 @@ const HeatMapTileLayer = L.GridLayer.extend({
             // display.
             ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
-            tile.src = URL.createObjectURL(blob);
+            // A null payload is an empty response: the heat map has no
+            // populated bin in this tile, or the tile is off the grid.  The
+            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
+            // is decoded and onload still fires to complete the tile.
+            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
         }).catch(() => {
             tile.src = BLANK_TILE;
         });
@@ -458,6 +476,12 @@ const HeatMapTileLayer = L.GridLayer.extend({
             const coords = tileInfo.coords;
             const active = this._appState.activeHeatMap;
             if (!active) {
+                // Release the decode before dropping it: turning the heat map
+                // off walks every tile on screen, so skipping this strands one
+                // object URL per tile.
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
                 tile.src = BLANK_TILE;
                 continue;
             }
@@ -472,7 +496,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
                 }
-                tile.src = URL.createObjectURL(blob);
+                // Null means the tile is empty now; assigning BLANK_TILE also
+                // drops whatever image it was holding, which matters when a
+                // refresh follows an edit that emptied a bin.
+                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
             }).catch(() => {
                 tile.src = BLANK_TILE;
             });
@@ -631,9 +658,35 @@ function createLayoutViewer(container) {
     container.element.appendChild(mapDiv);
 
     const heatMapLegend = document.createElement('div');
-    heatMapLegend.className = 'heatmap-map-legend hidden';
+    heatMapLegend.className = 'or-hud or-hud-bottom-right heatmap-map-legend hidden';
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
+
+    // Tile requests in flight, as a line along the top of the canvas.  Held on
+    // app because updateStatus runs from the socket callbacks, which know
+    // nothing about this panel -- and the panel can be closed, so every write
+    // to it goes through setTileProgress below.
+    const progress = document.createElement('div');
+    progress.className = 'or-progress';
+    mapDiv.appendChild(progress);
+    app.tileProgressEl = progress;
+
+    // Closing the panel discards this DOM, so drop the references to it.  Both
+    // readers null-check (setTileProgress here, updateHeatMapLegend in
+    // display-controls.js), and createLayoutViewer sets them again if the panel
+    // is reopened.
+    //
+    // app.map is deliberately left alone.  Calling map.remove() and nulling it
+    // would be the matching cleanup, but ~140 call sites across eleven modules
+    // reach app.map, many of them unguarded -- the View menu's zoom items, the
+    // inspector's zoom-to, the rulers, the display controls -- so nulling it
+    // turns a detached-but-harmless map into a dozen ways to throw while the
+    // panel is closed.  Guarding those is a lifecycle change, not a styling
+    // one.
+    container.on('destroy', () => {
+        app.tileProgressEl = null;
+        app.heatMapLegendEl = null;
+    });
 
     app.map = L.map(mapDiv, buildMapOptions());
     // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
@@ -673,10 +726,35 @@ function createLayoutViewer(container) {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
 
-    // Coordinate readout overlay (bottom-left of the layout viewer).
+    // Scale bar and coordinate readout share one HUD at the bottom-left of
+    // the viewer.  The scale bar is a display option and hides on its own, so
+    // the divider beside it goes when it does, and the HUD itself disappears
+    // when neither readout has anything to show -- otherwise an empty chip
+    // sits on the layout before the pointer has ever entered it.
+    const hud = document.createElement('div');
+    hud.className = 'or-hud or-hud-bottom-left hidden';
+    const scaleBar = document.createElement('div');
+    scaleBar.id = 'scale-bar';
+    const hudDivider = document.createElement('span');
+    hudDivider.className = 'or-hud-divider';
     const coordBar = document.createElement('div');
     coordBar.id = 'coord-bar';
-    mapDiv.appendChild(coordBar);
+    hud.appendChild(scaleBar);
+    hud.appendChild(hudDivider);
+    hud.appendChild(coordBar);
+    mapDiv.appendChild(hud);
+
+    function syncHud() {
+        // Content, not just the display property: the scale bar starts out
+        // display:'' but empty -- updateScaleBar has not run yet -- and an
+        // empty div would otherwise count as a visible readout.
+        const scale = scaleBar.style.display !== 'none'
+            && scaleBar.childElementCount > 0;
+        const coord = coordBar.textContent !== '';
+        hudDivider.style.display = (scale && coord) ? '' : 'none';
+        hud.classList.toggle('hidden', !scale && !coord);
+    }
+    syncHud();
 
     app.map.on('mousemove', (e) => {
         app.lastMouseLatLng = e.latlng;
@@ -685,14 +763,21 @@ function createLayoutViewer(container) {
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
             app.designOriginX, app.designOriginY);
         coordBar.textContent = `X: ${app.formatDbu(dbuX)}  Y: ${app.formatDbu(dbuY)}`;
+        syncHud();
     });
-    app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
-
-    // Scale bar overlay (bottom-left, above coord bar).  Content is an
-    // inline SVG rebuilt on each update (bracket + ticks + 0/total labels).
-    const scaleBar = document.createElement('div');
-    scaleBar.id = 'scale-bar';
-    mapDiv.appendChild(scaleBar);
+    app.map.on('mouseout', (e) => {
+        // Leaflet raises mouseout for a move onto anything inside the
+        // container too -- a zoom control, a marker, the HUD itself -- and
+        // both the readout and the zoom anchor should hold their values for
+        // those.  Only a move that actually leaves the viewer clears them.
+        const to = e.originalEvent && e.originalEvent.relatedTarget;
+        if (to && mapDiv.contains(to)) {
+            return;
+        }
+        app.lastMouseLatLng = null;
+        coordBar.textContent = '';
+        syncHud();
+    });
 
     const SB_H = 22;       // svg height
     const SB_BAR_H = 8;    // bracket height
@@ -731,6 +816,7 @@ function createLayoutViewer(container) {
     function updateScaleBar() {
         if (!app.designScale || !visibility.scale_bar) {
             scaleBar.style.display = 'none';
+            syncHud();
             return;
         }
         // Pixels per DBU at current zoom: designScale * 2^zoom.
@@ -745,10 +831,12 @@ function createLayoutViewer(container) {
         });
         if (!sb) {
             scaleBar.style.display = 'none';
+            syncHud();
             return;
         }
         scaleBar.style.display = '';
         renderScaleBar(sb.barPx, sb.label, sb.segments);
+        syncHud();
     }
 
     // Coalesce updates during continuous zoom gestures so the bar tracks
@@ -957,7 +1045,10 @@ function createStubPanel(container, title, description) {
 
 // ─── Layout Configuration ───────────────────────────────────────────────────
 
+const kHeaderHeight = 28;
+
 const defaultLayoutConfig = {
+    dimensions: { headerHeight: kHeaderHeight },
     root: {
         type: 'row',
         content: [
@@ -1103,7 +1194,11 @@ const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
 if (savedLayout && savedVersion === LAYOUT_VERSION) {
     try {
         const resolved = JSON.parse(savedLayout);
-        app.goldenLayout.loadLayout(LayoutConfig.fromResolved(resolved));
+        const restored = LayoutConfig.fromResolved(resolved);
+        restored.dimensions = {
+            ...restored.dimensions, headerHeight: kHeaderHeight,
+        };
+        app.goldenLayout.loadLayout(restored);
     } catch (e) {
         app.goldenLayout.loadLayout(defaultLayoutConfig);
     }
@@ -1111,10 +1206,22 @@ if (savedLayout && savedVersion === LAYOUT_VERSION) {
     app.goldenLayout.loadLayout(defaultLayoutConfig);
 }
 localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
+addTabIcons();
+
+// Add the per-panel tab icons and, if any were added, make Golden Layout
+// measure the headers again -- it chose which tabs fit before the icons
+// widened them, so without this the tabs that no longer fit overlap the
+// stack's controls instead of moving into the overflow dropdown.
+function addTabIcons() {
+    if (decorateTabIcons() > 0) {
+        app.goldenLayout.updateSize();
+    }
+}
 
 // Persist layout on changes (drag, resize, close, etc.)
 app.goldenLayout.on('stateChanged', () => {
     localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
+    addTabIcons();
 });
 
 // Resize GoldenLayout to the space #gl-container actually has.  The container

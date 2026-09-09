@@ -32,7 +32,7 @@ export class DrcWidget {
         toolbar.appendChild(this._categorySelect);
 
         this._loadBtn = document.createElement('button');
-        this._loadBtn.className = 'drc-btn';
+        this._loadBtn.className = 'or-btn or-btn-sm';
         this._loadBtn.textContent = 'Load...';
         toolbar.appendChild(this._loadBtn);
 
@@ -569,8 +569,8 @@ class DrcFileDialog {
                        placeholder="Server-side path to .rpt, .drc, or .json file">
                 <div class="modal-error" style="display:none"></div>
                 <div class="modal-buttons">
-                    <button class="cancel">Cancel</button>
-                    <button class="primary ok" disabled>Load</button>
+                    <button class="or-btn cancel">Cancel</button>
+                    <button class="or-btn or-btn-primary ok" disabled>Load</button>
                 </div>
             </div>`;
         document.body.appendChild(this._overlay);

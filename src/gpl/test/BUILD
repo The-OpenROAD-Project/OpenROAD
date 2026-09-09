@@ -21,6 +21,7 @@ TESTS = [
     "mbff_orig_name",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
+    "mt_invariance01",
     "nograd01",
     "simple01",
     "simple01-obs",
