@@ -210,6 +210,32 @@ reported inside `__kmp_*` frames are likely artifacts of the barrier
 implementation rather than OpenROAD bugs. Confirm a finding by checking that
 both stacks land in OpenROAD code.
 
+## Run tests with the [undefined behavior sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html):
+
+    bazelisk test --config=ubsan src/...
+
+Or to get an instrumented binary to run under ORFS:
+
+    bazelisk build --config=ubsan :openroad
+
+UBSan is much cheaper than asan/tsan -- a small constant slowdown, no memory
+overhead -- so it is the cheapest of the three to leave running over a real
+design.
+
+The config builds with `-fno-sanitize-recover=all`, so the first finding
+aborts the process. That is deliberate: `-fsanitize=undefined` on its own only
+prints a report and lets the process run on to exit 0, which would leave a
+test suite green with the reports buried in the logs. To survey everything a
+run would hit instead of stopping at the first, opt back into recovery:
+
+    bazelisk test --config=ubsan --copt=-fsanitize-recover=all src/...
+
+Reports name the check that fired (e.g. `signed-integer-overflow`,
+`misaligned-address`). An individual check can be switched off project-wide
+with a copt, which is preferable to disabling the config wholesale:
+
+    bazelisk test --config=ubsan --copt=-fno-sanitize=vptr src/...
+
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
     OPENROAD_EXE=$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan

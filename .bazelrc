@@ -155,6 +155,26 @@ build:tsan --linkopt=-gz=zlib
 # allocator instead, as --config=asan does.
 build:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
 
+# Settings for --config=ubsan undefined behavior sanitizer build
+build:ubsan --strip=never
+# As with --config=tsan, use hermetic-llvm's switch rather than a bare
+# -fsanitize=undefined copt. It also supplies the ignorelist that exempts the
+# libc startup files, which run before the runtime is initialized.
+build:ubsan --@llvm//config:ubsan=true
+build:ubsan --copt=-DUNDEFINED_BEHAVIOR_SANITIZER
+build:ubsan --copt=-O1
+build:ubsan --copt=-g
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:ubsan --copt=-gz=zlib
+build:ubsan --linkopt=-gz=zlib
+# -fsanitize=undefined is recoverable by default: a finding prints a report and
+# the process carries on to exit 0, so a test suite stays green while the logs
+# fill up with reports nobody reads. Trap instead, so the run fails.
+build:ubsan --copt=-fno-sanitize-recover=all
+build:ubsan --test_env=UBSAN_OPTIONS=print_stacktrace=1
+# UBSan does not replace the allocator, so unlike asan/tsan this config keeps
+# TCMalloc.
+
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
 build:profile --copt -g --host_copt -g
