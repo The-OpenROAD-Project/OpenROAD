@@ -197,9 +197,14 @@ The first `--config=tsan` invocation builds compiler-rt's tsan runtime from
 source, so expect a few minutes before any OpenROAD source is compiled.
 
 Instrumented code runs roughly 5-15x slower and uses far more memory, so
-prefer the smallest design that reproduces the race. Adjust the runtime via
-`TSAN_OPTIONS`, e.g. to keep going past the first report and get the second
-stack of a lock-order inversion:
+prefer the smallest design that reproduces the race. A full `src/...` run at
+Bazel's default parallelism can exhaust RAM and get the build OOM-killed;
+throttle it if that happens:
+
+    bazelisk test --config=tsan --test_tag_filters=-py --jobs=16 --local_test_jobs=8 src/...
+
+Adjust the runtime via `TSAN_OPTIONS`, e.g. to keep going past the first
+report and get the second stack of a lock-order inversion:
 
     bazelisk test --config=tsan --test_tag_filters=-py --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" src/...
 
