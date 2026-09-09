@@ -92,11 +92,6 @@ inline void copyRGBA(unsigned char* dst, const Color& src)
   std::memcpy(dst, &src, sizeof(uint32_t));
 }
 
-inline void zeroRGBA(unsigned char* dst)
-{
-  std::memset(dst, 0, 4);
-}
-
 bool anyNonZero(std::span<const unsigned char> data)
 {
   // OR-reduce 64-byte (cache-line) blocks eight u64 at a time; the compiler
@@ -115,6 +110,222 @@ bool anyNonZero(std::span<const unsigned char> data)
   // Remaining 0-63 bytes.
   return std::any_of(
       data.begin(), data.end(), [](unsigned char b) { return b != 0; });
+}
+
+// The most colours a tile can hold and still be written as an indexed PNG.
+constexpr size_t kMaxPaletteColors = 256;
+
+// Largest side an image may have and still be considered for the indexed and
+// blank-tile paths.  Both hold a byte per pixel or a whole encoded copy, which
+// is cheap at tile sizes and not at save_image sizes -- and a full-design image
+// has far more than kMaxPaletteColors anyway, so it would only pay for the
+// scan.
+constexpr unsigned kMaxIndexedDim = 4096;
+
+// The indexed path packs a pixel's four bytes into one word and unpacks the
+// word back through Color, so the two have to be those same four bytes.
+static_assert(sizeof(Color) == 4);
+static_assert(std::is_trivially_copyable_v<Color>);
+
+// An image reduced to a palette and one byte per pixel.
+struct IndexedImage
+{
+  std::vector<Color> palette;        // distinct colours, in first-seen order
+  std::vector<unsigned char> index;  // one palette index per pixel
+};
+
+// Reduce `rgba` to `out`, or return false once it passes kMaxPaletteColors.
+//
+// A 1024-slot open-addressed table keyed by the packed RGBA word.  Tiles hold a
+// handful of colours -- a layer draws its own colour at a few alpha levels --
+// so the table stays far below half full, probes almost always hit on the first
+// try, and nothing allocates beyond the two output vectors.
+bool buildIndexedImage(const std::vector<unsigned char>& rgba,
+                       const size_t pixels,
+                       IndexedImage& out)
+{
+  constexpr size_t kSlots = 1024;  // power of two, >= 4 * kMaxPaletteColors
+  std::array<uint32_t, kSlots> keys{};
+  std::array<int, kSlots> slot_index;
+  slot_index.fill(-1);
+
+  out.palette.clear();
+  // The palette is bounded by kMaxPaletteColors and the growth happens inside
+  // the pixel loop, so take the one allocation up front.
+  out.palette.reserve(kMaxPaletteColors);
+  out.index.resize(pixels);
+  for (size_t i = 0; i < pixels; ++i) {
+    uint32_t word;
+    std::memcpy(&word, &rgba[i * 4], sizeof(word));
+    // Knuth multiplicative hash; the low bits of a colour word are a poor
+    // bucket on their own (long runs share r, g and b and differ only in a).
+    size_t slot = static_cast<size_t>(word * 2654435761u) & (kSlots - 1);
+    while (true) {
+      if (slot_index[slot] < 0) {
+        if (out.palette.size() >= kMaxPaletteColors) {
+          return false;
+        }
+        Color color;
+        std::memcpy(&color, &word, sizeof(word));
+        keys[slot] = word;
+        slot_index[slot] = static_cast<int>(out.palette.size());
+        out.palette.push_back(color);
+        out.index[i] = static_cast<unsigned char>(slot_index[slot]);
+        break;
+      }
+      if (keys[slot] == word) {
+        out.index[i] = static_cast<unsigned char>(slot_index[slot]);
+        break;
+      }
+      slot = (slot + 1) & (kSlots - 1);
+    }
+  }
+  return true;
+}
+
+// PNG bytes for `indexed`, or empty if lodepng rejects it.
+std::vector<unsigned char> encodeIndexedPng(const IndexedImage& indexed,
+                                            const unsigned w,
+                                            const unsigned h)
+{
+  lodepng::State state;
+  state.info_raw.colortype = LCT_PALETTE;
+  state.info_raw.bitdepth = 8;
+  state.info_png.color.colortype = LCT_PALETTE;
+  state.info_png.color.bitdepth = 8;
+  // The palette below is exact, so leave lodepng's own colour profiling off --
+  // it would re-scan the pixels to reach the same conclusion.
+  state.encoder.auto_convert = 0;
+  for (const Color& c : indexed.palette) {
+    lodepng_palette_add(&state.info_png.color, c.r, c.g, c.b, c.a);
+    lodepng_palette_add(&state.info_raw, c.r, c.g, c.b, c.a);
+  }
+
+  std::vector<unsigned char> png;
+  if (lodepng::encode(png, indexed.index, w, h, state) != 0) {
+    png.clear();
+  }
+  return png;
+}
+
+// The encoding of a fully transparent w x h image, which depends only on its
+// dimensions.  Most tiles in a viewport are exactly that: every layer with no
+// geometry where the user is looking returns one.  Entries are never erased and
+// std::map keeps its nodes put, so the returned pointer stays valid after the
+// lock is released -- the same contract getLanczos2Taps() relies on.  Null when
+// the size is not worth caching or lodepng fails.
+std::mutex& blankPngMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
+std::map<std::pair<unsigned, unsigned>, std::vector<unsigned char>>&
+blankPngCache()
+{
+  static std::map<std::pair<unsigned, unsigned>, std::vector<unsigned char>>
+      cache;
+  return cache;
+}
+
+const std::vector<unsigned char>* blankPng(const unsigned w, const unsigned h)
+{
+  if (w > kMaxIndexedDim || h > kMaxIndexedDim) {
+    return nullptr;
+  }
+  const std::lock_guard<std::mutex> lock(blankPngMutex());
+  auto& cache = blankPngCache();
+  const std::pair<unsigned, unsigned> key{w, h};
+  auto it = cache.find(key);
+  if (it == cache.end()) {
+    const std::vector<unsigned char> blank(static_cast<size_t>(w) * h * 4, 0);
+    std::vector<unsigned char> png;
+    if (lodepng::encode(png, blank, w, h) != 0) {
+      return nullptr;
+    }
+    it = cache.emplace(key, std::move(png)).first;
+  }
+  return &it->second;
+}
+
+// True when `png` is one of the blank encodings handed out above.
+//
+// An exact test, not a heuristic: encodeImagePng() returns the one shared
+// buffer for every fully transparent tile of a given size, so equality with a
+// cached blank means the renderer drew nothing.  The cache holds one entry per
+// tile size in play — a handful — so the scan is shorter than a size lookup
+// would be, and it spares the caller having to know the tile's dimensions.
+bool isBlankPng(const std::vector<unsigned char>& png)
+{
+  if (png.empty()) {
+    return false;
+  }
+  const std::lock_guard<std::mutex> lock(blankPngMutex());
+  for (const auto& [size, blank] : blankPngCache()) {
+    if (png == blank) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Encode an RGBA image as PNG, picking the cheapest representation that
+// reproduces it exactly.
+//
+// Filtering and deflate dominate the encode, and both scale with the bytes fed
+// to them, so the win is in handing lodepng one byte per pixel instead of four.
+// Tiles nearly always allow it: a layer with nothing in view is a single
+// transparent colour, and a layer with something is its own colour at a few
+// alpha levels.  Richer images -- heat maps, dense pin labels, save_image
+// output -- fall through to RGBA, having paid only for a scan that stops at the
+// 257th colour.
+//
+// `error`, when given, receives the lodepng code behind an empty result so the
+// caller can report why the encode failed rather than only that it did.
+std::vector<unsigned char> encodeImagePng(
+    const std::vector<unsigned char>& rgba,
+    const unsigned w,
+    const unsigned h,
+    unsigned* error = nullptr)
+{
+  if (error != nullptr) {
+    *error = 0;
+  }
+  const size_t pixels = static_cast<size_t>(w) * h;
+  const bool well_formed = pixels != 0 && rgba.size() == pixels * 4;
+
+  if (well_formed && w <= kMaxIndexedDim && h <= kMaxIndexedDim) {
+    IndexedImage indexed;
+    if (buildIndexedImage(rgba, pixels, indexed)) {
+      // A single all-zero colour is the blank tile: hand back the shared
+      // encoding rather than deflating 256 KB of zeros again.
+      if (indexed.palette.size() == 1) {
+        const Color only = indexed.palette.front();
+        if (only.r == 0 && only.g == 0 && only.b == 0 && only.a == 0) {
+          if (const std::vector<unsigned char>* blank = blankPng(w, h)) {
+            return *blank;
+          }
+        }
+      }
+      std::vector<unsigned char> png = encodeIndexedPng(indexed, w, h);
+      if (!png.empty()) {
+        return png;
+      }
+    }
+  }
+
+  // Whatever sent us here -- too many colours, an oversized image, a malformed
+  // buffer, an indexed encode lodepng would not take -- RGBA is the encoding
+  // that always applies, so its failure is the one worth reporting.
+  std::vector<unsigned char> png;
+  const unsigned rgba_error = lodepng::encode(png, rgba, w, h);
+  if (rgba_error != 0) {
+    png.clear();
+    if (error != nullptr) {
+      *error = rgba_error;
+    }
+  }
+  return png;
 }
 
 // Fast division by 255 with proper rounding: (v + 128 + ((v + 128) >> 8)) >> 8
@@ -2174,6 +2385,11 @@ odb::dbTech* TileGenerator::getTech() const
   return nullptr;
 }
 
+bool TileGenerator::isBlankTilePng(const std::vector<unsigned char>& png)
+{
+  return isBlankPng(png);
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(
     const std::string& layer,
     const int z,
@@ -2209,11 +2425,16 @@ std::vector<unsigned char> TileGenerator::generateTile(
   // than assuming the requested one, which is 0 when the client did not name
   // it.
   const int rendered_px = bufferDim(image_buffer);
-  std::vector<unsigned char> png_data;
-  const unsigned error
-      = lodepng::encode(png_data, image_buffer, rendered_px, rendered_px);
-  if (error) {
-    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
+  unsigned encode_error = 0;
+  std::vector<unsigned char> png_data
+      = encodeImagePng(image_buffer, rendered_px, rendered_px, &encode_error);
+  if (encode_error != 0) {
+    logger_->report("PNG encoder error on tile {} {}/{}/{}: {}",
+                    layer,
+                    z,
+                    x,
+                    y,
+                    lodepng_error_text(encode_error));
   }
 
   if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
@@ -2256,9 +2477,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
 
   if (!getChip()) {
     // No design — return blank transparent PNG.
-    std::vector<unsigned char> png;
-    lodepng::encode(png, image, dim, dim);
-    return png;
+    return encodeImagePng(image, dim, dim);
   }
 
   // Short-circuit: if there's nothing to draw, return a blank tile.
@@ -2266,9 +2485,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
       && colored_rects.empty() && colored_polys.empty() && flight_lines.empty()
       && labels.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
-    std::vector<unsigned char> png;
-    lodepng::encode(png, image, dim, dim);
-    return png;
+    return encodeImagePng(image, dim, dim);
   }
 
   // Compute tile bounding box in DBU (same math as renderTileBuffer).
@@ -2276,9 +2493,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   y = num_tiles_at_zoom - 1 - y;  // flip Y
   const odb::Rect full_bounds = getBounds();
   if (full_bounds.maxDXDY() <= 0) {
-    std::vector<unsigned char> png;
-    lodepng::encode(png, image, dim, dim);
-    return png;
+    return encodeImagePng(image, dim, dim);
   }
   // Same exact grid as renderTileBuffer: the overlay is drawn on top of those
   // tiles, so a highlight has to land on the shape it highlights.
@@ -2324,9 +2539,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     }
   }
 
-  std::vector<unsigned char> png;
-  lodepng::encode(png, image, dim, dim);
-  return png;
+  return encodeImagePng(image, dim, dim);
 }
 
 // Forward declaration; defined below near compositePixel.  Separable Lanczos-2
@@ -4554,6 +4767,52 @@ std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
   return ptr;
 }
 
+namespace {
+
+// Clamp before the cast, for the reason toPxX() clamps: a bin is not clipped to
+// the tile before it is converted (see heatMapBinSpan), so a bin far larger
+// than the tile it crosses reaches a pixel edge past what an int holds, and
+// casting that is undefined.  Anything this far outside the tile floors to the
+// same empty-or-full span the exact value would.
+constexpr double kMaxBinPx = 1.0e7;
+
+int binPixelFloor(const double px)
+{
+  return static_cast<int>(std::floor(std::clamp(px, -kMaxBinPx, kMaxBinPx)));
+}
+
+// Half-open pixel span [lo, hi) of one heat-map bin along one axis, clamped to
+// a `limit`-pixel tile.
+//
+// Heat-map bins tile the plane edge to edge, so both edges round the same way
+// and a boundary pixel belongs to exactly one of the two bins that meet on it.
+// toPixels() rounds outward instead — right for a shape that must not lose a
+// fractional edge, wrong here, because it hands the shared pixel to both
+// neighbours and drawHeatMap composites it twice.  That painted a lattice of
+// darker seams over every map, and blending pairs of ramp entries pushed a
+// tile's colour count into the thousands when the ramp itself holds 256.
+//
+// Rounding is anchored on the bin grid rather than on the clipped rect, so the
+// lattice is the same in every tile a bin crosses and the seam does not
+// reappear at tile boundaries.  A bin narrower than a pixel still gets one, so
+// zooming out drops no bins from the map; that is the one place the
+// one-bin-per-pixel property above gives way, since a whole run of sub-pixel
+// bins then shares a pixel and composites into it — but a map that dense reads
+// as a wash of colour rather than as a lattice, which is what the property was
+// protecting.
+std::pair<int, int> heatMapBinSpan(const double px_lo,
+                                   const double px_hi,
+                                   const int limit)
+{
+  const int lo = binPixelFloor(px_lo);
+  int hi = binPixelFloor(px_hi);
+  if (hi <= lo) {
+    hi = lo + 1;
+  }
+  return {std::max(0, lo), std::min(limit, hi)};
+}
+}  // namespace
+
 void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
                                 gui::HeatMapDataSource& source,
                                 const TileFrame& frame) const
@@ -4575,15 +4834,19 @@ void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
     if (!map_point.rect.overlaps(dbu_tile)) {
       continue;
     }
-    const odb::Rect overlap = map_point.rect.intersect(dbu_tile);
-    const odb::Rect draw = toPixels(frame, overlap);
     const Color color{.r = static_cast<uint8_t>(map_point.color.r),
                       .g = static_cast<uint8_t>(map_point.color.g),
                       .b = static_cast<uint8_t>(map_point.color.b),
                       .a = static_cast<uint8_t>(map_point.color.a)};
 
-    for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-      for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+    const auto [x_lo, x_hi] = heatMapBinSpan(frame.pxX(map_point.rect.xMin()),
+                                             frame.pxX(map_point.rect.xMax()),
+                                             dim);
+    const auto [y_lo, y_hi] = heatMapBinSpan(frame.pxY(map_point.rect.yMin()),
+                                             frame.pxY(map_point.rect.yMax()),
+                                             dim);
+    for (int iy = y_lo; iy < y_hi; ++iy) {
+      for (int ix = x_lo; ix < x_hi; ++ix) {
         blendPixel(image_buffer, ix, dim - 1 - iy, color, dim);
       }
     }
@@ -4654,7 +4917,12 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
 
   const double num_tiles_at_zoom = pow(2, z);
   if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
-    return {};
+    // Off the grid: an empty tile, not an empty result.  Returning no bytes at
+    // all would put a zero-length body behind a PNG frame, which the client can
+    // only fail to decode; the blank encoding is what every other tile entry
+    // point hands back for "nothing here", and the handler turns it into an
+    // empty response from there.
+    return encodeImagePng(image_buffer, dim, dim);
   }
 
   y = num_tiles_at_zoom - 1 - y;
@@ -4667,10 +4935,13 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
 
   drawHeatMap(image_buffer, source, frame);
 
-  std::vector<unsigned char> png_data;
-  const unsigned error = lodepng::encode(png_data, image_buffer, dim, dim);
-  if (error) {
-    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
+  unsigned encode_error = 0;
+  std::vector<unsigned char> png_data
+      = encodeImagePng(image_buffer, dim, dim, &encode_error);
+  if (encode_error != 0) {
+    logger_->report("PNG encoder error on a {} heat map tile: {}",
+                    source.getName(),
+                    lodepng_error_text(encode_error));
   }
   return png_data;
 }
@@ -5104,11 +5375,12 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
   }
 
   // Encode to PNG.
-  std::vector<unsigned char> png_data;
-  const unsigned error = lodepng::encode(png_data, final_buf, final_w, final_h);
-  if (error) {
+  unsigned encode_error = 0;
+  std::vector<unsigned char> png_data
+      = encodeImagePng(final_buf, final_w, final_h, &encode_error);
+  if (encode_error != 0) {
     logger_->error(
-        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(error));
+        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(encode_error));
     return {};
   }
   if (out_width) {
@@ -5282,9 +5554,7 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
     }
   }
 
-  std::vector<unsigned char> png_data;
-  lodepng::encode(png_data, final_buf, final_w, final_h);
-  return png_data;
+  return encodeImagePng(final_buf, final_w, final_h);
 }
 
 void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
@@ -6186,6 +6456,25 @@ std::vector<unsigned char> TileGenerator::renderLabelTile(
 // User text labels (2.12) — global design annotations
 //------------------------------------------------------------------------------
 
+namespace {
+// A label's font height in CSS px, bounded on the way in.  0 keeps its meaning
+// of "unspecified", which drawTextLabels() reads as its own default.
+//
+// Bounded because the size reaches GlyphCache, which rasterizes all 95
+// printable ASCII glyphs at that height and holds the result for the life of
+// the process: every other font height in the renderer is a constant scaled by
+// the quantized device pixel ratio, so this is the one a caller can make
+// arbitrarily large.  Applied where the label is stored rather than at either
+// entry point, so the Tcl command and the websocket request are bounded by the
+// same line and labelsJson() reports back the size that will actually be drawn.
+// The ceiling is taller than a whole tile at the maximum ratio, well past any
+// legible label.
+int boundLabelSize(const int size)
+{
+  return std::clamp(size, 0, TileGenerator::kMaxLabelSize);
+}
+}  // namespace
+
 std::string TileGenerator::addLabel(const odb::Point& pos,
                                     const std::string& text,
                                     const Color& color,
@@ -6213,8 +6502,12 @@ std::string TileGenerator::addLabel(const odb::Point& pos,
     // GUI-44).
     return "";
   }
-  labels_.push_back(
-      {pos, text, color, size, anchor.empty() ? "center" : anchor, label_name});
+  labels_.push_back({pos,
+                     text,
+                     color,
+                     boundLabelSize(size),
+                     anchor.empty() ? "center" : anchor,
+                     label_name});
   return label_name;
 }
 
@@ -6243,7 +6536,7 @@ bool TileGenerator::updateLabel(const std::string& name,
       l.pos = pos;
       l.text = text;
       l.color = color;
-      l.size = size;
+      l.size = boundLabelSize(size);
       l.anchor = anchor.empty() ? "center" : anchor;
       return true;
     }
