@@ -18,9 +18,10 @@ namespace utl {
 //
 // On Linux the count is the number of distinct (package, core) pairs under
 // sysfs_cpu_dir for the CPUs in the process affinity mask, so taskset and
-// container CPU limits are honored. Where the topology cannot be read it
-// falls back to the hardware thread count, which is what callers used
-// before and never worse than that.
+// container CPU limits are honored. On macOS it is the kernel's
+// hw.physicalcpu. Where the topology cannot be read it falls back to the
+// hardware thread count, which is what callers used before and never worse
+// than that.
 int physicalCoreCount(const std::string& sysfs_cpu_dir
                       = "/sys/devices/system/cpu");
 

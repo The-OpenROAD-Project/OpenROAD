@@ -15,6 +15,10 @@
 #ifdef __linux__
 #include <sched.h>
 #endif
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#endif
 
 namespace utl {
 
@@ -68,6 +72,17 @@ int physicalCoreCount(const std::string& sysfs_cpu_dir,
   if (!cpus.empty()) {
     return static_cast<int>(cpus.size());
   }
+#ifdef __APPLE__
+  // macOS has no sysfs topology; the kernel reports the core count directly.
+  // Apple silicon has no SMT, so this equals the hardware thread count there
+  // and differs only on Intel parts with Hyper-Threading.
+  int physical = 0;
+  size_t size = sizeof(physical);
+  if (sysctlbyname("hw.physicalcpu", &physical, &size, nullptr, 0) == 0
+      && physical > 0) {
+    return physical;
+  }
+#endif
   const int threads = static_cast<int>(std::thread::hardware_concurrency());
   return threads > 0 ? threads : 1;
 }
