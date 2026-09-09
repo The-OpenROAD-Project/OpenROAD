@@ -21,6 +21,7 @@ cc_library(
     name = "utl",
     srcs = [
         "src/CFileUtils.cpp",
+        "src/cpu_topology.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
         "src/Logger.cpp",
@@ -52,6 +53,7 @@ cc_library(
         "include/utl/env.h",
         "include/utl/exception.h",
         "include/utl/histogram.h",
+        "include/utl/cpu_topology.h",
         "include/utl/mem_stats.h",
         "include/utl/options.h",
         "include/utl/prometheus/atomic_floating.h",

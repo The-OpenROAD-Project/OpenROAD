@@ -87,6 +87,7 @@ test_suite(
     tests = [
         ":TestAlgorithms",
         ":TestCFileUtils",
+        ":TestCpuTopology",
         ":TestMetrics",
         ":TestSuppressStdout",
     ],
@@ -175,4 +176,14 @@ doc_check_test(
         "//src/utl:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "TestCpuTopology",
+    srcs = ["cpp/TestCpuTopology.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
