@@ -11,6 +11,7 @@ or_integration_tests(
     mbff_orig_name
     mbff_clock_power_off
     mbff_clock_power_on
+    mt_invariance01
     convergence01
     core01
     density01
