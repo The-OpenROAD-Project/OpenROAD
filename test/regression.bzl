@@ -391,6 +391,9 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = size,
-            tags = tags,
+            # Tag with the test language so a run can select or skip one of
+            # them, e.g. --test_tag_filters=-py for the sanitizer configs,
+            # which cannot load the instrumented Python extension modules.
+            tags = tags + [ext],
             **kwargs
         )

@@ -187,7 +187,7 @@ SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
 
 ## Run tests with the [thread sanitizer](https://github.com/google/sanitizers/wiki/threadsanitizercppmanual):
 
-    bazelisk test --config=tsan src/...
+    bazelisk test --config=tsan --test_tag_filters=-py src/...
 
 Or to get an instrumented binary to run under ORFS:
 
@@ -201,7 +201,7 @@ prefer the smallest design that reproduces the race. Adjust the runtime via
 `TSAN_OPTIONS`, e.g. to keep going past the first report and get the second
 stack of a lock-order inversion:
 
-    bazelisk test --config=tsan --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" src/...
+    bazelisk test --config=tsan --test_tag_filters=-py --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" src/...
 
 `drt`, `gpl`, `grt` and `ant` parallelize with OpenMP. The `@openmp` runtime
 is instrumented along with everything else under `--config=tsan`, but it is
@@ -210,9 +210,12 @@ reported inside `__kmp_*` frames are likely artifacts of the barrier
 implementation rather than OpenROAD bugs. Confirm a finding by checking that
 both stacks land in OpenROAD code.
 
+`--test_tag_filters=-py` skips the Python tests; see "Sanitizers and the
+Python extension modules" below for why.
+
 ## Run tests with the [undefined behavior sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html):
 
-    bazelisk test --config=ubsan src/...
+    bazelisk test --config=ubsan --test_tag_filters=-py src/...
 
 Or to get an instrumented binary to run under ORFS:
 
@@ -228,13 +231,43 @@ prints a report and lets the process run on to exit 0, which would leave a
 test suite green with the reports buried in the logs. To survey everything a
 run would hit instead of stopping at the first, opt back into recovery:
 
-    bazelisk test --config=ubsan --copt=-fsanitize-recover=all src/...
+    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fsanitize-recover=all src/...
 
 Reports name the check that fired (e.g. `signed-integer-overflow`,
 `misaligned-address`). An individual check can be switched off project-wide
 with a copt, which is preferable to disabling the config wholesale:
 
-    bazelisk test --config=ubsan --copt=-fno-sanitize=vptr src/...
+    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fno-sanitize=vptr src/...
+
+## Sanitizers and the Python extension modules
+
+`--config=tsan` and `--config=ubsan` cover the C++ and Tcl tests, which run
+the instrumented `openroad` binary. They do **not** work for the `py`-tagged
+tests, which import OpenROAD as a Python extension module:
+
+    ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
+
+Clang links a sanitizer runtime into executables but not into shared
+libraries, assuming whoever loads the library provides the symbols. That holds
+for `openroad`, which statically links the runtime; it fails for
+`_openroadpy.so` / `_odb.so` / `_utl.so`, which the *uninstrumented* system
+`python3` dlopens.
+
+`-shared-libsan` is the mechanism for this case, but three things in
+hermetic-llvm block it today:
+
+1. only the static archives are staged into clang's resource directory, so the
+   driver cannot find `libclang_rt.<san>.so` (asan stages both, ubsan and tsan
+   stage static only);
+2. the shared runtimes are built by `cc_shared_library` with sonames like
+   `libubsan_standalone.shared.so`, so a consumer records a `DT_NEEDED` on a
+   name that does not match the staged `libclang_rt.ubsan_standalone.so`;
+3. the runtime arrives via a linkopt rather than a dep, so it lands in neither
+   the test's runfiles nor its RPATH.
+
+Fixing this belongs upstream in hermetic-llvm. Until then, skip them with
+`--test_tag_filters=-py`; the Tcl tests cover the same C++ code paths as their
+Python counterparts.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
