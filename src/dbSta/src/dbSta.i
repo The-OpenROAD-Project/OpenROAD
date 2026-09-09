@@ -192,6 +192,14 @@ sta_to_db_mod_net(Net *net)
   return db_mod_net;
 }
 
+Net *
+db_net_to_sta(odb::dbNet *db_net)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->dbToSta(db_net);
+}
+
 odb::dbMaster *
 sta_to_db_master(LibertyCell *cell)
 {
@@ -324,10 +332,9 @@ check_ip_cmd(const char* master_name,
 {
   ord::OpenRoad* openroad = ord::getOpenRoad();
   odb::dbDatabase* db = openroad->getDb();
-  sta::dbSta* sta = openroad->getSta();
   utl::Logger* logger = openroad->getLogger();
 
-  sta::IpChecker checker(db, sta, logger);
+  sta::IpChecker checker(db, logger);
   checker.setMaxPolygons(max_polygons);
   checker.setVerbose(verbose);
 

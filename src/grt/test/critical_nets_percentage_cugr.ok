@@ -38,34 +38,33 @@ met5       Horizontal       3600          1640          54.44%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Pattern routing with detours.
-Stage 3: Maze routing on sparsified graph.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 1/5
 [INFO GRT-0117] Start extra iteration 2/5
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (70).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (29).
 Routing statistics
-Wire length:           46827
-Total via count:       2207
-Total congestion:      69
-Min resource:          -1.1811113018459753
-Bottleneck:            (1, 24, 29)
-
-[INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
----------------------------------------------------------------------------------------
-li1                  0             0            0.00%             0 /  0 /  0
-met1              6127          1012           16.52%             1 /  0 / 29
-met2              5000          1043           20.86%             0 /  1 / 19
-met3              3248           560           17.24%             1 /  0 / 21
-met4              2496           191            7.65%             0 /  1 /  1
-met5              1640             6            0.37%             0 /  0 /  0
----------------------------------------------------------------------------------------
-Total            18511          2812           15.19%             2 /  2 / 70
-
-[INFO GRT-0018] Total wirelength: 24148 um
+Wire length:           46380
+Total via count:       2285
+Total congestion:      29.56
+Min resource:          -0.84
+Bottleneck:            (1, 30, 19)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
+--------------------------------------------------------------------------------------------------------------
+li1       V         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+met1      H      6126.71       940.00       147.92      1087.92      17.76      13.22       2.99          0.84
+met2      V      5000.00       858.00       112.61       970.61      19.41       4.46       0.69          0.74
+met3      H      3248.00       337.00        50.87       387.87      11.94       6.58       0.83          0.39
+met4      V      2496.00       236.00         9.55       245.55       9.84       0.00       0.00          0.00
+met5      H      1640.00         4.00         1.58         5.58       0.34       0.61       0.18          0.39
+--------------------------------------------------------------------------------------------------------------
+Total           18510.71      2375.00       322.53      2697.53      14.57      24.87       4.68          0.84
+[INFO GRT-0018] Total wirelength: 24040 um
 [INFO GRT-0014] Routed nets: 348
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.

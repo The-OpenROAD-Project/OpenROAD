@@ -130,10 +130,10 @@ map_combinationals_cmd()
 }
 
 void
-abc_roundtrip_cmd(const char* commands)
+abc_roundtrip_cmd(const char* commands, int naming_threshold = -1)
 {
   syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
-  synthesis->abcRoundtrip(commands);
+  synthesis->abcRoundtrip(commands, naming_threshold);
 }
 
 void
@@ -141,6 +141,17 @@ gate_fuse_opt_cmd()
 {
   syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
   synthesis->gateFuseOpt();
+}
+
+void
+acd_resynth_cmd(int max_leaves, int max_intermediate_leaves, int max_cells,
+                int max_outerfans, bool exclude_buffers, bool allow_lateral,
+                float effort, bool apply)
+{
+  syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
+  synthesis->acdResynth(max_leaves, max_intermediate_leaves, max_cells,
+                        max_outerfans, exclude_buffers, allow_lateral, effort,
+                        apply);
 }
 
 void

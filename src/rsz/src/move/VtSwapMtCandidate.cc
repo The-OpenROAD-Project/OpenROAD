@@ -3,6 +3,7 @@
 
 #include "VtSwapMtCandidate.hh"
 
+#include <string>
 #include <vector>
 
 #include "DelayEstimator.hh"

@@ -14,6 +14,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "syn/ir/Bundle.h"

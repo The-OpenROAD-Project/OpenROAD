@@ -1,13 +1,22 @@
+# Build outputs from CMake
 build/
 debug/
 src/sta/build/
 src/sta/debug/
-# we use abc from MODULE.bazel
-third-party/abc/
-tmp
+
 # standalone workspace for downstream consumer tests
 test/downstream/
+
+# Various things from third-party/ that might be used by CMake, but
+# we have in MODULE.bazel.
+# Goal: no sub-modules, only bazel-managed dependencies.
+third-party/abc/
+third-party/lemon/
+
 # fmt ships its own BUILD.bazel assuming it is the workspace root; we overlay
 # fmt via new_local_repository(name="fmt"), so hide this nested package from
 # //... discovery (its glob(["include/fmt/*.h"]) matches nothing here).
 third-party/slang-elab/third_party/fmt/support/bazel/
+
+# Other things to ignore
+tmp/

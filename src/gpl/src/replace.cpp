@@ -120,6 +120,21 @@ void Replace::checkHasCoreRows()
   }
 }
 
+// Runs before PlacerBaseCommon is built: -place_ios makes an unplaced port a
+// normal state there, so an unsupported design has to be rejected first.
+void Replace::checkPlaceIosSupported(const PlaceOptions& options)
+{
+  if (!options.placeIosMode) {
+    return;
+  }
+  if (db_->getChip()->getBlock()->getDieAreaPolygon().getPoints().size() > 5) {
+    log_->error(GPL,
+                173,
+                "Concurrent IO placement does not support non-rectangular die. "
+                "Please drop -place_ios or use a rectangular die.");
+  }
+}
+
 void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
@@ -215,6 +230,7 @@ void Replace::doPlace(const int threads, const PlaceOptions& options)
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
+  checkPlaceIosSupported(options);
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
@@ -253,7 +269,8 @@ void Replace::runMBFF(const int max_sz,
                       const float alpha,
                       const float beta,
                       const int threads,
-                      const int num_paths)
+                      const int num_paths,
+                      const float clock_power_weight)
 {
   MBFF pntset(db_,
               sta_,
@@ -264,7 +281,7 @@ void Replace::runMBFF(const int max_sz,
               num_paths,
               gui_debug_,
               graphics_->MakeNew(log_));
-  pntset.Run(max_sz, alpha, beta);
+  pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
 bool Replace::initNesterovPlace(const PlaceOptions& options,
@@ -376,6 +393,12 @@ int Replace::doNesterovPlace(const int threads,
                              const int start_iter)
 {
   checkHasCoreRows();
+  checkPlaceIosSupported(options);
+
+  if (options.placeIosMode) {
+    log_->info(GPL, 168, "Concurrent IO placement enabled.");
+  }
+
   if (!initNesterovPlace(options, threads, true)) {
     return 0;
   }
@@ -388,6 +411,8 @@ int Replace::doNesterovPlace(const int threads,
   auto start = std::chrono::high_resolution_clock::now();
 
   int return_do_nesterov = np_->doNesterovPlace(start_iter);
+
+  reportHpwlMetric();
 
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
@@ -405,6 +430,16 @@ int Replace::doNesterovPlace(const int threads,
     fr_->globalRoute();
   }
   return return_do_nesterov;
+}
+
+// Same evaluator dpl reports route__wirelength__estimated with, so the
+// global and detailed placement numbers are directly comparable.
+void Replace::reportHpwlMetric()
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  const int64_t hpwl = odb::WireLengthEvaluator(block).hpwl();
+  log_->info(GPL, 1018, "Final HPWL (um): {:.2f}", block->dbuToMicrons(hpwl));
+  log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
 }
 
 float Replace::getUniformTargetDensity(const PlaceOptions& options,

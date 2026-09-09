@@ -36,7 +36,8 @@ class dbUnfoldedBuilder
   void unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
                    dbChipRegionInst* region_inst);
   void unfoldConnections(dbChip* chip,
-                         const std::vector<dbChipInst*>& parent_path);
+                         const std::vector<dbChipInst*>& parent_path,
+                         const dbTransform& parent_xform);
   void unfoldNets(dbChip* chip, const std::vector<dbChipInst*>& parent_path);
 
   _dbUnfoldedChipInst* findUnfoldedChip(const std::vector<dbChipInst*>& path);

@@ -185,4 +185,74 @@ TEST_F(TestReadVerilog, DeepDescendantModBTermCollision)
   EXPECT_EQ(txclk_modnet->getModBTerms().size(), 1u);
 }
 
+TEST_F(TestReadVerilog, EscapedBracketScalarNames)
+{
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbBTerm* raw_bterm = block_->findBTerm("foo[3]");
+  odb::dbBTerm* leading_escape_bterm = block_->findBTerm("\\foo[3]");
+  odb::dbBTerm* escaped_bterm = block_->findBTerm("foo\\[3\\]");
+  EXPECT_EQ(raw_bterm, nullptr);
+  EXPECT_EQ(leading_escape_bterm, nullptr);
+  ASSERT_NE(escaped_bterm, nullptr);
+  EXPECT_STREQ(escaped_bterm->getConstName(), "foo\\[3\\]");
+
+  odb::dbModule* child = block_->findModule("child");
+  ASSERT_NE(child, nullptr);
+
+  EXPECT_EQ(child->findModBTerm("foo[3]"), nullptr);
+  EXPECT_EQ(child->findModBTerm("\\foo[3]"), nullptr);
+  odb::dbModBTerm* escaped_modbterm = child->findModBTerm("foo\\[3\\]");
+  ASSERT_NE(escaped_modbterm, nullptr);
+
+  EXPECT_EQ(child->getModNet("foo[3]"), nullptr);
+  EXPECT_EQ(child->getModNet("\\foo[3]"), nullptr);
+  odb::dbModNet* escaped_modnet = child->getModNet("foo\\[3\\]");
+  ASSERT_NE(escaped_modnet, nullptr);
+  EXPECT_EQ(escaped_modbterm->getModNet(), escaped_modnet);
+}
+
+TEST_F(TestReadVerilog, BusBitAndEscapedScalarAreDistinct)
+{
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbBTerm* bus_bit_bterm = block_->findBTerm("foo[3]");
+  odb::dbBTerm* leading_escape_bterm = block_->findBTerm("\\foo[3]");
+  odb::dbBTerm* escaped_bterm = block_->findBTerm("foo\\[3\\]");
+  ASSERT_NE(bus_bit_bterm, nullptr);
+  EXPECT_EQ(leading_escape_bterm, nullptr);
+  ASSERT_NE(escaped_bterm, nullptr);
+  EXPECT_NE(bus_bit_bterm, escaped_bterm);
+
+  odb::dbModule* child = block_->findModule("child");
+  ASSERT_NE(child, nullptr);
+
+  odb::dbModBTerm* bus_port = child->findModBTerm("foo");
+  odb::dbModBTerm* bus_bit_port = child->findModBTerm("foo[3]");
+  odb::dbModBTerm* escaped_port = child->findModBTerm("foo\\[3\\]");
+  ASSERT_NE(bus_port, nullptr);
+  ASSERT_NE(bus_bit_port, nullptr);
+  EXPECT_EQ(child->findModBTerm("\\foo[3]"), nullptr);
+  ASSERT_NE(escaped_port, nullptr);
+  EXPECT_NE(bus_bit_port, escaped_port);
+
+  odb::dbModNet* bus_bit_modnet = child->getModNet("foo[3]");
+  odb::dbModNet* escaped_modnet = child->getModNet("foo\\[3\\]");
+  ASSERT_NE(bus_bit_modnet, nullptr);
+  EXPECT_EQ(child->getModNet("\\foo[3]"), nullptr);
+  ASSERT_NE(escaped_modnet, nullptr);
+  EXPECT_NE(bus_bit_modnet, escaped_modnet);
+  EXPECT_EQ(escaped_port->getModNet(), escaped_modnet);
+}
+
 }  // namespace sta

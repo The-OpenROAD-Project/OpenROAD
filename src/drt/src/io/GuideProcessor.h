@@ -339,10 +339,16 @@ class GuidePathFinder
     int cost;
     bool operator<(const Wavefront& b) const
     {
-      if (cost == b.cost) {
+      // Total order so that priority_queue pop order (and therefore the
+      // chosen predecessor on cost ties) does not depend on the standard
+      // library's heap implementation.
+      if (cost != b.cost) {
+        return cost > b.cost;
+      }
+      if (node_idx != b.node_idx) {
         return node_idx > b.node_idx;
       }
-      return cost > b.cost;
+      return prev_idx > b.prev_idx;
     }
   };
   /**

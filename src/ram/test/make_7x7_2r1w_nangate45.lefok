@@ -265,6 +265,34 @@ MACRO RAM7x7
         RECT  43.705 11.06 43.845 11.2 ;
     END
   END Q1[6]
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER metal4 ;
+        RECT  49.43 11.06 49.57 11.2 ;
+        RECT  49.43 0 49.57 0.14 ;
+        RECT  40.43 11.06 40.57 11.2 ;
+        RECT  40.43 0 40.57 0.14 ;
+        RECT  31.43 11.06 31.57 11.2 ;
+        RECT  31.43 0 31.57 0.14 ;
+        RECT  22.43 11.06 22.57 11.2 ;
+        RECT  22.43 0 22.57 0.14 ;
+        RECT  13.43 11.06 13.57 11.2 ;
+        RECT  13.43 0 13.57 0.14 ;
+        RECT  4.43 11.06 4.57 11.2 ;
+        RECT  4.43 0 4.57 0.14 ;
+      LAYER metal1 ;
+        RECT  56.55 9.76 56.62 9.84 ;
+        RECT  0 9.76 0.07 9.84 ;
+        RECT  56.55 6.96 56.62 7.04 ;
+        RECT  0 6.96 0.07 7.04 ;
+        RECT  56.55 4.16 56.62 4.24 ;
+        RECT  0 4.16 0.07 4.24 ;
+        RECT  56.55 1.36 56.62 1.44 ;
+        RECT  0 1.36 0.07 1.44 ;
+    END
+  END VDD
   PIN VSS
     DIRECTION INOUT ;
     USE GROUND ;
@@ -295,34 +323,6 @@ MACRO RAM7x7
         RECT  0 -0.04 0.07 0.04 ;
     END
   END VSS
-  PIN VDD
-    DIRECTION INOUT ;
-    USE POWER ;
-    PORT
-      LAYER metal4 ;
-        RECT  49.43 11.06 49.57 11.2 ;
-        RECT  49.43 0 49.57 0.14 ;
-        RECT  40.43 11.06 40.57 11.2 ;
-        RECT  40.43 0 40.57 0.14 ;
-        RECT  31.43 11.06 31.57 11.2 ;
-        RECT  31.43 0 31.57 0.14 ;
-        RECT  22.43 11.06 22.57 11.2 ;
-        RECT  22.43 0 22.57 0.14 ;
-        RECT  13.43 11.06 13.57 11.2 ;
-        RECT  13.43 0 13.57 0.14 ;
-        RECT  4.43 11.06 4.57 11.2 ;
-        RECT  4.43 0 4.57 0.14 ;
-      LAYER metal1 ;
-        RECT  56.55 9.76 56.62 9.84 ;
-        RECT  0 9.76 0.07 9.84 ;
-        RECT  56.55 6.96 56.62 7.04 ;
-        RECT  0 6.96 0.07 7.04 ;
-        RECT  56.55 4.16 56.62 4.24 ;
-        RECT  0 4.16 0.07 4.24 ;
-        RECT  56.55 1.36 56.62 1.44 ;
-        RECT  0 1.36 0.07 1.44 ;
-    END
-  END VDD
   OBS
     LAYER metal1 ;
      RECT  0 -0.07 56.62 11.27 ;

@@ -15,13 +15,6 @@ namespace odb {
 class dbDatabase;
 class dbMarkerCategory;
 
-struct MatingSurfaces
-{
-  bool valid;
-  int top_z;
-  int bot_z;
-};
-
 class Checker
 {
  public:

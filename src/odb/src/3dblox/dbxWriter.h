@@ -34,7 +34,9 @@ class DbxWriter : public BaseWriter
   void writeDesign(YAML::Node& design_node, odb::dbChip* chiplet);
   void writeDesignExternal(YAML::Node& external_node, odb::dbChip* chiplet);
   void writeChipletInsts(YAML::Node& instances_node, odb::dbChip* chiplet);
-  void writeChipletInst(YAML::Node& instance_node, odb::dbChipInst* inst);
+  void writeChipletInst(YAML::Node& instance_node,
+                        odb::dbChipInst* inst,
+                        bool write_def);
   void writeStack(YAML::Node& stack_node, odb::dbChip* chiplet);
   void writeStackInstance(YAML::Node& stack_instance_node,
                           odb::dbChipInst* inst);

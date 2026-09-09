@@ -4,10 +4,12 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -47,6 +49,27 @@ struct PinGroupByIndex
   bool order;
 };
 
+// the width along the die edge and the length into the die of a pin
+struct PinSize
+{
+  int half_width = 0;
+  int height = 0;
+};
+
+// the arguments that select a spacing value in a layer spacing table
+struct SpacingKey
+{
+  int layer = 0;
+  int shape_width = 0;
+  int parallel_length = 0;
+
+  bool operator<(const SpacingKey& other) const
+  {
+    return std::tie(layer, shape_width, parallel_length)
+           < std::tie(other.layer, other.shape_width, other.parallel_length);
+  }
+};
+
 struct FallbackPins
 {
   std::vector<std::pair<std::vector<int>, bool>> groups;
@@ -62,6 +85,11 @@ enum class Edge
   invalid,
   polygonEdge,
 };
+
+inline bool hasVerticalPins(Edge edge)
+{
+  return edge == Edge::top || edge == Edge::bottom;
+}
 
 enum class Direction
 {
@@ -218,6 +246,22 @@ class IOPlacer
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
+  int roundUpToMfgGrid(int dim);
+  int roundUpToEvenMfgGrid(int dim);
+  PinSize computePinSize(int layer);
+  int computeShapeSpacing(odb::dbTechLayer* tech_layer,
+                          const odb::Rect& shape,
+                          int pin_width,
+                          int pin_length);
+  odb::Rect computePinKeepout(const odb::Rect& box,
+                              odb::dbTechLayer* tech_layer);
+  void forEachSpecialNetShape(
+      const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback);
+  void excludeBoundaryShape(const odb::Rect& box,
+                            odb::dbTechLayer* tech_layer,
+                            const odb::Rect& die_area);
+  void getBlockedRegions();
+  void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   Edge getMirroredEdge(const Edge& edge);
@@ -261,7 +305,12 @@ class IOPlacer
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   FallbackPins fallback_pins_;
-  std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
+  // fixed pin shapes padded by the pin size and spacing, per layer
+  std::map<int, std::vector<odb::Rect>> layer_fixed_pins_keepouts_;
+  // a pin size only depends on its layer, wrong way pins are rejected
+  std::map<int, PinSize> pin_size_cache_;
+  // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
+  std::map<SpacingKey, int> spacing_cache_;
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<utl::Validator> validator_;

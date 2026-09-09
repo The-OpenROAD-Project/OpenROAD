@@ -49,7 +49,7 @@ struct Tree
 class SteinerTreeBuilder
 {
  public:
-  SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger);
+  explicit SteinerTreeBuilder(utl::Logger* logger);
   ~SteinerTreeBuilder();
 
   Tree makeSteinerTree(const std::vector<int>& x,
@@ -96,7 +96,6 @@ class SteinerTreeBuilder
   std::pair<int, float> min_hpwl_alpha_;
 
   utl::Logger* logger_;
-  odb::dbDatabase* db_;
   std::unique_ptr<flt::Flute> flute_;
 };
 

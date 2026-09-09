@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -15,24 +16,31 @@ cc_library(
     name = "syn",
     srcs = [
         "src/flow/abc.cc",
+        "src/flow/acd.cc",
+        "src/flow/acd_resynth.cc",
+        "src/flow/acd_resynth.h",
+        "src/flow/acd_timing.cc",
         "src/flow/bitblast.cc",
         "src/flow/combinational_mapper.cc",
         "src/flow/combinational_mapper_npn.cc",
-        "src/flow/combinational_mapper_npn.h",
         "src/flow/constant_fold.cc",
-        "src/flow/constant_fold.h",
         "src/flow/export.cc",
         "src/flow/export.h",
         "src/flow/import.cc",
-        "src/flow/import.h",
         "src/flow/liveness.cc",
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
         "src/flow/sequential_mapper.cc",
+        "src/flow/target_index.cc",
         "src/synthesis.cpp",
     ],
     hdrs = [
         "include/syn/synthesis.h",
+        "src/flow/acd.h",
+        "src/flow/combinational_mapper_npn.h",
+        "src/flow/constant_fold.h",
+        "src/flow/import.h",
+        "src/flow/target_index.h",
     ],
     includes = [
         "include",
@@ -67,8 +75,6 @@ cc_library(
     deps = [
         ":syn",
         "//:ord",
-        "//src/dbSta",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -117,4 +123,16 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+exports_files(["README.md"])
+
+# Synthesis keeps most of its logger calls below src/: flow/ is covered by the
+# macro's recursive glob, elab/ and ir/ are their own packages.
+messages_txt(
+    extra_srcs = [
+        "//src/syn/src/elab:message_srcs",
+        "//src/syn/src/ir:message_srcs",
+    ],
+    visibility = ["//docs:__pkg__"],
 )

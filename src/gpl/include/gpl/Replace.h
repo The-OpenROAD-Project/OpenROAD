@@ -84,6 +84,8 @@ struct PlaceOptions
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
+  int initialPlacePerturbationSeed = 1;
+  float initialPlacePerturbationDist = -1.0f;
 
   float routabilityCheckOverflow = 0.3;
   float routabilitySnapshotOverflow = 0.6;
@@ -91,6 +93,7 @@ struct PlaceOptions
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
+  float routabilityMinCongestionForInflation = 0.95;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
@@ -101,6 +104,9 @@ struct PlaceOptions
   // OpenDB should have these values.
   int padLeft = 0;
   int padRight = 0;
+
+  // Concurrent IO pin + cell placement
+  bool placeIosMode = false;
 
   void skipIo();
   void validate(utl::Logger* log);
@@ -133,7 +139,12 @@ class Replace
                       const PlaceOptions& options = {},
                       int start_iter = 0);
 
-  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
+  void runMBFF(int max_sz,
+               float alpha,
+               float beta,
+               int threads,
+               int num_paths,
+               float clock_power_weight);
 
   void addPlacementCluster(const Cluster& cluster);
 
@@ -156,6 +167,8 @@ class Replace
                          int threads,
                          bool check_density);
   void checkHasCoreRows();
+  void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

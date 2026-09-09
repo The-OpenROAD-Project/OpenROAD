@@ -387,6 +387,8 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
       odb::dbDatabase::create(), odb::dbDatabase::destroy);
   TileGenerator gen(db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
   const odb::Rect dbu_tile(0, 0, 256, 256);
+  const TileFrame frame{
+      .origin_x = 0.0, .origin_y = 0.0, .scale = 1.0, .cull = dbu_tile};
 
   WebPainter narrow(dbu_tile, 1.0);
   narrow.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/1);
@@ -399,8 +401,8 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
   const int image_bytes = 256 * 256 * 4;
   std::vector<unsigned char> narrow_image(image_bytes, 0);
   std::vector<unsigned char> wide_image(image_bytes, 0);
-  gen.rasterizeWebPainterOps(narrow_image, narrow.ops(), dbu_tile, 1.0);
-  gen.rasterizeWebPainterOps(wide_image, wide.ops(), dbu_tile, 1.0);
+  gen.rasterizeWebPainterOps(narrow_image, narrow.ops(), frame);
+  gen.rasterizeWebPainterOps(wide_image, wide.ops(), frame);
 
   const auto alpha_at
       = [](const std::vector<unsigned char>& image, int x, int y) {

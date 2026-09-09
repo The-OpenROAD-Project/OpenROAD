@@ -21,6 +21,7 @@
 #include "VtSwapCandidate.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Network.hh"

@@ -156,11 +156,6 @@ COMPULSORY_TESTS = [
     "create_sboxes",
     "def_dup_net",
     "def_parser",
-    "design_is_routed1",
-    "design_is_routed2",
-    "design_is_routed3",
-    "design_is_routed_fail1",
-    "design_is_routed_fail2",
     "dont_touch",
     "dump_netlists",
     "dump_netlists_withfill",
@@ -192,6 +187,8 @@ COMPULSORY_TESTS = [
     "read_def_virtual",
     "read_def58",
     "read_lef",
+    "read_lef_dup_macro",
+    "read_lef_minwidth_wrongdirection",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",
@@ -219,6 +216,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     # pass-fail
     "read_3dbv_fail",
+    "read_3dbx_fail",
     "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
@@ -300,7 +298,11 @@ filegroup(
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
+        "data/lef58_celledgespacing_numeric.lef",
+        "data/lef58_macro_edgetype_numeric.lef",
+        "data/lef58_minwidth_wrongdirection.lef",
         "data/lef58class_gscl45nm.lef",
+        "data/lef_dup_macro.lef",
         "data/mask.lef",
         "data/ndr.def",
         "data/parser_test.def",
@@ -340,7 +342,15 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
-    visibility = ["//src/odb/test/cpp:__subpackages__"],
+    visibility = ["//visibility:public"],
+)
+
+# Hierarchical Verilog reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = ["replace_hier_mod1.v"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
@@ -362,9 +372,6 @@ filegroup(
         ) + {
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
-            ],
-            "all_pins_placed2": [
-                "design_is_routed1.def",
             ],
             "create_obstruction": [
                 "create_blockage.def",
@@ -430,6 +437,7 @@ test_suite(
         "//src/odb/test/cpp:TestAccessPoint",
         "//src/odb/test/cpp:TestCallBacks",
         "//src/odb/test/cpp:TestChips",
+        "//src/odb/test/cpp:TestDbStream",
         "//src/odb/test/cpp:TestDbWire",
         "//src/odb/test/cpp:TestGCellGrid",
         "//src/odb/test/cpp:TestGDSIn",

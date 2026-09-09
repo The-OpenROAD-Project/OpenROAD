@@ -52,7 +52,7 @@ TEST_F(SwapMasterLeafTest, SwapToCompatibleMasterPreservesConnections)
 
   dbInst* inst = dbInst::create(block_, and2, "i1");
   ASSERT_NE(inst, nullptr);
-  auto [na, nb, no] = makeNets<3>(block_, {"na", "nb", "no"});
+  auto [na, nb, no] = makeNets(block_, "na", "nb", "no");
   dbITerm* a = inst->findITerm("a");
   dbITerm* b = inst->findITerm("b");
   dbITerm* o = inst->findITerm("o");

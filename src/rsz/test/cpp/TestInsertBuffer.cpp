@@ -3371,4 +3371,175 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case34)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+TEST_F(TestInsertBuffer, BusBitModNetName)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buf_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_master, nullptr);
+
+  dbModule* sub_mod = block_->findModule("SUB");
+  ASSERT_NE(sub_mod, nullptr);
+
+  EXPECT_NE(block_->findBTerm("foo[3]"), nullptr);
+  EXPECT_EQ(block_->findBTerm("\\foo[3]"), nullptr);
+  EXPECT_NE(sub_mod->findModBTerm("foo[3]"), nullptr);
+  EXPECT_EQ(sub_mod->findModBTerm("foo\\[3\\]"), nullptr);
+  EXPECT_EQ(sub_mod->getModNet("foo[3]1"), nullptr);
+  EXPECT_EQ(sub_mod->getModNet("foo\\[3\\]"), nullptr);
+
+  dbNet* flat_net = block_->findNet("foo[3]");
+  ASSERT_NE(flat_net, nullptr);
+  dbITerm* load0_a = block_->findITerm("sub0/load0/A");
+  ASSERT_NE(load0_a, nullptr);
+  ASSERT_EQ(load0_a->getNet(), flat_net);
+  dbITerm* load1_a = block_->findITerm("sub0/child0/load1/A");
+  ASSERT_NE(load1_a, nullptr);
+  ASSERT_EQ(load1_a->getNet(), flat_net);
+
+  odb::PtrSet<dbObject> load_pins;
+  load_pins.insert(load0_a);
+  load_pins.insert(load1_a);
+
+  dbInst* new_buf
+      = flat_net->insertBufferBeforeLoads(load_pins,
+                                          buf_master,
+                                          nullptr,
+                                          "split",
+                                          "foo[3]",
+                                          dbNameUniquifyType::IF_NEEDED,
+                                          false);
+  ASSERT_NE(new_buf, nullptr);
+
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  std::string mod_net_names;
+  for (dbModNet* mod_net : sub_mod->getModNets()) {
+    if (!mod_net_names.empty()) {
+      mod_net_names += ", ";
+    }
+    mod_net_names += mod_net->getConstName();
+  }
+
+  EXPECT_NE(sub_mod->getModNet("foo_3_"), nullptr)
+      << "The split net is a scalar wire, so bracket characters should be "
+         "replaced in the stored dbModNet name. Existing dbModNet names: "
+      << mod_net_names;
+
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+TEST_F(TestInsertBuffer, BusBitBTermName)
+{
+  dbMaster* buf_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_master, nullptr);
+
+  dbNet* orig_net = dbNet::create(block_, "orig");
+  ASSERT_NE(orig_net, nullptr);
+  dbBTerm* bterm = dbBTerm::create(orig_net, "foo[3]");
+  ASSERT_NE(bterm, nullptr);
+  bterm->setIoType(dbIoType::OUTPUT);
+  bterm->connect(orig_net);
+
+  dbInst* drvr = dbInst::create(block_, db_->findMaster("LOGIC0_X1"), "drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  drvr_z->connect(orig_net);
+
+  dbInst* new_buf
+      = orig_net->insertBufferBeforeLoad(bterm, buf_master, nullptr, "output");
+  ASSERT_NE(new_buf, nullptr);
+
+  dbITerm* buf_z = new_buf->findITerm("Z");
+  ASSERT_NE(buf_z, nullptr);
+  dbNet* buf_out_net = buf_z->getNet();
+  ASSERT_NE(buf_out_net, nullptr);
+
+  EXPECT_EQ(bterm->getNet(), buf_out_net);
+  EXPECT_STREQ(buf_out_net->getConstName(), "foo[3]")
+      << "BTerm-derived net names must preserve the port name for Verilog "
+         "compatibility.";
+}
+
+TEST_F(TestInsertBuffer, BusBitTracePortName)
+{
+  const std::string test_name = "TestInsertBuffer_BusBitTracePortName";
+  readVerilogAndSetup("TestInsertBuffer_BeforeLoads_Case26_pre.v");
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buffer_master, nullptr);
+
+  dbITerm* driver_pin = block_->findITerm("h0/drvr/Z");
+  ASSERT_NE(driver_pin, nullptr);
+  dbModule* driver_module = driver_pin->getInst()->getModule();
+  ASSERT_NE(driver_module, nullptr);
+  dbModNet* driver_mod_net = dbModNet::create(driver_module, "path\\/data[5]");
+  ASSERT_TRUE(driver_mod_net->getModBTerms().empty());
+  driver_pin->connect(driver_mod_net);
+
+  // Reserve the sanitized name in the module's Verilog namespace.
+  dbInst* name_collision = dbInst::create(
+      block_, buffer_master, "path\\/data_5_", false, driver_module);
+  ASSERT_NE(name_collision, nullptr);
+  dbITerm* collision_input = name_collision->findITerm("A");
+  dbITerm* collision_output = name_collision->findITerm("Z");
+  ASSERT_NE(collision_input, nullptr);
+  ASSERT_NE(collision_output, nullptr);
+  collision_input->connect(driver_pin->getNet());
+  collision_input->connect(driver_mod_net);
+  dbNet* collision_flat_net = dbNet::create(
+      block_, "collision_output", dbNameUniquifyType::IF_NEEDED, driver_module);
+  dbModNet* collision_mod_net = dbModNet::create(driver_module,
+                                                 "collision_output",
+                                                 dbNameUniquifyType::IF_NEEDED,
+                                                 collision_flat_net);
+  ASSERT_NE(collision_flat_net, nullptr);
+  ASSERT_NE(collision_mod_net, nullptr);
+  collision_output->connect(collision_flat_net);
+  collision_output->connect(collision_mod_net);
+
+  dbITerm* load0 = block_->findITerm("h1/load0/A");
+  dbITerm* load1 = block_->findITerm("h1/load1/A");
+  ASSERT_NE(load0, nullptr);
+  ASSERT_NE(load1, nullptr);
+
+  odb::PtrSet<dbObject> loads;
+  loads.insert(load0);
+  loads.insert(load1);
+
+  dbInst* buffer = driver_pin->getNet()->insertBufferBeforeLoads(
+      loads,
+      buffer_master,
+      nullptr,
+      "new_buf",
+      nullptr,
+      dbNameUniquifyType::ALWAYS,
+      true);
+  ASSERT_NE(buffer, nullptr);
+
+  EXPECT_EQ(driver_module->findModBTerm("path\\/data[5]"), nullptr);
+  EXPECT_EQ(driver_module->findModBTerm("path\\/data_5_"), nullptr);
+  dbSet<dbModBTerm> trace_ports = driver_mod_net->getModBTerms();
+  ASSERT_EQ(trace_ports.size(), 1);
+  dbModBTerm* trace_port = *trace_ports.begin();
+  ASSERT_NE(trace_port, nullptr);
+  const std::string trace_port_name = trace_port->getName();
+  EXPECT_EQ(trace_port_name.rfind("path\\/data_5__", 0), 0);
+  EXPECT_EQ(trace_port->getModNet(), driver_mod_net);
+  EXPECT_NE(driver_module->getModInst()->findModITerm(trace_port->getName()),
+            nullptr);
+  EXPECT_EQ(db_network_->checkAxioms(), 0);
+
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace odb

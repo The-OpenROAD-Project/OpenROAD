@@ -13,16 +13,35 @@ package(
 )
 
 cc_library(
+    name = "rsz_private_hdrs",
+    hdrs = [
+        "src/BufferedNet.hh",
+        "src/ResizerObserver.hh",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "rsz",
     srcs = [
         "src/BufferedNet.cc",
-        "src/BufferedNet.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
         "src/DelayEstimator.cc",
         "src/DelayEstimator.hh",
         "src/DelayEstimatorReporter.cc",
         "src/DelayEstimatorReporter.hh",
+        "src/LRSubproblem.cc",
+        "src/LRSubproblem.hh",
         "src/MoveCommitter.cc",
         "src/MoveCommitter.hh",
         "src/MoveTracker.cc",
@@ -46,7 +65,6 @@ cc_library(
         "src/RepairTargetCollector.cc",
         "src/RepairTargetCollector.hh",
         "src/Resizer.cc",
-        "src/ResizerObserver.hh",
         "src/SwapArithModules.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
@@ -104,6 +122,8 @@ cc_library(
         "src/move/VtSwapMtCandidate.hh",
         "src/move/VtSwapMtGenerator.cc",
         "src/move/VtSwapMtGenerator.hh",
+        "src/policy/GlobalSizingPolicy.cc",
+        "src/policy/GlobalSizingPolicy.hh",
         "src/policy/MeasuredVtSwapPolicy.cc",
         "src/policy/MeasuredVtSwapPolicy.hh",
         "src/policy/OptimizationPolicy.cc",
@@ -130,6 +150,7 @@ cc_library(
         "src/policy/SetupWnsPolicy.hh",
     ],
     hdrs = [
+        "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
     ],
@@ -141,6 +162,7 @@ cc_library(
     ],
     linkopts = ["-pthread"],
     deps = [
+        ":rsz_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -148,6 +170,7 @@ cc_library(
         "//src/est",
         "//src/grt",
         "//src/grt:groute",
+        "//src/grt:route_pt",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
@@ -161,11 +184,9 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/BufferedNet.hh",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",
-        "src/ResizerObserver.hh",
         ":swig",
         ":tcl",
     ],
@@ -178,6 +199,7 @@ cc_library(
     ],
     deps = [
         ":rsz",
+        ":rsz_private_hdrs",
         "//:ord",
         "//src/dbSta:dbNetwork",
         "//src/gui",
@@ -218,6 +240,7 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
+        "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/Resizer.hh",
         "src/Resizer-py.i",
         "//:error_swig-py",

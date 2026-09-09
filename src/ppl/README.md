@@ -366,11 +366,6 @@ Simply run the following script:
 
 - This code depends on [Munkres](src/munkres/README.txt).
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+ioplacer+in%3Atitle)
-about this tool.
-
 ## License
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

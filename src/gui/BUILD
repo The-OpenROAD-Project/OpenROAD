@@ -30,7 +30,6 @@ cc_library(
         "src/heatMapPlacementDensity.cpp",
         "src/heatMapPlacementDensity.h",
         "src/init_descriptors.cpp",
-        "src/insertBufferDialog.h",
         "src/staDescriptors.cpp",
         "src/staDescriptors.h",
         ":tcl",
@@ -156,6 +155,13 @@ cc_library(
         ":ui/ui_highlightGroupDlg.h",
         ":ui/ui_selectedWidget.h",
     ],
+    includes = [
+        "ui",
+    ],
+    deps = [
+        "@qt-bazel//qt_source:core",
+        "@qt-bazel//qt_source:widgets",
+    ],
 )
 
 qt6_resource_library(
@@ -203,7 +209,10 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/gui/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gui/test:__pkg__",
+    ],
 )
 
 # Desktop entry for GUI builds. Generated from the same template that the

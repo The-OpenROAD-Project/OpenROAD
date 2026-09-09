@@ -257,12 +257,29 @@ proc read_db { args } {
   ord::read_db_cmd $filename $hierarchy
 }
 
-sta::define_cmd_args "write_db" {filename}
+sta::define_cmd_args "write_db" {[-compression level] filename}
 
 proc write_db { args } {
+  sta::parse_key_args "write_db" args \
+    keys {-compression} \
+    flags {}
+
   sta::check_argc_eq1 "write_db" $args
   set filename [file nativename [lindex $args 0]]
-  ord::write_db_cmd $filename
+
+  set compression_level -1
+  if { [info exists keys(-compression)] } {
+    set compression_level $keys(-compression)
+    sta::check_integer "write_db" $compression_level
+    if { $compression_level < 0 || $compression_level > 9 } {
+      utl::error "ORD" 77 "Compression level must be between 0 and 9."
+    }
+    if { ![string match "*.gz" $filename] } {
+      utl::warn "ORD" 78 "Compression level specified but output file is not a gzip file (.gz)."
+    }
+  }
+
+  ord::write_db_cmd $filename $compression_level
 }
 
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }

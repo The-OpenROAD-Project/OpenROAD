@@ -29,10 +29,11 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
                                      std::optional<std::string> buffer);
 
 std::unique_ptr<Graph> elaborateText(const std::string& source,
-                                     const std::vector<std::string>& args)
+                                     const std::vector<std::string>& args,
+                                     sta::dbSta* sta)
 {
   utl::Logger logger;
-  return elaborateImpl(&logger, args, nullptr, source);
+  return elaborateImpl(&logger, args, sta, source);
 }
 
 }  // namespace syn

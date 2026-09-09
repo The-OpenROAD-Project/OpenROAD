@@ -41,15 +41,9 @@ dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
     : _tech(nullptr),
       _block(nullptr),
       _ruleNameHint(0),
-      _milosFormat(false),
       _currentNet(nullptr),
       _mapArray(nullptr),
-      _mapCnt(0),
-      _ecoCnt(0),
-      logger_(logger),
-      _skipPowerNets(true),
-      _useLocation(false),
-      _verbose(false)
+      logger_(logger)
 {
 }
 dbCreateNetUtil::~dbCreateNetUtil()

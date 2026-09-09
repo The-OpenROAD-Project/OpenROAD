@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: latch_borrow_chain
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 13 components and 65 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 29 connections.
+[WARNING STA-0450] virtual clock vclk can not be propagated.
+BEFORE_BORROW_L1 0.4546
+BEFORE_BORROW_L2 0.3894
+BEFORE_SLACK -0.0230
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove BufferMove SplitLoadMove 
+[INFO RSZ-0094] Found 7 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 7 out of 7 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |       -0.2 |      7 | sibling_ff0/D
+      17* |       3 |       4 |        1 |      0 |     0 |    +4.8% |   -0.001 |       -0.0 |       -0.0 |      7 | sibling_ff0/D
+    final |       3 |       4 |        1 |      0 |     0 |    +4.8% |   -0.001 |       -0.0 |       -0.0 |      1 | sibling_ff0/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 3 buffers.
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 4 instances: 4 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+AFTER_BORROW_L1 0.4148
+AFTER_BORROW_L2 0.3577
+AFTER_SLACK 0.0014

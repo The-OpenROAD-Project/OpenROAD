@@ -84,18 +84,18 @@ void PatternRoute::constructSteinerTree()
 
   const int degree = selected_access_points.size();
   if (degree == 1) {
-    const auto& access_point = *selected_access_points.begin();
-    steiner_tree_ = std::make_shared<SteinerTreeNode>(access_point.point,
-                                                      access_point.layers);
+    const auto& [point, layers] = *selected_access_points.begin();
+    steiner_tree_ = std::make_shared<SteinerTreeNode>(point, layers);
     return;
   }
 
-  // Sort access points by (x, y) before passing to FLUTE for deterministic
-  // output when equal-coordinate points exist across different STL builds.
+  // Sort access points by (x, y) before passing to the tree builder for
+  // deterministic output when equal-coordinate points exist across different
+  // STL builds.
   std::vector<std::pair<int, int>> sorted_points;
   sorted_points.reserve(selected_access_points.size());
-  for (auto& access_point : selected_access_points) {
-    sorted_points.emplace_back(access_point.point.x(), access_point.point.y());
+  for (const auto& [point, layers] : selected_access_points) {
+    sorted_points.emplace_back(point.x(), point.y());
   }
   std::ranges::stable_sort(sorted_points);
 
@@ -108,14 +108,25 @@ void PatternRoute::constructSteinerTree()
     ys.push_back(y);
   }
 
-  stt::Tree flute_tree = stt_builder_->flute(xs, ys, flute_accuracy_);
-  const int num_branches = degree + degree - 2;
+  int driver_index = 0;
+  if (const auto driver_point = net_->getDriverAccessPoint()) {
+    const auto match = std::ranges::find(
+        sorted_points,
+        std::pair<int, int>{driver_point->x(), driver_point->y()});
+    if (match != sorted_points.end()) {
+      driver_index = std::distance(sorted_points.begin(), match);
+    }
+  }
+
+  const stt::Tree stt_tree
+      = stt_builder_->makeSteinerTree(net_->getDbNet(), xs, ys, driver_index);
+  const int num_branches = stt_tree.branchCount();
   std::vector<PointT> steiner_points;
   steiner_points.reserve(num_branches);
   std::vector<std::vector<int>> adjacent_list(num_branches);
 
   for (int branch_index = 0; branch_index < num_branches; branch_index++) {
-    const stt::Branch& branch = flute_tree.branch[branch_index];
+    const stt::Branch& branch = stt_tree.branch[branch_index];
     steiner_points.emplace_back(branch.x, branch.y);
     if (branch_index == branch.n) {
       continue;
@@ -148,11 +159,10 @@ void PatternRoute::constructSteinerTree()
           construct_tree(current, cur_index, next_index);
         }
         // Set fixed layer interval
-        const AccessPoint current_pt{.point = {current->x(), current->y()},
-                                     .layers = {}};
-        if (auto it = selected_access_points.find(current_pt);
+        if (auto it
+            = selected_access_points.find(PointT(current->x(), current->y()));
             it != selected_access_points.end()) {
-          current->setFixedLayers(it->layers);
+          current->setFixedLayers(it->second);
         }
         // Connect current to parent
         if (parent == nullptr) {
@@ -563,14 +573,17 @@ void PatternRoute::calculateRoutingCosts(
         if (grid_graph_->getLayerDirection(layer_index) != direction) {
           continue;
         }
-        CostT cost = net_->isInsideLayerRange(layer_index)
-                         ? path->getCosts()[layer_index]
-                               + grid_graph_->getWireCost(
-                                   layer_index,
-                                   *node,
-                                   *path,
-                                   net_->getNdrCost(layer_index))
-                         : std::numeric_limits<CostT>::max();
+        CostT cost = std::numeric_limits<CostT>::max();
+        if (net_->isInsideLayerRange(layer_index)) {
+          cost = path->getCosts()[layer_index]
+                 + grid_graph_->getWireCost(
+                     layer_index, *node, *path, net_->getNdrCost(layer_index));
+
+          if (net_->isResAware()) {
+            cost += grid_graph_->getWireResistanceCost(
+                layer_index, *node, *path, net_->getNdrWidth(layer_index));
+          }
+        }
         if (cost < costs[layer_index].first) {
           costs[layer_index] = std::make_pair(cost, path_index);
         }
@@ -596,6 +609,12 @@ void PatternRoute::calculateRoutingCosts(
     via_costs[layer_index] = via_costs[layer_index - 1]
                              + grid_graph_->getViaCost(
                                  layer_index - 1, *node, net_->getNdrCosts());
+    // Res-aware: charge via resistance so climbing only pays off when
+    // the upper-layer wire-R savings beat it.
+    if (net_->isResAware()) {
+      via_costs[layer_index]
+          += grid_graph_->getViaResistanceCost(layer_index - 1);
+    }
   }
 
   const LayerRange& net_range = net_->getLayerRange();

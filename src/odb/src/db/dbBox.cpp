@@ -94,6 +94,9 @@ bool _dbBox::operator==(const _dbBox& rhs) const
   if (design_rule_width_ != rhs.design_rule_width_) {
     return false;
   }
+  if (min_spacing_ != rhs.min_spacing_) {
+    return false;
+  }
   return true;
 }
 
@@ -144,6 +147,9 @@ int _dbBox::equal(const _dbBox& rhs) const
     return false;
   }
   if (design_rule_width_ != rhs.design_rule_width_) {
+    return false;
+  }
+  if (min_spacing_ != rhs.min_spacing_) {
     return false;
   }
   if (isOct() && shape_.oct != rhs.shape_.oct) {
@@ -572,6 +578,18 @@ void dbBox::setDesignRuleWidth(const int width)
   box->design_rule_width_ = width;
 }
 
+int dbBox::getMinSpacing() const
+{
+  const _dbBox* box = (const _dbBox*) this;
+  return box->min_spacing_;
+}
+
+void dbBox::setMinSpacing(const int spacing)
+{
+  _dbBox* box = (_dbBox*) this;
+  box->min_spacing_ = spacing;
+}
+
 Point dbBox::getViaXY() const
 {
   const _dbBox* box = (const _dbBox*) this;
@@ -986,7 +1004,7 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   box->flags_.octilinear = false;
   box->flags_.owner_type = dbBoxOwner::INST;
   box->owner_ = inst->getOID();
-  box->shape_.rect.init(x1, y1, x2, y2);
+  box->shape_.rect.reset(x1, y1, x2, y2);
   inst->halo_ = box->getOID();
   return (dbBox*) box;
 }
@@ -1076,13 +1094,15 @@ _dbBox::_dbBox(_dbDatabase*)
   flags_.octilinear = false;
   owner_ = 0;
   design_rule_width_ = -1;
+  min_spacing_ = -1;
 }
 
 _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
     : flags_(b.flags_),
       owner_(b.owner_),
       next_box_(b.next_box_),
-      design_rule_width_(b.design_rule_width_)
+      design_rule_width_(b.design_rule_width_),
+      min_spacing_(b.min_spacing_)
 {
   if (b.isOct()) {
     new (&shape_.oct) Oct();
@@ -1105,6 +1125,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
   stream << box.owner_;
   stream << box.next_box_;
   stream << box.design_rule_width_;
+  stream << box.min_spacing_;
   return stream;
 }
 
@@ -1148,6 +1169,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBox& box)
   stream >> box.owner_;
   stream >> box.next_box_;
   stream >> box.design_rule_width_;
+  if (box.getDatabase()->isSchema(kSchemaDbBoxMinSpacing)) {
+    stream >> box.min_spacing_;
+  } else {
+    box.min_spacing_ = -1;
+  }
   return stream;
 }
 

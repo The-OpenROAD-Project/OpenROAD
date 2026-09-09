@@ -1,0 +1,66 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.2 ;
+  WIDTH 0.1 ;
+  SPACING 0.1 ;
+  AREA 0.02 ;
+END metal1
+
+LAYER via12
+  TYPE CUT ;
+  SPACING 0.1 ;
+  WIDTH 0.1 ;
+END via12
+
+LAYER metal2
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.2 ;
+  WIDTH 0.1 ;
+  SPACING 0.1 ;
+  AREA 0.02 ;
+END metal2
+
+# Vias for the metal1/metal2 pair, none marked OR_DEFAULT. The ranking must
+# choose VIA_SMALL:
+#  - VIA_BIG is declared first, so a db-order pick would wrongly take it.
+#  - VIA_MULTI is a LEF DEFAULT via with an even smaller enclosure, so ranking
+#    the default flag before cut count would wrongly take it; single-cut must win.
+VIA VIA_BIG
+  LAYER metal1 ;
+    RECT -0.1 -0.15 0.1 0.15 ;
+  LAYER via12 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.15 -0.1 0.15 0.1 ;
+END VIA_BIG
+
+VIA VIA_SMALL
+  LAYER metal1 ;
+    RECT -0.05 -0.075 0.05 0.075 ;
+  LAYER via12 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.075 -0.05 0.075 0.05 ;
+END VIA_SMALL
+
+VIA VIA_MULTI DEFAULT
+  LAYER metal1 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER via12 ;
+    RECT -0.05 -0.05 -0.01 0.05 ;
+    RECT 0.01 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+END VIA_MULTI
+
+END LIBRARY

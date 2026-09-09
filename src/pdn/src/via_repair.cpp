@@ -3,20 +3,19 @@
 
 #include "via_repair.h"
 
-#include <array>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "utl/Logger.h"
 #include "via.h"
 
@@ -53,35 +52,20 @@ void ViaRepair::repair()
   }
 
   // find via violations
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbSBox>> tech_vias_to_remove;
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbSBox>> block_vias_to_remove;
   for (const auto& [layer, layer_obs] : combined_obs) {
-    Polygon90Set layer_obstructions;
-    for (const auto& obs : layer_obs) {
-      std::array<Pt, 4> pts = {Pt(obs.xMin(), obs.yMin()),
-                               Pt(obs.xMax(), obs.yMin()),
-                               Pt(obs.xMax(), obs.yMax()),
-                               Pt(obs.xMin(), obs.yMax())};
-
-      Polygon90 poly;
-      poly.set(pts.begin(), pts.end());
-      layer_obstructions.insert(poly);
+    odb::geom::BoostPolygon90Set layer_obstructions;
+    for (const odb::Rect& obs : layer_obs) {
+      layer_obstructions.insert(odb::geom::toPolygon90(obs));
     }
-
-    std::vector<Rectangle> layer_obstructions_rect;
-    layer_obstructions.get_rectangles(layer_obstructions_rect);
 
     const auto& layer_vias = vias[layer];
     auto& tech_vias = tech_vias_to_remove[layer];
     auto& block_vias = block_vias_to_remove[layer];
 
-    for (const auto& obs : layer_obstructions_rect) {
-      const odb::Rect obs_rect(xl(obs), yl(obs), xh(obs), yh(obs));
+    for (const odb::Rect& obs_rect :
+         odb::geom::extractRectangles(layer_obstructions)) {
       for (auto itr = layer_vias.qbegin(bgi::intersects(obs_rect));
            itr != layer_vias.qend();
            itr++) {

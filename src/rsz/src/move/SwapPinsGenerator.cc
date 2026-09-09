@@ -81,8 +81,8 @@ bool SwapPinsGenerator::resolveDriverContext(const Target& target,
   }
 
   drvr = resizer_.network()->instance(drvr_pin);
-  scene = target.endpoint_path->scene(resizer_.sta());
-  min_max = target.endpoint_path->minMax(resizer_.sta());
+  scene = target.activeScene(resizer_);
+  min_max = target.minMax(resizer_);
   return drvr != nullptr;
 }
 
@@ -210,7 +210,7 @@ void SwapPinsGenerator::equivCellPins(const sta::LibertyCell* cell,
                                       sta::LibertyPort* input_port,
                                       LibertyPortVec& ports) const
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }

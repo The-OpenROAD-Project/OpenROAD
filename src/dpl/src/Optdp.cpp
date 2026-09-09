@@ -73,7 +73,7 @@ void Opendp::improvePlacement(const int seed,
   // to dbInst in its post-flush orient loop, so use this orientation for
   // DetailedMgr DRC checks
   for (const auto& node : network_->getNodes()) {
-    if (node->getType() == Node::CELL && !node->isFixed()) {
+    if (node->getType() == Node::CELL) {
       odb::dbInst* inst = node->getDbInst();
       if (inst && inst->getPlacementStatus().isPlaced()) {
         node->adjustCurrOrient(inst->getOrient());
@@ -107,6 +107,10 @@ void Opendp::improvePlacement(const int seed,
   // improvement.  If it errors or prints a warning when
   // given a legal placement, that likely means there is
   // a bug in my code somewhere.
+  if (debug_observer_) {
+    logger_->report("Pause before \"legalize\" DPO initialization.");
+    debug_observer_->redrawAndPause();
+  }
   ShiftLegalizer lg;
   lg.legalize(mgr);
 

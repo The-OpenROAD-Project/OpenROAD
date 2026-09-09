@@ -135,6 +135,10 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     io_pin.setLayer(slot.layer);
     io_pin.setPlaced();
     io_pin.setEdge(slot.edge);
+    // the line is needed to find the orientation of pins in polygon dies
+    if (slot.edge == Edge::polygonEdge) {
+      io_pin.setLine(slot.containing_line);
+    }
     assignment.push_back(io_pin);
     slot.used = true;
   }

@@ -157,7 +157,7 @@ void PartitionMgr::getFromODB(
     if (!lib_cell) {
       logger_->error(PAR, 56, "Liberty cell not found: {}", inst->getName());
     }
-    if (lib_cell->hasSequentials()) {
+    if (lib_cell->isSequential()) {
       num_seq++;
     }
     auto [it, inserted]

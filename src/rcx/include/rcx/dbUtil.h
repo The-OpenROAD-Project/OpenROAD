@@ -81,15 +81,9 @@ class dbCreateNetUtil
   std::vector<odb::dbTechLayer*> _routingLayers;
   int _ruleNameHint;
   odb::dbMatrix<std::vector<odb::dbTechVia*>> _vias;
-  bool _milosFormat;
   odb::dbNet* _currentNet;
   odb::dbNet** _mapArray;
-  uint32_t _mapCnt;
-  uint32_t _ecoCnt;
   utl::Logger* logger_;
-  bool _skipPowerNets;
-  bool _useLocation;
-  bool _verbose;
 };
 
 }  // namespace rcx

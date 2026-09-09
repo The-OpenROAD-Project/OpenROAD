@@ -309,6 +309,7 @@ repair_design_cmd(double max_length,
                   double cap_margin,
                   bool pre_placement,
                   bool match_cell_footprint,
+                  bool reroute,
                   bool verbose)
 {
   ensureLinked();
@@ -318,6 +319,7 @@ repair_design_cmd(double max_length,
                         cap_margin,
                         pre_placement,
                         match_cell_footprint,
+                        reroute,
                         verbose);
 }
 

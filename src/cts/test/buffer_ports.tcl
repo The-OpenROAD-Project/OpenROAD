@@ -1,26 +1,11 @@
+# Test CTS design with input/output port buffers on passthrough top design
 source "helpers.tcl"
 
 source Nangate45/Nangate45.vars
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_verilog buffer_ports.v
-
-link_design clk_passthrough_top
-
+read_def buffer_ports.def
 read_sdc buffer_ports.sdc
-
-initialize_floorplan -die_area "0 0 1000 1000" -core_area "0 0 1000 1000" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
-#make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 15
-source $tracks_file
-
-remove_buffers
-buffer_ports
-
-place_pins -hor_layers $io_placer_hor_layer \
-  -ver_layers $io_placer_ver_layer
-global_placement -skip_nesterov_place
-detailed_placement
 
 
 source Nangate45/Nangate45.rc

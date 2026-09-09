@@ -526,6 +526,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 
   odb::cutRows(block_,
                /* min_row_width */ 0,
+               0,
                blockage_bboxes,
                /* halo_x */ 0,
                /* halo_y */ 0,
@@ -565,6 +566,10 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           continue;
         }
         rows.push_back(row);
+      }
+
+      if (rows.empty()) {
+        continue;
       }
 
       int total_row_count = rows.size();
@@ -1223,6 +1228,7 @@ void InitFloorplan::makePolygonRowsScanline(
 
   odb::cutRows(block_,
                /* min_row_width */ 0,
+               0,
                blockage_bboxes,
                /* halo_x */ 0,
                /* halo_y */ 0,

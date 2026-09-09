@@ -19,6 +19,7 @@ or_integration_tests(
     asap7_vias_dont_use
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
+    asap7_M1_M2_followpin_enclosure
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
     asap7_macro_notcovered
@@ -39,9 +40,14 @@ or_integration_tests(
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
     core_grid_min_width_layers
+    core_grid_mirrored_rows
+    core_grid_multiheight_rows
+    core_grid_multiheight_rows_pitch
+    core_grid_multiheight_site_order
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
+    core_grid_ring_on_pin_layer
     core_grid_single_pin
     core_grid_snap
     core_grid_split_cuts
@@ -51,6 +57,7 @@ or_integration_tests(
     core_grid_strap_outside_core
     core_grid_via_snap
     core_grid_with_multiple_bterms
+    core_grid_with_no_grid
     core_grid_with_M6_min_area
     core_grid_with_M6_min_area_rule
     core_grid_with_M7_pins
@@ -74,6 +81,9 @@ or_integration_tests(
     core_grid_with_single_layer_rings
     design_width
     existing
+    gf180_hybrid_followpins
+    gf180_hybrid_followpins_pitch
+    gf180_hybrid_followpins_rowpattern
     global_connect_with_dont_touch
     global_connect_with_dont_touch_warning
     macros
@@ -91,6 +101,7 @@ or_integration_tests(
     macros_cells_via_failure
     macros_different_nets
     macros_grid_check
+    macros_grid_not_used
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel
@@ -111,11 +122,13 @@ or_integration_tests(
     pads_black_parrot_flipchip_connect_overpads
     pads_black_parrot_grid_define
     pads_black_parrot_limit_connect
+    pads_black_parrot_macro_grid
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
+    pads_ihp_sg13g2_balance
     power_switch
     power_switch_cut_rows
     power_switch_daisy
@@ -135,7 +148,9 @@ or_integration_tests(
     reset
     ripup
     sky130_spm_floating_bpin
+    sky130_spm_halo_too_big
     sroute_test
+    stacked_via_merged_enclosure
     widthtable
 )
 

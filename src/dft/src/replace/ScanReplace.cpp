@@ -278,7 +278,7 @@ void ScanReplace::collectScanCellAvailable()
       }
 
       // We only care about sequential cells in DFT
-      if (!liberty_cell->hasSequentials()) {
+      if (!liberty_cell->isSequential()) {
         continue;
       }
 
@@ -389,7 +389,7 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
       continue;
     }
 
-    if (!from_liberty_cell->hasSequentials()
+    if (!from_liberty_cell->isSequential()
         || from_liberty_cell->isClockGate()) {
       // If the cell is not sequential, then there is nothing to replace
       continue;

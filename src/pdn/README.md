@@ -404,7 +404,7 @@ repair_pdn_vias
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](../src/PdnGen.cc) or the [swig file](PdnGen.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/PdnGen.cc) or the [swig file](./src/PdnGen.i).
 
 | Command Name | Description |
 | ----- | ----- |
@@ -471,10 +471,6 @@ Currently the following assumptions are made:
 1. The design is rectangular
 1. The input floorplan includes the stdcell rows, placement of all macro blocks and IO pins.
 1. The stdcells rows will be cut around macro placements
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+pdn) about this tool.
 
 ## License
 

@@ -11,18 +11,21 @@ add_library(dbSta_lib
   dbReadVerilog.cc
   SpefWriter.cc
   IpChecker.cc
+  DmpCeffLambertWDelayCalc.cc
 )
 
 target_include_directories(dbSta_lib
   PUBLIC
     ../include
     ${PROJECT_SOURCE_DIR}/include
+    ${OPENSTA_HOME}
+    ${OPENSTA_HOME}/include/sta
 )
 
 
 target_link_libraries(dbSta_lib
   PUBLIC
-    odb
+    db
     OpenSTA
   PRIVATE
     utl_lib

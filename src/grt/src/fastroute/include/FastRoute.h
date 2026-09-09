@@ -242,6 +242,8 @@ class FastRouteCore
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
+  void setResAwareNetsPercentage(float percentage);
+  float getResAwareNetsPercentage() { return res_aware_nets_percentage_; };
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
@@ -329,7 +331,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.15);
+  void updateSlacks();
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -367,10 +369,6 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void findNetsNearPosition(odb::PtrSet<odb::dbNet>& congestion_nets,
-                            const odb::Point& position,
-                            bool is_horizontal,
-                            int& radius);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(int net_id);
   bool areEdgesOverlapping(int net_id,
@@ -753,6 +751,8 @@ class FastRouteCore
   bool en_estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
+  // Dump the res-aware priority list (debug GRT resAware) only once per run.
+  bool res_aware_logged_ = false;
   bool is_3d_step_ = false;
   bool is_incremental_grt_ = false;
   float worst_slack_ = std::numeric_limits<float>::max();
@@ -778,6 +778,11 @@ class FastRouteCore
   int grid_hv_;
   bool verbose_;
   float critical_nets_percentage_;
+  float res_aware_nets_percentage_ = 15;
+  bool is_fixed_nets_percentage_ = false;
+  static constexpr float kInitialResAwareNetsPercentage = 15.0f;
+  static constexpr float kMidResAwareNetsPercentage = 30.0f;
+  static constexpr float kFinalResAwareNetsPercentage = 100.0f;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
@@ -803,6 +808,11 @@ class FastRouteCore
   std::vector<int> xcor_;
   std::vector<int> ycor_;
   std::vector<int> dcor_;
+  // Scratch map for setTreeNodesVariables() coordinate deduplication.
+  // Maps a packed (x,y) grid position to the dcor index of the first node
+  // inserted at that position, replacing an O(numpoints^2) linear scan with
+  // O(1) average lookups. Reused across calls to avoid per-call allocation.
+  std::unordered_map<uint32_t, int> tree_node_coord_dedup_;
 
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id

@@ -27,12 +27,33 @@ cc_library(
 )
 
 cc_library(
+    name = "abstract-cugr",
+    hdrs = [
+        "src/cugr/include/AbstractCugrRenderer.h",
+    ],
+    includes = ["src/cugr/include"],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":groute",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
     name = "groute",
     hdrs = ["include/grt/GRoute.h"],
     includes = [
         "include",
     ],
     deps = ["//src/odb/src/db"],
+)
+
+cc_library(
+    name = "route_pt",
+    hdrs = ["include/grt/RoutePt.h"],
+    includes = [
+        "include",
+    ],
 )
 
 cc_library(
@@ -109,6 +130,7 @@ cc_library(
         "src/cugr/src",
     ],
     deps = [
+        ":abstract-cugr",
         ":groute",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -121,17 +143,32 @@ cc_library(
 )
 
 cc_library(
-    name = "grt",
-    srcs = [
+    name = "grt_private_hdrs",
+    hdrs = [
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
+        "src/Net.h",
+        "src/Pin.h",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":groute",
+        ":route_pt",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
+    name = "grt",
+    srcs = [
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
         "src/Net.cpp",
-        "src/Net.h",
         "src/Pin.cpp",
-        "src/Pin.h",
         "src/RepairAntennas.cpp",
         "src/RepairAntennas.h",
         "src/RoutingTracks.h",
@@ -140,7 +177,6 @@ cc_library(
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -154,6 +190,8 @@ cc_library(
         ":cugr",
         ":fastroute",
         ":groute",
+        ":grt_private_hdrs",
+        ":route_pt",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -175,13 +213,10 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/AbstractGrouteRenderer.h",
-        "src/AbstractRoutingCongestionDataSource.h",
         "src/GrouteRenderer.cpp",
         "src/GrouteRenderer.h",
         "src/MakeGlobalRouter.cpp",
-        "src/Net.h",
-        "src/Pin.h",
+        "src/cugr/src/CugrRenderer.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
         "src/heatMap.cpp",
         "src/heatMap.h",
@@ -192,6 +227,7 @@ cc_library(
     ],
     hdrs = [
         "include/grt/MakeGlobalRouter.h",
+        "src/cugr/include/CugrRenderer.h",
         "src/fastroute/include/FastRouteRenderer.h",
     ],
     copts = [
@@ -201,12 +237,17 @@ cc_library(
     includes = [
         "include",
         "src",
+        "src/cugr/include",
+        "src/fastroute/include",
     ],
     deps = [
+        ":abstract-cugr",
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
         ":groute",
         ":grt",
+        ":grt_private_hdrs",
         "//:ord",
         "//src/gui",
         "//src/odb/src/db",
