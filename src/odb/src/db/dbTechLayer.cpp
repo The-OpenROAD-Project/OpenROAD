@@ -17,6 +17,7 @@
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
 #include "dbTechLayerCutEnclosureRule.h"
+#include "dbTechLayerCutEnclosureTableDefRule.h"
 #include "dbTechLayerCutSpacingRule.h"
 #include "dbTechLayerCutSpacingTableDefRule.h"
 #include "dbTechLayerCutSpacingTableOrthRule.h"
@@ -151,6 +152,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_) {
+    return false;
+  }
+  if (*cut_enc_table_rules_tbl_ != *rhs.cut_enc_table_rules_tbl_) {
     return false;
   }
   if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_) {
@@ -436,6 +440,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutEnclosureRuleObj);
+  cut_enc_table_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureTableDefRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerCutEnclosureTableDefRuleObj);
   eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
       db,
       this,
@@ -579,6 +588,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.cut_spacing_table_orth_tbl_;
   stream >> *obj.cut_spacing_table_def_tbl_;
   stream >> *obj.cut_enc_rules_tbl_;
+  stream >> *obj.cut_enc_table_rules_tbl_;
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
@@ -689,6 +699,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.cut_spacing_table_orth_tbl_;
   stream << *obj.cut_spacing_table_def_tbl_;
   stream << *obj.cut_enc_rules_tbl_;
+  stream << *obj.cut_enc_table_rules_tbl_;
   stream << *obj.eol_ext_rules_tbl_;
   stream << *obj.array_spacing_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
@@ -768,6 +779,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return cut_spacing_table_def_tbl_;
     case dbTechLayerCutEnclosureRuleObj:
       return cut_enc_rules_tbl_;
+    case dbTechLayerCutEnclosureTableDefRuleObj:
+      return cut_enc_table_rules_tbl_;
     case dbTechLayerEolExtensionRuleObj:
       return eol_ext_rules_tbl_;
     case dbTechLayerArraySpacingRuleObj:
@@ -832,6 +845,8 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
   cut_spacing_table_def_tbl_->collectMemInfo(
       info.children["cut_spacing_table_def_tbl_"]);
   cut_enc_rules_tbl_->collectMemInfo(info.children["cut_enc_rules_tbl_"]);
+  cut_enc_table_rules_tbl_->collectMemInfo(
+      info.children["cut_enc_table_rules_tbl_"]);
   eol_ext_rules_tbl_->collectMemInfo(info.children["eol_ext_rules_tbl_"]);
   array_spacing_rules_tbl_->collectMemInfo(
       info.children["array_spacing_rules_tbl_"]);
@@ -881,6 +896,7 @@ _dbTechLayer::~_dbTechLayer()
   delete cut_spacing_table_orth_tbl_;
   delete cut_spacing_table_def_tbl_;
   delete cut_enc_rules_tbl_;
+  delete cut_enc_table_rules_tbl_;
   delete eol_ext_rules_tbl_;
   delete array_spacing_rules_tbl_;
   delete eol_keep_out_rules_tbl_;
@@ -1065,6 +1081,14 @@ dbSet<dbTechLayerCutEnclosureRule> dbTechLayer::getTechLayerCutEnclosureRules()
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerCutEnclosureRule>(obj, obj->cut_enc_rules_tbl_);
+}
+
+dbSet<dbTechLayerCutEnclosureTableDefRule>
+dbTechLayer::getTechLayerCutEnclosureTableDefRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerCutEnclosureTableDefRule>(
+      obj, obj->cut_enc_table_rules_tbl_);
 }
 
 dbSet<dbTechLayerEolExtensionRule> dbTechLayer::getTechLayerEolExtensionRules()

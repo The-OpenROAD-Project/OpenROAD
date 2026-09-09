@@ -164,6 +164,7 @@ class dbTechLayerArraySpacingRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerCutClassRule;
 class dbTechLayerCutEnclosureRule;
+class dbTechLayerCutEnclosureTableDefRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingTableDefRule;
 class dbTechLayerCutSpacingTableOrthRule;
@@ -9352,6 +9353,9 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerCutEnclosureRule> getTechLayerCutEnclosureRules() const;
 
+  dbSet<dbTechLayerCutEnclosureTableDefRule>
+  getTechLayerCutEnclosureTableDefRules() const;
+
   dbSet<dbTechLayerEolExtensionRule> getTechLayerEolExtensionRules() const;
 
   dbSet<dbTechLayerArraySpacingRule> getTechLayerArraySpacingRules() const;
@@ -10149,6 +10153,36 @@ class dbTechLayerCutEnclosureRule : public dbObject
       dbTechLayer* inly,
       uint32_t dbid);
   // User Code End dbTechLayerCutEnclosureRule
+};
+
+class dbTechLayerCutEnclosureTableDefRule : public dbObject
+{
+ public:
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
+
+  dbTechLayerCutClassRule* getCutClass() const;
+
+  void setCutClassValid(bool cut_class_valid);
+
+  bool isCutClassValid() const;
+
+  static dbTechLayerCutEnclosureTableDefRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutEnclosureTableDefRule* obj);
+  // User Code Begin dbTechLayerCutEnclosureTableDefRule
+  // aboveBelow: 0 = both, 1 = above, 2 = below
+  void addDefaultRow(int aboveBelow, int oh1, int oh2, int oh3, int oh4);
+  void addWidthRow(int width,
+                   int aboveBelow,
+                   int oh1,
+                   int oh2,
+                   int oh3,
+                   int oh4,
+                   bool minSum);
+  void getDefaultRows(
+      std::vector<std::tuple<int, int, int, int, int>>& rows) const;
+  void getWidthRows(
+      std::vector<std::tuple<int, int, int, int, int, int, bool>>& rows) const;
+  // User Code End dbTechLayerCutEnclosureTableDefRule
 };
 
 class dbTechLayerCutSpacingRule : public dbObject
