@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <string>
+#include <string_view>
 
 #include "boost/bind/bind.hpp"
 #include "boostParser.h"
@@ -13,8 +14,8 @@ namespace odb {
 
 lefTechLayerCutEnclosureTableRuleParser::
     lefTechLayerCutEnclosureTableRuleParser(lefinReader* l)
+    : lefin_(l)
 {
-  lefin_ = l;
 }
 
 void lefTechLayerCutEnclosureTableRuleParser::checkCutClass(
@@ -31,9 +32,15 @@ void lefTechLayerCutEnclosureTableRuleParser::checkCutClass(
   }
 }
 
-void lefTechLayerCutEnclosureTableRuleParser::parse(const std::string& s,
+void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
                                                     odb::dbTechLayer* layer)
 {
+  // boost::spirit's shared _string sub-rule (boostParser.h) is hardcoded to
+  // std::string::const_iterator, which is a distinct type from
+  // std::string_view::const_iterator on this toolchain, so the grammar below
+  // still needs a real std::string to parse against.
+  const std::string value(s);
+
   qi::rule<std::string::const_iterator, space_type> cut_class_rule
       = -(lit("CUTCLASS") >> _string)[boost::bind(
           &lefTechLayerCutEnclosureTableRuleParser::checkCutClass,
@@ -68,8 +75,8 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(const std::string& s,
       = (lit("ENCLOSURETABLE") >> cut_class_rule >> *default_row_rule
          >> +width_row_rule >> lit(";"));
 
-  auto first = s.begin();
-  auto last = s.end();
+  auto first = value.begin();
+  auto last = value.end();
   bool valid = qi::phrase_parse(first, last, enclosure_table_rule, space)
                && first == last;
   if (!valid) {
