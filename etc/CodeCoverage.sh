@@ -77,7 +77,9 @@ _coverity() {
     percent=$(sed -nE \
         's/.*Emitted.*compilation units.*\(([0-9]+)%\).*/\1/p' \
         "${log_file}" | tail -n 1)
-    if [[ ${percent} -lt 85  ]]; then
+    # An empty match means the capture summary is missing; treat it as 0%.
+    percent="${percent:-0}"
+    if [[ ${percent} -lt 85 ]]; then
         echo "Coverity requires more than 85% of compilation coverage. Only got ${percent}%."
         exit 1
     fi

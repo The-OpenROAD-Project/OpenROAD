@@ -34,7 +34,23 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertIn("cov-build --dir cov-int cmake --build build", commands)
         self.assertNotIn("bazelisk", commands)
 
-    def _run(self, mode):
+    def test_static_fails_when_capture_percentage_is_missing(self):
+        result, archive_exists, _ = self._run("static", build_log="no summary\n")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(archive_exists)
+        self.assertIn("Only got 0%", result.stdout)
+
+    def test_static_fails_when_capture_percentage_is_low(self):
+        result, archive_exists, _ = self._run(
+            "static", build_log="Emitted 84 compilation units (84%)\n"
+        )
+
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(archive_exists)
+        self.assertIn("Only got 84%", result.stdout)
+
+    def _run(self, mode, build_log="Emitted 100 compilation units (100%)\n"):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             etc = root / "repo" / "etc"
@@ -59,9 +75,11 @@ class CodeCoverageTest(unittest.TestCase):
                 """#!/bin/sh
 printf 'cov-build %s\n' "$*" >> "$COMMAND_LOG"
 mkdir -p cov-int
-printf 'Emitted 100 compilation units (100%%)\n' > cov-int/build-log.txt
+cat "$BUILD_LOG_SOURCE" > cov-int/build-log.txt
 """,
             )
+            build_log_source = root / "build-log.txt"
+            build_log_source.write_text(build_log)
             self._write_executable(
                 fake_bin / "git",
                 '#!/bin/sh\nprintf "0123456789abcdef\\n"\n',
@@ -69,6 +87,7 @@ printf 'Emitted 100 compilation units (100%%)\n' > cov-int/build-log.txt
 
             env = os.environ.copy()
             env["COMMAND_LOG"] = str(command_log)
+            env["BUILD_LOG_SOURCE"] = str(build_log_source)
             env["PATH"] = f"{fake_bin}:{env['PATH']}"
             env["SKIP_COVERITY_UPLOAD"] = "1"
 
