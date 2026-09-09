@@ -286,6 +286,13 @@ class GridGraph
       const std::vector<double>& net_costs,
       const std::function<void(int, PointT, CapacityT, double)>& fn) const;
 
+  // Enumerate the lower cells of the preferred-direction edges a wire from
+  // u to v occupies on `layer_index` — the cells commitWire charges.
+  void forEachWireEdge(int layer_index,
+                       PointT u,
+                       PointT v,
+                       const std::function<void(PointT)>& fn) const;
+
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
   {
@@ -400,6 +407,8 @@ class GridGraph
                                PointT loc,
                                const std::vector<double>& net_costs,
                                F&& fn) const;
+  template <typename F>
+  void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

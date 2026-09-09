@@ -61,7 +61,7 @@ Initial-placement arguments
 
 Routability-driven arguments
 - They begin with `-routability`.
-- `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+- `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_min_congestion_for_inflation`, `-routability_rc_coefficients`
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
@@ -76,6 +76,7 @@ global_placement
     [-routability_driven]\
     [-incremental]\
     [-skip_io]\
+    [-place_ios]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -132,6 +133,7 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
+| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The resulting pin locations are written to the database but are not legalized to routing tracks or grid positions; `place_pins` must be run afterwards. Not supported on a rectilinear die. Cannot be combined with `-timing_driven`, `-routability_driven`, `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
@@ -158,6 +160,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `3`, and the allowed values are floats. |
+| `-routability_min_congestion_for_inflation` | Tiles with a congestion value below this value will not be inflated. The default value is `0.95`, and the allowed values are floats `[0, 1]`. |
 | `-routability_rc_coefficients` | Set routability RC coefficients for calculating the averate routing congestion. They relate to the 0.5%, 1%, 2%, and 5% most congested tiles. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
 
 #### Timing-Driven Arguments

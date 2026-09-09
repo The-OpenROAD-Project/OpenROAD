@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <set>
 #include <string>
@@ -181,6 +182,48 @@ bool Connect::isComplexStackedVia(const odb::Rect& lower,
   return false;
 }
 
+// The pads a stack leaves on a shared routing layer are concentric, so their
+// union is the larger of each dimension; width-conditioned rules measure the
+// smaller dimension of that union.  Returns true when any layer got wider,
+// meaning the stack has to be rebuilt against the new widths.
+bool Connect::updateSharedLayerWidths(
+    const std::vector<std::unique_ptr<DbVia>>& stack,
+    std::vector<std::optional<int>>& shared_widths) const
+{
+  bool changed = false;
+
+  for (size_t i = 1; i < stack.size(); i++) {
+    const DbVia* below = stack[i - 1].get();
+    const DbVia* above = stack[i].get();
+    if (!below->hasGenerator() || !above->hasGenerator()) {
+      continue;
+    }
+    const ViaGenerator* below_via = below->getGenerator();
+    const ViaGenerator* above_via = above->getGenerator();
+
+    const int merged_width
+        = std::min(std::max(below_via->getGeneratorWidth(false),
+                            above_via->getGeneratorWidth(true)),
+                   std::max(below_via->getGeneratorHeight(false),
+                            above_via->getGeneratorHeight(true)));
+
+    if (!shared_widths[i].has_value()
+        || merged_width > shared_widths[i].value()) {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "ViaEnclosure",
+                 1,
+                 "Merged shape on {} is {} wide, rebuilding stack.",
+                 above_via->getBottomLayer()->getName(),
+                 merged_width);
+      shared_widths[i] = merged_width;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 std::vector<Connect::ViaLayerRects> Connect::generateViaRects(
     const odb::Rect& lower,
     const odb::Rect& upper) const
@@ -189,7 +232,7 @@ std::vector<Connect::ViaLayerRects> Connect::generateViaRects(
 
   std::vector<ViaLayerRects> stack;
   stack.push_back({lower});
-  for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
+  for (size_t i = 0; i < intermediate_routing_layers_.size(); i++) {
     stack.push_back({intersection});
   }
   stack.push_back({upper});
@@ -582,73 +625,99 @@ void Connect::makeVia(odb::dbSWire* wire,
     }
     generateMinEnclosureViaRects(stack_rects);
 
-    std::vector<DbVia*> stack;
+    std::vector<std::unique_ptr<DbVia>> stack;
     std::vector<odb::dbTechLayer*> layers = getAllRoutingLayers();
 
-    for (int i = 1; i < layers.size(); i++) {
-      const auto& via_lower_rects = stack_rects[i - 1];
-      const auto& via_upper_rects = stack_rects[i];
-      auto* l0 = layers[i - 1];
-      auto* l1 = layers[i];
+    // The metal on a layer shared by two vias of a stack is the union of the
+    // pads landing on it from the cut layer below and the cut layer above, so
+    // it can be wider than either pad alone and select a different
+    // width-conditioned rule tier.  Build the stack, measure what actually
+    // lands on each shared layer, and rebuild until the widths stop growing.
+    //
+    // This terminates: a rebuild only happens when some shared layer got
+    // strictly wider, the widths are never lowered, and the pads they come from
+    // are bounded by the enclosures the tech's rules ask for.  So it runs at
+    // most once per width tier that a layer actually crosses.
+    std::vector<std::optional<int>> shared_widths(layers.size());
 
-      ViaGenerator::Constraint lower_constraint{false, false, true};
-      if (lower->getLayer() == l0) {
-        if (!lower->isModifiable() || lower->hasITermConnections()) {
-          // lower is not modifiable to all sides must fit
-          skip_caching = true;
-          lower_constraint.must_fit_x = true;
-          lower_constraint.must_fit_y = true;
-          lower_constraint.intersection_only = false;
-        } else {
-          lower_constraint.must_fit_x = !lower->isHorizontal();
-          lower_constraint.must_fit_y = !lower->isVertical();
+    bool rebuild = true;
+    while (rebuild) {
+      stack.clear();
+
+      bool failed = false;
+      for (size_t i = 1; i < layers.size(); i++) {
+        const auto& via_lower_rects = stack_rects[i - 1];
+        const auto& via_upper_rects = stack_rects[i];
+        auto* l0 = layers[i - 1];
+        auto* l1 = layers[i];
+
+        ViaGenerator::Constraint lower_constraint{
+            false, false, true, shared_widths[i - 1]};
+        if (lower->getLayer() == l0) {
+          if (!lower->isModifiable() || lower->hasITermConnections()) {
+            // lower is not modifiable to all sides must fit
+            skip_caching = true;
+            lower_constraint.must_fit_x = true;
+            lower_constraint.must_fit_y = true;
+            lower_constraint.intersection_only = false;
+          } else {
+            lower_constraint.must_fit_x = !lower->isHorizontal();
+            lower_constraint.must_fit_y = !lower->isVertical();
+          }
         }
-      }
-      ViaGenerator::Constraint upper_constraint{false, false, true};
-      if (upper->getLayer() == l1) {
-        if (!upper->isModifiable() || upper->hasITermConnections()) {
-          // upper is not modifiable to all sides must fit
-          skip_caching = true;
-          upper_constraint.must_fit_x = true;
-          upper_constraint.must_fit_y = true;
-          upper_constraint.intersection_only = false;
-        } else {
-          upper_constraint.must_fit_x = !upper->isHorizontal();
-          upper_constraint.must_fit_y = !upper->isVertical();
+        ViaGenerator::Constraint upper_constraint{
+            false, false, true, shared_widths[i]};
+        if (upper->getLayer() == l1) {
+          if (!upper->isModifiable() || upper->hasITermConnections()) {
+            // upper is not modifiable to all sides must fit
+            skip_caching = true;
+            upper_constraint.must_fit_x = true;
+            upper_constraint.must_fit_y = true;
+            upper_constraint.intersection_only = false;
+          } else {
+            upper_constraint.must_fit_x = !upper->isHorizontal();
+            upper_constraint.must_fit_y = !upper->isVertical();
+          }
         }
+
+        auto* new_via = makeSingleLayerVia(wire->getNet(),
+                                           wire->getBlock(),
+                                           l0,
+                                           via_lower_rects,
+                                           lower_constraint,
+                                           l1,
+                                           via_upper_rects,
+                                           upper_constraint);
+        if (new_via == nullptr) {
+          failed = true;
+          break;
+        }
+        stack.emplace_back(new_via);
       }
 
-      auto* new_via = makeSingleLayerVia(wire->getNet(),
-                                         wire->getBlock(),
-                                         l0,
-                                         via_lower_rects,
-                                         lower_constraint,
-                                         l1,
-                                         via_upper_rects,
-                                         upper_constraint);
-      if (new_via == nullptr) {
+      if (failed) {
         // no via made, so build dummy via for warning
-        for (auto* stack_via : stack) {
-          // make sure stack is cleared
-          delete stack_via;
-        }
         stack.clear();
         odb::dbTransform xfm({-x, -y});
         odb::Rect area = intersection;
         xfm.apply(area);
-        stack.push_back(
-            new DbGenerateDummyVia(this, area, layer0_, layer1_, false, ""));
+        stack.push_back(std::make_unique<DbGenerateDummyVia>(
+            this, area, layer0_, layer1_, false, ""));
         break;
       }
-      stack.push_back(new_via);
+
+      rebuild = updateSharedLayerWidths(stack, shared_widths);
     }
 
     via = std::make_unique<DbGenerateStackedVia>(
-        stack, layer0_, wire->getBlock());
+        std::move(stack), layer0_, wire->getBlock());
   }
 
   shapes = via->generate(
       wire->getBlock(), wire, type, x, y, ongrid_, grid_->getLogger());
+  if (!via->canCache()) {
+    skip_caching = true;
+  }
 
   if (skip_caching) {
     via = nullptr;

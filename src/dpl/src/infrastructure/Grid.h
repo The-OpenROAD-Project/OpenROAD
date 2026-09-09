@@ -89,6 +89,7 @@ class Grid
   std::unordered_set<int> getRowCoordinates() const;
 
   GridX gridX(DbuX x) const;
+  GridX gridRoundX(DbuX x) const;
   GridX gridEndX(DbuX x) const;
 
   GridX gridX(const Node* cell) const;

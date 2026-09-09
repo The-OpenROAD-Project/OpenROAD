@@ -481,7 +481,7 @@ void extSpef::writeCapITerm(const uint32_t node, const uint32_t capIndex)
   writeCNodeNumber();
 
   writeITermNode(node);
-  writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
+  writeRCvalue(_nodeCapTable->geti(capIndex), scale_factors_.capacitance);
 
   fprintf(_outFP, "\n");
 }
@@ -491,7 +491,7 @@ void extSpef::writeCapName(dbCapNode* capNode, const uint32_t capIndex)
   writeCNodeNumber();
 
   writeNameNode(capNode);
-  writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
+  writeRCvalue(_nodeCapTable->geti(capIndex), scale_factors_.capacitance);
 
   fprintf(_outFP, "\n");
 }
@@ -502,7 +502,7 @@ void extSpef::writeCapPort(const uint32_t node, const uint32_t capIndex)
 
   writeBTerm(node);
 
-  writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
+  writeRCvalue(_nodeCapTable->geti(capIndex), scale_factors_.capacitance);
   fprintf(_outFP, "\n");
 }
 
@@ -539,9 +539,12 @@ void extSpef::writePort(const uint32_t node)
 void extSpef::writeSingleRC(const double val, const bool delimiter)
 {
   if (delimiter) {
-    fprintf(_outFP, "%s%g", spef_header_.delimiter.c_str(), val * _cap_unit);
+    fprintf(_outFP,
+            "%s%g",
+            spef_header_.delimiter.c_str(),
+            val * scale_factors_.capacitance);
   } else {
-    fprintf(_outFP, "%g", val * _cap_unit);
+    fprintf(_outFP, "%g", val * scale_factors_.capacitance);
   }
 }
 
@@ -567,7 +570,7 @@ void extSpef::writeDnet(uint32_t netId, const double* totCap)
             "\n*D_NET %s ",
             addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
   }
-  writeRCvalue(totCap, _cap_unit);
+  writeRCvalue(totCap, scale_factors_.capacitance);
   fprintf(_outFP, "\n");
 }
 
@@ -751,7 +754,7 @@ void extSpef::writeNodeCap(const uint32_t netId,
 {
   writeCNodeNumber();
   writeNode(netId, ii);
-  writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
+  writeRCvalue(_nodeCapTable->geti(capIndex), scale_factors_.capacitance);
   fprintf(_outFP, "\n");
 }
 
@@ -970,13 +973,16 @@ void extSpef::writeCouplingCapsNoSort(dbSet<dbCCSeg>& capSet,
     writeCapNode(cc->getSourceCapNode()->getId(), netId);
     writeCapNode(cc->getTargetCapNode()->getId(), netId);
 
-    fprintf(
-        _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+    fprintf(_outFP,
+            "%g",
+            cc->getCapacitance(_active_corner_number[0])
+                * scale_factors_.capacitance);
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
               spef_header_.delimiter.c_str(),
-              cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+              cc->getCapacitance(_active_corner_number[ii])
+                  * scale_factors_.capacitance);
     }
     fprintf(_outFP, "\n");
   }
@@ -997,13 +1003,16 @@ void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet, const uint32_t netId)
     writeCapNode(cc->getSourceCapNode()->getId(), netId);
     writeCapNode(cc->getTargetCapNode()->getId(), netId);
 
-    fprintf(
-        _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+    fprintf(_outFP,
+            "%g",
+            cc->getCapacitance(_active_corner_number[0])
+                * scale_factors_.capacitance);
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
               spef_header_.delimiter.c_str(),
-              cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+              cc->getCapacitance(_active_corner_number[ii])
+                  * scale_factors_.capacitance);
     }
     fprintf(_outFP, "\n");
   }
@@ -1048,12 +1057,14 @@ void extSpef::writeCouplingCaps(const std::vector<dbCCSeg*>& vec_cc,
               "CC of net %d %s with capacitance %g",
               _d_net->getId(),
               _d_net->getConstName(),
-              cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+              cc->getCapacitance(_active_corner_number[0])
+                  * scale_factors_.capacitance);
       for (int ii = 1; ii < _active_corner_cnt; ii++) {
         sprintf(&msg1[0],
                 "%s%g",
                 spef_header_.delimiter.c_str(),
-                cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+                cc->getCapacitance(_active_corner_number[ii])
+                    * scale_factors_.capacitance);
         strcat(_bufString, &msg1[0]);
       }
       strcat(_bufString, " has both capNodes ");
@@ -1066,13 +1077,16 @@ void extSpef::writeCouplingCaps(const std::vector<dbCCSeg*>& vec_cc,
     writeCapNode(cc->getSourceCapNode(), netId);
     writeCapNode(cc->getTargetCapNode(), netId);
 
-    fprintf(
-        _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+    fprintf(_outFP,
+            "%g",
+            cc->getCapacitance(_active_corner_number[0])
+                * scale_factors_.capacitance);
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
               spef_header_.delimiter.c_str(),
-              cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+              cc->getCapacitance(_active_corner_number[ii])
+                  * scale_factors_.capacitance);
     }
 
     fprintf(_outFP, "\n");
@@ -1142,13 +1156,16 @@ void extSpef::writeRes(const uint32_t netId, dbSet<dbRSeg>& rSet)
     writeCapNode(rc->getSourceNode(), netId);
     writeCapNode(rc->getTargetNode(), netId);
 
-    fprintf(
-        _outFP, "%g", rc->getResistance(_active_corner_number[0]) * _res_unit);
+    fprintf(_outFP,
+            "%g",
+            rc->getResistance(_active_corner_number[0])
+                * scale_factors_.resistance);
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
               spef_header_.delimiter.c_str(),
-              rc->getResistance(_active_corner_number[ii]) * _res_unit);
+              rc->getResistance(_active_corner_number[ii])
+                  * scale_factors_.resistance);
     }
     fprintf(_outFP, " \n");
   }
@@ -1551,17 +1568,11 @@ void extSpef::writeBlock(const char* nodeCoord,
   }
 
   if (!_stopBeforeDnets && !_stopAfterNameMap) {
-    if (strcmp("PF", capUnit) == 0) {
-      _cap_unit = 0.001;
-      spef_header_.capacitance_unit_word = capUnit;
-    }
-    if (strcmp("MOHM", resUnit) == 0) {
-      _res_unit = 1000.0;
-      spef_header_.resistance_unit_word = resUnit;
-    } else if (strcmp("KOHM", resUnit) == 0) {
-      _res_unit = 0.001;
-      spef_header_.resistance_unit_word = resUnit;
-    }
+    scale_factors_ = computeScaleFactors(capUnit, resUnit);
+
+    spef_header_.capacitance_unit_word = capUnit;
+    spef_header_.resistance_unit_word = resUnit;
+
     setCornerCnt(_block->getCornerCount());
 
     if (!_preserveCapValues) {
@@ -1704,6 +1715,22 @@ std::string SpefHeader::string(utl::Logger* logger) const
   out << "*L_UNIT 1 " << inductance_unit_word << "\n";
 
   return out.str();
+}
+
+ScaleFactors extSpef::computeScaleFactors(const std::string& capacitance_unit,
+                                          const std::string& resistance_unit)
+{
+  ScaleFactors scale_factors;
+
+  if (capacitance_unit == "PF") {
+    scale_factors.capacitance = 0.001;
+  }
+
+  if (resistance_unit == "KOHM") {
+    scale_factors.resistance = 0.001;
+  }
+
+  return scale_factors;
 }
 
 }  // namespace rcx

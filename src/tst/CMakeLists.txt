@@ -100,3 +100,11 @@ target_link_libraries(tst_integrated_fixture
     db
     OpenSTA
 )
+
+# The fixtures log through utl, so they contribute man3 message pages like any
+# other module. SOURCE_DIR confines the scan to the library sources, matching
+# the Bazel messages_txt glob.
+messages(
+  TARGET tst_integrated_fixture
+  SOURCE_DIR src
+)

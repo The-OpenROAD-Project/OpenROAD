@@ -9,6 +9,7 @@ or_integration_tests(
     array_max_wl
     array_no_blockages
     array_repair_clock_nets
+    buffer_no_max_cap
     buffer_ports
     check_buffers
     check_buffers_blockages
@@ -31,6 +32,8 @@ or_integration_tests(
     gated_clock3
     gated_clock4
     gated_clock5
+    gated_clock_ndr_full
+    gated_clock_ndr_root
     hier_insertion_delay
     insertion_delay
     inverters

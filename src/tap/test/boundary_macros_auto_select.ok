@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
-[INFO ODB-0227] LEF file: Nangate45_data/endcaps.lef, created 13 library cells
+[WARNING ODB-0406] duplicate MACRO (ENDCAP_X4_RIGHTTOPCORNER) ignoring...
+[INFO ODB-0227] LEF file: Nangate45_data/endcaps.lef, created 12 library cells
 [INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
 [INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
 [INFO ODB-0128] Design: gcd

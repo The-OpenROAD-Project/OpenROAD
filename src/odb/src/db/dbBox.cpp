@@ -1004,7 +1004,7 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   box->flags_.octilinear = false;
   box->flags_.owner_type = dbBoxOwner::INST;
   box->owner_ = inst->getOID();
-  box->shape_.rect.init(x1, y1, x2, y2);
+  box->shape_.rect.reset(x1, y1, x2, y2);
   inst->halo_ = box->getOID();
   return (dbBox*) box;
 }

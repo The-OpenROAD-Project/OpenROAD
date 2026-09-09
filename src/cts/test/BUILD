@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_no_max_cap",
     "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
@@ -36,6 +37,8 @@ COMPULSORY_TESTS = [
     "gated_clock3",
     "gated_clock4",
     "gated_clock5",
+    "gated_clock_ndr_full",
+    "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
     "inverters",
@@ -115,6 +118,10 @@ filegroup(
                 "array_tile.lib",
                 "array_max_wl.defok",
             ],
+            "buffer_no_max_cap": [
+                "16sinks.def",
+                "Nangate45/Nangate45_typ_no_max_cap.lib",
+            ],
             "check_buffer_inference1": [
                 "ModNangate45/ModNangate45_typ.lib",
                 "check_buffers.def",
@@ -169,6 +176,14 @@ filegroup(
             "gated_clock5": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
+            ],
+            "gated_clock_ndr_full": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
+            "gated_clock_ndr_root": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
             ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",

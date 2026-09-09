@@ -48,6 +48,7 @@ TEST_F(ObjectTypeFixture, WriteHash)
   dbOStream out((_dbDatabase*) db_.get(), ss);
 
   out << dbGdsLibObj;
+  out.flush();
 
   // Should write the primary hash 0x2
   uint32_t hash;

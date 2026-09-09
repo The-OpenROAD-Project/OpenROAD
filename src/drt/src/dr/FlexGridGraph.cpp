@@ -217,7 +217,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
     const auto layer = getTech()->getLayer(layerNum);
-    if (layerNum + 2 <= getTech()->getTopLayerNum()) {
+    if (layerNum + 2 <= router_cfg_->TOP_ROUTING_LAYER) {
       nonPrefLayerNum = layerNum + 2;
     } else if (layerNum - 2 >= getTech()->getBottomLayerNum()) {
       nonPrefLayerNum = layerNum - 2;

@@ -16,6 +16,7 @@ add_executable(TestLef58Properties TestLef58Properties.cpp)
 add_executable(TestGroup TestGroup.cpp)
 add_executable(TestDbSet TestDbSet.cpp)
 add_executable(TestGCellGrid TestGCellGrid.cpp)
+add_executable(TestGCellTileSize TestGCellTileSize.cpp)
 add_executable(TestJournal TestJournal.cpp)
 add_executable(TestAccessPoint TestAccessPoint.cpp)
 add_executable(TestGuide TestGuide.cpp)
@@ -30,6 +31,7 @@ add_executable(TestSwapMaster TestSwapMaster.cpp)
 add_executable(TestSwapMasterUnusedPort TestSwapMasterUnusedPort.cpp)
 add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 add_executable(TestObjectType TestObjectType.cpp)
+add_executable(TestDbStream TestDbStream.cpp)
 
 target_link_libraries(OdbGTests
         db
@@ -51,6 +53,7 @@ target_link_libraries(TestCallBacks
 )
 target_link_libraries(TestGeom
         db
+        Boost::boost
         ${GTEST_LIBS}
 )
 target_link_libraries(TestModule
@@ -78,6 +81,11 @@ target_link_libraries(TestDbSet
         ${GTEST_LIBS}
 )
 target_link_libraries(TestGCellGrid
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGCellTileSize
         db
         odb_test_helper
         ${GTEST_LIBS}
@@ -157,6 +165,11 @@ target_link_libraries(TestWriteReadDbHier
         tst_integrated_fixture
         ${GTEST_LIBS}
 )
+target_link_libraries(TestDbStream
+        db
+        tst_base
+        ${GTEST_LIBS}
+)
 target_link_libraries(TestObjectType
         db
         tst_base
@@ -181,7 +194,8 @@ add_dependencies(build_and_test
         TestModule
         TestGroup
         TestDbSet
-        TestGCellGrid 
+        TestGCellGrid
+        TestGCellTileSize
         TestGuide
         TestNetTrack
         TestMaster
@@ -194,6 +208,7 @@ add_dependencies(build_and_test
         TestWriteReadDbHier
         OdbGTests
         TestObjectType
+        TestDbStream
 )
 add_subdirectory(helper)
 add_subdirectory(scan)

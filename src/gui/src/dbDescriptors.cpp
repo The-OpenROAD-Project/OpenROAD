@@ -45,6 +45,7 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #ifdef ENABLE_QT
 #include "options.h"
 #endif
@@ -1736,7 +1737,8 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
           }
           painter.saveState();
           painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
-          for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
+          for (const odb::Polygon& outline :
+               odb::geom::mergePolygons(guide_rects)) {
             painter.drawPolygon(outline);
           }
           painter.restoreState();

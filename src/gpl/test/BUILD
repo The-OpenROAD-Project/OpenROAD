@@ -21,6 +21,7 @@ TESTS = [
     "mbff_orig_name",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
+    "mt_invariance01",
     "nograd01",
     "simple01",
     "simple01-obs",
@@ -53,6 +54,8 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "incremental02",
+    "place_ios01",
+    "place_ios_top_layer",
 ]
 
 # Longer-running regression tests (see regression_tests_large.tcl). These are
@@ -209,6 +212,20 @@ cc_test(
         "//src/tst",
         "//src/utl",
         "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "placer_base_test",
+    srcs = ["placer_base_test.cpp"],
+    deps = [
+        "//src/gpl",
+        "//src/gpl:gpl_private_hdrs",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
