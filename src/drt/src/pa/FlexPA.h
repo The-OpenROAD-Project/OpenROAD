@@ -414,18 +414,18 @@ class FlexPA
    * @param layer_num layer in which the vias exist
    * @param inst_term optional param for when the caller wants to avoid certain
    * via_defs depending on the inst_term
-   * @param already_collected number of via defs already collected by the
-   * caller for other layers, counted against the trial budget so the total
-   * across calls matches the pre-refactor combined limit
+   * @param max_vias maximum number of via defs to return. Callers that need
+   * every via def on the layer can pass
+   * std::numeric_limits<int>::max(); callers splitting a combined budget
+   * across multiple calls (e.g. up vias and down vias) are responsible for
+   * subtracting what earlier calls already returned.
    *
    * @return a vector of the priority vias
    */
   std::vector<const frViaDef*> getPriorityViaDefs(frLayerNum layer_num,
                                                   frInstTerm* inst_term
                                                   = nullptr,
-                                                  bool get_all = false,
-                                                  int already_collected
-                                                  = 0) const;
+                                                  int max_vias = 2) const;
 
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,

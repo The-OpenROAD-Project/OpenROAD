@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -45,24 +46,20 @@ namespace drt {
 std::vector<const frViaDef*> FlexPA::getPriorityViaDefs(
     const frLayerNum layer_num,
     frInstTerm* inst_term,
-    const bool get_all,
-    const int already_collected) const
+    const int max_vias) const
 {
   std::vector<const frViaDef*> priority_via_defs;
   if (!layer_num_to_via_defs_.contains(layer_num)
       || !layer_num_to_via_defs_.at(layer_num).contains(1)) {
     return priority_via_defs;
   }
-  const int max_num_via_trial = 2;
-  int cnt = already_collected;
   for (auto& [tup, via_def] : layer_num_to_via_defs_.at(layer_num).at(1)) {
     if (inst_term && inst_term->isStubborn()
         && avoid_via_defs_.contains(via_def)) {
       continue;
     }
     priority_via_defs.push_back(via_def);
-    cnt++;
-    if (cnt >= max_num_via_trial && !get_all) {
+    if ((int) priority_via_defs.size() >= max_vias) {
       break;
     }
   }
@@ -902,12 +899,15 @@ void FlexPA::filterViaAccess(
   std::vector<const frViaDef*> via_defs;
   getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
+  const int max_num_via_trial = 2;
   if (via_defs.empty()) {  // no via map entry
+    const int max_vias
+        = try_all_vias ? std::numeric_limits<int>::max() : max_num_via_trial;
 
     // UP Vias
     if (layer_num + 1 <= router_cfg_->TOP_ROUTING_LAYER) {
       std::vector<const frViaDef*> up_vias
-          = getPriorityViaDefs(layer_num + 1, inst_term, try_all_vias);
+          = getPriorityViaDefs(layer_num + 1, inst_term, max_vias);
       via_defs.insert(via_defs.end(), up_vias.begin(), up_vias.end());
     }
 
@@ -915,14 +915,14 @@ void FlexPA::filterViaAccess(
     if (isIOTerm(inst_term)
         && layer_num > getDesign()->getTech()->getBottomLayerNum()
         && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER) {
-      std::vector<const frViaDef*> down_vias = getPriorityViaDefs(
-          layer_num - 1, inst_term, try_all_vias, (int) via_defs.size());
+      const int remaining_vias = max_vias - (int) via_defs.size();
+      std::vector<const frViaDef*> down_vias
+          = getPriorityViaDefs(layer_num - 1, inst_term, remaining_vias);
       via_defs.insert(via_defs.end(), down_vias.begin(), down_vias.end());
     }
   }
 
   int valid_via_count = 0;
-  const int max_num_via_trial = 2;
   for (const frViaDef* via_def : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
     const odb::Rect box = via->getLayer1BBox();
