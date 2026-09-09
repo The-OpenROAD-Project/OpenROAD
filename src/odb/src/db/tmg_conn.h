@@ -89,7 +89,7 @@ struct WirePoint
   const int x;  // nominal point
   const int y;
   dbTechLayer* const layer;
-  int tindex{-1};  // index to _termV
+  int tindex{-1};  // index to terminals_
   WirePoint* next_for_term{nullptr};
   WirePoint* t_alt{nullptr};
   WirePoint* next_for_clear{nullptr};
@@ -101,19 +101,25 @@ struct WirePoint
   bool c2pinpt{false};
 };
 
-struct tmg_rcterm
+struct Terminal
 {
-  tmg_rcterm(dbITerm* iterm) : iterm(iterm), bterm(nullptr) {}
-  tmg_rcterm(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
+  Terminal(dbITerm* iterm) : iterm(iterm), bterm(nullptr) {}
+  Terminal(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
+
   dbITerm* const iterm;
   dbBTerm* const bterm;
   WirePoint* pt;        // list of points
   WirePoint* first_pt;  // first point in dfs
 };
 
-struct tmg_rcshort
+// This is how we keep the information that two sections from different paths
+// are touching each other: two points, one from each section. Each point is
+// the end of the section that is closest to where the two touch.
+// Usually, the two points are the same spot, but not necessarily.
+struct Short
 {
-  tmg_rcshort(int i0, int i1) : i0(i0), i1(i1) {}
+  Short(int i0, int i1) : i0(i0), i1(i1) {}
+
   const int i0;
   const int i1;
   bool skip{false};
@@ -222,6 +228,8 @@ class tmg_conn
 
   std::vector<WireSection> wire_sections_;
   std::vector<WirePoint> wire_points_;
+  std::vector<Terminal> terminals_;
+  std::vector<Short> shorts_;
 
   int slicedTilePinCnt_;
   int stbtx1_[200];
@@ -231,9 +239,7 @@ class tmg_conn
   dbBTerm* slicedTileBTerm_[200];
   std::unique_ptr<tmg_conn_search> search_;
   std::unique_ptr<tmg_conn_graph> graph_;
-  std::vector<tmg_rcterm> termV_;
-  std::vector<tmg_rcterm*> tstackV_;
-  std::vector<tmg_rcshort> shortV_;
+  std::vector<Terminal*> tstackV_;
   bool hasSWire_;
   bool connected_;
   dbWireEncoder encoder_;
