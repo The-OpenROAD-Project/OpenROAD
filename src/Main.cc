@@ -216,6 +216,9 @@ static void handler(int sig)
 
 int main(int argc, char* argv[])
 {
+  // Idle OpenMP workers sleep instead of spinning between parallel regions.
+  // A user-set OMP_WAIT_POLICY takes precedence.
+  setenv("OMP_WAIT_POLICY", "passive", 0);
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
   std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
