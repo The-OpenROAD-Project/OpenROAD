@@ -316,6 +316,9 @@ filegroup(
                 "example1.lef",
                 "hier3.v",
             ],
+            "supply_port_graph": [
+                "write_verilog10.def",
+            ],
             "write_sdc1": [
                 "hier1.sdc",
                 "hier1.v",
