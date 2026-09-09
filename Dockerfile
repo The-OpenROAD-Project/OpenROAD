@@ -68,7 +68,7 @@ COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.
 
 FROM $devImage AS final
 
-COPY --from=builder /OpenROAD/install/ /usr/
+COPY --chown=root:root --from=builder /OpenROAD/install/ /usr/
 ENV OPENROAD_EXE=/usr/bin/openroad
 
 RUN <<EOF

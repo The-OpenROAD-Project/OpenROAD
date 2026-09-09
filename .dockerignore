@@ -1,4 +1,5 @@
 .git
 build*/
+bazel-*
 Dockerfile
 etc/openroad_deps_prefixes.txt
