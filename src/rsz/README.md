@@ -231,6 +231,8 @@ repair_timing
     [-skip_last_gasp]
     [-skip_vt_swap]
     [-skip_crit_vt_swap]
+    [-skip_crpr_setup]
+    [-skip_crpr_hold]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_iterations iterations]
@@ -261,6 +263,8 @@ repair_timing
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
+| `-skip_crpr_setup` | Disable CRPR while repairing setup timing. Does not select setup repair. |
+| `-skip_crpr_hold` | Disable CRPR while repairing hold timing. Does not select hold repair. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
@@ -268,6 +272,33 @@ repair_timing
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging of the repair progress. |
+
+`repair_timing` preserves the CRPR setting that was active when the command was
+called. The options temporarily disable the global timing-analysis setting only
+for their corresponding repair phase and restore the entry setting before the
+command returns or reports an error.
+
+| Options | Setup repair | Hold repair | After return or error |
+| ----- | ----- | ----- | ----- |
+| None | Entry setting | Entry setting | Entry setting |
+| `-skip_crpr_setup` | Off | Entry setting | Entry setting |
+| `-skip_crpr_hold` | Entry setting | Off | Entry setting |
+| Both | Off | Off | Entry setting |
+
+For example:
+
+```tcl
+repair_timing
+repair_timing -skip_crpr_setup
+repair_timing -skip_crpr_hold
+repair_timing -skip_crpr_setup -skip_crpr_hold
+```
+
+Progress metrics reported during a repair phase use that phase's temporary
+setting. Reports after `repair_timing` use the restored entry setting. Disabling
+CRPR can change optimization decisions, buffer insertion, and QoR. Hold repair's
+setup-protection checks use the hold phase's setting; these options do not create
+independent min/max CRPR configurations.
 
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that

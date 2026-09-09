@@ -249,6 +249,8 @@ or_integration_tests(
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1
+    repair_timing_crpr_options
+    repair_timing_crpr_timing
     cpp_tests
 )
 

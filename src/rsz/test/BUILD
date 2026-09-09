@@ -267,6 +267,13 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "repair_timing_crpr_options",
+    "repair_timing_crpr_timing",
+]
+
+PASSFAIL_NO_GOLDEN_TESTS = [
+    "repair_timing_crpr_options",
+    "repair_timing_crpr_timing",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -329,6 +336,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_log = False if test_name in PASSFAIL_NO_GOLDEN_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )
