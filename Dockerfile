@@ -43,9 +43,7 @@ EOF
 
 FROM $devImage AS builder
 
-ARG compiler=gcc
 ARG numThreads=NotSet
-ARG orVersion=NotSet
 
 RUN <<EOF
 groupadd user --gid 9000
@@ -56,19 +54,10 @@ USER user
 WORKDIR /OpenROAD
 COPY --chown=user:user . .
 RUN <<EOF
-# enable compiler for RHEL8
-if [ -f /opt/rh/gcc-toolset-13/enable ]; then
-    source /opt/rh/gcc-toolset-13/enable
-fi
-DEPS_ARGS=""
-if [ -f /etc/openroad_deps_prefixes.txt ]; then
-    DEPS_ARGS=$(cat /etc/openroad_deps_prefixes.txt)
-fi
-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DOPENROAD_VERSION=${orVersion} $DEPS_ARGS
 if [ "$numThreads" = "NotSet" ]; then
     numThreads=$(nproc)
 fi
-cmake --build build -- -j ${numThreads}
+./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
 EOF
 
 COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.
@@ -79,7 +68,7 @@ COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.
 
 FROM $devImage AS final
 
-COPY --from=builder /OpenROAD/build/bin/openroad /usr/bin/.
+COPY --from=builder /OpenROAD/install/ /usr/
 ENV OPENROAD_EXE=/usr/bin/openroad
 
 RUN <<EOF
