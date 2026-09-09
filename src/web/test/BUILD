@@ -407,6 +407,7 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

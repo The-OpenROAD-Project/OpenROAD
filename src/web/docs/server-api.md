@@ -372,10 +372,39 @@ limited to one module named `top`:
 Cones are capped at 150 instances; nets with fanout > 30 are skipped to
 keep the schematic readable.
 
+#### Gate symbol hints
+
+Cells recognised from their Liberty function carry three extra fields
+beyond the Yosys schema. They are rendering *hints* only — `type` stays
+the real master name, and a client that ignores them still gets a
+correct netlist, just drawn as generic boxes.
+
+| Field         | Type     | Description                                          |
+| ------------- | -------- | ---------------------------------------------------- |
+| `gate_kind`   | `string` | `and`/`nand`/`or`/`nor`/`xor`/`xnor`/`not`/`buf` for simple gates, `aoi`/`oai` for compound and/or-invert gates, `dff`/`dffr`/`dffs` for registers. Absent when the cell is not recognised. |
+| `gate_ports`  | `object` | Register symbol port id → real Liberty pin name (e.g. `{"CK": "CK", "Q": "Q"}`), letting the viewer route the skin symbol while still labelling the design's own pin names. |
+| `gate_terms`  | `array`  | `aoi`/`oai` only: the input pin names of each first-level term (AOI21 → `[["A"], ["B1", "B2"]]`). A one-pin term feeds the second-level gate directly. The viewer derives the symbol port ids from this grouping, so no `gate_ports` is sent. |
+
 ### `schematic_full`
 
 Same shape as `schematic_cone` but emits the entire block (no caps). No
 request fields.
+
+### `schematic_path`
+
+Build a schematic from an explicit list of instances — used to draw the
+cells of one timing path, as listed in the timing panel's detail table.
+
+| Field        | Type       | Required | Description                              |
+| ------------ | ---------- | :------: | ---------------------------------------- |
+| `inst_names` | `string[]` |    ✓     | Instance names to include. |
+
+Names that match no instance are skipped rather than erroring, so callers
+may pass pin-derived names that include block ports. Capped at 400
+instances. Only nets touching a listed instance are wired; every other
+pin renders as a short dangling stub.
+
+**Response (JSON):** same Yosys netlist shape as `schematic_cone`.
 
 ### `schematic_inspect`
 
@@ -460,6 +489,11 @@ Return the worst N timing paths.
 | `max_paths`  | `int`    |    ✓     | —                                | Maximum number of paths to return.                   |
 | `slack_min`  | `double` |          | `-FLT_MAX`                       | Lower slack bound (inclusive). Optional filter.      |
 | `slack_max`  | `double` |          | `+FLT_MAX`                       | Upper slack bound (exclusive). Optional filter.      |
+| `unconstrained` | `bool` |          | `false`                          | Include paths with no timing constraint.             |
+
+A design with no SDC constraints has no constrained path ends, so
+`unconstrained: false` returns an empty `paths` array. This mirrors the
+Qt GUI's "Unconstrained" checkbox in `TimingControlsDialog`.
 
 **Response (JSON):**
 ```json
@@ -471,13 +505,18 @@ Return the worst N timing paths.
       "slack":    -0.5,    "skew":    0.0,
       "path_delay": 0.9,   "logic_depth": 4, "fanout": 12,
       "start_pin":  "ff1/CK", "end_pin": "ff2/D",
-      "data_nodes":    [{"pin": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
+      "data_nodes":    [{"pin": "...", "inst": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
       "capture_nodes": [{...}]
     },
     ...
   ]
 }
 ```
+
+`inst` is the instance owning `pin`, empty for block ports. It lets
+clients join a path onto instance-keyed views without splitting `pin` on
+the hierarchy delimiter, which is ambiguous when instance names contain
+it.
 
 ### `timing_highlight`
 
@@ -488,7 +527,12 @@ single stage emphasized.
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
 | `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
 | `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
+| `unconstrained` | `bool` | optional, `>= 0` only   | Must match the `timing_report` that produced `path_index`.     |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
+
+The server re-runs the report to resolve `path_index`, so `unconstrained`
+has to match the value used for the `timing_report` request the index came
+from — otherwise the index resolves against a different path list.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

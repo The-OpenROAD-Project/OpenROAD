@@ -2097,6 +2097,33 @@ body {
     font-size: 12px;
 }
 
+/* Timing-path key for the schematic. Hidden unless a path
+   is drawn, so it costs no toolbar space the rest of the time. */
+.schematic-timing-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+/* Preserve the hidden attribute. */
+.schematic-timing-legend[hidden] { display: none; }
+
+.schematic-timing-legend-item,
+.timing-unconstrained {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+.schematic-timing-legend-item { color: var(--fg-muted); font-size: 11px; }
+.timing-unconstrained {
+    color: var(--fg-primary);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+.timing-unconstrained input { cursor: pointer; margin: 0; }
+
 .timing-cone-panel {
     display: flex;
     align-items: center;
@@ -2527,8 +2554,31 @@ body {
 
 /* ─── Schematic Widget ────────────────────────────────────────────────────── */
 
-/* netlistsvg renders dark strokes/text on white fills — invert for dark mode */
-html[data-theme="dark"] .schematic-widget svg {
+.schematic-svg-container.schematic-empty > svg { visibility: hidden; }
+.schematic-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 24px;
+    color: var(--fg-muted);
+    font-size: 13px;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* Upstream inverts the whole SVG; invert individual shapes here so timing
+   overlays keep their red/cyan/green colors in dark mode. */
+html[data-theme="dark"] .schematic-svg-container svg path:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg rect:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg circle:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg ellipse:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg line:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg polyline:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg polygon:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-svg-container svg text:not(.schematic-timing-node) {
     filter: invert(1) hue-rotate(180deg);
 }
 
