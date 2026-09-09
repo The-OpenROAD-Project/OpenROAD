@@ -49,21 +49,21 @@ export class TimingWidget {
         // Mirrors the Qt timing dialog for designs without SDC constraints.
         this._unconstrainedBox = document.createElement('input');
         this._unconstrainedBox.type = 'checkbox';
-        this._unconstrainedLabel = document.createElement('label');
-        this._unconstrainedLabel.className = 'timing-unconstrained';
-        this._unconstrainedLabel.title =
+        const unconstrainedLabel = document.createElement('label');
+        unconstrainedLabel.className = 'timing-unconstrained';
+        unconstrainedLabel.title =
             'Include paths that have no timing constraint.\n' +
             'Designs without an SDC report no paths otherwise.';
-        this._unconstrainedLabel.appendChild(this._unconstrainedBox);
-        this._unconstrainedLabel.appendChild(
+        unconstrainedLabel.appendChild(this._unconstrainedBox);
+        unconstrainedLabel.appendChild(
             document.createTextNode('Unconstrained'));
         if (isStaticMode(this._app)) {
             // Static reports cannot re-query timing data.
-            this._unconstrainedLabel.style.display = 'none';
+            unconstrainedLabel.style.display = 'none';
         }
 
         toolbar.appendChild(this._updateBtn);
-        toolbar.appendChild(this._unconstrainedLabel);
+        toolbar.appendChild(unconstrainedLabel);
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
 
@@ -391,15 +391,11 @@ export class TimingWidget {
         this._clearTimingHighlight();
     }
 
-    _unconstrained() {
-        return this._unconstrainedBox.checked;
-    }
-
     async update() {
         const generation = ++this._updateGeneration;
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
-        const unconstrained = this._unconstrained();
+        const unconstrained = this._unconstrainedBox.checked;
         try {
             const [setupData, holdData] = await Promise.all([
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100, unconstrained }),
@@ -463,7 +459,7 @@ export class TimingWidget {
         const tip = this._headerTooltip;
         tip.textContent = text;
         tip.style.display = 'block';
-        // position: fixed - viewport coordinates, offset from the cursor
+        // position: fixed — viewport coordinates, offset from the cursor
         // and clamped so the tooltip stays inside the viewport.
         const left = Math.min(e.clientX + 12,
                               window.innerWidth - tip.offsetWidth - 8);
@@ -499,16 +495,11 @@ export class TimingWidget {
     _showPathOnSchematic(path) {
         const schematic = this._app.schematicWidget;
         if (schematic) {
-            schematic.showTimingPath(path || null, this._activeDetailNodes(path));
+            const nodes = path
+                ? (this._detailTab === 'data' ? path.data_nodes : path.capture_nodes)
+                : [];
+            schematic.showTimingPath(path || null, nodes);
         }
-    }
-
-    _activeDetailNodes(path) {
-        if (!path) {
-            return [];
-        }
-        return (this._detailTab === 'capture' ? path.capture_nodes
-                                              : path.data_nodes) || [];
     }
 
     // Follow detail-tab switches between data and capture paths.
@@ -642,7 +633,7 @@ export class TimingWidget {
 
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
-        const nodes = this._activeDetailNodes(path);
+        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
         // Use _originalIndex when paths were filtered (e.g. by histogram
         // column click in static mode) so the overlay lookup matches.
         const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
@@ -666,7 +657,7 @@ export class TimingWidget {
         if (this._selectedPathIndex < 0 || this._selectedPathIndex >= paths.length) return;
 
         const path = paths[this._selectedPathIndex];
-        const nodes = this._activeDetailNodes(path);
+        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');

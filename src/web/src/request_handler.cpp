@@ -3628,18 +3628,10 @@ static std::vector<std::vector<std::string>> classifyAoiOai(
 static bool usesExactlyIterms(const std::vector<odb::dbITerm*>& connected,
                               const std::vector<odb::dbITerm*>& symbol_iterms)
 {
-  if (connected.size() != symbol_iterms.size()) {
-    return false;
-  }
-
-  for (odb::dbITerm* iterm : connected) {
-    if (std::find(symbol_iterms.begin(), symbol_iterms.end(), iterm)
-        == symbol_iterms.end()) {
-      return false;
-    }
-  }
-
-  return true;
+  return std::is_permutation(connected.begin(),
+                             connected.end(),
+                             symbol_iterms.begin(),
+                             symbol_iterms.end());
 }
 
 static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
@@ -3674,25 +3666,6 @@ static odb::dbITerm* findItermForPort(const std::vector<odb::dbITerm*>& iterms,
   return nullptr;
 }
 
-// Find the register definition referenced by this output function.
-static sta::Sequential* sequentialForOutputPort(sta::LibertyCell* cell,
-                                                sta::LibertyPort* output_port)
-{
-  sta::FuncExpr* function
-      = output_port != nullptr ? output_port->function() : nullptr;
-  if (function == nullptr) {
-    return nullptr;
-  }
-
-  for (sta::LibertyPort* function_port : function->ports()) {
-    sta::Sequential* sequential = cell->outputPortSequential(function_port);
-    if (sequential != nullptr && sequential->isRegister()) {
-      return sequential;
-    }
-  }
-  return nullptr;
-}
-
 // Check whether an output function references the Q or QN state.
 static bool outputPortReferencesState(sta::LibertyPort* output_port,
                                       const sta::LibertyPort* state_port)
@@ -3704,7 +3677,7 @@ static bool outputPortReferencesState(sta::LibertyPort* output_port,
 }
 
 static bool addRegisterOutputs(const std::vector<odb::dbITerm*>& signal_outputs,
-                               sta::Sequential* sequential,
+                               const sta::Sequential& sequential,
                                sta::dbNetwork* network,
                                GateClass& result)
 {
@@ -3713,10 +3686,9 @@ static bool addRegisterOutputs(const std::vector<odb::dbITerm*>& signal_outputs,
   for (odb::dbITerm* output_iterm : signal_outputs) {
     sta::LibertyPort* output_port
         = network->libertyPort(network->dbToSta(output_iterm));
-    if (outputPortReferencesState(output_port, sequential->output())) {
+    if (outputPortReferencesState(output_port, sequential.output())) {
       output = output_iterm;
-    } else if (outputPortReferencesState(output_port,
-                                         sequential->outputInv())) {
+    } else if (outputPortReferencesState(output_port, sequential.outputInv())) {
       output_inv = output_iterm;
     }
   }
@@ -3747,6 +3719,10 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   if (cell == nullptr || cell->sequentials().size() != 1) {
     return {};
   }
+  const sta::Sequential& sequential = cell->sequentials().front();
+  if (!sequential.isRegister()) {
+    return {};
+  }
 
   // Every signal pin must fit the symbol so no dangling connection is hidden.
   std::vector<odb::dbITerm*> signal_inputs;
@@ -3768,42 +3744,23 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
     return {};
   }
 
-  // All connected outputs must refer to the same Liberty register definition.
-  sta::Sequential* sequential = nullptr;
-  for (odb::dbITerm* output_iterm : signal_outputs) {
-    sta::LibertyPort* output_port
-        = network->libertyPort(network->dbToSta(output_iterm));
-    sta::Sequential* output_seq = sequentialForOutputPort(cell, output_port);
-    if (output_seq == nullptr) {
-      continue;
-    }
-    if (sequential != nullptr && sequential != output_seq) {
-      return {};
-    }
-    sequential = output_seq;
-  }
-
-  if (sequential == nullptr) {
-    return {};
-  }
-
   // Require direct data and clock ports.
   odb::dbITerm* data = findItermForPort(
-      signal_inputs, simplePortExpr(sequential->data()), network);
+      signal_inputs, simplePortExpr(sequential.data()), network);
   odb::dbITerm* clock = findItermForPort(
-      signal_inputs, simplePortExpr(sequential->clock()), network);
+      signal_inputs, simplePortExpr(sequential.clock()), network);
   if (data == nullptr || clock == nullptr) {
     return {};
   }
 
   // Support one active-low async control: reset or set, not both.
-  sta::LibertyPort* clear_port = activeLowPortExpr(sequential->clear());
-  sta::LibertyPort* preset_port = activeLowPortExpr(sequential->preset());
+  sta::LibertyPort* clear_port = activeLowPortExpr(sequential.clear());
+  sta::LibertyPort* preset_port = activeLowPortExpr(sequential.preset());
   odb::dbITerm* clear = findItermForPort(signal_inputs, clear_port, network);
   odb::dbITerm* preset = findItermForPort(signal_inputs, preset_port, network);
-  if ((sequential->clear() != nullptr
+  if ((sequential.clear() != nullptr
        && (clear_port == nullptr || clear == nullptr))
-      || (sequential->preset() != nullptr
+      || (sequential.preset() != nullptr
           && (preset_port == nullptr || preset == nullptr))) {
     return {};
   }
@@ -4030,14 +3987,22 @@ static void emitSchematicCell(boost::json::object& cells,
   cells[inst->getName()] = std::move(cell);
 }
 
-// The full-block request supplies all nets to preserve port-only feedthroughs.
-template <typename InstRange>
+// Cone/path requests wire only nets touching their selected instances.
 static boost::json::object buildSchematicNetlist(
-    const InstRange& insts,
-    odb::PtrMap<odb::dbNet, int>& net_to_id,
-    int& next_net_id,
+    const odb::PtrSet<odb::dbInst>& insts,
     sta::dbNetwork* network)
 {
+  odb::PtrMap<odb::dbNet, int> net_to_id;
+  int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
+  for (odb::dbInst* inst : insts) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net && !net_to_id.contains(net)) {
+        net_to_id[net] = next_net_id++;
+      }
+    }
+  }
+
   boost::json::object top;
   top["attributes"] = boost::json::object{};
 
@@ -4069,24 +4034,6 @@ static boost::json::object buildSchematicNetlist(
   boost::json::object root;
   root["modules"] = boost::json::object{{"top", std::move(top)}};
   return root;
-}
-
-// Cone/path requests wire only nets touching their selected instances.
-template <typename InstRange>
-static boost::json::object buildSchematicNetlist(const InstRange& insts,
-                                                 sta::dbNetwork* network)
-{
-  odb::PtrMap<odb::dbNet, int> net_to_id;
-  int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
-  for (odb::dbInst* inst : insts) {
-    for (odb::dbITerm* iterm : inst->getITerms()) {
-      odb::dbNet* net = iterm->getNet();
-      if (net && !net_to_id.contains(net)) {
-        net_to_id[net] = next_net_id++;
-      }
-    }
-  }
-  return buildSchematicNetlist(insts, net_to_id, next_net_id, network);
 }
 
 WebSocketResponse SelectHandler::handleSchematicCone(
@@ -4221,7 +4168,7 @@ WebSocketResponse SelectHandler::handleSchematicPath(
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
-  static constexpr int kMaxPathInsts = 400;
+  static constexpr size_t kMaxPathInsts = 400;
 
   try {
     odb::dbBlock* block = gen_->getBlock();
@@ -4231,7 +4178,7 @@ WebSocketResponse SelectHandler::handleSchematicPath(
 
     odb::PtrSet<odb::dbInst> all_insts;
     for (const auto& name_val : req.json.at("inst_names").as_array()) {
-      if (static_cast<int>(all_insts.size()) >= kMaxPathInsts) {
+      if (all_insts.size() >= kMaxPathInsts) {
         break;
       }
       const std::string name = std::string(name_val.as_string());
@@ -4270,11 +4217,43 @@ WebSocketResponse SelectHandler::handleSchematicFull(
       net_to_id[net] = next_net_id++;
     }
 
+    boost::json::object top;
+    top["attributes"] = boost::json::object{};
+
+    boost::json::object ports;
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      odb::dbNet* net = bterm->getNet();
+      if (!net) {
+        continue;
+      }
+      boost::json::object p;
+      p["direction"] = ioTypeToDirection(bterm->getIoType());
+      p["bits"] = boost::json::array{net_to_id[net]};
+      ports[bterm->getName()] = std::move(p);
+    }
+    top["ports"] = std::move(ports);
+
     sta::dbNetwork* network
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
-    writePayload(resp,
-                 buildSchematicNetlist(
-                     block->getInsts(), net_to_id, next_net_id, network));
+    boost::json::object cells;
+    for (odb::dbInst* inst : block->getInsts()) {
+      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
+    }
+    top["cells"] = std::move(cells);
+
+    boost::json::object netnames;
+    for (odb::dbNet* net : block->getNets()) {
+      boost::json::object n;
+      n["hide_name"] = 0;
+      n["bits"] = boost::json::array{net_to_id[net]};
+      n["attributes"] = boost::json::object{};
+      netnames[net->getName()] = std::move(n);
+    }
+    top["netnames"] = std::move(netnames);
+
+    boost::json::object root;
+    root["modules"] = boost::json::object{{"top", std::move(top)}};
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();

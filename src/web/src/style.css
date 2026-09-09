@@ -2569,8 +2569,8 @@ body {
     pointer-events: none;
 }
 
-/* Invert normal netlistsvg geometry, but leave timing colors unfiltered so
-   they match the layout path colors. */
+/* Upstream inverts the whole SVG; invert individual shapes here so timing
+   overlays keep their red/cyan/green colors in dark mode. */
 html[data-theme="dark"] .schematic-svg-container svg path:not(.schematic-timing-node),
 html[data-theme="dark"] .schematic-svg-container svg rect:not(.schematic-timing-node),
 html[data-theme="dark"] .schematic-svg-container svg circle:not(.schematic-timing-node),

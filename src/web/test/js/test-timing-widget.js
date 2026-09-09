@@ -30,12 +30,10 @@ function createMockApp(responses = {}) {
 
 function deferred() {
     let resolve;
-    let reject;
-    const promise = new Promise((resolvePromise, rejectPromise) => {
+    const promise = new Promise((resolvePromise) => {
         resolve = resolvePromise;
-        reject = rejectPromise;
     });
-    return { promise, resolve, reject };
+    return { promise, resolve };
 }
 
 function makePath(slack, endPin, extra = {}) {
@@ -488,8 +486,8 @@ describe('TimingWidget unconstrained paths', () => {
 });
 
 describe('TimingWidget schematic hand-off', () => {
-    function appWithSchematic(responses = {}) {
-        const app = createMockApp(responses);
+    function appWithSchematic() {
+        const app = createMockApp();
         app.schematicPaths = [];
         app.schematicNodes = [];
         app.schematicWidget = {

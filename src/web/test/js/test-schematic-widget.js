@@ -112,6 +112,16 @@ const netlist = {
     },
 };
 
+describe('SchematicWidget controls', () => {
+    it('uses standard symbols without offering a box-view selector', () => {
+        const { widget, container } = makeWidget();
+
+        assert.equal(widget.controls.querySelector('#schematic-view-style'), null);
+        assert.equal(widget.controls.textContent.includes('Boxes'), false);
+        container.element.remove();
+    });
+});
+
 describe('SchematicWidget SVG content bounds', () => {
     it('measures cell groups without also measuring their child shapes', () => {
         const { widget, container } = makeWidget();
@@ -714,36 +724,34 @@ describe('SchematicWidget render ordering', () => {
         } } } };
     }
 
-    it('keeps the newest view when layouts finish out of order', async () => {
+    it('keeps the newest schematic when layouts finish out of order', async () => {
         const { widget, container } = makeWidget();
         const pending = [];
+        let renderCount = 0;
         widget.skin = '<svg></svg>';
         widget.netlistsvg = {
             render(_skin, json) {
-                const type = json.modules.top.cells.u1.type;
-                const view = type === '$_BUF_' ? 'symbols' : 'boxes';
+                assert.equal(json.modules.top.cells.u1.type, '$_BUF_');
+                renderCount += 1;
                 let resolve;
                 const promise = new Promise(resolvePromise => {
                     resolve = resolvePromise;
                 });
-                pending.push({ view, resolve });
+                pending.push({ render: renderCount, resolve });
                 return promise;
             },
         };
-        const selector = widget.controls.querySelector('#schematic-view-style');
         const source = gateNetlist();
 
-        selector.value = 'boxes';
-        const boxes = widget.renderNetlist(source);
-        selector.value = 'symbols';
-        const symbols = widget.renderNetlist(source);
+        const first = widget.renderNetlist(source);
+        const second = widget.renderNetlist(source);
 
-        assert.deepEqual(pending.map(render => render.view), ['boxes', 'symbols']);
-        pending[1].resolve('<svg data-view="symbols"></svg>');
-        assert.equal(await symbols, true);
-        pending[0].resolve('<svg data-view="boxes"></svg>');
-        assert.equal(await boxes, false);
-        assert.equal(widget._svgEl.getAttribute('data-view'), 'symbols');
+        assert.deepEqual(pending.map(render => render.render), [1, 2]);
+        pending[1].resolve('<svg data-render="2"></svg>');
+        assert.equal(await second, true);
+        pending[0].resolve('<svg data-render="1"></svg>');
+        assert.equal(await first, false);
+        assert.equal(widget._svgEl.getAttribute('data-render'), '2');
         container.element.remove();
     });
 
@@ -763,7 +771,6 @@ describe('SchematicWidget render ordering', () => {
                         `<svg data-render="${renderCount}"></svg>`);
                 },
             };
-            widget.controls.querySelector('#schematic-view-style').value = 'boxes';
             widget.fitView = () => {
                 fitted.push(widget._svgEl.getAttribute('data-render'));
             };
@@ -1127,7 +1134,6 @@ describe('SchematicWidget timing path overlay', () => {
         };
         const { widget, container } = makeWidget(appState);
         widget._netlistsvgReady = true;
-        widget.controls.querySelector('#schematic-view-style').value = 'boxes';
         widget.fitView = () => {};
         widget.netlistsvg = {
             render: (_skin, json) => Promise.resolve(renderedPathSvg(

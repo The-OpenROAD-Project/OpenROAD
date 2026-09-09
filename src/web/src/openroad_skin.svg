@@ -2,8 +2,13 @@
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xmlns:s="https://github.com/nturley/netlistsvg"
   width="800" height="760">
-  <!-- OpenROAD's netlistsvg skin adds missing gate/register symbols and
-       instance labels. canonicalizeForSkin maps cells to these types. -->
+  <!-- OpenROAD custom netlistsvg skin.
+       Based on netlistsvg's default.svg, with two changes:
+       (1) every logic-gate symbol carries an s:attribute="ref" label so the
+           instance name renders on the gate, and
+       (2) added buffer, compound AOI/OAI, and register symbols.
+       The web schematic viewer rewrites cell types to the canonical names used
+       here (see canonicalizeForSkin in schematic-widget.js). -->
   <s:properties>
     <s:layoutEngine
       org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers="35"
@@ -33,7 +38,9 @@ text {
 .splitjoinBody {
   fill:#000;
 }
-/* Open gate bodies need their interior to receive clicks. */
+/* Make the (otherwise hollow) gate bodies clickable over their whole area so
+   select mode works when clicking inside a symbol, not just on its outline.
+   'all' makes the interior a pointer target regardless of fill. */
 path, rect, circle, polygon {
   pointer-events: all;
 }
