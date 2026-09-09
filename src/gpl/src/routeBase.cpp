@@ -1128,6 +1128,12 @@ std::pair<bool, bool> RouteBase::routability(
                "spent the {:.2f}% budget, ending routability.",
                100.0 * getTotalInflation() / original_movable_area_,
                100.0 * rbVars_.maxInflationTotal);
+    // Like every other way out of the loop: keep the best congestion seen,
+    // not whatever the last pass happened to leave behind. The passes are a
+    // search, and the last one is only the last, so ending on it can hand
+    // back both worse congestion and the extra inflation that bought it -
+    // area that then has to be absorbed by the density target.
+    revertToMinCongestion();
   }
 
   return std::make_pair(!budget_spent, true);
