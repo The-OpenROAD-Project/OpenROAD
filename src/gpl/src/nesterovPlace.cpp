@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -804,6 +805,15 @@ void NesterovPlace::runRoutability(int iter,
         = rb_->routability(routability_driven_revert_count);
     is_routability_need_ = result.first;
     bool isRevertInitNeeded = result.second;
+
+    // Every routability pass inflates cells, so the design placed after this
+    // one is not the design min_hpwl_ was measured on. Held across the change,
+    // the old minimum is unbeatable - there is more cell area to place now -
+    // and is_min_hpwl_ never comes true again, so no divergence snapshot is
+    // ever taken and a later divergence has nothing to fall back on but
+    // GPL-0307. Start the search for a minimum over on the new design.
+    min_hpwl_ = std::numeric_limits<int64_t>::max();
+    is_min_hpwl_ = false;
 
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
