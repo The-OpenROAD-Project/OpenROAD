@@ -42,7 +42,7 @@ writes the two public ones on their own, leaving `-file` as the only thing that
 has to be kept secret.
 
 The secret key is never logged.
-When using `-file`, the key is written with owner-only permissions. If the system random source cannot be accessed, the command fails rather than falling back to a predictable source.
+When using `-file`, the key is written with owner-only permissions. Existing private files with group or other permissions are rejected without modification. Private and public destinations must refer to different files, including through symbolic or hard links. Both outputs are validated and fully written to temporary files before either destination is replaced; each replacement is an atomic rename. If the system random source cannot be accessed, the command fails rather than falling back to a predictable source.
 
 ```tcl
 generate_watermark_key
@@ -204,6 +204,17 @@ cts_watermark
 | `-skew_margin_ns` | Maximum clock latency-spread increase and endpoint slack degradation, in ns. Defaults to `0.020`. `0` permits no degradation. |
 | `-slew_headroom_frac` | Fraction of the liberty slew limit left unused. Defaults to `0.20`. |
 
+The slew reserve is checked for each scene and rise/fall edge; capacitance
+reserve is checked in each scene. Limits include applicable SDC constraints and
+Liberty limits. Both headroom fractions must be finite and in `[0, 1]`.
+
+Placement and CTS distances and timing budgets must be finite and nonnegative.
+Distances must fit in `2147483647` database units; timing budgets must remain
+below STA's unconstrained range. Grid dimensions must be positive integers;
+pair counts must be nonnegative integers. Zero requested pairs produces no
+marks. Invalid options are rejected before changing the design or claims file,
+including through the Python API.
+
 ### Set Routing Watermark
 
 The `set_routing_watermark` command selects a keyed subset of signal nets, tags
@@ -223,7 +234,7 @@ set_routing_watermark
 | Switch Name | Description |
 | ----- | ----- |
 | `-key_hex` | 64-character hex routing key. |
-| `-fraction` | Expected fraction of eligible signal nets to tag. Defaults to `0.05`. |
+| `-fraction` | Finite fraction in `(0, 1]` of eligible signal nets to tag. Defaults to `0.05`. |
 
 ### Set Routing Watermark Strength
 
@@ -274,7 +285,7 @@ report_routing_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-p` | Quantile cutoff below which a net counts as carrying the watermark. Defaults to `0.4`. |
+| `-p` | Finite quantile in `(0, 1)` below which a net counts as carrying the watermark. Defaults to `0.4`. |
 
 ### Clear Routing Watermark
 

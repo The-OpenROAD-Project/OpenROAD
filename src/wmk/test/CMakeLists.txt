@@ -16,6 +16,9 @@ or_integration_tests(
   # otherwise pin those tools' logs into a watermarking golden.  They check
   # their own numbers instead.
   PASSFAIL_TESTS
+    cts_headroom
+    numeric_options
+    key_files
     cts_modes
     verify_nul
     strength_limits

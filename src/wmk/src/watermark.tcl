@@ -72,44 +72,111 @@ proc generate_watermark_key { args } {
     dict set result $stage $derived
   }
 
-  if { [info exists keys(-file)] } {
-    set path $keys(-file)
-    # The file holds the secret key, so create it owner-only rather than
-    # creating it and then narrowing it: between those two steps another local
-    # user can open it and keep that handle across every later write.  A umask
-    # can only clear bits, never add them, so 0600 is an upper bound.
-    if { [catch { open $path {WRONLY CREAT TRUNC} 0600 } fh] } {
-      utl::error WMK 103 "Could not create $path: $fh"
+  set paths {}
+  foreach option { -file -public_file } {
+    if { [info exists keys($option)] } {
+      dict set paths $option [file normalize $keys($option)]
     }
-    # A filesystem that does not carry permissions would leave the key readable
-    # while this command reported otherwise.  Refuse rather than misreport.
-    if { [catch { file attributes $path -permissions } mode] } {
-      close $fh
-      utl::error WMK 104 "Could not read back the permissions of $path, so it\
-                          cannot be confirmed owner-only: $mode"
-    }
-    if { $mode & 0o077 } {
-      close $fh
-      utl::error WMK 105 "$path is readable by others (mode [format 0%o $mode]);\
-                          refusing to write the secret key to it."
-    }
-    foreach name { design_id nonce_hex key_hex placement cts routing } {
-      puts $fh "$name [dict get $result $name]"
-    }
-    close $fh
-    utl::info WMK 95 "Wrote the watermark key material to $path."
   }
-
-  if { [info exists keys(-public_file)] } {
-    set path $keys(-public_file)
-    set fh [open $path w]
-    foreach name { design_id nonce_hex } {
-      puts $fh "$name [dict get $result $name]"
-    }
-    close $fh
-    utl::info WMK 102 "Wrote the public watermark parameters to $path."
-  }
+  wmk::write_key_files $result $paths
   return $result
+}
+
+# Validate both destinations before opening either. In particular, a failed
+# permission check must not truncate the only saved copy of an owner's key.
+proc wmk::check_key_paths { paths } {
+  dict for { option path } $paths {
+    if { [file exists $path] && ![file isfile $path] } {
+      utl::error WMK 115 "$path is not a regular file."
+    }
+  }
+  if { [dict exists $paths -file] && [dict exists $paths -public_file] } {
+    set private [dict get $paths -file]
+    set public [dict get $paths -public_file]
+    set same [expr { $private eq $public }]
+    if { [file exists $private] && [file exists $public] } {
+      file stat $private private_stat
+      file stat $public public_stat
+      set same [expr { $same || ($private_stat(dev) == $public_stat(dev)
+        && $private_stat(ino) == $public_stat(ino)) }]
+    }
+    if { $same } {
+      utl::error WMK 116 "The private and public key files must be different files."
+    }
+  }
+  if { [dict exists $paths -file] } {
+    set path [dict get $paths -file]
+    if { [file exists $path] } {
+      wmk::check_key_permissions $path
+    }
+  }
+}
+
+proc wmk::check_key_permissions { path } {
+  if { [catch { file attributes $path -permissions } mode] } {
+    utl::error WMK 104 "Could not confirm owner-only permissions for $path: $mode"
+  }
+  if { $mode & 0o077 } {
+    utl::error WMK 105 "$path is readable by others (mode [format 0%o $mode]);\
+                        refusing to write the secret key to it."
+  }
+}
+
+# Stage in the destination directory so publication is an atomic rename.
+# Exclusive creation prevents accidentally opening someone else's temporary
+# file; private material is owner-only from the moment the file is created.
+proc wmk::stage_key_file { path names result private } {
+  set suffix [wmk::random_hex_cmd 16]
+  if { $suffix eq "" } {
+    utl::error WMK 117 "Could not obtain a temporary key-file name."
+  }
+  set temporary "$path.wmk-$suffix.tmp"
+  set mode [expr { $private ? 0o600 : 0o666 }]
+  set fh [open $temporary {WRONLY CREAT EXCL} $mode]
+  try {
+    if { $private } {
+      wmk::check_key_permissions $temporary
+    }
+    foreach name $names {
+      puts $fh "$name [dict get $result $name]"
+    }
+    close $fh
+  } on error { message options } {
+    catch { close $fh }
+    file delete $temporary
+    return -options $options $message
+  }
+  return $temporary
+}
+
+proc wmk::write_key_files { result paths } {
+  wmk::check_key_paths $paths
+  set staged {}
+  try {
+    dict for { option path } $paths {
+      set private [expr { $option eq "-file" }]
+      set names { design_id nonce_hex }
+      if { $private } {
+        lappend names key_hex placement cts routing
+      }
+      dict set staged $path [wmk::stage_key_file $path $names $result $private]
+    }
+    # Both files have been written and closed successfully before replacing
+    # either destination. A validation or write error preserves existing files.
+    dict for { path temporary } $staged {
+      file rename -force $temporary $path
+    }
+  } finally {
+    dict for { path temporary } $staged {
+      file delete -force $temporary
+    }
+  }
+  if { [dict exists $paths -file] } {
+    utl::info WMK 95 "Wrote the watermark key material to [dict get $paths -file]."
+  }
+  if { [dict exists $paths -public_file] } {
+    utl::info WMK 102 "Wrote the public watermark parameters to [dict get $paths -public_file]."
+  }
 }
 
 sta::define_cmd_args "derive_watermark_key" {-design_id design_id \
@@ -158,7 +225,7 @@ proc set_routing_watermark { args } {
   if { [info exists keys(-fraction)] } {
     set fraction $keys(-fraction)
   }
-  if { $fraction <= 0.0 || $fraction > 1.0 } {
+  if { ![string is double -strict $fraction] || !($fraction > 0.0 && $fraction <= 1.0) } {
     utl::error WMK 21 "The -fraction argument must be in (0, 1]."
   }
 
@@ -300,7 +367,7 @@ proc report_routing_watermark { args } {
   if { [info exists keys(-p)] } {
     set p $keys(-p)
   }
-  if { $p <= 0.0 || $p >= 1.0 } {
+  if { ![string is double -strict $p] || !($p > 0.0 && $p < 1.0) } {
     utl::error WMK 22 "The -p argument must be in (0, 1)."
   }
 
@@ -354,7 +421,7 @@ proc verify_watermark { args } {
   if { [info exists keys(-tau)] } {
     set tau $keys(-tau)
   }
-  if { $tau < 0.0 || $tau > 1.0 } {
+  if { ![string is double -strict $tau] || !($tau >= 0.0 && $tau <= 1.0) } {
     utl::error WMK 40 "The -tau argument must be in \[0, 1\]."
   }
   if {
@@ -369,7 +436,7 @@ proc verify_watermark { args } {
   if { [info exists keys(-min_stages)] } {
     set min_stages $keys(-min_stages)
   }
-  if { $min_stages < 1 || $min_stages > 3 } {
+  if { ![string is integer -strict $min_stages] || $min_stages < 1 || $min_stages > 3 } {
     utl::error WMK 88 "The -min_stages argument must be 1, 2 or 3."
   }
 
@@ -387,14 +454,14 @@ proc verify_watermark { args } {
     if { [info exists keys(-routing_alpha)] } {
       set alpha $keys(-routing_alpha)
     }
-    if { $alpha <= 0.0 || $alpha >= 1.0 } {
+    if { ![string is double -strict $alpha] || !($alpha > 0.0 && $alpha < 1.0) } {
       utl::error WMK 48 "The -routing_alpha argument must be in (0, 1)."
     }
     set draws 100000
     if { [info exists keys(-routing_permutations)] } {
       set draws $keys(-routing_permutations)
     }
-    if { $draws < 1 } {
+    if { ![string is integer -strict $draws] || $draws < 1 || $draws > 2147483647 } {
       utl::error WMK 49 "The -routing_permutations argument must be positive."
     }
     set p_r [wmk::verify_routing_watermark_cmd $keys(-routing_key_hex) $frac \

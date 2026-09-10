@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "HmacSha256.h"
+#include "Options.h"
 #include "Timing.h"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
@@ -268,13 +269,14 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
                                    std::vector<PlacementClaim>& claims,
                                    std::vector<PlacementEdit>& edits)
 {
-  claims.clear();
-  edits.clear();
   dbBlock* block = db_->getChip() ? db_->getChip()->getBlock() : nullptr;
   if (block == nullptr) {
     logger_->error(utl::WMK, 50, "No block loaded; read a design first.");
     return 0;
   }
+  validateOptions(opts, block->getDbUnitsPerMicron(), logger_);
+  claims.clear();
+  edits.clear();
   if (block->getRows().empty()) {
     logger_->error(
         utl::WMK, 51, "The design has no rows; run floorplan first.");
@@ -287,7 +289,8 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   const int pair_dist = static_cast<int>(opts.pair_dist_um * dbu);
   // The bound is given in microns so that it means the same length on
   // every platform; database units do not.
-  const int hpwl_eps = static_cast<int>(opts.hpwl_eps_um * dbu);
+  const std::int64_t hpwl_eps
+      = static_cast<std::int64_t>(opts.hpwl_eps_um * dbu);
   const int nx = std::max(1, opts.grid_nx);
   const int ny = std::max(1, opts.grid_ny);
   const int tile_w = std::max(1, static_cast<int>(core.dx() / nx));
@@ -350,7 +353,7 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   // counts rejections: the relaxed pass re-walks the same candidates, and
   // counting them twice would report more rejections than there were pairs.
   auto enumerate = [&](size_t max_neighbours,
-                       int hpwl_eps,
+                       std::int64_t hpwl_eps,
                        bool counting,
                        std::vector<Candidate>& out) {
     for (auto& [bkey, bucket] : buckets) {
@@ -537,6 +540,8 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
     logger_->error(utl::WMK, 53, "No block loaded; read a design first.");
     return 0;
   }
+
+  validateOptions(opts, block->getDbUnitsPerMicron(), logger_);
 
   const bool guard_requested = opts.post_guard && opts.guard_degrade_ns > 0.0;
   const bool can_estimate = canEstimateParasitics(/* clock */ false);

@@ -26,7 +26,6 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Clock.hh"
-#include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -164,33 +163,7 @@ bool Watermark::driverHeadroomOk(odb::dbInst* inst,
     return true;
   }
 
-  // The limits come from the library (and any constraint overriding it), so
-  // what counts as too slow or too loaded is the technology's answer, not a
-  // number chosen here.  A limit the library does not state cannot be
-  // violated, so an absent one is not an objection.
-  const sta::MinMax* max = sta::MinMax::max();
-  const sta::RiseFall* rf = nullptr;
-  const sta::Scene* scene = nullptr;
-
-  sta_->checkSlewsPreamble();
-  sta::Slew slew = 0.0f;
-  float slew_limit = 0.0f;
-  float slew_slack = 0.0f;
-  sta_->checkSlew(
-      pin, sta_->scenes(), max, true, slew, slew_limit, slew_slack, rf, scene);
-  if (slew_limit > 0.0f
-      && (slew_limit - slew) / slew_limit < static_cast<float>(slew_frac)) {
-    return false;
-  }
-
-  sta_->checkCapacitancesPreamble(sta_->scenes());
-  float cap = 0.0f;
-  float cap_limit = 0.0f;
-  float cap_slack = 0.0f;
-  sta_->checkCapacitance(
-      pin, sta_->scenes(), max, cap, cap_limit, cap_slack, rf, scene);
-  return cap_limit <= 0.0f
-         || cap <= static_cast<float>(1.0 - cap_frac) * cap_limit;
+  return driverHasHeadroom(sta_, pin, slew_frac, cap_frac);
 }
 
 ClockIdentities Watermark::clockIdentitiesAt(odb::dbInst* inst) const
@@ -295,7 +268,7 @@ int Watermark::clearWatermark()
 int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
                                double fraction)
 {
-  if (fraction <= 0.0 || fraction > 1.0) {
+  if (!std::isfinite(fraction) || fraction <= 0.0 || fraction > 1.0) {
     logger_->error(
         utl::WMK, 12, "fraction must be in (0, 1]; got {:.3f}.", fraction);
     return 0;
@@ -365,7 +338,7 @@ int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
 
 double Watermark::reportWatermark(double p)
 {
-  if (p <= 0.0 || p >= 1.0) {
+  if (!std::isfinite(p) || p <= 0.0 || p >= 1.0) {
     logger_->error(utl::WMK, 6, "p must be in (0, 1); got {:.3f}.", p);
     return 1.0;
   }

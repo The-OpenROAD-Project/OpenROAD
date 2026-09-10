@@ -10,6 +10,7 @@
 
 namespace sta {
 class dbSta;
+class Pin;
 class Scene;
 class Vertex;
 class RiseFall;
@@ -20,6 +21,13 @@ namespace wmk {
 
 // STA uses a finite sentinel for unconstrained slack.
 bool isConstrainedSlack(float slack);
+
+// Check every scene and transition; minimum absolute slack is not the same
+// as minimum fractional headroom. The pin must be a cell's output driver.
+bool driverHasHeadroom(sta::dbSta* sta,
+                       const sta::Pin* pin,
+                       double slew_fraction,
+                       double capacitance_fraction);
 
 // Clock indices are allocated independently by each mode's SDC. Keep the
 // mode index with the clock index for both membership and timing availability.

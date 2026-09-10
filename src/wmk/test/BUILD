@@ -9,6 +9,9 @@ package(features = ["layering_check"])
 # tools' logs inside a watermarking golden would break this module whenever
 # they change their output, so they assert their own numbers instead.
 PASSFAIL_TESTS = [
+    "cts_headroom",
+    "numeric_options",
+    "key_files",
     "cts_modes",
     "verify_nul",
     "strength_limits",
@@ -38,6 +41,9 @@ PASSFAIL_TESTS = [
 TESTS = [
     "bias",
     "bias_neutral",
+    "cts_headroom",
+    "numeric_options",
+    "key_files",
     "cts_modes",
     "verify_nul",
     "strength_limits",

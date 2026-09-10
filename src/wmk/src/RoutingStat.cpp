@@ -43,7 +43,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <numeric>
 #include <random>
@@ -55,7 +54,6 @@
 #include "HmacSha256.h"
 #include "Wirelength.h"
 #include "odb/db.h"
-#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
 
@@ -113,7 +111,7 @@ double randomizationPvalue(const std::vector<double>& q,
       ++at_least_as_clean;
     }
   }
-  return static_cast<double>(1 + at_least_as_clean) / (trials + 1);
+  return (1.0 + at_least_as_clean) / (1.0 + trials);
 }
 
 }  // namespace
@@ -128,10 +126,15 @@ RoutingStat Watermark::verifyRouting(const std::array<std::uint8_t, 32>& key,
     logger_->error(utl::WMK, 80, "No block loaded; read a design first.");
     return stat;
   }
-  if (fraction <= 0.0 || fraction > 1.0) {
+  if (!std::isfinite(fraction) || fraction <= 0.0 || fraction > 1.0) {
     logger_->error(
         utl::WMK, 81, "fraction must be in (0, 1]; got {:.4f}.", fraction);
     return stat;
+  }
+
+  if (permutations < 1) {
+    logger_->error(
+        utl::WMK, 114, "permutations must be positive; got {}.", permutations);
   }
 
   // The marked set is recovered from the key alone.  Nothing recorded at embed

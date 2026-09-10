@@ -55,6 +55,7 @@ cc_library(
     name = "wmk_private_hdrs",
     hdrs = [
         "src/Keys.h",
+        "src/Options.h",
         "src/Wirelength.h",
     ],
     includes = [
@@ -69,6 +70,7 @@ cc_library(
     srcs = [
         "src/CtsWatermark.cpp",
         "src/Keys.cpp",
+        "src/Options.cpp",
         "src/PlacementWatermark.cpp",
         "src/RoutingStat.cpp",
         "src/Verify.cpp",

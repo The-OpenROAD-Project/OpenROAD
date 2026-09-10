@@ -42,6 +42,7 @@
 
 #include "ClockTree.h"
 #include "HmacSha256.h"
+#include "Options.h"
 #include "Timing.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -141,6 +142,8 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     logger_->error(utl::WMK, 70, "No block loaded; read a design first.");
     return 0;
   }
+
+  validateOptions(opts, block->getDbUnitsPerMicron(), logger_);
 
   if (!hasLiberty()) {
     logger_->error(
