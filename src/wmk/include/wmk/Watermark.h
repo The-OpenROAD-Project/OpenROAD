@@ -243,6 +243,11 @@ class Watermark
                             int permutations = 100000);
 
  private:
+  // Per-invocation selection and timing state, defined beside each embedder.
+  class PlacementEmbedding;
+  class PlacementGuard;
+  class CtsEmbedding;
+
   // What one committed pair moved, so it can be put back if the design turns
   // out to have paid for it in timing.
   struct PlacementEdit

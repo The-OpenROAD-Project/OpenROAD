@@ -252,6 +252,406 @@ void writePlacementClaims(std::ostream& out,
 
 }  // namespace
 
+class Watermark::PlacementEmbedding
+{
+ public:
+  PlacementEmbedding(Watermark& watermark,
+                     dbBlock* block,
+                     const std::array<std::uint8_t, 32>& key,
+                     const PlacementOptions& opts)
+      : watermark_(watermark),
+        block_(block),
+        key_(key),
+        opts_(opts),
+        pair_dist_(
+            static_cast<int>(opts.pair_dist_um * block->getDbUnitsPerMicron())),
+        hpwl_eps_(static_cast<std::int64_t>(opts.hpwl_eps_um
+                                            * block->getDbUnitsPerMicron())),
+        screen_slack_(opts.slack_threshold_ns > 0.0
+                      && watermark.placementTimingAvailable())
+  {
+  }
+
+  int run(std::vector<PlacementClaim>& claims,
+          std::vector<PlacementEdit>& edits)
+  {
+    collectBuckets();
+    selectFrom(enumerate(kMaxNeighbours, hpwl_eps_, /* counting */ true));
+    // Both passes run against the untouched design, so widening the gates
+    // cannot be confused by swaps the first pass already made.  Only the strict
+    // pass counts rejections: the relaxed pass re-walks the same candidates,
+    // and counting them twice would report more rejections than there were
+    // pairs.
+    const int strict_pairs = static_cast<int>(selected_.size());
+    const bool relaxed = strict_pairs < opts_.min_pairs_total;
+    // A design that yields only a handful of pairs cannot prove much, so look
+    // again with the search widened and the wirelength budget doubled.  The
+    // second pass only adds; nothing already chosen is revisited, and the
+    // choice is still the key's.
+    if (relaxed) {
+      selectFrom(
+          enumerate(kRelaxedNeighbours, hpwl_eps_ * 2, /* counting */ false));
+    }
+    apply(claims, edits);
+    const int committed = static_cast<int>(selected_.size());
+    if (relaxed) {
+      watermark_.logger_->info(
+          utl::WMK,
+          57,
+          "Placement watermark: {} pairs after the strict pass, below "
+          "the {} wanted, so the search was widened and found {}.",
+          strict_pairs,
+          opts_.min_pairs_total,
+          committed - strict_pairs);
+    }
+
+    watermark_.logger_->info(
+        utl::WMK,
+        52,
+        "Placement watermark: {} pairs committed from {} eligible "
+        "cells; {} candidate pairs, {} rejected on wirelength, {} cells "
+        "rejected on slack.",
+        committed,
+        n_eligible_,
+        n_eligible_pairs_,
+        rejected_hpwl_,
+        rejected_slack_);
+    return committed;
+  }
+
+ private:
+  struct Bucket
+  {
+    int tx, ty;
+    std::vector<dbInst*> insts;
+  };
+
+  struct Candidate
+  {
+    dbInst* a;
+    dbInst* b;
+    int tx, ty;
+    std::string first, second;
+    std::array<std::uint8_t, 32> sort_key;
+  };
+
+  void collectBuckets()
+  {
+    const odb::Rect core = block_->getCoreArea();
+    const int row_height = (*block_->getRows().begin())->getSite()->getHeight();
+    const int nx = std::max(1, opts_.grid_nx);
+    const int ny = std::max(1, opts_.grid_ny);
+    const int tile_w = std::max(1, static_cast<int>(core.dx() / nx));
+    const int tile_h = std::max(1, static_cast<int>(core.dy() / ny));
+
+    // Group by tile, row and width.  Only cells sharing all three can be
+    // swapped without disturbing the row, so these groups are exactly the
+    // candidate pools.
+    for (dbInst* inst : block_->getInsts()) {
+      if (!isEligibleInst(inst, row_height)) {
+        continue;
+      }
+      // Finish name validation before enumeration tries any placement swaps.
+      watermark_.checkClaimName(inst);
+      ++n_eligible_;
+      odb::dbBox* bbox = inst->getBBox();
+      const int tx = std::min(
+          nx - 1, std::max(0, (bbox->xMin() - core.xMin()) / tile_w));
+      const int ty = std::min(
+          ny - 1, std::max(0, (bbox->yMin() - core.yMin()) / tile_h));
+      const int width = bbox->getDX();
+      auto& b = buckets_[{tx, ty, bbox->yMin(), width}];
+      b.tx = tx;
+      b.ty = ty;
+      b.insts.push_back(inst);
+    }
+
+    for (auto& [bkey, bucket] : buckets_) {
+      std::ranges::sort(bucket.insts, [](dbInst* a, dbInst* b) {
+        return a->getBBox()->xMin() < b->getBBox()->xMin();
+      });
+    }
+  }
+
+  // Enumerate the candidates, apply the public guards, and only then let the
+  // key choose among what is left.  The order matters: the guards depend on the
+  // design and the choice depends on the key, so an observer who knows the
+  // algorithm still cannot say which of the eligible pairs ended up marked.
+  std::vector<Candidate> enumerate(size_t max_neighbours,
+                                   std::int64_t hpwl_eps,
+                                   bool counting)
+  {
+    std::vector<Candidate> out;
+    for (auto& [bkey, bucket] : buckets_) {
+      if (bucket.insts.size() < 2) {
+        continue;
+      }
+      for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
+        dbInst* a = bucket.insts[i];
+        const auto a_slack
+            = screen_slack_ ? watermark_.worstSlack(a) : std::nullopt;
+        if (screen_slack_
+            && (!a_slack || *a_slack < opts_.slack_threshold_ns * 1e-9)) {
+          if (counting) {
+            ++rejected_slack_;
+          }
+          continue;
+        }
+        const int ax = a->getBBox()->xMin();
+        const size_t last
+            = std::min(bucket.insts.size(), i + 1 + max_neighbours);
+        for (size_t j = i + 1; j < last; ++j) {
+          dbInst* cand = bucket.insts[j];
+          if (cand->getBBox()->xMin() - ax > pair_dist_) {
+            break;
+          }
+          const auto cand_slack
+              = screen_slack_ ? watermark_.worstSlack(cand) : std::nullopt;
+          if (screen_slack_
+              && (!cand_slack
+                  || *cand_slack < opts_.slack_threshold_ns * 1e-9)) {
+            continue;
+          }
+          if (counting) {
+            ++n_eligible_pairs_;
+          }
+          if (hpwlDeltaOfSwap(a, cand, &hpwl_cache_) > hpwl_eps) {
+            if (counting) {
+              ++rejected_hpwl_;
+            }
+            continue;
+          }
+          const std::string name_a = a->getName();
+          const std::string name_b = cand->getName();
+          Candidate c;
+          c.a = a;
+          c.b = cand;
+          c.tx = bucket.tx;
+          c.ty = bucket.ty;
+          c.first = std::min(name_a, name_b);
+          c.second = std::max(name_a, name_b);
+          c.sort_key = hmac_digest(key_,
+                                   {"pair_sort",
+                                    bytesPart(tileBytes(bucket.tx, bucket.ty)),
+                                    c.first,
+                                    c.second});
+          out.push_back(std::move(c));
+        }
+      }
+    }
+    // The keyed order.  Ties would be a 256-bit collision, so the
+    // identifier is only a formality; it keeps the sort total either way.
+    std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
+      if (x.sort_key != y.sort_key) {
+        return x.sort_key < y.sort_key;
+      }
+      return std::tie(x.first, x.second) < std::tie(y.first, y.second);
+    });
+    return out;
+  }
+
+  // Walk the keyed order and take every candidate that does not overlap one
+  // already taken.
+  void selectFrom(const std::vector<Candidate>& pool)
+  {
+    for (const Candidate& c : pool) {
+      const std::pair<int, int> tile{c.tx, c.ty};
+      if (per_tile_[tile] >= opts_.pairs_per_tile) {
+        continue;
+      }
+      if (used_.contains(c.a) || used_.contains(c.b)) {
+        continue;
+      }
+      selected_.push_back(c);
+      ++per_tile_[tile];
+      used_.insert(c.a);
+      used_.insert(c.b);
+    }
+  }
+
+  void apply(std::vector<PlacementClaim>& claims,
+             std::vector<PlacementEdit>& edits)
+  {
+    // Apply the marks only once the whole set is settled.  Selected pairs share
+    // no cell, so the order the swaps happen in cannot matter, and each pair's
+    // observed order is read before anything moves.
+    for (const Candidate& c : selected_) {
+      const bool a_is_left = c.a->getBBox()->xMin() < c.b->getBBox()->xMin();
+      const bool a_is_first = c.a->getName() == c.first;
+      const int observed = (a_is_left == a_is_first) ? 0 : 1;
+      const std::array<std::uint8_t, 32> d = hmac_digest(
+          key_, {"bit", bytesPart(tileBytes(c.tx, c.ty)), c.first, c.second});
+      const int target = d[0] & 1;
+
+      PlacementClaim claim;
+      claim.a_name = c.first;
+      claim.b_name = c.second;
+      claim.target_bit = target;
+      claim.already_satisfied = observed == target;
+
+      PlacementEdit edit;
+      edit.a = c.a;
+      edit.b = c.b;
+      edit.a_loc = c.a->getLocation();
+      edit.b_loc = c.b->getLocation();
+      edit.a_slack = watermark_.worstSlack(c.a);
+      edit.b_slack = watermark_.worstSlack(c.b);
+      edits.push_back(edit);
+
+      claims.push_back(claim);
+    }
+    // Take every slack baseline before changing any placement.
+    for (size_t i = 0; i < edits.size(); ++i) {
+      const PlacementEdit& edit = edits[i];
+      if (!claims[i].already_satisfied) {
+        edit.a->setLocation(edit.b_loc.x(), edit.a_loc.y());
+        edit.b->setLocation(edit.a_loc.x(), edit.b_loc.y());
+      }
+    }
+  }
+
+  Watermark& watermark_;
+  dbBlock* block_;
+  const std::array<std::uint8_t, 32>& key_;
+  const PlacementOptions& opts_;
+  const int pair_dist_;
+  // The bound is given in microns so that it means the same length on
+  // every platform; database units do not.
+  const std::int64_t hpwl_eps_;
+  const bool screen_slack_;
+  std::map<std::tuple<int, int, int, int>, Bucket> buckets_;
+  // Shared by both passes: they both measure the same untouched placement.
+  HpwlCache hpwl_cache_;
+  std::map<std::pair<int, int>, int> per_tile_;
+  // Membership only, never iterated, so hashing on the pointer cannot make the
+  // result depend on where the objects happen to live.
+  std::unordered_set<dbInst*> used_;
+  std::vector<Candidate> selected_;
+  int n_eligible_ = 0;
+  int n_eligible_pairs_ = 0;
+  int rejected_slack_ = 0;
+  int rejected_hpwl_ = 0;
+};
+
+class Watermark::PlacementGuard
+{
+ public:
+  PlacementGuard(Watermark& watermark,
+                 dbBlock* block,
+                 const PlacementOptions& opts)
+      : watermark_(watermark),
+        block_(block),
+        opts_(opts),
+        degrade_(static_cast<float>(opts.guard_degrade_ns * 1e-9)),
+        floor_(static_cast<float>(opts.slack_threshold_ns * 1e-9) - degrade_)
+  {
+    const bool guard_requested
+        = opts_.post_guard && opts_.guard_degrade_ns > 0.0;
+    can_estimate_ = watermark_.canEstimateParasitics(/* clock */ false);
+    if (guard_requested && can_estimate_) {
+      watermark_.estimate_parasitics_->estimateParasitics(
+          est::ParasiticsSrc::kPlacement);
+    }
+    can_measure_ = guard_requested && can_estimate_
+                   && watermark_.placementTimingAvailable();
+    if (guard_requested && !can_measure_) {
+      watermark_.logger_->warn(
+          utl::WMK,
+          59,
+          "Timing cannot be re-evaluated after the swaps, so the marks "
+          "will be committed without checking what they cost. Read "
+          "liberty, timing constraints and signal wire RC first.");
+    }
+    timing_before_ = can_measure_ ? endpointSlacks(watermark_.sta_)
+                                  : std::vector<EndpointSlack>{};
+    placement_before_ = savePlacement(block_);
+  }
+
+  void legalize()
+  {
+    legalizePlacement(watermark_.opendp_, block_, opts_.max_disp_um);
+    refresh();
+  }
+
+  void restore()
+  {
+    restorePlacement(placement_before_);
+    refresh();
+  }
+
+  int check(const std::vector<PlacementEdit>& edits)
+  {
+    if (!can_measure_) {
+      return 0;
+    }
+    // Every timing measurement describes one complete, legalized placement.
+    // Collect failed edits before restoring any of them, then refresh RC again.
+    int reverted = 0;
+    std::vector<bool> rejected(edits.size());
+    for (size_t i = 0; i < edits.size(); ++i) {
+      rejected[i] = !pairTimingOk(edits[i]);
+    }
+    for (size_t i = 0; i < edits.size(); ++i) {
+      if (rejected[i]) {
+        const PlacementEdit& edit = edits[i];
+        edit.a->setLocation(edit.a_loc.x(), edit.a_loc.y());
+        edit.b->setLocation(edit.b_loc.x(), edit.b_loc.y());
+        ++reverted;
+      }
+    }
+    if (reverted > 0) {
+      legalize();
+    }
+    bool final_ok
+        = endpointSlacksWithin(watermark_.sta_, timing_before_, degrade_);
+    for (size_t i = 0; i < edits.size(); ++i) {
+      if (!rejected[i] && !pairTimingOk(edits[i])) {
+        final_ok = false;
+      }
+    }
+    if (!final_ok) {
+      // Global legalization may have changed other cells. Restore the whole
+      // original placement instead of returning a state that failed timing.
+      restore();
+      reverted = static_cast<int>(edits.size());
+      watermark_.logger_->info(
+          utl::WMK,
+          110,
+          "Final legalized placement exceeds the timing budget; "
+          "restored the complete original placement.");
+    }
+    return reverted;
+  }
+
+ private:
+  bool pairTimingOk(const PlacementEdit& edit) const
+  {
+    const auto a_now = watermark_.worstSlack(edit.a);
+    const auto b_now = watermark_.worstSlack(edit.b);
+    return a_now && b_now && edit.a_slack && edit.b_slack && *a_now >= floor_
+           && *b_now >= floor_ && *a_now >= *edit.a_slack - degrade_
+           && *b_now >= *edit.b_slack - degrade_;
+  }
+
+  void refresh()
+  {
+    if (can_estimate_) {
+      watermark_.estimate_parasitics_->estimateParasitics(
+          est::ParasiticsSrc::kPlacement);
+    }
+  }
+
+  Watermark& watermark_;
+  dbBlock* block_;
+  const PlacementOptions& opts_;
+  const float degrade_;
+  const float floor_;
+  bool can_estimate_ = false;
+  bool can_measure_ = false;
+  std::vector<EndpointSlack> timing_before_;
+  std::vector<InstPlacement> placement_before_;
+};
+
 int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
                               const PlacementOptions& opts,
                               std::vector<PlacementClaim>& claims)
@@ -279,252 +679,7 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
     return 0;
   }
 
-  const odb::Rect core = block->getCoreArea();
-  const int row_height = (*block->getRows().begin())->getSite()->getHeight();
-  const int dbu = block->getDbUnitsPerMicron();
-  const int pair_dist = static_cast<int>(opts.pair_dist_um * dbu);
-  // The bound is given in microns so that it means the same length on
-  // every platform; database units do not.
-  const std::int64_t hpwl_eps
-      = static_cast<std::int64_t>(opts.hpwl_eps_um * dbu);
-  const int nx = std::max(1, opts.grid_nx);
-  const int ny = std::max(1, opts.grid_ny);
-  const int tile_w = std::max(1, static_cast<int>(core.dx() / nx));
-  const int tile_h = std::max(1, static_cast<int>(core.dy() / ny));
-
-  // Group by tile, row and width.  Only cells sharing all three can be swapped
-  // without disturbing the row, so these groups are exactly the candidate
-  // pools.
-  struct Bucket
-  {
-    int tx, ty;
-    std::vector<dbInst*> insts;
-  };
-  std::map<std::tuple<int, int, int, int>, Bucket> buckets;
-
-  int n_eligible = 0;
-  for (dbInst* inst : block->getInsts()) {
-    if (!isEligibleInst(inst, row_height)) {
-      continue;
-    }
-    // Finish name validation before enumeration tries any placement swaps.
-    checkClaimName(inst);
-    ++n_eligible;
-    odb::dbBox* bbox = inst->getBBox();
-    const int tx
-        = std::min(nx - 1, std::max(0, (bbox->xMin() - core.xMin()) / tile_w));
-    const int ty
-        = std::min(ny - 1, std::max(0, (bbox->yMin() - core.yMin()) / tile_h));
-    const int width = bbox->getDX();
-    auto& b = buckets[{tx, ty, bbox->yMin(), width}];
-    b.tx = tx;
-    b.ty = ty;
-    b.insts.push_back(inst);
-  }
-
-  const bool screen_slack
-      = opts.slack_threshold_ns > 0.0 && placementTimingAvailable();
-
-  // Enumerate the candidates, apply the public guards, and only then let the
-  // key choose among what is left.  The order matters: the guards depend on the
-  // design and the choice depends on the key, so an observer who knows the
-  // algorithm still cannot say which of the eligible pairs ended up marked.
-  struct Candidate
-  {
-    dbInst* a;
-    dbInst* b;
-    int tx, ty;
-    std::string first, second;
-    std::array<std::uint8_t, 32> sort_key;
-  };
-
-  int n_eligible_pairs = 0;
-  int rejected_slack = 0;
-  int rejected_hpwl = 0;
-  // Shared by both passes: they both measure the same untouched placement.
-  HpwlCache hpwl_cache;
-
-  // Both passes run against the untouched design, so widening the gates cannot
-  // be confused by swaps the first pass already made.  Only the strict pass
-  // counts rejections: the relaxed pass re-walks the same candidates, and
-  // counting them twice would report more rejections than there were pairs.
-  auto enumerate = [&](size_t max_neighbours,
-                       std::int64_t hpwl_eps,
-                       bool counting,
-                       std::vector<Candidate>& out) {
-    for (auto& [bkey, bucket] : buckets) {
-      if (bucket.insts.size() < 2) {
-        continue;
-      }
-      for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
-        dbInst* a = bucket.insts[i];
-        const auto a_slack = screen_slack ? worstSlack(a) : std::nullopt;
-        if (screen_slack
-            && (!a_slack || *a_slack < opts.slack_threshold_ns * 1e-9)) {
-          if (counting) {
-            ++rejected_slack;
-          }
-          continue;
-        }
-        const int ax = a->getBBox()->xMin();
-        const size_t last
-            = std::min(bucket.insts.size(), i + 1 + max_neighbours);
-        for (size_t j = i + 1; j < last; ++j) {
-          dbInst* cand = bucket.insts[j];
-          if (cand->getBBox()->xMin() - ax > pair_dist) {
-            break;
-          }
-          const auto cand_slack
-              = screen_slack ? worstSlack(cand) : std::nullopt;
-          if (screen_slack
-              && (!cand_slack
-                  || *cand_slack < opts.slack_threshold_ns * 1e-9)) {
-            continue;
-          }
-          if (counting) {
-            ++n_eligible_pairs;
-          }
-          if (hpwlDeltaOfSwap(a, cand, &hpwl_cache) > hpwl_eps) {
-            if (counting) {
-              ++rejected_hpwl;
-            }
-            continue;
-          }
-          const std::string name_a = a->getName();
-          const std::string name_b = cand->getName();
-          Candidate c;
-          c.a = a;
-          c.b = cand;
-          c.tx = bucket.tx;
-          c.ty = bucket.ty;
-          c.first = std::min(name_a, name_b);
-          c.second = std::max(name_a, name_b);
-          c.sort_key = hmac_digest(key,
-                                   {"pair_sort",
-                                    bytesPart(tileBytes(bucket.tx, bucket.ty)),
-                                    c.first,
-                                    c.second});
-          out.push_back(std::move(c));
-        }
-      }
-    }
-    // The keyed order.  Ties would be a 256-bit collision, so the
-    // identifier is only a formality; it keeps the sort total either way.
-    std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
-      if (x.sort_key != y.sort_key) {
-        return x.sort_key < y.sort_key;
-      }
-      return std::tie(x.first, x.second) < std::tie(y.first, y.second);
-    });
-  };
-
-  for (auto& [bkey, bucket] : buckets) {
-    std::ranges::sort(bucket.insts, [](dbInst* a, dbInst* b) {
-      return a->getBBox()->xMin() < b->getBBox()->xMin();
-    });
-  }
-
-  std::map<std::pair<int, int>, int> per_tile;
-  // Membership only, never iterated, so hashing on the pointer cannot make the
-  // result depend on where the objects happen to live.
-  std::unordered_set<dbInst*> used;
-  std::vector<Candidate> selected;
-
-  // Walk the keyed order and take every candidate that does not overlap one
-  // already taken.
-  auto select_from = [&](const std::vector<Candidate>& pool) {
-    for (const Candidate& c : pool) {
-      const std::pair<int, int> tile{c.tx, c.ty};
-      if (per_tile[tile] >= opts.pairs_per_tile) {
-        continue;
-      }
-      if (used.contains(c.a) || used.contains(c.b)) {
-        continue;
-      }
-      selected.push_back(c);
-      ++per_tile[tile];
-      used.insert(c.a);
-      used.insert(c.b);
-    }
-  };
-
-  std::vector<Candidate> pool;
-  enumerate(kMaxNeighbours, hpwl_eps, /* counting */ true, pool);
-  select_from(pool);
-
-  // A design that yields only a handful of pairs cannot prove much, so look
-  // again with the search widened and the wirelength budget doubled.  The
-  // second pass only adds; nothing already chosen is revisited, and the choice
-  // is still the key's.
-  const int strict_pairs = static_cast<int>(selected.size());
-  bool relaxed = false;
-  if (strict_pairs < opts.min_pairs_total) {
-    relaxed = true;
-    std::vector<Candidate> wider;
-    enumerate(kRelaxedNeighbours, hpwl_eps * 2, /* counting */ false, wider);
-    select_from(wider);
-  }
-
-  // Apply the marks only once the whole set is settled.  Selected pairs share
-  // no cell, so the order the swaps happen in cannot matter, and each pair's
-  // observed order is read before anything moves.
-  for (const Candidate& c : selected) {
-    const bool a_is_left = c.a->getBBox()->xMin() < c.b->getBBox()->xMin();
-    const bool a_is_first = c.a->getName() == c.first;
-    const int observed = (a_is_left == a_is_first) ? 0 : 1;
-    const std::array<std::uint8_t, 32> d = hmac_digest(
-        key, {"bit", bytesPart(tileBytes(c.tx, c.ty)), c.first, c.second});
-    const int target = d[0] & 1;
-
-    PlacementClaim claim;
-    claim.a_name = c.first;
-    claim.b_name = c.second;
-    claim.target_bit = target;
-    claim.already_satisfied = observed == target;
-
-    PlacementEdit edit;
-    edit.a = c.a;
-    edit.b = c.b;
-    edit.a_loc = c.a->getLocation();
-    edit.b_loc = c.b->getLocation();
-    edit.a_slack = worstSlack(c.a);
-    edit.b_slack = worstSlack(c.b);
-    edits.push_back(edit);
-
-    claims.push_back(claim);
-  }
-  // Take every slack baseline before changing any placement.
-  for (size_t i = 0; i < edits.size(); ++i) {
-    const PlacementEdit& edit = edits[i];
-    if (!claims[i].already_satisfied) {
-      edit.a->setLocation(edit.b_loc.x(), edit.a_loc.y());
-      edit.b->setLocation(edit.a_loc.x(), edit.b_loc.y());
-    }
-  }
-  const int committed = static_cast<int>(selected.size());
-
-  if (relaxed) {
-    logger_->info(utl::WMK,
-                  57,
-                  "Placement watermark: {} pairs after the strict pass, below "
-                  "the {} wanted, so the search was widened and found {}.",
-                  strict_pairs,
-                  opts.min_pairs_total,
-                  committed - strict_pairs);
-  }
-
-  logger_->info(
-      utl::WMK,
-      52,
-      "Placement watermark: {} pairs committed from {} eligible "
-      "cells; {} candidate pairs, {} rejected on wirelength, {} cells "
-      "rejected on slack.",
-      committed,
-      n_eligible,
-      n_eligible_pairs,
-      rejected_hpwl,
-      rejected_slack);
-  return committed;
+  return PlacementEmbedding(*this, block, key, opts).run(claims, edits);
 }
 
 int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
@@ -541,47 +696,13 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
 
   ClaimFile output(claims_file);
 
-  const bool guard_requested = opts.post_guard && opts.guard_degrade_ns > 0.0;
-  const bool can_estimate = canEstimateParasitics(/* clock */ false);
-  if (guard_requested && can_estimate) {
-    estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
-  }
-  const bool can_measure
-      = guard_requested && can_estimate && placementTimingAvailable();
-  if (guard_requested && !can_measure) {
-    logger_->warn(utl::WMK,
-                  59,
-                  "Timing cannot be re-evaluated after the swaps, so the marks "
-                  "will be committed without checking what they cost. Read "
-                  "liberty, timing constraints and signal wire RC first.");
-  }
-  const std::vector<EndpointSlack> timing_before
-      = can_measure ? endpointSlacks(sta_) : std::vector<EndpointSlack>{};
-  const std::vector<InstPlacement> placement_before = savePlacement(block);
+  PlacementGuard guard(*this, block, opts);
 
   std::vector<PlacementClaim> claims;
   std::vector<PlacementEdit> edits;
   int committed = 0;
   int displaced = 0;
 
-  const float degrade = static_cast<float>(opts.guard_degrade_ns * 1e-9);
-  const float floor
-      = static_cast<float>(opts.slack_threshold_ns * 1e-9) - degrade;
-  const auto pair_timing_ok = [&](const PlacementEdit& edit) {
-    const auto a_now = worstSlack(edit.a);
-    const auto b_now = worstSlack(edit.b);
-    return a_now && b_now && edit.a_slack && edit.b_slack && *a_now >= floor
-           && *b_now >= floor && *a_now >= *edit.a_slack - degrade
-           && *b_now >= *edit.b_slack - degrade;
-  };
-  const auto refresh = [&]() {
-    if (can_estimate) {
-      estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
-    }
-  };
-
-  // Every timing measurement describes one complete, legalized placement.
-  // Collect failed edits before restoring any of them, then refresh RC again.
   int reverted = 0;
   try {
     committed = embedPlacementEdits(key, opts, claims, edits);
@@ -593,43 +714,8 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
     }
 
     if (committed > 0) {
-      legalizePlacement(opendp_, block, opts.max_disp_um);
-      refresh();
-    }
-    if (can_measure && committed > 0) {
-      std::vector<bool> rejected(edits.size());
-      for (size_t i = 0; i < edits.size(); ++i) {
-        rejected[i] = !pair_timing_ok(edits[i]);
-      }
-      for (size_t i = 0; i < edits.size(); ++i) {
-        if (rejected[i]) {
-          const PlacementEdit& edit = edits[i];
-          edit.a->setLocation(edit.a_loc.x(), edit.a_loc.y());
-          edit.b->setLocation(edit.b_loc.x(), edit.b_loc.y());
-          ++reverted;
-        }
-      }
-      if (reverted > 0) {
-        legalizePlacement(opendp_, block, opts.max_disp_um);
-        refresh();
-      }
-      bool final_ok = endpointSlacksWithin(sta_, timing_before, degrade);
-      for (size_t i = 0; i < edits.size(); ++i) {
-        if (!rejected[i] && !pair_timing_ok(edits[i])) {
-          final_ok = false;
-        }
-      }
-      if (!final_ok) {
-        // Global legalization may have changed other cells. Restore the whole
-        // original placement instead of returning a state that failed timing.
-        restorePlacement(placement_before);
-        refresh();
-        reverted = committed;
-        logger_->info(utl::WMK,
-                      110,
-                      "Final legalized placement exceeds the timing budget; "
-                      "restored the complete original placement.");
-      }
+      guard.legalize();
+      reverted = guard.check(edits);
     }
     if (reverted > 0) {
       logger_->info(utl::WMK,
@@ -661,8 +747,7 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
     output.publish(
         [&](std::ostream& out) { writePlacementClaims(out, claims); });
   } catch (...) {
-    restorePlacement(placement_before);
-    refresh();
+    guard.restore();
     throw;
   }
 

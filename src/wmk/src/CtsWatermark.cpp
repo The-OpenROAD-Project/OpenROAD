@@ -129,6 +129,395 @@ void writeCtsClaims(std::ostream& out, const std::vector<CtsClaim>& claims)
 
 }  // namespace
 
+class Watermark::CtsEmbedding
+{
+ public:
+  CtsEmbedding(Watermark& watermark,
+               dbBlock* block,
+               const std::vector<dbInst*>& lcbs,
+               const std::array<std::uint8_t, 32>& key,
+               const CtsOptions& opts)
+      : watermark_(watermark),
+        block_(block),
+        lcbs_(lcbs),
+        key_(key),
+        opts_(opts),
+        network_(watermark.sta_->getDbNetwork()),
+        max_dist_(static_cast<std::int64_t>(opts.sibling_dist_um
+                                            * block->getDbUnitsPerMicron())),
+        claimed_(lcbs.size(), false)
+  {
+  }
+
+  int run(ClaimFile& output)
+  {
+    prepareTiming();
+    collectClocks();
+    indexBuffers();
+    enumerateCandidates();
+    edits_.reserve(std::min(candidates_.size(), lcbs_.size()));
+    try {
+      for (const Candidate& c : candidates_) {
+        if (std::cmp_greater_equal(claims_.size(), opts_.num_pairs)) {
+          break;
+        }
+        if (!claimed_[c.i] && !claimed_[c.j]) {
+          apply(c);
+        }
+      }
+      output.publish([&](std::ostream& out) { writeCtsClaims(out, claims_); });
+    } catch (...) {
+      restore();
+      throw;
+    }
+    watermark_.logger_->info(
+        utl::WMK,
+        73,
+        "CTS watermark: {} pairs claimed from {} leaf clock buffers, "
+        "{} at the keyed parity ({} sinks moved, {} rejected on skew, "
+        "{} with no movable sink, {} on drive strength, "
+        "{} with different or unknown clock sets, {} with different or "
+        "unproven clock logic, {} on setup/hold timing).",
+        static_cast<int>(claims_.size()),
+        static_cast<int>(lcbs_.size()),
+        held_,
+        moved_,
+        rejected_skew_,
+        rejected_no_sink_,
+        rejected_drive_,
+        rejected_cross_clock_,
+        rejected_clock_logic_,
+        rejected_timing_);
+    return static_cast<int>(claims_.size());
+  }
+
+ private:
+  // Enumerate the eligible pairs, then let the key order them.  Eligibility is
+  // public -- two leaf buffers close enough together that moving a sink between
+  // them stays local -- but which of those pairs carries a mark is not.
+  struct Candidate
+  {
+    size_t i, j;
+    std::string pair_key;
+    std::array<std::uint8_t, 32> sort_key;
+  };
+
+  struct SinkEdit
+  {
+    dbITerm* sink;
+    dbNet* origin;
+    dbNet* destination;
+  };
+
+  void prepareTiming()
+  {
+    // Establish fresh clock parasitics before recording a fixed baseline.
+    // Each clock and analysis scene has its own budget; an unrelated clock's
+    // larger skew must not hide degradation of the clock being edited.
+    const bool can_estimate
+        = watermark_.canEstimateParasitics(/* clock */ true);
+    if (can_estimate) {
+      for (dbNet* net : block_->getNets()) {
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          watermark_.reestimateNetParasitics(net, nullptr);
+        }
+      }
+    }
+    skew_before_ = can_estimate ? clockSkews(watermark_.sta_) : ClockSkews{};
+    // Latency spread alone does not bound setup/hold path degradation. Keep
+    // every constrained endpoint's original slack as a second timing guard.
+    timing_before_ = endpointSlacks(watermark_.sta_);
+  }
+
+  void collectClocks()
+  {
+    // Which clocks reach each buffer, computed once.  A sink may only move
+    // between two buffers with identical clock sets: findLeafClockBuffers
+    // returns the leaves of every clock tree in the design, and two trees can
+    // run alongside each other, so distance alone would let a move reconnect a
+    // flop to a different clock and change what the design does.
+    lcb_clocks_.reserve(lcbs_.size());
+    int with_a_clock = 0;
+    for (dbInst* lcb : lcbs_) {
+      lcb_clocks_.push_back(watermark_.clockIdentitiesAt(lcb));
+      if (!lcb_clocks_.back().empty()) {
+        ++with_a_clock;
+      }
+    }
+    // Rejecting every pair because the question could not be asked is a very
+    // different situation from rejecting the few that really do span two trees,
+    // and it looks identical in the counts.  A database read back without
+    // constraints has a clock tree but no clock, and would otherwise report
+    // that every pair spanned two clocks and quietly mark nothing.
+    if (with_a_clock == 0) {
+      watermark_.logger_->warn(
+          utl::WMK,
+          106,
+          "No clock reaches any of the {} leaf clock buffers, so no "
+          "pair can be shown to stay on one clock and none will be "
+          "marked.  Read constraints (create_clock) before embedding.",
+          static_cast<int>(lcbs_.size()));
+    }
+  }
+
+  void indexBuffers()
+  {
+    branches_.reserve(lcbs_.size());
+    for (dbInst* lcb : lcbs_) {
+      branches_.push_back(clockBranch(lcb, network_));
+    }
+
+    centres_.reserve(lcbs_.size());
+    for (dbInst* lcb : lcbs_) {
+      centres_.push_back(centreOf(lcb));
+    }
+
+    // Only buffers within max_dist of each other can be paired, so the search
+    // does not have to look at every pair.  Two buffers that close differ by at
+    // most max_dist on each axis, so on a grid of cells one max_dist on a side
+    // every pair worth considering lies in the same cell or in one of the eight
+    // around it.  Testing those nine cells finds exactly the pairs the full
+    // sweep found, in time proportional to the number of buffers that really
+    // are near one another instead of to the square of the buffer count.  Where
+    // a design packs every buffer inside one max_dist the two are the same
+    // amount of work, because then every pair genuinely is a candidate.
+    const std::int64_t cell = std::max<std::int64_t>(max_dist_, 1);
+    for (size_t i = 0; i < lcbs_.size(); ++i) {
+      grid_[{cellOf(centres_[i].x, cell), cellOf(centres_[i].y, cell)}]
+          .push_back(i);
+    }
+  }
+
+  void enumerateCandidates()
+  {
+    const std::int64_t cell = std::max<std::int64_t>(max_dist_, 1);
+    for (size_t i = 0; i < lcbs_.size(); ++i) {
+      const std::int64_t cx = cellOf(centres_[i].x, cell);
+      const std::int64_t cy = cellOf(centres_[i].y, cell);
+      for (std::int64_t dx = -1; dx <= 1; ++dx) {
+        for (std::int64_t dy = -1; dy <= 1; ++dy) {
+          const auto cell_it = grid_.find({cx + dx, cy + dy});
+          if (cell_it == grid_.end()) {
+            continue;
+          }
+          // Indices went into each cell in increasing order, so taking only
+          // those above i visits each pair once and keeps i < j.
+          for (size_t j : cell_it->second) {
+            if (j <= i) {
+              continue;
+            }
+            if (manhattan(centres_[i], centres_[j]) > max_dist_) {
+              continue;
+            }
+            // Both sets are sorted. Empty or unequal sets cannot establish
+            // that the sink will remain on exactly the same clocks.
+            if (!sameClockSet(lcb_clocks_[i], lcb_clocks_[j])) {
+              ++rejected_cross_clock_;
+              continue;
+            }
+            // Named clocks do not describe enables or inversion. Only move
+            // between branches with the same unconditional clock function.
+            if (!branches_[i] || !branches_[j]
+                || branches_[i] != branches_[j]) {
+              ++rejected_clock_logic_;
+              continue;
+            }
+            Candidate c;
+            c.i = i;
+            c.j = j;
+            // findLeafClockBuffers returns them in name order, so i < j already
+            // means the identifier is built from the sorted names.
+            c.pair_key = lcbs_[i]->getName() + "+" + lcbs_[j]->getName();
+            c.sort_key = hmac_digest(key_, {"pair_sort", c.pair_key});
+            candidates_.push_back(std::move(c));
+          }
+        }
+      }
+    }
+    std::ranges::sort(candidates_, [](const Candidate& x, const Candidate& y) {
+      if (x.sort_key != y.sort_key) {
+        return x.sort_key < y.sort_key;
+      }
+      return x.pair_key < y.pair_key;
+    });
+  }
+
+  int fanoutParity(dbInst* buffer) const
+  {
+    // Enumeration established this fanout and sink moves preserve its
+    // definition. Report a broken invariant before emitting invalid claims.
+    const auto fanout = seqFanout(buffer, network_);
+    if (!fanout) {
+      watermark_.logger_->error(
+          utl::WMK,
+          118,
+          "Cannot determine sequential fanout of clock buffer {}.",
+          buffer->getName());
+    }
+    return *fanout % 2;
+  }
+
+  void apply(const Candidate& c)
+  {
+    dbInst* a = lcbs_[c.i];
+    dbInst* b = lcbs_[c.j];
+    const std::string na = a->getName();
+    const std::string nb = b->getName();
+
+    // The key picks both which buffer carries the mark and what parity it
+    // must show, so neither is guessable from the netlist.
+    const std::array<std::uint8_t, 32> d
+        = hmac_digest(key_, {"pair", c.pair_key, na, nb});
+    const int target_bit = d[0] & 1;
+    const bool target_is_a = ((d[0] >> 1) & 1) != 0;
+
+    dbInst* target = target_is_a ? a : b;
+    dbInst* other = target_is_a ? b : a;
+
+    CtsClaim claim;
+    claim.pair_key = c.pair_key;
+    claim.target_lcb = target->getName();
+    claim.other_lcb = other->getName();
+    claim.target_bit = target_bit;
+    claim.final_bit = fanoutParity(target);
+
+    if (claim.final_bit != target_bit) {
+      setParity(claim, target, other, lcb_clocks_[c.i]);
+    }
+    if (claim.final_bit == target_bit) {
+      ++held_;
+    }
+    claims_.push_back(claim);
+    claimed_[target_is_a ? c.i : c.j] = true;
+  }
+
+  void setParity(CtsClaim& claim,
+                 dbInst* target,
+                 dbInst* other,
+                 const ClockIdentities& clocks)
+  {
+    // Move one sink across the boundary to flip the parity.  Taking it from
+    // the target lowers that count by one; taking it from the peer raises
+    // it.  Either direction changes the parity, so use whichever buffer has
+    // a sink free to move.
+    dbNet* target_net = singleOutputNet(target);
+    dbNet* other_net = singleOutputNet(other);
+    dbITerm* sink = nullptr;
+    dbNet* dest = nullptr;
+    if (target_net != nullptr && other_net != nullptr) {
+      sink = movableSink(other, target_net, network_);
+      dest = target_net;
+      if (sink == nullptr) {
+        sink = movableSink(target, other_net, network_);
+        dest = other_net;
+      }
+    }
+    if (sink == nullptr) {
+      ++rejected_no_sink_;
+    } else if (!haveClockSkews(clocks, skew_before_)) {
+      ++rejected_skew_;
+      if (!warned_skew_) {
+        watermark_.logger_->warn(
+            utl::WMK,
+            74,
+            "Clock skew cannot be evaluated for a selected pair; "
+            "its sinks will not be moved. Read liberty, constraints "
+            "and clock wire RC, and propagate the clocks first.");
+        warned_skew_ = true;
+      }
+    } else {
+      moveSink(claim, target, other, sink, dest);
+    }
+  }
+
+  void moveSink(CtsClaim& claim,
+                dbInst* target,
+                dbInst* other,
+                dbITerm* sink,
+                dbNet* dest)
+  {
+    dbNet* origin = sink->getNet();
+    bool skew_ok = false;
+    bool timing_ok = false;
+    bool drive_ok = false;
+    edits_.push_back({.sink = sink, .origin = origin, .destination = dest});
+    const bool accepted = tryClockSinkMove(
+        sink,
+        dest,
+        [&] { watermark_.reestimateNetParasitics(origin, dest); },
+        [&] {
+          skew_ok = clockSkewsWithin(skew_before_,
+                                     clockSkews(watermark_.sta_),
+                                     opts_.skew_margin_ns * 1e-9f);
+          timing_ok = endpointSlacksWithin(
+              watermark_.sta_, timing_before_, opts_.skew_margin_ns * 1e-9f);
+          // Moving a sink changes both loads; use Liberty limits for both
+          // drivers after refreshing the affected parasitics.
+          drive_ok
+              = watermark_.driverHeadroomOk(
+                    target, opts_.slew_headroom_frac, opts_.cap_headroom_frac)
+                && watermark_.driverHeadroomOk(
+                    other, opts_.slew_headroom_frac, opts_.cap_headroom_frac);
+          return skew_ok && timing_ok && drive_ok;
+        });
+    if (!accepted) {
+      edits_.pop_back();
+      if (!skew_ok) {
+        ++rejected_skew_;
+      } else if (!timing_ok) {
+        ++rejected_timing_;
+      } else {
+        ++rejected_drive_;
+      }
+    } else {
+      ++moved_;
+      claim.final_bit = fanoutParity(target);
+    }
+  }
+
+  void restore()
+  {
+    for (const SinkEdit& edit : std::views::reverse(edits_)) {
+      if (edit.sink->getNet() != edit.origin) {
+        edit.sink->connect(edit.origin);
+      }
+    }
+    for (const SinkEdit& edit : edits_) {
+      watermark_.reestimateNetParasitics(edit.origin, edit.destination);
+    }
+  }
+
+  Watermark& watermark_;
+  dbBlock* block_;
+  const std::vector<dbInst*>& lcbs_;
+  const std::array<std::uint8_t, 32>& key_;
+  const CtsOptions& opts_;
+  sta::dbNetwork* network_;
+  const std::int64_t max_dist_;
+  ClockSkews skew_before_;
+  std::vector<EndpointSlack> timing_before_;
+  std::vector<ClockIdentities> lcb_clocks_;
+  std::vector<std::optional<ClockBranch>> branches_;
+  std::vector<Centre> centres_;
+  std::map<std::pair<std::int64_t, std::int64_t>, std::vector<size_t>> grid_;
+  std::vector<Candidate> candidates_;
+  std::vector<CtsClaim> claims_;
+  // A buffer that has been claimed is frozen: its fanout is the evidence, so it
+  // can be neither the target nor the source of a later move.  A buffer that
+  // only lent a sink is still free, which is what the paper's rule amounts to.
+  std::vector<bool> claimed_;
+  std::vector<SinkEdit> edits_;
+  bool warned_skew_ = false;
+  int rejected_cross_clock_ = 0;
+  int rejected_clock_logic_ = 0;
+  int rejected_skew_ = 0;
+  int rejected_no_sink_ = 0;
+  int rejected_drive_ = 0;
+  int rejected_timing_ = 0;
+  int held_ = 0;
+  int moved_ = 0;
+};
+
 int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                             const CtsOptions& opts,
                             const std::string& claims_file)
@@ -170,303 +559,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     return 0;
   }
 
-  const int dbu = block->getDbUnitsPerMicron();
-  const std::int64_t max_dist
-      = static_cast<std::int64_t>(opts.sibling_dist_um * dbu);
-  // Establish fresh clock parasitics before recording a fixed baseline.
-  // Each clock and analysis scene has its own budget; an unrelated clock's
-  // larger skew must not hide degradation of the clock being edited.
-  const bool can_estimate = canEstimateParasitics(/* clock */ true);
-  if (can_estimate) {
-    for (dbNet* net : block->getNets()) {
-      if (net->getSigType() == odb::dbSigType::CLOCK) {
-        reestimateNetParasitics(net, nullptr);
-      }
-    }
-  }
-  const ClockSkews skew_before = can_estimate ? clockSkews(sta_) : ClockSkews{};
-  // Latency spread alone does not bound setup/hold path degradation. Keep
-  // every constrained endpoint's original slack as a second timing guard.
-  const std::vector<EndpointSlack> timing_before = endpointSlacks(sta_);
-  bool warned_skew = false;
-
-  // Enumerate the eligible pairs, then let the key order them.  Eligibility is
-  // public -- two leaf buffers close enough together that moving a sink between
-  // them stays local -- but which of those pairs carries a mark is not.
-  struct Candidate
-  {
-    size_t i, j;
-    std::string pair_key;
-    std::array<std::uint8_t, 32> sort_key;
-  };
-  // Which clocks reach each buffer, computed once.  A sink may only move
-  // between two buffers with identical clock sets: findLeafClockBuffers returns
-  // the leaves of every clock tree in the design, and two trees can run
-  // alongside each other, so distance alone would let a move reconnect a flop
-  // to a different clock and change what the design does.
-  std::vector<ClockIdentities> lcb_clocks;
-  lcb_clocks.reserve(lcbs.size());
-  int with_a_clock = 0;
-  for (dbInst* lcb : lcbs) {
-    lcb_clocks.push_back(clockIdentitiesAt(lcb));
-    if (!lcb_clocks.back().empty()) {
-      ++with_a_clock;
-    }
-  }
-  // Rejecting every pair because the question could not be asked is a very
-  // different situation from rejecting the few that really do span two trees,
-  // and it looks identical in the counts.  A database read back without
-  // constraints has a clock tree but no clock, and would otherwise report that
-  // every pair spanned two clocks and quietly mark nothing.
-  if (with_a_clock == 0) {
-    logger_->warn(utl::WMK,
-                  106,
-                  "No clock reaches any of the {} leaf clock buffers, so no "
-                  "pair can be shown to stay on one clock and none will be "
-                  "marked.  Read constraints (create_clock) before embedding.",
-                  static_cast<int>(lcbs.size()));
-  }
-  int rejected_cross_clock = 0;
-  int rejected_clock_logic = 0;
-  std::vector<std::optional<ClockBranch>> branches;
-  branches.reserve(lcbs.size());
-  for (dbInst* lcb : lcbs) {
-    branches.push_back(clockBranch(lcb, network));
-  }
-
-  std::vector<Centre> centres;
-  centres.reserve(lcbs.size());
-  for (dbInst* lcb : lcbs) {
-    centres.push_back(centreOf(lcb));
-  }
-
-  // Only buffers within max_dist of each other can be paired, so the search
-  // does not have to look at every pair.  Two buffers that close differ by at
-  // most max_dist on each axis, so on a grid of cells one max_dist on a side
-  // every pair worth considering lies in the same cell or in one of the eight
-  // around it.  Testing those nine cells finds exactly the pairs the full
-  // sweep found, in time proportional to the number of buffers that really are
-  // near one another instead of to the square of the buffer count.  Where a
-  // design packs every buffer inside one max_dist the two are the same amount
-  // of work, because then every pair genuinely is a candidate.
-  const std::int64_t cell = std::max<std::int64_t>(max_dist, 1);
-  std::map<std::pair<std::int64_t, std::int64_t>, std::vector<size_t>> grid;
-  for (size_t i = 0; i < lcbs.size(); ++i) {
-    grid[{cellOf(centres[i].x, cell), cellOf(centres[i].y, cell)}].push_back(i);
-  }
-
-  std::vector<Candidate> candidates;
-  for (size_t i = 0; i < lcbs.size(); ++i) {
-    const std::int64_t cx = cellOf(centres[i].x, cell);
-    const std::int64_t cy = cellOf(centres[i].y, cell);
-    for (std::int64_t dx = -1; dx <= 1; ++dx) {
-      for (std::int64_t dy = -1; dy <= 1; ++dy) {
-        const auto cell_it = grid.find({cx + dx, cy + dy});
-        if (cell_it == grid.end()) {
-          continue;
-        }
-        // Indices went into each cell in increasing order, so taking only
-        // those above i visits each pair once and keeps i < j.
-        for (size_t j : cell_it->second) {
-          if (j <= i) {
-            continue;
-          }
-          if (manhattan(centres[i], centres[j]) > max_dist) {
-            continue;
-          }
-          // Both sets are sorted. Empty or unequal sets cannot establish
-          // that the sink will remain on exactly the same clocks.
-          if (!sameClockSet(lcb_clocks[i], lcb_clocks[j])) {
-            ++rejected_cross_clock;
-            continue;
-          }
-          // Named clocks do not describe enables or inversion. Only move
-          // between branches with the same unconditional clock function.
-          if (!branches[i] || !branches[j] || branches[i] != branches[j]) {
-            ++rejected_clock_logic;
-            continue;
-          }
-          Candidate c;
-          c.i = i;
-          c.j = j;
-          // findLeafClockBuffers returns them in name order, so i < j already
-          // means the identifier is built from the sorted names.
-          c.pair_key = lcbs[i]->getName() + "+" + lcbs[j]->getName();
-          c.sort_key = hmac_digest(key, {"pair_sort", c.pair_key});
-          candidates.push_back(std::move(c));
-        }
-      }
-    }
-  }
-  std::ranges::sort(candidates, [](const Candidate& x, const Candidate& y) {
-    if (x.sort_key != y.sort_key) {
-      return x.sort_key < y.sort_key;
-    }
-    return x.pair_key < y.pair_key;
-  });
-
-  std::vector<CtsClaim> claims;
-  // A buffer that has been claimed is frozen: its fanout is the evidence, so it
-  // can be neither the target nor the source of a later move.  A buffer that
-  // only lent a sink is still free, which is what the paper's rule amounts to.
-  std::vector<bool> claimed(lcbs.size(), false);
-  int rejected_skew = 0;
-  int rejected_no_sink = 0;
-  int rejected_drive = 0;
-  int rejected_timing = 0;
-  int held = 0;
-  int moved = 0;
-
-  struct SinkEdit
-  {
-    dbITerm* sink;
-    dbNet* origin;
-    dbNet* destination;
-  };
-  std::vector<SinkEdit> edits;
-  edits.reserve(std::min(candidates.size(), lcbs.size()));
-
-  try {
-    for (const Candidate& c : candidates) {
-      if (std::cmp_greater_equal(claims.size(), opts.num_pairs)) {
-        break;
-      }
-      if (claimed[c.i] || claimed[c.j]) {
-        continue;
-      }
-
-      dbInst* a = lcbs[c.i];
-      dbInst* b = lcbs[c.j];
-      const std::string na = a->getName();
-      const std::string nb = b->getName();
-
-      // The key picks both which buffer carries the mark and what parity it
-      // must show, so neither is guessable from the netlist.
-      const std::array<std::uint8_t, 32> d
-          = hmac_digest(key, {"pair", c.pair_key, na, nb});
-      const int target_bit = d[0] & 1;
-      const bool target_is_a = ((d[0] >> 1) & 1) != 0;
-
-      dbInst* target = target_is_a ? a : b;
-      dbInst* other = target_is_a ? b : a;
-
-      CtsClaim claim;
-      claim.pair_key = c.pair_key;
-      claim.target_lcb = target->getName();
-      claim.other_lcb = other->getName();
-      claim.target_bit = target_bit;
-      claim.final_bit = *seqFanout(target, network) % 2;
-
-      if (claim.final_bit != target_bit) {
-        // Move one sink across the boundary to flip the parity.  Taking it from
-        // the target lowers that count by one; taking it from the peer raises
-        // it.  Either direction changes the parity, so use whichever buffer has
-        // a sink free to move.
-        dbNet* target_net = singleOutputNet(target);
-        dbNet* other_net = singleOutputNet(other);
-        dbITerm* sink = nullptr;
-        dbNet* dest = nullptr;
-        if (target_net != nullptr && other_net != nullptr) {
-          sink = movableSink(other, target_net, network);
-          dest = target_net;
-          if (sink == nullptr) {
-            sink = movableSink(target, other_net, network);
-            dest = other_net;
-          }
-        }
-        if (sink == nullptr) {
-          ++rejected_no_sink;
-        } else if (!haveClockSkews(lcb_clocks[c.i], skew_before)) {
-          ++rejected_skew;
-          if (!warned_skew) {
-            logger_->warn(
-                utl::WMK,
-                74,
-                "Clock skew cannot be evaluated for a selected pair; "
-                "its sinks will not be moved. Read liberty, constraints "
-                "and clock wire RC, and propagate the clocks first.");
-            warned_skew = true;
-          }
-        } else {
-          dbNet* origin = sink->getNet();
-          bool skew_ok = false;
-          bool timing_ok = false;
-          bool drive_ok = false;
-          edits.push_back(
-              {.sink = sink, .origin = origin, .destination = dest});
-          const bool accepted = tryClockSinkMove(
-              sink,
-              dest,
-              [&] { reestimateNetParasitics(origin, dest); },
-              [&] {
-                skew_ok = clockSkewsWithin(
-                    skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
-                timing_ok = endpointSlacksWithin(
-                    sta_, timing_before, opts.skew_margin_ns * 1e-9f);
-                // Moving a sink changes both loads; use Liberty limits for both
-                // drivers after refreshing the affected parasitics.
-                drive_ok = driverHeadroomOk(target,
-                                            opts.slew_headroom_frac,
-                                            opts.cap_headroom_frac)
-                           && driverHeadroomOk(other,
-                                               opts.slew_headroom_frac,
-                                               opts.cap_headroom_frac);
-                return skew_ok && timing_ok && drive_ok;
-              });
-          if (!accepted) {
-            edits.pop_back();
-            if (!skew_ok) {
-              ++rejected_skew;
-            } else if (!timing_ok) {
-              ++rejected_timing;
-            } else {
-              ++rejected_drive;
-            }
-          } else {
-            ++moved;
-            claim.final_bit = *seqFanout(target, network) % 2;
-          }
-        }
-      }
-
-      if (claim.final_bit == target_bit) {
-        ++held;
-      }
-      claims.push_back(claim);
-      claimed[target_is_a ? c.i : c.j] = true;
-    }
-
-    output.publish([&](std::ostream& out) { writeCtsClaims(out, claims); });
-  } catch (...) {
-    for (const SinkEdit& edit : std::views::reverse(edits)) {
-      if (edit.sink->getNet() != edit.origin) {
-        edit.sink->connect(edit.origin);
-      }
-    }
-    for (const SinkEdit& edit : edits) {
-      reestimateNetParasitics(edit.origin, edit.destination);
-    }
-    throw;
-  }
-
-  logger_->info(utl::WMK,
-                73,
-                "CTS watermark: {} pairs claimed from {} leaf clock buffers, "
-                "{} at the keyed parity ({} sinks moved, {} rejected on skew, "
-                "{} with no movable sink, {} on drive strength, "
-                "{} with different or unknown clock sets, {} with different or "
-                "unproven clock logic, {} on setup/hold timing).",
-                static_cast<int>(claims.size()),
-                static_cast<int>(lcbs.size()),
-                held,
-                moved,
-                rejected_skew,
-                rejected_no_sink,
-                rejected_drive,
-                rejected_cross_clock,
-                rejected_clock_logic,
-                rejected_timing);
-  return static_cast<int>(claims.size());
+  return CtsEmbedding(*this, block, lcbs, key, opts).run(output);
 }
 
 }  // namespace wmk
