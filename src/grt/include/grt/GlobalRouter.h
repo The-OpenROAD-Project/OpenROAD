@@ -69,6 +69,8 @@ class RoutingTracks;
 class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
+class AbstractCugrRenderer;
+struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
@@ -162,7 +164,12 @@ class GlobalRouter
   void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
   bool isNetResAware(odb::dbNet* db_net);
   void setMacroExtension(int macro_extension);
-  void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
+  void setUseCUGR(bool use_cugr)
+  {
+    use_cugr_ = use_cugr;
+    engine_selected_ = true;
+  };
+  bool isUseCUGR() const { return use_cugr_; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
@@ -307,6 +314,11 @@ class GlobalRouter
   void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
 
+  // CUGR stage-by-stage topology debug (global_route_debug).
+  void initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer);
+  AbstractCugrRenderer* getDebugCugr() const;
+  void setDebugCugrNet(odb::dbNet* net, const CugrDebugStages& stages);
+
   void saveSttInputFile(Net* net);
 
   // Report the wire length on each layer.
@@ -372,6 +384,7 @@ class GlobalRouter
 
  private:
   void finishGlobalRouting(bool save_guides = false);
+  void ensureEngineSelected();
   // DBU coordinate to gcell index, clamped into the (oversized) last gcell.
   int dbuToTile(int dbu_coord, bool is_x) const;
   // Net functions
@@ -594,7 +607,10 @@ class GlobalRouter
   int total_diodes_count_;
   bool is_congested_{false};
   bool incremental_congestion_report_pending_{false};
+  // Block property recording which engine produced the persisted guides.
+  static constexpr char kUseCugrProperty[] = "grt_use_cugr";
   bool use_cugr_{false};
+  bool engine_selected_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
   bool has_macros_or_pads_{false};
   bool check_pin_placement_{true};

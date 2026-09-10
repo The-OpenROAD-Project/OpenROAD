@@ -96,7 +96,7 @@ class ManPage:
         # it is okay for a function to have no switches.
         # assert self.switches, print("func switches not set")
         filepath = f"{dst_dir}/{self.name}.md"
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             self.write_header(f)
             self.write_name(f)
             self.write_synopsis(f)
@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
         # Read and print the generated content
         filepath = os.path.join(temp_dir, f"{man.name}.md")
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             generated_content = f.read()
 
         print("Generated man page content:")

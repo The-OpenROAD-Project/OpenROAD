@@ -9,8 +9,9 @@
 #include <tuple>
 #include <vector>
 
-#include "RDLRoute.h"
+#include "RDLNet.h"
 #include "RDLRouter.h"
+#include "RDLSegment.h"
 #include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"
@@ -47,9 +48,11 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   const auto& vertex_map = router_->getVertexMap();
 
-  odb::PtrMap<odb::dbITerm, RDLRoute*> routes;
+  odb::PtrMap<odb::dbITerm, RDLSegment*> routes;
   for (const auto& route : router_->getRoutes()) {
-    routes[route->getTerminal()] = route.get();
+    for (const auto& segment : route->getSegments()) {
+      routes[segment->getTerminal()] = segment.get();
+    }
   }
 
   const bool draw_obs = draw_detail && checkDisplayControl(kDrawObs);

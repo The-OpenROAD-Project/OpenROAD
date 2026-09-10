@@ -46,6 +46,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "place_macro_right_angle_rotation",
     "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
 ]
@@ -234,6 +235,10 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "place_macro_right_angle_rotation": [
+                    "testcases/place_macro_right_angle_rotation.def",
+                    "testcases/place_macro_right_angle_rotation.lef",
+                ],
                 "placement_blockages1": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
@@ -310,7 +315,10 @@ py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],
     data = ["//src/mpl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

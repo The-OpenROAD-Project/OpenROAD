@@ -35,6 +35,7 @@ TESTS = [
     "gcd",
     "gcd_cugr",
     "gcd_flute",
+    "global_route_above_max_layer_cugr",
     "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
@@ -101,11 +102,13 @@ TESTS = [
     "repair_antennas_only_diodes_cugr",
     "repair_antennas_only_jumpers",
     "repair_antennas_only_jumpers_cugr",
+    "repair_antennas_post_drt_above_max_layer_cugr",
     "repair_antennas_post_drt_below_min_cugr",
     "repair_antennas_post_drt_cugr",
     "repair_antennas_allow_congestion",
     "repair_antennas_cugr",
     "repair_antennas_from_odb",
+    "repair_antennas_from_odb_cugr",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
@@ -237,7 +240,10 @@ py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],
     data = ["//src/grt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

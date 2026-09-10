@@ -179,6 +179,10 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
       local_obstructions,
       allow_repair_channels_,
       domain_->getPDNGen()->getDebugRenderer());
+
+  if (logger->debugCheck(utl::PDN, "Pad", 1)) {
+    PadDirectConnectionStraps::reportConnectionBalance(getGridComponents());
+  }
 }
 
 void Grid::makeRoutingObstructions(odb::dbBlock* block) const
@@ -897,11 +901,10 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // Remove overlapping vias and keep largest
-  Via::ViaTree overlapping_via_tree;
-  for (const auto& via : vias) {
-    overlapping_via_tree.insert(via);
-  }
+  // Remove overlapping vias and keep largest. Build the tree in one go:
+  // the packing constructor is far cheaper than inserting millions of
+  // vias one at a time, and nothing queries the tree while it is built.
+  Via::ViaTree overlapping_via_tree(vias.begin(), vias.end());
   for (const auto& via : vias) {
     if (via->isFailed()) {
       continue;
@@ -943,9 +946,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   remove_set_of_vias(remove_vias);
 
   // build via tree
-  vias_.clear();
+  vias_ = Via::ViaTree(vias.begin(), vias.end());
   for (auto& via : vias) {
-    vias_.insert(via);
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
@@ -1322,9 +1324,11 @@ odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
+  auto net_map = std::make_shared<odb::PtrMap<odb::dbNet, int>>();
   std::vector<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
+    (*net_map)[net] = 0;
     std::vector<odb::dbITerm*> iterms;
     for (auto* iterm : net->getITerms()) {
       auto* inst = iterm->getInst();
@@ -1341,7 +1345,7 @@ void CoreGrid::setupDirectConnect(
 
     for (auto* iterm : iterms) {
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
-          this, iterm, connect_pad_layers);
+          this, iterm, connect_pad_layers, net_map);
       if (pad_connect->canConnect()) {
         straps.push_back(pad_connect.get());
         addStrap(std::move(pad_connect));

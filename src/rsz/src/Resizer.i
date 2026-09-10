@@ -141,7 +141,6 @@ remove_buffers_cmd(InstanceSeq *insts)
   Resizer *resizer = getResizer();
   if (insts) {
     resizer->removeBuffers(*insts);
-    delete insts;
   } else {
     resizer->removeBuffers({});
   }

@@ -93,6 +93,7 @@ struct PlaceOptions
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
+  float routabilityMinCongestionForInflation = 0.95;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
@@ -103,6 +104,9 @@ struct PlaceOptions
   // OpenDB should have these values.
   int padLeft = 0;
   int padRight = 0;
+
+  // Concurrent IO pin + cell placement
+  bool placeIosMode = false;
 
   void skipIo();
   void validate(utl::Logger* log);
@@ -163,6 +167,8 @@ class Replace
                          int threads,
                          bool check_density);
   void checkHasCoreRows();
+  void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

@@ -31,6 +31,7 @@ py_test(
     srcs = [
         "test_block.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -44,6 +45,7 @@ py_test(
     srcs = [
         "test_bterm.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -57,6 +59,7 @@ py_test(
     srcs = [
         "test_destroy.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -70,6 +73,7 @@ py_test(
     srcs = [
         "test_group.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -83,6 +87,7 @@ py_test(
     srcs = [
         "test_inst.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -96,6 +101,7 @@ py_test(
     srcs = [
         "test_iterm.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -109,6 +115,7 @@ py_test(
     srcs = [
         "test_module.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -122,6 +129,7 @@ py_test(
     srcs = [
         "test_net.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -135,6 +143,7 @@ py_test(
     srcs = [
         "test_wire_codec.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -187,6 +196,7 @@ COMPULSORY_TESTS = [
     "read_def_virtual",
     "read_def58",
     "read_lef",
+    "read_lef_dup_macro",
     "read_lef_minwidth_wrongdirection",
     "read_zipped",
     "replace_hier_mod1",
@@ -200,7 +210,6 @@ COMPULSORY_TESTS = [
     "row_settings",
     "sky130hd_multi_patterned",
     "smash_vias",
-    "swap_master",
     "transform",
     "wire_encoder",
     "write_cdl",
@@ -302,6 +311,7 @@ filegroup(
         "data/lef58_macro_edgetype_numeric.lef",
         "data/lef58_minwidth_wrongdirection.lef",
         "data/lef58class_gscl45nm.lef",
+        "data/lef_dup_macro.lef",
         "data/mask.lef",
         "data/ndr.def",
         "data/parser_test.def",
@@ -413,7 +423,10 @@ py_test(
     name = "odb_man_tcl_check",
     srcs = ["odb_man_tcl_check.py"],
     data = ["//src/odb:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -436,6 +449,7 @@ test_suite(
         "//src/odb/test/cpp:TestAccessPoint",
         "//src/odb/test/cpp:TestCallBacks",
         "//src/odb/test/cpp:TestChips",
+        "//src/odb/test/cpp:TestDbStream",
         "//src/odb/test/cpp:TestDbWire",
         "//src/odb/test/cpp:TestGCellGrid",
         "//src/odb/test/cpp:TestGDSIn",
@@ -450,6 +464,7 @@ test_suite(
         "//src/odb/test/cpp:TestObjectType",
         "//src/odb/test/cpp:TestPolygonalFloorplan",
         "//src/odb/test/cpp:TestSwapMaster",
+        "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
         "//src/odb/test/cpp:TestWriteReadDbHier",
     ],

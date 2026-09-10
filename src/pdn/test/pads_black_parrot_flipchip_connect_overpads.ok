@@ -6,4 +6,29 @@
 [INFO ODB-0132]     Created 139 special nets and 4915 connections.
 [INFO ODB-0133]     Created 219 nets and 267 connections.
 [INFO PDN-0001] Inserting grid: Core
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (123.5350 um, 323.4350 um) for VDD
+[WARNING PDN-0195] Removing 87 via(s) between metal9 and metal10 at (122.1000 um, 563.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (123.5350 um, 603.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (123.5350 um, 763.4350 um) for VDD
+[WARNING PDN-0195] Removing 87 via(s) between metal9 and metal10 at (122.1000 um, 1203.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (123.5350 um, 1843.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (123.5350 um, 2523.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (123.5350 um, 2563.4350 um) for VDD
+[WARNING PDN-0195] Removing 87 via(s) between metal9 and metal10 at (122.1000 um, 2603.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 283.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 443.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 1163.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 1323.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2123.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2363.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2523.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2563.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2683.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2723.4350 um) for VDD
+[WARNING PDN-0195] Removing 89 via(s) between metal9 and metal10 at (2876.4200 um, 2763.4350 um) for VDD
+[WARNING PDN-0195] Removing 5 via(s) between metal9 and metal10 at (2809.3200 um, 203.4350 um) for VDD
+[WARNING PDN-0195] Removing 87 via(s) between metal9 and metal10 at (2877.9000 um, 243.4350 um) for VDD
+[WARNING PDN-0195] Removing 5 via(s) between metal9 and metal10 at (2809.3200 um, 683.4350 um) for VDD
+[WARNING PDN-0195] Removing 5 via(s) between metal9 and metal10 at (2809.3200 um, 2603.4350 um) for VDD
+[WARNING PDN-0195] Removing 87 via(s) between metal9 and metal10 at (2877.9000 um, 2643.4350 um) for VDD
 No differences found.

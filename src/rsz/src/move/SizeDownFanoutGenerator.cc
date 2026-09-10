@@ -26,7 +26,6 @@
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 
@@ -91,8 +90,13 @@ bool resolveDriverContext(SizeDownFanoutContext& ctx)
   }
 
   ctx.drvr_port = ctx.resizer.network()->libertyPort(ctx.drvr_pin);
-  ctx.scene = ctx.target.endpoint_path->scene(ctx.resizer.sta());
-  ctx.min_max = ctx.target.endpoint_path->minMax(ctx.resizer.sta());
+  // Use the Target accessors (as every other generator does) rather than
+  // dereferencing endpoint_path directly: activeScene() prefers the stable
+  // Target::scene field and minMax() falls back to the resizer's analysis mode,
+  // avoiding a SIGSEGV when endpoint_path is stale after earlier moves in the
+  // sequence have perturbed the timing graph.
+  ctx.scene = ctx.target.activeScene(ctx.resizer);
+  ctx.min_max = ctx.target.minMax(ctx.resizer);
   return ctx.drvr_port != nullptr && ctx.scene != nullptr
          && ctx.min_max != nullptr;
 }
@@ -177,9 +181,16 @@ bool resolveLoadContext(const SizeDownFanoutContext& ctx,
 
   load_ctx.load_slack = load_slack;
   load_ctx.lib_ap = ctx.scene->libertyIndex(ctx.min_max);
-  load_ctx.input_cap = static_cast<const sta::LibertyPort*>(load_ctx.load_port)
-                           ->scenePort(load_ctx.lib_ap)
-                           ->capacitance();
+  // scenePort() is nullable (a port need not resolve at every liberty/corner
+  // index, e.g. multi-Vt libraries); guard it before dereferencing for the
+  // capacitance to avoid a SIGSEGV.
+  const sta::LibertyPort* load_scene_port
+      = static_cast<const sta::LibertyPort*>(load_ctx.load_port)
+            ->scenePort(load_ctx.lib_ap);
+  if (load_scene_port == nullptr) {
+    return false;
+  }
+  load_ctx.input_cap = load_scene_port->capacitance();
   return true;
 }
 
@@ -324,14 +335,20 @@ sta::LibertyCellSeq rankSwappableCells(
     sort(&swappable_cells,
          [&load_ctx, load_port_name](const sta::LibertyCell* cell1,
                                      const sta::LibertyCell* cell2) {
+           // findLibertyPort() and scenePort() are both nullable (a swappable
+           // cell may lack the load port, or the port may not resolve at this
+           // liberty index); rank any such cell last so it's never chosen.
+           const sta::LibertyPort* raw1 = static_cast<const sta::LibertyPort*>(
+               cell1->findLibertyPort(load_port_name));
+           const sta::LibertyPort* raw2 = static_cast<const sta::LibertyPort*>(
+               cell2->findLibertyPort(load_port_name));
            const sta::LibertyPort* port1
-               = static_cast<const sta::LibertyPort*>(
-                     cell1->findLibertyPort(load_port_name))
-                     ->scenePort(load_ctx.lib_ap);
+               = raw1 != nullptr ? raw1->scenePort(load_ctx.lib_ap) : nullptr;
            const sta::LibertyPort* port2
-               = static_cast<const sta::LibertyPort*>(
-                     cell2->findLibertyPort(load_port_name))
-                     ->scenePort(load_ctx.lib_ap);
+               = raw2 != nullptr ? raw2->scenePort(load_ctx.lib_ap) : nullptr;
+           if (port1 == nullptr || port2 == nullptr) {
+             return port1 != nullptr;
+           }
            const float cap1 = port1->capacitance();
            const float cap2 = port2->capacitance();
            const sta::ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
@@ -456,10 +473,19 @@ sta::Slack computeDelayBudget(const SizeDownFanoutContext& ctx,
 float candidateInputCap(const SizeDownFanoutLoadContext& load_ctx,
                         sta::LibertyCell* cell)
 {
-  return static_cast<const sta::LibertyPort*>(
-             cell->findLibertyPort(load_ctx.load_port->name()))
-      ->scenePort(load_ctx.lib_ap)
-      ->capacitance();
+  // Both lookups are nullable; a cell that lacks the load port (or whose port
+  // doesn't resolve at this liberty index) is treated as maximally costly so it
+  // is never preferred as a replacement, rather than crashing.
+  const sta::LibertyPort* port = static_cast<const sta::LibertyPort*>(
+      cell->findLibertyPort(load_ctx.load_port->name()));
+  if (port == nullptr) {
+    return sta::INF;
+  }
+  const sta::LibertyPort* scene_port = port->scenePort(load_ctx.lib_ap);
+  if (scene_port == nullptr) {
+    return sta::INF;
+  }
+  return scene_port->capacitance();
 }
 
 bool isWorseCapOrArea(const SizeDownFanoutLoadContext& load_ctx,
@@ -478,6 +504,11 @@ bool violatesOutputLimits(const SizeDownFanoutContext& ctx,
   for (size_t i = 0; i < profile.output_pins.size(); ++i) {
     sta::LibertyPort* output_port
         = swappable->findLibertyPort(profile.output_port_names[i]);
+    // A swappable cell lacking this output port can't be validated; reject it
+    // (findLibertyPort is nullable and is dereferenced in the cap/slew checks).
+    if (output_port == nullptr) {
+      return true;
+    }
     if (checkMaxCapViolation(
             ctx, profile.output_pins[i], output_port, profile.output_caps[i])
         || checkMaxSlewViolation(ctx,
