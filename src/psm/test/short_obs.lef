@@ -1,0 +1,67 @@
+# Macro used by check_power_grid_short_obstructions.  It carries no pins,
+# only routing obstructions, so the only way it can interact with the net
+# under test is through the master obstructions of the placed instance.
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO OBS_BLOCK
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN OBS_BLOCK 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.2 1.0 0.5 ;
+    LAYER metal2 ;
+      RECT 0 0.6 1.0 0.9 ;
+  END
+END OBS_BLOCK
+
+# Macro whose obstruction covers two of its own pins.  A master is allowed
+# to do this, so the pins have to be cut out of the obstruction before it
+# is checked, leaving three strips.  Two pins are the point: cutting each
+# pin out of the original obstruction instead of out of the running result
+# leaves the obstruction whole, and that only shows up from the second pin
+# on.
+MACRO OBS_PIN_BLOCK
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN OBS_PIN_BLOCK 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.2 0.2 0.4 0.5 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.6 0.2 0.8 0.5 ;
+    END
+  END B
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.2 1.0 0.5 ;
+  END
+END OBS_PIN_BLOCK
+
+# Macro whose obstruction runs 0.5um past its own right edge, the shape of
+# the overhang in the IHP IOLib pad fillers (an 80um obstruction in a 50um
+# cell).  Only the part inside the cell is metal the instance holds, the
+# rest sits over whatever is placed next to it.
+MACRO OBS_OVERHANG
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN OBS_OVERHANG 0 0 ;
+  SIZE 0.5 BY 1.0 ;
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.2 1.0 0.5 ;
+  END
+END OBS_OVERHANG

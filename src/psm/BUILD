@@ -24,6 +24,8 @@ cc_library(
         "src/heatMap.h",
         "src/ir_network.cpp",
         "src/ir_network.h",
+        "src/ir_short.cpp",
+        "src/ir_short.h",
         "src/ir_solver.cpp",
         "src/ir_solver.h",
         "src/node.cpp",
