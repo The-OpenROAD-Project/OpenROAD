@@ -731,25 +731,6 @@ IRSolver::LayerPolygons IRSolver::getMasterObstructions(
   return filtered_obstructions;
 }
 
-odb::PtrSet<odb::dbTechLayer> IRSolver::getNetPinLayers(odb::dbInst* inst) const
-{
-  odb::PtrSet<odb::dbTechLayer> layers;
-
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getNet() != net_) {
-      continue;
-    }
-
-    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
-      for (odb::dbBox* geom : mpin->getGeometry()) {
-        layers.insert(geom->getTechLayer());
-      }
-    }
-  }
-
-  return layers;
-}
-
 bool IRSolver::findShorts(bool check_placed)
 {
   // Check nets
@@ -877,19 +858,7 @@ bool IRSolver::findShorts(bool check_placed)
       continue;
     }
 
-    // Layers where this instance holds a pin of the net. The net has to
-    // reach that pin, so the metal of the net and the metal of the instance
-    // are coincident there by construction, and the obstruction around the
-    // pin covers the wire or via landing on it. Layers the instance does
-    // not connect on are still checked.
-    const odb::PtrSet<odb::dbTechLayer> connected_layers
-        = getNetPinLayers(inst);
-
     for (const auto& [layer, layer_obstructions] : obstructions) {
-      if (connected_layers.find(layer) != connected_layers.end()) {
-        continue;
-      }
-
       for (const auto& obs : layer_obstructions) {
         odb::Polygon transformed_obs = obs;
         xform.apply(transformed_obs);

@@ -164,8 +164,6 @@ class IRSolver
   // the master removed from them.
   LayerPolygons getMasterObstructions(odb::dbMaster* master) const;
   LayerPolygons getMasterTerms(odb::dbMTerm* mterm) const;
-  // The layers where the instance holds a pin of the net under test.
-  odb::PtrSet<odb::dbTechLayer> getNetPinLayers(odb::dbInst* inst) const;
   std::vector<odb::Polygon> determineShortShapes(odb::dbTechLayer* layer,
                                                  const odb::Polygon& polygon,
                                                  bool require_overlap
