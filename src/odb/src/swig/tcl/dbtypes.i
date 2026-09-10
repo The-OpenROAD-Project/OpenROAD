@@ -5,6 +5,134 @@
 #if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
   typedef int Tcl_Size;
 #endif
+
+// Borrowed pointers reach Tcl as bare handle strings rather than as registered
+// object commands.  Every shadow-creation site in the module funnels through the
+// SWIG_NewInstanceObj macro, so redirecting it here covers the generated
+// accessors and the container typemaps below alike.  Objects SWIG owns keep a
+// real object command, which is what reclaims them.  Method dispatch on a bare
+// handle goes through odb_unknown() in the wrapper section.
+#undef  SWIG_NewInstanceObj
+#define SWIG_NewInstanceObj(thisvalue, type, flags) \
+        odbNewHandleObj(interp, thisvalue, type, flags)
+
+static Tcl_Obj* odbNewHandleObj(Tcl_Interp* interp,
+                                void* ptr,
+                                swig_type_info* type,
+                                int flags)
+{
+  if (flags) {
+    return SWIG_Tcl_NewInstanceObj(interp, ptr, type, flags);
+  }
+  // SWIG encodes the handle by copying the bytes of the pointer
+  // (SWIG_PackData reads &ptr), which gcc's escape analysis does not treat as
+  // letting the pointee escape.  Inlined into a constructor wrapper, gcc then
+  // proves the freshly allocated object is never read and drops the stores that
+  // initialize it, so the handle names uninitialized memory.  Escaping the
+  // pointer explicitly restores the dependency at no runtime cost.
+#if defined(__GNUC__)
+  asm volatile("" : : "r"(ptr) : "memory");
+#endif
+  return SWIG_Tcl_NewPointerObj(ptr, type, 0);
+}
+
+// Strips the global-namespace qualifier a caller may have written in front of a
+// handle.  Returns a pointer into the original string.
+static const char* odbBareHandle(const char* name)
+{
+  return (name[0] == ':' && name[1] == ':') ? name + 2 : name;
+}
+
+// A qualified handle is no longer a resolvable command name, so normalize it
+// before SWIG's own conversion sees it.
+#undef  SWIG_ConvertPtr
+#define SWIG_ConvertPtr(obj, ptr, type, flags) \
+        odbConvertPtr(interp, obj, ptr, type, flags)
+
+static int odbConvertPtr(Tcl_Interp* interp,
+                         Tcl_Obj* obj,
+                         void** ptr,
+                         swig_type_info* type,
+                         int flags)
+{
+  const char* name = Tcl_GetString(obj);
+  const char* bare = odbBareHandle(name);
+  if (bare != name) {
+    return SWIG_Tcl_ConvertPtrFromString(interp, bare, ptr, type, flags);
+  }
+  return SWIG_Tcl_ConvertPtr(interp, obj, ptr, type, flags);
+}
+%}
+
+%wrapper %{
+// Dispatches "$handle method args..." for handles that have no object command.
+// The handle string carries the pointer and its mangled type, so the swig_class
+// method tables SWIG already generated supply the method lookup, including the
+// base-class walk for inherited methods.
+static int odbUnknownCmd(ClientData,
+                         Tcl_Interp* interp,
+                         int objc,
+                         Tcl_Obj* const objv[])
+{
+  if (objc >= 3) {
+    const char* name = Tcl_GetString(objv[1]);
+    // Both "$handle method" and "::$handle method" are accepted.
+    const char* bare = odbBareHandle(name);
+    void* ptr = nullptr;
+    if (bare[0] == '_') {
+      const char* mangled = SWIG_UnpackData(bare + 1, &ptr, sizeof(void*));
+      swig_type_info* type = mangled ? SWIG_MangledTypeQuery(mangled) : nullptr;
+      if (type && type->clientdata) {
+        const char* method = Tcl_GetString(objv[2]);
+        if (strcmp(method, "-delete") == 0 || strcmp(method, "-acquire") == 0
+            || strcmp(method, "-disown") == 0) {
+          Tcl_AppendResult(
+              interp, "no ownership operations on handle ", name, nullptr);
+          return TCL_ERROR;
+        }
+        // The method wrappers decode the pointer from thisptr, so it has to be
+        // the unqualified spelling.
+        Tcl_Obj* thisptr
+            = (bare == name) ? objv[1] : Tcl_NewStringObj(bare, -1);
+        Tcl_IncrRefCount(thisptr);
+        swig_instance inst;
+        inst.thisptr = thisptr;
+        inst.thisvalue = ptr;
+        inst.classptr = (swig_class*) type->clientdata;
+        inst.destroy = 0;
+        inst.cmdtok = nullptr;
+        const int code = SWIG_Tcl_MethodCommand(
+            (ClientData) &inst, interp, objc - 1, objv + 1);
+        Tcl_DecrRefCount(thisptr);
+        return code;
+      }
+    }
+  }
+
+  // Not a handle: hand it to whichever unknown handler we displaced.
+  Tcl_CmdInfo info;
+  const char* chain
+      = Tcl_GetCommandInfo(interp, "sta_unknown", &info) ? "sta_unknown"
+                                                         : "::unknown";
+  Tcl_Obj** argv = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * objc);
+  argv[0] = Tcl_NewStringObj(chain, -1);
+  Tcl_IncrRefCount(argv[0]);
+  for (int i = 1; i < objc; i++) {
+    argv[i] = objv[i];
+  }
+  const int code = Tcl_EvalObjv(interp, objc, argv, 0);
+  Tcl_DecrRefCount(argv[0]);
+  ckfree((char*) argv);
+  return code;
+}
+%}
+
+%init %{
+  Tcl_CreateObjCommand(interp, "odb_unknown", odbUnknownCmd, nullptr, nullptr);
+  // Enough on its own for the standalone odbtcl interpreter.  Applications that
+  // install their own handler after this (OpenROAD, via OpenSTA) have to put
+  // odb_unknown back; odb_unknown chains to whatever it displaced.
+  Tcl_Eval(interp, "namespace eval :: {namespace unknown odb_unknown}");
 %}
 
 %import <std_vector.i>

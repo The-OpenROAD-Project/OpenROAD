@@ -320,6 +320,11 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
 
+  // "$handle method args..." on an odb handle resolves here.  Installed after
+  // OpenSTA's handler, which odb_unknown falls back to for everything that is
+  // not an odb handle.
+  Tcl_Eval(tcl_interp, "namespace eval :: {namespace unknown odb_unknown}");
+
   // Initialize tcl history
   if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
     // There appears to be a typo in the history.tcl file in some
