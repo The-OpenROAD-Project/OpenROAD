@@ -14,11 +14,35 @@ package(
 )
 
 cc_library(
+    name = "hmac_sha256",
+    srcs = ["src/HmacSha256.cpp"],
+    hdrs = ["src/HmacSha256.h"],
+    includes = ["src"],
+)
+
+cc_library(
+    name = "claims",
+    srcs = ["src/Claims.cpp"],
+    hdrs = ["src/Claims.h"],
+    includes = ["src"],
+    deps = ["@boost.algorithm"],
+)
+
+cc_library(
+    name = "timing",
+    srcs = ["src/Timing.cpp"],
+    hdrs = ["src/Timing.h"],
+    includes = ["src"],
+    deps = [
+        "//src/dbSta",
+        "//src/sta:opensta_lib",
+    ],
+)
+
+cc_library(
     name = "wmk_private_hdrs",
     hdrs = [
-        "src/Claims.h",
         "src/ClockTree.h",
-        "src/HmacSha256.h",
         "src/Keys.h",
         "src/Wirelength.h",
     ],
@@ -32,10 +56,8 @@ cc_library(
 cc_library(
     name = "wmk",
     srcs = [
-        "src/Claims.cpp",
         "src/ClockTree.cpp",
         "src/CtsWatermark.cpp",
-        "src/HmacSha256.cpp",
         "src/Keys.cpp",
         "src/PlacementWatermark.cpp",
         "src/RoutingStat.cpp",
@@ -51,6 +73,9 @@ cc_library(
     ],
     deps = [
         ":wmk_private_hdrs",
+        ":hmac_sha256",
+        ":claims",
+        ":timing",
         # Slack screens the placement candidates and skew screens the clock
         # tree ones, and moving a cell needs its parasitics re-estimated before
         # either means anything.
@@ -61,7 +86,6 @@ cc_library(
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.algorithm",
     ],
 )
 
@@ -80,6 +104,7 @@ cc_library(
         "src",
     ],
     deps = [
+        ":hmac_sha256",
         ":wmk",
         ":wmk_private_hdrs",
         "//:ord",
@@ -149,6 +174,7 @@ cc_binary(
         # The interface file pulls in the key parser for its typemap, and
         # OpenRoad.hh for the accessor the wrapper is generated against.
         ":wmk_private_hdrs",
+        ":hmac_sha256",
         "//:ord",
         "//src/odb/src/db",
         "//src/utl",

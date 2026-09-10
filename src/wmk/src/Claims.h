@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <istream>
 #include <map>
 #include <string>
 #include <vector>
@@ -21,9 +22,22 @@ namespace wmk {
 // One claim, as a column-name to value mapping.
 using ClaimRow = std::map<std::string, std::string>;
 
-// Parse a claim file.  Returns false if the file cannot be opened or has no
-// header.  Rows with a different field count than the header are skipped.
+enum class ClaimStage
+{
+  kPlacement,
+  kCts
+};
+
+// Read and validate a complete claim file. On failure, rows is empty and error
+// identifies the malformed row or schema. Extra named columns are allowed.
 bool readClaims(const std::string& path,
+                ClaimStage stage,
+                std::vector<ClaimRow>& rows,
+                std::string& error);
+
+// Stream overload for callers that already have the claim data.
+bool readClaims(std::istream& in,
+                ClaimStage stage,
                 std::vector<ClaimRow>& rows,
                 std::string& error);
 

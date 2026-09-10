@@ -98,7 +98,17 @@ wirelength a swap would cost; the key then orders what survives and takes a
 greedy non-overlapping prefix. The design is re-legalized afterwards, and a pair
 whose cells then lost more than `-guard_degrade_ns` of slack is put back.
 
-Every pair chosen is claimed, including any whose mark did not survive. Removing failed pairs after observing the design would artificially inflate the extraction rate, in which
+After any rollback and legalization, parasitics are re-estimated and the final
+placement is checked against the original constrained endpoint setup and hold
+slacks in every analysis scene. If selective rollback cannot meet the budget,
+the entire original placement is restored. A requested guard without usable
+constraints and signal wire RC produces a warning; Liberty alone does not
+activate it. With timing available, the slack screen excludes unconstrained
+candidate cells.
+
+Every pair chosen is claimed, including pairs restored by the timing guard and
+any whose mark did not survive legalization. Removing failed pairs after
+observing the design would artificially inflate the extraction rate, in which
 case it would be 1.0 on every design.
 
 ```tcl
@@ -142,8 +152,17 @@ pin from one LCB of the pair to the other. A move is undone if it
 worsens the clock's worst skew by more than `-skew_margin_ns`, or if it leaves
 the LCB with less slew or capacitance headroom than the liberty cell allows.
 
-Timing must be set up first. Without liberty and constraints these checks cannot
-be evaluated and the command says so.
+Pairs must have identical, nonempty clock sets in the active timing modes.
+The skew guard measures the latest minus earliest propagated clock latency at
+sequential clock pins, separately for each clock, analysis scene and source
+edge. It compares against the original design throughout embedding; the budget
+does not reset after each accepted move. This conservative latency spread is
+different from the path-based `report_clock_skew` metric, which considers data
+path relationships, uncertainty and common-path pessimism removal.
+
+Read liberty and constraints, set clock wire RC, and propagate clocks before
+embedding. A pair without measurable clock timing is left unchanged and the
+command reports the unavailable guard. It remains a claim if selected.
 
 ```tcl
 cts_watermark
@@ -298,8 +317,11 @@ decision uses whichever is smaller.
 
 A claim file records what an embedder committed to. It is comma-separated with a
 header row, and columns are matched by name, so a producer may emit them in any
-order and add columns of its own. Values are not quoted, so instance names must
-not contain commas.
+order and add columns of its own. Missing required columns, empty or duplicate
+header names, malformed row widths, and invalid fields in checkable claims are
+errors; verification never scores a partially parsed file. The error identifies
+the file and line. `skipped_reason` is required even when every value is empty.
+Values are not quoted, so instance names must not contain commas.
 
 Each row represents either a watermark claim or a candidate that was skipped.
 A row is verified when `skipped_reason` is empty. The special value

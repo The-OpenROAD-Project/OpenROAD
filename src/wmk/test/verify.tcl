@@ -21,5 +21,9 @@ set fh [open $damaged w]
 puts $fh "kind,id,A_name,B_name,target_bit,skipped_reason"
 puts $fh "pair,_276_|_277_,_276_,_277_,,"
 close $fh
-catch { verify_watermark -placement_claims $damaged -min_stages 1 } message
+catch {
+  tee -quiet -variable diagnostic \
+    [list verify_watermark -placement_claims $damaged -min_stages 1]
+} message
+puts -nonewline [string map [list $damaged [file tail $damaged]] $diagnostic]
 puts "refused: $message"

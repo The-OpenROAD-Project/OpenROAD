@@ -46,7 +46,8 @@ puts "committed $committed pairs"
 # Pinned rather than merely non-zero: capacity quietly collapsing to a handful
 # of pairs would leave a design with too few bits to prove anything, and every
 # other check here would still pass.
-check "the design yields its usual capacity" { set committed } 24
+# Pairs without measured slack are excluded by the timing screen.
+check "the design yields its constrained capacity" { set committed } 23
 check "every committed pair holds" { verify_watermark -placement_claims $claims -min_stages 1 } 1
 
 # Some of those pairs have to be ones the embedder actually reordered.  A pair
@@ -67,7 +68,7 @@ proc count_swapped { path } {
 }
 puts "swapped [count_swapped $claims] of $committed pairs"
 check "and some of them were pairs the embedder had to reorder" \
-  { count_swapped $claims } 14
+  { count_swapped $claims } 13
 
 # Embedding the same key twice must not damage the first mark.  The pairs the
 # second run picks need not be the same ones -- pairing follows the cells along

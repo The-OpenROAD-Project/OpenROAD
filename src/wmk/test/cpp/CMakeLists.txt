@@ -25,3 +25,15 @@ gtest_discover_tests(TestHmacSha256
 )
 
 add_dependencies(build_and_test TestHmacSha256)
+
+add_executable(TestClaims TestClaims.cpp ../../src/Claims.cpp)
+target_include_directories(TestClaims PRIVATE ../../src)
+target_link_libraries(TestClaims PRIVATE GTest::gtest_main Boost::headers)
+gtest_discover_tests(TestClaims WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_dependencies(build_and_test TestClaims)
+
+add_executable(TestTiming TestTiming.cpp ../../src/Timing.cpp)
+target_include_directories(TestTiming PRIVATE ../../src)
+target_link_libraries(TestTiming PRIVATE GTest::gtest_main dbSta_lib OpenSTA)
+gtest_discover_tests(TestTiming WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_dependencies(build_and_test TestTiming)

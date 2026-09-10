@@ -31,13 +31,45 @@ estimate_parasitics -placement
 set key 0011223344556677889900aabbccddeeff00112233445566778899aabbccddee
 set claims [make_result_file place_guard.csv]
 
-# 24 pairs are committed; the guard puts 2 of them back, so 22 are claimed.
-set kept [place_watermark -key_hex $key -claims_file $claims \
+# Compare every connected instance pin immediately after the command and
+# after an independent extraction. This detects stale RC after rollback.
+proc pin_slacks {} {
+  set result [dict create]
+  foreach pin [get_pins -hierarchical *] {
+    foreach property { slack_max_rise slack_max_fall slack_min_rise slack_min_fall } {
+      set slack [get_property $pin $property]
+      if { abs($slack) < 1e20 } {
+        dict set result "[get_full_name $pin]:$property" $slack
+      }
+    }
+  }
+  return $result
+}
+set before [pin_slacks]
+set selected [tee -variable output [list place_watermark -key_hex $key -claims_file $claims \
   -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 64 \
-  -guard_degrade_ns 0.001]
-puts "kept $kept pairs"
-check "the pairs that cost timing are not claimed" { set kept } 22
-check "and what is left still verifies" \
-  { verify_watermark -placement_claims $claims -min_stages 1 } 1
-
+  -guard_degrade_ns 0.001]]
+check "timing-rejected pairs remain claimed" { set selected } 23
+check "this fixture exercises rollback" { string match {*WMK-0058*} $output } 1
+set immediate [pin_slacks]
+estimate_parasitics -placement
+set fresh [pin_slacks]
+set consistent 1
+set safe 1
+foreach key [dict keys $before] {
+  if { ![dict exists $immediate $key] || ![dict exists $fresh $key] } {
+    set consistent 0
+    set safe 0
+    continue
+  }
+  if { abs([dict get $immediate $key] - [dict get $fresh $key]) > 1e-6 } {
+    set consistent 0
+  }
+  if { [dict get $fresh $key] < [dict get $before $key] - 0.001001 } {
+    set safe 0
+  }
+}
+check "timing agrees with a fresh extraction" { set consistent } 1
+check "the final placement respects the timing budget" { set safe } 1
+check_placement
 exit_summary

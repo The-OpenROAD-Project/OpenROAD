@@ -11,12 +11,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "HmacSha256.h"
+#include "Timing.h"
 #include "Wirelength.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -93,7 +94,7 @@ Watermark::Watermark(odb::dbDatabase* db,
 {
 }
 
-bool Watermark::clockSkewAvailable() const
+bool Watermark::hasLiberty() const
 {
   if (sta_ == nullptr) {
     return false;
@@ -102,25 +103,31 @@ bool Watermark::clockSkewAvailable() const
   return network != nullptr && network->defaultLibertyLibrary() != nullptr;
 }
 
-float Watermark::worstClockSkew() const
+bool Watermark::placementTimingAvailable() const
 {
-  if (sta_ == nullptr) {
-    return 0.0f;
+  return hasLiberty()
+         && isConstrainedSlack(sta_->worstSlack(sta::MinMax::max()));
+}
+
+bool Watermark::canEstimateParasitics(bool clock) const
+{
+  if (!hasLiberty() || estimate_parasitics_ == nullptr) {
+    return false;
   }
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  if (network == nullptr || network->defaultLibertyLibrary() == nullptr) {
-    return 0.0f;
-  }
-  const float skew = sta_->findWorstClkSkew(
-      sta::MinMax::max(), /* include_internal_latency */ false);
-  return std::isfinite(skew) ? skew : 0.0f;
+  return !sta_->scenes().empty()
+         && std::ranges::all_of(sta_->scenes(), [&](const sta::Scene* scene) {
+              const double cap
+                  = clock ? estimate_parasitics_->wireClkCapacitance(scene)
+                          : estimate_parasitics_->wireSignalCapacitance(scene);
+              return std::isfinite(cap) && cap > 0.0;
+            });
 }
 
 bool Watermark::driverHeadroomOk(odb::dbInst* inst,
                                  double slew_frac,
                                  double cap_frac) const
 {
-  if (!clockSkewAvailable() || inst == nullptr) {
+  if (!hasLiberty() || inst == nullptr) {
     return true;
   }
   sta::dbNetwork* network = sta_->getDbNetwork();
@@ -199,10 +206,14 @@ std::vector<int> Watermark::clockIndicesAt(odb::dbInst* inst) const
     return clocks;
   }
 
-  for (const sta::Clock* clock : sta_->clocks(pin, sta_->cmdMode())) {
-    clocks.push_back(clock->index());
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::Clock* clock : sta_->clocks(pin, mode)) {
+      clocks.push_back(clock->index());
+    }
   }
   std::ranges::sort(clocks);
+  const auto duplicates = std::ranges::unique(clocks);
+  clocks.erase(duplicates.begin(), duplicates.end());
   return clocks;
 }
 
@@ -225,19 +236,13 @@ void Watermark::reestimateNetParasitics(odb::dbNet* a, odb::dbNet* b) const
   }
 }
 
-float Watermark::worstSlack(odb::dbInst* inst) const
+std::optional<float> Watermark::worstSlack(odb::dbInst* inst) const
 {
-  if (sta_ == nullptr) {
-    return std::numeric_limits<float>::max();
+  if (!hasLiberty()) {
+    return std::nullopt;
   }
   sta::dbNetwork* network = sta_->getDbNetwork();
-  // Without liberty there is no timing to consult.  Report unbounded slack so
-  // the caller's screening is simply inactive, rather than failing the whole
-  // run: a design read straight from a db has no libraries attached.
-  if (network == nullptr || network->defaultLibertyLibrary() == nullptr) {
-    return std::numeric_limits<float>::max();
-  }
-  float worst = std::numeric_limits<float>::max();
+  std::optional<float> worst;
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getNet() == nullptr) {
       continue;
@@ -248,7 +253,9 @@ float Watermark::worstSlack(odb::dbInst* inst) const
     }
     const float slack = sta_->slack(
         pin, sta::RiseFallBoth::riseFall(), sta_->scenes(), sta::MinMax::max());
-    worst = std::min(worst, slack);
+    if (isConstrainedSlack(slack) && (!worst || slack < *worst)) {
+      worst = slack;
+    }
   }
   return worst;
 }

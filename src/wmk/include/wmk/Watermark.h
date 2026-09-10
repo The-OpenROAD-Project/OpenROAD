@@ -22,6 +22,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -208,15 +209,14 @@ class Watermark
                      std::vector<PlacementClaim>& claims);
 
   // Embed the placement watermark and write its claims.  Legalizes afterwards
-  // and drops any pair whose cells lost slack, so a mark never costs timing.
-  // Returns the number of pairs that survived.
+  // and restores edits that exceed the timing budget. Rejected edits remain
+  // claimed. Returns the number of pairs selected, including restored pairs.
   int placementWatermark(const std::array<std::uint8_t, 32>& key,
                          const PlacementOptions& opts,
                          const std::string& claims_file);
 
   // Set the sequential fanout parity of a keyed subset of leaf clock buffers
-  // and write the committed pairs.  A pair is only claimed if the move it
-  // needed did not worsen clock skew.
+  // and write the selected pairs, including pairs whose edits were rejected.
   int ctsWatermark(const std::array<std::uint8_t, 32>& key,
                    const CtsOptions& opts,
                    const std::string& claims_file);
@@ -238,8 +238,8 @@ class Watermark
     odb::dbInst* b = nullptr;
     odb::Point a_loc;
     odb::Point b_loc;
-    float a_slack = 0.0f;
-    float b_slack = 0.0f;
+    std::optional<float> a_slack;
+    std::optional<float> b_slack;
   };
 
   // embedPlacement, also reporting what it moved.
@@ -255,18 +255,13 @@ class Watermark
                         double slew_frac,
                         double cap_frac) const;
 
-  // Worst slack over an instance's pins, in seconds.  Returns the maximum
-  // representable value when no timing has been set up, so that an unscreened
-  // design does not silently reject every candidate.
-  float worstSlack(odb::dbInst* inst) const;
+  // Worst constrained setup slack over an instance's pins, in seconds.
+  // No value means the instance has no timing that the guard can evaluate.
+  std::optional<float> worstSlack(odb::dbInst* inst) const;
 
-  // Worst clock skew over the design, or 0 when there is no timing to
-  // consult, so a design without liberty is simply unscreened.
-  float worstClockSkew() const;
-
-  // Is there enough timing set up for worstClockSkew to mean anything?  A zero
-  // from it is otherwise indistinguishable from a design with no skew.
-  bool clockSkewAvailable() const;
+  bool hasLiberty() const;
+  bool placementTimingAvailable() const;
+  bool canEstimateParasitics(bool clock) const;
 
   // The clocks reaching an instance's output pin, as sorted clock indices.
   //

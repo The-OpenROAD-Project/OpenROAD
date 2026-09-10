@@ -42,18 +42,6 @@ int instLeftEdge(dbInst* inst)
 // embedder calls too.  A second definition here that drifted from that one
 // would turn a valid watermark into a failed verification.
 
-// A claimed bit must be exactly "0" or "1".  Anything else means the claim
-// file is damaged, and a verifier that read it as zero would quietly measure
-// an extraction rate against a target nobody committed to.
-bool parseClaimBit(const std::string& text, int& bit)
-{
-  if (text == "0" || text == "1") {
-    bit = text[0] - '0';
-    return true;
-  }
-  return false;
-}
-
 }  // namespace
 
 VerifyResult Watermark::verifyPlacement(const std::string& claims_file)
@@ -67,7 +55,7 @@ VerifyResult Watermark::verifyPlacement(const std::string& claims_file)
 
   std::vector<ClaimRow> rows;
   std::string error;
-  if (!readClaims(claims_file, rows, error)) {
+  if (!readClaims(claims_file, ClaimStage::kPlacement, rows, error)) {
     logger_->error(utl::WMK, 31, "Placement claims: {}.", error);
     return result;
   }
@@ -78,19 +66,7 @@ VerifyResult Watermark::verifyPlacement(const std::string& claims_file)
     }
     const std::string a_name = claimField(row, "A_name");
     const std::string b_name = claimField(row, "B_name");
-    if (a_name.empty() || b_name.empty()) {
-      continue;
-    }
-    const std::string target_bit = claimField(row, "target_bit");
-    int target = 0;
-    if (!parseClaimBit(target_bit, target)) {
-      logger_->error(utl::WMK,
-                     100,
-                     "Placement claim {}|{}: target_bit is \"{}\", not 0 or 1.",
-                     a_name,
-                     b_name,
-                     target_bit);
-    }
+    const int target = claimField(row, "target_bit")[0] - '0';
     ++result.checked;
 
     dbInst* a = block->findInst(a_name.c_str());
@@ -139,7 +115,7 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
 
   std::vector<ClaimRow> rows;
   std::string error;
-  if (!readClaims(claims_file, rows, error)) {
+  if (!readClaims(claims_file, ClaimStage::kCts, rows, error)) {
     logger_->error(utl::WMK, 36, "CTS claims: {}.", error);
     return result;
   }
@@ -149,24 +125,13 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
       continue;
     }
     const std::string lcb_name = claimField(row, "target_lcb");
-    if (lcb_name.empty()) {
-      continue;
-    }
     // The row's own record of how the embedding turned out is deliberately not
     // consulted.  Skipping the claims that record a failure would let a claim
     // file decide its own denominator, and the rate would come out at one for
     // any file that was honest about what it could not set -- on any design,
     // marked or not.  What the design shows is measured against what the key
     // asked for, and nothing else.
-    const std::string target_bit = claimField(row, "target_bit");
-    int target = 0;
-    if (!parseClaimBit(target_bit, target)) {
-      logger_->error(utl::WMK,
-                     101,
-                     "CTS claim {}: target_bit is \"{}\", not 0 or 1.",
-                     lcb_name,
-                     target_bit);
-    }
+    const int target = claimField(row, "target_bit")[0] - '0';
     ++result.checked;
 
     dbInst* lcb = block->findInst(lcb_name.c_str());

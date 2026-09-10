@@ -19,12 +19,16 @@ or_integration_tests(
     cts
     cts_drive
     cts_guard
+    cts_clock_sets
+    cts_skew_domains
     keygen
     place
     place_guard
     place_keyed
+    place_unconstrained
     python_api
     route_verify
+    verify_malformed
 )
 
 add_subdirectory(cpp)

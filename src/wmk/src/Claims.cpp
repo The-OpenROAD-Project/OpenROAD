@@ -5,6 +5,8 @@
 
 #include <cstddef>
 #include <fstream>
+#include <istream>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,52 +24,118 @@ namespace {
 std::vector<std::string> splitFields(const std::string& line)
 {
   std::vector<std::string> out;
-  boost::split(out, line, boost::is_any_of(","));
+  boost::split(out, line, [](char ch) { return ch == ','; });
   return out;
 }
 
 std::string trim(const std::string& s)
 {
-  return boost::trim_copy_if(s, boost::is_any_of(" \t\r\n"));
+  return boost::trim_copy_if(s, [](char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+  });
 }
 
 }  // namespace
 
 bool readClaims(const std::string& path,
+                ClaimStage stage,
                 std::vector<ClaimRow>& rows,
                 std::string& error)
 {
   std::ifstream in(path);
-  if (!in.is_open()) {
-    error = "cannot open '" + path + "'";
+  if (!readClaims(in, stage, rows, error)) {
+    error = "'" + path + "': " + error;
     return false;
   }
+  return true;
+}
 
+bool readClaims(std::istream& in,
+                ClaimStage stage,
+                std::vector<ClaimRow>& rows,
+                std::string& error)
+{
+  rows.clear();
+  error.clear();
   std::string line;
   if (!std::getline(in, line)) {
-    error = "'" + path + "' is empty";
+    error = "cannot read header";
     return false;
   }
-  const std::vector<std::string> header = splitFields(line);
-  if (header.empty()) {
-    error = "'" + path + "' has no header row";
-    return false;
+  std::vector<std::string> header = splitFields(line);
+  std::set<std::string> columns;
+  for (std::string& column : header) {
+    column = trim(column);
+    if (column.empty() || !columns.insert(column).second) {
+      error = "line 1: empty or duplicate column name '" + column + "'";
+      return false;
+    }
+  }
+  const std::vector<std::string> required
+      = stage == ClaimStage::kPlacement
+            ? std::vector<std::string>{"kind",
+                                       "A_name",
+                                       "B_name",
+                                       "target_bit",
+                                       "skipped_reason"}
+            : std::vector<std::string>{
+                  "target_lcb", "target_bit", "skipped_reason"};
+  for (const std::string& column : required) {
+    if (!columns.contains(column)) {
+      error = "line 1: missing required column '" + column + "'";
+      return false;
+    }
   }
 
+  std::vector<ClaimRow> parsed;
+  size_t line_number = 1;
   while (std::getline(in, line)) {
+    ++line_number;
     if (trim(line).empty()) {
       continue;
     }
+    const std::string location = "line " + std::to_string(line_number) + ": ";
     const std::vector<std::string> fields = splitFields(line);
     if (fields.size() != header.size()) {
-      continue;
+      error = location + "expected " + std::to_string(header.size())
+              + " fields, got " + std::to_string(fields.size());
+      return false;
     }
     ClaimRow row;
     for (size_t i = 0; i < header.size(); ++i) {
-      row[trim(header[i])] = trim(fields[i]);
+      row[header[i]] = trim(fields[i]);
     }
-    rows.push_back(std::move(row));
+    if (stage == ClaimStage::kPlacement && claimField(row, "kind").empty()) {
+      error = location + "empty required field 'kind'";
+      return false;
+    }
+    const bool checkable
+        = claimIsCheckable(row)
+          && (stage == ClaimStage::kCts || claimField(row, "kind") == "pair");
+    if (checkable) {
+      for (const std::string& column : required) {
+        if (column != "skipped_reason" && claimField(row, column).empty()) {
+          error = location + "empty required field '";
+          error += column;
+          error += "'";
+          return false;
+        }
+      }
+      const std::string bit = claimField(row, "target_bit");
+      if (bit != "0" && bit != "1") {
+        error = location + "target_bit must be 0 or 1, got '";
+        error += bit;
+        error += "'";
+        return false;
+      }
+    }
+    parsed.push_back(std::move(row));
   }
+  if (in.bad() || !in.eof()) {
+    error = "error reading claims after line " + std::to_string(line_number);
+    return false;
+  }
+  rows.swap(parsed);
   return true;
 }
 

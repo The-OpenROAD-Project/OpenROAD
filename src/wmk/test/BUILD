@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -11,12 +12,16 @@ PASSFAIL_TESTS = [
     "cts",
     "cts_drive",
     "cts_guard",
+    "cts_clock_sets",
+    "cts_skew_domains",
     "keygen",
     "place",
     "place_guard",
     "place_keyed",
+    "place_unconstrained",
     "python_api",
     "route_verify",
+    "verify_malformed",
 ]
 
 TESTS = [
@@ -25,14 +30,18 @@ TESTS = [
     "cts",
     "cts_drive",
     "cts_guard",
+    "cts_clock_sets",
+    "cts_skew_domains",
     "keygen",
     "place",
     "place_guard",
     "place_keyed",
+    "place_unconstrained",
     "place_unmarked",
     "python_api",
     "route_stat",
     "route_verify",
+    "verify_malformed",
     "select",
     "strength",
     "verify",
@@ -60,3 +69,34 @@ filegroup(
     check_passfail = True if test_name in PASSFAIL_TESTS else False,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+cc_test(
+    name = "TestHmacSha256",
+    srcs = ["cpp/TestHmacSha256.cpp"],
+    deps = [
+        "//src/wmk:hmac_sha256",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestClaims",
+    srcs = ["cpp/TestClaims.cpp"],
+    deps = [
+        "//src/wmk:claims",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestTiming",
+    srcs = ["cpp/TestTiming.cpp"],
+    deps = [
+        "//src/sta:opensta_lib",
+        "//src/wmk:timing",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

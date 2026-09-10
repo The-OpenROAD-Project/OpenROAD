@@ -34,7 +34,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
-#include <iterator>
 #include <map>
 #include <string>
 #include <utility>
@@ -42,6 +41,7 @@
 
 #include "ClockTree.h"
 #include "HmacSha256.h"
+#include "Timing.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
@@ -82,14 +82,11 @@ std::int64_t cellOf(std::int64_t v, std::int64_t cell)
   return v >= 0 ? v / cell : -((-v + cell - 1) / cell);
 }
 
-// Do these two sorted clock-index lists have an entry in common?  Empty lists
-// never do, which is what makes an unanswerable clock question reject the pair
-// rather than wave it through.
-bool shareAClock(const std::vector<int>& a, const std::vector<int>& b)
+// Clock membership must be identical, not just overlapping. Two unknown
+// sets cannot establish that reconnecting a sink preserves its clocks.
+bool sameClockSet(const std::vector<int>& a, const std::vector<int>& b)
 {
-  std::vector<int> both;
-  std::ranges::set_intersection(a, b, std::back_inserter(both));
-  return !both.empty();
+  return !a.empty() && a == b;
 }
 
 // A sink that can be moved between two buffers without changing what the
@@ -156,20 +153,20 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   const int dbu = block->getDbUnitsPerMicron();
   const std::int64_t max_dist
       = static_cast<std::int64_t>(opts.sibling_dist_um * dbu);
-  // Whether skew can be evaluated at all decides whether the guard below has
-  // any force.  Reading a design from a database restores no liberty and no
-  // constraints, so a caller who has not set timing up would otherwise get the
-  // marks committed with the guard silently inert -- and a clock tree damaged
-  // without anything having said so.
-  const bool skew_known = clockSkewAvailable();
-  if (!skew_known) {
-    logger_->warn(utl::WMK,
-                  74,
-                  "No timing is set up, so clock skew cannot be evaluated and "
-                  "marks will be committed without the skew guard.  Read "
-                  "liberty and constraints first to keep it in force.");
+  // Establish fresh clock parasitics before recording a fixed baseline.
+  // Each clock and analysis scene has its own budget; an unrelated clock's
+  // larger skew must not hide degradation of the clock being edited.
+  const bool can_estimate = canEstimateParasitics(/* clock */ true);
+  if (can_estimate) {
+    for (dbNet* net : block->getNets()) {
+      if (net->getSigType() == odb::dbSigType::CLOCK) {
+        reestimateNetParasitics(net, nullptr);
+      }
+    }
   }
-  const float skew_before = worstClockSkew();
+  const ClockSkews skew_before
+      = hasLiberty() && can_estimate ? clockSkews(sta_) : ClockSkews{};
+  bool warned_skew = false;
 
   // Enumerate the eligible pairs, then let the key order them.  Eligibility is
   // public -- two leaf buffers close enough together that moving a sink between
@@ -181,10 +178,10 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     std::array<std::uint8_t, 32> sort_key;
   };
   // Which clocks reach each buffer, computed once.  A sink may only move
-  // between two buffers that share a clock: findLeafClockBuffers returns the
-  // leaves of every clock tree in the design, and two trees can run alongside
-  // each other, so distance alone would let a move reconnect a flop to a
-  // different clock and change what the design does.
+  // between two buffers with identical clock sets: findLeafClockBuffers returns
+  // the leaves of every clock tree in the design, and two trees can run
+  // alongside each other, so distance alone would let a move reconnect a flop
+  // to a different clock and change what the design does.
   std::vector<std::vector<int>> lcb_clocks;
   lcb_clocks.reserve(lcbs.size());
   int with_a_clock = 0;
@@ -249,11 +246,9 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
           if (manhattan(centres[i], centres[j]) > max_dist) {
             continue;
           }
-          // Both sets are sorted, so a shared clock is a set intersection.  An
-          // empty set means the question could not be answered -- no timing, or
-          // a cell with no single output -- and an unanswered question is not a
-          // licence to move a sink.
-          if (!shareAClock(lcb_clocks[i], lcb_clocks[j])) {
+          // Both sets are sorted. Empty or unequal sets cannot establish
+          // that the sink will remain on exactly the same clocks.
+          if (!sameClockSet(lcb_clocks[i], lcb_clocks[j])) {
             ++rejected_cross_clock;
             continue;
           }
@@ -336,6 +331,17 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       }
       if (sink == nullptr) {
         ++rejected_no_sink;
+      } else if (!haveClockSkews(lcb_clocks[c.i], skew_before)) {
+        ++rejected_skew;
+        if (!warned_skew) {
+          logger_->warn(
+              utl::WMK,
+              74,
+              "Clock skew cannot be evaluated for a selected pair; "
+              "its sinks will not be moved. Read liberty, constraints "
+              "and clock wire RC, and propagate the clocks first.");
+          warned_skew = true;
+        }
       } else {
         dbNet* origin = sink->getNet();
         sink->disconnect();
@@ -343,9 +349,8 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
         // Both nets now drive a different load.  Re-estimate before asking
         // timing anything, or the answers describe the tree as it was.
         reestimateNetParasitics(origin, dest);
-        const bool skew_ok
-            = !skew_known
-              || worstClockSkew() <= skew_before + opts.skew_margin_ns * 1e-9f;
+        const bool skew_ok = clockSkewsWithin(
+            skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
         // The buffer that gained a sink now drives more load, so whether it
         // still can is the library's question, not one this code should answer
         // with a number of its own.
@@ -390,7 +395,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                 "CTS watermark: {} pairs claimed from {} leaf clock buffers, "
                 "{} at the keyed parity ({} sinks moved, {} rejected on skew, "
                 "{} with no movable sink, {} on drive strength, "
-                "{} not on a shared clock).",
+                "{} with different or unknown clock sets).",
                 static_cast<int>(claims.size()),
                 static_cast<int>(lcbs.size()),
                 held,

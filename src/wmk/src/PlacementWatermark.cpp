@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -43,10 +44,11 @@
 #include <vector>
 
 #include "HmacSha256.h"
-#include "db_sta/dbSta.hh"
+#include "Timing.h"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
@@ -143,6 +145,53 @@ std::int64_t instHpwl(dbInst* inst, HpwlCache* cache)
     total += wl;
   }
   return total;
+}
+
+// Detailed placement can move cells outside the selected pairs. Retain the
+// complete placement so a failed final timing check can undo those changes too.
+struct InstPlacement
+{
+  dbInst* inst;
+  odb::Point location;
+  odb::dbOrientType orient;
+  odb::dbPlacementStatus status;
+};
+
+std::vector<InstPlacement> savePlacement(dbBlock* block)
+{
+  std::vector<InstPlacement> result;
+  result.reserve(block->getInsts().size());
+  for (dbInst* inst : block->getInsts()) {
+    result.push_back({.inst = inst,
+                      .location = inst->getLocation(),
+                      .orient = inst->getOrient(),
+                      .status = inst->getPlacementStatus()});
+  }
+  return result;
+}
+
+void restorePlacement(const std::vector<InstPlacement>& placement)
+{
+  for (const InstPlacement& saved : placement) {
+    saved.inst->setOrient(saved.orient);
+    saved.inst->setLocation(saved.location.x(), saved.location.y());
+    saved.inst->setPlacementStatus(saved.status);
+  }
+}
+
+void legalizePlacement(dpl::Opendp* opendp, dbBlock* block, int max_disp_um)
+{
+  if (opendp == nullptr) {
+    return;
+  }
+  odb::dbSite* site = (*block->getRows().begin())->getSite();
+  const int max_disp = max_disp_um * block->getDbUnitsPerMicron();
+  const int dx = site->getWidth() > 0 ? max_disp / site->getWidth() : 0;
+  const int dy = site->getHeight() > 0 ? max_disp / site->getHeight() : 0;
+  opendp->detailedPlacement(std::max(1, dx),
+                            std::max(1, dy),
+                            "",
+                            /* disallow_one_site_gaps */ true);
 }
 
 // How far along the row to look for a partner, in candidates.  The distance
@@ -272,7 +321,8 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
     b.insts.push_back(inst);
   }
 
-  sta::dbSta* sta = opts.slack_threshold_ns > 0.0 ? sta_ : nullptr;
+  const bool screen_slack
+      = opts.slack_threshold_ns > 0.0 && placementTimingAvailable();
 
   // Enumerate the candidates, apply the public guards, and only then let the
   // key choose among what is left.  The order matters: the guards depend on the
@@ -307,7 +357,9 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
       }
       for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
         dbInst* a = bucket.insts[i];
-        if (sta != nullptr && worstSlack(a) < opts.slack_threshold_ns * 1e-9) {
+        const auto a_slack = screen_slack ? worstSlack(a) : std::nullopt;
+        if (screen_slack
+            && (!a_slack || *a_slack < opts.slack_threshold_ns * 1e-9)) {
           if (counting) {
             ++rejected_slack;
           }
@@ -321,8 +373,11 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
           if (cand->getBBox()->xMin() - ax > pair_dist) {
             break;
           }
-          if (sta != nullptr
-              && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
+          const auto cand_slack
+              = screen_slack ? worstSlack(cand) : std::nullopt;
+          if (screen_slack
+              && (!cand_slack
+                  || *cand_slack < opts.slack_threshold_ns * 1e-9)) {
             continue;
           }
           if (counting) {
@@ -435,11 +490,15 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
     edit.b_slack = worstSlack(c.b);
     edits.push_back(edit);
 
-    if (!claim.already_satisfied) {
-      c.a->setLocation(edit.b_loc.x(), edit.a_loc.y());
-      c.b->setLocation(edit.a_loc.x(), edit.b_loc.y());
-    }
     claims.push_back(claim);
+  }
+  // Take every slack baseline before changing any placement.
+  for (size_t i = 0; i < edits.size(); ++i) {
+    const PlacementEdit& edit = edits[i];
+    if (!claims[i].already_satisfied) {
+      edit.a->setLocation(edit.b_loc.x(), edit.a_loc.y());
+      edit.b->setLocation(edit.a_loc.x(), edit.b_loc.y());
+    }
   }
   const int committed = static_cast<int>(selected.size());
 
@@ -477,8 +536,24 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
     return 0;
   }
 
-  // Record what each mark moved, and the slack of the cells it moved, so a
-  // mark that turns out to cost timing can be put back rather than shipped.
+  const bool guard_requested = opts.post_guard && opts.guard_degrade_ns > 0.0;
+  const bool can_estimate = canEstimateParasitics(/* clock */ false);
+  if (guard_requested && can_estimate) {
+    estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
+  }
+  const bool can_measure
+      = guard_requested && can_estimate && placementTimingAvailable();
+  if (guard_requested && !can_measure) {
+    logger_->warn(utl::WMK,
+                  59,
+                  "Timing cannot be re-evaluated after the swaps, so the marks "
+                  "will be committed without checking what they cost. Read "
+                  "liberty, timing constraints and signal wire RC first.");
+  }
+  const std::vector<EndpointSlack> timing_before
+      = can_measure ? endpointSlacks(sta_) : std::vector<EndpointSlack>{};
+  const std::vector<InstPlacement> placement_before = savePlacement(block);
+
   std::vector<PlacementClaim> claims;
   std::vector<PlacementEdit> edits;
   const int committed = embedPlacementEdits(key, opts, claims, edits);
@@ -489,81 +564,76 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
                   "small or the gates too strict.");
   }
 
-  // Swapping equally wide cells within a row keeps the row legal, but the
-  // incremental legalizer still has to settle any overlap the swap exposed.
-  dpl::Opendp* opendp = opendp_;
-  if (opendp != nullptr && committed > 0) {
-    const int site_width = (*block->getRows().begin())->getSite()->getWidth();
-    const int row_height = (*block->getRows().begin())->getSite()->getHeight();
-    const int max_disp_x
-        = site_width > 0
-              ? opts.max_disp_um * block->getDbUnitsPerMicron() / site_width
-              : 0;
-    const int max_disp_y
-        = row_height > 0
-              ? opts.max_disp_um * block->getDbUnitsPerMicron() / row_height
-              : 0;
-    opendp->detailedPlacement(std::max(1, max_disp_x),
-                              std::max(1, max_disp_y),
-                              "",
-                              /* disallow_one_site_gaps */ true);
-  }
+  const float degrade = static_cast<float>(opts.guard_degrade_ns * 1e-9);
+  const float floor
+      = static_cast<float>(opts.slack_threshold_ns * 1e-9) - degrade;
+  const auto pair_timing_ok = [&](const PlacementEdit& edit) {
+    const auto a_now = worstSlack(edit.a);
+    const auto b_now = worstSlack(edit.b);
+    return a_now && b_now && edit.a_slack && edit.b_slack && *a_now >= floor
+           && *b_now >= floor && *a_now >= *edit.a_slack - degrade
+           && *b_now >= *edit.b_slack - degrade;
+  };
+  const auto refresh = [&]() {
+    if (can_estimate) {
+      estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
+    }
+  };
 
-  // Now that the design is legal again, find out what the marks cost.  A cell
-  // whose slack fell by more than the guard allows, or fell through the floor
-  // the candidates were screened against, has its pair put back where it was.
-  //
-  // Which pairs are undone depends on timing and not on the bits they carry,
-  // so the claims that remain are still a set chosen without reference to what
-  // the design shows -- the property the extraction rate rests on.
+  // Every timing measurement describes one complete, legalized placement.
+  // Collect failed edits before restoring any of them, then refresh RC again.
   int reverted = 0;
-  const bool can_measure = opts.post_guard && opts.guard_degrade_ns > 0.0
-                           && clockSkewAvailable()
-                           && estimate_parasitics_ != nullptr;
-  if (opts.post_guard && opts.guard_degrade_ns > 0.0 && !can_measure) {
-    logger_->warn(utl::WMK,
-                  59,
-                  "Timing cannot be re-evaluated after the swaps, so the marks "
-                  "were committed without checking what they cost.  Read "
-                  "liberty and constraints first to keep the check in force.");
-  }
-  if (can_measure) {
-    // A cell that moved has different parasitics, and nothing recomputes them
-    // until asked.  Without this the slacks below would be the ones cached
-    // before the swaps, and every pair would look free.
-    estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
-    const float degrade = static_cast<float>(opts.guard_degrade_ns * 1e-9);
-    const float floor
-        = static_cast<float>(opts.slack_threshold_ns * 1e-9) - degrade;
-    std::vector<PlacementClaim> kept;
-    for (size_t i = 0; i < edits.size(); ++i) {
-      const PlacementEdit& e = edits[i];
-      const float a_now = worstSlack(e.a);
-      const float b_now = worstSlack(e.b);
-      const bool bad = a_now < floor || b_now < floor
-                       || (a_now - e.a_slack) < -degrade
-                       || (b_now - e.b_slack) < -degrade;
-      if (bad) {
-        e.a->setLocation(e.a_loc.x(), e.a_loc.y());
-        e.b->setLocation(e.b_loc.x(), e.b_loc.y());
-        ++reverted;
-      } else if (i < claims.size()) {
-        kept.push_back(claims[i]);
+  try {
+    if (committed > 0) {
+      legalizePlacement(opendp_, block, opts.max_disp_um);
+      refresh();
+    }
+    if (can_measure && committed > 0) {
+      std::vector<bool> rejected(edits.size());
+      for (size_t i = 0; i < edits.size(); ++i) {
+        rejected[i] = !pair_timing_ok(edits[i]);
+      }
+      for (size_t i = 0; i < edits.size(); ++i) {
+        if (rejected[i]) {
+          const PlacementEdit& edit = edits[i];
+          edit.a->setLocation(edit.a_loc.x(), edit.a_loc.y());
+          edit.b->setLocation(edit.b_loc.x(), edit.b_loc.y());
+          ++reverted;
+        }
+      }
+      if (reverted > 0) {
+        legalizePlacement(opendp_, block, opts.max_disp_um);
+        refresh();
+      }
+      bool final_ok = endpointSlacksWithin(sta_, timing_before, degrade);
+      for (size_t i = 0; i < edits.size(); ++i) {
+        if (!rejected[i] && !pair_timing_ok(edits[i])) {
+          final_ok = false;
+        }
+      }
+      if (!final_ok) {
+        // Global legalization may have changed other cells. Restore the whole
+        // original placement instead of returning a state that failed timing.
+        restorePlacement(placement_before);
+        refresh();
+        reverted = committed;
       }
     }
-    if (reverted > 0) {
-      claims.swap(kept);
-      logger_->info(utl::WMK,
-                    58,
-                    "Placement watermark: {} pairs put back because their "
-                    "cells lost more than {:.4g} ps of slack.",
-                    reverted,
-                    opts.guard_degrade_ns * 1000.0);
-      if (opendp != nullptr) {
-        opendp->detailedPlacement(1, 1, "", /* disallow_one_site_gaps */ true);
-      }
-    }
+  } catch (...) {
+    restorePlacement(placement_before);
+    refresh();
+    throw;
   }
+  if (reverted > 0) {
+    logger_->info(utl::WMK,
+                  58,
+                  "Placement watermark: {} pairs restored to keep timing "
+                  "within {:.4g} ps of the original placement.",
+                  reverted,
+                  opts.guard_degrade_ns * 1000.0);
+  }
+  // Timing-rejected edits remain claims. Their survival can depend on whether
+  // the keyed bit needed a swap, so removing them would bias extraction.
 
   // Legalization can move a cell back out of the order we just set.  Every
   // claim is still written: dropping the ones that no longer hold would let
