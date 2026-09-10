@@ -495,6 +495,48 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
 }
 
+// The cache stores blank tiles as an empty entry, so a hit has to come back as
+// kEmpty too rather than as a zero-byte image the client would fail to decode.
+TEST_F(TileHandlerTest, BlankTileStaysEmptyThroughTheCache)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
+
+  ASSERT_EQ(handler_->handleTile(req, state_).type, WebSocketResponse::kEmpty);
+  const auto hit = handler_->handleTile(req, state_);
+  EXPECT_EQ(hit.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(hit.payload.empty());
+}
+
+// The converse: a tile that did draw something must still arrive as an image.
+// The die outline puts content on every _instances tile.
+TEST_F(TileHandlerTest, DrawnTileIsStillAPngResponse)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
+
+  const auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+// The highlight overlay is one of the panes that never merges, and it holds
+// nothing at all until something is selected -- so it is the single tile layer
+// most worth not sending an image for.
+TEST_F(TileHandlerTest, OverlayTileWithNothingSelectedIsEmpty)
+{
+  const auto resp
+      = handler_->handleOverlayTile(overlayRequest(1, false), state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(resp.payload.empty());
+}
+
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
 {
   struct Case
@@ -649,11 +691,14 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
 
 TEST_F(TileHandlerTest, TileReturnsPng)
 {
+  // _instances rather than a tech layer: the die outline puts content on it, so
+  // there is an image to check the framing of.  A layer with nothing in it
+  // comes back as kEmpty instead (see EmptyTile).
   WebSocketRequest req;
   req.id = 99;
   req.type = WebSocketRequest::kTile;
-  req.json
-      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   auto resp = handler_->handleTile(req, state_);
   EXPECT_EQ(resp.id, 99u);
@@ -667,6 +712,10 @@ TEST_F(TileHandlerTest, TileReturnsPng)
   EXPECT_EQ(resp.payload[3], 'G');
 }
 
+// A layer with nothing in the tile comes back carrying nothing.  Sending the
+// transparent PNG instead would make the client decode it and hold a full-size
+// bitmap for an image with nothing in it, and most of the tiles in a viewport
+// are exactly this one.
 TEST_F(TileHandlerTest, EmptyTile)
 {
   WebSocketRequest req;
@@ -676,8 +725,8 @@ TEST_F(TileHandlerTest, EmptyTile)
       = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   auto resp = handler_->handleTile(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kPng);  // PNG
-  EXPECT_FALSE(resp.payload.empty());
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(resp.payload.empty());
 }
 
 TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
@@ -702,6 +751,13 @@ TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
 
 TEST_F(TileHandlerTest, OverlayTileReturnsPng)
 {
+  // The overlay draws nothing until something is highlighted, and then comes
+  // back as kEmpty (see OverlayTileWithNothingSelectedIsEmpty).  Give it a
+  // highlight so there is an image to check the framing of.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
   WebSocketRequest req;
   req.id = 10;
   req.type = WebSocketRequest::kOverlayTile;
@@ -742,6 +798,12 @@ TEST_F(TileHandlerTest, OverlayTileHonoursTheRequestedPixelCount)
 
 TEST_F(TileHandlerTest, OverlayTileClampsAndFallsBack)
 {
+  // Sizing is read off the returned PNG, so the overlay has to have something
+  // to draw; with nothing highlighted it comes back empty and carries no image.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
   const std::vector<std::pair<std::string, uint32_t>> cases = {
       {R"("dpr":1)", 256},                    // unspecified -> 256 * dpr
       {R"("dpr":2)", 512},                    // ...which follows dpr
@@ -967,10 +1029,11 @@ TEST_F(TileHandlerTest, PolyDecompFlipRederivesHighlights)
   primeInspected(net_descriptor.makeSelected(std::any(net)));
 
   // Nothing moved yet, so this request must not derive anything: it is the
-  // control for the assertion below.
+  // control for the assertion below.  Nothing derived means nothing drawn,
+  // which markEmptyIfBlank reports as an empty response rather than a PNG.
   WebSocketRequest req = polyDecompRequest(40, /*poly_decomp=*/false);
   ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
-            WebSocketResponse::kPng);
+            WebSocketResponse::kEmpty);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     EXPECT_TRUE(state_.highlight_rects.empty())
@@ -1004,9 +1067,10 @@ TEST_F(TileHandlerTest, PolyDecompFlipDoesNotResurrectClearedHighlights)
     state_.current_inspected = net_descriptor.makeSelected(std::any(net));
   }
 
+  // Nothing to draw, so the response is empty rather than a blank PNG.
   WebSocketRequest req = polyDecompRequest(42, /*poly_decomp=*/true);
   ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
-            WebSocketResponse::kPng);
+            WebSocketResponse::kEmpty);
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.highlight_rects.empty())
@@ -1028,7 +1092,8 @@ TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
 
   WebSocketRequest req = overlayRequest(23, /*flywires_only=*/true);
   auto resp = handler_->handleOverlayTile(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  // Nothing was resurrected, so the overlay drew nothing and carries no image.
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.highlight_lines.empty())
@@ -1081,7 +1146,8 @@ TEST_F(TileHandlerTest, FlywiresSkipSupplyNets)
 
   WebSocketRequest req = overlayRequest(22, /*flywires_only=*/true);
   auto resp = handler_->handleOverlayTile(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  // A supply net gets no flywires, so the overlay drew nothing.
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.highlight_lines.empty())
@@ -1469,8 +1535,8 @@ TEST_F(TileHandlerTest, TileStillServesOffGridCoordinates)
 
     WebSocketResponse resp;
     EXPECT_NO_THROW(resp = handler_->handleTile(req, state_)) << json;
-    EXPECT_EQ(resp.type, WebSocketResponse::kPng)
-        << "off-grid tiles are transparent, not errors: " << json;
+    EXPECT_EQ(resp.type, WebSocketResponse::kEmpty)
+        << "off-grid tiles are empty, not errors: " << json;
   }
 }
 
@@ -3836,6 +3902,26 @@ TEST_F(DRCHandlerTest, CategoriesEmpty)
   EXPECT_NE(json.find("\"categories\":[]"), std::string::npos);
 }
 
+// The viewer requests categories on connect, before any design exists; that
+// must answer with an empty list rather than an error the server logs.
+TEST(DRCHandlerNoDesignTest, CategoriesWithoutChipIsNotAnError)
+{
+  std::unique_ptr<odb::dbDatabase, void (*)(odb::dbDatabase*)> db(
+      odb::dbDatabase::create(), odb::dbDatabase::destroy);
+  auto gen = std::make_shared<TileGenerator>(
+      db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
+  DRCHandler handler(gen);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kDrcCategories;
+
+  auto resp = handler.handleDRCCategories(req);
+  EXPECT_EQ(resp.id, 1u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_NE(payloadStr(resp).find("\"categories\":[]"), std::string::npos);
+}
+
 TEST_F(DRCHandlerTest, CategoriesWithMarkers)
 {
   createTestCategory("DRC", 3);
@@ -4444,9 +4530,11 @@ TEST_F(TileHandlerTest, CancelSkipsQueuedTileRender)
   auto resp = handler_->handleTile(tile, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
 
-  // The cancellation is consumed: re-issuing the same id now renders.
+  // The cancellation is consumed: re-issuing the same id now renders.  metal1
+  // holds nothing in this fixture, so a completed render is an empty tile --
+  // the point is that it is no longer refused.
   auto resp2 = handler_->handleTile(tile, state_);
-  EXPECT_EQ(resp2.type, WebSocketResponse::kPng);
+  EXPECT_EQ(resp2.type, WebSocketResponse::kEmpty);
 }
 
 TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)

@@ -531,6 +531,15 @@ class TileGenerator
   // overlay tiles and save_image for every client — mirrors the Qt GUI.
   // addLabel returns the label's name (auto-generated "label<N>" when `name`
   // is empty; a clashing name is rejected and "" is returned).
+  //
+  // A label's font height in CSS px is clamped to [0, kMaxLabelSize] on the way
+  // in (0 = unspecified, take the renderer's default).  Every other font height
+  // is a constant scaled by the quantized device pixel ratio, so this is the
+  // one a caller can make large enough to matter — it reaches GlyphCache, which
+  // rasterizes 95 glyphs at that height and keeps them for the life of the
+  // process.
+  static constexpr int kMaxLabelSize = 256;
+
   std::string addLabel(const odb::Point& pos,
                        const std::string& text,
                        const Color& color,
@@ -565,6 +574,12 @@ class TileGenerator
   // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
   // the chiplet cache, so the value returned reflects the live hierarchy.
   uint64_t chipletsGeneration() const;
+
+  // True when `png` came back from generateTile (or any of the other tile
+  // entry points) carrying nothing: the layer had no geometry in that tile.
+  // Callers send those as an empty response instead of the image, so the
+  // client neither decodes them nor holds a bitmap for them.
+  static bool isBlankTilePng(const std::vector<unsigned char>& png);
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -892,13 +907,16 @@ class TileGenerator
   // as given and only its (in-bounds) result is rounded.  Converting an oblique
   // DBU segment through the clamped toPxX/toPxY instead would saturate each
   // axis on its own and rotate the segment — use toPxXd/toPxYd here.
+  // `dim` is the side of the buffer, as in setPixel/drawFilledRect; pass it on
+  // the hot paths so the clip bound and every step skip bufferDim()'s sqrt.
   static void drawLine(std::vector<unsigned char>& image,
                        double x0,
                        double y0,
                        double x1,
                        double y1,
                        const Color& c,
-                       int width = 3);
+                       int width = 3,
+                       int dim = -1);
 
   void computePinLabelMargin();
 
@@ -1045,6 +1063,19 @@ class TileGenerator
                          const odb::Rect& r,
                          const Color& c,
                          const TileFrame& frame) const;
+  // Draw polygon edges clamped to the tile (die/core outlines).
+  void outlinePolygonInTile(std::vector<unsigned char>& image,
+                            const odb::Polygon& polygon,
+                            const Color& c,
+                            const TileFrame& frame) const;
+  // Diagonal across the master's origin corner, so a flipped or rotated
+  // instance reads as such.  Mirrors RenderThread::drawInstanceOutlines();
+  // callers gate on the master height, as Qt does.
+  static void drawOrientationTag(std::vector<unsigned char>& image,
+                                 odb::dbInst* inst,
+                                 const TileFrame& frame,
+                                 int dim,
+                                 int stroke);
   mutable std::mutex heatmap_mutex_;
   mutable std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>>
       heatmaps_;

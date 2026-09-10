@@ -1332,6 +1332,27 @@ WebSocketResponse TileHandler::serializeTech(const uint32_t id,
   return resp;
 }
 
+// Send a tile the renderer drew nothing into as an empty response.  Most of
+// the tiles in a viewport are that: every layer with no geometry where the user
+// is looking, and the highlight overlay whenever nothing is selected.  The
+// transparent PNG they would otherwise carry still decodes to a full-size
+// bitmap on the client, which is what the decoded-image budget in tile-merge.js
+// is spent on.
+//
+// Applied in the handlers rather than in the generator so every other caller of
+// the tile entry points -- save_image, the GIF recorder, the tests -- keeps
+// getting an image back.
+namespace {
+void markEmptyIfBlank(WebSocketResponse& resp)
+{
+  if (resp.type == WebSocketResponse::kPng
+      && TileGenerator::isBlankTilePng(resp.payload)) {
+    resp.type = WebSocketResponse::kEmpty;
+    resp.payload.clear();
+  }
+}
+}  // namespace
+
 WebSocketResponse TileHandler::renderTile(
     const uint32_t id,
     const std::string& layer,
@@ -5025,7 +5046,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     if (gen_->tileCacheGet(cache_key, cached)) {
       WebSocketResponse resp;
       resp.id = req.id;
-      resp.type = WebSocketResponse::kPng;
+      // An empty cache entry is a tile the renderer drew nothing into; it is
+      // stored that way so a blank tile costs an LRU slot and not the bytes of
+      // a transparent PNG nobody will decode.
+      resp.type = cached.empty() ? WebSocketResponse::kEmpty
+                                 : WebSocketResponse::kPng;
       resp.payload = std::move(cached);
       debugPrint(gen_->getLogger(),
                  utl::WEB,
@@ -5061,7 +5086,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       nullptr,
                                       dpr,
                                       tile_px);
-  if (cacheable && resp.type == WebSocketResponse::kPng) {
+  markEmptyIfBlank(resp);
+  // An empty payload under kPng is a failed encode, not a blank tile; caching
+  // it would make the next hit read back as kEmpty and hide the failure.
+  const bool worth_caching
+      = resp.type == WebSocketResponse::kEmpty
+        || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
+  if (cacheable && worth_caching) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
 
@@ -5293,6 +5324,7 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                     labels,
                                     debug_renderers,
                                     jsonOr(req.json, "debug_live", false));
+    markEmptyIfBlank(resp);
 
     // The selection highlight the client draws over the layer tiles comes from
     // here, so the shape counts say whether a "missing" highlight was never
@@ -5366,12 +5398,17 @@ LabelFields parseLabelFields(const boost::json::object& obj)
   if (!isValidAnchor(anchor)) {
     throw std::runtime_error("anchor not recognized: " + anchor);
   }
-  return {.pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
-                            static_cast<int>(obj.at("y").as_int64())),
-          .text = std::string(obj.at("text").as_string()),
-          .size = static_cast<int>(jsonOr<int64_t>(obj, "size", 0)),
-          .anchor = anchor,
-          .color = parseLabelColor(obj)};
+  return {
+      .pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
+                        static_cast<int>(obj.at("y").as_int64())),
+      .text = std::string(obj.at("text").as_string()),
+      // Bounded by addLabel/updateLabel, which the Tcl entry point reaches
+      // too; narrowed here only so a colossal int64 does not wrap on the
+      // way.
+      .size = static_cast<int>(std::clamp<int64_t>(
+          jsonOr<int64_t>(obj, "size", 0), 0, TileGenerator::kMaxLabelSize)),
+      .anchor = anchor,
+      .color = parseLabelColor(obj)};
 }
 
 }  // namespace
@@ -5743,6 +5780,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       source = source_itr->second;
     }
     resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
+    markEmptyIfBlank(resp);
     debugPrint(gen_->getLogger(),
                utl::WEB,
                "tile",
@@ -6038,23 +6076,27 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
 
   try {
-    auto [block, chip] = getBlockAndChip();
+    // The viewer asks for categories as soon as it connects, so having no
+    // design yet is a normal state with no categories, not a failed request.
+    odb::dbChip* chip = gen_->getChip();
 
     boost::json::object root;
     boost::json::array categories;
-    for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
-      boost::json::object o;
-      o["name"] = std::string(category->getName());
-      o["count"] = category->getMarkerCount();
-      const std::string desc = category->getDescription();
-      if (!desc.empty()) {
-        o["description"] = desc;
+    if (chip != nullptr) {
+      for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
+        boost::json::object o;
+        o["name"] = std::string(category->getName());
+        o["count"] = category->getMarkerCount();
+        const std::string desc = category->getDescription();
+        if (!desc.empty()) {
+          o["description"] = desc;
+        }
+        const std::string source = category->getSource();
+        if (!source.empty()) {
+          o["source"] = source;
+        }
+        categories.emplace_back(std::move(o));
       }
-      const std::string source = category->getSource();
-      if (!source.empty()) {
-        o["source"] = source;
-      }
-      categories.emplace_back(std::move(o));
     }
     root["categories"] = std::move(categories);
     writePayload(resp, root);
