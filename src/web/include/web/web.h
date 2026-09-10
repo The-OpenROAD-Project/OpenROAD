@@ -14,6 +14,7 @@
 #include <thread>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/steady_timer.hpp"
 #include "odb/db.h"
@@ -60,6 +61,12 @@ enum class BindAddressKind
 // reach serve() from C++ (Main.cc) must check this first: serve() reports a
 // bad address with utl::error, which throws.
 BindAddressKind classifyBindAddress(std::string_view address);
+
+// Host to put in the URL the browser is pointed at, for a server listening on
+// `address`.  "localhost" only where it actually resolves to the listener —
+// naming it for the whole 127.0.0.0/8 range sends the browser to a port
+// nobody is bound to.  IPv6 literals come back bracketed, ready for a URL.
+std::string browserHostForBind(const boost::asio::ip::address& address);
 
 // What serve() binds to when the caller passes no address.  Owned here so the
 // Tcl and command-line front ends cannot drift apart on the security default.

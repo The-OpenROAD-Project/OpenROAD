@@ -296,15 +296,9 @@ void WebServer::serve(int port, const std::string& bind_address)
                                        max_in_flight);
     shutdown_listener_ = std::move(handle.shutdown);
 
-    // Point the browser at something it can actually reach: 0.0.0.0 is not a
-    // destination, and a loopback literal is better spelled "localhost".
-    std::string host = "localhost";
-    if (bind_kind != BindAddressKind::kLoopback && !address.is_unspecified()) {
-      host
-          = address.is_v6() ? "[" + bind_to + "]" : bind_to;  // URLs bracket v6
-    }
-    const std::string url
-        = "http://" + host + ":" + std::to_string(handle.port);
+    // Point the browser at something it can actually reach.
+    const std::string url = "http://" + browserHostForBind(address) + ":"
+                            + std::to_string(handle.port);
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without

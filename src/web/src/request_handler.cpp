@@ -346,6 +346,25 @@ BindAddressKind classifyBindAddress(const std::string_view address)
   return loopback ? BindAddressKind::kLoopback : BindAddressKind::kExposed;
 }
 
+std::string browserHostForBind(const boost::asio::ip::address& address)
+{
+  // "localhost" reads better than a literal, but it resolves to the canonical
+  // loopback only — naming it for the whole 127.0.0.0/8 range would send the
+  // browser to 127.0.0.1 while the listener sits on, say, 127.0.0.2.  The
+  // wildcard is not a destination at all, and localhost is inside it.
+  if (address.is_unspecified()
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v4::loopback())
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v6::loopback())) {
+    return "localhost";
+  }
+  const std::string literal = address.to_string();
+  return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
 WebSocketResponse errorResponse(const uint32_t id,
                                 const std::string_view message)
 {
