@@ -2702,7 +2702,6 @@ class extMain
   char* _origSpefFilePrefix = nullptr;
   char* _newSpefFilePrefix = nullptr;
   uint32_t _bufSpefCnt;
-  bool _incrNoBackSlash = false;
   uint32_t _cornerCnt = 0;
   uint32_t _extDbCnt;
 
@@ -2819,7 +2818,6 @@ class extMain
   bool _lef_res = false;
   std::string _tmpLenStats;
   int _last_node_xy[2];
-  bool _wireInfra = false;
   odb::Rect _extMaxRect;
 
   // ----------------------------------------- 060623
