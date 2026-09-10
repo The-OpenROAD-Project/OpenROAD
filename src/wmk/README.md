@@ -365,6 +365,12 @@ false-positive rate, because the sampled p-value is not an upper bound on the
 exact tail. Both raw components remain in the report; C++ and Python callers can
 use `RoutingStat::pValue()` to obtain the adjusted value used by Tcl.
 
+The sampler compares marked subset sums directly. It counts ties, including
+differences within a rounding allowance that scales with the number and magnitude
+of the summed fractions. This can increase the reported p-value conservatively;
+roundoff must not turn equal routing fractions into ownership evidence. Sorting
+the fractions makes the result independent of net iteration order.
+
 #### Claim file format
 
 A claim file records what an embedder committed to. It is comma-separated with a

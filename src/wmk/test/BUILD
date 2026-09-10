@@ -41,6 +41,7 @@ PASSFAIL_TESTS = [
     "routing_defaults",
     "routing_lifecycle",
     "routing_report",
+    "routing_ties",
     "verify_malformed",
 ]
 
@@ -81,6 +82,7 @@ TESTS = [
     "routing_defaults",
     "routing_lifecycle",
     "routing_report",
+    "routing_ties",
     "verify_malformed",
     "select",
     "strength",
@@ -171,6 +173,7 @@ cc_test(
     srcs = ["cpp/TestRoutingStat.cpp"],
     deps = [
         "//src/wmk",
+        "//src/wmk:wmk_private_hdrs",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

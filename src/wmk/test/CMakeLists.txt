@@ -48,6 +48,7 @@ or_integration_tests(
     routing_defaults
     routing_lifecycle
     routing_report
+    routing_ties
     verify_malformed
 )
 

@@ -51,6 +51,7 @@ gtest_discover_tests(TestClaimFile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 add_dependencies(build_and_test TestClaimFile)
 
 add_executable(TestRoutingStat TestRoutingStat.cpp)
+target_include_directories(TestRoutingStat PRIVATE ../../src)
 target_link_libraries(TestRoutingStat PRIVATE GTest::gtest_main wmk odb)
 gtest_discover_tests(TestRoutingStat WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(build_and_test TestRoutingStat)

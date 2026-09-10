@@ -62,12 +62,13 @@ cc_library(
     hdrs = [
         "src/Keys.h",
         "src/Options.h",
+        "src/RoutingStat.h",
         "src/Wirelength.h",
     ],
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/wmk:__subpackages__"],
     deps = ["//src/odb/src/db"],
 )
 
