@@ -73,11 +73,10 @@ export function showConfirmModal({ title, message, confirmLabel = 'OK',
         const buttons = document.createElement('div');
         buttons.className = 'or-modal-buttons';
         const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'or-modal-btn';
+        cancelBtn.className = 'or-btn';
         cancelBtn.textContent = 'Cancel';
         const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'or-modal-btn'
-            + (danger ? ' or-modal-btn-danger' : '');
+        confirmBtn.className = 'or-btn' + (danger ? ' or-btn-danger' : '');
         confirmBtn.textContent = confirmLabel;
 
         const close = (result) => {
@@ -505,4 +504,79 @@ export function makeResizableHeaders(table, widths) {
             document.addEventListener('mouseup', onMouseUp);
         });
     });
+}
+
+// ─── Panel tab icons ────────────────────────────────────────────────────────
+
+// A 16-viewBox stroke glyph per panel, keyed by the tab title in
+// defaultLayoutConfig (and in componentTitles, which must agree).  A stack can
+// hold six panels whose titles all read alike at tab width; the icon is what
+// makes one findable at a glance.
+const kPanelIconPaths = {
+    'Layout':           '<rect x="2.5" y="2.5" width="19" height="19" rx="2"/>'
+                        + '<path d="M2.5 9h19M9 2.5v19"/>',
+    'Schematic':        '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/>'
+                        + '<path d="M6 15.5V8a2 2 0 012-2h7.5"/>',
+    '3D Viewer':        '<path d="M12 2.5l9 5v9l-9 5-9-5v-9z"/><path d="M12 12l9-4.5M12 12v9.5M12 12L3 7.5"/>',
+    'Display Controls': '<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2"/>'
+                        + '<circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
+    'Inspector':        '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    'Hierarchy':        '<path d="M5 4v13a2 2 0 002 2h4M5 10h6"/>'
+                        + '<rect x="13" y="2" width="7" height="5" rx="1"/>'
+                        + '<rect x="13" y="15" width="7" height="5" rx="1"/>',
+    'Timing':           '<path d="M2 14h5l3-8 4 14 3-6h5"/>',
+    'DRC':              '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+    'Select Highlight': '<path d="M4 3l14 9-6 1 4 7-3 2-4-7-5 4z"/>',
+    'Clock Tree':       '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    'Charts':           '<path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/>',
+    'Tcl Console':      '<path d="M5 8l4 4-4 4M12 16h7"/>',
+    'Help':             '<circle cx="12" cy="12" r="9"/>'
+                        + '<path d="M9.5 9.5a2.5 2.5 0 115 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
+};
+
+// Build the icon element for a tab title, or null when the title has none --
+// a Tcl-added panel, say, which should get a plain tab rather than a wrong
+// icon.
+export function panelTabIcon(title) {
+    const path = kPanelIconPaths[title];
+    if (!path) return null;
+    const span = document.createElement('span');
+    span.className = 'or-tab-icon';
+    span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
+        + ' aria-hidden="true">' + path + '</svg>';
+    return span;
+}
+
+// Prepend the icon to every tab that does not have one yet, and return how
+// many were added.  Idempotent, so it can be called again after any layout
+// change -- Golden Layout rebuilds tab elements when a stack is dragged, split
+// or reordered -- without accumulating icons.  Titles are read from .lm_title
+// rather than from the component, so the overflow dropdown's tabs are
+// decorated by the same pass.
+//
+// The return value matters: an icon widens its tab, and Golden Layout decides
+// which tabs fit in a header before these exist, so the caller has to make it
+// measure again.  Reporting zero when there was nothing to do is what keeps
+// that re-measure from looping through the layout event that triggered it.
+export function decorateTabIcons(root = document) {
+    let added = 0;
+    for (const tab of root.querySelectorAll('.lm_tab:not([data-or-icon])')) {
+        const titleEl = tab.querySelector('.lm_title');
+        if (!titleEl) continue;
+        const title = titleEl.textContent.trim();
+        // An empty title means the tab is not built yet.  Marking it now would
+        // spend its one chance at an icon on a title we cannot match, so leave
+        // it for the next layout change.
+        if (!title) continue;
+        // Mark before the lookup, so a title with no icon of its own is not
+        // re-examined on every subsequent layout change.
+        tab.setAttribute('data-or-icon', '');
+        const icon = panelTabIcon(title);
+        if (icon) {
+            tab.insertBefore(icon, titleEl);
+            added++;
+        }
+    }
+    return added;
 }

@@ -41,6 +41,11 @@ using sta::Instance;
 %include "sdc/Sdc.i"
 %include "sdf/Sdf.i"
 %include "search/Property.i"
+// Set by CMakeLists.txt/BUILD when the OpenSTA submodule is the
+// OpenROAD fork rather than stock (parallaxsw) OpenSTA.
+#ifdef STA_OPENROAD_FORK
+%include "search/AnalysisCorner.i"
+#endif
 %include "search/Search.i"
 %include "spice/WriteSpice.i"
 %include "util/Util.i"
@@ -265,7 +270,6 @@ write_verilog_cmd(const char *filename,
   sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
   sta::writeVerilog(filename, include_pwr_gnd, remove_cells, network);
-  delete remove_cells;
 }
 
 void

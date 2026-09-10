@@ -655,6 +655,7 @@ py_test(
     srcs = ["gcd_resize.py"],
     data = [":test_resources"],
     main = "gcd_resize.py",
+    tags = ["py"],
     deps = [
         ":helpers",
         ":rsz_aux",
@@ -666,7 +667,10 @@ py_test(
     name = "rsz_man_tcl_check",
     srcs = ["rsz_man_tcl_check.py"],
     data = ["//src/rsz:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

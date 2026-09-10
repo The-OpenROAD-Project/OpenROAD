@@ -4,7 +4,6 @@
 src/web/test/pnpm-lock.yaml
 
 # --- Section 2: Existing YAML files (To be formatted in follow-up PRs) ---
-.gemini/config.yaml
 .github/ISSUE_TEMPLATE/bug_report.yml
 .github/ISSUE_TEMPLATE/bug_report_with_ol.yml
 .github/ISSUE_TEMPLATE/bug_report_with_orfs.yml

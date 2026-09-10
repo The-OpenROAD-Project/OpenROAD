@@ -24,6 +24,9 @@
 #include "utl/Logger.h"
 %}
 
+// Leave via SWIG_fail, not return, so %typemap(freearg) still runs. Returning
+// straight out of the wrapper skips the generated fail: label, which is where
+// SWIG puts the argument cleanup.
 %exception {
   try { $action }
   catch (std::bad_alloc &) {
@@ -45,6 +48,6 @@
 
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, excp.what(), nullptr);
-    return TCL_ERROR;
+    SWIG_fail;
   }
 }

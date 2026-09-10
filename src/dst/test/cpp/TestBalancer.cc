@@ -7,6 +7,7 @@
 #include "LoadBalancer.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
+#include "boost/scope_exit.hpp"
 #include "boost/thread/thread.hpp"
 #include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"
@@ -78,6 +79,16 @@ TEST(test_suite, test_balancer)
 
     // Checking if balancer is up and responding
     boost::thread t(boost::bind(&asio::io_context::run, &service));
+
+    // boost::thread's destructor detaches, so without this the thread keeps
+    // running io_context::run() on `service` after it has been destroyed at
+    // scope exit. The guard also covers the catch blocks below, which unwind
+    // while the thread is still live.
+    BOOST_SCOPE_EXIT_ALL(&)
+    {
+      service.stop();
+      t.join();
+    };
     JobMessage msg(JobMessage::JobType::kBalancer);
     JobMessage result;
     EXPECT_TRUE(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));

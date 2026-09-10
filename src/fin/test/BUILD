@@ -67,7 +67,10 @@ py_test(
     name = "fin_man_tcl_check",
     srcs = ["fin_man_tcl_check.py"],
     data = ["//src/fin:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

@@ -1187,6 +1187,12 @@ odb::dbBlock* dbNetwork::blockOf(odb::dbChipInst* chip_inst) const
   return master ? master->getBlock() : nullptr;
 }
 
+odb::dbChipInst* dbNetwork::chipInstOf(odb::dbBlock* block) const
+{
+  auto it = block_to_chip_inst_.find(block);
+  return it == block_to_chip_inst_.end() ? nullptr : it->second;
+}
+
 // ---- chip-object <-> STA-handle encode/decode ----
 
 // Resolve an unfolded bump to its pad inst's single dbITerm -- the bump's

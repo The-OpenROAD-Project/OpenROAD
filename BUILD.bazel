@@ -530,7 +530,13 @@ sh_test(
         # The handle the script uses to find the source tree it scans.
         "MODULE.bazel",
         "//etc:find_messages.py",
+        # The interpreter itself, so the script runs on the one the toolchain
+        # resolved rather than whatever python3 the host has on PATH.
+        "@rules_python//python:current_py_toolchain",
     ],
+    env = {
+        "PYTHON3_ROOTPATH": "$(PYTHON3_ROOTPATH)",
+    },
     # external: the sources being scanned are not declared inputs, so nothing
     # invalidates a cached result when one of them gains a duplicate ID. Without
     # this the check reports "(cached) PASSED" over a tree it never looked at.
@@ -538,6 +544,7 @@ sh_test(
         "external",
         "local",
     ],
+    toolchains = ["@rules_python//python:current_py_toolchain"],
 )
 
 # Make sure the Qt GUI variant keeps building. :openroad is exercised by

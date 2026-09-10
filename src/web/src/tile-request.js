@@ -55,6 +55,28 @@ export const TILE_SIZE_CSS = 240;
 // them. Those are files, not requests, so that path keeps the old size.
 export const STATIC_TILE_SIZE_CSS = 256;
 
+// What an <img> tile holds when the server drew nothing into it: a 1x1
+// transparent GIF.
+//
+// It has to hold SOMETHING.  An <img> with no src attribute but a CSS width and
+// height is not nothing to the browser -- Chrome paints the empty replaced
+// element, and since most tiles in a viewport are empty that came out as a grey
+// grid over the whole layout, one cell per tile.  Clearing the attribute is the
+// obvious way to say "no image" and it is the wrong one.
+//
+// This costs a 1x1 decode, 4 bytes, so it keeps what the empty response is for:
+// the tile still does not decode a full-size transparent PNG or hold a bitmap
+// the size of the tile.  Its load event also fires, which is what completes the
+// tile with Leaflet -- see the tile layers, which keep a tile hidden until then.
+//
+// It carries a Graphic Control Extension declaring colour 0 transparent.  A 1x1
+// GIF without one is a common paste and is NOT transparent: an <img> stretches
+// its single opaque pixel over the whole tile, so a viewport of empty tiles
+// comes out a solid wash instead of showing the layout underneath.
+export const BLANK_TILE
+    = 'data:image/gif;base64,'
+      + 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 // The CSS tile size in force for this session.  Resolved once rather than
 // passed around: the map's coordinate scale, all three tile layers and the
 // request payload must agree on it, and a value threaded through five call

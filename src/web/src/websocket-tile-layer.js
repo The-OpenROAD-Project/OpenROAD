@@ -4,7 +4,7 @@
 // Leaflet tile layer that fetches tiles via WebSocket.
 
 import {
-    buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
+    BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
     tileSizeFields, withDeviceExactTileSize,
 } from './tile-request.js';
 
@@ -31,6 +31,27 @@ export function buildTileRequest(coords, layerName, ctx) {
 // metadata arrives, is reflected in tile requests without rebuilding
 // the layer.  When null or absent the field is omitted and the server
 // renders every chiplet (default).
+// Point an <img> tile at a payload, or at the blank tile when the payload is
+// null.
+//
+// Null is an empty tile (payload type 3): the server drew nothing there.  The
+// element keeps its place in the grid holding a 1x1 transparent GIF instead of
+// a tile-sized transparent PNG, so the browser decodes 4 bytes and no bitmap
+// worth the name counts against the budget tile-merge.js is bounding.  See
+// BLANK_TILE for why it is not simply left with no src.  Reassigning matters on
+// a refresh too -- a tile that had content before an edit removed it must drop
+// the decode it is still holding.
+function applyTilePayload(tile, data) {
+    if (tile.src && tile.src.startsWith('blob:')) {
+        URL.revokeObjectURL(tile.src);
+    }
+    if (data == null) {
+        tile.src = BLANK_TILE;
+        return;
+    }
+    tile.src = (typeof data === 'string') ? data : URL.createObjectURL(data);
+}
+
 export function createWebSocketTileLayer(visibility, visibleLayers,
                                          selectability, selectableLayers,
                                          app) {
@@ -83,11 +104,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             this._websocketManager.request(
                 buildTileRequest(coords, this._layerName, ctx)
             ).then(data => {
-                if (typeof data === 'string') {
-                    tile.src = data;  // data URI from cache
-                } else {
-                    tile.src = URL.createObjectURL(data);
-                }
+                applyTilePayload(tile, data);
             }).catch(err => {
                 // Request was cancelled (e.g. by refreshTiles); ignore.  Note
                 // that `done` is never called and no retry is issued, so this
@@ -120,14 +137,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 this._websocketManager.request(
                     buildTileRequest(coords, this._layerName, ctx)
                 ).then(data => {
-                    if (tile.src && tile.src.startsWith('blob:')) {
-                        URL.revokeObjectURL(tile.src);
-                    }
-                    if (typeof data === 'string') {
-                        tile.src = data;
-                    } else {
-                        tile.src = URL.createObjectURL(data);
-                    }
+                    applyTilePayload(tile, data);
                 }).catch(err => {
                     // Tile refresh failed; keep existing image
                 });
@@ -215,11 +225,7 @@ export function createOverlayTileLayer(visibility, app) {
                 if (tile._websocketRequestId !== requestId) {
                     return;  // stale response; a newer request superseded this one
                 }
-                if (typeof data === 'string') {
-                    tile.src = data;
-                } else {
-                    tile.src = URL.createObjectURL(data);
-                }
+                applyTilePayload(tile, data);
             }).catch(err => {
             });
 
@@ -249,14 +255,7 @@ export function createOverlayTileLayer(visibility, app) {
                     if (tile._websocketRequestId !== requestId) {
                         return;  // stale response superseded by a newer refresh
                     }
-                    if (tile.src && tile.src.startsWith('blob:')) {
-                        URL.revokeObjectURL(tile.src);
-                    }
-                    if (typeof data === 'string') {
-                        tile.src = data;
-                    } else {
-                        tile.src = URL.createObjectURL(data);
-                    }
+                    applyTilePayload(tile, data);
                 }).catch(() => {});
             }
         },

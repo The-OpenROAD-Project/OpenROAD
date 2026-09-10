@@ -93,7 +93,7 @@ export class ThreeDViewerWidget {
 
     // Tooltip shown on chiplet hover (raycasting).
     this._tooltip = document.createElement('div');
-    this._tooltip.className = 'three-d-tooltip';
+    this._tooltip.className = 'or-tooltip';
     this._canvasContainer.appendChild(this._tooltip);
 
     this._optionsOverlay = this._createOptionsOverlay();
@@ -306,10 +306,12 @@ export class ThreeDViewerWidget {
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'margin-top:4px; display:flex; gap:4px;';
     const savePng = document.createElement('button');
+    savePng.className = 'or-btn or-btn-sm';
     savePng.textContent = 'Save PNG';
     savePng.title = 'Save the 3D view as a PNG image (2x resolution)';
     savePng.addEventListener('click', () => this._exportPng(2));
     const copyBtn = document.createElement('button');
+    copyBtn.className = 'or-btn or-btn-sm';
     copyBtn.textContent = 'Copy';
     copyBtn.title = 'Copy the 3D view image to the clipboard';
     copyBtn.addEventListener('click', () => this._copyImage(2));

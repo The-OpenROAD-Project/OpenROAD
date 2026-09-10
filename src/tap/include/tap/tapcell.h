@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -139,8 +138,6 @@ class Tapcell
     CornerType type;
     odb::Point pt;
   };
-  using Polygon = boost::polygon::polygon_90_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using CornerMap = odb::PtrMap<odb::dbRow, odb::PtrSet<odb::dbInst>>;
 
   struct InstIndexableGetter
@@ -191,11 +188,15 @@ class Tapcell
   int defaultDistance() const;
   int maxCoreCellHeight() const;
 
-  std::vector<Polygon90> getBoundaryAreas() const;
-  std::vector<Edge> getBoundaryEdges(const Polygon& area, bool outer) const;
-  std::vector<Edge> getBoundaryEdges(const Polygon90& area, bool outer) const;
-  std::vector<Corner> getBoundaryCorners(const Polygon90& area,
-                                         bool outer) const;
+  std::vector<odb::geom::BoostPolygon90WithHoles> getBoundaryAreas() const;
+  std::vector<Edge> getBoundaryEdges(const odb::geom::BoostPolygon90& area,
+                                     bool outer) const;
+  std::vector<Edge> getBoundaryEdges(
+      const odb::geom::BoostPolygon90WithHoles& area,
+      bool outer) const;
+  std::vector<Corner> getBoundaryCorners(
+      const odb::geom::BoostPolygon90WithHoles& area,
+      bool outer) const;
 
   std::string toString(EdgeType type) const;
   std::string toString(CornerType type) const;
@@ -203,12 +204,13 @@ class Tapcell
   odb::dbRow* getRow(const Corner& corner, odb::dbSite* site) const;
   std::vector<odb::dbRow*> getRows(const Edge& edge, odb::dbSite* site) const;
 
-  std::pair<int, int> placeEndcaps(const Polygon& area,
+  std::pair<int, int> placeEndcaps(const odb::geom::BoostPolygon90& area,
                                    bool outer,
                                    const EndcapCellOptions& options);
-  std::pair<int, int> placeEndcaps(const Polygon90& area,
-                                   bool outer,
-                                   const EndcapCellOptions& options);
+  std::pair<int, int> placeEndcaps(
+      const odb::geom::BoostPolygon90WithHoles& area,
+      bool outer,
+      const EndcapCellOptions& options);
 
   void placeEndcapCorner(const Corner& corner,
                          const EndcapCellOptions& options,

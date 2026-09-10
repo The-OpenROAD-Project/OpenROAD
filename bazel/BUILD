@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -21,6 +22,20 @@ exports_files(
         "tcl_tidy.sh",
         "yaml_fmt_test.sh",
         "yaml_tidy.sh",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# True under --config=tsan / --config=ubsan. The regression tests run the
+# openroad binary from the exec configuration, which those configs leave
+# uninstrumented on purpose (so swig, bison and the other build tools stay
+# clean). test/regression.bzl uses this to take the binary under test from the
+# target configuration instead, which is where the instrumentation lives.
+selects.config_setting_group(
+    name = "sanitizer_build",
+    match_any = [
+        "@llvm//config:tsan_enabled",
+        "@llvm//config:ubsan_enabled",
     ],
     visibility = ["//visibility:public"],
 )

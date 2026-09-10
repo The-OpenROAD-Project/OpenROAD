@@ -475,6 +475,40 @@ dbSet<dbITerm> dbModNet::getITerms() const
   return dbSet<dbITerm>(_mod_net, _block->module_modnet_iterm_itr_);
 }
 
+bool dbModNet::isConnectedToInputPort() const
+{
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() != dbIoType::OUTPUT) {
+      return true;
+    }
+  }
+
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (mod_bterm->getIoType() != dbIoType::OUTPUT) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbModNet::isConnectedToOutputPort() const
+{
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() != dbIoType::INPUT) {
+      return true;
+    }
+  }
+
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (mod_bterm->getIoType() != dbIoType::INPUT) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 unsigned dbModNet::connectionCount() const
 {
   return (getITerms().size() + getBTerms().size() + getModITerms().size()

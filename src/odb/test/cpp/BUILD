@@ -374,6 +374,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestSwapMasterLeaf",
+    srcs = [
+        "TestSwapMasterLeaf.cpp",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestSwapMasterUnusedPort",
     srcs = [
         "TestSwapMasterUnusedPort.cpp",

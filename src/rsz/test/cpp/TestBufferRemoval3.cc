@@ -995,4 +995,83 @@ TEST_F(BufRemTest3, HierFeedthroughAcrossLevels)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+// Insert a buffer across sibling hierarchies so the insertion API creates the
+// sink input port and a deeper source-side flat net before buffer removal.
+TEST_F(BufRemTest3, HierInputPortNamePreservedAfterBufferRemoval)
+{
+  const std::string test_name = "TestBufferRemoval3_hier_input_port";
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbITerm* driver = block_->findITerm("source/driver/u_drv/ZN");
+  odb::dbITerm* load0 = block_->findITerm("sink/load0/u_inv/A");
+  odb::dbITerm* load1 = block_->findITerm("sink/load1/u_inv/A");
+  ASSERT_NE(driver, nullptr);
+  ASSERT_NE(load0, nullptr);
+  ASSERT_NE(load1, nullptr);
+  EXPECT_EQ(driver->getNet()->getName(), "signal");
+  EXPECT_EQ(load0->getNet()->getName(), "seed");
+  EXPECT_EQ(load1->getNet()->getName(), "seed");
+
+  odb::dbMaster* buffer_master = db_->findMaster("BUF_X2");
+  ASSERT_NE(buffer_master, nullptr);
+  odb::PtrSet<odb::dbObject> loads;
+  loads.insert(load0);
+  loads.insert(load1);
+  odb::dbInst* buffer
+      = resizer_.insertBufferBeforeLoads(driver->getNet(),
+                                         loads,
+                                         buffer_master,
+                                         nullptr,
+                                         "u_buf",
+                                         "load_net",
+                                         odb::dbNameUniquifyType::IF_NEEDED,
+                                         /*loads_on_diff_nets=*/true);
+  ASSERT_NE(buffer, nullptr);
+  EXPECT_EQ(buffer, block_->findInst("sink/u_buf"));
+
+  odb::dbITerm* buffer_input = buffer->findITerm("A");
+  odb::dbITerm* buffer_output = buffer->findITerm("Z");
+  ASSERT_NE(buffer_input, nullptr);
+  ASSERT_NE(buffer_output, nullptr);
+  odb::dbNet* input_net = buffer_input->getNet();
+  odb::dbNet* output_net = buffer_output->getNet();
+  ASSERT_NE(input_net, nullptr);
+  ASSERT_NE(output_net, nullptr);
+  EXPECT_EQ(input_net->getName(), "source/driver/out");
+  EXPECT_EQ(output_net->getName(), "sink/load_net");
+  EXPECT_TRUE(input_net->isDeeperThan(output_net));
+
+  odb::dbModule* sink = block_->findModule("Sink");
+  ASSERT_NE(sink, nullptr);
+  odb::dbModBTerm* input_port = sink->findModBTerm("net");
+  ASSERT_NE(input_port, nullptr);
+  odb::dbModNet* input_modnet = input_port->getModNet();
+  odb::dbModNet* output_modnet = buffer_output->getModNet();
+  ASSERT_NE(input_modnet, nullptr);
+  ASSERT_NE(output_modnet, nullptr);
+  EXPECT_NE(input_modnet, output_modnet);
+  EXPECT_TRUE(output_modnet->getModBTerms().empty());
+  EXPECT_FALSE(output_modnet->getModITerms().empty());
+  EXPECT_EQ(input_modnet->getName(), "net");
+  EXPECT_EQ(output_modnet->getName(), "load_net");
+
+  sta::Instance* sta_buffer = db_network_->dbToSta(buffer);
+  ASSERT_NE(sta_buffer, nullptr);
+  sta::InstanceSeq buffers;
+  buffers.push_back(sta_buffer);
+  resizer_.removeBuffers(buffers);
+  EXPECT_EQ(block_->findInst("sink/u_buf"), nullptr);
+
+  sta_->updateTiming(true);
+  EXPECT_EQ(db_network_->checkAxioms() + sta_->checkSanity(), 0);
+  EXPECT_EQ(load0->getNet(), driver->getNet());
+  EXPECT_EQ(load1->getNet(), driver->getNet());
+
+  ASSERT_NE(input_port->getModNet(), nullptr);
+  EXPECT_EQ(std::string(input_port->getModNet()->getName()), "net")
+      << "the surviving input-port ModNet must retain the port name";
+
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace rsz

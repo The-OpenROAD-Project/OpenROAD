@@ -109,6 +109,35 @@ TEST_F(LabelTest, UpdateMutatesInPlace)
   EXPECT_EQ(draw[0].color.r, 255);
 }
 
+// A label's font height is the only one a caller sets directly -- every other
+// one in the renderer is a constant scaled by the quantized device pixel ratio
+// -- and it reaches GlyphCache, which rasterizes 95 glyphs at that height and
+// keeps them for the life of the process.  Bounded where the label is stored,
+// so the Tcl command and the websocket request are covered by the same line and
+// the stored size is the one that will be drawn.
+TEST_F(LabelTest, FontSizeIsBoundedOnTheWayIn)
+{
+  const Color c{.r = 0, .g = 0, .b = 0, .a = 255};
+  gen_->addLabel({0, 0}, "huge", c, 1'000'000, "center", "big");
+  gen_->addLabel({0, 0}, "negative", c, -5, "center", "neg");
+
+  auto draw = gen_->labelsForDraw();
+  ASSERT_EQ(draw.size(), 2u);
+  EXPECT_EQ(draw[0].size, TileGenerator::kMaxLabelSize);
+  // Not -5: 0 is the renderer's "unspecified, use the default".
+  EXPECT_EQ(draw[1].size, 0);
+
+  // update_label reaches the same field and is bounded the same way.
+  EXPECT_TRUE(gen_->updateLabel("big", {0, 0}, "huge", c, 999'999, "center"));
+  draw = gen_->labelsForDraw();
+  EXPECT_EQ(draw[0].size, TileGenerator::kMaxLabelSize);
+
+  // A size inside the bound is untouched.
+  EXPECT_TRUE(gen_->updateLabel("big", {0, 0}, "huge", c, 18, "center"));
+  draw = gen_->labelsForDraw();
+  EXPECT_EQ(draw[0].size, 18);
+}
+
 TEST_F(LabelTest, UpdateMissingIsNoOp)
 {
   const Color c{.r = 0, .g = 0, .b = 0, .a = 255};

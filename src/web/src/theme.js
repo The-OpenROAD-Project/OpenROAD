@@ -127,5 +127,9 @@ export function getThemeColors() {
         fgMuted:     v('--fg-muted'),
         bgPanel:     v('--bg-panel'),
         bgMap:       v('--bg-map'),
+        // Font stacks for ctx.font, so the canvas widgets draw in the same
+        // faces as the DOM ones: mono for values, sans for titles and labels.
+        fontMono:    v('--font-mono'),
+        fontSans:    v('--font-sans'),
     };
 }

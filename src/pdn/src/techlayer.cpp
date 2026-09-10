@@ -260,6 +260,14 @@ odb::Rect TechLayer::adjustToMinArea(
     return rect;
   }
 
+  // Shape::getMinimumRect() returns the mergeInit() sentinel when a shape has
+  // no bterm, iterm or via to merge, and dx()/dy()/area() overflow on it. The
+  // caller already skips an inverted rect when correcting the adjusted shape,
+  // so there is nothing to adjust here either.
+  if (rect.isInverted()) {
+    return rect;
+  }
+
   // make sure minimum area is honored
   const double area = min_area;
 

@@ -6,8 +6,9 @@ cd "$(dirname $(readlink -f $0))/../"
 
 _help() {
     cat <<EOF
-usage: $0 [dynamic]
+usage: $0 [dynamic|test]
        $0 static <TOKEN>
+       $0 static-bazel <TOKEN>
 
 EOF
     exit "${1:-1}"
@@ -41,7 +42,7 @@ _lcov() {
 
 }
 
-_coverity() {
+_coverity_cmake() {
     cmakeOptions=""
     if [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
         cmakeOptions="$(cat "/etc/openroad_deps_prefixes.txt")"
@@ -51,12 +52,35 @@ _coverity() {
     # Coverity fails to process abc code due to -fpermissive flag.
     cmake --build build -j $(nproc) --target abc
     cov-build --dir cov-int cmake --build build -j $(nproc)
+}
+
+_coverity_bazel() {
+    # Coverity captures compiler invocations, so cached or sandboxed Bazel
+    # actions can make the capture incomplete. Clear the local action cache,
+    # disable the persistent action caches, and execute spawns locally.
+    bazelisk clean
+    cov-build --dir cov-int --bazel bazelisk build \
+        --spawn_strategy=local \
+        --remote_cache= \
+        --disk_cache= \
+        --noremote_accept_cached \
+        --noremote_upload_local_results \
+        --jobs=$(nproc) \
+        --//:platform=cli \
+        -- //:openroad
+}
+
+_coverity() {
+    "$1"
     log_file=cov-int/build-log.txt
-    regex='Emitted.*compilation units.*\(\d+%\)'
     # get compilation coverage percentage
-    percent=$(grep -Poi "${regex}" ${log_file} | grep -Po '\d+' | tail -n 1)
-    if [[ ${percent} -lt 85  ]]; then
-        echo "Coverity requires more than 85% of compilation coverage. Only got ${percentage}%."
+    percent=$(sed -nE \
+        's/.*Emitted.*compilation units.*\(([0-9]+)%\).*/\1/p' \
+        "${log_file}" | tail -n 1)
+    # An empty match means the capture summary is missing; treat it as 0%.
+    percent="${percent:-0}"
+    if [[ ${percent} -lt 85 ]]; then
+        echo "Coverity requires more than 85% of compilation coverage. Only got ${percent}%."
         exit 1
     fi
 
@@ -106,7 +130,10 @@ case "${target}" in
     dynamic )
         _lcov
         ;;
-    static )
+    test )
+        bazelisk test //etc:code_coverage_test
+        ;;
+    static | static-bazel )
         if [[ $# -ne 2 ]]; then
             if [[ $# -lt 2 ]]; then
                 echo -n "Too few arguments. "
@@ -118,7 +145,11 @@ case "${target}" in
             _help
         fi
         token="${2}"
-        _coverity
+        if [[ ${target} == "static-bazel" ]]; then
+            _coverity _coverity_bazel
+        else
+            _coverity _coverity_cmake
+        fi
         ;;
     *)
         echo "invalid argument: ${1}" >&2

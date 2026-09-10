@@ -29,7 +29,6 @@ RUN apt-get -y update \
       groff \
       lcov \
       openjdk-21-jre-headless \
-      pandoc \
       parallel \
       python3 \
       python3-yaml \

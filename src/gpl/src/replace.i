@@ -5,6 +5,8 @@
 #include "ord/OpenRoad.hh"
 #include "gpl/Replace.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
+#include "utl/cpu_topology.h"
 #include "utl/options.h"
 
 namespace ord {
@@ -132,6 +134,34 @@ replace_reset_cmd()
   replace->reset();
 }
 
+// Global placement runs one thread per core, not per hardware thread. Its
+// parallel regions are memory-bound loops over gcells and nets that end in
+// an OpenMP barrier; on an SMT machine the sibling spinning in the barrier
+// slows the sibling still working, and -threads set to the hardware thread
+// count came out slower than the core count on every design measured
+// (coralnpu 39 s vs 31 s, bp_quad 334 s vs 293 s), at 2.5x the CPU time.
+// A -threads value at or below the core count is honored as given.
+static int placementThreads()
+{
+  auto* openroad = ord::OpenRoad::openRoad();
+  const int threads = openroad->getThreadCount();
+  const int cores = utl::physicalCoreCount();
+  if (threads <= cores) {
+    return threads;
+  }
+  static bool reported = false;
+  if (!reported) {
+    openroad->getLogger()->info(utl::GPL,
+                                190,
+                                "Using {} of {} threads for placement: one "
+                                "per core, SMT siblings idle.",
+                                cores,
+                                threads);
+    reported = true;
+  }
+  return cores;
+}
+
 void 
 replace_initial_place_cmd(const std::map<std::string, std::string>& keys,
                           const std::map<std::string, std::string>& flags)
@@ -139,7 +169,7 @@ replace_initial_place_cmd(const std::map<std::string, std::string>& keys,
   gpl::PlaceOptions options = getOptions(keys, flags);
 
   Replace* replace = getReplace();
-  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  int threads = placementThreads();
   replace->doInitialPlace(threads, options);
 }
 
@@ -149,7 +179,7 @@ replace_nesterov_place_cmd(const std::map<std::string, std::string>& keys,
 {
   gpl::PlaceOptions options = getOptions(keys, flags);
   Replace* replace = getReplace();
-  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  int threads = placementThreads();
   replace->doNesterovPlace(threads, options);
 }
 
@@ -159,7 +189,7 @@ replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths,
                      float clock_power_weight)
 {
   Replace* replace = getReplace();
-  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  int threads = placementThreads();
   replace->runMBFF(max_sz, alpha, beta, threads, num_paths, clock_power_weight);
 }
 
@@ -170,7 +200,7 @@ replace_incremental_place_cmd(const std::map<std::string, std::string>& keys,
 {
   gpl::PlaceOptions options = getOptions(keys, flags);
   Replace* replace = getReplace();
-  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  int threads = placementThreads();
   replace->doIncrementalPlace(threads, options);
 }
 
@@ -182,7 +212,7 @@ get_global_placement_uniform_density_cmd(
 {
   gpl::PlaceOptions options = getOptions(keys, flags);
   Replace* replace = getReplace();
-  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  int threads = placementThreads();
   return replace->getUniformTargetDensity(options, threads);
 }
 
