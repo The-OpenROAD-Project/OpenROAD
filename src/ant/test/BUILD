@@ -82,7 +82,10 @@ py_test(
     name = "ant_man_tcl_check",
     srcs = ["ant_man_tcl_check.py"],
     data = ["//src/ant:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
