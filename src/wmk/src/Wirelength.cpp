@@ -4,6 +4,7 @@
 #include "Wirelength.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <tuple>
@@ -11,6 +12,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 
 namespace wmk {
