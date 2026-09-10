@@ -20,7 +20,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -58,10 +60,8 @@ struct PlacementOptions
   // land on the paths that decide the clock period.
   double slack_threshold_ns = 0.20;
   // A swap that changes half-perimeter wirelength by more than this is
-  // reverted, keeping the mark invisible in wirelength.  Database units differ
-  // between platforms, so this is 0.05 um on NanGate45 and 1.0 um on ASAP7;
-  // it is inherited from the reference implementation rather than chosen per
-  // platform, and is worth setting deliberately on a new one.
+  // reverted. The bound is in microns on every platform; choose it deliberately
+  // for a new technology rather than interpreting it in database units.
   double hpwl_eps_um = 0.05;
   // How far legalization may move a cell afterwards, in microns.
   int max_disp_um = 5;
@@ -128,7 +128,7 @@ struct RoutingStat
   // Difference in mean wrong-way fraction.  More negative is stronger.
   //
   // The sign alone is not evidence: on a design carrying no watermark it is a
-  // coin flip, so the decision is made on p_r, not on this.
+  // coin flip, so the decision is made on pValue(), not on this.
   double t_r = 0.0;
   // Randomization p-value: the fraction of uniformly drawn marked sets of the
   // same size whose T_R is at least as negative.  Floored at 1/(B+1).
@@ -143,6 +143,15 @@ struct RoutingStat
   // does not exist on such a technology, so the stage cannot be tested at all
   // -- which is a different answer from testing it and finding nothing.
   bool carrier_absent = false;
+
+  // Bonferroni adjustment for the two tests of the same null. Each component
+  // gets half the error budget, without requiring independence between them.
+  // The sampled p-value is not an upper bound on the exact tail, so taking
+  // the unadjusted minimum would inflate the false-positive rate.
+  double pValue() const
+  {
+    return std::min(1.0, 2.0 * std::min(p_r, std::pow(10.0, log10_tail)));
+  }
 };
 
 // Outcome of checking one stage's claims against a design.  Ownership is
@@ -227,7 +236,8 @@ class Watermark
   // Test the routing watermark on a routed design.  The marked set is
   // recovered from the key, so no record from embed time is needed.
   // ``permutations`` is the number of null draws behind p_r; it bounds the
-  // smallest reportable p-value at 1/(permutations + 1).
+  // smallest sampled p-value at 1/(permutations + 1). RoutingStat::pValue()
+  // combines it with the analytical bound for the ownership decision.
   RoutingStat verifyRouting(const std::array<std::uint8_t, 32>& key,
                             double fraction,
                             int permutations = 100000);

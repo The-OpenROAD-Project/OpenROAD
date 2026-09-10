@@ -37,8 +37,10 @@ PASSFAIL_TESTS = [
     "place_unconstrained",
     "python_api",
     "route_verify",
+    "routing_calibration",
     "routing_defaults",
     "routing_lifecycle",
+    "routing_report",
     "verify_malformed",
 ]
 
@@ -75,8 +77,10 @@ TESTS = [
     "python_api",
     "route_stat",
     "route_verify",
+    "routing_calibration",
     "routing_defaults",
     "routing_lifecycle",
+    "routing_report",
     "verify_malformed",
     "select",
     "strength",
@@ -157,6 +161,16 @@ cc_test(
     srcs = ["cpp/TestClaimFile.cpp"],
     deps = [
         "//src/wmk:claim_file",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRoutingStat",
+    srcs = ["cpp/TestRoutingStat.cpp"],
+    deps = [
+        "//src/wmk",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

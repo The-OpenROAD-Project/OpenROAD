@@ -142,8 +142,8 @@ cts_watermark_cmd(const char* key_hex,
 }
 
 // Routing verification returns the p-value the ownership decision is made on:
-// the sampled one, or the closed-form tail when that is tighter.  T_R and both
-// components are reported by the module.  Returns -1 on a bad key.
+// the Bonferroni-adjusted minimum of the sampled p-value and closed-form bound.
+// T_R and both raw components are reported by the module. Returns -1 on a bad key.
 double
 verify_routing_watermark_cmd(const char* key_hex,
                              double fraction,
@@ -158,7 +158,7 @@ verify_routing_watermark_cmd(const char* key_hex,
   if (s.carrier_absent) {
     return -2.0;
   }
-  return std::min(s.p_r, std::pow(10.0, s.log10_tail));
+  return s.pValue();
 }
 
 // Verification returns the extraction rate; the caller compares it against the

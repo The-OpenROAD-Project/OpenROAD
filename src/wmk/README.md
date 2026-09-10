@@ -348,7 +348,7 @@ verify_watermark
 | `-routing_alpha` | Largest p-value the routing stage may show and still pass. Defaults to `1e-4`. |
 | `-routing_fraction` | The fraction the routing mark was embedded with. Defaults to `0.05`, matching `set_routing_watermark`. Supply the same fraction when embedding with a nondefault `-fraction`. |
 | `-routing_key_hex` | 64-character hex routing key. Checks the routing stage. |
-| `-routing_permutations` | Draws behind the routing p-value, which floors it at 1/(n+1). Defaults to `100000`. |
+| `-routing_permutations` | Draws behind the raw sampled p-value, whose minimum is 1/(n+1) before the two-test adjustment. Defaults to `100000`. |
 | `-tau` | Extraction rate a placement or clock-tree stage must reach. Defaults to `0.75`. |
 
 At least one of `-placement_claims`, `-cts_claims` or `-routing_key_hex` is
@@ -358,7 +358,12 @@ The routing stage also reports a closed-form bound on the same tail, exact when
 the marked nets carry no wrong-way metal. That is the case a working watermark
 produces, and it reaches probabilities sampling cannot express: on a routed jpeg
 the sampled p-value floors at 1e-5 while the closed form gives 1e-515. The
-decision uses whichever is smaller.
+decision uses `min(1, 2 * min(sampled_p, closed_form_bound))`. This Bonferroni
+adjustment allocates half of `-routing_alpha` to each test and does not require
+them to be independent. Taking the unadjusted minimum can exceed the configured
+false-positive rate, because the sampled p-value is not an upper bound on the
+exact tail. Both raw components remain in the report; C++ and Python callers can
+use `RoutingStat::pValue()` to obtain the adjusted value used by Tcl.
 
 #### Claim file format
 

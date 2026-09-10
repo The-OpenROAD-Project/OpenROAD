@@ -383,7 +383,8 @@ double Watermark::reportWatermark(double p)
     total_wl += l_tot;
     total_way += l_ww;
     const double ratio = static_cast<double>(l_ww) / static_cast<double>(l_tot);
-    const bool is_wm = (dbBoolProperty::find(net, "watermark") != nullptr);
+    auto* property = dbBoolProperty::find(net, "watermark");
+    const bool is_wm = property != nullptr && property->getValue();
     rows.push_back({.net = net, .ratio = ratio, .is_watermark = is_wm});
   }
 

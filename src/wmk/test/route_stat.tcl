@@ -6,7 +6,8 @@
 # is a coincidence, and the stage has to say so: on an unwatermarked design the
 # sign of T_R is a coin flip, so judging on the sign alone would hand ownership
 # to whichever of two keys got lucky.  What decides is how improbable the value
-# is, and 1.3e-02 is not improbable.  The second key is the ordinary case.
+# is: the adjusted p-value is about 0.30, which is not improbable.
+# The second key is the ordinary case.
 #
 # The counts are pinned as well.  Wrong-way fraction is measured on
 # canonicalized geometry -- collinear and overlapping records merged per layer

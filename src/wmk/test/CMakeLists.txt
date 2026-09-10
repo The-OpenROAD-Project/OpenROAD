@@ -44,8 +44,10 @@ or_integration_tests(
     place_unconstrained
     python_api
     route_verify
+    routing_calibration
     routing_defaults
     routing_lifecycle
+    routing_report
     verify_malformed
 )
 

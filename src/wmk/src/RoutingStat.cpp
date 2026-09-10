@@ -37,8 +37,9 @@
 // working watermark actually produces.  For that case the tail is also
 // available in closed form: the chance that a uniformly drawn subset of the
 // same size would be that clean is a ratio of binomial coefficients.  Both are
-// reported and the decision uses whichever is smaller, which is sound because
-// the closed form is an upper bound on the same tail.
+// reported. The decision doubles their minimum (capped at one), allocating
+// half the false-positive budget to each test. The sampled p-value is not an
+// upper bound on the exact tail, so the unadjusted minimum is not a valid test.
 
 #include <algorithm>
 #include <array>
