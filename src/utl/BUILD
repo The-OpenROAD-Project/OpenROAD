@@ -29,6 +29,7 @@ cc_library(
         "src/ScopedTemporaryFile.cpp",
         "src/ServiceRegistry.cpp",
         "src/SuppressStdout.cpp",
+        "src/ThreadPool.cpp",
         "src/decode.cpp",
         "src/histogram.cpp",
         "src/mem_stats.cpp",
@@ -44,9 +45,11 @@ cc_library(
         "include/utl/ScopedTemporaryFile.h",
         "include/utl/ServiceRegistry.h",
         "include/utl/SuppressStdout.h",
+        "include/utl/ThreadPool.h",
         "include/utl/algorithms.h",
         "include/utl/decode.h",
         "include/utl/deleter.h",
+        "include/utl/env.h",
         "include/utl/exception.h",
         "include/utl/histogram.h",
         "include/utl/mem_stats.h",
@@ -71,6 +74,7 @@ cc_library(
         "include/utl/prometheus/text_serializer.h",
         "include/utl/prometheus/time_window_quantiles.h",
         "include/utl/scope.h",
+        "include/utl/spatialIndex.h",
         "include/utl/timer.h",
         "include/utl/unionFind.h",
         "include/utl/unique_name.h",
@@ -81,11 +85,11 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/sta:opensta_lib",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.asio",
         "@boost.beast",
+        "@boost.geometry",
         "@boost.iostreams",
         "@boost.iterator",
         "@boost.random",
@@ -207,5 +211,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/utl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/utl/test:__pkg__",
+    ],
 )

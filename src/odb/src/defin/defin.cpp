@@ -66,13 +66,13 @@ void defin::useBlockName(const char* name)
   reader_->useBlockName(name);
 }
 
-void defin::readChip(std::vector<dbLib*>& libs,
+bool defin::readChip(std::vector<dbLib*>& libs,
                      const char* def_file,
                      dbChip* chip,
                      const bool issue_callback)
 {
   absl::MutexLock lock(&def_mutex_);
-  reader_->readChip(libs, def_file, chip, issue_callback);
+  return reader_->readChip(libs, def_file, chip, issue_callback);
 }
 
 }  // namespace odb

@@ -20,10 +20,12 @@ cc_library(
         "src/PadPlacer.h",
         "src/RDLGui.cpp",
         "src/RDLGui.h",
-        "src/RDLRoute.cpp",
-        "src/RDLRoute.h",
+        "src/RDLNet.cpp",
+        "src/RDLNet.h",
         "src/RDLRouter.cpp",
         "src/RDLRouter.h",
+        "src/RDLSegment.cpp",
+        "src/RDLSegment.h",
         "src/Utilities.cpp",
         "src/Utilities.h",
         ":swig",
@@ -39,7 +41,7 @@ cc_library(
     deps = [
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.graph",
@@ -86,5 +88,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/pad/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/pad/test:__pkg__",
+    ],
 )

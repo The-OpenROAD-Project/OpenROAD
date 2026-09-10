@@ -257,12 +257,29 @@ proc read_db { args } {
   ord::read_db_cmd $filename $hierarchy
 }
 
-sta::define_cmd_args "write_db" {filename}
+sta::define_cmd_args "write_db" {[-compression level] filename}
 
 proc write_db { args } {
+  sta::parse_key_args "write_db" args \
+    keys {-compression} \
+    flags {}
+
   sta::check_argc_eq1 "write_db" $args
   set filename [file nativename [lindex $args 0]]
-  ord::write_db_cmd $filename
+
+  set compression_level -1
+  if { [info exists keys(-compression)] } {
+    set compression_level $keys(-compression)
+    sta::check_integer "write_db" $compression_level
+    if { $compression_level < 0 || $compression_level > 9 } {
+      utl::error "ORD" 77 "Compression level must be between 0 and 9."
+    }
+    if { ![string match "*.gz" $filename] } {
+      utl::warn "ORD" 78 "Compression level specified but output file is not a gzip file (.gz)."
+    }
+  }
+
+  ord::write_db_cmd $filename $compression_level
 }
 
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
@@ -593,50 +610,6 @@ proc parse_list_args { cmd arg_var list_var lists_args } {
 
     set args $remaining_args
   }
-}
-
-proc cmd_args_completer { part start end line } {
-  if { $start == 0 || [catch { set cmd [::tclreadline::Lindex $line 0] } err] != 0 } {
-    utl::redirectStringBegin
-    set err [catch { ::tclreadline::ScriptCompleter $part $start $end $line } ret]
-    utl::redirectStringEnd
-    if { $err == 0 } {
-      return $ret
-    } else {
-      return ""
-    }
-  }
-  set unused_flags {}
-  if { [info exists ::sta::cmd_args($cmd)] } {
-    set metadata $::sta::cmd_args($cmd)
-    set all_flags [regexp -all -inline -- {[-+][a-zA-Z0-9_]+} $metadata]
-    set unused_flags [::tclreadline::RemoveUsedOptions $line [lsort -unique $all_flags]]
-  }
-  set raw_files [glob -nocomplain -types {f d} -- "${part}*"]
-  set files {}
-  foreach f $raw_files {
-    if { [file isdirectory $f] } {
-      lappend files "${f}/"
-    } else {
-      lappend files $f
-    }
-  }
-  set matches [lsort -unique [concat $unused_flags $files]]
-  set matches [::tclreadline::CompleteFromList $part $matches]
-  if { [llength $matches] == 1 && [string index [lindex $matches 0] end] == "/" } {
-    return [list [lindex $matches 0] [list {}]]
-  }
-  return $matches
-}
-
-proc setup_tclreadline { } {
-  history event
-  {*}$::auto_index(::tclreadline::ScriptCompleter)
-  ::tclreadline::readline builtincompleter false
-  catch { ::tclreadline::ScriptCompleter "" 0 0 "" }
-  ::tclreadline::readline customcompleter ::ord::cmd_args_completer
-  proc ::tclreadline::prompt1 { } { return "openroad> " }
-  proc ::tclreadline::prompt2 { } { return "...> " }
 }
 
 # namespace ord

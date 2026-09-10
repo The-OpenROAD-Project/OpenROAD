@@ -22,6 +22,7 @@
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -149,24 +150,89 @@ void ICeWall::makeBTerm(odb::dbNet* net,
           utl::PAD, 34, "Unable to create block terminal: {}", net->getName());
     }
   }
-  bterm->setSigType(net->getSigType());
+
+  if (bterm->getSigType() != net->getSigType()) {
+    bterm->setSigType(net->getSigType());
+  }
+
+  makeBTermPin(bterm, layer, shape);
+  Utilities::makeSpecial(net);
+}
+
+void ICeWall::makeBTermPin(odb::dbBTerm* bterm,
+                           odb::dbTechLayer* layer,
+                           const odb::Rect& shape) const
+{
   odb::dbBPin* pin = odb::dbBPin::create(bterm);
   odb::dbBox::create(
       pin, layer, shape.xMin(), shape.yMin(), shape.xMax(), shape.yMax());
+
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-  const double dbus = getBlock()->getDbUnitsPerMicron();
+  odb::dbBlock* block = bterm->getBlock();
+
   logger_->info(utl::PAD,
                 116,
                 "Creating terminal for {} on {} at ({:.3f}um, {:.3f}um) - "
                 "({:.3f}um, {:.3f}um)",
-                net->getName(),
+                bterm->getName(),
                 layer->getName(),
-                shape.xMin() / dbus,
-                shape.yMin() / dbus,
-                shape.xMax() / dbus,
-                shape.yMax() / dbus);
-  Utilities::makeSpecial(net);
+                block->dbuToMicrons(shape.xMin()),
+                block->dbuToMicrons(shape.yMin()),
+                block->dbuToMicrons(shape.xMax()),
+                block->dbuToMicrons(shape.yMax()));
+}
+
+std::optional<ICeWall::InstPin> ICeWall::findTopPin(odb::dbInst* inst) const
+{
+  odb::dbTechLayer* top_layer = nullptr;
+  std::set<odb::Rect> top_shapes;
+
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* layer = box->getTechLayer();
+
+        // Pin geometry may also hold via boxes and those have no tech layer.
+        if (!layer) {
+          continue;
+        }
+
+        if (!top_layer
+            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
+          if (top_layer
+              && top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            top_shapes.clear();
+          }
+
+          top_layer = layer;
+          top_shapes.insert(box->getBox());
+        }
+      }
+    }
+  }
+
+  if (!top_layer) {
+    return std::nullopt;
+  }
+
+  odb::Rect master_box;
+  inst->getMaster()->getPlacementBoundary(master_box);
+
+  odb::Rect pin_shape;
+  for (const odb::Rect& top_shape : top_shapes) {
+    if (top_shape.intersects(master_box.center())) {
+      pin_shape = top_shape;
+    }
+  }
+
+  if (pin_shape.area() == 0) {
+    pin_shape = *(top_shapes.begin());
+  }
+
+  inst->getTransform().apply(pin_shape);
+
+  return InstPin{top_layer, pin_shape};
 }
 
 void ICeWall::assignBump(odb::dbInst* inst,
@@ -186,10 +252,6 @@ void ICeWall::assignBump(odb::dbInst* inst,
 
   assertMasterType(inst, odb::dbMasterType::COVER_BUMP);
 
-  const odb::dbTransform xform = inst->getTransform();
-
-  odb::dbTechLayer* top_layer = nullptr;
-  std::set<odb::Rect> top_shapes;
   for (auto* iterm : inst->getITerms()) {
     if (iterm->getNet() != net) {
       iterm->connect(net);
@@ -218,46 +280,92 @@ void ICeWall::assignBump(odb::dbInst* inst,
     if (dont_route) {
       routing_map_[iterm] = nullptr;
     }
-
-    for (auto* mpin : iterm->getMTerm()->getMPins()) {
-      for (auto* geom : mpin->getGeometry()) {
-        auto* layer = geom->getTechLayer();
-        if (layer == nullptr) {
-          continue;
-        }
-
-        if (top_layer == nullptr
-            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
-          top_layer = layer;
-          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
-            top_shapes.clear();
-          }
-          top_shapes.insert(geom->getBox());
-        }
-      }
-    }
   }
 
-  if (top_layer != nullptr) {
-    odb::Rect master_box;
-    inst->getMaster()->getPlacementBoundary(master_box);
-    const odb::Point center = master_box.center();
+  const auto bump_pin = findTopPin(inst);
 
-    const odb::Rect* top_shape_ptr = nullptr;
-    for (const odb::Rect& shape : top_shapes) {
-      if (shape.intersects(center)) {
-        top_shape_ptr = &shape;
+  if (bump_pin) {
+    makeBTerm(net, bump_pin->layer, bump_pin->shape);
+  }
+}
+
+void ICeWall::makeBTermPinsFromBumps(odb::dbBlock* block) const
+{
+  if (!block) {
+    logger_->error(
+        utl::PAD, 123, "Block must be specified to make bterm pins on it.");
+  }
+
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    if (!bterm->getBPins().empty()) {
+      continue;
+    }
+
+    odb::dbNet* net = bterm->getNet();
+
+    if (!net) {
+      logger_->warn(utl::PAD,
+                    124,
+                    "Could not make a pin for terminal {}. It is not "
+                    "connected to a net.",
+                    bterm->getName());
+      continue;
+    }
+
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+
+    odb::dbInst* bump_inst = nullptr;
+    bool multiple_bumps = false;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbMaster* master = iterm->getInst()->getMaster();
+
+      if (master->getType() != odb::dbMasterType::COVER_BUMP) {
+        continue;
       }
+
+      if (bump_inst && bump_inst != iterm->getInst()) {
+        multiple_bumps = true;
+        break;
+      }
+
+      bump_inst = iterm->getInst();
     }
 
-    if (top_shape_ptr == nullptr) {
-      top_shape_ptr = &(*top_shapes.begin());
+    if (multiple_bumps) {
+      logger_->warn(utl::PAD,
+                    125,
+                    "Could not make a pin for terminal {}. Net {} connects "
+                    "more than one bump.",
+                    bterm->getName(),
+                    net->getName());
+      continue;
     }
 
-    odb::Rect top_shape = *top_shape_ptr;
+    if (!bump_inst) {
+      logger_->warn(utl::PAD,
+                    121,
+                    "Could not make a pin for terminal {}. No bump instance "
+                    "is connected to net {}.",
+                    bterm->getName(),
+                    net->getName());
+      continue;
+    }
 
-    xform.apply(top_shape);
-    makeBTerm(net, top_layer, top_shape);
+    const auto bump_pin = findTopPin(bump_inst);
+
+    if (!bump_pin) {
+      logger_->warn(utl::PAD,
+                    122,
+                    "Could not make a pin for terminal {}. Bump {} has no "
+                    "pin geometry.",
+                    bterm->getName(),
+                    bump_inst->getName());
+      continue;
+    }
+
+    makeBTermPin(bterm, bump_pin->layer, bump_pin->shape);
   }
 }
 
@@ -673,7 +781,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
   }
 
   // Check if bumps are present and have assignments
-  std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections;
+  odb::PtrMap<odb::dbInst, odb::PtrSet<odb::dbITerm>> iterm_connections;
   for (auto* inst : insts) {
     for (auto* iterm : inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
@@ -1002,7 +1110,7 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
 
   odb::Rect bond_rect;
   odb::dbTechLayer* bond_layer = nullptr;
-  std::map<odb::dbTechLayer*, int> shape_count;
+  odb::PtrMap<odb::dbTechLayer, int> shape_count;
   for (auto* mterm : bond->getMTerms()) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
@@ -1189,7 +1297,7 @@ void ICeWall::connectByAbutment()
              connections.size());
 
   // begin connections for current signals
-  std::set<odb::dbNet*> special_nets = connectByAbutment(connections);
+  odb::PtrSet<odb::dbNet> special_nets = connectByAbutment(connections);
 
   // make nets for newly formed nets
   for (const auto& [iterm0, iterm1] : connections) {
@@ -1210,11 +1318,11 @@ void ICeWall::connectByAbutment()
   }
 }
 
-std::set<odb::dbNet*> ICeWall::connectByAbutment(
+odb::PtrSet<odb::dbNet> ICeWall::connectByAbutment(
     const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
     const
 {
-  std::set<odb::dbNet*> special_nets;
+  odb::PtrSet<odb::dbNet> special_nets;
   bool changed = false;
   int iter = 0;
 
@@ -1307,7 +1415,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     return {};
   }
 
-  using ShapeMap = std::map<odb::dbTechLayer*, std::set<odb::Rect>>;
+  using ShapeMap = odb::PtrMap<odb::dbTechLayer, std::set<odb::Rect>>;
   auto populate_map = [](odb::dbITerm* iterm) -> ShapeMap {
     ShapeMap map;
     const odb::dbTransform xform = iterm->getInst()->getTransform();
@@ -1326,7 +1434,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     return map;
   };
 
-  std::map<odb::dbITerm*, ShapeMap> iterm_map;
+  odb::PtrMap<odb::dbITerm, ShapeMap> iterm_map;
   for (auto* iterm : inst0->getITerms()) {
     iterm_map[iterm] = populate_map(iterm);
   }
@@ -1443,6 +1551,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        int width,
                        int spacing,
                        bool allow45,
+                       bool fixed,
                        float turn_penalty,
                        int max_iterations)
 {
@@ -1459,6 +1568,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         width,
                                         spacing,
                                         allow45,
+                                        fixed,
                                         turn_penalty,
                                         max_iterations);
   router_->setRDLDebugNet(rdl_net_debug_);
@@ -1476,7 +1586,7 @@ void ICeWall::routeRDLDebugGUI(bool enable)
 {
   if (enable) {
     if (router_gui_ == nullptr) {
-      router_gui_ = std::make_unique<RDLGui>();
+      router_gui_ = std::make_unique<RDLGui>(logger_);
       if (router_ != nullptr) {
         router_gui_->setRouter(router_.get());
       }

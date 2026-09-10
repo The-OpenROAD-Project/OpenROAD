@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+# LOCAL DEVELOPER DIAGNOSTIC — opt-in, not part of the normal build.
+# Nothing auto-invokes this; you never need it to build or test OpenROAD.
+# (Authored with Claude to catch host-toolchain leaks during the
+# hermetic-llvm bring-up.)
+#
+# It launches bazel in a pruned environment so that toolchains and tools
+# the build is supposed to provide hermetically cannot be picked up from
+# the host. This is a ratchet, not a proof: it removes host compilers,
+# linkers and interpreters from PATH. The C++ toolchain (hermetic-llvm)
+# is zero-sysroot, so no host headers or libraries are involved; the
+# remaining host surface is the bazel binary itself and the allowlisted
+# shell tools below.
+#
+# Invoke it explicitly when you want the check:
+#    etc/bazel-hermetic [startup flags] <command> [args...]
+# Deliberately named etc/bazel-hermetic, NOT tools/bazel: bazelisk
+# auto-invokes a tools/bazel wrapper for every command, which would force
+# the pruned environment on everyone — but repository rules of some
+# dependencies legitimately expect host tools this wrapper prunes (e.g.
+# GNU Make's configure probing for ld in bazel-orfs's gnumake rule), so
+# forcing it would break ordinary builds. Keeping it opt-in and
+# out-of-the-way is intentional.
+#
+# The allowlist below is the contract for what the build may use from the
+# host. Grow it only with a comment stating which repository rule or
+# action needs the entry and why bazel cannot provide it.
+set -euo pipefail
+
+# Base shell utilities: repository rules (patch_cmds, configure scripts of
+# module extensions) run through /bin/sh and expect a POSIX userland.
+ALLOWED_TOOLS=(
+  bash sh env
+  basename dirname readlink realpath pwd
+  cat cp ln ls mkdir mktemp mv rm rmdir touch chmod stat find
+  cut grep head sed sort tail tr uniq wc od printf true false test expr sleep
+  awk                # module extension configure steps
+  diff cmp patch     # single_version_override / archive_override patches
+  tar gzip bzip2 xz zstd unzip  # archive extraction fallbacks
+  tee file xargs     # base utilities used by module extension scripts
+  uname id hostname date which getconf nproc
+  git                # tools/workspace_status.sh embeds version info
+  gh                 # optional; used by some developer workflows
+)
+
+# A fixed per-checkout toolbox: its path feeds --repo_env=PATH below,
+# which is part of bazel's analysis cache key, so it must be
+# byte-identical across runs — a random mktemp path forced a full
+# re-analysis and repository refetch on every invocation. It lives under
+# the workspace tmp/ (gitignored): per-user and per-checkout by
+# construction (no /tmp cross-user collisions) and not on a RAM-backed
+# tmpfs as /tmp commonly is.
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+TOOLBOX="${ROOT}/tmp/bazel-toolbox"
+mkdir -p "${TOOLBOX}"
+
+# Entries not in the allowlist (edited allowlist, older wrapper) are
+# pruned so the toolbox never offers more than the contract above.
+for entry in "${TOOLBOX}"/*; do
+  [[ -e ${entry} || -L ${entry} ]] || continue
+  name=$(basename "${entry}")
+  keep=0
+  [[ ${name} == bazel ]] && keep=1
+  for tool in "${ALLOWED_TOOLS[@]}"; do
+    [[ ${name} == "${tool}" ]] && { keep=1; break; }
+  done
+  [[ ${keep} -eq 1 ]] || rm -f "${entry}"
+done
+
+# type -P forces a PATH search: command -v would return bare builtin names
+# (pwd, test, true, ...) and create self-referential symlinks. ln -sfn
+# replaces atomically, so a concurrent invocation never sees a missing
+# tool; a tool that vanished from the host PATH is dropped.
+for tool in "${ALLOWED_TOOLS[@]}"; do
+  if path=$(type -P -- "${tool}" 2>/dev/null); then
+    ln -sfn "${path}" "${TOOLBOX}/${tool}" 2>/dev/null || true
+  else
+    rm -f "${TOOLBOX}/${tool}"
+  fi
+done
+
+# The bazel binary itself. When bazelisk invokes this wrapper it hands us
+# the real binary in $BAZEL_REAL. Otherwise resolve it: bazelisk is often
+# a node or shell wrapper whose interpreter must not leak into the pruned
+# PATH, so find the real binary it manages (~/.cache/bazelisk) instead of
+# symlinking the wrapper.
+BAZEL=${BAZEL_REAL:-}
+if [[ -z ${BAZEL} ]]; then
+  BAZEL=$(command -v bazelisk || command -v bazel) ||
+    { echo >&2 "etc/bazel-hermetic: no bazel or bazelisk on PATH"; exit 1; }
+fi
+# Wrapper detection: the bazelisk launcher by name, or any script shebang
+# (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
+# are symlinked directly. Read the first two bytes with the `read`
+# builtin (no head subprocess); the redirection's open() follows the
+# symlink for us, so no realpath/readlink -f is needed either.
+sig=""
+read -r -n 2 sig < "${BAZEL}" 2>/dev/null || true
+if [[ ${BAZEL} == *bazelisk* || ${sig} == '#!' ]]; then
+  version=$(BAZELISK_SKIP_WRAPPER=1 "${BAZEL}" --version | awk '{print $2}')
+  os=$(uname -s | tr '[:upper:]' '[:lower:]')
+  arch=$(uname -m | sed 's/aarch64/arm64/')
+  # Same cache-directory precedence as bazelisk itself.
+  if [[ -n ${BAZELISK_HOME:-} ]]; then
+    bazelisk_home=${BAZELISK_HOME}
+  elif [[ -n ${XDG_CACHE_HOME:-} ]]; then
+    bazelisk_home=${XDG_CACHE_HOME}/bazelisk
+  elif [[ ${os} == darwin ]]; then
+    bazelisk_home=${HOME}/Library/Caches/bazelisk
+  else
+    bazelisk_home=${HOME}/.cache/bazelisk
+  fi
+  meta="${bazelisk_home}/downloads/metadata/bazelbuild/bazel-${version}-${os}-${arch}"
+  # || true: a missing metadata file (non-bazelisk wrapper) must fall
+  # through to the check below, not abort the assignment under set -e.
+  real="${bazelisk_home}/downloads/sha256/$(cat "${meta}" 2>/dev/null || true)/bin/bazel"
+  if [[ -x ${real} ]]; then
+    BAZEL=${real}
+  else
+    # A wrapper we can't resolve to a bazelisk-managed binary — e.g. a
+    # custom (non-bazelisk) bazel wrapper. Use it directly rather than
+    # refusing to run: if its interpreter isn't on the pruned PATH the
+    # launch fails loudly on its own, which is better than blocking every
+    # non-bazelisk wrapper up front.
+    echo >&2 "etc/bazel-hermetic: ${BAZEL} looks like a wrapper but no" \
+             "bazelisk-managed bazel-${version} was found under" \
+             "${bazelisk_home}; using it directly"
+  fi
+fi
+ln -sfn "${BAZEL}" "${TOOLBOX}/bazel"
+
+# Leading --flags are bazel startup options (e.g. --output_base=...).
+# A flags-only invocation (e.g. `bazel --version`) is valid: no command.
+startup_flags=()
+while [[ $# -gt 0 && $1 == --* ]]; do
+  startup_flags+=("$1")
+  shift
+done
+command=${1:-}
+[[ $# -gt 0 ]] && shift
+
+# Classify the command. The set is exhaustive on purpose: a bazel startup
+# option can take its value as a separate word (`--output_base /tmp/x`),
+# and the loop above stops at the first non---flag, so that value would be
+# mistaken for the command. If we silently treated an unrecognized token
+# as a no-repo_env command, a build invoked that way would run repository
+# rules with the unpruned host PATH — exactly the leak this tool exists to
+# catch. So fail loud instead: an unknown command is an error, not a
+# silent bypass.
+extra_flags=()
+case "${command}" in
+  build|test|run|cquery|aquery|coverage|fetch|vendor|sync|mod)
+    extra_flags=(
+      # Repository rules see only the allowlisted tools. Actions keep
+      # bazel's strict default PATH (/bin:/usr/bin): the test harness
+      # still uses host python3/tee/file (see the PR cleanup list), and
+      # an --action_env PATH carrying this checkout-specific directory
+      # would fragment action cache keys across machines.
+      # BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN lives in .bazelrc so it
+      # applies to unwrapped invocations too.
+      "--repo_env=PATH=${TOOLBOX}"
+    )
+    ;;
+  # Commands that never fetch/analyze external repositories: no pruning
+  # needed, pass through untouched.
+  query|info|clean|version|help|shutdown|dump|license|\
+  canonicalize-flags|print_action|analyze-profile|config|mobile-install)
+    ;;
+  '')
+    # Flags-only invocation (e.g. `--version`); handled below.
+    ;;
+  *)
+    echo >&2 "etc/bazel-hermetic: unrecognized command '${command}'."
+    echo >&2 "If this was a startup option value, join it to the flag" \
+             "(--flag=value, one word) so the command is parsed correctly" \
+             "and the hermetic PATH is not silently bypassed."
+    exit 1
+    ;;
+esac
+
+# Network, auth, TLS and cache/tmp configuration is not toolchain leakage:
+# downloads must work behind corporate proxies, custom CAs, and git-over-ssh
+# overrides, and users may relocate caches and tmp. The BAZELISK_* / token
+# vars matter when the resolved bazel is a bazelisk wrapper used directly
+# (custom cache location, enterprise mirror, GitHub rate limits). The cloud
+# credential vars keep remote cache/execution auth (GCS, S3) working under
+# env -i.
+preserved_env=()
+for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
+  SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR \
+  DISPLAY WAYLAND_DISPLAY XAUTHORITY \
+  BAZELISK_HOME BAZELISK_BASE_URL BAZELISK_GITHUB_TOKEN GITHUB_TOKEN \
+  GOOGLE_APPLICATION_CREDENTIALS \
+  AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN \
+  AWS_ROLE_ARN AWS_WEB_IDENTITY_TOKEN_FILE AWS_SHARED_CREDENTIALS_FILE \
+  AWS_PROFILE AWS_CONFIG_FILE AWS_DEFAULT_REGION AWS_REGION; do
+  # Pure-bash indirect lookup, no subprocess and no eval: ${!var+x} tests
+  # whether the variable named by $var is set (set -u-safe), then ${!var}
+  # reads its value.
+  if [[ -n ${!var+x} ]]; then
+    value=${!var}
+    if [[ -n ${value} ]]; then
+      preserved_env+=("${var}=${value}")
+    fi
+  fi
+done
+
+# --nosystem_rc/--nohome_rc: only the workspace .bazelrc applies, so host-
+# specific configuration (e.g. remote caches) cannot mask missing hermeticity.
+# ${arr[@]+"${arr[@]}"} expands to nothing when the array is empty: a bare
+# "${arr[@]}" is an unbound-variable error under set -u on bash < 4.4 (the
+# 3.2 that macOS ships as /bin/bash).
+bazel_argv=(--nosystem_rc --nohome_rc ${startup_flags[@]+"${startup_flags[@]}"})
+if [[ -n ${command} ]]; then
+  bazel_argv+=("${command}" ${extra_flags[@]+"${extra_flags[@]}"} "$@")
+fi
+# Flags-only invocations (e.g. `bazel --version`) go to the binary verbatim;
+# rc-file options would be rejected there.
+if [[ -z ${command} ]]; then
+  bazel_argv=(${startup_flags[@]+"${startup_flags[@]}"})
+fi
+
+# macOS has no C.UTF-8 locale, so forcing it there makes programs print
+# "cannot change locale" warnings; use en_US.UTF-8 on Darwin. Both give
+# UTF-8 byte handling.
+case "$(uname -s)" in
+  Darwin) lang=en_US.UTF-8 ;;
+  *) lang=C.UTF-8 ;;
+esac
+
+# HOME:? fails early with a clear message if HOME is unset/empty (bazel
+# needs it for its caches and user bazelrc) instead of silently passing
+# an empty HOME; the array guards give the set -u / bash 3.2 safety.
+exec env -i \
+  HOME="${HOME:?etc/bazel-hermetic: HOME must be set}" \
+  USER="${USER:-$(id -un 2>/dev/null || echo nobody)}" \
+  LOGNAME="${LOGNAME:-$(id -un 2>/dev/null || echo nobody)}" \
+  TERM="${TERM:-dumb}" \
+  LANG="${lang}" \
+  PATH="${TOOLBOX}" \
+  ${preserved_env[@]+"${preserved_env[@]}"} \
+  "${TOOLBOX}/bazel" ${bazel_argv[@]+"${bazel_argv[@]}"}

@@ -77,6 +77,7 @@ TEST_F(Fixture, test_default)
 
   auto dbTech = db2->getTech();
   double distFactor = 2000;
+  double areaFactor = 2000 * 2000;
   auto layer = dbTech->findLayer("metal1");
   EXPECT_EQ(layer->getLef58Type(), odb::dbTechLayer::LEF58_TYPE::MIMCAP);
   auto rules = layer->getTechLayerSpacingEolRules();
@@ -228,7 +229,7 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(minCutRule->getNumCuts(), 2);
   EXPECT_EQ(minCutRule->getWithinCutDist(), 0.05 * distFactor);
   EXPECT_EQ(minCutRule->getWidth(), 0.09 * distFactor);
-  EXPECT_EQ(minCutRule->getArea(), 2.0 * distFactor);
+  EXPECT_EQ(minCutRule->getArea(), 2.0 * areaFactor);
 
   auto cutLayer = dbTech->findLayer("via1");
 
@@ -393,15 +394,15 @@ TEST_F(Fixture, test_default)
   int cnt = 0;
   for (odb::dbTechLayerAreaRule* subRule : areaRules) {
     if (cnt == 0) {
-      EXPECT_EQ(subRule->getArea(), 0.044 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.044 * areaFactor);
       EXPECT_EQ(subRule->getMask(), 2);
     }
     if (cnt == 1) {
-      EXPECT_EQ(subRule->getArea(), 0.34 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.34 * areaFactor);
       EXPECT_EQ(subRule->getRectWidth(), 0.12 * distFactor);
     }
     if (cnt == 2) {
-      EXPECT_EQ(subRule->getArea(), 1.01 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 1.01 * areaFactor);
       EXPECT_EQ(subRule->getExceptMinWidth(), 0.09 * distFactor);
       EXPECT_EQ(subRule->getExceptMinSize().first, 0.1 * distFactor);
       EXPECT_EQ(subRule->getExceptMinSize().second, 0.3 * distFactor);
@@ -410,16 +411,16 @@ TEST_F(Fixture, test_default)
       EXPECT_EQ(subRule->getExceptEdgeLength(), 0.8 * distFactor);
     }
     if (cnt == 3) {
-      EXPECT_EQ(subRule->getArea(), 0.101 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.101 * areaFactor);
       EXPECT_EQ(subRule->getTrimLayer()->getName(), "metal1");
       EXPECT_EQ(subRule->getOverlap(), 1);
     }
     if (cnt == 4) {
-      EXPECT_EQ(subRule->getArea(), 2.34 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 2.34 * areaFactor);
       EXPECT_TRUE(subRule->isExceptRectangle());
     }
     if (cnt == 5) {
-      EXPECT_EQ(subRule->getArea(), 0.78 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.78 * areaFactor);
       EXPECT_EQ(subRule->getExceptEdgeLengths().first, 0.3 * distFactor);
       EXPECT_EQ(subRule->getExceptEdgeLengths().second, 0.7 * distFactor);
     }
@@ -642,6 +643,92 @@ TEST_F(Fixture, TestLef58AntennaGatePlusDiff)
   EXPECT_EQ(pwl.ratios[0], 2.0);
   EXPECT_EQ(pwl.indices[1], 3.0);
   EXPECT_EQ(pwl.ratios[1], 4.0);
+}
+
+// Regression test for issue #10668: a CELLEDGESPACINGTABLE EDGETYPE group name
+// that is numeric or a single character (e.g. "1") must parse correctly and
+// must not trigger ODB-0299 (parse mismatch).
+TEST_F(Fixture, TestLef58CellEdgeSpacingNumericEdgeType)
+{
+  const char* libname = "lef58_celledgespacing_numeric.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_celledgespacing_numeric.lef");
+
+  dbTech* tech = db_->getTech();
+  auto cell_edge_spacing_tbl = tech->getCellEdgeSpacingTable();
+  // All three entries must be parsed (numeric, mixed numeric/alpha, and alpha).
+  EXPECT_EQ(cell_edge_spacing_tbl.size(), 3);
+
+  auto it = cell_edge_spacing_tbl.begin();
+  auto edge_spc = *it;
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.4 * 1000);
+
+  edge_spc = *(++it);
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "G2");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.2 * 1000);
+
+  // Alpha/multi-char group names (the pre-existing form) must still work.
+  edge_spc = *(++it);
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "G1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "G1");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.1 * 1000);
+}
+
+// Regression test for LEF58_EDGETYPE on macros: an edge type name that is
+// numeric (e.g. "2") must parse correctly and must not trigger ODB-0299
+// (parse mismatch).
+TEST_F(Fixture, TestLef58MacroNumericEdgeType)
+{
+  const char* libname = "lef58_macro_edgetype_numeric.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_macro_edgetype_numeric.lef");
+
+  odb::dbMaster* master = db_->findMaster("CELL_NUMERIC_EDGE");
+  ASSERT_NE(master, nullptr);
+  ASSERT_EQ(master->getEdgeTypes().size(), 4);
+
+  auto it = master->getEdgeTypes().begin();
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::LEFT);
+  EXPECT_EQ((*it)->getEdgeType(), "2");
+
+  ++it;
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::RIGHT);
+  EXPECT_EQ((*it)->getEdgeType(), "2");
+
+  // Alpha names and trailing options must still work after the numeric fix.
+  ++it;
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::TOP);
+  EXPECT_EQ((*it)->getEdgeType(), "G2");
+  EXPECT_EQ((*it)->getRangeBegin(), 500);
+  EXPECT_EQ((*it)->getRangeEnd(), 1500);
+
+  ++it;
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::BOTTOM);
+  EXPECT_EQ((*it)->getEdgeType(), "TYPE1");
+}
+
+// Regression test for issue #4252: LEF58_MINWIDTH with WRONGDIRECTION and
+// trailing whitespace after the terminating semicolon must parse without
+// warnings.
+TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
+{
+  const char* libname = "lef58_minwidth_wrongdirection.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_minwidth_wrongdirection.lef");
+
+  dbTech* tech = db_->getTech();
+  auto layer = tech->findLayer("M4");
+  ASSERT_NE(layer, nullptr);
+
+  auto* str_prop = dbStringProperty::find(layer, "LEF58_MINWIDTH");
+  ASSERT_NE(str_prop, nullptr);
+  EXPECT_EQ(str_prop->getValue(), "\n    MINWIDTH 1.0 WRONGDIRECTION ; ");
+
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 1000);
+  EXPECT_EQ(logger_.getWarningCount(), 0);
 }
 
 }  // namespace odb

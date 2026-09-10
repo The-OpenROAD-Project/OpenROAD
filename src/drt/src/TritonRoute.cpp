@@ -35,6 +35,7 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
+#include "drt-global.h"
 #include "drt/PinAccessService.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
@@ -43,7 +44,6 @@
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "gc/FlexGC.h"
-#include "global.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/db.h"
@@ -61,6 +61,7 @@
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/ServiceRegistry.h"
+#include "utl/timer.h"
 
 using odb::dbTechLayerType;
 
@@ -981,6 +982,7 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
 
 int TritonRoute::main()
 {
+  utl::Timer timer;
   // Just to verify that OMP support is compiled in correctly.
   omp_set_num_threads(2);
 #pragma omp parallel
@@ -1018,9 +1020,19 @@ int TritonRoute::main()
   }
   initDesign();
   bool has_routable_nets = false;
-  for (auto net : db_->getChip()->getBlock()->getNets()) {
-    if (net->getITerms().size() + net->getBTerms().size() > 1) {
+  bool has_grt_guides = false;
+  for (auto* net : db_->getChip()->getBlock()->getNets()) {
+    auto iterms = net->getITerms();
+    auto bterms = net->getBTerms();
+    if (!has_routable_nets
+        && (iterms.hasMoreThan(1) || bterms.hasMoreThan(1)
+            || (!iterms.empty() && !bterms.empty()))) {
       has_routable_nets = true;
+    }
+    if (!has_grt_guides && !net->getGuides().empty()) {
+      has_grt_guides = true;
+    }
+    if (has_routable_nets && has_grt_guides) {
       break;
     }
   }
@@ -1030,6 +1042,12 @@ int TritonRoute::main()
                   "Design does not have any routable net "
                   "(with at least 2 terms)");
     return 0;
+  }
+  if (!has_grt_guides) {
+    logger_->error(DRT,
+                   47,
+                   "Design has no global routing guides. Global routing must "
+                   "be run before detailed routing.");
   }
   if (router_cfg_->DO_PA) {
     pa_ = std::make_unique<FlexPA>(
@@ -1074,6 +1092,7 @@ int TritonRoute::main()
   if (!router_cfg_->SINGLE_STEP_DR) {
     endFR();
   }
+  logger_->info(DRT, 501, "Runtime: {:.2f}s", timer.elapsed());
   return 0;
 }
 

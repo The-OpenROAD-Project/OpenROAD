@@ -3,8 +3,10 @@
 set -e
 set -o pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${RESULTS_DIR:-results}"
 LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"
+METRICS_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.metrics"
 
 mkdir -p ${RESULTS_DIR}
 
@@ -13,18 +15,23 @@ echo "Results Directory: ${RESULTS_DIR}"
 
 case "$TEST_TYPE" in
 standalone_python)
-	CMD="python3 -u $TEST_NAME.$TEST_EXT"
-	;;
+    CMD="python3 -u $TEST_NAME.$TEST_EXT"
+    ;;
 python)
-	if "$OPENROAD_EXE" -help 2>&1 | grep -q -- "-python"; then
-		CMD="$OPENROAD_EXE -python -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
-	else
-		CMD="python3 -u $TEST_NAME.$TEST_EXT"
-	fi
-	;;
+    if "$OPENROAD_EXE" -help 2>&1 | grep -q -- "-python"; then
+        CMD="$OPENROAD_EXE -python -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
+    else
+        CMD="python3 -u $TEST_NAME.$TEST_EXT"
+    fi
+    ;;
 *)
-	CMD="$OPENROAD_EXE -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
-	;;
+    # -metrics makes openroad write the json the limits are compared against.
+    METRICS_OPT=""
+    if [ "$TEST_CHECK_METRICS" == "True" ]; then
+        METRICS_OPT="-metrics $METRICS_FILE"
+    fi
+    CMD="$OPENROAD_EXE -no_splash -no_init -exit $METRICS_OPT $TEST_NAME.$TEST_EXT"
+    ;;
 esac
 
 echo "Command: $CMD"
@@ -36,32 +43,45 @@ set -e
 
 case "$TEST_TYPE" in
 python | standalone_python)
-	sed -E -i 's#(File ")[^"]*/([^"]+")#\1\2#g' "$LOG_FILE"
-	sed -E -i '/^[[:space:]]+\^+$/d' "$LOG_FILE"
-	awk '
-		prev_internal_frame && $0 ~ /^[[:space:]]+/ { prev_internal_frame = 0; next }
-		{
-			print
-			prev_internal_frame = ($0 ~ /File "(openroadpy|.*_py)\.py", line [0-9]+, in /)
-		}
-	' "$LOG_FILE" > "${LOG_FILE}.tmp"
-	mv "${LOG_FILE}.tmp" "$LOG_FILE"
-	;;
+    sed -E -i 's#(File ")[^"]*/([^"]+")#\1\2#g' "$LOG_FILE"
+    sed -E -i '/^[[:space:]]+\^+$/d' "$LOG_FILE"
+    awk '
+        prev_internal_frame && $0 ~ /^[[:space:]]+/ { prev_internal_frame = 0; next }
+        {
+            print
+            prev_internal_frame = ($0 ~ /File "(openroadpy|.*_py)\.py", line [0-9]+, in /)
+        }
+    ' "$LOG_FILE" > "${LOG_FILE}.tmp"
+    mv "${LOG_FILE}.tmp" "$LOG_FILE"
+    ;;
 esac
 
 echo "Exitcode:  $CMD_EXIT"
 
 if [ "$CMD_EXIT" -ne "$EXPECTED_EXIT_CODE" ]; then
-	echo "Expected exit code: $EXPECTED_EXIT_CODE"
-	exit 1
+    echo "Expected exit code: $EXPECTED_EXIT_CODE"
+    exit 1
 fi
 
 if [ "$TEST_CHECK_LOG" == "True" ]; then
     echo "Diff:      ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"
     GOLDEN_FILE="${TEST_GOLDEN_FILE:-$TEST_NAME.ok}"
-    diff "$GOLDEN_FILE" "$LOG_FILE" > "${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"
+    if ! diff "$GOLDEN_FILE" "$LOG_FILE" > "${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"; then
+        echo "Log does not match golden file: ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"
+        exit 1
+    fi
 fi
 
 if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then
-	tail -n1 $LOG_FILE | grep -E '^(pass|OK)'
+    if ! tail -n1 "$LOG_FILE" | grep -E '^(pass|OK)'; then
+        echo "Test did not report pass/OK on the last line of: $LOG_FILE"
+        exit 1
+    fi
+fi
+
+if [ "$TEST_CHECK_METRICS" == "True" ]; then
+    echo "Metrics:   $METRICS_FILE vs $TEST_NAME.metrics_limits"
+    METRICS_FILE="$METRICS_FILE" \
+    METRICS_LIMITS_FILE="$TEST_NAME.metrics_limits" \
+        "$OPENROAD_EXE" -no_splash -no_init -exit "$SCRIPT_DIR/check_metrics.tcl"
 fi

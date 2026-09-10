@@ -85,8 +85,7 @@ class SaveReportTest : public tst::Nangate45Fixture
     WebServer server(getDb(),
                      /*sta=*/nullptr,
                      getLogger(),
-                     /*interp=*/nullptr,
-                     /*num_threads=*/1);
+                     /*interp=*/nullptr);
     server.saveReport(path, max_setup, max_hold);
   }
 
@@ -156,6 +155,9 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
 
   EXPECT_TRUE(contains(html, "class WebSocketManager"));
   EXPECT_TRUE(contains(html, "fromCache"));
+  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
+  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
+  EXPECT_TRUE(contains(html, "function computeGroupCount"));
   EXPECT_TRUE(contains(html, "TimingWidget"));
   EXPECT_TRUE(contains(html, "ChartsWidget"));
 }
@@ -379,6 +381,19 @@ TEST_F(SaveReportTest, SerializeTechResponse)
   EXPECT_TRUE(contains(json, "\"dbu_per_micron\":"));
 }
 
+// Non-routing tech layers (Nangate45's MASTERSLICE poly/active and OVERLAP)
+// are grouped into an "Other" category node in the layer hierarchy, mirroring
+// the Qt GUI's displayControls grouping.
+TEST_F(SaveReportTest, SerializeTechResponseGroupsOtherLayers)
+{
+  TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());
+  const std::string json = boost::json::serialize(serializeTechResponse(gen));
+
+  EXPECT_TRUE(contains(json, "\"layer_hierarchy\":"));
+  EXPECT_TRUE(contains(json, "\"type\":\"category\""));
+  EXPECT_TRUE(contains(json, "\"name\":\"Other\""));
+}
+
 TEST_F(SaveReportTest, SerializeBoundsShapesReady)
 {
   TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());
@@ -402,6 +417,33 @@ TEST_F(SaveReportTest, ZeroPathsReport)
 
   ASSERT_TRUE(std::filesystem::exists(path));
   EXPECT_TRUE(contains(html, "\"paths\":[]"));
+}
+
+// A 3DBlox top chip owns no dbBlock, so the report's fanout histogram has to
+// pool the chiplets' nets rather than report on a single block.
+TEST_F(SaveReportTest, FanoutHistogramPoolsEveryBlock)
+{
+  odb::dbNet::create(block_, "n1");
+  odb::dbNet::create(block_, "n2");
+
+  odb::dbChip* other
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+  odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+  odb::dbNet::create(other_block, "m1");
+
+  const FanoutHistogramResult first = computeFanoutHistogram({block_});
+  const FanoutHistogramResult second = computeFanoutHistogram({other_block});
+  ASSERT_GT(first.total_nets, 0);
+  ASSERT_GT(second.total_nets, 0);
+
+  const FanoutHistogramResult pooled
+      = computeFanoutHistogram({block_, other_block});
+  EXPECT_EQ(pooled.total_nets, first.total_nets + second.total_nets);
+
+  // Null entries are skipped, not counted as an empty block.
+  const FanoutHistogramResult with_null
+      = computeFanoutHistogram({block_, nullptr});
+  EXPECT_EQ(with_null.total_nets, first.total_nets);
 }
 
 }  // namespace

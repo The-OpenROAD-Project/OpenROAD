@@ -1,0 +1,41 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 14 components and 70 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 28 connections.
+[INFO ODB-0133]     Created 9 nets and 28 connections.
+Dont-touch instances: 14
+Repair policy: LEGACY
+[INFO RSZ-0100] Repair move sequence: SizeUpMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+All dont-touch instances preserved after LEGACY.
+Manual ECO: restored r1 to DFF_X1.
+Repair policy: LEGACY_MT
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupLegacyMtPolicy' selected. Do not use this for production.
+[INFO RSZ-0100] Repair move sequence: SizeUpMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY_MT
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+All dont-touch instances preserved after LEGACY_MT.
+worst slack max -0.23
+tns max -0.230

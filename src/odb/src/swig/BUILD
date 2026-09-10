@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "message_srcs")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -71,20 +72,13 @@ tcl_encode(
     namespace = "odb",
 )
 
-filegroup(
-    name = "message_srcs",
-    srcs = glob([
-        "**/*.cpp",
-        "**/*.h",
-        "**/*.tcl",
-    ]),
+message_srcs(
     visibility = ["//src/odb:__pkg__"],
 )
 
 cc_library(
     name = "ui",
     srcs = [
-        "common/swig_common.h",
         "tcl/MakeOdb.cpp",
         ":swig",
         ":tcl",
@@ -99,11 +93,10 @@ cc_library(
         "common",
     ],
     deps = [
+        ":swig_common",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.polygon",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

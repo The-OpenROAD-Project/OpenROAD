@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -35,7 +35,14 @@ COMPULSORY_TESTS = [
     "gcd_genetic",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+# ABC resynthesis output is nondeterministic/threaded, so this test self-checks
+# invariants and prints "pass" instead of diffing a flaky golden log.
+PASSFAIL_TESTS = [
+    "gcd_restructure_delay",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -135,6 +142,8 @@ LONG_RUNNING_TESTS = [
     regression_test(
         name = test_name,
         size = "medium" if test_name in LONG_RUNNING_TESTS else "small",
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [
             ":" + test_name + "_resources",
             "//src/rmp:rmp_py",
@@ -160,7 +169,8 @@ cc_test(
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
@@ -186,7 +196,8 @@ cc_test(
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
@@ -201,7 +212,10 @@ py_test(
     name = "rmp_man_tcl_check",
     srcs = ["rmp_man_tcl_check.py"],
     data = ["//src/rmp:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

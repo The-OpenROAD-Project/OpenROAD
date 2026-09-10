@@ -140,11 +140,7 @@ void HTreeBuilder::preSinkClustering(
   std::vector<std::pair<float, float>> newSinkLocations;
   for (const std::vector<unsigned>& cluster :
        matching.sinkClusteringSolution()) {
-    if (cluster.size() == 1) {
-      const std::pair<float, float>& point = points[cluster[0]];
-      newSinkLocations.emplace_back(point);
-    }
-    if (cluster.size() > 1) {
+    if (!cluster.empty()) {
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
@@ -1248,6 +1244,7 @@ void HTreeBuilder::run()
 
   initSinkRegion();
 
+  double prevMaxHPWL = std::numeric_limits<double>::max();
   for (int level = 1; level <= clockTreeMaxDepth_; ++level) {
     const unsigned numSinksPerSubRegion
         = computeNumberOfSinksPerSubRegion(level);
@@ -1272,12 +1269,41 @@ void HTreeBuilder::run()
     computeLevelTopology(level, regionWidth, regionHeight);
 
     if (isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
-      logger_->info(CTS,
-                    32,
-                    " Stop criterion found. Max number of sinks is {}.",
-                    options_->getMaxFanout() ? options_->getMaxFanout()
-                                             : numMaxLeafSinks_);
-      break;
+      if (options_->getMaxWl()) {
+        double maxHPWL = topologyForEachLevel_.back().getLargestSinkRegionHPWL(
+            wireSegmentUnit_);
+        if (maxHPWL < options_->getMaxWl()) {
+          logger_->info(CTS,
+                        38,
+                        " Stop criterion found. Sink region hpwl "
+                        "is smaller than max wirelength ({:.3f} um) and max "
+                        "number of sinks is {}.",
+                        static_cast<double>(options_->getMaxWl())
+                            / options_->getDbUnits(),
+                        options_->getMaxFanout() ? options_->getMaxFanout()
+                                                 : numMaxLeafSinks_);
+          break;
+        }
+        if (maxHPWL >= prevMaxHPWL) {
+          logger_->info(CTS,
+                        54,
+                        " Stop criterion found. Sink region hpwl "
+                        "({:.3f} um) did not improve and max "
+                        "number of sinks is {}.",
+                        maxHPWL / options_->getDbUnits(),
+                        options_->getMaxFanout() ? options_->getMaxFanout()
+                                                 : numMaxLeafSinks_);
+          break;
+        }
+        prevMaxHPWL = maxHPWL;
+      } else {
+        logger_->info(CTS,
+                      32,
+                      " Stop criterion found. Max number of sinks is {}.",
+                      options_->getMaxFanout() ? options_->getMaxFanout()
+                                               : numMaxLeafSinks_);
+        break;
+      }
     }
   }
 
@@ -1829,6 +1855,33 @@ void HTreeBuilder::initSecondLevelSinks(
   }
 }
 
+double HTreeBuilder::LevelTopology::getLargestSinkRegionHPWL(
+    const unsigned wireSegmentUnit) const
+{
+  double bestHpwl = 0.0;
+  for (unsigned i = 0; i < branchSinkLocs_.size(); ++i) {
+    const auto& sinks = branchSinkLocs_[i];
+    if (sinks.size() < 2) {
+      continue;
+    }
+    double minX = sinks[0].getX();
+    double maxX = minX;
+    double minY = sinks[0].getY();
+    double maxY = minY;
+    for (unsigned j = 1; j < sinks.size(); ++j) {
+      minX = std::min(minX, sinks[j].getX());
+      maxX = std::max(maxX, sinks[j].getX());
+      minY = std::min(minY, sinks[j].getY());
+      maxY = std::max(maxY, sinks[j].getY());
+    }
+    const double hpwl = ((maxX - minX) + (maxY - minY));
+    if (hpwl > bestHpwl) {
+      bestHpwl = hpwl;
+    }
+  }
+  return bestHpwl * wireSegmentUnit;
+}
+
 void HTreeBuilder::computeBranchSinks(
     const LevelTopology& topology,
     const unsigned branchIdx,
@@ -1937,7 +1990,6 @@ void HTreeBuilder::createClockSubNets()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
-  rootClockSubNet.setTreeLevel(0);
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -2039,11 +2091,6 @@ void HTreeBuilder::createClockSubNets()
                              wireSegmentUnit_,
                              this);
 
-      // Set clock tree level the first time only.
-      if (builder.getDrivingSubNet()->getTreeLevel() < 0) {
-        builder.getDrivingSubNet()->setTreeLevel(levelIdx);
-      }
-
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
       } else {
@@ -2114,7 +2161,6 @@ void HTreeBuilder::createSingleBufferClockNet()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
-  clockSubNet.setTreeLevel(0);
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });

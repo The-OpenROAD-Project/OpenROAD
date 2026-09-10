@@ -103,20 +103,21 @@ uint32_t extMeasure::computeRes(SEQ* s,
     return 0;
   }
 
-  Array1D<SEQ*> overlapSeq(16);
-  getDgOverlap_res(s, _dir, dgContext, &overlapSeq, residueSeq);
+  Array1D<SEQ*> neighbor_regions(16);
+  getDgOverlap_res(s, _dir, dgContext, &neighbor_regions, residueSeq);
 
-  uint32_t len = 0;
-  for (uint32_t jj = 0; jj < overlapSeq.getCnt(); jj++) {
-    SEQ* tgt = overlapSeq.get(jj);
-    uint32_t diagDist = calcDist(tgt->_ll, tgt->_ur);
-    uint32_t len1 = getLength(tgt, !_dir);
+  uint32_t total_neighbors_span = 0;
+  for (uint32_t jj = 0; jj < neighbor_regions.getCnt(); jj++) {
+    SEQ* neighbor_region = neighbor_regions.get(jj);
+    uint32_t distance_to_neighbor
+        = calcDist(neighbor_region->_ll, neighbor_region->_ur);
+    uint32_t neighbor_span = getLength(neighbor_region, !_dir);
 
-    len += len1;
-    calcRes(_rsegSrcId, len1, _dist, diagDist, _met);
+    total_neighbors_span += neighbor_span;
+    calcRes(_rsegSrcId, neighbor_span, _dist, distance_to_neighbor, _met);
   }
-  seq_release(&overlapSeq);
-  return len;
+  seq_release(&neighbor_regions);
+  return total_neighbors_span;
 }
 
 int extMeasure::getMaxDist(int tgtMet, uint32_t modelIndex)
@@ -236,6 +237,8 @@ extDistRC* extDistRCTable::getComputeRC_res(uint32_t dist1, uint32_t dist2)
     return nullptr;
   }
 
+  // This represents the first RESOVER table row i.e., the entry
+  // in which there is no neighboring context effect.
   extDistRC* rc1 = measureTableR_[0]->geti(0);
   rc1->diag_ = 0.0;
   if (rc1 == nullptr) {
@@ -245,9 +248,13 @@ extDistRC* extDistRCTable::getComputeRC_res(uint32_t dist1, uint32_t dist2)
   if (dist1 + dist2 == 0) {  // ASSUMPTION: 0 dist exists as first
     return rc1;
   }
-  if (dist1 >= maxDist_ && dist2 >= maxDist_) {
-    return nullptr;
+
+  if (dist1 > maxDist_ && dist2 > maxDist_) {
+    // Anything beyond the bounds of the RESOVER
+    // table is not considered neighborhood.
+    return rc1;
   }
+
   if (dist2 > maxDist_) {
     dist2 = dist1;
     dist1 = 0;

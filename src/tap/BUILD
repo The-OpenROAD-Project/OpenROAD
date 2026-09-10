@@ -24,7 +24,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",
@@ -34,7 +34,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/tap/tapcell.h",
         "src/MakeTapcell.cpp",
         ":swig",
         ":tcl",
@@ -48,10 +47,8 @@ cc_library(
     deps = [
         ":tap",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@boost.geometry",
-        "@boost.polygon",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -108,5 +105,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/tap/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/tap/test:__pkg__",
+    ],
 )

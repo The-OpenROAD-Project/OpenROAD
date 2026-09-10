@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "odb/db.h"
 
 namespace dpl {

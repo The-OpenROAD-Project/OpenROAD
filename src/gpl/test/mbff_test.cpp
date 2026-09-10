@@ -9,6 +9,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "ant/AntennaChecker.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
@@ -30,6 +31,15 @@ class MBFFTestPeer
   {
     return uut->IsValidTray(tray);
   }
+
+  static bool HaveSameMask(MBFF* uut, odb::dbInst* first, odb::dbInst* second)
+  {
+    const MBFF::Mask first_mask = uut->GetArrayMask(first, true);
+    const MBFF::Mask second_mask = uut->GetArrayMask(second, true);
+    return !(first_mask < second_mask) && !(second_mask < first_mask);
+  }
+
+  static void ReadLibs(MBFF* uut) { uut->ReadLibs(); }
 };
 
 namespace {
@@ -42,7 +52,7 @@ class MBFFTestFixture : public tst::Fixture
     logger_ = getLogger();
     service_registry_ = std::make_unique<utl::ServiceRegistry>(logger_);
     verilog_network_ = std::make_unique<ord::dbVerilogNetwork>(getSta());
-    stt_builder_ = std::make_unique<stt::SteinerTreeBuilder>(getDb(), logger_);
+    stt_builder_ = std::make_unique<stt::SteinerTreeBuilder>(logger_);
     antenna_checker_ = std::make_unique<ant::AntennaChecker>(getDb(), logger_);
     opendp_ = std::make_unique<dpl::Opendp>(getDb(), logger_);
     global_router_
@@ -69,10 +79,10 @@ class MBFFTestFixture : public tst::Fixture
                                               opendp_.get(),
                                               estimate_parasitics_.get());
 
-    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
     loadTechAndLib("test0",
                    "test0",
                    getFilePath("openroad/src/gpl/test/library/test/test0.lef"));
+    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");
@@ -129,7 +139,7 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
 {
   // Retreive masters, create a test cell, and assert that they are correctly
   // identified as either a tray or not a tray.
-  EXPECT_EQ(db_->findLib("test0")->getMasters().size(), 6);
+  EXPECT_EQ(db_->findLib("test0")->getMasters().size(), 7);
 
   EXPECT_FALSE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "INV")));
@@ -143,6 +153,27 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2CLPS")));
   EXPECT_TRUE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2SECLPS")));
+  EXPECT_TRUE(MBFFTestPeer::IsValidTray(
+      mbff_.get(), CreateTmpCell("test_tray", "test0", "MBLATCH2")));
+}
+
+TEST_F(MBFFTestFixture, RegisterAndLatchTraysUseDifferentMasks)
+{
+  // Given equivalent register-bank and latch-bank tray interfaces.
+  odb::dbInst* register_tray = CreateTmpCell("register_tray", "test0", "MBFF2");
+  odb::dbInst* latch_tray = CreateTmpCell("latch_tray", "test0", "MBLATCH2");
+
+  // Then their sequential behavior must keep them in separate candidate pools.
+  EXPECT_FALSE(
+      MBFFTestPeer::HaveSameMask(mbff_.get(), register_tray, latch_tray));
+}
+
+TEST_F(MBFFTestFixture, ReadLibsSuccessfullyProcessesTestCells)
+{
+  // In test0.lib, cells like MBFF2SE have their sequential definition
+  // nested inside a test_cell block. Without consistent Liberty cell views,
+  // GetPinMapping returns empty vectors and triggers an out-of-bounds crash.
+  EXPECT_NO_FATAL_FAILURE(MBFFTestPeer::ReadLibs(mbff_.get()));
 }
 
 }  // namespace

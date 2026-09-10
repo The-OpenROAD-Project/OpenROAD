@@ -37,6 +37,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class RouteBase;
 class TimingBase;
+class ClockBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -55,10 +56,13 @@ struct PlaceOptions
   bool skipIoMode = false;
   bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
+  bool timingDrivenRepairTiming = false;
+  float timingDrivenRepairTnsEndPercent = 1.0;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
   float timingNetWeightMax = 5;
+  float timingDrivenNetsPercentage = 10;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
   // timing driven check overflow to keep resizer changes (non-virtual resizer)
@@ -67,6 +71,11 @@ struct PlaceOptions
   bool disableRevertIfDiverge = false;
   bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
+  bool virtualCtsMode = false;
+  // Maximum clock insertion delay as a fraction of the clock period.
+  // The MST leaf farthest from the virtual clock root gets this delay;
+  // all others are scaled proportionally.  Default: 10% of the period.
+  float virtualCtsMaxSkewFraction = 0.10f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
@@ -75,6 +84,8 @@ struct PlaceOptions
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
+  int initialPlacePerturbationSeed = 1;
+  float initialPlacePerturbationDist = -1.0f;
 
   float routabilityCheckOverflow = 0.3;
   float routabilitySnapshotOverflow = 0.6;
@@ -82,6 +93,7 @@ struct PlaceOptions
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
+  float routabilityMinCongestionForInflation = 0.95;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
@@ -92,6 +104,9 @@ struct PlaceOptions
   // OpenDB should have these values.
   int padLeft = 0;
   int padRight = 0;
+
+  // Concurrent IO pin + cell placement
+  bool placeIosMode = false;
 
   void skipIo();
   void validate(utl::Logger* log);
@@ -124,7 +139,12 @@ class Replace
                       const PlaceOptions& options = {},
                       int start_iter = 0);
 
-  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
+  void runMBFF(int max_sz,
+               float alpha,
+               float beta,
+               int threads,
+               int num_paths,
+               float clock_power_weight);
 
   void addPlacementCluster(const Cluster& cluster);
 
@@ -147,6 +167,8 @@ class Replace
                          int threads,
                          bool check_density);
   void checkHasCoreRows();
+  void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -162,6 +184,7 @@ class Replace
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<ClockBase> cb_;
 
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;

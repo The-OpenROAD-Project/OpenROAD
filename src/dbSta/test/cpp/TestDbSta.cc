@@ -82,9 +82,26 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(modnet_out2, nullptr);
   Net* sta_modnet_out2 = db_network_->dbToSta(modnet_out2);
   ASSERT_NE(sta_modnet_out2, nullptr);
+  // highestNetAbove on a mod net now returns the associated flat dbNet, not the
+  // highest mod net, so that parasitic externality checks work correctly.
   Net* sta_highest_modnet_out
       = db_network_->highestNetAbove(sta_modnet_mod_out);
-  ASSERT_EQ(sta_highest_modnet_out, sta_modnet_out2);
+  ASSERT_EQ(sta_highest_modnet_out, sta_dbnet_out2);
+
+  // Regression for PR #3194: dbNetwork::highestConnectedNet on a hier
+  // dbModNet must return the associated flat dbNet, not the modnet wrapper
+  // itself. Parasitics::findParasiticNet uses this as the lookup key into
+  // the parasitic network map. SPEF is a flat format so parasitics are
+  // keyed by flat dbNet; returning the modnet wrapper caused a cache miss
+  // and silently degraded delay calculation to LumpedCap.
+  const Net* sta_highest_connected_modnet
+      = db_network_->highestConnectedNet(sta_modnet_mod_out);
+  ASSERT_EQ(sta_highest_connected_modnet, sta_dbnet_out2);
+
+  // Flat dbNet input: highestConnectedNet is idempotent.
+  const Net* sta_highest_connected_flat
+      = db_network_->highestConnectedNet(sta_dbnet_out2);
+  ASSERT_EQ(sta_highest_connected_flat, sta_dbnet_out2);
 
   // Check get_ports -of_object Net*
   NetTermIterator* term_iter = db_network_->termIterator(sta_dbnet_out2);

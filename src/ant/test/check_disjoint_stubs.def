@@ -1,0 +1,19 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN disjoint_stubs ;
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 100000 100000 ) ;
+
+COMPONENTS 2 ;
+- u1 sky130_fd_sc_ms__buf_1 + PLACED ( 10000 10000 ) N ;
+- u2 sky130_fd_sc_ms__buf_1 + PLACED ( 50000 10000 ) N ;
+END COMPONENTS
+
+NETS 1 ;
+- n1 ( u1 A ) ( u2 A )
+  + ROUTED li1 ( 8000 11615 ) ( 10200 11615 )
+    NEW li1 ( 10800 11615 ) ( 50200 11615 ) ;
+END NETS
+END DESIGN

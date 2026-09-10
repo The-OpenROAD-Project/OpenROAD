@@ -11,9 +11,10 @@ design.readDef("generate_pattern.defok")
 
 rcx_aux.define_process_corner(design, ext_model_index=0, filename="X")
 
+rcx_aux.set_extraction_rules_file(design, filename="ext_pattern.rules")
+
 rcx_aux.extract_parasitics(
     design,
-    ext_model_file="ext_pattern.rules",
     cc_model=12,
     max_res=0,
     context_depth=10,

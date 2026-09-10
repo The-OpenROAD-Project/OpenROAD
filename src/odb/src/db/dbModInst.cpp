@@ -33,6 +33,7 @@
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 #include "dbSwapMasterSanityChecker.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -413,7 +414,7 @@ void dbModInst::removeUnusedPortsAndPins()
 
   dbModule* module = this->getMaster();
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
-  std::set<dbModBTerm*> busmodbterms;  // harvest the bus modbterms
+  odb::PtrSet<dbModBTerm> busmodbterms;  // harvest the bus modbterms
 
   // 1. Traverse in modbterm order so we can skip over any unused pins in a bus.
   int bus_ix = 0;
@@ -440,7 +441,7 @@ void dbModInst::removeUnusedPortsAndPins()
   }
 
   // 2. Find unused ports that do not have internal connections
-  std::set<dbModITerm*> kill_set;
+  odb::PtrSet<dbModITerm> kill_set;
   for (dbModITerm* mod_iterm : getModITerms()) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     assert(mod_bterm != nullptr);

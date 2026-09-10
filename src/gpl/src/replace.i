@@ -24,7 +24,9 @@ static gpl::PlaceOptions getOptions(
 
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
+  checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
+  checkFlag(flags, "-virtual_cts", options.virtualCtsMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
   checkFlag(
       flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
@@ -53,6 +55,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-routability_max_inflation_ratio",
            options.routabilityMaxInflationRatio);
+  checkKey(keys,
+           "-routability_min_congestion_for_inflation",
+           options.routabilityMinCongestionForInflation);
   checkKey(keys, "-pad_left", options.padLeft);
   checkKey(keys, "-pad_right", options.padRight);
   checkKey(keys,
@@ -68,11 +73,20 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
+  checkKey(keys,
+           "-virtual_cts_max_skew_fraction",
+           options.virtualCtsMaxSkewFraction);
+  checkKey(keys, "-timing_driven_nets_percentage", options.timingDrivenNetsPercentage);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);
   checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);
   checkKey(keys, "-init_wirelength_coef", options.initWireLengthCoef);
   checkKey(keys, "-reference_hpwl", options.referenceHpwl);
+  checkKey(keys,
+           "-timing_driven_repair_tns_end_percent",
+           options.timingDrivenRepairTnsEndPercent);
+  checkKey(keys, "-random_seed", options.initialPlacePerturbationSeed);
+  checkKey(keys, "-perturb_dist", options.initialPlacePerturbationDist);
 
   if (auto it = keys.find("-density"); it != keys.end()) {
     if (it->second == "uniform") {
@@ -86,6 +100,7 @@ static gpl::PlaceOptions getOptions(
     options.binGridCntY = options.binGridCntX;
   }
   checkFlag(flags, "-skip_io", [&](bool) { options.skipIo(); });
+  checkFlag(flags, "-place_ios", options.placeIosMode);
   return options;
 }
 
@@ -140,11 +155,12 @@ replace_nesterov_place_cmd(const std::map<std::string, std::string>& keys,
 
 
 void
-replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths) 
+replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths,
+                     float clock_power_weight)
 {
   Replace* replace = getReplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
-  replace->runMBFF(max_sz, alpha, beta, threads, num_paths);   
+  replace->runMBFF(max_sz, alpha, beta, threads, num_paths, clock_power_weight);
 }
 
 

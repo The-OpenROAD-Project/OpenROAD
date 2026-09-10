@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -6,6 +6,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
@@ -22,6 +23,7 @@ COMPULSORY_TESTS = [
     "asap7_vias_dont_use",
     "asap7_vias_fixed_vias",
     "asap7_vias_max_rows_columns",
+    "asap7_M1_M2_followpin_enclosure",
     "asap7_M1_M3_followpins",
     "asap7_M1_M3_followpins_staggered",
     "asap7_macro_notcovered",
@@ -41,9 +43,15 @@ COMPULSORY_TESTS = [
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
+    "core_grid_min_width_layers",
+    "core_grid_mirrored_rows",
+    "core_grid_multiheight_rows",
+    "core_grid_multiheight_rows_pitch",
+    "core_grid_multiheight_site_order",
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",
+    "core_grid_ring_on_pin_layer",
     "core_grid_single_pin",
     "core_grid_snap",
     "core_grid_split_cuts",
@@ -52,7 +60,10 @@ COMPULSORY_TESTS = [
     "core_grid_strap_count",
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
+    "core_grid_with_multiple_bterms",
+    "core_grid_with_no_grid",
     "core_grid_with_M6_min_area",
+    "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
     "core_grid_with_bterms",
     "core_grid_with_dual_rings",
@@ -74,6 +85,9 @@ COMPULSORY_TESTS = [
     "core_grid_with_single_layer_rings",
     "design_width",
     "existing",
+    "gf180_hybrid_followpins",
+    "gf180_hybrid_followpins_pitch",
+    "gf180_hybrid_followpins_rowpattern",
     "global_connect_with_dont_touch",
     "global_connect_with_dont_touch_warning",
     "macros",
@@ -91,6 +105,7 @@ COMPULSORY_TESTS = [
     "macros_cells_via_failure",
     "macros_different_nets",
     "macros_grid_check",
+    "macros_grid_not_used",
     "macros_grid_through",
     "macros_grid_through_without_middle",
     "macros_narrow_channel",
@@ -111,11 +126,13 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_flipchip_connect_overpads",
     "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
+    "pads_black_parrot_macro_grid",
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
     "pads_black_parrot_straps",
     "pads_connect_from_non_pref_edge",
+    "pads_ihp_sg13g2_balance",
     "power_switch",
     "power_switch_cut_rows",
     "power_switch_daisy",
@@ -135,29 +152,13 @@ COMPULSORY_TESTS = [
     "reset",
     "ripup",
     "sky130_spm_floating_bpin",
+    "sky130_spm_halo_too_big",
     "sroute_test",
+    "stacked_via_merged_enclosure",
     "widthtable",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
-
-PY_TESTS = [
-    "asap7_taper",
-    "core_grid",
-    "core_grid_with_rings",
-    "core_grid_with_routing_obstructions",
-    "existing",
-    "macros",
-    "max_width",
-    "min_width",
-    "offgrid",
-    "power_switch",
-    "repair_vias",
-    "report",
-    "reset",
-    "ripup",
-    "widthtable",
-]
 
 filegroup(
     name = "regression_resources",
@@ -202,6 +203,7 @@ filegroup(
         "asap7_vias/asap7_tech_1x.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing_tightspacing.lef",
+        "asap7_vias/asap7_tech_1x_followpin_enc.lef",
         "asap7_vias/asap7_tech_1x_noviarules.lef",
         "asap7_vias/asap7_tech_1x_offcenter_via.lef",
         "asap7_vias/asap7_tech_1x_via_dontuse.lef",
@@ -212,6 +214,10 @@ filegroup(
         "gf180/gf180mcu_fd_io.lef",
         "gf180/gf180mcu_fd_sc_mcu7t5v0.lef",
         "gf180_data/floorplan.def",
+        "gf180_hybrid/adjusted_sc9.lef",
+        "gf180_hybrid/floorplan.def",
+        "gf180_hybrid/floorplan_rowpattern.def",
+        "gf180_hybrid/hybrid_sites.lef",
         "helpers.py",
         "helpers.tcl",
         "nangate_bsg_black_parrot/Nangate45_maxwidth.lef",
@@ -221,6 +227,7 @@ filegroup(
         "nangate_bsg_black_parrot/floorplan_flipchip.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_nogrid.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_short.def",
+        "nangate_data/Nangate45.lef",
         "nangate_existing/floorplan.def",
         "nangate_gcd/floorplan.def",
         "nangate_gcd/floorplan_obstructions.def",
@@ -236,10 +243,14 @@ filegroup(
         "nangate_macros/floorplan_partial_wire_on_macro.def",
         "nangate_macros/floorplan_very_narrow.def",
         "nangate_macros/floorplan_with_jog.def",
+        "nangate_mirrored_rows/floorplan.def",
         "pdn_aux.py",
         "repair_channel_inf_loop/floorplan.def",
         "repair_channel_inf_loop/tech_macro.lef",
         "sky130_gcd/floorplan.def",
+        "sky130_multiheight_rows/floorplan.def",
+        "sky130_multiheight_rows/floorplan_multisite.def",
+        "sky130_multiheight_rows/multiheight_sites.lef",
         "sky130_non_rect_region/HEADER.lef",
         "sky130_non_rect_region/SLC.lef",
         "sky130_non_rect_region/floorplan.def",
@@ -284,6 +295,8 @@ filegroup(
         "sky130hd/work_around_yosys/formal_pdk.v",
         "sky130hvl/sky130_fd_sc_hvl.tlef",
         "sky130hvl/sky130_fd_sc_hvl_merged.lef",
+        "via_stack_enclosure/floorplan.def",
+        "via_stack_enclosure/tech.lef",
     ],
 )
 
@@ -295,16 +308,33 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
+            "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
+            ],
+            "macros_grid_not_used": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
+                "ihp_ethmac/floorplan.def",
+            ],
+            "pads_ihp_sg13g2_balance": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_tensorcore/sg13g2_io.lef",
+                "ihp_tensorcore/floorplan.def",
             ],
         }.get(test_name, []),
     )
@@ -321,36 +351,14 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-py_library(
-    name = "helpers",
-    srcs = [
-        "helpers.py",
-        "pdn_aux.py",
-    ],
-    imports = ["."],
-    deps = [
-        "//python/openroad:openroadpy",
-    ],
-)
-
-[
-    py_test(
-        name = test_name,
-        srcs = [test_name + ".py"],
-        data = [":" + test_name + "_resources"],
-        deps = [
-            ":helpers",
-            "//python/openroad:openroadpy",
-        ],
-    )
-    for test_name in PY_TESTS
-]
-
 py_test(
     name = "pdn_man_tcl_check",
     srcs = ["pdn_man_tcl_check.py"],
     data = ["//src/pdn:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

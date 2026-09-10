@@ -98,6 +98,9 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["region_insts_map"].add(region_insts_map_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -106,10 +109,17 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipInst::getName() const
+const std::string& dbChipInst::getName() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   return obj->name_;
+}
+
+void dbChipInst::setOrient(dbOrientType3D orient)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  obj->orient_ = orient;
 }
 
 dbOrientType3D dbChipInst::getOrient() const
@@ -144,13 +154,6 @@ dbTransform dbChipInst::getTransform() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   return dbTransform(obj->orient_, obj->origin_);
-}
-
-void dbChipInst::setOrient(dbOrientType3D orient)
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-
-  obj->orient_ = orient;
 }
 
 void dbChipInst::setLoc(const Point3D& loc)

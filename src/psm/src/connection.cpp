@@ -222,6 +222,18 @@ std::string TermConnection::describe() const
 
 /////////////////////////////
 
+BridgeConnection::BridgeConnection(Node* node0, Node* node1)
+    : Connection(node0, node1)
+{
+}
+
+std::string BridgeConnection::describe() const
+{
+  return "Bridge Connection";
+}
+
+/////////////////////////////
+
 FixedResistanceConnection::FixedResistanceConnection(Node* node0,
                                                      Node* node1,
                                                      Resistance resistance)

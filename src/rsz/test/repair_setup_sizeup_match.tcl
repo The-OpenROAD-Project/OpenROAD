@@ -6,7 +6,7 @@ if { ![info exists repair_args] } {
 }
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def repair_setup_sizedown.def
+read_def repair_setup_size_down_fanout.def
 create_clock -period 0.35 clk
 set_load 1.0 [all_outputs]
 

@@ -163,6 +163,23 @@ class gcNet : public gcBlockObject
       return -1;
     }
   }
+  frCoord getMinSpacing() const
+  {
+    if (hasOwner()) {
+      switch (owner_->typeId()) {
+        case frcInstBlockage:
+          return static_cast<frInstBlockage*>(owner_)
+              ->getBlockage()
+              ->getMinSpacing();
+        case frcBlockage:
+          return static_cast<frBlockage*>(owner_)->getMinSpacing();
+        default:
+          return -1;
+      }
+    } else {
+      return -1;
+    }
+  }
   // others
   frBlockObjectEnum typeId() const override { return gccNet; }
 

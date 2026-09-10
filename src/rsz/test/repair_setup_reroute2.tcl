@@ -1,6 +1,6 @@
 # repair_timing -setup with the REROUTE phase on ASAP7 GCD.
-# The REROUTE phase uses repairSetup_Reroute -> repairPathReroute,
-# which applies RerouteMove to high-wire-delay nets on violating paths.
+# The REROUTE phase applies RerouteMove to high-wire-delay nets on violating
+# paths through the Reroute generator/candidate flow.
 # Requires global routing to be present (haveRoutes).
 source "helpers.tcl"
 

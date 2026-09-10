@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 24951 components and 119534 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 49902 connections.
 [INFO ODB-0133]     Created 21886 nets and 69632 connections.
-[INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0083] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
@@ -48,7 +48,7 @@
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       7.811 *  7.011 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -85,7 +85,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
 [INFO GPL-1014] Final placement area: 47581.96 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
       310 |   0.1860 |  2.120036e+06 |  +92.01% |  4.62e-08 |      
       320 |   0.2508 |  1.285716e+06 |  -39.35% |  6.80e-08 |      
       330 |   0.2150 |  1.199802e+06 |   -6.68% |  1.00e-07 |      

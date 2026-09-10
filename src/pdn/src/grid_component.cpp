@@ -14,6 +14,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -342,9 +343,9 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
 }
 
 std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
-    const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-    bool add_pins,
-    const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const
+    const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+    const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
+    const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const
 {
   std::vector<ShapePtr> all_shapes;
   for (const auto& [layer, shapes] : shapes_) {
@@ -366,14 +367,20 @@ std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
   });
 
   for (const auto& shape : all_shapes) {
-    auto net = net_map.find(shape->getNet());
-    if (net == net_map.end()) {
+    const auto wire_itr = net_map.find(shape->getNet());
+    if (wire_itr == net_map.end()) {
       continue;
     }
+    odb::dbSWire* wire = wire_itr->second;
+
+    const auto bterm_itr = bterm_map.find(shape->getNet());
+    odb::dbBTerm* bterm
+        = bterm_itr == bterm_map.end() ? nullptr : bterm_itr->second;
+
     const bool is_pin_layer = convert_layer_to_pin.find(shape->getLayer())
                               != convert_layer_to_pin.end();
-    shape_map[shape.get()]
-        = shape->writeToDb(net->second, add_pins, is_pin_layer);
+
+    shape_map[shape.get()] = shape->writeToDb(wire, bterm, is_pin_layer);
   }
 
   return shape_map;

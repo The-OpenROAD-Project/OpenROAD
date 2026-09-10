@@ -42,7 +42,6 @@ target_link_libraries(grt_lib
     ant_lib
     dpl_lib
     dbSta_lib
-    gui_heatmap_core
     stt_lib
     rsz_lib
     OpenSTA
@@ -57,6 +56,7 @@ target_sources(grt
     src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
+    src/cugr/src/CugrRenderer.cpp
 )
 
 target_include_directories(grt
@@ -64,12 +64,14 @@ target_include_directories(grt
     include
   PRIVATE
     src
+    src/cugr/include
 )
 
 target_link_libraries(grt
     grt_lib
     dbSta
     gui
+    gui_heatmap_core
     stt
     rsz
 )

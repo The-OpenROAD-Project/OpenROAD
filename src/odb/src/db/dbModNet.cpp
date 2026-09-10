@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -36,6 +35,7 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -475,6 +475,40 @@ dbSet<dbITerm> dbModNet::getITerms() const
   return dbSet<dbITerm>(_mod_net, _block->module_modnet_iterm_itr_);
 }
 
+bool dbModNet::isConnectedToInputPort() const
+{
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() != dbIoType::OUTPUT) {
+      return true;
+    }
+  }
+
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (mod_bterm->getIoType() != dbIoType::OUTPUT) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbModNet::isConnectedToOutputPort() const
+{
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() != dbIoType::INPUT) {
+      return true;
+    }
+  }
+
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (mod_bterm->getIoType() != dbIoType::INPUT) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 unsigned dbModNet::connectionCount() const
 {
   return (getITerms().size() + getBTerms().size() + getModITerms().size()
@@ -506,7 +540,7 @@ dbNet* dbModNet::findRelatedNet() const
   //
   // Slow path: traverse hierarchy
   //
-  std::set<const dbModNet*> visited_modnets;
+  odb::PtrSet<const dbModNet> visited_modnets;
   boost::container::small_vector<const dbModNet*, 16> modnets_to_visit;
 
   // Helper to add a modnet to the visit queue if it's new.
@@ -575,7 +609,7 @@ void dbModNet::checkSanityNameCollision() const
 
   // Check if any flat net in this module scope has a base name
   // matching this ModNet's name without being associated.
-  std::set<dbNet*> checked;
+  odb::PtrSet<dbNet> checked;
   for (dbInst* inst : module->getInsts()) {
     for (dbITerm* iterm : inst->getITerms()) {
       dbNet* net = iterm->getNet();
@@ -592,7 +626,7 @@ void dbModNet::checkSanityNameCollision() const
       }
       // Check if this flat net is associated with this ModNet
       // by traversing the hierarchy.
-      std::set<dbModNet*> related_modnets;
+      odb::PtrSet<dbModNet> related_modnets;
       net->findRelatedModNets(related_modnets);
       bool associated = false;
       for (dbModNet* mn : related_modnets) {
@@ -823,7 +857,7 @@ dbModNet* dbModNet::findInHierarchy(
     dbHierSearchDir dir) const
 {
   boost::container::small_vector<dbModNet*, 16> worklist;
-  std::set<dbModNet*> visited;
+  odb::PtrSet<dbModNet> visited;
   worklist.push_back(const_cast<dbModNet*>(this));
   visited.insert(const_cast<dbModNet*>(this));
 

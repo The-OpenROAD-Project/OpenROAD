@@ -10,6 +10,7 @@ import { DrcWidget } from '../../src/drc-widget.js';
 function createMockApp(responses = {}) {
     return {
         websocketManager: {
+            readyPromise: Promise.resolve(),
             request(msg) {
                 const type = msg.type;
                 if (responses[type]) {
@@ -22,6 +23,7 @@ function createMockApp(responses = {}) {
         designMaxDXDY: 100000,
         designOriginX: 0,
         designOriginY: 0,
+        getDbuPerMicron() { return 1000; },
         map: {
             fitBounds() {},
         },
@@ -47,8 +49,8 @@ describe('DrcWidget', () => {
             const select = toolbar.querySelector('.drc-category-select');
             assert.ok(select, 'category select exists');
 
-            const buttons = toolbar.querySelectorAll('.drc-btn');
-            assert.ok(buttons.length >= 2, 'load and refresh buttons exist');
+            const buttons = toolbar.querySelectorAll('.or-btn');
+            assert.ok(buttons.length >= 1, 'load button exists');
 
             // Should have info bar
             const infoBar = widget.element.querySelector('.drc-info-bar');

@@ -5,7 +5,7 @@ read_lef Nangate45/Nangate45.lef
 read_def nangate_gcd/floorplan.def
 
 # Adjust techrules to set min area on metal6
-[[ord::get_db_tech] findLayer metal6] setArea 0.5898
+[[ord::get_db_tech] findLayer metal6] setArea 2359200
 
 add_global_connection -net VDD -pin_pattern VDD -power
 add_global_connection -net VSS -pin_pattern VSS -ground

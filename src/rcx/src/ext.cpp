@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <list>
+#include <memory>
 #include <string>
 
 #include "odb/db.h"
@@ -16,6 +17,9 @@
 #include "rcx/extModelGen.h"
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
+#include "rcx/ext_options.h"
+#include "rcx/multiChipExtractor.h"
+#include "rcx/multiChipSpefWriter.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -24,7 +28,12 @@ using utl::Logger;
 using utl::RCX;
 
 Ext::Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version)
-    : _db(db), _ext(new extMain()), logger_(logger), spef_version_(spef_version)
+    : _db(db),
+      _ext(new extMain()),
+      logger_(logger),
+      spef_version_(spef_version),
+      multi_chip_extractor_(std::make_unique<MultiChipExtractor>(db, logger)),
+      multi_chip_spef_writer_(std::make_unique<MultiChipSpefWriter>(db, logger))
 {
   _ext->init(db, logger);
 }
@@ -42,7 +51,7 @@ void Ext::setLogger(Logger* logger)
 }
 void Ext::write_rules(const std::string& name, const std::string& file)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   _ext->writeRules(name.c_str(), file.c_str());
 }
 void Ext::bench_wires(const BenchWiresOptions& bwo)
@@ -147,7 +156,7 @@ void Ext::bench_wires_gen(const PatternOptions& opt)
 
 void Ext::bench_verilog(const std::string& file)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   char* filename = (char*) file.c_str();
   if (!filename || !filename[0]) {
     logger_->error(RCX, 147, "bench_verilog: file is not defined!");
@@ -161,7 +170,7 @@ void Ext::bench_verilog(const std::string& file)
 
 void Ext::define_process_corner(int ext_model_index, const std::string& name)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   char* cornerName = _ext->addRCCorner(name.c_str(), ext_model_index);
 
   if (cornerName != nullptr) {
@@ -208,12 +217,57 @@ void Ext::get_ext_db_corner(int& index, const std::string& name)
   }
 }
 
+void Ext::extractMultiChip(const ExtractOptions& options)
+{
+  multi_chip_extractor_->run(options);
+}
+
+void Ext::setExtractionRulesFile(const std::string& rules_file)
+{
+  _ext->setExtractionRulesFile(rules_file);
+}
+
+void Ext::setExtractionRulesFile(const std::string& rules_file,
+                                 const std::string& tech_name)
+{
+  odb::dbTech* tech = _db->findTech(tech_name.c_str());
+  if (!tech) {
+    logger_->error(RCX,
+                   522,
+                   "Could not set extraction rules file. Tech {} not found.",
+                   tech_name);
+  }
+
+  multi_chip_extractor_->setExtractionRulesFile(tech, rules_file);
+}
+
+void Ext::setAssemblyExtractionRulesFile(
+    const std::string& assembly_extraction_rules_file)
+{
+  multi_chip_extractor_->setAssemblyExtractionRulesFile(
+      assembly_extraction_rules_file);
+}
+
 void Ext::extract(ExtractOptions options)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   odb::dbBlock* block = _ext->getBlock();
 
   odb::orderWires(logger_, block);
+
+  if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
+    logger_->warn(RCX,
+                  514,
+                  "The ext_model_file option is deprecated. Use "
+                  "set_extraction_rules_file command instead.");
+
+    _ext->setExtractionRulesFile(options.ext_model_file);
+  }
+
+  const std::string& rules_file = _ext->getExtractionRulesFile();
+  if (!rules_file.empty()) {
+    options.ext_model_file = rules_file.c_str();
+  }
 
   _ext->set_debug_nets(options.debug_net);
 
@@ -229,14 +283,17 @@ void Ext::extract(ExtractOptions options)
   if (_ext->_v2) {
     _ext->makeBlockRCsegs_v2(options.net, options.ext_model_file);
   } else {
-    _ext->makeBlockRCsegs(options.net,
-                          options.cc_up,
-                          options.cc_model,
-                          options.max_res,
-                          !options.no_merge_via_res,
-                          options.coupling_threshold,
-                          options.context_depth,
-                          options.ext_model_file);
+    _ext->setExtractionOptions(options);
+
+    if (_ext->modelExists()) {
+      odb::dbTech* tech = block->getTech();
+      std::unique_ptr<extRCModel> rules_model = parseRules(
+          tech, rules_file, _ext->getProcessCornerTable(), _ext->_v2, logger_);
+
+      _ext->registerRulesModel(rules_model.release());
+      _ext->setCornerCount();
+      _ext->run();
+    }
   }
 }
 
@@ -250,13 +307,13 @@ void Ext::write_spef_nets(odb::dbObject* block,
                           bool parallel,
                           int corner)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   _ext->write_spef_nets(flatten, parallel);
 }
 
 void Ext::write_spef(const SpefOptions& options)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   if (options.end) {
     _ext->writeSPEF(true);
     return;
@@ -297,9 +354,14 @@ void Ext::write_spef(const SpefOptions& options)
                   options.parallel);
 }
 
+void Ext::writeMultiChipSpef(const SpefOptions& options)
+{
+  multi_chip_spef_writer_->run(options);
+}
+
 void Ext::read_spef(ReadSpefOpts& opt)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
   bool stampWire = opt.stamp_wire;
@@ -352,7 +414,7 @@ void Ext::read_spef(ReadSpefOpts& opt)
 
 void Ext::diff_spef(const DiffOptions& opt)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   std::string filename(opt.file);
   if (filename.empty()) {
     logger_->error(
@@ -430,7 +492,7 @@ bool Ext::gen_rcx_model(const std::string& spef_file_list,
                         const std::string& version,
                         int pattern)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
 
   if (spef_file_list.empty()) {
     logger_->error(
@@ -474,7 +536,7 @@ bool Ext::define_rcx_corners(const std::string& corner_list)
         RCX, 146, "\nCorner List option -corner_list  is required\n");
   }
 
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
 
   Parser parser(logger_);
   int n1 = parser.mkWords(corner_list.c_str());

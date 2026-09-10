@@ -12,6 +12,14 @@ package(
     features = ["layering_check"],
 )
 
+# rule_scripts/ and calibration/ have no BUILD file of their own, so
+# they're part of this package; exported here so test/BUILD can depend
+# on them.
+exports_files([
+    "rule_scripts/UniversalFormat2FasterCap_923.py",
+    "calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+])
+
 cc_library(
     name = "rcx",
     srcs = [
@@ -58,6 +66,8 @@ cc_library(
         "src/grids.cpp",
         "src/gs.cpp",
         "src/gseq.h",
+        "src/multiChipExtractor.cpp",
+        "src/multiChipSpefWriter.cpp",
         "src/name.cpp",
         "src/name.h",
         "src/netRC.cpp",
@@ -84,6 +94,8 @@ cc_library(
         "include/rcx/ext_options.h",
         "include/rcx/extprocess.h",
         "include/rcx/grids.h",
+        "include/rcx/multiChipExtractor.h",
+        "include/rcx/multiChipSpefWriter.h",
         "include/rcx/rcx.h",
         "include/rcx/util.h",
     ],
@@ -91,7 +103,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )
@@ -113,7 +125,6 @@ cc_library(
     deps = [
         ":rcx",
         "//:ord",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -175,5 +186,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rcx/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rcx/test:__pkg__",
+    ],
 )

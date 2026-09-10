@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
@@ -167,7 +168,7 @@ std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
 
 std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
 {
-  std::set<odb::dbRow*> claimed_rows;
+  odb::PtrSet<odb::dbRow> claimed_rows;
   for (auto* domain : pdngen_->getDomains()) {
     if (domain == this) {
       continue;
@@ -225,7 +226,7 @@ void VoltageDomain::report() const
 
 odb::dbNet* VoltageDomain::findDomainNet(const odb::dbSigType& type) const
 {
-  std::set<odb::dbNet*> nets;
+  odb::PtrSet<odb::dbNet> nets;
 
   for (auto* net : block_->getNets()) {
     if (net->getSigType() == type) {

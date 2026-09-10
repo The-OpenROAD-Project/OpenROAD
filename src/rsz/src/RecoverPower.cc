@@ -18,17 +18,14 @@
 #include "rsz/Resizer.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
@@ -157,6 +154,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
       if (better) {
         failed_move_threshold = 0;
         resizer_->journalEnd();
+        resize_count_++;
         debugPrint(logger_,
                    RSZ,
                    "recover_power",
@@ -181,6 +179,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                         "power recovery",
                         failed_move_threshold_limit_);
           resizer_->journalEnd();
+          resize_count_++;
           break;
         }
         resizer_->journalRestore();
@@ -231,6 +230,10 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     drvr_vertex = recoverPower(path, slack);
+  }
+  // No accept/reject journal here: a returned vertex is one kept downsize.
+  if (drvr_vertex != nullptr) {
+    resize_count_++;
   }
 
   if (resize_count_ > 0) {
@@ -292,7 +295,7 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
       const sta::Path* drvr_path = expanded.path(drvr_index);
       sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
       // If we already tried this vertex and got a worse result, skip it.
-      if (bad_vertices_.find(drvr_vertex) != bad_vertices_.end()) {
+      if (bad_vertices_.contains(drvr_vertex)) {
         continue;
       }
       const sta::Pin* drvr_pin = drvr_vertex->pin();
@@ -363,7 +366,7 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                  drvr_port->libertyCell()->name(),
                  downsize->name());
       if (resizer_->replaceCell(drvr, downsize, true)) {
-        resize_count_++;
+        // Counted by the caller only if the move is kept (journalEnd).
         return true;
       }
     }

@@ -18,6 +18,7 @@
 #include "ir_network.h"
 #include "ir_solver.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shape.h"
@@ -26,7 +27,7 @@
 namespace psm {
 
 SolverDescriptor::SolverDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : solvers_(solvers)
 {
 }
@@ -54,7 +55,7 @@ IRSolver* SolverDescriptor::getSolver(Connection* connection) const
 /////////////////////////////////////
 
 NodeDescriptor::NodeDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : SolverDescriptor(solvers)
 {
 }
@@ -152,7 +153,7 @@ void NodeDescriptor::highlight(const std::any& object,
 /////////////////////////////////////
 
 ITermNodeDescriptor::ITermNodeDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : NodeDescriptor(solvers)
 {
 }
@@ -208,7 +209,7 @@ void ITermNodeDescriptor::highlight(const std::any& object,
 /////////////////////////////////////
 
 BPinNodeDescriptor::BPinNodeDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : NodeDescriptor(solvers)
 {
 }
@@ -264,7 +265,7 @@ void BPinNodeDescriptor::highlight(const std::any& object,
 /////////////////////////////////////
 
 ConnectionDescriptor::ConnectionDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : SolverDescriptor(solvers)
 {
 }
@@ -423,7 +424,7 @@ void DebugGui::populate()
     nodes_[layer] = NodeTree(values.begin(), values.end());
   }
 
-  std::map<odb::dbTechLayer*, std::vector<ITermNode*>> iterms;
+  odb::PtrMap<odb::dbTechLayer, std::vector<ITermNode*>> iterms;
   for (const auto& node : network_->getITermNodes()) {
     iterms[node->getLayer()].emplace_back(node.get());
   }
@@ -432,7 +433,7 @@ void DebugGui::populate()
   }
   iterms.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<BPinNode*>> bpins;
+  odb::PtrMap<odb::dbTechLayer, std::vector<BPinNode*>> bpins;
   for (const auto& node : network_->getBPinNodes()) {
     bpins[node->getLayer()].emplace_back(node.get());
   }
@@ -441,7 +442,7 @@ void DebugGui::populate()
   }
   bpins.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<ConnectionValue>> conns;
+  odb::PtrMap<odb::dbTechLayer, std::vector<ConnectionValue>> conns;
   for (const auto& conn : network_->getConnections()) {
     const odb::Point& pt0 = conn->getNode0()->getPoint();
     const odb::Point& pt1 = conn->getNode1()->getPoint();
@@ -710,7 +711,7 @@ void DebugGui::setSources(const SourceNodes& sources)
 {
   sources_.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<Node*>> srcs;
+  odb::PtrMap<odb::dbTechLayer, std::vector<Node*>> srcs;
   for (const auto& node : sources) {
     srcs[node->getLayer()].emplace_back(node->getSource());
   }

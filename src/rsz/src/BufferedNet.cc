@@ -530,7 +530,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
-  if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
+  if (pins && !pins_visited.contains(to_loc)) {
     pins_visited.insert(to_loc);
     for (const sta::Pin* pin : *pins) {
       if (network->isLoad(pin)) {
@@ -654,8 +654,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
-  if (sink_map.contains(to_loc)
-      && pins_visited.find(to_loc) == pins_visited.end()) {
+  if (sink_map.contains(to_loc) && !pins_visited.contains(to_loc)) {
     pins_visited.insert(to_loc);
     for (BufferedNetPtr sink : sink_map[to_loc]) {
       if (bnet) {
@@ -986,7 +985,7 @@ static BufferedNetPtr makeBufferedNet(
     sta::dbNetwork* db_network,
     RoutePtSet& visited)
 {
-  if (visited.find(to) != visited.end()) {
+  if (visited.contains(to)) {
     debugPrint(logger, RSZ, "groute_bnet", 2, "Loop found in groute");
     return nullptr;
   }
@@ -1176,8 +1175,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
 
 bool BufferedNet::fitsEnvelope(Metrics target)
 {
-  return maxLoadWireLength() <= target.max_load_wl && slack() >= target.slack
-         && sta::fuzzyLessEqual(cap(), target.cap)
+  return slack() >= target.slack && sta::fuzzyLessEqual(cap(), target.cap)
          && sta::fuzzyGreaterEqual(maxLoadSlew(), target.max_load_slew)
          && sta::fuzzyLessEqual(fanout(), target.fanout);
 }

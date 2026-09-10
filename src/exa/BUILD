@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -12,10 +13,21 @@ package(
 )
 
 cc_library(
+    name = "exa_private_hdrs",
+    hdrs = [
+        "src/observer.h",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = ["//src/odb/src/db"],
+)
+
+cc_library(
     name = "exa",
     srcs = [
         "src/example.cpp",
-        "src/observer.h",
     ],
     hdrs = [
         "include/exa/example.h",
@@ -24,9 +36,9 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        ":exa_private_hdrs",
+        "//src/odb/src/db",
         "//src/utl",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -36,7 +48,6 @@ cc_library(
         "src/MakeExample.cpp",
         "src/graphics.cpp",
         "src/graphics.h",
-        "src/observer.h",
         ":swig",
         ":tcl",
     ],
@@ -49,9 +60,10 @@ cc_library(
     ],
     deps = [
         ":exa",
+        ":exa_private_hdrs",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -97,4 +109,10 @@ python_wrap_cc(
         "include",
         "src",
     ],
+)
+
+exports_files(["README.md"])
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

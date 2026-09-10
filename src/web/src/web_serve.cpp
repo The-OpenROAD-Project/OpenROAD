@@ -6,6 +6,7 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <algorithm>
 #include <cerrno>
 #include <chrono>
 #include <cstdint>
@@ -26,7 +27,6 @@
 #include "boost/asio/steady_timer.hpp"
 #include "boost/asio/strand.hpp"
 #include "boost/system/error_code.hpp"
-#include "tclDecls.h"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "boost/beast/core.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -39,6 +39,7 @@
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tcl.h"
+#include "tclDecls.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
@@ -121,6 +122,34 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
   WebViewerHook* hook_;
   std::string pending_;
 };
+
+void WebServer::initLogger()
+{
+  // Idempotent: skip if already registered, or if serve() is already
+  // running (it registers the sink itself).
+  if (logger_initialized_ || ioc_) {
+    return;
+  }
+
+  // Create the hook object now because WebLogSink holds a raw pointer to it
+  // (for sessions()).  Do NOT install it as the Gui headless viewer here:
+  // that would make gui::Gui::enabled() true during startup scripts, and
+  // gui::pause() would then block kClientConnectTimeoutSeconds (~30s)
+  // waiting for a web client that cannot connect until serve() opens the
+  // network.  The headless viewer and chart factory are installed in
+  // serve() instead.
+  if (!viewer_hook_) {
+    viewer_hook_ = std::make_unique<WebViewerHook>();
+  }
+
+  auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
+  log_sink_ = log_sink;
+  logger_->addSink(log_sink_);
+  viewer_hook_->setDrainLogsFn(
+      [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
+
+  logger_initialized_ = true;
+}
 
 // Tcl stdout / stderr capture --------------------------------------------
 //
@@ -328,12 +357,19 @@ void WebServer::serve(int port)
     return;
   }
 
+  // Register the WebLogSink if Main.cc / the interactive `web_server`
+  // command did not already call initLogger().  Idempotent.
+  initLogger();
+
+  // Clear any stale exit/stop request left over from a previous session,
+  // so a request that arrived during the previous teardown doesn't make
+  // runEventLoopUntilStop() return immediately.
   exit_requested_ = false;
   stop_requested_ = false;
   main_thread_id_ = Tcl_GetCurrentThread();
 
   try {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    ensureGenerator();
     auto timing_report = std::make_shared<TimingReport>(sta_);
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
@@ -351,7 +387,9 @@ void WebServer::serve(int port)
     {
       const std::string rename_orig
           = std::string("rename exit ") + kRenamedExitCmd;
+      // NOLINTNEXTLINE(misc-include-cleaner)
       Tcl_Eval(interp_, rename_orig.c_str());
+      // NOLINTNEXTLINE(misc-include-cleaner)
       Tcl_CreateCommand(
           interp_, "exit", &WebServer::tclExitHandler, this, nullptr);
     }
@@ -366,7 +404,11 @@ void WebServer::serve(int port)
                                       this,
                                       /*delProc=*/nullptr);
 
-    viewer_hook_ = std::make_unique<WebViewerHook>();
+    // viewer_hook_ and the WebLogSink were created by initLogger() above.
+    // Install the hook as the Gui headless viewer and chart factory now
+    // that the network is about to open — deferred from initLogger() so
+    // startup scripts run with gui::Gui::enabled() == false (see
+    // initLogger()).
     gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
     gui::Gui::get()->setChartFactory(
         [hook = viewer_hook_.get()](const std::string& name,
@@ -375,11 +417,6 @@ void WebServer::serve(int port)
           return hook->createChart(name, x_label, y_labels);
         });
 
-    auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
-    log_sink_ = log_sink;
-    logger_->addSink(log_sink_);
-    viewer_hook_->setDrainLogsFn(
-        [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
     // Flush WebLogSink at the end of every Tcl eval so log output
     // emitted during a command reaches clients before the response
     // carrying the Tcl result.  viewer_hook_ outlives every io thread
@@ -414,8 +451,7 @@ void WebServer::serve(int port)
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
          hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                    const odb::Rect& dbu_tile,
-                                    double scale,
+                                    const TileFrame& frame,
                                     bool debug_live) {
           if (hook == nullptr) {
             return;
@@ -428,15 +464,36 @@ void WebServer::serve(int port)
             return;
           }
           for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
-            WebPainter painter(dbu_tile, scale);
+            // A Renderer sees the tile as a whole-DBU window (Painter's API is
+            // integer DBU); only the rasterization below needs the exact
+            // origin, which it takes from the frame.
+            WebPainter painter(frame.cull, frame.scale);
             renderer->drawObjects(painter);
-            gen->rasterizeWebPainterOps(image, painter.ops(), dbu_tile, scale);
+            gen->rasterizeWebPainterOps(image, painter.ops(), frame);
           }
         });
+
+    // After a design edit invalidates the tile cache, push a refresh so every
+    // connected client re-requests its tiles (mirrors the Qt GUI's repaint on
+    // Search::modified).  Fired on the design-mutation thread; broadcast() is
+    // safe from any thread (it posts writes onto each session's strand).
+    generator_->setDesignChangedCallback([hook = viewer_hook_.get()]() {
+      if (hook == nullptr) {
+        return;
+      }
+      hook->sessions().broadcast(R"({"type":"refresh"})");
+    });
 
     auto const address = net::ip::make_address("0.0.0.0");
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
+
+    // Bound how many requests the client keeps in flight at once. Scale with
+    // the server's I/O worker count (the threads that actually service
+    // requests) so the window tracks the configured thread budget, with an
+    // absolute cap so a many-core box doesn't hand out an unbounded window.
+    // Announced to the client on connect; see WebSocketSession::on_accept.
+    int const max_in_flight = std::clamp(num_threads * 4, 16, 256);
 
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
@@ -447,7 +504,8 @@ void WebServer::serve(int port)
                                        timing_report,
                                        clock_report,
                                        logger_,
-                                       viewer_hook_.get());
+                                       viewer_hook_.get(),
+                                       max_in_flight);
     shutdown_listener_ = std::move(handle.shutdown);
 
     const std::string url = "http://localhost:" + std::to_string(handle.port);
@@ -643,6 +701,9 @@ void WebServer::stop()
 
   if (viewer_hook_) {
     TileGenerator::setDebugOverlayCallback({});
+    if (generator_) {
+      generator_->setDesignChangedCallback({});
+    }
     if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
       gui::Gui::get()->setHeadlessViewer(nullptr);
     }
@@ -663,6 +724,8 @@ void WebServer::stop()
     log_sink_.reset();
   }
   viewer_hook_.reset();
+  // Reset so a subsequent serve()/initLogger() re-registers the sink.
+  logger_initialized_ = false;
 
   main_thread_id_ = nullptr;
   exit_requested_ = false;

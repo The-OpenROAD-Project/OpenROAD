@@ -40,6 +40,7 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
@@ -48,7 +49,7 @@ cc_library(
         "//src/dpl",
         "//src/est",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.geometry",
@@ -114,5 +115,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/psm/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/psm/test:__pkg__",
+    ],
 )

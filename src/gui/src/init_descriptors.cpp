@@ -13,6 +13,7 @@
 #include "db_sta/dbSta.hh"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
@@ -50,7 +51,7 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
 
   // Static empty sets for DbNetDescriptor — in the full GUI build,
   // MainWindow::init() re-registers with real widget-owned sets.
-  static const std::set<odb::dbNet*> empty_net_set;
+  static const odb::PtrSet<odb::dbNet> empty_net_set;
 
   registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db, sta));
   registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db, sta));
@@ -120,8 +121,10 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
   registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
-  // Note: RulerDescriptor, LabelDescriptor, and BufferTreeDescriptor are
-  // GUI-only and are registered in MainWindow::init().
+  // Note: RulerDescriptor and LabelDescriptor are GUI-only and are registered
+  // in MainWindow::init().  BufferTreeDescriptor needs Qt as well, so it is
+  // registered in Gui::init() (which runs in any Qt binary, window or not)
+  // and re-registered by MainWindow::init(); see the comment there.
 }
 
 }  // namespace gui

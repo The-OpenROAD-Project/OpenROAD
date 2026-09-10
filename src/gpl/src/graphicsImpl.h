@@ -168,6 +168,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   NesterovPlace* np_ = nullptr;
   static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
   static constexpr const char* kDrawInstances = "Draw GPL Cells";
+  static constexpr const char* kDrawTimingNets = "Draw Timing Nets";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
   bool draw_bins_ = false;
@@ -185,6 +186,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void initCharts();
   void initDebugHeatmap();
   void drawNesterov(gui::Painter& painter);
+  void drawTimingNets(gui::Painter& painter);
   void drawInitial(gui::Painter& painter);
   void drawMBFF(gui::Painter& painter);
   void drawBounds(gui::Painter& painter);

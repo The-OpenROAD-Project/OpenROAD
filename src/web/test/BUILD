@@ -46,7 +46,9 @@ DOM_TEST_DATA = [
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":gif_test",
         ":request_handler_test",
+        ":save_display_controls_test",
         ":tile_generator_test",
     ],
 )
@@ -59,6 +61,27 @@ js_test(
 )
 
 js_test(
+    name = "ui_utils_test",
+    data = JS_FILES,
+    entry_point = "js/test-ui-utils.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "display_state_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-display-state.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "schematic_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-schematic-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
@@ -66,9 +89,37 @@ js_test(
 )
 
 js_test(
+    name = "context_menu_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-context-menu.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "search_nav_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-search-nav.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "capture_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-capture.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "websocket_manager_test",
     data = JS_FILES,
     entry_point = "js/test-websocket-manager.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "websocket_tile_layer_test",
+    data = JS_FILES,
+    entry_point = "js/test-websocket-tile-layer.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -81,7 +132,7 @@ js_test(
 
 js_test(
     name = "display_controls_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -108,6 +159,13 @@ js_test(
 )
 
 js_test(
+    name = "timing_cone_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-timing-cone.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "inspector_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
@@ -118,6 +176,13 @@ js_test(
     name = "ruler_test",
     data = JS_FILES,
     entry_point = "js/test-ruler.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "label_manager_test",
+    data = JS_FILES,
+    entry_point = "js/test-label-manager.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -136,6 +201,13 @@ js_test(
 )
 
 js_test(
+    name = "selection_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-selection-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "menu_bar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-menu-bar.js",
@@ -143,9 +215,58 @@ js_test(
 )
 
 js_test(
+    name = "toolbar_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-toolbar.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "image_export_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-image-export.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "edit_dialogs_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-edit-dialogs.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "merged_tile_layer_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-merged-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_merge_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-merge.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "dpr_test",
+    data = JS_FILES,
+    entry_point = "js/test-dpr.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "device_pixels_test",
+    data = JS_FILES,
+    entry_point = "js/test-device-pixels.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -170,10 +291,27 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "gif_test",
+    srcs = ["cpp/TestGif.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -187,8 +325,10 @@ cc_test(
     ],
     deps = [
         "//src/gui",
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
+        "//src/utl",
         "//src/web",
         "@boost.json",
         "@googletest//:gtest",
@@ -203,7 +343,9 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
@@ -221,10 +363,13 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -237,9 +382,64 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "timing_cone_test",
+    srcs = ["cpp/TestTimingCone.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "charts_test",
+    srcs = ["cpp/TestCharts.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "labels_test",
+    srcs = ["cpp/TestLabels.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -250,6 +450,7 @@ cc_test(
     name = "glyph_cache_test",
     srcs = ["cpp/TestGlyphCache.cpp"],
     deps = [
+        "//src/gui:gui_stub",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -261,7 +462,8 @@ cc_test(
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
         "//src/gui",
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -275,10 +477,27 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_display_controls_test",
+    srcs = ["cpp/TestSaveDisplayControls.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

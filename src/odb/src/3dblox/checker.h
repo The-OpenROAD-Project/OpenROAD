@@ -13,15 +13,7 @@ class Sta;
 
 namespace odb {
 class dbDatabase;
-class UnfoldedModel;
 class dbMarkerCategory;
-
-struct MatingSurfaces
-{
-  bool valid;
-  int top_z;
-  int bot_z;
-};
 
 class Checker
 {
@@ -31,20 +23,14 @@ class Checker
   void check();
 
  private:
-  void checkLogicalConnectivity(dbMarkerCategory* top_cat,
-                                const UnfoldedModel* model);
-  void checkFloatingChips(dbMarkerCategory* top_cat,
-                          const UnfoldedModel* model);
-  void checkOverlappingChips(dbMarkerCategory* top_cat,
-                             const UnfoldedModel* model);
-  void checkInternalExtUsage(dbMarkerCategory* top_cat,
-                             const UnfoldedModel* model);
-  void checkConnectionRegions(dbMarkerCategory* top_cat,
-                              const UnfoldedModel* model);
-  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
-                                  const UnfoldedModel* model);
-  void checkNetConnectivity(dbMarkerCategory* top_cat,
-                            const UnfoldedModel* model);
+  void checkLogicalConnectivity(dbMarkerCategory* top_cat);
+  void checkFloatingChips(dbMarkerCategory* top_cat);
+  void checkOverlappingChips(dbMarkerCategory* top_cat);
+  void checkInternalExtUsage(dbMarkerCategory* top_cat);
+  void checkConnectionRegions(dbMarkerCategory* top_cat);
+  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat);
+  void checkNetConnectivity(dbMarkerCategory* top_cat);
+  void checkAlignmentMarkers(dbMarkerCategory* top_cat);
   utl::Logger* logger_;
   dbDatabase* db_;
 };

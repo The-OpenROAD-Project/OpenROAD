@@ -17,10 +17,11 @@ jobs:
     permissions:
       # Read-only access so we don't accidentally try to push to *this* repository.
       contents: read
-      # Pull request write access, so we can remove the label.
-      issues: write
+      # Pull-requests write so we can remove the label (label endpoints on a
+      # PR require pull-requests scope, even though they live under the
+      # issues API).
       pull-requests: write
-      # Deployment write access, so we can add the nice deployment info.
+      # Deployment write so link_pr can record the upstream PR.
       deployments: write
 
     # Only run on the private repository.
@@ -82,6 +83,8 @@ jobs:
       uses: The-OpenROAD-Project/actions/send_pr@main
       env:
         STAGING_GITHUB_TOKEN: ${{ steps.resolve_token.outputs.token }}
+      with:
+        draft: 'true'
 
     - name: Linking to PR using deployment.
       uses: The-OpenROAD-Project/actions/link_pr@main

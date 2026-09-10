@@ -341,15 +341,10 @@ void FlexDRWorker::initNetObjs(
       odb::Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
       odb::Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
       odb::Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
-      frLayerNum bNum = guide->getBeginLayerNum();
-      frLayerNum eNum = guide->getEndLayerNum();
       frRect rect;
       rect.setBBox({bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
-      for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
-           lNum += 2) {
-        rect.setLayerNum(lNum);
-        netGuides[guide->getNet()].push_back(rect);
-      }
+      rect.setLayerNum(guide->getLayerNum());
+      netGuides[guide->getNet()].push_back(rect);
     }
   }
 }
@@ -1916,13 +1911,13 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
       break;
     }
     if (isAddPathCost) {
-      gridGraph_.setGridCost(x, y, z, dir);
-      gridGraph_.setGridCost(x, y, z, frDirEnum::D);
-      gridGraph_.setGridCost(x, y, z, frDirEnum::U);
+      gridGraph_.setApCost(x, y, z, dir);
+      gridGraph_.setApCost(x, y, z, frDirEnum::D);
+      gridGraph_.setApCost(x, y, z, frDirEnum::U);
     } else {
-      gridGraph_.resetGridCost(x, y, z, dir);
-      gridGraph_.resetGridCost(x, y, z, frDirEnum::D);
-      gridGraph_.resetGridCost(x, y, z, frDirEnum::U);
+      gridGraph_.resetApCost(x, y, z, dir);
+      gridGraph_.resetApCost(x, y, z, frDirEnum::D);
+      gridGraph_.resetApCost(x, y, z, frDirEnum::U);
     }
     switch (dir) {
       case frDirEnum::W:
@@ -2727,6 +2722,14 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     result.clear();
     if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::ROUTING) {
       isRoutingLayer = true;
+      // The grid graph need not span the full layer stack: TOP_ROUTING_LAYER
+      // can trim routing layers above it out of the grid. Skip fixed-shape
+      // costing on layers absent from the grid so getMazeZIdx / getLayerNum
+      // stay in range. No-op when the grid spans every routing layer.
+      if (layerNum < gridGraph_.getMinLayerNum()
+          || layerNum > gridGraph_.getMaxLayerNum()) {
+        continue;
+      }
       zIdx = gridGraph_.getMazeZIdx(layerNum);
     } else if (getTech()->getLayer(layerNum)->getType()
                == dbTechLayerType::CUT) {
@@ -2734,6 +2737,10 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       if (getTech()->getBottomLayerNum() <= layerNum - 1
           && getTech()->getLayer(layerNum - 1)->getType()
                  == dbTechLayerType::ROUTING) {
+        if (layerNum - 1 < gridGraph_.getMinLayerNum()
+            || layerNum - 1 > gridGraph_.getMaxLayerNum()) {
+          continue;
+        }
         zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
       } else {
         continue;
@@ -2899,6 +2906,12 @@ void FlexDRWorker::initMazeCost_terms(
             if (getTech()->getLayer(layerNum)->getType()
                 == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
+              // Grid may not span the full stack (TOP_ROUTING_LAYER trim);
+              // skip layers absent from the grid. No-op when fully spanned.
+              if (layerNum < gridGraph_.getMinLayerNum()
+                  || layerNum > gridGraph_.getMaxLayerNum()) {
+                continue;
+              }
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
                        == dbTechLayerType::CUT) {
@@ -2906,6 +2919,10 @@ void FlexDRWorker::initMazeCost_terms(
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
                          == dbTechLayerType::ROUTING) {
+                if (layerNum - 1 < gridGraph_.getMinLayerNum()
+                    || layerNum - 1 > gridGraph_.getMaxLayerNum()) {
+                  continue;
+                }
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -2976,6 +2993,12 @@ void FlexDRWorker::initMazeCost_terms(
             if (getTech()->getLayer(layerNum)->getType()
                 == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
+              // Grid may not span the full stack (TOP_ROUTING_LAYER trim);
+              // skip layers absent from the grid. No-op when fully spanned.
+              if (layerNum < gridGraph_.getMinLayerNum()
+                  || layerNum > gridGraph_.getMaxLayerNum()) {
+                continue;
+              }
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
                        == dbTechLayerType::CUT) {
@@ -2983,6 +3006,10 @@ void FlexDRWorker::initMazeCost_terms(
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
                          == dbTechLayerType::ROUTING) {
+                if (layerNum - 1 < gridGraph_.getMinLayerNum()
+                    || layerNum - 1 > gridGraph_.getMaxLayerNum()) {
+                  continue;
+                }
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;

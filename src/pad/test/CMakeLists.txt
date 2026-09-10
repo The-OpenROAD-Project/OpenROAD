@@ -10,11 +10,16 @@ or_integration_tests(
     bump_array_remove_single
     connect_by_abutment
     connect_by_abutment_with_single_pinnet
+    make_bterm_pins_from_bumps
+    make_bterm_pins_from_bumps_multiple_bumps
+    make_bterm_pins_from_bumps_no_bump
     make_corner_sites
     make_io_sites
     make_io_sites_different_sites
     make_io_sites_rotations
     non_top_layer
+    order_net_match_different
+    order_net_match_unconnected
     place_bondpad
     place_bondpad_stagger
     place_corners_avoid_bumps
@@ -32,6 +37,7 @@ or_integration_tests(
     place_pads_bumps_strategy
     place_pad_wrong_master
     place_pads_bumps
+    place_pads_placer_fullyblocked
     place_pads_too_many
     place_pads_uniform
     place_pads_uniform_slip
@@ -45,7 +51,9 @@ or_integration_tests(
     rdl_route_assignments_overlapping_iterms
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
+    rdl_route_daisy_chain
     rdl_route_failed
+    rdl_route_fixed
     rdl_route_invalid
     rdl_route_keep_existing
     rdl_route_max_iterations
@@ -58,4 +66,3 @@ or_integration_tests(
     skywater130_coyote_tc
     skywater130_overlapping_filler
 )
-

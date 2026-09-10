@@ -175,6 +175,29 @@ void FastRouteCore::netpinOrderInc()
         static_cast<float>(res_aware_nets) / net_ids_.size() * 100);
   }
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
+
+  // One-shot dump of the res-aware nets in routing order (their
+  // layer-assignment priority). Enable with -debug_level GRT resAware 2.
+  if (enable_resistance_aware_ && !is_incremental_grt_ && !res_aware_logged_
+      && logger_->debugCheck(GRT, "resAware", 2)) {
+    res_aware_logged_ = true;
+    logger_->report(
+        "FastRoute res-aware nets in layer-assignment priority order:");
+    int rank = 0;
+    for (const OrderNetPin& order : tree_order_pv_) {
+      FrNet* net = nets_[order.treeIndex];
+      if (!net->isResAware()) {
+        continue;
+      }
+      logger_->report("  {}: {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                      rank++,
+                      net->getName(),
+                      net->getSlack() * 1e12,
+                      net->getResistance(),
+                      net->getNumPins(),
+                      net->getNetLength());
+    }
+  }
 }
 
 void FastRouteCore::fillVIA()
@@ -671,7 +694,7 @@ void FastRouteCore::setIncrementalGrt(bool is_incremental)
 
 // Update and sort the critical nets. Finally pick a percentage of the
 // nets to use the resistance-aware strategy
-void FastRouteCore::updateSlacks(float percentage)
+void FastRouteCore::updateSlacks()
 {
   // Check if liberty file was loaded before calculating slack
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr
@@ -737,6 +760,8 @@ void FastRouteCore::updateSlacks(float percentage)
 
   std::ranges::stable_sort(res_aware_list, compareSlack);
 
+  float percentage = res_aware_nets_percentage_ / 100.0;
+
   // During incremental grt, enable res-aware for all nets in the list
   if (is_incremental_grt_) {
     percentage = 1;
@@ -758,6 +783,40 @@ void FastRouteCore::updateSlacks(float percentage)
           res_aware_list[i].second);
     }
     nets_[res_aware_list[i].first]->setIsResAware(true);
+  }
+
+  // Res-aware set-growth instrumentation (-debug_level GRT resAware 2); reports
+  // per-call delta and running total, level 3 lists newly-marked nets.
+  if (logger_->debugCheck(GRT, "resAware", 2) && !is_incremental_grt_) {
+    int total = 0;
+    for (const int id : net_ids_) {
+      if (nets_[id]->isResAware()) {
+        total++;
+      }
+    }
+    const int newly = std::min<int>(
+        static_cast<int>(std::ceil(res_aware_list.size() * percentage)),
+        static_cast<int>(res_aware_list.size()));
+    logger_->report(
+        "Res-aware growth (updateSlacks): +{} marked of {} candidates -> {} "
+        "total ({:.2f}%)",
+        newly,
+        res_aware_list.size(),
+        total,
+        net_ids_.empty()
+            ? 0.0f
+            : 100.0f * total / static_cast<float>(net_ids_.size()));
+    if (logger_->debugCheck(GRT, "resAware", 3)) {
+      for (int i = 0; i < newly; i++) {
+        FrNet* net = nets_[res_aware_list[i].first];
+        logger_->report("  + {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                        net->getName(),
+                        net->getSlack() * 1e12,
+                        net->getResistance(),
+                        net->getNumPins(),
+                        net->getNetLength());
+      }
+    }
   }
 }
 
@@ -1289,7 +1348,13 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kInitialResAwareNetsPercentage;
+  }
   updateSlacks();
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kMidResAwareNetsPercentage;
+  }
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
@@ -2763,7 +2828,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2787,7 +2852,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2798,19 +2863,18 @@ void FastRouteCore::saveCongestion(const int iter)
     }
   }
 
-  // check if the file name is defined
-  if (congestion_file_name_.empty()) {
+  // The final-report file-write (iter == -1) is handled in
+  // GlobalRouter::saveCongestion so both routing engines share the
+  // same code path. Per-iteration reports stay here because only
+  // FastRoute knows the current iteration index.
+  if (iter == -1 || congestion_file_name_.empty()) {
     return;
   }
 
-  // Modify the file name for each iteration
+  // delete rpt extension and add iteration number
   std::string file_name = congestion_file_name_;
-  if (iter != -1) {
-    // delete rpt extension
-    file_name = file_name.substr(0, file_name.size() - 4);
-    // add iteration number
-    file_name += "-" + std::to_string(iter) + ".rpt";
-  }
+  file_name = file_name.substr(0, file_name.size() - 4);
+  file_name += "-" + std::to_string(iter) + ".rpt";
 
   odb::dbMarkerCategory* tool_category
       = db_->getChip()->getBlock()->findMarkerCategory(
@@ -2938,6 +3002,18 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
   auto& treenodes = sttrees_[netID].nodes;
 
   // Setting the values needed for each TreeNode
+  //
+  // Coordinate deduplication: non-terminal nodes that share a grid (x,y)
+  // position with an earlier node are aliased (stackAlias) to that earlier
+  // node. The original implementation found the earliest matching node with an
+  // O(numpoints) linear scan, making the whole loop O(numpoints^2). For large
+  // multi-pin nets this dominates global routing runtime. We replace the scan
+  // with a hash-map keyed by the packed (x,y) position, mapping to the dcor
+  // index of the FIRST node inserted at that position. This yields identical
+  // results (same first-match semantics, same xcor_/ycor_/dcor_ contents)
+  // with O(1) average lookups.
+  auto& coord_map = tree_node_coord_dedup_;
+  coord_map.clear();
   for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
     treenodes[d].topL = -1;
     treenodes[d].botL = num_layers_;
@@ -2948,6 +3024,12 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     treenodes[d].lID = BIG_INT;
     treenodes[d].status = 0;
 
+    // Pack the int16_t grid coordinates into a single unsigned 32-bit key.
+    // Unsigned avoids undefined behavior from shifting into the sign bit.
+    const uint32_t key
+        = (static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].x)) << 16)
+          | static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].y));
+
     if (d < num_terminals) {
       const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
       treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
@@ -2955,20 +3037,21 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
       treenodes[d].assigned = true;
       treenodes[d].status = 1;
 
+      // Terminals are always appended (they are never aliased away), matching
+      // the original behavior. Record only the first dcor per position so
+      // later lookups resolve to the earliest insertion, as the linear scan
+      // did.
+      coord_map.try_emplace(key, d);
       xcor_[numpoints] = treenodes[d].x;
       ycor_[numpoints] = treenodes[d].y;
       dcor_[numpoints] = d;
       numpoints++;
     } else {
-      bool redundant = false;
-      for (int k = 0; k < numpoints; k++) {
-        if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
-          treenodes[d].stackAlias = dcor_[k];
-          redundant = true;
-          break;
-        }
-      }
-      if (!redundant) {
+      const auto it = coord_map.find(key);
+      if (it != coord_map.end()) {
+        treenodes[d].stackAlias = it->second;
+      } else {
+        coord_map.emplace(key, d);
         xcor_[numpoints] = treenodes[d].x;
         ycor_[numpoints] = treenodes[d].y;
         dcor_[numpoints] = d;

@@ -20,6 +20,7 @@
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/ext_options.h"
 #include "rcx/extprocess.h"
 #include "rcx/util.h"
 #include "utl/Logger.h"

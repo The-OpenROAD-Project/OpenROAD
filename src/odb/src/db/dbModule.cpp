@@ -236,7 +236,12 @@ void dbModule::addInst(dbInst* inst)
         _inst->name_);
   }
 
-  if (_inst->module_ != 0) {
+  // Distinguish a real reparent (inst already had a module) from the
+  // initial assignment during dbInst::create (module_ is unset). Only
+  // the former should fire inDbPostInstParentChange -- otherwise every
+  // create would falsely trigger downstream subtree-invalidation paths.
+  const bool is_reparent = (_inst->module_ != 0);
+  if (is_reparent) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
     ((_dbModule*) mod)->removeInst(inst);
   }
@@ -253,6 +258,12 @@ void dbModule::addInst(dbInst* inst)
     _inst->module_next_ = module->insts_;
     module->insts_ = _inst->getOID();
     cur_head->module_prev_ = _inst->getOID();
+  }
+
+  if (is_reparent) {
+    for (dbBlockCallBackObj* cb : block->callbacks_) {
+      cb->inDbPostInstParentChange(inst);
+    }
   }
 }
 
@@ -554,10 +565,9 @@ dbModBTerm* dbModule::findModBTerm(const char* name) const
   // hierarchical path to a non-hierarchical port name.
   auto it = obj->modbterm_hash_.find(name);
   if (it == obj->modbterm_hash_.end()) {
-    const char hier_delimiter = getOwner()->getHierarchyDelimiter();
-    const char* last_delim = strrchr(name, hier_delimiter);
-    if (last_delim != nullptr) {
-      it = obj->modbterm_hash_.find(last_delim + 1);
+    const char* base_name = getOwner()->getBaseName(name);
+    if (base_name != name) {
+      it = obj->modbterm_hash_.find(base_name);
     }
   }
   if (it != obj->modbterm_hash_.end()) {

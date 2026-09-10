@@ -16,6 +16,8 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbChip.h"
+#include "dbChipBump.h"
+#include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -125,6 +127,8 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       region_prev_(i.region_prev_),
       module_prev_(i.module_prev_),
       hierarchy_(i.hierarchy_),
+      chip_region_(i.chip_region_),
+      bump_(i.bump_),
       iterms_(i.iterms_),
       halo_(i.halo_),
       pin_access_idx_(i.pin_access_idx_)
@@ -161,6 +165,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
   stream << inst.region_prev_;
   stream << inst.module_prev_;
   stream << inst.hierarchy_;
+  stream << inst.chip_region_;
+  stream << inst.bump_;
   stream << inst.iterms_;
   stream << inst.halo_;
   stream << inst.pin_access_idx_;
@@ -187,6 +193,10 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst.region_prev_;
   stream >> inst.module_prev_;
   stream >> inst.hierarchy_;
+  if (inst.getDatabase()->isSchema(kSchemaInstBump)) {
+    stream >> inst.chip_region_;
+    stream >> inst.bump_;
+  }
   stream >> inst.iterms_;
   stream >> inst.halo_;
   stream >> inst.pin_access_idx_;
@@ -300,6 +310,14 @@ bool _dbInst::operator==(const _dbInst& rhs) const
     return false;
   }
 
+  if (chip_region_ != rhs.chip_region_) {
+    return false;
+  }
+
+  if (bump_ != rhs.bump_) {
+    return false;
+  }
+
   if (iterms_ != rhs.iterms_) {
     return false;
   }
@@ -360,10 +378,15 @@ bool dbInst::rename(const char* name)
     block->journal_->updateField(this, _dbInst::kName, inst->name_, name);
   }
 
+  std::string old_name(inst->name_);
   block->inst_hash_.remove(inst);
   free((void*) inst->name_);
   inst->name_ = safe_strdup(name);
   block->inst_hash_.insert(inst);
+
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
+    cb->inDbPostInstRename(this, old_name.c_str());
+  }
 
   return true;
 }
@@ -1287,6 +1310,18 @@ uint32_t dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
+dbChipBump* dbInst::getChipBump() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  if (inst->bump_ == 0) {
+    return nullptr;
+  }
+  _dbChip* chip = (_dbChip*) getBlock()->getChip();
+  _dbChipRegion* chip_region
+      = (_dbChipRegion*) chip->chip_region_tbl_->getPtr(inst->chip_region_);
+  return (dbChipBump*) chip_region->chip_bump_tbl_->getPtr(inst->bump_);
+}
+
 dbInst* dbInst::create(dbBlock* block,
                        dbMaster* master,
                        const char* name,
@@ -1486,6 +1521,13 @@ void dbInst::destroy(dbInst* inst_)
                              362,
                              "Attempt to destroy dont_touch instance {}",
                              inst->name_);
+  }
+  if (inst->bump_.isValid()) {
+    inst->getLogger()->error(
+        utl::ODB,
+        546,
+        "Cannot destroy instance {} with an associated chip bump",
+        inst->name_);
   }
 
   dbScanInst* scan_inst = inst_->getScanInst();

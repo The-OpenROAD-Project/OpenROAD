@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -113,7 +113,7 @@ cc_test(
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/dft/src/utils",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -134,7 +134,7 @@ cc_test(
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/dft/src/utils",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -145,7 +145,10 @@ py_test(
     name = "dft_man_tcl_check",
     srcs = ["dft_man_tcl_check.py"],
     data = ["//src/dft:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

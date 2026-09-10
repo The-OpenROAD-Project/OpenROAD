@@ -49,19 +49,16 @@ struct ExtractOptions
   float coupling_threshold = 0.1;
   int context_depth = 5;
   int cc_model = 10;
-  int signal_table = 3;
-  bool over_cell = false;
-
-  bool skip_via_wires = false;
-
   bool lef_rc = false;
   bool lef_res = false;
-  bool rlog = false;
+  int _dbg = 0;
+
+  // v2-only variables:
   bool _v2 = false;
   float _version = 2.2;
   int _wire_extracted_progress_count = 50000;
-
-  int _dbg = 0;
+  bool over_cell = false;
+  bool skip_via_wires = false;
 };
 
 struct SpefOptions

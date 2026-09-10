@@ -1,75 +1,96 @@
 # Manpages Test Framework
 
-There are 4 regression tests we conduct for the manpages, namely:
-- Translator
-- Count output files
-- Man functionality check
-- Man-to-Tcl check
+The documentation tests are split into two groups:
 
-There are also 2 CI tests as part of the
-They can be found in `.github/workflows/github-actions-docs-test.yml` file.
+- **Static tests** — registered in `regression_tests.tcl`, they exercise the
+  documentation *scripts* against fixed inputs checked in beside them.
+- **Dynamic (per-module) tests** — generated for each documented module, they
+  check that a module's `README.md` and `messages.txt` stay consistent with its
+  Tcl sources.
 
-## Regression tests 
+All of them are pure Python or Tcl and run in seconds without building the
+OpenROAD binary. See [Documentation Check Tests](../doc_check_tests.md) for the
+Bazel-level view.
 
-This is divided into static and dynamic regression tests.
-Static tests are designed to test the script functionality, whereas
-dynamic tests are designed to test the documentation compatibitity with the 
-script and will be housed in individual module folders.
+## Running the tests
 
-### Static Test
+```shell
+# All documentation checks, static and per-module
+bazelisk test --test_tag_filters=doc_check //src/...
+```
+
+## Static tests
+
+These three are registered in `regression_tests.tcl`:
 
 #### Translator
 
-The code file can be found [here](translator.py). 
+The code file can be found [here](translator.py).
 The objective of this test is to test if the underlying `README.md`
 file can be converted to roff format via regex extraction. Namely,
 the script checks for equality in the number of function names,
 descriptors, synopsis, options and arguments detected per Tcl command.
 
+It runs against the checked-in fixtures `translator.md` (a frozen module
+README) and `translator.txt` (a frozen `messages.txt`), comparing the result to
+`translator.ok`. Those fixtures are test input — do not edit them to fix a
+problem in a real module README.
+
 #### Man functionality check
 
-The code file can be found [here](man_func.tcl). 
+The code file can be found [here](man_func.tcl).
 The objective of this test is to check the functionality of the Tcl
-`man` command implemented within the OpenROAD binary. 
+`man` command implemented within the OpenROAD binary.
 Mode 1 is where we run `man -manpath <CMD>`, and mode 2
 is where we do not specify the `-manpath` argument and just run
-`man <CMD>`. 
+`man <CMD>`.
 
 This check makes sure that the files are compiled in the correct location
 and viewable by the `man` command.
 
-### Dynamic Test
+#### Bazel developer activities check
 
-For all the tests below, do make sure to update it locally every 
-time you make a change to the `README.md`, update messages, or 
-make a change to the top-level `Tcl` code. 
+The code file can be found [here](bazel_developer_activities_check.py).
+It asserts that the Bazel developer documentation still covers the key
+day-to-day activities, and fails naming the topic that went missing.
+
+## Dynamic (per-module) tests
+
+For all the tests below, do make sure to update it locally every
+time you make a change to the `README.md`, update messages, or
+make a change to the top-level `Tcl` code.
+
+Each documented module gets two tests, declared in its own
+`src/{module}/test/BUILD` and tagged `doc_check`:
 
 #### README-messages check
 
-The name of this test is `{MODULE}_readme_msgs_check.py`.
-The objective of this test is to check the number of
-parsed module commands and messages.
+The name of this test is `{module}_readme_msgs_check`.
+It validates that the module's `README.md` parses correctly into man2 format
+and that its `messages.txt` parses into man3 format.
 
-### Man-to-Tcl check
+#### Man-to-Tcl check
 
-The name of this test is `{MODULE}_man_tcl_check.py`
-The objective of this test is to ensure that there are similar counts of 
-command in the following: `proc`, `help`, `man`. 
+The name of this test is `{module}_man_tcl_check`.
+The objective of this test is to ensure that there are similar counts of
+command in the following: `proc`, `help`, `man`.
 
 `proc` and `help` commands are parsed from the Tcl file, whereas
-`man` commands are parsed from the README file. 
+`man` commands are parsed from the README file.
 
-## CI tests
+Note this compares **counts only** — a command renamed in the Tcl file and left
+stale in the README still passes as long as the totals match.
 
-These two tests ensure that the documents and top-level Tcl files 
-are formatted properly to catch manpage extraction or compilation errors. 
+## Not currently wired up
 
-- Tcl Syntax Parser [code](man_tcl_params.py) 
-- Readme Syntax Parser [code](readme_parser.py)
+`man_tcl_params.py` performs per-command name and flag/key signature matching
+across the Tcl `help` output, the `proc` definitions, and the README. It is
+stricter than `man_tcl_check`, but it is in no Bazel target and is not
+registered in `regression_tests.tcl`, so it does not run today.
 
-## New Test Checklist 
+## New Test Checklist
 
-Adding a new test called `func`, you must create/update the following:
+Adding a new static test called `func`, you must create/update the following:
 - `func.py|tcl`: Test script.
 - `func.ok`: Log output of the test.
 - `.*ok`: Ideal file output of the test (can be `def`, `lef` etc).

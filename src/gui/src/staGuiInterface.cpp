@@ -15,6 +15,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -548,7 +549,11 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
       level_(0),
       subtree_visibility_(true)
 {
-  net_ = getNet(*clock_->pins().begin());
+  // A virtual clock has no pins; net_ stays null and ClockWidget::populate
+  // skips the tree. Dereferencing pins().begin() here would be UB.
+  if (!clock_->pins().empty()) {
+    net_ = getNet(*clock_->pins().begin());
+  }
 }
 
 std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility = false) const
@@ -741,9 +746,9 @@ sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
   return minimum;
 }
 
-std::set<odb::dbNet*> ClockTree::getNets(bool visibility = false) const
+odb::PtrSet<odb::dbNet> ClockTree::getNets(bool visibility = false) const
 {
-  std::set<odb::dbNet*> nets;
+  odb::PtrSet<odb::dbNet> nets;
 
   if (!visibility or subtree_visibility_) {
     if (net_ != nullptr) {
@@ -852,12 +857,23 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
 
   std::vector<std::pair<const sta::Pin*, const sta::Pin*>> path;
 
+  if (drivers_.empty()) {
+    // No driver, so there is no root to walk towards.
+    return path;
+  }
+
   // looking for path to root
   const sta::Pin* root = drivers_.begin()->first;
 
   const sta::Pin* search_pin = pin;
   while (search_pin != root) {
     const auto& connections = pin_map[search_pin];
+
+    if (connections.empty()) {
+      // search_pin is not connected to anything in this tree, so the walk
+      // cannot reach the root.
+      break;
+    }
 
     for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);

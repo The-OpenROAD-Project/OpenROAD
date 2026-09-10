@@ -148,7 +148,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule)
   stream >> rule.r1max_;
   stream >> rule.r2min_;
   stream >> rule.r2max_;
-  stream >> rule.cut_area_;
+  if (rule.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> rule.cut_area_;
+  } else {
+    uint32_t cut_area;
+    stream >> cut_area;
+    rule.cut_area_ = static_cast<int64_t>(cut_area) * 20000;
+  }
   stream >> rule.layer_;
   stream >> rule.cut_layer_below_;
 
@@ -244,13 +250,13 @@ void dbTechLayerSpacingRule::setCutParallelOverlap(bool overlap)
   _lsp->flags_.cut_parallel_overlap = overlap;
 }
 
-uint32_t dbTechLayerSpacingRule::getCutArea() const
+int64_t dbTechLayerSpacingRule::getCutArea() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   return _lsp->cut_area_;
 }
 
-void dbTechLayerSpacingRule::setCutArea(uint32_t area)
+void dbTechLayerSpacingRule::setCutArea(int64_t area)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   _lsp->cut_area_ = area;

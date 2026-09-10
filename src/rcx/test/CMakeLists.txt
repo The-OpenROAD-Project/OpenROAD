@@ -2,6 +2,7 @@ or_integration_tests(
   "rcx"
   TESTS
     45_gcd
+    dup_pattern_names
     ext_pattern
     gcd
     generate_pattern
@@ -9,8 +10,10 @@ or_integration_tests(
     net_name_consistency
     coordinates
     no_merging
+    short_resover
   PASSFAIL_TESTS
     rcx_unit_test
+    test_dielectric_epsilon
 )
 
 #generate_rules

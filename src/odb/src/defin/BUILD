@@ -2,6 +2,7 @@
 # Copyright (c) 2026-2026, Precision Innovations Inc.
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "message_srcs")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -15,6 +16,9 @@ cc_library(
         "*.h",
     ]),
     hdrs = ["//src/odb:include/odb/defin.h"],
+    includes = [
+        "../../include",
+    ],
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/def",
@@ -26,11 +30,6 @@ cc_library(
     ],
 )
 
-filegroup(
-    name = "message_srcs",
-    srcs = glob([
-        "*.cpp",
-        "*.h",
-    ]),
+message_srcs(
     visibility = ["//src/odb:__pkg__"],
 )

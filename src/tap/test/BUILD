@@ -8,6 +8,8 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "abutting_macros_step",
+    "abutting_macros_step_no_corners",
     "aes_gf180",
     "allow_one_site_gaps",
     "avoid_overlap",
@@ -17,12 +19,15 @@ COMPULSORY_TESTS = [
     "boundary_macros_separate2",
     "boundary_macros_tapcell",
     "cut_rows",
+    "cut_rows_asymmetric_halo",
     "cut_rows_halo",
+    "cut_rows_l_macro",
     "cut_rows_min_step_bottom_left",
     "cut_rows_min_step_bottom_right",
     "cut_rows_min_step_top_left",
     "cut_rows_min_step_top_right",
     "cut_rows_min_width",
+    "cut_rows_short_core",
     "cut_rows_with_endcaps",
     "disallow_one_site_gaps",
     "disallow_one_site_gaps2",
@@ -40,11 +45,14 @@ COMPULSORY_TESTS = [
     "gcd_sky130",
     "gcd_sky130_separate",
     "invalid_cells",
+    "invalid_master_class",
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
     "overlap_cover",
     "region1",
+    "single_row_macros",
+    "single_row_macros_offset",
     "symmetry",
 ]
 
@@ -145,12 +153,23 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abutting_macros_step": [],
+            "abutting_macros_step_no_corners": ["abutting_macros_step.def"],
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
+            "cut_rows_asymmetric_halo": [
+                "Nangate45_data/l_macro.lef",
+                "cut_rows_min_step.def",
+            ],
+            "cut_rows_l_macro": [
+                "Nangate45_data/l_macro.lef",
+                "cut_rows_min_step.def",
+            ],
             "cut_rows_min_step_bottom_left": ["cut_rows_min_step.def"],
             "cut_rows_min_step_bottom_right": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_left": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_right": ["cut_rows_min_step.def"],
+            "cut_rows_short_core": [],
             "disallow_one_site_gaps2": [
                 "disallow_one_site_gaps.def",
                 "disallow_one_site_gaps.defok",
@@ -159,6 +178,8 @@ filegroup(
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
+            "single_row_macros": [],
+            "single_row_macros_offset": [],
         }.get(
             test_name,
             ["boundary_macros.def"],
@@ -181,7 +202,10 @@ py_test(
     name = "tap_man_tcl_check",
     srcs = ["tap_man_tcl_check.py"],
     data = ["//src/tap:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

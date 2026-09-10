@@ -26,27 +26,27 @@
 [DEBUG RSZ-move_tracker] Pre-Optimization Gate Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
 [DEBUG RSZ-move_tracker] < -0.300           |      2 | ##
-[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
-[DEBUG RSZ-move_tracker] >= 0.000           |      0 | 
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 |
+[DEBUG RSZ-move_tracker] >= 0.000           |      0 |
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Post-Optimization Gate Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.300           |      0 | 
-[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
+[DEBUG RSZ-move_tracker] < -0.300           |      0 |
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 |
 [DEBUG RSZ-move_tracker] >= 0.000           |      2 | ##
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Summary: 2 driver pins tracked (4 destroyed), max bin count: 2 (# = 1 gate)
@@ -56,27 +56,27 @@
 [DEBUG RSZ-move_tracker] Pre-Optimization Endpoint Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
 [DEBUG RSZ-move_tracker] < -0.300           |      1 | #
-[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      1 | #
 [DEBUG RSZ-move_tracker] >= 0.000           |      2 | ##
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Post-Optimization Endpoint Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.300           |      0 | 
-[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
-[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
+[DEBUG RSZ-move_tracker] < -0.300           |      0 |
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 |
 [DEBUG RSZ-move_tracker] >= 0.000           |      4 | ####
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Summary: 4 endpoints tracked (0 destroyed), max bin count: 4 (# = 1 endpoint)

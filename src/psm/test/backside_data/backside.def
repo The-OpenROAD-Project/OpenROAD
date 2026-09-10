@@ -1,0 +1,42 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+DESIGN backside_top ;
+
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 3800 2800 ) ;
+
+ROW row_0 coreSite 0 0 N DO 20 BY 1 STEP 380 0 ;
+ROW row_1 coreSite 0 2800 FS DO 20 BY 1 STEP 380 0 ;
+
+TRACKS X 35 DO 20 STEP 380 LAYER M1 ;
+TRACKS Y 35 DO 20 STEP 280 LAYER M2 ;
+TRACKS X 35 DO 20 STEP 380 LAYER B1 ;
+
+COMPONENTS 5 ;
+- u_tap_0 bridge_tap + PLACED ( 0 0 ) N ;
+- u_fill_0 backside_filler + PLACED ( 760 0 ) N ;
+- u_fill_1 backside_filler + PLACED ( 950 0 ) N ;
+- u_fill_2 backside_filler + PLACED ( 1140 0 ) N ;
+- u_tap_1 bridge_tap + PLACED ( 1330 0 ) N ;
+END COMPONENTS
+
+PINS 0 ;
+END PINS
+
+SPECIALNETS 2 ;
+- vdd ( * vdd ) + USE POWER
+  + ROUTED B1 140 + SHAPE FOLLOWPIN
+        ( 0 2800 ) ( 3800 * )
+  ;
+- vss ( * vss ) + USE GROUND
+  + ROUTED B1 140 + SHAPE FOLLOWPIN
+        ( 0 0 ) ( 3800 * )
+  ;
+END SPECIALNETS
+
+NETS 0 ;
+END NETS
+
+END DESIGN

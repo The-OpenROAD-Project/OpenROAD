@@ -20,10 +20,10 @@
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
-#include "global.h"
 #include "odb/db.h"
 
 namespace odb {
@@ -256,7 +256,8 @@ class FlexGCWorker::Impl
   void checkMetalSpacing_short_obs(
       gcRect* rect1,
       gcRect* rect2,
-      const gtl::rectangle_data<frCoord>& markerRect);
+      const gtl::rectangle_data<frCoord>& markerRect,
+      const bool rects_abut);
   frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
                                              gcRect* rect2,
                                              frCoord prl,
@@ -534,14 +535,16 @@ class FlexGCWorker::Impl
                               frMinimumcutConstraint* con);
   void checkMinimumCut_main(gcRect* rect);
   void checkMinimumCut();
-  void checkMetalShape_lef58Area(gcPin* pin);
+  void checkMetalShape_lef58Area(gcPin* pin, bool allow_patching);
   bool checkMetalShape_lef58Area_exceptRectangle(
       gcPolygon* poly,
       odb::dbTechLayerAreaRule* db_rule);
   bool checkMetalShape_lef58Area_rectWidth(gcPolygon* poly,
-                                           odb::dbTechLayerAreaRule* db_rule,
-                                           bool& check_rect_width);
+                                           odb::dbTechLayerAreaRule* db_rule);
   void checkMetalShape_addPatch(gcPin* pin, int min_area);
+  void checkMetalShape_addMarker(gcPin* pin,
+                                 frConstraint* con,
+                                 const odb::Rect& bbox);
   void checkMetalShape_patchOwner_helper(drPatchWire* patch,
                                          const std::vector<drNet*>* dr_nets);
 

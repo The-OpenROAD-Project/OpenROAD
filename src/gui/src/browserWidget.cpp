@@ -29,6 +29,7 @@
 #include "displayControls.h"
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -100,7 +101,7 @@ struct BrowserWidget::ModuleStats
 ///////
 
 BrowserWidget::BrowserWidget(
-    const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+    const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
         modulesettings,
     DisplayControls* controls,
     QWidget* parent)
@@ -847,18 +848,18 @@ void BrowserWidget::updateModuleColorIcon(odb::dbModule* module,
   }
 }
 
-std::set<odb::dbModule*> BrowserWidget::getChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getChildren(odb::dbModule* parent)
 {
-  std::set<odb::dbModule*> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : parent->getChildren()) {
     children.insert(child->getMaster());
   }
   return children;
 }
 
-std::set<odb::dbModule*> BrowserWidget::getAllChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getAllChildren(odb::dbModule* parent)
 {
-  std::set<odb::dbModule*> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : getChildren(parent)) {
     children.insert(child);
     const auto next_children = getAllChildren(child);

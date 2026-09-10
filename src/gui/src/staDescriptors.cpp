@@ -23,6 +23,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/ClkNetwork.hh"
@@ -108,7 +109,7 @@ void LibertyLibraryDescriptor::highlight(const std::any& object,
   auto network = sta_->getDbNetwork();
 
   sta::LibertyCellIterator cell_iter(library);
-  std::set<odb::dbMaster*> masters;
+  odb::PtrSet<odb::dbMaster> masters;
   while (cell_iter.hasNext()) {
     auto* master = network->staToDb(cell_iter.next());
     if (master != nullptr) {
@@ -291,7 +292,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   }
   add_if_true(props, "Dont Use", cell->dontUse());
   props.push_back({"Filename", cell->filename()});
-  add_if_true(props, "Has Sequentials", cell->hasSequentials());
+  add_if_true(props, "Has Sequentials", cell->isSequential());
   add_if_true(props, "Is Always On", cell->alwaysOn());
   add_if_true(props, "Is Buffer", cell->isBuffer());
   add_if_true(props, "Is Clock Cell", cell->isClockCell());

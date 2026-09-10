@@ -81,8 +81,9 @@ void _dbGDSPath::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["xy"].add(xy_);
+
+  // User Code Begin collectMemInfo
   info.children["propattr"].add(propattr_);
   for (auto& [i, s] : propattr_) {
     info.children["propattr"].add(s);
@@ -162,10 +163,17 @@ int16_t dbGDSPath::getPathType() const
 }
 
 // User Code Begin dbGDSPathPublicMethods
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSPath::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSPath::getPropattr() const
 {
   auto* obj = (_dbGDSPath*) this;
   return obj->propattr_;
+}
+
+void dbGDSPath::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSPath*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 const std::vector<Point>& dbGDSPath::getXY()

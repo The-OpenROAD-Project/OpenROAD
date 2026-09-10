@@ -3,7 +3,7 @@ load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
 package(
-    features = ["-layering_check"],  # TODO: enable
+    features = ["layering_check"],  # TODO: enable
 )
 
 exports_files(["write_verilog.tcl"])

@@ -1,9 +1,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Inspector panel — property tree, hover highlights, bbox display.
+// Inspector panel — property tree, hover highlights, bbox display,
+// property editing (server descriptor editors).
 
-import { dbuToLatLng, dbuRectToBounds } from './coordinates.js';
+import { dbuRectToBounds } from './coordinates.js';
+import { beginSelection, isCurrentSelection, isStaticMode, showConfirmModal,
+         showToast } from './ui-utils.js';
+
+// Delete: trash can (Material "delete")
+const DELETE_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
+    '</svg>';
+
+// Highlight group: color palette (Material "palette")
+const HIGHLIGHT_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>' +
+    '</svg>';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -50,10 +65,213 @@ const CLEAR_FOCUS_SVG =
     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>' +
     '</svg>';
 
-export function createInspectorPanel(app, redrawAllLayers) {
+// Chevron left: Material "chevron_left"
+const CHEVRON_LEFT_SVG =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>' +
+    '</svg>';
+
+// Chevron right: Material "chevron_right"
+const CHEVRON_RIGHT_SVG =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
+    '</svg>';
+
+// Insert-buffer: buffer gate triangle + "+", matching the Qt GUI's buffer.png.
+const BUFFER_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M4 4 L4 20 L17 12 Z"/>' +
+    '<path d="M19 3 h2 v2 h2 v2 h-2 v2 h-2 v-2 h-2 v-2 h2 z"/>' +
+    '</svg>';
+
+export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
+    refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
+    let pendingHoverId = null;
+    let editInFlight = false;
     const kMinHoverBoxPixels = 10;
+
+    // Commit a server-backed property edit.  payload is {value} for
+    // string/number/bool editors or {option_index, option_name} for list
+    // editors (the server passes the indexed option's exact value to the
+    // descriptor callback).  The response always carries the authoritative
+    // inspect payload — re-render from it, and surface the reason when the
+    // edit is rejected (the Qt GUI reverts silently).  A refresh push from
+    // the server redraws the tiles for every client, including this one.
+    function sendSetProperty(name, payload) {
+        if (editInFlight) return Promise.resolve();
+        editInFlight = true;
+        return app.websocketManager.request({
+            type: 'set_property', name, use_dbu: app.showDbu, ...payload,
+        }).then(data => {
+            if (!data.ok && data.error) showToast(data.error);
+            updateInspector(data);
+            if (data.ok && data.bbox) pulseHighlight(data.bbox);
+        }).catch(err => {
+            console.error('set_property failed:', err);
+            showToast('Edit failed: ' + err);
+            if (lastInspectData) updateInspector(lastInspectData);
+        }).finally(() => { editInFlight = false; });
+    }
+
+    // Build the <select> for a list/bool editor.  Bool editors mirror the
+    // Qt delegate's synthesized True/False choices and commit the boolean
+    // itself; list editors commit by option index.
+    function buildEditorSelect(prop, data) {
+        const select = document.createElement('select');
+        select.className = 'inspector-editor-select';
+        const options = prop.editor.type === 'bool'
+            ? ['True', 'False'] : (prop.editor.options || []);
+        for (const name of options) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (name === prop.value) opt.selected = true;
+            select.appendChild(opt);
+        }
+        if (!options.includes(prop.value)) {
+            // Current value is not among the choices (e.g. unset); show it
+            // as a disabled placeholder so the select reflects reality.
+            const opt = document.createElement('option');
+            opt.value = prop.value || '';
+            opt.textContent = prop.value || '';
+            opt.selected = true;
+            opt.disabled = true;
+            select.insertBefore(opt, select.firstChild);
+        }
+        select.addEventListener('change', () => {
+            if (data.onPropertyChange) {
+                // Client-side (ruler, label): same string contract as the
+                // contentEditable path, so the handler needs no select-specific
+                // case.
+                data.onPropertyChange(prop.name, select.value);
+                return;
+            }
+            if (prop.editor.type === 'bool') {
+                data.onPropertyEdit(prop, { value: select.value === 'True' });
+            } else {
+                const idx = (prop.editor.options || []).indexOf(select.value);
+                data.onPropertyEdit(prop, {
+                    option_index: idx, option_name: select.value,
+                });
+            }
+        });
+        return select;
+    }
+
+    // Run a descriptor action (e.g. Delete) on the inspected object.
+    // Destructive actions confirm first — there is no undo.
+    async function triggerAction(name, data) {
+        if (editInFlight) return;
+        if (name === 'Delete') {
+            const confirmed = await showConfirmModal({
+                title: 'Delete ' + (data.type || 'object'),
+                message: 'Delete ' + (data.type || 'object') + ' "'
+                    + (data.name || '') + '"? This cannot be undone.',
+                confirmLabel: 'Delete',
+                danger: true,
+            });
+            if (!confirmed) return;
+        }
+        editInFlight = true;
+        try {
+            const resp = await app.websocketManager.request({
+                type: 'trigger_action', name, use_dbu: app.showDbu,
+            });
+            if (!resp.ok && resp.error) showToast(resp.error);
+            updateInspector(resp.properties ? resp : null);
+            if (resp.deleted && app.highlightRect && app.map) {
+                app.map.removeLayer(app.highlightRect);
+                app.highlightRect = null;
+            }
+            clearClientHoverHighlight();
+            refreshOverlay();
+        } catch (err) {
+            console.error('trigger_action failed:', err);
+            showToast('Action failed: ' + err);
+        } finally {
+            editInFlight = false;
+        }
+    }
+
+    // Put/remove the inspected object in a color-coded highlight group
+    // (Qt GUI parity: 16 fixed groups, palette served by the backend).
+    // The response is a refreshed inspect payload, so the group badge
+    // updates in place.
+    function sendHighlight(msg) {
+        app.websocketManager.request({ ...msg, use_dbu: app.showDbu })
+            .then(data => {
+                if (!data.ok && data.error) showToast(data.error);
+                updateInspector(data);
+                refreshOverlay();
+            })
+            .catch(err => {
+                console.error(msg.type + ' failed:', err);
+            });
+    }
+
+    function closeHighlightPicker() {
+        const el = document.getElementById('highlight-picker');
+        if (el) el.remove();
+    }
+
+    // 4x4 swatch popover anchored to the toolbar button — a one-click
+    // group choice (the Qt GUI opens a modal 16-radio dialog instead).
+    function openHighlightPicker(anchor, data) {
+        closeHighlightPicker();
+        const colors = app.techData?.highlight_colors || [];
+        if (!colors.length) return;
+
+        const picker = document.createElement('div');
+        picker.id = 'highlight-picker';
+        const grid = document.createElement('div');
+        grid.className = 'highlight-swatch-grid';
+        colors.forEach((c, group) => {
+            const swatch = document.createElement('button');
+            swatch.className = 'highlight-swatch';
+            swatch.title = 'Group ' + (group + 1);
+            swatch.style.backgroundColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+            if (group === data.highlight_group) {
+                swatch.classList.add('active');
+            }
+            swatch.addEventListener('click', () => {
+                closeHighlightPicker();
+                sendHighlight({ type: 'highlight', group });
+            });
+            grid.appendChild(swatch);
+        });
+        picker.appendChild(grid);
+
+        if (data.highlight_group >= 0) {
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'highlight-remove';
+            removeBtn.textContent = 'Remove highlight';
+            removeBtn.addEventListener('click', () => {
+                closeHighlightPicker();
+                sendHighlight({ type: 'unhighlight' });
+            });
+            picker.appendChild(removeBtn);
+        }
+
+        document.body.appendChild(picker);
+        const rect = anchor.getBoundingClientRect();
+        picker.style.left = rect.left + 'px';
+        picker.style.top = (rect.bottom + 4) + 'px';
+
+        const dismiss = (e) => {
+            if (e.type === 'keydown' && e.key !== 'Escape') return;
+            if (e.type === 'mousedown' && picker.contains(e.target)) return;
+            closeHighlightPicker();
+            document.removeEventListener('mousedown', dismiss, true);
+            document.removeEventListener('keydown', dismiss, true);
+        };
+        // Defer so the opening click doesn't immediately dismiss.
+        setTimeout(() => {
+            document.addEventListener('mousedown', dismiss, true);
+            document.addEventListener('keydown', dismiss, true);
+        }, 0);
+    }
 
     function showLoading() {
         if (!app.inspectorEl) return;
@@ -105,7 +323,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         } catch (err) {
             console.error('set_route_guides failed:', err);
         }
-        redrawAllLayers();
+        refreshOverlay();
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
@@ -190,17 +408,88 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
-            app.websocketManager.request({ type: 'hover', select_id: selectId })
-                .then(data => {
-                    renderHoverRects(data.rects || []);
-                    redrawAllLayers();
-                })
-                .catch(() => {});
+            // Cancel any in-flight hover request: out-of-order responses
+            // would otherwise render hover rects for the wrong element
+            // when the user moves between inspector-links quickly.
+            // Mirrors the cancel pattern used by navigateInspector.
+            if (pendingHoverId !== null) {
+                app.websocketManager.cancel(pendingHoverId);
+                pendingHoverId = null;
+            }
+            const promise = app.websocketManager.request(
+                { type: 'hover', select_id: selectId });
+            pendingHoverId = promise.requestId;
+            promise.then(data => {
+                pendingHoverId = null;
+                renderHoverRects(data.rects || []);
+                refreshOverlay();
+            }).catch(() => {
+                pendingHoverId = null;
+            });
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
-            redrawAllLayers();
+            refreshOverlay();
         });
+    }
+
+    function cycleSelection(direction) {
+        const reqType = direction > 0 ? 'select_next' : 'select_prev';
+        if (pendingInspectId !== null) {
+            app.websocketManager.cancel(pendingInspectId);
+            pendingInspectId = null;
+        }
+        showLoading();
+        // Cycling moves the inspected object, so it owns the selection from
+        // here on: a response from an older selection path must not overwrite
+        // it, and panels painting their own selection must let go.
+        const token = beginSelection(app);
+        const promise = app.websocketManager.request({ type: reqType, use_dbu: app.showDbu });
+        pendingInspectId = promise.requestId;
+        promise
+            .then(data => {
+                pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
+                if (data.error) {
+                    console.error('Selection cycle error:', data.error);
+                    updateInspector(lastInspectData);
+                    return;
+                }
+                updateInspector(data);
+                // Keep schematic in sync when cycling to an instance.
+                if (data.type === 'Inst' && data.name) {
+                    app.selectedInstanceName = data.name;
+                    if (app.schematicWidget) {
+                        app.schematicWidget.refresh();
+                    }
+                }
+                if (app.map) {
+                    app.map.closePopup();
+                }
+                clearClientHoverHighlight();
+                if (app.highlightRect && app.map) {
+                    app.map.removeLayer(app.highlightRect);
+                    app.highlightRect = null;
+                }
+                if (data.bbox && app.map && app.designScale) {
+                    const [x1, y1, x2, y2] = data.bbox;
+                    if (data.type !== 'Inst') {
+                        highlightBBox(x1, y1, x2, y2, data.type);
+                    }
+                    if (data.selection_count > 1) {
+                        animateSelection(data.bbox);
+                    } else {
+                        pulseHighlight(data.bbox, data.type);
+                    }
+                }
+                // Redraw tiles to restore selection-set highlights.
+                redrawAllLayers();
+            })
+            .catch(err => {
+                pendingInspectId = null;
+                console.error('Selection cycle failed:', err);
+                updateInspector(lastInspectData);
+            });
     }
 
     function navigateInspector(selectId) {
@@ -213,13 +502,15 @@ export function createInspectorPanel(app, redrawAllLayers) {
         // Show loading state immediately
         showLoading();
 
+        const token = beginSelection(app);
         const promise = app.websocketManager.request(
-            { type: 'inspect', select_id: selectId });
+            { type: 'inspect', select_id: selectId, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect error:', data.error);
                     return;
@@ -237,11 +528,12 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     // For non-instance objects, show dashed bbox outline
                     // (instances get the yellow tile-based highlight instead)
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
+                    pulseHighlight(data.bbox, data.type);
                 }
-                // Redraw tiles to update instance highlight
-                redrawAllLayers();
+                // Refresh overlay to update instance highlight
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -257,12 +549,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
         showLoading();
 
-        const promise = app.websocketManager.request({ type: 'inspect_back' });
+        const token = beginSelection(app);
+        const promise = app.websocketManager.request({ type: 'inspect_back', use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect back error:', data.error);
                     return;
@@ -275,11 +569,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     app.map.removeLayer(app.highlightRect);
                     app.highlightRect = null;
                 }
-                if (data.bbox && app.map && app.designScale && data.type !== 'Inst') {
-                    const [x1, y1, x2, y2] = data.bbox;
-                    highlightBBox(x1, y1, x2, y2);
+                if (data.bbox && app.map && app.designScale) {
+                    if (data.type !== 'Inst') {
+                        const [x1, y1, x2, y2] = data.bbox;
+                        highlightBBox(x1, y1, x2, y2, data.type);
+                    }
+                    pulseHighlight(data.bbox, data.type);
                 }
-                redrawAllLayers();
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -287,58 +584,257 @@ export function createInspectorPanel(app, redrawAllLayers) {
             });
     }
 
-    function highlightBBox(x1, y1, x2, y2) {
+    function highlightBBox(x1, y1, x2, y2, type) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        // A net's bbox spans its whole extent, which is distracting; the net's
+        // trace is already highlighted via the overlay, so skip the rectangle.
+        if (type === 'Net') {
+            return;
         }
         const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
+        // Always build the outline; only attach it while the "Highlight
+        // selected" toggle (Misc) is on, so toggling it back on can
+        // re-attach the current selection's outline (redrawAllLayers).
         app.highlightRect = L.rectangle(bounds, {
             color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
-        }).addTo(app.map);
+        });
+        if (!(app.visibility && app.visibility.highlight_selected === false)) {
+            app.highlightRect.addTo(app.map);
+        }
     }
 
-    function renderProperty(prop) {
-        // Group with children (PropertyList or SelectionSet)
-        if (prop.children) {
-            const group = document.createElement('div');
-            group.className = 'inspector-group';
+    // Briefly pulse the object's bbox so the user can see which object
+    // the inspector is now showing — mirrors the Qt GUI's selection
+    // animation.  The pulse is a filled rectangle that fades in and out
+    // several times, then removes itself.
+    let pulseLayer = null;
+    function pulseHighlight(bbox, type) {
+        if (!bbox || !app.map || !app.designScale) return;
+        // Clear any pulse in flight before honoring the toggle, so a call
+        // while highlighting is off doesn't leave a stale pulse behind.
+        if (animTimer !== null) stopSelectionAnimation();
+        if (pulseLayer) {
+            app.map.removeLayer(pulseLayer);
+            pulseLayer = null;
+        }
+        // Honor the "Highlight selected" toggle (Misc).
+        if (app.visibility && app.visibility.highlight_selected === false) {
+            return;
+        }
+        // A net's bbox spans the whole net; don't pulse a giant rectangle.
+        if (type === 'Net') return;
+        const [x1, y1, x2, y2] = bbox;
+        const bounds = dbuRectToBounds(
+            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+        pulseLayer = L.rectangle(bounds, {
+            color: '#ff0',
+            weight: 3,
+            fill: true,
+            fillColor: '#ff0',
+            fillOpacity: 0.25,
+            opacity: 1,
+            interactive: false,
+            className: 'selection-pulse',
+            pane: app.hoverHighlightPane,
+        }).addTo(app.map);
+        // Remove after the animation finishes (3 cycles × 350ms = 1050ms).
+        const layerToRemove = pulseLayer;
+        setTimeout(() => {
+            if (layerToRemove && app.map && app.map.hasLayer(layerToRemove)) {
+                app.map.removeLayer(layerToRemove);
+            }
+            if (pulseLayer === layerToRemove) {
+                pulseLayer = null;
+            }
+        }, 1100);
+    }
 
-            const header = document.createElement('div');
-            header.className = 'inspector-group-header';
-            const arrow = document.createElement('span');
-            arrow.className = 'vis-arrow';
-            arrow.textContent = '▶';
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'inspector-prop-name';
-            nameSpan.textContent = prop.name;
+    // Qt-style selection animation (layoutViewer.cpp selectionAnimation):
+    // every tick the outline weight cycles 1→2→3 px with a yellow brush
+    // flash on the weight-1 tick.  Unlike Qt, only this Leaflet path
+    // repaints — the layout tiles are untouched.  repeats=0 animates
+    // until stopSelectionAnimation() or a new animation replaces it.
+    let animLayer = null;
+    let animTimer = null;
+    function stopSelectionAnimation() {
+        if (animTimer !== null) {
+            clearInterval(animTimer);
+            animTimer = null;
+        }
+        if (animLayer) {
+            if (app.map && app.map.hasLayer(animLayer)) {
+                app.map.removeLayer(animLayer);
+            }
+            animLayer = null;
+        }
+    }
+    function animateSelection(bbox, { repeats = 6, intervalMs = 300 } = {}) {
+        if (!bbox || !app.map || !app.designScale) return;
+        stopSelectionAnimation();
+        if (typeof matchMedia === 'function'
+            && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            pulseHighlight(bbox);
+            return;
+        }
+        const [x1, y1, x2, y2] = bbox;
+        const bounds = dbuRectToBounds(
+            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+        animLayer = L.rectangle(bounds, {
+            color: '#ff0',
+            weight: 1,
+            fill: true,
+            fillColor: '#ff0',
+            fillOpacity: 0.39,  // ≈ Qt kHighlight brush alpha 100/255
+            opacity: 1,
+            interactive: false,
+            pane: app.hoverHighlightPane,
+        }).addTo(app.map);
+        let state = 0;
+        const maxState = repeats > 0 ? repeats * 3 : Infinity;
+        animTimer = setInterval(() => {
+            state += 1;
+            if (state >= maxState) {
+                stopSelectionAnimation();
+                return;
+            }
+            const weight = (state % 3) + 1;
+            animLayer.setStyle({
+                weight,
+                fillOpacity: weight === 1 ? 0.39 : 0,
+            });
+        }, intervalMs);
+    }
+
+    // Let redrawAllLayers cancel an in-flight pulse when the "Highlight
+    // selected" toggle is turned off (pulseLayer is private to this closure).
+    app.clearSelectionPulse = function() {
+        if (pulseLayer) {
+            app.map.removeLayer(pulseLayer);
+            pulseLayer = null;
+        }
+    };
+
+    // Build the collapsible shell (header row + body) shared by the group and
+    // table property renderers.  `count` is the parenthesised badge after the
+    // name; pass null to omit it.
+    function makeCollapsibleGroup(name, count, collapsed) {
+        const group = document.createElement('div');
+        group.className = 'inspector-group';
+
+        const header = document.createElement('div');
+        header.className = 'inspector-group-header';
+        const arrow = document.createElement('span');
+        arrow.className = 'vis-arrow';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'inspector-prop-name';
+        nameSpan.textContent = name;
+        nameSpan.title = name;
+        header.appendChild(arrow);
+        header.appendChild(nameSpan);
+        if (count !== null) {
             const countSpan = document.createElement('span');
             countSpan.className = 'inspector-count';
-            countSpan.textContent = `(${prop.children.length})`;
-            header.appendChild(arrow);
-            header.appendChild(nameSpan);
+            countSpan.textContent = `(${count})`;
             header.appendChild(countSpan);
-            group.appendChild(header);
+        }
+        group.appendChild(header);
 
-            const kids = document.createElement('div');
-            const autoExpand = prop.children.length < 10;
-            kids.className = 'inspector-group-children' + (autoExpand ? '' : ' collapsed');
-            arrow.textContent = autoExpand ? '▼' : '▶';
-            for (const child of prop.children) {
-                kids.appendChild(renderProperty(child));
+        const body = document.createElement('div');
+        body.className = 'inspector-group-children'
+            + (collapsed ? ' collapsed' : '');
+        arrow.textContent = collapsed ? '▶' : '▼';
+        group.appendChild(body);
+
+        // One listener, on the header.  The arrow lives inside the header, so
+        // clicking it expands/collapses too — which is what users reach for
+        // first.  A second listener on the arrow itself would also see the
+        // click bubble up to the header and toggle twice, leaving the group
+        // exactly as it was.
+        header.addEventListener('click', () => {
+            body.classList.toggle('collapsed');
+            arrow.textContent = body.classList.contains('collapsed')
+                ? '▶' : '▼';
+        });
+
+        return { group, header, arrow, body };
+    }
+
+    // Render a PropertyTable (e.g. a layer's two-widths spacing table) as a
+    // grid, matching the Qt inspector.  Row and column headers are optional:
+    // a table that has none is drawn as a bare grid rather than with a blank
+    // header row/column.
+    function renderTable(table) {
+        const columns = table.column_headers || [];
+        const rowHeaders = table.row_headers || [];
+        const data = table.data || [];
+        const hasColumnHeaders = columns.some(h => h !== '');
+        const hasRowHeaders = rowHeaders.some(h => h !== '');
+
+        const el = document.createElement('table');
+        el.className = 'inspector-table';
+
+        if (hasColumnHeaders) {
+            const head = document.createElement('thead');
+            const tr = document.createElement('tr');
+            if (hasRowHeaders) {
+                // Empty corner cell above the row-header column.
+                tr.appendChild(document.createElement('th'));
             }
-            group.appendChild(kids);
+            for (const header of columns) {
+                const th = document.createElement('th');
+                th.textContent = header;
+                tr.appendChild(th);
+            }
+            head.appendChild(tr);
+            el.appendChild(head);
+        }
 
-            arrow.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
-            header.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
+        const body = document.createElement('tbody');
+        data.forEach((row, i) => {
+            const tr = document.createElement('tr');
+            if (hasRowHeaders) {
+                const th = document.createElement('th');
+                th.textContent = rowHeaders[i] || '';
+                tr.appendChild(th);
+            }
+            for (const cell of row) {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            }
+            body.appendChild(tr);
+        });
+        el.appendChild(body);
 
+        return el;
+    }
+
+    function renderProperty(prop, data) {
+        // Table-valued property (PropertyTable)
+        if (prop.table) {
+            const rows = (prop.table.data || []).length;
+            const { group, body } = makeCollapsibleGroup(
+                prop.name, rows, /*collapsed=*/rows >= 10);
+            const scroller = document.createElement('div');
+            scroller.className = 'inspector-table-scroll';
+            scroller.appendChild(renderTable(prop.table));
+            body.appendChild(scroller);
+            return group;
+        }
+
+        // Group with children (PropertyList, SelectionSet or value list)
+        if (prop.children) {
+            const autoExpand = prop.children.length < 10;
+            const { group, body } = makeCollapsibleGroup(
+                prop.name, prop.children.length, /*collapsed=*/!autoExpand);
+            for (const child of prop.children) {
+                body.appendChild(renderProperty(child, data));
+            }
             return group;
         }
 
@@ -348,11 +844,69 @@ export function createInspectorPanel(app, redrawAllLayers) {
         const nameEl = document.createElement('span');
         nameEl.className = 'inspector-prop-name';
         nameEl.textContent = prop.name || '';
+        // The column clips long names, so keep the full text reachable.
+        nameEl.title = prop.name || '';
         const valEl = document.createElement('span');
         valEl.className = 'inspector-prop-value';
         valEl.textContent = prop.value || '';
         row.appendChild(nameEl);
         row.appendChild(valEl);
+
+        // Editable property.  Choice editors (list/bool) render a select;
+        // string/number editors make the value contentEditable with
+        // Enter/Escape keys.  Client-side properties (rulers, labels) route
+        // through onPropertyChange and server-backed ones through
+        // onPropertyEdit, but either can offer a choice list.
+        const isChoice = prop.editable && data
+            && (data.onPropertyEdit || data.onPropertyChange)
+            && prop.editor
+            && (prop.editor.type === 'list' || prop.editor.type === 'bool');
+        if (isChoice && prop.value_select_id === undefined) {
+            row.replaceChild(buildEditorSelect(prop, data), valEl);
+        } else if (isChoice) {
+            // The value doubles as a navigation link (e.g. an instance's
+            // Master); keep it clickable and swap in the choice list only
+            // when the pencil button is pressed.
+            const pencil = document.createElement('button');
+            pencil.className = 'inspector-edit-btn';
+            pencil.title = 'Edit ' + prop.name;
+            pencil.textContent = '✎';
+            pencil.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const select = buildEditorSelect(prop, data);
+                row.replaceChild(select, valEl);
+                pencil.remove();
+                select.focus();
+            });
+            row.appendChild(pencil);
+        } else if (prop.editable && data
+                   && (data.onPropertyChange || data.onPropertyEdit)) {
+            valEl.contentEditable = true;
+            valEl.classList.add('inspector-editable');
+            valEl.addEventListener('blur', () => {
+                const newVal = valEl.textContent;
+                if (newVal === prop.value) return;
+                if (data.onPropertyChange) {  // client-side (ruler)
+                    data.onPropertyChange(prop.name, newVal);
+                    return;
+                }
+                if (prop.editor && prop.editor.type === 'number') {
+                    const num = Number(newVal);
+                    if (newVal.trim() === '' || Number.isNaN(num)) {
+                        showToast('Not a number: ' + newVal);
+                        valEl.textContent = prop.value;
+                        return;
+                    }
+                    data.onPropertyEdit(prop, { value: num });
+                    return;
+                }
+                data.onPropertyEdit(prop, { value: newVal });
+            });
+            valEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); valEl.blur(); }
+                if (e.key === 'Escape') { valEl.textContent = prop.value; valEl.blur(); }
+            });
+        }
 
         // For single-target rows like SelectionSet entries, make the whole row
         // interactive so hover is easy to hit.
@@ -369,6 +923,52 @@ export function createInspectorPanel(app, redrawAllLayers) {
         return row;
     }
 
+    // Width of the property-name column, in pixels.  Held here rather than in
+    // the DOM because updateInspector() rebuilds the panel from scratch on
+    // every selection, which would otherwise reset a width the user set.
+    const kDefaultNameWidth = 140;
+    const kMinNameWidth = 60;
+    const kMaxNameWidth = 500;
+    let nameColumnWidth = kDefaultNameWidth;
+
+    function applyNameColumnWidth() {
+        if (!app.inspectorEl) return;
+        app.inspectorEl.style.setProperty(
+            '--inspector-name-w', nameColumnWidth + 'px');
+    }
+
+    // Divider between the name and value columns; drag to widen the name
+    // column when a property name is clipped.
+    function makeColumnResizer() {
+        const grip = document.createElement('div');
+        grip.className = 'inspector-col-resizer';
+        grip.title = 'Drag to resize the name column';
+
+        grip.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startWidth = nameColumnWidth;
+            grip.classList.add('dragging');
+
+            const onMove = (ev) => {
+                nameColumnWidth = Math.max(
+                    kMinNameWidth,
+                    Math.min(kMaxNameWidth,
+                             startWidth + ev.clientX - startX));
+                applyNameColumnWidth();
+            };
+            const onUp = () => {
+                grip.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        return grip;
+    }
+
     function zoomToBBox(bbox) {
         if (!bbox || !app.map || !app.designScale) return;
         const [x1, y1, x2, y2] = bbox;
@@ -382,6 +982,9 @@ export function createInspectorPanel(app, redrawAllLayers) {
         app.inspectorEl.innerHTML = '';
 
         if (!data || !data.properties || data.properties.length === 0) {
+            // No object inspected: kill any lingering selection animation so
+            // it can't flash over a since-cleared/destroyed object.
+            stopSelectionAnimation();
             const placeholder = document.createElement('div');
             placeholder.className = 'stub-panel';
             placeholder.innerHTML =
@@ -391,13 +994,22 @@ export function createInspectorPanel(app, redrawAllLayers) {
             return;
         }
 
+        // Server-backed objects get the set_property edit dispatcher;
+        // client-side panels (ruler) supply their own onPropertyChange
+        // and are left alone.
+        if (!data.onPropertyChange && !data.onPropertyEdit
+            && !isStaticMode(app)) {
+            data.onPropertyEdit
+                = (prop, payload) => sendSetProperty(prop.name, payload);
+        }
+
         // Toolbar with action buttons
         if (data) {
             const toolbar = document.createElement('div');
             toolbar.className = 'inspector-toolbar';
 
             const backBtn = document.createElement('button');
-            backBtn.className = 'inspector-btn';
+            backBtn.className = 'or-btn or-btn-icon';
             backBtn.title = 'Back';
             backBtn.innerHTML = BACK_SVG;
             backBtn.disabled = !data.can_navigate_back;
@@ -406,7 +1018,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
             if (data.bbox) {
                 const zoomBtn = document.createElement('button');
-                zoomBtn.className = 'inspector-btn';
+                zoomBtn.className = 'or-btn or-btn-icon';
                 zoomBtn.title = 'Zoom to';
                 zoomBtn.innerHTML = ZOOM_TO_SVG;
                 zoomBtn.addEventListener('click', () => zoomToBBox(data.bbox));
@@ -417,7 +1029,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             if (data.type === 'Net' && data.name) {
                 const isFocused = app.focusNets.has(data.name);
                 const focusBtn = document.createElement('button');
-                focusBtn.className = 'inspector-btn';
+                focusBtn.className = 'or-btn or-btn-icon';
                 focusBtn.title = isFocused ? 'De-focus net' : 'Focus net';
                 focusBtn.innerHTML = isFocused ? DEFOCUS_SVG : FOCUS_SVG;
                 focusBtn.addEventListener('click', () => toggleFocusNet(data.name));
@@ -428,29 +1040,122 @@ export function createInspectorPanel(app, redrawAllLayers) {
             if (data.type === 'Net' && data.name && data.has_guides) {
                 const isShowing = app.routeGuideNets.has(data.name);
                 const guideBtn = document.createElement('button');
-                guideBtn.className = 'inspector-btn';
+                guideBtn.className = 'or-btn or-btn-icon';
                 guideBtn.title = isShowing ? 'Hide route guides' : 'Show route guides';
                 guideBtn.innerHTML = isShowing ? HIDE_ROUTE_GUIDE_SVG : ROUTE_GUIDE_SVG;
                 guideBtn.addEventListener('click', () => toggleRouteGuides(data.name));
                 toolbar.appendChild(guideBtn);
             }
 
+            // Insert Buffer button for Net objects (mirrors the Qt dbNet
+            // descriptor action). The dialog fetches buffer_info and gates
+            // itself (drivers<=1), so it is always offered for a Net here.
+            if (data.type === 'Net' && data.name && app.showInsertBufferDialog) {
+                const bufBtn = document.createElement('button');
+                bufBtn.className = 'or-btn or-btn-icon';
+                bufBtn.title = 'Insert buffer';
+                bufBtn.innerHTML = BUFFER_SVG;
+                bufBtn.addEventListener('click', () => app.showInsertBufferDialog(data.name));
+                toolbar.appendChild(bufBtn);
+            }
+
             // Clear all focus nets button
             if (app.focusNets.size > 0) {
                 const clearBtn = document.createElement('button');
-                clearBtn.className = 'inspector-btn';
+                clearBtn.className = 'or-btn or-btn-icon';
                 clearBtn.title = 'Clear focus nets';
                 clearBtn.innerHTML = CLEAR_FOCUS_SVG;
                 clearBtn.addEventListener('click', () => clearFocusNets());
                 toolbar.appendChild(clearBtn);
             }
 
+            // Highlight-group button (server-backed objects carry a
+            // highlight_group field; client-side panels like the ruler
+            // don't).  The badge shows the current group's color.
+            if (typeof data.highlight_group === 'number' && !isStaticMode(app)
+                && (app.techData?.highlight_colors || []).length) {
+                const hlBtn = document.createElement('button');
+                hlBtn.className = 'or-btn or-btn-icon inspector-highlight-btn';
+                const group = data.highlight_group;
+                hlBtn.title = group >= 0
+                    ? 'Highlight group ' + (group + 1)
+                    : 'Add to highlight group';
+                hlBtn.innerHTML = HIGHLIGHT_SVG;
+                if (group >= 0) {
+                    const c = app.techData.highlight_colors[group];
+                    hlBtn.style.backgroundColor
+                        = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.45)`;
+                    hlBtn.style.borderColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+                }
+                hlBtn.addEventListener('click',
+                                       () => openHighlightPicker(hlBtn, data));
+                toolbar.appendChild(hlBtn);
+            }
+
+            // Descriptor actions (server-provided, e.g. Delete).
+            if (Array.isArray(data.actions) && !isStaticMode(app)) {
+                for (const name of data.actions) {
+                    const btn = document.createElement('button');
+                    btn.className = 'or-btn inspector-action-btn';
+                    btn.title = name;
+                    if (name === 'Delete') {
+                        // The only action drawn as a glyph, so the only one
+                        // that gets the square icon variant.
+                        btn.classList.add('or-btn-icon', 'or-btn-danger-hover');
+                        btn.innerHTML = DELETE_SVG;
+                    } else {
+                        // Any action the server does not suppress arrives here
+                        // by name ("Change color", "Report Path", ...), so this
+                        // has to size to its label.
+                        btn.classList.add('or-btn-sm');
+                        btn.textContent = name;
+                    }
+                    btn.addEventListener('click', () => triggerAction(name, data));
+                    toolbar.appendChild(btn);
+                }
+            }
+
             app.inspectorEl.appendChild(toolbar);
         }
 
-        for (const prop of data.properties) {
-            app.inspectorEl.appendChild(renderProperty(prop));
+        // Selection navigation bar (visible when multiple objects selected)
+        const selCount = data.selection_count || 0;
+        const selIndex = typeof data.selection_index === 'number'
+            ? data.selection_index : -1;
+        if (selCount > 1 && selIndex >= 0) {
+            const nav = document.createElement('div');
+            nav.className = 'inspector-selection-nav';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'or-btn or-btn-icon';
+            prevBtn.title = 'Previous (Shift+click to multi-select)';
+            prevBtn.innerHTML = CHEVRON_LEFT_SVG;
+            prevBtn.addEventListener('click', () => cycleSelection(-1));
+
+            const label = document.createElement('span');
+            label.className = 'inspector-selection-label';
+            label.textContent = (selIndex + 1) + ' / ' + selCount;
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'or-btn or-btn-icon';
+            nextBtn.title = 'Next';
+            nextBtn.innerHTML = CHEVRON_RIGHT_SVG;
+            nextBtn.addEventListener('click', () => cycleSelection(+1));
+
+            nav.appendChild(prevBtn);
+            nav.appendChild(label);
+            nav.appendChild(nextBtn);
+            app.inspectorEl.appendChild(nav);
         }
+
+        const rows = document.createElement('div');
+        rows.className = 'inspector-rows';
+        for (const prop of data.properties) {
+            rows.appendChild(renderProperty(prop, data));
+        }
+        rows.appendChild(makeColumnResizer());
+        app.inspectorEl.appendChild(rows);
+        applyNameColumnWidth();
     }
 
     function createInspector(container) {
@@ -463,5 +1168,20 @@ export function createInspectorPanel(app, redrawAllLayers) {
         updateInspector(null);
     }
 
-    return { createInspector, updateInspector, highlightBBox };
+    // Re-request the currently inspected object from the server
+    // (e.g. after toggling show-DBU so property formatting changes).
+    // Rulers are client-side so we re-select instead of re-requesting.
+    function refreshInspector() {
+        if (!lastInspectData) return;
+        if (lastInspectData.type === 'Ruler') {
+            if (app.rulerManager && app.rulerManager._selectedRulerId !== null) {
+                app.rulerManager._selectRuler(app.rulerManager._selectedRulerId);
+            }
+            return;
+        }
+        if (!app.websocketManager) return;
+        navigateInspector(-1);
+    }
+
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, animateSelection, stopSelectionAnimation, navigateInspector, refreshInspector };
 }

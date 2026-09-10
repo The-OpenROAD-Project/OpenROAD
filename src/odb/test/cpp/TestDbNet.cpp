@@ -3,6 +3,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "tst/fixture.h"
@@ -15,7 +16,7 @@ class TestDbNet : public tst::Fixture
   struct ComplexHierarchy
   {
     dbNet* the_net = nullptr;
-    std::set<dbModNet*> expected_modnets;
+    odb::PtrSet<odb::dbModNet> expected_modnets;
   };
 
   struct SingleModuleCollision
@@ -169,7 +170,7 @@ TEST_F(TestDbNet, FindRelatedModNetsComplex)
   const auto hierarchy = SetUpComplexHierarchy("the_net", "top_mod_net");
 
   // ACTION
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   hierarchy.the_net->findRelatedModNets(related_modnets);
 
   // ASSERT
@@ -190,7 +191,7 @@ TEST_F(TestDbNet, FindRelatedModNetsNone)
   inst->findITerm("A1")->connect(net);
 
   // ACTION
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   net->findRelatedModNets(related_modnets);
 
   // ASSERT
@@ -205,7 +206,7 @@ TEST_F(TestDbNet, FindRelatedModNetsClearsSet)
   auto* top_mod = block_->getTopModule();
   auto* dummy_mod_net = dbModNet::create(top_mod, "dummy");
 
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   related_modnets.insert(dummy_mod_net);
 
   // ACTION
@@ -213,6 +214,48 @@ TEST_F(TestDbNet, FindRelatedModNetsClearsSet)
 
   // ASSERT
   EXPECT_TRUE(related_modnets.empty());
+}
+
+TEST_F(TestDbNet, InsertBufferIgnoresSupplyInputs)
+{
+  dbMaster* inv_master = db_->findMaster("INV_X1");
+  ASSERT_NE(inv_master, nullptr);
+
+  dbMaster* buffer_master
+      = dbMaster::create(inv_master->getLib(), "BUF_WITH_INPUT_SUPPLIES");
+  buffer_master->setWidth(inv_master->getWidth());
+  buffer_master->setHeight(inv_master->getHeight());
+  buffer_master->setType(dbMasterType::CORE);
+  dbMTerm* buffer_input
+      = dbMTerm::create(buffer_master, "A", dbIoType::INPUT, dbSigType::SIGNAL);
+  dbMTerm* buffer_output = dbMTerm::create(
+      buffer_master, "Z", dbIoType::OUTPUT, dbSigType::SIGNAL);
+  dbMTerm::create(buffer_master, "VDD", dbIoType::INPUT, dbSigType::POWER);
+  dbMTerm::create(buffer_master, "VSS", dbIoType::INPUT, dbSigType::GROUND);
+  buffer_master->setFrozen();
+
+  dbInst* driver = dbInst::create(block_, inv_master, "driver");
+  dbInst* load = dbInst::create(block_, inv_master, "load");
+  dbITerm* driver_output = driver->findITerm("ZN");
+  dbITerm* load_input = load->findITerm("A");
+  ASSERT_NE(driver_output, nullptr);
+  ASSERT_NE(load_input, nullptr);
+
+  dbNet* net = dbNet::create(block_, "signal");
+  driver_output->connect(net);
+  load_input->connect(net);
+
+  dbInst* buffer
+      = net->insertBufferBeforeLoad(load_input, buffer_master, nullptr, "buf");
+
+  ASSERT_NE(buffer, nullptr);
+  EXPECT_EQ(buffer->getITerm(buffer_input)->getNet(), net);
+  dbNet* buffered_net = buffer->getITerm(buffer_output)->getNet();
+  ASSERT_NE(buffered_net, nullptr);
+  EXPECT_NE(buffered_net, net);
+  EXPECT_EQ(load_input->getNet(), buffered_net);
+  EXPECT_EQ(buffer->findITerm("VDD")->getNet(), nullptr);
+  EXPECT_EQ(buffer->findITerm("VSS")->getNet(), nullptr);
 }
 
 // Test that the net is renamed to the name of the highest-level modnet

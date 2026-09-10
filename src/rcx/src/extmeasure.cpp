@@ -169,6 +169,9 @@ uint32_t extMeasure::createNetSingleWire(char* dirName,
     net = _create_net_util.createNetSingleWire(
         netName, ll[0], ll[1], ur[0], ur[1], _met);
   }
+  if (net == nullptr) {
+    logger_->error(RCX, 529, "Failed to create pattern wire net {}.", netName);
+  }
 
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != nullptr) {
@@ -198,6 +201,9 @@ uint32_t extMeasure::createNetSingleWire_cntx(int met,
   assert(_create_net_util.getBlock() == _block);
   dbNet* net = _create_net_util.createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], met);
+  if (net == nullptr) {
+    logger_->error(RCX, 530, "Failed to create context wire net {}.", netName);
+  }
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != nullptr) {
     in1->rename(net->getConstName());
@@ -239,6 +245,9 @@ uint32_t extMeasure::createDiagNetSingleWire(char* dirName,
   assert(_create_net_util.getBlock() == _block);
   dbNet* net = _create_net_util.createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], met);
+  if (net == nullptr) {
+    logger_->error(RCX, 531, "Failed to create diagonal wire net {}.", netName);
+  }
   addNew2dBox(net, ll, ur, met, false);
 
   _extMain->makeNetRCsegs(net);
@@ -2569,9 +2578,10 @@ void extMeasure::measureRC(CoupleOptions& options)
               " ---------------------------------------------------------------"
               "------------------\n");
     }
-    double deltaRes[10];
+
+    double base_resistances[10];
     for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      deltaRes[jj] = 0.0;
+      base_resistances[jj] = 0.0;
     }
 
     SEQ* s = addSeq(_ll, _ur);
@@ -2583,15 +2593,18 @@ void extMeasure::measureRC(CoupleOptions& options)
       len_covered += len_down_not_coupled;
     }
     if (len_covered > 0) {
-      calcRes0(deltaRes, _met, len_covered);
+      calcRes0(base_resistances, _met, len_covered);
     }
 
     for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      double totR1 = _rc[jj]->res_;
-      if (totR1 > 0) {
-        totR1 -= deltaRes[jj];
-        if (totR1 != 0.0) {
-          _extMain->updateRes(rseg1, totR1, jj);
+      const double total_resistance = _rc[jj]->res_;
+
+      if (total_resistance > 0) {
+        const double neighboring_adjustment
+            = total_resistance - base_resistances[jj];
+
+        if (neighboring_adjustment != 0.0) {
+          _extMain->updateRes(rseg1, neighboring_adjustment, jj);
         }
       }
     }

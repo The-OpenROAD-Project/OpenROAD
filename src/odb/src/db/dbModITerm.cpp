@@ -19,7 +19,6 @@
 // User Code Begin Includes
 #include <cassert>
 #include <cstdint>
-#include <cstring>
 #include <string>
 
 #include "dbCommon.h"
@@ -232,7 +231,6 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
 
   _dbModInst* parent = reinterpret_cast<_dbModInst*>(parentInstance);
   _dbBlock* block = static_cast<_dbBlock*>(parent->getOwner());
-  assert(strchr(name, block->hier_delimiter_) == nullptr);
   _dbModITerm* moditerm = block->moditerm_tbl_->create();
 
   // defaults

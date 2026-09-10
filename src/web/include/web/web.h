@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include <spdlog/common.h>
-
 #include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -18,6 +17,7 @@
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/steady_timer.hpp"
 #include "odb/db.h"
+#include "spdlog/common.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 
@@ -43,6 +43,7 @@ class TileGenerator;
 struct TclEvaluator;
 class TimingReport;
 class WebViewerHook;
+struct WebGif;  // defined in web.cpp; holds a GifEncoder + frame dimensions
 
 // Returned by createAndRunListener: a shutdown callback and the actual
 // port the listener bound to (useful when the caller passes port 0).
@@ -62,7 +63,8 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
-    WebViewerHook* viewer_hook);
+    WebViewerHook* viewer_hook,
+    int max_in_flight);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads and returns immediately.  After serve(), the calling Tcl
@@ -80,9 +82,20 @@ class WebServer
   WebServer(odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger,
-            Tcl_Interp* interp,
-            int num_threads);
+            Tcl_Interp* interp);
   ~WebServer();
+
+  // Register the WebLogSink with the Logger so startup output is captured
+  // (and buffered) before any client connects, without opening the network
+  // or installing the headless viewer.  Idempotent and cheap; serve() calls
+  // it too.  Splitting this out lets Main.cc capture read_db/script logs
+  // while deferring serve() until the database is fully loaded, which avoids
+  // the network threads racing the main thread's db construction.
+  void initLogger();
+
+  // Sets the number of thread workers for the server's I/O context and tile
+  // generator.
+  void setThreadCount(int num_threads);
 
   // Start the web server on the given port.  Launches background
   // I/O threads and returns immediately.  A second call is a no-op if
@@ -155,6 +168,70 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
+  // User text labels (2.12), Tcl-driven (add_label/delete_label/clear_labels).
+  // Delegate to the shared TileGenerator store; returns the label name.
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       const std::string& anchor,
+                       const std::string& color,
+                       int size,
+                       const std::string& name);
+  void deleteLabel(const std::string& name);
+  void clearLabels();
+
+  // Persist the connected client's current display-controls state (as
+  // synced via the "set_display_state" request) to a JSON file.  The cache
+  // holds a single snapshot: with several clients connected, the state of
+  // whichever client synced last is the one saved.
+  void saveDisplayControls(const std::string& filename);
+
+  // Read a display-controls JSON file and broadcast it to every connected
+  // client so they re-apply the saved state.
+  void restoreDisplayControls(const std::string& filename);
+
+  // Cache a display-controls snapshot (forwarded to the viewer hook).
+  // No-op if the server was never initialized.  The live
+  // "set_display_state" request writes to the hook directly; this entry
+  // point exists for tests and embedders.
+  void setDisplayState(std::string json);
+
+  // Custom UI registered from Tcl (create_menu_item / create_toolbar_button).
+  // These are thin facades over WebViewerHook (which owns the registry and
+  // broadcasts to clients), mirroring how gui::Gui delegates to MainWindow.
+  // initLogger() is called first so the hook exists even when the command
+  // runs from a startup script before web_server.  Returns the item key.
+  std::string addToolbarButton(const std::string& name,
+                               const std::string& text,
+                               const std::string& script,
+                               const std::string& icon,
+                               const std::string& tooltip,
+                               bool toggle,
+                               const std::string& script_off,
+                               bool echo);
+  void removeToolbarButton(const std::string& name);
+  std::string addMenuItem(const std::string& name,
+                          const std::string& path,
+                          const std::string& text,
+                          const std::string& script,
+                          const std::string& shortcut,
+                          bool echo);
+  void removeMenuItem(const std::string& name);
+
+  // Animated-GIF export (mirrors gui's save_animated_gif).  A 3-call state
+  // machine: gifStart opens a stream and returns its key; gifAddFrame captures
+  // the current layout (via TileGenerator, same compositing as saveImage) as
+  // one frame; gifEnd finalizes the file.  Multiple concurrent streams are
+  // keyed by the returned index.  delay is in hundredths of a second.
+  int gifStart(const std::string& filename);
+  void gifAddFrame(std::optional<int> key,
+                   const odb::Rect& region,
+                   int width_px,
+                   double dbu_per_pixel,
+                   std::optional<int> delay,
+                   const std::string& vis_json);
+  void gifEnd(std::optional<int> key);
+
  private:
   // Wakes the main thread's Tcl event loop by queuing a no-op Tcl
   // event so a parked Tcl_DoOneEvent returns and the wait loop in
@@ -167,13 +244,28 @@ class WebServer
   // worker (would otherwise raise EDEADLK on self-join).
   void stopAndJoinIoThreads();
 
+  // Push the current label set to every connected client.  Labels are global
+  // and live outside ODB, so nothing else notifies the other sessions that a
+  // Tcl-driven add/delete/clear changed what they should draw.
+  void broadcastLabels();
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
   int num_threads_ = 0;
+  // Creates the tile generator on first use (the server need not be running)
+  // and hands it the configured thread count.
+  TileGenerator& ensureGenerator();
+
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
+
+  // Open animated-GIF streams, indexed by the key returned from gifStart.
+  // Kept as a vector (like gui's gifs_) so multiple GIFs can record at once;
+  // a finished slot is reset to nullptr rather than erased so keys stay stable.
+  std::vector<std::unique_ptr<WebGif>> gifs_;
+  static constexpr int kDefaultGifDelay = 250;  // hundredths of a second
 
   // Background I/O context and worker threads (non-null while running).
   std::unique_ptr<boost::asio::io_context> ioc_;
@@ -223,6 +315,11 @@ class WebServer
   Tcl_Channel mirror_stderr_chan_ = nullptr;
   void* mirror_stdout_data_ = nullptr;
   void* mirror_stderr_data_ = nullptr;
+
+  // True once initLogger() registered the WebLogSink.  Lets serve() and
+  // initLogger() be idempotent and lets stop() know the sink needs removing.
+  // Reset in stop() so a subsequent serve() re-registers the sink.
+  bool logger_initialized_ = false;
 
   // Tcl command override: replaces `exit` while the server is running
   // so a worker-thread `exit` doesn't run Tcl_Exit (which would self-join

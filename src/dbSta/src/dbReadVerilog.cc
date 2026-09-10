@@ -629,12 +629,8 @@ bool Verilog2db::staToDb(dbModule* module,
 
   if (module) {
     if (cur_inst) {
-      std::string instance_name = network_->pathName(cur_inst);
-      size_t last_idx = instance_name.find_last_of('/');
-      if (last_idx != std::string::npos) {
-        instance_name = instance_name.substr(last_idx + 1);
-      }
-      dbModInst* mod_inst = module->findModInst(instance_name.c_str());
+      const std::string local_name = network_->name(cur_inst);
+      dbModInst* mod_inst = module->findModInst(local_name.c_str());
       if (mod_inst) {
         mod_iterm = mod_inst->findModITerm(pin_name.c_str());
       }
@@ -648,18 +644,30 @@ bool Verilog2db::staToDb(dbModule* module,
     } else {
       // a pin on an instance
       // we store just the pin name on the db inst iterm
-      const std::string instance_name = network_->pathName(cur_inst);
+      const std::string full_name = network_->pathName(cur_inst);
       size_t last_idx = pin_name.find_last_of('/');
       if (last_idx != std::string::npos) {
         pin_name = pin_name.substr(last_idx + 1);
       }
       // we store the full instance name for db insts
-      dbInst* db_inst = module->findDbInst(instance_name.c_str());
+      dbInst* db_inst = module->findDbInst(full_name.c_str());
       if (db_inst) {
         iterm = db_inst->findITerm(pin_name.c_str());
       } else {
-        // a port on the module itself (a mod bterm)
-        mod_bterm = module->findModBTerm(pin_name.c_str());
+        // Only treat this as a port of `module` (a modBTerm) when
+        // cur_inst's full hierarchical path matches `module`'s own
+        // hierarchical path. Without this guard, deep-descendant pins
+        // whose path strips to a name also held by one of `module`'s
+        // ports would be falsely attached, since findModBTerm matches
+        // by name only. (E.g., a deep pin path "sub/sub/clk" strips
+        // to "clk" and would collide with `module`'s top-level "clk"
+        // port.) Avoid dbNetwork::staToDb here -- during reader
+        // construction the sta::Instance may not yet be backed by a
+        // dbObject, and the reinterpret_cast inside that function
+        // would crash.
+        if (full_name == module->getHierarchicalName()) {
+          mod_bterm = module->findModBTerm(pin_name.c_str());
+        }
       }
     }
   }

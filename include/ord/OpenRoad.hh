@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -130,6 +131,10 @@ namespace web {
 class WebServer;
 }
 
+namespace syn {
+class Synthesis;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -184,6 +189,7 @@ class OpenRoad
     return estimate_parasitics_;
   }
   web::WebServer* getWebServer() { return web_server_; }
+  syn::Synthesis* getSynthesis() { return synthesis_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -235,7 +241,8 @@ class OpenRoad
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);
-  void writeDb(const char* filename);
+  void writeDb(const char* filename,
+               std::optional<int> compression_level = std::nullopt);
 
   void setThreadCount(int threads, bool print_info = true);
   void setThreadCount(const char* threads, bool print_info = true);
@@ -288,6 +295,7 @@ class OpenRoad
   dft::Dft* dft_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
+  syn::Synthesis* synthesis_ = nullptr;
   utl::ServiceRegistry* service_registry_ = nullptr;
 
   int threads_ = 1;

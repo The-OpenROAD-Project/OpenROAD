@@ -21,7 +21,6 @@
        not is_public and not _enum.public %}
     enum {% if _enum.cls %} class {% endif %}
          {{ _enum.name }}
-         {% if _enum.type %} : {{ _enum.type }}{% endif %}
     {
       {% for value in _enum.values %}
         {% if not loop.first %},{%endif%} {{value}}
@@ -33,11 +32,12 @@
 
 {% macro getter_signature(field, klass=None) -%}
   {% if klass %}{% set prefix = klass.name + "::" %}{% endif %}
-  {% if field.dbSetGetter %}
+  {% set getter_kind = field.kind.getter_kind() %}
+  {% if getter_kind == 'dbset' %}
     dbSet<{{field.table_base_type}}> {{prefix}}get{{field.functional_name}}() const
-  {% elif field.isPassByRef %}
+  {% elif getter_kind == 'out_param' %}
     void {{prefix}}{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
-  {% elif field.isHashTable %}
+  {% elif getter_kind == 'hash_find' %}
     {{field.getterReturnType}} {{prefix}}{{field.getterFunctionName}}(const char* name) const
   {% else %}
     {{field.getterReturnType}} {{prefix}}{{field.getterFunctionName}}() const

@@ -11,17 +11,16 @@ class frTrackPattern : public frBlockObject
 {
  public:
   // constructors
-  frTrackPattern() = default;
-  frTrackPattern(bool tmpIsH,
-                 frCoord tmpSC,
-                 frUInt4 tmpNT,
-                 frUInt4 tmpTS,
-                 frLayerNum tmpLN)
-      : horizontal_(tmpIsH),
-        startCoord_(tmpSC),
-        numTracks_(tmpNT),
-        trackSpacing_(tmpTS),
-        layerNum_(tmpLN)
+  frTrackPattern(bool horizontal,
+                 frCoord start_coord,
+                 frUInt4 num_tracks,
+                 frUInt4 track_spacing,
+                 frLayerNum layer_num)
+      : horizontal_(horizontal),
+        startCoord_(start_coord),
+        numTracks_(num_tracks),
+        trackSpacing_(track_spacing),
+        layerNum_(layer_num)
   {
   }
   // getters
@@ -31,24 +30,14 @@ class frTrackPattern : public frBlockObject
   frUInt4 getNumTracks() const { return numTracks_; }
   frUInt4 getTrackSpacing() const { return trackSpacing_; }
   frLayerNum getLayerNum() const { return layerNum_; }
-  // setters
-  // vertical track has horizontal = true;
-  void setHorizontal(bool tmpIsHorizontal) { horizontal_ = tmpIsHorizontal; }
-  void setStartCoord(frCoord tmpStartCoord) { startCoord_ = tmpStartCoord; }
-  void setNumTracks(frUInt4 tmpNumTracks) { numTracks_ = tmpNumTracks; }
-  void setTrackSpacing(frUInt4 tmpTrackSpacing)
-  {
-    trackSpacing_ = tmpTrackSpacing;
-  }
-  void setLayerNum(frLayerNum tmpLayerNum) { layerNum_ = tmpLayerNum; }
   frBlockObjectEnum typeId() const override { return frcTrackPattern; }
 
  private:
-  bool horizontal_{false};
-  frCoord startCoord_{0};
-  frUInt4 numTracks_{0};
-  frUInt4 trackSpacing_{0};
-  frLayerNum layerNum_{0};
+  bool horizontal_;
+  frCoord startCoord_;
+  frUInt4 numTracks_;
+  frUInt4 trackSpacing_;
+  frLayerNum layerNum_;
 };
 
 }  // namespace drt

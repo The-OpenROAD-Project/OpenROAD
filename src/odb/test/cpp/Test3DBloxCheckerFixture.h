@@ -9,10 +9,10 @@
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
-#include "tst/fixture.h"
+#include "tst/db_fixture.h"
 
 namespace odb {
-class CheckerFixture : public tst::Fixture
+class CheckerFixture : public tst::DbFixture
 {
  protected:
   CheckerFixture()

@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -39,6 +39,7 @@ struct Options
   int halo_x = -1;  // default = 2um
   int halo_y = -1;  // default = 2um
   int row_min_width = -1;
+  int row_min_height = 0;  // 0 = disabled
   odb::dbMaster* cnrcap_nwin_master = nullptr;
   odb::dbMaster* cnrcap_nwout_master = nullptr;
   odb::dbMaster* tap_nwintie_master = nullptr;
@@ -137,9 +138,7 @@ class Tapcell
     CornerType type;
     odb::Point pt;
   };
-  using Polygon = boost::polygon::polygon_90_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
+  using CornerMap = odb::PtrMap<odb::dbRow, odb::PtrSet<odb::dbInst>>;
 
   struct InstIndexableGetter
   {
@@ -155,6 +154,9 @@ class Tapcell
                                       InstIndexableGetter>;
 
   std::vector<odb::dbBox*> findBlockages();
+  void checkPlaceable(odb::dbMaster* master, const std::string& option) const;
+  void checkPlaceable(const Options& options) const;
+  void checkPlaceable(const EndcapCellOptions& options) const;
   bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
   odb::dbInst* makeInstance(odb::dbBlock* block,
                             odb::dbMaster* master,
@@ -162,18 +164,19 @@ class Tapcell
                             int x,
                             int y,
                             const std::string& prefix);
-  std::optional<int> findValidLocation(int x,
-                                       int width,
-                                       const odb::dbOrientType& orient,
-                                       const std::set<odb::dbInst*>& row_insts,
-                                       int site_width,
-                                       int tap_width,
-                                       int row_urx,
-                                       bool disallow_one_site_gaps);
+  std::optional<int> findValidLocation(
+      int x,
+      int width,
+      const odb::dbOrientType& orient,
+      const odb::PtrSet<odb::dbInst>& row_insts,
+      int site_width,
+      int tap_width,
+      int row_urx,
+      bool disallow_one_site_gaps);
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
-                     const std::set<odb::dbInst*>& row_insts);
+                     const odb::PtrSet<odb::dbInst>& row_insts);
   int placeTapcells(odb::dbMaster* tapcell_master, int dist);
   int placeTapcells(odb::dbMaster* tapcell_master,
                     int dist,
@@ -183,12 +186,17 @@ class Tapcell
                     const InstTree& fixed_instances);
 
   int defaultDistance() const;
+  int maxCoreCellHeight() const;
 
-  std::vector<Polygon90> getBoundaryAreas() const;
-  std::vector<Edge> getBoundaryEdges(const Polygon& area, bool outer) const;
-  std::vector<Edge> getBoundaryEdges(const Polygon90& area, bool outer) const;
-  std::vector<Corner> getBoundaryCorners(const Polygon90& area,
-                                         bool outer) const;
+  std::vector<odb::geom::BoostPolygon90WithHoles> getBoundaryAreas() const;
+  std::vector<Edge> getBoundaryEdges(const odb::geom::BoostPolygon90& area,
+                                     bool outer) const;
+  std::vector<Edge> getBoundaryEdges(
+      const odb::geom::BoostPolygon90WithHoles& area,
+      bool outer) const;
+  std::vector<Corner> getBoundaryCorners(
+      const odb::geom::BoostPolygon90WithHoles& area,
+      bool outer) const;
 
   std::string toString(EdgeType type) const;
   std::string toString(CornerType type) const;
@@ -196,24 +204,34 @@ class Tapcell
   odb::dbRow* getRow(const Corner& corner, odb::dbSite* site) const;
   std::vector<odb::dbRow*> getRows(const Edge& edge, odb::dbSite* site) const;
 
-  std::pair<int, int> placeEndcaps(const Polygon& area,
+  std::pair<int, int> placeEndcaps(const odb::geom::BoostPolygon90& area,
                                    bool outer,
                                    const EndcapCellOptions& options);
-  std::pair<int, int> placeEndcaps(const Polygon90& area,
-                                   bool outer,
-                                   const EndcapCellOptions& options);
+  std::pair<int, int> placeEndcaps(
+      const odb::geom::BoostPolygon90WithHoles& area,
+      bool outer,
+      const EndcapCellOptions& options);
 
-  CornerMap placeEndcapCorner(const Corner& corner,
-                              const EndcapCellOptions& options);
+  void placeEndcapCorner(const Corner& corner,
+                         const EndcapCellOptions& options,
+                         odb::PtrSet<odb::dbInst>& area_corners);
   int placeEndcapEdge(const Edge& edge,
                       const CornerMap& corners,
                       const EndcapCellOptions& options);
   int placeEndcapEdgeHorizontal(const Edge& edge,
                                 const CornerMap& corners,
                                 const EndcapCellOptions& options);
+  int fillEndcapEdge(odb::dbRow* row,
+                     int x_start,
+                     int x_end,
+                     const std::vector<odb::dbMaster*>& masters,
+                     EdgeType edge_type,
+                     const std::string& prefix);
   int placeEndcapEdgeVertical(const Edge& edge,
-                              const CornerMap& corners,
                               const EndcapCellOptions& options);
+  bool isRowSpanOccupied(odb::dbRow* row, int x_min, int x_max) const;
+  bool overlapsPlacedCell(odb::dbRow* row, int x_min, int x_max) const;
+  std::vector<std::pair<int, int>> occupiedSpans(odb::dbRow* row) const;
 
   EndcapCellOptions correctEndcapOptions(
       const EndcapCellOptions& options) const;
@@ -222,7 +240,7 @@ class Tapcell
 
   odb::dbMaster* getMasterByType(const odb::dbMasterType& type,
                                  const std::string& option_name) const;
-  std::set<odb::dbMaster*> findMasterByType(
+  odb::PtrSet<odb::dbMaster> findMasterByType(
       const odb::dbMasterType& type) const;
   odb::dbBlock* getBlock() const;
 
@@ -232,6 +250,10 @@ class Tapcell
   std::string tap_prefix_;
   std::string endcap_prefix_;
   std::vector<Edge> filled_edges_;
+  // x-spans already occupied by endcap cells, per row.
+  odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>> occupied_row_spans_;
+  // corner cells placed so far, per row, persisted across areas/holes.
+  CornerMap placed_corners_;
 };
 
 }  // namespace tap

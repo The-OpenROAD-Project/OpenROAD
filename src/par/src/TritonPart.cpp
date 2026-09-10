@@ -1292,7 +1292,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         vertex_weights_.emplace_back(vwts);
         if (master->isBlock()) {
           vertex_types_.emplace_back(kMacro);
-        } else if (liberty_cell->hasSequentials()) {
+        } else if (liberty_cell->isSequential()) {
           vertex_types_.emplace_back(kSeqStdCell);
         } else {
           vertex_types_.emplace_back(kCombStdCell);
@@ -1336,7 +1336,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       vertex_weights_.emplace_back(vwts);
       if (master->isBlock()) {
         vertex_types_.emplace_back(kMacro);
-      } else if (liberty_cell->hasSequentials()) {
+      } else if (liberty_cell->isSequential()) {
         vertex_types_.emplace_back(kSeqStdCell);
       } else {
         vertex_types_.emplace_back(kCombStdCell);

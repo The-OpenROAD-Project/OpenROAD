@@ -247,7 +247,7 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
 template <typename T>
 void GDSWriter::writePropAttr(T* el)
 {
-  auto& props = el->getPropattr();
+  const auto& props = el->getPropattr();
   for (const auto& pair : props) {
     record_t r;
     r.type = RecordType::PROPATTR;

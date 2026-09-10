@@ -25,6 +25,7 @@
 #include "Utilities.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
@@ -156,7 +157,7 @@ void PartitionMgr::getFromODB(
     if (!lib_cell) {
       logger_->error(PAR, 56, "Liberty cell not found: {}", inst->getName());
     }
-    if (lib_cell->hasSequentials()) {
+    if (lib_cell->isSequential()) {
       num_seq++;
     }
     auto [it, inserted]
@@ -438,7 +439,7 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
 {
   std::vector<odb::dbInst*> insts;
   insts.reserve(cluster->getNumInsts());
-  std::map<odb::dbInst*, int> inst_vertex_id_map;
+  odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
   std::vector<float> vertex_weight;
   int vertex_id = 0;
   int large_net_threshold = 50;

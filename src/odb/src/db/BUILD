@@ -2,6 +2,7 @@
 # Copyright (c) 2026-2026, Precision Innovations Inc.
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "message_srcs")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -17,6 +18,7 @@ cc_library(
         "*.inc",
     ]),
     hdrs = [
+        "//src/odb:include/odb/PtrSetMap.h",
         "//src/odb:include/odb/db.h",
         "//src/odb:include/odb/dbBlockCallBackObj.h",
         "//src/odb:include/odb/dbBlockSet.h",
@@ -46,14 +48,12 @@ cc_library(
         "//src/odb:include/odb/isotropy.h",
         "//src/odb:include/odb/odbDList.h",
         "//src/odb:include/odb/poly_decomp.h",
-        "//src/odb:include/odb/unfoldedModel.h",
         "//src/odb:include/odb/util.h",
         "//src/odb:include/odb/wOrder.h",
     ],
     includes = ["../../include"],
     deps = [
         "//src/utl",
-        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.container",
         "@boost.geometry",
@@ -66,11 +66,6 @@ cc_library(
     ],
 )
 
-filegroup(
-    name = "message_srcs",
-    srcs = glob([
-        "*.cpp",
-        "*.h",
-    ]),
+message_srcs(
     visibility = ["//src/odb:__pkg__"],
 )

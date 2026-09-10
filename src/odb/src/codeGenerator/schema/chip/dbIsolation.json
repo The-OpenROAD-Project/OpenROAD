@@ -15,28 +15,23 @@
     },
     {
       "name":"applies_to_",
-      "type":"std::string",
-      "flags":["no-set"]
+      "type":"std::string"
     },
     {
       "name":"clamp_value_",
-      "type":"std::string",
-      "flags":["no-set"]
+      "type":"std::string"
     },
     {
       "name":"isolation_signal_",
-      "type":"std::string",
-      "flags":["no-set"]
+      "type":"std::string"
     },
     {
       "name":"isolation_sense_",
-      "type":"std::string",
-      "flags":["no-set"]
+      "type":"std::string"
     },
     {
       "name":"location_",
-      "type":"std::string",
-      "flags":["no-set"]
+      "type":"std::string"
     },
     {
       "name": "isolation_cells_",
@@ -46,7 +41,6 @@
     {
       "name":"power_domain_",
       "type":"dbId<_dbPowerDomain>",
-      "flags":[],
       "parent":"dbBlock"
     }
   ],

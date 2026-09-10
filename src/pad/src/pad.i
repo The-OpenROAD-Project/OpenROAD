@@ -71,6 +71,11 @@ void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net, odb::dbITerm* termin
   ord::getICeWall()->assignBump(inst, net, terminal, dont_route);
 }
 
+void make_bterm_pins_from_bumps(odb::dbBlock* block)
+{
+  ord::getICeWall()->makeBTermPinsFromBumps(block);
+}
+
 void make_fake_site(const char* name, int width, int height)
 {
   ord::getICeWall()->makeFakeSite(name, width, height);
@@ -138,10 +143,11 @@ void route_rdl(odb::dbTechLayer* layer,
                odb::dbTechVia* pad_via,
                const std::vector<odb::dbNet*>& nets,
                int width = 0, int spacing = 0, bool allow45 = false,
+               bool fixed = false,
                float penalty = 2.0,
                int max_iterations = 10)
 {
-  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty, max_iterations);
+  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, fixed, penalty, max_iterations);
 }
 
 void route_rdl_gui(bool enable)

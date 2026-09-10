@@ -14,6 +14,7 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
@@ -51,7 +52,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   };
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
@@ -340,7 +341,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     std::atomic_bool rows_init{false};
     std::atomic_bool bpins_init{false};
   };
-  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  odb::PtrMap<odb::dbBlock, BlockData> child_block_data_;
   BlockData top_block_data_;
 };
 

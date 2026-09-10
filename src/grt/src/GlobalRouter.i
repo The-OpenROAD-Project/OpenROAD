@@ -6,6 +6,7 @@
 #include "grt/GlobalRouter.h"
 #include "GrouteRenderer.h"
 #include "FastRouteRenderer.h"
+#include "CugrRenderer.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 
@@ -23,6 +24,8 @@ using sta::LibertyPort;
 %ignore grt::GlobalRouter::init;
 %ignore grt::GlobalRouter::initDebugFastRoute;
 %ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::initDebugCugr;
+%ignore grt::GlobalRouter::getDebugCugr;
 %ignore grt::GlobalRouter::setRenderer;
 
 %import <stl.i>
@@ -111,6 +114,12 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
+set_res_aware_nets_percentage(float percentage)
+{
+  getGlobalRouter()->setResAwareNetsPercentage(percentage);
+}
+
+void
 set_snapshot_batched_width(int snapshot_batched_width)
 {
   getGlobalRouter()->setSnapshotBatchedWidth(snapshot_batched_width);
@@ -164,6 +173,12 @@ set_use_cugr(bool use_cugr)
   getGlobalRouter()->setUseCUGR(use_cugr);
 }
 
+bool
+is_use_cugr()
+{
+  return getGlobalRouter()->isUseCUGR();
+}
+
 void
 set_skip_large_fanout(int skip_large_fanout)
 {
@@ -175,12 +190,8 @@ set_infinite_cap(bool infinite_capacity)
 {
   getGlobalRouter()->setInfiniteCapacity(infinite_capacity);
 }
-// NOTE: Debug-only. Not part of the public incremental API.
-void
-update_cugr_net(odb::dbNet* net)
-{
-  getGlobalRouter()->updateCUGRNet(net);
-}
+
+
 
 void start_incremental()
 {
@@ -263,6 +274,23 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
   getGlobalRouter()->setDebugEdges3D(edges3D);
+}
+
+void set_cugr_debug_cmd(odb::dbNet* net,
+                        bool patternRoute,
+                        bool resAware,
+                        bool detours,
+                        bool maze,
+                        bool rrr)
+{
+  const CugrDebugStages stages{patternRoute, resAware, detours, maze, rrr};
+  GlobalRouter* global_router = getGlobalRouter();
+  // No stages requested disarms; only the drawing needs a GUI and a renderer.
+  if (stages.any() && gui::Gui::enabled()
+      && global_router->getDebugCugr() == nullptr) {
+    global_router->initDebugCugr(std::make_unique<CugrRenderer>());
+  }
+  global_router->setDebugCugrNet(net, stages);
 }
 
 void set_global_route_debug_stt_input_filename(const char* file_name)

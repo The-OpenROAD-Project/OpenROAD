@@ -3,12 +3,13 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
 
 export class TimingWidget {
-    constructor(app, redrawAllLayers) {
+    constructor(app, redrawAllLayers, refreshOverlay) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._refreshOverlay = refreshOverlay || redrawAllLayers;
 
         this._currentTab = 'setup';
         this._setupPaths = [];
@@ -16,6 +17,9 @@ export class TimingWidget {
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
+        // Default to sorting by slack, matching the Qt GUI.
+        this._sortCol = 'slack';
+        this._sortAscending = true;
 
         this._build();
     }
@@ -29,8 +33,11 @@ export class TimingWidget {
         toolbar.className = 'timing-toolbar';
 
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
+        if (isStaticMode(this._app)) {
+            this._updateBtn.style.display = 'none';
+        }
 
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
@@ -38,6 +45,9 @@ export class TimingWidget {
         toolbar.appendChild(this._updateBtn);
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
+
+        // --- Timing cone panel (fanin/fanout overlay on the layout) ---
+        el.appendChild(this._buildConePanel());
 
         // --- Setup/Hold Tab Bar ---
         const tabBar = document.createElement('div');
@@ -74,9 +84,19 @@ export class TimingWidget {
         this._detailTableContainer.appendChild(this._detailTable);
         el.appendChild(this._detailTableContainer);
 
+        // Column-header tooltip (custom div, like the charts/clock-tree
+        // tooltips, rather than the easy-to-miss native title tooltip).
+        this._headerTooltip = document.createElement('div');
+        this._headerTooltip.className = 'or-tooltip or-tooltip-fixed';
+        el.appendChild(this._headerTooltip);
+
         this.element = el;
 
         this._bindEvents();
+
+        if (isStaticMode(this._app)) {
+            setTimeout(() => this.update(), 0);
+        }
     }
 
     _makeTab(label, active) {
@@ -159,17 +179,187 @@ export class TimingWidget {
         });
     }
 
+    // Build the timing-cone control panel.  Web-GUI additions over the Qt
+    // GUI: an interactive per-direction depth limit, a slack↔depth color
+    // toggle, and (via main.js) schematic cross-highlight.
+    _buildConePanel() {
+        const panel = document.createElement('div');
+        panel.className = 'timing-cone-panel';
+
+        const title = document.createElement('span');
+        title.className = 'timing-cone-title';
+        title.textContent = 'Timing cone:';
+        panel.appendChild(title);
+
+        const mkCheckbox = (id, text, checked = false) => {
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = id;
+            input.checked = checked;
+            const lbl = document.createElement('label');
+            lbl.htmlFor = id;
+            lbl.textContent = text;
+            return { input, lbl };
+        };
+
+        const fanin = mkCheckbox('cone-fanin', 'Fanin', true);
+        const fanout = mkCheckbox('cone-fanout', 'Fanout', true);
+        this._coneFanin = fanin.input;
+        this._coneFanout = fanout.input;
+        panel.append(fanin.input, fanin.lbl, fanout.input, fanout.lbl);
+
+        // Depth limits (0 = unlimited, matching the Qt GUI's behaviour).
+        const mkDepth = (label) => {
+            const lbl = document.createElement('label');
+            lbl.className = 'timing-cone-depth-label';
+            lbl.textContent = label;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.value = '0';
+            input.className = 'timing-cone-depth';
+            input.title = '0 = unlimited';
+            lbl.appendChild(input);
+            return { lbl, input };
+        };
+        const fi = mkDepth('in≤');
+        const fo = mkDepth('out≤');
+        this._coneFaninDepth = fi.input;
+        this._coneFanoutDepth = fo.input;
+        panel.append(fi.lbl, fo.lbl);
+
+        // Color mode: slack (Qt parity) or logic depth (Web-only).
+        this._coneColorMode = document.createElement('select');
+        this._coneColorMode.className = 'timing-cone-colormode';
+        for (const [val, text] of [['slack', 'by slack'], ['depth', 'by depth']]) {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = text;
+            this._coneColorMode.appendChild(opt);
+        }
+        panel.appendChild(this._coneColorMode);
+
+        // Sync the schematic cone view for the same target (Web-only).
+        const sync = mkCheckbox('cone-sync-schematic', 'Sync schematic');
+        this._coneSyncSchematic = sync.input;
+        panel.append(sync.input, sync.lbl);
+
+        this._coneApplyBtn = document.createElement('button');
+        this._coneApplyBtn.className = 'or-btn';
+        this._coneApplyBtn.textContent = 'Cone';
+        this._coneApplyBtn.title = 'Show the timing cone for the selected instance';
+        this._coneClearBtn = document.createElement('button');
+        this._coneClearBtn.className = 'or-btn';
+        this._coneClearBtn.textContent = 'Clear';
+        panel.append(this._coneApplyBtn, this._coneClearBtn);
+
+        this._coneStatus = document.createElement('span');
+        this._coneStatus.className = 'timing-cone-status';
+        panel.appendChild(this._coneStatus);
+
+        this._coneApplyBtn.addEventListener('click', () => this._applyCone());
+        this._coneClearBtn.addEventListener('click', () => this._clearCone());
+
+        return panel;
+    }
+
+    // The cone target: the currently selected instance.  (The backend also
+    // accepts pin_name for a future per-pin cone, but the web UI has no pin
+    // selection yet, so we always target the instance.)
+    _coneTarget() {
+        return this._app.selectedInstanceName || '';
+    }
+
+    async _applyCone() {
+        const fanin = this._coneFanin.checked;
+        const fanout = this._coneFanout.checked;
+        if (!fanin && !fanout) {
+            this._coneStatus.textContent = 'select fanin and/or fanout';
+            return;
+        }
+        const inst = this._coneTarget();
+        if (!inst) {
+            this._coneStatus.textContent = 'select an instance first';
+            return;
+        }
+        const req = {
+            type: 'timing_cone',
+            fanin,
+            fanout,
+            fanin_depth: Math.max(0, parseInt(this._coneFaninDepth.value, 10) || 0),
+            fanout_depth: Math.max(0, parseInt(this._coneFanoutDepth.value, 10) || 0),
+            color_mode: this._coneColorMode.value,
+            inst_name: inst,
+        };
+        this._coneApplyBtn.disabled = true;
+        this._coneStatus.textContent = 'computing…';
+        try {
+            const res = await this._app.websocketManager.request(req);
+            this._refreshOverlay();
+            this._renderConeStatus(res);
+            if (this._coneSyncSchematic.checked && inst) {
+                // Web-only: mirror the cone in the schematic SVG view.
+                // Carry the direction flags too: the schematic has no notion
+                // of a disabled direction, so without them an unchecked
+                // Fanin/Fanout still expands there.  Depths keep this
+                // widget's "0 = unlimited" meaning; syncCone translates.
+                document.dispatchEvent(new CustomEvent('openroad-cone-sync', {
+                    detail: {
+                        inst_name: inst,
+                        fanin: req.fanin,
+                        fanout: req.fanout,
+                        fanin_depth: req.fanin_depth,
+                        fanout_depth: req.fanout_depth,
+                    },
+                }));
+            }
+        } catch (e) {
+            this._coneStatus.textContent = 'cone error: ' + (e.message || e);
+        }
+        this._coneApplyBtn.disabled = false;
+    }
+
+    _renderConeStatus(res) {
+        if (!res) {
+            this._coneStatus.textContent = '';
+            return;
+        }
+        const n = res.node_count || 0;
+        if (n === 0) {
+            this._coneStatus.textContent = 'empty cone';
+            return;
+        }
+        let txt = n + ' pins';
+        if (res.color_mode === 'depth') {
+            txt += `, depth ±${res.max_depth}`;
+        } else if (res.constrained) {
+            const unit = res.time_unit || '';
+            txt += `, slack ${fmtTime(res.min_slack)}…${fmtTime(res.max_slack)}${unit}`;
+        } else {
+            txt += ', unconstrained';
+        }
+        this._coneStatus.textContent = txt;
+    }
+
+    _clearCone() {
+        this._app.websocketManager.request({ type: 'timing_cone', clear: true })
+            .then(() => this._refreshOverlay());
+        this._coneStatus.textContent = '';
+    }
+
     showPaths(tab, paths) {
         this._currentTab = tab;
+        // Copy so sorting never reorders the caller's array.
         if (tab === 'setup') {
-            this._setupPaths = paths;
+            this._setupPaths = [...paths];
             this._setupTab.classList.add('active');
             this._holdTab.classList.remove('active');
         } else {
-            this._holdPaths = paths;
+            this._holdPaths = [...paths];
             this._holdTab.classList.add('active');
             this._setupTab.classList.remove('active');
         }
+        this._applySort();
         this._selectedPathIndex = -1;
         this._pathCountLabel.textContent = paths.length + ' paths';
         this._renderPathTable();
@@ -185,8 +375,12 @@ export class TimingWidget {
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
             ]);
-            this._setupPaths = setupData.paths || [];
-            this._holdPaths = holdData.paths || [];
+            // Copy the arrays: in static mode the response is a shared
+            // cached object whose path order must keep matching the
+            // server-side overlay indices, so it must not be sorted.
+            this._setupPaths = [...(setupData.paths || [])];
+            this._holdPaths = [...(holdData.paths || [])];
+            this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
             this._renderDetailTable();
@@ -198,9 +392,65 @@ export class TimingWidget {
         this._updateBtn.textContent = 'Update';
     }
 
+    // Sort both path lists by the current sort column/order. Paths are
+    // tagged with their server-side index first so timing_highlight
+    // requests keep mapping to the right path after reordering.
+    _applySort() {
+        for (const paths of [this._setupPaths, this._holdPaths]) {
+            paths.forEach((p, i) => {
+                if (p._originalIndex === undefined) p._originalIndex = i;
+            });
+            const dir = this._sortAscending ? 1 : -1;
+            const key = this._sortCol;
+            paths.sort((a, b) => {
+                const va = a[key];
+                const vb = b[key];
+                const cmp = (typeof va === 'number' && typeof vb === 'number') ?
+                    va - vb :
+                    String(va).localeCompare(String(vb));
+                return dir * cmp;
+            });
+        }
+    }
+
+    _showHeaderTooltip(e, text) {
+        if (e.buttons !== 0) {
+            // Mid-drag (e.g. a column resize); don't show a tooltip.
+            this._hideHeaderTooltip();
+            return;
+        }
+        const tip = this._headerTooltip;
+        tip.textContent = text;
+        tip.style.display = 'block';
+        // position: fixed — viewport coordinates, offset from the cursor
+        // and clamped so the tooltip stays inside the viewport.
+        const left = Math.min(e.clientX + 12,
+                              window.innerWidth - tip.offsetWidth - 8);
+        tip.style.left = Math.max(0, left) + 'px';
+        tip.style.top = (e.clientY + 14) + 'px';
+    }
+
+    _hideHeaderTooltip() {
+        this._headerTooltip.style.display = 'none';
+    }
+
+    _sortBy(key) {
+        if (this._sortCol === key) {
+            this._sortAscending = !this._sortAscending;
+        } else {
+            this._sortCol = key;
+            this._sortAscending = true;
+        }
+        this._applySort();
+        this._selectedPathIndex = -1;
+        this._renderPathTable();
+        this._renderDetailTable();
+        this._clearTimingHighlight();
+    }
+
     _clearTimingHighlight() {
         this._app.websocketManager.request({ type: 'timing_highlight', path_index: -1 })
-            .then(() => this._redrawAllLayers());
+            .then(() => this._refreshOverlay());
     }
 
     _selectPathRow(idx) {
@@ -220,11 +470,15 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-        }).then(() => this._redrawAllLayers())
+        }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
     }
 
     _renderPathTable() {
+        // The hovered header may be replaced by the re-render, in which
+        // case its mouseleave never fires; hide the tooltip explicitly.
+        this._hideHeaderTooltip();
+
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
 
@@ -238,50 +492,72 @@ export class TimingWidget {
         const hr = document.createElement('tr');
         for (const col of TimingWidget.PATH_COLS) {
             const th = document.createElement('th');
-            th.textContent = col;
+            th.classList.add('sortable');
+            if (col.num) th.classList.add('num');
+            th.textContent = col.label +
+                (col.key === this._sortCol ? (this._sortAscending ? ' ▲' : ' ▼') : '');
+            if (col.tooltip) {
+                th.addEventListener('mousemove',
+                    (e) => this._showHeaderTooltip(e, col.tooltip));
+                th.addEventListener('mouseleave',
+                    () => this._hideHeaderTooltip());
+            }
+            th.addEventListener('click', () => this._sortBy(col.key));
             hr.appendChild(th);
         }
         thead.appendChild(hr);
         this._pathTable.appendChild(thead);
 
         const tbody = document.createElement('tbody');
+        // Scale for the slack bars: the largest magnitude in the table, so a
+        // bar reads as "how bad relative to the worst path shown".  Guard the
+        // zero case so a table of exactly-zero slacks does not divide by it.
+        const worstSlack = paths.reduce(
+            (m, p) => Math.max(m, Math.abs(Number(p.slack) || 0)), 0);
         paths.forEach((p, idx) => {
             const tr = document.createElement('tr');
             if (idx === this._selectedPathIndex) tr.classList.add('selected');
-            const vals = [
-                p.end_clk,
-                fmtTime(p.required),
-                fmtTime(p.arrival),
-                fmtTime(p.slack),
-                fmtTime(p.skew),
-                fmtTime(p.path_delay),
-                p.logic_depth,
-                p.fanout,
-                p.start_pin,
-                p.end_pin,
-            ];
-            vals.forEach((v, ci) => {
+            for (const col of TimingWidget.PATH_COLS) {
                 const td = document.createElement('td');
-                td.textContent = v;
-                if (ci === 3 && p.slack < 0) td.classList.add('slack-negative');
+                const v = p[col.key];
+                td.textContent = col.time ? fmtTime(v) : v;
+                if (col.num) td.classList.add('num');
+                if (col.key === 'slack') {
+                    const slack = Number(p.slack);
+                    if (slack < 0) td.classList.add('slack-negative');
+                    if (Number.isFinite(slack) && worstSlack > 0) {
+                        td.classList.add('slack-cell',
+                                         slack < 0 ? 'slack-under' : 'slack-over');
+                        td.style.setProperty(
+                            '--slack-frac',
+                            String(Math.abs(slack) / worstSlack));
+                    }
+                }
                 tr.appendChild(td);
-            });
+            }
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', () => this._selectPathRow(idx));
             tbody.appendChild(tr);
         });
+
+        if (paths.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = TimingWidget.PATH_COLS.length;
+            td.style.textAlign = 'center';
+            td.style.color = 'var(--fg-secondary)';
+            td.textContent = isStaticMode(this._app) ?
+                'No timing data available' :
+                'Click "Update" to load timing paths';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
+
         this._pathTable.appendChild(tbody);
 
-        // Restore previous widths if available, otherwise compute fresh.
-        if (savedWidths.length > 0 && savedWidths[0]) {
-            const newHeaders = this._pathTable.querySelectorAll('thead th');
-            this._pathTable.style.tableLayout = 'fixed';
-            newHeaders.forEach((th, i) => {
-                if (i < savedWidths.length) th.style.width = savedWidths[i];
-            });
-        } else {
-            makeResizableHeaders(this._pathTable);
-        }
+        // Install resize grips, reusing any previously saved widths to
+        // avoid a measuring reflow.
+        makeResizableHeaders(this._pathTable, savedWidths);
     }
 
     _selectDetailRow(idx) {
@@ -306,7 +582,7 @@ export class TimingWidget {
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
             pin_name: nodes[idx].pin,
-        }).then(() => this._redrawAllLayers());
+        }).then(() => this._refreshOverlay());
     }
 
     _renderDetailTable() {
@@ -326,6 +602,7 @@ export class TimingWidget {
         const hr = document.createElement('tr');
         for (const col of TimingWidget.DETAIL_COLS) {
             const th = document.createElement('th');
+            if (TimingWidget.DETAIL_NUM_COLS.has(col)) th.classList.add('num');
             th.textContent = col;
             hr.appendChild(th);
         }
@@ -345,25 +622,24 @@ export class TimingWidget {
                 fmtTime(n.slew),
                 fmtTime(n.load),
             ];
-            for (const v of vals) {
+            vals.forEach((v, col) => {
                 const td = document.createElement('td');
+                if (TimingWidget.DETAIL_NUM_COLS.has(TimingWidget.DETAIL_COLS[col])) {
+                    td.classList.add('num');
+                }
                 td.textContent = v;
                 tr.appendChild(td);
-            }
+            });
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', () => this._selectDetailRow(idx));
             tbody.appendChild(tr);
         });
         this._detailTable.appendChild(tbody);
 
-        if (savedWidths.length > 0 && savedWidths[0]) {
-            const newHeaders = this._detailTable.querySelectorAll('thead th');
-            this._detailTable.style.tableLayout = 'fixed';
-            newHeaders.forEach((th, i) => {
-                if (i < savedWidths.length) th.style.width = savedWidths[i];
-            });
-        } else {
-            makeResizableHeaders(this._detailTable);
+        // Install resize grips, reusing any previously saved widths to
+        // avoid a measuring reflow.
+        makeResizableHeaders(this._detailTable, savedWidths);
+        if (!savedWidths[0]) {
             // Pin column: set initial width to 30 characters
             const pinTh = this._detailTable.querySelector('thead th');
             if (pinTh) {
@@ -379,6 +655,33 @@ export function fmtTime(v) {
     return typeof v === 'number' ? v.toFixed(4) : String(v);
 }
 
-TimingWidget.PATH_COLS = ['Clock', 'Required', 'Arrival', 'Slack', 'Skew',
-                          'Logic Delay', 'Logic Depth', 'Fanout', 'Start', 'End'];
+// Path table columns: label, path field to display/sort by, time formatting,
+// and header tooltip (tooltips match the Qt GUI's TimingPathsModel).
+// `time` formats the value through fmtTime; `num` is the display hint -- a
+// numeric column is right-aligned with tabular figures so a column of values
+// lines up on the decimal point.  Every time column is numeric; the counts are
+// too, and the clock and pin names are not.
+TimingWidget.PATH_COLS = [
+    { label: 'Clock', key: 'end_clk' },
+    { label: 'Required', key: 'required', time: true, num: true },
+    { label: 'Arrival', key: 'arrival', time: true, num: true },
+    { label: 'Slack', key: 'slack', time: true, num: true },
+    { label: 'Skew', key: 'skew', time: true, num: true,
+      tooltip: 'The difference in arrival times between\n' +
+               'source and destination clock pins of a macro/register,\n' +
+               'adjusted for CRPR and subtracting a clock period.\n' +
+               'Setup and hold times account for internal clock delays.' },
+    { label: 'Logic Delay', key: 'path_delay', time: true, num: true,
+      tooltip: 'Path delay from instances (excluding buffers and consecutive '
+               + 'inverter pairs)' },
+    { label: 'Logic Depth', key: 'logic_depth', num: true,
+      tooltip: 'Path instances (excluding buffers and consecutive inverter '
+               + 'pairs)' },
+    { label: 'Fanout', key: 'fanout', num: true },
+    { label: 'Start', key: 'start_pin' },
+    { label: 'End', key: 'end_pin' },
+];
 TimingWidget.DETAIL_COLS = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
+// Which of the above hold numbers (see PATH_COLS' `num`).
+TimingWidget.DETAIL_NUM_COLS
+    = new Set(['Fanout', 'Time', 'Delay', 'Slew', 'Load']);

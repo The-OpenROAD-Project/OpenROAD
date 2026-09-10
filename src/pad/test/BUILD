@@ -17,11 +17,16 @@ COMPULSORY_TESTS = [
     "bump_array_remove_single",
     "connect_by_abutment",
     "connect_by_abutment_with_single_pinnet",
+    "make_bterm_pins_from_bumps",
+    "make_bterm_pins_from_bumps_multiple_bumps",
+    "make_bterm_pins_from_bumps_no_bump",
     "make_corner_sites",
     "make_io_sites",
     "make_io_sites_different_sites",
     "make_io_sites_rotations",
     "non_top_layer",
+    "order_net_match_different",
+    "order_net_match_unconnected",
     "place_bondpad",
     "place_bondpad_stagger",
     "place_corners_avoid_bumps",
@@ -39,6 +44,7 @@ COMPULSORY_TESTS = [
     "place_pads_bumps_bump_overlap",
     "place_pads_bumps_strategy_placer_blockages",
     "place_pads_bumps_strategy",
+    "place_pads_placer_fullyblocked",
     "place_pads_too_many",
     "place_pads_uniform",
     "place_pads_uniform_slip",
@@ -52,7 +58,9 @@ COMPULSORY_TESTS = [
     "rdl_route_assignments_overlapping_iterms",
     "rdl_route_bump_to_bump_only",
     "rdl_route_bump_via",
+    "rdl_route_daisy_chain",
     "rdl_route_failed",
+    "rdl_route_fixed",
     "rdl_route_invalid",
     "rdl_route_keep_existing",
     "rdl_route_max_iterations",
@@ -64,11 +72,6 @@ COMPULSORY_TESTS = [
     "skywater130_caravel",
     "skywater130_coyote_tc",
     "skywater130_overlapping_filler",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "rdl_route_single_target",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -219,7 +222,6 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -229,7 +231,10 @@ py_test(
     name = "pad_man_tcl_check",
     srcs = ["pad_man_tcl_check.py"],
     data = ["//src/pad:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

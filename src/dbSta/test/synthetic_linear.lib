@@ -1,0 +1,49 @@
+library(synthetic_oracle) {
+  delay_model : "table_lookup";
+  
+  /* Explicit C++ unit definitions */
+  capacitive_load_unit (1,ff);         /* Capacitance is in fF (1.0f = 1 fF) */
+  pulling_resistance_unit : "1kohm";   /* Resistance is in kOhm (1.0f = 1 kOhm) */
+  time_unit : "1ps";                   /* Time is in ps (1.0f = 1 ps) */
+  voltage_unit : "1v";                 /* Voltage is in Volts */
+  current_unit : "1mA";                /* Current is in milliAmperes */
+  leakage_power_unit : "1pW";          /* Power is in picowatts */
+
+  /* Slew and Logic Thresholds */
+  slew_derate_from_library : 1.0;
+  slew_lower_threshold_pct_fall : 20.0;
+  slew_upper_threshold_pct_fall : 80.0;
+  slew_lower_threshold_pct_rise : 20.0;
+  slew_upper_threshold_pct_rise : 80.0;
+  input_threshold_pct_fall      : 50.0;
+  input_threshold_pct_rise      : 50.0;
+  output_threshold_pct_fall     : 50.0;
+  output_threshold_pct_rise     : 50.0;
+
+  lu_table_template(template_2d) {
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1("0.0, 50.0");             /* Input slew index goes up to 50 ps */
+    index_2("0.0, 10.0");             /* Output load cap index goes up to 10 fF */
+  }
+
+  cell(perfect_buffer) {
+    pin(A) { direction : input; }
+    pin(Y) { 
+      direction : output;
+      timing() {
+        related_pin : "A";
+        /* Planar linear Delay: Delay = 0.5 * slew + 2.0 * Cload */
+        cell_rise(template_2d) {
+          values("0.0, 20.0", 
+                 "25.0, 45.0"); 
+        }
+        /* Planar linear Slew: Slew = 0.6 * slew + 2.0 * Cload */
+        rise_transition(template_2d) {
+          values("0.0, 20.0", 
+                 "30.0, 50.0");
+        }
+      }
+    }
+  }
+}

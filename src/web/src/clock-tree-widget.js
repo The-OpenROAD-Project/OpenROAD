@@ -4,6 +4,18 @@
 // Canvas-based clock tree viewer widget.
 
 import { getThemeColors } from './theme.js';
+import { isStaticMode } from './ui-utils.js';
+import { downloadUrl } from './image-export.js';
+
+// Export filename for the clock on show, so exporting several tabs in a row
+// does not overwrite one file.  Anything a file name cannot carry becomes '_'
+// -- a hierarchical clock name holds '/', and Windows rejects more besides --
+// and a clock with no usable name still gets a file.
+export function clockTreePngName(clockName) {
+    const cleaned = String(clockName || '').replace(/[^A-Za-z0-9._-]/g, '_')
+        .replace(/^_+|_+$/g, '');
+    return (cleaned || 'clock_tree') + '.png';
+}
 
 export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
 export const kNodeSize = 10;       // base node shape size in pixels
@@ -152,9 +164,10 @@ export function computeClockTreeLayout(clockData) {
 }
 
 export class ClockTreeWidget {
-    constructor(container, app, redrawAllLayers) {
+    constructor(container, app, redrawAllLayers, refreshOverlay) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._refreshOverlay = refreshOverlay || redrawAllLayers;
         this._clockData = [];
         this._selectedClockIdx = 0;
         this._selectedNodeId = -1;
@@ -187,15 +200,23 @@ export class ClockTreeWidget {
         const toolbar = document.createElement('div');
         toolbar.className = 'clock-tree-toolbar';
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
+        if (isStaticMode(this._app)) {
+            this._updateBtn.style.display = 'none';
+        }
         this._fitBtn = document.createElement('button');
-        this._fitBtn.className = 'timing-btn';
+        this._fitBtn.className = 'or-btn';
         this._fitBtn.textContent = 'Fit';
+        this._pngBtn = document.createElement('button');
+        this._pngBtn.className = 'or-btn';
+        this._pngBtn.textContent = 'PNG';
+        this._pngBtn.title = 'Export the clock tree as a PNG image';
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
         toolbar.appendChild(this._updateBtn);
         toolbar.appendChild(this._fitBtn);
+        toolbar.appendChild(this._pngBtn);
         toolbar.appendChild(this._statusLabel);
         el.appendChild(toolbar);
 
@@ -211,7 +232,7 @@ export class ClockTreeWidget {
 
         // Tooltip
         this._tooltip = document.createElement('div');
-        this._tooltip.className = 'clock-tree-tooltip';
+        this._tooltip.className = 'or-tooltip';
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 
@@ -220,6 +241,10 @@ export class ClockTreeWidget {
 
         this._ctx = this._canvas.getContext('2d');
         this._bindEvents();
+
+        if (isStaticMode(this._app)) {
+            setTimeout(() => this.update(), 0);
+        }
     }
 
     _fit() {
@@ -228,9 +253,28 @@ export class ClockTreeWidget {
         this._render();
     }
 
+    _pngFileName() {
+        const clock = this._clockData[this._selectedClockIdx];
+        return clockTreePngName(clock && clock.name);
+    }
+
+    // The clock tree is drawn in the browser, so the image is taken from the
+    // canvas rather than re-rendered server-side the way the Qt GUI's
+    // save_clocktree_image does.  _render() paints an opaque background
+    // first, so the PNG is not transparent.  The canvas is sized in device
+    // pixels (see _sizeCanvas), so this exports at the display's resolution.
+    _exportPng() {
+        try {
+            downloadUrl(this._canvas.toDataURL('image/png'), this._pngFileName());
+        } catch (err) {
+            console.error('PNG export failed:', err);
+        }
+    }
+
     _bindEvents() {
         this._updateBtn.addEventListener('click', () => this.update());
         this._fitBtn.addEventListener('click', () => this._fit());
+        this._pngBtn.addEventListener('click', () => this._exportPng());
 
         this._canvas.addEventListener('keydown', (e) => {
             if (e.key === 'f') {
@@ -391,10 +435,12 @@ export class ClockTreeWidget {
 
         if (!this._layout.length) {
             ctx.fillStyle = tc.canvasText;
-            ctx.font = '14px monospace';
+            ctx.font = '14px ' + tc.fontSans;
             ctx.textAlign = 'center';
-            ctx.fillText('Click "Update" to load clock tree data',
-                w / 2, h / 2);
+            const msg = isStaticMode(this._app)
+                ? 'No clock tree data available'
+                : 'Click "Update" to load clock tree data';
+            ctx.fillText(msg, w / 2, h / 2);
             return;
         }
 
@@ -585,7 +631,7 @@ export class ClockTreeWidget {
         ctx.save();
         ctx.fillStyle = tc.canvasLabel;
         ctx.strokeStyle = tc.canvasAxis;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
 
@@ -661,7 +707,7 @@ export class ClockTreeWidget {
             this._app.websocketManager.request({
                 type: 'clock_tree_highlight',
                 inst_name: hit.name,
-            }).then(() => this._redrawAllLayers());
+            }).then(() => this._refreshOverlay());
         } else {
             if (this._selectedNodeId >= 0) {
                 this._selectedNodeId = -1;
@@ -669,7 +715,7 @@ export class ClockTreeWidget {
                 this._app.websocketManager.request({
                     type: 'clock_tree_highlight',
                     inst_name: '',
-                }).then(() => this._redrawAllLayers());
+                }).then(() => this._refreshOverlay());
             }
         }
     }

@@ -116,7 +116,7 @@ void _dbPolygon::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-Polygon dbPolygon::getPolygon() const
+const Polygon& dbPolygon::getPolygon() const
 {
   _dbPolygon* obj = (_dbPolygon*) this;
   return obj->polygon_;

@@ -10,7 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-      - name: Verify lock file is up to date
-        run: bazelisk mod deps --lockfile_mode=error
+      - name: Update lock file to check for differences
+        run: bazelisk mod deps --lockfile_mode=update
+
+      - name: Differences to be addressed
+        run: |
+          if ! git diff --exit-code -- MODULE.bazel.lock ; then
+            msg="MODULE.bazel.lock is out of date. Regenerate with:"
+            msg="$msg  bazelisk mod deps --lockfile_mode=update"
+            msg="$msg  then commit the updated MODULE.bazel.lock."
+            echo "::error file=MODULE.bazel.lock::$msg"
+            exit 1
+          fi

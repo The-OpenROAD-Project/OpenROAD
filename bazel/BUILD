@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -14,15 +15,32 @@ exports_files(
         "bzl_lint_test.sh",
         "bzl_tidy.sh",
         "fix_lint.sh",
+        "git_ls_files.sh",
         "install.sh",
         "tcl_fmt_test.sh",
         "tcl_lint_test.sh",
         "tcl_tidy.sh",
+        "yaml_fmt_test.sh",
+        "yaml_tidy.sh",
     ],
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt binaries from pip — version pinned in requirements.in
+# True under --config=tsan / --config=ubsan. The regression tests run the
+# openroad binary from the exec configuration, which those configs leave
+# uninstrumented on purpose (so swig, bison and the other build tools stay
+# clean). test/regression.bzl uses this to take the binary under test from the
+# target configuration instead, which is where the instrumentation lives.
+selects.config_setting_group(
+    name = "sanitizer_build",
+    match_any = [
+        "@llvm//config:tsan_enabled",
+        "@llvm//config:ubsan_enabled",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# tclint / tclfmt / yamlfix binaries from pip — version pinned in requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
@@ -32,6 +50,12 @@ py_console_script_binary(
 py_console_script_binary(
     name = "tclfmt",
     pkg = "@openroad-pip//tclint",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "yamlfix",
+    pkg = "@openroad-pip//yamlfix",
     visibility = ["//visibility:public"],
 )
 
@@ -49,20 +73,12 @@ pkg_files(
     strip_prefix = strip_prefix.from_root(),
 )
 
-pkg_files(
-    name = "tclreadline_files",
-    srcs = ["@tclreadline//:tclreadline_scripts"],
-    prefix = "tclreadline",
-    strip_prefix = strip_prefix.from_root(),
-)
-
 # Packaging up all tcl resources to one complete zip file. It can be
 # directly embedded in Tcl9 in a //zipfs:/ vfs.
 pkg_zip(
     name = "tcl_resources_zip",
     srcs = [
         ":tcl_core_files",
-        ":tclreadline_files",
     ],
 )
 
