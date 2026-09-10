@@ -143,7 +143,10 @@ py_test(
     name = "ifp_man_tcl_check",
     srcs = ["ifp_man_tcl_check.py"],
     data = ["//src/ifp:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
