@@ -126,11 +126,20 @@ int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load,
 
   if (!load.empty()) {
     odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
-    sta::LibertyCell* libertyLoadCell
-        = network_->libertyCell(network_->dbToSta(loadMaster));
-    sta::LibertyPort *input, *output;
-    libertyLoadCell->bufferPorts(input, output);
-    totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    if (loadMaster) {
+      sta::Cell* loadCell = network_->dbToSta(loadMaster);
+      if (loadCell) {
+        sta::LibertyCell* libertyLoadCell = network_->libertyCell(loadCell);
+        if (libertyLoadCell) {
+          sta::LibertyPort *input, *output;
+          libertyLoadCell->bufferPorts(input, output);
+          if (input) {
+            totalCap += input->capacitance(sta::RiseFall::rise(),
+                                           sta::MinMax::max());
+          }
+        }
+      }
+    }
   }
 
   return wireRes * totalCap * dpUnit_;
@@ -527,22 +536,23 @@ DPResult LatencyBalancer::solveDP(int64_t target,
     }
   }
 
-  // Pick best solution
+  // Pick best solution; the empty chain (no buffers, 0 delay) is the baseline
   int64_t bestW = 0;
   int bestJ = -1;
-  for (int64_t w = 0; w <= maxW; w++) {
+  int64_t bestDist = target;
+  int32_t bestLen = 0;
+  for (int64_t w = 1; w <= maxW; w++) {
     for (size_t j = 0; j < nBuffers; j++) {
-      if (dp[state(w, j)] == kUnset) {
+      const int32_t chainLen = dp[state(w, j)];
+      if (chainLen == kUnset) {
         continue;
       }
-      int64_t dist = std::abs(w - target);
-      int64_t bestDist = (bestJ == -1) ? std::numeric_limits<int64_t>::max()
-                                       : std::abs(bestW - target);
-
-      if (dist < bestDist
-          || (dist == bestDist && dp[state(w, j)] < dp[state(bestW, bestJ)])) {
+      const int64_t dist = std::abs(w - target);
+      if (dist < bestDist || (dist == bestDist && chainLen < bestLen)) {
         bestW = w;
         bestJ = static_cast<int>(j);
+        bestDist = dist;
+        bestLen = chainLen;
       }
     }
   }
