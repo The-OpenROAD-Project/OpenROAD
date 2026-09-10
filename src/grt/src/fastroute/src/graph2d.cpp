@@ -97,7 +97,14 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
     congested_ndrs_ = other.congested_ndrs_;
     congestion_nets_ = other.congestion_nets_;
   } else {
+    // The per net records, the NDR capacity taken from each layer and the
+    // per edge overflow counters are a single piece of bookkeeping: dropping
+    // the records alone would leave reservations that can never be released
+    // and overflow counters that can never return to zero, keeping the edges
+    // congested for NDR nets for the rest of the run.
     clearNDRnets();
+    resetNDRCap();
+    foreachEdge([](Edge& edge) { edge.ndr_overflow = 0; });
     clearCongestedNDRnets();
     congestion_nets_.clear();
   }
@@ -672,19 +679,20 @@ double Graph2D::getCostNDRAware(FrNet* net,
     // half the edge cost a second time in the initial routing steps. But we
     // only need to count once to avoid problems when managing 3D capacity
     if (is_net_present) {
-      // The cost to remove is the cost that was added for this net. It cannot
-      // be decided from edge.ndr_overflow, since the nets are not ripped up in
-      // the same order they were routed: refunding a cost the net never paid
-      // makes the edge usage drift and eventually underflow.
-      const bool charged_overflow = net_it->second;
+      // The resources to remove are the ones that were added for this net.
+      // They cannot be derived from the current state of the edge, since the
+      // nets are not ripped up in the same order they were routed: releasing
+      // resources the net never took makes the edge usage and the NDR
+      // capacity drift.
+      const NDRUsage ndr_usage = net_it->second;
       ndr_nets.erase(net_it);
-      if (charged_overflow) {
+      if (ndr_usage.charged_overflow) {
         edge.ndr_overflow--;
         final_edge_cost = -OVERFLOW_COST_MULTIPLIER * edgeCost;
       } else {
         final_edge_cost = -edgeCost;
       }
-      updateNDRCapLayer(x, y, net, direction, edge_cost);
+      releaseNDRCapLayer(x, y, direction, ndr_usage);
     }
   } else {  // Routing: add resource
     // If the net is not in the list, add it and compute the edge cost.
@@ -703,8 +711,9 @@ double Graph2D::getCostNDRAware(FrNet* net,
       } else {
         final_edge_cost = edgeCost;
       }
-      ndr_nets.emplace(net, charge_overflow);
-      updateNDRCapLayer(x, y, net, direction, edge_cost);
+      NDRUsage ndr_usage = reserveNDRCapLayer(x, y, net, direction);
+      ndr_usage.charged_overflow = charge_overflow;
+      ndr_nets.emplace(net, ndr_usage);
     }
   }
 
@@ -725,46 +734,63 @@ void Graph2D::printNDRCap(const int x, const int y)
   }
 }
 
-// Updates the NDR capacity of a layer for a given net.
-void Graph2D::updateNDRCapLayer(const int x,
-                                const int y,
-                                FrNet* net,
-                                EdgeDirection dir,
-                                const double edge_cost)
+// Reserves the NDR capacity of a layer for a given net, returning the layer
+// that was debited and by how much, so that the rip-up can release exactly
+// the same resources.
+Graph2D::NDRUsage Graph2D::reserveNDRCapLayer(const int x,
+                                              const int y,
+                                              FrNet* net,
+                                              EdgeDirection dir)
 {
-  const int8_t edgeCost = net->getEdgeCost();
-  if (edgeCost == 1) {
-    return;
-  }
-
   auto& cap_3D = (dir == EdgeDirection::Horizontal) ? h_cap_3D_ : v_cap_3D_;
-  int8_t layer_edge_cost = 0;
 
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     auto& layer_cap = cap_3D[l][x][y];
-    layer_edge_cost = net->getLayerEdgeCost(l);
-    if (edge_cost < 0) {  // Reducing edge usage
-      // If we already have a NDR net in this layer, increase the NDR capacity
-      // available again
-      if (layer_cap.cap - layer_cap.cap_ndr >= layer_edge_cost) {
-        layer_cap.cap_ndr += layer_edge_cost;
-        return;
-      }
-    } else {  // Increasing edge usage
-      // If there is NDR capacity available, reduce the capacity value
-      if (layer_cap.cap_ndr >= layer_edge_cost) {
-        layer_cap.cap_ndr -= layer_edge_cost;
-        return;
-      }
+    const int8_t layer_edge_cost = net->getLayerEdgeCost(l);
+    // If there is NDR capacity available, reduce the capacity value
+    if (layer_cap.cap_ndr >= layer_edge_cost) {
+      layer_cap.cap_ndr -= layer_edge_cost;
+      return {.layer = static_cast<int16_t>(l), .amount = layer_edge_cost};
     }
   }
 
   // If the edge is already with congestion and there is no capacity available
-  // in any layer, reduce the capacity available of the first layer.
-  // When rippin-up, it will be the first to be released
-  if (edge_cost > 0) {
-    layer_edge_cost = net->getLayerEdgeCost(net->getMinLayer());
-    cap_3D[net->getMinLayer()][x][y].cap_ndr -= layer_edge_cost;
+  // in any layer, reduce the capacity available of the first layer. The
+  // capacity goes negative to represent the oversubscription, and the rip-up
+  // of this net restores it.
+  const int min_layer = net->getMinLayer();
+  const int8_t layer_edge_cost = net->getLayerEdgeCost(min_layer);
+  cap_3D[min_layer][x][y].cap_ndr -= layer_edge_cost;
+  return {.layer = static_cast<int16_t>(min_layer), .amount = layer_edge_cost};
+}
+
+// Releases the NDR capacity that a net reserved on an edge.
+void Graph2D::releaseNDRCapLayer(const int x,
+                                 const int y,
+                                 EdgeDirection dir,
+                                 const NDRUsage& ndr_usage)
+{
+  if (ndr_usage.layer < 0) {
+    return;
+  }
+
+  auto& cap_3D = (dir == EdgeDirection::Horizontal) ? h_cap_3D_ : v_cap_3D_;
+  cap_3D[ndr_usage.layer][x][y].cap_ndr += ndr_usage.amount;
+}
+
+// Resets the NDR capacity of every layer to the full edge capacity. Used when
+// the list of NDR nets per edge is dropped, since the reservations recorded
+// in cap_ndr can only be released through it.
+void Graph2D::resetNDRCap()
+{
+  for (auto* cap_3D : {&v_cap_3D_, &h_cap_3D_}) {
+    for (auto plane : *cap_3D) {
+      for (auto row : plane) {
+        for (Cap3D& layer_cap : row) {
+          layer_cap.cap_ndr = layer_cap.cap;
+        }
+      }
+    }
   }
 }
 
