@@ -17,6 +17,7 @@ or_integration_tests(
   # their own numbers instead.
   PASSFAIL_TESTS
     claim_publication
+    cts_empty_claims
     cts_headroom
     numeric_options
     key_files
@@ -43,6 +44,7 @@ or_integration_tests(
     place_unconstrained
     python_api
     route_verify
+    routing_defaults
     verify_malformed
 )
 

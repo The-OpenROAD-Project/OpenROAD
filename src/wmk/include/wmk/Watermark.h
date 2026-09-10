@@ -219,6 +219,7 @@ class Watermark
 
   // Set the sequential fanout parity of a keyed subset of leaf clock buffers
   // and write the selected pairs, including pairs whose edits were rejected.
+  // Returns the number selected; zero publishes a header-only claims file.
   int ctsWatermark(const std::array<std::uint8_t, 32>& key,
                    const CtsOptions& opts,
                    const std::string& claims_file);

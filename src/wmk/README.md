@@ -221,6 +221,8 @@ must exist and be writable; the destination must be a regular file or a new
 path. Devices, directories and output symlinks are rejected. If publication
 fails, the command reports an error, preserves any previous claims file, and
 restores its placement or clock-connection edits with refreshed parasitics.
+Successful embedding with no selected pairs writes a header-only claims file,
+replacing any previous claims. Such a file provides no ownership evidence.
 
 ### Set Routing Watermark
 
@@ -344,7 +346,7 @@ verify_watermark
 | `-min_stages` | Stages that must pass. Defaults to `2`. |
 | `-placement_claims` | Claim file from the placement watermark. |
 | `-routing_alpha` | Largest p-value the routing stage may show and still pass. Defaults to `1e-4`. |
-| `-routing_fraction` | The fraction the routing mark was embedded with. Defaults to `0.02`. |
+| `-routing_fraction` | The fraction the routing mark was embedded with. Defaults to `0.05`, matching `set_routing_watermark`. Supply the same fraction when embedding with a nondefault `-fraction`. |
 | `-routing_key_hex` | 64-character hex routing key. Checks the routing stage. |
 | `-routing_permutations` | Draws behind the routing p-value, which floors it at 1/(n+1). Defaults to `100000`. |
 | `-tau` | Extraction rate a placement or clock-tree stage must reach. Defaults to `0.75`. |

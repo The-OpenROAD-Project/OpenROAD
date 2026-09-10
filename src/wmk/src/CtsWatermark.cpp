@@ -158,7 +158,10 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   for (dbInst* lcb : lcbs) {
     checkClaimName(lcb);
   }
+  ClaimFile output(claims_file);
   if (lcbs.size() < 2) {
+    // A successful empty embedding must replace claims from an earlier run.
+    output.publish([](std::ostream& out) { writeCtsClaims(out, {}); });
     logger_->warn(utl::WMK,
                   71,
                   "Found {} leaf clock buffer(s); at least two are needed to "
@@ -166,8 +169,6 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                   static_cast<int>(lcbs.size()));
     return 0;
   }
-
-  ClaimFile output(claims_file);
 
   const int dbu = block->getDbUnitsPerMicron();
   const std::int64_t max_dist

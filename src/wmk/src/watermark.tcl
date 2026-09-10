@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+namespace eval wmk {
+# Embedding and verification must derive the same marked population by default.
+variable default_routing_fraction 0.05
+}
+
 sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
                                                [-file file] \
                                                [-key_hex key_hex] \
@@ -97,8 +102,10 @@ proc wmk::check_key_paths { paths } {
     if { [file exists $private] && [file exists $public] } {
       file stat $private private_stat
       file stat $public public_stat
-      set same [expr { $same || ($private_stat(dev) == $public_stat(dev)
-        && $private_stat(ino) == $public_stat(ino)) }]
+      set same [expr {
+        $same || ($private_stat(dev) == $public_stat(dev)
+          && $private_stat(ino) == $public_stat(ino))
+      }]
     }
     if { $same } {
       utl::error WMK 116 "The private and public key files must be different files."
@@ -221,7 +228,7 @@ proc set_routing_watermark { args } {
   sta::parse_key_args "set_routing_watermark" args \
     keys {-key_hex -fraction} flags {}
 
-  set fraction 0.05
+  set fraction $wmk::default_routing_fraction
   if { [info exists keys(-fraction)] } {
     set fraction $keys(-fraction)
   }
@@ -257,9 +264,9 @@ sta::define_cmd_args "place_watermark" {-claims_file file \
                                        [-guard_degrade_ns ns]}
 
 # Put a keyed subset of same-row, same-width cell pairs into a keyed
-# left-to-right order, writing the committed pairs to -claims_file.  Run after
-# detailed placement; the design is re-legalized afterwards and any pair that
-# legalization disturbed is dropped rather than claimed.
+# left-to-right order, writing all selected pairs to -claims_file. Run after
+# detailed placement; the design is re-legalized afterwards. Pairs whose edits
+# are rejected or disturbed by legalization remain claimed for verification.
 proc place_watermark { args } {
   sta::parse_key_args "place_watermark" args \
     keys {-key_hex -claims_file -grid_nx -grid_ny -pair_dist_um \
@@ -315,9 +322,9 @@ sta::define_cmd_args "cts_watermark" {-claims_file file \
                                      [-cap_headroom_frac frac]}
 
 # Set the sequential fanout parity of a keyed subset of leaf clock buffers,
-# writing the committed pairs to -claims_file.  Run after clock tree synthesis.
-# A pair is committed only if the sink move it needed did not worsen the
-# clock's worst skew.
+# writing all selected pairs to -claims_file. Run after clock tree synthesis.
+# Sink moves must respect the timing and electrical limits. Pairs whose edits
+# are rejected remain claimed for verification.
 proc cts_watermark { args } {
   sta::parse_key_args "cts_watermark" args \
     keys {-key_hex -claims_file -num_pairs -sibling_dist_um -skew_margin_ns \
@@ -446,7 +453,7 @@ proc verify_watermark { args } {
   # T_R is not evidence on its own -- on an unwatermarked design it is a coin
   # flip -- so the stage is judged on the p-value instead.
   if { [info exists keys(-routing_key_hex)] } {
-    set frac 0.02
+    set frac $wmk::default_routing_fraction
     if { [info exists keys(-routing_fraction)] } {
       set frac $keys(-routing_fraction)
     }

@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 # they change their output, so they assert their own numbers instead.
 PASSFAIL_TESTS = [
     "claim_publication",
+    "cts_empty_claims",
     "cts_headroom",
     "numeric_options",
     "key_files",
@@ -36,11 +37,13 @@ PASSFAIL_TESTS = [
     "place_unconstrained",
     "python_api",
     "route_verify",
+    "routing_defaults",
     "verify_malformed",
 ]
 
 TESTS = [
     "claim_publication",
+    "cts_empty_claims",
     "bias",
     "bias_neutral",
     "cts_headroom",
@@ -71,6 +74,7 @@ TESTS = [
     "python_api",
     "route_stat",
     "route_verify",
+    "routing_defaults",
     "verify_malformed",
     "select",
     "strength",
