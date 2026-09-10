@@ -2598,7 +2598,7 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 
   logger_->info(MPL,
                 78,
-                "The location generated for the standard cells was not "
+                "The locations generated for the standard cells were not "
                 "included in the macro placement file.");
 }
 
