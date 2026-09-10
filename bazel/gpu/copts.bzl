@@ -55,8 +55,12 @@ CUDA_COPTS = [
     # libc++'s placement new/delete are __host__ only, which breaks the
     # Kokkos kernels that placement-new in __host__ __device__ code. The
     # shim replaces them with host+device definitions; see the header.
+    # Resolved through $(location) so the path is right in any execroot,
+    # including a downstream module's where this repo lives under
+    # external/; every user of CUDA_COPTS must list the header in
+    # additional_compiler_inputs, which is what makes the expansion legal.
     "-include",
-    "bazel/gpu/cuda_placement_new.h",
+    "$(location //bazel/gpu:cuda_placement_new.h)",
     # gpl's sources use OpenMP pragmas on the host side; same flag (and
     # @openmp dependency) as the CPU //src/gpl target.
     "-fopenmp",
