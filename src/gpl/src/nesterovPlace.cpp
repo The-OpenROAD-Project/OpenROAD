@@ -573,13 +573,8 @@ void NesterovPlace::runTimingDriven(int iter,
         is_min_hpwl_ = true;
       }
 
-      // A non-virtual iteration replaced topology (repair_design created and
-      // destroyed instances). The accelerated-gradient momentum accumulated
-      // over the previous iterations is no longer valid for the changed
-      // objective. Request a FISTA restart so the next iteration takes a plain
-      // gradient step (coeff = 0) instead of extrapolating along the stale
-      // pre-repair trajectory, which otherwise diverges HPWL while overflow
-      // keeps falling.
+      // The repair replaced the topology, so the momentum accumulated on the
+      // old objective is stale. Restart FISTA on the next iteration.
       reset_nesterov_momentum_ = true;
     }
 
