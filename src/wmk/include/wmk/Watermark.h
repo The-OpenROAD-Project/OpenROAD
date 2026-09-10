@@ -21,9 +21,11 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -264,7 +266,8 @@ class Watermark
   bool placementTimingAvailable() const;
   bool canEstimateParasitics(bool clock) const;
 
-  // The clocks reaching an instance's output pin, as sorted clock indices.
+  // The clocks reaching an instance's output pin, as sorted (mode, clock)
+  // index pairs. Numeric clock indices alone are not unique across modes.
   //
   // Two leaf buffers may only be paired when a sink can move between them
   // without changing which clock it is on.  Distance alone does not establish
@@ -272,7 +275,8 @@ class Watermark
   // reconnects a flop to a different clock, which changes what the design
   // does.  Empty when there is no timing to ask, or when the instance is not
   // a single-output cell -- in either case the caller must not pair it.
-  std::vector<int> clockIndicesAt(odb::dbInst* inst) const;
+  std::vector<std::pair<size_t, int>> clockIdentitiesAt(
+      odb::dbInst* inst) const;
 
   // Re-estimate the parasitics of the two nets a sink was moved between.
   //

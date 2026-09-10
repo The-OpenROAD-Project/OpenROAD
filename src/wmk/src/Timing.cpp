@@ -12,6 +12,7 @@
 #include "sta/Clock.hh"
 #include "sta/Graph.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Path.hh"
 #include "sta/Scene.hh"
 #include "sta/Search.hh"
@@ -42,8 +43,9 @@ ClockSkews clockSkews(sta::dbSta* sta)
         continue;
       }
       const sta::ClockEdge* edge = path->clkEdge(sta);
-      const ClockSkewKey key{clock->index(),
-                             path->scene(sta)->index(),
+      const sta::Scene* scene = path->scene(sta);
+      const ClockSkewKey key{{scene->mode()->modeIndex(), clock->index()},
+                             scene->index(),
                              edge->transition()->index()};
       const float latency = path->arrival() - edge->time();
       if (!isConstrainedSlack(latency)) {
@@ -61,13 +63,14 @@ ClockSkews clockSkews(sta::dbSta* sta)
   return skews;
 }
 
-bool haveClockSkews(const std::vector<int>& clocks, const ClockSkews& skews)
+bool haveClockSkews(const ClockIdentities& clocks, const ClockSkews& skews)
 {
-  return !clocks.empty() && std::ranges::all_of(clocks, [&](int clock) {
-    return std::ranges::any_of(skews, [&](const auto& entry) {
-      return std::get<0>(entry.first) == clock;
-    });
-  });
+  return !clocks.empty()
+         && std::ranges::all_of(clocks, [&](const ClockIdentity& clock) {
+              return std::ranges::any_of(skews, [&](const auto& entry) {
+                return std::get<0>(entry.first) == clock;
+              });
+            });
 }
 
 bool clockSkewsWithin(const ClockSkews& before,

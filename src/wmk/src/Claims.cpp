@@ -36,6 +36,48 @@ std::string trim(const std::string& s)
   });
 }
 
+bool validateClaimRow(const ClaimRow& row,
+                      ClaimStage stage,
+                      const std::vector<std::string>& required,
+                      std::string& error)
+{
+  if (stage == ClaimStage::kPlacement && claimField(row, "kind").empty()) {
+    error = "empty required field 'kind'";
+    return false;
+  }
+  const bool checkable
+      = claimIsCheckable(row)
+        && (stage == ClaimStage::kCts || claimField(row, "kind") == "pair");
+  if (checkable) {
+    for (const std::string& column : required) {
+      if (column != "skipped_reason" && claimField(row, column).empty()) {
+        error = "empty required field '";
+        error += column;
+        error += "'";
+        return false;
+      }
+    }
+    const std::vector<std::string> names
+        = stage == ClaimStage::kPlacement
+              ? std::vector<std::string>{"A_name", "B_name"}
+              : std::vector<std::string>{"target_lcb"};
+    for (const std::string& name : names) {
+      if (!isClaimNameSupported(claimField(row, name))) {
+        error = "unrepresentable instance name in '" + name + "'";
+        return false;
+      }
+    }
+    const std::string bit = claimField(row, "target_bit");
+    if (bit != "0" && bit != "1") {
+      error = "target_bit must be 0 or 1, got '";
+      error += bit;
+      error += "'";
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 bool isClaimNameSupported(std::string_view name)
@@ -70,6 +112,10 @@ bool readClaims(std::istream& in,
     error = "cannot read header";
     return false;
   }
+  if (line.find('\0') != std::string::npos) {
+    error = "line 1: NUL byte in claim header";
+    return false;
+  }
   std::vector<std::string> header = splitFields(line);
   std::set<std::string> columns;
   for (std::string& column : header) {
@@ -99,6 +145,12 @@ bool readClaims(std::istream& in,
   size_t line_number = 1;
   while (std::getline(in, line)) {
     ++line_number;
+    // OpenDB lookups accept C strings. A NUL must never truncate a claimed
+    // name into a different instance, even in an otherwise well-formed row.
+    if (line.find('\0') != std::string::npos) {
+      error = "line " + std::to_string(line_number) + ": NUL byte in claim row";
+      return false;
+    }
     if (trim(line).empty()) {
       continue;
     }
@@ -113,29 +165,9 @@ bool readClaims(std::istream& in,
     for (size_t i = 0; i < header.size(); ++i) {
       row[header[i]] = trim(fields[i]);
     }
-    if (stage == ClaimStage::kPlacement && claimField(row, "kind").empty()) {
-      error = location + "empty required field 'kind'";
+    if (!validateClaimRow(row, stage, required, error)) {
+      error.insert(0, location);
       return false;
-    }
-    const bool checkable
-        = claimIsCheckable(row)
-          && (stage == ClaimStage::kCts || claimField(row, "kind") == "pair");
-    if (checkable) {
-      for (const std::string& column : required) {
-        if (column != "skipped_reason" && claimField(row, column).empty()) {
-          error = location + "empty required field '";
-          error += column;
-          error += "'";
-          return false;
-        }
-      }
-      const std::string bit = claimField(row, "target_bit");
-      if (bit != "0" && bit != "1") {
-        error = location + "target_bit must be 0 or 1, got '";
-        error += bit;
-        error += "'";
-        return false;
-      }
     }
     parsed.push_back(std::move(row));
   }

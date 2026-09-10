@@ -159,8 +159,8 @@ Protected source/destination nets and fixed or protected sink instances are not
 modified. A connection, extraction or timing error restores the trial sink's
 original net and refreshes both nets' parasitics before propagating the error.
 
-Pairs must have identical, nonempty clock sets in the active timing modes and
-provably equivalent clock logic. The command traces only unconditional Liberty
+Pairs must have identical, nonempty clock sets in the active timing modes,
+including mode identity, and provably equivalent clock logic. The command traces only unconditional Liberty
 buffers and inverters, requires a common source net and matching inversion
 parity, and stops at gates, muxes and sequential cells. Case analysis does not
 remove these boundaries. Floating nets, multiple drivers and cycles are rejected.
@@ -243,7 +243,12 @@ set_routing_watermark_strength
 
 | Switch Name | Description |
 | ----- | ----- |
-| `strength` | Non-negative cost multiplier. |
+| `strength` | Finite cost multiplier from 0 to 4294967040 (inclusive). |
+
+The upper limit is the largest stored float below the router's unsigned cost
+limit. Scaled edge costs and accumulated path/queue costs saturate at the
+maximum router cost (4294967295) instead of wrapping. Very large strengths can make distinct expensive paths
+indistinguishable; the default remains 100.
 
 ### Get Routing Watermark Strength
 

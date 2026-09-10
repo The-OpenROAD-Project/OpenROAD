@@ -29,6 +29,7 @@
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Scene.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
@@ -192,9 +193,9 @@ bool Watermark::driverHeadroomOk(odb::dbInst* inst,
          || cap <= static_cast<float>(1.0 - cap_frac) * cap_limit;
 }
 
-std::vector<int> Watermark::clockIndicesAt(odb::dbInst* inst) const
+ClockIdentities Watermark::clockIdentitiesAt(odb::dbInst* inst) const
 {
-  std::vector<int> clocks;
+  ClockIdentities clocks;
   if (sta_ == nullptr || inst == nullptr) {
     return clocks;
   }
@@ -222,7 +223,7 @@ std::vector<int> Watermark::clockIndicesAt(odb::dbInst* inst) const
 
   for (const sta::Mode* mode : sta_->modes()) {
     for (const sta::Clock* clock : sta_->clocks(pin, mode)) {
-      clocks.push_back(clock->index());
+      clocks.emplace_back(mode->modeIndex(), clock->index());
     }
   }
   std::ranges::sort(clocks);

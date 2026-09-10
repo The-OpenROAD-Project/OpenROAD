@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <map>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace sta {
@@ -20,15 +21,20 @@ namespace wmk {
 // STA uses a finite sentinel for unconstrained slack.
 bool isConstrainedSlack(float slack);
 
-// Clock index, scene index, source edge. Separating source edges avoids
+// Clock indices are allocated independently by each mode's SDC. Keep the
+// mode index with the clock index for both membership and timing availability.
+using ClockIdentity = std::pair<size_t, int>;
+using ClockIdentities = std::vector<ClockIdentity>;
+
+// Clock identity, scene index, source edge. Separating source edges avoids
 // counting the clock's duty cycle as skew.
-using ClockSkewKey = std::tuple<int, size_t, int>;
+using ClockSkewKey = std::tuple<ClockIdentity, size_t, size_t>;
 using ClockSkews = std::map<ClockSkewKey, float>;
 
 // Propagated clock latency spread at sequential clock pins, in seconds.
 // Each clock, scene and source edge has its own nonnegative measurement.
 ClockSkews clockSkews(sta::dbSta* sta);
-bool haveClockSkews(const std::vector<int>& clocks, const ClockSkews& skews);
+bool haveClockSkews(const ClockIdentities& clocks, const ClockSkews& skews);
 bool clockSkewsWithin(const ClockSkews& before,
                       const ClockSkews& after,
                       float margin);

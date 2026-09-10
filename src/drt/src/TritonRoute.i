@@ -9,6 +9,7 @@
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 #include "drt-global.h"
+#include "dr/WatermarkCost.h"
 %}
 
 %include "../../Exception.i"
@@ -56,6 +57,12 @@ void detailed_route_set_unidirectional_layer(const char* layerName)
 // (WATERMARK_WRONGWAY_MULT).
 void set_routing_watermark_strength_cmd(double strength)
 {
+  if (!drt::isValidWatermarkStrength(strength)) {
+    ord::OpenRoad::openRoad()->getLogger()->error(
+        utl::DRT, 802,
+        "Routing watermark strength must be finite and between 0 and {:.0f}.",
+        drt::maxWatermarkStrength());
+  }
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->getRouterConfiguration()->WATERMARK_WRONGWAY_MULT
       = static_cast<float>(strength);

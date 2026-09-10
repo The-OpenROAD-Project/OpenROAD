@@ -25,6 +25,7 @@
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
+#include "dr/WatermarkCost.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -964,6 +965,10 @@ class FlexGridGraph
   // leaves the router's behavior unchanged.
   void setWrongWayWatermarkMultiplier(float m)
   {
+    if (!isValidWatermarkStrength(m)) {
+      logger_->error(
+          utl::DRT, 803, "Invalid routing watermark multiplier: {}.", m);
+    }
     wrong_way_watermark_multiplier_ = m;
   }
   float getWrongWayWatermarkMultiplier() const

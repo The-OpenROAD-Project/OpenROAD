@@ -162,5 +162,52 @@ TEST(Claims, RejectsNamesThatCannotRoundTrip)
   EXPECT_FALSE(isClaimNameSupported(std::string("a\0b", 3)));
 }
 
+TEST(Claims, RejectsNulInEveryRequiredInstanceNameAtomically)
+{
+  const std::string nul(1, '\0');
+  for (const std::string& row :
+       {"pair,a" + nul + "_missing,b,0,", "pair,a,b" + nul + "_missing,0,"}) {
+    std::istringstream in(std::string(kPlacementHeader) + "pair,a,b,0,\n" + row
+                          + "\n");
+    std::vector<ClaimRow> rows{{{"previous", "result"}}};
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_TRUE(rows.empty());
+    EXPECT_EQ(error, "line 3: NUL byte in claim row");
+  }
+  std::istringstream in("target_lcb,target_bit,skipped_reason\nleaf,0,\nleaf"
+                        + nul + "_missing,0,\n");
+  std::vector<ClaimRow> rows{{{"previous", "result"}}};
+  std::string error;
+  EXPECT_FALSE(readClaims(in, ClaimStage::kCts, rows, error));
+  EXPECT_TRUE(rows.empty());
+  EXPECT_EQ(error, "line 3: NUL byte in claim row");
+}
+
+TEST(Claims, RejectsNulInHeadersAndSkippedRows)
+{
+  const std::string nul(1, '\0');
+  for (const std::string& text :
+       {std::string(kPlacementHeader) + "pair,,,,hpwl" + nul + "_reject\n",
+        "extra" + nul + "," + kPlacementHeader + "metadata,pair,a,b,0,\n"}) {
+    std::istringstream in(text);
+    std::vector<ClaimRow> rows;
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_TRUE(rows.empty());
+    EXPECT_NE(error.find("NUL byte"), std::string::npos);
+  }
+}
+
+TEST(Claims, RejectsEmbeddedCarriageReturnInInstanceNames)
+{
+  std::istringstream in(std::string(kPlacementHeader) + "pair,a\rb,c,0,\n");
+  std::vector<ClaimRow> rows;
+  std::string error;
+  EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+  EXPECT_TRUE(rows.empty());
+  EXPECT_EQ(error, "line 2: unrepresentable instance name in 'A_name'");
+}
+
 }  // namespace
 }  // namespace wmk

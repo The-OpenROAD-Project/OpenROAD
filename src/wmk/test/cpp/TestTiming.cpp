@@ -22,41 +22,53 @@ TEST(WatermarkTiming, UnconstrainedSlackIsNotATimingMeasurement)
 
 TEST(WatermarkTiming, UnrelatedClockCannotHideSkewDegradation)
 {
-  const ClockSkews before{{{1, 0, 0}, 100e-12f}, {{2, 0, 0}, 10e-12f}};
-  const ClockSkews after{{{1, 0, 0}, 100e-12f}, {{2, 0, 0}, 60e-12f}};
+  const ClockSkews before{{{{0, 1}, 0, 0}, 100e-12f},
+                          {{{0, 2}, 0, 0}, 10e-12f}};
+  const ClockSkews after{{{{0, 1}, 0, 0}, 100e-12f}, {{{0, 2}, 0, 0}, 60e-12f}};
   EXPECT_FALSE(clockSkewsWithin(before, after, 20e-12f));
   EXPECT_TRUE(clockSkewsWithin(before, before, 0.0f));
 }
 
 TEST(WatermarkTiming, EverySceneAndSourceEdgeHasItsOwnBudget)
 {
-  const ClockSkews before{
-      {{1, 0, 0}, 100e-12f}, {{1, 1, 0}, 10e-12f}, {{1, 1, 1}, 5e-12f}};
+  const ClockSkews before{{{{0, 1}, 0, 0}, 100e-12f},
+                          {{{0, 1}, 1, 0}, 10e-12f},
+                          {{{0, 1}, 1, 1}, 5e-12f}};
   auto after = before;
-  after[{1, 1, 0}] = 60e-12f;
+  after[{{0, 1}, 1, 0}] = 60e-12f;
   EXPECT_FALSE(clockSkewsWithin(before, after, 20e-12f));
   after = before;
-  after[{1, 1, 1}] = 40e-12f;
+  after[{{0, 1}, 1, 1}] = 40e-12f;
   EXPECT_FALSE(clockSkewsWithin(before, after, 20e-12f));
 }
 
 TEST(WatermarkTiming, MissingClockTimingCannotPass)
 {
-  const ClockSkews before{{{1, 0, 0}, 10e-12f}};
+  const ClockSkews before{{{{0, 1}, 0, 0}, 10e-12f}};
   EXPECT_FALSE(haveClockSkews({}, before));
-  EXPECT_FALSE(haveClockSkews({1, 2}, before));
-  EXPECT_TRUE(haveClockSkews({1}, before));
+  EXPECT_FALSE(haveClockSkews({{0, 1}, {0, 2}}, before));
+  EXPECT_TRUE(haveClockSkews({{0, 1}}, before));
   EXPECT_FALSE(clockSkewsWithin(before, {}, 20e-12f));
   EXPECT_FALSE(clockSkewsWithin({}, {}, 20e-12f));
 }
 
 TEST(WatermarkTiming, CumulativeSkewIsComparedWithTheOriginalDesign)
 {
-  const ClockSkews before{{{1, 0, 0}, 10e-12f}};
-  const ClockSkews first{{{1, 0, 0}, 25e-12f}};
-  const ClockSkews second{{{1, 0, 0}, 40e-12f}};
+  const ClockSkews before{{{{0, 1}, 0, 0}, 10e-12f}};
+  const ClockSkews first{{{{0, 1}, 0, 0}, 25e-12f}};
+  const ClockSkews second{{{{0, 1}, 0, 0}, 40e-12f}};
   EXPECT_TRUE(clockSkewsWithin(before, first, 20e-12f));
   EXPECT_FALSE(clockSkewsWithin(before, second, 20e-12f));
+}
+
+TEST(WatermarkTiming, ClockIndicesAreLocalToTheirMode)
+{
+  const ClockSkews before{{{{0, 1}, 0, 0}, 10e-12f}};
+  EXPECT_TRUE(haveClockSkews({{0, 1}}, before));
+  EXPECT_FALSE(haveClockSkews({{1, 1}}, before));
+  EXPECT_FALSE(haveClockSkews({{0, 1}, {1, 1}}, before));
+  const ClockSkews other_mode{{{{1, 1}, 0, 0}, 10e-12f}};
+  EXPECT_FALSE(clockSkewsWithin(before, other_mode, 20e-12f));
 }
 
 }  // namespace

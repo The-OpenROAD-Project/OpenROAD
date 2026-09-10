@@ -87,7 +87,7 @@ std::int64_t cellOf(std::int64_t v, std::int64_t cell)
 
 // Clock membership must be identical, not just overlapping. Two unknown
 // sets cannot establish that reconnecting a sink preserves its clocks.
-bool sameClockSet(const std::vector<int>& a, const std::vector<int>& b)
+bool sameClockSet(const ClockIdentities& a, const ClockIdentities& b)
 {
   return !a.empty() && a == b;
 }
@@ -202,11 +202,11 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   // the leaves of every clock tree in the design, and two trees can run
   // alongside each other, so distance alone would let a move reconnect a flop
   // to a different clock and change what the design does.
-  std::vector<std::vector<int>> lcb_clocks;
+  std::vector<ClockIdentities> lcb_clocks;
   lcb_clocks.reserve(lcbs.size());
   int with_a_clock = 0;
   for (dbInst* lcb : lcbs) {
-    lcb_clocks.push_back(clockIndicesAt(lcb));
+    lcb_clocks.push_back(clockIdentitiesAt(lcb));
     if (!lcb_clocks.back().empty()) {
       ++with_a_clock;
     }
