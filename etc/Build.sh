@@ -392,7 +392,11 @@ if [[ "$useBazel" == "yes" ]]; then
     if command -v bazelisk &> /dev/null; then
         bazel_cmd="bazelisk"
     fi
-    bazelArgs=("--jobs=${numThreads}")
+    # Build.sh is the install path (ORFS, Docker, packaging). Plain
+    # `bazel build` embeds the "bazel-nostamp" placeholder so dev builds stay
+    # cacheable; --config=release turns on --stamp so `openroad -version`
+    # reports the same `git describe` string the CMake build always did.
+    bazelArgs=("--jobs=${numThreads}" "--config=release")
     if [[ "$bazelLto" == "yes" ]]; then
         bazelArgs+=("--config=opt")
     fi
