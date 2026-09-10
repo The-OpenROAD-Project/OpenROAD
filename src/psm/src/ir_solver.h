@@ -263,6 +263,7 @@ class IRSolver
 
   static constexpr Current kSpiceFileMinCurrent = 1e-18;
   static constexpr size_t kMaxShortEntries = 10000;
+  static constexpr const char* kMarkerCategory = "PSM";
 };
 
 }  // namespace psm

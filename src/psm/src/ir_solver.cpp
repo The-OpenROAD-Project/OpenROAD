@@ -129,6 +129,17 @@ bool IRSolver::check(bool check_bterms, bool check_placed)
     return connected_.value();
   }
 
+  // Remove old markers
+  odb::dbMarkerCategory* tool_category
+      = getBlock()->findMarkerCategory(kMarkerCategory);
+  if (tool_category != nullptr) {
+    odb::dbMarkerCategory* net_category
+        = tool_category->findMarkerCategory(net_->getName().c_str());
+    if (net_category != nullptr) {
+      odb::dbMarkerCategory::destroy(net_category);
+    }
+  }
+
   if (!network_->hasNodes()) {
     connected_ = false;
   } else {
@@ -274,15 +285,15 @@ void IRSolver::reportUnconnectedNodes() const
   }
 
   odb::dbMarkerCategory* tool_category
-      = odb::dbMarkerCategory::createOrGet(getBlock(), "PSM");
+      = odb::dbMarkerCategory::createOrGet(getBlock(), kMarkerCategory);
   tool_category->setSource("PSM");
-  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrReplace(
+  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrGet(
       tool_category, net_->getName().c_str());
 
   if (!results.unconnected_nodes.empty()) {
     if (logger_->debugCheck(utl::PSM, "reportnodes", 1)) {
-      odb::dbMarkerCategory* category
-          = odb::dbMarkerCategory::create(net_category, "Unconnected node");
+      odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrReplace(
+          net_category, "Unconnected node");
       for (auto* node : results.unconnected_nodes) {
         logger_->warn(utl::PSM,
                       42,
@@ -303,8 +314,8 @@ void IRSolver::reportUnconnectedNodes() const
       }
     }
     odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
-    odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
+    odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrReplace(
+        net_category, "Unconnected shape");
 
     std::set<const Shape*> reported_shapes;
     for (auto* node : results.unconnected_nodes) {
@@ -360,8 +371,8 @@ void IRSolver::reportUnconnectedNodes() const
                     node->getPoint().getY() / dbu);
     }
 
-    odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(net_category, "Unconnected instance");
+    odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrReplace(
+        net_category, "Unconnected instance");
     for (auto* inst : insts) {
       odb::dbMarker* marker = odb::dbMarker::create(category);
       if (marker == nullptr) {
@@ -476,13 +487,13 @@ void IRSolver::reportShortedNodes() const
   const double dbu = getBlock()->getDbUnitsPerMicron();
 
   odb::dbMarkerCategory* tool_category
-      = odb::dbMarkerCategory::createOrGet(getBlock(), "PSM");
+      = odb::dbMarkerCategory::createOrGet(getBlock(), kMarkerCategory);
   tool_category->setSource("PSM");
-  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrReplace(
+  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrGet(
       tool_category, net_->getName().c_str());
 
   odb::dbMarkerCategory* category
-      = odb::dbMarkerCategory::create(net_category, "Shorts");
+      = odb::dbMarkerCategory::createOrReplace(net_category, "Shorts");
 
   for (const auto& shorted : shorts_) {
     shorted->report(net_, logger_, dbu);
@@ -2008,7 +2019,8 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
     return;
   }
 
-  odb::dbMarkerCategory* group = getBlock()->findMarkerCategory("PSM");
+  odb::dbMarkerCategory* group
+      = getBlock()->findMarkerCategory(kMarkerCategory);
   if (group == nullptr) {
     return;
   }
