@@ -317,6 +317,16 @@ class dbIStream
 
   _dbDatabase* getDatabase() { return db_; }
 
+  ~dbIStream()
+  {
+    size_t unread_bytes = buffer_size_ - buffer_pos_;
+    if (unread_bytes > 0) {
+      f_.clear(f_.rdstate()
+               & ~(std::ios_base::eofbit | std::ios_base::failbit));
+      f_.seekg(-static_cast<std::streamoff>(unread_bytes), std::ios_base::cur);
+    }
+  }
+
   void read_bytes(std::span<char> bytes)
   {
     char* data = bytes.data();
