@@ -161,7 +161,8 @@ TEST_F(DelayBufListTest, NoDedicatedDelayCellsInNangate45)
 }
 
 // The ihp-sg13g2 library provides sg13g2_dlygate4sd*_1 delay cells, tagged
-// with a DLY* cell_footprint.
+// with a DLY* cell_footprint. They are generic delay cells, not clock delay
+// cells, so inference must leave them out.
 class DelayBufListDlyCellTest : public DelayBufListTest
 {
  protected:
@@ -173,16 +174,15 @@ class DelayBufListDlyCellTest : public DelayBufListTest
   }
 };
 
-TEST_F(DelayBufListDlyCellTest, AppendsInferredDelayCells)
+TEST_F(DelayBufListDlyCellTest, GenericDelayCellsAreNotInferred)
 {
   const std::vector<std::string> result
       = delayBufList({"BUF_X8"}, /*inferred=*/true);
 
-  EXPECT_EQ(result[0], "BUF_X8");
-  EXPECT_TRUE(contains(result, "sg13g2_dlygate4sd1_1"));
-  EXPECT_TRUE(contains(result, "sg13g2_dlygate4sd2_1"));
-  EXPECT_TRUE(contains(result, "sg13g2_dlygate4sd3_1"));
-  // Regular buffers of the same library are not delay cells.
+  EXPECT_EQ(result, std::vector<std::string>{"BUF_X8"});
+  EXPECT_FALSE(contains(result, "sg13g2_dlygate4sd1_1"));
+  EXPECT_FALSE(contains(result, "sg13g2_dlygate4sd2_1"));
+  EXPECT_FALSE(contains(result, "sg13g2_dlygate4sd3_1"));
   EXPECT_FALSE(contains(result, "sg13g2_buf_1"));
 }
 
@@ -193,19 +193,71 @@ TEST_F(DelayBufListDlyCellTest, NoDelayCellsWhenBufferListIsUserSupplied)
             std::vector<std::string>{"BUF_X8"});
 }
 
+// tst_clkdly_fp tags its clock delay cells with a clkdly cell_footprint.
+class DelayBufListClkDlyFootprintTest : public DelayBufListTest
+{
+ protected:
+  DelayBufListClkDlyFootprintTest()
+  {
+    readLiberty("_main/src/cts/test/clkdly_footprint.lib");
+  }
+};
+
+TEST_F(DelayBufListClkDlyFootprintTest, InfersClockDelayCellsByFootprint)
+{
+  const std::vector<std::string> result
+      = delayBufList({"BUF_X8"}, /*inferred=*/true);
+
+  EXPECT_EQ(result[0], "BUF_X8");
+  EXPECT_TRUE(contains(result, "TSTFP_CLKDLYBUF_X1"));
+  EXPECT_TRUE(contains(result, "TSTFP_CLKDLYBUF_X2"));
+  // A generic DLY footprint and a plain buffer are not clock delay cells.
+  EXPECT_FALSE(contains(result, "TSTFP_DLYBUF_X1"));
+  EXPECT_FALSE(contains(result, "TSTFP_BUF_X1"));
+}
+
+TEST_F(DelayBufListClkDlyFootprintTest,
+       NoDelayCellsWhenBufferListIsUserSupplied)
+{
+  EXPECT_EQ(delayBufList({"BUF_X8"}, /*inferred=*/false),
+            std::vector<std::string>{"BUF_X8"});
+}
+
 // -library restricts inference to one library.
-TEST_F(DelayBufListDlyCellTest, LibraryOptionRestrictsInference)
+TEST_F(DelayBufListClkDlyFootprintTest, LibraryOptionRestrictsInference)
 {
   EXPECT_EQ(delayBufList({"BUF_X8"},
                          /*inferred=*/true,
                          /*library=*/"NangateOpenCellLibrary"),
             std::vector<std::string>{"BUF_X8"});
 
+  const std::vector<std::string> result = delayBufList({"BUF_X8"},
+                                                       /*inferred=*/true,
+                                                       /*library=*/
+                                                       "tst_clkdly_fp");
+  EXPECT_TRUE(contains(result, "TSTFP_CLKDLYBUF_X1"));
+}
+
+// tst_clkdly_nm has no clkdly footprint, so the name based tier applies.
+class DelayBufListClkDlyNameTest : public DelayBufListTest
+{
+ protected:
+  DelayBufListClkDlyNameTest()
+  {
+    readLiberty("_main/src/cts/test/clkdly_name.lib");
+  }
+};
+
+TEST_F(DelayBufListClkDlyNameTest, InfersClockDelayCellsByName)
+{
   const std::vector<std::string> result
-      = delayBufList({"BUF_X8"},
-                     /*inferred=*/true,
-                     /*library=*/"sg13g2_stdcell_typ_1p20V_25C");
-  EXPECT_TRUE(contains(result, "sg13g2_dlygate4sd1_1"));
+      = delayBufList({"BUF_X8"}, /*inferred=*/true);
+
+  EXPECT_EQ(result[0], "BUF_X8");
+  EXPECT_TRUE(contains(result, "TSTNM_CLKDLY_X1"));
+  EXPECT_TRUE(contains(result, "TSTNM_CLKDEL_X1"));
+  // DLY alone does not make a clock delay cell.
+  EXPECT_FALSE(contains(result, "TSTNM_DLY_X1"));
 }
 
 }  // namespace cts

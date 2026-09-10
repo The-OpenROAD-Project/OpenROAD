@@ -809,14 +809,6 @@ bool TechChar::isClkDlyCell(const std::string& cellName)
   return (!cellName.empty() && (cellName.find("clkdly") != std::string::npos));
 }
 
-bool TechChar::isDlyCell(const std::string& cellName)
-{
-  return (!cellName.empty()
-          && (cellName.find("DEL") != std::string::npos
-              || cellName.find("DLY") != std::string::npos
-              || cellName.find("dlygate") != std::string::npos));
-}
-
 static bool containsIgnoreCase(const std::string& str,
                                const std::string& substr)
 {
@@ -835,9 +827,7 @@ void TechChar::createDelayBufList()
     const char* lib_name
         = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
     std::vector<std::string> footprintClkDly;
-    std::vector<std::string> footprintDly;
     std::vector<std::string> nameClkDly;
-    std::vector<std::string> nameDly;
     std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
         db_network_->libertyLibraryIterator());
     while (lib_iter->hasNext()) {
@@ -871,12 +861,6 @@ void TechChar::createDelayBufList()
     } else if (!nameClkDly.empty()) {
       properDlyBuffers = nameClkDly;
       debugPrint(logger_, CTS, "insertion delay", 1, "Using name for clkdly");
-    } else if (!footprintDly.empty()) {
-      properDlyBuffers = footprintDly;
-      debugPrint(logger_, CTS, "insertion delay", 1, "Using footprint for dly");
-    } else if (!nameDly.empty()) {
-      properDlyBuffers = nameDly;
-      debugPrint(logger_, CTS, "insertion delay", 1, "Using name for dly");
     }
   }
 
