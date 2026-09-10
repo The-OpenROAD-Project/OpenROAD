@@ -38,6 +38,7 @@ PASSFAIL_TESTS = [
     "python_api",
     "route_verify",
     "routing_defaults",
+    "routing_lifecycle",
     "verify_malformed",
 ]
 
@@ -75,6 +76,7 @@ TESTS = [
     "route_stat",
     "route_verify",
     "routing_defaults",
+    "routing_lifecycle",
     "verify_malformed",
     "select",
     "strength",
