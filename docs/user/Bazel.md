@@ -146,6 +146,9 @@ To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=rele
     bazelisk build --config=release :openroad
     ./bazel-bin/openroad -version
 
+`etc/Build.sh` always passes `--config=release`, so installs made through it
+(including ORFS `build_openroad.sh`) carry the real version.
+
 ## Platforms
 
 https://bazel.build/extending/platforms
