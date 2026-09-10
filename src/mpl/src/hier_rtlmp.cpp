@@ -2595,6 +2595,11 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
   }
 
   out << odb::generateMacroPlacementString(block_);
+
+  logger_->info(MPL,
+                78,
+                "The location generated for the standard cells was not "
+                "included in the macro placement file.");
 }
 
 void HierRTLMP::clear()
