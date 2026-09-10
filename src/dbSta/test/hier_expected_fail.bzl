@@ -372,10 +372,23 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_sequential_probe_clkgate.v",
         ],
     ),
+    # OpenSTA d2c508dd (parallaxsw/OpenSTA#489) replaced the std::stol in
+    # VerilogNetConstant::parseConstant with stringLong plus a 1-bit default, so
+    # an unsized constant is now STA-2724 and read_verilog keeps going instead
+    # of failing. The connection is still emitted, but it names a net the
+    # written module never declares or drives:
+    #
+    #   OR2_X1 g1 (.A1(a), .A2(zero_), .ZN(y));
+    #
+    # `zero_` is an implicit, undriven 1-bit wire, so the emitted netlist is not
+    # equivalent to the input and kepler-formal reports a load error. Accepting
+    # input that used to stop the reader and turning it into a floating pin is a
+    # behaviour change worth raising upstream; recording the observed mode here
+    # does not endorse it.
     xfail(
         path = "flat",
-        mode = "or-error",
-        symptom = "Error - out_flat.tcl, 3 stol - no conversion",
+        mode = "tool-error",
+        symptom = "unsized constant warned about (STA-2724) instead of rejected, so the emitted netlist ties the pin to an undeclared, undriven zero_/one_ net that kepler-formal cannot load",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
@@ -399,10 +412,13 @@ CONFORMANCE_EXPECTED_FAIL = [
             "wb_sta_reader_attr_src_line_overflow.v",
         ],
     ),
+    # Same as the flat entry above: since OpenSTA d2c508dd the unsized constant
+    # is only STA-2724, and the emitted netlist ties the pin to an undeclared,
+    # undriven zero_/one_ net that kepler-formal cannot load.
     xfail(
         path = "hier",
-        mode = "or-error",
-        symptom = "Error - out_hier.tcl, 3 stol - no conversion",
+        mode = "tool-error",
+        symptom = "unsized constant warned about (STA-2724) instead of rejected, so the emitted netlist ties the pin to an undeclared, undriven zero_/one_ net that kepler-formal cannot load",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
@@ -1529,14 +1545,18 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_dbsta_link_attr_impl_oper_unused.v",
         ],
     ),
+    # The three constant-width cases that used to live here now round-trip.
+    # OpenSTA d2c508dd (parallaxsw/OpenSTA#489) rewrote the size parse in
+    # VerilogNetConstant::parseConstant, so neither shape aborts the reader any
+    # more: 'b0 and 'd1 take the empty-size path and warn STA-2724, and -1'b1
+    # parses as -1, fails the size_value > 0 check and warns STA-2725. Both then
+    # fall back to one bit. The entries below still throw, from the stoi in the
+    # attribute parser, which that commit did not touch.
     structural_xfail(
         path = "flat",
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "bx_constants_unsized_b0.v",
-            "bx_constants_unsized_d1.v",
-            "structural/wb_sta_reader_const_negative_width.v",
             "wb_dbsta_link_attr_dont_touch_string.v",
             "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
@@ -1624,14 +1644,14 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_dbsta_link_attr_impl_oper_unused.v",
         ],
     ),
+    # Same as the flat entry above: the three constant-width cases round-trip
+    # since OpenSTA d2c508dd, via STA-2724 for 'b0 / 'd1 and STA-2725 for
+    # -1'b1. What is left still throws, from the attribute parser's stoi.
     structural_xfail(
         path = "hier",
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "bx_constants_unsized_b0.v",
-            "bx_constants_unsized_d1.v",
-            "structural/wb_sta_reader_const_negative_width.v",
             "wb_dbsta_link_attr_dont_touch_string.v",
             "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
