@@ -145,13 +145,19 @@ place_watermark
 
 The `cts_watermark` command drives a keyed subset of leaf clock buffers (LCBs) to a
 keyed sequential-fanout parity and writes the claimed pairs to `-claims_file`.
-It returns the number of pairs claimed. Run it after clock tree synthesis.
+It returns the number of pairs claimed. Run it after clock tree synthesis on a
+flat design, linked without `-hier`. Hierarchical CTS embedding is rejected before
+any edits because moving a sink also requires updating module ports and nets.
+CTS verification remains available for hierarchical designs.
 
 LCBs are marked in pairs. Parity is changed by moving one flip-flop's clock
 pin from one LCB of the pair to the other. A move is undone if it
 increases clock latency spread or degrades a constrained endpoint's setup/hold
 slack by more than `-skew_margin_ns`, or if it leaves
 the LCB with less slew or capacitance headroom than the liberty cell allows.
+Protected source/destination nets and fixed or protected sink instances are not
+modified. A connection, extraction or timing error restores the trial sink's
+original net and refreshes both nets' parasitics before propagating the error.
 
 Pairs must have identical, nonempty clock sets in the active timing modes and
 provably equivalent clock logic. The command traces only unconditional Liberty
@@ -337,7 +343,10 @@ order and add columns of its own. Missing required columns, empty or duplicate
 header names, malformed row widths, and invalid fields in checkable claims are
 errors; verification never scores a partially parsed file. The error identifies
 the file and line. `skipped_reason` is required even when every value is empty.
-Values are not quoted, so instance names must not contain commas.
+Values are not quoted. Names must be nonempty, contain no commas, line breaks
+or NULs, and have no leading or trailing spaces or tabs. Both embedders validate
+all eligible instance names before selecting marks or changing the design and
+fail explicitly if the format cannot represent a name.
 
 Each row represents either a watermark claim or a candidate that was skipped.
 A row is verified when `skipped_reason` is empty. The special value

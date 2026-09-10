@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <vector>
 
@@ -21,6 +22,18 @@ bool isSequentialClockSink(odb::dbITerm* iterm, sta::dbNetwork* network);
 std::optional<int> seqFanout(odb::dbInst* lcb, sta::dbNetwork* network);
 std::vector<odb::dbInst*> findLeafClockBuffers(odb::dbBlock* block,
                                                sta::dbNetwork* network);
+
+// Flat connectivity edits must honor protections on both nets and the sink.
+bool canMoveClockSink(odb::dbITerm* sink, odb::dbNet* destination);
+
+// Refresh the affected parasitics after moving the sink and after any rollback.
+// Rejected checks and exceptions restore the original connection. Exceptions
+// propagate to the caller; a failed restoration/refresh must not report
+// success.
+bool tryClockSinkMove(odb::dbITerm* sink,
+                      odb::dbNet* destination,
+                      const std::function<void()>& refresh,
+                      const std::function<bool()>& acceptable);
 
 struct ClockBranch
 {

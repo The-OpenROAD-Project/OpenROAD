@@ -8,6 +8,7 @@
 #include <istream>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -17,8 +18,8 @@ namespace wmk {
 
 namespace {
 
-// Split one line on commas.  The claim writers emit instance and net names,
-// which do not contain commas, so quoted fields are not supported.  A trailing
+// Split one line on commas. Embedders reject names the unquoted format
+// cannot represent before changing the design. A trailing
 // comma yields a final empty field, which is how an empty skipped_reason is
 // written.
 std::vector<std::string> splitFields(const std::string& line)
@@ -36,6 +37,13 @@ std::string trim(const std::string& s)
 }
 
 }  // namespace
+
+bool isClaimNameSupported(std::string_view name)
+{
+  return !name.empty() && name.find_first_of(",\r\n") == std::string_view::npos
+         && name.find('\0') == std::string_view::npos && name.front() != ' '
+         && name.front() != '\t' && name.back() != ' ' && name.back() != '\t';
+}
 
 bool readClaims(const std::string& path,
                 ClaimStage stage,

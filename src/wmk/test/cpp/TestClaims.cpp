@@ -138,5 +138,29 @@ TEST(Claims, RejectsUnreadableStream)
   EXPECT_FALSE(error.empty());
 }
 
+TEST(Claims, SupportedNamesRoundTripWithoutLoss)
+{
+  for (const std::string name :
+       {"top/bank/ff[3]", "a+b", "a b", "a\tb", "a\"b"}) {
+    EXPECT_TRUE(isClaimNameSupported(name));
+    std::istringstream in(std::string(kPlacementHeader) + "pair," + name
+                          + ",peer,1,\n");
+    std::vector<ClaimRow> rows;
+    std::string error;
+    ASSERT_TRUE(readClaims(in, ClaimStage::kPlacement, rows, error)) << error;
+    ASSERT_EQ(rows.size(), 1);
+    EXPECT_EQ(claimField(rows.front(), "A_name"), name);
+  }
+}
+
+TEST(Claims, RejectsNamesThatCannotRoundTrip)
+{
+  for (const std::string name :
+       {"", "a,b", "a\nb", "a\rb", " a", "a ", "\ta", "a\t"}) {
+    EXPECT_FALSE(isClaimNameSupported(name));
+  }
+  EXPECT_FALSE(isClaimNameSupported(std::string("a\0b", 3)));
+}
+
 }  // namespace
 }  // namespace wmk

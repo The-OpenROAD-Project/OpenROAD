@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,7 @@
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
 #include "tst/nangate45_fixture.h"
 
@@ -165,6 +167,170 @@ TEST_F(TestClockTree, UnknownFanoutCannotEstablishParity)
   unknown->findITerm("CLK")->connect(singleOutputNet(a));
   EXPECT_FALSE(seqFanout(a, network_));
   EXPECT_TRUE(findLeafClockBuffers(block_, network_).empty());
+}
+
+TEST_F(TestClockTree, AcceptedSinkMoveRefreshesBeforeChecking)
+{
+  auto* sink = cell("DFF_X1", "ff")->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  std::vector<odb::dbNet*> refreshed;
+  EXPECT_TRUE(tryClockSinkMove(
+      sink,
+      dest,
+      [&] { refreshed.push_back(sink->getNet()); },
+      [&] {
+        EXPECT_EQ(refreshed, std::vector<odb::dbNet*>{dest});
+        return true;
+      }));
+  EXPECT_EQ(sink->getNet(), dest);
+  EXPECT_EQ(refreshed, std::vector<odb::dbNet*>{dest});
+}
+
+TEST_F(TestClockTree, RejectedSinkMoveRestoresAndRefreshes)
+{
+  auto* sink = cell("DFF_X1", "ff")->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  std::vector<odb::dbNet*> refreshed;
+  EXPECT_FALSE(tryClockSinkMove(
+      sink,
+      dest,
+      [&] { refreshed.push_back(sink->getNet()); },
+      [] { return false; }));
+  EXPECT_EQ(sink->getNet(), root_);
+  EXPECT_EQ(refreshed, (std::vector<odb::dbNet*>{dest, root_}));
+}
+
+TEST_F(TestClockTree, TimingExceptionRestoresAndRefreshes)
+{
+  auto* sink = cell("DFF_X1", "ff")->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  std::vector<odb::dbNet*> refreshed;
+  EXPECT_THROW(tryClockSinkMove(
+                   sink,
+                   dest,
+                   [&] { refreshed.push_back(sink->getNet()); },
+                   []() -> bool { throw std::runtime_error("timing failed"); }),
+               std::runtime_error);
+  EXPECT_EQ(sink->getNet(), root_);
+  EXPECT_EQ(refreshed, (std::vector<odb::dbNet*>{dest, root_}));
+}
+
+TEST_F(TestClockTree, ExtractionExceptionRestoresAndRefreshes)
+{
+  auto* sink = cell("DFF_X1", "ff")->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  std::vector<odb::dbNet*> refreshed;
+  EXPECT_THROW(tryClockSinkMove(
+                   sink,
+                   dest,
+                   [&] {
+                     refreshed.push_back(sink->getNet());
+                     if (sink->getNet() == dest) {
+                       throw std::runtime_error("extraction failed");
+                     }
+                   },
+                   [] {
+                     ADD_FAILURE() << "Timing cannot use failed extraction";
+                     return true;
+                   }),
+               std::runtime_error);
+  EXPECT_EQ(sink->getNet(), root_);
+  EXPECT_EQ(refreshed, (std::vector<odb::dbNet*>{dest, root_}));
+}
+
+// OpenDB can throw after it has already changed the connection. Exercise that
+// path with a real callback rather than an exception before the mutation.
+class ThrowOnConnect : public odb::dbBlockCallBackObj
+{
+ public:
+  explicit ThrowOnConnect(odb::dbITerm* sink) : sink_(sink) {}
+
+  void inDbITermPostConnect(odb::dbITerm* iterm) override
+  {
+    if (iterm == sink_) {
+      sink_ = nullptr;
+      throw std::runtime_error("connection callback failed");
+    }
+  }
+
+ private:
+  odb::dbITerm* sink_;
+};
+
+TEST_F(TestClockTree, ConnectionExceptionRestoresAndRefreshes)
+{
+  auto* sink = cell("DFF_X1", "ff")->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  ThrowOnConnect callback(sink);
+  callback.addOwner(block_);
+  std::vector<odb::dbNet*> refreshed;
+  EXPECT_THROW(tryClockSinkMove(
+                   sink,
+                   dest,
+                   [&] { refreshed.push_back(sink->getNet()); },
+                   [] {
+                     ADD_FAILURE() << "A failed connection cannot be accepted";
+                     return true;
+                   }),
+               std::runtime_error);
+  EXPECT_EQ(sink->getNet(), root_);
+  EXPECT_EQ(refreshed, std::vector<odb::dbNet*>{root_});
+}
+
+TEST_F(TestClockTree, ProtectedNetsAndSinksAreNotDisconnected)
+{
+  auto* inst = cell("DFF_X1", "ff");
+  auto* sink = inst->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  const auto refused = [&] {
+    EXPECT_FALSE(tryClockSinkMove(
+        sink,
+        dest,
+        [] { ADD_FAILURE() << "Protected connectivity must not change"; },
+        [] {
+          ADD_FAILURE() << "A protected move cannot reach timing checks";
+          return true;
+        }));
+    EXPECT_EQ(sink->getNet(), root_);
+  };
+  dest->setDoNotTouch(true);
+  refused();
+  dest->setDoNotTouch(false);
+  root_->setDoNotTouch(true);
+  refused();
+  root_->setDoNotTouch(false);
+  inst->setDoNotTouch(true);
+  refused();
+  inst->setDoNotTouch(false);
+  inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  refused();
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  EXPECT_TRUE(tryClockSinkMove(sink, dest, [] {}, [] { return true; }));
+  EXPECT_EQ(sink->getNet(), dest);
+}
+
+TEST_F(TestClockTree, FailedRollbackExtractionDoesNotReportSuccess)
+{
+  auto* sink = cell("DFF_X1", "ff")->findITerm("CK");
+  sink->connect(root_);
+  auto* dest = odb::dbNet::create(block_, "destination");
+  EXPECT_THROW(tryClockSinkMove(
+                   sink,
+                   dest,
+                   [&] {
+                     if (sink->getNet() == root_) {
+                       throw std::runtime_error("rollback extraction failed");
+                     }
+                   },
+                   [] { return false; }),
+               std::runtime_error);
+  EXPECT_EQ(sink->getNet(), root_);
 }
 
 }  // namespace

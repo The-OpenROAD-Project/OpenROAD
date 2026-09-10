@@ -15,9 +15,14 @@
 #include <istream>
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace wmk {
+
+// Names must round-trip through the unquoted, whitespace-trimming format.
+// Embedders check every eligible name before changing the design.
+bool isClaimNameSupported(std::string_view name);
 
 // One claim, as a column-name to value mapping.
 using ClaimRow = std::map<std::string, std::string>;

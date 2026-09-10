@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "Claims.h"
 #include "HmacSha256.h"
 #include "Timing.h"
 #include "Wirelength.h"
@@ -92,6 +93,19 @@ Watermark::Watermark(odb::dbDatabase* db,
       estimate_parasitics_(estimate_parasitics),
       logger_(logger)
 {
+}
+
+void Watermark::checkClaimName(odb::dbInst* inst) const
+{
+  if (!isClaimNameSupported(inst->getName())) {
+    logger_->error(
+        utl::WMK,
+        112,
+        "Instance '{}' cannot be represented in an unquoted claim "
+        "file. Names must be nonempty, contain no commas, line "
+        "breaks or NULs, and have no leading or trailing whitespace.",
+        inst->getName());
+  }
 }
 
 bool Watermark::hasLiberty() const

@@ -308,6 +308,8 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
     if (!isEligibleInst(inst, row_height)) {
       continue;
     }
+    // Finish name validation before enumeration tries any placement swaps.
+    checkClaimName(inst);
     ++n_eligible;
     odb::dbBox* bbox = inst->getBBox();
     const int tx

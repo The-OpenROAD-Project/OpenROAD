@@ -4,6 +4,7 @@
 #include "ClockTree.h"
 
 #include <algorithm>
+#include <functional>
 #include <optional>
 #include <unordered_set>
 #include <vector>
@@ -118,6 +119,44 @@ std::vector<dbInst*> findLeafClockBuffers(dbBlock* block,
   std::ranges::sort(
       lcbs, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
   return lcbs;
+}
+
+bool canMoveClockSink(dbITerm* sink, dbNet* destination)
+{
+  dbNet* origin = sink->getNet();
+  dbInst* inst = sink->getInst();
+  return origin != nullptr && destination != nullptr && origin != destination
+         && origin->getBlock() == destination->getBlock()
+         && !origin->isDoNotTouch() && !destination->isDoNotTouch()
+         && !inst->isDoNotTouch() && !inst->isFixed()
+         && !sink->getDb()->hasHierarchy() && sink->getModNet() == nullptr;
+}
+
+bool tryClockSinkMove(dbITerm* sink,
+                      dbNet* destination,
+                      const std::function<void()>& refresh,
+                      const std::function<bool()>& acceptable)
+{
+  if (!canMoveClockSink(sink, destination)) {
+    return false;
+  }
+  dbNet* origin = sink->getNet();
+  try {
+    // connect validates the destination before disconnecting the original net.
+    // Do not call disconnect(): it also discards hierarchical connectivity.
+    sink->connect(destination);
+    refresh();
+    if (acceptable()) {
+      return true;
+    }
+  } catch (...) {
+    sink->connect(origin);
+    refresh();
+    throw;
+  }
+  sink->connect(origin);
+  refresh();
+  return false;
 }
 
 std::optional<ClockBranch> clockBranch(dbInst* lcb, sta::dbNetwork* network)

@@ -259,6 +259,7 @@ class Watermark
   // No value means the instance has no timing that the guard can evaluate.
   std::optional<float> worstSlack(odb::dbInst* inst) const;
 
+  void checkClaimName(odb::dbInst* inst) const;
   bool hasLiberty() const;
   bool placementTimingAvailable() const;
   bool canEstimateParasitics(bool clock) const;

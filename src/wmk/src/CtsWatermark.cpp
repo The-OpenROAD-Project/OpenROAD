@@ -95,7 +95,7 @@ bool sameClockSet(const std::vector<int>& a, const std::vector<int>& b)
 // A sink that can be moved between two buffers without changing what the
 // design does: an ordinary sequential clock pin, not a pin the flow has
 // pinned down.
-dbITerm* movableSink(dbInst* lcb, sta::dbNetwork* network)
+dbITerm* movableSink(dbInst* lcb, dbNet* destination, sta::dbNetwork* network)
 {
   dbNet* net = singleOutputNet(lcb);
   if (net == nullptr) {
@@ -105,8 +105,7 @@ dbITerm* movableSink(dbInst* lcb, sta::dbNetwork* network)
     if (!isSequentialClockSink(iterm, network)) {
       continue;
     }
-    dbInst* inst = iterm->getInst();
-    if (inst->isDoNotTouch() || inst->isFixed()) {
+    if (!canMoveClockSink(iterm, destination)) {
       continue;
     }
     return iterm;
@@ -147,8 +146,19 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     logger_->error(
         utl::WMK, 107, "Read Liberty before embedding a CTS watermark.");
   }
+  // Flat reconnection cannot preserve module ports and nets. Until edits and
+  // rollback support hierarchy, reject before changing connectivity or RC.
+  if (db_->hasHierarchy()) {
+    logger_->error(utl::WMK,
+                   111,
+                   "CTS watermark embedding requires a flat design. "
+                   "Link the design without -hier before embedding.");
+  }
   sta::dbNetwork* network = sta_->getDbNetwork();
   const std::vector<dbInst*> lcbs = findLeafClockBuffers(block, network);
+  for (dbInst* lcb : lcbs) {
+    checkClaimName(lcb);
+  }
   if (lcbs.size() < 2) {
     logger_->warn(utl::WMK,
                   71,
@@ -345,10 +355,10 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       dbITerm* sink = nullptr;
       dbNet* dest = nullptr;
       if (target_net != nullptr && other_net != nullptr) {
-        sink = movableSink(other, network);
+        sink = movableSink(other, target_net, network);
         dest = target_net;
         if (sink == nullptr) {
-          sink = movableSink(target, network);
+          sink = movableSink(target, other_net, network);
           dest = other_net;
         }
       }
@@ -367,29 +377,28 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
         }
       } else {
         dbNet* origin = sink->getNet();
-        sink->disconnect();
-        sink->connect(dest);
-        // Both nets now drive a different load.  Re-estimate before asking
-        // timing anything, or the answers describe the tree as it was.
-        reestimateNetParasitics(origin, dest);
-        const bool skew_ok = clockSkewsWithin(
-            skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
-        const bool timing_ok = endpointSlacksWithin(
-            sta_, timing_before, opts.skew_margin_ns * 1e-9f);
-        // The buffer that gained a sink now drives more load, so whether it
-        // still can is the library's question, not one this code should answer
-        // with a number of its own.
-        const bool drive_ok
-            = driverHeadroomOk(
-                  target, opts.slew_headroom_frac, opts.cap_headroom_frac)
-              && driverHeadroomOk(
-                  other, opts.slew_headroom_frac, opts.cap_headroom_frac);
-        if (!skew_ok || !drive_ok || !timing_ok) {
-          // The mark would cost more than the clock can spare, so put the sink
-          // back.
-          sink->disconnect();
-          sink->connect(origin);
-          reestimateNetParasitics(origin, dest);
+        bool skew_ok = false;
+        bool timing_ok = false;
+        bool drive_ok = false;
+        const bool accepted = tryClockSinkMove(
+            sink,
+            dest,
+            [&] { reestimateNetParasitics(origin, dest); },
+            [&] {
+              skew_ok = clockSkewsWithin(
+                  skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
+              timing_ok = endpointSlacksWithin(
+                  sta_, timing_before, opts.skew_margin_ns * 1e-9f);
+              // Moving a sink changes both loads; use Liberty limits for both
+              // drivers after refreshing the affected parasitics.
+              drive_ok
+                  = driverHeadroomOk(
+                        target, opts.slew_headroom_frac, opts.cap_headroom_frac)
+                    && driverHeadroomOk(
+                        other, opts.slew_headroom_frac, opts.cap_headroom_frac);
+              return skew_ok && timing_ok && drive_ok;
+            });
+        if (!accepted) {
           if (!skew_ok) {
             ++rejected_skew;
           } else if (!timing_ok) {

@@ -16,6 +16,10 @@ or_integration_tests(
   # otherwise pin those tools' logs into a watermarking golden.  They check
   # their own numbers instead.
   PASSFAIL_TESTS
+    cts_protected
+    cts_hierarchy
+    cts_claim_names
+    place_claim_names
     cts
     cts_drive
     cts_guard
