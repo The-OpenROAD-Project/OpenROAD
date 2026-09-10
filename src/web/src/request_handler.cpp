@@ -6052,23 +6052,27 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
 
   try {
-    auto [block, chip] = getBlockAndChip();
+    // The viewer asks for categories as soon as it connects, so having no
+    // design yet is a normal state with no categories, not a failed request.
+    odb::dbChip* chip = gen_->getChip();
 
     boost::json::object root;
     boost::json::array categories;
-    for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
-      boost::json::object o;
-      o["name"] = std::string(category->getName());
-      o["count"] = category->getMarkerCount();
-      const std::string desc = category->getDescription();
-      if (!desc.empty()) {
-        o["description"] = desc;
+    if (chip != nullptr) {
+      for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
+        boost::json::object o;
+        o["name"] = std::string(category->getName());
+        o["count"] = category->getMarkerCount();
+        const std::string desc = category->getDescription();
+        if (!desc.empty()) {
+          o["description"] = desc;
+        }
+        const std::string source = category->getSource();
+        if (!source.empty()) {
+          o["source"] = source;
+        }
+        categories.emplace_back(std::move(o));
       }
-      const std::string source = category->getSource();
-      if (!source.empty()) {
-        o["source"] = source;
-      }
-      categories.emplace_back(std::move(o));
     }
     root["categories"] = std::move(categories);
     writePayload(resp, root);

@@ -164,7 +164,10 @@ py_test(
     name = "utl_man_tcl_check",
     srcs = ["utl_man_tcl_check.py"],
     data = ["//src/utl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

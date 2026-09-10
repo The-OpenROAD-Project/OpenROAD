@@ -3792,6 +3792,26 @@ TEST_F(DRCHandlerTest, CategoriesEmpty)
   EXPECT_NE(json.find("\"categories\":[]"), std::string::npos);
 }
 
+// The viewer requests categories on connect, before any design exists; that
+// must answer with an empty list rather than an error the server logs.
+TEST(DRCHandlerNoDesignTest, CategoriesWithoutChipIsNotAnError)
+{
+  std::unique_ptr<odb::dbDatabase, void (*)(odb::dbDatabase*)> db(
+      odb::dbDatabase::create(), odb::dbDatabase::destroy);
+  auto gen = std::make_shared<TileGenerator>(
+      db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
+  DRCHandler handler(gen);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kDrcCategories;
+
+  auto resp = handler.handleDRCCategories(req);
+  EXPECT_EQ(resp.id, 1u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_NE(payloadStr(resp).find("\"categories\":[]"), std::string::npos);
+}
+
 TEST_F(DRCHandlerTest, CategoriesWithMarkers)
 {
   createTestCategory("DRC", 3);

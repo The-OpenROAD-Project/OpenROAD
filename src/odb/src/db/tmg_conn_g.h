@@ -18,7 +18,7 @@ struct tcg_edge
   tmg_rcshort* s;
   int fr;
   int to;
-  int k;  // index to _rcV
+  int k;  // index to wire_sections_
   bool visited;
   bool skip;
 };
