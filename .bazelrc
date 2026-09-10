@@ -5,10 +5,6 @@ common --enable_bzlmod
 common --@abc//:use_readline=false
 build --workspace_status_command=tools/workspace_status.sh
 
-# Release builds embed real git version info; dev builds use cache-safe placeholders.
-# Usage: bazel build --config=release //...
-build:release --stamp
-
 # suppress distracting warning about newer module
 # versions found in dependency graph.
 common --check_direct_dependencies=off
@@ -270,5 +266,11 @@ build --build_tag_filters=-orfs
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
 build:lint --output_groups=rules_lint_report
 build:lint --remote_download_outputs=all
+
+# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Usage: bazel build --config=release //...
+build:release --stamp
+# Tell the 'release' config to include 'opt'
+build:release --config=opt
 
 try-import %workspace%/user.bazelrc
