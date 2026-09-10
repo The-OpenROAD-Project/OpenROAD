@@ -637,6 +637,27 @@ bool IRSolver::checkShortNetShape(odb::dbNet* net, const odb::dbShape& shape)
   return true;
 }
 
+IRSolver::LayerPolygons IRSolver::getMasterTerms(odb::dbMTerm* mterm) const
+{
+  odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygonSet> terms;
+  for (odb::dbMPin* mpin : mterm->getMPins()) {
+    for (odb::dbPolygon* pin : mpin->getPolygonGeometry()) {
+      terms[pin->getTechLayer()].insert(
+          odb::geom::toPolygonSet(pin->getPolygon()));
+    }
+    for (odb::dbBox* pin : mpin->getGeometry(false)) {
+      terms[pin->getTechLayer()].insert(odb::geom::toPolygonSet(pin->getBox()));
+    }
+  }
+
+  LayerPolygons mterms;
+  for (auto& [layer, layer_term] : terms) {
+    mterms[layer] = odb::geom::extractPolygons(layer_term);
+  }
+
+  return mterms;
+}
+
 IRSolver::LayerPolygons IRSolver::getMasterObstructions(
     odb::dbMaster* master) const
 {
@@ -644,7 +665,6 @@ IRSolver::LayerPolygons IRSolver::getMasterObstructions(
   master->getPlacementBoundary(boundary);
 
   using boost::polygon::operators::operator+;
-  using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator-=;
   using boost::polygon::operators::operator&=;
 
@@ -653,11 +673,12 @@ IRSolver::LayerPolygons IRSolver::getMasterObstructions(
   // clip and the pin removal done on the set in between.
   odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygonSet> obstructions;
   for (odb::dbPolygon* obs : master->getPolygonObstructions()) {
-    obstructions[obs->getTechLayer()]
-        += odb::geom::toPolygonSet(obs->getPolygon());
+    obstructions[obs->getTechLayer()].insert(
+        odb::geom::toPolygonSet(obs->getPolygon()));
   }
   for (odb::dbBox* obs : master->getObstructions(false)) {
-    obstructions[obs->getTechLayer()] += odb::geom::toPolygonSet(obs->getBox());
+    obstructions[obs->getTechLayer()].insert(
+        odb::geom::toPolygonSet(obs->getBox()));
   }
 
   // Get the pins, bloated by one dbu so an obstruction does not come out of
@@ -669,13 +690,13 @@ IRSolver::LayerPolygons IRSolver::getMasterObstructions(
       for (odb::dbPolygon* geom : mpin->getPolygonGeometry()) {
         // bloating the set is the same as Polygon::bloat, without the trip
         // back into odb only to convert it here again
-        pins[geom->getTechLayer()]
-            += odb::geom::toPolygonSet(geom->getPolygon()) + 1;
+        pins[geom->getTechLayer()].insert(
+            odb::geom::toPolygonSet(geom->getPolygon()) + 1);
       }
       for (odb::dbBox* geom : mpin->getGeometry(false)) {
         odb::Rect pin;
         geom->getBox().bloat(1, pin);
-        pins[geom->getTechLayer()] += odb::geom::toPolygonSet(pin);
+        pins[geom->getTechLayer()].insert(odb::geom::toPolygonSet(pin));
       }
     }
   }
@@ -792,6 +813,7 @@ bool IRSolver::findShorts(bool check_placed)
 
   // Check instances (honor floorplanning flag)
   odb::PtrMap<odb::dbMaster, LayerPolygons> master_obstructions;
+  odb::PtrMap<odb::dbMTerm, LayerPolygons> master_terms;
   for (odb::dbInst* inst : getBlock()->getInsts()) {
     if (check_placed) {
       if (!inst->getPlacementStatus().isPlaced()) {
@@ -803,6 +825,8 @@ bool IRSolver::findShorts(bool check_placed)
       }
     }
 
+    odb::dbMaster* master = inst->getMaster();
+    const odb::dbTransform xform = inst->getTransform();
     for (odb::dbITerm* iterm : inst->getITerms()) {
       if (iterm->getNet() == net_) {
         continue;
@@ -817,12 +841,27 @@ bool IRSolver::findShorts(bool check_placed)
         continue;
       }
 
+      odb::dbMTerm* mterm = iterm->getMTerm();
+      if (master_terms.find(mterm) == master_terms.end()) {
+        master_terms[mterm] = getMasterTerms(mterm);
+      }
+      const LayerPolygons& terms = master_terms[mterm];
+      if (terms.empty()) {
+        continue;
+      }
+
       // Check if the iterm intersects with any of the shapes in the power net
-      for (const auto& [layer, geom] : iterm->getGeometries()) {
-        for (const auto& overlap : determineShortShapes(layer, geom)) {
-          if (!addShort(
-                  std::make_unique<IRShortITerm>(layer, overlap, iterm))) {
-            return false;
+      for (const auto& [layer, layer_terms] : terms) {
+        for (const auto& layer_term : layer_terms) {
+          odb::Polygon transformed_term = layer_term;
+          xform.apply(transformed_term);
+
+          for (const auto& overlap :
+               determineShortShapes(layer, transformed_term)) {
+            if (!addShort(
+                    std::make_unique<IRShortITerm>(layer, overlap, iterm))) {
+              return false;
+            }
           }
         }
       }
@@ -830,7 +869,6 @@ bool IRSolver::findShorts(bool check_placed)
 
     // The obstructions only depend on the master, so they are held for the
     // next instance of it
-    odb::dbMaster* master = inst->getMaster();
     if (master_obstructions.find(master) == master_obstructions.end()) {
       master_obstructions[master] = getMasterObstructions(master);
     }
@@ -847,7 +885,6 @@ bool IRSolver::findShorts(bool check_placed)
     const odb::PtrSet<odb::dbTechLayer> connected_layers
         = getNetPinLayers(inst);
 
-    const odb::dbTransform xform = inst->getTransform();
     for (const auto& [layer, layer_obstructions] : obstructions) {
       if (connected_layers.find(layer) != connected_layers.end()) {
         continue;

@@ -163,6 +163,7 @@ class IRSolver
   // The obstructions of a master, clipped to the cell and with the pins of
   // the master removed from them.
   LayerPolygons getMasterObstructions(odb::dbMaster* master) const;
+  LayerPolygons getMasterTerms(odb::dbMTerm* mterm) const;
   // The layers where the instance holds a pin of the net under test.
   odb::PtrSet<odb::dbTechLayer> getNetPinLayers(odb::dbInst* inst) const;
   std::vector<odb::Polygon> determineShortShapes(odb::dbTechLayer* layer,
