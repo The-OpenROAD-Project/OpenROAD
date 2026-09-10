@@ -20,6 +20,7 @@ target_sources(wmk
     src/ClockTree.cpp
     src/Verify.cpp
     src/Claims.cpp
+    src/ClaimFile.cpp
     src/Timing.cpp
     src/MakeWatermark.cpp
     src/HmacSha256.cpp

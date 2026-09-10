@@ -405,6 +405,7 @@ cc_binary(
         "//src/tap",
         "//src/utl",
         "//src/wmk",
+        "//src/wmk:hmac_sha256",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -420,7 +421,6 @@ py_library(
         "//src/gpl:gpl_py",
         "//src/odb:odb_py",
         "//src/utl:utl_py",
-        "//src/wmk:wmk_py",
     ],
 )
 

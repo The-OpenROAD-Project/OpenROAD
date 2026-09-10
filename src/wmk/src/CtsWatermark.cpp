@@ -33,13 +33,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <fstream>
 #include <map>
 #include <optional>
+#include <ostream>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "ClaimFile.h"
 #include "ClockTree.h"
 #include "HmacSha256.h"
 #include "Options.h"
@@ -114,13 +116,8 @@ dbITerm* movableSink(dbInst* lcb, dbNet* destination, sta::dbNetwork* network)
   return nullptr;
 }
 
-bool writeCtsClaims(const std::string& path,
-                    const std::vector<CtsClaim>& claims)
+void writeCtsClaims(std::ostream& out, const std::vector<CtsClaim>& claims)
 {
-  std::ofstream out(path);
-  if (!out.is_open()) {
-    return false;
-  }
   out << "pair_idx,pair_key,target_lcb,other_lcb,target_bit,final_bit,"
          "skipped_reason\n";
   int idx = 0;
@@ -128,7 +125,6 @@ bool writeCtsClaims(const std::string& path,
     out << idx++ << ',' << c.pair_key << ',' << c.target_lcb << ','
         << c.other_lcb << ',' << c.target_bit << ',' << c.final_bit << ",\n";
   }
-  return out.good();
 }
 
 }  // namespace
@@ -170,6 +166,8 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                   static_cast<int>(lcbs.size()));
     return 0;
   }
+
+  ClaimFile output(claims_file);
 
   const int dbu = block->getDbUnitsPerMicron();
   const std::int64_t max_dist
@@ -318,115 +316,136 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   int held = 0;
   int moved = 0;
 
-  for (const Candidate& c : candidates) {
-    if (std::cmp_greater_equal(claims.size(), opts.num_pairs)) {
-      break;
-    }
-    if (claimed[c.i] || claimed[c.j]) {
-      continue;
-    }
+  struct SinkEdit
+  {
+    dbITerm* sink;
+    dbNet* origin;
+    dbNet* destination;
+  };
+  std::vector<SinkEdit> edits;
+  edits.reserve(std::min(candidates.size(), lcbs.size()));
 
-    dbInst* a = lcbs[c.i];
-    dbInst* b = lcbs[c.j];
-    const std::string na = a->getName();
-    const std::string nb = b->getName();
-
-    // The key picks both which buffer carries the mark and what parity it
-    // must show, so neither is guessable from the netlist.
-    const std::array<std::uint8_t, 32> d
-        = hmac_digest(key, {"pair", c.pair_key, na, nb});
-    const int target_bit = d[0] & 1;
-    const bool target_is_a = ((d[0] >> 1) & 1) != 0;
-
-    dbInst* target = target_is_a ? a : b;
-    dbInst* other = target_is_a ? b : a;
-
-    CtsClaim claim;
-    claim.pair_key = c.pair_key;
-    claim.target_lcb = target->getName();
-    claim.other_lcb = other->getName();
-    claim.target_bit = target_bit;
-    claim.final_bit = *seqFanout(target, network) % 2;
-
-    if (claim.final_bit != target_bit) {
-      // Move one sink across the boundary to flip the parity.  Taking it from
-      // the target lowers that count by one; taking it from the peer raises
-      // it.  Either direction changes the parity, so use whichever buffer has
-      // a sink free to move.
-      dbNet* target_net = singleOutputNet(target);
-      dbNet* other_net = singleOutputNet(other);
-      dbITerm* sink = nullptr;
-      dbNet* dest = nullptr;
-      if (target_net != nullptr && other_net != nullptr) {
-        sink = movableSink(other, target_net, network);
-        dest = target_net;
-        if (sink == nullptr) {
-          sink = movableSink(target, other_net, network);
-          dest = other_net;
-        }
+  try {
+    for (const Candidate& c : candidates) {
+      if (std::cmp_greater_equal(claims.size(), opts.num_pairs)) {
+        break;
       }
-      if (sink == nullptr) {
-        ++rejected_no_sink;
-      } else if (!haveClockSkews(lcb_clocks[c.i], skew_before)) {
-        ++rejected_skew;
-        if (!warned_skew) {
-          logger_->warn(
-              utl::WMK,
-              74,
-              "Clock skew cannot be evaluated for a selected pair; "
-              "its sinks will not be moved. Read liberty, constraints "
-              "and clock wire RC, and propagate the clocks first.");
-          warned_skew = true;
+      if (claimed[c.i] || claimed[c.j]) {
+        continue;
+      }
+
+      dbInst* a = lcbs[c.i];
+      dbInst* b = lcbs[c.j];
+      const std::string na = a->getName();
+      const std::string nb = b->getName();
+
+      // The key picks both which buffer carries the mark and what parity it
+      // must show, so neither is guessable from the netlist.
+      const std::array<std::uint8_t, 32> d
+          = hmac_digest(key, {"pair", c.pair_key, na, nb});
+      const int target_bit = d[0] & 1;
+      const bool target_is_a = ((d[0] >> 1) & 1) != 0;
+
+      dbInst* target = target_is_a ? a : b;
+      dbInst* other = target_is_a ? b : a;
+
+      CtsClaim claim;
+      claim.pair_key = c.pair_key;
+      claim.target_lcb = target->getName();
+      claim.other_lcb = other->getName();
+      claim.target_bit = target_bit;
+      claim.final_bit = *seqFanout(target, network) % 2;
+
+      if (claim.final_bit != target_bit) {
+        // Move one sink across the boundary to flip the parity.  Taking it from
+        // the target lowers that count by one; taking it from the peer raises
+        // it.  Either direction changes the parity, so use whichever buffer has
+        // a sink free to move.
+        dbNet* target_net = singleOutputNet(target);
+        dbNet* other_net = singleOutputNet(other);
+        dbITerm* sink = nullptr;
+        dbNet* dest = nullptr;
+        if (target_net != nullptr && other_net != nullptr) {
+          sink = movableSink(other, target_net, network);
+          dest = target_net;
+          if (sink == nullptr) {
+            sink = movableSink(target, other_net, network);
+            dest = other_net;
+          }
         }
-      } else {
-        dbNet* origin = sink->getNet();
-        bool skew_ok = false;
-        bool timing_ok = false;
-        bool drive_ok = false;
-        const bool accepted = tryClockSinkMove(
-            sink,
-            dest,
-            [&] { reestimateNetParasitics(origin, dest); },
-            [&] {
-              skew_ok = clockSkewsWithin(
-                  skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
-              timing_ok = endpointSlacksWithin(
-                  sta_, timing_before, opts.skew_margin_ns * 1e-9f);
-              // Moving a sink changes both loads; use Liberty limits for both
-              // drivers after refreshing the affected parasitics.
-              drive_ok
-                  = driverHeadroomOk(
-                        target, opts.slew_headroom_frac, opts.cap_headroom_frac)
-                    && driverHeadroomOk(
-                        other, opts.slew_headroom_frac, opts.cap_headroom_frac);
-              return skew_ok && timing_ok && drive_ok;
-            });
-        if (!accepted) {
-          if (!skew_ok) {
-            ++rejected_skew;
-          } else if (!timing_ok) {
-            ++rejected_timing;
-          } else {
-            ++rejected_drive;
+        if (sink == nullptr) {
+          ++rejected_no_sink;
+        } else if (!haveClockSkews(lcb_clocks[c.i], skew_before)) {
+          ++rejected_skew;
+          if (!warned_skew) {
+            logger_->warn(
+                utl::WMK,
+                74,
+                "Clock skew cannot be evaluated for a selected pair; "
+                "its sinks will not be moved. Read liberty, constraints "
+                "and clock wire RC, and propagate the clocks first.");
+            warned_skew = true;
           }
         } else {
-          ++moved;
-          claim.final_bit = *seqFanout(target, network) % 2;
+          dbNet* origin = sink->getNet();
+          bool skew_ok = false;
+          bool timing_ok = false;
+          bool drive_ok = false;
+          edits.push_back(
+              {.sink = sink, .origin = origin, .destination = dest});
+          const bool accepted = tryClockSinkMove(
+              sink,
+              dest,
+              [&] { reestimateNetParasitics(origin, dest); },
+              [&] {
+                skew_ok = clockSkewsWithin(
+                    skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
+                timing_ok = endpointSlacksWithin(
+                    sta_, timing_before, opts.skew_margin_ns * 1e-9f);
+                // Moving a sink changes both loads; use Liberty limits for both
+                // drivers after refreshing the affected parasitics.
+                drive_ok = driverHeadroomOk(target,
+                                            opts.slew_headroom_frac,
+                                            opts.cap_headroom_frac)
+                           && driverHeadroomOk(other,
+                                               opts.slew_headroom_frac,
+                                               opts.cap_headroom_frac);
+                return skew_ok && timing_ok && drive_ok;
+              });
+          if (!accepted) {
+            edits.pop_back();
+            if (!skew_ok) {
+              ++rejected_skew;
+            } else if (!timing_ok) {
+              ++rejected_timing;
+            } else {
+              ++rejected_drive;
+            }
+          } else {
+            ++moved;
+            claim.final_bit = *seqFanout(target, network) % 2;
+          }
         }
       }
+
+      if (claim.final_bit == target_bit) {
+        ++held;
+      }
+      claims.push_back(claim);
+      claimed[target_is_a ? c.i : c.j] = true;
     }
 
-    if (claim.final_bit == target_bit) {
-      ++held;
+    output.publish([&](std::ostream& out) { writeCtsClaims(out, claims); });
+  } catch (...) {
+    for (const SinkEdit& edit : std::views::reverse(edits)) {
+      if (edit.sink->getNet() != edit.origin) {
+        edit.sink->connect(edit.origin);
+      }
     }
-    claims.push_back(claim);
-    claimed[target_is_a ? c.i : c.j] = true;
-  }
-
-  if (!writeCtsClaims(claims_file, claims)) {
-    logger_->error(
-        utl::WMK, 72, "Could not write claims to '{}'.", claims_file);
-    return 0;
+    for (const SinkEdit& edit : edits) {
+      reestimateNetParasitics(edit.origin, edit.destination);
+    }
+    throw;
   }
 
   logger_->info(utl::WMK,

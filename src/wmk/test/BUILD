@@ -9,6 +9,7 @@ package(features = ["layering_check"])
 # tools' logs inside a watermarking golden would break this module whenever
 # they change their output, so they assert their own numbers instead.
 PASSFAIL_TESTS = [
+    "claim_publication",
     "cts_headroom",
     "numeric_options",
     "key_files",
@@ -39,6 +40,7 @@ PASSFAIL_TESTS = [
 ]
 
 TESTS = [
+    "claim_publication",
     "bias",
     "bias_neutral",
     "cts_headroom",
@@ -139,6 +141,16 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/wmk:clock_tree",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestClaimFile",
+    srcs = ["cpp/TestClaimFile.cpp"],
+    deps = [
+        "//src/wmk:claim_file",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

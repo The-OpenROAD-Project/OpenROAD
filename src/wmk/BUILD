@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -17,6 +16,13 @@ cc_library(
     name = "hmac_sha256",
     srcs = ["src/HmacSha256.cpp"],
     hdrs = ["src/HmacSha256.h"],
+    includes = ["src"],
+)
+
+cc_library(
+    name = "claim_file",
+    srcs = ["src/ClaimFile.cpp"],
+    hdrs = ["src/ClaimFile.h"],
     includes = ["src"],
 )
 
@@ -87,6 +93,7 @@ cc_library(
         ":wmk_private_hdrs",
         ":hmac_sha256",
         ":claims",
+        ":claim_file",
         ":timing",
         ":clock_tree",
         # Slack screens the placement candidates and skew screens the clock
@@ -169,37 +176,13 @@ python_wrap_cc(
     ],
 )
 
-# The Python extension and the wrapper that loads it.  Without these the module
-# is reachable from Tcl only: openroad -python would import openroad fine and
-# then fail on "import wmk", because the generated shim and the .so it needs
-# would never be packaged together.
-cc_binary(
-    name = "_wmk.so",
-    srcs = [
-        ":swig-py",
-    ],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    includes = ["src"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        ":wmk",
-        # The interface file pulls in the key parser for its typemap, and
-        # OpenRoad.hh for the accessor the wrapper is generated against.
-        ":wmk_private_hdrs",
-        ":hmac_sha256",
-        "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
+# Keep timing-dependent bindings in _openroadpy.so. A separate WMK extension
+# would link another copy of OpenSTA's singleton state (such as port directions)
+# and interpret the Design's Liberty objects using that uninitialized copy.
 py_library(
     name = "wmk_py",
-    srcs = [":swig-py"],
-    data = [":_wmk.so"],
+    srcs = ["wmk.py"],
     imports = ["."],
     visibility = ["//visibility:public"],
+    deps = ["//:openroad_py"],
 )

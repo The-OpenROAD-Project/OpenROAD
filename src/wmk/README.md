@@ -215,6 +215,13 @@ pair counts must be nonnegative integers. Zero requested pairs produces no
 marks. Invalid options are rejected before changing the design or claims file,
 including through the Python API.
 
+Placement and CTS claims are staged in the output directory and replace the
+requested file only after writing and closing succeed. The parent directory
+must exist and be writable; the destination must be a regular file or a new
+path. Devices, directories and output symlinks are rejected. If publication
+fails, the command reports an error, preserves any previous claims file, and
+restores its placement or clock-connection edits with refreshed parasitics.
+
 ### Set Routing Watermark
 
 The `set_routing_watermark` command selects a keyed subset of signal nets, tags

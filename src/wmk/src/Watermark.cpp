@@ -222,6 +222,16 @@ void Watermark::reestimateNetParasitics(odb::dbNet* a, odb::dbNet* b) const
       estimate_parasitics_->estimateWireParasitic(sta_net);
     }
   }
+  // The per-net estimator replaces RC without invalidating cached delays.
+  // As in EstimateParasitics::updateParasitics, invalidate only after both
+  // nets have fresh annotations, including after a rejected or aborted move.
+  for (odb::dbNet* net : {a, b}) {
+    if (net != nullptr) {
+      if (sta::Net* sta_net = network->dbToSta(net)) {
+        sta_->delaysInvalidFromFanin(sta_net);
+      }
+    }
+  }
 }
 
 std::optional<float> Watermark::worstSlack(odb::dbInst* inst) const

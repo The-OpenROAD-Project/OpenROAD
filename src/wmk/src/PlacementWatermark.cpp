@@ -33,9 +33,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <fstream>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -43,6 +43,7 @@
 #include <utility>
 #include <vector>
 
+#include "ClaimFile.h"
 #include "HmacSha256.h"
 #include "Options.h"
 #include "Timing.h"
@@ -238,20 +239,15 @@ std::int64_t hpwlDeltaOfSwap(dbInst* a, dbInst* b, HpwlCache* cache)
 // Write the claim file verify_watermark reads.  The column set is the one
 // documented in the module README; a producer is free to add columns, so the
 // extra bookkeeping the Python embedder emits stays compatible.
-bool writePlacementClaims(const std::string& path,
+void writePlacementClaims(std::ostream& out,
                           const std::vector<PlacementClaim>& claims)
 {
-  std::ofstream out(path);
-  if (!out.is_open()) {
-    return false;
-  }
   out << "kind,id,A_name,B_name,target_bit,skipped_reason\n";
   for (const PlacementClaim& c : claims) {
     out << "pair," << c.a_name << '|' << c.b_name << ',' << c.a_name << ','
         << c.b_name << ',' << c.target_bit << ','
         << (c.already_satisfied ? "already_satisfied" : "") << '\n';
   }
-  return out.good();
 }
 
 }  // namespace
@@ -543,6 +539,8 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
 
   validateOptions(opts, block->getDbUnitsPerMicron(), logger_);
 
+  ClaimFile output(claims_file);
+
   const bool guard_requested = opts.post_guard && opts.guard_degrade_ns > 0.0;
   const bool can_estimate = canEstimateParasitics(/* clock */ false);
   if (guard_requested && can_estimate) {
@@ -563,13 +561,8 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
 
   std::vector<PlacementClaim> claims;
   std::vector<PlacementEdit> edits;
-  const int committed = embedPlacementEdits(key, opts, claims, edits);
-  if (committed == 0) {
-    logger_->warn(utl::WMK,
-                  54,
-                  "No placement pairs were committed; the design may be too "
-                  "small or the gates too strict.");
-  }
+  int committed = 0;
+  int displaced = 0;
 
   const float degrade = static_cast<float>(opts.guard_degrade_ns * 1e-9);
   const float floor
@@ -591,6 +584,14 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
   // Collect failed edits before restoring any of them, then refresh RC again.
   int reverted = 0;
   try {
+    committed = embedPlacementEdits(key, opts, claims, edits);
+    if (committed == 0) {
+      logger_->warn(utl::WMK,
+                    54,
+                    "No placement pairs were committed; the design may be too "
+                    "small or the gates too strict.");
+    }
+
     if (committed > 0) {
       legalizePlacement(opendp_, block, opts.max_disp_um);
       refresh();
@@ -630,43 +631,39 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
                       "restored the complete original placement.");
       }
     }
+    if (reverted > 0) {
+      logger_->info(utl::WMK,
+                    58,
+                    "Placement watermark: {} pairs restored to keep timing "
+                    "within {:.4g} ps of the original placement.",
+                    reverted,
+                    opts.guard_degrade_ns * 1000.0);
+    }
+    // Timing-rejected edits remain claims. Their survival can depend on whether
+    // the keyed bit needed a swap, so removing them would bias extraction.
+
+    // Legalization can move a cell back out of the order we just set.  Every
+    // claim is still written: dropping the ones that no longer hold would let
+    // the embedder pick its evidence after the fact, and an extraction rate
+    // chosen that way would be one on any design.  What the count below reports
+    // is how much of the mark actually survived, which is the number the owner
+    // needs to see before shipping.
+    for (const PlacementClaim& claim : claims) {
+      dbInst* a = block->findInst(claim.a_name.c_str());
+      dbInst* b = block->findInst(claim.b_name.c_str());
+      if (a == nullptr || b == nullptr
+          || (a->getBBox()->xMin() < b->getBBox()->xMin() ? 0 : 1)
+                 != claim.target_bit) {
+        ++displaced;
+      }
+    }
+
+    output.publish(
+        [&](std::ostream& out) { writePlacementClaims(out, claims); });
   } catch (...) {
     restorePlacement(placement_before);
     refresh();
     throw;
-  }
-  if (reverted > 0) {
-    logger_->info(utl::WMK,
-                  58,
-                  "Placement watermark: {} pairs restored to keep timing "
-                  "within {:.4g} ps of the original placement.",
-                  reverted,
-                  opts.guard_degrade_ns * 1000.0);
-  }
-  // Timing-rejected edits remain claims. Their survival can depend on whether
-  // the keyed bit needed a swap, so removing them would bias extraction.
-
-  // Legalization can move a cell back out of the order we just set.  Every
-  // claim is still written: dropping the ones that no longer hold would let
-  // the embedder pick its evidence after the fact, and an extraction rate
-  // chosen that way would be one on any design.  What the count below reports
-  // is how much of the mark actually survived, which is the number the owner
-  // needs to see before shipping.
-  int displaced = 0;
-  for (const PlacementClaim& claim : claims) {
-    dbInst* a = block->findInst(claim.a_name.c_str());
-    dbInst* b = block->findInst(claim.b_name.c_str());
-    if (a == nullptr || b == nullptr
-        || (a->getBBox()->xMin() < b->getBBox()->xMin() ? 0 : 1)
-               != claim.target_bit) {
-      ++displaced;
-    }
-  }
-
-  if (!writePlacementClaims(claims_file, claims)) {
-    logger_->error(
-        utl::WMK, 55, "Could not write claims to '{}'.", claims_file);
-    return 0;
   }
 
   logger_->info(utl::WMK,
