@@ -274,6 +274,11 @@ void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
   clearSolvers();
 }
 
+void PDNSim::inDbFillCreate(odb::dbFill*)
+{
+  clearSolvers();
+}
+
 // Functions of decap cells
 void PDNSim::addDecapMaster(odb::dbMaster* decap_master, double decap_cap)
 {
