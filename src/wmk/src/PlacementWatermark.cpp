@@ -617,6 +617,10 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
         restorePlacement(placement_before);
         refresh();
         reverted = committed;
+        logger_->info(utl::WMK,
+                      110,
+                      "Final legalized placement exceeds the timing budget; "
+                      "restored the complete original placement.");
       }
     }
   } catch (...) {

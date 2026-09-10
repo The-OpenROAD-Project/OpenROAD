@@ -19,6 +19,7 @@
 
 #include "Claims.h"
 #include "ClockTree.h"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
@@ -120,6 +121,11 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
     return result;
   }
 
+  if (!hasLiberty()) {
+    logger_->error(
+        utl::WMK, 108, "Read Liberty before verifying a CTS watermark.");
+  }
+
   for (const ClaimRow& row : rows) {
     if (!claimIsCheckable(row)) {
       continue;
@@ -140,7 +146,16 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
       continue;
     }
 
-    const int observed = seqFanout(lcb) % 2;
+    const auto fanout = seqFanout(lcb, sta_->getDbNetwork());
+    if (!fanout) {
+      logger_->info(utl::WMK,
+                    109,
+                    "CTS claim {}: carrier or fanout cannot be classified "
+                    "using Liberty.",
+                    lcb_name);
+      continue;
+    }
+    const int observed = *fanout % 2;
     if (observed == target) {
       ++result.held;
     } else {

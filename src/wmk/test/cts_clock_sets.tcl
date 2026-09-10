@@ -33,9 +33,15 @@ check "sink connectivity is preserved" {
   expr {[[[$block findInst ff0] findITerm CK] getNet] == $before}
 } 1
 
-# Both leaves now see the same set. With a generous skew budget the pair
-# must remain eligible, so the equality check cannot simply reject all pairs.
+# Case analysis cannot justify bypassing mux logic, even with equal clock sets.
 set_case_analysis 0 [get_ports select]
+set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
+  -sibling_dist_um 100 -skew_margin_ns 100 \
+  -slew_headroom_frac 0 -cap_headroom_frac 0]
+check "case analysis does not erase a clock-logic boundary" { set count } 0
+
+# Connect both buffers to the same source to establish a truly equivalent pair.
+[[$block findInst leaf_b] findITerm A] connect [$block findNet clk1]
 set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
   -sibling_dist_um 100 -skew_margin_ns 100 \
   -slew_headroom_frac 0 -cap_headroom_frac 0]

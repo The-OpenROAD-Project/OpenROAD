@@ -4,11 +4,13 @@
 #include "ClockTree.h"
 
 #include <algorithm>
-#include <cctype>
-#include <string>
+#include <optional>
+#include <unordered_set>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "sta/Liberty.hh"
 
 namespace wmk {
 
@@ -17,60 +19,89 @@ using odb::dbInst;
 using odb::dbITerm;
 using odb::dbNet;
 
-odb::dbNet* singleOutputNet(dbInst* inst)
+namespace {
+
+struct BufferPorts
 {
-  dbNet* out = nullptr;
-  int count = 0;
+  dbITerm* input = nullptr;
+  dbITerm* output = nullptr;
+  bool inverted = false;
+};
+
+std::optional<BufferPorts> bufferPorts(dbInst* inst, sta::dbNetwork* network)
+{
+  const sta::LibertyCell* cell = network->libertyCell(inst);
+  if (cell == nullptr || !cell->sequentials().empty() || cell->isClockGate()
+      || (!cell->isBuffer() && !cell->isInverter())) {
+    return std::nullopt;
+  }
+  BufferPorts ports;
+  ports.inverted = cell->isInverter();
   for (dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      if (++count > 1) {
-        break;
-      }
-      out = iterm->getNet();
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+    if (iterm->getIoType() == odb::dbIoType::INPUT && ports.input == nullptr) {
+      ports.input = iterm;
+    } else if (iterm->getIoType() == odb::dbIoType::OUTPUT
+               && ports.output == nullptr) {
+      ports.output = iterm;
+    } else {
+      return std::nullopt;
+    }
+    const sta::LibertyPort* port
+        = network->libertyPort(network->dbToSta(iterm));
+    if (port == nullptr || port->tristateEnable() != nullptr) {
+      return std::nullopt;
     }
   }
-  return count == 1 ? out : nullptr;
+  if (ports.input == nullptr || ports.output == nullptr) {
+    return std::nullopt;
+  }
+  return ports;
 }
 
-bool isSequentialClockSink(dbITerm* iterm)
+}  // namespace
+
+odb::dbNet* singleOutputNet(dbInst* inst)
 {
-  if (iterm->getIoType() != odb::dbIoType::INPUT) {
-    return false;
+  dbITerm* output = nullptr;
+  for (dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (output != nullptr) {
+        return nullptr;
+      }
+      output = iterm;
+    }
   }
-  odb::dbMTerm* mterm = iterm->getMTerm();
-  if (mterm == nullptr) {
-    return false;
-  }
-  if (mterm->getSigType() == odb::dbSigType::CLOCK) {
-    return true;
-  }
-  dbInst* inst = iterm->getInst();
-  if (inst == nullptr || !inst->getMaster()->isSequential()) {
-    return false;
-  }
-  std::string name = mterm->getName();
-  std::ranges::transform(name, name.begin(), [](unsigned char c) {
-    return static_cast<char>(std::toupper(c));
-  });
-  return name == "CP" || name == "CLK" || name == "CK" || name == "CLOCK";
+  return output == nullptr ? nullptr : output->getNet();
 }
 
-int seqFanout(dbInst* lcb)
+bool isSequentialClockSink(dbITerm* iterm, sta::dbNetwork* network)
 {
-  dbNet* net = singleOutputNet(lcb);
-  if (net == nullptr) {
-    return 0;
+  return network->isRegClkPin(network->dbToSta(iterm));
+}
+
+std::optional<int> seqFanout(dbInst* lcb, sta::dbNetwork* network)
+{
+  const auto ports = bufferPorts(lcb, network);
+  if (!ports || ports->output->getNet() == nullptr) {
+    return std::nullopt;
   }
   int count = 0;
-  for (dbITerm* iterm : net->getITerms()) {
-    if (isSequentialClockSink(iterm)) {
+  for (dbITerm* iterm : ports->output->getNet()->getITerms()) {
+    if (network->libertyPort(network->dbToSta(iterm)) == nullptr) {
+      return std::nullopt;
+    }
+    if (isSequentialClockSink(iterm, network)) {
       ++count;
     }
   }
   return count;
 }
 
-std::vector<dbInst*> findLeafClockBuffers(dbBlock* block)
+std::vector<dbInst*> findLeafClockBuffers(dbBlock* block,
+                                          sta::dbNetwork* network)
 {
   std::vector<dbInst*> lcbs;
   for (dbInst* inst : block->getInsts()) {
@@ -78,14 +109,57 @@ std::vector<dbInst*> findLeafClockBuffers(dbBlock* block)
     if (out == nullptr || out->getSigType() != odb::dbSigType::CLOCK) {
       continue;
     }
-    if (seqFanout(inst) > 0) {
+    const auto fanout = seqFanout(inst, network);
+    if (fanout && *fanout > 0) {
       lcbs.push_back(inst);
     }
   }
-  // Name order, so the pairing below does not depend on database order.
+  // Name order keeps pairing independent of database insertion order.
   std::ranges::sort(
       lcbs, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
   return lcbs;
+}
+
+std::optional<ClockBranch> clockBranch(dbInst* lcb, sta::dbNetwork* network)
+{
+  if (!bufferPorts(lcb, network)) {
+    return std::nullopt;
+  }
+  dbNet* net = singleOutputNet(lcb);
+  bool inverted = false;
+  std::unordered_set<dbNet*> visited;
+  while (net != nullptr && visited.insert(net).second) {
+    dbITerm* driver = nullptr;
+    int drivers = 0;
+    for (dbITerm* iterm : net->getITerms()) {
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        driver = iterm;
+        ++drivers;
+      } else if (iterm->getIoType() != odb::dbIoType::INPUT) {
+        return std::nullopt;
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        ++drivers;
+      } else if (bterm->getIoType() != odb::dbIoType::OUTPUT) {
+        return std::nullopt;
+      }
+    }
+    if (drivers != 1) {
+      return std::nullopt;
+    }
+    if (driver == nullptr) {
+      return ClockBranch{.source = net, .inverted = inverted};
+    }
+    const auto ports = bufferPorts(driver->getInst(), network);
+    if (!ports) {
+      return ClockBranch{.source = net, .inverted = inverted};
+    }
+    inverted ^= ports->inverted;
+    net = ports->input->getNet();
+  }
+  return std::nullopt;
 }
 
 }  // namespace wmk

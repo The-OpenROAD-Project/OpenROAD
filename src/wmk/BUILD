@@ -40,9 +40,20 @@ cc_library(
 )
 
 cc_library(
+    name = "clock_tree",
+    srcs = ["src/ClockTree.cpp"],
+    hdrs = ["src/ClockTree.h"],
+    includes = ["src"],
+    deps = [
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+    ],
+)
+
+cc_library(
     name = "wmk_private_hdrs",
     hdrs = [
-        "src/ClockTree.h",
         "src/Keys.h",
         "src/Wirelength.h",
     ],
@@ -56,7 +67,6 @@ cc_library(
 cc_library(
     name = "wmk",
     srcs = [
-        "src/ClockTree.cpp",
         "src/CtsWatermark.cpp",
         "src/Keys.cpp",
         "src/PlacementWatermark.cpp",
@@ -76,6 +86,7 @@ cc_library(
         ":hmac_sha256",
         ":claims",
         ":timing",
+        ":clock_tree",
         # Slack screens the placement candidates and skew screens the clock
         # tree ones, and moving a cell needs its parasitics re-estimated before
         # either means anything.

@@ -149,19 +149,30 @@ It returns the number of pairs claimed. Run it after clock tree synthesis.
 
 LCBs are marked in pairs. Parity is changed by moving one flip-flop's clock
 pin from one LCB of the pair to the other. A move is undone if it
-worsens the clock's worst skew by more than `-skew_margin_ns`, or if it leaves
+increases clock latency spread or degrades a constrained endpoint's setup/hold
+slack by more than `-skew_margin_ns`, or if it leaves
 the LCB with less slew or capacitance headroom than the liberty cell allows.
 
-Pairs must have identical, nonempty clock sets in the active timing modes.
+Pairs must have identical, nonempty clock sets in the active timing modes and
+provably equivalent clock logic. The command traces only unconditional Liberty
+buffers and inverters, requires a common source net and matching inversion
+parity, and stops at gates, muxes and sequential cells. Case analysis does not
+remove these boundaries. Floating nets, multiple drivers and cycles are rejected.
+Leaf carriers must be Liberty buffers or inverters; STA identifies sequential
+clock pins without relying on LEF flags or pin names.
+
 The skew guard measures the latest minus earliest propagated clock latency at
 sequential clock pins, separately for each clock, analysis scene and source
 edge. It compares against the original design throughout embedding; the budget
 does not reset after each accepted move. This conservative latency spread is
 different from the path-based `report_clock_skew` metric, which considers data
-path relationships, uncertainty and common-path pessimism removal.
+path relationships, uncertainty and common-path pessimism removal. A separate
+STA guard checks every originally constrained endpoint's setup and hold slack,
+for each scene and transition, against its fixed baseline with the same budget.
+This catches path degradation even when the overall latency spread is unchanged.
 
-Read liberty and constraints, set clock wire RC, and propagate clocks before
-embedding. A pair without measurable clock timing is left unchanged and the
+Read Liberty and constraints, set signal and clock wire RC, estimate parasitics,
+and propagate clocks before embedding. A pair without measurable clock timing is left unchanged and the
 command reports the unavailable guard. It remains a claim if selected.
 
 ```tcl
@@ -184,7 +195,7 @@ cts_watermark
 | `-cap_headroom_frac` | Fraction of the liberty capacitance limit left unused. Defaults to `0.20`. |
 | `-num_pairs` | Most pairs to mark, one bit each. Defaults to `32`. |
 | `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns. Defaults to `20.0`. |
-| `-skew_margin_ns` | Skew a move may cost. Defaults to `0.020`. `0` turns the stage off wherever the clock is tight. |
+| `-skew_margin_ns` | Maximum clock latency-spread increase and endpoint slack degradation, in ns. Defaults to `0.020`. `0` permits no degradation. |
 | `-slew_headroom_frac` | Fraction of the liberty slew limit left unused. Defaults to `0.20`. |
 
 ### Set Routing Watermark
@@ -272,6 +283,11 @@ checked stages pass.
 Placement and clock-tree marks are read from their claim files and judged by the
 extraction rate, the fraction of claims that still hold, against `-tau`. An exact
 match is not expected: routing and filling disturb a few marked objects.
+
+CTS verification requires Liberty to identify buffers and sequential clock pins
+using the same definitions as embedding. Missing Liberty is an error; a claimed
+carrier with unknown Liberty fanout remains in the denominator and fails its
+claim. Timing constraints are not required just to observe the fanout parity.
 
 Routing has no claim file. Its marked set is recovered from `-routing_key_hex`
 alone and judged by how improbable the marked nets' wrong-way wirelength is under

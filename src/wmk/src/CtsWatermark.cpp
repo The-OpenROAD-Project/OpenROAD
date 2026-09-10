@@ -12,13 +12,13 @@
 // remove a sink: routing, filling and metal fixes all preserve it.  It is also
 // cheap to observe, which is what makes verification a simple count.
 //
-// The cost is skew.  Moving a sink changes the load on both buffers, so the
-// move is undone if the clock's worst skew gets worse.
+// Moving a sink changes both buffer loads. Fixed latency-spread and
+// endpoint setup/hold budgets bound the timing cost of each accepted move.
 //
 // Which buffers get paired is keyed as well.  Eligibility is public -- same
-// clock, close enough that a moved sink stays local -- and the key then orders
-// the eligible pairs and takes a greedy prefix, so an observer can list the
-// candidates but not say which of them carry marks.
+// clock logic, close enough that a moved sink stays local -- and the key then
+// orders the eligible pairs and takes a greedy prefix, so an observer can list
+// the candidates but not say which of them carry marks.
 //
 // The key orders pairs by their names, never by the parity they currently show,
 // and a pair whose parity could not be set is claimed all the same.  Pairing
@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,6 +43,8 @@
 #include "ClockTree.h"
 #include "HmacSha256.h"
 #include "Timing.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
@@ -92,14 +95,14 @@ bool sameClockSet(const std::vector<int>& a, const std::vector<int>& b)
 // A sink that can be moved between two buffers without changing what the
 // design does: an ordinary sequential clock pin, not a pin the flow has
 // pinned down.
-dbITerm* movableSink(dbInst* lcb)
+dbITerm* movableSink(dbInst* lcb, sta::dbNetwork* network)
 {
   dbNet* net = singleOutputNet(lcb);
   if (net == nullptr) {
     return nullptr;
   }
   for (dbITerm* iterm : net->getITerms()) {
-    if (!isSequentialClockSink(iterm)) {
+    if (!isSequentialClockSink(iterm, network)) {
       continue;
     }
     dbInst* inst = iterm->getInst();
@@ -140,7 +143,12 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     return 0;
   }
 
-  const std::vector<dbInst*> lcbs = findLeafClockBuffers(block);
+  if (!hasLiberty()) {
+    logger_->error(
+        utl::WMK, 107, "Read Liberty before embedding a CTS watermark.");
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  const std::vector<dbInst*> lcbs = findLeafClockBuffers(block, network);
   if (lcbs.size() < 2) {
     logger_->warn(utl::WMK,
                   71,
@@ -164,8 +172,10 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       }
     }
   }
-  const ClockSkews skew_before
-      = hasLiberty() && can_estimate ? clockSkews(sta_) : ClockSkews{};
+  const ClockSkews skew_before = can_estimate ? clockSkews(sta_) : ClockSkews{};
+  // Latency spread alone does not bound setup/hold path degradation. Keep
+  // every constrained endpoint's original slack as a second timing guard.
+  const std::vector<EndpointSlack> timing_before = endpointSlacks(sta_);
   bool warned_skew = false;
 
   // Enumerate the eligible pairs, then let the key order them.  Eligibility is
@@ -205,6 +215,12 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                   static_cast<int>(lcbs.size()));
   }
   int rejected_cross_clock = 0;
+  int rejected_clock_logic = 0;
+  std::vector<std::optional<ClockBranch>> branches;
+  branches.reserve(lcbs.size());
+  for (dbInst* lcb : lcbs) {
+    branches.push_back(clockBranch(lcb, network));
+  }
 
   std::vector<Centre> centres;
   centres.reserve(lcbs.size());
@@ -252,6 +268,12 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
             ++rejected_cross_clock;
             continue;
           }
+          // Named clocks do not describe enables or inversion. Only move
+          // between branches with the same unconditional clock function.
+          if (!branches[i] || !branches[j] || branches[i] != branches[j]) {
+            ++rejected_clock_logic;
+            continue;
+          }
           Candidate c;
           c.i = i;
           c.j = j;
@@ -279,6 +301,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   int rejected_skew = 0;
   int rejected_no_sink = 0;
   int rejected_drive = 0;
+  int rejected_timing = 0;
   int held = 0;
   int moved = 0;
 
@@ -310,7 +333,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     claim.target_lcb = target->getName();
     claim.other_lcb = other->getName();
     claim.target_bit = target_bit;
-    claim.final_bit = seqFanout(target) % 2;
+    claim.final_bit = *seqFanout(target, network) % 2;
 
     if (claim.final_bit != target_bit) {
       // Move one sink across the boundary to flip the parity.  Taking it from
@@ -322,10 +345,10 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       dbITerm* sink = nullptr;
       dbNet* dest = nullptr;
       if (target_net != nullptr && other_net != nullptr) {
-        sink = movableSink(other);
+        sink = movableSink(other, network);
         dest = target_net;
         if (sink == nullptr) {
-          sink = movableSink(target);
+          sink = movableSink(target, network);
           dest = other_net;
         }
       }
@@ -351,6 +374,8 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
         reestimateNetParasitics(origin, dest);
         const bool skew_ok = clockSkewsWithin(
             skew_before, clockSkews(sta_), opts.skew_margin_ns * 1e-9f);
+        const bool timing_ok = endpointSlacksWithin(
+            sta_, timing_before, opts.skew_margin_ns * 1e-9f);
         // The buffer that gained a sink now drives more load, so whether it
         // still can is the library's question, not one this code should answer
         // with a number of its own.
@@ -359,7 +384,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                   target, opts.slew_headroom_frac, opts.cap_headroom_frac)
               && driverHeadroomOk(
                   other, opts.slew_headroom_frac, opts.cap_headroom_frac);
-        if (!skew_ok || !drive_ok) {
+        if (!skew_ok || !drive_ok || !timing_ok) {
           // The mark would cost more than the clock can spare, so put the sink
           // back.
           sink->disconnect();
@@ -367,12 +392,14 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
           reestimateNetParasitics(origin, dest);
           if (!skew_ok) {
             ++rejected_skew;
+          } else if (!timing_ok) {
+            ++rejected_timing;
           } else {
             ++rejected_drive;
           }
         } else {
           ++moved;
-          claim.final_bit = seqFanout(target) % 2;
+          claim.final_bit = *seqFanout(target, network) % 2;
         }
       }
     }
@@ -395,7 +422,8 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                 "CTS watermark: {} pairs claimed from {} leaf clock buffers, "
                 "{} at the keyed parity ({} sinks moved, {} rejected on skew, "
                 "{} with no movable sink, {} on drive strength, "
-                "{} with different or unknown clock sets).",
+                "{} with different or unknown clock sets, {} with different or "
+                "unproven clock logic, {} on setup/hold timing).",
                 static_cast<int>(claims.size()),
                 static_cast<int>(lcbs.size()),
                 held,
@@ -403,7 +431,9 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                 rejected_skew,
                 rejected_no_sink,
                 rejected_drive,
-                rejected_cross_clock);
+                rejected_cross_clock,
+                rejected_clock_logic,
+                rejected_timing);
   return static_cast<int>(claims.size());
 }
 
