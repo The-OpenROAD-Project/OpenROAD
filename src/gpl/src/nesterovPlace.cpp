@@ -572,6 +572,15 @@ void NesterovPlace::runTimingDriven(int iter,
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       }
+
+      // A non-virtual iteration replaced topology (repair_design created and
+      // destroyed instances). The accelerated-gradient momentum accumulated
+      // over the previous iterations is no longer valid for the changed
+      // objective. Request a FISTA restart so the next iteration takes a plain
+      // gradient step (coeff = 0) instead of extrapolating along the stale
+      // pre-repair trajectory, which otherwise diverges HPWL while overflow
+      // keeps falling.
+      reset_nesterov_momentum_ = true;
     }
 
     // problem occured
@@ -1101,6 +1110,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
+    // A previous non-virtual timing-driven iteration replaced topology; restart
+    // the accelerated-gradient momentum so the extrapolation coefficient below
+    // starts from zero rather than the stale ~0.99 pre-repair value.
+    if (reset_nesterov_momentum_) {
+      curA = 1.0;
+      reset_nesterov_momentum_ = false;
+      log_->info(GPL, 111, "Timing-driven: restarting Nesterov momentum.");
+    }
+
     const float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
