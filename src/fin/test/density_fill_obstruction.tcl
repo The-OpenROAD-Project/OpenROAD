@@ -6,10 +6,12 @@ proc count_fill_overlaps { block layer region } {
   foreach fill [$block getFills] {
     if { [$fill getTechLayer] == $layer } {
       set rect [$fill getRect]
-      if { [$rect xMin] < [$region xMax]
+      if {
+        [$rect xMin] < [$region xMax]
         && [$rect xMax] > [$region xMin]
         && [$rect yMin] < [$region yMax]
-        && [$rect yMax] > [$region yMin] } {
+        && [$rect yMax] > [$region yMin]
+      } {
         incr count
       }
     }
