@@ -857,18 +857,9 @@ void TechChar::createDelayBufList()
           footprintClkDly.push_back(std::string(buffer->name()));
         }
 
-        if (isDlyCell(footprint)) {
-          footprintDly.push_back(std::string(buffer->name()));
-        }
-
         if (containsIgnoreCase(buffer->name(), "CLKDLY")
             || containsIgnoreCase(buffer->name(), "CLKDEL")) {
           nameClkDly.push_back(std::string(buffer->name()));
-        }
-
-        if (containsIgnoreCase(buffer->name(), "DLY")
-            || containsIgnoreCase(buffer->name(), "DEL")) {
-          nameDly.push_back(std::string(buffer->name()));
         }
       }
     }
