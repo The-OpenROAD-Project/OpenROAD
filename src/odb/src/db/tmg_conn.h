@@ -103,13 +103,13 @@ struct WirePoint
 
 struct Terminal
 {
-  Terminal(dbITerm* iterm) : iterm(iterm), bterm(nullptr) {}
-  Terminal(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
+  Terminal(dbITerm* iterm) : iterm(iterm) {}
+  Terminal(dbBTerm* bterm) : bterm(bterm) {}
 
-  dbITerm* const iterm;
-  dbBTerm* const bterm;
-  WirePoint* pt;        // list of points
-  WirePoint* first_pt;  // first point in dfs
+  dbITerm* const iterm{nullptr};
+  dbBTerm* const bterm{nullptr};
+  WirePoint* pt{nullptr};        // list of points
+  WirePoint* first_pt{nullptr};  // first point in dfs
 };
 
 // This is how we keep the information that two sections from different paths
