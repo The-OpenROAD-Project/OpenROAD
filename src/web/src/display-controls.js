@@ -76,6 +76,7 @@ import {
     DEFAULT_BUDGET_BYTES, UNMERGED_PANE_COUNT,
 } from './tile-merge.js';
 import { buildMergedPanes } from './merged-tile-layer.js';
+import { tileSizeCss } from './tile-request.js';
 
 // Populate display controls with layer checkboxes and visibility tree.
 export function populateDisplayControls(app, visibility, selectability,
@@ -408,8 +409,12 @@ export function populateDisplayControls(app, visibility, selectability,
         // one pane per layer and silently disables the merging entirely.
         function wantedGroupCount() {
             const { width, height } = measureViewport(app.map.getContainer());
-            const tilesPerPane = estimateTilesPerPane(width, height);
-            const perTile = tileBytes(256, app.tileDpr ? app.tileDpr() : 1);
+            // Both from the size the layers actually use: the tile count and
+            // the bytes per tile move in opposite directions with it, and
+            // reading it on one side only would leave the product wrong.
+            const tile = tileSizeCss();
+            const tilesPerPane = estimateTilesPerPane(width, height, tile);
+            const perTile = tileBytes(tile, app.tileDpr ? app.tileDpr() : 1);
             // The panes that are NOT merged still hold full tile grids, and
             // they are not free: at dpr 3 each costs ~54 MB, so the three of
             // them would put the real total over the ceiling while the budget

@@ -403,20 +403,91 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return count;
   }
 
-  // Return true if any visible pixel is NOT the gray die/core outline
-  // ({128,128,128,255}) drawn on the _instances pass.
-  // True if any visible pixel isn't part of the always-on die/core outline.
-  // The outline is neutral gray (kOutlineGray); alpha is NOT checked because
-  // tiles are rasterized supersampled and Lanczos-decimated, so edge pixels
-  // come back with partial coverage (observed 64..197) while the RGB stays
-  // 128,128,128.
+  // Render the _instances tile twice, with and without the blockage hatch,
+  // and report how many of the label's solid pixels the hatch washed out.
+  //
+  // The hatch shows up in the blue channel: the label over a hatch line stays
+  // strongly yellow (min(R,G) - B ~ 210), while a hatch line over the label
+  // flattens it (~0 once the hatch is opaque grey).  Alpha is only tested for
+  // "mostly covered" because tiles are rendered supersampled and decimated,
+  // so a glyph's own pixels come back below the 220 the label colour carries.
+  struct LabelWash
+  {
+    int label_px = 0;
+    int washed_out = 0;
+    int min_yellowness = 255;
+    std::vector<unsigned char> hatched;
+    unsigned w = 0;
+    unsigned h = 0;
+  };
+
+  LabelWash measureLabelWash()
+  {
+    LabelWash out;
+    TileVisibility vis;
+    vis.inst_names = true;
+
+    unsigned pw = 0, ph = 0;
+    vis.placement_blockages = false;
+    const auto plain = decodePng(
+        tile_gen_->generateTile("_instances", 0, 0, 0, vis), pw, ph);
+    vis.placement_blockages = true;
+    out.hatched = decodePng(
+        tile_gen_->generateTile("_instances", 0, 0, 0, vis), out.w, out.h);
+    EXPECT_EQ(pw, out.w);
+    EXPECT_EQ(ph, out.h);
+
+    for (size_t i = 0; i + 3 < plain.size() && i + 3 < out.hatched.size();
+         i += 4) {
+      const bool solid_label = plain[i] > 200 && plain[i + 1] > 200
+                               && plain[i + 2] < 40 && plain[i + 3] > 128;
+      if (!solid_label) {
+        continue;
+      }
+      ++out.label_px;
+      const int yellowness = std::min<int>(out.hatched[i], out.hatched[i + 1])
+                             - out.hatched[i + 2];
+      out.min_yellowness = std::min(out.min_yellowness, yellowness);
+      if (yellowness < 100) {
+        ++out.washed_out;
+      }
+    }
+    return out;
+  }
+
+  static void expectLabelSurvived(const LabelWash& wash)
+  {
+    ASSERT_GT(wash.label_px, 150)
+        << "precondition: the label must be large enough to meet several "
+           "hatch lines; only "
+        << wash.label_px << " solid pixels";
+    EXPECT_EQ(wash.washed_out, 0)
+        << wash.washed_out << " of " << wash.label_px
+        << " label pixels were painted over by the blockage hatch (weakest "
+           "yellowness "
+        << wash.min_yellowness << ")";
+  }
+
+  // True if the RGBA pixel at `p` carries the die/core outline colour.  Alpha
+  // is NOT checked because tiles are rasterized supersampled and
+  // Lanczos-decimated, so edge pixels come back with partial coverage
+  // (observed 64..197) while the RGB stays kOutlineGray.  Read from the shared
+  // constant rather than spelled out, so the renderer cannot drift from it.
+  static bool isOutlineGray(const unsigned char* p)
+  {
+    return p[0] == kOutlineGray.r && p[1] == kOutlineGray.g
+           && p[2] == kOutlineGray.b;
+  }
+
+  // True if any visible pixel isn't part of the always-on die/core outline
+  // drawn on the _instances pass.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
       if (rgba[i + 3] == 0) {
         continue;
       }
-      if (rgba[i] != 128 || rgba[i + 1] != 128 || rgba[i + 2] != 128) {
+      if (!isOutlineGray(&rgba[i])) {
         return true;
       }
     }
@@ -703,6 +774,56 @@ TEST_F(TileGeneratorTest, BoundsCoverDieAreaWhenContentIsSmaller)
   EXPECT_GE(bounds.yMax(), die.yMax());
 }
 
+// Issue #11338: getBounds() reserves room for the pin labels that hang outward
+// from the die edge, because the tile grid is clamped to it and labels outside
+// would have no tiles.  That margin must not reach the zoom-to-fit box, or the
+// design is framed with it as dead space around the design.
+TEST_F(TileGeneratorTest, FitBoundsExcludesThePinLabelMargin)
+{
+  placeInst("BUF_X16", "inst", 0, 0);
+  // A long name, so the label margin is large enough to be unmistakable.
+  makeBTermAtEdge("a_deliberately_long_pin_name", "metal1", 0, 40000, 200, 200);
+  makeTileGen();
+
+  const odb::Rect fit = tile_gen_->getFitBounds();
+  const odb::Rect geo = tile_gen_->getBounds();
+
+  // The fit box is the design proper: the die, as Qt's LayoutViewer::getBounds
+  // returns it.
+  const odb::Rect die = block_->getDieArea();
+  EXPECT_LE(fit.xMin(), die.xMin());
+  EXPECT_LE(fit.yMin(), die.yMin());
+  EXPECT_GE(fit.xMax(), die.xMax());
+  EXPECT_GE(fit.yMax(), die.yMax());
+
+  // The georeference rect is that box grown by the same margin on all four
+  // sides -- which is what the tiles need and the fit must not carry.
+  const int margin = fit.xMin() - geo.xMin();
+  EXPECT_GT(margin, 0) << "precondition: this design has a label margin";
+  EXPECT_EQ(geo.xMax() - fit.xMax(), margin);
+  EXPECT_EQ(fit.yMin() - geo.yMin(), margin);
+  EXPECT_EQ(geo.yMax() - fit.yMax(), margin);
+}
+
+// The margin scales with the longest pin name, so the georeference rect grows
+// as names get longer.  The framing rect must not move with them at all --
+// that is the whole point of keeping the two apart.
+TEST_F(TileGeneratorTest, FitBoundsIsIndifferentToPinNameLength)
+{
+  placeInst("BUF_X16", "inst", 0, 0);
+  makeBTermAtEdge("s", "metal1", 0, 40000, 200, 200);
+  makeTileGen();
+  const odb::Rect short_fit = tile_gen_->getFitBounds();
+  const odb::Rect short_geo = tile_gen_->getBounds();
+
+  makeBTermAtEdge(
+      "a_very_much_longer_pin_name_indeed", "metal1", 0, 50000, 200, 200);
+  makeTileGen();
+
+  EXPECT_EQ(tile_gen_->getFitBounds(), short_fit);
+  EXPECT_LT(tile_gen_->getBounds().xMin(), short_geo.xMin());
+}
+
 // The consequence of the bug above, and the one the reporter saw: the tile
 // grid is georeferenced on getBounds() and its indices are clamped to it, so
 // die area outside those bounds had no tiles at all and simply went missing.
@@ -765,7 +886,8 @@ TEST_F(TileGeneratorTest, DieOutlineFarFromContentIsRasterized)
 // interior, and the tag is the only thing left that can.
 TEST_F(TileGeneratorTest, OrientationTagMarksTheMasterOrigin)
 {
-  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
 
   TileVisibility vis;
   vis.placement_blockages = false;
@@ -840,6 +962,118 @@ TEST_F(TileGeneratorTest, InstanceFootprintIsHatched)
   EXPECT_GT(countNonTransparentPixels(pixels_on),
             2 * countNonTransparentPixels(pixels_off))
       << "the instance footprint should be hatched when blockages are shown";
+}
+
+// Qt brushes blockages with Qt::BDiagPattern, whose lines run "/" -- up to the
+// right.  Mirroring them to "\" is the same texture but not the same picture,
+// and the two GUIs sit side by side in review screenshots.
+TEST_F(TileGeneratorTest, BlockageHatchRunsUpToTheRightLikeQt)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.inst_names = false;
+  vis.placement_blockages = true;
+  unsigned w = 0, h = 0;
+  const auto px
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+
+  // Chase each lit pixel along both diagonals and keep the longest unbroken
+  // run.  A "/" line runs its whole length up-to-the-right, while across the
+  // other diagonal it is only as long as the band is wide -- a separation that
+  // holds whatever the lattice period is, unlike counting neighbours, where a
+  // band a quarter of the period wide already answers to both directions.
+  const auto is_hatch = [&](int x, int y) {
+    if (x < 0 || y < 0 || x >= static_cast<int>(w)
+        || y >= static_cast<int>(h)) {
+      return false;
+    }
+    const size_t i = 4UL * (static_cast<unsigned>(y) * w + x);
+    // Any coverage counts: a 1 px line at 45 degrees has no fully covered
+    // pixel left after the supersampled render is decimated.  The hatch is the
+    // only neutral grey on this tile once the outline is excluded.
+    const bool neutral = px[i] == px[i + 1] && px[i + 1] == px[i + 2];
+    return px[i + 3] > 0 && px[i] > 20 && neutral && !isOutlineGray(&px[i]);
+  };
+  const auto longest_run = [&](int dy) {
+    int best = 0;
+    for (int y = 0; y < static_cast<int>(h); ++y) {
+      for (int x = 0; x < static_cast<int>(w); ++x) {
+        if (!is_hatch(x, y) || is_hatch(x - 1, y - dy)) {
+          continue;  // not the start of a run
+        }
+        int run = 0;
+        while (is_hatch(x + run, y + run * dy)) {
+          ++run;
+        }
+        best = std::max(best, run);
+      }
+    }
+    return best;
+  };
+  const int up_right = longest_run(-1);
+  const int down_right = longest_run(1);
+  ASSERT_GT(up_right + down_right, 20) << "precondition: no hatch was drawn";
+  EXPECT_GT(up_right, 3 * down_right)
+      << "hatch runs the wrong way: longest run is " << up_right
+      << " up-right vs " << down_right << " down-right";
+}
+
+// Qt paints instance names near the END of drawBlock, after drawBlockages, so
+// a hatch line never crosses a label.  The web renderer must do the same.
+TEST_F(TileGeneratorTest, BlockageHatchDoesNotCrossInstanceNames)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  expectLabelSurvived(measureLabelWash());
+}
+
+// Same rule for a standalone dbBlockage laid over the instance: Qt hatches
+// every blockage before it labels any instance, so the label still wins.
+TEST_F(TileGeneratorTest, StandaloneBlockageDoesNotCrossInstanceNames)
+{
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  // A die a little larger than the instance, so the blockage reaches past the
+  // instance footprint -- the two hatch sources cannot be confused -- while
+  // the instance still fills enough of the tile to carry a long label.
+  const odb::Rect box = inst->getBBox()->getBox();
+  const odb::Rect die(box.xMin() - box.dx() / 10,
+                      box.yMin() - box.dy() / 10,
+                      box.xMax() + box.dx() / 10,
+                      box.yMax() + box.dy() / 10);
+  block_->setDieArea(die);
+  odb::dbBlockage::create(
+      block_, die.xMin(), die.yMin(), die.xMax(), die.yMax());
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const LabelWash wash = measureLabelWash();
+  expectLabelSurvived(wash);
+
+  // The die margin the instance footprint does not reach: hatch there can only
+  // have come from the standalone-blockage pass, so it keeps this test from
+  // passing vacuously if that pass ever stops running.
+  int margin_hatch = 0;
+  const unsigned qx = wash.w / 8;
+  for (unsigned y = 0; y < wash.h; ++y) {
+    for (unsigned x = 0; x < qx; ++x) {
+      const size_t i = 4UL * (y * wash.w + x);
+      if (wash.hatched[i + 3] > 0 && !isOutlineGray(&wash.hatched[i])
+          && wash.hatched[i] > 100) {
+        ++margin_hatch;
+      }
+    }
+  }
+  EXPECT_GT(margin_hatch, 0)
+      << "the standalone-blockage pass drew nothing; the test above proves "
+         "nothing";
 }
 
 TEST_F(TileGeneratorTest, GetLayers)
@@ -1162,7 +1396,8 @@ TEST_F(TileGeneratorTest, GeomCacheReusedWhenDesignUnchanged)
 // silently dropping the geometry of any master or via the edit introduced.
 TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
 {
-  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
   makeTileGen();
   // Registers Search as a db callback object and builds the indices, so the
   // first edit below is the valid→invalid transition and the second is not.
@@ -2714,8 +2949,7 @@ TEST_F(TileGeneratorTest, DieAndCoreOutlinesOnInstancesLayer)
     int gray = 0;
     for (unsigned xx = 0; xx < w; ++xx) {
       const size_t i = 4UL * (yy * w + xx);
-      if (pixels[i] == 128 && pixels[i + 1] == 128 && pixels[i + 2] == 128
-          && pixels[i + 3] > 0) {
+      if (pixels[i + 3] > 0 && isOutlineGray(&pixels[i])) {
         ++gray;
       }
     }
@@ -2756,8 +2990,7 @@ TEST_F(TileGeneratorTest, PolygonFloorplanOutlineFollowsDiagonalEdge)
            xx <= std::min(cx + 2, static_cast<int>(w) - 1);
            ++xx) {
         const size_t i = 4UL * (static_cast<size_t>(yy) * w + xx);
-        if (pixels[i + 3] > 0 && pixels[i] == 128 && pixels[i + 1] == 128
-            && pixels[i + 2] == 128) {
+        if (pixels[i + 3] > 0 && isOutlineGray(&pixels[i])) {
           return true;
         }
       }
@@ -4058,7 +4291,7 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdCulledUniformlyAcrossTileSeam)
     if (p[3] == 0) {
       return false;
     }
-    return p[0] != 128 || p[1] != 128 || p[2] != 128;
+    return !isOutlineGray(p);
   };
 
   auto coverage = [&](const std::vector<unsigned char>& px, int xa, int xb) {

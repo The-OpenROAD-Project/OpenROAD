@@ -383,16 +383,15 @@ bool parseTileCoords(const boost::json::object& json,
 // (moving an instance outside the block bbox, deleting an edge instance),
 // which shifts the tile georeference — clients must resync their
 // coordinate transforms or every later click/highlight lands offset.
-// Bounds use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
-// response.
+// Both rects use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
+// response, and mean the same things there: `bounds` georeferences the tile
+// grid, `fit_bounds` is what the client zooms to fit.
 static std::string refreshBroadcastPayload(const TileGenerator& gen)
 {
-  const odb::Rect bounds = gen.getBounds();
   boost::json::object o;
   o["type"] = "refresh";
-  o["bounds"]
-      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
-                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  o["bounds"] = boundsArray(gen.getBounds());
+  o["fit_bounds"] = boundsArray(gen.getFitBounds());
   return boost::json::serialize(o);
 }
 
