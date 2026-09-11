@@ -5343,7 +5343,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       // in for the flag, rather than compositing an empty pass over the image.
       logger_->warn(
           utl::WEB,
-          77,
+          78,
           "{} is on but the design has nothing to color it by; for "
           "clusters, run rtl_macro_placer -keep_clustering_data first.",
           spec.keys[0]);
