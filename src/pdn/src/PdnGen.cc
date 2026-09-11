@@ -74,7 +74,7 @@ void PdnGen::buildGrids(bool trim)
   // connect instances already assigned to grids
   odb::PtrSet<odb::dbInst> insts_in_grids;
   for (auto* grid : grids) {
-    auto insts_in_grid = grid->getInstances();
+    auto insts_in_grid = grid->getObstructionExemptInstances();
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
