@@ -39,7 +39,7 @@ void FlexPA::initViaRawPriority()
   }
 }
 
-ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
+ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def) const
 {
   const bool is_not_default_via = !(via_def->getDefault());
   gtl::polygon_90_set_data<frCoord> via_layer_ps1;
