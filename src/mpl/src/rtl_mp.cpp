@@ -56,7 +56,7 @@ bool MacroPlacer::place(const int num_threads,
                         const float min_ar,
                         const char* report_directory,
                         const bool keep_clustering_data,
-                        const bool use_full_halo)
+                        const bool pin_aware_channels)
 {
   utl::Timer timer;
   hier_rtlmp_->init();
@@ -80,7 +80,7 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-  hier_rtlmp_->setUseFullHalo(use_full_halo);
+  hier_rtlmp_->setPinAwareChannels(pin_aware_channels);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();
@@ -221,18 +221,9 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
   guidance_regions_[macro] = region;
 }
 
-void MacroPlacer::setBaseHalo(int left, int bottom, int right, int top)
+void MacroPlacer::setMinChannelSize(int width, int height)
 {
-  hier_rtlmp_->setBaseHalo(left, bottom, right, top);
-}
-
-void MacroPlacer::setMacroHalo(odb::dbInst* macro,
-                               int left,
-                               int bottom,
-                               int right,
-                               int top)
-{
-  hier_rtlmp_->setMacroHalo(macro, left, bottom, right, top);
+  hier_rtlmp_->setMinChannelSize(width, height);
 }
 
 void MacroPlacer::blockMacroChannels()
