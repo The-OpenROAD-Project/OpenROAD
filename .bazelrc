@@ -197,6 +197,8 @@ build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
 # capability explicitly so Kokkos and OpenROAD compile for the same target;
 # Kokkos warns at runtime if that target differs from the selected device.
 build:gpu --//:gpu=cuda
+# Convenience configs for the two architectures the GPU tests are run on;
+# any value in bazel/gpu/archs.bzl works via --config=gpu --//:cuda_arch=sm_XX.
 build:gpu-sm120 --config=gpu
 build:gpu-sm120 --//:cuda_arch=sm_120
 build:gpu-sm121 --config=gpu

@@ -1,6 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+# Bazel-built Kokkos and KokkosFFT for the opt-in GPU build. This package holds
+# the BUILD overlays for the pinned source archives (BUILD.kokkos.bazel,
+# BUILD.kokkos_fft.bazel, referenced from MODULE.bazel) and the configuration
+# headers their CMake builds would have generated: the arch-dependent
+# KokkosCore_config.h is expanded from the template by configure.bzl, the rest
+# are hand-maintained copies under config/. Everything here is GPU-only.
+
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel/gpu:defs.bzl", "GPU_ONLY")
 load(":configure.bzl", "kokkos_config_header")

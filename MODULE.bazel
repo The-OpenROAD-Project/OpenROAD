@@ -488,6 +488,8 @@ orfs.default(
 # @sv-lang directly; this alias only exists for the slang-elab submodule.
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 new_local_repository(
     name = "slang",
     build_file_content = """\
@@ -507,8 +509,6 @@ alias(
 # Remove these rules if supported upstream/BCR Bazel targets become available.
 # Bazel fetches the archives lazily: CPU targets neither download nor compile
 # them. The CUDA toolkit remains system-provided and is wrapped separately.
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
 http_archive(
     name = "kokkos",
     build_file = "//bazel/kokkos:BUILD.kokkos.bazel",

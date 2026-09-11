@@ -1,7 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""CUDA architectures supported by the Bazel GPU build."""
+"""CUDA architectures supported by the Bazel GPU build.
+
+One dict maps each --//:cuda_arch value to the Kokkos_ARCH_* macros Kokkos's
+CMake would define for it. Keeping the sm_* list and the Kokkos define map
+together guarantees that the flag's accepted values (BUILD.bazel), the
+--cuda-gpu-arch select (copts.bzl) and the generated KokkosCore_config.h
+(bazel/kokkos/configure.bzl) always cover the same set.
+"""
 
 CUDA_ARCH_DEFINES = {
     "sm_100": ["KOKKOS_ARCH_BLACKWELL", "KOKKOS_ARCH_BLACKWELL100"],
@@ -23,8 +30,8 @@ CUDA_ARCH_DEFINES = {
 CUDA_ARCHS = sorted(CUDA_ARCH_DEFINES.keys())
 
 CUDA_ARCH_FLAG_ERROR = (
-    "--config=gpu requires an explicit CUDA architecture; use " +
-    "--config=gpu-sm120, --config=gpu-sm121, or pass " +
-    "--@openroad//:cuda_arch=sm_<compute capability> " +
-    "(--//:cuda_arch=... in the OpenROAD checkout)"
+    "--config=gpu requires an explicit CUDA architecture: pass " +
+    "--@openroad//:cuda_arch=sm_<compute capability> (--//:cuda_arch=... " +
+    "inside the OpenROAD checkout). See docs/user/Bazel.md, section " +
+    "\"GPU build\"."
 )
