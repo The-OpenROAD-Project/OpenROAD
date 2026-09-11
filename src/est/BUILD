@@ -44,6 +44,7 @@ cc_library(
     name = "parasitics_service",
     hdrs = ["include/est/ParasiticsService.h"],
     includes = ["include"],
+    deps = ["//src/grt:groute"],
 )
 
 cc_library(

@@ -243,12 +243,12 @@ async function renderToBlob(app) {
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext('2d');
-    // Background matches the viewer (--bg-map); fall back to #111 when the
+    // Background matches the viewer (--bg-map); fall back to #000 when the
     // computed color is empty or fully transparent (both would export a
     // transparent PNG, hiding light elements on white viewers).
     const bg = getComputedStyle(container).backgroundColor;
     ctx.fillStyle = (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)')
-        ? bg : '#111';
+        ? bg : '#000';
     ctx.fillRect(0, 0, w, h);
     drawGridLayers(app, ctx, mapRect);
     drawImageOverlays(app, ctx, mapRect);

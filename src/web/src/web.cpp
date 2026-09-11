@@ -684,6 +684,29 @@ WebSocketSession::~WebSocketSession()
 
 void WebSocketSession::run(http::request<http::string_body>&& req)
 {
+  // Tile responses are mostly small and arrive in bursts — a viewport is one
+  // request per layer per grid square, and the empty ones carry no payload at
+  // all.  Nagle holds a small segment until the previous one is acknowledged,
+  // so the first reply of a burst waits on the client's delayed ACK and the
+  // whole burst stalls behind it.  Measured over loopback: a viewport served
+  // entirely from the tile cache took 1274 ms with Nagle on and 19.9 ms with it
+  // off, and a cold one 2157 ms against 1732 ms.
+  //
+  // Failing to set it is not worth refusing the connection over: the session
+  // still works, just with the stall.
+  beast::error_code nodelay_ec;
+  beast::get_lowest_layer(websocket_)
+      .socket()
+      .set_option(net::ip::tcp::no_delay(true), nodelay_ec);
+  if (nodelay_ec) {
+    debugPrint(logger_,
+               utl::WEB,
+               "websocket",
+               1,
+               "could not disable Nagle on the tile socket: {}",
+               nodelay_ec.message());
+  }
+
   websocket_.set_option(
       websocket::stream_base::timeout::suggested(beast::role_type::server));
   websocket_.set_option(
@@ -1304,6 +1327,23 @@ WebServer::WebServer(odb::dbDatabase* db,
 {
 }
 
+void WebServer::setThreadCount(int num_threads)
+{
+  num_threads_ = num_threads;
+  if (generator_) {
+    generator_->setThreadCount(num_threads);
+  }
+}
+
+TileGenerator& WebServer::ensureGenerator()
+{
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    generator_->setThreadCount(num_threads_);
+  }
+  return *generator_;
+}
+
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
 // pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
@@ -1399,13 +1439,11 @@ void WebServer::saveReport(const std::string& filename,
                            const int max_hold)
 {
   // Create/init the tile generator.
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
-  generator_->eagerInit();
+  ensureGenerator().eagerInit();
 
   odb::dbBlock* block = generator_->getBlock();
-  if (!block) {
+  const std::vector<odb::dbBlock*> design_blocks = generator_->blocks();
+  if (design_blocks.empty()) {
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
@@ -1442,7 +1480,7 @@ void WebServer::saveReport(const std::string& filename,
   }
   // Net fanout histogram depends only on odb, so it's always populated.
   const std::string hist_fanout = boost::json::serialize(
-      serializeFanoutHistogram(computeFanoutHistogram(block)));
+      serializeFanoutHistogram(computeFanoutHistogram(design_blocks)));
   const std::string tech_json
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
@@ -1451,6 +1489,13 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Serialize module hierarchy ──
 
+  // HierarchyReport walks one block's module tree, which a 3DBlox top lacks.
+  if (!block) {
+    logger_->warn(utl::WEB,
+                  77,
+                  "Multi-die design: the module hierarchy section will be "
+                  "empty, it is not aggregated across chiplets yet.");
+  }
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
@@ -1491,9 +1536,14 @@ void WebServer::saveReport(const std::string& filename,
   // must be produced with them on or the saved HTML caches empty ones.
   vis.module_view = true;
   vis.cluster_view = true;
-  // A 256x256 fully-transparent RGBA PNG is exactly 102 bytes with lodepng.
-  // Any tile with visible content will be larger.
-  constexpr size_t kEmptyPngSize = 102;
+  // An image the renderer drew nothing into.  Asked of the encoding rather than
+  // of its size: the tile entry points hand back one shared buffer per size for
+  // a fully transparent image, so this is exact, where a byte threshold has to
+  // be re-derived whenever the encoder changes.  An empty vector is a failed
+  // encode, not a blank image, and is dropped either way.
+  auto is_blank = [](const std::vector<unsigned char>& png) {
+    return png.empty() || TileGenerator::isBlankTilePng(png);
+  };
 
   // In the z order save_image composites them, derived from `vis`, so a new
   // layer is cached here without this code learning about it.
@@ -1514,7 +1564,7 @@ void WebServer::saveReport(const std::string& filename,
       for (int tx = 0; tx < num_tiles; ++tx) {
         auto png = generator_->generateTile(
             layer, kZ, tx, ty, vis, {}, {}, {}, {}, &inst_colors);
-        if (png.size() > kEmptyPngSize) {
+        if (!is_blank(png)) {
           std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
           tile_entries.emplace_back(std::move(key), base64Encode(png));
@@ -1528,18 +1578,25 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Render per-path overlay images ──
 
+  const std::vector<ChipletNode>& chiplets = generator_->chiplets();
   auto render_path_overlays = [&](const std::vector<TimingPathSummary>& paths) {
     std::vector<std::string> overlays;
     for (const auto& path : paths) {
       std::vector<ColoredRect> rects;
       std::vector<FlightLine> lines;
-      collectTimingPathShapes(block, path, rects, lines);
+      collectTimingPathShapes(chiplets, path, rects, lines);
       const int overlay_px = 256 * (1 << kZ);
       auto png = generator_->renderOverlayPng(overlay_px, rects, lines);
-      if (png.size() > kEmptyPngSize) {
-        overlays.push_back(base64Encode(png));
-      } else {
+      // An empty string is the report's "this path has no overlay" marker.  A
+      // path with no shapes at all already renders to no bytes, but one whose
+      // shapes all fall outside the die area renders to a blank image, and the
+      // size threshold this replaced could not see that: it was derived for a
+      // 256 px tile (transparent, exactly 102 bytes) and these are 512 px,
+      // where a blank one is 125.
+      if (is_blank(png)) {
         overlays.emplace_back();
+      } else {
+        overlays.push_back(base64Encode(png));
       }
     }
     return overlays;
@@ -1547,11 +1604,17 @@ void WebServer::saveReport(const std::string& filename,
   const auto setup_overlays = render_path_overlays(setup_paths);
   const auto hold_overlays = render_path_overlays(hold_paths);
 
+  // Entries stay index-aligned with the paths, so an unrenderable path leaves
+  // an empty slot; only count the ones that actually carry an image.
+  auto count_rendered = [](const std::vector<std::string>& overlays) {
+    return std::ranges::count_if(
+        overlays, [](const std::string& png) { return !png.empty(); });
+  };
   logger_->info(utl::WEB,
                 34,
                 "Rendered {} setup + {} hold path overlays.",
-                setup_overlays.size(),
-                hold_overlays.size());
+                count_rendered(setup_overlays),
+                count_rendered(hold_overlays));
 
   // ── Write the HTML ──
 
@@ -1736,10 +1799,7 @@ void WebServer::saveImage(const std::string& filename,
                           const std::string& vis_json)
 {
   // Create generator on demand (server may not be running).
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
-  generator_->eagerInit();
+  ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
@@ -1818,9 +1878,7 @@ std::string WebServer::addLabel(const int x,
                                 const int size,
                                 const std::string& name)
 {
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
+  ensureGenerator();
   // Reject an unknown anchor rather than silently centring the label, which
   // reads as "the option did nothing".  Qt's add_label errors the same way
   // (GUI-45); listing the choices saves a trip to the manual over a typo.
@@ -2034,9 +2092,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
   // Create generator on demand (server may not be running).  eagerInit()
   // rebuilds the spatial index, so run it only once per stream (first frame);
   // the design is static across a GIF's frames.
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
+  ensureGenerator();
   if (gif->frame_count == 0) {
     generator_->eagerInit();
   }

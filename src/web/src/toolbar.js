@@ -36,7 +36,7 @@ export function createToolbar(app) {
 
         for (const btn of buttons) {
             const el = document.createElement('button');
-            el.className = 'toolbar-button';
+            el.className = 'or-btn or-btn-sm toolbar-button';
             el.dataset.key = btn.key;
             if (btn.tooltip) el.title = btn.tooltip;
 

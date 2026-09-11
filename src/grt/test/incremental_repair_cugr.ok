@@ -110,11 +110,11 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          8.8 u
+total displacement          9.2 u
 average displacement        0.0 u
-max displacement            2.8 u
+max displacement            1.4 u
 original HPWL            6996.9 u
-legalized HPWL           7000.6 u
+legalized HPWL           6999.7 u
 delta HPWL                    0 %
 
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
@@ -123,20 +123,20 @@ delta HPWL                    0 %
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.318 |       -9.3 |       -8.6 |     32 | _881_/D
-     355* |      57 |     132 |       44 |      0 |    22 |   +16.5% |   -0.149 |       -4.4 |       -4.0 |     32 | _875_/D
-    final |      57 |     138 |       44 |      0 |    22 |   +16.9% |   -0.149 |       -4.4 |       -3.9 |     32 | _875_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.317 |       -9.2 |       -8.6 |     32 | _881_/D
+     339* |      55 |     113 |       39 |      0 |    21 |   +13.3% |   -0.146 |       -4.3 |       -3.9 |     32 | _866_/D
+    final |      55 |     116 |       39 |      0 |    21 |   +13.4% |   -0.146 |       -4.3 |       -3.9 |     32 | _866_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 57 buffers.
-[INFO RSZ-0040] Inserted 44 buffers.
-[INFO RSZ-0051] Resized 138 instances: 138 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 22 instances.
+[INFO RSZ-0059] Removed 55 buffers.
+[INFO RSZ-0040] Inserted 39 buffers.
+[INFO RSZ-0051] Resized 116 instances: 116 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 21 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 840.83 um^2
+[INFO DPL-0007] Movable instances area: 815.82 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
-[INFO DPL-0009] Utilization: 14.1%
+[INFO DPL-0009] Utilization: 13.7%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 [INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
@@ -144,20 +144,21 @@ delta HPWL                    0 %
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 673 cells
+[INFO DPL-0393]   height 1 row(s): 670 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 0.
+        0 |          4 |         2 |         2
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement         76.7 u
+total displacement         66.7 u
 average displacement        0.1 u
-max displacement            4.2 u
-original HPWL            7026.0 u
-legalized HPWL           7077.5 u
-delta HPWL                    1 %
+max displacement            2.8 u
+original HPWL            7027.8 u
+legalized HPWL           7032.5 u
+delta HPWL                    0 %
 
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

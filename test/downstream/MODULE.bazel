@@ -4,7 +4,7 @@ module(name = "downstream-test")
 
 bazel_dep(name = "openroad")
 bazel_dep(name = "rules_cc", version = "0.2.17")
-bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_python", version = "2.3.2")
 
 local_path_override(
     module_name = "openroad",
@@ -72,6 +72,9 @@ osx.frameworks(names = [
     "UIFoundation",
     "UniformTypeIdentifiers",
 ])
+
+rules_python_config = use_extension("@rules_python//python/extensions:config.bzl", "config")
+rules_python_config.explicit_init_py(default = True)
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(

@@ -20,6 +20,7 @@ test --test_timeout=300,1800,1800,9600
 # match, but bazel 8 will be strict. So start now.
 common --incompatible_disallow_empty_glob
 common --experimental_isolated_extension_usages
+common --incompatible_default_to_explicit_init_py
 
 build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
@@ -28,10 +29,19 @@ build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
 # Default to optimized build (-c opt)
 build -c opt
 
-# Settings for --config=opt build: Enable -O3 and Full-LTO for performance
+# Settings for --config=opt build: -O3 plus ThinLTO via the toolchain's thin_lto
+# feature. Bazel splits the LTO work into per-object actions that run in parallel
+# and are cached individually, instead of one monolithic link that is redone
+# whenever any input changes. Do not add raw -flto/-flto=thin flags next to it.
+# Test binaries do not need cross-module inlining: with the two extra lines they
+# link shared non-LTO native objects (one backend per object, shared by every test)
+# instead of each getting its own LTO index and shard set. The feature only applies
+# to statically linked tests, hence --dynamic_mode=off. Declared in the toolchain by
+# bazel/llvm-patches.
 build:opt --copt=-O3
-build:opt --copt=-flto
-build:opt --linkopt=-flto
+build:opt --features=thin_lto
+build:opt --features=thin_lto_linkstatic_tests_use_shared_nonlto_backends
+build:opt --dynamic_mode=off
 
 # Needed for floating point stability in FFT (fft_test will check this).
 # See also https://kristerw.github.io/2021/11/09/fp-contract/
@@ -134,6 +144,52 @@ build:asan --linkopt=-fsanitize=address
 # Override the per-target malloc attribute to use the system allocator, which
 # ASan intercepts cleanly.
 build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
+
+# Settings for --config=tsan thread sanitizer build
+build:tsan --strip=never
+# hermetic-llvm's own sanitizer switch, rather than a bare -fsanitize=thread
+# copt: the toolchain builds compiler-rt's tsan runtime from source and links
+# it, which a plain driver flag cannot find under the zero sysroot. The flag
+# is scoped to the target configuration, so exec-config tools (swig, bison,
+# ...) keep building uninstrumented. @llvm is a dev_dependency, so this
+# resolves only when OpenROAD is the root module.
+build:tsan --@llvm//config:tsan=true
+build:tsan --copt=-DTHREAD_SANITIZER
+build:tsan --copt=-O1
+build:tsan --copt=-g
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:tsan --copt=-gz=zlib
+build:tsan --linkopt=-gz=zlib
+# TCMalloc replaces the allocator TSan needs to intercept; use the system
+# allocator instead, as --config=asan does.
+build:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
+
+# Settings for --config=ubsan undefined behavior sanitizer build
+build:ubsan --strip=never
+# As with --config=tsan, use hermetic-llvm's switch rather than a bare
+# -fsanitize=undefined copt. It also supplies the ignorelist that exempts the
+# libc startup files, which run before the runtime is initialized.
+build:ubsan --@llvm//config:ubsan=true
+build:ubsan --copt=-DUNDEFINED_BEHAVIOR_SANITIZER
+build:ubsan --copt=-O1
+build:ubsan --copt=-g
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:ubsan --copt=-gz=zlib
+build:ubsan --linkopt=-gz=zlib
+# -fsanitize=undefined is recoverable by default: a finding prints a report and
+# the process carries on to exit 0, so a test suite stays green while the logs
+# fill up with reports nobody reads. Trap instead, so the run fails.
+build:ubsan --copt=-fno-sanitize-recover=all
+build:ubsan --test_env=UBSAN_OPTIONS=print_stacktrace=1
+# Third-party UB is not actionable here, the same stance .bazelrc already takes
+# for warnings with --per_file_copt=.*external/.*@-w. As with that flag this
+# only covers compiling third-party *source* files, not third-party headers
+# inlined into OpenROAD translation units; suppressing those needs an
+# -fsanitize-ignorelist, which the toolchain would have to declare as a compile
+# input for us.
+build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
+# UBSan does not replace the allocator, so unlike asan/tsan this config keeps
+# TCMalloc.
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never

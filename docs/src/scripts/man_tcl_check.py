@@ -36,7 +36,7 @@ class TestManTclCheck(unittest.TestCase):
             if "ICeWall" in path or "PdnGen" in path:
                 continue
 
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
                 help_dict[tool_dir] = help_dict.get(tool_dir, 0) + len(
                     extract_help(content)
@@ -51,7 +51,7 @@ class TestManTclCheck(unittest.TestCase):
             if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
                 continue
             tool_dir = os.path.dirname(path)
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 results = [
                     x
                     for x in extract_tcl_code(f.read())

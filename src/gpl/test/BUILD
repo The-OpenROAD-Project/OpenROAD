@@ -21,6 +21,7 @@ TESTS = [
     "mbff_orig_name",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
+    "mt_invariance01",
     "nograd01",
     "simple01",
     "simple01-obs",
@@ -169,6 +170,7 @@ PY_TESTS = [
         data = [
             ":test_resources",
         ],
+        tags = ["py"],
         deps = [
             ":helpers",
             "//python/openroad:openroadpy",
@@ -216,11 +218,28 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "placer_base_test",
+    srcs = ["placer_base_test.cpp"],
+    deps = [
+        "//src/gpl",
+        "//src/gpl:gpl_private_hdrs",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "gpl_man_tcl_check",
     srcs = ["gpl_man_tcl_check.py"],
     data = ["//src/gpl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

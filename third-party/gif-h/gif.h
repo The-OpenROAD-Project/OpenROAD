@@ -430,6 +430,7 @@ void GifMakePalette(const uint8_t* lastFrame,
                     bool buildForDither,
                     GifPalette* pPal)
 {
+  memset(pPal, 0, sizeof(*pPal));
   pPal->bitDepth = bitDepth;
 
   // SplitPalette is destructive (it sorts the pixels by color) so

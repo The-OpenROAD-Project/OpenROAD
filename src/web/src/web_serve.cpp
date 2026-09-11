@@ -170,7 +170,7 @@ void WebServer::serve(int port)
   }
 
   try {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    ensureGenerator();
     auto timing_report = std::make_shared<TimingReport>(sta_);
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
