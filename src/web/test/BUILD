@@ -368,6 +368,7 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:color",
         "//third-party/lodepng",
         "@boost.json",
         "@googletest//:gtest",

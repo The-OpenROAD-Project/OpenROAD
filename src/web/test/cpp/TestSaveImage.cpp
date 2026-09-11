@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "boost/json/parse.hpp"
+#include "color.h"
 #include "gtest/gtest.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -113,19 +114,19 @@ class SaveImageTest : public tst::Nangate45Fixture
 
   // True if any visible pixel isn't part of the always-on die/core outline,
   // which getBounds() now guarantees is in every saved image.  Matches
-  // TileGeneratorTest::hasNonOutlinePixel: the outline is neutral gray
-  // (kOutlineGray) and alpha is NOT checked, because tiles are rasterized
-  // supersampled and decimated, so its edge pixels come back at partial
-  // coverage while the RGB stays 128,128,128.  Testing by colour rather than
-  // by carving out a border keeps the die edge itself in scope — that is
-  // where pin markers are drawn.
+  // TileGeneratorTest::hasNonOutlinePixel: the outline is kOutlineGray and
+  // alpha is NOT checked, because tiles are rasterized supersampled and
+  // decimated, so its edge pixels come back at partial coverage while the RGB
+  // stays put.  Testing by colour rather than by carving out a border keeps
+  // the die edge itself in scope — that is where pin markers are drawn.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
       if (rgba[i + 3] == 0) {
         continue;
       }
-      if (rgba[i] != 128 || rgba[i + 1] != 128 || rgba[i + 2] != 128) {
+      if (rgba[i] != kOutlineGray.r || rgba[i + 1] != kOutlineGray.g
+          || rgba[i + 2] != kOutlineGray.b) {
         return true;
       }
     }

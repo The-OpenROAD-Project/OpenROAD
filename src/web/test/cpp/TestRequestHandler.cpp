@@ -3097,6 +3097,30 @@ TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
   const auto expected = serializeBoundsResponse(*gen_, gen_->shapesReady());
   EXPECT_EQ(boost::json::serialize(push.at("bounds")),
             boost::json::serialize(expected.at("bounds")));
+  // The framing rect travels with it: an edit moves both.
+  ASSERT_TRUE(push.if_contains("fit_bounds"));
+  EXPECT_EQ(boost::json::serialize(push.at("fit_bounds")),
+            boost::json::serialize(expected.at("fit_bounds")));
+}
+
+// The bounds response carries two rects: `bounds` georeferences the tile grid
+// and `fit_bounds` is what the client frames.  They differ by the pin-label
+// margin, so the framing rect is always inside the georeference one.
+TEST_F(SetPropertyTest, BoundsResponseCarriesTheFramingRect)
+{
+  const auto resp = serializeBoundsResponse(*gen_, true);
+  ASSERT_TRUE(resp.if_contains("fit_bounds"));
+  const auto& geo = resp.at("bounds").as_array();
+  const auto& fit = resp.at("fit_bounds").as_array();
+  // Wire order is [[yMin, xMin], [yMax, xMax]].
+  EXPECT_GE(fit.at(0).as_array().at(0).as_int64(),
+            geo.at(0).as_array().at(0).as_int64());
+  EXPECT_GE(fit.at(0).as_array().at(1).as_int64(),
+            geo.at(0).as_array().at(1).as_int64());
+  EXPECT_LE(fit.at(1).as_array().at(0).as_int64(),
+            geo.at(1).as_array().at(0).as_int64());
+  EXPECT_LE(fit.at(1).as_array().at(1).as_int64(),
+            geo.at(1).as_array().at(1).as_int64());
 }
 
 // Documents the dynamic-bounds behavior the client resync exists for:

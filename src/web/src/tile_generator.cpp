@@ -515,13 +515,18 @@ constexpr int kInstNameFontHeight = 12;    // atlas size for instance names
 // survives on its length.
 constexpr double kMinViewablePx = 5.0;
 
-// Die/core/region outline color: Qt pen Qt::gray width 0 (drawChip,
-// renderThread.cpp:1174).
-constexpr Color kOutlineGray{.r = 128, .g = 128, .b = 128, .a = 255};
-
 // Placement-blockage hatch, worn by dbBlockage shapes and by every instance's
-// own bbox+halo alike — Qt paints both in drawBlockages() with one brush.
-constexpr Color kBlockageHash{.r = 255, .g = 255, .b = 255, .a = 180};
+// own bbox+halo alike — Qt paints both in drawBlockages() with one brush,
+// QBrush(Qt::darkGray, Qt::BDiagPattern), and darkGray is #808080 opaque.
+constexpr Color kBlockageHash{.r = 128, .g = 128, .b = 128, .a = 255};
+
+// Qt's BDiagPattern is an 8x8 device-pixel bitmap carrying one lit pixel per
+// row, each row shifted one column: a 1 px line every 8 px along the axis.
+// Authored in CSS px and scaled by px_per_css like every other size here, so
+// the hatch keeps its physical size on a HiDPI display -- Qt's pattern is a
+// device-space texture and halves instead.
+constexpr int kBlockageHashPeriodCss = 8;
+constexpr int kBlockageHashWidthCss = 1;
 
 // DBU -> tile-pixel conversion shared by the drawing primitives, in double.
 // Unclamped: an oblique segment must be converted through these and clipped
@@ -1634,17 +1639,16 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
   }
 }
 
-odb::Rect TileGenerator::getBounds() const
+odb::Rect TileGenerator::getFitBounds() const
 {
   // Union of every reachable chiplet's block bbox AND die area, in world
-  // coordinates.  Mirrors LayoutViewer::getBounds() in the Qt GUI.
+  // coordinates.  Mirrors LayoutViewer::getBounds() in the Qt GUI, and this is
+  // what the client frames on: the Qt Fit zooms to exactly this rect.
   //
   // The die area must be in the union: dbBlock::getBBox() covers the placed
   // SHAPES, not the die, so a design whose content sits in a corner of a much
   // larger die (one macro in an empty floorplan) would frame on the content
-  // alone.  This rect is not just the zoom-to-fit box — it also georeferences
-  // the tile grid, whose indices are clamped to it, so anything outside is
-  // never rasterized at all and the die simply has no tiles (issue #11280).
+  // alone.
   odb::dbChip* root = getChip();
   if (!root) {
     return {};
@@ -1671,12 +1675,24 @@ odb::Rect TileGenerator::getBounds() const
   if (!any) {
     return {};
   }
-  if (pin_label_margin_dbu_ > 0) {
-    bounds.set_xlo(bounds.xMin() - pin_label_margin_dbu_);
-    bounds.set_ylo(bounds.yMin() - pin_label_margin_dbu_);
-    bounds.set_xhi(bounds.xMax() + pin_label_margin_dbu_);
-    bounds.set_yhi(bounds.yMax() + pin_label_margin_dbu_);
+  return bounds;
+}
+
+odb::Rect TileGenerator::getBounds() const
+{
+  // getFitBounds() grown by the pin-label margin.  This rect georeferences the
+  // tile grid, whose indices are clamped to it, so anything outside is never
+  // rasterized at all and the die simply has no tiles (issue #11280) -- which
+  // is why the labels that hang outward from the die edge need room here.
+  //
+  // Deliberately NOT the zoom-to-fit box: framing on the margin as well shrinks
+  // the design in the viewport, and with the map resting on integer zoom levels
+  // it can cost a whole level (issue #11338).  The client fits getFitBounds().
+  odb::Rect bounds = getFitBounds();
+  if (bounds == odb::Rect{} || pin_label_margin_dbu_ <= 0) {
+    return bounds;
   }
+  bounds.bloat(pin_label_margin_dbu_, bounds);
   return bounds;
 }
 
@@ -2731,6 +2747,85 @@ void TileGenerator::drawOrientationTag(std::vector<unsigned char>& image,
            dim);
 }
 
+/* static */
+void TileGenerator::drawInstanceName(std::vector<unsigned char>& image,
+                                     odb::dbInst* inst,
+                                     const TileFrame& frame,
+                                     const int dim,
+                                     const GlyphCache::FontSize& inst_font)
+{
+  // The same pixel box the instance pass drew: floor the low corner, ceil the
+  // high one, so the label centres on exactly that rectangle.
+  const odb::Rect box = inst->getBBox()->getBox();
+  const auto pixel_xl = static_cast<int64_t>(frame.pxX(box.xMin()));
+  const auto pixel_yl = static_cast<int64_t>(frame.pxY(box.yMin()));
+  const auto pixel_xh = static_cast<int64_t>(std::ceil(frame.pxX(box.xMax())));
+  const auto pixel_yh = static_cast<int64_t>(std::ceil(frame.pxY(box.yMax())));
+
+  // The font is a FIXED size, as in the Qt GUI, which renders every instance
+  // name in options_->instanceNameFont() and only decides whether the name
+  // fits (drawTextInBBox).  Scaling it with the box instead made a large
+  // macro's name fill the macro.  The caller has already applied Qt's size
+  // gate; everything reaching here draws.
+  const int box_px_w = (int) (pixel_xh - pixel_xl);
+  const int box_px_h = (int) (pixel_yh - pixel_yl);
+  const int font_h = getTextHeight(inst_font);
+
+  const std::string full_name = inst->getName();
+  const int full_w = getTextWidth(full_name, inst_font);
+
+  // Rotate if taller than wide and text overflows (85%).
+  const bool rotate = (box_px_h > box_px_w) && (full_w > box_px_w * 85 / 100);
+
+  // Available width for text (90% of relevant dim).
+  const int avail = rotate ? (box_px_h * 9 / 10) : (box_px_w * 9 / 10);
+
+  // Elide from the left if text is too wide.  Maintain a running prefix width
+  // so each candidate "..." + name.substr(skip) is evaluated in O(1) using
+  //   textWidth(name.substr(skip))
+  //     = full_w - prefix_w - kern(name[skip-1], name[skip])
+  // giving O(N) total instead of O(N^2).
+  std::string name = full_name;
+  int text_w = full_w;
+  if (text_w > avail && name.size() > 4) {
+    const int dots_w = getTextWidth("...", inst_font);
+    const size_t n = name.size();
+    int prefix_w = 0;
+    for (size_t skip = 1; skip < n - 1; ++skip) {
+      prefix_w += inst_font.glyph(name[skip - 1]).advance;
+      if (skip >= 2) {
+        prefix_w += inst_font.kern(name[skip - 2], name[skip - 1]);
+      }
+      const int suffix_w
+          = full_w - prefix_w - inst_font.kern(name[skip - 1], name[skip]);
+      const int w = dots_w + inst_font.kern('.', name[skip]) + suffix_w;
+      if (w <= avail) {
+        name = "..." + name.substr(skip);
+        text_w = w;
+        break;
+      }
+    }
+  }
+
+  // Center of instance bbox in pixel coords.
+  const int64_t cx = (pixel_xl + pixel_xh) / 2;
+  const int64_t cy = dim - 1 - (pixel_yl + pixel_yh) / 2;
+
+  if (rotate) {
+    const int64_t px = cx - font_h / 2;
+    const int64_t py = cy - text_w / 2;
+    if (px > -font_h && px < dim && py > -text_w && py < dim) {
+      drawTextRotated(image, (int) px, (int) py, name, inst_font, kLabelYellow);
+    }
+  } else {
+    const int64_t px = cx - text_w / 2;
+    const int64_t py = cy - font_h / 2;
+    if (px > -text_w && px < dim && py > -font_h && py < dim) {
+      drawText(image, (int) px, (int) py, name, inst_font, kLabelYellow);
+    }
+  }
+}
+
 // Special "_access_points" layer: dbAccessPoint markers (X).  Mirrors GUI
 // RenderThread::drawAccessPoints (renderThread.cpp:1484-1550).
 void TileGenerator::drawAccessPointsLayer(std::vector<unsigned char>& image,
@@ -3412,21 +3507,32 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                              super);
             };
 
-      // Diagonal white hash: the blockage look, shared by placement blockages,
-      // instance footprints and routing obstructions so one design cannot show
-      // three spacings of the same pattern.  Coarser and thinner than
-      // FillPattern::kDiagonal, whose lattice is sized for layer shapes.  The
-      // period is anchored in absolute pixel space so the hatch is seamless
-      // across tile boundaries.
-      const int hash_period = static_cast<int>(std::lround(20 * super_per_css));
-      const int hash_width = static_cast<int>(std::lround(2 * super_per_css));
+      // The blockage hatch, shared by placement blockages, instance footprints
+      // and routing obstructions so one design cannot show three spacings of
+      // the same pattern.  Sized from Qt's BDiagPattern (see
+      // kBlockageHashPeriodCss).  The period is anchored in absolute pixel
+      // space so the hatch is seamless across tile boundaries.
+      //
+      // Routing obstructions ride along here; Qt draws those in the layer's
+      // own colour darkened (drawObstructions), which this does not do.
+      //
+      // Lit where (x - y) is on the lattice, y counting UP: that is the "/"
+      // Qt gets from Qt::BDiagPattern (drawBlockages).  Using (x + y) mirrors
+      // the pattern to "\\" -- same texture, but not the one beside it.
+      const int hash_period
+          = std::max(2,
+                     static_cast<int>(
+                         std::lround(kBlockageHashPeriodCss * super_per_css)));
+      const int hash_width = std::max(
+          1,
+          static_cast<int>(std::lround(kBlockageHashWidthCss * super_per_css)));
       const int hash_ox = latticeAnchor(dbu_x_min, scale, hash_period);
       const int hash_oy = latticeAnchor(dbu_y_min, scale, hash_period);
       // One CSS px in buffer pixels; invariant for the tile.
       const int stroke = hairlineCss(frame);
       // Walks only the lit pixels: from each row's starting phase, step to the
       // first lit column and stride by the period.  Visiting every pixel and
-      // testing `(ix + iy) % period` instead costs a real idiv on 100% of the
+      // testing `(ix - iy) % period` instead costs a real idiv on 100% of the
       // area to light 10% of it -- affordable when this only ran over the rare
       // dbBlockage, not now that it runs over every instance footprint.
       auto hatch_box_in_tile = [&](const odb::Rect& box) {
@@ -3441,7 +3547,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         for (int iy = y_lo; iy < y_hi; ++iy) {
           const int draw_y = super - 1 - iy;
           // Phase of x_lo on this row, in [0, hash_period).
-          int phase = (x_lo + hash_ox + iy + hash_oy) % hash_period;
+          int phase = (x_lo + hash_ox - iy - hash_oy) % hash_period;
           if (phase < 0) {
             phase += hash_period;
           }
@@ -3763,10 +3869,21 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
+        // Both fonts are a fixed CSS size, so they are invariant for the whole
+        // tile.  fontAtlasGetFont takes a global lock; asking per instance
+        // would serialise the render threads on it.
+        const auto inst_name_font = fontAtlasGetFont(
+            static_cast<int>(std::lround(kInstNameFontHeight * super_per_css)));
+        const int inst_name_font_h = getTextHeight(inst_name_font);
+
         // Draw instances.  instance_size_limit_dbu culls sub-resolution
         // instances at the RTree level (Qt-parity), so dense bump arrays vanish
         // at zoom-out — unless "Detailed view" is on, which sets the limit to
         // 0.
+        // Filled by the pass below and drawn after the hatching, so a label
+        // is never crossed by a hatch line -- Qt's drawBlock order.
+        std::vector<odb::dbInst*> named_insts;
+
         const Search::InstRange insts
             = inst_pass_draws ? search_->searchInsts(block,
                                                      dbu_tile.xMin(),
@@ -3814,17 +3931,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
           if (instances_only) {
             // Draw the rectangle border (instances-only layer)
-            const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
             if (dbu_x_min <= xl && xl <= dbu_x_max) {
               for (int iy = loop_yl; iy < loop_yh; ++iy) {
                 const int draw_y = (super - 1 - iy);
-                setPixel(image_buffer, draw_xl, draw_y, gray);
+                setPixel(image_buffer, draw_xl, draw_y, kOutlineGray);
               }
             }
             if (dbu_x_min <= xh && xh <= dbu_x_max) {
               for (int iy = loop_yl; iy < loop_yh; ++iy) {
                 const int draw_y = (super - 1 - iy);
-                setPixel(image_buffer, draw_xh, draw_y, gray);
+                setPixel(image_buffer, draw_xh, draw_y, kOutlineGray);
               }
             }
             if (dbu_y_min <= yl && yl <= dbu_y_max) {
@@ -3833,7 +3949,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               if (width > 0) {
                 unsigned char* row
                     = &image_buffer[(draw_y * super + loop_xl) * 4];
-                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
+                fillSpan({row, static_cast<size_t>(width) * 4}, kOutlineGray);
               }
             }
             if (dbu_y_min <= yh && yh <= dbu_y_max) {
@@ -3842,7 +3958,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               if (width > 0) {
                 unsigned char* row
                     = &image_buffer[(draw_y * super + loop_xl) * 4];
-                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
+                fillSpan({row, static_cast<size_t>(width) * 4}, kOutlineGray);
               }
             }
 
@@ -3868,101 +3984,22 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               drawOrientationTag(image_buffer, inst, frame, super, stroke);
             }
 
-            // Draw instance name label when zoomed in enough.
-            // The font is a FIXED size, as in the Qt GUI, which renders every
-            // instance name in options_->instanceNameFont() and only decides
-            // whether the name fits (drawTextInBBox).  Scaling it with the box
-            // instead made a large macro's name fill the macro.  Text is
-            // elided from the left ("...suffix") to fit 90% of the
-            // available dimension, matching the Qt GUI's behavior.
-            if (vis.inst_names) {
-              const int box_px_w = (int) (pixel_xh - pixel_xl);
-              const int box_px_h = (int) (pixel_yh - pixel_yl);
-              const int box_px_min = std::min(box_px_w, box_px_h);
-              const auto inst_font = fontAtlasGetFont(static_cast<int>(
-                  std::lround(kInstNameFontHeight * super_per_css)));
-              const int font_h = getTextHeight(inst_font);
-
-              // The only size gate, as in Qt's drawTextInBBox: skip when the
-              // font would dominate the cell (> 50% of the cross dimension),
-              // matching its kNonCoreScaleLimit = 2.0.  A separate minimum
-              // box test would be dead weight -- with a fixed font this one
-              // already implies box_px_min >= 2 * kInstNameFontHeight.
-              if (2 * font_h <= box_px_min) {
-                constexpr Color name_color{
-                    .r = 255, .g = 255, .b = 0, .a = 220};
-                const std::string full_name = inst->getName();
-                const int full_w = getTextWidth(full_name, inst_font);
-
-                // Rotate if taller than wide and text overflows (85%).
-                const bool rotate
-                    = (box_px_h > box_px_w) && (full_w > box_px_w * 85 / 100);
-
-                // Available width for text (90% of relevant dim).
-                const int avail
-                    = rotate ? (box_px_h * 9 / 10) : (box_px_w * 9 / 10);
-
-                // Elide from the left if text is too wide.  Maintain a
-                // running prefix width so each candidate "..." +
-                // name.substr(skip) is evaluated in O(1) using
-                //   textWidth(name.substr(skip))
-                //     = full_w - prefix_w - kern(name[skip-1], name[skip])
-                // giving O(N) total instead of O(N^2).
-                std::string name = full_name;
-                int text_w = full_w;
-                if (text_w > avail && name.size() > 4) {
-                  const int dots_w = getTextWidth("...", inst_font);
-                  const size_t n = name.size();
-                  int prefix_w = 0;
-                  for (size_t skip = 1; skip < n - 1; ++skip) {
-                    prefix_w += inst_font.glyph(name[skip - 1]).advance;
-                    if (skip >= 2) {
-                      prefix_w
-                          += inst_font.kern(name[skip - 2], name[skip - 1]);
-                    }
-                    const int suffix_w
-                        = full_w - prefix_w
-                          - inst_font.kern(name[skip - 1], name[skip]);
-                    const int w
-                        = dots_w + inst_font.kern('.', name[skip]) + suffix_w;
-                    if (w <= avail) {
-                      name = "..." + name.substr(skip);
-                      text_w = w;
-                      break;
-                    }
-                  }
-                }
-
-                // Center of instance bbox in pixel coords.
-                const int64_t cx = (pixel_xl + pixel_xh) / 2;
-                const int64_t cy = super - 1 - (pixel_yl + pixel_yh) / 2;
-
-                if (rotate) {
-                  const int64_t px = cx - font_h / 2;
-                  const int64_t py = cy - text_w / 2;
-                  if (px > -font_h && px < super && py > -text_w
-                      && py < super) {
-                    drawTextRotated(image_buffer,
-                                    (int) px,
-                                    (int) py,
-                                    name,
-                                    inst_font,
-                                    name_color);
-                  }
-                } else {
-                  const int64_t px = cx - text_w / 2;
-                  const int64_t py = cy - font_h / 2;
-                  if (px > -text_w && px < super && py > -font_h
-                      && py < super) {
-                    drawText(image_buffer,
-                             (int) px,
-                             (int) py,
-                             name,
-                             inst_font,
-                             name_color);
-                  }
-                }
-              }
+            // The name is NOT drawn here.  Qt paints instance names near the
+            // end of drawBlock, after drawBlockages, so a hatch line never
+            // crosses a label; collect it and draw once this tile's hatching
+            // is down (issue #11338).
+            //
+            // The size gate stays here rather than moving with the drawing:
+            // the pixel box is already in hand, and most instances in a tile
+            // fail it, so testing later would re-derive a box per instance to
+            // throw it away.  It is Qt's own gate from drawTextInBBox -- skip
+            // when the font would take more than half the cell's cross
+            // dimension, its kNonCoreScaleLimit = 2.0.
+            if (vis.inst_names
+                && 2 * inst_name_font_h
+                       <= std::min((int) (pixel_xh - pixel_xl),
+                                   (int) (pixel_yh - pixel_yl))) {
+              named_insts.push_back(inst);
             }
           } else if (!tech_layer) {
             // No layer filter (a layer name this chiplet's tech doesn't have):
@@ -4014,8 +4051,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
             // Draw ITerm name labels when zoomed in and pins are visible.
             if (vis.inst_pins && vis.inst_pin_names) {
-              constexpr Color iterm_label_color{
-                  .r = 255, .g = 255, .b = 0, .a = 220};
               const odb::dbTransform xfm = inst->getTransform();
 
               for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -4061,7 +4096,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                         py,
                                         name,
                                         iterm_font,
-                                        iterm_label_color);
+                                        kLabelYellow);
                       }
                     } else {
                       const int px = cx - text_w / 2;
@@ -4073,7 +4108,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                  py,
                                  name,
                                  iterm_font,
-                                 iterm_label_color);
+                                 kLabelYellow);
                       }
                     }
 
@@ -4139,9 +4174,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // One label per pin: the first box big enough and inside the tile,
             // in the same order the master declares them.
             if (vis.inst_pins && vis.inst_pin_names) {
-              constexpr Color iterm_label_color{
-                  .r = 255, .g = 255, .b = 0, .a = 220};
-
               for (const auto& [mterm, boxes] : mg->pin_boxes) {
                 for (const odb::Rect& src : boxes) {
                   odb::Rect box = src;
@@ -4178,24 +4210,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     const int py = cy - text_w / 2;
                     if (px > -iterm_font_h && px < super && py > -text_w
                         && py < super) {
-                      drawTextRotated(image_buffer,
-                                      px,
-                                      py,
-                                      name,
-                                      iterm_font,
-                                      iterm_label_color);
+                      drawTextRotated(
+                          image_buffer, px, py, name, iterm_font, kLabelYellow);
                     }
                   } else {
                     const int px = cx - text_w / 2;
                     const int py = cy - iterm_font_h / 2;
                     if (px > -text_w && px < super && py > -iterm_font_h
                         && py < super) {
-                      drawText(image_buffer,
-                               px,
-                               py,
-                               name,
-                               iterm_font,
-                               iterm_label_color);
+                      drawText(
+                          image_buffer, px, py, name, iterm_font, kLabelYellow);
                     }
                   }
 
@@ -4376,6 +4400,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                         shape_size_limit_dbu)) {
             hatch_box_in_tile(blk->getBBox()->getBox());
           }
+        }
+
+        // Instance names last, as in Qt: every hatch this tile carries is
+        // already down, so none of them can cross a label.
+        for (odb::dbInst* named : named_insts) {
+          drawInstanceName(image_buffer, named, frame, super, inst_name_font);
         }
 
         // Draw routing obstructions (dbObstruction) on per-layer tiles.
@@ -5432,9 +5462,11 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
   }
 
   // Frame on getBounds() exactly: the viewer stretches this image over that
-  // rect (serializeBoundsResponse -> app.fitBounds in main.js), so a die-area
-  // frame or a cosmetic margin -- what saveImage uses -- lands the overlay off
-  // the tiles.  getBounds() also covers 3DBlox, where the top owns no block.
+  // rect (serializeBoundsResponse -> the pathOverlay in main.js), so a
+  // die-area frame or a cosmetic margin -- what saveImage uses -- lands the
+  // overlay off the tiles.  It is also the rect the tile mosaic below is
+  // built on, since renderTileBuffer georeferences on it.  getBounds() covers
+  // 3DBlox too, where the top owns no block.
   const odb::Rect bounds = getBounds();
   if (bounds.dx() == 0 || bounds.dy() == 0) {
     return {};
@@ -7100,14 +7132,21 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   return out;
 }
 
+boost::json::array boundsArray(const odb::Rect& r)
+{
+  return boost::json::array{boost::json::array{r.yMin(), r.xMin()},
+                            boost::json::array{r.yMax(), r.xMax()}};
+}
+
 boost::json::object serializeBoundsResponse(const TileGenerator& gen,
                                             bool shapes_ready)
 {
-  const odb::Rect bounds = gen.getBounds();
   boost::json::object out;
-  out["bounds"]
-      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
-                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  out["bounds"] = boundsArray(gen.getBounds());
+  // The zoom-to-fit rect, which is the georeference rect WITHOUT the pin-label
+  // margin.  Sent alongside rather than instead: the client needs both, one to
+  // place tiles and one to frame the design.
+  out["fit_bounds"] = boundsArray(gen.getFitBounds());
   out["shapes_ready"] = shapes_ready;
   out["pin_max_size"] = gen.getPinMaxSize();
   return out;

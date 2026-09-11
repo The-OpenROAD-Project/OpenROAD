@@ -13,8 +13,8 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
-    watchDevicePixelRatio, tileSizeFields,
+    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
@@ -24,9 +24,9 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
          buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
-         decorateTabIcons, formatDbu, formatDistance, isCurrentSelection,
-         isStaticMode, maxUsefulZoom, parseDbu, rafCoalesce, showToast,
-         unitLabel }
+         decorateTabIcons, fittedTileSizeCss, formatDbu, formatDistance,
+         isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
+         rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -111,6 +111,9 @@ function setTileProgress(pendingCount) {
 // they'll receive it as an explicit parameter.
 const app = {
     map: null,
+    // Zoom-to-fit box in latlng, Qt's 5% margin per dimension already added
+    // (computeBoundsTransforms).  Anything wanting the design's own extent
+    // has to work from the DBU rects, not from this.
     fitBounds: null,
     lastSelectionBounds: null,  // Leaflet bounds of the last selected object
     selHasInst: false,          // selection contains any instance
@@ -1181,7 +1184,7 @@ if (staticCache) {
     // different design) — resync the coordinate transforms; a bounds
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
-        resyncBounds(null, { reloadOnChange: true }).catch(() => {});
+        resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
     };
 }
 
@@ -1388,10 +1391,12 @@ function ensureDebugContinueButton() {
 // whenever the server reports different bounds — otherwise every later
 // click and highlight lands offset from the re-rendered tiles.
 
-function applyBounds(designBounds) {
+// `designBounds` georeferences the tile grid; `fitRect` is what Fit frames.
+// They differ by the pin-label margin the server adds to the former.
+function applyBounds(designBounds, fitRect) {
     // The map's whole coordinate system is defined in units of one tile, so
     // this must be the size the layers actually use.
-    const t = computeBoundsTransforms(designBounds, tileSizeCss());
+    const t = computeBoundsTransforms(designBounds, tileSizeCss(), fitRect);
     if (!t) return false;
     app.currentBounds = designBounds;
     app.designScale = t.scale;
@@ -1407,19 +1412,24 @@ function applyBounds(designBounds) {
     return true;
 }
 
-async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
+async function resyncBounds(inlineBounds, inlineFitBounds,
+                            { reloadOnChange = false } = {}) {
     // Returns true when it already redrew the layers (bounds changed), so
     // callers can avoid a second redundant redraw.
     if (isStaticMode(app) || !app.map) return false;
     let designBounds = inlineBounds;
+    let fitRect = inlineFitBounds;
     if (!designBounds) {
         try {
             const data = await app.websocketManager.request({ type: 'bounds' });
             designBounds = data.bounds;
+            fitRect = data.fit_bounds;
         } catch (err) {
             return false;
         }
     }
+    // `bounds` alone is the sentinel: both rects come out of the same union of
+    // block bboxes and die areas, so neither moves without the other.
     if (!designBounds || boundsEqual(app.currentBounds, designBounds)) {
         return false;
     }
@@ -1438,7 +1448,7 @@ async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
                       app.designScale, app.designMaxDXDY,
                       app.designOriginX, app.designOriginY)
         : null;
-    if (!applyBounds(designBounds)) return false;
+    if (!applyBounds(designBounds, fitRect)) return false;
     if (center) {
         const ll = dbuToLatLng(center.dbuX, center.dbuY, app.designScale,
                                app.designMaxDXDY, app.designOriginX,
@@ -1462,7 +1472,7 @@ app.websocketManager.onPush = (msg) => {
         // tile georeference); resync transforms before/along the redraw.
         // resyncBounds already redraws when the bounds changed, so only
         // redraw here when it didn't (same bounds, edited geometry).
-        resyncBounds(msg.bounds)
+        resyncBounds(msg.bounds, msg.fit_bounds)
             .then((redrew) => { if (!redrew) redrawAllLayers(); })
             .catch(() => redrawAllLayers());
         // The design may have been edited by another session's
@@ -1564,9 +1574,22 @@ app.websocketManager.readyPromise.then(async () => {
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
+        const fitRect = boundsData.fit_bounds;
+
+        // Size the tiles so the fit below lands on an integer zoom level.
+        // Must precede applyBounds, which derives the map's coordinate scale
+        // from the tile size, and populateDisplayControls, which builds the
+        // layers with it.  Static reports are pre-rasterized at a fixed size
+        // (useStaticTileSize above), so they are not free to choose.
+        if (!staticCache) {
+            const viewport = app.map.getSize();
+            useFittedTileSize(fittedTileSizeCss({
+                designBounds, fitRect, viewW: viewport.x, viewH: viewport.y,
+            }));
+        }
 
         // No design loaded — skip map setup, let user open a DB via menu.
-        const hasDesign = applyBounds(designBounds);
+        const hasDesign = applyBounds(designBounds, fitRect);
         if (hasDesign) {
             // Load any server-side text labels (2.12) now that applyBounds
             // has set the coordinate transform, so their handles can be
@@ -1586,10 +1609,18 @@ app.websocketManager.readyPromise.then(async () => {
                 app.map.boxZoom.disable();
                 app.map.doubleClickZoom.disable();
 
-                // Path highlight overlay image.
-                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
-                    opacity: 1, interactive: false, zIndex: 1000,
-                });
+                // Path highlight overlay image.  NOT app.fitBounds, which
+                // carries Qt's framing margin: renderOverlayPng frames these
+                // on the GEOREFERENCE rect, the one the tile grid is built
+                // on, so the image has to be stretched over that same rect or
+                // it lands offset from the tiles under it.
+                app.pathOverlay = L.imageOverlay(
+                    '',
+                    dbuRectToBounds(designBounds[0][1], designBounds[0][0],
+                                    designBounds[1][1], designBounds[1][0],
+                                    app.designScale, app.designMaxDXDY,
+                                    app.designOriginX, app.designOriginY),
+                    { opacity: 1, interactive: false, zIndex: 1000 });
                 staticCache.setPathOverlay = (src) => {
                     if (src) {
                         app.pathOverlay.setUrl(src);
