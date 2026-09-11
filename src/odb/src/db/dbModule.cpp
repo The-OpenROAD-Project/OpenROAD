@@ -243,7 +243,7 @@ void dbModule::addInst(dbInst* inst)
   const bool is_reparent = (_inst->module_ != 0);
   if (is_reparent) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
-    ((_dbModule*) mod)->removeInst(inst);
+    ((_dbModule*) mod)->removeInst(inst, false);
   }
 
   _inst->module_ = module->getOID();
@@ -267,7 +267,7 @@ void dbModule::addInst(dbInst* inst)
   }
 }
 
-void _dbModule::removeInst(dbInst* inst)
+void _dbModule::removeInst(dbInst* inst, bool notify)
 {
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
@@ -286,6 +286,7 @@ void _dbModule::removeInst(dbInst* inst)
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
+  module->dbinst_hash_.erase(inst->getName());
 
   if (module->insts_ == id) {
     module->insts_ = _inst->module_next_;
@@ -308,6 +309,12 @@ void _dbModule::removeInst(dbInst* inst)
   _inst->module_ = 0;
   _inst->module_next_ = 0;
   _inst->module_prev_ = 0;
+
+  if (notify) {
+    for (dbBlockCallBackObj* callback : block->callbacks_) {
+      callback->inDbPostInstParentChange(inst);
+    }
+  }
 }
 
 dbSet<dbModInst> dbModule::getChildren() const
