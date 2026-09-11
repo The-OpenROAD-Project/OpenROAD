@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -144,6 +145,18 @@ class lefTechLayerCutEnclosureRuleParser
                    odb::dbTechLayerCutEnclosureRule* rule,
                    odb::dbTechLayer* layer);
 };
+
+class lefTechLayerCutEnclosureTableRuleParser
+{
+ public:
+  lefTechLayerCutEnclosureTableRuleParser(lefinReader*);
+  void parse(std::string_view, odb::dbTechLayer*);
+
+ private:
+  lefinReader* lefin_;
+  void checkCutClass(const std::string& val, odb::dbTechLayer* layer);
+};
+
 class lefTechLayerEolExtensionRuleParser
 {
  public:
