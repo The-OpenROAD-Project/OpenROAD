@@ -2,7 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -11,6 +11,14 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
+
+# Read by //src/web/test:asset_list_parity_test, which holds the two build
+# systems' asset lists to each other, and by the test of the report bundler.
+exports_files([
+    "BUILD",
+    "CMakeLists.txt",
+    "src/embed_report_assets.py",
+])
 
 py_binary(
     name = "embed_report_assets",
@@ -24,83 +32,68 @@ py_binary(
     main = "src/embed_web_assets.py",
 )
 
+# The vendored libraries are generated files (see third-party/README.md); this
+# is what catches one being edited in place instead of through the script.
+py_test(
+    name = "vendor_lock_test",
+    srcs = ["third-party/update_vendor.py"],
+    args = ["--check"],
+    data = glob(
+        ["third-party/**"],
+        exclude = ["third-party/update_vendor.py"],
+    ),
+    legacy_create_init = 0,
+    main = "third-party/update_vendor.py",
+)
+
+# The report inlines these into one <script type="module">, so the order is
+# what runs.  Listed once and used for both srcs and the command line.
+_REPORT_JS_FILES = [
+    "src/theme.js",
+    "src/display-state.js",
+    "src/3d-viewer-widget.js",
+    "src/coordinates.js",
+    "src/ui-utils.js",
+    "src/checkbox-tree-model.js",
+    "src/vis-tree.js",
+    "src/websocket-manager.js",
+    "src/tile-merge.js",
+    "src/tile-request.js",
+    "src/device-pixels.js",
+    "src/websocket-tile-layer.js",
+    "src/merged-tile-layer.js",
+    "src/display-controls.js",
+    "src/inspector.js",
+    "src/ruler.js",
+    "src/label-manager.js",
+    "src/tcl-completer.js",
+    "src/hierarchy-browser.js",
+    "src/menu-bar.js",
+    "src/context-menu.js",
+    "src/search-nav.js",
+    "src/capture.js",
+    "src/toolbar.js",
+    "src/image-export.js",
+    "src/edit-dialogs.js",
+    "src/title.js",
+    "src/clock-tree-widget.js",
+    "src/schematic-widget.js",
+    "src/charts-widget.js",
+    "src/timing-widget.js",
+    "src/drc-widget.js",
+    "src/selection-browser.js",
+    "src/main.js",
+]
+
 genrule(
     name = "report_assets",
-    srcs = [
-        "src/style.css",
-        "src/theme.js",
-        "src/display-state.js",
-        "src/3d-viewer-widget.js",
-        "src/coordinates.js",
-        "src/ui-utils.js",
-        "src/checkbox-tree-model.js",
-        "src/vis-tree.js",
-        "src/websocket-manager.js",
-        "src/tile-merge.js",
-        "src/tile-request.js",
-        "src/device-pixels.js",
-        "src/websocket-tile-layer.js",
-        "src/merged-tile-layer.js",
-        "src/display-controls.js",
-        "src/inspector.js",
-        "src/ruler.js",
-        "src/label-manager.js",
-        "src/tcl-completer.js",
-        "src/hierarchy-browser.js",
-        "src/menu-bar.js",
-        "src/context-menu.js",
-        "src/search-nav.js",
-        "src/capture.js",
-        "src/toolbar.js",
-        "src/image-export.js",
-        "src/edit-dialogs.js",
-        "src/title.js",
-        "src/clock-tree-widget.js",
-        "src/schematic-widget.js",
-        "src/charts-widget.js",
-        "src/timing-widget.js",
-        "src/drc-widget.js",
-        "src/selection-browser.js",
-        "src/main.js",
-    ],
+    srcs = ["src/style.css"] + _REPORT_JS_FILES,
     outs = ["src/report_assets.cpp"],
     cmd = "$(execpath :embed_report_assets)" +
           " --output $@" +
           " --css $(location src/style.css)" +
-          " --js $(location src/theme.js)" +
-          " $(location src/display-state.js)" +
-          " $(location src/3d-viewer-widget.js)" +
-          " $(location src/coordinates.js)" +
-          " $(location src/ui-utils.js)" +
-          " $(location src/checkbox-tree-model.js)" +
-          " $(location src/vis-tree.js)" +
-          " $(location src/websocket-manager.js)" +
-          " $(location src/tile-merge.js)" +
-          " $(location src/tile-request.js)" +
-          " $(location src/device-pixels.js)" +
-          " $(location src/websocket-tile-layer.js)" +
-          " $(location src/merged-tile-layer.js)" +
-          " $(location src/display-controls.js)" +
-          " $(location src/inspector.js)" +
-          " $(location src/ruler.js)" +
-          " $(location src/label-manager.js)" +
-          " $(location src/tcl-completer.js)" +
-          " $(location src/hierarchy-browser.js)" +
-          " $(location src/menu-bar.js)" +
-          " $(location src/context-menu.js)" +
-          " $(location src/search-nav.js)" +
-          " $(location src/capture.js)" +
-          " $(location src/toolbar.js)" +
-          " $(location src/image-export.js)" +
-          " $(location src/edit-dialogs.js)" +
-          " $(location src/title.js)" +
-          " $(location src/clock-tree-widget.js)" +
-          " $(location src/schematic-widget.js)" +
-          " $(location src/charts-widget.js)" +
-          " $(location src/timing-widget.js)" +
-          " $(location src/drc-widget.js)" +
-          " $(location src/selection-browser.js)" +
-          " $(location src/main.js)",
+          " --js" +
+          "".join([" $(location %s)" % f for f in _REPORT_JS_FILES]),
     tools = [":embed_report_assets"],
 )
 
@@ -142,6 +135,45 @@ _WEB_ASSET_FILES = [
     "src/drc-widget.js",
     "src/selection-browser.js",
     "src/main.js",
+    # The vendored browser libraries.  They are served from the binary like any
+    # other asset so the viewer never loads code from a CDN (issue #11065); see
+    # third-party/README.md.  Their directory layout is part of the contract:
+    # the stylesheets reach their icons through relative urls.
+    "third-party/leaflet/leaflet.js",
+    "third-party/leaflet/leaflet.css",
+    "third-party/leaflet/images/layers.png",
+    "third-party/leaflet/images/layers-2x.png",
+    "third-party/leaflet/images/marker-icon.png",
+    "third-party/leaflet/images/marker-icon-2x.png",
+    "third-party/leaflet/images/marker-shadow.png",
+    "third-party/golden-layout/golden-layout.esm.js",
+    "third-party/golden-layout/css/goldenlayout-base.css",
+    "third-party/golden-layout/css/themes/goldenlayout-dark-theme.css",
+    "third-party/golden-layout/css/themes/goldenlayout-light-theme.css",
+    "third-party/golden-layout/img/lm_close_black.png",
+    "third-party/golden-layout/img/lm_close_tab_white.png",
+    "third-party/golden-layout/img/lm_close_white.png",
+    "third-party/golden-layout/img/lm_maximise_black.png",
+    "third-party/golden-layout/img/lm_maximise_white.png",
+    "third-party/golden-layout/img/lm_minimize_black.png",
+    "third-party/golden-layout/img/lm_minimize_white.png",
+    "third-party/golden-layout/img/lm_popin_black.png",
+    "third-party/golden-layout/img/lm_popin_white.png",
+    "third-party/golden-layout/img/lm_popout_black.png",
+    "third-party/golden-layout/img/lm_popout_white.png",
+    "third-party/three/three.module.min.js",
+    "third-party/elkjs/elk.bundled.js",
+    "third-party/netlistsvg/netlistsvg.bundle.js",
+]
+
+# Assets under src/ are served flat ("/main.js"); everything else keeps its
+# path ("/third-party/leaflet/images/layers.png").
+_WEB_ASSET_ARGS = [
+    "/%s=$(location %s)" % (
+        f[len("src/"):] if f.startswith("src/") else f,
+        f,
+    )
+    for f in _WEB_ASSET_FILES
 ]
 
 genrule(
@@ -149,7 +181,7 @@ genrule(
     srcs = _WEB_ASSET_FILES,
     outs = ["src/web_assets.cpp"],
     cmd = "$(execpath :embed_web_assets) --output $@ " +
-          " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
+          " ".join(_WEB_ASSET_ARGS),
     tools = [":embed_web_assets"],
 )
 
@@ -179,7 +211,6 @@ cc_library(
         "src/tile_generator.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
-        "src/web_assets.h",
         "src/web_chart.cpp",
         "src/web_gif.cpp",
         "src/web_gif.h",
@@ -205,6 +236,8 @@ cc_library(
         "src/web_viewer_hook.h",
         "src/request_handler.h",
         "src/clock_tree_report.h",
+        "src/css_inliner.h",
+        "src/web_assets.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",

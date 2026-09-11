@@ -5,19 +5,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
+    <!-- Every library below is vendored under src/web/third-party and served by
+         the OpenROAD binary itself: the viewer must not load code from a CDN
+         (issue #11065) and has to work on a machine with no network. -->
+    <link rel="stylesheet" href="third-party/leaflet/leaflet.css"/>
+    <script src="third-party/leaflet/leaflet.js"></script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-    <link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-    <link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
+    <link rel="stylesheet" href="third-party/golden-layout/css/goldenlayout-base.css"/>
+    <link rel="stylesheet" id="gl-theme-dark" href="third-party/golden-layout/css/themes/goldenlayout-dark-theme.css"/>
+    <link rel="stylesheet" id="gl-theme-light" href="third-party/golden-layout/css/themes/goldenlayout-light-theme.css" disabled/>
 
-    <script src="https://nturley.github.io/netlistsvg/elk.bundled.js"></script>
-    <script src="https://nturley.github.io/netlistsvg/built/netlistsvg.bundle.js"></script>
+    <!-- netlistsvg reads ELK off the global scope, so elk has to load first. -->
+    <script src="third-party/elkjs/elk.bundled.js"></script>
+    <script src="third-party/netlistsvg/netlistsvg.bundle.js"></script>
+
+    <!-- three and golden-layout are ES modules; this must precede the
+         <script type="module"> below. -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "/third-party/three/three.module.min.js",
+        "golden-layout": "/third-party/golden-layout/golden-layout.esm.js"
+      }
+    }
+    </script>
 
     <link rel="stylesheet" href="style.css"/>
 </head>

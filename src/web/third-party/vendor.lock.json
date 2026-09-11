@@ -1,0 +1,67 @@
+{
+  "files": {
+    "elkjs/LICENSE.md": "89591d4578fb1ebd91501312a3d25f021bd865a2e436641c1cf7b1bc7e3c1617",
+    "elkjs/elk.bundled.js": "b0745abd7f23cd91690a1587e377edbe19fd7233c783300290936720546216d4",
+    "golden-layout/LICENSE": "09bd451dd4f4880343f42c3c19d9bac4f4038b10a00da0d37f381d62b7052bf3",
+    "golden-layout/css/goldenlayout-base.css": "7b47240817e5a2cd1e24fd1f47e0933dee723b8bd99d220f27a352af2f92477b",
+    "golden-layout/css/themes/goldenlayout-dark-theme.css": "818c38af69eec4ed9036c11f93cde774908892734a355dd867666aa1a900523e",
+    "golden-layout/css/themes/goldenlayout-light-theme.css": "3a32668a558465c8799d04311a004a5e3344bc52b95250b556a05cb29b2bda31",
+    "golden-layout/golden-layout.esm.js": "599dc968ffb6e59f334ae8b9a383843b1c4e62087c4d84c81ba9decc75a46f25",
+    "golden-layout/img/lm_close_black.png": "9c591dff4b8fbe738ae73feabb6ee60c25ac796f4a9279d66f9e7cd2fe2ea3da",
+    "golden-layout/img/lm_close_tab_white.png": "3a42999f6301aca6ed08ccd91db6ac8f21149975277f8efcef49222aa3b491a2",
+    "golden-layout/img/lm_close_white.png": "d0faa564c08b45aabc4276bc4398628b9ba4e3a3afb4144babf6a97d03ed775b",
+    "golden-layout/img/lm_maximise_black.png": "494f8bfd8821f673f5756c2d57c160df73b9123a7202acc612c0ebb981d9800a",
+    "golden-layout/img/lm_maximise_white.png": "f33476d85de9d4e147c81c04d65dbb12ad6aa91bdbb583714ae575ad6aac16be",
+    "golden-layout/img/lm_minimize_black.png": "33d220a64308f8a5a450661a2095c5dbb636583646a51ad7c956114e2559c442",
+    "golden-layout/img/lm_minimize_white.png": "4d6d9885678e7c99d7285afca6c25af39de27fceb3c3b4458edab5ff33bf9625",
+    "golden-layout/img/lm_popin_black.png": "aebcdeb6d202a838f7b936c533d1c1c2affed04c49448bdf46a5eb2920a44b69",
+    "golden-layout/img/lm_popin_white.png": "c369f824133f36d7c37e7f24ce01e36b10285b96e54ee7c491cd717a8304b7b8",
+    "golden-layout/img/lm_popout_black.png": "f50c09eaa7bbb0bbfa5ee3b72c68c0dc7dd31c13e62e7321dd1cdfe6bdc1f34c",
+    "golden-layout/img/lm_popout_white.png": "285b6557d0209a0dc2be02048b59e679b0324d17cae8319bea0db5ede5b3f3e8",
+    "leaflet/LICENSE": "53e8dc25862014e4324741ca18fbe3611e11d42ef69f59f86ea8c5389647d4cb",
+    "leaflet/images/layers-2x.png": "066daca850d8ffbef007af00b06eac0015728dee279c51f3cb6c716df7c42edf",
+    "leaflet/images/layers.png": "1dbbe9d028e292f36fcba8f8b3a28d5e8932754fc2215b9ac69e4cdecf5107c6",
+    "leaflet/images/marker-icon-2x.png": "00179c4c1ee830d3a108412ae0d294f55776cfeb085c60129a39aa6fc4ae2528",
+    "leaflet/images/marker-icon.png": "574c3a5cca85f4114085b6841596d62f00d7c892c7b03f28cbfa301deb1dc437",
+    "leaflet/images/marker-shadow.png": "264f5c640339f042dd729062cfc04c17f8ea0f29882b538e3848ed8f10edb4da",
+    "leaflet/leaflet.css": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6",
+    "leaflet/leaflet.js": "db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a",
+    "netlistsvg/LICENSE": "8155b60db06839a4e8ea741f20b8da4e1077824bfbf78c9909b5dfaf4b9314d4",
+    "netlistsvg/netlistsvg.bundle.js": "a6fa542e226f61ba27eddf2c889ce28f3f55fa26ca82fd58106b508001777625",
+    "three/LICENSE": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d",
+    "three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
+  },
+  "packages": {
+    "elkjs": {
+      "sha256": "b95b224bd1ab71fd40f6d9a6365c28d989745dff6b0d514407bc1eb68f2f561e",
+      "version": "0.9.3"
+    },
+    "golden-layout": {
+      "sha256": "2097b74f3d45a4770bc00360276e3251a6a74a88385f8cf7aa37ca6e6395a4bc",
+      "version": "2.6.0"
+    },
+    "leaflet": {
+      "sha256": "84c65a256e50657896f54c33bd857b6849ebe94c817803be818bf32a3dde0b77",
+      "version": "1.9.4"
+    },
+    "netlistsvg": {
+      "sha256": "f261a9840e8c244ab6721917081bda04138e500b6d5727e672ba1b635ee9ceec",
+      "version": "1.0.2"
+    },
+    "three": {
+      "sha256": "1ee2f935c4f555814b388e87b5ef78a44856bd2e9d0feb88643a6e193fb42856",
+      "version": "0.160.0"
+    }
+  },
+  "tools": {
+    "esbuild": {
+      "platforms": {
+        "darwin-arm64": "1980cde09749094452b20d36ff267585ccb3f72749c7bc97291cd9996ccf5a2a",
+        "darwin-x64": "abb6a7a895aaf2cc0df36fecc3bf0042479ffec51a643a056d54e9109f27db55",
+        "linux-arm64": "a96dbfa41d3ef5dbd1ef22b1c10d5187be9267e86093a870f06402a7ec931596",
+        "linux-x64": "9573bb2233aab0f9ea7647d5cca9726113cc1768de61d66b17267f4db84488f6"
+      },
+      "version": "0.28.2"
+    }
+  }
+}

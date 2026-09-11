@@ -11,31 +11,39 @@
 import argparse
 import re
 
+# Delimiters for the raw string literals the generated .cpp holds the assets in.
+CSS_DELIMITER = "__CSS__"
+JS_DELIMITER = "__JS__"
+
 
 def process_js_file(content):
     """Process a single JS file for concatenation into a shared scope."""
-    # Remove import statements, including ones wrapped over several lines.
-    # `[^;]*` spans newlines but stops at the first ';', so a statement is
-    # consumed whole and no real code can be swallowed.  A single-line-only
-    # pattern left the tail of a wrapped import behind, which is a syntax error
-    # for the whole concatenated bundle.
-    content = re.sub(r"^import\s[^;]*;[ \t]*$", "", content, flags=re.MULTILINE)
+    # Remove the imports: concatenated into one scope, the bindings are already
+    # there.  Anchored on the quoted specifier, not on the semicolon, which may
+    # be absent -- and [^'";]* then cannot swallow the next statement.
+    content = re.sub(
+        r"^import\b[^'\";]*(['\"])[^'\"\n]*\1[ \t]*;?[ \t]*$",
+        "",
+        content,
+        flags=re.MULTILINE,
+    )
 
     # Find exported names and strip the export keyword.
     # Two patterns:
-    #   1. export function/class/const Name ...
+    #   1. export [async] function/class/const Name ...
     #   2. export { InternalA as ExportedA, InternalB, ... }
     exported_names = []
 
-    # Pattern 1: export function/class/const Name
+    # Pattern 1: export [async] function/class/const Name.  A form not matched
+    # here survives as a syntax error; check_no_module_syntax catches it.
     def capture_export_decl(m):
-        keyword = m.group(1)  # function, class, or const
+        keyword = m.group(1)  # [async] function, class, or const
         name = m.group(2)
         exported_names.append(name)
         return keyword + " " + name
 
     content = re.sub(
-        r"^export\s+(function|class|const)\s+(\w+)",
+        r"^export\s+(async\s+function|function|class|const)\s+(\w+)",
         capture_export_decl,
         content,
         flags=re.MULTILINE,
@@ -96,6 +104,28 @@ def process_js_file(content):
     return "\n".join(lines)
 
 
+def check_embeddable(text, delimiter, what):
+    """Refuse content a raw string literal cannot carry verbatim."""
+    if f'){delimiter}"' in text:
+        raise SystemExit(f'{what} contains the raw string delimiter ){delimiter}"')
+    for name, character in (("a carriage return", "\r"), ("a NUL", "\0")):
+        if character in text:
+            raise SystemExit(f"{what} contains {name}")
+
+
+def check_no_module_syntax(js):
+    """Fail on an import/export the patterns above did not strip.
+
+    Left in place it is a syntax error that costs every widget in the report.
+    """
+    leftover = re.search(r"^[ \t]*(import|export)\b.*$", js, flags=re.MULTILINE)
+    if leftover:
+        raise SystemExit(
+            "the report JS still contains module syntax after processing, which "
+            f"would not parse: {leftover.group(0).strip()}"
+        )
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
@@ -118,16 +148,20 @@ def main():
     with open(args.css, encoding="utf-8") as f:
         css_content = f.read()
 
+    check_no_module_syntax(combined_js)
+    check_embeddable(css_content, CSS_DELIMITER, args.css)
+    check_embeddable(combined_js, JS_DELIMITER, "the concatenated report JS")
+
     with open(args.output, "w", encoding="utf-8") as out:
         out.write("// Auto-generated — do not edit.\n")
         out.write("#include <string_view>\n")
         out.write("namespace web {\n")
-        out.write('extern const std::string_view kReportCSS = R"__CSS__(\n')
+        out.write(f'extern const std::string_view kReportCSS = R"{CSS_DELIMITER}(\n')
         out.write(css_content)
-        out.write(')__CSS__";\n\n')
-        out.write('extern const std::string_view kReportJS = R"__JS__(\n')
+        out.write(f'){CSS_DELIMITER}";\n\n')
+        out.write(f'extern const std::string_view kReportJS = R"{JS_DELIMITER}(\n')
         out.write(combined_js)
-        out.write(')__JS__";\n')
+        out.write(f'){JS_DELIMITER}";\n')
         out.write("}  // namespace web\n")
 
 

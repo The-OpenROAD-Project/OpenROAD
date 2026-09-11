@@ -12,8 +12,9 @@
 //   cd src/web/test/visual && npm i puppeteer-core   # one-time
 //   node preview.mjs [outDir]
 //
-// Requires google-chrome (or set CHROME=/path/to/chrome) and network access
-// (netlistsvg is loaded from its CDN, same as the real viewer).
+// Requires google-chrome (or set CHROME=/path/to/chrome).  elk and netlistsvg
+// come from src/web/third-party, the same copies the real viewer serves, so no
+// network access is needed.
 
 import puppeteer from 'puppeteer-core';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync } from 'node:fs';
@@ -74,8 +75,8 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
 <style>:root{--bg-panel:#fff;--fg-primary:#111;--bg-header:#eee;--border:#ccc;
   --bg-main:#fff;--fg-muted:#999;--accent:#e05a00;--fg-white:#fff;}
   body{margin:0;background:#fff}#host svg{color:#111}</style>
-<script src="https://nturley.github.io/netlistsvg/elk.bundled.js"></script>
-<script src="https://nturley.github.io/netlistsvg/built/netlistsvg.bundle.js"></script>
+<script src="/third-party/elkjs/elk.bundled.js"></script>
+<script src="/third-party/netlistsvg/netlistsvg.bundle.js"></script>
 </head><body><div id="host" style="width:760px;height:460px"></div>
 <script type="module">
   import { SchematicWidget } from '/schematic-widget.js';
@@ -100,7 +101,9 @@ const server = http.createServer((req, res) => {
   try {
     const ext = url.slice(url.lastIndexOf('.'));
     res.setHeader('Content-Type', MIME[ext] || 'text/plain');
-    res.end(readFileSync(join(srcDir, url)));
+    // The vendored libraries live next to src/, not inside it.
+    const root = url.startsWith('/third-party/') ? join(srcDir, '..') : srcDir;
+    res.end(readFileSync(join(root, url)));
   } catch (e) { res.statusCode = 404; res.end('not found'); }
 });
 await new Promise((r) => server.listen(0, r));
