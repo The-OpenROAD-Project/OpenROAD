@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: short_obs.lef, created 3 library cells
+[INFO ODB-0128] Design: short_obstructions
+[INFO ODB-0131]     Created 13 components and 34 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 16 connections.
+[WARNING PSM-0043] Shorted shape on net VDD to instance obs1 at (3.500um, 2.715um) - (4.500um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to instance obs2 at (5.915um, 4.100um) - (6.085um, 4.400um), layer: metal2.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal obs4/A (net unconnected) at (6.500um, 2.715um) - (6.700um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal obs4/B (net unconnected) at (6.900um, 2.715um) - (7.100um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to instance obs4 at (6.300um, 2.715um) - (6.500um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to instance obs4 at (6.700um, 2.715um) - (6.899um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to instance obs4 at (7.101um, 2.715um) - (7.300um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to instance obs5 at (7.700um, 2.715um) - (8.200um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to obstruction at (2.000um, 2.750um) - (2.300um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to obstruction of u6 at (0.450um, 2.750um) - (0.490um, 2.950um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to obstruction of u6 at (0.490um, 2.750um) - (0.650um, 2.885um), layer: metal1.
+[ERROR PSM-0069] Check connectivity failed on VDD.
+PSM-0069
