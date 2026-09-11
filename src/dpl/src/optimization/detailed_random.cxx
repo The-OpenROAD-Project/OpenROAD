@@ -620,6 +620,7 @@ void RandomGenerator::stats()
       attempts_,
       swaps_,
       moves_);
+  mgr_->addAttempts(attempts_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -792,6 +793,7 @@ void DisplacementGenerator::stats()
       attempts_,
       swaps_,
       moves_);
+  mgr_->addAttempts(attempts_);
 }
 
 }  // namespace dpl

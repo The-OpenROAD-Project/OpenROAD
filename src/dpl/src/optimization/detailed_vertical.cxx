@@ -396,6 +396,7 @@ void DetailedVerticalSwap::stats()
       attempts_,
       swaps_,
       moves_);
+  mgr_->addAttempts(attempts_);
 }
 
 }  // namespace dpl
