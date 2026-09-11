@@ -565,6 +565,11 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
   try {
     utl::InStreamHandler handler(filename, true);
     readDb(handler.getStream());
+    // Only a database that read completely has constraints worth
+    // restoring; a failed read errors out below and never gets here.
+    // Without liberty there is nothing to restore into and the record
+    // stays in the block.
+    restoreSdcFromDb();
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
@@ -602,9 +607,29 @@ void OpenRoad::writeDb(std::ostream& stream)
   db_->write(stream);
 }
 
-void OpenRoad::writeDb(const char* filename,
-                       std::optional<int> compression_level)
+bool OpenRoad::restoreSdcFromDb()
 {
+  return getSta()->restoreSdcFromDb();
+}
+
+void OpenRoad::writeDb(const char* filename,
+                       std::optional<int> compression_level,
+                       bool store_sdc)
+{
+  sta::dbSta* sta = getSta();
+  if (store_sdc) {
+    // Store the timing constraints in the block so the .odb is
+    // self-describing and does not have to be paired with a .sdc by name.
+    sta->saveSdcToDb();
+  } else {
+    sta::Network* network = sta->getDbNetwork();
+    if (network->isLinked() && network->defaultLibertyLibrary() != nullptr) {
+      // The caller chose not to store, and a record written before an
+      // edit to this design could be stale: drop it. An odb-only tool has
+      // no liberty and carries the record through untouched.
+      sta->clearSdcInDb();
+    }
+  }
   utl::OutStreamHandler stream_handler(filename, true, compression_level);
   writeDb(stream_handler.getStream());
 }
