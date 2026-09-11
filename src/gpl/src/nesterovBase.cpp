@@ -3352,6 +3352,10 @@ float NesterovBase::getUniformTargetDensity() const
 
 float NesterovBase::estimateTargetDensity(float overflow)
 {
+  if (getNesterovInstsArea() == 0) {
+    return uniformTargetDensity_;
+  }
+
   // The constructor never populates each bin's placed-instance area --
   // that normally only happens once the Nesterov solve starts moving
   // cells -- so without this, the search below would run against bins
