@@ -2089,6 +2089,9 @@ int RepairChannelStraps::getMaxLength() const
 
 bool RepairChannelStraps::isAtEndOfRepairOptions() const
 {
+  if (repair_options_exhausted_) {
+    return true;
+  }
   const TechLayer layer(getLayer());
   if (getWidth() != layer.getMinWidth()) {
     return false;
@@ -2119,8 +2122,17 @@ void RepairChannelStraps::continueRepairs(
       getNetString(),
       getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
       next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+  const int prev_width = getWidth();
+  const int prev_spacing = getSpacing();
   setWidth(next_width);
   determineParameters(other_shapes);
+  // A "continued" repair that changes nothing rebuilds the same strap, and
+  // repairGridChannels counts a successful rebuild as a repair and goes
+  // around again: with the width already at minimum and the spacing above
+  // it, that loop never ends. Record the dead end so the next pass stops.
+  if (getWidth() == prev_width && getSpacing() == prev_spacing) {
+    repair_options_exhausted_ = true;
+  }
 }
 
 void RepairChannelStraps::determineParameters(
@@ -2774,6 +2786,36 @@ void RepairChannelStraps::repairGridChannels(
     }
 
     // create strap repair channel
+    // A repair strap for this channel that has run out of options means
+    // every width and spacing has been built here and the channel is still
+    // open. Making another strap would start the same sequence over, and
+    // repairGridChannels would recurse on it forever.
+    bool options_exhausted = false;
+    for (const auto& strap : grid->getStraps()) {
+      if (strap->type() != GridComponent::kRepairChannel) {
+        continue;
+      }
+      auto* repair_strap = dynamic_cast<RepairChannelStraps*>(strap.get());
+      if (repair_strap != nullptr
+          && repair_strap->getLayer() == channel.target->getLayer()
+          && repair_strap->getArea() == channel.area
+          && repair_strap->isAtEndOfRepairOptions()) {
+        options_exhausted = true;
+        break;
+      }
+    }
+    if (options_exhausted) {
+      debugPrint(grid->getLogger(),
+                 utl::PDN,
+                 "Channel",
+                 1,
+                 "No repair options left at {} in {}.",
+                 Shape::getRectText(channel.area,
+                                    grid->getBlock()->getDbUnitsPerMicron()),
+                 channel.target->getLayer()->getName());
+      continue;
+    }
+
     auto strap = std::make_unique<RepairChannelStraps>(grid,
                                                        channel.target,
                                                        channel.connect_to,
