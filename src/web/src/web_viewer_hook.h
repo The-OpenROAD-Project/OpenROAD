@@ -201,16 +201,17 @@ class WebViewerHook : public gui::HeadlessViewer
 
   // Shared add/remove for the two custom-UI vectors (toolbar buttons and menu
   // items), which differ only in element type, id counter and key prefix.
-  // registerCustom appends `item` under the lock (auto-generating "prefix{N}"
-  // when `name` is empty), then broadcasts the new registry outside the lock;
-  // it sets *is_duplicate (and does NOT add) when a non-empty `name` already
-  // exists, so the caller can log the tool-specific error with a literal id.
+  // registerCustom consumes `item` into the vector under the lock
+  // (auto-generating "prefix{N}" when `name` is empty), then broadcasts the new
+  // registry outside the lock; it sets *is_duplicate (and does NOT add) when a
+  // non-empty `name` already exists, so the caller can log the tool-specific
+  // error with a literal id.
   template <class T>
   std::string registerCustom(std::vector<T>& vec,
                              int& next_id,
                              const char* prefix,
                              const std::string& name,
-                             T item,
+                             T&& item,
                              bool* is_duplicate);
   template <class T>
   void removeCustom(std::vector<T>& vec, const std::string& name);

@@ -6,15 +6,19 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <sys/stat.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -288,6 +292,19 @@ void WebServer::serve(int port)
         net::make_strand(ioc_->get_executor()));
     scheduleLogDrain();
 
+    // Error file for the browser launcher below.  Created here, before the
+    // io threads start, because umask() is process-wide; mkstemp already
+    // creates the file 0600 and the clamp only pins it for static analysis.
+    char tmp_filename[] = "/tmp/openroad-XXXXXX";
+    const mode_t old_umask = umask(S_IRWXG | S_IRWXO);
+    const int fd = mkstemp(tmp_filename);
+    umask(old_umask);
+    std::string errfile = "/dev/null";
+    if (fd != -1) {
+      errfile = tmp_filename;
+      close(fd);
+    }
+
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
       threads_.emplace_back([this] { ioc_->run(); });
@@ -296,13 +313,6 @@ void WebServer::serve(int port)
     logger_->info(utl::WEB, 1, "Server started on {}.", url);
 
     // Open the url with the default browser
-    char tmp_filename[] = "/tmp/openroad-XXXXXX";
-    int fd = mkstemp(tmp_filename);
-    std::string errfile = "/dev/null";
-    if (fd != -1) {
-      errfile = tmp_filename;
-      close(fd);
-    }
 #if defined(__APPLE__)
     std::string open_cmd = "open " + url + " > /dev/null 2> " + errfile;
 #elif defined(_WIN32)
@@ -336,7 +346,8 @@ void WebServer::serve(int port)
                     errout);
     }
     if (fd != -1) {
-      std::remove(errfile.c_str());
+      std::error_code err_ignored;
+      std::filesystem::remove(errfile, err_ignored);
     }
   } catch (std::exception const& e) {
     stop();

@@ -4428,7 +4428,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 namespace {
 
 // Center of a cone pin in DBU: ITerm average pin location (fallback: instance
-// center), or the first BPin box center for a BTerm.
+// center), or the first placed BPin box center for a BTerm.
 odb::Point conePinCenter(const TimingConeNode& node)
 {
   if (node.iterm) {
@@ -4441,9 +4441,10 @@ odb::Point conePinCenter(const TimingConeNode& node)
     return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
   }
   if (node.bterm) {
-    for (odb::dbBPin* bpin : node.bterm->getBPins()) {
-      const odb::Rect r = bpin->getBBox();
-      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+    int x = 0;
+    int y = 0;
+    if (node.bterm->getFirstPinLocation(x, y)) {
+      return {x, y};
     }
   }
   return {0, 0};
@@ -5390,7 +5391,7 @@ LabelFields parseLabelFields(const boost::json::object& obj)
       // way.
       .size = static_cast<int>(std::clamp<int64_t>(
           jsonOr<int64_t>(obj, "size", 0), 0, TileGenerator::kMaxLabelSize)),
-      .anchor = anchor,
+      .anchor = std::move(anchor),
       .color = parseLabelColor(obj)};
 }
 
