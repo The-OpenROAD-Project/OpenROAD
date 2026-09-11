@@ -330,132 +330,50 @@ rule takes the binary from there instead. Only the binary under test moves;
 swig, bison and the other exec-configuration tools stay uninstrumented, and
 because exactly one of the two attributes is ever set `openroad` is still
 built once.
+
 ## GPU build (`--config=gpu`)
 
 `--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
-and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. It is opt-in and
-non-hermetic: the CUDA toolkit, Kokkos and KokkosFFT come from the host, wrapped
-as external repositories by `bazel/gpu/system_gpu.bzl`. Nothing in the default
-build or in CI depends on them.
+and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. Kokkos 5.2.2 and
+KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
+hermetic LLVM toolchain. Only the CUDA toolkit remains host-provided. Default
+CPU targets neither download nor compile Kokkos and do not compile or link
+against CUDA. Because the CUDA repository definition is loaded by shared Bazel
+configuration, CPU invocations still probe the configured toolkit path.
 
-    bazelisk test --config=gpu //src/gpl/test/...
+Choose the configuration matching the device compute capability:
 
-Install prefixes are read from the shell environment:
-
-| Variable             | Default                        | Meaning                                              |
-|----------------------|--------------------------------|------------------------------------------------------|
-| `KOKKOS_ROOT`        | `/usr/local/kokkos-libcxx`     | Kokkos install (static, CUDA backend, see recipe)    |
-| `KOKKOS_FFT_ROOT`    | `/usr/local/kokkos-fft-libcxx` | KokkosFFT install built against that Kokkos          |
-| `OPENROAD_CUDA_PATH` | `/usr/local/cuda-12.8`         | Full CUDA toolkit (`bin/ptxas`, `nvvm/libdevice`)    |
-| `OPENROAD_CUDA_ARCH` | unset                          | Only needed if it cannot be read from the Kokkos install |
-
-A missing or unusable install never breaks the CPU build: the wrapped
-repository becomes a stub, and only a `--config=gpu` build fails, at analysis
-time, with a message that names the variable and the problem (prefix missing,
-incomplete install, Kokkos built without CUDA, architecture mismatch).
-
-### Why the CMake-flow Kokkos does not work here
-
-The hermetic LLVM toolchain compiles against its bundled libc++ and links
-against its own glibc-2.28 sysroot. A Kokkos built the usual way (nvcc or g++,
-libstdc++, the host's glibc headers) fails to link: either with libstdc++/libc++
-ABI mismatches (undefined `std::__1::...` symbols) or, on newer distributions,
-with `undefined symbol: __isoc23_strtol` because the host headers redirect
-`strtol` to symbols the sysroot's glibc stub does not export. Kokkos and
-KokkosFFT therefore have to be built with the toolchain's own clang and header
-set.
-
-### Kokkos recipe
-
-Run from an OpenROAD checkout after any `bazelisk build`, so the toolchain has
-been fetched. The header directories below are the ones the Bazel
-`cc_toolchain` uses.
-
-```bash
-OB=$(bazelisk info output_base)
-EX=$OB/execroot/_main
-case "$(uname -m)" in
-  x86_64)  OUT=k8-opt;      TC=llvm-toolchain-minimal-linux-amd64 ;;
-  aarch64) OUT=aarch64-opt; TC=llvm-toolchain-minimal-linux-arm64 ;;
-esac
-CLANGXX=$(ls -d $OB/external/*${TC}/bin/clang++)
-GLIBC_H=$(ls -d $OB/external/llvm++glibc+glibc_headers_*/include)
-KERNEL_H=$(ls -d $OB/external/llvm++kernel_headers+*/include)
-LIBCXX_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxx/libcxx_headers_include_search_directory
-LIBCXXABI_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxxabi/libcxxabi_headers_include_search_directory
-
-CUDA_HOME=/usr/local/cuda-12.8          # match OPENROAD_CUDA_PATH
-KOKKOS_ARCH=BLACKWELL120                # match your device, see below
-
-HFLAGS="--sysroot=/dev/null -isystem $LIBCXX_H -isystem $LIBCXXABI_H -isystem $KERNEL_H -isystem $GLIBC_H"
-CUFLAGS="--cuda-path=$CUDA_HOME -Wno-unknown-cuda-version -D_ALLOW_UNSUPPORTED_LIBCPP"
-
-git clone https://github.com/kokkos/kokkos.git && cd kokkos   # 4.7 or newer
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-libcxx \
-  -DCMAKE_CXX_COMPILER="$CLANGXX" \
-  -DCMAKE_CXX_STANDARD=20 \
-  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
-  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-  -DCMAKE_CXX_ARCHIVE_CREATE="<CMAKE_AR> qc <TARGET> <OBJECTS>" \
-  -DCMAKE_CXX_ARCHIVE_APPEND="<CMAKE_AR> q <TARGET> <OBJECTS>" \
-  -DCMAKE_CXX_ARCHIVE_FINISH="<CMAKE_RANLIB> <TARGET>" \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DKokkos_ENABLE_SERIAL=ON \
-  -DKokkos_ENABLE_CUDA=ON \
-  -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
-  -DKokkos_ENABLE_DEPRECATED_CODE_4=ON \
-  -DKokkos_ARCH_${KOKKOS_ARCH}=ON \
-  -DKokkos_ENABLE_TESTS=OFF -DKokkos_ENABLE_EXAMPLES=OFF -DKokkos_ENABLE_BENCHMARKS=OFF
-cmake --build build -j && sudo cmake --install build
-```
-
-Each option that is easy to drop matters:
-
-- `--sysroot=/dev/null` plus the four `-isystem` directories: the toolchain's
-  header set, not the host's (the `__isoc23_*` failure above).
-- `-D_ALLOW_UNSUPPORTED_LIBCPP`: CUDA's `host_defines.h` refuses libc++ on
-  x86_64 otherwise.
-- `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`: the static archives end up inside
-  OpenROAD's Python extension (`_gpl.so`); without PIC the final link fails
-  with relocation errors.
-- `-DKokkos_ENABLE_DEPRECATED_CODE_4=ON`: `gpl` uses `View::HostMirror`, which
-  Kokkos 5 only provides behind this flag.
-- `-DCMAKE_CXX_STANDARD=20`: must match `.bazelrc` (`-std=c++20`).
-- `-DKokkos_ARCH_...`: exactly one NVIDIA architecture, and it must be the
-  compute capability of the device the tests run on. `--config=gpu` reads it
-  back from the install's `KokkosCore_config.h` and compiles `gpl`'s kernels for
-  the same target. This is not a cosmetic choice: `sm_120` kernels on an
-  `sm_121` device (`BLACKWELL120` vs `BLACKWELL121`, e.g. an RTX 5090 vs a GB10)
-  run without any error and produce NaN placements.
+    bazelisk test --config=gpu-sm120 //src/gpl/test/...
+    bazelisk test --config=gpu-sm121 //src/gpl/test/...
 
 `nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
-capability (`12.0` -> `BLACKWELL120`, `12.1` -> `BLACKWELL121`). `sm_121`
-needs CUDA 12.9 or newer; with CUDA 13 also set `OPENROAD_CUDA_PATH` to that
-toolkit (its libcu++ headers live in `include/cccl/`, which `--config=gpu`
-already adds to the search path).
+capability. Remove the decimal point to form the Bazel value (`12.0` ->
+`sm_120`, `12.1` -> `sm_121`). `sm_121` needs CUDA 12.9 or newer; with CUDA 13
+also set `OPENROAD_CUDA_PATH` to that toolkit (its libcu++ headers live in
+`include/cccl/`, which `--config=gpu` already adds to the search path).
 
-### KokkosFFT recipe
+For another supported architecture, use `--config=gpu` together with
+`--//:cuda_arch=sm_XX`. The accepted values are `sm_60`, `sm_61`, `sm_70`,
+`sm_72`, `sm_75`, `sm_80`, `sm_86`, `sm_87`, `sm_89`, `sm_90`, `sm_100`,
+`sm_103`, `sm_120`, and `sm_121`. Plain `--config=gpu` intentionally requires
+this extra flag so Kokkos and OpenROAD's kernels use one explicit target. If the
+compiled target differs from the selected device, Kokkos prints a runtime
+warning; compatible code may still run, usually with reduced portability or
+performance.
 
-KokkosFFT is header-only but must be configured against the Kokkos above with
-the FFTW host backend enabled (`gpl` creates host-space plans). FFTW itself is
-built from source by Bazel (the `fftw` module in `MODULE.bazel`), so no system
-FFTW is needed at build time.
+`OPENROAD_CUDA_PATH` selects the full CUDA toolkit and defaults to
+`/usr/local/cuda-12.8`. The toolkit must contain `bin/ptxas`, `nvvm/libdevice`,
+`libcudart`, and `libcufft`. A missing or incomplete toolkit never breaks the
+CPU build: its repository becomes a stub, and only a GPU build fails during
+analysis with an actionable message. The installed NVIDIA driver must support
+the CUDA toolkit used for the build.
 
-```bash
-git clone https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
-cmake -S . -B build \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-fft-libcxx \
-  -DCMAKE_CXX_COMPILER="$CLANGXX" \
-  -DCMAKE_CXX_STANDARD=20 \
-  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
-  -DKokkos_ROOT=/usr/local/kokkos-libcxx \
-  -DKokkosFFT_ENABLE_FFTW=ON \
-  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARKS=OFF
-sudo cmake --install build
-```
+### Dependency model
+
+The Bazel build does not use `KOKKOS_ROOT` or `KOKKOS_FFT_ROOT`. Its BUILD
+overlays compile Kokkos with the same clang, libc++, glibc headers, CUDA target,
+and C++ standard as OpenROAD. This avoids the C++ ABI and libc symbol mismatches
+caused by linking a host-built Kokkos into a hermetic OpenROAD binary.
 
 ### Notes
 
@@ -467,14 +385,19 @@ sudo cmake --install build
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
+- The first GPU build downloads the two pinned source archives and compiles
+  Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
+  OpenROAD GPU sources for the new target.
+- The CMake `ENABLE_GPU` flow is unchanged and continues to use the Kokkos and
+  KokkosFFT installations selected by its CMake configuration.
 - The ORFS flow targets under `test/orfs` run their stages as build actions,
   which carry no `ENABLE_GPU` pin, so under `--config=gpu` they place on the
   GPU. The GPU placer is not bit-identical to the CPU one and the gcd/asap7
   metadata rules are tuned for the CPU result, so `//test/orfs/...` is not
   expected to pass under `--config=gpu`; run it on the default build.
-- After upgrading Kokkos, KokkosFFT or CUDA in place, run `bazelisk shutdown`
-  (or change the corresponding environment variable) so the wrapped repository
-  is refetched with the new file list.
+- After upgrading CUDA in place, run `bazelisk shutdown` (or change
+  `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
+  file list.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
