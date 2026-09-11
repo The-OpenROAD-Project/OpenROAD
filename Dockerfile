@@ -44,6 +44,10 @@ EOF
 FROM $devImage AS builder
 
 ARG numThreads=NotSet
+# Release builds pass the published version, for example
+# --build-arg orVersion=2026-09-10. The build context has no .git directory,
+# so the Bazel stamp cannot find the version by itself.
+ARG orVersion=""
 
 RUN <<EOF
 groupadd user --gid 9000
@@ -55,7 +59,8 @@ WORKDIR /OpenROAD
 COPY --chown=user:user . .
 # Keep Bazel's build cache out of the published builder image.
 RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 <<EOF
-bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
+OPENROAD_VERSION="${orVersion}" \
+    bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
 # Preserve the path used by builder-image consumers.
 mkdir -p build/bin
 ln -s ../../install/bin/openroad build/bin/openroad

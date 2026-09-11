@@ -146,6 +146,15 @@ To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=rele
     bazelisk build --config=release :openroad
     ./bazel-bin/openroad -version
 
+A release build reads the version with `git describe`, and gives `unknown` when
+the tree has no git metadata. Set `OPENROAD_VERSION` to supply the version
+directly:
+
+    OPENROAD_VERSION=26Q1 bazelisk build --config=release :openroad
+
+The Docker build needs this, because `.dockerignore` keeps `.git` out of the
+build context. Pass the version with `--build-arg orVersion=<version>`.
+
 ## Platforms
 
 https://bazel.build/extending/platforms
