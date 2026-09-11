@@ -306,6 +306,11 @@ void HierRTLMP::blockMacroChannels()
 
 void HierRTLMP::init()
 {
+  tree_ = std::make_unique<PhysicalHierarchy>();
+  skip_macro_placement_ = false;
+  placement_blockages_.clear();
+  io_blockages_.clear();
+
   block_ = db_->getChip()->getBlock();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, logger_, tritonpart_, graphics_.get());
