@@ -10,6 +10,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
@@ -76,6 +77,12 @@ void _dbScanPin::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
+void dbScanPin::destroy(dbScanPin* obj)
+{
+  _dbDft* _parent = (_dbDft*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->scan_pins_->destroy((_dbScanPin*) obj);
+}
 // User Code Begin dbScanPinPublicMethods
 std::variant<dbBTerm*, dbITerm*> dbScanPin::getPin() const
 {
