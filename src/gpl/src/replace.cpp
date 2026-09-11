@@ -478,6 +478,26 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_images_path_ = images_path;
 }
 
+float Replace::estimateTargetDensity(const PlaceOptions& options,
+                                     const int threads)
+{
+  log_->info(GPL, 88, "Initialize gpl and estimate target density.");
+  log_->redirectStringBegin();
+
+  PlaceOptions options_no_io = options;
+  options_no_io.skipIo();  // in case bterms are not placed
+
+  float density = 1.0f;
+  bool initialized = initNesterovPlace(options_no_io, threads, false);
+  log_->redirectStringEnd();  // discard output
+
+  if (initialized) {
+    density = nbVec_[0]->estimateTargetDensity(options_no_io.overflow);
+  }
+
+  return density;
+}
+
 void PlaceOptions::validate(utl::Logger* logger)
 {
   utl::Validator val(logger, GPL);
