@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -42,6 +43,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -472,6 +474,148 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   }
 };
 
+// True when `name` is a registered heat map source's display name, which is
+// what HeatMapRenderer uses for its single control.  A linear walk over the
+// handful of registered sources: cheaper than building a set per request, and
+// only reached for controls already known to be in the heat map group.
+bool isRegisteredHeatMapName(const std::string& name)
+{
+  for (const gui::HeatMapSourceHandle& source :
+       gui::getRegisteredHeatMapSources()) {
+    if (source->getName() == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void seedRendererControls(WebViewerHook* hook)
+{
+  if (hook == nullptr) {
+    return;
+  }
+  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+    // The controls a renderer declares are fixed once it has registered, so
+    // one pass per renderer is enough — the render path calls this on every
+    // tile and must not pay for the walk each time.
+    if (!hook->markRendererSeeded(renderer)) {
+      continue;
+    }
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      hook->seedDisplayControlVisible(renderer->displayControlPath(name),
+                                      control.visibility);
+    }
+  }
+}
+
+// Serializes the per-renderer display controls for the `renderer_controls`
+// request: {"type":"renderer_controls","controls":[...]}.  Flat list; the
+// client groups by `group` the way registerRenderer merges renderers that
+// share a group name.  `path` is what checkDisplayControl composes and what
+// set_renderer_control takes, so the client never has to rebuild it.
+//
+// The heat maps are left out.  gui::Gui::registerHeatMap gives every source a
+// HeatMapRenderer whose single control gates its drawObjects, but the web
+// draws heat maps through its own tile layer, driven by the dedicated
+// "Heat Maps" group in the display-controls panel; serving these too put a
+// second, settings-less "Heat Maps" group in the same panel.  They are still
+// SEEDED here — that is what keeps them at their default of off, and so what
+// stops the heat map from also being drawn through the renderer path, on top
+// of the tile layer, whenever Debug Graphics is on.
+std::string rendererControlsJson(WebViewerHook* hook)
+{
+  seedRendererControls(hook);
+
+  // A control belongs to a heat map when BOTH its group and its name match:
+  // the group literal mirrors HeatMapRenderer::getDisplayControlGroupName()
+  // and the names come from the source registry (rather than
+  // Gui::getHeatMaps, which the CLI-only gui library does not define).
+  // Matching the name alone would silently drop an unrelated renderer's
+  // control that happened to be called "Pin Density"; matching the group
+  // alone would drop a real renderer that picked the same group name.
+  static constexpr const char* kHeatMapGroup = "Heat Maps";
+
+  boost::json::array controls;
+  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+    const std::string group = renderer->getDisplayControlGroupName();
+    const bool heat_map_group = group == kHeatMapGroup;
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      if (heat_map_group && isRegisteredHeatMapName(name)) {
+        continue;
+      }
+      const std::string path = renderer->displayControlPath(name);
+      boost::json::object o;
+      o["group"] = group;
+      o["name"] = name;
+      o["path"] = path;
+      o["visible"] = hook != nullptr ? hook->checkDisplayControlVisible(path)
+                                     : control.visibility;
+      // mutual_exclusivity is deliberately not serialized: the rule is
+      // applied server-side by applyRendererControlExclusivity, and the
+      // client re-reads the whole set after a change rather than predicting
+      // which siblings moved.
+      //
+      // Qt binds interactive_setup to a double-click on the row; its only
+      // user opens a Qt dialog (HeatMapRenderer::showSetup), which has no
+      // meaning here, so it is deliberately not exposed either.
+      controls.emplace_back(std::move(o));
+    }
+  }
+
+  boost::json::object root;
+  root["type"] = "renderer_controls";
+  root["controls"] = std::move(controls);
+  return boost::json::serialize(root);
+}
+
+// The per-renderer control just switched on at `path` turns off the siblings
+// it declares mutually exclusive with, mirroring
+// DisplayControls::itemChanged: exclusivity is scoped to the parent group, an
+// empty name means "every sibling", and renderers that share a group name
+// share the parent, so a sibling can belong to another renderer.
+void applyRendererControlExclusivity(WebViewerHook* hook,
+                                     const std::string& path)
+{
+  std::string group;
+  std::set<std::string> exclusivity;
+  bool found = false;
+  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+    const std::string renderer_group = renderer->getDisplayControlGroupName();
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      if (renderer->displayControlPath(name) == path) {
+        group = renderer_group;
+        exclusivity = control.mutual_exclusivity;
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      break;
+    }
+  }
+  if (!found || exclusivity.empty()) {
+    return;
+  }
+  const bool exclude_all = exclusivity.contains("");
+
+  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+    const std::string renderer_group = renderer->getDisplayControlGroupName();
+    if (renderer_group != group) {
+      continue;
+    }
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      if (!exclude_all && !exclusivity.contains(name)) {
+        continue;
+      }
+      const std::string control_path = renderer->displayControlPath(name);
+      if (control_path == path) {
+        continue;
+      }
+      hook->setDisplayControlVisible(control_path, false);
+    }
+  }
+}
+
 WebSocketSession::WebSocketSession(
     Tcp::socket&& socket,
     // NOLINTBEGIN(performance-unnecessary-value-param)
@@ -648,6 +792,89 @@ WebSocketSession::WebSocketSession(
                                      ? viewer_hook_->customUiJson()
                                      : R"({"type":"custom_ui","menu":[],)"
                                        R"("toolbar":[]})";
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Per-renderer display controls; see rendererControlsJson.
+  dispatcher_.add(
+      "renderer_controls",
+      WebSocketRequest::kRendererControls,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = rendererControlsJson(viewer_hook_);
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Toggle one per-renderer control.  Mutual exclusivity is enforced here
+  // rather than in the client, so the value the renderers read is right even
+  // if a client sends only the row it changed.  Qt's rule
+  // (DisplayControls::itemChanged): turning a control on unchecks the
+  // siblings it names, within its own group; "" names every sibling.
+  dispatcher_.add(
+      "set_renderer_control",
+      WebSocketRequest::kSetRendererControl,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        if (viewer_hook_ == nullptr) {
+          return errorResponse(req.id, "server error: no viewer");
+        }
+        try {
+          const std::string path = std::string(req.json.at("path").as_string());
+          const bool value = req.json.at("value").as_bool();
+          viewer_hook_->setDisplayControlVisible(path, value);
+          if (value) {
+            applyRendererControlExclusivity(viewer_hook_, path);
+          }
+          // Every client shows the same server-side state, so tell them all;
+          // the renderers redraw from the new values on the next tile.
+          viewer_hook_->sessions().broadcast(
+              R"({"type":"renderer_controls_changed"})");
+        } catch (const std::exception& e) {
+          return errorResponse(req.id,
+                               std::string("server error: ") + e.what());
+        }
+        const std::string json = R"({"ok":1})";
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Options > "Show polygon decomposition" (2.15).  With no "value" this is
+  // the getter a connecting client uses to sync its menu; with one it sets
+  // the flag.  The setting is server-global, matching the single Qt window,
+  // so a change is broadcast and every client re-requests its overlay — the
+  // overlay handler notices the flip and re-derives the highlight shapes.
+  dispatcher_.add(
+      "poly_decomp",
+      WebSocketRequest::kPolyDecomp,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        auto* gui = gui::Gui::get();
+        const auto* value = req.json.if_contains("value");
+        if (value != nullptr && value->is_bool()) {
+          const bool requested = value->get_bool();
+          if (requested != gui->usePolyDecompView()) {
+            gui->setUsePolyDecompView(requested);
+            if (viewer_hook_ != nullptr) {
+              viewer_hook_->sessions().broadcast(
+                  std::string(R"({"type":"poly_decomp","value":)")
+                  + (requested ? "true" : "false") + "}");
+            }
+          }
+        }
+        const std::string json = std::string(R"({"value":)")
+                                 + (gui->usePolyDecompView() ? "true" : "false")
+                                 + "}";
         resp.payload.assign(json.begin(), json.end());
         return resp;
       },

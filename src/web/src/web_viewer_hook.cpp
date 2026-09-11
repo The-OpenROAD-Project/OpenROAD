@@ -272,6 +272,42 @@ bool WebViewerHook::isPaused() const
   return paused_.load(std::memory_order_acquire);
 }
 
+// ─── Per-renderer display controls ───────────────────────────────────────────
+//
+// An unknown path answers `true`, the base class's behaviour: a renderer that
+// asks about a control nobody registered should draw rather than vanish.  The
+// registry seeds every known path from its own default, so the honest defaults
+// are in place before a renderer's first paint.
+
+bool WebViewerHook::checkDisplayControlVisible(const std::string& name)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  const auto it = renderer_control_visible_.find(name);
+  return it == renderer_control_visible_.end() ? true : it->second;
+}
+
+void WebViewerHook::setDisplayControlVisible(const std::string& name,
+                                             const bool value)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  renderer_control_visible_[name] = value;
+}
+
+void WebViewerHook::seedDisplayControlVisible(const std::string& name,
+                                              const bool value)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  // insert(), not operator[]: a renderer re-registering (a second placement
+  // run) must not reset a control the user turned on.
+  renderer_control_visible_.insert({name, value});
+}
+
+bool WebViewerHook::markRendererSeeded(const void* renderer)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  return seeded_renderers_.insert(renderer).second;
+}
+
 void WebViewerHook::drainLogs()
 {
   if (drain_logs_) {

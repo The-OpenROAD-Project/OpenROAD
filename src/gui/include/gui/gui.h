@@ -5,6 +5,7 @@
 
 #include <any>
 #include <array>
+#include <atomic>
 #include <cstring>
 #include <functional>
 #include <initializer_list>
@@ -604,6 +605,15 @@ class Renderer
   using DisplayControls = std::map<std::string, DisplayControl>;
   const DisplayControls& getDisplayControls() { return controls_; }
 
+  // The path a display control is addressed by: "Group/Name", or just the
+  // name for an ungrouped renderer.  One definition, because both front-ends
+  // and every consumer of getDisplayControls() has to agree on it.
+  std::string displayControlPath(const std::string& name)
+  {
+    const std::string group = getDisplayControlGroupName();
+    return group.empty() ? name : group + "/" + name;
+  }
+
   // Used to check the value of the display control
   bool checkDisplayControl(const std::string& name);
   // Used to set the value of the display control
@@ -1088,6 +1098,15 @@ class Gui
   void setChartFactory(ChartFactory factory);
   const ChartFactory& getChartFactory() const { return chart_factory_; }
 
+  // Options > "Show polygon decomposition": when set, an ITerm/MTerm
+  // highlight outlines the decomposed rectangles instead of the true
+  // polygons.  Held here rather than in a front-end so the web viewer can
+  // drive it too; the Qt main window keeps its own QAction and re-registers
+  // the two descriptors against that instead.  Atomic because the
+  // descriptors read it from the render threads.
+  void setUsePolyDecompView(bool value) { use_poly_decomp_view_ = value; }
+  bool usePolyDecompView() const { return use_poly_decomp_view_; }
+
   // initialize the GUI
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
@@ -1107,6 +1126,9 @@ class Gui
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
+
+  // Options > "Show polygon decomposition"; see setUsePolyDecompView().
+  std::atomic<bool> use_poly_decomp_view_{false};
 
   utl::Logger* logger_;
   odb::dbDatabase* db_;

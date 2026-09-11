@@ -4,7 +4,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { boundsEqual, computeBoundsTransforms, computeScaleBar, cssColorToHex,
-         isValidHexColor, maxUsefulZoom, MAX_TILE_ZOOM, niceRoundParts }
+         installWheelPanning, isValidHexColor, maxUsefulZoom, MAX_TILE_ZOOM,
+         niceRoundParts }
     from '../../src/ui-utils.js';
 
 describe('computeBoundsTransforms', () => {
@@ -202,5 +203,106 @@ describe('maxUsefulZoom', () => {
         const scale = scaleFor(71510);
         assert.ok(maxUsefulZoom(scale, 64) > maxUsefulZoom(scale, 8),
                   'a larger budget allows deeper zoom');
+    });
+});
+
+// ─── installWheelPanning (Options > mouse-wheel-zoom, 2.15) ─────────────────
+
+// A stand-in for the Leaflet map: DOM-free, so this file stays free of jsdom.
+function makeWheelMap({ zoom = 5, clientHeight = 600 } = {}) {
+    const calls = { pan: [], zoom: [], disabled: 0, prevented: 0 };
+    let listener = null;
+    const container = {
+        clientHeight,
+        addEventListener(type, fn) {
+            if (type === 'wheel') listener = fn;
+        },
+    };
+    const map = {
+        scrollWheelZoom: { disable() { calls.disabled++; } },
+        getContainer: () => container,
+        getZoom: () => zoom,
+        panBy: (offset) => calls.pan.push(offset),
+        setZoomAround: (latlng, z) => calls.zoom.push(z),
+        mouseEventToLatLng: () => 'cursor',
+    };
+    const fire = (e) => listener({
+        deltaX: 0, deltaY: 0, deltaMode: 0, ctrlKey: false,
+        preventDefault: () => { calls.prevented++; },
+        ...e,
+    });
+    return { map, calls, fire };
+}
+
+describe('installWheelPanning', () => {
+    // Leaflet's own handler would zoom on top of whatever this one did.
+    it('turns off Leaflet\'s wheel zoom and swallows the page scroll', () => {
+        const { map, calls, fire } = makeWheelMap();
+        installWheelPanning(map, () => true);
+        assert.equal(calls.disabled, 1);
+        fire({ deltaY: -1 });
+        assert.equal(calls.prevented, 1);
+    });
+
+    // Qt's LayoutScroll::wheelEvent: pan when the preference and the Ctrl
+    // modifier agree, zoom otherwise.
+    it('zooms on a bare wheel when the preference is on', () => {
+        const { map, calls, fire } = makeWheelMap({ zoom: 5 });
+        installWheelPanning(map, () => true);
+        fire({ deltaY: -1 });
+        fire({ deltaY: 1 });
+        assert.deepEqual(calls.zoom, [6, 4]);
+        assert.deepEqual(calls.pan, []);
+    });
+
+    it('pans on Ctrl+wheel when the preference is on', () => {
+        const { map, calls, fire } = makeWheelMap();
+        installWheelPanning(map, () => true);
+        fire({ deltaY: 120, ctrlKey: true });
+        assert.deepEqual(calls.pan, [[0, 120]]);
+        assert.deepEqual(calls.zoom, []);
+    });
+
+    it('pans on a bare wheel when the preference is off (Qt default)', () => {
+        const { map, calls, fire } = makeWheelMap();
+        installWheelPanning(map, () => false);
+        fire({ deltaY: 120 });
+        assert.deepEqual(calls.pan, [[0, 120]]);
+        assert.deepEqual(calls.zoom, []);
+    });
+
+    it('zooms on Ctrl+wheel when the preference is off', () => {
+        const { map, calls, fire } = makeWheelMap({ zoom: 3 });
+        installWheelPanning(map, () => false);
+        fire({ deltaY: -1, ctrlKey: true });
+        assert.deepEqual(calls.zoom, [4]);
+    });
+
+    it('reads the preference on every event, not just at install', () => {
+        let pref = true;
+        const { map, calls, fire } = makeWheelMap();
+        installWheelPanning(map, () => pref);
+        fire({ deltaY: -1 });
+        pref = false;
+        fire({ deltaY: -1 });
+        assert.equal(calls.zoom.length, 1);
+        assert.equal(calls.pan.length, 1);
+    });
+
+    it('pans horizontally from deltaX', () => {
+        const { map, calls, fire } = makeWheelMap();
+        installWheelPanning(map, () => false);
+        fire({ deltaX: -40, deltaY: 10 });
+        assert.deepEqual(calls.pan, [[-40, 10]]);
+    });
+
+    // Firefox reports lines and some remote-desktop stacks report pages;
+    // treating either as pixels would make one notch pan a few pixels.
+    it('scales line- and page-mode deltas to pixels', () => {
+        const { map, calls, fire } = makeWheelMap({ clientHeight: 600 });
+        installWheelPanning(map, () => false);
+        fire({ deltaY: 3, deltaMode: 1 });
+        fire({ deltaY: 1, deltaMode: 2 });
+        assert.deepEqual(calls.pan, [[0, 48], [0, 600]]);
     });
 });

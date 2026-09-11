@@ -1270,7 +1270,17 @@ export function populateDisplayControls(app, visibility, selectability,
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
     // Subtrees that opt into a second "selectable" checkbox column mirror
     // the Qt GUI's selectability column (see displayControls.cpp).
-    const visTree = new VisTree(visibility, selectability, redrawAllLayers);
+    // VisTree shares one onChange across every row of both models, so latch
+    // the only value that changes the per-renderer answer instead of paying a
+    // round trip for each of the ~100 unrelated toggles.
+    let lastDebugRenderers = !!visibility.debug_renderers;
+    const visTree = new VisTree(visibility, selectability, () => {
+        redrawAllLayers();
+        if (!!visibility.debug_renderers !== lastDebugRenderers) {
+            lastDebugRenderers = !!visibility.debug_renderers;
+            if (app.refreshRendererControls) app.refreshRendererControls();
+        }
+    });
     visTree.add({ label: 'Nets', addSelectable: true, children: [
         { key: 'net_signal', label: 'Signal' },
         { key: 'net_power', label: 'Power' },
@@ -1378,6 +1388,120 @@ export function populateDisplayControls(app, visibility, selectability,
     ]});
     visTree.render(app.displayControlsEl);
 
+    // ─── Per-renderer display controls ──────────────────────────────────────
+    // The rows Qt's DisplayControls builds from Renderer::getDisplayControls()
+    // (registerRenderer): one top-level group per renderer group name, with
+    // renderers that share a name merged under it.  These are server state,
+    // not TileVisibility keys — the renderers read them from the render
+    // threads and every client sees the same values — so they live outside
+    // visTree and are fetched instead of stored in a cookie.
+    const rendererControlsEl = document.createElement('div');
+    rendererControlsEl.className = 'renderer-controls';
+    app.displayControlsEl.appendChild(rendererControlsEl);
+
+    // Send one or more control changes.  Nothing is done with the replies:
+    // the server broadcasts renderer_controls_changed to every session
+    // including this one, and main.js re-reads and redraws from that — so a
+    // local refresh here would just duplicate the round trip.  Mutual
+    // exclusivity is applied server-side, which is why the re-read has to be
+    // a full one rather than a guess at which siblings moved.
+    function setRendererControls(changes) {
+        return Promise.all(changes.map(
+            ({ path, value }) => app.websocketManager.request(
+                { type: 'set_renderer_control', path, value })))
+            .catch(() => {});
+    }
+
+    function buildRendererControls(controls) {
+        rendererControlsEl.innerHTML = '';
+        // Group in arrival order, so the panel follows the registration order
+        // the server reports.
+        const groups = new Map();
+        for (const control of controls || []) {
+            const key = control.group || '';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(control);
+        }
+
+        for (const [groupName, rows] of groups) {
+            let parent = rendererControlsEl;
+            if (groupName) {
+                const group = document.createElement('div');
+                group.className = 'vis-group';
+                const { header, arrow, name } = makeGroupHeader();
+                name.textContent = groupName;
+
+                // Qt's parent row carries a tri-state checkbox that drives its
+                // children; derive it from them and apply it to all of them.
+                const groupCb = document.createElement('input');
+                groupCb.type = 'checkbox';
+                groupCb.className = 'vis-cb';
+                groupCb.title = 'Visible';
+                const onCount = rows.filter(r => r.visible).length;
+                groupCb.checked = onCount === rows.length;
+                groupCb.indeterminate = onCount > 0 && onCount < rows.length;
+                groupCb.addEventListener('change', () => {
+                    const want = groupCb.checked;
+                    setRendererControls(
+                        rows.filter(r => !!r.visible !== want)
+                            .map(r => ({ path: r.path, value: want })));
+                });
+                header.appendChild(groupCb);
+                header.appendChild(makeSelSpacer());
+                group.appendChild(header);
+
+                const kids = document.createElement('div');
+                kids.className = 'vis-group-children';
+                group.appendChild(kids);
+                attachGroupCollapse(header, arrow, kids, false);
+                rendererControlsEl.appendChild(group);
+                parent = kids;
+            }
+
+            for (const control of rows) {
+                const row = document.createElement('div');
+                row.className = 'vis-leaf';
+                // Hidden triangle, as the layer rows and VisTree leaves do:
+                // it is 14px of the name column, so without it these names sit
+                // left of every other leaf name in the panel.
+                const spacer = document.createElement('span');
+                spacer.className = 'vis-arrow';
+                spacer.style.visibility = 'hidden';
+                spacer.textContent = '▶';
+                row.appendChild(spacer);
+                row.appendChild(makeNameSpan(control.name));
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'vis-cb';
+                cb.title = 'Visible';
+                cb.checked = !!control.visible;
+                cb.addEventListener('change', () => setRendererControls(
+                    [{ path: control.path, value: cb.checked }]));
+                row.appendChild(cb);
+                row.appendChild(makeSelSpacer());
+                parent.appendChild(row);
+            }
+        }
+    }
+
+    // Renderers register when a tool starts with debug graphics on, which can
+    // be long after this panel was built, so main.js calls this again on a
+    // refresh push.  Empty (and silent) when there is no server to ask.
+    app.refreshRendererControls = function() {
+        // No server, or the overlay is off (in which case no renderer is
+        // registered): clear rather than leave a stale list, and skip the
+        // round trip.  Owned here so no caller has to remember the rule.
+        if (!app.websocketManager || isStaticMode(app)
+            || !visibility.debug_renderers) {
+            rendererControlsEl.innerHTML = '';
+            return Promise.resolve();
+        }
+        return app.websocketManager.request({ type: 'renderer_controls' })
+            .then(data => buildRendererControls(data.controls))
+            .catch(() => {});
+    };
+    app.refreshRendererControls();
+
     // Background color control (Qt GUI "Background" parity): a swatch that
     // opens the native color picker + a reset-to-theme link.  The layout
     // background is the CSS var --bg-map on the Leaflet container, so this
@@ -1414,7 +1538,8 @@ export function populateDisplayControls(app, visibility, selectability,
     bgRow.appendChild(bgLabel);
     bgRow.appendChild(bgInput);
     bgRow.appendChild(bgReset);
-    app.displayControlsEl.appendChild(bgRow);
+    // Appended after the heat maps group below: Background is the panel's
+    // footer, so every group — heat maps included — sits above it.
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {
@@ -1438,6 +1563,9 @@ export function populateDisplayControls(app, visibility, selectability,
     heatMapGroup.appendChild(heatMapContainer);
 
     attachGroupCollapse(heatMapHeader, heatMapArrow, heatMapContainer, true);
+
+    // The Background row closes the panel, below every group.
+    app.displayControlsEl.appendChild(bgRow);
 
     function addCheckbox(parent, label, checked, onChange) {
         const row = document.createElement('label');
@@ -1703,6 +1831,20 @@ export function populateDisplayControls(app, visibility, selectability,
                               });
                           });
             }
+        }
+
+        // Qt's HeatMapSetup offers this only for sources that name it; the
+        // label carries the source's own wording ("Only selected instances").
+        if (active.selection_filter_label) {
+            addCheckbox(settings, active.selection_filter_label,
+                        active.use_selected_only, value => {
+                            sendHeatMapUpdate({
+                                type: 'set_heatmap',
+                                name: active.name,
+                                option: 'use_selected_only',
+                                value,
+                            });
+                        });
         }
 
         const rebuild = document.createElement('button');

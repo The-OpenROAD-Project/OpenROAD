@@ -51,12 +51,33 @@
     --fg-hud: #eef4f8;
     --fg-hud-muted: #9fb0bc;
 
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Qt's Options > "Application font" (QApplication::setFont) parity: the
+     * one place that sets the UI font.  --font-sans is the proportional
+     * chrome, so the preference drives it; --font-mono is deliberately left
+     * alone, because the Tcl console and the numeric tables are legible and
+     * aligned only in a monospaced face. */
+    --or-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-sans: var(--or-font-family);
     /* Bare `monospace` is whatever the UA picked, which on several systems is
      * Courier -- wide, and thin at the 11-12px this UI uses.  Name the faces
      * that ship with each platform first and keep `monospace` as the floor. */
     --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono',
                  'DejaVu Sans Mono', Menlo, Consolas, monospace;
+
+    /* The authored px sizes, scaled.  A preference change moves the whole
+     * chrome at once, and a scale of 1 renders exactly as the hand-written
+     * sizes did.  Canvas text (layout labels, charts) is rendered server-side
+     * from the font atlas and is deliberately not covered. */
+    --or-font-scale: 1;
+    --fs-9: calc(9px * var(--or-font-scale));
+    --fs-10: calc(10px * var(--or-font-scale));
+    --fs-11: calc(11px * var(--or-font-scale));
+    --fs-12: calc(12px * var(--or-font-scale));
+    --fs-13: calc(13px * var(--or-font-scale));
+    --fs-14: calc(14px * var(--or-font-scale));
+    --fs-15: calc(15px * var(--or-font-scale));
+    --fs-16: calc(16px * var(--or-font-scale));
+    --fs-18: calc(18px * var(--or-font-scale));
 
     /* Violated and met slack.  These are the Qt GUI's histogram colours
      * (chartsWidget.cpp:1052-1062, lightgreen/lightcoral), which
@@ -279,7 +300,7 @@ html[data-theme="light"] {
     color: var(--fg-hud);
     padding: 2px 6px;
     border-radius: var(--radius-sm);
-    font: 12px var(--font-mono);
+    font: var(--fs-12) var(--font-mono);
     white-space: nowrap;
     pointer-events: none;
     border: none;
@@ -350,7 +371,7 @@ body {
     height: 24px;
     background: var(--bg-header);
     border-bottom: 1px solid var(--bg-input);
-    font: 13px var(--font-sans);
+    font: var(--fs-13) var(--font-sans);
     color: var(--fg-primary);
     user-select: none;
     z-index: 10001;
@@ -451,7 +472,7 @@ body {
 /* A Tcl-registered button carries an icon slot ahead of its label; the button
  * itself is a plain .or-btn. */
 #toolbar .toolbar-icon {
-    font-size: 13px;
+    font-size: var(--fs-13);
     line-height: 1;
 }
 /* Unlike the inline SVGs elsewhere, this is a user-supplied image of unknown
@@ -494,7 +515,7 @@ body {
     color: var(--fg-primary);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
-    font: 12px var(--font-sans);
+    font: var(--fs-12) var(--font-sans);
     line-height: 1;
     white-space: nowrap;
     cursor: pointer;
@@ -512,7 +533,7 @@ body {
 .or-btn-sm {
     --or-btn-h: 22px;
     padding: 0 var(--space-md);
-    font-size: 11px;
+    font-size: var(--fs-11);
 }
 /* Square, for a button whose whole label is one glyph or icon. */
 .or-btn-icon {
@@ -576,7 +597,7 @@ body {
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 14px var(--shadow);
     color: var(--fg-primary);
-    font-size: 12px;
+    font-size: var(--fs-12);
     /* `pre`, not `nowrap`: the timing column help arrives as a multi-line
      * string and has to keep its newlines.  Single-line content renders the
      * same under either. */
@@ -608,7 +629,7 @@ body {
     box-shadow: 0 6px 20px var(--shadow-strong);
     backdrop-filter: blur(3px);
     color: var(--fg-hud);
-    font: 12px var(--font-mono);
+    font: var(--fs-12) var(--font-mono);
     font-variant-numeric: tabular-nums;
     pointer-events: none;
 }
@@ -656,7 +677,7 @@ body {
     padding: 16px 20px;
     min-width: 400px;
     color: var(--fg-primary);
-    font: 13px var(--font-sans);
+    font: var(--fs-13) var(--font-sans);
 }
 .modal-dialog .modal-close {
     position: absolute;
@@ -668,7 +689,7 @@ body {
     border: none;
     background: transparent;
     color: var(--fg-primary);
-    font-size: 18px;
+    font-size: var(--fs-18);
     line-height: 20px;
     cursor: pointer;
     opacity: 0.7;
@@ -678,7 +699,7 @@ body {
 }
 .modal-dialog h3 {
     margin: 0 0 12px 0;
-    font-size: 14px;
+    font-size: var(--fs-14);
     font-weight: 600;
 }
 .modal-dialog input[type="text"] {
@@ -688,7 +709,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     color: var(--fg-primary);
-    font: 13px var(--font-mono);
+    font: var(--fs-13) var(--font-mono);
     box-sizing: border-box;
 }
 .modal-dialog input[type="text"]:focus {
@@ -704,29 +725,55 @@ body {
 .modal-dialog .modal-error {
     color: var(--error);
     margin-top: 8px;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 /* Search & navigation dialogs (Find / Go to) */
-.search-nav-dialog .sn-row {
+/* Shared by every dialog built on the sn-row markup. */
+.search-nav-dialog .sn-row,
+.options-dialog .sn-row {
     display: flex;
     align-items: center;
     gap: 8px;
     margin: 6px 0;
 }
-.search-nav-dialog .sn-row label {
+.search-nav-dialog .sn-row label,
+.options-dialog .sn-row label {
     width: 64px;
     flex-shrink: 0;
 }
 .search-nav-dialog .sn-row .fb-path-input,
-.search-nav-dialog .sn-type {
+.search-nav-dialog .sn-type,
+.options-dialog .sn-row .fb-path-input,
+.options-dialog .opt-family {
     flex: 1;
+    min-width: 0;
 }
 .search-nav-dialog .sn-check {
     display: block;
     margin: 8px 0 2px;
 }
 .modal-dialog .modal-error.info {
+    color: var(--fg-primary);
+}
+
+/* Options-menu dialogs (Arrow keys scroll step / Application font): the shared
+   sn-row layout above, with a wider label column for the longer field names. */
+.options-dialog { min-width: 380px; }
+.options-dialog .sn-row label { width: 110px; }
+.options-dialog .opt-hint {
+    margin: 8px 0 2px;
+    color: var(--fg-muted);
+    font-size: var(--fs-11);
+}
+/* The preview deliberately ignores --or-font-scale: it shows the pending
+   choice, which is not applied to the document yet. */
+.options-dialog .opt-preview {
+    margin: 10px 0 2px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
     color: var(--fg-primary);
 }
 
@@ -737,7 +784,7 @@ body {
     align-items: center;
     gap: 8px;
     margin: 6px 0;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 .edit-field > span { min-width: 96px; color: var(--fg-muted); }
 .edit-field input, .edit-field select { flex: 1; }
@@ -755,7 +802,7 @@ body {
     gap: 6px;
     padding: 3px 6px;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 .gc-row.gc-head { background: var(--bg-header); color: var(--fg-muted); font-weight: bold; }
 .gc-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -772,7 +819,7 @@ body {
     border: 1px solid var(--bg-input);
     padding: 4px;
 }
-.buf-pin { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 0; }
+.buf-pin { display: flex; align-items: center; gap: 6px; font-size: var(--fs-12); padding: 2px 0; }
 
 /* File browser dialog */
 .file-browser-dialog {
@@ -785,7 +832,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     margin-bottom: 8px;
-    font-size: 12px;
+    font-size: var(--fs-12);
     white-space: nowrap;
     overflow-x: auto;
 }
@@ -832,7 +879,7 @@ body {
     flex-shrink: 0;
     width: 16px;
     text-align: center;
-    font-size: 13px;
+    font-size: var(--fs-13);
 }
 .fb-name {
     flex: 1;
@@ -843,7 +890,7 @@ body {
 .fb-size {
     flex-shrink: 0;
     color: var(--fg-muted);
-    font-size: 11px;
+    font-size: var(--fs-11);
     margin-left: 8px;
 }
 .fb-empty, .fb-loading {
@@ -888,7 +935,7 @@ body {
     box-shadow: none;
     color: var(--fg-muted);
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: var(--fs-12);
     border-bottom: 2px solid transparent;
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
     transition: background-color 120ms ease, color 120ms ease;
@@ -1024,7 +1071,7 @@ body {
 }
 /* "Fit" control button — inherits .leaflet-bar sizing from Leaflet's CSS. */
 .leaflet-control-fit a {
-    font-size: 16px;
+    font-size: var(--fs-16);
     font-weight: bold;
     line-height: 26px;
     text-align: center;
@@ -1125,7 +1172,7 @@ body {
     color: var(--fg-white);
     padding: 16px 24px;
     border-radius: var(--radius-md);
-    font-size: 16px;
+    font-size: var(--fs-16);
     font-weight: bold;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     text-align: center;
@@ -1173,16 +1220,21 @@ body {
 /* Tick/label text drawn inside the scale-bar SVG. */
 .scale-bar-text {
     fill: currentColor;
-    font: 11px var(--font-mono);
+    font: var(--fs-11) var(--font-mono);
 }
 
 /* Background color control in the Display Controls panel. */
+/* The panel's footer, and the only row that is not a display control — hence
+   the divider above it, which separates it from everything that governs what
+   is drawn (layers through heat maps). */
 .bg-color-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 8px;
-    font-size: 12px;
+    margin-top: 12px;
+    padding: 8px 8px 4px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: var(--fs-12);
 }
 .bg-color-row span {
     flex: 1;
@@ -1196,7 +1248,7 @@ body {
     cursor: pointer;
 }
 .bg-color-reset {
-    font-size: 11px;
+    font-size: var(--fs-11);
     cursor: pointer;
 }
 
@@ -1215,7 +1267,7 @@ body {
     align-items: center;
     gap: 12px;
     color: var(--fg-primary);
-    font: 16px var(--font-sans);
+    font: var(--fs-16) var(--font-sans);
 }
 #loading-overlay .spinner {
     width: 20px;
@@ -1235,12 +1287,12 @@ body {
     justify-content: center;
     height: 100%;
     color: var(--fg-disabled);
-    font-size: 14px;
+    font-size: var(--fs-14);
     text-align: center;
     padding: 20px;
 }
 .stub-title {
-    font-size: 15px;
+    font-size: var(--fs-15);
     font-weight: 600;
     color: var(--fg-muted);
     margin-bottom: 8px;
@@ -1257,7 +1309,7 @@ body {
     box-sizing: border-box;
     overflow-y: auto;
     height: 100%;
-    font-size: 13px;
+    font-size: var(--fs-13);
 }
 /* Column header, mirroring the Qt GUI's QHeaderView
  * (DisplayControlModel::headerData): an icon over the visibility column and
@@ -1352,7 +1404,7 @@ body {
     user-select: none;
 }
 .display-controls .vis-arrow {
-    font-size: 9px;
+    font-size: var(--fs-9);
     width: 14px;
     text-align: center;
     color: var(--fg-muted);
@@ -1417,7 +1469,7 @@ body {
     z-index: 10000;
     padding: 4px 0;
     box-shadow: 0 2px 8px var(--shadow);
-    font-size: 13px;
+    font-size: var(--fs-13);
     color: var(--fg-primary);
 }
 .context-menu-item {
@@ -1451,7 +1503,7 @@ body {
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 10px;
+    font-size: var(--fs-10);
     opacity: 0.7;
 }
 .cm-submenu {
@@ -1488,7 +1540,7 @@ body {
     flex-direction: column;
     height: 100%;
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: var(--fs-13);
 }
 .tcl-output {
     flex: 1;
@@ -1532,7 +1584,7 @@ body {
     outline: none;
     padding: 6px 8px 6px 0;
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: var(--fs-13);
 }
 
 /* Tcl completion popup */
@@ -1547,7 +1599,7 @@ body {
     box-shadow: 0 -4px 12px var(--shadow);
     z-index: 10003;
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: var(--fs-13);
     color: var(--fg-primary);
     min-width: 200px;
 }
@@ -1572,7 +1624,7 @@ body {
 /* Help panel */
 .help-panel {
     padding: 16px;
-    font-size: 13px;
+    font-size: var(--fs-13);
     line-height: 1.6;
     overflow-y: auto;
     height: 100%;
@@ -1580,7 +1632,7 @@ body {
 .help-panel h3 {
     color: var(--fg-secondary);
     margin: 0 0 12px 0;
-    font-size: 14px;
+    font-size: var(--fs-14);
 }
 .help-panel table {
     border-collapse: collapse;
@@ -1594,7 +1646,7 @@ body {
     border-radius: var(--radius-sm);
     padding: 1px 6px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--fs-12);
     color: var(--fg-bright);
 }
 
@@ -1603,7 +1655,7 @@ body {
     padding: 8px;
     overflow-y: auto;
     height: 100%;
-    font-size: 13px;
+    font-size: var(--fs-13);
     font-family: var(--font-sans);
 }
 .inspector-prop {
@@ -1666,7 +1718,7 @@ body {
 .inspector-editable:hover::after {
     content: ' \270E';
     color: var(--fg-muted);
-    font-size: 10px;
+    font-size: var(--fs-10);
 }
 .inspector-editable:focus {
     outline: none;
@@ -1690,7 +1742,7 @@ body {
     color: var(--fg-muted);
     cursor: pointer;
     padding: 0 4px;
-    font-size: 12px;
+    font-size: var(--fs-12);
     flex-shrink: 0;
 }
 .inspector-edit-btn:hover {
@@ -1721,7 +1773,7 @@ body {
 }
 .or-modal-message {
     color: var(--fg-secondary);
-    font-size: 12px;
+    font-size: var(--fs-12);
     margin-bottom: 14px;
     word-break: break-all;
 }
@@ -1734,7 +1786,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    font-size: 12px;
+    font-size: var(--fs-12);
     color: var(--fg-primary);
 }
 .sb-tabs {
@@ -1792,7 +1844,7 @@ body {
     padding: var(--space-sm);
     border-bottom: 1px solid var(--border);
     font-family: var(--font-sans);
-    font-size: 11px;
+    font-size: var(--fs-11);
     font-weight: 600;
 }
 .sb-table th.sb-sortable {
@@ -1876,7 +1928,7 @@ body {
     border-radius: var(--radius-sm);
     color: var(--fg-primary);
     cursor: pointer;
-    font-size: 11px;
+    font-size: var(--fs-11);
 }
 .highlight-remove:hover {
     background: var(--border);
@@ -1893,7 +1945,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-md);
     box-shadow: 0 6px 20px var(--shadow-strong);
-    font-size: 12px;
+    font-size: var(--fs-12);
     z-index: 3000;
     opacity: 0;
     pointer-events: none;
@@ -1937,7 +1989,7 @@ body {
     background: var(--bg-context);
 }
 .inspector-group-header .vis-arrow {
-    font-size: 9px;
+    font-size: var(--fs-9);
     width: 14px;
     text-align: center;
     color: var(--fg-muted);
@@ -1946,7 +1998,7 @@ body {
 .inspector-count {
     color: var(--fg-disabled);
     margin-left: 6px;
-    font-size: 11px;
+    font-size: var(--fs-11);
 }
 .inspector-group-children {
     padding-left: 16px;
@@ -1965,7 +2017,7 @@ body {
     border-collapse: collapse;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 .inspector-table th,
 .inspector-table td {
@@ -2008,7 +2060,7 @@ body {
     margin-bottom: 4px;
 }
 .inspector-selection-label {
-    font-size: 11px;
+    font-size: var(--fs-11);
     color: var(--fg-muted);
     min-width: 40px;
     text-align: center;
@@ -2078,7 +2130,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    font-size: 13px;
+    font-size: var(--fs-13);
     font-family: var(--font-sans);
     overflow: hidden;
 }
@@ -2094,7 +2146,7 @@ body {
 
 .timing-path-count {
     color: var(--fg-muted);
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 .timing-cone-panel {
@@ -2105,14 +2157,14 @@ body {
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
     flex-wrap: wrap;
-    font-size: 12px;
+    font-size: var(--fs-12);
     color: var(--fg-primary);
 }
 .timing-cone-title { color: var(--fg-muted); }
-.timing-cone-panel label { font-size: 12px; }
+.timing-cone-panel label { font-size: var(--fs-12); }
 .timing-cone-depth-label { display: inline-flex; align-items: center; gap: 3px; }
 .timing-cone-depth { width: 42px; }
-.timing-cone-colormode { font-size: 12px; }
+.timing-cone-colormode { font-size: var(--fs-12); }
 .timing-cone-status { color: var(--fg-muted); flex: 1; min-width: 80px; }
 
 .timing-tab-bar {
@@ -2128,7 +2180,7 @@ body {
     color: var(--fg-muted);
     padding: 6px 16px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: var(--fs-12);
     font-family: inherit;
 }
 .timing-tab.active {
@@ -2154,7 +2206,7 @@ body {
 .timing-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 .timing-table thead th {
@@ -2167,7 +2219,7 @@ body {
     text-align: left;
     border-bottom: 1px solid var(--border);
     font-family: var(--font-sans);
-    font-size: 11px;
+    font-size: var(--fs-11);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -2287,7 +2339,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    font-size: 13px;
+    font-size: var(--fs-13);
     font-family: var(--font-sans);
     overflow: hidden;
 }
@@ -2305,7 +2357,7 @@ body {
     cursor: pointer;
     color: var(--fg-muted);
     user-select: none;
-    font-size: 9px;
+    font-size: var(--fs-9);
     margin-right: 4px;
 }
 
@@ -2329,7 +2381,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    font-size: 13px;
+    font-size: var(--fs-13);
     font-family: var(--font-sans);
     overflow: hidden;
     position: relative;
@@ -2375,7 +2427,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: var(--fs-12);
     color: var(--fg-primary);
     user-select: none;
 }
@@ -2393,7 +2445,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    font-size: 13px;
+    font-size: var(--fs-13);
     font-family: var(--font-sans);
     overflow: hidden;
     position: relative;
@@ -2415,7 +2467,7 @@ body {
     border-radius: var(--radius-sm);
     padding: 3px 6px;
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: var(--fs-12);
     cursor: pointer;
 }
 .charts-select:hover {
@@ -2429,16 +2481,17 @@ body {
     display: block;
 }
 
+/* No rule above this group: heat maps are a display control like the ones
+   before them, so the panel's divider sits below them, on .bg-color-row.  The
+   small gap stays — the block has a header of its own. */
 .heatmap-controls {
-    margin-top: 12px;
-    padding-top: 8px;
+    margin-top: 6px;
     padding-bottom: 12px;
-    border-top: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
     gap: 6px;
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 .heatmap-header {
@@ -2470,7 +2523,7 @@ body {
     border-radius: var(--radius-sm);
     padding: 2px 4px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 .heatmap-rebuild {
@@ -2539,7 +2592,7 @@ html[data-theme="dark"] .schematic-widget svg {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 .drc-toolbar {
@@ -2557,14 +2610,14 @@ html[data-theme="dark"] .schematic-widget svg {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 3px 4px;
-    font-size: 12px;
+    font-size: var(--fs-12);
 }
 
 .drc-info-bar {
     padding: 2px 6px;
     color: var(--fg-secondary);
     border-bottom: 1px solid var(--border);
-    font-size: 11px;
+    font-size: var(--fs-11);
     min-height: 16px;
 }
 
@@ -2595,7 +2648,7 @@ html[data-theme="dark"] .schematic-widget svg {
 
 .drc-toggle {
     width: 12px;
-    font-size: 10px;
+    font-size: var(--fs-10);
     color: var(--fg-secondary);
     text-align: center;
     flex-shrink: 0;
@@ -2618,7 +2671,7 @@ html[data-theme="dark"] .schematic-widget svg {
 
 .drc-count {
     color: var(--fg-secondary);
-    font-size: 11px;
+    font-size: var(--fs-11);
     flex-shrink: 0;
 }
 
@@ -2648,7 +2701,7 @@ html[data-theme="dark"] .schematic-widget svg {
     text-align: right;
     color: var(--fg-secondary);
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: var(--fs-11);
 }
 
 .drc-marker-name {
@@ -2665,7 +2718,7 @@ html[data-theme="dark"] .schematic-widget svg {
     border: 1px solid var(--border);
     border-radius: var(--radius-xs);
     padding: 0 4px;
-    font-size: 10px;
+    font-size: var(--fs-10);
     flex-shrink: 0;
 }
 
