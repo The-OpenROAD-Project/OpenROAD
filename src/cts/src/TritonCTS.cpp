@@ -54,6 +54,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -252,8 +253,13 @@ void TritonCTS::setupCharacterization()
   }
 
   // A new characteriztion is always created.
-  techChar_ = std::make_unique<TechChar>(
-      options_, db_, openSta_, estimate_parasitics_, network_, logger_);
+  techChar_ = std::make_unique<TechChar>(options_,
+                                         db_,
+                                         openSta_,
+                                         resizer_,
+                                         estimate_parasitics_,
+                                         network_,
+                                         logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -2711,6 +2717,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
   // convert from per meter to per dbu
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
+  double resPerDBU = estimate_parasitics_->wireClkResistance(corner) * 1e-6
+                     / block_->getDbUnitsPerMicron();
 
   for (auto& builder : std::ranges::reverse_view(builders_)) {
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
@@ -2721,8 +2729,9 @@ void TritonCTS::balanceMacroRegisterLatencies()
                                                  db_,
                                                  network_,
                                                  openSta_,
-                                                 techChar_->getLengthUnit(),
-                                                 capPerDBU);
+                                                 techChar_.get(),
+                                                 capPerDBU,
+                                                 resPerDBU);
       totalDelayBuff += balancer.run();
     }
   }
