@@ -19,6 +19,14 @@
 #include "Keys.h"
 %}
 
+// Return typed counts and their null probability as one Tcl list.
+%typemap(out) wmk::VerifyResult {
+  Tcl_Obj* values[] = {Tcl_NewIntObj($1.checked),
+                       Tcl_NewIntObj($1.held),
+                       Tcl_NewDoubleObj($1.pValue())};
+  Tcl_SetObjResult(interp, Tcl_NewListObj(3, values));
+}
+
 %inline %{
 
 // Draw a fresh secret key.  Returned as hex rather than logged: the module
@@ -161,9 +169,21 @@ verify_routing_watermark_cmd(const char* key_hex,
   return s.pValue();
 }
 
-// Verification returns the extraction rate; the caller compares it against the
-// ownership threshold.  A stage with no checkable claims returns -1 so that it
-// is distinguishable from a stage where every claim failed.
+// Ownership uses counts as well as rates. Keep the rate-only accessors below
+// for extraction diagnostics; they do not make an ownership decision.
+wmk::VerifyResult
+verify_placement_claims_cmd(const char* claims_file)
+{
+  return ord::OpenRoad::openRoad()->getWatermark()->verifyPlacement(claims_file);
+}
+
+wmk::VerifyResult
+verify_cts_claims_cmd(const char* claims_file)
+{
+  return ord::OpenRoad::openRoad()->getWatermark()->verifyCts(claims_file);
+}
+
+// A stage with no checkable claims returns -1, distinct from all claims failing.
 double
 verify_placement_watermark_cmd(const char* claims_file)
 {

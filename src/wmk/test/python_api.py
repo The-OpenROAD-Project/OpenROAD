@@ -66,6 +66,9 @@ ok = (
     and again == 24
     and result.held == 24
     and result.checked == 24
+    and result.rate() == 1.0
+    and result.pValue() == 2.0**-24
+    and wmk.VerifyResult().pValue() == 1.0
     and tagged == 35
 )
 print("pass" if ok else "FAIL")

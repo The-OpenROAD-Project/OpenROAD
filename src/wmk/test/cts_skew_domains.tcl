@@ -31,7 +31,7 @@ set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
   -sibling_dist_um 100 -skew_margin_ns 0 -slew_headroom_frac 0 -cap_headroom_frac 0]
 check "the rejected pair is still claimed" { set count } 1
 check "an unrelated clock cannot hide skew degradation" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 0
 
 # With enough budget, the same keyed move succeeds. This also proves that
@@ -39,6 +39,6 @@ check "an unrelated clock cannot hide skew degradation" {
 cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
   -sibling_dist_um 100 -skew_margin_ns 0.5 -slew_headroom_frac 0 -cap_headroom_frac 0
 check "the move succeeds with a sufficient clock-specific budget" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 1
 exit_summary

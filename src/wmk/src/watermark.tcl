@@ -390,7 +390,8 @@ proc clear_routing_watermark { args } {
   wmk::clear_routing_watermark_cmd
 }
 
-sta::define_cmd_args "verify_watermark" {[-cts_claims file] \
+sta::define_cmd_args "verify_watermark" {[-claim_alpha alpha] \
+                                         [-cts_claims file] \
                                          [-min_stages n] \
                                          [-placement_claims file] \
                                          [-routing_alpha alpha] \
@@ -403,7 +404,8 @@ sta::define_cmd_args "verify_watermark" {[-cts_claims file] \
 # design.
 #
 # Placement and CTS are decided by the extraction rate, the fraction of claims
-# that still hold, against the threshold tau. An exact match is not expected:
+# that still hold, against the threshold tau, and a binomial chance probability
+# based on the held/checked counts against claim_alpha. An exact match is not expected:
 # routing and filling legitimately disturb a few marked objects.
 #
 # Routing has no claims to count -- the marked set is recovered from the key
@@ -421,7 +423,7 @@ sta::define_cmd_args "verify_watermark" {[-cts_claims file] \
 proc verify_watermark { args } {
   sta::parse_key_args "verify_watermark" args \
     keys {-placement_claims -cts_claims -routing_key_hex -routing_fraction \
-          -routing_alpha -routing_permutations -tau -min_stages} \
+          -routing_alpha -routing_permutations -tau -min_stages -claim_alpha} \
     flags {}
 
   set tau 0.75
@@ -437,6 +439,16 @@ proc verify_watermark { args } {
   } {
     utl::error WMK 41 "At least one of -placement_claims, -cts_claims or\
                        -routing_key_hex is required."
+  }
+
+  set claim_alpha 1e-4
+  if { [info exists keys(-claim_alpha)] } {
+    set claim_alpha $keys(-claim_alpha)
+  }
+  if {
+    ![string is double -strict $claim_alpha] || !($claim_alpha > 0.0 && $claim_alpha < 1.0)
+  } {
+    utl::error WMK 119 "The -claim_alpha argument must be in (0, 1)."
   }
 
   set min_stages 2
@@ -493,21 +505,26 @@ proc verify_watermark { args } {
   }
 
   foreach { key stage cmd } {
-    -placement_claims placement wmk::verify_placement_watermark_cmd
-    -cts_claims       cts       wmk::verify_cts_watermark_cmd
+    -placement_claims placement wmk::verify_placement_claims_cmd
+    -cts_claims       cts       wmk::verify_cts_claims_cmd
   } {
     if { ![info exists keys($key)] } {
       continue
     }
-    set rate [$cmd $keys($key)]
-    if { $rate < 0.0 } {
+    lassign [$cmd $keys($key)] count held probability
+    if { $count == 0 } {
       utl::warn WMK 42 "No checkable $stage claims; stage skipped."
       continue
     }
     incr checked
+    set rate [expr { double($held) / $count }]
     if { $rate < $tau } {
       utl::warn WMK 43 \
         "Stage $stage below threshold: [format %.4f $rate] < [format %.4f $tau]."
+    } elseif { $probability > $claim_alpha } {
+      utl::warn WMK 120 \
+        "Insufficient $stage evidence: $held of $count claims hold;\
+         binomial p = [format %.4g $probability] > [format %.4g $claim_alpha]."
     } else {
       incr passed
     }

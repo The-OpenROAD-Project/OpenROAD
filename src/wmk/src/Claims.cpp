@@ -78,6 +78,40 @@ bool validateClaimRow(const ClaimRow& row,
   return true;
 }
 
+// Only scored rows consume carriers. Reversed placement names still refer to
+// the same physical comparison, regardless of target bit or metadata.
+bool validateCarrier(const ClaimRow& row,
+                     ClaimStage stage,
+                     std::set<std::pair<std::string, std::string>>& carriers,
+                     std::string& error)
+{
+  if (!claimIsCheckable(row)
+      || (stage == ClaimStage::kPlacement
+          && claimField(row, "kind") != "pair")) {
+    return true;
+  }
+  std::string a = claimField(
+      row, stage == ClaimStage::kPlacement ? "A_name" : "target_lcb");
+  std::string b
+      = stage == ClaimStage::kPlacement ? claimField(row, "B_name") : "";
+  if (stage == ClaimStage::kPlacement) {
+    if (a == b) {
+      error = "placement pair must name two different instances: '" + a + "'";
+      return false;
+    }
+    if (b < a) {
+      std::swap(a, b);
+    }
+  }
+  if (!carriers.emplace(a, b).second) {
+    error = stage == ClaimStage::kPlacement
+                ? "duplicate placement pair '" + a + "' / '" + b + "'"
+                : "duplicate CTS target '" + a + "'";
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 bool isClaimNameSupported(std::string_view name)
@@ -142,6 +176,7 @@ bool readClaims(std::istream& in,
   }
 
   std::vector<ClaimRow> parsed;
+  std::set<std::pair<std::string, std::string>> carriers;
   size_t line_number = 1;
   while (std::getline(in, line)) {
     ++line_number;
@@ -165,7 +200,8 @@ bool readClaims(std::istream& in,
     for (size_t i = 0; i < header.size(); ++i) {
       row[header[i]] = trim(fields[i]);
     }
-    if (!validateClaimRow(row, stage, required, error)) {
+    if (!validateClaimRow(row, stage, required, error)
+        || !validateCarrier(row, stage, carriers, error)) {
       error.insert(0, location);
       return false;
     }

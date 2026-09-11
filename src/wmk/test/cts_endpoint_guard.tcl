@@ -38,13 +38,13 @@ check "timing-rejected pairs remain claimed" { set count } 1
 check "latency spread permits this move" { string match {*0 rejected on skew*} $output } 1
 check "the endpoint guard rejects it" { string match {*1 on setup/hold timing*} $output } 1
 check "the rejected mark fails verification" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 0
 
 # A positive control ensures that eligibility or another guard is not the cause.
 cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
   -sibling_dist_um 100 -skew_margin_ns 0.5 -slew_headroom_frac 0 -cap_headroom_frac 0
 check "the move succeeds with enough timing budget" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 1
 exit_summary

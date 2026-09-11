@@ -194,15 +194,12 @@ def exercise(stage, directory):
     assert count > 0 and changes >= 2, (stage, count, changes)
     assert claims.read_bytes() != old
     assert not list(directory.glob(".wmk-claims-*"))
-    verdict = tcl(
-        design,
-        "verify_watermark -"
-        + ("placement" if stage == "place" else "cts")
-        + "_claims {"
-        + str(claims)
-        + "} -min_stages 1",
+    result = (
+        watermark.verifyPlacement(str(claims))
+        if stage == "place"
+        else watermark.verifyCts(str(claims))
     )
-    assert verdict == "1", verdict
+    assert result.checked == count and result.held == count
     check_timing(design, slacks(design))
     print(stage, "publication and rollback pass; changed instances:", changes)
 

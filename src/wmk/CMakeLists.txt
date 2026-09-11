@@ -19,6 +19,7 @@ target_sources(wmk
     src/RoutingStat.cpp
     src/ClockTree.cpp
     src/Verify.cpp
+    src/VerifyResult.cpp
     src/Claims.cpp
     src/ClaimFile.cpp
     src/Timing.cpp
@@ -45,6 +46,7 @@ target_link_libraries(wmk
     dbSta_lib
     dpl_lib
     est_lib
+    Boost::headers
 )
 
 messages(

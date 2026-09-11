@@ -74,6 +74,6 @@ puts $stream "target_lcb,target_bit,skipped_reason"
 puts $stream "leaf_a,0,"
 close $stream
 check "hierarchical claims can still be verified" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 1
 exit_summary

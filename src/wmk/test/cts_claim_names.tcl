@@ -56,6 +56,6 @@ foreach unsupported { zzleaf,b "zzleaf\nnext" " zzleaf" "zzleaf " } {
 $leaf rename leaf_b
 cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 -sibling_dist_um 100
 check "a supported name can be embedded and verified" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 1
 exit_summary

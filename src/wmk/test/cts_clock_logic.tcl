@@ -46,7 +46,7 @@ check "the positive control actually moves a sink" {
   string match {*1 sinks moved*} $output
 } 1
 check "the gated mark round-trips" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 1
 
 # A single-output clock gate is not a valid carrier, even for target bit zero.
@@ -55,7 +55,7 @@ puts $fh "pair_idx,pair_key,target_lcb,other_lcb,target_bit,final_bit,skipped_re
 puts $fh "0,gate+leaf_a,gate,leaf_a,0,0,"
 close $fh
 check "verification refuses a non-buffer carrier" {
-  verify_watermark -cts_claims $claims -min_stages 1
+  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
 } 0
 
 # Named clocks still match through an inverter, but their edges do not.

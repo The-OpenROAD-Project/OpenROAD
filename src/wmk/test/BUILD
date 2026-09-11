@@ -9,6 +9,8 @@ package(features = ["layering_check"])
 # tools' logs inside a watermarking golden would break this module whenever
 # they change their output, so they assert their own numbers instead.
 PASSFAIL_TESTS = [
+    "verify_evidence",
+    "verify_carriers",
     "claim_publication",
     "cts_empty_claims",
     "cts_headroom",
@@ -47,6 +49,8 @@ PASSFAIL_TESTS = [
 ]
 
 TESTS = [
+    "verify_evidence",
+    "verify_carriers",
     "claim_publication",
     "cts_empty_claims",
     "bias",
@@ -191,6 +195,16 @@ cc_test(
     deps = [
         "//src/wmk",
         "//src/wmk:wmk_private_hdrs",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestVerifyResult",
+    srcs = ["cpp/TestVerifyResult.cpp"],
+    deps = [
+        "//src/wmk:verify_result",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

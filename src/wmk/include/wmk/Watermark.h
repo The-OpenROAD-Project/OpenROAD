@@ -32,6 +32,7 @@
 
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "wmk/VerifyResult.h"
 
 namespace sta {
 class dbSta;
@@ -151,20 +152,6 @@ struct RoutingStat
   double pValue() const
   {
     return std::min(1.0, 2.0 * std::min(p_r, std::pow(10.0, log10_tail)));
-  }
-};
-
-// Outcome of checking one stage's claims against a design.  Ownership is
-// decided by the extraction rate against a threshold rather than by an exact
-// match, because routing and filling disturb a few marked objects.
-struct VerifyResult
-{
-  int checked = 0;
-  int held = 0;
-
-  double rate() const
-  {
-    return checked > 0 ? static_cast<double>(held) / checked : 0.0;
   }
 };
 

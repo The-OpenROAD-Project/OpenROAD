@@ -16,6 +16,8 @@ or_integration_tests(
   # otherwise pin those tools' logs into a watermarking golden.  They check
   # their own numbers instead.
   PASSFAIL_TESTS
+    verify_evidence
+    verify_carriers
     claim_publication
     cts_empty_claims
     cts_headroom

@@ -37,9 +37,9 @@ foreach value { NaN Inf 0 -1 1.5 2147483648 nonsense {} } {
 check "a finite routing threshold rejects unrouted evidence" {
   verify_watermark -routing_key_hex $key -routing_alpha 0.01 -min_stages 1
 } 0
-check "tau's documented zero boundary remains allowed" {
+check "tau zero is allowed but cannot waive the evidence requirement" {
   verify_watermark -placement_claims $claims -tau 0 -min_stages 1
-} 1
+} 0
 check "tau's documented one boundary remains allowed" {
   verify_watermark -placement_claims $claims -tau 1 -min_stages 1
 } 0

@@ -10,9 +10,9 @@
 // is key-recoverable and statistical -- and is handled by selectNetsKeyed and
 // reportWatermark.
 //
-// Ownership is decided by the extraction rate, the fraction of claims that
-// still hold, against a threshold.  Routing and filling legitimately disturb a
-// few marked objects, so an exact match is not required and not expected.
+// Ownership requires both a sufficient extraction rate and count-dependent
+// evidence. Routing and filling can disturb marks, so an exact match is not
+// required. Preserve every checked/held count for the caller's decision.
 
 #include <string>
 #include <vector>
@@ -22,6 +22,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "wmk/VerifyResult.h"
 #include "wmk/Watermark.h"
 
 namespace wmk {

@@ -46,7 +46,7 @@ proc attempt { description expected } {
   check "$description remains a claim" { set count } 1
   check "$description connection" { [$sink getNet] getName } $expected
   set held [expr { $expected eq "clock_a" }]
-  check "$description extraction" { verify_watermark -cts_claims $claims -min_stages 1 } $held
+  check "$description extraction" { expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75} } $held
   report_check_types -max_fanout -violators
   check "$description fanout violations" { sta::max_fanout_violation_count } $violations
   $sink connect [$block findNet clock_b]

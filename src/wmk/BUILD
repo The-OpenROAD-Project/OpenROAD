@@ -27,6 +27,14 @@ cc_library(
 )
 
 cc_library(
+    name = "verify_result",
+    srcs = ["src/VerifyResult.cpp"],
+    hdrs = ["include/wmk/VerifyResult.h"],
+    includes = ["include"],
+    deps = ["@boost.math"],
+)
+
+cc_library(
     name = "claims",
     srcs = ["src/Claims.cpp"],
     hdrs = ["src/Claims.h"],
@@ -94,6 +102,7 @@ cc_library(
         ":wmk_private_hdrs",
         ":hmac_sha256",
         ":claims",
+        ":verify_result",
         ":claim_file",
         ":timing",
         ":clock_tree",
@@ -165,6 +174,7 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
+        "include/wmk/VerifyResult.h",
         "include/wmk/Watermark.h",
         "src/watermark-py.i",
         "//:error_swig-py",

@@ -70,4 +70,5 @@
   $1 = (PyBytes_Check($input) || PyUnicode_Check($input)) ? 1 : 0;
 }
 
+%include "wmk/VerifyResult.h"
 %include "wmk/Watermark.h"

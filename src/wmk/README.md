@@ -316,8 +316,30 @@ carries the watermark. Ownership is granted when at least `-min_stages` of the
 checked stages pass.
 
 Placement and clock-tree marks are read from their claim files and judged by the
-extraction rate, the fraction of claims that still hold, against `-tau`. An exact
-match is not expected: routing and filling disturb a few marked objects.
+extraction rate against `-tau` **and** a count-dependent evidence threshold
+`-claim_alpha`. With `n` distinct checkable claims and `h` matches, the latter
+uses the inclusive binomial tail `P[Binomial(n, 0.5) >= h]`. A stage counts as
+passing only when its rate is at least `-tau` and this probability is at most
+`-claim_alpha` (default `1e-4`). A nonempty but insufficient sample is reported
+as insufficient evidence and does not contribute a passing stage.
+
+For example, one perfect bit has probability `0.5`; one matching placement bit
+and one matching CTS bit cannot produce a default ownership verdict. Thirteen
+perfect matches have probability `1/8192`, which fails the default threshold;
+fourteen have probability `1/16384`, which passes. At 48 matches out of 64,
+the rate is `0.75` and the probability is approximately `3.87e-5`, satisfying
+both defaults. `-min_stages 1` changes the required number of passing stages;
+it does not waive their evidence requirements. Empty claim sets are skipped.
+
+This calculation assumes distinct, precommitted, independent fair target bits
+under the unmarked-design model. It is not a probability that an ownership
+assertion is true, an authentication check on the claims, or a measured
+false-positive rate on real designs. Thresholds are per stage; stage voting
+does not establish independence between stages. Repeated keys, parameters or
+claim subsets selected after observing a suspect design require a separate
+multiple-testing analysis. Choose thresholds before inspecting the result.
+The C++/Python `VerifyResult` retains `checked`, `held`, `rate()` and `pValue()`;
+extraction can be inspected even when a design has insufficient capacity.
 
 CTS verification requires Liberty to identify buffers and sequential clock pins
 using the same definitions as embedding. Missing Liberty is an error; a claimed
@@ -332,6 +354,7 @@ design.
 
 ```tcl
 verify_watermark
+    [-claim_alpha alpha]
     [-cts_claims file]
     [-min_stages n]
     [-placement_claims file]
@@ -346,6 +369,7 @@ verify_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-claim_alpha` | Largest binomial chance probability for a placement or CTS stage. Defaults to `1e-4`; must be in `(0, 1)`. |
 | `-cts_claims` | Claim file from the clock-tree watermark. |
 | `-min_stages` | Stages that must pass. Defaults to `2`. |
 | `-placement_claims` | Claim file from the placement watermark. |
@@ -383,6 +407,10 @@ order and add columns of its own. Missing required columns, empty or duplicate
 header names, malformed row widths, and invalid fields in checkable claims are
 errors; verification never scores a partially parsed file. The error identifies
 the file and line. `skipped_reason` is required even when every value is empty.
+Checkable placement pairs must name two different instances. Repeated unordered
+placement pairs (including reversed names) and repeated CTS target buffers are
+errors, regardless of target bit, pair ID or other metadata. Skipped candidate
+records do not contribute evidence or consume a scored carrier.
 Values are not quoted. Names must be nonempty, contain no commas, line breaks
 or NULs, and have no leading or trailing spaces or tabs. Both embedders validate
 all eligible instance names before selecting marks or changing the design and

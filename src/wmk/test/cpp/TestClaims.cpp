@@ -209,5 +209,61 @@ TEST(Claims, RejectsEmbeddedCarriageReturnInInstanceNames)
   EXPECT_EQ(error, "line 2: unrepresentable instance name in 'A_name'");
 }
 
+TEST(Claims, RejectsPlacementSelfPairs)
+{
+  for (const char* bit : {"0", "1"}) {
+    std::istringstream in(std::string(kPlacementHeader) + "pair,a,a," + bit
+                          + ",\n");
+    std::vector<ClaimRow> rows;
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_TRUE(rows.empty());
+    EXPECT_EQ(error,
+              "line 2: placement pair must name two different instances: 'a'");
+  }
+}
+
+TEST(Claims, RejectsIdenticalConflictingAndReversedPlacementDuplicates)
+{
+  for (const char* duplicate : {"pair,a,b,0,",
+                                "pair,a,b,1,",
+                                "pair,b,a,1,",
+                                "pair,b,a,0,already_satisfied"}) {
+    std::istringstream in(std::string(kPlacementHeader)
+                          + "pair,a,b,0,\npair,c,d,1,\n" + duplicate + "\n");
+    std::vector<ClaimRow> rows{{{"previous", "result"}}};
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_TRUE(rows.empty());
+    EXPECT_EQ(error, "line 4: duplicate placement pair 'a' / 'b'");
+  }
+}
+
+TEST(Claims, RejectsRepeatedCtsTargetsRegardlessOfMetadata)
+{
+  for (const char* duplicate :
+       {"a,0,new,", "a,1,new,", "a,1,new,already_satisfied"}) {
+    std::istringstream in(
+        std::string("target_lcb,target_bit,pair_key,skipped_reason\n")
+        + "a,0,old,\nb,1,other,\n" + duplicate + "\n");
+    std::vector<ClaimRow> rows{{{"previous", "result"}}};
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kCts, rows, error));
+    EXPECT_TRUE(rows.empty());
+    EXPECT_EQ(error, "line 4: duplicate CTS target 'a'");
+  }
+}
+
+TEST(Claims, SkippedCandidatesDoNotConsumeScoredCarriers)
+{
+  std::istringstream in(
+      std::string(kPlacementHeader)
+      + "pair,a,b,0,hpwl_reject\npair,a,b,0,\nother,a,b,0,\n");
+  std::vector<ClaimRow> rows;
+  std::string error;
+  ASSERT_TRUE(readClaims(in, ClaimStage::kPlacement, rows, error)) << error;
+  EXPECT_EQ(rows.size(), 3);
+}
+
 }  // namespace
 }  // namespace wmk

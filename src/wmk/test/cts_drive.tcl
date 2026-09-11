@@ -32,6 +32,6 @@ set committed [cts_watermark -key_hex $key -claims_file $claims \
   -slew_headroom_frac 0.99 -cap_headroom_frac 0.99]
 puts "committed $committed pairs"
 check "the pairs the library turned away are still claimed" { set committed } 3
-check "and none of the claims hold" { verify_watermark -cts_claims $claims -min_stages 1 } 0
+check "and none of the claims hold" { expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75} } 0
 
 exit_summary

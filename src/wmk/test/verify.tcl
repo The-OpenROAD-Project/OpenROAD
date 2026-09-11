@@ -5,7 +5,7 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def gcd.def
 
-# 5 checkable claims, 4 of which hold: above the default threshold.
+# Five claims clear the extraction threshold but provide too little evidence.
 puts "verdict [verify_watermark -placement_claims wm_place_claims.csv -min_stages 1]"
 
 # The same evidence is not enough once the bar is raised past it.
