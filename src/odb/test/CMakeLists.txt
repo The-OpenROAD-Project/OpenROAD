@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     abstract_origin
     abstract_polygon
+    abstract_polygon_no_overlap
     all_pins_placed1
     all_pins_placed2
     bterm_hier_create

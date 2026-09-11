@@ -44,8 +44,6 @@ MACRO polygon_block
     END
   END out
   OBS
-    LAYER OVERLAP ;
-     POLYGON  0 0 0 100 100 100 100 50 50 50 50 0 ;
     LAYER metal1 ;
      POLYGON  0 0 0 100 100 100 100 50 50 50 50 0 ;
   END

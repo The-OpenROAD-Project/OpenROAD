@@ -156,6 +156,7 @@ py_test(
 COMPULSORY_TESTS = [
     "abstract_origin",
     "abstract_polygon",
+    "abstract_polygon_no_overlap",
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
@@ -382,6 +383,10 @@ filegroup(
         ) + {
             "abstract_polygon": [
                 "abstract_polygon_bloat.lefok",
+            ],
+            "abstract_polygon_no_overlap": [
+                "abstract_polygon.def",
+                "abstract_polygon_no_overlap_bloat.lefok",
             ],
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
