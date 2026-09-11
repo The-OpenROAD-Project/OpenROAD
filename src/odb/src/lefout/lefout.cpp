@@ -186,7 +186,9 @@ void lefout::writePolygon(std::ostream& out,
                           const Polygon& polygon)
 {
   fmt::print(out, "{}  POLYGON  ", indent.c_str());
-  for (const Point& pt : polygon.getPoints()) {
+  const auto points = polygon.getPoints();
+  for (size_t i = 0; i < points.size() - 1; i++) {
+    const Point& pt = points[i];
     int x = pt.x();
     int y = pt.y();
     fmt::print(out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
@@ -253,12 +255,11 @@ void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
 
     if (overlap == nullptr) {
       logger_->warn(utl::ODB, 33, "No overlap layer found for obstructions.");
-      is_polygon_floorplan = false;
     }
   }
 
-  fmt::print(out, "{}", "  OBS\n");
-  if (is_polygon_floorplan) {
+  fmt::print(out, "  OBS\n");
+  if (is_polygon_floorplan && overlap != nullptr) {
     fmt::print(out, "    LAYER {} ;\n", overlap->getName());
     writePolygon(out, "   ", die_area);
   }
