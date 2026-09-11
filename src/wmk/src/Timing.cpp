@@ -99,6 +99,15 @@ bool driverHasHeadroom(sta::dbSta* sta,
                        double slew_fraction,
                        double capacitance_fraction)
 {
+  sta->checkFanoutPreamble();
+  for (const sta::Mode* mode : sta->modes()) {
+    float fanout, limit, slack;
+    // STA resolves SDC/Liberty limits and weighted fanout loads for each mode.
+    sta->checkFanout(pin, mode, sta::MinMax::max(), fanout, limit, slack);
+    if (slack < 0.0f) {
+      return false;
+    }
+  }
   sta->checkSlewsPreamble();
   sta->checkCapacitancesPreamble(sta->scenes());
   for (sta::Scene* scene : sta->scenes()) {

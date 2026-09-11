@@ -451,8 +451,8 @@ class Watermark::CtsEmbedding
                                      opts_.skew_margin_ns * 1e-9f);
           timing_ok = endpointSlacksWithin(
               watermark_.sta_, timing_before_, opts_.skew_margin_ns * 1e-9f);
-          // Moving a sink changes both loads; use Liberty limits for both
-          // drivers after refreshing the affected parasitics.
+          // Moving a sink changes both loads; check effective electrical
+          // limits for both drivers after refreshing the affected parasitics.
           drive_ok
               = watermark_.driverHeadroomOk(
                     target, opts_.slew_headroom_frac, opts_.cap_headroom_frac)

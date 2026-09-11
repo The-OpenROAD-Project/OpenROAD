@@ -12,6 +12,7 @@ PASSFAIL_TESTS = [
     "claim_publication",
     "cts_empty_claims",
     "cts_headroom",
+    "cts_fanout",
     "numeric_options",
     "key_files",
     "cts_modes",
@@ -51,6 +52,7 @@ TESTS = [
     "bias",
     "bias_neutral",
     "cts_headroom",
+    "cts_fanout",
     "numeric_options",
     "key_files",
     "cts_modes",
@@ -137,6 +139,21 @@ cc_test(
     srcs = ["cpp/TestTiming.cpp"],
     deps = [
         "//src/sta:opensta_lib",
+        "//src/wmk:timing",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDriverHeadroom",
+    srcs = ["cpp/TestDriverHeadroom.cpp"],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
         "//src/wmk:timing",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

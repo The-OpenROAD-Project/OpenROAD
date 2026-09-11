@@ -38,6 +38,12 @@ target_link_libraries(TestTiming PRIVATE GTest::gtest_main dbSta_lib OpenSTA)
 gtest_discover_tests(TestTiming WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(build_and_test TestTiming)
 
+add_executable(TestDriverHeadroom TestDriverHeadroom.cpp ../../src/Timing.cpp)
+target_include_directories(TestDriverHeadroom PRIVATE ../../src)
+target_link_libraries(TestDriverHeadroom PRIVATE GTest::gtest_main tst dbSta_lib OpenSTA)
+gtest_discover_tests(TestDriverHeadroom WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_dependencies(build_and_test TestDriverHeadroom)
+
 add_executable(TestClockTree TestClockTree.cpp ../../src/ClockTree.cpp)
 target_include_directories(TestClockTree PRIVATE ../../src)
 target_link_libraries(TestClockTree PRIVATE GTest::gtest_main tst dbSta_lib OpenSTA)

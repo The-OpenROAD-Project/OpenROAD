@@ -153,8 +153,8 @@ CTS verification remains available for hierarchical designs.
 LCBs are marked in pairs. Parity is changed by moving one flip-flop's clock
 pin from one LCB of the pair to the other. A move is undone if it
 increases clock latency spread or degrades a constrained endpoint's setup/hold
-slack by more than `-skew_margin_ns`, or if it leaves
-the LCB with less slew or capacitance headroom than the liberty cell allows.
+slack by more than `-skew_margin_ns`, violates either LCB's max-fanout limit,
+or leaves either LCB with insufficient slew or capacitance headroom.
 Protected source/destination nets and fixed or protected sink instances are not
 modified. A connection, extraction or timing error restores the trial sink's
 original net and refreshes both nets' parasitics before propagating the error.
@@ -198,15 +198,19 @@ cts_watermark
 | ----- | ----- |
 | `-claims_file` | Where to write the claims. |
 | `-key_hex` | 64-character hex clock-tree key. |
-| `-cap_headroom_frac` | Fraction of the liberty capacitance limit left unused. Defaults to `0.20`. |
+| `-cap_headroom_frac` | Fraction of the effective capacitance limit left unused. Defaults to `0.20`. |
 | `-num_pairs` | Most pairs to mark, one bit each. Defaults to `32`. |
 | `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns. Defaults to `20.0`. |
 | `-skew_margin_ns` | Maximum clock latency-spread increase and endpoint slack degradation, in ns. Defaults to `0.020`. `0` permits no degradation. |
-| `-slew_headroom_frac` | Fraction of the liberty slew limit left unused. Defaults to `0.20`. |
+| `-slew_headroom_frac` | Fraction of the effective slew limit left unused. Defaults to `0.20`. |
 
 The slew reserve is checked for each scene and rise/fall edge; capacitance
 reserve is checked in each scene. Limits include applicable SDC constraints and
 Liberty limits. Both headroom fractions must be finite and in `[0, 1]`.
+Max fanout is checked in every timing mode using STA's effective SDC/Liberty
+limit and Liberty fanout loads. A load equal to the limit is allowed; no
+additional fractional fanout reserve is required. A rejected move remains in
+the claims denominator, so fanout limits can reduce the attainable match rate.
 
 Placement and CTS distances and timing budgets must be finite and nonnegative.
 Distances must fit in `2147483647` database units; timing budgets must remain

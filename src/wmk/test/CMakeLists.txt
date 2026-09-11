@@ -19,6 +19,7 @@ or_integration_tests(
     claim_publication
     cts_empty_claims
     cts_headroom
+    cts_fanout
     numeric_options
     key_files
     cts_modes

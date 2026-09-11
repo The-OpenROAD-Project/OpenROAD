@@ -23,7 +23,8 @@ namespace wmk {
 bool isConstrainedSlack(float slack);
 
 // Check every scene and transition; minimum absolute slack is not the same
-// as minimum fractional headroom. The pin must be a cell's output driver.
+// as minimum fractional headroom. Also enforce max fanout in every mode.
+// The pin must be a cell's output driver.
 bool driverHasHeadroom(sta::dbSta* sta,
                        const sta::Pin* pin,
                        double slew_fraction,
