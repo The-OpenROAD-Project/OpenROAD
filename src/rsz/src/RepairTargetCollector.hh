@@ -316,6 +316,14 @@ class RepairTargetCollector
   utl::Logger* logger_;
   sta::Sta* sta_;
   sta::Graph* graph_;
+
+  // Startpoint vertices: top-level inputs and register outputs, clock
+  // pins excluded, in graph iteration order. Walked once per collector:
+  // setup repair inserts, resizes, clones and removes combinational
+  // cells and swaps pins, none of which creates or removes a startpoint,
+  // so only their slacks move between two rows of the progress table.
+  std::vector<sta::Vertex*> startpoint_vertices_;
+  bool startpoints_collected_ = false;
   sta::Network* network_;
   const sta::MinMax* max_;
   sta::Search* search_;

@@ -845,23 +845,34 @@ void RepairTargetCollector::collectViolatingStartpoints()
 {
   violating_startpoints_.clear();
 
-  int all_startpoints = 0;
-  sta::VertexIterator vertex_iter(graph_);
-  while (vertex_iter.hasNext()) {
-    sta::Vertex* vertex = vertex_iter.next();
-    const sta::Pin* pin = vertex->pin();
-    if (sta_->isClock(pin, sta_->cmdMode())) {
-      continue;
-    }
-
-    sta::PortDirection* direction = network_->direction(pin);
-    if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
-        || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
-      ++all_startpoints;
-      const sta::Slack slack = sta_->slack(vertex, max_);
-      if (sta::fuzzyLess(slack, slack_margin_)) {
-        violating_startpoints_.emplace_back(pin, slack);
+  // The set of startpoints is fixed for the life of this collector; only
+  // their slacks change. Walking every vertex of the graph to find them
+  // again on every -verbose progress row is what made the row cost
+  // proportional to the design, once per endpoint visited.
+  if (!startpoints_collected_) {
+    startpoint_vertices_.clear();
+    sta::VertexIterator vertex_iter(graph_);
+    while (vertex_iter.hasNext()) {
+      sta::Vertex* vertex = vertex_iter.next();
+      const sta::Pin* pin = vertex->pin();
+      if (sta_->isClock(pin, sta_->cmdMode())) {
+        continue;
       }
+
+      sta::PortDirection* direction = network_->direction(pin);
+      if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
+          || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
+        startpoint_vertices_.push_back(vertex);
+      }
+    }
+    startpoints_collected_ = true;
+  }
+
+  const int all_startpoints = startpoint_vertices_.size();
+  for (sta::Vertex* vertex : startpoint_vertices_) {
+    const sta::Slack slack = sta_->slack(vertex, max_);
+    if (sta::fuzzyLess(slack, slack_margin_)) {
+      violating_startpoints_.emplace_back(vertex->pin(), slack);
     }
   }
 
