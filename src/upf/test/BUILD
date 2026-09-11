@@ -12,6 +12,7 @@ COMPULSORY_TESTS = [
     "write",
     "isolation",
     "isolation_select",
+    "supply",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -25,6 +26,7 @@ filegroup(
         "data/isolation/mpd_top.upf",
         "data/isolation/mpd_top.v",
         "data/isolation/mpd_top_select_iso.upf",
+        "data/isolation/mpd_top_supply.upf",
         "data/mpd_top/mpd_top.upf",
         "data/mpd_top/mpd_top.v",
         "data/mpd_top/mpd_top_combined.upf",

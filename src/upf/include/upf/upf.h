@@ -29,6 +29,49 @@ bool create_logic_port(utl::Logger* logger,
                        const std::string& name,
                        const std::string& direction);
 
+// Accepts and validates the UPF version declared by the file.
+// OpenROAD does not implement version-specific behavior, so the version is
+// stored on the block (as a property) and otherwise treated as a no-op.
+bool set_upf_version(utl::Logger* logger,
+                     odb::dbBlock* block,
+                     const std::string& version);
+
+// Declares a supply port. Supply ports/nets are tracked as block properties
+// (no dedicated odb object exists) so that connect_supply_net can validate
+// references and write_upf can round-trip them.
+bool create_supply_port(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& name,
+                        const std::string& direction);
+
+// Declares a supply net (optionally belonging to a power domain).
+bool create_supply_net(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const std::string& name,
+                       const std::string& domain,
+                       bool reuse);
+
+// Connects a previously declared supply net to a supply port.
+bool connect_supply_net(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& net,
+                        const std::string& port);
+
+// Stores the -supply association of a power domain. No supply-set object
+// exists in odb, so the handle list is persisted as a property on the domain.
+bool set_power_domain_supply(utl::Logger* logger,
+                             odb::dbBlock* block,
+                             const std::string& domain,
+                             const std::string& supply);
+
+// Stores a supply association (-isolation_supply / -source / -sink) of an
+// isolation strategy as a property, since odb has no field for it.
+bool set_isolation_supply(utl::Logger* logger,
+                          odb::dbBlock* block,
+                          const std::string& isolation,
+                          const std::string& key,
+                          const std::string& value);
+
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
                          const std::string& name,

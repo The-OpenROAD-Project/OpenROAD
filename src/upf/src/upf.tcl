@@ -27,12 +27,17 @@ proc write_upf { args } {
 #
 # - elements: list of module paths that belong to this domain OR '.' for top domain
 # - name: domain name
-sta::define_cmd_args "create_power_domain" { [-elements elements] name }
+sta::define_cmd_args "create_power_domain" { \
+    [-elements elements] \
+    [-include_scope] \
+    [-supply supply] \
+    name
+}
 proc create_power_domain { args } {
   upf::check_block_exists
 
   sta::parse_key_args "create_power_domain" args \
-    keys {-elements} flags {}
+    keys {-elements -supply} flags {-include_scope}
 
   sta::check_argc_eq1 "create_power_domain" $args
 
@@ -43,9 +48,23 @@ proc create_power_domain { args } {
     set elements $keys(-elements)
   }
 
+  if { [info exists flags(-include_scope)] } {
+    # -include_scope means "this domain owns the entire current scope".
+    # Represent it the same way the top domain is represented: a single
+    # '.' element. This maps cleanly onto the existing element list.
+    lappend elements "."
+  }
+
   upf::create_power_domain_cmd $domain_name
   foreach {el} $elements {
     upf::update_power_domain_cmd $domain_name $el
+  }
+
+  if { [info exists keys(-supply)] } {
+    # -supply takes {supply_set_handle_name supply_set_ref} pairs. OpenROAD
+    # has no supply-set object, so store the raw handle list on the domain
+    # for round-tripping and downstream inspection rather than dropping it.
+    upf::set_power_domain_supply_cmd $domain_name $keys(-supply)
   }
 }
 
@@ -72,6 +91,120 @@ proc create_logic_port { args } {
   }
 
   upf::create_logic_port_cmd $port_name $direction
+}
+
+# Declares the UPF version of the file being read.
+#
+# Arguments:
+#
+# - version: the UPF version string (e.g. 2.0)
+sta::define_cmd_args "upf_version" { version }
+proc upf_version { args } {
+  upf::check_block_exists
+
+  sta::parse_key_args "upf_version" args keys {} flags {}
+  sta::check_argc_eq1 "upf_version" $args
+
+  upf::set_upf_version_cmd [lindex $args 0]
+}
+
+# Creates a supply port.
+#
+# Arguments:
+#
+# - direction: direction of the port (in | out)
+# - domain: (accepted for compatibility; not used by OpenROAD)
+# - port_name: supply port name
+sta::define_cmd_args "create_supply_port" { \
+    [-direction direction] \
+    [-domain domain] \
+    port_name
+}
+proc create_supply_port { args } {
+  upf::check_block_exists
+
+  sta::parse_key_args "create_supply_port" args \
+    keys {-direction -domain} flags {}
+
+  sta::check_argc_eq1 "create_supply_port" $args
+
+  set port_name [lindex $args 0]
+  set direction ""
+
+  if { [info exists keys(-direction)] } {
+    set direction $keys(-direction)
+  }
+
+  upf::create_supply_port_cmd $port_name $direction
+}
+
+# Creates a supply net.
+#
+# Arguments:
+#
+# - domain: power domain this supply net belongs to
+# - reuse: tolerate redeclaration of an existing supply net
+# - net_name: supply net name
+sta::define_cmd_args "create_supply_net" { \
+    [-domain domain] \
+    [-reuse] \
+    net_name
+}
+proc create_supply_net { args } {
+  upf::check_block_exists
+
+  sta::parse_key_args "create_supply_net" args \
+    keys {-domain} flags {-reuse}
+
+  sta::check_argc_eq1 "create_supply_net" $args
+
+  set net_name [lindex $args 0]
+  set domain ""
+  set reuse 0
+
+  if { [info exists keys(-domain)] } {
+    set domain $keys(-domain)
+  }
+
+  if { [info exists flags(-reuse)] } {
+    set reuse 1
+  }
+
+  upf::create_supply_net_cmd $net_name $domain $reuse
+}
+
+# Connects a supply net to a supply port.
+#
+# Arguments:
+#
+# - ports: a supply port to connect the net to
+# - net_name: supply net name
+sta::define_cmd_args "connect_supply_net" { \
+    [-ports ports] \
+    net_name
+}
+proc connect_supply_net { args } {
+  upf::check_block_exists
+
+  sta::parse_key_args "connect_supply_net" args \
+    keys {-ports} flags {}
+
+  sta::check_argc_eq1 "connect_supply_net" $args
+
+  set net_name [lindex $args 0]
+  set ports {}
+
+  if { [info exists keys(-ports)] } {
+    set ports $keys(-ports)
+  }
+
+  if { [llength $ports] == 0 } {
+    upf::connect_supply_net_cmd $net_name ""
+  } else {
+    foreach port $ports {
+      upf::connect_supply_net_cmd $net_name $port
+    }
+  }
 }
 
 # Creates a power switch
@@ -156,6 +289,9 @@ sta::define_cmd_args "set_isolation" { \
     [-clamp_value clamp_value] \
     [-isolation_signal isolation_signal] \
     [-isolation_sense isolation_sense] \
+    [-isolation_supply isolation_supply] \
+    [-sink sink] \
+    [-source source] \
     [-location location] \
     [-update] \
     name
@@ -165,7 +301,7 @@ proc set_isolation { args } {
 
   sta::parse_key_args "set_isolation" args \
     keys {-domain -applies_to -clamp_value -isolation_signal
-          -isolation_sense -location} \
+          -isolation_sense -isolation_supply -sink -source -location} \
     flags {-update}
 
   sta::check_argc_eq1 "set_isolation" $args
@@ -213,6 +349,20 @@ proc set_isolation { args } {
 
   upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value \
     $isolation_signal $isolation_sense $location
+
+  # -isolation_supply / -source / -sink have no dedicated odb field. Persist
+  # them as properties on the isolation strategy so they round-trip and remain
+  # queryable. -source/-sink accept supply-set handle pairs in UPF; we store
+  # the raw value.
+  if { [info exists keys(-isolation_supply)] } {
+    upf::set_isolation_supply_cmd $name "isolation_supply" $keys(-isolation_supply)
+  }
+  if { [info exists keys(-source)] } {
+    upf::set_isolation_supply_cmd $name "source" $keys(-source)
+  }
+  if { [info exists keys(-sink)] } {
+    upf::set_isolation_supply_cmd $name "sink" $keys(-sink)
+  }
 }
 
 # Specifies the cells to be used for an isolation strategy
