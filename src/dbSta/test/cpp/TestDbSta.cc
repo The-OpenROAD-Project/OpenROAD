@@ -306,8 +306,14 @@ TEST_F(TestDbSta, StalePrevPath)
   auto nd1_drvr_path = [&]() -> Path* {
     Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
     EXPECT_NE(nd1, nullptr);
+    if (nd1 == nullptr) {
+      return nullptr;
+    }
     Pin* zn = network->findPin(nd1, "ZN");
     EXPECT_NE(zn, nullptr);
+    if (zn == nullptr) {
+      return nullptr;
+    }
     return sta_->vertexWorstArrivalPath(sta_->ensureGraph()->pinDrvrVertex(zn),
                                         MinMax::max());
   };
