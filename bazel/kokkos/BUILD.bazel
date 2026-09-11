@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(":configure.bzl", "kokkos_config_header")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "BUILD.kokkos.bazel",
+    "BUILD.kokkos_fft.bazel",
+    "Kokkos_Version_Info.cpp",
+])
+
+kokkos_config_header(
+    name = "configured_header",
+    out = "generated/KokkosCore_config.h",
+)
+
+cc_library(
+    name = "config_header",
+    hdrs = [":configured_header"],
+    strip_include_prefix = "generated",
+)
+
+cc_library(
+    name = "config_common",
+    hdrs = glob([
+        "config/KokkosCore_Config_*.hpp",
+        "config/desul/**/*.hpp",
+    ]),
+    strip_include_prefix = "config",
+)
+
+cc_library(
+    name = "config",
+    deps = [
+        ":config_common",
+        ":config_header",
+    ],
+)
+
+cc_library(
+    name = "fft_config",
+    hdrs = ["config/KokkosFFT_config.hpp"],
+    strip_include_prefix = "config",
+)

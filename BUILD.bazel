@@ -77,6 +77,56 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 
+# CUDA code generation and the Kokkos configuration must use the same target.
+# "none" makes plain --config=gpu fail with an actionable message instead of
+# silently producing kernels for the wrong device.
+string_flag(
+    name = "cuda_arch",
+    build_setting_default = "none",
+    values = [
+        "none",
+        "sm_60",
+        "sm_61",
+        "sm_70",
+        "sm_72",
+        "sm_75",
+        "sm_80",
+        "sm_86",
+        "sm_87",
+        "sm_89",
+        "sm_90",
+        "sm_100",
+        "sm_103",
+        "sm_120",
+        "sm_121",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+[
+    config_setting(
+        name = "cuda_arch_" + arch,
+        flag_values = {":cuda_arch": arch},
+        visibility = ["//visibility:public"],
+    )
+    for arch in [
+        "sm_60",
+        "sm_61",
+        "sm_70",
+        "sm_72",
+        "sm_75",
+        "sm_80",
+        "sm_86",
+        "sm_87",
+        "sm_89",
+        "sm_90",
+        "sm_100",
+        "sm_103",
+        "sm_120",
+        "sm_121",
+    ]
+]
+
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
     "//src/ant",

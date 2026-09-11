@@ -15,9 +15,8 @@ absent here.
 """
 
 load("@cuda_local//:defs.bzl", "CUDA_PATH")
-load("@kokkos//:defs.bzl", "CUDA_ARCH")
 
-CUDA_COPTS = [
+CUDA_TOOLKIT_COPTS = [
     # Overrides the global "-xc++" from .bazelrc: rule copts come after
     # --cxxopt on the command line and the last -x before the input wins.
     "-xcuda",
@@ -25,27 +24,44 @@ CUDA_COPTS = [
     # compiler as declared inputs (an absolute system path would trip
     # Bazel's undeclared-inclusion check).
     "--cuda-path=" + CUDA_PATH,
-] + (
-    # The compute capability the Kokkos install was built for (read from
-    # its KokkosCore_config.h by system_gpu.bzl). Empty only when @kokkos
-    # is a stub, in which case analysis fails on the stub target before
-    # any CUDA TU is compiled.
-    ["--cuda-gpu-arch=" + CUDA_ARCH] if CUDA_ARCH else []
-) + [
     # CUDA 13 moved the libcu++ headers that Kokkos includes (cuda/std/*)
-    # from include/ down into include/cccl/. Harmless on 12.x, where the
-    # directory does not exist and clang drops the search path.
+    # from include/ down into include/cccl/. Harmless on 12.x.
     "-isystem",
     CUDA_PATH + "/include/cccl",
-    # clang only recognizes CUDA releases up to the one it was released
-    # with; a newer toolkit (e.g. CUDA 13 with clang 22) works but would
-    # otherwise warn once per TU.
     "-Wno-unknown-cuda-version",
-    # CUDA's crt/host_defines.h rejects libc++ on x86_64 unless this
-    # opt-out is set (the toolkit only "supports" libstdc++ there; the
-    # guard does not exist on aarch64). The hermetic toolchain is
-    # libc++-only, and clang's CUDA mode handles libc++ fine in practice.
+    # The hermetic LLVM toolchain uses libc++; CUDA's host header requires
+    # this opt-out on x86_64.
     "-D_ALLOW_UNSUPPORTED_LIBCPP",
+]
+
+CUDA_ARCH_COPTS = select(
+    {
+        Label("//:cuda_arch_" + arch): ["--cuda-gpu-arch=" + arch]
+        for arch in [
+            "sm_60",
+            "sm_61",
+            "sm_70",
+            "sm_72",
+            "sm_75",
+            "sm_80",
+            "sm_86",
+            "sm_87",
+            "sm_89",
+            "sm_90",
+            "sm_100",
+            "sm_103",
+            "sm_120",
+            "sm_121",
+        ]
+    },
+    no_match_error = (
+        "--config=gpu requires an explicit CUDA architecture; use " +
+        "--config=gpu-sm120, --config=gpu-sm121, or pass " +
+        "--//:cuda_arch=sm_<compute capability>"
+    ),
+)
+
+CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
     # Device-side FMA off for bit-stable results — the CMake --fmad=false
     # equivalent. The global .bazelrc -ffp-contract=off also reaches these
     # TUs; this restates it at rule level so device code stays FMA-free

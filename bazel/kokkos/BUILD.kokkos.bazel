@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@openroad//bazel/gpu:copts.bzl", "CUDA_ARCH_COPTS", "CUDA_TOOLKIT_COPTS")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "kokkos",
+    srcs = [
+        "algorithms/src/KokkosAlgorithms_dummy.cpp",
+        "containers/src/impl/Kokkos_UnorderedMap_impl.cpp",
+        "core/src/Cuda/Kokkos_CudaSpace.cpp",
+        "core/src/Cuda/Kokkos_Cuda_Instance.cpp",
+        "core/src/Serial/Kokkos_Serial.cpp",
+        "core/src/impl/Kokkos_Abort.cpp",
+        "core/src/impl/Kokkos_CPUDiscovery.cpp",
+        "core/src/impl/Kokkos_Command_Line_Parsing.cpp",
+        "core/src/impl/Kokkos_Core.cpp",
+        "core/src/impl/Kokkos_Error.cpp",
+        "core/src/impl/Kokkos_ExecPolicy.cpp",
+        "core/src/impl/Kokkos_HostBarrier.cpp",
+        "core/src/impl/Kokkos_HostSpace.cpp",
+        "core/src/impl/Kokkos_HostSpace_deepcopy.cpp",
+        "core/src/impl/Kokkos_HostThreadTeam.cpp",
+        "core/src/impl/Kokkos_MemoryPool.cpp",
+        "core/src/impl/Kokkos_Profiling.cpp",
+        "core/src/impl/Kokkos_SharedAlloc.cpp",
+        "core/src/impl/Kokkos_Stacktrace.cpp",
+        "core/src/impl/Kokkos_hwloc.cpp",
+        "simd/src/Kokkos_SIMD_dummy.cpp",
+        "tpls/desul/src/Lock_Array_CUDA.cpp",
+        "@openroad//bazel/kokkos:Kokkos_Version_Info.cpp",
+    ],
+    hdrs = glob([
+        "algorithms/src/**/*.hpp",
+        "containers/src/**/*.hpp",
+        "core/src/**/*.h",
+        "core/src/**/*.hpp",
+        "simd/src/**/*.hpp",
+        "tpls/desul/include/**/*.hpp",
+        "tpls/desul/include/**/*.inc*",
+        "tpls/mdspan/include/**/*.hpp",
+    ]) + ["cmake/Kokkos_Version_Info.hpp"],
+    additional_compiler_inputs = ["@cuda_local//:compiler_inputs"],
+    copts = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS,
+    includes = [
+        "algorithms/src",
+        "cmake",
+        "containers/src",
+        "core/src",
+        "simd/src",
+        "tpls/desul/include",
+        "tpls/mdspan/include",
+    ],
+    linkopts = ["-ldl"],
+    local_defines = ["KOKKOS_DEPENDENCE"],
+    deps = [
+        "@cuda_local//:cudart",
+        "@openroad//bazel/kokkos:config",
+    ],
+)
