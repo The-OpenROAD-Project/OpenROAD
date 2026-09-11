@@ -230,6 +230,20 @@ git_override(
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
 bazel_dep(name = "llvm", version = "0.8.18", dev_dependency = True)
 
+# Declare Bazel's built-in ThinLTO scoping features
+# (thin_lto_linkstatic_tests_use_shared_nonlto_backends and the all-linkstatic
+# variant) in the hermetic-llvm toolchain so --features=... can enable them;
+# Bazel silently ignores requested features the toolchain does not know.
+# --config=opt uses the tests variant to keep cc_test binaries off per-binary LTO.
+# Drop this override once hermetic-llvm declares them upstream.
+single_version_override(
+    module_name = "llvm",
+    patch_strip = 1,
+    patches = [
+        "//bazel/llvm-patches:0001-declare-thin-lto-shared-nonlto-backend-features.patch",
+    ],
+)
+
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)

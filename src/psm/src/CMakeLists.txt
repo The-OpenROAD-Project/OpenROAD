@@ -19,6 +19,7 @@ target_sources(psm
     heatMap.cpp
     ir_solver.cpp
     ir_network.cpp
+    ir_short.cpp
     connection.cpp
     shape.cpp
     node.cpp

@@ -1,0 +1,90 @@
+# Two abutted standard cell rows sharing a single metal1 VDD followpin,
+# strapped up to metal3 through via1/via2 so the net under test carries
+# vias as well as wires.  The only objects that touch VDD here are
+# obstructions, so this isolates the obstruction half of the short check
+# from the wire, terminal and fill half in check_power_grid_short.
+#
+# The VDD rail (metal1, y = 2.715um - 2.885um) is overlapped by:
+#   metal1 blockage                dbObstruction  x = 2.000um - 2.300um
+#   metal1 blockage of u6          dbObstruction  x = 0.450um - 0.650um
+#   metal1 OBS of macro obs1       dbMaster       x = 3.500um - 4.500um
+#   metal1 OBS of macro obs4       dbMaster       x = 6.300um - 7.300um
+#   the A and B pins of obs4       dbITerm        x = 6.500um - 7.100um
+#   metal1 OBS of macro obs5       dbMaster       x = 7.700um - 8.200um
+# and the VDD metal2 strap at x = 6.000um is overlapped by:
+#   metal2 OBS of macro obs2       dbMaster       y = 4.100um - 4.400um
+#
+# The remaining objects are controls and must never be reported:
+#   metal1 blockage clear of VDD          x = 2.000um - 2.300um, y = 3.2um
+#   metal4 blockage over the metal3 strap - VDD has no shape on metal4
+#   metal1 EXCEPTPGNET blockage           x = 4.800um - 5.100um
+#   PLACEMENT blockage over the rail      x = 5.300um - 5.600um
+#   macro obs3, placed clear of the grid
+#
+# The obstruction of obs4 covers its own two pins, which are checked as
+# iterms of their own, so it is reported as the three strips left after
+# cutting the pins out of it.  The cut takes one extra dbu on each side of
+# a pin, which the 3 decimals of the report round away.
+#
+# The obstruction of obs5 runs from 7.700um to 8.700um, but the cell ends
+# at 8.200um.  Only the part inside the cell is reported: the rest is over
+# the area next to the cell, and the rail runs under all of it.
+#
+# The EXCEPTPGNET blockage is written as a POLYGON on purpose: odb only
+# applies the flag on the polygon path of the DEF reader, a RECT with
+# + EXCEPTPGNET loses it and would read back as a plain obstruction.
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN short_obstructions ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 17100 13000 ) ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 0 2800 N DO 45 BY 1 STEP 380 0 ;
+ROW ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 0 5600 FS DO 45 BY 1 STEP 380 0 ;
+VIAS 2 ;
+    - via1_pg + RECT metal1 ( -170 -170 ) ( 170 170 )
+      + RECT via1 ( -70 -70 ) ( 70 70 )
+      + RECT metal2 ( -170 -170 ) ( 170 170 ) ;
+    - via2_pg + RECT metal2 ( -170 -170 ) ( 170 170 )
+      + RECT via2 ( -70 -70 ) ( 70 70 )
+      + RECT metal3 ( -170 -170 ) ( 170 170 ) ;
+END VIAS
+COMPONENTS 13 ;
+    - u1 INV_X1 + PLACED ( 0 2800 ) N ;
+    - u2 INV_X1 + PLACED ( 760 2800 ) N ;
+    - u3 INV_X1 + PLACED ( 1520 2800 ) N ;
+    - u4 INV_X1 + PLACED ( 2280 2800 ) N ;
+    - u5 INV_X1 + PLACED ( 0 5600 ) FS ;
+    - u6 INV_X1 + PLACED ( 760 5600 ) FS ;
+    - u7 INV_X1 + PLACED ( 1520 5600 ) FS ;
+    - u8 INV_X1 + PLACED ( 2280 5600 ) FS ;
+    - obs1 OBS_BLOCK + PLACED ( 7000 4800 ) N ;
+    - obs2 OBS_BLOCK + PLACED ( 11500 7000 ) N ;
+    - obs3 OBS_BLOCK + PLACED ( 700 10000 ) N ;
+    - obs4 OBS_PIN_BLOCK + PLACED ( 12600 4800 ) N ;
+    - obs5 OBS_OVERHANG + PLACED ( 15400 4800 ) N ;
+END COMPONENTS
+BLOCKAGES 6 ;
+    - LAYER metal1 RECT ( 4000 5500 ) ( 4600 5900 ) ;
+    - LAYER metal1 + COMPONENT u6 RECT ( 900 5500 ) ( 1300 5900 ) ;
+    - LAYER metal1 RECT ( 4000 6400 ) ( 4600 6800 ) ;
+    - LAYER metal4 RECT ( 11800 11200 ) ( 12400 11600 ) ;
+    - LAYER metal1 + EXCEPTPGNET POLYGON ( 9600 5500 ) ( 10200 5500 )
+      ( 10200 5900 ) ( 9600 5900 ) ;
+    - PLACEMENT RECT ( 10600 5400 ) ( 11200 5800 ) ;
+END BLOCKAGES
+SPECIALNETS 2 ;
+    - VDD ( * VDD ) + USE POWER
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 0 5600 ) ( 17100 5600 )
+      NEW metal1 0 + SHAPE STRIPE ( 12000 5600 ) via1_pg
+      NEW metal1 0 + SHAPE STRIPE ( 15000 5600 ) via1_pg
+      NEW metal2 340 + SHAPE STRIPE ( 12000 5600 ) ( 12000 11400 )
+      NEW metal2 340 + SHAPE STRIPE ( 15000 5600 ) ( 15000 11400 )
+      NEW metal2 0 + SHAPE STRIPE ( 12000 11400 ) via2_pg
+      NEW metal2 0 + SHAPE STRIPE ( 15000 11400 ) via2_pg
+      NEW metal3 340 + SHAPE STRIPE ( 11000 11400 ) ( 16000 11400 ) ;
+    - VSS ( * VSS ) + USE GROUND
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 0 2800 ) ( 17100 2800 )
+      NEW metal1 340 + SHAPE FOLLOWPIN ( 0 8400 ) ( 17100 8400 ) ;
+END SPECIALNETS
+END DESIGN
