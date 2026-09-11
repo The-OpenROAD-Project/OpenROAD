@@ -173,6 +173,7 @@ class Replace
 
   // Query for uniform density value
   float getUniformTargetDensity(const PlaceOptions& options, int threads);
+  float estimateTargetDensity(const PlaceOptions& options, int threads);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
