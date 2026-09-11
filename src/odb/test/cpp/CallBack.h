@@ -38,6 +38,13 @@ class CallBack : public dbBlockCallBackObj
       events.push_back("Destroy inst " + inst->getName());
     }
   }
+  void inDbPostInstParentChange(dbInst* inst) override
+  {
+    if (!_pause) {
+      events.push_back("Change parent of inst " + inst->getName() + " to "
+                       + inst->getModule()->getName());
+    }
+  }
   void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override
   {
     if (!_pause) {
