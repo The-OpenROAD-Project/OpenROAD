@@ -446,6 +446,11 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
     settings.endGroup();
   }
 
+  // Register the timing path's DisplayControls entries once, up front, so
+  // "Timing Path/*" is always scriptable regardless of whether the Timing
+  // Report window is currently open (see TimingWidget::toggleRenderer).
+  controls_->registerRenderer(timing_widget_->getTimingRenderer());
+
   // load resources and set window icon
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));

@@ -868,12 +868,10 @@ void TimingWidget::toggleRenderer(bool visible)
     return;
   }
 
-  auto gui = Gui::get();
-  if (visible) {
-    gui->registerRenderer(path_renderer_.get());
-  } else {
-    gui->unregisterRenderer(path_renderer_.get());
-  }
+  // Only toggle painting; the "Timing Path" DisplayControls entries are
+  // registered once (see MainWindow's constructor) and stay in place while
+  // hidden so scripts can still reference them (e.g. "Timing Path/*").
+  Gui::get()->setRendererPaintingEnabled(path_renderer_.get(), visible);
 }
 
 void TimingWidget::setBlock(odb::dbBlock* block)
