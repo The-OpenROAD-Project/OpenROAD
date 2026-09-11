@@ -129,6 +129,11 @@ class MoveCommitter
   int committedMoves(MoveType type) const;
   int summaryCommittedMoves(MoveType type) const;
   int totalMoves(MoveType type) const;
+  // Count of netlist edits through this committer: every accepted move
+  // and every reverted one. Monotonic, so a caller can tell whether the
+  // design changed between two points even when a revert and a new
+  // accept leave the per-type totals where they were.
+  int netlistEdits() const { return netlist_edits_; }
   bool hasPendingMoves(MoveType type, sta::Instance* inst) const;
   bool hasMoves(MoveType type, sta::Instance* inst) const;
   bool hasBlockingBufferRemovalMove(sta::Instance* inst,
@@ -164,6 +169,7 @@ class MoveCommitter
   // the parent's vector (mirroring odb's commitEco append-to-parent semantics).
   std::stack<std::vector<MoveResult>> pending_move_results_;
   std::array<int, kTypeCount> pending_by_type_{};
+  int netlist_edits_ = 0;
   std::array<int, kTypeCount> committed_by_type_{};
   std::array<int, kTypeCount> summary_carried_by_type_{};
   std::array<std::unordered_multiset<sta::Instance*>, kTypeCount>
