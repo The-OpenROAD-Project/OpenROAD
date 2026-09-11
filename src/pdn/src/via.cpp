@@ -195,7 +195,7 @@ DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
   std::map<int, std::set<ViaLayerShape::RectBoxPair>> layer_rects;
   for (auto& shape : shapes) {
     auto* layer = shape.getTechLayer();
-    if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+    if (layer != nullptr && layer->getType() == odb::dbTechLayerType::ROUTING) {
       odb::Rect box_shape = shape.getBox();
       layer_rects[layer->getRoutingLevel()].insert({box_shape, box});
     }
@@ -276,7 +276,7 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
 
     const odb::Rect rect = box->getBox();
 
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
+    if (layer != nullptr && layer->getType() == odb::dbTechLayerType::CUT) {
       cut_layer_ = layer;
       single_via_rect_ = rect;
       via_rect_.merge(rect);
@@ -2977,7 +2977,7 @@ std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
   const odb::dbTransform xform(pt);
   for (auto* box : via->getBoxes()) {
     auto* layer = box->getTechLayer();
-    if (layer->getType() != odb::dbTechLayerType::CUT) {
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::CUT) {
       continue;
     }
 

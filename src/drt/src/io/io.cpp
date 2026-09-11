@@ -506,7 +506,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     createNDR(ndr);
   }
   for (auto& layer : getTech()->getLayers()) {
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (layer == nullptr || layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     router_cfg_->MTSAFEDIST = std::max(
@@ -2804,7 +2804,7 @@ void io::Parser::setLayers(odb::dbTech* db_tech)
     // backside-power PDKs). DRT only routes the front-side stack;
     // backside layers exist in ODB and survive DEF/GDS round-trip,
     // but the router treats them as invisible.
-    if (layer->isBackside()) {
+    if (layer == nullptr || layer->isBackside()) {
       continue;
     }
     switch (layer->getType().getValue()) {
@@ -2947,6 +2947,9 @@ void io::Parser::setMasters(odb::dbDatabase* db)
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
         auto layer = obs->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
         std::string layer_name = layer->getName();
         auto layer_type = layer->getType();
         if (getTech()->name2layer_.find(layer_name)

@@ -812,6 +812,9 @@ void dbTech::checkLayer(bool typeChk,
   }
 
   for (dbTechLayer* layer : getLayers()) {
+    if (layer == nullptr) {
+      continue;
+    }
     dbTechLayerType type = layer->getType();
     if (type.getValue() == dbTechLayerType::CUT) {
       continue;

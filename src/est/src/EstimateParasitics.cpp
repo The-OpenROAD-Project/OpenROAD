@@ -962,7 +962,7 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const sta::Pin* pin)
   if (iterm) {
     int min_layer_idx = std::numeric_limits<int>::max();
     for (const auto& [layer, rect] : iterm->getGeometries()) {
-      if (layer->getType() == odb::dbTechLayerType::ROUTING
+      if (layer != nullptr && layer->getType() == odb::dbTechLayerType::ROUTING
           && layer->getRoutingLevel() < min_layer_idx) {
         min_layer_idx = layer->getRoutingLevel();
         pin_layer = layer;
@@ -1115,7 +1115,8 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
 
     for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
       odb::dbTechLayer* cut_layer = tech->findLayer(layer_idx);
-      if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
+      if (cut_layer == nullptr
+          || cut_layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
       double res, cap;
