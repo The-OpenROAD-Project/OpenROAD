@@ -79,21 +79,20 @@ describe('ClustersWidget', () => {
         assert.equal(widget._updateBtn.textContent, 'Update');
     });
 
-    // Closing the Hierarchy tab hands the overlay back: the flag stays as the
-    // user left it, and an empty map is what stops the layer drawing.
-    it('clears its color map on the way out', async () => {
+    // The panel calls this on first show; a second source switch back must not
+    // pay for the tree again.
+    it('ensureLoaded fetches once, however often it is called', async () => {
         const app = createMockApp();
         const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-        assert.notEqual(
-            app.sent.filter(m => m.type === 'set_group_colors').at(-1).colors,
-            '', 'painting something to begin with');
 
-        await widget.clearOverlay();
+        widget.ensureLoaded();
+        widget.ensureLoaded();
+        await waitForMicrotasks();
+        widget.ensureLoaded();
+        await waitForMicrotasks();
 
         assert.equal(
-            app.sent.filter(m => m.type === 'set_group_colors').at(-1).colors,
-            '');
+            app.sent.filter(m => m.type === 'group_hierarchy').length, 1);
     });
 
     // Straight from the constructor, with no _render() of our own: the panel has

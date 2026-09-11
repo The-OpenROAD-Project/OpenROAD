@@ -107,18 +107,14 @@ export class HierarchyPanel {
         container.on('destroy', () => this._onDestroy());
     }
 
-    // Closing the tab takes the coloring with it: the overlays are fed by
-    // these views, and with the tab gone there is no source dropdown and no
-    // per-row checkbox left to control what they paint.  The flags stay as
-    // they are -- the Display Controls checkbox is the user's, not ours -- and
-    // an empty color map is what stops the drawing.
+    // Closing the tab leaves the coloring up: the Hierarchy view checkbox in
+    // Display Controls still turns it off without the tab, so the design can
+    // be looked at coloured with the panel out of the way.
     _onDestroy() {
         // A reopened tab registers before the old one is destroyed; only the
-        // panel still on the app may clear it.
+        // panel still on the app may clear it.  With it gone, the flags are
+        // derived from the remembered source instead (activeHierarchySource).
         if (this._app.hierarchyPanel === this) this._app.hierarchyPanel = null;
-        // Both, not just the visible one: the hidden view has a map on the
-        // server too.
-        for (const widget of this._widgets.values()) widget.clearOverlay();
     }
 
     // Show one view and hand it the selector.  What the Source dropdown calls.
@@ -133,6 +129,10 @@ export class HierarchyPanel {
                 widget.toolbar.insertBefore(this._picker,
                                             widget.toolbar.firstChild);
                 if (this._stale.delete(view_name)) widget._render();
+                // A view that is about to paint needs its tree: the coloring
+                // outlives the tab, so a reopened panel would otherwise show
+                // an empty table over a coloured layout.
+                widget.ensureLoaded();
             }
         }
         this._select.value = name;

@@ -47,10 +47,21 @@ export class ClustersWidget {
 
         this._build(container);
 
-        // Auto-load in static mode (data is already cached).
+        // Static mode has the data cached already, so there is nothing to wait
+        // for; live sessions load when the panel first shows this view.
         if (isStaticMode(app)) {
-            this.update();
+            this.ensureLoaded();
         }
+    }
+
+    // Load once, on first show.  The panel calls this rather than update() so
+    // switching source back and forth costs no round trip.  Its own flag, not
+    // `_loaded`: update() is async, and two calls before the reply landed
+    // would both see `_loaded` still false.
+    ensureLoaded() {
+        if (this._loadRequested) return;
+        this._loadRequested = true;
+        this.update();
     }
 
     _build(container) {
@@ -250,17 +261,6 @@ export class ClustersWidget {
               && this._app.visibility[this._gate] === false
                 ? HIERARCHY_OFF_HINT
                 : this._nodes.length + ' groups';
-    }
-
-    // Drop this view's colors from the session, on the way out.  The overlay
-    // only draws while its flag is on AND the session holds a map, so an empty
-    // map stops it without touching the flag -- which stays a plain derivation
-    // of the Hierarchy view checkbox and the remembered source.
-    clearOverlay() {
-        this._groupState.clear();
-        // Nothing to clear on a static report: there is no session.
-        if (isStaticMode(this._app)) return Promise.resolve();
-        return this._sendGroupColors();
     }
 
     async _sendGroupColors() {

@@ -154,6 +154,31 @@ describe('HierarchyPanel', () => {
         assert.equal(panel.activeView(), 'clusters');
     });
 
+    // The coloring outlives the tab, so a reopened panel would show an empty
+    // table over a coloured layout.  Each view loads the first time it is
+    // shown -- and only the first time.
+    it('loads each view once, the first time it is shown', async () => {
+        const app = createMockApp();
+        const panel = new HierarchyPanel(makeContainer(), app, () => {});
+        await waitForMicrotasks();
+        const count = (type) => app.sent.filter(m => m.type === type).length;
+
+        // The source it opened on, without anyone pressing Update.
+        assert.equal(count('module_hierarchy'), 1);
+        assert.equal(count('group_hierarchy'), 0, 'not the hidden one');
+
+        panel.selectView('clusters');
+        await waitForMicrotasks();
+        assert.equal(count('group_hierarchy'), 1);
+
+        // Switching back and forth is free.
+        panel.selectView('instances');
+        panel.selectView('clusters');
+        await waitForMicrotasks();
+        assert.equal(count('module_hierarchy'), 1);
+        assert.equal(count('group_hierarchy'), 1);
+    });
+
     // Hiding a view must not throw its data away: switching back has to be
     // free, not another round trip to the server.
     it('keeps a hidden view loaded', async () => {
@@ -336,10 +361,9 @@ describe('HierarchyPanel', () => {
         });
     });
 
-    // With the tab gone there is no source dropdown and no per-row checkbox
-    // left to control what the overlays paint, so the coloring goes with it.
-    // The Display Controls checkbox is the user's and stays put; an empty
-    // color map is what stops the layers drawing.
+    // The coloring outlives the tab: the Hierarchy view checkbox in Display
+    // Controls still turns it off without the tab, so the design can be looked
+    // at coloured with the panel out of the way.
     describe('closing the tab', () => {
         function openThenClose() {
             const app = createMockApp();
@@ -354,17 +378,18 @@ describe('HierarchyPanel', () => {
             return { app, panel, container, refreshed };
         }
 
-        it('clears both views\' color maps, not just the visible one',
-           async () => {
+        it('keeps both views\' color maps on the server', async () => {
             const { app, container } = openThenClose();
 
             container.close();
             await waitForMicrotasks();
 
+            // An empty map is what would stop the layers drawing, so none may
+            // be sent: the layout keeps the colors it had.
             for (const type of ['set_module_colors', 'set_group_colors']) {
-                const last = app.sent.filter(m => m.type === type).at(-1);
-                assert.ok(last, type + ' sent');
-                assert.equal(last.colors, '', type + ' cleared');
+                const cleared = app.sent.filter(
+                    m => m.type === type && m.colors === '');
+                assert.deepEqual(cleared, [], type + ' must not be cleared');
             }
         });
 
