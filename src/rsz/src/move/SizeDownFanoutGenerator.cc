@@ -35,8 +35,6 @@ namespace {
 
 using utl::RSZ;
 
-constexpr int kSizeDownFanoutMaxFanout = 10;
-
 struct SizeDownFanoutContext
 {
   Resizer& resizer;
@@ -75,17 +73,6 @@ bool resolveDriverContext(SizeDownFanoutContext& ctx)
   ctx.drvr_pin = ctx.target.resolvedPin(ctx.resizer);
   ctx.drvr_vertex = ctx.target.vertex(ctx.resizer);
   if (ctx.drvr_pin == nullptr || ctx.drvr_vertex == nullptr) {
-    return false;
-  }
-  if (ctx.target.fanout >= kSizeDownFanoutMaxFanout) {
-    debugPrint(ctx.resizer.logger(),
-               RSZ,
-               "size_down_fanout_move",
-               2,
-               "REJECT SizeDownFanoutMove {}: Fanout {} >= {} max fanout",
-               ctx.resizer.network()->pathName(ctx.drvr_pin),
-               ctx.target.fanout,
-               kSizeDownFanoutMaxFanout);
     return false;
   }
 
@@ -488,15 +475,6 @@ float candidateInputCap(const SizeDownFanoutLoadContext& load_ctx,
   return scene_port->capacitance();
 }
 
-bool isWorseCapOrArea(const SizeDownFanoutLoadContext& load_ctx,
-                      sta::LibertyCell* best_cell,
-                      sta::LibertyCell* swappable)
-{
-  return candidateInputCap(load_ctx, swappable)
-             > candidateInputCap(load_ctx, best_cell)
-         || swappable->area() > best_cell->area();
-}
-
 bool violatesOutputLimits(const SizeDownFanoutContext& ctx,
                           const SizeDownFanoutOutputProfile& profile,
                           sta::LibertyCell* swappable)
@@ -616,54 +594,35 @@ sta::LibertyCell* selectReplacementCell(
     const sta::LibertyCellSeq& swappable_cells,
     const SizeDownFanoutOutputProfile& profile)
 {
-  sta::LibertyCell* best_cell = load_ctx.load_cell;
+  // Step down a single drive strength: the largest cell still smaller than the
+  // current one, mirroring how size_up takes the next-stronger cell rather than
+  // the family maximum.  Taking one step (instead of jumping to the minimum-cap
+  // cell) keeps the per-load change small so it is more likely to fit the delay
+  // budget and commit.  The candidate is accepted only if it stays within the
+  // max-cap/slew output limits and the per-load delay budget; the full timing
+  // assessment is left to STA and the repair loop.
+  sta::LibertyCell* step_down = nullptr;
+  float step_cap = -1.0f;
   for (sta::LibertyCell* swappable : swappable_cells) {
     if (swappable == load_ctx.load_cell) {
       continue;
     }
-
-    debugPrint(ctx.resizer.logger(),
-               RSZ,
-               "size_down_fanout_move",
-               4,
-               " considering swap {} {} -> {}",
-               ctx.resizer.network()->pathName(load_ctx.load_pin),
-               load_ctx.load_cell->name(),
-               swappable->name());
-
-    if (isWorseCapOrArea(load_ctx, best_cell, swappable)) {
-      debugPrint(ctx.resizer.logger(),
-                 RSZ,
-                 "size_down_fanout_move",
-                 4,
-                 "  skip based on cap/area {} gate={} cap={}>{} area={}>{}",
-                 ctx.resizer.network()->pathName(load_ctx.load_pin),
-                 swappable->name(),
-                 candidateInputCap(load_ctx, swappable),
-                 candidateInputCap(load_ctx, best_cell),
-                 swappable->area(),
-                 best_cell->area());
-      continue;
+    const float cap = candidateInputCap(load_ctx, swappable);
+    // Use >= so that among cells of equal input capacitance the last one wins:
+    // rankSwappableCells orders equal-cap cells with the smaller intrinsic
+    // delay last, so this keeps the better candidate for that capacitance step.
+    if (cap < load_ctx.input_cap && cap >= step_cap
+        && swappable->area() < load_ctx.load_cell->area()) {
+      step_cap = cap;
+      step_down = swappable;
     }
-
-    if (violatesOutputLimits(ctx, profile, swappable)
-        || !fitsDelayBudget(ctx, load_ctx, profile, swappable)) {
-      continue;
-    }
-
-    best_cell = swappable;
-    debugPrint(ctx.resizer.logger(),
-               RSZ,
-               "size_down_fanout_move",
-               3,
-               " new best size down {} -> {} ({} -> {})",
-               ctx.resizer.network()->pathName(load_ctx.load_pin),
-               ctx.resizer.network()->pathName(profile.output_pins[0]),
-               load_ctx.load_cell->name(),
-               swappable->name());
   }
-
-  return best_cell != load_ctx.load_cell ? best_cell : nullptr;
+  if (step_down != nullptr
+      && (violatesOutputLimits(ctx, profile, step_down)
+          || !fitsDelayBudget(ctx, load_ctx, profile, step_down))) {
+    return nullptr;
+  }
+  return step_down;
 }
 
 std::unique_ptr<MoveCandidate> buildCandidate(const SizeDownFanoutContext& ctx,
@@ -715,8 +674,10 @@ std::vector<std::unique_ptr<MoveCandidate>> buildCandidates(
              "sizing down for crit fanout {}",
              ctx.resizer.network()->pathName(ctx.drvr_pin));
 
+  auto fanout_slacks = sortedFanoutSlacks(ctx);
+
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  for (const auto& [load_vertex, load_slack] : sortedFanoutSlacks(ctx)) {
+  for (const auto& [load_vertex, load_slack] : fanout_slacks) {
     auto candidate = buildCandidate(ctx, load_vertex, load_slack);
     if (!candidate) {
       continue;
