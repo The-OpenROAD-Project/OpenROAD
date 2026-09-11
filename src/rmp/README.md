@@ -30,7 +30,7 @@ Example: `restructure -liberty_file ckt.lib -target delay -tielo_pin ABC -tiehi_
 restructure 
     [-slack_threshold slack_val]
     [-depth_threshold depth_threshold]
-    [-target area|delay]
+    [-target area|timing]
     [-abc_logfile logfile]
     [-liberty_file liberty_file]
     [-tielo_port  tielo_pin_name]
@@ -43,7 +43,7 @@ restructure
 | Switch Name | Description |
 | ----- | ----- |
 | `-liberty_file` | Liberty file with description of cells used in design. This is passed to ABC. |
-| `-target` | Either `area` or `delay`. In area mode, the focus is area reduction, and timing may degrade. In delay mode, delay is likely reduced, but the area may increase. The default value is `area`. |
+| `-target` | Either `area` or `timing`. In area mode, the focus is area reduction, and timing may degrade. In timing mode, delay is likely reduced, but the area may increase. The default value is `area`. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`, and the allowed values are floats `[0, MAX_FLOAT]`. |
 | `-depth_threshold` | Specifies the path depth above which a timing path would be considered for restructuring. The default value is `16`, and the allowed values are `[0, MAX_INT]`. |
 | `-tielo_pin` | Tie cell pin that can drive constant zero. The format is `<cell>/<port>`. |
@@ -57,14 +57,14 @@ Resynthesize parts of the design in an attempt to fix negative slack.
 
 ```tcl
 resynth
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Process corner to use. |
+| `-scene` | Process scene to use. |
 
 ### Resynth with simulated annealing
 
@@ -75,7 +75,7 @@ The optimization function is defined as the worst slack.
 
 ```tcl
 resynth_annealing
-    [-corner corner]
+    [-scene scene]
     [-slack_threshold slack_threshold]
     [-seed seed]
     [-temp temp]
@@ -88,7 +88,7 @@ resynth_annealing
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Process corner to use. |
+| `-scene` | Process scene to use. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
 | `-seed` | Seed to use for randomness in simulated annealing. |
 | `-temp` | Initial temperature for simulated annealing. The default is the required arrival time on the worst slack endpoint. |
@@ -107,7 +107,7 @@ The optimization function is defined as the worst slack.
 
 ```tcl
 resynth_genetic
-    [-corner corner]
+    [-scene scene]
     [-slack_threshold slack_threshold]
     [-seed seed]
     [-population_size population_size]
@@ -123,7 +123,7 @@ resynth_genetic
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Process corner to use. |
+| `-scene` | Process scene to use. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
 | `-seed` | Seed to use for randomness. |
 | `-population_size` | Population size. |
@@ -134,6 +134,39 @@ resynth_genetic
 | `-iters` | Number of iterations to run genetic algorithm. |
 | `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
+
+### Resynth with extended technology mapping
+
+Resynthesize parts of the design with `mockturtle` extended technology mapping.
+The selected logic is exported through a logic cut, mapped with
+[`emap`](https://mockturtle.readthedocs.io/en/latest/algorithms/mapper.html)
+against the currently loaded library, and then imported back into OpenROAD.
+With `-map_multioutput`, mapping can use multioutput cells such as adders.
+
+Currently, cells with up to 9 inputs are supported.
+
+```tcl
+resynth_emap
+    [-scene scene]
+    [-map_multioutput]
+    [-verbose]
+    [-create_po_buffers]
+    [-insert_buffers]
+    [-min_drive_resistance min_drive_resistance]
+    [-max_drive_resistance max_drive_resistance]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-scene` | Process scene to use. |
+| `-map_multioutput` | Map multioutput cells. |
+| `-verbose` | Enable verbose output from `mockturtle` during mapping. |
+| `-create_po_buffers` | Allow `mockturtle` to create buffers on primary outputs. |
+| `-insert_buffers` | Allow `mockturtle` to insert buffers during mapping. |
+| `-min_drive_resistance` | Keep only library cells whose average drive resistance is greater than or equal to the given threshold. Takes precedence over `-max_drive_resistance`. |
+| `-max_drive_resistance` | Keep only library cells whose average drive resistance is less than or equal to the given threshold. |
 
 ## Example scripts
 

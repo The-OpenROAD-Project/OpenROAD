@@ -65,9 +65,10 @@ class Restructure
   ~Restructure();
 
   void reset();
-  void resynth(sta::Scene* corner);
-  void resynthAnnealing(sta::Scene* corner);
-  void resynthGenetic(sta::Scene* corner);
+  void resynth(sta::Scene* scene);
+  void resynthAnnealing(sta::Scene* scene);
+  void resynthEmap(sta::Scene* scene);
+  void resynthGenetic(sta::Scene* scene);
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,
@@ -82,6 +83,27 @@ class Restructure
     annealing_revert_after_ = revert_after;
   }
   void setAnnealingInitialOps(unsigned ops) { annealing_init_ops_ = ops; }
+  void setEmapCreatePoBuffers(bool create_po_buffers)
+  {
+    emap_create_po_buffers_ = create_po_buffers;
+  }
+  void setEmapInsertBuffers(bool insert_buffers)
+  {
+    emap_insert_buffers_ = insert_buffers;
+  }
+  void setEmapMapMultioutput(bool map_multioutput)
+  {
+    emap_map_multioutput_ = map_multioutput;
+  }
+  void setEmapVerbose(bool verbose) { emap_verbose_ = verbose; }
+  void setEmapMaxDriveResistance(double max_drive_resistance)
+  {
+    emap_max_drive_resistance_ = max_drive_resistance;
+  }
+  void setEmapMinDriveResistance(double min_drive_resistance)
+  {
+    emap_min_drive_resistance_ = min_drive_resistance;
+  }
   void setGeneticSeed(int seed) { genetic_seed_ = seed; }
   void setGeneticPopulationSize(unsigned population_size)
   {
@@ -148,6 +170,14 @@ class Restructure
   unsigned annealing_iters_ = 100;
   std::optional<unsigned> annealing_revert_after_;
   unsigned annealing_init_ops_ = 10;
+
+  // Emap
+  bool emap_create_po_buffers_ = false;
+  bool emap_insert_buffers_ = false;
+  bool emap_map_multioutput_ = false;
+  bool emap_verbose_ = false;
+  double emap_max_drive_resistance_ = 0.0;
+  double emap_min_drive_resistance_ = 0.0;
 
   // Genetic
   int genetic_seed_ = 0;
