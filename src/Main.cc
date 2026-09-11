@@ -385,11 +385,10 @@ static int tclAppInit(int& argc,
     // Register the web server's log sink early (before splash/thread output
     // and read_db) so the WebLogSink captures all startup messages for the
     // browser console.  The network and browser are NOT opened here — that
-    // happens later in serve(), just before waitForStop(), once the database
-    // is fully loaded.  Opening them here would let a connecting client run
-    // Search::eagerInit on the I/O worker threads while read_db is still
-    // mutating the db on this thread — a coredump in
-    // odb::dbBPinItr::getObject().  See issue #10576.
+    // happens later in serve(), once the database is fully loaded.  Opening
+    // them here would let a connecting client run Search::eagerInit on the
+    // I/O worker threads while read_db is still mutating the db on this
+    // thread — a coredump in odb::dbBPinItr::getObject().  See issue #10576.
     int web_port = 0;
     if (web_enabled) {
       if (web_port_arg) {
@@ -419,13 +418,15 @@ static int tclAppInit(int& argc,
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
-    // The web server now installs its HeadlessViewer late, in serve() (just
-    // before waitForStop), so gui::Gui::enabled() is still false here in the
-    // web path.  The `&& !web_enabled` is kept defensively: even with a
-    // viewer installed, the web server executes scripts directly on the main
-    // thread (like the non-GUI path), and addRestoreStateCommand() only
-    // works with the Qt event loop.
+    // The web server installs its HeadlessViewer late, in serve(), so
+    // gui::Gui::enabled() is still false here in the web path unless a
+    // script already called `web_server`.  The `&& !web_enabled` is kept
+    // defensively: even with a viewer installed, the web server executes
+    // scripts directly on the main thread (like the non-GUI path), and
+    // addRestoreStateCommand() only works with the Qt event loop.
     const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
+
+    auto* web_server = ord::OpenRoad::openRoad()->getWebServer();
 
     if (read_odb_filename) {
       std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
@@ -489,16 +490,25 @@ static int tclAppInit(int& argc,
     // thread, so the database is fully loaded and stable.  Open the network
     // and browser now: a connecting client's Search::eagerInit will index a
     // settled db instead of racing read_db (the issue #10576 coredump).
-    // Then block until the web server is stopped (like QApplication::exec()
-    // for the GUI).  After this returns, fall through to readline.
-    if (web_enabled) {
-      auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      server->serve(web_port);
-      server->waitForStop();
+    // A script that called `web_server` itself has already started it.
+    if (web_enabled && !web_server->isRunning()) {
+      web_server->serve(web_port);
+    }
+
+    // If the web server is running at this point — either because of
+    // -web or because the script itself called `web_server` — park the
+    // main thread in Tcl_DoOneEvent so worker threads can drive
+    // browser-typed tcl_eval requests.  The wait exits when a
+    // browser-typed `exit` (requestExit) or `web_server -stop`
+    // (requestStop) wakes the loop.  After this returns, fall through to
+    // the terminal REPL.
+    if (web_server->isRunning()) {
+      const bool was_exit = web_server->runEventLoopUntilStop();
+      web_server->stop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are
       // already joined by stop()).
-      if (server->exitRequested()) {
+      if (was_exit) {
         Tcl_Exit(EXIT_SUCCESS);
       }
     }

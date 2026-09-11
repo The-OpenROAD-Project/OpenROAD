@@ -24,7 +24,40 @@ proc web_server { args } {
   }
 
   web::web_server_cmd $port
-  web::web_server_wait_cmd
+
+  # When invoked interactively (i.e. ::tclreadline::Loop is somewhere
+  # above us on the call stack) we want the browser to be the only
+  # Tcl input surface — block here so the launching terminal's
+  # prompt is suppressed until `web_server -stop` (browser button) or
+  # browser-typed `exit` ends the server.  When invoked from a sourced
+  # script, return immediately so the rest of the script keeps running;
+  # Main.cc parks in Tcl_DoOneEvent after the script settles.
+  #
+  # `info script` is unreliable here because in OpenROAD it stays
+  # set to the most recently sourced file even after sourcing ends,
+  # so we walk the call frames and look for the REPL instead.
+  # ::tclreadline::Loop is a C command (the linenoise REPL), so its
+  # frame carries a `cmd` entry rather than a `proc` one; both keys are
+  # checked so the walk also works if it is ever a Tcl proc again.
+  set in_readline 0
+  for { set i 1 } { $i <= [info frame] } { incr i } {
+    set frame [info frame $i]
+    foreach key { proc cmd } {
+      if { ![dict exists $frame $key] } {
+        continue
+      }
+      if { [string match "*tclreadline::Loop*" [dict get $frame $key]] } {
+        set in_readline 1
+        break
+      }
+    }
+    if { $in_readline } {
+      break
+    }
+  }
+  if { $in_readline } {
+    web::web_server_wait_cmd
+  }
 }
 
 sta::define_cmd_args "save_image" {[-web] \

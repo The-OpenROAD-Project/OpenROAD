@@ -1525,6 +1525,13 @@ app.websocketManager.onPush = (msg) => {
         let text = msg.text;
         if (text.endsWith('\n')) text = text.slice(0, -1);
         if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'console_input') {
+        // Top-level command executed on the main Tcl thread (script line
+        // or terminal-typed command), broadcast by the level-1 trace
+        // installed in WebServer::serve().  Render it like a
+        // browser-typed command so the browser console shows the same
+        // history as the user driving the process from elsewhere.
+        if (msg.text) tclAppend(`>>> ${msg.text}\n`, 'tcl-cmd');
     } else if (msg.type === 'restore_display_state') {
         // restore_display_controls (Tcl) broadcast a saved state — apply it.
         applyDisplayState(msg.state);
