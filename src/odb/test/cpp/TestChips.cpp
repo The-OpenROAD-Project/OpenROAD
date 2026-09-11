@@ -56,9 +56,7 @@ struct ChipHierarchyFixture : public SimpleDbFixture
     memory_chip_region_r1 = dbChipRegion::create(
         memory_chip, "R1", dbChipRegion::Side::FRONT, layer_l1);
     memory_chip_region_r2 = dbChipRegion::create(
-        memory_chip, "R2", dbChipRegion::Side::BACK, layer_l1);
-    memory_chip_region_r3 = dbChipRegion::create(
-        memory_chip, "R3", dbChipRegion::Side::INTERNAL, nullptr);
+        memory_chip, "R2", dbChipRegion::Side::BACK, nullptr);
     io_chip_region_r1 = dbChipRegion::create(
         io_chip, "R1", dbChipRegion::Side::FRONT, layer_M1);
     dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
@@ -103,7 +101,6 @@ struct ChipHierarchyFixture : public SimpleDbFixture
   dbChipInst* cache_inst;
   dbChipRegion* memory_chip_region_r1;
   dbChipRegion* memory_chip_region_r2;
-  dbChipRegion* memory_chip_region_r3;
   dbChipRegion* io_chip_region_r1;
   dbChipBump* io_bump;
 };
@@ -260,24 +257,21 @@ TEST_F(ChipHierarchyFixture, test_chip_regions)
   EXPECT_EQ(memory_chip_region_r1->getSide(), dbChipRegion::Side::FRONT);
   EXPECT_EQ(memory_chip_region_r1->getLayer(), layer_l1);
   EXPECT_EQ(memory_chip_region_r1->getChip(), memory_chip);
-  EXPECT_EQ(memory_chip_region_r3->getSide(), dbChipRegion::Side::INTERNAL);
-  EXPECT_EQ(memory_chip_region_r3->getLayer(), nullptr);
+  EXPECT_EQ(memory_chip_region_r2->getSide(), dbChipRegion::Side::BACK);
+  EXPECT_EQ(memory_chip_region_r2->getLayer(), nullptr);
   // Test dbChip::findChipRegion
   EXPECT_EQ(memory_chip->findChipRegion("R1"), memory_chip_region_r1);
   EXPECT_EQ(memory_chip->findChipRegion("R2"), memory_chip_region_r2);
-  EXPECT_EQ(memory_chip->findChipRegion("R3"), memory_chip_region_r3);
-  EXPECT_EQ(memory_chip->findChipRegion("R4"), nullptr);
+  EXPECT_EQ(memory_chip->findChipRegion("R3"), nullptr);
   // Test dbChipInst::findChipRegionInst
   EXPECT_EQ(memory_inst->findChipRegionInst("R1")->getChipRegion(),
             memory_chip_region_r1);
   EXPECT_EQ(memory_inst->findChipRegionInst("R2")->getChipRegion(),
             memory_chip_region_r2);
-  EXPECT_EQ(memory_inst->findChipRegionInst("R3")->getChipRegion(),
-            memory_chip_region_r3);
-  EXPECT_EQ(memory_inst->findChipRegionInst("R4"), nullptr);
+  EXPECT_EQ(memory_inst->findChipRegionInst("R3"), nullptr);
 
-  iterateChipRegions(memory_chip, {"R1", "R2", "R3"});
-  iterateChipRegionInsts(memory_inst, {"R1", "R2", "R3"});
+  iterateChipRegions(memory_chip, {"R1", "R2"});
+  iterateChipRegionInsts(memory_inst, {"R1", "R2"});
   iterateChipRegions(io_chip, {"R1"});
 
   EXPECT_THROW(

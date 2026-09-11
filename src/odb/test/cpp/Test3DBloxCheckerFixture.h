@@ -21,13 +21,17 @@ class CheckerFixture : public tst::DbFixture
     top_chip_
         = dbChip::create(db_.get(), nullptr, "TopChip", dbChip::ChipType::HIER);
 
-    // Create master chips
-    chip1_ = dbChip::create(db_.get(), tech_, "Chip1", dbChip::ChipType::DIE);
+    // Create master chips. They are SUBSTRATE (rather than DIE) so that the
+    // internal_ext region tests can legally attach INTERNAL_EXT regions, which
+    // dbChipRegion::create only allows on RDL/SUBSTRATE chips.
+    chip1_ = dbChip::create(
+        db_.get(), tech_, "Chip1", dbChip::ChipType::SUBSTRATE);
     chip1_->setWidth(2000);
     chip1_->setHeight(2000);
     chip1_->setThickness(500);
 
-    chip2_ = dbChip::create(db_.get(), tech_, "Chip2", dbChip::ChipType::DIE);
+    chip2_ = dbChip::create(
+        db_.get(), tech_, "Chip2", dbChip::ChipType::SUBSTRATE);
     chip2_->setWidth(1500);
     chip2_->setHeight(1500);
     chip2_->setThickness(500);
