@@ -244,4 +244,16 @@ set_debug_cmd(int pause_iterations,
                     generate_images, resolved_path);
 }
 
+float
+estimate_target_density_cmd(
+  const std::map<std::string, std::string>& keys,
+  const std::map<std::string, std::string>& flags)
+{
+  gpl::PlaceOptions options = getOptions(keys, flags);
+  Replace* replace = getReplace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+
+  return replace->estimateTargetDensity(options, threads);
+}
+
 %} // inline

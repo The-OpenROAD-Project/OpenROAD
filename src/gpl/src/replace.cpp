@@ -196,11 +196,6 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   locked_options.overflow = std::max(options.overflow, 0.2f);
   locked_options.nesterovPlaceMaxIter = 300;
 
-  // Use uniform density for incremental runs to fill gaps effectively
-  if (!options.uniformTargetDensityMode) {
-    locked_options.uniformTargetDensityMode = true;
-  }
-
   doInitialPlace(threads, locked_options);
   const int iter = doNesterovPlace(threads, locked_options);
 
@@ -212,7 +207,6 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 
   if (options.overflow < locked_options.overflow) {
     PlaceOptions final_options = options;
-    final_options.uniformTargetDensityMode = true;
     final_options.initDensityPenaltyFactor = 1;
 
     doNesterovPlace(threads, final_options, iter + 1);
@@ -482,6 +476,26 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_rudy_stride_ = rudy_stride;
   gui_debug_generate_images_ = generate_images;
   gui_debug_images_path_ = images_path;
+}
+
+float Replace::estimateTargetDensity(const PlaceOptions& options,
+                                     const int threads)
+{
+  log_->info(GPL, 88, "Initialize gpl and estimate target density.");
+  log_->redirectStringBegin();
+
+  PlaceOptions options_no_io = options;
+  options_no_io.skipIo();  // in case bterms are not placed
+
+  float density = 1.0f;
+  bool initialized = initNesterovPlace(options_no_io, threads, false);
+  log_->redirectStringEnd();  // discard output
+
+  if (initialized) {
+    density = nbVec_[0]->estimateTargetDensity(options_no_io.overflow);
+  }
+
+  return density;
 }
 
 void PlaceOptions::validate(utl::Logger* logger)

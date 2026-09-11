@@ -301,6 +301,19 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "estimate_target_density_test",
+    srcs = ["estimate_target_density_test.cpp"],
+    deps = [
+        "//src/gpl",
+        "//src/gpl:gpl_private_hdrs",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "gpl_man_tcl_check",
     srcs = ["gpl_man_tcl_check.py"],
