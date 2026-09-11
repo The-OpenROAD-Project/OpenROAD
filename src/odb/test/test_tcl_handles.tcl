@@ -44,7 +44,7 @@ assert {[llength [info commands rect]] == 1} "named constructor made no command"
 assert {[odb::Rect_xMin rect] == 100} "rect did not convert by name"
 assert {[odb::Rect_xMin ::rect] == 100} "::rect did not convert by name"
 namespace eval elsewhere {
-  assert {[odb::Rect_xMin ::rect] == 100} "::rect did not convert from a namespace"
+assert {[odb::Rect_xMin ::rect] == 100} "::rect did not convert from a namespace"
 }
 rename rect {}
 
@@ -54,12 +54,12 @@ assert {[catch { no_such_command_at_all }] == 1} "unknown command did not error"
 # Commands that are not handles reach the handler odb_unknown displaced, even
 # when an application installs one of its own after odb is initialized.
 proc app_unknown { args } { return "app_unknown saw [lindex $args 0]" }
-namespace eval :: { namespace unknown app_unknown }
+uplevel #0 [list namespace unknown app_unknown]
 odb_install_unknown
 assertStringEq [some_missing_command] "app_unknown saw some_missing_command" \
   "odb_unknown did not chain to the displaced handler"
 assertStringNotEq [$net getName] "" "handle dispatch broke after reinstall"
-namespace eval :: { namespace unknown {} }
+uplevel #0 [list namespace unknown ""]
 odb_install_unknown
 assert {[catch { no_such_command_at_all }] == 1} \
   "unknown command did not error after the handler was cleared"
