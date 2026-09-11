@@ -732,8 +732,21 @@ void NesterovPlace::runRoutability(int iter,
                                    float& curA)
 {
   // check routability using RUDY or GR
+  //
+  // The overflow gate alone says the design is spread; it does not say the
+  // cells have stopped moving, and those come apart when the penalty schedule
+  // changes pace. Measured on one design at the same overflow of 0.30: cells
+  // moving 2.02 bins per iteration read a congestion of 1.6447, and cells
+  // moving 6.44 bins per iteration - the same overflow, a faster schedule -
+  // read 2.3458. Inflation sized from the second reading is aimed at a
+  // placement that no longer exists by the time it lands. Wait for the motion
+  // to come off its peak as well.
+  //
+  // This can only ever delay the trigger, so a design already settled at its
+  // overflow gate is unaffected.
   if (npVars_.routability_driven_mode && is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
+      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+      && isPlacementSettled()) {
     nbVec_[0]->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
@@ -840,6 +853,18 @@ void NesterovPlace::runRoutability(int iter,
       }
     }
   }
+}
+
+// Every region has to have settled: routability acts on one congestion map
+// covering all of them.
+bool NesterovPlace::isPlacementSettled() const
+{
+  for (const auto& nb : nbVec_) {
+    if (!nb->isSettled()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool NesterovPlace::isConverged(int gpl_iter_count,

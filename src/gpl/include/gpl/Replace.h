@@ -80,7 +80,11 @@ struct PlaceOptions
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
   float initWireLengthCoef = 0.25;
-  float referenceHpwl = 446000000;
+  // Scale the density-penalty controller measures a wirelength change
+  // against, in DBU. The controller eases the penalty ramp in proportion to
+  // (delta HPWL / referenceHpwl), so a fixed value only suits designs whose
+  // HPWL happens to be near it. 0 derives it from the design's own HPWL.
+  float referenceHpwl = 0;
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
@@ -94,6 +98,19 @@ struct PlaceOptions
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
   float routabilityMinCongestionForInflation = 0.95;
+
+  // Ceiling on the artificial area routability may add, as a fraction of the
+  // movable area it started from. Inflation is the only thing in the loop that
+  // grows the design, and past some point the density penalty is handed more
+  // area than the floorplan can absorb.
+  float routabilityMaxInflationTotal = 0.30;
+  // Wirelength weight applied to the nets that put the most wire into the
+  // congested tiles, and the share of those nets that gets weighted. A net
+  // deposits demand in proportion to its own length, so pulling the worst
+  // offenders shorter takes demand out of the region they cross - unlike
+  // inflating cells, which adds wirelength everywhere. 1.0 turns it off.
+  float routabilityNetWeightMax = 1.5;
+  float routabilityCongestedNetsPercentage = 1.0;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
