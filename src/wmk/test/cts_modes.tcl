@@ -22,7 +22,7 @@ foreach name { leaf_a leaf_b ff0 ff1 ff2 ff3 } {
   incr x 10000
 }
 estimate_parasitics -placement
-proc clock_memberships {} {
+proc clock_memberships { } {
   set result {}
   foreach mode { mode_a mode_b } {
     set_mode $mode
@@ -36,7 +36,7 @@ proc clock_memberships {} {
   }
   return $result
 }
-proc clock_connections {} {
+proc clock_connections { } {
   set result {}
   set block [ord::get_db_block]
   foreach name { ff0 ff1 ff2 ff3 } {

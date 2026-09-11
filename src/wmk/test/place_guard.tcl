@@ -33,7 +33,7 @@ set claims [make_result_file place_guard.csv]
 
 # Compare every connected instance pin immediately after the command and
 # after an independent extraction. This detects stale RC after rollback.
-proc pin_slacks {} {
+proc pin_slacks { } {
   set result [dict create]
   foreach pin [get_pins -hierarchical *] {
     foreach property { slack_max_rise slack_max_fall slack_min_rise slack_min_fall } {

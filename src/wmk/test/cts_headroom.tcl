@@ -36,7 +36,7 @@ proc attempt { description expected } {
     -sibling_dist_um 100 -skew_margin_ns 1]
   check "$description remains a claim" { set count } 1
   check "$description connection" { [$sink getNet] getName } $expected
-  set held [expr {$expected eq "clock_a"}]
+  set held [expr { $expected eq "clock_a" }]
   check "$description extraction" { verify_watermark -cts_claims $claims -min_stages 1 } $held
   $sink connect [$block findNet clock_b]
 }
