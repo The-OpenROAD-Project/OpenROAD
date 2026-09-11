@@ -36,10 +36,11 @@ using utl::Logger;
 // The key idea is: "We say that vi is a neighbor of vj if the smallest
 // bounding box containing vi and vj contains no other nodes."
 
-// This has nothing to do with the Guibas & Stolfi method despite its
-// mention in the paper and the comments of the original code.  GS is
-// not a good choice as it excludes edges that may be optimal for high
-// alpha values.
+// Below implements the double monotone chains algorithm described in
+// "Provably Optimal Planar Pareto Nearest Neighbor Search with Double
+// Monotone Chains" (Guo et al, DATE'26).
+// This is output-optimal, 39x faster than brute force and 1.3x faster
+// than the lossy Guibas-Stolfi algorithm.
 
 using Neighbors = std::vector<int>;
 static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
@@ -51,56 +52,63 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
 
   vector<Neighbors> neighbors(pt_count);
 
-  // These keep track of the closest node in X seen so far in the
-  // respective quandrant of each node (the index).  Any node beyond
-  // this coordinate would have another node in its bbox and is
-  // therefore not a nearest neighbor.  This depends on processing the
-  // nodes in order of increasing y distance.
-  data.reserve(pt_count * 5);
-  data.resize(pt_count * 2, std::numeric_limits<int>::max());
-  data.resize(pt_count * 4, std::numeric_limits<int>::min());
-  data.resize(pt_count * 5);
-  int* const ur = &data[0];  // NOLINT
-  int* const lr = &data[pt_count];
-  int* const ul = &data[pt_count * 2];
-  int* const ll = &data[pt_count * 3];
-  int* const sorted = &data[pt_count * 4];
+  data.resize(pt_count * 6);
+  std::fill_n(data.begin(), pt_count * 4, -1);
+  int *yprev_w_smallx = &data[0];
+  int *ynext_w_smallx = &data[pt_count];
+  int *curx_yprev_w_largex = &data[pt_count * 2];
+  int *curx_ynext_w_largex = &data[pt_count * 3];
+  int *sorted_x = &data[pt_count * 4];
+  int *sorted_y = &data[pt_count * 5];
 
-  // sort in y-axis
-  std::iota(sorted, sorted + pt_count, 0);
-  std::stable_sort(sorted, sorted + pt_count, [&pts](int i, int j) {
-    return std::make_pair(pts[i].getY(), pts[i].getX())
-           < std::make_pair(pts[j].getY(), pts[j].getX());
+  std::iota(sorted_x, sorted_x + pt_count, 0);
+  std::iota(sorted_y, sorted_y + pt_count, 0);
+  std::sort(sorted_x, sorted_x + pt_count, [&pts] (int i, int j) {
+    return std::make_tuple(pts[i].getX(), pts[i].getY()) < std::make_tuple(pts[j].getX(), pts[j].getY());
+  });
+  std::sort(sorted_y, sorted_y + pt_count, [&pts] (int i, int j) {
+    return std::make_tuple(pts[i].getY(), pts[i].getX()) < std::make_tuple(pts[j].getY(), pts[j].getX());
   });
 
-  // Compute neighbors going from bottom to top in Y
-  for (int idx = 0; idx < pt_count; ++idx) {
-    const int pt_idx = sorted[idx];
-    const int pt_x = pts[pt_idx].getX();
-    // Update upper neighbors of all pts below pt (below.y <= pt.y)
-    for (int i = 0; i < idx; ++i) {
-      const int below_idx = sorted[i];
-      const int below_x = pts[below_idx].getX();
-      if (below_x <= pt_x && pt_x < ur[below_idx]) {  // pt in ur
-        neighbors[below_idx].push_back(pt_idx);
-        ur[below_idx] = pt_x;
-      } else if (ul[below_idx] < pt_x && pt_x < below_x) {  // pt in ul
-        neighbors[below_idx].push_back(pt_idx);
-        ul[below_idx] = pt_x;
-      }
+  // x left to right
+  // first compute "the previous/next (order by y) i that has smaller x"
+  for (int syi = 1; syi < pt_count; ++syi) {
+    int i = sorted_y[syi];
+    int xi = pts[i].getX();
+    int j = sorted_y[syi - 1];
+    while (j >= 0 && pts[j].getX() > xi) {
+      j = yprev_w_smallx[j];
     }
-
-    // Set all lower neighbors for 'pt' (below.y <= pt.y)
-    for (int i = idx - 1; i >= 0; --i) {
-      const int below_idx = sorted[i];
-      const int below_x = pts[below_idx].getX();
-      if (pt_x <= below_x && below_x < lr[pt_idx]) {  // below in lr
-        neighbors[pt_idx].push_back(below_idx);
-        lr[pt_idx] = below_x;
-      } else if (ll[pt_idx] < below_x && below_x < pt_x) {  // below in ll
-        neighbors[pt_idx].push_back(below_idx);
-        ll[pt_idx] = below_x;
-      }
+    yprev_w_smallx[i] = j;
+  }
+  for (int syi = pt_count - 2; syi >= 0; --syi) {
+    int i = sorted_y[syi];
+    int xi = pts[i].getX();
+    int j = sorted_y[syi + 1];
+    while (j >= 0 && pts[j].getX() > xi) {
+      j = ynext_w_smallx[j];
+    }
+    ynext_w_smallx[i] = j;
+  }
+  // next, add nodes one by one with increasing x.
+  // for currently encountered nodes, maintain next/prev larger x.
+  for (int sxi = 0; sxi < pt_count; ++sxi) {
+    int i = sorted_x[sxi], j;
+    // upper left
+    j = ynext_w_smallx[i];
+    while (j >= 0) {
+      neighbors[j].push_back(i);
+      neighbors[i].push_back(j);
+      curx_yprev_w_largex[j] = i;
+      j = curx_ynext_w_largex[j];
+    }
+    // lower left
+    j = yprev_w_smallx[i];
+    while (j >= 0) {
+      neighbors[j].push_back(i);
+      neighbors[i].push_back(j);
+      curx_ynext_w_largex[j] = i;
+      j = curx_yprev_w_largex[j];
     }
   }
 
