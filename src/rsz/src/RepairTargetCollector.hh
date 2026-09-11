@@ -317,12 +317,19 @@ class RepairTargetCollector
   sta::Sta* sta_;
   sta::Graph* graph_;
 
-  // Startpoint vertices: top-level inputs and register outputs, clock
-  // pins excluded, in graph iteration order. Walked once per collector:
-  // setup repair inserts, resizes, clones and removes combinational
-  // cells and swaps pins, none of which creates or removes a startpoint,
-  // so only their slacks move between two rows of the progress table.
-  std::vector<sta::Vertex*> startpoint_vertices_;
+  // Startpoints: top-level inputs and register outputs, clock pins
+  // excluded, in graph iteration order. Walked once per init(): setup
+  // repair inserts, resizes, clones and removes combinational cells and
+  // swaps pins, none of which creates or removes a startpoint, so only
+  // their slacks move between two rows of the progress table. Pins are
+  // cached rather than vertices because replacing a register's cell can
+  // recreate its vertices; the vertex is looked up again per row.
+  struct CachedStartpoint
+  {
+    const sta::Pin* pin;
+    bool drvr_vertex;  // which of a bidirect pin's two vertices this was
+  };
+  std::vector<CachedStartpoint> startpoints_;
   bool startpoints_collected_ = false;
   sta::Network* network_;
   const sta::MinMax* max_;

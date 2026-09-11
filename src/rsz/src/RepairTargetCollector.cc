@@ -220,6 +220,7 @@ void RepairTargetCollector::init(float slack_margin,
 
   slack_margin_ = slack_margin;
 
+  startpoints_collected_ = false;
   collectViolatingEndpoints();
   if (collect_startpoints) {
     collectViolatingStartpoints();
@@ -850,7 +851,7 @@ void RepairTargetCollector::collectViolatingStartpoints()
   // again on every -verbose progress row is what made the row cost
   // proportional to the design, once per endpoint visited.
   if (!startpoints_collected_) {
-    startpoint_vertices_.clear();
+    startpoints_.clear();
     sta::VertexIterator vertex_iter(graph_);
     while (vertex_iter.hasNext()) {
       sta::Vertex* vertex = vertex_iter.next();
@@ -862,17 +863,23 @@ void RepairTargetCollector::collectViolatingStartpoints()
       sta::PortDirection* direction = network_->direction(pin);
       if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
           || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
-        startpoint_vertices_.push_back(vertex);
+        startpoints_.push_back({pin, vertex == graph_->pinDrvrVertex(pin)});
       }
     }
     startpoints_collected_ = true;
   }
 
-  const int all_startpoints = startpoint_vertices_.size();
-  for (sta::Vertex* vertex : startpoint_vertices_) {
+  const int all_startpoints = startpoints_.size();
+  for (const CachedStartpoint& startpoint : startpoints_) {
+    sta::Vertex* vertex = startpoint.drvr_vertex
+                              ? graph_->pinDrvrVertex(startpoint.pin)
+                              : graph_->pinLoadVertex(startpoint.pin);
+    if (vertex == nullptr) {
+      continue;
+    }
     const sta::Slack slack = sta_->slack(vertex, max_);
     if (sta::fuzzyLess(slack, slack_margin_)) {
-      violating_startpoints_.emplace_back(vertex->pin(), slack);
+      violating_startpoints_.emplace_back(startpoint.pin, slack);
     }
   }
 
