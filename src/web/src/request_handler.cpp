@@ -322,6 +322,53 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+bool webSocketOriginAllowed(const std::string_view origin,
+                            const std::string_view host)
+{
+  // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
+  // forge its Origin, so a foreign page is rejected below.  A non-browser
+  // client controls every header (it can omit Origin or spoof any value), so
+  // this check cannot authenticate one — that requires binding to loopback
+  // (issue #11167, F-02), on which this guard depends.
+  //
+  // Absent Origin: browsers always send it on a WS handshake, so its absence
+  // is a non-browser client; allow it (F-02 is what keeps such a client local).
+  if (origin.empty()) {
+    return true;
+  }
+  // The authority is what follows "scheme://", up to the first '/'.  An Origin
+  // without a scheme (e.g. the opaque "null") has no authority and is rejected.
+  const size_t scheme = origin.find("://");
+  if (scheme == std::string_view::npos) {
+    return false;
+  }
+  std::string_view authority = origin.substr(scheme + 3);
+  const size_t slash = authority.find('/');
+  if (slash != std::string_view::npos) {
+    authority = authority.substr(0, slash);
+  }
+  // Strict same-origin: the page was served by this very viewer.  Nothing else
+  // is accepted — not even another localhost:<port>, which could be an XSS'd
+  // local service.  The server opens the browser at the same host:port it
+  // reports, so a legitimate viewer always matches; a user who manually swaps
+  // the loopback spelling (127.0.0.1 vs localhost) must use the reported one.
+  //
+  // The comparison ignores case: a host is case-insensitive (RFC 3986 3.2.2)
+  // and a proxy or non-browser client may vary it, which would otherwise 403 a
+  // legitimate handshake.  Hosts are ASCII (IDNs arrive punycoded), so lower
+  // without std::tolower and its locale.
+  const auto ascii_lower = [](const char c) {
+    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+  };
+  return std::equal(authority.begin(),
+                    authority.end(),
+                    host.begin(),
+                    host.end(),
+                    [&ascii_lower](const char a, const char b) {
+                      return ascii_lower(a) == ascii_lower(b);
+                    });
+}
+
 WebSocketResponse errorResponse(const uint32_t id,
                                 const std::string_view message)
 {
