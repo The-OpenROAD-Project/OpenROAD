@@ -112,28 +112,35 @@ int Shape::getNumberOfConnections() const
   return vias_.size() + iterm_connections_.size() + bterm_connections_.size();
 }
 
+void Shape::clearVias()
+{
+  vias_.clear();
+  connections_above_ = 0;
+  connections_below_ = 0;
+}
+
+void Shape::addVia(const ViaPtr& via)
+{
+  vias_.push_back(via);
+  // Count on the way in rather than by rescanning the via list on every
+  // query. RepairChannelStraps::findRepairChannels asks every strap and
+  // followpin shape for its connections above, and on a large die a rail
+  // carries thousands of vias: the rescan was over 90% of pdngen's runtime.
+  if (via->getLowerLayer() == layer_) {
+    connections_above_++;
+  } else if (via->getUpperLayer() == layer_) {
+    connections_below_++;
+  }
+}
+
 int Shape::getNumberOfConnectionsBelow() const
 {
-  int connections = 0;
-  for (const auto& via : vias_) {
-    if (via->getUpperLayer() == layer_) {
-      connections++;
-    }
-  }
-
-  return connections;
+  return connections_below_;
 }
 
 int Shape::getNumberOfConnectionsAbove() const
 {
-  int connections = 0;
-  for (const auto& via : vias_) {
-    if (via->getLowerLayer() == layer_) {
-      connections++;
-    }
-  }
-
-  return connections;
+  return connections_above_;
 }
 
 bool Shape::isValid() const
@@ -244,6 +251,17 @@ bool Shape::cut(const ObstructionTree& obstructions,
 
     if (other_shape->net_ != nullptr && net_ == other_shape->net_
         && other_shape->shapeType() != ShapeType::kShape) {
+      if (other_shape->shapeType() == ShapeType::kPadObs) {
+        // Pad metal on this shape's own net.  Touching it merges rather than
+        // shorts, and keeping a full spacing away from it is legal, so only
+        // the gap in between is a violation.  The query above is against the
+        // obstruction box of both shapes, so it is reached by pairs that are
+        // up to two spacings apart and cannot be trusted on its own.
+        if (rect_.intersects(other_shape->rect_)
+            || !rect_.intersects(other_shape->getObstruction())) {
+          continue;
+        }
+      }
       // obstruction is of the same net, so see if the violation is completely
       // inside the new strap and therefore is okay
       if (is_horizontal) {

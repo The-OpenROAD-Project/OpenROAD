@@ -20,8 +20,8 @@ function buildModal(title, bodyHtml, okLabel) {
             ${bodyHtml}
             <div class="modal-error" style="display:none"></div>
             <div class="modal-buttons">
-                <button class="cancel">Cancel</button>
-                <button class="primary ok">${okLabel}</button>
+                <button class="or-btn cancel">Cancel</button>
+                <button class="or-btn or-btn-primary ok">${okLabel}</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);

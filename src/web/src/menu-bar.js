@@ -381,8 +381,8 @@ function showPathDialog(app, title, tclCmd) {
                    placeholder="Server-side file path (e.g. /path/to/design.odb)">
             <div class="modal-error" style="display:none"></div>
             <div class="modal-buttons">
-                <button class="cancel">Cancel</button>
-                <button class="primary ok" disabled>${isSave ? 'Save' : 'Open'}</button>
+                <button class="or-btn cancel">Cancel</button>
+                <button class="or-btn or-btn-primary ok" disabled>${isSave ? 'Save' : 'Open'}</button>
             </div>
         </div>`;
 

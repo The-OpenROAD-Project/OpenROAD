@@ -99,6 +99,7 @@
     "https://bcr.bazel.build/modules/bazel_features/1.9.1/MODULE.bazel": "8f679097876a9b609ad1f60249c49d68bfab783dd9be012faf9d82547b14815a",
     "https://bcr.bazel.build/modules/bazel_lib/3.0.0-rc.0/MODULE.bazel": "d6e00979a98ac14ada5e31c8794708b41434d461e7e7ca39b59b765e6d233b18",
     "https://bcr.bazel.build/modules/bazel_lib/3.0.0/MODULE.bazel": "22b70b80ac89ad3f3772526cd9feee2fa412c2b01933fea7ed13238a448d370d",
+    "https://bcr.bazel.build/modules/bazel_lib/3.1.0/MODULE.bazel": "6809765c14e3c766a9b9286c7b0ec56ed87a73326e48fe01749f0c0fdcfe3287",
     "https://bcr.bazel.build/modules/bazel_lib/3.2.2/MODULE.bazel": "e2c890c8a515d6bca9c66d47718aa9e44b458fde64ec7204b8030bf2d349058c",
     "https://bcr.bazel.build/modules/bazel_lib/3.2.2/source.json": "9e84e115c20e14652c5c21401ae85ff4daa8702e265b5c0b3bf89353f17aa212",
     "https://bcr.bazel.build/modules/bazel_skylib/1.0.3/MODULE.bazel": "bcb0fd896384802d1ad283b4e4eb4d718eebd8cb820b0a2c3a347fb971afd9d8",
@@ -156,7 +157,8 @@
     "https://bcr.bazel.build/modules/boost.container_hash/1.89.0.bcr.2/MODULE.bazel": "4c9504529f491c52892a407dad38b142e9c05698d018b2304ef9591594ed53bb",
     "https://bcr.bazel.build/modules/boost.container_hash/1.89.0.bcr.2/source.json": "b6144b67916b2d734b3183aeec3cbef15c819a13213c518915a3e9356e62e423",
     "https://bcr.bazel.build/modules/boost.context/1.89.0.bcr.2/MODULE.bazel": "ccfa144c34905a3dd68e2a3083f88a89722d57faf0b11504101d94164d0bb490",
-    "https://bcr.bazel.build/modules/boost.context/1.89.0.bcr.2/source.json": "0d91755c3e834e2407693ccc889e8ef929ced16c06c07adb9182f1dd7d1431bc",
+    "https://bcr.bazel.build/modules/boost.context/1.89.0.bcr.3/MODULE.bazel": "9fe1ef737a0360f802a2eade159b1fc221da2c4878bd61bd84f715e817b90e4e",
+    "https://bcr.bazel.build/modules/boost.context/1.89.0.bcr.3/source.json": "ab2c1f6595cc918bfce7caf1be95ebe2f63e50245050f71b52120f409f48f0da",
     "https://bcr.bazel.build/modules/boost.conversion/1.89.0.bcr.2/MODULE.bazel": "e915be1dac2f24ebc6c05ed940f989706ba7015b5e9cbb20ff880dc59041bcb7",
     "https://bcr.bazel.build/modules/boost.conversion/1.89.0.bcr.2/source.json": "9bf91fcb3450f510ea14788149033a8851eb7875cd2d3f1db293821456e9c6a5",
     "https://bcr.bazel.build/modules/boost.core/1.87.0/MODULE.bazel": "33517eb46bb16f4b4f4a1bde61fe8b2475f45b5574bcd9f04c85f4bf3afe30d2",
@@ -363,6 +365,8 @@
     "https://bcr.bazel.build/modules/eigen/3.4.0.bcr.3/source.json": "a8611a2b5577929ad7e1f44ded19dab21a188125a74ac6192d21d283609f280f",
     "https://bcr.bazel.build/modules/envoy_api/0.0.0-20241214-918efc9/MODULE.bazel": "24e05f6f52f37be63a795192848555a2c8c855e7814dbc1ed419fb04a7005464",
     "https://bcr.bazel.build/modules/envoy_api/0.0.0-20241214-918efc9/source.json": "212043ab69d87f7a04aa4f627f725b540cff5e145a3a31a9403d8b6ec2e920c9",
+    "https://bcr.bazel.build/modules/fftw/3.3.10/MODULE.bazel": "f5bf023114131df33a72abf5f626e65e8a8322e5a013e6cc83de7daab0d760c2",
+    "https://bcr.bazel.build/modules/fftw/3.3.10/source.json": "400646f2f2803d344ccea930c9d94cbf1819b5f361eda7ce91ffaa3933c5982d",
     "https://bcr.bazel.build/modules/flex/2.6.4.bcr.5/MODULE.bazel": "72575f9a1926e50e7a9c7a61a98394390c36a22f28ba16c7d94b51534cfb974c",
     "https://bcr.bazel.build/modules/flex/2.6.4.bcr.5/source.json": "58ea819b72b59020743c12c11799624dcea18efcdbc4b3f0b470f43c7ea24d5e",
     "https://bcr.bazel.build/modules/fmt/11.1.3/MODULE.bazel": "3f422eb59fec5a54faf6d6c5b4cfbd173ad989e2ee5a2da944e19a39a8a90e00",
@@ -572,6 +576,8 @@
     "https://bcr.bazel.build/modules/rules_apple/3.5.1/MODULE.bazel": "3d1bbf65ad3692003d36d8a29eff54d4e5c1c5f4bfb60f79e28646a924d9101c",
     "https://bcr.bazel.build/modules/rules_apple/4.1.0/MODULE.bazel": "76e10fd4a48038d3fc7c5dc6e63b7063bbf5304a2e3bd42edda6ec660eebea68",
     "https://bcr.bazel.build/modules/rules_apple/4.1.0/source.json": "8ee81e1708756f81b343a5eb2b2f0b953f1d25c4ab3d4a68dc02754872e80715",
+    "https://bcr.bazel.build/modules/rules_autoconf/0.0.16/MODULE.bazel": "cabdd0c2471ce4890b2d6745fba31ad3fcf576936fbcd35fb503f7b57fb02f92",
+    "https://bcr.bazel.build/modules/rules_autoconf/0.0.16/source.json": "be5db175c04294b0a822e1405a9a9c2bdc5e625745ab476565c4684389d5670f",
     "https://bcr.bazel.build/modules/rules_bison/0.3.1/MODULE.bazel": "8288c90a34dafe7d47bd5be78ee101a9bbe3b8ae87e719385c41653869e01f75",
     "https://bcr.bazel.build/modules/rules_bison/0.4/MODULE.bazel": "b6e62441d2222194ce444c63bb7d51647d2f1df2ffd9a4a52d680d4e3cf357bd",
     "https://bcr.bazel.build/modules/rules_bison/0.4/source.json": "fd7d5e58850e3d233a1a0383f2d174caa9bda5522f5f5b5971bbbb2423223236",
@@ -4268,7 +4274,9 @@
             "https://files.pythonhosted.org/packages/4b/2a/0276479a4b3caeb8a8c1af2f8e4355746a97fab05a372e4a2c6a6b876165/idna-2.7-py2.py3-none-any.whl": "sha256:156a6814fb5ac1fc6850fb002e0852d56c0c8d2531923a51032d1b70760e186e",
             "https://files.pythonhosted.org/packages/65/c4/80f97e9c9628f3cac9b98bfca0402ede54e0563b56482e3e6e45c43c4935/idna-2.7.tar.gz": "sha256:684a38a6f903c1d71d6d5fac066b58d7768af4de2b832e426ec79c30daa94a16",
             "https://files.pythonhosted.org/packages/6f/6d/0703ccc57f3a7233505399edb88de3cbd678da106337b9fcde432b65ed60/idna-3.11.tar.gz": "sha256:795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902",
-            "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz": "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848"
+            "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz": "sha256:ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc",
+            "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz": "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848",
+            "https://files.pythonhosted.org/packages/d2/23/408243171aa9aaba178d3e2559159c24c1171a641aa83b67bdd3394ead8e/idna-3.15-py3-none-any.whl": "sha256:048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8"
           },
           "imagesize": {
             "https://files.pythonhosted.org/packages/5f/53/fb7122b71361a0d121b669dcf3d31244ef75badbbb724af388948de543e2/imagesize-2.0.0-py2.py3-none-any.whl": "sha256:5667c5bbb57ab3f1fa4bc366f4fbc971db3d5ed011fd2715fd8001f782718d96",
@@ -5766,6 +5774,15 @@
             "https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl": "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c",
             "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz": "sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f",
             "https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl": "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176"
+          },
+          "pypandoc-binary": {
+            "https://files.pythonhosted.org/packages/0d/2d/6a51cd4e54bdf132c19416801077c34bd40ba182e85d843360d36ae03a2d/pypandoc_binary-1.17-py3-none-musllinux_1_2_x86_64.whl": "sha256:f6e6d3e4cfafbe23189a08db3d41f8def260bacd6e7e382bceadab7ba1f17da6",
+            "https://files.pythonhosted.org/packages/15/58/8fd107c68522957868c1e785fbea7595608df118e440e424d189668294df/pypandoc_binary-1.17-py3-none-macosx_11_0_arm64.whl": "sha256:fcfd28f347ed998dda28823fc6bc24f9310e7fdf3ddceaf925bf0563a100ab5b",
+            "https://files.pythonhosted.org/packages/3b/31/a5a867159c4080e5d368f4a53540a727501a2f31affc297dc8e0fced96a7/pypandoc_binary-1.17-py3-none-musllinux_1_2_aarch64.whl": "sha256:2f439dcd211183bb3460253ca4511101df6e1acf4a01f45f5617e1fa2ad24279",
+            "https://files.pythonhosted.org/packages/80/85/681a54111f0948821a5cf87ce30a88bb0a3f6848af5112c912abac4a2b77/pypandoc_binary-1.17-py3-none-macosx_10_9_x86_64.whl": "sha256:734726dc618ef276343e272e1a6b4567e59c2ef9ef41d5533042deac3b0531f1",
+            "https://files.pythonhosted.org/packages/8d/7f/1e5612b52900ebe590862dabeadf546f739b27527dcd8bfd632f8adac1be/pypandoc_binary-1.17-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl": "sha256:9ada156cb980cd54fd6534231788e668c00dbb591cbd24f0be0bd86812eb8788",
+            "https://files.pythonhosted.org/packages/c6/b9/f47b77ba75ed5d47ec85fcc2ecfbf7f78e3a73347f3a09836634d930de98/pypandoc_binary-1.17-py3-none-win_amd64.whl": "sha256:76fae066cd2d7e78fb97f0ec8e9e36f437b07187b689b0b415ca18216f8f898a",
+            "https://files.pythonhosted.org/packages/f4/27/ac1078239aae14b94c51975b7f46ad8e099e47d7ae26c175a5486b1c0099/pypandoc_binary-1.17-py3-none-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl": "sha256:d6b620b21c9374e3e48aabd518492bf0776b148442ee28816f6aaf52da3d4387"
           },
           "pyparsing": {
             "https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl": "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d",
