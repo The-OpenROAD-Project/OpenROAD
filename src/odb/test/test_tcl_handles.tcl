@@ -37,7 +37,32 @@ assertStringEq [lindex [$block getNets] 0] $net "handle identity is not stable"
 # Objects SWIG owns keep a command of their own, which is what destroys them.
 odb::Rect rect 100 200 300 400
 assert {[llength [info commands rect]] == 1} "named constructor made no command"
+
+# An object command passed by name still converts, qualified or not, and from
+# inside another namespace.  Object commands live in the global namespace, so
+# both spellings name the same object.
+assert {[odb::Rect_xMin rect] == 100} "rect did not convert by name"
+assert {[odb::Rect_xMin ::rect] == 100} "::rect did not convert by name"
+namespace eval elsewhere {
+  assert {[odb::Rect_xMin ::rect] == 100} "::rect did not convert from a namespace"
+}
 rename rect {}
+
+# A command that is not a handle still errors the usual way.
+assert {[catch { no_such_command_at_all }] == 1} "unknown command did not error"
+
+# Commands that are not handles reach the handler odb_unknown displaced, even
+# when an application installs one of its own after odb is initialized.
+proc app_unknown { args } { return "app_unknown saw [lindex $args 0]" }
+namespace eval :: { namespace unknown app_unknown }
+odb_install_unknown
+assertStringEq [some_missing_command] "app_unknown saw some_missing_command" \
+  "odb_unknown did not chain to the displaced handler"
+assertStringNotEq [$net getName] "" "handle dispatch broke after reinstall"
+namespace eval :: { namespace unknown {} }
+odb_install_unknown
+assert {[catch { no_such_command_at_all }] == 1} \
+  "unknown command did not error after the handler was cleared"
 
 # Values reach a constructed object intact.  Handing the pointer to Tcl encodes
 # it byte-wise, which is not enough for gcc to treat the object as escaping, so
@@ -52,10 +77,6 @@ assert {[$r xMin] == 100} "xMin via dispatch is [$r xMin], expected 100"
 set p [odb::new_Point 7 9]
 assert {[$p getX] == 7} "getX is [$p getX], expected 7"
 assert {[$p getY] == 9} "getY is [$p getY], expected 9"
-
-# Names that are not handles reach the handler we displaced, so command
-# abbreviation and the usual error still work.
-assert {[catch { no_such_command_at_all }] == 1} "unknown command did not error"
 
 puts "pass"
 exit 0

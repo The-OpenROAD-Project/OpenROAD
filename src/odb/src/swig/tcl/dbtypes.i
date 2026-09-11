@@ -37,14 +37,19 @@ static Tcl_Obj* odbNewHandleObj(Tcl_Interp* interp,
 }
 
 // Strips the global-namespace qualifier a caller may have written in front of a
-// handle.  Returns a pointer into the original string.
+// packed handle.  Returns a pointer into the original string.  A qualified
+// object-command name keeps its qualifier, so that SWIG's own command lookup
+// still resolves the global command the caller asked for rather than one that
+// shadows it in the current namespace.
 static const char* odbBareHandle(const char* name)
 {
-  return (name[0] == ':' && name[1] == ':') ? name + 2 : name;
+  const bool qualified_handle
+      = name[0] == ':' && name[1] == ':' && name[2] == '_';
+  return qualified_handle ? name + 2 : name;
 }
 
-// A qualified handle is no longer a resolvable command name, so normalize it
-// before SWIG's own conversion sees it.
+// A qualified handle is not a resolvable command name, so normalize it before
+// SWIG's own conversion sees it.
 #undef  SWIG_ConvertPtr
 #define SWIG_ConvertPtr(obj, ptr, type, flags) \
         odbConvertPtr(interp, obj, ptr, type, flags)
@@ -65,6 +70,10 @@ static int odbConvertPtr(Tcl_Interp* interp,
 %}
 
 %wrapper %{
+// Holds the command prefix that odb_unknown displaced, so that commands which
+// are not odb handles keep reaching it.
+static const char* const odbDisplacedUnknownVar = "::odb_displaced_unknown";
+
 // Dispatches "$handle method args..." for handles that have no object command.
 // The handle string carries the pointer and its mangled type, so the swig_class
 // method tables SWIG already generated supply the method lookup, including the
@@ -95,12 +104,11 @@ static int odbUnknownCmd(ClientData,
         Tcl_Obj* thisptr
             = (bare == name) ? objv[1] : Tcl_NewStringObj(bare, -1);
         Tcl_IncrRefCount(thisptr);
-        swig_instance inst;
+        // Zero-initialized so that a field SWIG may add stays well defined.
+        swig_instance inst = {};
         inst.thisptr = thisptr;
         inst.thisvalue = ptr;
         inst.classptr = (swig_class*) type->clientdata;
-        inst.destroy = 0;
-        inst.cmdtok = nullptr;
         const int code = SWIG_Tcl_MethodCommand(
             (ClientData) &inst, interp, objc - 1, objv + 1);
         Tcl_DecrRefCount(thisptr);
@@ -109,30 +117,70 @@ static int odbUnknownCmd(ClientData,
     }
   }
 
-  // Not a handle: hand it to whichever unknown handler we displaced.
-  Tcl_CmdInfo info;
-  const char* chain
-      = Tcl_GetCommandInfo(interp, "sta_unknown", &info) ? "sta_unknown"
-                                                         : "::unknown";
-  Tcl_Obj** argv = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * objc);
-  argv[0] = Tcl_NewStringObj(chain, -1);
-  Tcl_IncrRefCount(argv[0]);
-  for (int i = 1; i < objc; i++) {
-    argv[i] = objv[i];
+  // Not a handle: hand it to the handler odbInstallUnknown displaced, which is
+  // a command prefix rather than a bare command name.
+  Tcl_Obj* chain = Tcl_GetVar2Ex(
+      interp, odbDisplacedUnknownVar, nullptr, TCL_GLOBAL_ONLY);
+  Tcl_Size prefixc = 0;
+  Tcl_Obj** prefixv = nullptr;
+  if (chain == nullptr
+      || Tcl_ListObjGetElements(interp, chain, &prefixc, &prefixv) != TCL_OK
+      || prefixc == 0) {
+    // Nothing was displaced, so Tcl's own default applies.
+    chain = Tcl_NewStringObj("::unknown", -1);
+    Tcl_IncrRefCount(chain);
+    Tcl_ListObjGetElements(interp, chain, &prefixc, &prefixv);
+  } else {
+    Tcl_IncrRefCount(chain);
   }
-  const int code = Tcl_EvalObjv(interp, objc, argv, 0);
-  Tcl_DecrRefCount(argv[0]);
+
+  const int argc = prefixc + objc - 1;
+  Tcl_Obj** argv = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * argc);
+  for (Tcl_Size i = 0; i < prefixc; i++) {
+    argv[i] = prefixv[i];
+  }
+  for (int i = 1; i < objc; i++) {
+    argv[prefixc + i - 1] = objv[i];
+  }
+  const int code = Tcl_EvalObjv(interp, argc, argv, 0);
   ckfree((char*) argv);
+  Tcl_DecrRefCount(chain);
   return code;
+}
+
+// Makes odb_unknown the global namespace unknown handler, remembering the
+// command prefix it displaces.  Idempotent, so an application can call it again
+// after installing a handler of its own.
+static int odbInstallUnknown(ClientData,
+                             Tcl_Interp* interp,
+                             int,
+                             Tcl_Obj* const[])
+{
+  static const char* const query = "namespace eval :: {namespace unknown}";
+  if (Tcl_Eval(interp, query) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  Tcl_Obj* displaced = Tcl_GetObjResult(interp);
+  if (strcmp(Tcl_GetString(displaced), "odb_unknown") != 0) {
+    Tcl_SetVar2Ex(
+        interp, odbDisplacedUnknownVar, nullptr, displaced, TCL_GLOBAL_ONLY);
+  }
+  Tcl_ResetResult(interp);
+
+  static const char* const install
+      = "namespace eval :: {namespace unknown odb_unknown}";
+  return Tcl_Eval(interp, install);
 }
 %}
 
 %init %{
   Tcl_CreateObjCommand(interp, "odb_unknown", odbUnknownCmd, nullptr, nullptr);
-  // Enough on its own for the standalone odbtcl interpreter.  Applications that
-  // install their own handler after this (OpenROAD, via OpenSTA) have to put
-  // odb_unknown back; odb_unknown chains to whatever it displaced.
-  Tcl_Eval(interp, "namespace eval :: {namespace unknown odb_unknown}");
+  Tcl_CreateObjCommand(
+      interp, "odb_install_unknown", odbInstallUnknown, nullptr, nullptr);
+  // Enough on its own for the standalone odbtcl interpreter.  An application
+  // that installs its own handler after this (OpenROAD, via OpenSTA) has to
+  // call odb_install_unknown again to put odb_unknown back in front of it.
+  odbInstallUnknown(nullptr, interp, 0, nullptr);
 %}
 
 %import <std_vector.i>
