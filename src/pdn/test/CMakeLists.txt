@@ -129,6 +129,9 @@ or_integration_tests(
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
     pads_ihp_sg13g2_balance
+    pads_placed_not_fixed
+    pads_straps_through_pads
+    pads_via_repair_through_pads
     power_switch
     power_switch_cut_rows
     power_switch_daisy
