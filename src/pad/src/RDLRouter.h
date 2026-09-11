@@ -194,14 +194,20 @@ class RDLRouter
   static bool isCoverTerm(odb::dbITerm* term);
 
  private:
+  struct AddEdgeConfig
+  {
+    std::optional<float> edge_weight_scale = {};
+    bool check_obstructions = true;
+    bool check_routes = true;
+  };
+
   void makeGraph();
   bool addGraphVertex(const odb::Point& point);
   void removeGraphVertex(const odb::Point& point);
+  bool addGraphInitialEdge(const odb::Point& point0, const odb::Point& point1);
   bool addGraphEdge(const odb::Point& point0,
                     const odb::Point& point1,
-                    float edge_weight_scale = 1.0,
-                    bool check_obstructions = true,
-                    bool check_routes = true);
+                    const AddEdgeConfig& config);
   GridEdge removeGraphEdge(const GridGraphEdge& edge);
 
   std::vector<GridGraphVertex> run(const odb::Point& source,
