@@ -31,6 +31,7 @@ LayoutTabs::LayoutTabs(Options* options,
                        std::function<bool()> using_poly_decomp_view,
                        std::function<bool()> show_ruler_as_euclidian,
                        std::function<bool()> default_mouse_wheel_zoom,
+                       std::function<bool()> arrow_keys_scroll_accel,
                        std::function<int()> arrow_keys_scroll_step,
                        QWidget* parent)
     : QTabWidget(parent),
@@ -45,6 +46,7 @@ LayoutTabs::LayoutTabs(Options* options,
       using_poly_decomp_view_(std::move(using_poly_decomp_view)),
       show_ruler_as_euclidian_(std::move(show_ruler_as_euclidian)),
       default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
+      arrow_keys_scroll_accel_(std::move(arrow_keys_scroll_accel)),
       arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
       logger_(nullptr)
 {
@@ -99,7 +101,8 @@ void LayoutTabs::chipLoaded(odb::dbChip* chip)
     viewer->commandAboutToExecute();
   }
   auto scroll = new LayoutScroll(
-      viewer, default_mouse_wheel_zoom_, arrow_keys_scroll_step_, this);
+      viewer, default_mouse_wheel_zoom_, arrow_keys_scroll_accel_,
+      arrow_keys_scroll_step_, this);
   viewer->chipLoaded(chip);
 
   auto tech = chip->getTech();
