@@ -149,7 +149,7 @@ void WebServer::initLogger()
   logger_initialized_ = true;
 }
 
-void WebServer::serve(int port)
+void WebServer::serve(int port, const std::string& bind_address)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
@@ -251,7 +251,28 @@ void WebServer::serve(int port)
       hook->sessions().broadcast(R"({"type":"refresh"})");
     });
 
-    auto const address = net::ip::make_address("0.0.0.0");
+    // Who may reach the port decides who may run Tcl here; see
+    // BindAddressKind (issue #11167).
+    const std::string bind_to
+        = bind_address.empty() ? kDefaultBindAddress : bind_address;
+    const BindAddressKind bind_kind = classifyBindAddress(bind_to);
+    if (bind_kind == BindAddressKind::kInvalid) {
+      // noreturn: the catch below tears the half-built server down.
+      logger_->error(utl::WEB,
+                     79,
+                     "Invalid bind address \"{}\"; {}.",
+                     bind_to,
+                     kBindAddressHint);
+    }
+    if (bind_kind == BindAddressKind::kExposed) {
+      logger_->warn(utl::WEB,
+                    80,
+                    "Web server bound to {}, reachable beyond this machine. "
+                    "The viewer runs Tcl commands, so anyone who can reach "
+                    "this port can run commands as this user.",
+                    bind_to);
+    }
+    auto const address = net::ip::make_address(bind_to);  // validated above
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
 
@@ -275,7 +296,9 @@ void WebServer::serve(int port)
                                        max_in_flight);
     shutdown_listener_ = std::move(handle.shutdown);
 
-    const std::string url = "http://localhost:" + std::to_string(handle.port);
+    // Point the browser at something it can actually reach.
+    const std::string url = "http://" + browserHostForBind(address) + ":"
+                            + std::to_string(handle.port);
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without

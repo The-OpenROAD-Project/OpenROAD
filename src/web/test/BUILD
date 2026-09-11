@@ -330,6 +330,7 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
+        "@boost.asio",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
