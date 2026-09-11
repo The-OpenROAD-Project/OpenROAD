@@ -1,0 +1,46 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 17 components and 92 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 34 connections.
+[INFO ODB-0133]     Created 7 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 4 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
+      10* |       3 |       2 |        3 |      0 |     0 |    +1.8% |    0.015 |        0.0 |        0.0 |      4 | r2/D
+    final |       3 |       2 |        3 |      0 |     0 |    +1.8% |    0.015 |        0.0 |        0.0 |      0 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 3 buffers.
+[INFO RSZ-0040] Inserted 3 buffers.
+[INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT
+
+==================== ECO change summary ====================
+  Gates resized      : 2
+      r1                   DFF_X1 -> DFF_X2
+      u1                   BUF_X1 -> BUF_X2
+  Buffers inserted   : 3
+  Buffers removed    : 3
+  Instances added    : 3
+  Instances removed  : 3
+  Nets modified      : 10
+  ----------------------------------------------------------
+  WNS (ns)       -0.3332 ->       0.0000
+  TNS (ns)       -0.4196 ->       0.0000
+============================================================
+ECO change set written (repair_timing_eco-tcl.eco)
+wns improved or equal yes
+reported counts match netlist delta yes
+resized 2
+bufs_removed 3
+bufs_inserted 3
+nets_modified 10
+resized detail r1 DFF_X1 -> DFF_X2
+resized detail u1 BUF_X1 -> BUF_X2
+u2 still present yes
+u2 master unchanged yes
+u2 not resized yes
+eco file non-empty yes
