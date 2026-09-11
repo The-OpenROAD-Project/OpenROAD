@@ -151,9 +151,8 @@ export function computeBoundsTransforms(designBounds, tileSize = 256,
     };
 }
 
-// A bounds-response rect with a positive extent in both axes.  Exported so
-// every consumer of an optional fit rect resolves it the same way.
-export function isUsableRect(r) {
+// A bounds-response rect with a positive extent in both axes.
+function isUsableRect(r) {
     return !!r && r[1][0] > r[0][0] && r[1][1] > r[0][1];
 }
 

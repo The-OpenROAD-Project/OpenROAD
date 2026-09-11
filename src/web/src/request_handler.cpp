@@ -4373,14 +4373,17 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(is_setup);
       if (path_index < static_cast<int>(paths.size())) {
-        odb::dbBlock* block = gen_->getBlock();
-        collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);
+        // chiplets() covers both cases: for a single-die design its root node
+        // carries the top block with an identity transform.
+        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+        collectTimingPathShapes(
+            chiplets, paths[path_index], new_rects, new_lines);
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm] = resolvePin(block, pin_name);
+          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
 
           odb::dbNet* net = nullptr;
           if (iterm) {
@@ -4397,7 +4400,8 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
                              nullptr,
                              kStageColor,
                              new_rects,
-                             new_lines);
+                             new_lines,
+                             node->world_xfm);
           }
         }
       }
@@ -4639,8 +4643,7 @@ WebSocketResponse TimingHandler::handleFanoutHistogram(
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    odb::dbBlock* block = gen_->getBlock();
-    auto histogram = computeFanoutHistogram(block);
+    auto histogram = computeFanoutHistogram(gen_->blocks());
     writePayload(resp, serializeFanoutHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -6051,23 +6054,27 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
 
   try {
-    auto [block, chip] = getBlockAndChip();
+    // The viewer asks for categories as soon as it connects, so having no
+    // design yet is a normal state with no categories, not a failed request.
+    odb::dbChip* chip = gen_->getChip();
 
     boost::json::object root;
     boost::json::array categories;
-    for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
-      boost::json::object o;
-      o["name"] = std::string(category->getName());
-      o["count"] = category->getMarkerCount();
-      const std::string desc = category->getDescription();
-      if (!desc.empty()) {
-        o["description"] = desc;
+    if (chip != nullptr) {
+      for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
+        boost::json::object o;
+        o["name"] = std::string(category->getName());
+        o["count"] = category->getMarkerCount();
+        const std::string desc = category->getDescription();
+        if (!desc.empty()) {
+          o["description"] = desc;
+        }
+        const std::string source = category->getSource();
+        if (!source.empty()) {
+          o["source"] = source;
+        }
+        categories.emplace_back(std::move(o));
       }
-      const std::string source = category->getSource();
-      if (!source.empty()) {
-        o["source"] = source;
-      }
-      categories.emplace_back(std::move(o));
     }
     root["categories"] = std::move(categories);
     writePayload(resp, root);

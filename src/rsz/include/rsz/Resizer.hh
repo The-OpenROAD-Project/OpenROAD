@@ -686,6 +686,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
+  // Returns true when there's no liberty or SDC fanout-load limit.
+  bool checkFanout(const sta::Pin* drvr_pin,
+                   const sta::Mode* mode,
+                   const sta::MinMax* min_max,
+                   // Return values.
+                   float& fanout,
+                   float& max_fanout,
+                   float& fanout_slack) const;
+  // Backstop for high-fanout nets with no liberty or SDC fanout constraint.
+  // This is a count of load pins, not a liberty fanout-load value.
+  static constexpr int kDefaultMaxFanout = 50;
+  int fanoutLoadCount(const sta::Pin* drvr_pin) const;
   float portCapacitance(sta::LibertyPort* input, const sta::Scene* scene) const;
   bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,

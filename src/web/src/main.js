@@ -25,8 +25,7 @@ import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
          buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
          decorateTabIcons, fittedTileSizeCss, formatDbu, formatDistance,
-         isCurrentSelection, isStaticMode, isUsableRect, maxUsefulZoom,
-         parseDbu,
+         isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
          rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
@@ -1610,20 +1609,15 @@ app.websocketManager.readyPromise.then(async () => {
                 app.map.boxZoom.disable();
                 app.map.doubleClickZoom.disable();
 
-                // Path highlight overlay image.  NOT app.fitBounds: the
-                // server renders these over the FIT rect grown by 5% of its
-                // larger dimension (kOverlayMarginPercent in
-                // tile_generator.cpp), which carries neither the pin-label
-                // margin of the georeference rect nor the per-dimension
-                // margin baked into app.fitBounds.  An image placed on the
-                // wrong rect lands offset from the tiles under it.
-                const overlay = isUsableRect(fitRect) ? fitRect : designBounds;
-                const pad = Math.max(overlay[1][1] - overlay[0][1],
-                                     overlay[1][0] - overlay[0][0]) * 0.05;
+                // Path highlight overlay image.  NOT app.fitBounds, which
+                // carries Qt's framing margin: renderOverlayPng frames these
+                // on the GEOREFERENCE rect, the one the tile grid is built
+                // on, so the image has to be stretched over that same rect or
+                // it lands offset from the tiles under it.
                 app.pathOverlay = L.imageOverlay(
                     '',
-                    dbuRectToBounds(overlay[0][1] - pad, overlay[0][0] - pad,
-                                    overlay[1][1] + pad, overlay[1][0] + pad,
+                    dbuRectToBounds(designBounds[0][1], designBounds[0][0],
+                                    designBounds[1][1], designBounds[1][0],
                                     app.designScale, app.designMaxDXDY,
                                     app.designOriginX, app.designOriginY),
                     { opacity: 1, interactive: false, zIndex: 1000 });

@@ -1,0 +1,133 @@
+# Macro used by check_power_grid_short_obstructions.  It carries no pins,
+# only routing obstructions, so the only way it can interact with the net
+# under test is through the master obstructions of the placed instance.
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO OBS_BLOCK
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN OBS_BLOCK 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.2 1.0 0.5 ;
+    LAYER metal2 ;
+      RECT 0 0.6 1.0 0.9 ;
+  END
+END OBS_BLOCK
+
+# Macro whose obstruction covers two of its own pins.  A master is allowed
+# to do this, so the pins have to be cut out of the obstruction before it
+# is checked, leaving three strips.  Two pins are the point: cutting each
+# pin out of the original obstruction instead of out of the running result
+# leaves the obstruction whole, and that only shows up from the second pin
+# on.
+MACRO OBS_PIN_BLOCK
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN OBS_PIN_BLOCK 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.2 0.2 0.4 0.5 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.6 0.2 0.8 0.5 ;
+    END
+  END B
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.2 1.0 0.5 ;
+  END
+END OBS_PIN_BLOCK
+
+# Macro whose obstruction runs 0.5um past its own right edge, the shape of
+# the overhang in the IHP IOLib pad fillers (an 80um obstruction in a 50um
+# cell).  Only the part inside the cell is metal the instance holds, the
+# rest sits over whatever is placed next to it.
+MACRO OBS_OVERHANG
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN OBS_OVERHANG 0 0 ;
+  SIZE 0.5 BY 1.0 ;
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.2 1.0 0.5 ;
+  END
+END OBS_OVERHANG
+
+# Vias for the pin geometry of the two macros below, the shape of the pin
+# via stacks write_abstract_lef leaves in a block's power pins.
+VIA PV_via1
+  LAYER metal1 ;
+    RECT -0.17 -0.17 0.17 0.17 ;
+  LAYER via1 ;
+    RECT -0.07 -0.07 0.07 0.07 ;
+  LAYER metal2 ;
+    RECT -0.17 -0.17 0.17 0.17 ;
+END PV_via1
+
+VIA PV_via2
+  LAYER metal2 ;
+    RECT -0.17 -0.17 0.17 0.17 ;
+  LAYER via2 ;
+    RECT -0.07 -0.07 0.07 0.07 ;
+  LAYER metal3 ;
+    RECT -0.17 -0.17 0.17 0.17 ;
+END PV_via2
+
+# Macro whose power pin carries a via stack from its metal1 rail up to a
+# metal3 strap, under a blanket metal2 obstruction, the way an abstract of
+# a block covers its internal grid.  The metal2 enclosures of the pin vias
+# are pin metal, so they have to come out of the obstruction like the pin
+# rects do and must never be reported against the pin's own net.
+MACRO PIN_VIA_BLOCK
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN PIN_VIA_BLOCK 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.2 1.0 0.5 ;
+      LAYER metal3 ;
+        RECT 0.3 0.7 0.7 0.9 ;
+      VIA 0.5 0.35 PV_via1 ;
+      VIA 0.5 0.8 PV_via2 ;
+    END
+  END VDD
+  OBS
+    LAYER metal2 ;
+      RECT 0 0 1.0 1.0 ;
+  END
+END PIN_VIA_BLOCK
+
+# Macro whose signal pin is a single via, so the pin holds metal on two
+# layers but no rect of its own.  Placed with the via's metal2 enclosure
+# over a VDD strap it must be reported on metal2, which only happens if
+# the via is expanded into per-layer boxes when the terminal is checked.
+MACRO SIG_VIA_BLOCK
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN SIG_VIA_BLOCK 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  PIN X
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      VIA 0.4 0.4 PV_via2 ;
+    END
+  END X
+END SIG_VIA_BLOCK

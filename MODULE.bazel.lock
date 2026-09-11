@@ -99,6 +99,7 @@
     "https://bcr.bazel.build/modules/bazel_features/1.9.1/MODULE.bazel": "8f679097876a9b609ad1f60249c49d68bfab783dd9be012faf9d82547b14815a",
     "https://bcr.bazel.build/modules/bazel_lib/3.0.0-rc.0/MODULE.bazel": "d6e00979a98ac14ada5e31c8794708b41434d461e7e7ca39b59b765e6d233b18",
     "https://bcr.bazel.build/modules/bazel_lib/3.0.0/MODULE.bazel": "22b70b80ac89ad3f3772526cd9feee2fa412c2b01933fea7ed13238a448d370d",
+    "https://bcr.bazel.build/modules/bazel_lib/3.1.0/MODULE.bazel": "6809765c14e3c766a9b9286c7b0ec56ed87a73326e48fe01749f0c0fdcfe3287",
     "https://bcr.bazel.build/modules/bazel_lib/3.2.2/MODULE.bazel": "e2c890c8a515d6bca9c66d47718aa9e44b458fde64ec7204b8030bf2d349058c",
     "https://bcr.bazel.build/modules/bazel_lib/3.2.2/source.json": "9e84e115c20e14652c5c21401ae85ff4daa8702e265b5c0b3bf89353f17aa212",
     "https://bcr.bazel.build/modules/bazel_skylib/1.0.3/MODULE.bazel": "bcb0fd896384802d1ad283b4e4eb4d718eebd8cb820b0a2c3a347fb971afd9d8",
@@ -364,6 +365,8 @@
     "https://bcr.bazel.build/modules/eigen/3.4.0.bcr.3/source.json": "a8611a2b5577929ad7e1f44ded19dab21a188125a74ac6192d21d283609f280f",
     "https://bcr.bazel.build/modules/envoy_api/0.0.0-20241214-918efc9/MODULE.bazel": "24e05f6f52f37be63a795192848555a2c8c855e7814dbc1ed419fb04a7005464",
     "https://bcr.bazel.build/modules/envoy_api/0.0.0-20241214-918efc9/source.json": "212043ab69d87f7a04aa4f627f725b540cff5e145a3a31a9403d8b6ec2e920c9",
+    "https://bcr.bazel.build/modules/fftw/3.3.10/MODULE.bazel": "f5bf023114131df33a72abf5f626e65e8a8322e5a013e6cc83de7daab0d760c2",
+    "https://bcr.bazel.build/modules/fftw/3.3.10/source.json": "400646f2f2803d344ccea930c9d94cbf1819b5f361eda7ce91ffaa3933c5982d",
     "https://bcr.bazel.build/modules/flex/2.6.4.bcr.5/MODULE.bazel": "72575f9a1926e50e7a9c7a61a98394390c36a22f28ba16c7d94b51534cfb974c",
     "https://bcr.bazel.build/modules/flex/2.6.4.bcr.5/source.json": "58ea819b72b59020743c12c11799624dcea18efcdbc4b3f0b470f43c7ea24d5e",
     "https://bcr.bazel.build/modules/fmt/11.1.3/MODULE.bazel": "3f422eb59fec5a54faf6d6c5b4cfbd173ad989e2ee5a2da944e19a39a8a90e00",
@@ -573,6 +576,8 @@
     "https://bcr.bazel.build/modules/rules_apple/3.5.1/MODULE.bazel": "3d1bbf65ad3692003d36d8a29eff54d4e5c1c5f4bfb60f79e28646a924d9101c",
     "https://bcr.bazel.build/modules/rules_apple/4.1.0/MODULE.bazel": "76e10fd4a48038d3fc7c5dc6e63b7063bbf5304a2e3bd42edda6ec660eebea68",
     "https://bcr.bazel.build/modules/rules_apple/4.1.0/source.json": "8ee81e1708756f81b343a5eb2b2f0b953f1d25c4ab3d4a68dc02754872e80715",
+    "https://bcr.bazel.build/modules/rules_autoconf/0.0.16/MODULE.bazel": "cabdd0c2471ce4890b2d6745fba31ad3fcf576936fbcd35fb503f7b57fb02f92",
+    "https://bcr.bazel.build/modules/rules_autoconf/0.0.16/source.json": "be5db175c04294b0a822e1405a9a9c2bdc5e625745ab476565c4684389d5670f",
     "https://bcr.bazel.build/modules/rules_bison/0.3.1/MODULE.bazel": "8288c90a34dafe7d47bd5be78ee101a9bbe3b8ae87e719385c41653869e01f75",
     "https://bcr.bazel.build/modules/rules_bison/0.4/MODULE.bazel": "b6e62441d2222194ce444c63bb7d51647d2f1df2ffd9a4a52d680d4e3cf357bd",
     "https://bcr.bazel.build/modules/rules_bison/0.4/source.json": "fd7d5e58850e3d233a1a0383f2d174caa9bda5522f5f5b5971bbbb2423223236",
@@ -4269,7 +4274,9 @@
             "https://files.pythonhosted.org/packages/4b/2a/0276479a4b3caeb8a8c1af2f8e4355746a97fab05a372e4a2c6a6b876165/idna-2.7-py2.py3-none-any.whl": "sha256:156a6814fb5ac1fc6850fb002e0852d56c0c8d2531923a51032d1b70760e186e",
             "https://files.pythonhosted.org/packages/65/c4/80f97e9c9628f3cac9b98bfca0402ede54e0563b56482e3e6e45c43c4935/idna-2.7.tar.gz": "sha256:684a38a6f903c1d71d6d5fac066b58d7768af4de2b832e426ec79c30daa94a16",
             "https://files.pythonhosted.org/packages/6f/6d/0703ccc57f3a7233505399edb88de3cbd678da106337b9fcde432b65ed60/idna-3.11.tar.gz": "sha256:795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902",
-            "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz": "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848"
+            "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz": "sha256:ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc",
+            "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz": "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848",
+            "https://files.pythonhosted.org/packages/d2/23/408243171aa9aaba178d3e2559159c24c1171a641aa83b67bdd3394ead8e/idna-3.15-py3-none-any.whl": "sha256:048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8"
           },
           "imagesize": {
             "https://files.pythonhosted.org/packages/5f/53/fb7122b71361a0d121b669dcf3d31244ef75badbbb724af388948de543e2/imagesize-2.0.0-py2.py3-none-any.whl": "sha256:5667c5bbb57ab3f1fa4bc366f4fbc971db3d5ed011fd2715fd8001f782718d96",

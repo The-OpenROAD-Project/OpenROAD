@@ -146,6 +146,9 @@ To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=rele
     bazelisk build --config=release :openroad
     ./bazel-bin/openroad -version
 
+`etc/Build.sh` always passes `--config=release`, so installs made through it
+(including ORFS `build_openroad.sh`) carry the real version.
+
 ## Platforms
 
 https://bazel.build/extending/platforms
@@ -184,6 +187,294 @@ Direct leak of 18191 byte(s) in 2525 object(s) allocated from:
 SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
 [deleted]
 ```
+
+## Run tests with the [thread sanitizer](https://github.com/google/sanitizers/wiki/threadsanitizercppmanual):
+
+    bazelisk test --config=tsan --test_tag_filters=-py src/...
+
+Or to get an instrumented binary to run under ORFS:
+
+    bazelisk build --config=tsan :openroad
+
+The first `--config=tsan` invocation builds compiler-rt's tsan runtime from
+source, so expect a few minutes before any OpenROAD source is compiled.
+
+Instrumented code runs roughly 5-15x slower and uses far more memory, so
+prefer the smallest design that reproduces the race. A full `src/...` run at
+Bazel's default parallelism can exhaust RAM and get the build OOM-killed;
+throttle it if that happens:
+
+    bazelisk test --config=tsan --test_tag_filters=-py --jobs=16 --local_test_jobs=8 src/...
+
+Adjust the runtime via `TSAN_OPTIONS`, e.g. to keep going past the first
+report and get the second stack of a lock-order inversion:
+
+    bazelisk test --config=tsan --test_tag_filters=-py --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" src/...
+
+`drt`, `gpl`, `grt` and `ant` parallelize with OpenMP. The `@openmp` runtime
+is instrumented along with everything else under `--config=tsan`, but it is
+not built with OpenMP's TSan annotations (`LIBOMP_TSAN_SUPPORT`), so races
+reported inside `__kmp_*` frames are artifacts of the barrier implementation
+rather than OpenROAD bugs. Confirm a finding by checking that both stacks land
+in OpenROAD code.
+
+### Known findings
+
+A `--config=tsan --test_tag_filters=-py src/...` sweep reports 36 of 3980
+tests failing, and the OpenMP artifacts above are almost all of it:
+
+| Origin | Tests |
+| --- | --- |
+| `@openmp` `runtime/src/kmp_runtime.cpp`, `kmp_wait_release.h` | 33, across `drt`, `grt`, `ram`, `rcx`, `gpl` |
+| `src/sta/graph/Graph.cc:1288` | 1, via `rmp` |
+| `boost::asio` `scheduler.ipp:187` | 1, in `dst` |
+
+Silencing the OpenMP group means building `@openmp` with
+`LIBOMP_TSAN_SUPPORT`, which is a change to that module rather than something
+this repo can pass as a flag. The remaining two are real: the `dst` one is a
+test that destroys a stack `io_context` while its thread still runs it, and
+the OpenSTA one is upstream.
+
+`--test_tag_filters=-py` skips the Python tests; see "Sanitizers and the
+Python extension modules" below for why.
+
+## Run tests with the [undefined behavior sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html):
+
+    bazelisk test --config=ubsan --test_tag_filters=-py src/...
+
+Or to get an instrumented binary to run under ORFS:
+
+    bazelisk build --config=ubsan :openroad
+
+UBSan is much cheaper than asan/tsan -- a small constant slowdown, no memory
+overhead -- so it is the cheapest of the three to leave running over a real
+design.
+
+The config builds with `-fno-sanitize-recover=all`, so the first finding
+aborts the process. That is deliberate: `-fsanitize=undefined` on its own only
+prints a report and lets the process run on to exit 0, which would leave a
+test suite green with the reports buried in the logs. To survey everything a
+run would hit instead of stopping at the first, opt back into recovery:
+
+    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fsanitize-recover=all src/...
+
+Reports name the check that fired (e.g. `signed-integer-overflow`,
+`misaligned-address`). An individual check can be switched off project-wide
+with a copt, which is preferable to disabling the config wholesale:
+
+    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fno-sanitize=vptr src/...
+
+### Known findings
+
+A `--config=ubsan --test_tag_filters=-py src/...` sweep is not clean yet. As of
+this writing 36 of 3980 tests fail, in two groups.
+
+Third-party UB reached through headers that are inlined into OpenROAD
+translation units, 24 tests:
+
+| Origin | Check | Tests |
+| --- | --- | --- |
+| `boost.geometry` `strategies/cartesian/intersection.hpp` | `undefined-behavior` | 19, via `pad::RDLRouter::isEdgeObstructed` |
+| `coin-or-lemon` `lemon/network_simplex.h` | `signed-integer-overflow` | 5, in `cts` |
+
+`--per_file_copt=.*external/.*@-fno-sanitize=all` above exempts third-party
+*source* files, which is why abc, tcl and bliss no longer report. It cannot
+exempt a third-party *header* compiled as part of our own translation unit --
+the same limitation the `-w` per_file_copt has. Doing that needs an
+`-fsanitize-ignorelist`, which has to be declared as a compile action input,
+so it belongs in the toolchain rather than in this file.
+
+OpenROAD's own UB, 11 tests, to be fixed separately:
+
+| Site | Check | Tests |
+| --- | --- | --- |
+| `src/rcx/src/netRC.cpp:374`, `:1575`, `:1576` | `load of value` | 8 |
+| `src/odb/include/odb/geom.h:373` | `signed-integer-overflow` | 2 |
+| `src/grt/src/cugr/src/geo.h:111` | `signed-integer-overflow` | 1 |
+
+## Sanitizers and the Python extension modules
+
+`--config=tsan` and `--config=ubsan` cover the C++ and Tcl tests, which run
+the instrumented `openroad` binary. They do **not** work for the `py`-tagged
+tests, which import OpenROAD as a Python extension module:
+
+    ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
+
+Clang links a sanitizer runtime into executables but not into shared
+libraries, assuming whoever loads the library provides the symbols. That holds
+for `openroad`, which statically links the runtime; it fails for
+`_openroadpy.so` / `_odb.so` / `_utl.so`, which the *uninstrumented* system
+`python3` dlopens.
+
+`-shared-libsan` is the mechanism for this case, but three things in
+hermetic-llvm block it today:
+
+1. only the static archives are staged into clang's resource directory, so the
+   driver cannot find `libclang_rt.<san>.so` (asan stages both, ubsan and tsan
+   stage static only);
+2. the shared runtimes are built by `cc_shared_library` with sonames like
+   `libubsan_standalone.shared.so`, so a consumer records a `DT_NEEDED` on a
+   name that does not match the staged `libclang_rt.ubsan_standalone.so`;
+3. the runtime arrives via a linkopt rather than a dep, so it lands in neither
+   the test's runfiles nor its RPATH.
+
+Fixing this belongs upstream in hermetic-llvm. Until then, skip them with
+`--test_tag_filters=-py`; the Tcl tests cover the same C++ code paths as their
+Python counterparts.
+
+The Tcl tests do get instrumented. `test/regression.bzl` normally takes the
+`openroad` binary from the exec configuration, to avoid building it twice when
+it is also used as a build tool by bazel-orfs. The sanitizer configs only
+instrument the target configuration, so under `//bazel:sanitizer_build` the
+rule takes the binary from there instead. Only the binary under test moves;
+swig, bison and the other exec-configuration tools stay uninstrumented, and
+because exactly one of the two attributes is ever set `openroad` is still
+built once.
+## GPU build (`--config=gpu`)
+
+`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
+and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. It is opt-in and
+non-hermetic: the CUDA toolkit, Kokkos and KokkosFFT come from the host, wrapped
+as external repositories by `bazel/gpu/system_gpu.bzl`. Nothing in the default
+build or in CI depends on them.
+
+    bazelisk test --config=gpu //src/gpl/test/...
+
+Install prefixes are read from the shell environment:
+
+| Variable             | Default                        | Meaning                                              |
+|----------------------|--------------------------------|------------------------------------------------------|
+| `KOKKOS_ROOT`        | `/usr/local/kokkos-libcxx`     | Kokkos install (static, CUDA backend, see recipe)    |
+| `KOKKOS_FFT_ROOT`    | `/usr/local/kokkos-fft-libcxx` | KokkosFFT install built against that Kokkos          |
+| `OPENROAD_CUDA_PATH` | `/usr/local/cuda-12.8`         | Full CUDA toolkit (`bin/ptxas`, `nvvm/libdevice`)    |
+| `OPENROAD_CUDA_ARCH` | unset                          | Only needed if it cannot be read from the Kokkos install |
+
+A missing or unusable install never breaks the CPU build: the wrapped
+repository becomes a stub, and only a `--config=gpu` build fails, at analysis
+time, with a message that names the variable and the problem (prefix missing,
+incomplete install, Kokkos built without CUDA, architecture mismatch).
+
+### Why the CMake-flow Kokkos does not work here
+
+The hermetic LLVM toolchain compiles against its bundled libc++ and links
+against its own glibc-2.28 sysroot. A Kokkos built the usual way (nvcc or g++,
+libstdc++, the host's glibc headers) fails to link: either with libstdc++/libc++
+ABI mismatches (undefined `std::__1::...` symbols) or, on newer distributions,
+with `undefined symbol: __isoc23_strtol` because the host headers redirect
+`strtol` to symbols the sysroot's glibc stub does not export. Kokkos and
+KokkosFFT therefore have to be built with the toolchain's own clang and header
+set.
+
+### Kokkos recipe
+
+Run from an OpenROAD checkout after any `bazelisk build`, so the toolchain has
+been fetched. The header directories below are the ones the Bazel
+`cc_toolchain` uses.
+
+```bash
+OB=$(bazelisk info output_base)
+EX=$OB/execroot/_main
+case "$(uname -m)" in
+  x86_64)  OUT=k8-opt;      TC=llvm-toolchain-minimal-linux-amd64 ;;
+  aarch64) OUT=aarch64-opt; TC=llvm-toolchain-minimal-linux-arm64 ;;
+esac
+CLANGXX=$(ls -d $OB/external/*${TC}/bin/clang++)
+GLIBC_H=$(ls -d $OB/external/llvm++glibc+glibc_headers_*/include)
+KERNEL_H=$(ls -d $OB/external/llvm++kernel_headers+*/include)
+LIBCXX_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxx/libcxx_headers_include_search_directory
+LIBCXXABI_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxxabi/libcxxabi_headers_include_search_directory
+
+CUDA_HOME=/usr/local/cuda-12.8          # match OPENROAD_CUDA_PATH
+KOKKOS_ARCH=BLACKWELL120                # match your device, see below
+
+HFLAGS="--sysroot=/dev/null -isystem $LIBCXX_H -isystem $LIBCXXABI_H -isystem $KERNEL_H -isystem $GLIBC_H"
+CUFLAGS="--cuda-path=$CUDA_HOME -Wno-unknown-cuda-version -D_ALLOW_UNSUPPORTED_LIBCPP"
+
+git clone https://github.com/kokkos/kokkos.git && cd kokkos   # 4.7 or newer
+cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-libcxx \
+  -DCMAKE_CXX_COMPILER="$CLANGXX" \
+  -DCMAKE_CXX_STANDARD=20 \
+  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+  -DCMAKE_CXX_ARCHIVE_CREATE="<CMAKE_AR> qc <TARGET> <OBJECTS>" \
+  -DCMAKE_CXX_ARCHIVE_APPEND="<CMAKE_AR> q <TARGET> <OBJECTS>" \
+  -DCMAKE_CXX_ARCHIVE_FINISH="<CMAKE_RANLIB> <TARGET>" \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DKokkos_ENABLE_SERIAL=ON \
+  -DKokkos_ENABLE_CUDA=ON \
+  -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
+  -DKokkos_ENABLE_DEPRECATED_CODE_4=ON \
+  -DKokkos_ARCH_${KOKKOS_ARCH}=ON \
+  -DKokkos_ENABLE_TESTS=OFF -DKokkos_ENABLE_EXAMPLES=OFF -DKokkos_ENABLE_BENCHMARKS=OFF
+cmake --build build -j && sudo cmake --install build
+```
+
+Each option that is easy to drop matters:
+
+- `--sysroot=/dev/null` plus the four `-isystem` directories: the toolchain's
+  header set, not the host's (the `__isoc23_*` failure above).
+- `-D_ALLOW_UNSUPPORTED_LIBCPP`: CUDA's `host_defines.h` refuses libc++ on
+  x86_64 otherwise.
+- `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`: the static archives end up inside
+  OpenROAD's Python extension (`_gpl.so`); without PIC the final link fails
+  with relocation errors.
+- `-DKokkos_ENABLE_DEPRECATED_CODE_4=ON`: `gpl` uses `View::HostMirror`, which
+  Kokkos 5 only provides behind this flag.
+- `-DCMAKE_CXX_STANDARD=20`: must match `.bazelrc` (`-std=c++20`).
+- `-DKokkos_ARCH_...`: exactly one NVIDIA architecture, and it must be the
+  compute capability of the device the tests run on. `--config=gpu` reads it
+  back from the install's `KokkosCore_config.h` and compiles `gpl`'s kernels for
+  the same target. This is not a cosmetic choice: `sm_120` kernels on an
+  `sm_121` device (`BLACKWELL120` vs `BLACKWELL121`, e.g. an RTX 5090 vs a GB10)
+  run without any error and produce NaN placements.
+
+`nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
+capability (`12.0` -> `BLACKWELL120`, `12.1` -> `BLACKWELL121`). `sm_121`
+needs CUDA 12.9 or newer; with CUDA 13 also set `OPENROAD_CUDA_PATH` to that
+toolkit (its libcu++ headers live in `include/cccl/`, which `--config=gpu`
+already adds to the search path).
+
+### KokkosFFT recipe
+
+KokkosFFT is header-only but must be configured against the Kokkos above with
+the FFTW host backend enabled (`gpl` creates host-space plans). FFTW itself is
+built from source by Bazel (the `fftw` module in `MODULE.bazel`), so no system
+FFTW is needed at build time.
+
+```bash
+git clone https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
+cmake -S . -B build \
+  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-fft-libcxx \
+  -DCMAKE_CXX_COMPILER="$CLANGXX" \
+  -DCMAKE_CXX_STANDARD=20 \
+  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
+  -DKokkos_ROOT=/usr/local/kokkos-libcxx \
+  -DKokkosFFT_ENABLE_FFTW=ON \
+  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARKS=OFF
+sudo cmake --install build
+```
+
+### Notes
+
+- The runtime gate is the `ENABLE_GPU` environment variable, read by
+  `gpl::gpuEnabled()`. It defaults to on when the GPU code is compiled in, so
+  every regression test pins `ENABLE_GPU=0` on a GPU build to stay on its CPU
+  golden logs (`test/regression.bzl`); the GPU-only tests
+  (`region01_gpu`, `region01_gpu_asym`, `fft_gpu_test`, `wl_gpu_test`) pin it
+  to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
+- `--config=gpu` binaries link libcudart/libcufft by absolute path with an
+  rpath into the toolkit; they are not relocatable to another machine.
+- The ORFS flow targets under `test/orfs` run their stages as build actions,
+  which carry no `ENABLE_GPU` pin, so under `--config=gpu` they place on the
+  GPU. The GPU placer is not bit-identical to the CPU one and the gcd/asap7
+  metadata rules are tuned for the CPU result, so `//test/orfs/...` is not
+  expected to pass under `--config=gpu`; run it on the default build.
+- After upgrading Kokkos, KokkosFFT or CUDA in place, run `bazelisk shutdown`
+  (or change the corresponding environment variable) so the wrapped repository
+  is refetched with the new file list.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 

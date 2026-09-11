@@ -24,6 +24,13 @@ single_version_override(
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
+
+# Host-space FFTW plans for the opt-in GPU build's KokkosFFT (see
+# bazel/gpu/system_gpu.bzl). Only reachable through @kokkos_fft, so it is
+# built from source solely under --config=gpu (the hermetic toolchain
+# cannot link a host-distribution libfftw3); CPU builds pay nothing beyond
+# the lockfile entry.
+bazel_dep(name = "fftw", version = "3.3.10")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.18")
@@ -229,6 +236,20 @@ git_override(
 ## Keep >= 0.8.14: earlier releases silently produce empty `bazel coverage`
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
 bazel_dep(name = "llvm", version = "0.8.18", dev_dependency = True)
+
+# Declare Bazel's built-in ThinLTO scoping features
+# (thin_lto_linkstatic_tests_use_shared_nonlto_backends and the all-linkstatic
+# variant) in the hermetic-llvm toolchain so --features=... can enable them;
+# Bazel silently ignores requested features the toolchain does not know.
+# --config=opt uses the tests variant to keep cc_test binaries off per-binary LTO.
+# Drop this override once hermetic-llvm declares them upstream.
+single_version_override(
+    module_name = "llvm",
+    patch_strip = 1,
+    patches = [
+        "//bazel/llvm-patches:0001-declare-thin-lto-shared-nonlto-backend-features.patch",
+    ],
+)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
@@ -478,6 +499,40 @@ alias(
 )
 """,
     path = "bazel/slang-compat",
+)
+
+# --- GPU build (opt-in, non-hermetic) ---
+#
+# System-installed Kokkos / KokkosFFT / CUDA toolkit for the opt-in GPU
+# build (--config=gpu), mirroring the CMake ENABLE_GPU flow. Install
+# prefixes come from the shell environment (KOKKOS_ROOT, KOKKOS_FFT_ROOT,
+# OPENROAD_CUDA_PATH); the CUDA arch is read from the Kokkos install
+# (OPENROAD_CUDA_ARCH is only consulted when it cannot be). A missing or
+# unusable install yields a stub repo whose targets fail at analysis with
+# the reason, so the default CPU build, CI and `bazel query` never notice.
+# Registered non-dev because //src/gpl/BUILD loads @cuda_local//:defs.bzl
+# and @kokkos//:defs.bzl unconditionally (via bazel/gpu/copts.bzl).
+system_prefix_repo = use_repo_rule("//bazel/gpu:system_gpu.bzl", "system_prefix_repo")
+
+system_prefix_repo(
+    name = "kokkos",
+    default_path = "/usr/local/kokkos-libcxx",
+    env_var = "KOKKOS_ROOT",
+    flavor = "kokkos",
+)
+
+system_prefix_repo(
+    name = "kokkos_fft",
+    default_path = "/usr/local/kokkos-fft-libcxx",
+    env_var = "KOKKOS_FFT_ROOT",
+    flavor = "kokkos_fft",
+)
+
+system_prefix_repo(
+    name = "cuda_local",
+    default_path = "/usr/local/cuda-12.8",
+    env_var = "OPENROAD_CUDA_PATH",
+    flavor = "cuda_local",
 )
 
 # --- Overrides ---
