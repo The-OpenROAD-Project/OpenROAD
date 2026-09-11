@@ -49,6 +49,12 @@ class ScanCell
   virtual odb::Point getOrigin() const = 0;
   virtual bool isPlaced() const = 0;
 
+  // Physical location of the scan-in / scan-out pins on the placed instance.
+  // Used for asymmetric-distance scan chain ordering (2-Opt / Or-Opt).
+  // Falls back to getOrigin() when placement geometry is unavailable.
+  virtual odb::Point getScanInLocation() const = 0;
+  virtual odb::Point getScanOutLocation() const = 0;
+
  private:
   std::string name_;
   std::unique_ptr<ClockDomain> clock_domain_;

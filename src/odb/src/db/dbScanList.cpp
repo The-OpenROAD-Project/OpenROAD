@@ -93,6 +93,12 @@ dbScanInst* dbScanList::add(dbInst* inst)
   return scan_inst;
 }
 
+void dbScanList::clear()
+{
+  _dbScanList* list = (_dbScanList*) this;
+  list->first_scan_inst_ = 0;
+}
+
 dbScanList* dbScanList::create(dbScanPartition* scan_partition)
 {
   _dbScanPartition* obj = (_dbScanPartition*) scan_partition;

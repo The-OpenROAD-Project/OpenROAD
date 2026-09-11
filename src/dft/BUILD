@@ -26,6 +26,7 @@ cc_library(
         "//src/dbSta",
         "//src/dft/src/architect",
         "//src/dft/src/cells",
+        "//src/dft/src/optimizer",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/dft/src/replace",
