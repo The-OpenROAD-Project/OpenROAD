@@ -265,7 +265,6 @@ class dbOStreamScope
   dbOStream& ostream_;
 };
 
-#if defined(__cpp_exceptions) && __cpp_exceptions
 class ScopedExceptionToggle
 {
  public:
@@ -308,7 +307,6 @@ class ScopedExceptionToggle
   bool toggled_;
   bool restored_;
 };
-#endif
 
 class dbIStream
 {
@@ -397,7 +395,8 @@ class dbIStream
   void readValues(Ts&... vals)
   {
     constexpr size_t kTotal = (0 + ... + sizeof(Ts));
-    static_assert(kTotal <= kBufferSize);
+    static_assert(kTotal <= 1024,
+                  "readValues exceeds safe stack allocation limit");
     if constexpr (kTotal > 0) {
       char temp[kTotal];
       read_bytes(std::span<char>(temp, kTotal));
@@ -452,11 +451,9 @@ class dbIStream
     uint32_t sz = 0;
     *this >> sz;
     m.clear();
-    using Key = typename Map::key_type;
-    using Value = typename Map::mapped_type;
     for (uint32_t i = 0; i < sz; i++) {
-      Key key;
-      Value val;
+      typename Map::key_type key;
+      typename Map::mapped_type val;
       *this >> key;
       *this >> val;
       m.emplace_hint(m.end(), std::move(key), std::move(val));
