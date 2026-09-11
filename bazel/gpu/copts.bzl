@@ -15,6 +15,7 @@ absent here.
 """
 
 load("@cuda_local//:defs.bzl", "CUDA_PATH")
+load("//bazel/gpu:archs.bzl", "CUDA_ARCHS", "CUDA_ARCH_FLAG_ERROR")
 
 CUDA_TOOLKIT_COPTS = [
     # Overrides the global "-xc++" from .bazelrc: rule copts come after
@@ -37,28 +38,9 @@ CUDA_TOOLKIT_COPTS = [
 CUDA_ARCH_COPTS = select(
     {
         Label("//:cuda_arch_" + arch): ["--cuda-gpu-arch=" + arch]
-        for arch in [
-            "sm_60",
-            "sm_61",
-            "sm_70",
-            "sm_72",
-            "sm_75",
-            "sm_80",
-            "sm_86",
-            "sm_87",
-            "sm_89",
-            "sm_90",
-            "sm_100",
-            "sm_103",
-            "sm_120",
-            "sm_121",
-        ]
+        for arch in CUDA_ARCHS
     },
-    no_match_error = (
-        "--config=gpu requires an explicit CUDA architecture; use " +
-        "--config=gpu-sm120, --config=gpu-sm121, or pass " +
-        "--//:cuda_arch=sm_<compute capability>"
-    ),
+    no_match_error = CUDA_ARCH_FLAG_ERROR,
 )
 
 CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [

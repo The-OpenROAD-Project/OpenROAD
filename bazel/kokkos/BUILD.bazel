@@ -2,25 +2,32 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel/gpu:defs.bzl", "GPU_ONLY")
 load(":configure.bzl", "kokkos_config_header")
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
-exports_files([
-    "BUILD.kokkos.bazel",
-    "BUILD.kokkos_fft.bazel",
-    "Kokkos_Version_Info.cpp",
-])
+exports_files(
+    [
+        "BUILD.kokkos.bazel",
+        "BUILD.kokkos_fft.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 kokkos_config_header(
     name = "configured_header",
     out = "generated/KokkosCore_config.h",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
 )
 
 cc_library(
     name = "config_header",
     hdrs = [":configured_header"],
     strip_include_prefix = "generated",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
 )
 
 cc_library(
@@ -30,10 +37,15 @@ cc_library(
         "config/desul/**/*.hpp",
     ]),
     strip_include_prefix = "config",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
 )
 
 cc_library(
     name = "config",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+    visibility = ["//visibility:public"],
     deps = [
         ":config_common",
         ":config_header",
@@ -44,4 +56,7 @@ cc_library(
     name = "fft_config",
     hdrs = ["config/KokkosFFT_config.hpp"],
     strip_include_prefix = "config",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+    visibility = ["//visibility:public"],
 )

@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+// Manually mirrors Kokkos 5.2.2's generated KokkosCore_config.h for a static
+// C++20 build with Serial, CUDA, CUDA_CONSTEXPR, and deprecated APIs enabled.
+// DEPRECATED_CODE_4 is required by gpl's View::HostMirror usage. Recompare this
+// file with cmake/KokkosCore_config.h.in and a CMake-generated header whenever
+// the Kokkos pin in MODULE.bazel changes.
+
 #if !defined(KOKKOS_MACROS_HPP) || defined(KOKKOS_CORE_CONFIG_H)
 #error "Do not include KokkosCore_config.h directly; include Kokkos_Macros.hpp instead."
 #else

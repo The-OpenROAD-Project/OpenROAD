@@ -26,10 +26,9 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
 
 # Host-space FFTW plans for the opt-in GPU build's KokkosFFT. Only reachable
-# through @kokkos_fft, so it is
-# built from source solely under --config=gpu (the hermetic toolchain
-# cannot link a host-distribution libfftw3); CPU builds pay nothing beyond
-# the lockfile entry.
+# through @kokkos_fft, so it is built from source solely under --config=gpu
+# (the hermetic toolchain cannot link a host-distribution libfftw3); CPU builds
+# pay nothing beyond the lockfile entry.
 bazel_dep(name = "fftw", version = "3.3.10")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_bison", version = "0.3.1")
@@ -503,10 +502,11 @@ alias(
 
 # --- GPU build (opt-in) ---
 #
-# Kokkos and KokkosFFT are pinned source archives compiled by the registered
-# hermetic LLVM toolchain. Their upstream CMake builds are represented by small
-# BUILD overlays because Kokkos does not publish Bazel targets. The CUDA toolkit
-# remains system-provided for now and is wrapped separately below.
+# Kokkos and KokkosFFT are not available from BCR at these versions and do not
+# publish Bazel targets, so checksum-pinned archives use small BUILD overlays.
+# Remove these rules if supported upstream/BCR Bazel targets become available.
+# Bazel fetches the archives lazily: CPU targets neither download nor compile
+# them. The CUDA toolkit remains system-provided and is wrapped separately.
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -522,6 +522,8 @@ http_archive(
     build_file = "//bazel/kokkos:BUILD.kokkos_fft.bazel",
     sha256 = "f2c1f7b848e68aa214f2dea7820c22e729564167a4d4010170b01c81ad3a0714",
     strip_prefix = "kokkos-fft-2.0.0",
+    # KokkosFFT 2.0.0 has no release tarball asset, so use GitHub's generated
+    # tag archive; sha256 makes any server-side byte change fail loudly.
     urls = ["https://github.com/kokkos/kokkos-fft/archive/refs/tags/v2.0.0.tar.gz"],
 )
 

@@ -336,25 +336,37 @@ built once.
 `--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
 and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. Kokkos 5.2.2 and
 KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
-hermetic LLVM toolchain. Only the CUDA toolkit remains host-provided. Nothing
-in the default build depends on the GPU archives or toolkit.
+hermetic LLVM toolchain. Only the CUDA toolkit remains host-provided. Default
+CPU targets neither download nor compile Kokkos and do not compile or link
+against CUDA. Because the CUDA repository definition is loaded by shared Bazel
+configuration, CPU invocations still probe the configured toolkit path.
 
 Choose the configuration matching the device compute capability:
 
     bazelisk test --config=gpu-sm120 //src/gpl/test/...
     bazelisk test --config=gpu-sm121 //src/gpl/test/...
 
+`nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
+capability. Remove the decimal point to form the Bazel value (`12.0` ->
+`sm_120`, `12.1` -> `sm_121`). `sm_121` needs CUDA 12.9 or newer; with CUDA 13
+also set `OPENROAD_CUDA_PATH` to that toolkit (its libcu++ headers live in
+`include/cccl/`, which `--config=gpu` already adds to the search path).
+
 For another supported architecture, use `--config=gpu` together with
 `--//:cuda_arch=sm_XX`. The accepted values are `sm_60`, `sm_61`, `sm_70`,
 `sm_72`, `sm_75`, `sm_80`, `sm_86`, `sm_87`, `sm_89`, `sm_90`, `sm_100`,
 `sm_103`, `sm_120`, and `sm_121`. Plain `--config=gpu` intentionally requires
-this extra flag so it cannot silently build for the wrong device.
+this extra flag so Kokkos and OpenROAD's kernels use one explicit target. If the
+compiled target differs from the selected device, Kokkos prints a runtime
+warning; compatible code may still run, usually with reduced portability or
+performance.
 
 `OPENROAD_CUDA_PATH` selects the full CUDA toolkit and defaults to
 `/usr/local/cuda-12.8`. The toolkit must contain `bin/ptxas`, `nvvm/libdevice`,
 `libcudart`, and `libcufft`. A missing or incomplete toolkit never breaks the
 CPU build: its repository becomes a stub, and only a GPU build fails during
-analysis with an actionable message.
+analysis with an actionable message. The installed NVIDIA driver must support
+the CUDA toolkit used for the build.
 
 ### Dependency model
 
@@ -362,12 +374,6 @@ The Bazel build does not use `KOKKOS_ROOT` or `KOKKOS_FFT_ROOT`. Its BUILD
 overlays compile Kokkos with the same clang, libc++, glibc headers, CUDA target,
 and C++ standard as OpenROAD. This avoids the C++ ABI and libc symbol mismatches
 caused by linking a host-built Kokkos into a hermetic OpenROAD binary.
-
-`nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
-capability (`12.0` -> `BLACKWELL120`, `12.1` -> `BLACKWELL121`). `sm_121`
-needs CUDA 12.9 or newer; with CUDA 13 also set `OPENROAD_CUDA_PATH` to that
-toolkit (its libcu++ headers live in `include/cccl/`, which `--config=gpu`
-already adds to the search path).
 
 ### Notes
 
@@ -379,6 +385,11 @@ already adds to the search path).
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
+- The first GPU build downloads the two pinned source archives and compiles
+  Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
+  OpenROAD GPU sources for the new target.
+- The CMake `ENABLE_GPU` flow is unchanged and continues to use the Kokkos and
+  KokkosFFT installations selected by its CMake configuration.
 - The ORFS flow targets under `test/orfs` run their stages as build actions,
   which carry no `ENABLE_GPU` pin, so under `--config=gpu` they place on the
   GPU. The GPU placer is not bit-identical to the CPU one and the gcd/asap7

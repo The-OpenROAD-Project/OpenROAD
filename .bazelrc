@@ -194,8 +194,8 @@ build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
 # Opt-in GPU build: Kokkos and KokkosFFT are built from pinned sources with
 # the hermetic LLVM toolchain. The CUDA toolkit remains system-provided via
 # OPENROAD_CUDA_PATH (default /usr/local/cuda-12.8). Select the device compute
-# capability explicitly; using the wrong architecture can silently corrupt
-# numerical results.
+# capability explicitly so Kokkos and OpenROAD compile for the same target;
+# Kokkos warns at runtime if that target differs from the selected device.
 build:gpu --//:gpu=cuda
 build:gpu-sm120 --config=gpu
 build:gpu-sm120 --//:cuda_arch=sm_120

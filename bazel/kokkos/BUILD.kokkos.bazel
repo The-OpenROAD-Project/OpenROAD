@@ -31,7 +31,6 @@ cc_library(
         "core/src/impl/Kokkos_hwloc.cpp",
         "simd/src/Kokkos_SIMD_dummy.cpp",
         "tpls/desul/src/Lock_Array_CUDA.cpp",
-        "@openroad//bazel/kokkos:Kokkos_Version_Info.cpp",
     ],
     hdrs = glob([
         "algorithms/src/**/*.hpp",
@@ -42,12 +41,13 @@ cc_library(
         "tpls/desul/include/**/*.hpp",
         "tpls/desul/include/**/*.inc*",
         "tpls/mdspan/include/**/*.hpp",
-    ]) + ["cmake/Kokkos_Version_Info.hpp"],
+    ]),
     additional_compiler_inputs = ["@cuda_local//:compiler_inputs"],
+    # Kokkos needs the common toolkit and architecture flags, but not gpl's
+    # placement-new shim or OpenMP flag from CUDA_COPTS.
     copts = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS,
     includes = [
         "algorithms/src",
-        "cmake",
         "containers/src",
         "core/src",
         "simd/src",
@@ -55,7 +55,6 @@ cc_library(
         "tpls/mdspan/include",
     ],
     linkopts = ["-ldl"],
-    local_defines = ["KOKKOS_DEPENDENCE"],
     deps = [
         "@cuda_local//:cudart",
         "@openroad//bazel/kokkos:config",
