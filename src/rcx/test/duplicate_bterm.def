@@ -1,0 +1,17 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN duplicate_bterm ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 5000 4000 ) ;
+PINS 2 ;
+    - in1 + NET n1 + DIRECTION INPUT + PLACED ( 1000 2000 ) N
+      + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
+    - out1 + NET n1 + DIRECTION OUTPUT + PLACED ( 2500 2000 ) N
+      + LAYER metal3 ( -750 -750 ) ( 750 750 ) ;
+END PINS
+NETS 1 ;
+    - n1 ( PIN in1 ) ( PIN out1 )
+      + ROUTED metal3 ( 1000 2000 ) ( 2000 2000 ) ( 3000 2000 ) ( 4000 2000 ) ;
+END NETS
+END DESIGN

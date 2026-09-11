@@ -11,6 +11,7 @@ or_integration_tests(
     coordinates
     no_merging
     short_resover
+    duplicate_bterm
   PASSFAIL_TESTS
     rcx_unit_test
     test_dielectric_epsilon

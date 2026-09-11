@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: duplicate_bterm
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0133]     Created 1 nets and 0 connections.
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[INFO RCX-0435] Reading extraction model file 45_patterns.rules ...
+[INFO RCX-0436] RC segment generation duplicate_bterm (max_merge_res 0.0) ...
+[INFO RCX-0040] Final 3 rc segments
+[INFO RCX-0439] Coupling Cap extraction duplicate_bterm ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 100% of 3 wires extracted
+[INFO RCX-0045] Extract -1 nets, 4 rsegs, 4 caps, 0 ccs
+[INFO RCX-0443] 1 nets finished
+duplicate bterm resistors: 3

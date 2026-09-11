@@ -660,12 +660,25 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                          const double* restbl,
                          const double* captbl)
 {
-  if (!path.bterm && isTermPathEnded(pshape.bterm, pshape.iterm)) {
-    rsegJid.clear();
-    return nullptr;
+  const bool repeated_term
+      = !path.bterm && isTermPathEnded(pshape.bterm, pshape.iterm);
+
+  uint32_t dstId;
+  if (repeated_term) {
+    // A wide BTERM can mark adjacent wire points with the same terminal.
+    // Keep the physical segment by making the repeated point internal.
+    _nodeTable->set(pshape.junction_id, -1);
+    dstId = getCapNodeId(net, nullptr, nullptr, pshape.junction_id, isBranch);
+  } else {
+    dstId = getCapNodeId(
+        net, pshape.bterm, pshape.iterm, pshape.junction_id, isBranch);
   }
-  const uint32_t dstId = getCapNodeId(
-      net, pshape.bterm, pshape.iterm, pshape.junction_id, isBranch);
+  if (dstId == srcId && pshape.bterm != nullptr) {
+    // The same wide BTERM may be attached to two adjacent path points.
+    _nodeTable->set(pshape.junction_id, -1);
+    dstId = getCapNodeId(net, nullptr, nullptr, pshape.junction_id, isBranch);
+  }
+
   if (dstId == srcId) {
     std::string tname;
     if (pshape.bterm) {

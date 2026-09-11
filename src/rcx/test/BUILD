@@ -22,6 +22,7 @@ COMPULSORY_TESTS = [
     "coordinates",
     "no_merging",
     "short_resover",
+    "duplicate_bterm",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
