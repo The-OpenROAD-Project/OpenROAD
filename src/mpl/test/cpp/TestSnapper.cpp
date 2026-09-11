@@ -490,5 +490,31 @@ TEST_F(TestSnapper, SingleLayerWithUnalignablePinThrowsException)
   }
 }
 
+TEST_F(TestSnapper, KeepsMacroInsideCore)
+{
+  db_->getTech()->setManufacturingGrid(10);
+  const odb::Rect core(1000, 1000, 4000, 4000);
+  db_->getChip()->getBlock()->setCoreArea(core);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setWidth(2000);
+  macro_master->setHeight(2000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(3000, 3000);
+
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  const odb::Rect bbox = macro->getBBox()->getBox();
+  EXPECT_TRUE(core.contains(bbox));
+  EXPECT_EQ(macro->getOrigin().x(), 2000);
+  EXPECT_EQ(macro->getOrigin().y(), 2000);
+}
+
 }  // namespace
 }  // namespace mpl
