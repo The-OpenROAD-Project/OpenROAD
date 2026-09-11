@@ -166,6 +166,12 @@ class Grid
   void ripup();
 
   virtual odb::PtrSet<odb::dbInst> getInstances() const;
+  // Instances whose obstructions this grid republishes itself and which
+  // must therefore not be collected as block level obstructions.
+  virtual odb::PtrSet<odb::dbInst> getObstructionExemptInstances() const
+  {
+    return {};
+  }
 
   bool hasShapes() const;
   bool hasVias() const;
@@ -239,6 +245,10 @@ class InstanceGrid : public Grid
 
   odb::dbInst* getInstance() const { return inst_; }
   odb::PtrSet<odb::dbInst> getInstances() const override { return {inst_}; }
+  odb::PtrSet<odb::dbInst> getObstructionExemptInstances() const override
+  {
+    return {inst_};
+  }
 
   std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 
@@ -259,6 +269,9 @@ class InstanceGrid : public Grid
   virtual bool isValid() const;
   void checkSetup() const override;
 
+  // Obstructions of a pad cell, split so that the metal coincident with a
+  // pin is attributed to that pin's net instead of blocking every net.
+  static ShapeVectorMap getPadObstructions(odb::dbInst* inst);
   static ShapeVectorMap getInstanceObstructions(odb::dbInst* inst,
                                                 const Halo& halo
                                                 = {0, 0, 0, 0});

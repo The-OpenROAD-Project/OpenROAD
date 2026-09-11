@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: ihp_ethmac/tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp_ethmac/sg13g2.lef, created 78 library cells
+[INFO ODB-0227] LEF file: ihp_tensorcore/sg13g2_io.lef, created 22 library cells
+[INFO ODB-0128] Design: chip_top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 32 components and 168 component-terminals.
+[INFO ODB-0132]     Created 4 special nets and 128 connections.
+[INFO PDN-0001] Inserting grid: stdcell_grid
+[WARNING PDN-0110] No via inserted between TopMetal1 and TopMetal2 at (319.6400, 514.1600) - (323.7800, 515.0400) on VDD
+[WARNING PDN-0110] No via inserted between TopMetal1 and TopMetal2 at (319.6400, 614.1600) - (323.7800, 615.0800) on VDD
+[WARNING PDN-0110] No via inserted between TopMetal1 and TopMetal2 at (319.6400, 714.1600) - (323.7800, 715.1200) on VDD
+[WARNING PDN-0110] No via inserted between TopMetal1 and TopMetal2 at (876.2200, 514.1600) - (880.3600, 515.0400) on VDD
+[WARNING PDN-0110] No via inserted between TopMetal1 and TopMetal2 at (876.2200, 614.1600) - (880.3600, 615.0800) on VDD
+[WARNING PDN-0110] No via inserted between TopMetal1 and TopMetal2 at (876.2200, 714.1600) - (880.3600, 715.1200) on VDD
+No differences found.

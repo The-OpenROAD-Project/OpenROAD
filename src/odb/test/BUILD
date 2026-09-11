@@ -237,6 +237,7 @@ PASSFAIL_TESTS = [
     "test_iterm",
     "test_module",
     "test_net",
+    "test_tcl_handles",
     "test_wire_codec",
 ]
 
