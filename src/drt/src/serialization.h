@@ -797,6 +797,7 @@ void RouterConfiguration::serialize(Archive& ar, const unsigned int /*version*/)
   (ar) & MAX_CLIPSIZE_INCREASE;
 
   (ar) & END_ITERATION;
+  (ar) & REROUTE_VIOLATIONS_START_ITER;
 
   (ar) & NDR_NETS_RIPUP_HARDINESS;
   (ar) & CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
