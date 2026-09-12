@@ -36,6 +36,27 @@ std::string trim(const std::string& s)
   });
 }
 
+const char* stageName(ClaimStage stage)
+{
+  return stage == ClaimStage::kPlacement ? "placement" : "CTS";
+}
+
+// The columns naming a claim's two objects.
+std::pair<const char*, const char*> nameColumns(ClaimStage stage)
+{
+  if (stage == ClaimStage::kPlacement) {
+    return {"A_name", "B_name"};
+  }
+  return {"target_lcb", "other_lcb"};
+}
+
+// Only these rows are scored, and only they consume carriers.
+bool isScored(const ClaimRow& row, ClaimStage stage)
+{
+  return claimIsCheckable(row)
+         && (stage == ClaimStage::kCts || claimField(row, "kind") == "pair");
+}
+
 bool validateClaimRow(const ClaimRow& row,
                       ClaimStage stage,
                       const std::vector<std::string>& required,
@@ -45,71 +66,84 @@ bool validateClaimRow(const ClaimRow& row,
     error = "empty required field 'kind'";
     return false;
   }
-  const bool checkable
-      = claimIsCheckable(row)
-        && (stage == ClaimStage::kCts || claimField(row, "kind") == "pair");
-  if (checkable) {
-    for (const std::string& column : required) {
-      if (column != "skipped_reason" && claimField(row, column).empty()) {
-        error = "empty required field '";
-        error += column;
-        error += "'";
-        return false;
-      }
-    }
-    const std::vector<std::string> names
-        = stage == ClaimStage::kPlacement
-              ? std::vector<std::string>{"A_name", "B_name"}
-              : std::vector<std::string>{"target_lcb"};
-    for (const std::string& name : names) {
-      if (!isClaimNameSupported(claimField(row, name))) {
-        error = "unrepresentable instance name in '" + name + "'";
-        return false;
-      }
-    }
-    const std::string bit = claimField(row, "target_bit");
-    if (bit != "0" && bit != "1") {
-      error = "target_bit must be 0 or 1, got '";
-      error += bit;
+  if (!isScored(row, stage)) {
+    return true;
+  }
+  for (const std::string& column : required) {
+    if (column != "skipped_reason" && claimField(row, column).empty()) {
+      error = "empty required field '";
+      error += column;
       error += "'";
       return false;
     }
   }
+  const auto [a, b] = claimNames(row, stage);
+  if (!isClaimNameSupported(a) || !isClaimNameSupported(b)) {
+    const auto [a_column, b_column] = nameColumns(stage);
+    error = "unrepresentable instance name in '";
+    error += isClaimNameSupported(a) ? b_column : a_column;
+    error += "'";
+    return false;
+  }
+  if (a == b) {
+    error = std::string(stageName(stage))
+            + " pair must name two different instances: '" + a + "'";
+    return false;
+  }
+  const std::string bit = claimField(row, "target_bit");
+  if (bit != "0" && bit != "1") {
+    error = "target_bit must be 0 or 1, got '";
+    error += bit;
+    error += "'";
+    return false;
+  }
   return true;
 }
 
-// Only scored rows consume carriers. Reversed placement names still refer to
-// the same physical comparison, regardless of target bit or metadata.
+// A pair is the same carrier whichever way round it is named, whatever bit or
+// metadata the row carries.
 bool validateCarrier(const ClaimRow& row,
                      ClaimStage stage,
                      std::set<std::pair<std::string, std::string>>& carriers,
                      std::string& error)
 {
-  if (!claimIsCheckable(row)
-      || (stage == ClaimStage::kPlacement
-          && claimField(row, "kind") != "pair")) {
+  if (!isScored(row, stage)) {
     return true;
   }
-  std::string a = claimField(
-      row, stage == ClaimStage::kPlacement ? "A_name" : "target_lcb");
-  std::string b
-      = stage == ClaimStage::kPlacement ? claimField(row, "B_name") : "";
-  if (stage == ClaimStage::kPlacement) {
-    if (a == b) {
-      error = "placement pair must name two different instances: '" + a + "'";
-      return false;
-    }
-    if (b < a) {
-      std::swap(a, b);
-    }
+  auto [a, b] = claimNames(row, stage);
+  if (b < a) {
+    std::swap(a, b);
   }
   if (!carriers.emplace(a, b).second) {
-    error = stage == ClaimStage::kPlacement
-                ? "duplicate placement pair '" + a + "' / '" + b + "'"
-                : "duplicate CTS target '" + a + "'";
+    error = std::string("duplicate ") + stageName(stage) + " pair '" + a
+            + "' / '" + b + "'";
     return false;
   }
   return true;
+}
+
+enum class LineStatus
+{
+  kLine,
+  kEnd,
+  kTooLong
+};
+
+// std::getline grows without bound; this stops at the limit instead.
+LineStatus readLine(std::istream& in, std::string& line)
+{
+  line.clear();
+  char ch;
+  while (in.get(ch)) {
+    if (ch == '\n') {
+      return LineStatus::kLine;
+    }
+    if (line.size() == kMaxClaimLineLength) {
+      return LineStatus::kTooLong;
+    }
+    line.push_back(ch);
+  }
+  return line.empty() ? LineStatus::kEnd : LineStatus::kLine;
 }
 
 }  // namespace
@@ -142,15 +176,27 @@ bool readClaims(std::istream& in,
   rows.clear();
   error.clear();
   std::string line;
-  if (!std::getline(in, line)) {
-    error = "cannot read header";
-    return false;
+  switch (readLine(in, line)) {
+    case LineStatus::kEnd:
+      error = "cannot read header";
+      return false;
+    case LineStatus::kTooLong:
+      error = "line 1: longer than " + std::to_string(kMaxClaimLineLength)
+              + " bytes";
+      return false;
+    case LineStatus::kLine:
+      break;
   }
   if (line.find('\0') != std::string::npos) {
     error = "line 1: NUL byte in claim header";
     return false;
   }
   std::vector<std::string> header = splitFields(line);
+  if (header.size() > kMaxClaimColumns) {
+    error
+        = "line 1: more than " + std::to_string(kMaxClaimColumns) + " columns";
+    return false;
+  }
   std::set<std::string> columns;
   for (std::string& column : header) {
     column = trim(column);
@@ -167,7 +213,7 @@ bool readClaims(std::istream& in,
                                        "target_bit",
                                        "skipped_reason"}
             : std::vector<std::string>{
-                  "target_lcb", "target_bit", "skipped_reason"};
+                  "target_lcb", "other_lcb", "target_bit", "skipped_reason"};
   for (const std::string& column : required) {
     if (!columns.contains(column)) {
       error = "line 1: missing required column '" + column + "'";
@@ -178,18 +224,32 @@ bool readClaims(std::istream& in,
   std::vector<ClaimRow> parsed;
   std::set<std::pair<std::string, std::string>> carriers;
   size_t line_number = 1;
-  while (std::getline(in, line)) {
+  for (;;) {
+    const LineStatus status = readLine(in, line);
+    if (status == LineStatus::kEnd) {
+      break;
+    }
     ++line_number;
+    const std::string location = "line " + std::to_string(line_number) + ": ";
+    if (status == LineStatus::kTooLong) {
+      error = location + "longer than " + std::to_string(kMaxClaimLineLength)
+              + " bytes";
+      return false;
+    }
     // OpenDB lookups accept C strings. A NUL must never truncate a claimed
     // name into a different instance, even in an otherwise well-formed row.
     if (line.find('\0') != std::string::npos) {
-      error = "line " + std::to_string(line_number) + ": NUL byte in claim row";
+      error = location + "NUL byte in claim row";
       return false;
     }
     if (trim(line).empty()) {
       continue;
     }
-    const std::string location = "line " + std::to_string(line_number) + ": ";
+    if (parsed.size() == kMaxClaimRows) {
+      error
+          = location + "more than " + std::to_string(kMaxClaimRows) + " claims";
+      return false;
+    }
     const std::vector<std::string> fields = splitFields(line);
     if (fields.size() != header.size()) {
       error = location + "expected " + std::to_string(header.size())
@@ -225,6 +285,13 @@ bool claimIsCheckable(const ClaimRow& row)
 {
   const std::string reason = claimField(row, "skipped_reason");
   return reason.empty() || reason == "already_satisfied";
+}
+
+std::pair<std::string, std::string> claimNames(const ClaimRow& row,
+                                               ClaimStage stage)
+{
+  const auto [a_column, b_column] = nameColumns(stage);
+  return {claimField(row, a_column), claimField(row, b_column)};
 }
 
 }  // namespace wmk

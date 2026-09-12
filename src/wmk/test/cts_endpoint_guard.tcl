@@ -32,19 +32,20 @@ set_assigned_delay -net -from [get_ports clk1] -to [get_pins high1/CK] 1
 set key 0000000000000000000000000000000000000000000000000000000000000000
 set claims [make_result_file cts_endpoint_guard.csv]
 set count [tee -variable output [list cts_watermark -key_hex $key -claims_file $claims \
-  -num_pairs 1 -sibling_dist_um 100 -skew_margin_ns 0 \
+  -num_pairs 1 -sibling_dist_um 100 -skew_margin_ns 0 -slack_margin_ns 0 \
   -slew_headroom_frac 0 -cap_headroom_frac 0]]
 check "timing-rejected pairs remain claimed" { set count } 1
 check "latency spread permits this move" { string match {*0 rejected on skew*} $output } 1
 check "the endpoint guard rejects it" { string match {*1 on setup/hold timing*} $output } 1
 check "the rejected mark fails verification" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 0
 
 # A positive control ensures that eligibility or another guard is not the cause.
 cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-  -sibling_dist_um 100 -skew_margin_ns 0.5 -slew_headroom_frac 0 -cap_headroom_frac 0
+  -sibling_dist_um 100 -skew_margin_ns 0.5 -slack_margin_ns 0.5 \
+  -slew_headroom_frac 0 -cap_headroom_frac 0
 check "the move succeeds with enough timing budget" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 1
 exit_summary

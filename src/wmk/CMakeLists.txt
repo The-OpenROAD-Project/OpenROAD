@@ -26,6 +26,7 @@ target_sources(wmk
     src/MakeWatermark.cpp
     src/HmacSha256.cpp
     src/Keys.cpp
+    src/Marks.cpp
 )
 
 target_include_directories(wmk

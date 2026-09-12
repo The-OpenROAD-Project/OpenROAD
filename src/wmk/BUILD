@@ -6,6 +6,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -17,6 +18,14 @@ cc_library(
     srcs = ["src/HmacSha256.cpp"],
     hdrs = ["src/HmacSha256.h"],
     includes = ["src"],
+)
+
+cc_library(
+    name = "marks",
+    srcs = ["src/Marks.cpp"],
+    hdrs = ["src/Marks.h"],
+    includes = ["src"],
+    deps = [":hmac_sha256"],
 )
 
 cc_library(
@@ -101,6 +110,7 @@ cc_library(
     deps = [
         ":wmk_private_hdrs",
         ":hmac_sha256",
+        ":marks",
         ":claims",
         ":verify_result",
         ":claim_file",
@@ -135,6 +145,7 @@ cc_library(
     ],
     deps = [
         ":hmac_sha256",
+        ":marks",
         ":wmk",
         ":wmk_private_hdrs",
         "//:ord",
@@ -184,6 +195,22 @@ python_wrap_cc(
     swig_includes = [
         "include",
         "src",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/watermark.tcl",
+    ],
+    visibility = ["//src/wmk/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/wmk/test:__pkg__",
     ],
 )
 

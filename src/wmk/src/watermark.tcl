@@ -6,6 +6,75 @@ namespace eval wmk {
 variable default_routing_fraction 0.05
 }
 
+# Read a key file written by generate_watermark_key -file: one "name value"
+# pair per line.
+proc wmk::read_key_file { path } {
+  if { [catch { open $path r } fh] } {
+    utl::error WMK 130 "Cannot read key file $path: $fh"
+  }
+  try {
+    set text [read $fh]
+  } finally {
+    close $fh
+  }
+  set result [dict create]
+  foreach line [split $text \n] {
+    set line [string trim $line]
+    if { $line eq "" } {
+      continue
+    }
+    if { ![regexp {^(\S+)\s+(\S+)$} $line unused name value] } {
+      utl::error WMK 131 "Cannot parse key file $path: '$line'."
+    }
+    dict set result $name $value
+  }
+  return $result
+}
+
+# The stage key held in a key file: the stored one, or derived from the secret
+# key and the public parameters when only those are present.
+proc wmk::stage_key_from_file { path stage } {
+  set material [wmk::read_key_file $path]
+  if { [dict exists $material $stage] } {
+    return [dict get $material $stage]
+  }
+  foreach name { key_hex design_id nonce_hex } {
+    if { ![dict exists $material $name] } {
+      utl::error WMK 132 "Key file $path has neither a $stage key nor the\
+                          key_hex, design_id and nonce_hex to derive it from."
+    }
+  }
+  set derived [wmk::derive_stage_key_cmd [dict get $material key_hex] \
+    [dict get $material design_id] [dict get $material nonce_hex] $stage]
+  if { $derived eq "" } {
+    utl::error WMK 133 "Key file $path holds an invalid key_hex or nonce_hex."
+  }
+  return $derived
+}
+
+proc wmk::check_key_hex { what key } {
+  if { ![regexp {^[0-9a-fA-F]{64}$} $key] } {
+    utl::error WMK 134 "$what must be a 64-character hex string (32 bytes)."
+  }
+  return $key
+}
+
+# The stage key a command was given: through -key_hex, or read from the key
+# file named by -key_file.  Exactly one of the two.
+proc wmk::stage_key { command stage keys_name } {
+  upvar 1 $keys_name keys
+  if { [info exists keys(-key_hex)] && [info exists keys(-key_file)] } {
+    utl::error WMK 135 "$command takes -key_hex or -key_file, not both."
+  }
+  if { [info exists keys(-key_hex)] } {
+    return [wmk::check_key_hex "The -key_hex argument" $keys(-key_hex)]
+  }
+  if { [info exists keys(-key_file)] } {
+    return [wmk::stage_key_from_file $keys(-key_file) $stage]
+  }
+  utl::error WMK 136 "$command requires -key_hex or -key_file."
+}
+
 sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
                                                [-file file] \
                                                [-key_hex key_hex] \
@@ -13,8 +82,8 @@ sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
                                                [-public_file public_file]}
 
 # Draw a watermark secret key and derive the three stage keys from it,
-# returning them as a dictionary with keys key_hex, nonce_hex, placement, cts
-# and routing.
+# returning them as a dictionary with keys key_hex, nonce_hex, design_id,
+# placement, cts and routing.
 #
 # The secret key and the nonce are drawn from the system's random source unless
 # given, so the same secret key can be reused across designs and revisions: the
@@ -22,8 +91,11 @@ sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
 # are needed again at verification time, so record them -- the nonce and the
 # identifier are public, the secret key is not.
 #
-# Nothing is written to the log.  With -file the values are written to that
-# path with owner-only permissions instead.
+# Nothing is written to the log.  With -file the secret key and the stage keys
+# are written to that path with owner-only permissions instead, and left out of
+# the returned dictionary: an interactive session echoes every result, and a
+# key that was meant for a file should not also end up on the screen.  The
+# keyed commands read the file back through -key_file.
 #
 # -public_file writes only the design identifier and the nonce, at ordinary
 # permissions.  Both are needed again to derive the stage keys, and neither is
@@ -39,11 +111,7 @@ proc generate_watermark_key { args } {
   set design_id $keys(-design_id)
 
   if { [info exists keys(-key_hex)] } {
-    set key_hex $keys(-key_hex)
-    if { [string length $key_hex] != 64 } {
-      utl::error WMK 91 "The -key_hex argument must be a 64-character hex\
-                         string (32 bytes)."
-    }
+    set key_hex [wmk::check_key_hex "The -key_hex argument" $keys(-key_hex)]
   } else {
     set key_hex [wmk::random_hex_cmd 32]
     if { $key_hex eq "" } {
@@ -84,6 +152,9 @@ proc generate_watermark_key { args } {
     }
   }
   wmk::write_key_files $result $paths
+  if { [dict exists $paths -file] } {
+    return [dict create design_id $design_id nonce_hex $nonce_hex]
+  }
   return $result
 }
 
@@ -186,26 +257,39 @@ proc wmk::write_key_files { result paths } {
   }
 }
 
-sta::define_cmd_args "derive_watermark_key" {-design_id design_id \
-                                             -key_hex key_hex \
-                                             -nonce_hex nonce_hex \
-                                             -stage stage}
+sta::define_cmd_args "derive_watermark_key" {-stage stage \
+                                             [-design_id design_id] \
+                                             [-key_file key_file] \
+                                             [-key_hex key_hex] \
+                                             [-nonce_hex nonce_hex]}
 
 # Re-derive one stage key from the secret key, the design identifier and the
 # nonce, returning it as a 64-character hex string.  Verification needs the
 # same stage keys embedding used, and this is how to get them back without
-# storing them.
+# storing them.  With -key_file the three inputs are read from a key file
+# written by generate_watermark_key.
 proc derive_watermark_key { args } {
   sta::parse_key_args "derive_watermark_key" args \
-    keys {-key_hex -design_id -nonce_hex -stage} flags {}
+    keys {-key_hex -design_id -nonce_hex -stage -key_file} flags {}
 
-  foreach required { -key_hex -design_id -nonce_hex -stage } {
-    if { ![info exists keys($required)] } {
-      utl::error WMK 96 "The $required argument is required."
-    }
+  if { ![info exists keys(-stage)] } {
+    utl::error WMK 96 "The -stage argument is required."
   }
   if { [lsearch -exact { placement cts routing } $keys(-stage)] < 0 } {
     utl::error WMK 97 "The -stage argument must be placement, cts or routing."
+  }
+  if { [info exists keys(-key_file)] } {
+    foreach option { -key_hex -design_id -nonce_hex } {
+      if { [info exists keys($option)] } {
+        utl::error WMK 137 "-key_file replaces $option; give one or the other."
+      }
+    }
+    return [wmk::stage_key_from_file $keys(-key_file) $keys(-stage)]
+  }
+  foreach required { -key_hex -design_id -nonce_hex } {
+    if { ![info exists keys($required)] } {
+      utl::error WMK 138 "The $required argument is required without -key_file."
+    }
   }
   set derived [wmk::derive_stage_key_cmd $keys(-key_hex) $keys(-design_id) \
     $keys(-nonce_hex) $keys(-stage)]
@@ -216,8 +300,9 @@ proc derive_watermark_key { args } {
   return $derived
 }
 
-sta::define_cmd_args "set_routing_watermark" {-key_hex key_hex \
-                                              [-fraction fraction]}
+sta::define_cmd_args "set_routing_watermark" {[-fraction fraction] \
+                                              [-key_file key_file] \
+                                              [-key_hex key_hex]}
 
 # Tag a keyed subset of signal nets as watermark nets, returning the number
 # tagged.  Selection is keyed unconditionally: a net is selected when the
@@ -226,7 +311,7 @@ sta::define_cmd_args "set_routing_watermark" {-key_hex key_hex \
 # tags are cleared first, so repeated calls are idempotent.
 proc set_routing_watermark { args } {
   sta::parse_key_args "set_routing_watermark" args \
-    keys {-key_hex -fraction} flags {}
+    keys {-key_hex -key_file -fraction} flags {}
 
   set fraction $wmk::default_routing_fraction
   if { [info exists keys(-fraction)] } {
@@ -236,32 +321,26 @@ proc set_routing_watermark { args } {
     utl::error WMK 21 "The -fraction argument must be in (0, 1]."
   }
 
-  if { ![info exists keys(-key_hex)] } {
-    utl::error WMK 20 "The -key_hex argument is required."
-  }
-  set key_hex $keys(-key_hex)
-  if { [string length $key_hex] != 64 } {
-    utl::error WMK 24 "The -key_hex argument must be a 64-character hex\
-                       string (32 bytes)."
-  }
-  set rc [wmk::set_routing_watermark_cmd $key_hex $fraction]
+  set key [wmk::stage_key set_routing_watermark routing keys]
+  set rc [wmk::set_routing_watermark_cmd $key $fraction]
   if { $rc < 0 } {
-    utl::error WMK 25 "Failed to parse -key_hex: must be 64 hex chars."
+    utl::error WMK 25 "Failed to parse the routing key: must be 64 hex chars."
   }
   return $rc
 }
 
 sta::define_cmd_args "place_watermark" {-claims_file file \
-                                       -key_hex key_hex \
                                        [-grid_nx n] \
                                        [-grid_ny n] \
-                                       [-pair_dist_um dist] \
-                                       [-pairs_per_tile n] \
-                                       [-slack_threshold_ns slack] \
+                                       [-guard_degrade_ns ns] \
                                        [-hpwl_eps_um eps] \
+                                       [-key_file key_file] \
+                                       [-key_hex key_hex] \
                                        [-max_disp_um disp] \
                                        [-min_pairs_total n] \
-                                       [-guard_degrade_ns ns]}
+                                       [-pair_dist_um dist] \
+                                       [-pairs_per_tile n] \
+                                       [-slack_threshold_ns slack]}
 
 # Put a keyed subset of same-row, same-width cell pairs into a keyed
 # left-to-right order, writing all selected pairs to -claims_file. Run after
@@ -269,21 +348,15 @@ sta::define_cmd_args "place_watermark" {-claims_file file \
 # are rejected or disturbed by legalization remain claimed for verification.
 proc place_watermark { args } {
   sta::parse_key_args "place_watermark" args \
-    keys {-key_hex -claims_file -grid_nx -grid_ny -pair_dist_um \
+    keys {-key_hex -key_file -claims_file -grid_nx -grid_ny -pair_dist_um \
           -pairs_per_tile -slack_threshold_ns -hpwl_eps_um -max_disp_um \
           -min_pairs_total -guard_degrade_ns} \
     flags {}
 
-  if { ![info exists keys(-key_hex)] } {
-    utl::error WMK 60 "The -key_hex argument is required."
-  }
   if { ![info exists keys(-claims_file)] } {
     utl::error WMK 61 "The -claims_file argument is required."
   }
-  if { [string length $keys(-key_hex)] != 64 } {
-    utl::error WMK 62 "The -key_hex argument must be a 64-character hex\
-                       string (32 bytes)."
-  }
+  set key [wmk::stage_key place_watermark placement keys]
 
   set grid_nx 8
   set grid_ny 8
@@ -304,59 +377,58 @@ proc place_watermark { args } {
   if { [info exists keys(-min_pairs_total)] } { set min_pairs $keys(-min_pairs_total) }
   if { [info exists keys(-guard_degrade_ns)] } { set guard_degrade $keys(-guard_degrade_ns) }
 
-  set rc [wmk::place_watermark_cmd $keys(-key_hex) $keys(-claims_file) \
+  set rc [wmk::place_watermark_cmd $key $keys(-claims_file) \
     $grid_nx $grid_ny $pair_dist $per_tile $slack $hpwl_eps $max_disp \
     $min_pairs $guard_degrade]
   if { $rc < 0 } {
-    utl::error WMK 63 "Failed to parse -key_hex: must be 64 hex chars."
+    utl::error WMK 63 "Failed to parse the placement key: must be 64 hex chars."
   }
   return $rc
 }
 
 sta::define_cmd_args "cts_watermark" {-claims_file file \
-                                     -key_hex key_hex \
+                                     [-cap_headroom_frac frac] \
+                                     [-key_file key_file] \
+                                     [-key_hex key_hex] \
                                      [-num_pairs n] \
                                      [-sibling_dist_um dist] \
                                      [-skew_margin_ns margin] \
-                                     [-slew_headroom_frac frac] \
-                                     [-cap_headroom_frac frac]}
+                                     [-slack_margin_ns margin] \
+                                     [-slew_headroom_frac frac]}
 
 # Set the sequential fanout parity of a keyed subset of leaf clock buffers,
-# writing all selected pairs to -claims_file. Run after clock tree synthesis.
-# Sink moves must respect the timing and electrical limits. Pairs whose edits
-# are rejected remain claimed for verification.
+# writing all selected pairs to -claims_file. Run after clock tree synthesis
+# and before routing. Sink moves must respect the timing and electrical limits.
+# Pairs whose edits are rejected remain claimed for verification.
 proc cts_watermark { args } {
   sta::parse_key_args "cts_watermark" args \
-    keys {-key_hex -claims_file -num_pairs -sibling_dist_um -skew_margin_ns \
-          -slew_headroom_frac -cap_headroom_frac} \
+    keys {-key_hex -key_file -claims_file -num_pairs -sibling_dist_um \
+          -skew_margin_ns -slack_margin_ns -slew_headroom_frac \
+          -cap_headroom_frac} \
     flags {}
 
-  if { ![info exists keys(-key_hex)] } {
-    utl::error WMK 64 "The -key_hex argument is required."
-  }
   if { ![info exists keys(-claims_file)] } {
     utl::error WMK 65 "The -claims_file argument is required."
   }
-  if { [string length $keys(-key_hex)] != 64 } {
-    utl::error WMK 66 "The -key_hex argument must be a 64-character hex\
-                       string (32 bytes)."
-  }
+  set key [wmk::stage_key cts_watermark cts keys]
 
   set num_pairs 32
   set dist 20.0
   set margin 0.020
+  set slack_margin 0.020
   set slew_frac 0.20
   set cap_frac 0.20
   if { [info exists keys(-num_pairs)] } { set num_pairs $keys(-num_pairs) }
   if { [info exists keys(-sibling_dist_um)] } { set dist $keys(-sibling_dist_um) }
   if { [info exists keys(-skew_margin_ns)] } { set margin $keys(-skew_margin_ns) }
+  if { [info exists keys(-slack_margin_ns)] } { set slack_margin $keys(-slack_margin_ns) }
   if { [info exists keys(-slew_headroom_frac)] } { set slew_frac $keys(-slew_headroom_frac) }
   if { [info exists keys(-cap_headroom_frac)] } { set cap_frac $keys(-cap_headroom_frac) }
 
-  set rc [wmk::cts_watermark_cmd $keys(-key_hex) $keys(-claims_file) \
-    $num_pairs $dist $margin $slew_frac $cap_frac]
+  set rc [wmk::cts_watermark_cmd $key $keys(-claims_file) \
+    $num_pairs $dist $margin $slack_margin $slew_frac $cap_frac]
   if { $rc < 0 } {
-    utl::error WMK 67 "Failed to parse -key_hex: must be 64 hex chars."
+    utl::error WMK 67 "Failed to parse the clock-tree key: must be 64 hex chars."
   }
   return $rc
 }
@@ -387,13 +459,18 @@ sta::define_cmd_args "clear_routing_watermark" {}
 # cleared.
 proc clear_routing_watermark { args } {
   sta::check_argc_eq0 "clear_routing_watermark" $args
+  sta::parse_key_args "clear_routing_watermark" args keys {} flags {}
   wmk::clear_routing_watermark_cmd
 }
 
 sta::define_cmd_args "verify_watermark" {[-claim_alpha alpha] \
                                          [-cts_claims file] \
+                                         [-cts_key_hex key_hex] \
+                                         [-key_file key_file] \
                                          [-min_stages n] \
                                          [-placement_claims file] \
+                                         [-placement_key_hex key_hex] \
+                                         [-routing] \
                                          [-routing_alpha alpha] \
                                          [-routing_fraction fraction] \
                                          [-routing_key_hex key_hex] \
@@ -403,15 +480,24 @@ sta::define_cmd_args "verify_watermark" {[-claim_alpha alpha] \
 # Check the committed placement, CTS and routing watermarks against the loaded
 # design.
 #
-# Placement and CTS are decided by the extraction rate, the fraction of claims
-# that still hold, against the threshold tau, and a binomial chance probability
-# based on the held/checked counts against claim_alpha. An exact match is not expected:
-# routing and filling legitimately disturb a few marked objects.
+# Every stage is keyed.  A placement or CTS claim file names the marked
+# objects; which of each pair is the target and the value it carries are
+# derived again from the stage key, and a file whose records disagree with the
+# key is refused rather than scored.  Placement and CTS are then decided by the
+# extraction rate, the fraction of claims that still hold, against the
+# threshold tau, and a binomial chance probability based on the held/checked
+# counts against claim_alpha. An exact match is not expected: routing and
+# filling legitimately disturb a few marked objects.
 #
 # Routing has no claims to count -- the marked set is recovered from the key
 # alone -- so it is decided by how improbable the marked nets' wrong-way
 # wirelength is under a random choice of marked set, against the threshold
 # alpha.
+#
+# Stage keys are given as -placement_key_hex, -cts_key_hex and
+# -routing_key_hex, or read from a key file with -key_file.  The routing stage
+# is checked when -routing_key_hex is given, or with -routing when the key
+# comes from the file.
 #
 # Ownership is granted when at least -min_stages of the checked stages pass,
 # two by default.  Requiring every stage would let one stage with no capacity
@@ -422,9 +508,10 @@ sta::define_cmd_args "verify_watermark" {[-claim_alpha alpha] \
 # Returns 1 when the design carries the watermark, otherwise 0.
 proc verify_watermark { args } {
   sta::parse_key_args "verify_watermark" args \
-    keys {-placement_claims -cts_claims -routing_key_hex -routing_fraction \
-          -routing_alpha -routing_permutations -tau -min_stages -claim_alpha} \
-    flags {}
+    keys {-placement_claims -placement_key_hex -cts_claims -cts_key_hex \
+          -routing_key_hex -routing_fraction -routing_alpha \
+          -routing_permutations -tau -min_stages -claim_alpha -key_file} \
+    flags {-routing}
 
   set tau 0.75
   if { [info exists keys(-tau)] } {
@@ -433,12 +520,17 @@ proc verify_watermark { args } {
   if { ![string is double -strict $tau] || !($tau >= 0.0 && $tau <= 1.0) } {
     utl::error WMK 40 "The -tau argument must be in \[0, 1\]."
   }
+  set check_routing [expr { [info exists keys(-routing_key_hex)] || [info exists flags(-routing)] }]
   if {
     ![info exists keys(-placement_claims)] && ![info exists keys(-cts_claims)]
-    && ![info exists keys(-routing_key_hex)]
+    && !$check_routing
   } {
-    utl::error WMK 41 "At least one of -placement_claims, -cts_claims or\
-                       -routing_key_hex is required."
+    utl::error WMK 41 "At least one of -placement_claims, -cts_claims,\
+                       -routing_key_hex or -routing is required."
+  }
+  if { [info exists flags(-routing)] && ![info exists keys(-key_file)] } {
+    utl::error WMK 139 "-routing takes the routing key from -key_file; give\
+                        -key_file or -routing_key_hex."
   }
 
   set claim_alpha 1e-4
@@ -464,7 +556,8 @@ proc verify_watermark { args } {
   # Routing is a population statistic rather than a set of claims.  The sign of
   # T_R is not evidence on its own -- on an unwatermarked design it is a coin
   # flip -- so the stage is judged on the p-value instead.
-  if { [info exists keys(-routing_key_hex)] } {
+  if { $check_routing } {
+    set routing_key [wmk::verify_stage_key routing keys]
     set frac $wmk::default_routing_fraction
     if { [info exists keys(-routing_fraction)] } {
       set frac $keys(-routing_fraction)
@@ -483,15 +576,13 @@ proc verify_watermark { args } {
     if { ![string is integer -strict $draws] || $draws < 1 || $draws > 2147483647 } {
       utl::error WMK 49 "The -routing_permutations argument must be positive."
     }
-    set p_r [wmk::verify_routing_watermark_cmd $keys(-routing_key_hex) $frac \
-      $draws]
+    set p_r [wmk::verify_routing_watermark_cmd $routing_key $frac $draws]
     if { $p_r == -2.0 } {
       # The technology has no wrong-way routing to measure, so the stage is not
       # applicable rather than failed, and it does not count against the tally.
       utl::warn WMK 87 "No routing carrier in this technology; stage skipped."
     } elseif { $p_r < 0.0 } {
-      utl::error WMK 23 "Failed to parse -routing_key_hex: must be 64 hex\
-                         chars."
+      utl::error WMK 23 "Failed to parse the routing key: must be 64 hex chars."
     } else {
       incr checked
       if { $p_r > $alpha } {
@@ -511,7 +602,8 @@ proc verify_watermark { args } {
     if { ![info exists keys($key)] } {
       continue
     }
-    lassign [$cmd $keys($key)] count held probability
+    set stage_key [wmk::verify_stage_key $stage keys]
+    lassign [$cmd $stage_key $keys($key)] count held probability
     if { $count == 0 } {
       utl::warn WMK 42 "No checkable $stage claims; stage skipped."
       continue
@@ -548,4 +640,18 @@ proc verify_watermark { args } {
     "Ownership evidence does not hold: $passed of $checked stage(s) passed,\
      $min_stages required."
   return 0
+}
+
+# The key verify_watermark checks one stage with: the explicit
+# -<stage>_key_hex, or the stage's key from -key_file.
+proc wmk::verify_stage_key { stage keys_name } {
+  upvar 1 $keys_name keys
+  set option -${stage}_key_hex
+  if { [info exists keys($option)] } {
+    return [wmk::check_key_hex "The $option argument" $keys($option)]
+  }
+  if { [info exists keys(-key_file)] } {
+    return [wmk::stage_key_from_file $keys(-key_file) $stage]
+  }
+  utl::error WMK 140 "Checking the $stage stage requires $option or -key_file."
 }

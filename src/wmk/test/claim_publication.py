@@ -195,9 +195,9 @@ def exercise(stage, directory):
     assert claims.read_bytes() != old
     assert not list(directory.glob(".wmk-claims-*"))
     result = (
-        watermark.verifyPlacement(str(claims))
+        watermark.verifyPlacement(key, str(claims))
         if stage == "place"
-        else watermark.verifyCts(str(claims))
+        else watermark.verifyCts(key, str(claims))
     )
     assert result.checked == count and result.held == count
     check_timing(design, slacks(design))

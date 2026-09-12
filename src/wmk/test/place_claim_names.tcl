@@ -50,6 +50,6 @@ $candidate rename $original_name
 check "supported names can still be embedded" {
   place_watermark -key_hex $key -claims_file $claims \
     -hpwl_eps_um 1 -pair_dist_um 3 -pairs_per_tile 64
-} 23
+} 24
 check_placement
 exit_summary

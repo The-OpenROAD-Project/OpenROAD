@@ -215,6 +215,10 @@ bool endpointSlacksWithin(sta::dbSta* sta,
                           const std::vector<EndpointSlack>& before,
                           float margin)
 {
+  // Sta::slack on a vertex brings required times up to date itself, but the
+  // comparison below is only meaningful against a complete pass, so ask for
+  // one explicitly rather than rely on that.
+  sta->findRequireds();
   return std::ranges::all_of(before, [&](const EndpointSlack& entry) {
     const float slack = sta->slack(entry.vertex,
                                    entry.transition->asRiseFallBoth(),

@@ -3,8 +3,12 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def gcd.def
 
+# The key wm_place_claims.csv was written with.
+set key 0011223344556677889900aabbccddeeff00112233445566778899aabbccddee
+
 check "valid evidence fails the strict threshold" {
-  verify_watermark -placement_claims wm_place_claims.csv -tau 0.9 -min_stages 1
+  verify_watermark -placement_claims wm_place_claims.csv -placement_key_hex $key \
+    -tau 0.9 -min_stages 1
 } 0
 
 set fh [open wm_place_claims.csv r]
@@ -18,7 +22,8 @@ set fh [open $damaged w]
 puts $fh [join $lines \n]
 close $fh
 set failed [catch {
-  tee -variable message [list verify_watermark -placement_claims $damaged -tau 0.9 -min_stages 1]
+  tee -variable message [list verify_watermark -placement_claims $damaged \
+    -placement_key_hex $key -tau 0.9 -min_stages 1]
 }]
 check "malformed evidence is refused" { set failed } 1
 check "the error identifies the damaged row" {

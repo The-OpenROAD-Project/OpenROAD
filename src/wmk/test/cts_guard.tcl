@@ -38,6 +38,8 @@ set committed [cts_watermark -key_hex $key -claims_file $claims \
   -skew_margin_ns 0]
 puts "committed $committed pairs"
 check "the pairs the guard turned away are still claimed" { set committed } 3
-check "and the claim does not hold" { expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75} } 0
+check "and the claim does not hold" {
+  expr { [wmk::verify_cts_watermark_cmd $key $claims] >= 0.75 }
+} 0
 
 exit_summary

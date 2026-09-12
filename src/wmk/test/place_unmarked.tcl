@@ -9,14 +9,17 @@
 # and the rate is measuring nothing: any key would score full marks on any
 # design, including one its holder had never touched.
 #
-# wm_place_marked.csv is what place.tcl commits.  Seven of its twenty pairs
-# were already in the keyed order and needed no swap; those are exactly the
-# seven that hold here.
+# wm_place_marked.csv is what place.tcl commits.  Eleven of its twenty-four
+# pairs were already in the keyed order and needed no swap; those are exactly
+# the eleven that hold here.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def gcd_placed.def
 
-check "an unmarked design does not carry the mark" \
-  { verify_watermark -placement_claims wm_place_marked.csv -min_stages 1 } 0
+set key 0011223344556677889900aabbccddeeff00112233445566778899aabbccddee
+check "an unmarked design does not carry the mark" {
+  verify_watermark -placement_claims wm_place_marked.csv -placement_key_hex $key \
+    -min_stages 1
+} 0
 
 exit_summary

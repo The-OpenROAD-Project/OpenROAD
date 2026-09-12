@@ -17,6 +17,20 @@ observer who knows the algorithm still cannot locate the marks. Verification
 needs no flow and no re-run: it reads a claim file, or for routing the key alone,
 against any loaded database.
 
+Every stage is verified with its key. A placement or clock-tree claim file
+names the marked objects and nothing more: which of each pair is the target
+and the value it was driven to are derived again from the stage key at
+verification, and a claim file that records anything else is refused. Without
+the key a claim file is a list of names that anyone could write to match any
+layout; with it, the target values are the key's and cannot be chosen after
+the fact. The routing stage recovers its marked set from the key alone.
+
+What the key does not establish is *when* the key and the claims existed.
+With the key, anyone could still choose which pairs to claim after seeing a
+layout, so the scheme assumes that the key (or a commitment to it) and the
+claim files were timestamped before the design was released. That sealing is
+outside this module (see Limitations).
+
 ## Commands
 
 ```{note}
@@ -42,7 +56,26 @@ writes the two public ones on their own, leaving `-file` as the only thing that
 has to be kept secret.
 
 The secret key is never logged.
-When using `-file`, the key is written with owner-only permissions. Existing private files with group or other permissions are rejected without modification. Private and public destinations must refer to different files, including through symbolic or hard links. Both outputs are validated and fully written to temporary files before either destination is replaced; each replacement is an atomic rename. If the system random source cannot be accessed, the command fails rather than falling back to a predictable source.
+When using `-file`, the key is written with owner-only permissions and left
+out of the returned dictionary, which then holds only `design_id` and
+`nonce_hex`: an interactive session echoes every command's result, and a key
+meant for a file should not also end up on the screen. The keyed commands read
+the file back through `-key_file`. Existing private files with group or other
+permissions are rejected without modification. Private and public destinations
+must refer to different files, including through symbolic or hard links. Both
+outputs are validated and fully written to temporary files before either
+destination is replaced; each replacement is an atomic rename. If the system
+random source cannot be accessed, the command fails rather than falling back to
+a predictable source.
+
+**Key handling.** A key given on the command line as `-key_hex` is visible to anything that
+records command lines: the interactive history file (`~/.openroad_history`),
+shell history when the command is passed through a shell, and process listings
+while the command runs. Prefer `-file` at generation and `-key_file` on every
+keyed command, and keep keyed commands in scripts rather than typing them at
+the prompt. The key file format is one `name value` pair per line, and a
+keyed command takes the stage key stored in it, or derives it from `key_hex`,
+`design_id` and `nonce_hex` when only those are present.
 
 ```tcl
 generate_watermark_key
@@ -58,7 +91,7 @@ generate_watermark_key
 | Switch Name | Description |
 | ----- | ----- |
 | `-design_id` | Identifier of the design version being marked (e.g., `jpeg_NG45_v1`). |
-| `-file` | Write the secret key, nonce and stage keys to this path, readable only by its owner. |
+| `-file` | Write the secret key, nonce and stage keys to this path, readable only by its owner, and return only the public parameters. |
 | `-key_hex` | Use this 64-character hex secret key instead of drawing one. |
 | `-nonce_hex` | Use the specified nonce instead of generating a random nonce. The nonce must be provided as an even-length hexadecimal string. Automatically generated nonces are 16 bytes (128 bits). |
 | `-public_file` | Write the design identifier and the nonce to this path. These are the public inputs to key derivation and carry no key material, so this file can be kept with the design's records and passed on. |
@@ -68,23 +101,26 @@ generate_watermark_key
 The `derive_watermark_key` command re-derives one stage key and returns it as a
 64-character hex string. Verification runs in a later process than embedding, so
 this recovers the keys that were used without any of them having been stored.
+The inputs are given explicitly or read from a key file.
 
 ```tcl
 derive_watermark_key
-    -design_id design_id
-    -key_hex key_hex
-    -nonce_hex nonce_hex
     -stage stage
+    [-design_id design_id]
+    [-key_file key_file]
+    [-key_hex key_hex]
+    [-nonce_hex nonce_hex]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-stage` | `placement`, `cts` or `routing`. |
 | `-design_id` | The identifier the keys were generated with. |
+| `-key_file` | A key file written by `generate_watermark_key -file`, in place of the three explicit inputs. |
 | `-key_hex` | The 64-character hex secret key. |
 | `-nonce_hex` | The nonce the keys were generated with. |
-| `-stage` | `placement`, `cts` or `routing`. |
 
 ### Place Watermark
 
@@ -101,10 +137,18 @@ whose cells then lost more than `-guard_degrade_ns` of slack is put back.
 After any rollback and legalization, parasitics are re-estimated and the final
 placement is checked against the original constrained endpoint setup and hold
 slacks in every analysis scene. If selective rollback cannot meet the budget,
-the entire original placement is restored. A requested guard without usable
+the entire original placement is restored, nothing is claimed, a header-only
+claim file is written and the command returns `0`: a design that carries none
+of the mark has no evidence to publish. A requested guard without usable
 constraints and signal wire RC produces a warning; Liberty alone does not
 activate it. With timing available, the slack screen excludes unconstrained
-candidate cells.
+candidate cells, and a marked cell that had no constrained slack is judged by
+the design-wide endpoint check alone.
+
+Only ordinary standard cells (LEF class `CORE`) that are placed, not fixed and
+not marked dont-touch are eligible. Fillers, taps, endcaps, antenna cells and
+tie cells are not: the flow may delete or re-create them, and a claim on such a
+cell is evidence that evaporates.
 
 Every pair chosen is claimed, including pairs restored by the timing guard and
 any whose mark did not survive legalization. Removing failed pairs after
@@ -114,11 +158,12 @@ case it would be 1.0 on every design.
 ```tcl
 place_watermark
     -claims_file file
-    -key_hex key_hex
     [-grid_nx n]
     [-grid_ny n]
     [-guard_degrade_ns ns]
     [-hpwl_eps_um eps]
+    [-key_file key_file]
+    [-key_hex key_hex]
     [-max_disp_um disp]
     [-min_pairs_total n]
     [-pair_dist_um dist]
@@ -131,6 +176,7 @@ place_watermark
 | Switch Name | Description |
 | ----- | ----- |
 | `-claims_file` | Where to write the claims. |
+| `-key_file` | Key file holding the placement key. One of `-key_file` and `-key_hex` is required. |
 | `-key_hex` | 64-character hex placement key. |
 | `-grid_nx`, `-grid_ny` | Tiles across and down the core, so marks are spread rather than clustered. Both default to `8`. |
 | `-guard_degrade_ns` | Slack a pair may cost before it is put back. Defaults to `0.02`. `0` disables the check. |
@@ -145,19 +191,25 @@ place_watermark
 
 The `cts_watermark` command drives a keyed subset of leaf clock buffers (LCBs) to a
 keyed sequential-fanout parity and writes the claimed pairs to `-claims_file`.
-It returns the number of pairs claimed. Run it after clock tree synthesis on a
-flat design, linked without `-hier`. Hierarchical CTS embedding is rejected before
-any edits because moving a sink also requires updating module ports and nets.
-CTS verification remains available for hierarchical designs.
+It returns the number of pairs claimed. Run it after clock tree synthesis and
+before routing, on a flat design linked without `-hier`. Hierarchical CTS
+embedding is rejected before any edits because moving a sink also requires
+updating module ports and nets, and a design whose clock nets already carry
+wires or guides is rejected because reconnecting a pin would leave that
+geometry describing the old connectivity. CTS verification remains available
+for hierarchical and routed designs.
 
 LCBs are marked in pairs. Parity is changed by moving one flip-flop's clock
-pin from one LCB of the pair to the other. A move is undone if it
-increases clock latency spread or degrades a constrained endpoint's setup/hold
-slack by more than `-skew_margin_ns`, violates either LCB's max-fanout limit,
-or leaves either LCB with insufficient slew or capacitance headroom.
-Protected source/destination nets and fixed or protected sink instances are not
-modified. A connection, extraction or timing error restores the trial sink's
-original net and refreshes both nets' parasitics before propagating the error.
+pin from one LCB of the pair to the other; a buffer only lends a sink when it
+drives at least two, so no buffer is left driving nothing. A move is undone if
+it increases clock latency spread by more than `-skew_margin_ns`, degrades a
+constrained endpoint's setup/hold slack by more than `-slack_margin_ns`,
+violates either LCB's max-fanout limit, or leaves either LCB with insufficient
+slew or capacitance headroom. Protected source/destination nets and fixed or
+protected sink instances are not modified. A connection, extraction or timing
+error restores the trial sink's original net and refreshes both nets'
+parasitics before propagating the error; if any part of that rollback fails,
+the command reports the modified connectivity as its own error.
 
 Pairs must have identical, nonempty clock sets in the active timing modes,
 including mode identity, and provably equivalent clock logic. The command traces only unconditional Liberty
@@ -174,8 +226,9 @@ does not reset after each accepted move. This conservative latency spread is
 different from the path-based `report_clock_skew` metric, which considers data
 path relationships, uncertainty and common-path pessimism removal. A separate
 STA guard checks every originally constrained endpoint's setup and hold slack,
-for each scene and transition, against its fixed baseline with the same budget.
-This catches path degradation even when the overall latency spread is unchanged.
+for each scene and transition, against its fixed baseline with the
+`-slack_margin_ns` budget. This catches path degradation even when the overall
+latency spread is unchanged.
 
 Read Liberty and constraints, set signal and clock wire RC, estimate parasitics,
 and propagate clocks before embedding. A pair without measurable clock timing is left unchanged and the
@@ -184,11 +237,13 @@ command reports the unavailable guard. It remains a claim if selected.
 ```tcl
 cts_watermark
     -claims_file file
-    -key_hex key_hex
     [-cap_headroom_frac frac]
+    [-key_file key_file]
+    [-key_hex key_hex]
     [-num_pairs n]
     [-sibling_dist_um dist]
     [-skew_margin_ns margin]
+    [-slack_margin_ns margin]
     [-slew_headroom_frac frac]
 ```
 
@@ -197,11 +252,13 @@ cts_watermark
 | Switch Name | Description |
 | ----- | ----- |
 | `-claims_file` | Where to write the claims. |
-| `-key_hex` | 64-character hex clock-tree key. |
 | `-cap_headroom_frac` | Fraction of the effective capacitance limit left unused. Defaults to `0.20`. |
+| `-key_file` | Key file holding the clock-tree key. One of `-key_file` and `-key_hex` is required. |
+| `-key_hex` | 64-character hex clock-tree key. |
 | `-num_pairs` | Most pairs to mark, one bit each. Defaults to `32`. |
 | `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns. Defaults to `20.0`. |
-| `-skew_margin_ns` | Maximum clock latency-spread increase and endpoint slack degradation, in ns. Defaults to `0.020`. `0` permits no degradation. |
+| `-skew_margin_ns` | Maximum clock latency-spread increase, in ns. Defaults to `0.020`. `0` permits no increase. |
+| `-slack_margin_ns` | Maximum setup or hold slack degradation at a constrained endpoint, in ns. Defaults to `0.020`. `0` permits no degradation. |
 | `-slew_headroom_frac` | Fraction of the effective slew limit left unused. Defaults to `0.20`. |
 
 The slew reserve is checked for each scene and rise/fall edge; capacitance
@@ -213,8 +270,8 @@ additional fractional fanout reserve is required. A rejected move remains in
 the claims denominator, so fanout limits can reduce the attainable match rate.
 
 Placement and CTS distances and timing budgets must be finite and nonnegative.
-Distances must fit in `2147483647` database units; timing budgets must remain
-below STA's unconstrained range. Grid dimensions must be positive integers;
+Distances must fit in `2147483647` database units; timing budgets must not
+exceed one second. Grid dimensions must be positive integers;
 pair counts must be nonnegative integers. Zero requested pairs produces no
 marks. Invalid options are rejected before changing the design or claims file,
 including through the Python API.
@@ -238,49 +295,24 @@ calls are idempotent. Call it before `detailed_route`.
 
 ```tcl
 set_routing_watermark
-    -key_hex key_hex
     [-fraction fraction]
+    [-key_file key_file]
+    [-key_hex key_hex]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-key_hex` | 64-character hex routing key. |
 | `-fraction` | Finite fraction in `(0, 1]` of eligible signal nets to tag. Defaults to `0.05`. |
+| `-key_file` | Key file holding the routing key. One of `-key_file` and `-key_hex` is required. |
+| `-key_hex` | 64-character hex routing key. |
 
-### Set Routing Watermark Strength
-
-The `set_routing_watermark_strength` command sets the multiplier applied to the
-non-preferred-direction grid cost when the detailed router routes a tagged net.
-A value of `1` tags nets without biasing them, which is the control case.
-
-This is router configuration and does not persist in the database, so it must be
-set in the same process that runs `detailed_route`.
-
-```tcl
-set_routing_watermark_strength
-    strength
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `strength` | Finite cost multiplier from 0 to 4294967040 (inclusive). |
-
-The upper limit is the largest stored float below the router's unsigned cost
-limit. Scaled edge costs and accumulated path/queue costs saturate at the
-maximum router cost (4294967295) instead of wrapping. Very large strengths can make distinct expensive paths
-indistinguishable; the default remains 100.
-
-### Get Routing Watermark Strength
-
-The `get_routing_watermark_strength` command returns the current multiplier.
-
-```tcl
-get_routing_watermark_strength
-```
+The cost the detailed router applies to wrong-way wiring on tagged nets is
+router configuration: see `set_routing_watermark_strength` and
+`get_routing_watermark_strength` in the [detailed router](../drt/README.md)
+documentation. The default strength is `100`; `1` tags nets without biasing
+them, which is the control case.
 
 ### Report Routing Watermark
 
@@ -313,9 +345,17 @@ clear_routing_watermark
 
 The `verify_watermark` command checks the loaded design and returns `1` when it
 carries the watermark. Ownership is granted when at least `-min_stages` of the
-checked stages pass.
+checked stages pass. Every stage checked needs its stage key, given as
+`-placement_key_hex`, `-cts_key_hex` and `-routing_key_hex` or read from a key
+file with `-key_file`.
 
-Placement and clock-tree marks are read from their claim files and judged by the
+Placement and clock-tree marks are read from their claim files. For each
+claim the verifier derives the target from the key -- the keyed bit of a
+placement pair, or the target buffer and parity of a clock-tree pair -- and
+refuses the file with an error if any claim recorded something else, or if two
+clock-tree claims derive the same target buffer. A file the key does not
+reproduce was not written by an embedder holding the key, and scoring it would
+score claims nobody committed to. The claims that remain are judged by the
 extraction rate against `-tau` **and** a count-dependent evidence threshold
 `-claim_alpha`. With `n` distinct checkable claims and `h` matches, the latter
 uses the inclusive binomial tail `P[Binomial(n, 0.5) >= h]`. A stage counts as
@@ -356,8 +396,12 @@ design.
 verify_watermark
     [-claim_alpha alpha]
     [-cts_claims file]
+    [-cts_key_hex key_hex]
+    [-key_file key_file]
     [-min_stages n]
     [-placement_claims file]
+    [-placement_key_hex key_hex]
+    [-routing]
     [-routing_alpha alpha]
     [-routing_fraction fraction]
     [-routing_key_hex key_hex]
@@ -370,17 +414,21 @@ verify_watermark
 | Switch Name | Description |
 | ----- | ----- |
 | `-claim_alpha` | Largest binomial chance probability for a placement or CTS stage. Defaults to `1e-4`; must be in `(0, 1)`. |
-| `-cts_claims` | Claim file from the clock-tree watermark. |
+| `-cts_claims` | Claim file from the clock-tree watermark. Checks the clock-tree stage. |
+| `-cts_key_hex` | 64-character hex clock-tree key. |
+| `-key_file` | Key file written by `generate_watermark_key -file`; supplies any stage key not given explicitly. |
 | `-min_stages` | Stages that must pass. Defaults to `2`. |
-| `-placement_claims` | Claim file from the placement watermark. |
+| `-placement_claims` | Claim file from the placement watermark. Checks the placement stage. |
+| `-placement_key_hex` | 64-character hex placement key. |
+| `-routing` | Check the routing stage with the routing key from `-key_file`. |
 | `-routing_alpha` | Largest p-value the routing stage may show and still pass. Defaults to `1e-4`. |
 | `-routing_fraction` | The fraction the routing mark was embedded with. Defaults to `0.05`, matching `set_routing_watermark`. Supply the same fraction when embedding with a nondefault `-fraction`. |
 | `-routing_key_hex` | 64-character hex routing key. Checks the routing stage. |
 | `-routing_permutations` | Draws behind the raw sampled p-value, whose minimum is 1/(n+1) before the two-test adjustment. Defaults to `100000`. |
 | `-tau` | Extraction rate a placement or clock-tree stage must reach. Defaults to `0.75`. |
 
-At least one of `-placement_claims`, `-cts_claims` or `-routing_key_hex` is
-required.
+At least one of `-placement_claims`, `-cts_claims`, `-routing_key_hex` or
+`-routing` is required.
 
 The routing stage also reports a closed-form bound on the same tail, exact when
 the marked nets carry no wrong-way metal. That is the case a working watermark
@@ -401,20 +449,27 @@ the fractions makes the result independent of net iteration order.
 
 #### Claim file format
 
-A claim file records what an embedder committed to. It is comma-separated with a
-header row, and columns are matched by name, so a producer may emit them in any
-order and add columns of its own. Missing required columns, empty or duplicate
-header names, malformed row widths, and invalid fields in checkable claims are
-errors; verification never scores a partially parsed file. The error identifies
-the file and line. `skipped_reason` is required even when every value is empty.
-Checkable placement pairs must name two different instances. Repeated unordered
-placement pairs (including reversed names) and repeated CTS target buffers are
-errors, regardless of target bit, pair ID or other metadata. Skipped candidate
-records do not contribute evidence or consume a scored carrier.
-Values are not quoted. Names must be nonempty, contain no commas, line breaks
-or NULs, and have no leading or trailing spaces or tabs. Both embedders validate
-all eligible instance names before selecting marks or changing the design and
-fail explicitly if the format cannot represent a name.
+A claim file records which objects an embedder marked. It is comma-separated
+with a header row, and columns are matched by name, so a producer may emit them
+in any order and add columns of its own. Missing required columns, empty or
+duplicate header names, malformed row widths, and invalid fields in checkable
+claims are errors; verification never scores a partially parsed file. The error
+identifies the file and line. `skipped_reason` is required even when every
+value is empty. A checkable claim must name two different instances, and a
+repeated unordered pair (including reversed names) is an error regardless of
+target bit or other metadata. Skipped candidate records do not contribute
+evidence or consume a scored carrier. Values are not quoted. Names must be
+nonempty, contain no commas, line breaks or NULs, and have no leading or
+trailing spaces or tabs. Both embedders validate all eligible instance names
+before selecting marks or changing the design and fail explicitly if the format
+cannot represent a name. A line longer than 65536 bytes, more than 64 columns
+or more than 1048576 rows is refused before anything is read into memory.
+
+The target value recorded in a claim is the owner's record of what the key
+called for, and verification checks it against the key rather than trusting
+it: the placement bit is `HMAC-SHA256(key, "bit", first, second)` for the two
+names in lexicographic order, and the clock-tree target and parity come from
+`HMAC-SHA256(key, "pair", first + "+" + second, first, second)`.
 
 Each row represents either a watermark claim or a candidate that was skipped.
 A row is verified when `skipped_reason` is empty. The special value
@@ -437,28 +492,34 @@ the two sits further left, comparing instance bounding boxes.
 | ----- | ----- |
 | `kind` | `pair`; other kinds are ignored. |
 | `A_name`, `B_name` | Instance names of the marked pair. |
-| `target_bit` | `0` if A was driven left of B, `1` otherwise. |
+| `target_bit` | `0` if A was driven left of B, `1` otherwise. Must be the bit the key derives for the pair. |
 | `skipped_reason` | Empty or `already_satisfied` to be checked. |
 
 ```text
 kind,id,A_name,B_name,target_bit,skipped_reason
-pair,_101770_|_101842_,_101842_,_101770_,0,already_satisfied
-pair,_070839_|_070816_,_070839_,_070816_,1,
+pair,_101770_|_101842_,_101770_,_101842_,0,already_satisfied
+pair,_070816_|_070839_,_070816_,_070839_,1,
 ```
 
-**CTS claims** describe leaf clock buffers. The bit is the parity of the buffer's
-sequential fanout.
+The embedder writes the two names in lexicographic order, which is the order
+the key derives the bit for; a producer that writes them the other way round
+records the bit relative to its own order, and the verifier accounts for that.
+
+**CTS claims** describe pairs of leaf clock buffers. The bit is the parity of
+the target buffer's sequential fanout.
 
 | Column | Meaning |
 | ----- | ----- |
-| `target_lcb` | Instance name of the marked leaf clock buffer. |
-| `target_bit` | Parity the key called for, `0` or `1`. |
+| `target_lcb` | Instance name of the marked leaf clock buffer. Must be the buffer the key selects from the pair. |
+| `other_lcb` | The other buffer of the pair. |
+| `target_bit` | Parity the key called for, `0` or `1`. Must be the parity the key derives. |
+| `pair_key` | The pair's identifier, `first+second`. Recorded for the owner; not read by the verifier. |
 | `final_bit` | Parity the embedder achieved. Recorded for the owner; not read by the verifier. |
 | `skipped_reason` | As above. |
 
 ```text
-pair_idx,target_lcb,other_lcb,target_bit,final_bit,skipped_reason
-0,clkbuf_leaf_314_clk,clkbuf_leaf_313_clk,1,1,
+pair_idx,pair_key,target_lcb,other_lcb,target_bit,final_bit,skipped_reason
+0,clkbuf_leaf_313_clk+clkbuf_leaf_314_clk,clkbuf_leaf_314_clk,clkbuf_leaf_313_clk,1,1,
 ```
 
 A claim naming an instance that is not in the design counts against the
@@ -466,18 +527,25 @@ extraction rate rather than aborting the check.
 
 ## Example scripts
 
+Generate the keys once, keeping the secret in a file:
+
+```
+generate_watermark_key -design_id jpeg_NG45_v1 -file wm.key \
+                       -public_file wm.public
+```
+
 Mark all three stages:
 
-```tcl
+```
 detailed_placement
-place_watermark -key_hex $place_key -claims_file wm_place.csv
+place_watermark -key_file wm.key -claims_file wm_place.csv
 
 clock_tree_synthesis -buf_list $buffers -root_buf $root_buf
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
-cts_watermark -key_hex $cts_key -claims_file wm_cts.csv
+cts_watermark -key_file wm.key -claims_file wm_cts.csv
 
-set_routing_watermark -key_hex $route_key -fraction 0.02
+set_routing_watermark -key_file wm.key -fraction 0.02
 set_routing_watermark_strength 100
 global_route
 detailed_route
@@ -485,12 +553,12 @@ detailed_route
 
 Check a suspect layout, which need not be one this process built:
 
-```tcl
+```
 read_db suspect.odb
-verify_watermark -placement_claims wm_place.csv \
+verify_watermark -key_file wm.key \
+                 -placement_claims wm_place.csv \
                  -cts_claims wm_cts.csv \
-                 -routing_key_hex $route_key \
-                 -routing_fraction 0.02
+                 -routing -routing_fraction 0.02
 ```
 
 ## Regression tests
@@ -515,8 +583,12 @@ Simply run the following script:
     yield few placement pairs or none, and a shallow clock tree too few leaf
     buffers to pair.
 -   Certificate sealing and the timestamped key commitment are not part of this
-    module. Their guarantee comes from an independent timestamping authority
-    rather than from anything the tool can check.
+    module. Verification proves that whoever holds the key also holds claims
+    the key derives; it cannot tell claims chosen before a design was released
+    from claims a key holder picked to fit it afterwards. That the key and the
+    claim files existed before release is what sealing them establishes, and
+    its guarantee comes from an independent timestamping authority rather than
+    from anything the tool can check.
 
 ## Using the Python interface to wmk
 
@@ -531,7 +603,7 @@ watermark = design.getWatermark()
 options = wmk.PlacementOptions()
 watermark.placementWatermark(key_hex, options, "wm_place.csv")
 watermark.selectNetsKeyed(key_hex, 0.02)
-result = watermark.verifyPlacement("wm_place.csv")
+result = watermark.verifyPlacement(key_hex, "wm_place.csv")
 ```
 
 A key is passed as the 64-character hex string or as 32 raw bytes. Anything else

@@ -44,9 +44,7 @@ std::array<std::uint8_t, 32> deriveStageKey(
 // Is this one of the three stages a key can be derived for?
 bool isWatermarkStage(const std::string& stage);
 
-// Lowercase hex, and back.  ``fromHex`` returns false on odd length or any
-// non-hex character rather than silently accepting a shorter key.
+// Lowercase hex.  The inverse is hexToBytes in HmacSha256.h.
 std::string toHex(const std::uint8_t* data, std::size_t len);
-bool fromHex(const std::string& hex, std::vector<std::uint8_t>& out);
 
 }  // namespace wmk

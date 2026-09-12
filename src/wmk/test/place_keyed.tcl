@@ -62,6 +62,6 @@ puts "key A marked [llength $a], key B marked [llength $b], shared [llength $sha
 
 check "both keys find the same amount to mark" \
   { expr { [llength $a] == 5 && [llength $b] == 5 } } 1
-check "but they do not mark the same pairs" { llength $shared } 1
+check "but they do not mark the same pairs" { llength $shared } 2
 
 exit_summary

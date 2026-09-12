@@ -10,8 +10,9 @@
 // screened on slack and wirelength before being committed and re-checked after.
 //
 // A pair carries one bit: 0 when the first name sorts left of the second, 1
-// otherwise.  The bit is derived from the key, so an observer cannot tell a
-// marked ordering from an arbitrary one without it.
+// otherwise.  The bit is derived from the key and the two names, so an
+// observer cannot tell a marked ordering from an arbitrary one without it, and
+// a verifier holding the key can derive it again from the names alone.
 //
 // Which cells get paired is keyed too, and that is the part an observer cannot
 // reconstruct.  Candidates are enumerated and screened by rules anyone can
@@ -33,6 +34,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <map>
 #include <optional>
 #include <ostream>
@@ -44,7 +46,7 @@
 #include <vector>
 
 #include "ClaimFile.h"
-#include "HmacSha256.h"
+#include "Marks.h"
 #include "Options.h"
 #include "Timing.h"
 #include "dpl/Opendp.h"
@@ -69,15 +71,16 @@ namespace {
 // the clock network, which is placed to meet skew rather than to be shuffled.
 bool isEligibleInst(dbInst* inst, int row_height)
 {
-  if (!inst->isPlaced() || inst->isFixed()) {
+  if (!inst->isPlaced() || inst->isFixed() || inst->isDoNotTouch()) {
     return false;
   }
   odb::dbMaster* master = inst->getMaster();
-  // isCoreAutoPlaceable rules out pads, covers, rings and corner endcaps in a
-  // single call, and rules out more than naming them one by one did.  It is
-  // true for macros and for ordinary endcaps though, and neither of those may
-  // be swapped, so the block test stays alongside it.
-  if (!master->isCoreAutoPlaceable() || master->isBlock()) {
+  // Only ordinary standard cells carry a mark.  Fillers are inserted and
+  // removed by the flow, taps, endcaps and antenna cells are placed by rules
+  // rather than by the placer, and tie cells and feedthroughs are not what a
+  // placement watermark should rest on: a claim on a cell the flow may
+  // legitimately delete or re-create is evidence that evaporates.
+  if (master->getType() != odb::dbMasterType::CORE) {
     return false;
   }
   if (std::cmp_not_equal(master->getHeight(), row_height)) {
@@ -92,9 +95,9 @@ bool isEligibleInst(dbInst* inst, int row_height)
   return true;
 }
 
-// Half-perimeter wirelength of every net the instance touches.  Used to reject
-// swaps that would lengthen wires: the watermark should not be visible as a
-// wirelength anomaly, and should not cost routability.
+// Half-perimeter wirelength of one net.  Used to reject swaps that would
+// lengthen wires: the watermark should not be visible as a wirelength anomaly,
+// and should not cost routability.
 std::int64_t netHpwl(dbNet* net)
 {
   odb::Rect bbox;
@@ -125,28 +128,54 @@ std::int64_t netHpwl(dbNet* net)
 // describes the placement it was taken from.
 using HpwlCache = std::unordered_map<dbNet*, std::int64_t>;
 
-std::int64_t instHpwl(dbInst* inst, HpwlCache* cache)
+// The nets a swap can change: every signal net on either cell, each once.  A
+// net shared by the two cells would otherwise be counted twice, halving the
+// wirelength budget for exactly the directly connected pairs that same-row
+// neighbours tend to be.
+std::vector<dbNet*> swapNets(dbInst* a, dbInst* b)
 {
-  std::int64_t total = 0;
-  for (dbITerm* iterm : inst->getITerms()) {
-    dbNet* net = iterm->getNet();
-    if (net == nullptr || net->isSpecial()) {
-      continue;
-    }
-    if (cache != nullptr) {
-      auto it = cache->find(net);
-      if (it != cache->end()) {
-        total += it->second;
+  std::vector<dbNet*> nets;
+  for (dbInst* inst : {a, b}) {
+    for (dbITerm* iterm : inst->getITerms()) {
+      dbNet* net = iterm->getNet();
+      if (net == nullptr || net->isSpecial()) {
         continue;
       }
+      if (std::ranges::find(nets, net) == nets.end()) {
+        nets.push_back(net);
+      }
     }
-    const std::int64_t wl = netHpwl(net);
-    if (cache != nullptr) {
-      cache->emplace(net, wl);
-    }
-    total += wl;
   }
-  return total;
+  return nets;
+}
+
+// What swapping the two cells would cost in half-perimeter wirelength.  The
+// swap is symmetric, so this does not depend on which way round the pair ends
+// up, and the key is not consulted.
+std::int64_t hpwlDeltaOfSwap(dbInst* a, dbInst* b, HpwlCache& cache)
+{
+  const std::vector<dbNet*> nets = swapNets(a, b);
+  // The design is untouched here, so the cache answers.  After the cells move
+  // it cannot, and the second measurement is taken fresh.
+  std::int64_t before = 0;
+  for (dbNet* net : nets) {
+    auto it = cache.find(net);
+    if (it == cache.end()) {
+      it = cache.emplace(net, netHpwl(net)).first;
+    }
+    before += it->second;
+  }
+  const odb::Point a_loc = a->getLocation();
+  const odb::Point b_loc = b->getLocation();
+  a->setLocation(b_loc.x(), a_loc.y());
+  b->setLocation(a_loc.x(), b_loc.y());
+  std::int64_t after = 0;
+  for (dbNet* net : nets) {
+    after += netHpwl(net);
+  }
+  a->setLocation(a_loc.x(), a_loc.y());
+  b->setLocation(b_loc.x(), b_loc.y());
+  return std::llabs(after - before);
 }
 
 // Detailed placement can move cells outside the selected pairs. Retain the
@@ -186,14 +215,14 @@ void legalizePlacement(dpl::Opendp* opendp, dbBlock* block, int max_disp_um)
   if (opendp == nullptr) {
     return;
   }
+  // The displacement bound is given to the legalizer in sites across and rows
+  // down.  A swap leaves every row legal by construction, so this is a bound
+  // on what the legalizer may do to everything else.
   odb::dbSite* site = (*block->getRows().begin())->getSite();
   const int max_disp = max_disp_um * block->getDbUnitsPerMicron();
   const int dx = site->getWidth() > 0 ? max_disp / site->getWidth() : 0;
   const int dy = site->getHeight() > 0 ? max_disp / site->getHeight() : 0;
-  opendp->detailedPlacement(std::max(1, dx),
-                            std::max(1, dy),
-                            "",
-                            /* disallow_one_site_gaps */ true);
+  opendp->detailedPlacement(std::max(1, dx), std::max(1, dy), "");
 }
 
 // How far along the row to look for a partner, in candidates.  The distance
@@ -204,41 +233,8 @@ constexpr size_t kMaxNeighbours = 8;
 // mark.  Wider search, and the caller doubles the wirelength budget too.
 constexpr size_t kRelaxedNeighbours = 24;
 
-// The tile a candidate sits in, as the PRF sees it: two big-endian int32.
-// Eight fixed-width bytes, not text, so it is typed as bytes; bytesPart turns
-// it into a hashed part at the call site, and the bytes fed to the PRF are
-// unchanged from when this returned a string.
-std::array<std::uint8_t, 8> tileBytes(int tx, int ty)
-{
-  std::array<std::uint8_t, 8> out{};
-  for (int k = 0; k < 4; ++k) {
-    out[k] = static_cast<std::uint8_t>((tx >> (24 - 8 * k)) & 0xff);
-    out[4 + k] = static_cast<std::uint8_t>((ty >> (24 - 8 * k)) & 0xff);
-  }
-  return out;
-}
-
-// What swapping the two cells would cost in half-perimeter wirelength.  The
-// swap is symmetric, so this does not depend on which way round the pair ends
-// up, and the key is not consulted.
-std::int64_t hpwlDeltaOfSwap(dbInst* a, dbInst* b, HpwlCache* cache)
-{
-  // The design is untouched here, so the cache answers.  After the cells move
-  // it cannot, and the second measurement is taken fresh.
-  const std::int64_t before = instHpwl(a, cache) + instHpwl(b, cache);
-  const odb::Point a_loc = a->getLocation();
-  const odb::Point b_loc = b->getLocation();
-  a->setLocation(b_loc.x(), a_loc.y());
-  b->setLocation(a_loc.x(), b_loc.y());
-  const std::int64_t after = instHpwl(a, nullptr) + instHpwl(b, nullptr);
-  a->setLocation(a_loc.x(), a_loc.y());
-  b->setLocation(b_loc.x(), b_loc.y());
-  return std::llabs(after - before);
-}
-
 // Write the claim file verify_watermark reads.  The column set is the one
-// documented in the module README; a producer is free to add columns, so the
-// extra bookkeeping the Python embedder emits stays compatible.
+// documented in the module README; a producer is free to add columns.
 void writePlacementClaims(std::ostream& out,
                           const std::vector<PlacementClaim>& claims)
 {
@@ -331,9 +327,18 @@ class Watermark::PlacementEmbedding
     dbInst* a;
     dbInst* b;
     int tx, ty;
-    std::string first, second;
+    OrderedPair pair;
     std::array<std::uint8_t, 32> sort_key;
   };
+
+  // Does the cell keep enough slack to be moved at all?  Applied once per
+  // cell, before pairing, so the count is of cells and every cell is read
+  // once.
+  bool passesSlackScreen(dbInst* inst) const
+  {
+    const auto slack = watermark_.worstSlack(inst);
+    return slack && *slack >= opts_.slack_threshold_ns * 1e-9;
+  }
 
   void collectBuckets()
   {
@@ -354,6 +359,10 @@ class Watermark::PlacementEmbedding
       // Finish name validation before enumeration tries any placement swaps.
       watermark_.checkClaimName(inst);
       ++n_eligible_;
+      if (screen_slack_ && !passesSlackScreen(inst)) {
+        ++rejected_slack_;
+        continue;
+      }
       odb::dbBox* bbox = inst->getBBox();
       const int tx = std::min(
           nx - 1, std::max(0, (bbox->xMin() - core.xMin()) / tile_w));
@@ -388,15 +397,6 @@ class Watermark::PlacementEmbedding
       }
       for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
         dbInst* a = bucket.insts[i];
-        const auto a_slack
-            = screen_slack_ ? watermark_.worstSlack(a) : std::nullopt;
-        if (screen_slack_
-            && (!a_slack || *a_slack < opts_.slack_threshold_ns * 1e-9)) {
-          if (counting) {
-            ++rejected_slack_;
-          }
-          continue;
-        }
         const int ax = a->getBBox()->xMin();
         const size_t last
             = std::min(bucket.insts.size(), i + 1 + max_neighbours);
@@ -405,36 +405,22 @@ class Watermark::PlacementEmbedding
           if (cand->getBBox()->xMin() - ax > pair_dist_) {
             break;
           }
-          const auto cand_slack
-              = screen_slack_ ? watermark_.worstSlack(cand) : std::nullopt;
-          if (screen_slack_
-              && (!cand_slack
-                  || *cand_slack < opts_.slack_threshold_ns * 1e-9)) {
-            continue;
-          }
           if (counting) {
             ++n_eligible_pairs_;
           }
-          if (hpwlDeltaOfSwap(a, cand, &hpwl_cache_) > hpwl_eps) {
+          if (hpwlDeltaOfSwap(a, cand, hpwl_cache_) > hpwl_eps) {
             if (counting) {
               ++rejected_hpwl_;
             }
             continue;
           }
-          const std::string name_a = a->getName();
-          const std::string name_b = cand->getName();
           Candidate c;
           c.a = a;
           c.b = cand;
           c.tx = bucket.tx;
           c.ty = bucket.ty;
-          c.first = std::min(name_a, name_b);
-          c.second = std::max(name_a, name_b);
-          c.sort_key = hmac_digest(key_,
-                                   {"pair_sort",
-                                    bytesPart(tileBytes(bucket.tx, bucket.ty)),
-                                    c.first,
-                                    c.second});
+          c.pair = orderPair(a->getName(), cand->getName());
+          c.sort_key = placementSortKey(key_, bucket.tx, bucket.ty, c.pair);
           out.push_back(std::move(c));
         }
       }
@@ -445,7 +431,8 @@ class Watermark::PlacementEmbedding
       if (x.sort_key != y.sort_key) {
         return x.sort_key < y.sort_key;
       }
-      return std::tie(x.first, x.second) < std::tie(y.first, y.second);
+      return std::tie(x.pair.first, x.pair.second)
+             < std::tie(y.pair.first, y.pair.second);
     });
     return out;
   }
@@ -477,15 +464,13 @@ class Watermark::PlacementEmbedding
     // observed order is read before anything moves.
     for (const Candidate& c : selected_) {
       const bool a_is_left = c.a->getBBox()->xMin() < c.b->getBBox()->xMin();
-      const bool a_is_first = c.a->getName() == c.first;
+      const bool a_is_first = c.a->getName() == c.pair.first;
       const int observed = (a_is_left == a_is_first) ? 0 : 1;
-      const std::array<std::uint8_t, 32> d = hmac_digest(
-          key_, {"bit", bytesPart(tileBytes(c.tx, c.ty)), c.first, c.second});
-      const int target = d[0] & 1;
+      const int target = placementTargetBit(key_, c.pair);
 
       PlacementClaim claim;
-      claim.a_name = c.first;
-      claim.b_name = c.second;
+      claim.a_name = c.pair.first;
+      claim.b_name = c.pair.second;
       claim.target_bit = target;
       claim.already_satisfied = observed == target;
 
@@ -496,14 +481,14 @@ class Watermark::PlacementEmbedding
       edit.b_loc = c.b->getLocation();
       edit.a_slack = watermark_.worstSlack(c.a);
       edit.b_slack = watermark_.worstSlack(c.b);
+      edit.moved = observed != target;
       edits.push_back(edit);
 
       claims.push_back(claim);
     }
     // Take every slack baseline before changing any placement.
-    for (size_t i = 0; i < edits.size(); ++i) {
-      const PlacementEdit& edit = edits[i];
-      if (!claims[i].already_satisfied) {
+    for (const PlacementEdit& edit : edits) {
+      if (edit.moved) {
         edit.a->setLocation(edit.b_loc.x(), edit.a_loc.y());
         edit.b->setLocation(edit.a_loc.x(), edit.b_loc.y());
       }
@@ -542,8 +527,7 @@ class Watermark::PlacementGuard
       : watermark_(watermark),
         block_(block),
         opts_(opts),
-        degrade_(static_cast<float>(opts.guard_degrade_ns * 1e-9)),
-        floor_(static_cast<float>(opts.slack_threshold_ns * 1e-9) - degrade_)
+        degrade_(static_cast<float>(opts.guard_degrade_ns * 1e-9))
   {
     const bool guard_requested
         = opts_.post_guard && opts_.guard_degrade_ns > 0.0;
@@ -573,12 +557,22 @@ class Watermark::PlacementGuard
     refresh();
   }
 
-  void restore()
+  // Put the whole original placement back.  Returns false if its parasitics
+  // could not be re-estimated afterwards, in which case the placement is
+  // restored but the timing data is stale.
+  bool restore() noexcept
   {
     restorePlacement(placement_before_);
-    refresh();
+    try {
+      refresh();
+    } catch (...) {
+      return false;
+    }
+    return true;
   }
 
+  // Undo the marked pairs that cost more than the budget, and report how many.
+  // If the legalized design still cannot meet the budget, undo everything.
   int check(const std::vector<PlacementEdit>& edits)
   {
     if (!can_measure_) {
@@ -586,10 +580,12 @@ class Watermark::PlacementGuard
     }
     // Every timing measurement describes one complete, legalized placement.
     // Collect failed edits before restoring any of them, then refresh RC again.
+    // A pair that was already in the keyed order was never moved, so there is
+    // nothing of it to undo.
     int reverted = 0;
     std::vector<bool> rejected(edits.size());
     for (size_t i = 0; i < edits.size(); ++i) {
-      rejected[i] = !pairTimingOk(edits[i]);
+      rejected[i] = edits[i].moved && !pairTimingOk(edits[i]);
     }
     for (size_t i = 0; i < edits.size(); ++i) {
       if (rejected[i]) {
@@ -605,32 +601,47 @@ class Watermark::PlacementGuard
     bool final_ok
         = endpointSlacksWithin(watermark_.sta_, timing_before_, degrade_);
     for (size_t i = 0; i < edits.size(); ++i) {
-      if (!rejected[i] && !pairTimingOk(edits[i])) {
+      if (!rejected[i] && edits[i].moved && !pairTimingOk(edits[i])) {
         final_ok = false;
       }
     }
     if (!final_ok) {
       // Global legalization may have changed other cells. Restore the whole
       // original placement instead of returning a state that failed timing.
-      restore();
+      if (!restore()) {
+        watermark_.logger_->warn(
+            utl::WMK,
+            141,
+            "The original placement was restored but its parasitics could "
+            "not be re-estimated; run estimate_parasitics before trusting "
+            "timing.");
+      }
+      restored_all_ = true;
       reverted = static_cast<int>(edits.size());
-      watermark_.logger_->info(
-          utl::WMK,
-          110,
-          "Final legalized placement exceeds the timing budget; "
-          "restored the complete original placement.");
     }
     return reverted;
   }
 
+  bool restoredAll() const { return restored_all_; }
+
  private:
   bool pairTimingOk(const PlacementEdit& edit) const
   {
-    const auto a_now = watermark_.worstSlack(edit.a);
-    const auto b_now = watermark_.worstSlack(edit.b);
-    return a_now && b_now && edit.a_slack && edit.b_slack && *a_now >= floor_
-           && *b_now >= floor_ && *a_now >= *edit.a_slack - degrade_
-           && *b_now >= *edit.b_slack - degrade_;
+    return cellTimingOk(edit.a, edit.a_slack)
+           && cellTimingOk(edit.b, edit.b_slack);
+  }
+
+  // A cell that had no constrained slack before the swap has nothing to
+  // compare against; the check of every endpoint still covers it.  One that
+  // had a slack must still have one, and must not have lost more than the
+  // budget.
+  bool cellTimingOk(dbInst* inst, const std::optional<float>& before) const
+  {
+    if (!before) {
+      return true;
+    }
+    const auto now = watermark_.worstSlack(inst);
+    return now && *now >= *before - degrade_;
   }
 
   void refresh()
@@ -645,9 +656,9 @@ class Watermark::PlacementGuard
   dbBlock* block_;
   const PlacementOptions& opts_;
   const float degrade_;
-  const float floor_;
   bool can_estimate_ = false;
   bool can_measure_ = false;
+  bool restored_all_ = false;
   std::vector<EndpointSlack> timing_before_;
   std::vector<InstPlacement> placement_before_;
 };
@@ -698,14 +709,26 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
 
   PlacementGuard guard(*this, block, opts);
 
+  // Whatever went wrong, the design goes back to how it was.  If even that
+  // cannot be completed, say so rather than let the original error stand
+  // alone as if nothing else had happened.
+  const auto abandon = [&](const char* what) {
+    if (!guard.restore()) {
+      logger_->error(utl::WMK,
+                     126,
+                     "Placement watermark failed ({}); the original placement "
+                     "was restored but its parasitics could not be "
+                     "re-estimated. Run estimate_parasitics before trusting "
+                     "timing.",
+                     what);
+    }
+  };
+
   std::vector<PlacementClaim> claims;
   std::vector<PlacementEdit> edits;
-  int committed = 0;
   int displaced = 0;
-
-  int reverted = 0;
   try {
-    committed = embedPlacementEdits(key, opts, claims, edits);
+    const int committed = embedPlacementEdits(key, opts, claims, edits);
     if (committed == 0) {
       logger_->warn(utl::WMK,
                     54,
@@ -713,11 +736,22 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
                     "small or the gates too strict.");
     }
 
+    int reverted = 0;
     if (committed > 0) {
       guard.legalize();
       reverted = guard.check(edits);
     }
-    if (reverted > 0) {
+    if (guard.restoredAll()) {
+      // The design carries none of the mark, so there is nothing to claim.  A
+      // claim file for it would verify at chance and prove nothing, and
+      // publishing one would read as a partial success.
+      logger_->warn(utl::WMK,
+                    110,
+                    "Placement watermark: the legalized placement exceeds "
+                    "the timing budget even with every marked pair put back; "
+                    "restored the original placement and claimed nothing.");
+      claims.clear();
+    } else if (reverted > 0) {
       logger_->info(utl::WMK,
                     58,
                     "Placement watermark: {} pairs restored to keep timing "
@@ -746,8 +780,11 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
 
     output.publish(
         [&](std::ostream& out) { writePlacementClaims(out, claims); });
+  } catch (const std::exception& error) {
+    abandon(error.what());
+    throw;
   } catch (...) {
-    guard.restore();
+    abandon("unknown error");
     throw;
   }
 

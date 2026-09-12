@@ -11,9 +11,9 @@
 # need that (jpeg commits its per-tile quota at the defaults).  What is being
 # tested is the mark, not the gate values.
 #
-# Twenty-four pairs is the strict pass finding twenty and the capacity fallback
-# adding four more, which is the fallback doing its job on a design that cannot
-# reach the sixty-four it would like.
+# Twenty-four pairs is the strict pass finding nineteen and the capacity
+# fallback adding five more, which is the fallback doing its job on a design
+# that cannot reach the sixty-four it would like.
 #
 # place_unmarked.tcl is the other half: it checks these same claims against
 # the design as it was before embedding, where they must not hold.
@@ -47,9 +47,9 @@ puts "committed $committed pairs"
 # of pairs would leave a design with too few bits to prove anything, and every
 # other check here would still pass.
 # Pairs without measured slack are excluded by the timing screen.
-check "the design yields its constrained capacity" { set committed } 23
+check "the design yields its constrained capacity" { set committed } 24
 check "every committed pair holds" {
-  expr { [wmk::verify_placement_watermark_cmd $claims] >= 0.75 }
+  expr { [wmk::verify_placement_watermark_cmd $key $claims] >= 0.75 }
 } 1
 
 # Some of those pairs have to be ones the embedder actually reordered.  A pair
@@ -79,6 +79,6 @@ check "and some of them were pairs the embedder had to reorder" \
 place_watermark -key_hex $key -claims_file [make_result_file place_again.csv] \
   -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 64
 check "re-embedding the same key leaves the first mark intact" \
-  { expr {[wmk::verify_placement_watermark_cmd $claims] >= 0.75} } 1
+  { expr {[wmk::verify_placement_watermark_cmd $key $claims] >= 0.75} } 1
 
 exit_summary

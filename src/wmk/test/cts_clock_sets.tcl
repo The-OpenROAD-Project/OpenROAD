@@ -26,7 +26,7 @@ set key 0000000000000000000000000000000000000000000000000000000000000000
 set claims [make_result_file cts_clock_sets.csv]
 set before [[[$block findInst ff0] findITerm CK] getNet]
 set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-  -sibling_dist_um 100 -skew_margin_ns 100 \
+  -sibling_dist_um 100 -skew_margin_ns 100 -slack_margin_ns 100 \
   -slew_headroom_frac 0 -cap_headroom_frac 0]
 check "overlapping unequal clock sets cannot be paired" { set count } 0
 check "sink connectivity is preserved" {
@@ -36,17 +36,17 @@ check "sink connectivity is preserved" {
 # Case analysis cannot justify bypassing mux logic, even with equal clock sets.
 set_case_analysis 0 [get_ports select]
 set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-  -sibling_dist_um 100 -skew_margin_ns 100 \
+  -sibling_dist_um 100 -skew_margin_ns 100 -slack_margin_ns 100 \
   -slew_headroom_frac 0 -cap_headroom_frac 0]
 check "case analysis does not erase a clock-logic boundary" { set count } 0
 
 # Connect both buffers to the same source to establish a truly equivalent pair.
 [[$block findInst leaf_b] findITerm A] connect [$block findNet clk1]
 set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-  -sibling_dist_um 100 -skew_margin_ns 100 \
+  -sibling_dist_um 100 -skew_margin_ns 100 -slack_margin_ns 100 \
   -slew_headroom_frac 0 -cap_headroom_frac 0]
 check "equal nonempty clock sets remain eligible" { set count } 1
 check "the eligible pair achieves the requested parity" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 1
 exit_summary

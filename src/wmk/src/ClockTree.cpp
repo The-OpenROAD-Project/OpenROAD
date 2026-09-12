@@ -121,6 +121,12 @@ std::vector<dbInst*> findLeafClockBuffers(dbBlock* block,
   return lcbs;
 }
 
+bool isRoutedNet(dbNet* net)
+{
+  return net->getWire() != nullptr || !net->getGuides().empty()
+         || !net->getSWires().empty();
+}
+
 bool canMoveClockSink(dbITerm* sink, dbNet* destination)
 {
   dbNet* origin = sink->getNet();
@@ -128,6 +134,7 @@ bool canMoveClockSink(dbITerm* sink, dbNet* destination)
   return origin != nullptr && destination != nullptr && origin != destination
          && origin->getBlock() == destination->getBlock()
          && !origin->isDoNotTouch() && !destination->isDoNotTouch()
+         && !isRoutedNet(origin) && !isRoutedNet(destination)
          && !inst->isDoNotTouch() && !inst->isFixed()
          && !sink->getDb()->hasHierarchy() && sink->getModNet() == nullptr;
 }

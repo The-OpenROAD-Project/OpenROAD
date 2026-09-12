@@ -33,17 +33,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <map>
 #include <optional>
 #include <ostream>
 #include <ranges>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "ClaimFile.h"
 #include "ClockTree.h"
-#include "HmacSha256.h"
+#include "Marks.h"
 #include "Options.h"
 #include "Timing.h"
 #include "db_sta/dbNetwork.hh"
@@ -95,13 +97,18 @@ bool sameClockSet(const ClockIdentities& a, const ClockIdentities& b)
   return !a.empty() && a == b;
 }
 
-// A sink that can be moved between two buffers without changing what the
-// design does: an ordinary sequential clock pin, not a pin the flow has
-// pinned down.
+// A sink that can be moved off ``lcb`` without changing what the design does:
+// an ordinary sequential clock pin, not a pin the flow has pinned down, and
+// not the buffer's last one.  A buffer left driving nothing is a buffer the
+// next cleanup pass may legitimately delete, together with any claim on it.
 dbITerm* movableSink(dbInst* lcb, dbNet* destination, sta::dbNetwork* network)
 {
   dbNet* net = singleOutputNet(lcb);
   if (net == nullptr) {
+    return nullptr;
+  }
+  const auto fanout = seqFanout(lcb, network);
+  if (!fanout || *fanout < 2) {
     return nullptr;
   }
   for (dbITerm* iterm : net->getITerms()) {
@@ -166,8 +173,11 @@ class Watermark::CtsEmbedding
         }
       }
       output.publish([&](std::ostream& out) { writeCtsClaims(out, claims_); });
+    } catch (const std::exception& error) {
+      abandon(error.what());
+      throw;
     } catch (...) {
-      restore();
+      abandon("unknown error");
       throw;
     }
     watermark_.logger_->info(
@@ -198,7 +208,7 @@ class Watermark::CtsEmbedding
   struct Candidate
   {
     size_t i, j;
-    std::string pair_key;
+    OrderedPair pair;
     std::array<std::uint8_t, 32> sort_key;
   };
 
@@ -327,8 +337,8 @@ class Watermark::CtsEmbedding
             c.j = j;
             // findLeafClockBuffers returns them in name order, so i < j already
             // means the identifier is built from the sorted names.
-            c.pair_key = lcbs_[i]->getName() + "+" + lcbs_[j]->getName();
-            c.sort_key = hmac_digest(key_, {"pair_sort", c.pair_key});
+            c.pair = orderPair(lcbs_[i]->getName(), lcbs_[j]->getName());
+            c.sort_key = ctsSortKey(key_, c.pair);
             candidates_.push_back(std::move(c));
           }
         }
@@ -338,7 +348,8 @@ class Watermark::CtsEmbedding
       if (x.sort_key != y.sort_key) {
         return x.sort_key < y.sort_key;
       }
-      return x.pair_key < y.pair_key;
+      return std::tie(x.pair.first, x.pair.second)
+             < std::tie(y.pair.first, y.pair.second);
     });
   }
 
@@ -359,36 +370,29 @@ class Watermark::CtsEmbedding
 
   void apply(const Candidate& c)
   {
-    dbInst* a = lcbs_[c.i];
-    dbInst* b = lcbs_[c.j];
-    const std::string na = a->getName();
-    const std::string nb = b->getName();
-
     // The key picks both which buffer carries the mark and what parity it
-    // must show, so neither is guessable from the netlist.
-    const std::array<std::uint8_t, 32> d
-        = hmac_digest(key_, {"pair", c.pair_key, na, nb});
-    const int target_bit = d[0] & 1;
-    const bool target_is_a = ((d[0] >> 1) & 1) != 0;
-
-    dbInst* target = target_is_a ? a : b;
-    dbInst* other = target_is_a ? b : a;
+    // must show, so neither is guessable from the netlist.  The same
+    // derivation is repeated at verification from the names alone.
+    const CtsTarget keyed = ctsTarget(key_, c.pair);
+    const bool target_is_i = keyed.target == lcbs_[c.i]->getName();
+    dbInst* target = target_is_i ? lcbs_[c.i] : lcbs_[c.j];
+    dbInst* other = target_is_i ? lcbs_[c.j] : lcbs_[c.i];
 
     CtsClaim claim;
-    claim.pair_key = c.pair_key;
-    claim.target_lcb = target->getName();
-    claim.other_lcb = other->getName();
-    claim.target_bit = target_bit;
+    claim.pair_key = ctsPairKey(c.pair);
+    claim.target_lcb = keyed.target;
+    claim.other_lcb = keyed.other;
+    claim.target_bit = keyed.bit;
     claim.final_bit = fanoutParity(target);
 
-    if (claim.final_bit != target_bit) {
+    if (claim.final_bit != claim.target_bit) {
       setParity(claim, target, other, lcb_clocks_[c.i]);
     }
-    if (claim.final_bit == target_bit) {
+    if (claim.final_bit == claim.target_bit) {
       ++held_;
     }
     claims_.push_back(claim);
-    claimed_[target_is_a ? c.i : c.j] = true;
+    claimed_[target_is_i ? c.i : c.j] = true;
   }
 
   void setParity(CtsClaim& claim,
@@ -437,6 +441,7 @@ class Watermark::CtsEmbedding
                 dbNet* dest)
   {
     dbNet* origin = sink->getNet();
+    bool checked = false;
     bool skew_ok = false;
     bool timing_ok = false;
     bool drive_ok = false;
@@ -446,11 +451,12 @@ class Watermark::CtsEmbedding
         dest,
         [&] { watermark_.reestimateNetParasitics(origin, dest); },
         [&] {
+          checked = true;
           skew_ok = clockSkewsWithin(skew_before_,
                                      clockSkews(watermark_.sta_),
                                      opts_.skew_margin_ns * 1e-9f);
           timing_ok = endpointSlacksWithin(
-              watermark_.sta_, timing_before_, opts_.skew_margin_ns * 1e-9f);
+              watermark_.sta_, timing_before_, opts_.slack_margin_ns * 1e-9f);
           // Moving a sink changes both loads; check effective electrical
           // limits for both drivers after refreshing the affected parasitics.
           drive_ok
@@ -460,30 +466,66 @@ class Watermark::CtsEmbedding
                     other, opts_.slew_headroom_frac, opts_.cap_headroom_frac);
           return skew_ok && timing_ok && drive_ok;
         });
-    if (!accepted) {
-      edits_.pop_back();
-      if (!skew_ok) {
-        ++rejected_skew_;
-      } else if (!timing_ok) {
-        ++rejected_timing_;
-      } else {
-        ++rejected_drive_;
-      }
-    } else {
+    if (accepted) {
       ++moved_;
       claim.final_bit = fanoutParity(target);
+      return;
+    }
+    edits_.pop_back();
+    if (!checked) {
+      // Refused before any guard ran: the sink could not be moved at all.
+      ++rejected_no_sink_;
+    } else if (!skew_ok) {
+      ++rejected_skew_;
+    } else if (!timing_ok) {
+      ++rejected_timing_;
+    } else {
+      ++rejected_drive_;
     }
   }
 
-  void restore()
+  // Put every moved sink back, continuing past any that cannot be, and
+  // refresh the parasitics of every net touched.  Returns how many of those
+  // steps failed: a rollback that stopped at the first failure would leave
+  // the design in a state nobody asked for, and say nothing about it.
+  int restore() noexcept
   {
+    int failed = 0;
     for (const SinkEdit& edit : std::views::reverse(edits_)) {
-      if (edit.sink->getNet() != edit.origin) {
-        edit.sink->connect(edit.origin);
+      try {
+        if (edit.sink->getNet() != edit.origin) {
+          edit.sink->connect(edit.origin);
+        }
+      } catch (...) {
+        ++failed;
       }
     }
     for (const SinkEdit& edit : edits_) {
-      watermark_.reestimateNetParasitics(edit.origin, edit.destination);
+      try {
+        watermark_.reestimateNetParasitics(edit.origin, edit.destination);
+      } catch (...) {
+        ++failed;
+      }
+    }
+    edits_.clear();
+    return failed;
+  }
+
+  // Roll back after an error.  An incomplete rollback is reported as its own
+  // error, with the original one inside it, rather than letting the original
+  // stand alone as if the design were untouched.
+  void abandon(const char* what)
+  {
+    const int failed = restore();
+    if (failed > 0) {
+      watermark_.logger_->error(
+          utl::WMK,
+          125,
+          "CTS watermark failed ({}) and {} sink reconnections or parasitic "
+          "refreshes could not be undone; the clock connectivity has been "
+          "modified.",
+          what,
+          failed);
     }
   }
 
@@ -508,8 +550,9 @@ class Watermark::CtsEmbedding
   std::vector<bool> claimed_;
   std::vector<SinkEdit> edits_;
   bool warned_skew_ = false;
-  int rejected_cross_clock_ = 0;
-  int rejected_clock_logic_ = 0;
+  // Counted per examined pair, of which there can be more than fit an int.
+  std::int64_t rejected_cross_clock_ = 0;
+  std::int64_t rejected_clock_logic_ = 0;
   int rejected_skew_ = 0;
   int rejected_no_sink_ = 0;
   int rejected_drive_ = 0;
@@ -546,6 +589,17 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   const std::vector<dbInst*> lcbs = findLeafClockBuffers(block, network);
   for (dbInst* lcb : lcbs) {
     checkClaimName(lcb);
+    // Reconnecting a pin of a routed net leaves the wires describing the old
+    // connectivity, so a clock tree that has been routed is past the point
+    // where its sinks can be moved.
+    dbNet* net = singleOutputNet(lcb);
+    if (net != nullptr && isRoutedNet(net)) {
+      logger_->error(utl::WMK,
+                     124,
+                     "Clock net {} is already routed; run cts_watermark "
+                     "after clock_tree_synthesis and before global_route.",
+                     net->getName());
+    }
   }
   ClaimFile output(claims_file);
   if (lcbs.size() < 2) {

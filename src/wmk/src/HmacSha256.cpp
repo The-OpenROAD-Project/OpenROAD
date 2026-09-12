@@ -7,6 +7,7 @@
 #include "HmacSha256.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -139,6 +140,17 @@ void sha256_final(Sha256Ctx& c, std::uint8_t out[32])
   }
 }
 
+// Clear key material once it is no longer needed.  A plain memset of a
+// buffer about to go out of scope is dead code to the optimizer; a volatile
+// pointer is not.
+void secureZero(void* data, std::size_t len)
+{
+  volatile std::uint8_t* p = static_cast<volatile std::uint8_t*>(data);
+  while (len-- > 0) {
+    *p++ = 0;
+  }
+}
+
 }  // namespace
 
 std::array<std::uint8_t, 32> sha256(const std::string& msg)
@@ -186,6 +198,14 @@ void hmac_sha256(const std::uint8_t* key,
   sha256_update(co, opad, 64);
   sha256_update(co, inner, 32);
   sha256_final(co, out);
+
+  // Nothing derived from the key outlives the call.
+  secureZero(kpad, sizeof(kpad));
+  secureZero(ipad, sizeof(ipad));
+  secureZero(opad, sizeof(opad));
+  secureZero(inner, sizeof(inner));
+  secureZero(&ci, sizeof(ci));
+  secureZero(&co, sizeof(co));
 }
 
 std::array<std::uint8_t, 32> hmac_sha256_key32(
@@ -201,40 +221,47 @@ std::array<std::uint8_t, 32> hmac_sha256_key32(
   return out;
 }
 
-bool parse_hex_key32(const std::string& hex,
-                     std::array<std::uint8_t, 32>& key_out)
+bool hexToBytes(const std::string& hex, std::vector<std::uint8_t>& out)
 {
-  if (hex.size() != 64) {
+  out.clear();
+  if (hex.size() % 2 != 0) {
     return false;
   }
-  auto nib = [](char c, int& v) {
+  auto nibble = [](char c, int& value) {
     if (c >= '0' && c <= '9') {
-      v = c - '0';
-      return true;
-    }
-    if (c >= 'a' && c <= 'f') {
-      v = 10 + (c - 'a');
-      return true;
-    }
-    if (c >= 'A' && c <= 'F') {
-      v = 10 + (c - 'A');
-      return true;
-    }
-    return false;
-  };
-  for (std::size_t i = 0; i < 32; ++i) {
-    int hi = 0, lo = 0;
-    if (!nib(hex[i * 2], hi) || !nib(hex[i * 2 + 1], lo)) {
+      value = c - '0';
+    } else if (c >= 'a' && c <= 'f') {
+      value = 10 + (c - 'a');
+    } else if (c >= 'A' && c <= 'F') {
+      value = 10 + (c - 'A');
+    } else {
       return false;
     }
-    key_out[i] = static_cast<std::uint8_t>((hi << 4) | lo);
+    return true;
+  };
+  out.reserve(hex.size() / 2);
+  for (std::size_t i = 0; i < hex.size(); i += 2) {
+    int hi = 0;
+    int lo = 0;
+    if (!nibble(hex[i], hi) || !nibble(hex[i + 1], lo)) {
+      out.clear();
+      return false;
+    }
+    out.push_back(static_cast<std::uint8_t>((hi << 4) | lo));
   }
   return true;
 }
 
-std::string bytesPart(const std::array<std::uint8_t, 8>& value)
+bool parse_hex_key32(const std::string& hex,
+                     std::array<std::uint8_t, 32>& key_out)
 {
-  return std::string(reinterpret_cast<const char*>(value.data()), value.size());
+  std::vector<std::uint8_t> bytes;
+  if (hex.size() != 64 || !hexToBytes(hex, bytes)) {
+    return false;
+  }
+  std::memcpy(key_out.data(), bytes.data(), key_out.size());
+  secureZero(bytes.data(), bytes.size());
+  return true;
 }
 
 std::array<std::uint8_t, 32> hmac_digest(

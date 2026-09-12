@@ -41,14 +41,16 @@ claims = helpers.make_result_file("python_api.csv")
 committed = watermark.placementWatermark(KEY_HEX, options, claims)
 print("committed from a hex key:", committed)
 
-# The same key as raw bytes has to reach the same 24 pairs.  They are already
-# in this key's order by now, so the second run simply finds them there.
+# The same key as raw bytes reaches the same design, now already in this
+# key's order: the second run finds 24 of the 25 pairs where they are, and the
+# one it no longer pairs is a cell the first run swapped past its partner's
+# neighbourhood.  Nothing it does can fall out of the first mark.
 again = watermark.placementWatermark(
     bytes.fromhex(KEY_HEX), options, helpers.make_result_file("python_api_bytes.csv")
 )
 print("committed from a bytes key:", again)
 
-result = watermark.verifyPlacement(claims)
+result = watermark.verifyPlacement(KEY_HEX, claims)
 print("verification:", result.held, "of", result.checked)
 
 tagged = watermark.selectNetsKeyed(KEY_HEX, 0.10)
@@ -62,12 +64,12 @@ for bad in ("abc", b"\x00" * 5, 42):
         print("refused", repr(bad), "->", type(exception).__name__)
 
 ok = (
-    committed == 24
+    committed == 25
     and again == 24
-    and result.held == 24
-    and result.checked == 24
+    and result.held == 25
+    and result.checked == 25
     and result.rate() == 1.0
-    and result.pValue() == 2.0**-24
+    and result.pValue() == 2.0**-25
     and wmk.VerifyResult().pValue() == 1.0
     and tagged == 35
 )

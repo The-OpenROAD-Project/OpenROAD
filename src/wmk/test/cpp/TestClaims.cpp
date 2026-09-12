@@ -107,24 +107,32 @@ TEST(Claims, PreservesDocumentedSkippedRecords)
   EXPECT_FALSE(claimIsCheckable(rows[0]));
 }
 
+constexpr const char* kCtsHeader
+    = "target_lcb,other_lcb,target_bit,skipped_reason\n";
+
 TEST(Claims, ValidatesCtsSchemaAndRows)
 {
-  for (const std::string text :
-       {"target_bit,skipped_reason\n1,\n",
-        "target_lcb,target_bit,skipped_reason\n,1,\n",
-        "target_lcb,target_bit,skipped_reason\nleaf,2,\n",
-        "target_lcb,target_bit,skipped_reason\nleaf,1\n"}) {
+  for (const std::string& text :
+       {std::string("other_lcb,target_bit,skipped_reason\nleaf,1,\n"),
+        std::string("target_lcb,target_bit,skipped_reason\nleaf,1,\n"),
+        std::string(kCtsHeader) + ",peer,1,\n",
+        std::string(kCtsHeader) + "leaf,,1,\n",
+        std::string(kCtsHeader) + "leaf,peer,2,\n",
+        std::string(kCtsHeader) + "leaf,peer,1\n",
+        std::string(kCtsHeader) + "leaf,leaf,1,\n"}) {
     std::istringstream in(text);
     std::vector<ClaimRow> rows;
     std::string error;
-    EXPECT_FALSE(readClaims(in, ClaimStage::kCts, rows, error));
+    EXPECT_FALSE(readClaims(in, ClaimStage::kCts, rows, error)) << text;
     EXPECT_TRUE(rows.empty());
   }
-  std::istringstream in("target_lcb,target_bit,skipped_reason\nleaf,1,\n");
+  std::istringstream in(std::string(kCtsHeader) + "leaf,peer,1,\n");
   std::vector<ClaimRow> rows;
   std::string error;
   EXPECT_TRUE(readClaims(in, ClaimStage::kCts, rows, error)) << error;
   ASSERT_EQ(rows.size(), 1);
+  EXPECT_EQ(claimNames(rows.front(), ClaimStage::kCts),
+            (std::pair<std::string, std::string>{"leaf", "peer"}));
 }
 
 TEST(Claims, RejectsUnreadableStream)
@@ -175,8 +183,8 @@ TEST(Claims, RejectsNulInEveryRequiredInstanceNameAtomically)
     EXPECT_TRUE(rows.empty());
     EXPECT_EQ(error, "line 3: NUL byte in claim row");
   }
-  std::istringstream in("target_lcb,target_bit,skipped_reason\nleaf,0,\nleaf"
-                        + nul + "_missing,0,\n");
+  std::istringstream in(std::string(kCtsHeader) + "leaf,peer,0,\nleaf" + nul
+                        + "_missing,peer,0,\n");
   std::vector<ClaimRow> rows{{{"previous", "result"}}};
   std::string error;
   EXPECT_FALSE(readClaims(in, ClaimStage::kCts, rows, error));
@@ -239,19 +247,62 @@ TEST(Claims, RejectsIdenticalConflictingAndReversedPlacementDuplicates)
   }
 }
 
-TEST(Claims, RejectsRepeatedCtsTargetsRegardlessOfMetadata)
+TEST(Claims, RejectsRepeatedCtsPairsRegardlessOfMetadata)
 {
   for (const char* duplicate :
-       {"a,0,new,", "a,1,new,", "a,1,new,already_satisfied"}) {
+       {"a,b,0,new,", "a,b,1,new,", "b,a,1,new,already_satisfied"}) {
     std::istringstream in(
-        std::string("target_lcb,target_bit,pair_key,skipped_reason\n")
-        + "a,0,old,\nb,1,other,\n" + duplicate + "\n");
+        std::string("target_lcb,other_lcb,target_bit,pair_key,skipped_reason\n")
+        + "a,b,0,old,\nb,c,1,other,\n" + duplicate + "\n");
     std::vector<ClaimRow> rows{{{"previous", "result"}}};
     std::string error;
     EXPECT_FALSE(readClaims(in, ClaimStage::kCts, rows, error));
     EXPECT_TRUE(rows.empty());
-    EXPECT_EQ(error, "line 4: duplicate CTS target 'a'");
+    EXPECT_EQ(error, "line 4: duplicate CTS pair 'a' / 'b'");
   }
+}
+
+TEST(Claims, BoundsLinesColumnsAndRows)
+{
+  {
+    std::istringstream in(std::string(kPlacementHeader) + "pair,"
+                          + std::string(kMaxClaimLineLength, 'a') + ",b,0,\n");
+    std::vector<ClaimRow> rows;
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_EQ(error, "line 2: longer than 65536 bytes");
+  }
+  {
+    std::string header = kPlacementHeader;
+    header.pop_back();
+    for (size_t i = 0; i < kMaxClaimColumns; ++i) {
+      header += ",extra" + std::to_string(i);
+    }
+    std::istringstream in(header + "\n");
+    std::vector<ClaimRow> rows;
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_EQ(error, "line 1: more than 64 columns");
+  }
+  {
+    std::string text = kPlacementHeader;
+    for (size_t i = 0; i <= kMaxClaimRows; ++i) {
+      text += "pair,a" + std::to_string(i) + ",b,0,\n";
+    }
+    std::istringstream in(text);
+    std::vector<ClaimRow> rows;
+    std::string error;
+    EXPECT_FALSE(readClaims(in, ClaimStage::kPlacement, rows, error));
+    EXPECT_EQ(error,
+              "line " + std::to_string(kMaxClaimRows + 2) + ": more than "
+                  + std::to_string(kMaxClaimRows) + " claims");
+  }
+  // A final line without a newline is still a claim.
+  std::istringstream in(std::string(kPlacementHeader) + "pair,a,b,0,");
+  std::vector<ClaimRow> rows;
+  std::string error;
+  EXPECT_TRUE(readClaims(in, ClaimStage::kPlacement, rows, error)) << error;
+  EXPECT_EQ(rows.size(), 1);
 }
 
 TEST(Claims, SkippedCandidatesDoNotConsumeScoredCarriers)

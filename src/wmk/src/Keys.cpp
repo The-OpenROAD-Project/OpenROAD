@@ -4,7 +4,6 @@
 #include "Keys.h"
 
 #include <array>
-#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -73,35 +72,6 @@ std::string toHex(const std::uint8_t* data, std::size_t len)
     out.push_back(kDigits[data[i] & 0x0f]);
   }
   return out;
-}
-
-bool fromHex(const std::string& hex, std::vector<std::uint8_t>& out)
-{
-  out.clear();
-  if (hex.size() % 2 != 0) {
-    return false;
-  }
-  out.reserve(hex.size() / 2);
-  for (std::size_t i = 0; i < hex.size(); i += 2) {
-    int value = 0;
-    for (int k = 0; k < 2; ++k) {
-      const char c = hex[i + k];
-      int digit;
-      if (c >= '0' && c <= '9') {
-        digit = c - '0';
-      } else if (c >= 'a' && c <= 'f') {
-        digit = c - 'a' + 10;
-      } else if (c >= 'A' && c <= 'F') {
-        digit = c - 'A' + 10;
-      } else {
-        out.clear();
-        return false;
-      }
-      value = value * 16 + digit;
-    }
-    out.push_back(static_cast<std::uint8_t>(value));
-  }
-  return true;
 }
 
 }  // namespace wmk

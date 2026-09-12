@@ -23,7 +23,13 @@ std::optional<int> seqFanout(odb::dbInst* lcb, sta::dbNetwork* network);
 std::vector<odb::dbInst*> findLeafClockBuffers(odb::dbBlock* block,
                                                sta::dbNetwork* network);
 
-// Flat connectivity edits must honor protections on both nets and the sink.
+// A net that already carries wires or guides.  Reconnecting a pin of such a
+// net would leave the geometry describing the old connectivity: a short
+// between two clock nets and an open where the pin used to be.
+bool isRoutedNet(odb::dbNet* net);
+
+// Flat connectivity edits must honor protections on both nets and the sink,
+// and cannot be made once either net is routed.
 bool canMoveClockSink(odb::dbITerm* sink, odb::dbNet* destination);
 
 // Refresh the affected parasitics after moving the sink and after any rollback.

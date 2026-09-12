@@ -66,20 +66,31 @@ check "failed write cleans temporary outputs" {
   glob -nocomplain $private.wmk-*.tmp $public.wmk-*.tmp
 } {}
 set result [generate_watermark_key {*}$args -file $private -public_file $public]
+check "with -file the result carries only the public parameters" {
+  lsort [dict keys $result]
+} {design_id nonce_hex}
 check "successful output retains owner-only permissions" {
   expr {([file attributes $private -permissions] & 0o077) == 0}
 } 1
-set private_text [read_text $private]
+set material [wmk::read_key_file $private]
 set public_text [read_text $public]
+check "private file retains the secret key" { dict get $material key_hex } $key
 foreach stage { key_hex placement cts routing } {
-  check "private file retains $stage" {
-    string match "*$stage [dict get $result $stage]*" $private_text
-  } 1
+  check "private file retains $stage" { dict exists $material $stage } 1
   check "public file omits $stage" { string match "*$stage *" $public_text } 0
 }
 foreach stage { placement cts routing } {
   check "persisted $stage key can be rederived" {
     derive_watermark_key -design_id test -key_hex $key -nonce_hex 001122 -stage $stage
-  } [dict get $result $stage]
+  } [dict get $material $stage]
+  check "and read back through -key_file" {
+    derive_watermark_key -key_file $private -stage $stage
+  } [dict get $material $stage]
 }
+check "a key file without stored stage keys still derives them" {
+  set fh [open $public a]
+  puts $fh "key_hex $key"
+  close $fh
+  derive_watermark_key -key_file $public -stage routing
+} [dict get $material routing]
 exit_summary

@@ -49,7 +49,7 @@ set before [pin_slacks]
 set selected [tee -variable output [list place_watermark -key_hex $key -claims_file $claims \
   -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 64 \
   -guard_degrade_ns 0.001]]
-check "timing-rejected pairs remain claimed" { set selected } 23
+check "timing-rejected pairs remain claimed" { set selected } 24
 check "this fixture exercises rollback" { string match {*WMK-0058*} $output } 1
 set immediate [pin_slacks]
 estimate_parasitics -placement

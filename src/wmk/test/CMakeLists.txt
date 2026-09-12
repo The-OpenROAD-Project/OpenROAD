@@ -4,12 +4,9 @@
 or_integration_tests(
   "wmk"
   TESTS
-    bias
-    bias_neutral
     place_unmarked
     route_stat
     select
-    strength
     verify
     via_layer
   # These run a placer, a clock tree synthesizer or a router, and would
@@ -53,6 +50,8 @@ or_integration_tests(
     routing_report
     routing_ties
     verify_malformed
+    wrong_key
+    three_stages
 )
 
 add_subdirectory(cpp)

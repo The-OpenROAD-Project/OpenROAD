@@ -46,16 +46,22 @@ check "the positive control actually moves a sink" {
   string match {*1 sinks moved*} $output
 } 1
 check "the gated mark round-trips" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 1
 
-# A single-output clock gate is not a valid carrier, even for target bit zero.
+# A single-output clock gate is not a valid carrier, whatever parity the key
+# asks of it.  The claim must still be one the key derives, so pair the gate
+# with whichever name makes it the target.
+set peer leaf_a
+while { [wmk::cts_target_lcb_cmd $key gate $peer] ne "gate" } {
+  set peer "${peer}_"
+}
 set fh [open $claims w]
 puts $fh "pair_idx,pair_key,target_lcb,other_lcb,target_bit,final_bit,skipped_reason"
-puts $fh "0,gate+leaf_a,gate,leaf_a,0,0,"
+puts $fh "0,gate+$peer,gate,$peer,[wmk::cts_target_bit_cmd $key gate $peer],0,"
 close $fh
 check "verification refuses a non-buffer carrier" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 0
 
 # Named clocks still match through an inverter, but their edges do not.

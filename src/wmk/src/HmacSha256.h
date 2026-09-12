@@ -32,6 +32,10 @@ std::array<std::uint8_t, 32> hmac_sha256_key32(
     const std::array<std::uint8_t, 32>& key,
     const std::string& msg);
 
+// Decode hex, either case.  Returns false on odd length or any non-hex
+// character rather than silently accepting a shorter value.
+bool hexToBytes(const std::string& hex, std::vector<std::uint8_t>& out);
+
 // Parse a 64-character hex string into a 32-byte key.  Returns false on
 // invalid input (length, non-hex characters); on success the parsed bytes are
 // written to key_out.
@@ -50,11 +54,5 @@ bool parse_hex_key32(const std::string& hex,
 std::array<std::uint8_t, 32> hmac_digest(
     const std::array<std::uint8_t, 32>& key,
     const std::vector<std::string>& parts);
-
-// The tile a placement candidate sits in, as the PRF sees it: two big-endian
-// int32.  Returned as bytes rather than a string because that is what it is --
-// a fixed-width value, not text -- and the conversion to a hashed part happens
-// at the call site.
-std::string bytesPart(const std::array<std::uint8_t, 8>& value);
 
 }  // namespace wmk

@@ -11,7 +11,7 @@ set key 0000000000000000000000000000000000000000000000000000000000000000
 set failed [catch { cts_watermark -key_hex $key -claims_file $claims } message]
 check "embedding requires Liberty" { set failed } 1
 check "embedding explains the missing dependency" { string match {*WMK-0107*} $message } 1
-set failed [catch { expr { [wmk::verify_cts_watermark_cmd $claims] >= 0.75 } } message]
+set failed [catch { expr { [wmk::verify_cts_watermark_cmd $key $claims] >= 0.75 } } message]
 check "verification requires Liberty" { set failed } 1
 check "verification explains the missing dependency" { string match {*WMK-0108*} $message } 1
 exit_summary

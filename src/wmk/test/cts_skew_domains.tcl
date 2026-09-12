@@ -28,17 +28,19 @@ set_assigned_delay -net -from [get_ports clk2] -to [get_pins high1/CK] 1
 set key 0000000000000000000000000000000000000000000000000000000000000000
 set claims [make_result_file cts_skew_domains.csv]
 set count [cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-  -sibling_dist_um 100 -skew_margin_ns 0 -slew_headroom_frac 0 -cap_headroom_frac 0]
+  -sibling_dist_um 100 -skew_margin_ns 0 -slack_margin_ns 0 \
+  -slew_headroom_frac 0 -cap_headroom_frac 0]
 check "the rejected pair is still claimed" { set count } 1
 check "an unrelated clock cannot hide skew degradation" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 0
 
 # With enough budget, the same keyed move succeeds. This also proves that
 # the first call had a movable sink and usable timing.
 cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-  -sibling_dist_um 100 -skew_margin_ns 0.5 -slew_headroom_frac 0 -cap_headroom_frac 0
+  -sibling_dist_um 100 -skew_margin_ns 0.5 -slack_margin_ns 0.5 \
+  -slew_headroom_frac 0 -cap_headroom_frac 0
 check "the move succeeds with a sufficient clock-specific budget" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 1
 exit_summary

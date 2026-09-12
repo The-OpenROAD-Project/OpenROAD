@@ -6,7 +6,6 @@
 #include <limits>
 #include <string_view>
 
-#include "sta/MinMax.hh"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
 
@@ -44,9 +43,10 @@ void checkDistance(std::string_view name,
 
 void checkTime(std::string_view name, double ns, utl::Logger* logger)
 {
-  // Keep conversions and subsequent sums/differences away from STA's
-  // unconstrained sentinel as well as floating-point overflow.
-  checkRange(name, ns, 0.0, static_cast<double>(sta::INF) * 1e9 / 4, logger);
+  // A budget of more than a second is not a budget, and keeping it far below
+  // STA's unconstrained sentinel means no sum or difference below can reach
+  // that sentinel by accident.
+  checkRange(name, ns, 0.0, 1e9, logger);
 }
 
 }  // namespace
@@ -71,6 +71,7 @@ void validateOptions(const CtsOptions& opts, int dbu, utl::Logger* logger)
       "num_pairs", opts.num_pairs, 0, std::numeric_limits<int>::max(), logger);
   checkDistance("sibling_dist_um", opts.sibling_dist_um, dbu, logger);
   checkTime("skew_margin_ns", opts.skew_margin_ns, logger);
+  checkTime("slack_margin_ns", opts.slack_margin_ns, logger);
   checkRange("slew_headroom_frac", opts.slew_headroom_frac, 0, 1, logger);
   checkRange("cap_headroom_frac", opts.cap_headroom_frac, 0, 1, logger);
 }

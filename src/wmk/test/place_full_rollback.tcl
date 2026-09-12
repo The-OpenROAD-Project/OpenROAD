@@ -35,7 +35,13 @@ set claims [make_result_file place_full_rollback.csv]
 set count [tee -variable output [list place_watermark -key_hex $key -claims_file $claims \
   -hpwl_eps_um 1 -pair_dist_um 3 -pairs_per_tile 64 -guard_degrade_ns 0.0001]]
 check "the complete-placement fallback runs" { string match {*WMK-0110*} $output } 1
-check "all selected claims are retained" { set count } 23
+check "a design that carries no mark claims nothing" { set count } 0
+check "the claim file records that nothing was claimed" {
+  set fh [open $claims r]
+  set text [read $fh]
+  close $fh
+  set text
+} "kind,id,A_name,B_name,target_bit,skipped_reason\n"
 check "location, orientation and status are restored for every instance" {
   placement_snapshot
 } $placement_before

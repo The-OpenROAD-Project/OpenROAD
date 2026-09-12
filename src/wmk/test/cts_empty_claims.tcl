@@ -20,13 +20,17 @@ foreach leaves { 0 1 } {
     set claims [make_result_file cts_empty_${leaves}_${existing}.csv]
     file delete -force $claims
     if { $existing } {
+      # A claim the key would have written, so it is checkable.
+      set target [wmk::cts_target_lcb_cmd $key leaf_a leaf_b]
+      set other [expr { $target eq "leaf_a" ? "leaf_b" : "leaf_a" }]
       set stream [open $claims w]
-      puts $stream "target_lcb,target_bit,skipped_reason"
-      puts $stream "leaf_a,0,"
+      puts $stream "target_lcb,other_lcb,target_bit,skipped_reason"
+      puts $stream "$target,$other,[wmk::cts_target_bit_cmd $key leaf_a leaf_b],"
       close $stream
       check "old claims are checkable with $leaves leaves" {
-        wmk::verify_cts_watermark_cmd $claims
-      } 1.0
+        lassign [wmk::verify_cts_claims_cmd $key $claims] count held probability
+        set count
+      } 1
     }
     check "$leaves leaves produce no pairs (existing=$existing)" {
       cts_watermark -key_hex $key -claims_file $claims
@@ -35,10 +39,10 @@ foreach leaves { 0 1 } {
       file isfile $claims
     } 1
     check "empty claims parse without checkable evidence" {
-      wmk::verify_cts_watermark_cmd $claims
+      wmk::verify_cts_watermark_cmd $key $claims
     } -1.0
     check "empty claims cannot prove ownership" {
-      verify_watermark -cts_claims $claims -min_stages 1
+      verify_watermark -cts_claims $claims -cts_key_hex $key -min_stages 1
     } 0
   }
 

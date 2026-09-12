@@ -53,7 +53,7 @@ foreach margin { 0 0.020 } {
   close $stream
   set failed [catch {
     cts_watermark -key_hex $key -claims_file $claims -num_pairs 1 \
-      -sibling_dist_um 100 -skew_margin_ns $margin
+      -sibling_dist_um 100 -skew_margin_ns $margin -slack_margin_ns $margin
   } message]
   check "$margin: hierarchical embedding fails explicitly" { set failed } 1
   check "$margin: the error explains the flat-design requirement" {
@@ -69,11 +69,14 @@ foreach margin { 0 0.020 } {
   } "previous claim file"
 }
 # Verification is read-only and remains supported for a hierarchical design.
+set target [wmk::cts_target_lcb_cmd $key leaf_a leaf_b]
+set other [expr { $target eq "leaf_a" ? "leaf_b" : "leaf_a" }]
 set stream [open $claims w]
-puts $stream "target_lcb,target_bit,skipped_reason"
-puts $stream "leaf_a,0,"
+puts $stream "target_lcb,other_lcb,target_bit,skipped_reason"
+puts $stream "$target,$other,[wmk::cts_target_bit_cmd $key leaf_a leaf_b],"
 close $stream
 check "hierarchical claims can still be verified" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  lassign [wmk::verify_cts_claims_cmd $key $claims] count held probability
+  set count
 } 1
 exit_summary

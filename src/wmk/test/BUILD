@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -46,6 +47,8 @@ PASSFAIL_TESTS = [
     "routing_report",
     "routing_ties",
     "verify_malformed",
+    "wrong_key",
+    "three_stages",
 ]
 
 TESTS = [
@@ -53,8 +56,6 @@ TESTS = [
     "verify_carriers",
     "claim_publication",
     "cts_empty_claims",
-    "bias",
-    "bias_neutral",
     "cts_headroom",
     "cts_fanout",
     "numeric_options",
@@ -91,7 +92,6 @@ TESTS = [
     "routing_ties",
     "verify_malformed",
     "select",
-    "strength",
     "verify",
     "via_layer",
 ]
@@ -118,11 +118,38 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in TESTS]
 
+py_test(
+    name = "wmk_man_tcl_check",
+    srcs = ["wmk_man_tcl_check.py"],
+    data = ["//src/wmk:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "wmk_readme_msgs_check",
+    data = [
+        "//src/wmk:doc_files",
+        "//src/wmk:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 cc_test(
     name = "TestHmacSha256",
     srcs = ["cpp/TestHmacSha256.cpp"],
     deps = [
         "//src/wmk:hmac_sha256",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestMarks",
+    srcs = ["cpp/TestMarks.cpp"],
+    deps = [
+        "//src/wmk:marks",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

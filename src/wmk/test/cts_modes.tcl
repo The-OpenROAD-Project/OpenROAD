@@ -75,7 +75,7 @@ check "one mode's timing cannot authorize another mode's sink move" {
   expr {[clock_connections] eq $connections}
 } 1
 check "unachieved parity remains a failed claim" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 0
 
 # Positive control: once both modes have propagated timing, a move succeeds
@@ -92,6 +92,6 @@ check "successful move preserves clocks in every mode" {
   expr {[clock_memberships] eq $membership}
 } 1
 check "positive control achieves parity" {
-  expr {[wmk::verify_cts_watermark_cmd $claims] >= 0.75}
+  expr {[wmk::verify_cts_watermark_cmd $key $claims] >= 0.75}
 } 1
 exit_summary

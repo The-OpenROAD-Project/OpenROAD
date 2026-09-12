@@ -74,6 +74,7 @@ for option, values in {
 for option in (
     "sibling_dist_um",
     "skew_margin_ns",
+    "slack_margin_ns",
     "slew_headroom_frac",
     "cap_headroom_frac",
 ):

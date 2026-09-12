@@ -99,6 +99,10 @@ struct CtsOptions
   // rejects 14 of 26 pairs and leaves the extraction rate at 0.46; 20 ps
   // accepts all 26 and costs about 1 ps of skew.
   double skew_margin_ns = 0.020;
+  // How much setup or hold slack a constrained endpoint may lose to a moved
+  // sink.  Latency spread and path slack are different quantities, so each
+  // has its own budget.
+  double slack_margin_ns = 0.020;
   // Fraction of a leaf buffer's liberty slew and capacitance limits that must
   // remain unused after a sink has moved onto it.  The limits come from the
   // library rather than from a number fixed here, so the check follows
@@ -190,14 +194,19 @@ class Watermark
   int clearWatermark();
 
   // Check the placement claims in ``claims_file`` against the loaded design.
-  // Each claim names a pair of cells and the bit they were driven to, which is
-  // which of the two sits further left.
-  VerifyResult verifyPlacement(const std::string& claims_file);
+  // Each claim names a pair of cells; the bit they were driven to -- which of
+  // the two sits further left -- is derived again from the key, and a claim
+  // whose recorded bit is not the key's is refused.  Without the key a claim
+  // file is a list of names anyone could have written to match any layout.
+  VerifyResult verifyPlacement(const std::array<std::uint8_t, 32>& key,
+                               const std::string& claims_file);
 
   // Check the CTS claims in ``claims_file`` against the loaded design.  Each
-  // claim names a leaf clock buffer and the parity its sequential fanout was
-  // driven to.
-  VerifyResult verifyCts(const std::string& claims_file);
+  // claim names a pair of leaf clock buffers; which of them carries the mark
+  // and the sequential-fanout parity it was driven to are derived again from
+  // the key, and a claim that recorded anything else is refused.
+  VerifyResult verifyCts(const std::array<std::uint8_t, 32>& key,
+                         const std::string& claims_file);
 
   // Put a keyed subset of same-row, same-width cell pairs into a keyed
   // left-to-right order, and report the pairs committed in ``claims``.  The
@@ -209,6 +218,9 @@ class Watermark
   // Embed the placement watermark and write its claims.  Legalizes afterwards
   // and restores edits that exceed the timing budget. Rejected edits remain
   // claimed. Returns the number of pairs selected, including restored pairs.
+  // If the legalized design cannot meet the budget even with every edit put
+  // back, the whole placement is restored, nothing is claimed and zero is
+  // returned.
   int placementWatermark(const std::array<std::uint8_t, 32>& key,
                          const PlacementOptions& opts,
                          const std::string& claims_file);
@@ -245,6 +257,8 @@ class Watermark
     odb::Point b_loc;
     std::optional<float> a_slack;
     std::optional<float> b_slack;
+    // False for a pair that already sat in the keyed order: nothing to undo.
+    bool moved = false;
   };
 
   // embedPlacement, also reporting what it moved.

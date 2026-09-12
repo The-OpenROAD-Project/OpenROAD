@@ -37,4 +37,11 @@ check "the tags can be dropped" { clear_routing_watermark } 197
 check "and ownership still proves without them" \
   { verify_watermark -routing_key_hex $key -routing_fraction 0.5 -min_stages 1 } 1
 
+# The key is the only thing that separates the owner from anyone else, so a
+# key one bit away must find nothing: its marked set is an unrelated draw from
+# the same nets.
+set other 0011223344556677889900aabbccddeeff00112233445566778899aabbccddef
+check "a key one bit away proves nothing" \
+  { verify_watermark -routing_key_hex $other -routing_fraction 0.5 -min_stages 1 } 0
+
 exit_summary

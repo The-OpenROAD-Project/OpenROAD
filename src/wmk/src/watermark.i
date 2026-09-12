@@ -4,6 +4,7 @@
 %{
 #include <string>
 #include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 #include "wmk/Watermark.h"
 %}
 
@@ -17,6 +18,23 @@
 #include <cstdint>
 #include "HmacSha256.h"
 #include "Keys.h"
+#include "Marks.h"
+
+namespace {
+
+// The stage key a keyed verification or derivation command was given.  The
+// Tcl layer checks the length; this is the second guard.
+std::array<std::uint8_t, 32> stage_key_or_error(const char* key_hex)
+{
+  std::array<std::uint8_t, 32> key;
+  if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
+    ord::OpenRoad::openRoad()->getLogger()->error(
+        utl::WMK, 128, "A stage key must be 64 hex characters (32 bytes).");
+  }
+  return key;
+}
+
+}  // namespace
 %}
 
 // Return typed counts and their null probability as one Tcl list.
@@ -57,7 +75,7 @@ derive_stage_key_cmd(const char* master_hex,
   std::array<std::uint8_t, 32> master;
   std::vector<std::uint8_t> nonce;
   if (!wmk::parse_hex_key32(std::string(master_hex), master)
-      || !wmk::fromHex(std::string(nonce_hex), nonce)
+      || !wmk::hexToBytes(std::string(nonce_hex), nonce)
       || !wmk::isWatermarkStage(std::string(stage))) {
     return result.c_str();
   }
@@ -72,8 +90,6 @@ set_routing_watermark_cmd(const char* key_hex, double fraction)
 {
   std::array<std::uint8_t, 32> key;
   if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
-    auto* w = ord::OpenRoad::openRoad()->getWatermark();
-    (void) w;
     return -1;
   }
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
@@ -132,6 +148,7 @@ cts_watermark_cmd(const char* key_hex,
                   int num_pairs,
                   double sibling_dist_um,
                   double skew_margin_ns,
+                  double slack_margin_ns,
                   double slew_headroom_frac,
                   double cap_headroom_frac)
 {
@@ -143,6 +160,7 @@ cts_watermark_cmd(const char* key_hex,
   opts.num_pairs = num_pairs;
   opts.sibling_dist_um = sibling_dist_um;
   opts.skew_margin_ns = skew_margin_ns;
+  opts.slack_margin_ns = slack_margin_ns;
   opts.slew_headroom_frac = slew_headroom_frac;
   opts.cap_headroom_frac = cap_headroom_frac;
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
@@ -172,32 +190,61 @@ verify_routing_watermark_cmd(const char* key_hex,
 // Ownership uses counts as well as rates. Keep the rate-only accessors below
 // for extraction diagnostics; they do not make an ownership decision.
 wmk::VerifyResult
-verify_placement_claims_cmd(const char* claims_file)
+verify_placement_claims_cmd(const char* key_hex, const char* claims_file)
 {
-  return ord::OpenRoad::openRoad()->getWatermark()->verifyPlacement(claims_file);
+  return ord::OpenRoad::openRoad()->getWatermark()->verifyPlacement(
+      stage_key_or_error(key_hex), claims_file);
 }
 
 wmk::VerifyResult
-verify_cts_claims_cmd(const char* claims_file)
+verify_cts_claims_cmd(const char* key_hex, const char* claims_file)
 {
-  return ord::OpenRoad::openRoad()->getWatermark()->verifyCts(claims_file);
+  return ord::OpenRoad::openRoad()->getWatermark()->verifyCts(
+      stage_key_or_error(key_hex), claims_file);
 }
 
 // A stage with no checkable claims returns -1, distinct from all claims failing.
 double
-verify_placement_watermark_cmd(const char* claims_file)
+verify_placement_watermark_cmd(const char* key_hex, const char* claims_file)
 {
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
-  const wmk::VerifyResult r = w->verifyPlacement(std::string(claims_file));
+  const wmk::VerifyResult r
+      = w->verifyPlacement(stage_key_or_error(key_hex), std::string(claims_file));
   return r.checked > 0 ? r.rate() : -1.0;
 }
 
 double
-verify_cts_watermark_cmd(const char* claims_file)
+verify_cts_watermark_cmd(const char* key_hex, const char* claims_file)
 {
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
-  const wmk::VerifyResult r = w->verifyCts(std::string(claims_file));
+  const wmk::VerifyResult r
+      = w->verifyCts(stage_key_or_error(key_hex), std::string(claims_file));
   return r.checked > 0 ? r.rate() : -1.0;
+}
+
+// The keyed values of a mark, for scripts that need to know what an embedder
+// would have committed to: the placement bit of a pair of cells, and the
+// target buffer and parity of a pair of leaf clock buffers.
+int
+placement_target_bit_cmd(const char* key_hex, const char* a, const char* b)
+{
+  return wmk::placementTargetBit(stage_key_or_error(key_hex),
+                                 wmk::orderPair(a, b));
+}
+
+const char*
+cts_target_lcb_cmd(const char* key_hex, const char* a, const char* b)
+{
+  static std::string result;
+  result = wmk::ctsTarget(stage_key_or_error(key_hex), wmk::orderPair(a, b))
+               .target;
+  return result.c_str();
+}
+
+int
+cts_target_bit_cmd(const char* key_hex, const char* a, const char* b)
+{
+  return wmk::ctsTarget(stage_key_or_error(key_hex), wmk::orderPair(a, b)).bit;
 }
 
 %}  // inline
