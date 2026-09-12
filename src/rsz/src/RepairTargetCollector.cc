@@ -842,6 +842,60 @@ void RepairTargetCollector::collectViolatingEndpoints()
                  * 100));
 }
 
+void RepairTargetCollector::walkStartpoints(
+    std::vector<CachedStartpoint>& startpoints) const
+{
+  startpoints.clear();
+  sta::VertexIterator vertex_iter(graph_);
+  while (vertex_iter.hasNext()) {
+    sta::Vertex* vertex = vertex_iter.next();
+    const sta::Pin* pin = vertex->pin();
+    if (sta_->isClock(pin, sta_->cmdMode())) {
+      continue;
+    }
+
+    sta::PortDirection* direction = network_->direction(pin);
+    if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
+        || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
+      startpoints.push_back({pin, vertex == graph_->pinDrvrVertex(pin)});
+    }
+  }
+}
+
+void RepairTargetCollector::checkStartpointCache() const
+{
+  if (!logger_->debugCheck(RSZ, "violator_collector", 2)) {
+    return;
+  }
+
+  std::vector<CachedStartpoint> fresh;
+  walkStartpoints(fresh);
+  if (fresh.size() != startpoints_.size()) {
+    debugPrint(logger_,
+               RSZ,
+               "violator_collector",
+               2,
+               "Startpoint cache stale: cached {}, graph now has {}",
+               startpoints_.size(),
+               fresh.size());
+    return;
+  }
+  for (size_t i = 0; i < fresh.size(); ++i) {
+    if (fresh[i].pin != startpoints_[i].pin
+        || fresh[i].drvr_vertex != startpoints_[i].drvr_vertex) {
+      debugPrint(logger_,
+                 RSZ,
+                 "violator_collector",
+                 2,
+                 "Startpoint cache stale at {}: cached {}, graph has {}",
+                 i,
+                 network_->pathName(startpoints_[i].pin),
+                 network_->pathName(fresh[i].pin));
+      return;
+    }
+  }
+}
+
 void RepairTargetCollector::collectViolatingStartpoints()
 {
   violating_startpoints_.clear();
@@ -850,22 +904,10 @@ void RepairTargetCollector::collectViolatingStartpoints()
   // their slacks change. Walking every vertex of the graph to find them
   // again on every -verbose progress row is what made the row cost
   // proportional to the design, once per endpoint visited.
-  if (!startpoints_collected_) {
-    startpoints_.clear();
-    sta::VertexIterator vertex_iter(graph_);
-    while (vertex_iter.hasNext()) {
-      sta::Vertex* vertex = vertex_iter.next();
-      const sta::Pin* pin = vertex->pin();
-      if (sta_->isClock(pin, sta_->cmdMode())) {
-        continue;
-      }
-
-      sta::PortDirection* direction = network_->direction(pin);
-      if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
-          || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
-        startpoints_.push_back({pin, vertex == graph_->pinDrvrVertex(pin)});
-      }
-    }
+  if (startpoints_collected_) {
+    checkStartpointCache();
+  } else {
+    walkStartpoints(startpoints_);
     startpoints_collected_ = true;
   }
 
@@ -875,6 +917,12 @@ void RepairTargetCollector::collectViolatingStartpoints()
                               ? graph_->pinDrvrVertex(startpoint.pin)
                               : graph_->pinLoadVertex(startpoint.pin);
     if (vertex == nullptr) {
+      // A cached startpoint whose vertex is gone is skipped rather than
+      // treated as a stale cache: the pin outliving its vertex is the
+      // only case this can catch (were the pin itself deleted, the
+      // cached pointer would already be dangling), and re-collecting
+      // here would move the printed StTNS mid-repair. Left as is;
+      // checkStartpointCache() makes a real occurrence visible.
       continue;
     }
     const sta::Slack slack = sta_->slack(vertex, max_);
