@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO WMK-0009] Routing watermark report: X=0 watermark nets, 0 passed, 0 failed (p=0.400, cutoff rank=0 / 1).
+[INFO WMK-0010] Total signal wirelength = 3000 DBU, wrong-way = 2000 DBU (66.667%).
+[INFO WMK-0011] Signature strength Pc = 1.000e+00.

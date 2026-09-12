@@ -27,3 +27,10 @@ set_tests_properties(
   drt.ndr_no_auto_taper.tcl
   PROPERTIES TIMEOUT 900
 )
+
+include(GoogleTest)
+add_executable(WatermarkCostTest WatermarkCostTest.cpp)
+target_include_directories(WatermarkCostTest PRIVATE ../src)
+target_link_libraries(WatermarkCostTest PRIVATE drt_lib GTest::gtest_main)
+gtest_discover_tests(WatermarkCostTest)
+add_dependencies(build_and_test WatermarkCostTest)

@@ -825,6 +825,8 @@ void RouterConfiguration::serialize(Archive& ar, const unsigned int /*version*/)
   (ar) & GC_IGNORE_PDN_LAYER_NUM;
 
   (ar) & unidirectional_layer_names_;
+  // Appended last so the archive layout of existing members is unchanged.
+  (ar) & WATERMARK_WRONGWAY_MULT;
 }
 
 }  // namespace drt

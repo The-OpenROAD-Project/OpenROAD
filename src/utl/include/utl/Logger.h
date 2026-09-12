@@ -83,7 +83,8 @@ class Progress;
   X(UKN)                \
   X(UPF)                \
   X(UTL)                \
-  X(WEB)
+  X(WEB)                \
+  X(WMK)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,

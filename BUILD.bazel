@@ -140,6 +140,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
+    "//src/wmk",
+    "//src/wmk:ui",
     ":ord",
 ]
 
@@ -424,6 +426,8 @@ cc_binary(
         "//src/stt",
         "//src/tap",
         "//src/utl",
+        "//src/wmk",
+        "//src/wmk:hmac_sha256",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -478,6 +482,7 @@ python_wrap_cc(
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
+        "//src/wmk:swig-py",
     ],
 )
 
