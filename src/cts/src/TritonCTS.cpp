@@ -1510,9 +1510,18 @@ bool TritonCTS::separateMacroRegSinks(
       sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
       sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
       if (libertyCell && libertyCell->isInverter()) {
+        odb::dbNet* invertedNet = inst->getFirstOutput()->getNet();
         odb::dbITerm* invertedTerm
-            = inst->getFirstOutput()->getNet()->get1stSignalInput(false);
-        nonSinkMacro &= invertedTerm->getInst()->isBlock();
+            = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
+        if (invertedTerm) {
+          nonSinkMacro &= invertedTerm->getInst()->isBlock();
+        } else {
+          logger_->warn(CTS,
+                        111,
+                        "Inverter {} output net has no signal input; "
+                        "treating as a dangling clock inverter.",
+                        inst->getName());
+        }
       }
 
       if (hasInsertionDelay(inst, mterm) || nonSinkMacro || inst->isBlock()) {
