@@ -40,7 +40,10 @@ py_test(
     name = "stt_man_tcl_check",
     srcs = ["stt_man_tcl_check.py"],
     data = ["//src/stt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

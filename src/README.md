@@ -150,13 +150,14 @@ read_db reg1.db
 To write a database to disk.
 
 ``` tcl
-write_db filename
+write_db [-compression level] filename
 ```
 ### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `filename` | Path to the file to be written, if the filename ends with `.gz` the file will be compressed using gzip. |
+| `-compression` | Gzip compression level. Must be between 0 (no compression) and 9 (best compression). Default is 6. Only applicable if the filename ends with `.gz`. |
+| `filename` | Path to the file to be written. If the filename ends with `.gz`, the file will be compressed. |
 
 ### Examples
 ```

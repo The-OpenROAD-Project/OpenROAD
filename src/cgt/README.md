@@ -42,6 +42,9 @@ All parameters for clock gating are optional, as indicated by square brackets: `
 
 ### Clock gating
 
+The `clock_gating` command inserts clock gates on registers that share a
+provable gating condition, reducing switching power.
+
 ```tcl
 clock_gating
     [-min_instances min_instances]

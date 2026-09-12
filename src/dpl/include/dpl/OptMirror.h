@@ -86,7 +86,7 @@ class OptimizeMirroring
 
   // Net bounding box size on nets with more instance terminals
   // than this are ignored.
-  static constexpr int mirror_max_iterm_count_ = 100;
+  static constexpr uint32_t mirror_max_iterm_count_ = 100;
 };
 
 }  // namespace dpl

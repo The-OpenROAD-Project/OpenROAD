@@ -121,8 +121,10 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
   registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
-  // Note: RulerDescriptor, LabelDescriptor, and BufferTreeDescriptor are
-  // GUI-only and are registered in MainWindow::init().
+  // Note: RulerDescriptor and LabelDescriptor are GUI-only and are registered
+  // in MainWindow::init().  BufferTreeDescriptor needs Qt as well, so it is
+  // registered in Gui::init() (which runs in any Qt binary, window or not)
+  // and re-registered by MainWindow::init(); see the comment there.
 }
 
 }  // namespace gui

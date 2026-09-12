@@ -13,7 +13,7 @@ BANT=$("$(dirname "$0")"/get-bant-path.sh)
 
 # Run depend-on-what-you-use build-cleaner.
 # Print buildifier commands to fix if needed.
-"${BANT}" dwyu --graph-augment="..." "$@"
+"${BANT}" dwyu --graph-augment="..." --pp-ifdef=strict "$@"
 
 BANT_EXIT=$?
 if [ ${BANT_EXIT} -eq ${BANT_EXIT_ON_DWYU_ISSUES} ]; then

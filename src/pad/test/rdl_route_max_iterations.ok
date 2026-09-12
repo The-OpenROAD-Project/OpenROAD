@@ -6,13 +6,14 @@
 [INFO ODB-0132]     Created 4 special nets and 4706 connections.
 [INFO ODB-0133]     Created 354 nets and 627 connections.
 [INFO PAD-0005] Routing 139 nets
-[INFO PAD-0037] End of routing iteration 1: 81.2% complete
-[INFO PAD-0037] End of routing iteration 2: 85.4% complete
-[INFO PAD-0037] End of routing iteration 3: 81.9% complete
-[INFO PAD-0037] End of routing iteration 4: 84.4% complete
-[WARNING PAD-0006] Failed to route the following 18 nets:
+[INFO PAD-0037] End of routing iteration 1: 82.1% complete
+[INFO PAD-0037] End of routing iteration 2: 85.8% complete
+[INFO PAD-0037] End of routing iteration 3: 81.6% complete
+[INFO PAD-0037] End of routing iteration 4: 84.7% complete
+[WARNING PAD-0006] Failed to route the following 19 nets:
   DVDD
-    BUMP_11_13/PAD -> u_v18_19/DVDD, u_v18_20/DVDD, u_v18_18/DVDD, u_v18_21/DVDD, u_v18_17/DVDD, ... (67 possible terminals)
+    BUMP_0_9/PAD -> u_v18_29/DVDD, u_v18_30/DVDD, u_v18_28/DVDD, u_v18_31/DVDD, u_v18_27/DVDD, ... (67 possible terminals)
+    BUMP_7_3/PAD -> u_v18_3/DVDD, u_v18_4/DVDD, u_v18_2/DVDD, u_v18_5/DVDD, u_v18_1/DVDD, ... (67 possible terminals)
   VSS
     BUMP_0_7/PAD -> u_vss_14/VSS, u_vss_13/VSS, u_vss_15/VSS, u_vss_12/VSS, u_vss_0/VSS, ... (33 possible terminals)
     BUMP_10_13/PAD -> u_vss_9/VSS, u_vss_pll/VSS, u_vss_10/VSS, u_vss_8/VSS, u_vss_7/VSS, ... (33 possible terminals)
@@ -26,6 +27,8 @@
     BUMP_13_12/PAD -> u_ci_3_i/PAD
   p_ci_4_i
     BUMP_12_11/PAD -> u_ci_4_i/PAD
+  p_clk_B_i
+    BUMP_8_12/PAD -> u_clk_B_i/PAD
   p_co2_clk_o
     BUMP_3_12/PAD -> u_co2_clk_o/PAD
   p_ddr_addr_13_o
@@ -48,5 +51,5 @@
     BUMP_2_9/PAD -> u_ddr_dq_5_io/PAD
   p_ddr_odt_o
     BUMP_10_3/PAD -> u_ddr_odt_o/PAD
-[ERROR PAD-0007] Failed to route 18 nets.
+[ERROR PAD-0007] Failed to route 19 nets.
 pass

@@ -127,11 +127,9 @@ void OptimizeMirroring::findNetBoxes()
     bool ignore = net->getSigType().isSupply()
                   || net->isSpecial()
                   // Reducing HPWL on large nets (like clocks) is irrelevant
-                  // to mirroring criterra.
-                  // Note that getITerms().size() iteractes through the iterms
-                  // so it has to be checked once here instead of where it is
-                  // needed.
-                  || net->getITerms().size() > mirror_max_iterm_count_;
+                  // to mirroring criteria. hasMoreThan() walks the iterms
+                  // (bounded), so check once here and cache the result.
+                  || net->getITerms().hasMoreThan(mirror_max_iterm_count_);
     if (ignore) {
       debugPrint(
           logger_, DPL, "opt_mirror", 2, "ignore {}", net->getConstName());

@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -136,6 +137,10 @@ class Connect
       odb::dbTechLayer* upper,
       const std::set<odb::Rect>& upper_rects,
       const ViaGenerator::Constraint& upper_constraint) const;
+
+  bool updateSharedLayerWidths(
+      const std::vector<std::unique_ptr<DbVia>>& stack,
+      std::vector<std::optional<int>>& shared_widths) const;
 
   void populateDBVias();
   void populateGenerateRules();

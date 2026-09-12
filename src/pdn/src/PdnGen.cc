@@ -74,7 +74,7 @@ void PdnGen::buildGrids(bool trim)
   // connect instances already assigned to grids
   odb::PtrSet<odb::dbInst> insts_in_grids;
   for (auto* grid : grids) {
-    auto insts_in_grid = grid->getInstances();
+    auto insts_in_grid = grid->getObstructionExemptInstances();
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
@@ -738,7 +738,7 @@ void PdnGen::setDebugRenderer(bool on)
 {
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
-      debug_renderer_ = std::make_unique<PDNRenderer>(this);
+      debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
   } else {

@@ -1,0 +1,30 @@
+--- a/toolchain/cc_toolchain.bzl
++++ b/toolchain/cc_toolchain.bzl
+@@ -1,10 +1,27 @@
++load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+ load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+ load("@rules_cc//cc/toolchains:toolchain.bzl", _cc_toolchain = "cc_toolchain")
+ 
+ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
++    # Bazel's built-in ThinLTO scoping features. When requested with
++    # --features=..., linkstatic cc_test targets (or all linkstatic targets) link
++    # shared non-LTO native objects instead of getting a per-binary LTO index and
++    # backend set. Declared here so the request is not silently ignored.
++    cc_feature(
++        name = name + "_thin_lto_linkstatic_tests_use_shared_nonlto_backends",
++        args = [],
++        feature_name = "thin_lto_linkstatic_tests_use_shared_nonlto_backends",
++    )
++    cc_feature(
++        name = name + "_thin_lto_all_linkstatic_use_shared_nonlto_backends",
++        args = [],
++        feature_name = "thin_lto_all_linkstatic_use_shared_nonlto_backends",
++    )
+     cc_feature_set(
+         name = name + "_known_features",
+         all_of = [
++            name + "_thin_lto_linkstatic_tests_use_shared_nonlto_backends",
++            name + "_thin_lto_all_linkstatic_use_shared_nonlto_backends",
+             "@rules_cc//cc/toolchains/args/layering_check:layering_check",
+             "@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
+             "@llvm//toolchain/features:static_link_cpp_runtimes",
