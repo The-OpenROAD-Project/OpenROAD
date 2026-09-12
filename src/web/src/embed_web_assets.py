@@ -2,13 +2,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Embed web asset files (HTML, JS, CSS) as C++ raw string literals
-# so the web server can serve them without a -dir argument.
+# Embed the web assets in the OpenROAD binary, so the browser never fetches code
+# from a CDN (issue #11065).  Generates a .cpp with path -> (content, MIME type).
 #
-# Generates a .cpp file with a lookup function: path -> (content, MIME type).
+# Each asset is given as "<served path>=<file path>", e.g.
+#   /third-party/leaflet/images/layers.png=/abs/path/to/leaflet/images/layers.png
+# The served path keeps its directories: leaflet.css reaches its icons through
+# "images/*.png".
 
 import argparse
 import os
+import re
 
 MIME_TYPES = {
     ".html": "text/html",
@@ -16,68 +20,142 @@ MIME_TYPES = {
     ".css": "text/css",
     ".json": "application/json",
     ".svg": "image/svg+xml",
+    ".png": "image/png",
 }
 
+# Delimiter for the raw string literals.  Content containing it would close the
+# literal early, so as_text() checks rather than assumes.
+DELIMITER = "__WEB_ASSET__"
 
-def c_identifier(filename):
-    """Convert a filename to a valid C identifier."""
-    return "k_" + filename.replace(".", "_").replace("-", "_")
+# Emitted verbatim after the table; only the table itself varies per build.
+LOOKUP_FUNCTIONS = """\
+const EmbeddedAsset* findEmbeddedAsset(std::string_view path)
+{
+  for (const auto& entry : kAssetTable) {
+    if (path == entry.path) {
+      return &entry.asset;
+    }
+  }
+  return nullptr;
+}
+
+size_t embeddedAssetCount()
+{
+  return std::size(kAssetTable);
+}
+
+const EmbeddedAssetEntry& embeddedAssetAt(const size_t index)
+{
+  return kAssetTable[index];
+}
+
+"""
+
+
+def c_identifier(served_path):
+    """Convert a served path to a unique, valid C identifier."""
+    return "k_" + re.sub(r"[^A-Za-z0-9]", "_", served_path.strip("/"))
+
+
+def as_text(data):
+    """Return data as raw-string-literal-safe text, or None if it must be bytes."""
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    # A NUL would truncate the asset, and a carriage return inside a raw string
+    # literal is translated away by the compiler, so neither survives verbatim.
+    if f'){DELIMITER}"' in text or "\0" in text or "\r" in text:
+        return None
+    return text
+
+
+def write_text_asset(out, ident, text):
+    out.write(f'static const char {ident}_data[] = R"{DELIMITER}(')
+    out.write(text)
+    out.write(f'){DELIMITER}";\n\n')
+
+
+def write_binary_asset(out, ident, data):
+    """Write data as octal escapes: images, and text the raw literal cannot hold."""
+    out.write(f'static const char {ident}_data[] =\n    "')
+    for i, byte in enumerate(data):
+        if i and i % 20 == 0:
+            out.write('"\n    "')
+        out.write(f"\\{byte:03o}")
+    out.write('";\n\n')
+
+
+def parse_asset_arg(arg):
+    served, sep, path = arg.partition("=")
+    if not sep:
+        raise SystemExit(f"expected <served path>=<file path>, got: {arg}")
+    if not served.startswith("/"):
+        raise SystemExit(f"served path must be absolute: {served}")
+    return served, path
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
-    parser.add_argument("files", nargs="+", help="Asset files to embed")
+    parser.add_argument(
+        "assets", nargs="+", help="Assets to embed, as <served path>=<file path>"
+    )
     args = parser.parse_args()
 
     assets = []
-    for path in args.files:
-        filename = os.path.basename(path)
-        ext = os.path.splitext(filename)[1]
-        mime = MIME_TYPES.get(ext, "application/octet-stream")
-        with open(path, encoding="utf-8") as f:
-            content = f.read()
-        assets.append((filename, c_identifier(filename), mime, content))
+    seen = {}
+    identifiers = {}
+    for arg in args.assets:
+        served, path = parse_asset_arg(arg)
+        if served in seen:
+            raise SystemExit(
+                f"two assets are served as {served}: {seen[served]} and {path}"
+            )
+        seen[served] = path
+        # c_identifier() folds every non-alphanumeric to _, so two served paths
+        # can collide into one name.
+        ident = c_identifier(served)
+        if ident in identifiers:
+            raise SystemExit(f"{served} and {identifiers[ident]} both generate {ident}")
+        identifiers[ident] = served
+        mime = MIME_TYPES.get(os.path.splitext(served)[1], "application/octet-stream")
+        with open(path, "rb") as f:
+            data = f.read()
+        assets.append((served, ident, mime, data))
 
-    # Use a delimiter unlikely to appear in JS/CSS/HTML content.
-    delim = "__WEB_ASSET__"
-
-    with open(args.output, "w", encoding="utf-8") as out:
+    # Written aside and renamed: a failure must not leave a truncated .cpp
+    # newer than its inputs, which the next build would keep.
+    partial = args.output + ".tmp"
+    with open(partial, "w", encoding="utf-8") as out:
         out.write("// Auto-generated by embed_web_assets.py — do not edit.\n")
         out.write('#include "web_assets.h"\n\n')
+        out.write("#include <cstddef>\n")
+        out.write("#include <iterator>\n")
         out.write("#include <string_view>\n\n")
         out.write("namespace web {\n\n")
 
-        # Write each asset as a raw string literal.
-        for filename, ident, mime, content in assets:
-            out.write(f"// {filename}\n")
-            out.write(f'static const char {ident}_data[] = R"{delim}(')
-            out.write(content)
-            out.write(f'){delim}";\n\n')
+        for served, ident, _, data in assets:
+            out.write(f"// {served}\n")
+            text = as_text(data)
+            if text is None:
+                write_binary_asset(out, ident, data)
+            else:
+                write_text_asset(out, ident, text)
 
-        # Write the lookup table.
-        out.write("static const struct {\n")
-        out.write("  const char* path;\n")
-        out.write("  EmbeddedAsset asset;\n")
-        out.write(f"}} kAssetTable[] = {{\n")
-        for filename, ident, mime, _ in assets:
+        # The lookup table.  Sizes are the byte counts, not sizeof - 1: a
+        # binary asset may contain a NUL and every literal above is escaped.
+        out.write("static const EmbeddedAssetEntry kAssetTable[] = {\n")
+        for served, ident, mime, data in assets:
             out.write(
-                f'    {{"/{filename}", '
-                f'{{{ident}_data, sizeof({ident}_data) - 1, "{mime}"}}}},\n'
+                f'    {{"{served}", ' f'{{{ident}_data, {len(data)}, "{mime}"}}}},\n'
             )
         out.write("};\n\n")
 
-        out.write("const EmbeddedAsset* findEmbeddedAsset(std::string_view path)\n")
-        out.write("{\n")
-        out.write("  for (const auto& entry : kAssetTable) {\n")
-        out.write("    if (path == entry.path) {\n")
-        out.write("      return &entry.asset;\n")
-        out.write("    }\n")
-        out.write("  }\n")
-        out.write("  return nullptr;\n")
-        out.write("}\n\n")
-
+        out.write(LOOKUP_FUNCTIONS)
         out.write("}  // namespace web\n")
+
+    os.replace(partial, args.output)
 
 
 if __name__ == "__main__":

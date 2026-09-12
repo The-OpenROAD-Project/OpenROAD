@@ -4,6 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -36,6 +37,26 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in TESTS]
 
+# The report bundler strips module syntax with regexes; this pins the shapes.
+py_test(
+    name = "embed_report_assets_test",
+    srcs = ["embed_report_assets_test.py"],
+    data = ["//src/web:src/embed_report_assets.py"],
+    legacy_create_init = 0,
+)
+
+# The asset lists live once per build system; this is what keeps them equal.
+py_test(
+    name = "asset_list_parity_test",
+    srcs = ["asset_list_parity.py"],
+    data = [
+        "//src/web:BUILD",
+        "//src/web:CMakeLists.txt",
+    ],
+    legacy_create_init = 0,
+    main = "asset_list_parity.py",
+)
+
 JS_FILES = ["//src/web:js_files"]
 
 DOM_TEST_DATA = [
@@ -46,10 +67,35 @@ DOM_TEST_DATA = [
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":css_inliner_test",
         ":gif_test",
         ":request_handler_test",
         ":save_display_controls_test",
         ":tile_generator_test",
+        ":web_assets_test",
+    ],
+)
+
+cc_test(
+    name = "css_inliner_test",
+    srcs = ["cpp/TestCssInliner.cpp"],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/utl",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "web_assets_test",
+    srcs = ["cpp/TestWebAssets.cpp"],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -480,6 +526,7 @@ cc_test(
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
+        "//src/utl",
         "//src/web",
         "@boost.json",
         "@googletest//:gtest",

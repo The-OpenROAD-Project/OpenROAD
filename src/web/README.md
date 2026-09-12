@@ -222,8 +222,10 @@ The report includes:
 - **Display controls**, hierarchy browser, clock tree, and other panels from
   the live viewer (features that require server interaction show empty states).
 
-The report requires an internet connection to load Leaflet and GoldenLayout
-CSS/JS from CDN.
+The report is self-contained: Leaflet, GoldenLayout and three are inlined as
+`data:` URIs, so it opens from `file://` with no server and no network.  The
+schematic panel is not available in it -- it needs the server, and its two
+libraries would add 2.8 MB to every saved file.
 
 #### Examples
 
