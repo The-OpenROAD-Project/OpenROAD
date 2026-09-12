@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "Rebuffer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -819,10 +820,12 @@ void RepairTargetCollector::collectViolatingEndpoints()
 {
   violating_endpoints_.clear();
 
+  const PathGroupFilter path_group_filter(resizer_);
   const sta::VertexSet& endpoints = sta_->endpoints();
   for (sta::Vertex* endpoint : endpoints) {
     const sta::Slack slack = sta_->slack(endpoint, max_);
-    if (sta::fuzzyLess(slack, slack_margin_)) {
+    if (sta::fuzzyLess(slack, slack_margin_)
+        && path_group_filter.endpointInGroup(endpoint, max_)) {
       violating_endpoints_.emplace_back(endpoint->pin(), slack);
     }
   }
@@ -845,6 +848,7 @@ void RepairTargetCollector::collectViolatingStartpoints()
 {
   violating_startpoints_.clear();
 
+  const PathGroupFilter path_group_filter(resizer_);
   int all_startpoints = 0;
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
@@ -857,6 +861,9 @@ void RepairTargetCollector::collectViolatingStartpoints()
     sta::PortDirection* direction = network_->direction(pin);
     if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
         || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
+      if (!path_group_filter.startpointInGroup(vertex)) {
+        continue;
+      }
       ++all_startpoints;
       const sta::Slack slack = sta_->slack(vertex, max_);
       if (sta::fuzzyLess(slack, slack_margin_)) {
@@ -1424,9 +1431,11 @@ vector<const sta::Pin*> RepairTargetCollector::collectViolatorsByFaninTraversal(
   const sta::VertexSet& all_endpoints = sta_->endpoints();
   std::vector<sta::Vertex*> critical_endpoints;
 
+  const PathGroupFilter path_group_filter(resizer_);
   for (sta::Vertex* endpoint : all_endpoints) {
     sta::Slack endpoint_slack = sta_->slack(endpoint, max_);
-    if (endpoint_slack < slack_threshold) {
+    if (endpoint_slack < slack_threshold
+        && path_group_filter.endpointInGroup(endpoint, max_)) {
       critical_endpoints.push_back(endpoint);
     }
   }
@@ -2475,8 +2484,20 @@ sta::Slack RepairTargetCollector::getOverallEndpointWns() const
 
 sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
 {
-  if (!use_cone) {
+  if (!use_cone && !restrictedToPathGroup()) {
     return sta_->totalNegativeSlack(max_);
+  }
+  if (!use_cone) {
+    // Design wide TNS counts endpoints outside the path group being repaired.
+    sta::Slack total_tns = 0.0;
+    for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
+      const sta::Slack endpoint_wns = getEndpointWns(endpoint_pin);
+      if (endpoint_wns < 0.0) {
+        total_tns
+            = sta::delayAsFloat(total_tns) + sta::delayAsFloat(endpoint_wns);
+      }
+    }
+    return total_tns;
   }
 
   sta::Slack total_tns = 0.0;
@@ -2494,6 +2515,10 @@ sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
 // Proxy method: return WNS (same for both startpoints and endpoints)
 sta::Slack RepairTargetCollector::getWns() const
 {
+  if (restrictedToPathGroup()) {
+    // The design's worst path may well be outside the group being repaired.
+    return getOverallEndpointWns();
+  }
   // WNS is the same regardless of whether we look at startpoints or endpoints
   // because the critical path is always from a startpoint to an endpoint
   sta::Slack wns;
@@ -2531,6 +2556,19 @@ const sta::Pin* RepairTargetCollector::getWorstPin(bool use_startpoints) const
       }
     }
 
+    return worst_pin;
+  }
+  if (restrictedToPathGroup()) {
+    // Report the group's worst endpoint, not the design's.
+    const sta::Pin* worst_pin = nullptr;
+    sta::Slack worst_slack = std::numeric_limits<float>::max();
+    for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
+      const sta::Slack endpoint_wns = getEndpointWns(endpoint_pin);
+      if (endpoint_wns < worst_slack) {
+        worst_slack = endpoint_wns;
+        worst_pin = endpoint_pin;
+      }
+    }
     return worst_pin;
   }
   // For endpoints, use STA's worstSlack to get the worst vertex

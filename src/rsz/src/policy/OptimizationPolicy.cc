@@ -111,7 +111,7 @@ bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
                      /*collect_startpoints=*/true);
   printFinalProgress(final_targets, initial_design_area);
   committer_.printTrackerFinalReports(finalReportPins());
-  return reportRepairSummary();
+  return reportRepairSummary(final_targets.getWns());
 }
 
 void OptimizationPolicy::printProgressHeader() const
@@ -180,7 +180,7 @@ const std::vector<const sta::Pin*>& OptimizationPolicy::finalReportPins() const
   return target_collector_->getViolatingPins();
 }
 
-bool OptimizationPolicy::reportRepairSummary() const
+bool OptimizationPolicy::reportRepairSummary(const sta::Slack worst_slack) const
 {
   bool repaired = false;
 
@@ -248,7 +248,6 @@ bool OptimizationPolicy::reportRepairSummary() const
         utl::RSZ, 53, "Rerouted {} nets resistance-aware.", reroute_moves);
   }
 
-  const sta::Slack worst_slack = sta_->worstSlack(max_);
   if (sta::fuzzyLess(worst_slack, config_.setup_slack_margin)) {
     repaired = true;
     logger_->warn(utl::RSZ, 62, "Unable to repair all setup violations.");

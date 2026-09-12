@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "PathGroupFilter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -78,9 +79,13 @@ bool RepairHold::repairHold(
 
   sta_->findRequireds();
   sta::VertexSet& ends = sta_->search()->endpoints();
+  const PathGroupFilter path_group_filter(resizer_);
   sta::VertexSeq ends1;
   for (sta::Vertex* end : ends) {
-    ends1.push_back(end);
+    // Hold paths are min delay paths, so classify the group against min_.
+    if (path_group_filter.endpointInGroup(end, min_)) {
+      ends1.push_back(end);
+    }
   }
   sta::sort(ends1, sta::VertexIdLess(graph_));
 

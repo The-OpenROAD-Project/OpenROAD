@@ -218,6 +218,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     return estimate_parasitics_;
   }
   bool& matchCellFootprint() { return match_cell_footprint_; }
+  // Path group `repair_timing -path_group` restricts optimization to, empty
+  // when every path group is repaired.  Only set for the duration of one
+  // repair_timing run.
+  const std::string& pathGroup() const { return path_group_; }
   const GlobalSizingConfig& globalSizingConfig() const
   {
     return global_sizing_config_;
@@ -351,6 +355,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool verbose,
                    const std::vector<MoveType>& sequence,
                    const char* phases,
+                   // Path group to restrict repair to, "" for all groups.
+                   const char* path_group,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_size_down_fanout,
@@ -377,7 +383,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   int max_passes,
                   int max_iterations,
                   bool match_cell_footprint,
-                  bool verbose);
+                  bool verbose,
+                  // Path group to restrict repair to, "" for all groups.
+                  const char* path_group);
   void repairHold(const sta::Pin* end_pin,
                   double setup_margin,
                   double hold_margin,
@@ -1016,6 +1024,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
+  std::string path_group_;
 
   // Equivalence classes over the link cells, owned by equiv_cell_groups_ (a
   // deque so the classes keep stable addresses).  No dont_use filtering;

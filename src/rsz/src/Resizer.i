@@ -17,6 +17,7 @@
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
+#include "PathGroupFilter.hh"
 #include "ord/OpenRoad.hh"
 
 namespace ord {
@@ -366,6 +367,7 @@ repair_setup(double setup_margin,
              bool verbose,
              std::vector<rsz::MoveType> sequence,
              const char* phases,
+             const char* path_group,
              bool skip_pin_swap,
              bool skip_gate_cloning,
              bool skip_size_down_fanout,
@@ -380,11 +382,18 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence, phases,
+                       verbose, sequence, phases, path_group,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
+}
+
+std::string
+resolve_path_group(const char* path_group)
+{
+  ensureLinked();
+  return rsz::resolvePathGroup(getResizer(), path_group);
 }
 
 void
@@ -411,7 +420,8 @@ repair_hold(double setup_margin,
             int max_passes,
             int max_iterations,
             bool match_cell_footprint,
-            bool verbose)
+            bool verbose,
+            const char* path_group)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -419,7 +429,7 @@ repair_hold(double setup_margin,
                       allow_setup_violations,
                       max_buffer_percent, max_passes,
                       max_iterations, match_cell_footprint,
-                      verbose);
+                      verbose, path_group);
 }
 
 void
