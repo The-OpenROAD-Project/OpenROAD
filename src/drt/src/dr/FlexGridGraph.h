@@ -956,13 +956,12 @@ class FlexGridGraph
 
   void setNDR(frNonDefaultRule* ndr) { ndr_ = ndr; }
 
-  // Per-net multiplier applied to the grid cost, used to implement the
-  // routing watermark of Kahng et al., "Robust IP Watermarking Methodologies
-  // for Physical Design" (ISPD'98): watermark nets pay a strongly inflated
-  // cost for the edges getCosts charges GRIDCOST on, which covers wrong-way
-  // edges and off-track preferred-direction edges alike.  This approximates
-  // the IC Craftsman "limit way = 1" rule.  A value of 1.0 (the default)
-  // leaves the router's behavior unchanged.
+  // Per-net multiplier on the cost of wiring against a layer's preferred
+  // direction, used to implement the routing watermark of Kahng et al.,
+  // "Robust IP Watermarking Methodologies for Physical Design" (ISPD'98):
+  // watermark nets pay a strongly inflated grid cost on wrong-way edges, which
+  // approximates the IC Craftsman "limit way = 1" rule.  A value of 1.0 (the
+  // default) leaves the router's behavior unchanged.
   void setWrongWayWatermarkMultiplier(float m)
   {
     if (!isValidWatermarkStrength(m)) {
@@ -976,6 +975,23 @@ class FlexGridGraph
     return wrong_way_watermark_multiplier_;
   }
 
+  // Is a move in ``dir`` on layer ``z`` against the layer's preferred
+  // direction?  That is the wiring the routing watermark penalizes, and the
+  // wiring its detector measures.
+  bool isWrongWayEdge(frMIdx z, frDirEnum dir) const
+  {
+    switch (dir) {
+      case frDirEnum::E:
+      case frDirEnum::W:
+        return getZDir(z) == odb::dbTechLayerDir::VERTICAL;
+      case frDirEnum::N:
+      case frDirEnum::S:
+        return getZDir(z) == odb::dbTechLayerDir::HORIZONTAL;
+      default:
+        return false;
+    }
+  }
+
   void setDstTaperBox(frBox3D* t) { dstTaperBox_ = t; }
 
   frCost getCosts(frMIdx gridX,
@@ -986,6 +1002,23 @@ class FlexGridGraph
                   bool considerNDR,
                   bool route_with_jumpers) const;
   bool useNDRCosts(const FlexWavefrontGrid& p) const;
+
+  // The ordinary cost functions and their routing-watermark variants.  The
+  // ordinary ones are the router's original 32-bit arithmetic, untouched;
+  // the watermark ones accumulate in 64 bits and saturate, since an inflated
+  // wrong-way edge can exceed what a 32-bit path can hold.
+  template <bool kWatermark>
+  frCost getNextPathCostImpl(const FlexWavefrontGrid& currGrid,
+                             const frDirEnum& dir,
+                             bool route_with_jumpers) const;
+  template <bool kWatermark>
+  frCost getCostsImpl(frMIdx gridX,
+                      frMIdx gridY,
+                      frMIdx gridZ,
+                      frDirEnum dir,
+                      frLayer* layer,
+                      bool considerNDR,
+                      bool route_with_jumpers) const;
 
   frNonDefaultRule* getNDR() const { return ndr_; }
   const frBox3D* getDstTaperBox() const { return dstTaperBox_; }
@@ -1160,15 +1193,15 @@ class FlexGridGraph
   frUInt4 ggDRCCost_ = 0;
   frUInt4 ggMarkerCost_ = 0;
   frUInt4 ggFixedShapeCost_ = 0;
+  // Watermark: multiplier on wrong-way edges of the net currently being
+  // routed.  1.0 = no change.  See setWrongWayWatermarkMultiplier().
+  float wrong_way_watermark_multiplier_ = 1.0f;
   // temporary variables
   FlexWavefront wavefront_;
   const std::vector<std::pair<frCoord, frCoord>>* halfViaEncArea_
       = nullptr;  // std::pair<layer1area, layer2area>
   // ndr related
   frNonDefaultRule* ndr_ = nullptr;
-  // Watermark: multiplier for the grid cost on the net currently being
-  // routed.  1.0 = no change.  See setWrongWayWatermarkMultiplier().
-  float wrong_way_watermark_multiplier_ = 1.0f;
   const frBox3D* dstTaperBox_
       = nullptr;  // taper box for the current dest pin in the search
 

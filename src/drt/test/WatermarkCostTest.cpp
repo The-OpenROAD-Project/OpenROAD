@@ -25,6 +25,7 @@ TEST(WatermarkCost, RejectsUnrepresentableStrengths)
   EXPECT_TRUE(isValidWatermarkStrength(maxWatermarkStrength()));
   EXPECT_FALSE(isValidWatermarkStrength(std::nextafter(
       maxWatermarkStrength(), std::numeric_limits<float>::infinity())));
+  EXPECT_FALSE(isValidWatermarkStrength(10001.0));
 }
 
 TEST(WatermarkCost, PreservesOrdinaryCosts)
@@ -42,14 +43,16 @@ TEST(WatermarkCost, LargeProductsSaturateBeforeIntegerConversion)
   EXPECT_EQ(scaledWatermarkCost(limit, 1.0f), limit);
   EXPECT_EQ(scaledWatermarkCost(limit, 100.0f), limit);
   EXPECT_EQ(scaledWatermarkCost(uint64_t{limit} * 2, 100.0f), limit);
-  EXPECT_EQ(scaledWatermarkCost(2000, maxWatermarkStrength()), limit);
+  EXPECT_EQ(scaledWatermarkCost(2000, maxWatermarkStrength()), 20000000);
+  EXPECT_EQ(scaledWatermarkCost(1000000, maxWatermarkStrength()), limit);
   EXPECT_EQ(scaledWatermarkCost(uint64_t{limit} * 2, 0.0f), 0);
 }
 
 TEST(WatermarkCost, SaturatedEdgesCannotWrapPathOrQueueCosts)
 {
   const auto limit = std::numeric_limits<frCost>::max();
-  const auto edge = scaledWatermarkCost(2000, maxWatermarkStrength());
+  const auto edge = scaledWatermarkCost(1000000, maxWatermarkStrength());
+  EXPECT_EQ(edge, limit);
   EXPECT_EQ(saturateWatermarkCost(uint64_t{edge} + 2000), limit);
   EXPECT_EQ(addWatermarkCosts(edge, 1), limit);
   EXPECT_EQ(addWatermarkCosts(edge, limit), limit);
@@ -60,7 +63,7 @@ TEST(WatermarkCost, IncreasingStrengthCannotDecreaseEdgeCost)
 {
   frCost previous = 0;
   for (const float strength :
-       {0.0f, 1.0f, 100.0f, 1e6f, maxWatermarkStrength()}) {
+       {0.0f, 1.0f, 100.0f, 1000.0f, maxWatermarkStrength()}) {
     const auto cost = scaledWatermarkCost(50000, strength);
     EXPECT_GE(cost, previous);
     previous = cost;

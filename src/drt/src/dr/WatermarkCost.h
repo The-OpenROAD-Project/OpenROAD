@@ -11,12 +11,13 @@
 
 namespace drt {
 
-// The configuration stores a float, while maze costs use frCost. Use the
-// largest float below the cost limit so conversion cannot round above it.
+// Upper bound on the routing watermark multiplier.  Maze costs are frUInt4
+// and a path accumulates many edges, so a multiplier this large already
+// saturates any path with a few hundred wrong-way edges on it; a larger one
+// would only make distinct expensive paths indistinguishable sooner.
 inline float maxWatermarkStrength()
 {
-  return std::nextafter(static_cast<float>(std::numeric_limits<frCost>::max()),
-                        0.0f);
+  return 10000.0f;
 }
 
 inline bool isValidWatermarkStrength(double strength)
