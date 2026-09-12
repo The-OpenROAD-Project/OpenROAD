@@ -1510,7 +1510,9 @@ bool TritonCTS::separateMacroRegSinks(
       sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
       sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
       if (libertyCell && libertyCell->isInverter()) {
-        odb::dbNet* invertedNet = inst->getFirstOutput()->getNet();
+        odb::dbITerm* invertedOutput = inst->getFirstOutput();
+        odb::dbNet* invertedNet
+            = invertedOutput ? invertedOutput->getNet() : nullptr;
         odb::dbITerm* invertedTerm
             = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
         if (invertedTerm) {
