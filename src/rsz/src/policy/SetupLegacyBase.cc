@@ -866,7 +866,18 @@ void SetupLegacyBase::printProgress(const int iteration,
 
   std::string itr_field = fmt::format("{}{}", iteration, phase_marker);
 
-  const double design_area = resizer_.computeDesignArea();
+  // computeDesignArea() walks every instance. A row is printed every ten
+  // passes and once per endpoint visited, and most of those rows follow
+  // passes that changed nothing; the area can only have moved if the
+  // netlist was edited, so it is recomputed only then. The committer's
+  // edit count is monotonic: a revert followed by a different accept
+  // changes it even when the per-type move totals come back equal.
+  const int edits = committer_.netlistEdits();
+  if (setup_context_.progress_area_at_edit != edits) {
+    setup_context_.progress_design_area = resizer_.computeDesignArea();
+    setup_context_.progress_area_at_edit = edits;
+  }
+  const double design_area = setup_context_.progress_design_area;
   const double area_growth = design_area - setup_context_.initial_design_area;
   double area_growth_percent = std::numeric_limits<double>::infinity();
   if (std::abs(setup_context_.initial_design_area) > 0.0) {
