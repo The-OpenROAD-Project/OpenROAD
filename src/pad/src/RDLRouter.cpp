@@ -723,7 +723,7 @@ void RDLRouter::removeTerminalAccess(const TerminalAccess& access)
   }
 
   for (const auto& [pt0, pt1, weight] : access.removed_edges) {
-    addGraphEdge(pt0, pt1, {.edge_weight_scale = weight});
+    addGraphEdge(pt0, pt1, {.weight = weight});
   }
 }
 
@@ -1151,11 +1151,10 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 void RDLRouter::uncommitRoute(const std::vector<RDLRouter::GridEdge>& route)
 {
   for (const auto& [p0, p1, weight] : route) {
-    addGraphEdge(p0,
-                 p1,
-                 {.edge_weight_scale = weight,
-                  .check_obstructions = false,
-                  .check_routes = false});
+    addGraphEdge(
+        p0,
+        p1,
+        {.weight = weight, .check_obstructions = false, .check_routes = false});
   }
 }
 
@@ -1268,14 +1267,12 @@ std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
 
 RDLRouter::GridEdge RDLRouter::removeGraphEdge(const GridGraphEdge& edge)
 {
-  const float weight = graph_weight_[edge];
+  const int64_t weight = graph_weight_[edge];
   boost::remove_edge(edge, graph_);
 
   return {vertex_point_map_[edge.m_source],
           vertex_point_map_[edge.m_target],
-          weight
-              / distance(vertex_point_map_[edge.m_source],
-                         vertex_point_map_[edge.m_target])};
+          weight};
 }
 
 std::vector<GridGraphVertex> RDLRouter::run(const odb::Point& source,
@@ -1597,10 +1594,13 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
     return false;
   }
 
-  const int64_t direction_bias = point0.y() == point1.y() ? 1 : 0;
-  const int64_t weight
-      = (config.edge_weight_scale.value_or(1.0)) * distance(point0, point1)
-        + (config.edge_weight_scale.has_value() ? 0 : direction_bias);
+  int64_t weight = 0;
+  if (config.weight.has_value()) {
+    weight = config.weight.value();
+  } else {
+    const int64_t direction_bias = point0.y() == point1.y() ? 1 : 0;
+    weight = distance(point0, point1) + direction_bias;
+  }
 
   debugPrint(logger_,
              utl::PAD,

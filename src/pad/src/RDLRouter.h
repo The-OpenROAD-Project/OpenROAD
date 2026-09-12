@@ -113,7 +113,7 @@ class RDLRouter
   {
     odb::Point source;
     odb::Point target;
-    float weight;
+    int64_t weight;
   };
   struct NetRoute
   {
@@ -197,7 +197,7 @@ class RDLRouter
  private:
   struct AddEdgeConfig
   {
-    std::optional<float> edge_weight_scale = {};
+    std::optional<int64_t> weight = {};
     bool check_obstructions = true;
     bool check_routes = true;
   };
