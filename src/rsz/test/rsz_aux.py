@@ -85,6 +85,7 @@ def repair_timing(
     allow_setup_violations=False,
     sequence="",
     phases="",
+    path_group="",
     skip_pin_swap=False,
     skip_gate_cloning=False,
     skip_size_down_fanout=False,
@@ -141,6 +142,7 @@ def repair_timing(
             verbose,
             sequence,
             phases,
+            path_group,
             skip_pin_swap,
             skip_gate_cloning,
             skip_size_down_fanout,
@@ -161,6 +163,7 @@ def repair_timing(
             max_iterations,
             match_cell_footprint,
             verbose,
+            path_group,
         )
 
 

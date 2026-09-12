@@ -136,7 +136,8 @@ TEST_F(RepairHoldRollbackTest, HoldBufferCountSurvivesRollback)
                       /*max_passes=*/10000,
                       /*max_iterations=*/-1,
                       /*match_cell_footprint=*/false,
-                      /*verbose=*/false);
+                      /*verbose=*/false,
+                      /*path_group=*/"");
 
   const int buffers_added = bufferInstCount() - buffers_before;
 
