@@ -227,8 +227,10 @@ static void addTimingActions(T obj,
                      }});
 }
 
-// Ask the user to pick a tech layer.  Returns current if the pick was
-// cancelled.  Only called when Gui::getDialogs() is set.
+// Ask the user to pick a tech layer, with `current` preselected.  Returns
+// nullptr if the pick was cancelled, so the caller can distinguish that from
+// a pick that happens to land back on `current`.  Only called when
+// Gui::getDialogs() is set.
 static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
                                            odb::dbTechLayer* current = nullptr)
 {
@@ -250,7 +252,7 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
   const std::optional<int> selection = Gui::get()->getDialogs()->chooseItem(
       "Select technology layer", "Layer", names, default_selection);
   if (!selection.has_value()) {
-    return current;
+    return nullptr;
   }
   return layers[selection.value()];
 }
