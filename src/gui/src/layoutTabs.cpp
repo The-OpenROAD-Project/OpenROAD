@@ -21,7 +21,7 @@
 
 namespace gui {
 
-LayoutTabs::LayoutTabs(Options* options,
+LayoutTabs::LayoutTabs(QtOptions* options,
                        ScriptWidget* output_widget,
                        const SelectionSet& selected,
                        const HighlightSet& highlighted,

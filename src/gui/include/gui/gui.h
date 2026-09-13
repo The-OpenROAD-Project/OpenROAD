@@ -42,7 +42,6 @@ namespace gui {
 class HeatMapDataSource;
 class Painter;
 class Selected;
-class Options;
 
 struct GIF
 {
@@ -83,6 +82,75 @@ struct PainterColor
   {
     return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
   }
+};
+
+// The display options a Painter draws under.  Only the Qt-free
+// visibility/selectability predicates live here; the Qt gui's
+// DisplayControls implements QtOptions (src/options.h), which adds the
+// QColor/QFont/BrushStyle accessors its own painters need.
+//
+// Every predicate has a default so that this class is usable on its own:
+// a Painter built without options (the web viewer's ShapeCollector, say)
+// draws against a plain Options instance meaning "everything visible, no
+// exclusive modes".
+class Options
+{
+ public:
+  virtual ~Options() = default;
+
+  virtual bool isVisible(const odb::dbTechLayer*) { return true; }
+  virtual bool isSelectable(const odb::dbTechLayer*) { return true; }
+  virtual bool isNetVisible(odb::dbNet*) { return true; }
+  virtual bool isNetSelectable(odb::dbNet*) { return true; }
+  virtual bool isInstanceVisible(odb::dbInst*) { return true; }
+  virtual bool isInstanceSelectable(odb::dbInst*) { return true; }
+  virtual bool areInstanceNamesVisible() { return true; }
+  virtual bool areInstancePinsVisible() { return true; }
+  virtual bool areInstancePinsSelectable() { return true; }
+  virtual bool areInstancePinNamesVisible() { return true; }
+  virtual bool areInstanceBlockagesVisible() { return true; }
+  virtual bool areBlockagesVisible() { return true; }
+  virtual bool areBlockagesSelectable() { return true; }
+  virtual bool areObstructionsVisible() { return true; }
+  virtual bool areObstructionsSelectable() { return true; }
+  virtual bool areSitesVisible() { return false; }
+  virtual bool areSitesSelectable() { return false; }
+  virtual bool isSiteSelectable(odb::dbSite*) { return false; }
+  virtual bool isSiteVisible(odb::dbSite*) { return false; }
+  virtual bool arePrefTracksVisible() { return false; }
+  virtual bool areNonPrefTracksVisible() { return false; }
+
+  virtual bool areIOPinsVisible() const { return true; }
+  virtual bool areIOPinsSelectable() const { return true; }
+  virtual bool areIOPinNamesVisible() const { return true; }
+
+  virtual bool areRoutingSegmentsVisible() const { return true; }
+  virtual bool areRoutingViasVisible() const { return true; }
+  virtual bool areSpecialRoutingSegmentsVisible() const { return true; }
+  virtual bool areSpecialRoutingViasVisible() const { return true; }
+  virtual bool areFillsVisible() const { return true; }
+
+  virtual bool areRulersVisible() { return true; }
+  virtual bool areRulersSelectable() { return true; }
+
+  virtual bool areLabelsVisible() { return true; }
+  virtual bool areLabelsSelectable() { return true; }
+
+  virtual bool isDetailedVisibility() { return false; }
+
+  virtual bool areSelectedVisible() { return true; }
+
+  virtual bool isScaleBarVisible() const { return false; }
+  virtual bool areAccessPointsVisible() const { return false; }
+  virtual bool areRegionsVisible() const { return true; }
+  virtual bool areRegionsSelectable() const { return true; }
+  virtual bool isManufacturingGridVisible() const { return false; }
+
+  virtual bool isModuleView() const { return false; }
+
+  virtual bool isGCellGridVisible() const { return false; }
+  virtual bool isFlywireHighlightOnly() const { return false; }
+  virtual bool areFocusedNetsGuidesVisible() const { return false; }
 };
 
 // This is an API that the Renderer instances will use to do their
@@ -292,7 +360,14 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions();
+  Options* getOptions()
+  {
+    if (options_ == nullptr) {
+      static Options defaults;
+      return &defaults;
+    }
+    return options_;
+  }
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:

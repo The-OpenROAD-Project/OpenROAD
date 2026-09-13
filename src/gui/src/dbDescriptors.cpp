@@ -46,9 +46,6 @@
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
-#ifdef ENABLE_QT
-#include "options.h"
-#endif
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
@@ -1707,11 +1704,7 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
 
   bool draw_flywires = true;
 
-#ifdef ENABLE_QT
   if (!painter.getOptions()->isFlywireHighlightOnly()) {
-#else
-  {
-#endif
     odb::dbWire* wire = net->getWire();
     if (wire) {
       draw_flywires = false;

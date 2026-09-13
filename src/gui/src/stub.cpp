@@ -29,13 +29,6 @@ struct GifWriter
 
 namespace gui {
 
-Options* Painter::getOptions()
-{
-  return options_;
-}
-
-////
-
 Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
 }

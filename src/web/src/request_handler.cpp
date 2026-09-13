@@ -775,10 +775,10 @@ static void collectNetFlightLines(odb::dbNet* net,
 //
 // Reproduced rather than delegated to DbNetDescriptor because the descriptor
 // cannot be made to honor the mode from here: its gate is
-// painter.getOptions()->isFlywireHighlightOnly(), and gui::Options is a private
-// Qt-dependent interface (QColor/QFont), so a non-Qt module has no way to
-// implement it — ShapeCollector's null Options resolves to DefaultOptions,
-// which answers false.  Going through Gui::getDescriptor<odb::dbSWire*>() for
+// painter.getOptions()->isFlywireHighlightOnly(), and ShapeCollector passes no
+// Options, so Painter::getOptions() resolves to the default gui::Options
+// instance, which answers false.  Going through
+// Gui::getDescriptor<odb::dbSWire*>() for
 // just the tail is no better: an unregistered descriptor makes
 // DescriptorRegistry emit GUI-0053, which is fatal, and nothing registers the
 // odb descriptors in the web unit tests.
