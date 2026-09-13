@@ -126,15 +126,45 @@ class NegotiationLegalizer
   {
     disable_window_extension_ = disable;
   }
+  // Suppresses the configuration and per-iteration progress output.  Warnings
+  // (stalls, non-convergence) are always reported.
+  void setQuiet(bool quiet) { quiet_ = quiet; }
 
   // Metrics (valid after legalize()), in site widths on both axes.
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
   [[nodiscard]] int totalMoves() const { return total_moves_; }
+  // Iterations actually executed by each phase.
+  [[nodiscard]] int phase1Iterations() const { return phase1_iterations_; }
+  [[nodiscard]] int phase2Iterations() const { return phase2_iterations_; }
+  [[nodiscard]] int totalIterations() const
+  {
+    return phase1_iterations_ + phase2_iterations_;
+  }
+  // Phase that drove the violation count to zero: 1 or 2.  -1 when the run
+  // ended without converging (phase-2 iteration limit, or a stall handed to
+  // the diamond search), 0 when negotiation never ran because every cell was
+  // already legal.
+  [[nodiscard]] int convergePhase() const;
+  // Times a stalled phase handed its illegal cells to the diamond search.
+  [[nodiscard]] int diamondRecoveries() const { return diamond_recoveries_; }
+  // Report-friendly "<phase> (<how it ended>)" summary.
+  [[nodiscard]] std::string finishDescription() const;
   [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
  private:
+  // How runNegotiation terminated.  Phase 1 falling back to the diamond
+  // search is not a terminal state: the run continues into phase 2.
+  enum class Finish
+  {
+    kNotRun,           // negotiation was never entered (no illegal cell)
+    kPhase1Converged,  // zero violations reached during phase 1
+    kPhase2Converged,  // zero violations reached during phase 2
+    kPhase2Recovery,   // phase 2 stalled, diamond search took over
+    kPhase2IterLimit   // phase-2 iteration limit exhausted
+  };
+
   // Initialisation
   bool initFromDb();
   void buildGrid();
@@ -306,7 +336,14 @@ class NegotiationLegalizer
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool disable_window_extension_{false};
+  bool quiet_{false};
   int total_moves_{0};
+
+  // Convergence stats for the current runNegotiation call.
+  int phase1_iterations_{0};
+  int phase2_iterations_{0};
+  int diamond_recoveries_{0};
+  Finish finish_{Finish::kNotRun};
 
   // Stuck-cell tallies for the current runNegotiation call. Reset at the
   // start of runNegotiation and printed at the end. The per-height maps are

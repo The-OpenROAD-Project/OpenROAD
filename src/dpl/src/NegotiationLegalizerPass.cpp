@@ -87,6 +87,12 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   stuck_no_candidate_by_height_.clear();
   stuck_same_pos_by_height_.clear();
 
+  // Reset convergence stats for this negotiation run.
+  phase1_iterations_ = 0;
+  phase2_iterations_ = 0;
+  diamond_recoveries_ = 0;
+  finish_ = Finish::kNotRun;
+
   // Seed with illegal cells and all movable neighbors within the search
   // window so the loop can create space organically.
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
@@ -142,12 +148,14 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
              active.size(),
              max_iter_neg_);
 
-  logger_->report("          |      Total |  Illegal |  Illegal");
-  logger_->report("Iteration | Violations |    Cells |    Sites");
-  logger_->report("---------------------------------------------");
+  if (!quiet_) {
+    logger_->report("          |      Total |  Illegal |  Illegal");
+    logger_->report("Iteration | Violations |    Cells |    Sites");
+    logger_->report("---------------------------------------------");
+  }
 
   auto print_last_if_needed = [&]() {
-    if (last_iter_ >= 0 && last_iter_ != last_printed_iter_) {
+    if (!quiet_ && last_iter_ >= 0 && last_iter_ != last_printed_iter_) {
       logger_->report("{:>9} | {:>10} | {:>9} | {:>9}",
                       last_iter_,
                       last_violations_,
@@ -160,16 +168,19 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   int prev_violations = -1;
   int stall_count = 0;
   for (int iter = 0; iter < max_iter_neg_; ++iter) {
-    const bool print_row = iter < 10 || iter % 10 == 0;
+    const bool print_row = !quiet_ && (iter < 10 || iter % 10 == 0);
     const int phase_1_violations
         = negotiationIter(active, iter, /*updateHistory=*/true, print_row);
+    phase1_iterations_ = iter + 1;
     if (print_row) {
       last_printed_iter_ = iter;
     }
     if (phase_1_violations == 0) {
+      finish_ = Finish::kPhase1Converged;
       print_last_if_needed();
-      logger_->report("Negotiation phase 1 converged at iteration {}.", iter);
-      logger_->metric("negotiation__converge__phase_1__iteration", iter);
+      if (!quiet_) {
+        logger_->report("Negotiation phase 1 converged at iteration {}.", iter);
+      }
       printStuckSummary("Total stuck cells summary",
                         stuck_no_candidate_count_,
                         stuck_same_pos_count_,
@@ -213,23 +224,30 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   }
 
   // Phase 2 – isolation point active: skip already-legal cells.
-  logger_->report("Negotiation phase 2: isolation point active, {} iterations.",
-                  kMaxIterNeg2);
+  if (!quiet_) {
+    logger_->report(
+        "Negotiation phase 2: isolation point active, {} iterations.",
+        kMaxIterNeg2);
+  }
 
   prev_violations = -1;
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
     const int actual_iter = iter + max_iter_neg_;
-    const bool print_row = actual_iter < 10 || actual_iter % 10 == 0;
+    const bool print_row
+        = !quiet_ && (actual_iter < 10 || actual_iter % 10 == 0);
     const int phase_2_violations = negotiationIter(
         active, actual_iter, /*updateHistory=*/true, print_row);
+    phase2_iterations_ = iter + 1;
     if (print_row) {
       last_printed_iter_ = actual_iter;
     }
     if (phase_2_violations == 0) {
+      finish_ = Finish::kPhase2Converged;
       print_last_if_needed();
-      logger_->report("Negotiation phase 2 converged at iteration {}.", iter);
-      logger_->metric("negotiation__converge__phase_2__iteration", iter);
+      if (!quiet_) {
+        logger_->report("Negotiation phase 2 converged at iteration {}.", iter);
+      }
       printStuckSummary("negotiation totals",
                         stuck_no_candidate_count_,
                         stuck_same_pos_count_,
@@ -255,6 +273,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                       "remaining illegal cells.",
                       phase_2_violations,
                       illegal_cells.size());
+        finish_ = Finish::kPhase2Recovery;
         diamondRecovery(illegal_cells);
         break;
       }
@@ -264,6 +283,10 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     prev_violations = phase_2_violations;
   }
   print_last_if_needed();
+
+  if (finish_ != Finish::kPhase2Recovery) {
+    finish_ = Finish::kPhase2IterLimit;
+  }
 
   // Non-convergence is reported by the caller (Opendp::detailedPlacement)
   // via numViolations(), which avoids registering a message ID in this file.
@@ -1137,6 +1160,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
   if (!opendp_ || !network_) {
     return;
   }
+  ++diamond_recoveries_;
   int recovered = 0;
   for (int idx : activeCells) {
     if (cells_[idx].fixed || isCellLegal(idx)) {
