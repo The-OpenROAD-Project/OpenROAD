@@ -134,11 +134,11 @@ void DiscreteLegend::draw(Painter& painter) const
 
 bool Renderer::checkDisplayControl(const std::string& name)
 {
-  auto it = controls_.find(name);
-  if (it != controls_.end()) {
-    return it->second.visibility;
-  }
-  return false;
+  // Same routing as the Qt build (gui.cpp): the answer belongs to whatever
+  // front-end is installed, which for a no-Qt binary is the web viewer's
+  // HeadlessViewer.  Reading controls_ directly here made that seam inert,
+  // so every per-renderer toggle in the web panel did nothing.
+  return Gui::get()->checkDisplayControlsVisible(displayControlPath(name));
 }
 
 void Renderer::addDisplayControl(
@@ -323,8 +323,22 @@ int Gui::select(const std::string& type,
   return 0;
 }
 
+// The display-control state belongs to whatever front-end is installed, which
+// for a no-Qt binary is the headless viewer (e.g. the web viewer).  Without a
+// viewer everything is visible so headless renderers draw by default.
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->setDisplayControlVisible(name, value);
+  }
+}
+
+bool Gui::checkDisplayControlsVisible(const std::string& name)
+{
+  if (headless_viewer_ != nullptr) {
+    return headless_viewer_->checkDisplayControlVisible(name);
+  }
+  return true;
 }
 
 void Gui::clearHighlights(int highlight_group)
