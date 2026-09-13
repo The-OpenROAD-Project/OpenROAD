@@ -106,57 +106,6 @@ void Gui::triggerAction(const std::string& /* action */)
 {
 }
 
-void Renderer::redraw()
-{
-  Gui::get()->redraw();
-}
-
-Renderer::~Renderer()
-{
-  Gui::get()->unregisterRenderer(this);
-}
-
-void DiscreteLegend::addLegendKey(const Painter::Color& color,
-                                  const std::string& text)
-{
-}
-
-void DiscreteLegend::draw(Painter& painter) const
-{
-}
-
-bool Renderer::checkDisplayControl(const std::string& name)
-{
-  // Same routing as the Qt build (gui.cpp): the answer belongs to whatever
-  // front-end is installed, which for a no-Qt binary is the web viewer's
-  // HeadlessViewer.  Reading controls_ directly here made that seam inert,
-  // so every per-renderer toggle in the web panel did nothing.
-  return Gui::get()->checkDisplayControlsVisible(displayControlPath(name));
-}
-
-void Renderer::addDisplayControl(
-    const std::string& name,
-    bool initial_visible,
-    const DisplayControlCallback& setup,
-    const std::vector<std::string>& mutual_exclusivity)
-{
-  DisplayControl control;
-  control.visibility = initial_visible;
-  control.interactive_setup = setup;
-  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
-                                    mutual_exclusivity.end());
-  controls_[name] = std::move(control);
-}
-
-Renderer::Settings Renderer::getSettings()
-{
-  return {};
-}
-
-void Renderer::setSettings(const Renderer::Settings& /* settings */)
-{
-}
-
 Selected Gui::makeSelected(const std::any& object)
 {
   return DescriptorRegistry::instance()->makeSelected(object);

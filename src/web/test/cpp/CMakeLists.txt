@@ -6,7 +6,7 @@ set(TEST_LIBS
   utl_lib
   lodepng
   tst
-  gui_descriptors
+  gui_core
   GTest::gtest
   GTest::gtest_main
 )
@@ -16,18 +16,14 @@ set(TEST_LIBS
 # gui::Gui::{get,setHeadlessViewer,setChartFactory}.  Compile the headless gui
 # stub into those tests -- the Qt gui library would drag in the whole
 # application -- mirroring the Bazel targets' gui_stub dependency.  `web`
-# itself links only gui_descriptors, so nothing else defines these symbols and
-# there is no clash in either a Qt or a non-Qt build.
+# links gui_core, which holds no Gui dispatch of its own, so nothing else
+# defines these symbols and there is no clash in either a Qt or a non-Qt
+# build.
 #
-# The stub's initGui() calls DescriptorRegistry::initDescriptors(), so the
-# descriptor implementations come along too.  gui_descriptors deliberately
-# holds only the registry, to keep these out of the web library; they compile
-# without Qt here, as they do in the CLI-only gui library.
+# The stub's initGui() calls DescriptorRegistry::initDescriptors(); the
+# descriptor implementations behind it come from gui_core.
 set(GUI_STUB_SRCS
   ${OPENROAD_HOME}/src/gui/src/stub.cpp
-  ${OPENROAD_HOME}/src/gui/src/init_descriptors.cpp
-  ${OPENROAD_HOME}/src/gui/src/dbDescriptors.cpp
-  ${OPENROAD_HOME}/src/gui/src/staDescriptors.cpp
 )
 
 set(GUI_STUB_INCLUDES

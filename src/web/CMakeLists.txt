@@ -145,8 +145,7 @@ target_link_libraries(web
     odb
   PRIVATE
     cli_completer
-    gui_descriptors
-    gui_heatmap_core
+    gui_core
     dbSta_lib
     lodepng
     stb_truetype

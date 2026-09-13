@@ -17,28 +17,42 @@ package(
     features = ["layering_check"],
 )
 
+# The .cpp sources that make up :core.  Named so :gui_qt can exclude them
+# from its glob; the matching headers are listed in :core's srcs.
+CORE_SRCS = [
+    "src/bufferTreeDescriptor.cpp",
+    "src/colorGenerator.cpp",
+    "src/dbDescriptors.cpp",
+    "src/descriptor_registry.cpp",
+    "src/heatMapCore.cpp",
+    "src/heatMapPinDensity.cpp",
+    "src/heatMapPlacementDensity.cpp",
+    "src/init_descriptors.cpp",
+    "src/renderer.cpp",
+    "src/staDescriptors.cpp",
+]
+
+# The Qt-free half of the gui: the data model every other module draws
+# through -- Painter, Renderer, Descriptor/Selected, HeatMapDataSource --
+# published through gui/core.h.  Compiled once and linked by both :gui and
+# :gui_qt, so the Qt build no longer carries a second, separately compiled
+# copy of these objects.
+#
+# Not yet complete on its own: the Gui dispatch it calls into still lives in
+# gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of those too.
 cc_library(
-    name = "gui",
-    srcs = [
+    name = "core",
+    srcs = CORE_SRCS + [
         "src/bufferTreeDescriptor.h",
-        "src/dbDescriptors.cpp",
+        "src/colorGenerator.h",
         "src/dbDescriptors.h",
-        "src/descriptor_registry.cpp",
-        "src/heatMapCore.cpp",
-        "src/heatMapPinDensity.cpp",
         "src/heatMapPinDensity.h",
-        "src/heatMapPlacementDensity.cpp",
         "src/heatMapPlacementDensity.h",
-        "src/init_descriptors.cpp",
-        "src/staDescriptors.cpp",
         "src/staDescriptors.h",
-        ":tcl",
     ],
     hdrs = [
-        "include/gui/MakeGui.h",
         "include/gui/core.h",
         "include/gui/descriptor_registry.h",
-        "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
     includes = [
@@ -54,6 +68,24 @@ cc_library(
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.multi_array",
+    ],
+)
+
+cc_library(
+    name = "gui",
+    srcs = [
+        ":tcl",
+    ],
+    hdrs = [
+        "include/gui/MakeGui.h",
+        "include/gui/gui.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -68,7 +100,7 @@ cc_library(
 # like Gui::enabled, and the GUI never opens at runtime.
 #
 # Only the CLI :openroad binary (and :_openroadpy.so) need to dep
-# :gui_stub explicitly to satisfy those undefined references in :gui's
+# :gui_stub explicitly to satisfy those undefined references in :core's
 # heatMapCore.cpp et al.
 cc_library(
     name = "gui_stub",
@@ -77,6 +109,7 @@ cc_library(
         "src/stub.cpp",
     ],
     deps = [
+        ":core",
         ":gui",
         "//src/odb/src/db",
         "@tcl_lang//:tcl",
@@ -98,7 +131,11 @@ QT_GUI_PLATFORMS = {
             include = [
                 "src/*.cpp",
             ],
-            exclude = [
+            # The Qt-free sources are compiled once, by :core, which this
+            # target deps on.  Globbing them here too would put a second,
+            # separately compiled copy of every descriptor and heatmap
+            # object in the same link as :core's.
+            exclude = CORE_SRCS + [
                 "src/stub.cpp",
                 "src/stub_heatMap.cpp",
             ],
@@ -108,10 +145,7 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
-            "include/gui/core.h",
-            "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
-            "include/gui/heatMap.h",
         ],
         defines = select({
             "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
@@ -126,6 +160,7 @@ QT_GUI_PLATFORMS = {
         qt_gui_platform = platform,
         uic_srcs = glob(["ui/*.ui"]) if platform == "native" else [],
         deps = [
+            ":core",
             ":qt_resources",
             "//:ord",
             "//src/dbSta",
