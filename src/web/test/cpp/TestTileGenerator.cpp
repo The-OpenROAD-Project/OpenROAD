@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -14,6 +15,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include "boost/json/object.hpp"
@@ -405,20 +407,91 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return count;
   }
 
-  // Return true if any visible pixel is NOT the gray die/core outline
-  // ({128,128,128,255}) drawn on the _instances pass.
-  // True if any visible pixel isn't part of the always-on die/core outline.
-  // The outline is neutral gray (kOutlineGray); alpha is NOT checked because
-  // tiles are rasterized supersampled and Lanczos-decimated, so edge pixels
-  // come back with partial coverage (observed 64..197) while the RGB stays
-  // 128,128,128.
+  // Render the _instances tile twice, with and without the blockage hatch,
+  // and report how many of the label's solid pixels the hatch washed out.
+  //
+  // The hatch shows up in the blue channel: the label over a hatch line stays
+  // strongly yellow (min(R,G) - B ~ 210), while a hatch line over the label
+  // flattens it (~0 once the hatch is opaque grey).  Alpha is only tested for
+  // "mostly covered" because tiles are rendered supersampled and decimated,
+  // so a glyph's own pixels come back below the 220 the label colour carries.
+  struct LabelWash
+  {
+    int label_px = 0;
+    int washed_out = 0;
+    int min_yellowness = 255;
+    std::vector<unsigned char> hatched;
+    unsigned w = 0;
+    unsigned h = 0;
+  };
+
+  LabelWash measureLabelWash()
+  {
+    LabelWash out;
+    TileVisibility vis;
+    vis.inst_names = true;
+
+    unsigned pw = 0, ph = 0;
+    vis.placement_blockages = false;
+    const auto plain = decodePng(
+        tile_gen_->generateTile("_instances", 0, 0, 0, vis), pw, ph);
+    vis.placement_blockages = true;
+    out.hatched = decodePng(
+        tile_gen_->generateTile("_instances", 0, 0, 0, vis), out.w, out.h);
+    EXPECT_EQ(pw, out.w);
+    EXPECT_EQ(ph, out.h);
+
+    for (size_t i = 0; i + 3 < plain.size() && i + 3 < out.hatched.size();
+         i += 4) {
+      const bool solid_label = plain[i] > 200 && plain[i + 1] > 200
+                               && plain[i + 2] < 40 && plain[i + 3] > 128;
+      if (!solid_label) {
+        continue;
+      }
+      ++out.label_px;
+      const int yellowness = std::min<int>(out.hatched[i], out.hatched[i + 1])
+                             - out.hatched[i + 2];
+      out.min_yellowness = std::min(out.min_yellowness, yellowness);
+      if (yellowness < 100) {
+        ++out.washed_out;
+      }
+    }
+    return out;
+  }
+
+  static void expectLabelSurvived(const LabelWash& wash)
+  {
+    ASSERT_GT(wash.label_px, 150)
+        << "precondition: the label must be large enough to meet several "
+           "hatch lines; only "
+        << wash.label_px << " solid pixels";
+    EXPECT_EQ(wash.washed_out, 0)
+        << wash.washed_out << " of " << wash.label_px
+        << " label pixels were painted over by the blockage hatch (weakest "
+           "yellowness "
+        << wash.min_yellowness << ")";
+  }
+
+  // True if the RGBA pixel at `p` carries the die/core outline colour.  Alpha
+  // is NOT checked because tiles are rasterized supersampled and
+  // Lanczos-decimated, so edge pixels come back with partial coverage
+  // (observed 64..197) while the RGB stays kOutlineGray.  Read from the shared
+  // constant rather than spelled out, so the renderer cannot drift from it.
+  static bool isOutlineGray(const unsigned char* p)
+  {
+    return p[0] == kOutlineGray.r && p[1] == kOutlineGray.g
+           && p[2] == kOutlineGray.b;
+  }
+
+  // True if any visible pixel isn't part of the always-on die/core outline
+  // drawn on the _instances pass.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
       if (rgba[i + 3] == 0) {
         continue;
       }
-      if (rgba[i] != 128 || rgba[i + 1] != 128 || rgba[i + 2] != 128) {
+      if (!isOutlineGray(&rgba[i])) {
         return true;
       }
     }
@@ -705,6 +778,56 @@ TEST_F(TileGeneratorTest, BoundsCoverDieAreaWhenContentIsSmaller)
   EXPECT_GE(bounds.yMax(), die.yMax());
 }
 
+// Issue #11338: getBounds() reserves room for the pin labels that hang outward
+// from the die edge, because the tile grid is clamped to it and labels outside
+// would have no tiles.  That margin must not reach the zoom-to-fit box, or the
+// design is framed with it as dead space around the design.
+TEST_F(TileGeneratorTest, FitBoundsExcludesThePinLabelMargin)
+{
+  placeInst("BUF_X16", "inst", 0, 0);
+  // A long name, so the label margin is large enough to be unmistakable.
+  makeBTermAtEdge("a_deliberately_long_pin_name", "metal1", 0, 40000, 200, 200);
+  makeTileGen();
+
+  const odb::Rect fit = tile_gen_->getFitBounds();
+  const odb::Rect geo = tile_gen_->getBounds();
+
+  // The fit box is the design proper: the die, as Qt's LayoutViewer::getBounds
+  // returns it.
+  const odb::Rect die = block_->getDieArea();
+  EXPECT_LE(fit.xMin(), die.xMin());
+  EXPECT_LE(fit.yMin(), die.yMin());
+  EXPECT_GE(fit.xMax(), die.xMax());
+  EXPECT_GE(fit.yMax(), die.yMax());
+
+  // The georeference rect is that box grown by the same margin on all four
+  // sides -- which is what the tiles need and the fit must not carry.
+  const int margin = fit.xMin() - geo.xMin();
+  EXPECT_GT(margin, 0) << "precondition: this design has a label margin";
+  EXPECT_EQ(geo.xMax() - fit.xMax(), margin);
+  EXPECT_EQ(fit.yMin() - geo.yMin(), margin);
+  EXPECT_EQ(geo.yMax() - fit.yMax(), margin);
+}
+
+// The margin scales with the longest pin name, so the georeference rect grows
+// as names get longer.  The framing rect must not move with them at all --
+// that is the whole point of keeping the two apart.
+TEST_F(TileGeneratorTest, FitBoundsIsIndifferentToPinNameLength)
+{
+  placeInst("BUF_X16", "inst", 0, 0);
+  makeBTermAtEdge("s", "metal1", 0, 40000, 200, 200);
+  makeTileGen();
+  const odb::Rect short_fit = tile_gen_->getFitBounds();
+  const odb::Rect short_geo = tile_gen_->getBounds();
+
+  makeBTermAtEdge(
+      "a_very_much_longer_pin_name_indeed", "metal1", 0, 50000, 200, 200);
+  makeTileGen();
+
+  EXPECT_EQ(tile_gen_->getFitBounds(), short_fit);
+  EXPECT_LT(tile_gen_->getBounds().xMin(), short_geo.xMin());
+}
+
 // The consequence of the bug above, and the one the reporter saw: the tile
 // grid is georeferenced on getBounds() and its indices are clamped to it, so
 // die area outside those bounds had no tiles at all and simply went missing.
@@ -767,7 +890,8 @@ TEST_F(TileGeneratorTest, DieOutlineFarFromContentIsRasterized)
 // interior, and the tag is the only thing left that can.
 TEST_F(TileGeneratorTest, OrientationTagMarksTheMasterOrigin)
 {
-  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
 
   TileVisibility vis;
   vis.placement_blockages = false;
@@ -842,6 +966,118 @@ TEST_F(TileGeneratorTest, InstanceFootprintIsHatched)
   EXPECT_GT(countNonTransparentPixels(pixels_on),
             2 * countNonTransparentPixels(pixels_off))
       << "the instance footprint should be hatched when blockages are shown";
+}
+
+// Qt brushes blockages with Qt::BDiagPattern, whose lines run "/" -- up to the
+// right.  Mirroring them to "\" is the same texture but not the same picture,
+// and the two GUIs sit side by side in review screenshots.
+TEST_F(TileGeneratorTest, BlockageHatchRunsUpToTheRightLikeQt)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.inst_names = false;
+  vis.placement_blockages = true;
+  unsigned w = 0, h = 0;
+  const auto px
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+
+  // Chase each lit pixel along both diagonals and keep the longest unbroken
+  // run.  A "/" line runs its whole length up-to-the-right, while across the
+  // other diagonal it is only as long as the band is wide -- a separation that
+  // holds whatever the lattice period is, unlike counting neighbours, where a
+  // band a quarter of the period wide already answers to both directions.
+  const auto is_hatch = [&](int x, int y) {
+    if (x < 0 || y < 0 || x >= static_cast<int>(w)
+        || y >= static_cast<int>(h)) {
+      return false;
+    }
+    const size_t i = 4UL * (static_cast<unsigned>(y) * w + x);
+    // Any coverage counts: a 1 px line at 45 degrees has no fully covered
+    // pixel left after the supersampled render is decimated.  The hatch is the
+    // only neutral grey on this tile once the outline is excluded.
+    const bool neutral = px[i] == px[i + 1] && px[i + 1] == px[i + 2];
+    return px[i + 3] > 0 && px[i] > 20 && neutral && !isOutlineGray(&px[i]);
+  };
+  const auto longest_run = [&](int dy) {
+    int best = 0;
+    for (int y = 0; y < static_cast<int>(h); ++y) {
+      for (int x = 0; x < static_cast<int>(w); ++x) {
+        if (!is_hatch(x, y) || is_hatch(x - 1, y - dy)) {
+          continue;  // not the start of a run
+        }
+        int run = 0;
+        while (is_hatch(x + run, y + run * dy)) {
+          ++run;
+        }
+        best = std::max(best, run);
+      }
+    }
+    return best;
+  };
+  const int up_right = longest_run(-1);
+  const int down_right = longest_run(1);
+  ASSERT_GT(up_right + down_right, 20) << "precondition: no hatch was drawn";
+  EXPECT_GT(up_right, 3 * down_right)
+      << "hatch runs the wrong way: longest run is " << up_right
+      << " up-right vs " << down_right << " down-right";
+}
+
+// Qt paints instance names near the END of drawBlock, after drawBlockages, so
+// a hatch line never crosses a label.  The web renderer must do the same.
+TEST_F(TileGeneratorTest, BlockageHatchDoesNotCrossInstanceNames)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  expectLabelSurvived(measureLabelWash());
+}
+
+// Same rule for a standalone dbBlockage laid over the instance: Qt hatches
+// every blockage before it labels any instance, so the label still wins.
+TEST_F(TileGeneratorTest, StandaloneBlockageDoesNotCrossInstanceNames)
+{
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  // A die a little larger than the instance, so the blockage reaches past the
+  // instance footprint -- the two hatch sources cannot be confused -- while
+  // the instance still fills enough of the tile to carry a long label.
+  const odb::Rect box = inst->getBBox()->getBox();
+  const odb::Rect die(box.xMin() - box.dx() / 10,
+                      box.yMin() - box.dy() / 10,
+                      box.xMax() + box.dx() / 10,
+                      box.yMax() + box.dy() / 10);
+  block_->setDieArea(die);
+  odb::dbBlockage::create(
+      block_, die.xMin(), die.yMin(), die.xMax(), die.yMax());
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const LabelWash wash = measureLabelWash();
+  expectLabelSurvived(wash);
+
+  // The die margin the instance footprint does not reach: hatch there can only
+  // have come from the standalone-blockage pass, so it keeps this test from
+  // passing vacuously if that pass ever stops running.
+  int margin_hatch = 0;
+  const unsigned qx = wash.w / 8;
+  for (unsigned y = 0; y < wash.h; ++y) {
+    for (unsigned x = 0; x < qx; ++x) {
+      const size_t i = 4UL * (y * wash.w + x);
+      if (wash.hatched[i + 3] > 0 && !isOutlineGray(&wash.hatched[i])
+          && wash.hatched[i] > 100) {
+        ++margin_hatch;
+      }
+    }
+  }
+  EXPECT_GT(margin_hatch, 0)
+      << "the standalone-blockage pass drew nothing; the test above proves "
+         "nothing";
 }
 
 TEST_F(TileGeneratorTest, GetLayers)
@@ -1164,7 +1400,8 @@ TEST_F(TileGeneratorTest, GeomCacheReusedWhenDesignUnchanged)
 // silently dropping the geometry of any master or via the edit introduced.
 TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
 {
-  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
   makeTileGen();
   // Registers Search as a db callback object and builds the indices, so the
   // first edit below is the valid→invalid transition and the second is not.
@@ -3043,8 +3280,7 @@ TEST_F(TileGeneratorTest, DieAndCoreOutlinesOnInstancesLayer)
     int gray = 0;
     for (unsigned xx = 0; xx < w; ++xx) {
       const size_t i = 4UL * (yy * w + xx);
-      if (pixels[i] == 128 && pixels[i + 1] == 128 && pixels[i + 2] == 128
-          && pixels[i + 3] > 0) {
+      if (pixels[i + 3] > 0 && isOutlineGray(&pixels[i])) {
         ++gray;
       }
     }
@@ -3085,8 +3321,7 @@ TEST_F(TileGeneratorTest, PolygonFloorplanOutlineFollowsDiagonalEdge)
            xx <= std::min(cx + 2, static_cast<int>(w) - 1);
            ++xx) {
         const size_t i = 4UL * (static_cast<size_t>(yy) * w + xx);
-        if (pixels[i + 3] > 0 && pixels[i] == 128 && pixels[i + 1] == 128
-            && pixels[i + 2] == 128) {
+        if (pixels[i + 3] > 0 && isOutlineGray(&pixels[i])) {
           return true;
         }
       }
@@ -4035,6 +4270,135 @@ TEST_F(TileGeneratorTest, SelectAtGatesInstancesByLayerSelectability)
 }
 
 //------------------------------------------------------------------------------
+// Renderer::select — a click can hit an object a renderer owns.  Qt walks the
+// layers in reverse, visible AND selectable only, then makes one pass with a
+// null layer (LayoutViewer::selectAt).
+//------------------------------------------------------------------------------
+
+// Records the layers it is asked about and can claim the click.
+struct RendererSelectRecorder
+{
+  std::vector<std::string> asked;   // "" for the layer-independent pass
+  bool claim_on_null_pass = false;  // return an object on that pass
+
+  void install()
+  {
+    TileGenerator::setRendererHooks(
+        {.select = [this](odb::dbTechLayer* layer,
+                          const odb::Rect& region,
+                          std::vector<SelectionResult>& out) {
+          asked.emplace_back(layer != nullptr ? layer->getName() : "");
+          if (layer == nullptr && claim_on_null_pass) {
+            out.push_back({std::any{},
+                           "renderer-object",
+                           "GCell",
+                           region,
+                           odb::dbTransform(),
+                           /*is_inst=*/false});
+          }
+        }});
+  }
+
+  static void clear() { TileGenerator::setRendererHooks({}); }
+};
+
+TEST_F(TileGeneratorTest, RendererSelectAsksEveryLayerThenTheNullPassLast)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  RendererSelectRecorder recorder;
+  recorder.install();
+  TileVisibility vis;
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis);
+  RendererSelectRecorder::clear();
+
+  ASSERT_FALSE(recorder.asked.empty());
+  // psm::DebugGui::select clears its state on the null pass, so it has to be
+  // the last thing asked.
+  EXPECT_EQ(recorder.asked.back(), "")
+      << "the layer-independent pass must come after every layer";
+  EXPECT_EQ(std::ranges::count(recorder.asked, std::string()), 1)
+      << "and it must happen exactly once";
+  // Reverse layer order, as in Qt: metal2 is asked before metal1.
+  const auto m1 = std::ranges::find(recorder.asked, std::string("metal1"));
+  const auto m2 = std::ranges::find(recorder.asked, std::string("metal2"));
+  ASSERT_NE(m1, recorder.asked.end());
+  ASSERT_NE(m2, recorder.asked.end());
+  EXPECT_LT(m2 - recorder.asked.begin(), m1 - recorder.asked.begin());
+}
+
+TEST_F(TileGeneratorTest, RendererSelectSkipsHiddenAndUnselectableLayers)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // Only metal1 visible.
+  RendererSelectRecorder hidden;
+  hidden.install();
+  TileVisibility vis;
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis, {"metal1"});
+  RendererSelectRecorder::clear();
+  EXPECT_EQ(hidden.asked, (std::vector<std::string>{"metal1", ""}));
+
+  // Visible but not selectable ⇒ not asked at all.
+  RendererSelectRecorder unselectable;
+  unselectable.install();
+  TileVisibility vis_no_sel;
+  vis_no_sel.parseFromJson(parseObj(R"({"selectable_layers":[]})"));
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis_no_sel, {"metal1"});
+  RendererSelectRecorder::clear();
+  EXPECT_EQ(unselectable.asked, (std::vector<std::string>{""}))
+      << "only the layer-independent pass survives";
+}
+
+// Qt pushes renderer hits before searching the design, so a renderer's object
+// wins the click.  Here the sort that promotes instances must not bury it.
+TEST_F(TileGeneratorTest, RendererSelectResultsComeBeforeDesignObjects)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  RendererSelectRecorder recorder;
+  recorder.claim_on_null_pass = true;
+  recorder.install();
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  RendererSelectRecorder::clear();
+
+  ASSERT_GE(results.size(), 2u) << "the instance and the renderer object";
+  EXPECT_EQ(results.front().name, "renderer-object");
+  EXPECT_EQ(results.front().type_name, "GCell");
+  EXPECT_TRUE(std::ranges::any_of(results, [](const SelectionResult& r) {
+    return r.is_inst;
+  })) << "the instance is still picked, just behind";
+}
+
+// With no callback installed nothing changes: the plain openroad binary with
+// no web server never installs one.
+TEST_F(TileGeneratorTest, RendererSelectIsANoOpWithoutACallback)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt((bbox.xMin() + bbox.xMax()) / 2,
+                                     (bbox.yMin() + bbox.yMax()) / 2,
+                                     /*zoom=*/0,
+                                     vis);
+  EXPECT_EQ(results.size(), 1u);
+}
+
+//------------------------------------------------------------------------------
 
 TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)
 {
@@ -4387,7 +4751,7 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdCulledUniformlyAcrossTileSeam)
     if (p[3] == 0) {
       return false;
     }
-    return p[0] != 128 || p[1] != 128 || p[2] != 128;
+    return !isOutlineGray(p);
   };
 
   auto coverage = [&](const std::vector<unsigned char>& px, int xa, int xb) {
@@ -5222,6 +5586,209 @@ TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 {
   EXPECT_EQ(getDb()->getDbuPerMicron(), 2000u);
   EXPECT_EQ(dbuPrecision(getDb()->getDbuPerMicron()), 4);
+}
+
+//------------------------------------------------------------------------------
+// Debug-graphics overlay: the two halves of the gui::Renderer API.  Qt calls
+// drawLayer once per tech layer and drawObjects once after the layers; the web
+// used to call only drawObjects, and once per layer tile at that.
+//------------------------------------------------------------------------------
+
+// Records which layer each debug-overlay invocation was for.  nullptr stands
+// for the layer-independent drawObjects pass.
+struct DebugOverlayRecorder
+{
+  std::vector<std::string> layer_calls;  // one entry per drawLayer pass
+  int object_calls = 0;                  // drawObjects passes
+
+  void install()
+  {
+    TileGenerator::setRendererHooks({.draw = [this](std::vector<unsigned char>&,
+                                                    const TileFrame&,
+                                                    bool,
+                                                    odb::dbTechLayer* layer) {
+      if (layer != nullptr) {
+        layer_calls.emplace_back(layer->getName());
+      } else {
+        ++object_calls;
+      }
+    }});
+  }
+
+  static void clear() { TileGenerator::setRendererHooks({}); }
+};
+
+TEST_F(TileGeneratorTest, DebugOverlayPassesTheTileTechLayer)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  tile_gen_->generateTile("metal3", 0, 0, 0, vis);
+  DebugOverlayRecorder::clear();
+
+  // Each layer tile drives Renderer::drawLayer for its OWN layer, so a
+  // renderer that draws per layer lands on the right tile.
+  EXPECT_EQ(recorder.layer_calls,
+            (std::vector<std::string>{"metal1", "metal3"}));
+  EXPECT_EQ(recorder.object_calls, 0)
+      << "the layer tiles must not carry the drawObjects pass";
+}
+
+TEST_F(TileGeneratorTest, DebugOverlayObjectsPassRunsOncePerTile)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  // What a client does for one tile: a tile per visible layer, plus one
+  // overlay tile.  drawObjects used to run once per layer here.
+  for (const char* layer : {"metal1", "metal2", "metal3", "metal4"}) {
+    tile_gen_->generateTile(layer, 0, 0, 0, vis);
+  }
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 /*highlight_rects=*/{},
+                                 /*highlight_polys=*/{},
+                                 /*colored_rects=*/{},
+                                 /*flight_lines=*/{},
+                                 /*route_guide_net_ids=*/nullptr,
+                                 /*has_visible_layers=*/false,
+                                 /*visible_layers=*/{},
+                                 /*dpr=*/1.0,
+                                 /*tile_px=*/0,
+                                 /*colored_polys=*/{},
+                                 /*labels=*/{},
+                                 /*debug_renderers=*/true,
+                                 /*debug_live=*/true);
+  DebugOverlayRecorder::clear();
+
+  EXPECT_EQ(recorder.object_calls, 1)
+      << "drawObjects belongs to the overlay tile, not to every layer";
+  EXPECT_EQ(recorder.layer_calls.size(), 4u);
+}
+
+// The pseudo layers ("_instances", the grid overlays) have no tech layer, so
+// they take no part in the per-layer pass -- otherwise a renderer would be
+// asked to draw a layer that does not exist.
+TEST_F(TileGeneratorTest, DebugOverlaySkipsPseudoLayers)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  tile_gen_->generateTile("_mfg_grid", 0, 0, 0, vis);
+  DebugOverlayRecorder::clear();
+
+  EXPECT_TRUE(recorder.layer_calls.empty());
+  EXPECT_EQ(recorder.object_calls, 0);
+}
+
+// An overlay tile with no shapes at all still has to render: while a tool is
+// paused mid-run the debug graphics are the only thing on it.
+TEST_F(TileGeneratorTest, DebugOverlayDefeatsTheEmptyOverlayShortCircuit)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 {},
+                                 {},
+                                 {},
+                                 {},
+                                 nullptr,
+                                 false,
+                                 {},
+                                 1.0,
+                                 0,
+                                 {},
+                                 {},
+                                 /*debug_renderers=*/true,
+                                 /*debug_live=*/true);
+  EXPECT_EQ(recorder.object_calls, 1);
+
+  // And with the toggle off the short-circuit still applies.
+  recorder.object_calls = 0;
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 {},
+                                 {},
+                                 {},
+                                 {},
+                                 nullptr,
+                                 false,
+                                 {},
+                                 1.0,
+                                 0,
+                                 {},
+                                 {},
+                                 /*debug_renderers=*/false,
+                                 /*debug_live=*/false);
+  DebugOverlayRecorder::clear();
+  EXPECT_EQ(recorder.object_calls, 0);
+}
+
+// WebServer::stop() clears the hooks from the Tcl thread while the io threads
+// may still be serving a tile, so installing and calling must be serialized.
+// This passes either way without a sanitizer; its job is to give TSan the
+// interleaving to catch (configure a build with -DTSAN=ON to check).
+TEST_F(TileGeneratorTest, RendererHooksSurviveConcurrentInstallAndCall)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+
+  constexpr int kIterations = 200;
+  std::atomic<bool> stop{false};
+  std::atomic<int> draws{0};
+
+  std::thread installer([&] {
+    for (int i = 0; i < kIterations && !stop.load(); ++i) {
+      TileGenerator::setRendererHooks(
+          {.draw = [&draws](std::vector<unsigned char>&,
+                            const TileFrame&,
+                            bool,
+                            odb::dbTechLayer*) { ++draws; }});
+      TileGenerator::setRendererHooks({});
+    }
+  });
+
+  for (int i = 0; i < kIterations; ++i) {
+    tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  }
+  stop.store(true);
+  installer.join();
+  TileGenerator::setRendererHooks({});
+
+  // The count is racy by nature — the point is that neither thread tore the
+  // other's std::function out from under it.
+  SUCCEED();
 }
 
 }  // namespace

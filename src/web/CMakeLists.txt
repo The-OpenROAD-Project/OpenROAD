@@ -37,6 +37,7 @@ set(WEB_ASSET_FILES
     src/clusters-widget.js
     src/hierarchy-panel.js
     src/menu-bar.js
+    src/options-dialogs.js
     src/context-menu.js
     src/search-nav.js
     src/capture.js
@@ -89,6 +90,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clusters-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-panel.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/options-dialogs.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/context-menu.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/search-nav.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.js

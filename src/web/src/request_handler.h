@@ -166,6 +166,9 @@ struct WebSocketRequest
     kGlobalConnectApply,
     kBufferInfo,
     kInsertBuffer,
+    kPolyDecomp,
+    kRendererControls,
+    kSetRendererControl,
     kUnknown
   };
 
@@ -239,6 +242,13 @@ struct SessionState
   // driver->sink lines instead of their routed wire/guides (GUI
   // isFlywireHighlightOnly() parity).
   bool flywires_only = false;
+  // Last Options > "Show polygon decomposition" value this session derived
+  // its highlight shapes under.  The setting itself is server-global (it
+  // lives in gui::Gui, where the ITerm/MTerm descriptors read it); this copy
+  // exists only so the overlay handler can spot that the shapes it holds
+  // predate a change and re-derive them, exactly as it does for
+  // flywires_only.
+  bool poly_decomp = false;
   // Which selection the highlight_* vectors were derived from, or kNone while
   // they hold nothing.  A flywires_only flip has to re-derive them from the
   // SAME source: the multi-selection normally, but a single object when the
@@ -334,6 +344,17 @@ struct SessionState
 // friends), and matching "/?mergetiles=0" against the asset table simply fails,
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
+
+// True if a WebSocket handshake carrying this Origin/Host may be accepted.
+// Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
+// Origin header and JavaScript cannot forge it, so a cross-site page opening
+// ws://localhost:<port> is rejected here before it can drive tcl_eval.
+//
+// An absent Origin is allowed: browsers always send it on a WS handshake, so
+// its absence marks a non-browser client (local tooling, tests), which a
+// loopback bind (F-02) is what keeps local.  A present Origin is accepted only
+// when its authority equals the Host header (strict same-origin).
+bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws

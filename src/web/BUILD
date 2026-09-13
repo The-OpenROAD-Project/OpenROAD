@@ -51,6 +51,7 @@ genrule(
         "src/clusters-widget.js",
         "src/hierarchy-panel.js",
         "src/menu-bar.js",
+        "src/options-dialogs.js",
         "src/context-menu.js",
         "src/search-nav.js",
         "src/capture.js",
@@ -93,6 +94,7 @@ genrule(
           " $(location src/clusters-widget.js)" +
           " $(location src/hierarchy-panel.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/options-dialogs.js)" +
           " $(location src/context-menu.js)" +
           " $(location src/search-nav.js)" +
           " $(location src/capture.js)" +
@@ -136,6 +138,7 @@ _WEB_ASSET_FILES = [
     "src/clusters-widget.js",
     "src/hierarchy-panel.js",
     "src/menu-bar.js",
+    "src/options-dialogs.js",
     "src/context-menu.js",
     "src/search-nav.js",
     "src/capture.js",

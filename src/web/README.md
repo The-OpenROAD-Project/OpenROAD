@@ -22,6 +22,7 @@ console run on the server.
 ```tcl
 web_server
     [-port port]
+    [-bind address]
     [-stop]
 ```
 
@@ -30,8 +31,34 @@ web_server
 | Switch Name | Description |
 | ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
+| `-bind` | IP address to listen on. Default: `127.0.0.1` (loopback only). Accepts an IP literal, not a hostname. |
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
 | `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
+
+```{warning}
+The browser console evaluates Tcl on the server, so anyone who can reach the
+port can run commands as the user who started `openroad`. The default loopback
+bind keeps that local. Only pass `-bind` (for example `-bind 0.0.0.0`) on a
+network you trust; the server has no authentication.
+```
+
+Because the default is loopback, a viewer started inside a container or on a
+remote host is not reachable from outside it — the connection is refused with no
+message from the server. Bind explicitly in that case, and publish the port:
+
+```tcl
+web_server -port 8080 -bind 0.0.0.0
+```
+
+```shell
+docker run -p 8080:8080 ...        # then browse to http://localhost:8080
+```
+
+The same applies to the command-line entry point, which takes `-web_bind`:
+
+```shell
+openroad -web -web_port 8080 -web_bind 0.0.0.0
+```
 
 ### Save Image
 

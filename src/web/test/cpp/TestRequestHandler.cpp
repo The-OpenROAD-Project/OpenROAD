@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -29,6 +30,7 @@
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
+#include "web/web.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -666,6 +668,127 @@ TEST_F(TileHandlerTest, OverlayTileWithNothingSelectedIsEmpty)
   EXPECT_TRUE(resp.payload.empty());
 }
 
+// Origin validation for the WebSocket handshake (issue #11167, anti-CSWSH).
+TEST(WebSocketOriginAllowed, AbsentOriginIsAllowed)
+{
+  // Non-browser clients (local tooling, tests) send no Origin.
+  EXPECT_TRUE(webSocketOriginAllowed("", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginIsAllowed)
+{
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://localhost:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginComparisonIsCaseInsensitive)
+{
+  // A host is case-insensitive; a proxy or client may vary its casing.
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://localhost:8080", "LocalHost:8080"));
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://LOCALHOST:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, DifferentLoopbackSpellingIsRejected)
+{
+  // Strict same-origin: a loopback Origin whose spelling differs from the Host
+  // the request targeted is rejected (closes the cross-port-localhost vector).
+  EXPECT_FALSE(
+      webSocketOriginAllowed("http://127.0.0.1:8080", "localhost:8080"));
+  EXPECT_FALSE(webSocketOriginAllowed("http://[::1]:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginWorksForAnyLoopbackSpelling)
+{
+  // Any spelling is fine as long as Origin authority and Host match exactly.
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://127.0.0.1:8080", "127.0.0.1:8080"));
+}
+
+TEST(WebSocketOriginAllowed, CrossOriginIsRejected)
+{
+  // The F-01 vector: a foreign page opening the loopback socket.
+  EXPECT_FALSE(
+      webSocketOriginAllowed("https://evil.example", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, LoopbackSuffixIsNotConfusedForLoopback)
+{
+  EXPECT_FALSE(
+      webSocketOriginAllowed("http://localhost.evil.com", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
+{
+  // A sandboxed iframe / file:// page serializes its Origin as "null".
+  EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
+}
+
+// Bind-address classification for web_server -bind (issue #11167).
+TEST(ClassifyBindAddress, LoopbackIsRecognised)
+{
+  EXPECT_EQ(classifyBindAddress("127.0.0.1"), BindAddressKind::kLoopback);
+  EXPECT_EQ(classifyBindAddress("::1"), BindAddressKind::kLoopback);
+}
+
+TEST(ClassifyBindAddress, NonLoopbackIsExposed)
+{
+  // 0.0.0.0 was the old hard-coded default: listens on every interface.
+  EXPECT_EQ(classifyBindAddress("0.0.0.0"), BindAddressKind::kExposed);
+  EXPECT_EQ(classifyBindAddress("::"), BindAddressKind::kExposed);
+  EXPECT_EQ(classifyBindAddress("192.168.1.5"), BindAddressKind::kExposed);
+}
+
+TEST(ClassifyBindAddress, IPv4MappedIsClassifiedByItsIPv4Part)
+{
+  // ::ffff:a.b.c.d is an IPv4 bind in v6 clothing; is_loopback() alone would
+  // call the loopback one exposed and raise a spurious warning.
+  EXPECT_EQ(classifyBindAddress("::ffff:127.0.0.1"),
+            BindAddressKind::kLoopback);
+  EXPECT_EQ(classifyBindAddress("::ffff:192.168.1.5"),
+            BindAddressKind::kExposed);
+}
+
+TEST(ClassifyBindAddress, NonLiteralsAreInvalid)
+{
+  // IP literals only, never resolved — pins the documented contract.
+  EXPECT_EQ(classifyBindAddress("localhost"), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress(""), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress("not-an-ip"), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress("999.999.999.999"), BindAddressKind::kInvalid);
+}
+
+// The URL the browser is pointed at has to name where the listener actually is.
+static std::string browserHost(const std::string& literal)
+{
+  return browserHostForBind(boost::asio::ip::make_address(literal));
+}
+
+TEST(BrowserHostForBind, CanonicalLoopbackAndWildcardBecomeLocalhost)
+{
+  // localhost resolves to these, and it is inside the wildcard, which is not
+  // an address a browser can connect to.
+  EXPECT_EQ(browserHost("127.0.0.1"), "localhost");
+  EXPECT_EQ(browserHost("::1"), "localhost");
+  EXPECT_EQ(browserHost("0.0.0.0"), "localhost");
+  EXPECT_EQ(browserHost("::"), "localhost");
+}
+
+TEST(BrowserHostForBind, OtherLoopbackAddressesKeepTheirLiteral)
+{
+  // The bug this pins: localhost resolves to 127.0.0.1, so naming it for the
+  // rest of 127.0.0.0/8 sends the browser to a port nobody is listening on.
+  EXPECT_EQ(browserHost("127.0.0.2"), "127.0.0.2");
+  EXPECT_EQ(browserHost("::ffff:127.0.0.1"), "[::ffff:127.0.0.1]");
+}
+
+TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
+{
+  EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
+  EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
+}
+
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
 {
   struct Case
@@ -1129,6 +1252,81 @@ TEST_F(TileHandlerTest, GeometryChangeRebuildsHighlightGroupShapes)
       << "the group rectangle must follow the instance to its new placement";
   EXPECT_FALSE(state_.highlight_geometry_stale)
       << "the flag is consumed so the next overlay does not rebuild again";
+}
+
+//------------------------------------------------------------------------------
+// Options > "Show polygon decomposition" (2.15) — a server-global setting that
+// travels on the request, so a session has to notice the value moved and
+// re-derive its highlight shapes.
+//------------------------------------------------------------------------------
+
+// An overlay-tile request carrying the polygon-decomposition setting, with
+// "Flywires only" held off so only this toggle can trigger a re-derivation.
+WebSocketRequest polyDecompRequest(uint32_t id, bool poly_decomp)
+{
+  WebSocketRequest req;
+  req.id = id;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json
+      = parseObj(poly_decomp ? R"({"z":0,"x":0,"y":0,"poly_decomp":true})"
+                             : R"({"z":0,"x":0,"y":0,"poly_decomp":false})");
+  return req;
+}
+
+TEST_F(TileHandlerTest, PolyDecompFlipRederivesHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("poly");
+  ASSERT_NE(net, nullptr);
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Nothing moved yet, so this request must not derive anything: it is the
+  // control for the assertion below.  Nothing derived means nothing drawn,
+  // which markEmptyIfBlank reports as an empty response rather than a PNG.
+  WebSocketRequest req = polyDecompRequest(40, /*poly_decomp=*/false);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kEmpty);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.highlight_rects.empty())
+        << "an unchanged setting must not re-derive on every tile";
+    EXPECT_FALSE(state_.poly_decomp);
+  }
+
+  // Flip it the way another client's toggle would, then ask for the same
+  // tile: the handler has to spot the change on its own.
+  req = polyDecompRequest(41, /*poly_decomp=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "the highlight shapes must be re-derived under the new setting";
+  EXPECT_TRUE(state_.poly_decomp)
+      << "the session records what it derived under, so the next tile is a "
+         "no-op";
+}
+
+TEST_F(TileHandlerTest, PolyDecompFlipDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("poly2");
+  ASSERT_NE(net, nullptr);
+  static FakeNetDescriptor net_descriptor;
+  {
+    // An explicit "clear highlights" keeps the inspected object but leaves
+    // the source at kNone.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+  }
+
+  // Nothing to draw, so the response is empty rather than a blank PNG.
+  WebSocketRequest req = polyDecompRequest(42, /*poly_decomp=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kEmpty);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty())
+      << "a toggle must not bring back highlights the user cleared";
 }
 
 TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
@@ -1695,6 +1893,41 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     EXPECT_TRUE(state_.heatmaps.at("Pin")->getShowNumbers());
   }
+}
+
+// Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
+// that name one.  It is not one of getSettings()' entries, so the handler has
+// to special-case it the way Qt's dialog wires the setter directly.
+TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
+{
+  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest meta_req;
+  meta_req.id = 20;
+  meta_req.type = WebSocketRequest::kHeatmaps;
+  const std::string before
+      = payloadStr(handler_->handleHeatMaps(meta_req, state_));
+  EXPECT_NE(before.find("\"selection_filter_label\""), std::string::npos)
+      << "the client needs the label to know whether to offer the control";
+  EXPECT_NE(before.find("\"use_selected_only\":false"), std::string::npos);
+
+  WebSocketRequest set_req;
+  set_req.id = 21;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json
+      = parseObj(R"({"name":"Pin","option":"use_selected_only","value":true})");
+  EXPECT_EQ(handler_->handleSetHeatMap(set_req, state_).type,
+            WebSocketResponse::kJson);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_TRUE(state_.heatmaps.at("Pin")->useSelectedOnly());
+  }
+  const std::string after
+      = payloadStr(handler_->handleHeatMaps(meta_req, state_));
+  EXPECT_NE(after.find("\"use_selected_only\":true"), std::string::npos);
 }
 
 // The browser's number input runs every value through parseFloat, so an
@@ -3771,6 +4004,30 @@ TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
   const auto expected = serializeBoundsResponse(*gen_, gen_->shapesReady());
   EXPECT_EQ(boost::json::serialize(push.at("bounds")),
             boost::json::serialize(expected.at("bounds")));
+  // The framing rect travels with it: an edit moves both.
+  ASSERT_TRUE(push.if_contains("fit_bounds"));
+  EXPECT_EQ(boost::json::serialize(push.at("fit_bounds")),
+            boost::json::serialize(expected.at("fit_bounds")));
+}
+
+// The bounds response carries two rects: `bounds` georeferences the tile grid
+// and `fit_bounds` is what the client frames.  They differ by the pin-label
+// margin, so the framing rect is always inside the georeference one.
+TEST_F(SetPropertyTest, BoundsResponseCarriesTheFramingRect)
+{
+  const auto resp = serializeBoundsResponse(*gen_, true);
+  ASSERT_TRUE(resp.if_contains("fit_bounds"));
+  const auto& geo = resp.at("bounds").as_array();
+  const auto& fit = resp.at("fit_bounds").as_array();
+  // Wire order is [[yMin, xMin], [yMax, xMax]].
+  EXPECT_GE(fit.at(0).as_array().at(0).as_int64(),
+            geo.at(0).as_array().at(0).as_int64());
+  EXPECT_GE(fit.at(0).as_array().at(1).as_int64(),
+            geo.at(0).as_array().at(1).as_int64());
+  EXPECT_LE(fit.at(1).as_array().at(0).as_int64(),
+            geo.at(1).as_array().at(0).as_int64());
+  EXPECT_LE(fit.at(1).as_array().at(1).as_int64(),
+            geo.at(1).as_array().at(1).as_int64());
 }
 
 // Documents the dynamic-bounds behavior the client resync exists for:
