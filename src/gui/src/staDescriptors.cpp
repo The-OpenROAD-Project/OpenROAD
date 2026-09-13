@@ -3,10 +3,6 @@
 
 #include "staDescriptors.h"
 
-#ifdef ENABLE_QT
-#include <QInputDialog>
-#include <QStringList>
-#endif
 #include <algorithm>
 #include <any>
 #include <array>
