@@ -2104,22 +2104,57 @@ bool RepairChannelStraps::isAtEndOfRepairOptions() const
 void RepairChannelStraps::continueRepairs(
     const Shape::ObstructionTreeMap& other_shapes)
 {
+  if (isAtEndOfRepairOptions()) {
+    // every width and spacing has been tried, so there is nothing to continue
+    return;
+  }
+
   clearShapes();
-  const int next_width = getNextWidth();
-  debugPrint(
-      getLogger(),
-      utl::PDN,
-      "Channel",
-      1,
-      "Continue repair at {} on {} with straps on {} for {}: changing width "
-      "from {} um to {} um",
-      Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
-      connect_to_->getName(),
-      getLayer()->getName(),
-      getNetString(),
-      getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
-      next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
-  setWidth(next_width);
+
+  const TechLayer layer(getLayer());
+  const int min_width = layer.getMinWidth();
+
+  // isAtEndOfRepairOptions() reports the end of the width and spacing sequence
+  // that determineParameters() walks, so this must advance that sequence on
+  // every call or the end is never reached. determineParameters() alone is not
+  // enough: it keeps the current parameters when they already fit, which for a
+  // strap already at the minimum width leaves everything unchanged and makes
+  // repairGridChannels() rebuild the same strap forever.
+  if (getWidth() > min_width) {
+    const int next_width = getNextWidth();
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Continue repair at {} on {} with straps on {} for {}: changing width "
+        "from {} um to {} um",
+        Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+        connect_to_->getName(),
+        getLayer()->getName(),
+        getNetString(),
+        getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+        next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+    setWidth(next_width);
+  } else {
+    // the width is at the layer minimum, so the spacing is all that is left
+    const int next_spacing = layer.getSpacing(min_width, getMaxLength());
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Continue repair at {} on {} with straps on {} for {}: changing "
+        "spacing from {} um to {} um",
+        Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+        connect_to_->getName(),
+        getLayer()->getName(),
+        getNetString(),
+        getSpacing() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+        next_spacing / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+    setSpacing(next_spacing);
+  }
+
   determineParameters(other_shapes);
 }
 
@@ -2730,6 +2765,8 @@ void RepairChannelStraps::repairGridChannels(
         if (repair_strap->getLayer() == channel.target->getLayer()
             && channel.area == repair_strap->getArea()) {
           if (!repair_strap->isAtEndOfRepairOptions()) {
+            const std::set<odb::Rect> prev_shapes = strap->getShapeRects();
+
             repair_strap->addNets(channel.nets);
             repair_strap->removeShapes(local_shapes);
             repair_strap->removeObstructions(obstructions);
@@ -2738,7 +2775,12 @@ void RepairChannelStraps::repairGridChannels(
             if (repair_strap->testBuild(local_shapes, obstructions)) {
               strap->getShapes(local_shapes);  // need new shapes
               strap->getObstructions(obstructions);
-              areas_repaired.insert(channel.area);
+              // a rebuild that reproduces the same shapes has not repaired
+              // anything, and counting it would make repairGridChannels()
+              // recurse on an unchanged grid
+              if (strap->getShapeRects() != prev_shapes) {
+                areas_repaired.insert(channel.area);
+              }
             }
           }
         }
@@ -2767,6 +2809,36 @@ void RepairChannelStraps::repairGridChannels(
                  "Channel",
                  1,
                  "Skipping repair at {} in {}.",
+                 Shape::getRectText(channel.area,
+                                    grid->getBlock()->getDbUnitsPerMicron()),
+                 channel.target->getLayer()->getName());
+      continue;
+    }
+
+    // A repair strap already at this channel that has run out of widths and
+    // spacings has tried everything a new strap would try. Building another
+    // one restarts that sequence and repairGridChannels() recurses on it, so
+    // leave the channel to be reported as remaining instead.
+    bool options_exhausted = false;
+    for (const auto& strap : grid->getStraps()) {
+      if (strap->type() != GridComponent::kRepairChannel) {
+        continue;
+      }
+      auto* repair_strap = dynamic_cast<RepairChannelStraps*>(strap.get());
+      if (repair_strap != nullptr
+          && repair_strap->getLayer() == channel.target->getLayer()
+          && repair_strap->getArea() == channel.area
+          && repair_strap->isAtEndOfRepairOptions()) {
+        options_exhausted = true;
+        break;
+      }
+    }
+    if (options_exhausted) {
+      debugPrint(grid->getLogger(),
+                 utl::PDN,
+                 "Channel",
+                 1,
+                 "No repair options left at {} in {}.",
                  Shape::getRectText(channel.area,
                                     grid->getBlock()->getDbUnitsPerMicron()),
                  channel.target->getLayer()->getName());
