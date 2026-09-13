@@ -43,9 +43,11 @@ EOF
 
 FROM $devImage AS builder
 
-ARG compiler=gcc
 ARG numThreads=NotSet
-ARG orVersion=NotSet
+# Release builds pass the published version, for example
+# --build-arg orVersion=2026-09-10. The build context has no .git directory,
+# so the Bazel stamp cannot find the version by itself.
+ARG orVersion=""
 
 RUN <<EOF
 groupadd user --gid 9000
@@ -55,20 +57,14 @@ EOF
 USER user
 WORKDIR /OpenROAD
 COPY --chown=user:user . .
-RUN <<EOF
-# enable compiler for RHEL8
-if [ -f /opt/rh/gcc-toolset-13/enable ]; then
-    source /opt/rh/gcc-toolset-13/enable
-fi
-DEPS_ARGS=""
-if [ -f /etc/openroad_deps_prefixes.txt ]; then
-    DEPS_ARGS=$(cat /etc/openroad_deps_prefixes.txt)
-fi
-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DOPENROAD_VERSION=${orVersion} $DEPS_ARGS
-if [ "$numThreads" = "NotSet" ]; then
-    numThreads=$(nproc)
-fi
-cmake --build build -- -j ${numThreads}
+# Keep Bazel's build cache out of the published builder image.
+RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 <<EOF
+OPENROAD_VERSION="${orVersion}" \
+    bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
+# Preserve the path used by builder-image consumers.
+mkdir -p build/bin
+ln -s ../../install/bin/openroad build/bin/openroad
+rm -f bazel-OpenROAD bazel-bin bazel-out bazel-testlogs
 EOF
 
 COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.
@@ -79,7 +75,7 @@ COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.
 
 FROM $devImage AS final
 
-COPY --from=builder /OpenROAD/build/bin/openroad /usr/bin/.
+COPY --chown=root:root --from=builder /OpenROAD/install/ /usr/
 ENV OPENROAD_EXE=/usr/bin/openroad
 
 RUN <<EOF

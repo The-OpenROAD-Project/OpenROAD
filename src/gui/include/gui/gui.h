@@ -5,6 +5,7 @@
 
 #include <any>
 #include <array>
+#include <atomic>
 #include <cstring>
 #include <functional>
 #include <initializer_list>
@@ -41,7 +42,6 @@ namespace gui {
 class HeatMapDataSource;
 class Painter;
 class Selected;
-class Options;
 
 struct GIF
 {
@@ -82,6 +82,75 @@ struct PainterColor
   {
     return (r == other.r) && (g == other.g) && (b == other.b) && (a == other.a);
   }
+};
+
+// The display options a Painter draws under.  Only the Qt-free
+// visibility/selectability predicates live here; the Qt gui's
+// DisplayControls implements QtOptions (src/options.h), which adds the
+// QColor/QFont/BrushStyle accessors its own painters need.
+//
+// Every predicate has a default so that this class is usable on its own:
+// a Painter built without options (the web viewer's ShapeCollector, say)
+// draws against a plain Options instance meaning "everything visible, no
+// exclusive modes".
+class Options
+{
+ public:
+  virtual ~Options() = default;
+
+  virtual bool isVisible(const odb::dbTechLayer*) { return true; }
+  virtual bool isSelectable(const odb::dbTechLayer*) { return true; }
+  virtual bool isNetVisible(odb::dbNet*) { return true; }
+  virtual bool isNetSelectable(odb::dbNet*) { return true; }
+  virtual bool isInstanceVisible(odb::dbInst*) { return true; }
+  virtual bool isInstanceSelectable(odb::dbInst*) { return true; }
+  virtual bool areInstanceNamesVisible() { return true; }
+  virtual bool areInstancePinsVisible() { return true; }
+  virtual bool areInstancePinsSelectable() { return true; }
+  virtual bool areInstancePinNamesVisible() { return true; }
+  virtual bool areInstanceBlockagesVisible() { return true; }
+  virtual bool areBlockagesVisible() { return true; }
+  virtual bool areBlockagesSelectable() { return true; }
+  virtual bool areObstructionsVisible() { return true; }
+  virtual bool areObstructionsSelectable() { return true; }
+  virtual bool areSitesVisible() { return false; }
+  virtual bool areSitesSelectable() { return false; }
+  virtual bool isSiteSelectable(odb::dbSite*) { return false; }
+  virtual bool isSiteVisible(odb::dbSite*) { return false; }
+  virtual bool arePrefTracksVisible() { return false; }
+  virtual bool areNonPrefTracksVisible() { return false; }
+
+  virtual bool areIOPinsVisible() const { return true; }
+  virtual bool areIOPinsSelectable() const { return true; }
+  virtual bool areIOPinNamesVisible() const { return true; }
+
+  virtual bool areRoutingSegmentsVisible() const { return true; }
+  virtual bool areRoutingViasVisible() const { return true; }
+  virtual bool areSpecialRoutingSegmentsVisible() const { return true; }
+  virtual bool areSpecialRoutingViasVisible() const { return true; }
+  virtual bool areFillsVisible() const { return true; }
+
+  virtual bool areRulersVisible() { return true; }
+  virtual bool areRulersSelectable() { return true; }
+
+  virtual bool areLabelsVisible() { return true; }
+  virtual bool areLabelsSelectable() { return true; }
+
+  virtual bool isDetailedVisibility() { return false; }
+
+  virtual bool areSelectedVisible() { return true; }
+
+  virtual bool isScaleBarVisible() const { return false; }
+  virtual bool areAccessPointsVisible() const { return false; }
+  virtual bool areRegionsVisible() const { return true; }
+  virtual bool areRegionsSelectable() const { return true; }
+  virtual bool isManufacturingGridVisible() const { return false; }
+
+  virtual bool isModuleView() const { return false; }
+
+  virtual bool isGCellGridVisible() const { return false; }
+  virtual bool isFlywireHighlightOnly() const { return false; }
+  virtual bool areFocusedNetsGuidesVisible() const { return false; }
 };
 
 // This is an API that the Renderer instances will use to do their
@@ -291,7 +360,14 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions();
+  Options* getOptions()
+  {
+    if (options_ == nullptr) {
+      static Options defaults;
+      return &defaults;
+    }
+    return options_;
+  }
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:
@@ -604,6 +680,15 @@ class Renderer
   using DisplayControls = std::map<std::string, DisplayControl>;
   const DisplayControls& getDisplayControls() { return controls_; }
 
+  // The path a display control is addressed by: "Group/Name", or just the
+  // name for an ungrouped renderer.  One definition, because both front-ends
+  // and every consumer of getDisplayControls() has to agree on it.
+  std::string displayControlPath(const std::string& name)
+  {
+    const std::string group = getDisplayControlGroupName();
+    return group.empty() ? name : group + "/" + name;
+  }
+
   // Used to check the value of the display control
   bool checkDisplayControl(const std::string& name);
   // Used to set the value of the display control
@@ -728,6 +813,29 @@ class Chart
 
  protected:
   Chart() = default;
+};
+
+// The modal dialogs some Descriptor actions need.  Descriptors are compiled
+// into builds with no Qt at all (the CLI, the web viewer), so the actions
+// that need a dialog are only offered when the Qt gui has installed a
+// handler via Gui::setDialogs.
+class Dialogs
+{
+ public:
+  virtual ~Dialogs() = default;
+
+  // Ask the user to pick one of `items`, starting on `current`.  Returns the
+  // chosen index, or nothing if the user cancelled.
+  virtual std::optional<int> chooseItem(const std::string& title,
+                                        const std::string& label,
+                                        const std::vector<std::string>& items,
+                                        int current)
+      = 0;
+
+  // Run the insert-buffer dialog on `net` and perform the insertion.
+  // Returns the inserted instance, or nullptr if the user cancelled or the
+  // insertion failed (in which case the dialog reports the error).
+  virtual odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) = 0;
 };
 
 // Optional backend plugged in when the Qt GUI is not running (e.g. the web
@@ -1088,6 +1196,20 @@ class Gui
   void setChartFactory(ChartFactory factory);
   const ChartFactory& getChartFactory() const { return chart_factory_; }
 
+  // Options > "Show polygon decomposition": when set, an ITerm/MTerm
+  // highlight outlines the decomposed rectangles instead of the true
+  // polygons.  Held here rather than in a front-end so the web viewer can
+  // drive it too; the Qt main window keeps its own QAction and re-registers
+  // the two descriptors against that instead.  Atomic because the
+  // descriptors read it from the render threads.
+  void setUsePolyDecompView(bool value) { use_poly_decomp_view_ = value; }
+  bool usePolyDecompView() const { return use_poly_decomp_view_; }
+
+  // Install / inspect the provider of the modal dialogs some Descriptor
+  // actions need.  Null in a build without Qt; see the Dialogs comment.
+  void setDialogs(Dialogs* dialogs) { dialogs_ = dialogs; }
+  Dialogs* getDialogs() const { return dialogs_; }
+
   // initialize the GUI
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
@@ -1107,6 +1229,9 @@ class Gui
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
+
+  // Options > "Show polygon decomposition"; see setUsePolyDecompView().
+  std::atomic<bool> use_poly_decomp_view_{false};
 
   utl::Logger* logger_;
   odb::dbDatabase* db_;
@@ -1129,6 +1254,7 @@ class Gui
   // Used when Qt GUI is not active.  Installed by the web viewer.
   HeadlessViewer* headless_viewer_ = nullptr;
   ChartFactory chart_factory_;
+  Dialogs* dialogs_ = nullptr;
 };
 
 // The main entry point

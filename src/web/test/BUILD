@@ -222,6 +222,13 @@ js_test(
 )
 
 js_test(
+    name = "options_dialogs_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-options-dialogs.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "image_export_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-image-export.js",
@@ -330,6 +337,7 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
+        "@boost.asio",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -368,6 +376,7 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:color",
         "//third-party/lodepng",
         "@boost.json",
         "@googletest//:gtest",
@@ -494,10 +503,12 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -119,6 +119,21 @@ void Shape::clearVias()
   connections_below_ = 0;
 }
 
+void Shape::removeVias(const std::set<Via*>& vias)
+{
+  std::erase_if(vias_, [this, &vias](const ViaPtr& via) {
+    if (!vias.contains(via.get())) {
+      return false;
+    }
+    if (via->getLowerLayer() == layer_) {
+      connections_above_--;
+    } else if (via->getUpperLayer() == layer_) {
+      connections_below_--;
+    }
+    return true;
+  });
+}
+
 void Shape::addVia(const ViaPtr& via)
 {
   vias_.push_back(via);

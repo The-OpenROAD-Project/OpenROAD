@@ -51,6 +51,7 @@
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "ord/OpenRoad.hh"
+#include "qtDialogs.h"
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "third-party/gif-h/gif.h"
@@ -63,89 +64,6 @@ extern int cmd_argc;
 extern char** cmd_argv;
 
 namespace gui {
-
-// Default Options implementation for Painters without a real Options
-// (e.g. the web viewer's ShapeCollector).  Returns sensible defaults:
-// everything visible, no exclusive modes.
-class DefaultOptions : public Options
-{
- public:
-  QColor background() override { return Qt::black; }
-  QColor color(const odb::dbTechLayer*) override { return Qt::white; }
-  Qt::BrushStyle pattern(const odb::dbTechLayer*) override
-  {
-    return Qt::SolidPattern;
-  }
-  QColor placementBlockageColor() override { return Qt::darkGray; }
-  Qt::BrushStyle placementBlockagePattern() override
-  {
-    return Qt::SolidPattern;
-  }
-  QColor regionColor() override { return Qt::darkGray; }
-  Qt::BrushStyle regionPattern() override { return Qt::SolidPattern; }
-  QColor instanceNameColor() override { return Qt::white; }
-  QFont instanceNameFont() override { return {}; }
-  QColor itermLabelColor() override { return Qt::white; }
-  QFont itermLabelFont() override { return {}; }
-  QColor siteColor(odb::dbSite*) override { return Qt::darkGray; }
-  bool isVisible(const odb::dbTechLayer*) override { return true; }
-  bool isSelectable(const odb::dbTechLayer*) override { return true; }
-  bool isNetVisible(odb::dbNet*) override { return true; }
-  bool isNetSelectable(odb::dbNet*) override { return true; }
-  bool isInstanceVisible(odb::dbInst*) override { return true; }
-  bool isInstanceSelectable(odb::dbInst*) override { return true; }
-  bool areInstanceNamesVisible() override { return true; }
-  bool areInstancePinsVisible() override { return true; }
-  bool areInstancePinsSelectable() override { return true; }
-  bool areInstancePinNamesVisible() override { return true; }
-  bool areInstanceBlockagesVisible() override { return true; }
-  bool areBlockagesVisible() override { return true; }
-  bool areBlockagesSelectable() override { return true; }
-  bool areObstructionsVisible() override { return true; }
-  bool areObstructionsSelectable() override { return true; }
-  bool areSitesVisible() override { return false; }
-  bool areSitesSelectable() override { return false; }
-  bool isSiteSelectable(odb::dbSite*) override { return false; }
-  bool isSiteVisible(odb::dbSite*) override { return false; }
-  bool arePrefTracksVisible() override { return false; }
-  bool areNonPrefTracksVisible() override { return false; }
-  bool areIOPinsVisible() const override { return true; }
-  bool areIOPinsSelectable() const override { return true; }
-  bool areIOPinNamesVisible() const override { return true; }
-  QFont ioPinMarkersFont() const override { return {}; }
-  bool areRoutingSegmentsVisible() const override { return true; }
-  bool areRoutingViasVisible() const override { return true; }
-  bool areSpecialRoutingSegmentsVisible() const override { return true; }
-  bool areSpecialRoutingViasVisible() const override { return true; }
-  bool areFillsVisible() const override { return true; }
-  QColor rulerColor() override { return Qt::cyan; }
-  QFont rulerFont() override { return {}; }
-  bool areRulersVisible() override { return true; }
-  bool areRulersSelectable() override { return true; }
-  QFont labelFont() override { return {}; }
-  bool areLabelsVisible() override { return true; }
-  bool areLabelsSelectable() override { return true; }
-  bool isDetailedVisibility() override { return false; }
-  bool areSelectedVisible() override { return true; }
-  bool isScaleBarVisible() const override { return false; }
-  bool areAccessPointsVisible() const override { return false; }
-  bool areRegionsVisible() const override { return true; }
-  bool areRegionsSelectable() const override { return true; }
-  bool isManufacturingGridVisible() const override { return false; }
-  bool isModuleView() const override { return false; }
-  bool isGCellGridVisible() const override { return false; }
-  bool isFlywireHighlightOnly() const override { return false; }
-  bool areFocusedNetsGuidesVisible() const override { return false; }
-};
-
-Options* Painter::getOptions()
-{
-  if (!options_) {
-    static DefaultOptions defaults;
-    return &defaults;
-  }
-  return options_;
-}
 
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
@@ -1361,23 +1279,12 @@ void Renderer::redraw()
 
 bool Renderer::checkDisplayControl(const std::string& name)
 {
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    return Gui::get()->checkDisplayControlsVisible(name);
-  }
-  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
+  return Gui::get()->checkDisplayControlsVisible(displayControlPath(name));
 }
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
 {
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    Gui::get()->setDisplayControlsVisible(name, value);
-  } else {
-    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
-  }
+  Gui::get()->setDisplayControlsVisible(displayControlPath(name), value);
 }
 
 void Renderer::addDisplayControl(
@@ -1768,6 +1675,12 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
   db_ = db;
   setLogger(logger);
+
+  // Lets the descriptors offer the actions that need a modal dialog.  Only
+  // this file is Qt-only, so a build without Qt leaves the hook null and
+  // those actions are not offered.
+  static QtDialogs dialogs;
+  setDialogs(&dialogs);
 
   auto* registry = DescriptorRegistry::instance();
   registry->setLogger(logger);
