@@ -2824,9 +2824,8 @@ void RepairChannelStraps::repairGridChannels(
       if (strap->type() != GridComponent::kRepairChannel) {
         continue;
       }
-      auto* repair_strap = dynamic_cast<RepairChannelStraps*>(strap.get());
-      if (repair_strap != nullptr
-          && repair_strap->getLayer() == channel.target->getLayer()
+      auto* repair_strap = static_cast<RepairChannelStraps*>(strap.get());
+      if (repair_strap->getLayer() == channel.target->getLayer()
           && repair_strap->getArea() == channel.area
           && repair_strap->isAtEndOfRepairOptions()) {
         options_exhausted = true;
