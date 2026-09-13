@@ -718,7 +718,8 @@ class TileGenerator
                  const odb::Rect& region,
                  int width_px,
                  double dbu_per_pixel,
-                 const TileVisibility& vis) const;
+                 const TileVisibility& vis,
+                 const Color& bg = {}) const;
 
   // The layers saveImage composites, bottom to top.  Public so a test can pin
   // the order down: it has to match the zIndex the client gives each layer in

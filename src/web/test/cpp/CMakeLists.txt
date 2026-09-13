@@ -114,13 +114,14 @@ gtest_discover_tests(TestClockTreeReport
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_executable(TestSaveImage TestSaveImage.cpp)
+add_executable(TestSaveImage TestSaveImage.cpp ${GUI_STUB_SRCS})
 
 target_link_libraries(TestSaveImage ${TEST_LIBS})
 
 target_include_directories(TestSaveImage
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+    ${GUI_STUB_INCLUDES}
 )
 
 gtest_discover_tests(TestSaveImage

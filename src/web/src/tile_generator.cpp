@@ -5337,8 +5337,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     if (!(vis.*(spec.flag))) {
       continue;
     }
-    owner_colors[spec.index] = spec.default_colors(block, sta_);
-    if (owner_colors[spec.index].empty()) {
+    // The same map the viewer paints with before a panel sends its own.
+    owner_colors[spec.index] = defaultOwnerColors(spec.index);
+    if (!owner_colors[spec.index] || owner_colors[spec.index]->empty()) {
       // Nothing to color by: warn and drop the layer saveImageLayerOrder put
       // in for the flag, rather than compositing an empty pass over the image.
       logger_->warn(

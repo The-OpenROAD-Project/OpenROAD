@@ -64,6 +64,10 @@ When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
+The image is opaque: it is painted on the Background color of the browser that
+last synced its display state, and on black — the default of both GUIs — when
+none has, as with a plain headless run.
+
 #### Display option keys (web mode)
 
 Display options control which elements are rendered when using `-web`.
@@ -187,8 +191,9 @@ zoom the GUI is at.
 
 On the web path, the first frame fixes the GIF's dimensions; a later frame that
 comes out a different size — because the design's bounding box grew, say — is
-rescaled to match rather than starting a second GIF. Area outside the design is
-left transparent, which most viewers show as black. Ending a stream that never
+rescaled to match rather than starting a second GIF. Area outside the design
+comes out black: the GIF encoder ignores alpha, so it writes the frame's
+uncomposited pixels. Ending a stream that never
 received a frame writes no file and warns. The maximum frame dimension is 16384
 pixels, as for `save_image`; larger requests are clamped.
 

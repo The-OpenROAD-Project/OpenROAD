@@ -134,6 +134,25 @@ bool parseIntExact(std::string_view s, T& out, int base = 10)
   return res.ec == std::errc{} && res.ptr == last;
 }
 
+// "rrggbb", with or without a leading '#', to an opaque Color.  False for
+// anything else: the /image query parameter writes it bare, the viewer's
+// or_bg_color cookie carries the '#'.
+bool parseHexColor(std::string_view s, Color& out)
+{
+  if (!s.empty() && s.front() == '#') {
+    s.remove_prefix(1);
+  }
+  unsigned rgb = 0;
+  if (s.size() != 6 || !parseIntExact(s, rgb, 16)) {
+    return false;
+  }
+  out = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+              .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+              .b = static_cast<unsigned char>(rgb & 0xFF),
+              .a = 255};
+  return true;
+}
+
 // Percent-decode a URL query value (e.g. the JSON `vis` payload).
 std::string urlDecode(std::string_view s)
 {
@@ -249,18 +268,12 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   }
 
   // Background color (RRGGBB hex) so the saved image matches the viewer's
-  // background; absent => transparent.
+  // background; absent or malformed => transparent.
   Color bg{};  // {0,0,0,0}
   const auto bg_it = params.find("bg");
-  unsigned rgb = 0;
-  if (bg_it != params.end() && bg_it->second.size() == 6
-      && parseIntExact(bg_it->second, rgb, 16)) {
-    bg = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-               .b = static_cast<unsigned char>(rgb & 0xFF),
-               .a = 255};
+  if (bg_it != params.end()) {
+    parseHexColor(bg_it->second, bg);
   }
-  // Malformed/absent bg: keep transparent.
 
   const std::vector<unsigned char> png = generator->renderImagePng(
       region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
@@ -1787,6 +1800,30 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   }
   return vis;
 }
+
+// The background the saved image is painted on: whatever the viewer is showing
+// when a client has synced its state, else black -- the default both GUIs use
+// (--bg-map in style.css, background_color_ in displayControls.cpp).  Never
+// transparent: an image file is looked at on its own, not composited.
+Color savedBackgroundColor(WebViewerHook* hook)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  if (hook == nullptr) {
+    return kBlack;
+  }
+  // The snapshot is {"version":1,"entries":{"or_bg_color":"#rrggbb",...}}.
+  std::error_code ec;
+  const boost::json::value state
+      = boost::json::parse(hook->getDisplayState(), ec);
+  const auto* color
+      = ec ? nullptr : state.find_pointer("/entries/or_bg_color", ec);
+  Color parsed{};
+  if (color != nullptr && color->is_string()
+      && parseHexColor(color->get_string(), parsed)) {
+    return parsed;
+  }
+  return kBlack;
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -1803,7 +1840,12 @@ void WebServer::saveImage(const std::string& filename,
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
-  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+  generator_->saveImage(filename,
+                        region,
+                        width_px,
+                        dbu_per_pixel,
+                        vis,
+                        savedBackgroundColor(viewer_hook_.get()));
 }
 
 namespace {

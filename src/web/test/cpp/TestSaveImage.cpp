@@ -19,6 +19,7 @@
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/web.h"
 
 namespace web {
 namespace {
@@ -162,6 +163,74 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_GT(h, 0u);
   // Should contain visible content (placed instance).
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+  // No background named, so what the tiles did not draw stays transparent --
+  // which is what the GIF frames want.
+  EXPECT_EQ(pixels[3], 0) << "the corner is outside the die";
+}
+
+// A saved image is looked at on its own, not composited over something else,
+// so it carries a background the way the Qt save_image does (which passes
+// options_->background()).  Everything the tiles leave untouched must come out
+// in that color, opaque.
+TEST_F(SaveImageTest, BackgroundFillsWhatTheTilesDoNotDraw)
+{
+  const std::string path = tempPng("bg_blue");
+  const Color blue{.r = 0x12, .g = 0x34, .b = 0x56, .a = 255};
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}, blue);
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(path, w, h);
+  ASSERT_GT(w * h, 0u);
+  for (size_t i = 3; i < pixels.size(); i += 4) {
+    ASSERT_EQ(pixels[i], 255) << "transparent pixel at " << (i / 4);
+  }
+  // The corner is outside the die, so nothing composites over it.
+  EXPECT_EQ(pixels[0], blue.r);
+  EXPECT_EQ(pixels[1], blue.g);
+  EXPECT_EQ(pixels[2], blue.b);
+}
+
+// `save_image -web` goes through WebServer, which picks the background out of
+// the state the browser last synced -- that is what makes the file match what
+// the user is looking at.  Anything else, a plain headless run with no browser
+// included, falls back to black.
+TEST_F(SaveImageTest, BackgroundComesFromTheViewerState)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  struct Case
+  {
+    const char* label;
+    const char* state;  // nullptr: nothing ever synced
+    Color want;
+  };
+  const Case cases[] = {
+      {"nostate", nullptr, kBlack},
+      {"color",
+       R"({"version":1,"entries":{"or_bg_color":"#123456"}})",
+       Color{.r = 0x12, .g = 0x34, .b = 0x56, .a = 255}},
+      {"garbage",
+       R"({"version":1,"entries":{"or_bg_color":"nonsense"}})",
+       kBlack},
+  };
+
+  for (const Case& c : cases) {
+    WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+    if (c.state != nullptr) {
+      server.initLogger();  // creates the hook that holds the synced state
+      server.setDisplayState(c.state);
+    }
+    const std::string path = tempPng(c.label);
+    server.saveImage(path, 0, 0, 0, 0, /*width_px=*/0, /*dbu_per_pixel=*/0, "");
+
+    unsigned w = 0, h = 0;
+    const auto pixels = decodePngFile(path, w, h);
+    ASSERT_GE(pixels.size(), 4u) << c.label;
+    // The corner is outside the die: the background and nothing else.
+    EXPECT_EQ(pixels[0], c.want.r) << c.label;
+    EXPECT_EQ(pixels[1], c.want.g) << c.label;
+    EXPECT_EQ(pixels[2], c.want.b) << c.label;
+    EXPECT_EQ(pixels[3], c.want.a) << c.label;
+  }
 }
 
 // `save_image -web -display_option {cluster_view true}` is the headless path
