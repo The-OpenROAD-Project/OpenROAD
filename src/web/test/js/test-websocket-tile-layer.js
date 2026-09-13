@@ -48,7 +48,8 @@ const { buildMapOptions } = await import('../../src/ui-utils.js');
 const { floorClampZoom, buildTileRequest, currentDpr,
         createWebSocketTileLayer, createOverlayTileLayer }
     = await import('../../src/websocket-tile-layer.js');
-const { BLANK_TILE, TILE_SIZE_CSS, buildTileRequestFor, watchDevicePixelRatio }
+const { BLANK_TILE, TILE_SIZE_CSS, buildTileRequestFor, setTileSrc,
+        watchDevicePixelRatio }
     = await import('../../src/tile-request.js');
 const { WebSocketManager } = await import('../../src/websocket-manager.js');
 
@@ -82,6 +83,25 @@ describe('BLANK_TILE', () => {
         assert.equal(b[block], 0x21, 'an extension block must come first');
         assert.equal(b[block + 1], 0xF9, 'and it must be the graphic control');
         assert.equal(b[block + 3] & 0x01, 1, 'with the transparency flag set');
+    });
+});
+
+// The one place any tile layer points a tile at an image, including the heat
+// map in main.js, which has no tests of its own.  Assigning `src` by hand is
+// how a path ends up stranding the blob the tile was holding.
+describe('setTileSrc', () => {
+    it('releases the blob the tile was holding', () => {
+        const revoked = [];
+        const saved = URL.revokeObjectURL;
+        URL.revokeObjectURL = (u) => revoked.push(u);
+        try {
+            const tile = { src: 'blob:fake-url' };
+            setTileSrc(tile, BLANK_TILE);
+            assert.equal(tile.src, BLANK_TILE);
+        } finally {
+            URL.revokeObjectURL = saved;
+        }
+        assert.deepEqual(revoked, ['blob:fake-url']);
     });
 });
 
@@ -410,7 +430,7 @@ describe('gated tile layers', () => {
                                               'cluster_view');
         const tile = layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
         assert.equal(requests.length, 0);
-        assert.match(tile.src, /^data:image\/png;base64,/);
+        assert.equal(tile.src, BLANK_TILE);
     });
 
     it('requests normally once the flag is on', () => {
@@ -461,7 +481,7 @@ describe('gated tile layers', () => {
         visibility.cluster_view = false;
         layer.refreshTiles();
         assert.equal(requests.length, 0);
-        assert.match(el.src, /^data:image\/png;base64,/);
+        assert.equal(el.src, BLANK_TILE);
 
         visibility.cluster_view = true;
         layer.refreshTiles();

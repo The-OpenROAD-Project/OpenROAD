@@ -75,10 +75,28 @@ export const STATIC_TILE_SIZE_CSS = 256;
 // It carries a Graphic Control Extension declaring colour 0 transparent.  A 1x1
 // GIF without one is a common paste and is NOT transparent: an <img> stretches
 // its single opaque pixel over the whole tile, so a viewport of empty tiles
-// comes out a solid wash instead of showing the layout underneath.
+// comes out a solid wash instead of showing the layout underneath.  This exact
+// image is also the only blank a tile may hold: a 1x1 PNG in its place leaves a
+// grey fringe per tile in Firefox, which lines up into a grid over the layout.
 export const BLANK_TILE
     = 'data:image/gif;base64,'
       + 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+// Release the object URL a tile is holding, if that is what it holds.  Every
+// path that drops a tile image -- a new src, the load event, a pruned tile --
+// has to do this or the blob stays alive for the life of the document.
+export function releaseTileBlob(tile) {
+    if (tile.src && tile.src.startsWith('blob:')) {
+        URL.revokeObjectURL(tile.src);
+    }
+}
+
+// Point a tile at an image.  Every src assignment in every tile layer goes
+// through here, so there is one answer to what an empty tile holds.
+export function setTileSrc(tile, src) {
+    releaseTileBlob(tile);
+    tile.src = src;
+}
 
 // The CSS tile size in force for this session.  Resolved once rather than
 // passed around: the map's coordinate scale, all three tile layers and the

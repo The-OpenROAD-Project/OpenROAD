@@ -4,8 +4,9 @@
 // Leaflet tile layer that fetches tiles via WebSocket.
 
 import {
-    BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
-    tileSizeFields, withDeviceExactTileSize,
+    BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr,
+    releaseTileBlob, setTileSrc, tileSizeCss, tileSizeFields,
+    withDeviceExactTileSize,
 } from './tile-request.js';
 
 // Imported AND re-exported: `export { x } from '...'` alone re-exports without
@@ -26,11 +27,6 @@ export function buildTileRequest(coords, layerName, ctx) {
                                tileSizeCss());
 }
 
-// A 1x1 transparent PNG, for a tile the server would render empty anyway
-// (see the `gate` option below): no round trip and a one-pixel bitmap.
-const EMPTY_TILE
-    = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
-
 // `app` (last arg) is read lazily on every request so that
 // app.visibleChiplets, populated by display-controls.js after the tech
 // metadata arrives, is reflected in tile requests without rebuilding
@@ -47,14 +43,12 @@ const EMPTY_TILE
 // a refresh too -- a tile that had content before an edit removed it must drop
 // the decode it is still holding.
 function applyTilePayload(tile, data) {
-    if (tile.src && tile.src.startsWith('blob:')) {
-        URL.revokeObjectURL(tile.src);
-    }
     if (data == null) {
-        tile.src = BLANK_TILE;
+        setTileSrc(tile, BLANK_TILE);
         return;
     }
-    tile.src = (typeof data === 'string') ? data : URL.createObjectURL(data);
+    setTileSrc(tile,
+               (typeof data === 'string') ? data : URL.createObjectURL(data));
 }
 
 export function createWebSocketTileLayer(visibility, visibleLayers,
@@ -96,16 +90,6 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             return !ctx.visibility[gate];
         },
 
-        // Point a tile at a new image, releasing the blob the old one held.
-        // Every src assignment goes through here so the revoke cannot be
-        // forgotten on one of the paths.
-        _setTileSrc: function(tile, src) {
-            if (tile.src && tile.src.startsWith('blob:')) {
-                URL.revokeObjectURL(tile.src);
-            }
-            tile.src = src;
-        },
-
         // Ask the server for this tile and show whatever comes back.  Shared by
         // createTile and refreshTiles: the request, the id bookkeeping that lets
         // it be cancelled, and the cache's data-URI-vs-blob answer are the same
@@ -132,9 +116,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             // refreshTiles() can set tile.src and still trigger done().
             tile._tileDone = false;
             tile.onload = () => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
+                releaseTileBlob(tile);
                 if (!tile._tileDone) {
                     tile._tileDone = true;
                     done(null, tile);
@@ -148,7 +130,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             };
 
             if (this._gatedOff()) {
-                tile.src = EMPTY_TILE;
+                setTileSrc(tile, BLANK_TILE);
                 return tile;
             }
 
@@ -181,8 +163,8 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 // overlay the user just turned off.  Only if not already blank —
                 // redrawAllLayers walks every layer on any visibility change.
                 if (gated) {
-                    if (tile.src !== EMPTY_TILE) {
-                        this._setTileSrc(tile, EMPTY_TILE);
+                    if (tile.src !== BLANK_TILE) {
+                        setTileSrc(tile, BLANK_TILE);
                     }
                     continue;
                 }
@@ -197,9 +179,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 if (tile.el._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile.el._websocketRequestId);
                 }
-                if (tile.el.src && tile.el.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.el.src);
-                }
+                releaseTileBlob(tile.el);
             }
             L.GridLayer.prototype._removeTile.call(this, key);
         }
@@ -248,9 +228,7 @@ export function createOverlayTileLayer(visibility, app) {
 
             tile._tileDone = false;
             tile.onload = () => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
+                releaseTileBlob(tile);
                 if (!tile._tileDone) {
                     tile._tileDone = true;
                     done(null, tile);
@@ -314,9 +292,7 @@ export function createOverlayTileLayer(visibility, app) {
                     this._websocketManager.cancel(tile.el._websocketRequestId);
                     tile.el._websocketRequestId = undefined;
                 }
-                if (tile.el.src && tile.el.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.el.src);
-                }
+                releaseTileBlob(tile.el);
             }
             L.GridLayer.prototype._removeTile.call(this, key);
         }

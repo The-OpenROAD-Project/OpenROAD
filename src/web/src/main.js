@@ -13,8 +13,8 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
-    watchDevicePixelRatio, tileSizeFields,
+    BLANK_TILE, releaseTileBlob, setTileSrc, tileSizeCss, useStaticTileSize,
+    withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
@@ -435,6 +435,33 @@ const HeatMapTileLayer = L.GridLayer.extend({
     // Upscale-only display, same as the layout tile layer: the map rests on
     // integer zoom so heatmap tiles show 1:1 with no fractional rescaling.
     _clampZoom: function(zoom) {
+    // Ask the server for one tile of the active heat map.  A null payload is
+    // an empty response -- no populated bin here, or the tile is off the grid
+    // -- and the 1x1 BLANK_TILE stands in, so nothing is decoded and onload
+    // still fires to complete the tile.
+    _requestTile: function(tile, coords) {
+        const active = this._appState.activeHeatMap;
+        if (!active) {
+            setTileSrc(tile, BLANK_TILE);
+            return;
+        }
+        this._websocketManager.request({
+            type: 'heatmap_tile',
+            name: active,
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
+        }).then(blob => {
+            setTileSrc(tile, blob ? URL.createObjectURL(blob) : BLANK_TILE);
+        }).catch(() => {
+            setTileSrc(tile, BLANK_TILE);
+        });
+    },
+
         return L.GridLayer.prototype._clampZoom.call(
             this, floorClampZoom(this, zoom));
     },
@@ -445,9 +472,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
         tile.setAttribute('role', 'presentation');
         tile._tileDone = false;
         tile.onload = () => {
-            if (tile.src && tile.src.startsWith('blob:')) {
-                URL.revokeObjectURL(tile.src);
-            }
+            releaseTileBlob(tile);
             if (!tile._tileDone) {
                 tile._tileDone = true;
                 done(null, tile);
@@ -460,32 +485,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
             }
         };
 
-        const active = this._appState.activeHeatMap;
-        if (!active) {
-            tile.src = BLANK_TILE;
-            return tile;
-        }
-
-        this._websocketManager.request({
-            type: 'heatmap_tile',
-            name: active,
-            z: coords.z,
-            x: coords.x,
-            y: coords.y,
-            // Sized like the layer tiles beneath it; without this the heat map
-            // is a 256 px image stretched over crisp layers on any HiDPI
-            // display.
-            ...tileSizeFields(currentDpr(), this.getTileSize().x),
-        }).then(blob => {
-            // A null payload is an empty response: the heat map has no
-            // populated bin in this tile, or the tile is off the grid.  The
-            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
-            // is decoded and onload still fires to complete the tile.
-            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
-        }).catch(() => {
-            tile.src = BLANK_TILE;
-        });
-
+        this._requestTile(tile, coords);
         return tile;
     },
 
@@ -494,37 +494,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
         for (const key in this._tiles) {
             const tileInfo = this._tiles[key];
             if (!tileInfo || !tileInfo.el) continue;
-            const tile = tileInfo.el;
-            const coords = tileInfo.coords;
-            const active = this._appState.activeHeatMap;
-            if (!active) {
-                // Release the decode before dropping it: turning the heat map
-                // off walks every tile on screen, so skipping this strands one
-                // object URL per tile.
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
-                tile.src = BLANK_TILE;
-                continue;
-            }
-            this._websocketManager.request({
-                type: 'heatmap_tile',
-                name: active,
-                z: coords.z,
-                x: coords.x,
-                y: coords.y,
-                ...tileSizeFields(currentDpr(), this.getTileSize().x),
-            }).then(blob => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
-                // Null means the tile is empty now; assigning BLANK_TILE also
-                // drops whatever image it was holding, which matters when a
-                // refresh follows an edit that emptied a bin.
-                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
-            }).catch(() => {
-                tile.src = BLANK_TILE;
-            });
+            this._requestTile(tileInfo.el, tileInfo.coords);
         }
     },
 });
