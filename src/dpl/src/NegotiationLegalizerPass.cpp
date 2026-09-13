@@ -168,7 +168,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   int prev_violations = -1;
   int stall_count = 0;
   for (int iter = 0; iter < max_iter_neg_; ++iter) {
-    const bool print_row = !quiet_ && (iter < 10 || iter % 10 == 0);
+    const bool print_row = shouldPrintIteration(iter);
     const int phase_1_violations
         = negotiationIter(active, iter, /*updateHistory=*/true, print_row);
     phase1_iterations_ = iter + 1;
@@ -234,8 +234,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
     const int actual_iter = iter + max_iter_neg_;
-    const bool print_row
-        = !quiet_ && (actual_iter < 10 || actual_iter % 10 == 0);
+    const bool print_row = shouldPrintIteration(actual_iter);
     const int phase_2_violations = negotiationIter(
         active, actual_iter, /*updateHistory=*/true, print_row);
     phase2_iterations_ = iter + 1;

@@ -117,17 +117,10 @@ class Opendp
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
                          bool disable_window_extension = false,
-                         // Suppresses the progress/analysis output and the
-                         // metrics, for callers that legalize as a service.
                          bool quiet = false);
-  // Legalize with default settings and no reporting, for tools that call
-  // detailed placement as a service (antenna repair, congestion relief).
   // C++ equivalent of `detailed_placement -quiet`.
   void detailedPlacementQuiet();
   void reportLegalizationStats() const;
-  // One-line displacement/HPWL summary printed instead of the full analysis
-  // when detailed placement runs with -quiet, plus the running stage totals
-  // as metrics.
   void reportLegalizationSummary(double runtime);
 
   void setPaddingGlobal(int left, int right);
@@ -427,16 +420,12 @@ class Opendp
   bool use_diamond_legalizer_ = false;
   bool quiet_ = false;
   int total_moves_ = 0;
-  // Totals over every detailedPlacement() call in this process, which for the
-  // flow means every legalization of one stage.  Reported by
-  // reportLegalizationSummary() so repeated service calls add up instead of
-  // overwriting each other's metrics.
+  // Counters for reporting
   int cumulative_moves_ = 0;
   int64_t cumulative_displacement_ = 0;
   int64_t cumulative_displacement_max_ = 0;
   double cumulative_hpwl_delta_ = 0.0;
   double cumulative_runtime_ = 0.0;
-  // Negotiation legalizer convergence stats, copied out after legalize().
   int negotiation_iters_phase1_ = 0;
   int negotiation_iters_phase2_ = 0;
   int negotiation_converge_phase_ = 0;

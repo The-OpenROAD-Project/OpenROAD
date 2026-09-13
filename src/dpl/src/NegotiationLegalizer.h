@@ -147,9 +147,7 @@ class NegotiationLegalizer
   // the diamond search), 0 when negotiation never ran because every cell was
   // already legal.
   [[nodiscard]] int convergePhase() const;
-  // Times a stalled phase handed its illegal cells to the diamond search.
   [[nodiscard]] int diamondRecoveries() const { return diamond_recoveries_; }
-  // Report-friendly "<phase> (<how it ended>)" summary.
   [[nodiscard]] std::string finishDescription() const;
   [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
@@ -221,6 +219,11 @@ class NegotiationLegalizer
       int same_pos_count,
       const std::unordered_map<int, int>& no_cand_by_height,
       const std::unordered_map<int, int>& same_pos_by_height) const;
+
+  [[nodiscard]] bool shouldPrintIteration(int iter) const
+  {
+    return !quiet_ && (iter < 10 || iter % 10 == 0);
+  }
 
   // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);

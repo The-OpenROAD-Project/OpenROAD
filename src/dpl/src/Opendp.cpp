@@ -323,15 +323,11 @@ void Opendp::detailedPlacementQuiet()
                     /* quiet */ true);
 }
 
-// Compact stand-in for reportLegalizationStats() under -quiet: the calling
-// stage still records what the legalization cost the design, without the
-// full analysis block or the metrics that belong to the placement stage.
+// Compact stand-in for reportLegalizationStats() under -quiet.
 void Opendp::reportLegalizationSummary(const double runtime)
 {
   odb::WireLengthEvaluator eval(block_);
   const double hpwl_legal = eval.hpwl();
-  // One decimal, unlike the integer percent of the full analysis: an
-  // incidental legalization moves few cells, so its HPWL delta is small.
   const double hpwl_delta = (hpwl_before_ == 0.0) ? 0.0
                                                   : (hpwl_legal - hpwl_before_)
                                                         / hpwl_before_ * 100;
@@ -350,16 +346,12 @@ void Opendp::reportLegalizationSummary(const double runtime)
   cumulative_displacement_ += displacement_sum_;
   cumulative_displacement_max_
       = std::max(cumulative_displacement_max_, displacement_max_);
-  // Sum of the per-call deltas, not last-legalized minus first-before: other
-  // tools move the design between two legalizations, and their HPWL cost is
-  // not detailed placement's.
+  // Sum of the per-call deltas.
+  // Other tools move the design between two legalizations, and their HPWL cost
+  // is not detailed placement's.
   cumulative_hpwl_delta_ += hpwl_legal - hpwl_before_;
   cumulative_runtime_ += runtime;
 
-  // Running totals under stable keys.  A stage legalizes several times and
-  // every call rewrites these, so the metrics file keeps the last value
-  // written: making that value cumulative turns the overwrite into the stage
-  // total instead of whatever the final (often no-op) legalization did.
   logger_->metric("dpl__total__moves", cumulative_moves_);
   logger_->metric("dpl__instance__displacement__total",
                   block_->dbuToMicrons(cumulative_displacement_));
