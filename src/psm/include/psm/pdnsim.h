@@ -118,6 +118,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   void inDbSWireAddSBox(odb::dbSBox*) override;
   void inDbSWireRemoveSBox(odb::dbSBox*) override;
   void inDbSWirePostDestroySBoxes(odb::dbSWire*) override;
+  void inDbFillCreate(odb::dbFill*) override;
 
   void getIRDropForLayer(odb::dbNet* net,
                          odb::dbTechLayer* layer,

@@ -26,6 +26,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -52,6 +53,7 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/web.h"
 
 namespace web {
 
@@ -320,6 +322,47 @@ std::string assetPathFromTarget(const std::string_view target)
     return "/index.html";
   }
   return path;
+}
+
+BindAddressKind classifyBindAddress(const std::string_view address)
+{
+  // make_address parses IP literals only — it never resolves a name, so
+  // "localhost" lands here as invalid rather than silently binding somewhere.
+  boost::system::error_code ec;
+  const auto parsed = boost::asio::ip::make_address(address, ec);
+  if (ec) {
+    return BindAddressKind::kInvalid;
+  }
+  // is_loopback() covers 127.0.0.0/8 and ::1, but not ::ffff:127.0.0.1 — an
+  // IPv4 bind wearing a v6 literal, which would otherwise be reported as
+  // exposed.  Unwrap those and judge them by their IPv4 half.  Everything
+  // else, the unspecified 0.0.0.0/:: included, is reachable off-machine.
+  bool loopback = parsed.is_loopback();
+  if (parsed.is_v6() && parsed.to_v6().is_v4_mapped()) {
+    loopback = boost::asio::ip::make_address_v4(boost::asio::ip::v4_mapped,
+                                                parsed.to_v6())
+                   .is_loopback();
+  }
+  return loopback ? BindAddressKind::kLoopback : BindAddressKind::kExposed;
+}
+
+std::string browserHostForBind(const boost::asio::ip::address& address)
+{
+  // "localhost" reads better than a literal, but it resolves to the canonical
+  // loopback only — naming it for the whole 127.0.0.0/8 range would send the
+  // browser to 127.0.0.1 while the listener sits on, say, 127.0.0.2.  The
+  // wildcard is not a destination at all, and localhost is inside it.
+  if (address.is_unspecified()
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v4::loopback())
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v6::loopback())) {
+    return "localhost";
+  }
+  const std::string literal = address.to_string();
+  return address.is_v6() ? "[" + literal + "]" : literal;
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
@@ -4428,7 +4471,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 namespace {
 
 // Center of a cone pin in DBU: ITerm average pin location (fallback: instance
-// center), or the first BPin box center for a BTerm.
+// center), or the first placed BPin box center for a BTerm.
 odb::Point conePinCenter(const TimingConeNode& node)
 {
   if (node.iterm) {
@@ -4441,9 +4484,10 @@ odb::Point conePinCenter(const TimingConeNode& node)
     return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
   }
   if (node.bterm) {
-    for (odb::dbBPin* bpin : node.bterm->getBPins()) {
-      const odb::Rect r = bpin->getBBox();
-      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+    int x = 0;
+    int y = 0;
+    if (node.bterm->getFirstPinLocation(x, y)) {
+      return {x, y};
     }
   }
   return {0, 0};
@@ -5390,7 +5434,7 @@ LabelFields parseLabelFields(const boost::json::object& obj)
       // way.
       .size = static_cast<int>(std::clamp<int64_t>(
           jsonOr<int64_t>(obj, "size", 0), 0, TileGenerator::kMaxLabelSize)),
-      .anchor = anchor,
+      .anchor = std::move(anchor),
       .color = parseLabelColor(obj)};
 }
 

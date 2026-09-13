@@ -6,15 +6,19 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <sys/stat.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -149,7 +153,7 @@ void WebServer::initLogger()
   logger_initialized_ = true;
 }
 
-void WebServer::serve(int port)
+void WebServer::serve(int port, const std::string& bind_address)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
@@ -251,7 +255,28 @@ void WebServer::serve(int port)
       hook->sessions().broadcast(R"({"type":"refresh"})");
     });
 
-    auto const address = net::ip::make_address("0.0.0.0");
+    // Who may reach the port decides who may run Tcl here; see
+    // BindAddressKind (issue #11167).
+    const std::string bind_to
+        = bind_address.empty() ? kDefaultBindAddress : bind_address;
+    const BindAddressKind bind_kind = classifyBindAddress(bind_to);
+    if (bind_kind == BindAddressKind::kInvalid) {
+      // noreturn: the catch below tears the half-built server down.
+      logger_->error(utl::WEB,
+                     79,
+                     "Invalid bind address \"{}\"; {}.",
+                     bind_to,
+                     kBindAddressHint);
+    }
+    if (bind_kind == BindAddressKind::kExposed) {
+      logger_->warn(utl::WEB,
+                    80,
+                    "Web server bound to {}, reachable beyond this machine. "
+                    "The viewer runs Tcl commands, so anyone who can reach "
+                    "this port can run commands as this user.",
+                    bind_to);
+    }
+    auto const address = net::ip::make_address(bind_to);  // validated above
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
 
@@ -275,7 +300,9 @@ void WebServer::serve(int port)
                                        max_in_flight);
     shutdown_listener_ = std::move(handle.shutdown);
 
-    const std::string url = "http://localhost:" + std::to_string(handle.port);
+    // Point the browser at something it can actually reach.
+    const std::string url = "http://" + browserHostForBind(address) + ":"
+                            + std::to_string(handle.port);
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without
@@ -288,15 +315,31 @@ void WebServer::serve(int port)
         net::make_strand(ioc_->get_executor()));
     scheduleLogDrain();
 
+    // Error file for the browser launcher below.  Created here, before the
+    // io threads start, because umask() is process-wide; mkstemp already
+    // creates the file 0600 and the clamp only pins it for static analysis.
+    char tmp_filename[] = "/tmp/openroad-XXXXXX";
+    const mode_t old_umask = umask(S_IRWXG | S_IRWXO);
+    const int fd = mkstemp(tmp_filename);
+    umask(old_umask);
+    std::string errfile = "/dev/null";
+    if (fd != -1) {
+      errfile = tmp_filename;
+      close(fd);
+    }
+
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
+    logger_->info(utl::WEB, 1, "Server started on {}.", url);
+
+    // Open the url with the default browser
 #if defined(__APPLE__)
-    std::string open_cmd = "open " + url + " > /dev/null 2>&1";
+    std::string open_cmd = "open " + url + " > /dev/null 2> " + errfile;
 #elif defined(_WIN32)
-    std::string open_cmd = "start " + url + " > nul 2>&1";
+    std::string open_cmd = "start " + url + " > nul 2> " + errfile;
 #else
     // `setsid -f` forks the launcher into a new session, severing the
     // SIGHUP cascade from openroad's controlling pty.  Without this,
@@ -305,14 +348,30 @@ void WebServer::serve(int port)
     // the pty master and SIGHUPs every process in the session.  Also
     // redirect stdin from /dev/null so xdg-open never blocks on input
     // inherited from the pty.
-    std::string open_cmd
-        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null 2>&1";
+    // `setsid -w` waits for xdg-open to finish end so the return code
+    // can be forwarded to setsid
+    std::string open_cmd = "setsid -f -w xdg-open " + url
+                           + " < /dev/null > /dev/null 2> " + errfile;
 #endif
     int ret = std::system(open_cmd.c_str());
-    (void) ret;
-
-    logger_->info(utl::WEB, 1, "Server started on {}.", url);
-
+    if (ret != 0) {
+      std::ifstream err(errfile);
+      std::string errout = "";
+      if (err) {
+        std::ostringstream ss;
+        ss << err.rdbuf();
+        errout = "\n" + ss.str();
+      }
+      logger_->warn(utl::WEB,
+                    3,
+                    "Could not launch default browser (shell error {}){}",
+                    ret,
+                    errout);
+    }
+    if (fd != -1) {
+      std::error_code err_ignored;
+      std::filesystem::remove(errfile, err_ignored);
+    }
   } catch (std::exception const& e) {
     stop();
     logger_->error(utl::WEB, 2, "Server error : {}", e.what());

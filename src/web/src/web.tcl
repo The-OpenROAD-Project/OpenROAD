@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2026, The OpenROAD Authors
 
-sta::define_cmd_args "web_server" { [-port port] [-dir dir] [-stop] }
+sta::define_cmd_args "web_server" { [-port port] [-bind address] [-dir dir] [-stop] }
 
 proc web_server { args } {
   sta::parse_key_args "web_server" args \
-    keys {-port -dir} flags {-stop}
+    keys {-port -bind -dir} flags {-stop}
 
   if { [info exists flags(-stop)] } {
     web::web_server_stop_cmd
@@ -17,13 +17,25 @@ proc web_server { args } {
   set port 0
   if { [info exists keys(-port)] } {
     set port $keys(-port)
+    # Checked here because the C++ side narrows to uint16_t: without this a
+    # -port of 70000 would silently listen on 4464.
+    if { ![string is integer -strict $port] || $port < 0 || $port > 65535 } {
+      utl::error WEB 81 "-port must be an integer between 0 and 65535."
+    }
   }
 
   if { [info exists keys(-dir)] } {
     utl::warn WEB 37 "-dir is deprecated and ignored; assets are embedded in the binary."
   }
 
-  web::web_server_cmd $port
+  # Empty lets the server apply its own loopback default: the browser console
+  # evaluates Tcl, so a wider bind gives a shell to anyone reaching the port.
+  set bind ""
+  if { [info exists keys(-bind)] } {
+    set bind $keys(-bind)
+  }
+
+  web::web_server_cmd $port $bind
   web::web_server_wait_cmd
 }
 

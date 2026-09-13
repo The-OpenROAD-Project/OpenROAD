@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -28,6 +29,7 @@
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
+#include "web/web.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -535,6 +537,70 @@ TEST_F(TileHandlerTest, OverlayTileWithNothingSelectedIsEmpty)
       = handler_->handleOverlayTile(overlayRequest(1, false), state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
   EXPECT_TRUE(resp.payload.empty());
+}
+
+// Bind-address classification for web_server -bind (issue #11167).
+TEST(ClassifyBindAddress, LoopbackIsRecognised)
+{
+  EXPECT_EQ(classifyBindAddress("127.0.0.1"), BindAddressKind::kLoopback);
+  EXPECT_EQ(classifyBindAddress("::1"), BindAddressKind::kLoopback);
+}
+
+TEST(ClassifyBindAddress, NonLoopbackIsExposed)
+{
+  // 0.0.0.0 was the old hard-coded default: listens on every interface.
+  EXPECT_EQ(classifyBindAddress("0.0.0.0"), BindAddressKind::kExposed);
+  EXPECT_EQ(classifyBindAddress("::"), BindAddressKind::kExposed);
+  EXPECT_EQ(classifyBindAddress("192.168.1.5"), BindAddressKind::kExposed);
+}
+
+TEST(ClassifyBindAddress, IPv4MappedIsClassifiedByItsIPv4Part)
+{
+  // ::ffff:a.b.c.d is an IPv4 bind in v6 clothing; is_loopback() alone would
+  // call the loopback one exposed and raise a spurious warning.
+  EXPECT_EQ(classifyBindAddress("::ffff:127.0.0.1"),
+            BindAddressKind::kLoopback);
+  EXPECT_EQ(classifyBindAddress("::ffff:192.168.1.5"),
+            BindAddressKind::kExposed);
+}
+
+TEST(ClassifyBindAddress, NonLiteralsAreInvalid)
+{
+  // IP literals only, never resolved — pins the documented contract.
+  EXPECT_EQ(classifyBindAddress("localhost"), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress(""), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress("not-an-ip"), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress("999.999.999.999"), BindAddressKind::kInvalid);
+}
+
+// The URL the browser is pointed at has to name where the listener actually is.
+static std::string browserHost(const std::string& literal)
+{
+  return browserHostForBind(boost::asio::ip::make_address(literal));
+}
+
+TEST(BrowserHostForBind, CanonicalLoopbackAndWildcardBecomeLocalhost)
+{
+  // localhost resolves to these, and it is inside the wildcard, which is not
+  // an address a browser can connect to.
+  EXPECT_EQ(browserHost("127.0.0.1"), "localhost");
+  EXPECT_EQ(browserHost("::1"), "localhost");
+  EXPECT_EQ(browserHost("0.0.0.0"), "localhost");
+  EXPECT_EQ(browserHost("::"), "localhost");
+}
+
+TEST(BrowserHostForBind, OtherLoopbackAddressesKeepTheirLiteral)
+{
+  // The bug this pins: localhost resolves to 127.0.0.1, so naming it for the
+  // rest of 127.0.0.0/8 sends the browser to a port nobody is listening on.
+  EXPECT_EQ(browserHost("127.0.0.2"), "127.0.0.2");
+  EXPECT_EQ(browserHost("::ffff:127.0.0.1"), "[::ffff:127.0.0.1]");
+}
+
+TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
+{
+  EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
+  EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
