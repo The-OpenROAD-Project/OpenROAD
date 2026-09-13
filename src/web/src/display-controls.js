@@ -1284,7 +1284,14 @@ export function populateDisplayControls(app, visibility, selectability,
     // and this runs on every checkbox in the tree, not just that one.
     const applyHierarchyOverlay = () => {
         syncHierarchyOverlay(visibility, activeHierarchySource(app));
-        if (app.hierarchyPanel) app.hierarchyPanel.refreshActiveStatus();
+        if (app.hierarchyPanel) {
+            // The overlay paints with the server's default palette on its own
+            // (request_handler.cpp), so this is about the table: turning the
+            // checkbox on pulls in the tree that matches what the layout is
+            // now showing, instead of leaving an empty panel beside it.
+            app.hierarchyPanel.ensureActiveLoaded();
+            app.hierarchyPanel.refreshActiveStatus();
+        }
     };
 
     const visTree = new VisTree(visibility, selectability, () => {
@@ -1385,10 +1392,10 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'focused_nets_guides', label: 'Focused nets guides' },
         { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
-    // One control for both hierarchy overlays -- module colors and the cluster
-    // colors MPL writes with -keep_clustering_data.  Which of the two paints
-    // comes from the Hierarchy tab's Source dropdown, so the two can never
-    // stack on the same instance; see syncHierarchyOverlay.
+    // One control for both hierarchy overlays -- module colors and instance
+    // group colors.  Which of the two paints comes from the Hierarchy tab's
+    // Source dropdown, so the two can never stack on the same instance; see
+    // syncHierarchyOverlay.
     visTree.add({ key: 'ui_hierarchy_view', label: 'Hierarchy view' });
     // Developer overlays.  All three are plain leaves under a visKey-less
     // group: giving the group `visKey: 'debug_renderers'` would tie the

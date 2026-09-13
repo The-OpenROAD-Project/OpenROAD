@@ -4,7 +4,8 @@
 import { waitForMicrotasks } from './setup-dom.js';
 import { beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { HierarchyPanel } from '../../src/hierarchy-panel.js';
+import { HierarchyPanel, resetHierarchyOverlay }
+    from '../../src/hierarchy-panel.js';
 import { deleteCookie, setCookie } from '../../src/theme.js';
 
 const SOURCE_COOKIE = 'or_hierarchy_source';
@@ -154,16 +155,31 @@ describe('HierarchyPanel', () => {
         assert.equal(panel.activeView(), 'clusters');
     });
 
-    // The coloring outlives the tab, so a reopened panel would show an empty
-    // table over a coloured layout.  Each view loads the first time it is
-    // shown -- and only the first time.
-    it('loads each view once, the first time it is shown', async () => {
+    // The Hierarchy view checkbox is what asks for a tree.  With it off,
+    // nothing is fetched and nothing is painted, however the panel is used.
+    it('loads nothing while the overlay is off', async () => {
         const app = createMockApp();
+        app.visibility = { ui_hierarchy_view: false };
         const panel = new HierarchyPanel(makeContainer(), app, () => {});
         await waitForMicrotasks();
         const count = (type) => app.sent.filter(m => m.type === type).length;
 
-        // The source it opened on, without anyone pressing Update.
+        assert.equal(count('module_hierarchy'), 0, 'nobody asked for it');
+
+        panel.selectView('clusters');
+        await waitForMicrotasks();
+        assert.equal(count('group_hierarchy'), 0, 'nor on a source switch');
+    });
+
+    // With it on, whatever is on screen has to have something to paint: the
+    // panel opening on a source, and switching to the other one, both load.
+    it('loads the active source while the overlay is on', async () => {
+        const app = createMockApp();
+        app.visibility = { ui_hierarchy_view: true };
+
+        const panel = new HierarchyPanel(makeContainer(), app, () => {});
+        await waitForMicrotasks();
+        const count = (type) => app.sent.filter(m => m.type === type).length;
         assert.equal(count('module_hierarchy'), 1);
         assert.equal(count('group_hierarchy'), 0, 'not the hidden one');
 
@@ -171,12 +187,82 @@ describe('HierarchyPanel', () => {
         await waitForMicrotasks();
         assert.equal(count('group_hierarchy'), 1);
 
-        // Switching back and forth is free.
+        // And only once each: showing a view again is free.
         panel.selectView('instances');
         panel.selectView('clusters');
         await waitForMicrotasks();
         assert.equal(count('module_hierarchy'), 1);
         assert.equal(count('group_hierarchy'), 1);
+    });
+
+    // A reconnect gives the server a new session with no color maps in it.
+    // Whatever a view had loaded goes back up, or the rows the user unchecked
+    // would come back as the server's defaults.
+    it('resendColors re-sends what each loaded view holds', async () => {
+        const app = createMockApp();
+        app.visibility = { ui_hierarchy_view: true };
+        const panel = new HierarchyPanel(makeContainer(), app, () => {});
+        await waitForMicrotasks();
+        const colorMsgs = (type) => app.sent.filter(m => m.type === type).length;
+        const before = colorMsgs('set_module_colors');
+
+        panel.resendColors();
+        await waitForMicrotasks();
+
+        assert.equal(colorMsgs('set_module_colors'), before + 1);
+        assert.equal(colorMsgs('set_group_colors'), 0,
+                     'the view that never loaded has nothing to re-send');
+    });
+
+    // Display Controls calls this after deriving the flags, so ticking the
+    // checkbox is what pulls the tree in.
+    it('ensureActiveLoaded follows the checkbox', async () => {
+        const app = createMockApp();
+        app.visibility = { ui_hierarchy_view: false };
+        const panel = new HierarchyPanel(makeContainer(), app, () => {});
+        await waitForMicrotasks();
+        const count = () => app.sent.filter(
+            m => m.type === 'module_hierarchy').length;
+        assert.equal(count(), 0);
+
+        panel.ensureActiveLoaded();
+        await waitForMicrotasks();
+        assert.equal(count(), 0, 'still off');
+
+        app.visibility.ui_hierarchy_view = true;
+        panel.ensureActiveLoaded();
+        await waitForMicrotasks();
+        assert.equal(count(), 1);
+    });
+
+    // A restored layout builds its tabs in the same turn the socket is opened,
+    // so a request issued from the constructor is rejected outright and the
+    // message sticks to the status line.  The load waits for the connection.
+    it('waits for the socket before loading', async () => {
+        const app = createMockApp();
+        app.visibility = { ui_hierarchy_view: true };
+        let open;
+        app.websocketManager.readyPromise = new Promise(r => { open = r; });
+        const request = app.websocketManager.request;
+        app.websocketManager.request = (msg) => {
+            if (!app.websocketManager._open) {
+                return Promise.reject(new Error('WebSocket not connected'));
+            }
+            return request(msg);
+        };
+
+        const panel = new HierarchyPanel(makeContainer(), app, () => {});
+        await waitForMicrotasks();
+        assert.equal(app.sent.length, 0, 'nothing goes out before the socket');
+        assert.equal(panel.activeWidget()._statusLabel.textContent, '');
+
+        app.websocketManager._open = true;
+        open();
+        await waitForMicrotasks();
+        assert.equal(
+            app.sent.filter(m => m.type === 'module_hierarchy').length, 1);
+        assert.equal(panel.activeWidget()._statusLabel.textContent.startsWith(
+            'Error'), false);
     });
 
     // Hiding a view must not throw its data away: switching back has to be
@@ -311,6 +397,21 @@ describe('HierarchyPanel', () => {
             // Both overlays repaint on every switch: one starts drawing and
             // the other has to stop.
             assert.deepEqual(refreshed.slice(-2), ['_modules', '_clusters']);
+        });
+
+        // The one flag a session does not get back: it costs a round trip and
+        // a repaint, and restoring it ticked showed a checkbox over a layout
+        // with nothing painted on it (review of #11122).
+        it('resetHierarchyOverlay clears the checkbox and both gates', () => {
+            const visibility = {
+                ui_hierarchy_view: true, module_view: true, cluster_view: true,
+            };
+            resetHierarchyOverlay(visibility);
+            assert.deepEqual(visibility, {
+                ui_hierarchy_view: false,
+                module_view: false,
+                cluster_view: false,
+            });
         });
 
         it('leaves both off whatever the source, while it is off', () => {

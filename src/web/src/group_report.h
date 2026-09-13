@@ -18,9 +18,9 @@ class dbBlock;
 
 namespace web {
 
-// One row of the Clusters view: a dbGroup.  MPL writes its clustering tree as
-// nested VISUAL_DEBUG groups; power/voltage domains show up too, told apart by
-// `type`.
+// One row of the Instance Groups view: a dbGroup.  Every group in the block
+// shows up — power/voltage domains, regions, MPL's nested VISUAL_DEBUG
+// clustering tree — told apart by `type`.
 struct GroupNode
 {
   int id = 0;

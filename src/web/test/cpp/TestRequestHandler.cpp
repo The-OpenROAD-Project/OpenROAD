@@ -1955,6 +1955,53 @@ TEST_F(GroupHandlerTest, OnlyADrawingColorOverlayBypassesTheTileCache)
       << "a drawing color-overlay tile must not enter the cache";
 }
 
+// The Hierarchy tab is not the only way to switch the overlay on: the Display
+// Controls checkbox works with the tab closed, and a reconnect starts a session
+// with no color map at all.  With nothing synced the layer paints the palette
+// the panel would have started from, which is also what `save_image -web`
+// produces -- otherwise the checkbox is on over an unpainted layout.
+TEST_F(GroupHandlerTest, ColorOverlayPaintsDefaultsWithNothingSynced)
+{
+  makeClusterTree();
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+
+  const auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng)
+      << "an overlay with no session colors must fall back to the defaults";
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+// The other side of that rule, and the one a careless fallback would break:
+// an empty map is not "nothing synced", it is the user unchecking every row.
+TEST_F(GroupHandlerTest, ColorOverlayStaysEmptyWhenTheUserClearsEveryRow)
+{
+  makeClusterTree();
+
+  WebSocketRequest clear;
+  clear.id = 1;
+  clear.type = WebSocketRequest::kSetGroupColors;
+  clear.json = parseObj(R"({"colors":""})");
+  handler_->handleSetOwnerColors(clear, state_, slotOf("_clusters"));
+
+  WebSocketRequest req;
+  req.id = 2;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+
+  const auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty)
+      << "clearing every row must not be answered with the default palette";
+  EXPECT_TRUE(resp.payload.empty());
+}
+
 TEST_F(GroupHandlerTest, SetGroupColorsWithEmptyStringClears)
 {
   setOwnerColors("_clusters", {{3, Color{.r = 1, .g = 2, .b = 3, .a = 4}}});

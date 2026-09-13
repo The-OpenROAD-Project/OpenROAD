@@ -1842,7 +1842,7 @@ void TileGenerator::clearOverlayCaches() const
   dropOverlayCaches();
 }
 
-// Caller holds overlay_cache_mutex_.  All three caches are derived from the
+// Caller holds overlay_cache_mutex_.  All of these caches are derived from the
 // same design state and are invalidated as a unit, so one recorded revision
 // covers them.
 void TileGenerator::dropOverlayCaches() const
@@ -1850,6 +1850,7 @@ void TileGenerator::dropOverlayCaches() const
   bpin_ap_cache_.clear();
   gcell_x_cache_.clear();
   gcell_y_cache_.clear();
+  default_owner_colors_.fill(nullptr);
 }
 
 // Caller holds overlay_cache_mutex_.  `rev` must have been read BEFORE the lock
@@ -1862,6 +1863,25 @@ void TileGenerator::dropOverlayCachesIfStale(const uint64_t rev) const
     dropOverlayCaches();
     overlay_cache_revision_ = rev;
   }
+}
+
+TileGenerator::OwnerColorMap TileGenerator::defaultOwnerColors(
+    const size_t overlay_index) const
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr || overlay_index >= kNumColorOverlays) {
+    return nullptr;
+  }
+  const uint64_t rev = search_->revision();
+  std::lock_guard lock(overlay_cache_mutex_);
+  dropOverlayCachesIfStale(rev);
+  OwnerColorMap& cached = default_owner_colors_[overlay_index];
+  if (!cached) {
+    const ColorOverlaySpec& spec = colorOverlayLayers()[overlay_index];
+    cached = std::make_shared<const std::map<uint32_t, Color>>(
+        spec.default_colors(block, sta_));
+  }
+  return cached;
 }
 
 TileGenerator::BpinApList TileGenerator::bpinAccessPoints(
@@ -5331,7 +5351,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   // Owner coloring is opt-in, one display option per overlay
   // (`-display_option {cluster_view true}`, `{module_view true}`).  Driven by
   // the table so a new overlay needs no branch here.
-  std::array<std::map<uint32_t, Color>, kNumColorOverlays> owner_colors;
+  std::array<OwnerColorMap, kNumColorOverlays> owner_colors;
   InstColorOverlay inst_colors;
   for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
     if (!(vis.*(spec.flag))) {
@@ -5342,16 +5362,14 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     if (!owner_colors[spec.index] || owner_colors[spec.index]->empty()) {
       // Nothing to color by: warn and drop the layer saveImageLayerOrder put
       // in for the flag, rather than compositing an empty pass over the image.
-      logger_->warn(
-          utl::WEB,
-          78,
-          "{} is on but the design has nothing to color it by; for "
-          "clusters, run rtl_macro_placer -keep_clustering_data first.",
-          spec.keys[0]);
+      logger_->warn(utl::WEB,
+                    78,
+                    "{} is on but the design has nothing to color it by.",
+                    spec.keys[0]);
       std::erase(layers_to_render, spec.layer);
       continue;
     }
-    inst_colors.colors[spec.index] = &owner_colors[spec.index];
+    inst_colors.colors[spec.index] = owner_colors[spec.index].get();
   }
 
   // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
@@ -5520,12 +5538,13 @@ void TileGenerator::saveImage(const std::string& filename,
                               const odb::Rect& region,
                               const int width_px,
                               const double dbu_per_pixel,
-                              const TileVisibility& vis) const
+                              const TileVisibility& vis,
+                              const Color& bg) const
 {
   int final_w = 0;
   int final_h = 0;
   const std::vector<unsigned char> png_data = renderImagePng(
-      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &final_w, &final_h);
+      region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
   if (png_data.empty()) {
     return;
   }

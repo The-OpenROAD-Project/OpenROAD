@@ -54,14 +54,23 @@ export class ClustersWidget {
         }
     }
 
-    // Load once, on first show.  The panel calls this rather than update() so
-    // switching source back and forth costs no round trip.  Its own flag, not
-    // `_loaded`: update() is async, and two calls before the reply landed
-    // would both see `_loaded` still false.
+    // Load once, without anyone pressing Update.  Its own flag, not `_loaded`:
+    // update() is async, and two calls before the reply landed would both see
+    // `_loaded` still false.
+    //
+    // Waits for the socket: a restored layout builds its tabs in the same turn
+    // the connection is opened, and a request issued then is rejected outright
+    // ("WebSocket not connected") and left on the status line.
     ensureLoaded() {
         if (this._loadRequested) return;
         this._loadRequested = true;
-        this.update();
+        const ready = this._app.websocketManager.readyPromise;
+        (ready || Promise.resolve())
+            .then(() => this.update())
+            // update() reports failure on the status line, not by throwing, so
+            // `_loaded` is what says whether the tree landed.  A failed load
+            // must not latch the flag: the next trigger has to try again.
+            .then(() => { this._loadRequested = this._loaded; });
     }
 
     _build(container) {
@@ -263,6 +272,14 @@ export class ClustersWidget {
                 : this._nodes.length + ' groups';
     }
 
+    // Re-send this view's map to the server.  The colors live in the session,
+    // so a reconnect starts with none and the coloring would fall back to the
+    // defaults, losing whatever rows the user had unchecked.
+    resendColors() {
+        if (!this._loaded) return;
+        this._sendGroupColors();
+    }
+
     async _sendGroupColors() {
         try {
             await this._app.websocketManager.request({
@@ -386,11 +403,12 @@ export class ClustersWidget {
                 td.textContent = 'No instance group data available';
             } else if (this._loaded) {
                 // The design was read and simply has no dbGroups: say so, and
-                // say what produces them.  This is the common case for an ODB
-                // written by a normal flow run.
-                td.textContent = 'This design has no instance groups. Run '
-                    + 'rtl_macro_placer -keep_clustering_data (before tapcells) '
-                    + 'to store MPL\'s clustering in the ODB.';
+                // name one command that writes them.  This is the common case
+                // for an ODB written by a normal flow run.
+                td.textContent = 'This design has no instance groups. They come '
+                    + 'from commands that write dbGroups, such as '
+                    + 'rtl_macro_placer -keep_clustering_data (before tapcells), '
+                    + 'which stores MPL\'s clustering in the ODB.';
             } else {
                 td.textContent = 'Click "Update" to load instance groups';
             }

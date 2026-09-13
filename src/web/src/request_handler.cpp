@@ -5193,6 +5193,14 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     std::lock_guard<std::mutex> lock(owner.mutex);
     overlay_colors = owner.colors;
   }
+  if (color_overlay_active && !overlay_colors) {
+    // This session never sent a map: paint the palette the panel starts from,
+    // so the checkbox draws with the Hierarchy tab closed, keeps drawing
+    // across a reconnect, and matches what `save_image -web` produces.  A map
+    // that IS there but empty is the opposite instruction -- the user
+    // unchecked every row -- and must keep painting nothing.
+    overlay_colors = gen_->defaultOwnerColors(overlay->index);
+  }
   // The snapshot outlives both the lock and the render: the panel sending new
   // colors replaces the session's handle and drops its own reference, never the
   // one this render holds.
@@ -5858,8 +5866,8 @@ WebSocketResponse TileHandler::handleSetOwnerColors(const WebSocketRequest& req,
   return resp;
 }
 
-// Cluster (dbGroup) tree for the Clusters panel.  MPL writes its
-// clustering hierarchy here when run with -keep_clustering_data.
+// dbGroup tree for the Instance Groups panel: every group in the block,
+// whatever created it.
 WebSocketResponse TileHandler::handleGroupHierarchy(const WebSocketRequest& req)
 {
   WebSocketResponse resp;

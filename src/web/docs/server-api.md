@@ -613,10 +613,10 @@ layer).
 
 ### `group_hierarchy`
 
-Return the `dbGroup` tree (Instance Groups view of the Hierarchy panel).  MPL writes its clustering
-hierarchy here as nested groups of type `VISUAL_DEBUG` when run as
-`rtl_macro_placer -keep_clustering_data`; power/voltage-domain groups appear
-too, distinguished by `type`.  Nodes are in DFS order, so a parent always
+Return the `dbGroup` tree (Instance Groups view of the Hierarchy panel).  Every group in the block
+is reported, whatever created it — power/voltage domains, regions, or the
+nested `VISUAL_DEBUG` clustering `rtl_macro_placer -keep_clustering_data`
+writes — distinguished by `type`.  Nodes are in DFS order, so a parent always
 precedes its children.
 
 No request fields.

@@ -19,7 +19,7 @@ import {
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
-import { HierarchyPanel } from './hierarchy-panel.js';
+import { HierarchyPanel, resetHierarchyOverlay } from './hierarchy-panel.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
@@ -295,13 +295,9 @@ try {
         for (const [k, v] of Object.entries(parsed)) {
             visibility[k] = !!v;
         }
-        // Cookies written before the two overlays became one control carry
-        // their flags but no ui_hierarchy_view; without this an overlay the user
-        // had on would come back off.
-        if (!('ui_hierarchy_view' in parsed)) {
-            visibility.ui_hierarchy_view
-                = visibility.module_view || visibility.cluster_view;
-        }
+        // Every flag comes back except the hierarchy overlay, which starts off
+        // whatever the cookie says -- see resetHierarchyOverlay.
+        resetHierarchyOverlay(visibility);
     }
 } catch (_) {
     // Ignore malformed cookie.
@@ -464,6 +460,33 @@ const HeatMapTileLayer = L.GridLayer.extend({
 
         return L.GridLayer.prototype._clampZoom.call(
             this, floorClampZoom(this, zoom));
+    },
+
+    // Ask the server for one tile of the active heat map.  A null payload is
+    // an empty response -- no populated bin here, or the tile is off the grid
+    // -- and the 1x1 BLANK_TILE stands in, so nothing is decoded and onload
+    // still fires to complete the tile.
+    _requestTile: function(tile, coords) {
+        const active = this._appState.activeHeatMap;
+        if (!active) {
+            setTileSrc(tile, BLANK_TILE);
+            return;
+        }
+        this._websocketManager.request({
+            type: 'heatmap_tile',
+            name: active,
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
+        }).then(blob => {
+            setTileSrc(tile, blob ? URL.createObjectURL(blob) : BLANK_TILE);
+        }).catch(() => {
+            setTileSrc(tile, BLANK_TILE);
+        });
     },
 
     createTile: function(coords, done) {
@@ -1160,6 +1183,10 @@ if (staticCache) {
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
         resyncBounds(null, { reloadOnChange: true }).catch(() => {});
+        // Owner colors live in the server session, which the reconnect
+        // replaced: without this the overlay falls back to the default palette
+        // and the rows the user unchecked come back.
+        if (app.hierarchyPanel) app.hierarchyPanel.resendColors();
     };
 }
 

@@ -4670,6 +4670,31 @@ TEST_F(TileGeneratorTest, ColorOverlaysSkipHiddenInstances)
   EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", macros_off)));
 }
 
+// The map the tile path falls back to when a session has never sent one.
+// Walking the hierarchy per tile would be absurd, so it is computed once and
+// held until the design moves -- the same contract as the other design-derived
+// overlay caches.
+TEST_F(TileGeneratorTest, DefaultOwnerColorsAreCachedUntilTheDesignChanges)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(block_->findInst("buf1"));
+  makeTileGen();
+
+  const size_t slot = findColorOverlay("_clusters")->index;
+  const auto first = tile_gen_->defaultOwnerColors(slot);
+  ASSERT_NE(first, nullptr);
+  EXPECT_EQ(first->count(group->getId()), 1u)
+      << "the group the panel would color must be in the default map";
+  EXPECT_EQ(tile_gen_->defaultOwnerColors(slot), first)
+      << "a second call must not rebuild the map";
+
+  tile_gen_->eagerInit();
+  EXPECT_NE(tile_gen_->defaultOwnerColors(slot), first)
+      << "a design reload must drop it";
+}
+
 // Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
 // map must leave the tile empty.  Falling through to the generic instance
 // drawing would stack a second copy of the instances layer over the design.

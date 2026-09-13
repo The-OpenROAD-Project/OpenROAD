@@ -64,6 +64,15 @@ export function syncHierarchyOverlay(visibility, source) {
     return changed;
 }
 
+// The overlay is never restored from a saved session.  It is the one control
+// whose "on" costs a round trip and a repaint, and a session that came back
+// with it on showed a ticked checkbox over an unpainted layout until someone
+// pressed Update (review of #11122).
+export function resetHierarchyOverlay(visibility) {
+    visibility.ui_hierarchy_view = false;
+    syncHierarchyOverlay(visibility, null);
+}
+
 export class HierarchyPanel {
     constructor(container, app, redrawAllLayers) {
         this._app = app;
@@ -129,10 +138,6 @@ export class HierarchyPanel {
                 widget.toolbar.insertBefore(this._picker,
                                             widget.toolbar.firstChild);
                 if (this._stale.delete(view_name)) widget._render();
-                // A view that is about to paint needs its tree: the coloring
-                // outlives the tab, so a reopened panel would otherwise show
-                // an empty table over a coloured layout.
-                widget.ensureLoaded();
             }
         }
         this._select.value = name;
@@ -140,6 +145,27 @@ export class HierarchyPanel {
         setCookie(SOURCE_COOKIE, name);
         // Set last: the derivation reads activeView() back off the panel.
         this.syncOverlay();
+        // After syncOverlay, which is what moves the gate to this source: the
+        // load follows the checkbox, so it has to read the flags it just set.
+        this.ensureActiveLoaded();
+    }
+
+    // The coloring is on, so the view on screen has to have something to paint
+    // — the checkbox is what asks for the tree, here and from Display Controls.
+    // Idempotent: each widget's ensureLoaded() requests only once.
+    ensureActiveLoaded() {
+        if (!this._app.visibility || !this._app.visibility.ui_hierarchy_view) {
+            return;
+        }
+        const widget = this.activeWidget();
+        if (widget) widget.ensureLoaded();
+    }
+
+    // A reconnect is a new server session, with no color maps in it.  Both
+    // views, not just the one on screen: the hidden one's colors are what a
+    // source switch would paint next.
+    resendColors() {
+        for (const widget of this._widgets.values()) widget.resendColors();
     }
 
     // Move the overlay to the view now on screen.  Repaints only the two

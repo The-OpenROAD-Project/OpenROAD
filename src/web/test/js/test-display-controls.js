@@ -575,16 +575,18 @@ describe('overlay layer toggles', () => {
     });
 
     // One checkbox for two overlays, and which one it turns on depends on the
-    // Hierarchy tab's source.  This panel derives the flags and asks the tab
-    // to redo its status line -- but must NOT repaint: redrawAllLayers runs
-    // right after and covers both overlay layers, and this callback fires for
-    // every checkbox in the tree, so repainting here would cancel and re-issue
-    // a screen of overlay tiles on each unrelated click.
+    // Hierarchy tab's source.  This panel derives the flags, tells the tab to
+    // load what it is about to paint, and asks it to redo its status line --
+    // but must NOT repaint: redrawAllLayers runs right after and covers both
+    // overlay layers, and this callback fires for every checkbox in the tree,
+    // so repainting here would cancel and re-issue a screen of overlay tiles
+    // on each unrelated click.
     it('derives the flags for the tab\'s source without repainting', () => {
         const calls = [];
         app.hierarchyPanel = {
             activeView: () => 'clusters',
             syncOverlay: () => calls.push('syncOverlay'),
+            ensureActiveLoaded: () => calls.push('ensureActiveLoaded'),
             refreshActiveStatus: () => calls.push('refreshActiveStatus'),
         };
 
@@ -592,8 +594,11 @@ describe('overlay layer toggles', () => {
         assert.equal(visibility.cluster_view, true);
         assert.equal(visibility.module_view, false,
                      'the other source must not paint at the same time');
-        assert.deepEqual(calls, ['refreshActiveStatus'],
-                         'the status line, not a repaint');
+        // Ticking the box is what asks for the tree: without the load the
+        // server has no colors and the checkbox would be on over a layout
+        // with nothing painted (review of #11122).
+        assert.deepEqual(calls, ['ensureActiveLoaded', 'refreshActiveStatus'],
+                         'the load and the status line, not a repaint');
 
         toggle('ui_hierarchy_view');
         assert.equal(visibility.cluster_view, false);

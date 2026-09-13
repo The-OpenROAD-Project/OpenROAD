@@ -491,6 +491,15 @@ class TileGenerator
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
 
+  // The colors a color overlay paints with when no session has sent any: the
+  // palette the Hierarchy panel itself starts from (ColorOverlaySpec::
+  // default_colors).  Walking the hierarchy per tile is out of the question,
+  // so it is computed once per design, like the other design-derived caches.
+  // Shared by the tile path and the headless save path, so the viewer and
+  // `save_image -web` cannot disagree about what "on" looks like.
+  using OwnerColorMap = std::shared_ptr<const std::map<uint32_t, Color>>;
+  OwnerColorMap defaultOwnerColors(size_t overlay_index) const;
+
   int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
 
@@ -1097,7 +1106,9 @@ class TileGenerator
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
-  // The Search::revision() the three caches above were built at; see
+  // Default color map per overlay, for the top block; see defaultOwnerColors.
+  mutable std::array<OwnerColorMap, kNumColorOverlays> default_owner_colors_;
+  // The Search::revision() the caches above were built at; see
   // dropOverlayCachesIfStale.
   mutable uint64_t overlay_cache_revision_ = 0;
 

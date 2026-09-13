@@ -95,6 +95,34 @@ describe('ClustersWidget', () => {
             app.sent.filter(m => m.type === 'group_hierarchy').length, 1);
     });
 
+    // A load that fails (the socket dropped, the server restarted) must not
+    // latch the automatism off: the checkbox and the source switch have to be
+    // able to ask again.
+    it('retries after a failed load', async () => {
+        const app = createMockApp();
+        let fail = true;
+        const request = app.websocketManager.request;
+        app.websocketManager.request = (msg) => {
+            if (fail && msg.type === 'group_hierarchy') {
+                app.sent.push(msg);
+                return Promise.reject(new Error('WebSocket not connected'));
+            }
+            return request(msg);
+        };
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+
+        widget.ensureLoaded();
+        await waitForMicrotasks();
+        assert.match(widget._statusLabel.textContent, /^Error/);
+
+        fail = false;
+        widget.ensureLoaded();
+        await waitForMicrotasks();
+        assert.equal(widget._statusLabel.textContent, '4 groups');
+        assert.equal(
+            app.sent.filter(m => m.type === 'group_hierarchy').length, 2);
+    });
+
     // Straight from the constructor, with no _render() of our own: the panel has
     // to say what it wants as soon as it is opened.
     it('asks for an Update before anything is loaded', () => {
