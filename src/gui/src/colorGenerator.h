@@ -5,7 +5,7 @@
 
 #include <array>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 
 namespace gui {
 
