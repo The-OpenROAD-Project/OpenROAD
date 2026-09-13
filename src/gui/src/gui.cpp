@@ -51,6 +51,7 @@
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "ord/OpenRoad.hh"
+#include "qtDialogs.h"
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "third-party/gif-h/gif.h"
@@ -1674,6 +1675,12 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
   db_ = db;
   setLogger(logger);
+
+  // Lets the descriptors offer the actions that need a modal dialog.  Only
+  // this file is Qt-only, so a build without Qt leaves the hook null and
+  // those actions are not offered.
+  static QtDialogs dialogs;
+  setDialogs(&dialogs);
 
   auto* registry = DescriptorRegistry::instance();
   registry->setLogger(logger);

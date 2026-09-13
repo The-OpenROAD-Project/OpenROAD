@@ -815,6 +815,29 @@ class Chart
   Chart() = default;
 };
 
+// The modal dialogs some Descriptor actions need.  Descriptors are compiled
+// into builds with no Qt at all (the CLI, the web viewer), so the actions
+// that need a dialog are only offered when the Qt gui has installed a
+// handler via Gui::setDialogs.
+class Dialogs
+{
+ public:
+  virtual ~Dialogs() = default;
+
+  // Ask the user to pick one of `items`, starting on `current`.  Returns the
+  // chosen index, or nothing if the user cancelled.
+  virtual std::optional<int> chooseItem(const std::string& title,
+                                        const std::string& label,
+                                        const std::vector<std::string>& items,
+                                        int current)
+      = 0;
+
+  // Run the insert-buffer dialog on `net` and perform the insertion.
+  // Returns the inserted instance, or nullptr if the user cancelled or the
+  // insertion failed (in which case the dialog reports the error).
+  virtual odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) = 0;
+};
+
 // Optional backend plugged in when the Qt GUI is not running (e.g. the web
 // viewer).  Lets Gui::enabled/redraw/pause work without Qt so that debug
 // graphics (gpl, cts, drt, mpl, ...) light up in headless contexts.
@@ -1182,6 +1205,11 @@ class Gui
   void setUsePolyDecompView(bool value) { use_poly_decomp_view_ = value; }
   bool usePolyDecompView() const { return use_poly_decomp_view_; }
 
+  // Install / inspect the provider of the modal dialogs some Descriptor
+  // actions need.  Null in a build without Qt; see the Dialogs comment.
+  void setDialogs(Dialogs* dialogs) { dialogs_ = dialogs; }
+  Dialogs* getDialogs() const { return dialogs_; }
+
   // initialize the GUI
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
@@ -1226,6 +1254,7 @@ class Gui
   // Used when Qt GUI is not active.  Installed by the web viewer.
   HeadlessViewer* headless_viewer_ = nullptr;
   ChartFactory chart_factory_;
+  Dialogs* dialogs_ = nullptr;
 };
 
 // The main entry point
