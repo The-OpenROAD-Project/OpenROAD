@@ -254,7 +254,7 @@ export class ChartsWidget {
         const pgLabel = document.createElement('span');
         pgLabel.textContent = 'Path Groups:';
         pgLabel.style.color = 'var(--fg-muted)';
-        pgLabel.style.fontSize = '12px';
+        pgLabel.style.fontSize = 'var(--fs-12)';
         // Multiple selection → stacked histogram (Qt parity). None → all.
         this._pathGroupSelect = document.createElement('select');
         this._pathGroupSelect.className = 'charts-select';
@@ -265,7 +265,7 @@ export class ChartsWidget {
         const clkLabel = document.createElement('span');
         clkLabel.textContent = 'Clock:';
         clkLabel.style.color = 'var(--fg-muted)';
-        clkLabel.style.fontSize = '12px';
+        clkLabel.style.fontSize = 'var(--fs-12)';
         this._clockSelect = document.createElement('select');
         this._clockSelect.className = 'charts-select';
         this._clockSelect.innerHTML = '<option value="">All</option>';

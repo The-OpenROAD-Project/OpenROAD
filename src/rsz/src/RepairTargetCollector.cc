@@ -221,6 +221,7 @@ void RepairTargetCollector::init(float slack_margin,
 
   slack_margin_ = slack_margin;
 
+  startpoints_collected_ = false;
   collectViolatingEndpoints();
   if (collect_startpoints) {
     collectViolatingStartpoints();
@@ -844,10 +845,10 @@ void RepairTargetCollector::collectViolatingEndpoints()
                  * 100));
 }
 
-void RepairTargetCollector::collectViolatingStartpoints()
+void RepairTargetCollector::walkStartpoints(
+    std::vector<CachedStartpoint>& startpoints) const
 {
-  violating_startpoints_.clear();
-
+  startpoints.clear();
   const PathGroupFilter path_group_filter(resizer_);
   int all_startpoints = 0;
   sta::VertexIterator vertex_iter(graph_);
@@ -864,11 +865,77 @@ void RepairTargetCollector::collectViolatingStartpoints()
       if (!path_group_filter.startpointInGroup(vertex)) {
         continue;
       }
-      ++all_startpoints;
-      const sta::Slack slack = sta_->slack(vertex, max_);
-      if (sta::fuzzyLess(slack, slack_margin_)) {
-        violating_startpoints_.emplace_back(pin, slack);
-      }
+      startpoints.push_back({pin, vertex == graph_->pinDrvrVertex(pin)});
+    }
+  }
+}
+
+void RepairTargetCollector::checkStartpointCache() const
+{
+  if (!logger_->debugCheck(RSZ, "violator_collector", 2)) {
+    return;
+  }
+
+  std::vector<CachedStartpoint> fresh;
+  walkStartpoints(fresh);
+  if (fresh.size() != startpoints_.size()) {
+    debugPrint(logger_,
+               RSZ,
+               "violator_collector",
+               2,
+               "Startpoint cache stale: cached {}, graph now has {}",
+               startpoints_.size(),
+               fresh.size());
+    return;
+  }
+  for (size_t i = 0; i < fresh.size(); ++i) {
+    if (fresh[i].pin != startpoints_[i].pin
+        || fresh[i].drvr_vertex != startpoints_[i].drvr_vertex) {
+      debugPrint(logger_,
+                 RSZ,
+                 "violator_collector",
+                 2,
+                 "Startpoint cache stale at {}: cached {}, graph has {}",
+                 i,
+                 network_->pathName(startpoints_[i].pin),
+                 network_->pathName(fresh[i].pin));
+      return;
+    }
+  }
+}
+
+void RepairTargetCollector::collectViolatingStartpoints()
+{
+  violating_startpoints_.clear();
+
+  // The set of startpoints is fixed for the life of this collector; only
+  // their slacks change. Walking every vertex of the graph to find them
+  // again on every -verbose progress row is what made the row cost
+  // proportional to the design, once per endpoint visited.
+  if (startpoints_collected_) {
+    checkStartpointCache();
+  } else {
+    walkStartpoints(startpoints_);
+    startpoints_collected_ = true;
+  }
+
+  const int all_startpoints = startpoints_.size();
+  for (const CachedStartpoint& startpoint : startpoints_) {
+    sta::Vertex* vertex = startpoint.drvr_vertex
+                              ? graph_->pinDrvrVertex(startpoint.pin)
+                              : graph_->pinLoadVertex(startpoint.pin);
+    if (vertex == nullptr) {
+      // A cached startpoint whose vertex is gone is skipped rather than
+      // treated as a stale cache: the pin outliving its vertex is the
+      // only case this can catch (were the pin itself deleted, the
+      // cached pointer would already be dangling), and re-collecting
+      // here would move the printed StTNS mid-repair. Left as is;
+      // checkStartpointCache() makes a real occurrence visible.
+      continue;
+    }
+    const sta::Slack slack = sta_->slack(vertex, max_);
+    if (sta::fuzzyLess(slack, slack_margin_)) {
+      violating_startpoints_.emplace_back(startpoint.pin, slack);
     }
   }
 
