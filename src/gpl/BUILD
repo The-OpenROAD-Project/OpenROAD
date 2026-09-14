@@ -236,6 +236,7 @@ cc_library(
         ":gpl_private_hdrs",
         "//:ord",
         "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
