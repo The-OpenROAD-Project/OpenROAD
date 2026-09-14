@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "bufferTreeDescriptor.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -321,19 +320,6 @@ void Gui::timingCone(Term term, bool fanin, bool fanout)
 
 void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
-}
-
-// BufferTree stubs — the real implementation is in bufferTreeDescriptor.cpp
-// which is only compiled in the Qt build.
-sta::dbSta* BufferTree::sta_ = nullptr;
-
-BufferTree::BufferTree(odb::dbNet* /* net */)
-{
-}
-
-bool BufferTree::isAggregate(odb::dbNet* /* net */)
-{
-  return false;
 }
 
 }  // namespace gui

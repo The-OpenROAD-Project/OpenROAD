@@ -105,7 +105,6 @@ cc_library(
 cc_library(
     name = "gui_stub",
     srcs = [
-        "src/bufferTreeDescriptor.h",
         "src/stub.cpp",
     ],
     deps = [

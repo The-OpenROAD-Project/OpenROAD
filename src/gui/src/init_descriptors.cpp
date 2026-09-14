@@ -127,10 +127,16 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
   registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
+  // The empty sets are the same compromise made for DbNetDescriptor above;
+  // MainWindow::init() re-registers this with the real widget-owned sets when
+  // a window opens.  Registered here so that DbNetDescriptor's "Buffer tree"
+  // property -- gated on BufferTree::isAggregate() -- has something to build a
+  // Selected with in a build with no Qt, rather than warning GUI-33.
+  registerDescriptor<BufferTree>(new BufferTreeDescriptor(
+      db, sta, empty_net_set, empty_net_set, empty_net_set));
+
   // Note: RulerDescriptor and LabelDescriptor are GUI-only and are registered
-  // in MainWindow::init().  BufferTreeDescriptor needs Qt as well, so it is
-  // registered in Gui::init() (which runs in any Qt binary, window or not)
-  // and re-registered by MainWindow::init(); see the comment there.
+  // in MainWindow::init().
 }
 
 }  // namespace gui
