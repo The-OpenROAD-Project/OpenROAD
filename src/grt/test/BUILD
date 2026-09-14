@@ -87,6 +87,7 @@ TESTS = [
     "repair_antennas_only_jumpers",
     "repair_antennas_allow_congestion",
     "repair_antennas_from_odb",
+    "repair_antennas_odb_roundtrip",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",

@@ -82,6 +82,7 @@ or_integration_tests(
     repair_antennas_error1
     repair_antennas_error2
     repair_antennas_from_odb
+    repair_antennas_odb_roundtrip
     repair_antennas_only_diodes
     repair_antennas_only_jumpers
     report_wire_length1
