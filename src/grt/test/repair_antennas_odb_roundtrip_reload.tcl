@@ -1,4 +1,4 @@
-# Fresh-process half of repair_antennas_odb_roundtrip.tcl.
+# Compare repair after ODB reload with the original in-memory result.
 set test_name repair_antennas_odb_roundtrip
 source "helpers.tcl"
 
