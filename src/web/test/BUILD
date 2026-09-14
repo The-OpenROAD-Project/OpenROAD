@@ -358,6 +358,7 @@ cc_test(
     ],
     deps = [
         "//src/gui",
+        "//src/gui:core",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
@@ -378,6 +379,7 @@ cc_test(
     ],
     deps = [
         "//src/gui",
+        "//src/gui:core",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
@@ -398,6 +400,7 @@ cc_test(
     ],
     deps = [
         "//src/gui",
+        "//src/gui:core",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
@@ -497,6 +500,7 @@ cc_test(
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
         "//src/gui",
+        "//src/gui:core",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/web",
@@ -530,6 +534,7 @@ cc_test(
     ],
     deps = [
         "//src/gui",
+        "//src/gui:core",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",

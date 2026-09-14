@@ -722,10 +722,10 @@ static void collectNetFlightLines(odb::dbNet* net,
 //
 // Reproduced rather than delegated to DbNetDescriptor because the descriptor
 // cannot be made to honor the mode from here: its gate is
-// painter.getOptions()->isFlywireHighlightOnly(), and gui::Options is a private
-// Qt-dependent interface (QColor/QFont), so a non-Qt module has no way to
-// implement it — ShapeCollector's null Options resolves to DefaultOptions,
-// which answers false.  Going through Gui::getDescriptor<odb::dbSWire*>() for
+// painter.getOptions()->isFlywireHighlightOnly(), and ShapeCollector passes no
+// Options, so Painter::getOptions() resolves to the default gui::Options
+// instance, which answers false.  Going through
+// Gui::getDescriptor<odb::dbSWire*>() for
 // just the tail is no better: an unregistered descriptor makes
 // DescriptorRegistry emit GUI-0053, which is fatal, and nothing registers the
 // odb descriptors in the web unit tests.
@@ -970,9 +970,10 @@ static int addConnectedNets(gui::SelectionSet& selection_set)
 }
 
 // Descriptor actions that must not be surfaced in the web client:
-// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (guarded by
-//   ENABLE_QT in dbDescriptors.cpp); in a Qt-enabled binary running in
-//   web mode triggering them would crash — there is no QApplication.
+// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (offered only
+//   when Gui::getDialogs() is set, which Gui::init() does in a Qt build);
+//   in a Qt-enabled binary running in web mode triggering them would
+//   crash — there is no QApplication.
 // - Focus / route-guide / zoom actions call global gui::Gui methods that
 //   are stub no-ops in web builds; the web inspector already provides
 //   per-session equivalents in its toolbar.

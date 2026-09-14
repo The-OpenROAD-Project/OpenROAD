@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "bufferTreeDescriptor.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -29,37 +28,8 @@ struct GifWriter
 
 namespace gui {
 
-Options* Painter::getOptions()
-{
-  return options_;
-}
-
-////
-
 Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
-}
-
-Gui* gui::Gui::get()
-{
-  static Gui* singleton = new Gui();
-  return singleton;
-}
-
-bool gui::Gui::enabled()
-{
-  return Gui::get()->getHeadlessViewer() != nullptr;
-}
-
-bool gui::Gui::hasUI()
-{
-  return false;
-}
-
-void gui::Gui::registerRenderer(gui::Renderer* renderer)
-{
-  renderers_.insert(renderer);
-  redraw();
 }
 
 void HeatMapDataSource::registerHeatMap()
@@ -71,33 +41,8 @@ void HeatMapDataSource::registerHeatMap()
   // a no-op until heatmap plumbing for ad-hoc sources lands.
 }
 
-void gui::Gui::unregisterRenderer(gui::Renderer* renderer)
-{
-  renderers_.erase(renderer);
-  redraw();
-}
-
 void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
 {
-}
-
-void gui::Gui::redraw()
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->redraw();
-  }
-}
-
-void gui::Gui::pause(int timeout)
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->pause(timeout);
-  }
-}
-
-void gui::Gui::setHeadlessViewer(HeadlessViewer* viewer)
-{
-  headless_viewer_ = viewer;
 }
 
 void gui::Gui::setChartFactory(ChartFactory factory)
@@ -105,68 +50,8 @@ void gui::Gui::setChartFactory(ChartFactory factory)
   chart_factory_ = std::move(factory);
 }
 
-void Gui::status(const std::string& /* message */)
-{
-}
-
 void Gui::triggerAction(const std::string& /* action */)
 {
-}
-
-void Renderer::redraw()
-{
-  Gui::get()->redraw();
-}
-
-Renderer::~Renderer()
-{
-  Gui::get()->unregisterRenderer(this);
-}
-
-void DiscreteLegend::addLegendKey(const Painter::Color& color,
-                                  const std::string& text)
-{
-}
-
-void DiscreteLegend::draw(Painter& painter) const
-{
-}
-
-bool Renderer::checkDisplayControl(const std::string& name)
-{
-  // Same routing as the Qt build (gui.cpp): the answer belongs to whatever
-  // front-end is installed, which for a no-Qt binary is the web viewer's
-  // HeadlessViewer.  Reading controls_ directly here made that seam inert,
-  // so every per-renderer toggle in the web panel did nothing.
-  return Gui::get()->checkDisplayControlsVisible(displayControlPath(name));
-}
-
-void Renderer::addDisplayControl(
-    const std::string& name,
-    bool initial_visible,
-    const DisplayControlCallback& setup,
-    const std::vector<std::string>& mutual_exclusivity)
-{
-  DisplayControl control;
-  control.visibility = initial_visible;
-  control.interactive_setup = setup;
-  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
-                                    mutual_exclusivity.end());
-  controls_[name] = std::move(control);
-}
-
-Renderer::Settings Renderer::getSettings()
-{
-  return {};
-}
-
-void Renderer::setSettings(const Renderer::Settings& /* settings */)
-{
-}
-
-Selected Gui::makeSelected(const std::any& object)
-{
-  return DescriptorRegistry::instance()->makeSelected(object);
 }
 
 void Gui::setSelected(const Selected& selection)
@@ -177,22 +62,6 @@ const SelectionSet& Gui::selection()
 {
   static SelectionSet dummy;
   return dummy;
-}
-
-void Gui::registerDescriptor(const std::type_info& type,
-                             const Descriptor* descriptor)
-{
-  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
-}
-
-void Gui::unregisterDescriptor(const std::type_info& type)
-{
-  DescriptorRegistry::instance()->unregisterDescriptor(type);
-}
-
-const Descriptor* Gui::getDescriptor(const std::type_info& type) const
-{
-  return DescriptorRegistry::instance()->getDescriptor(type);
 }
 
 void Gui::removeSelectedByType(const std::string& /* type */)
@@ -379,19 +248,6 @@ void Gui::timingCone(Term term, bool fanin, bool fanout)
 
 void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
-}
-
-// BufferTree stubs — the real implementation is in bufferTreeDescriptor.cpp
-// which is only compiled in the Qt build.
-sta::dbSta* BufferTree::sta_ = nullptr;
-
-BufferTree::BufferTree(odb::dbNet* /* net */)
-{
-}
-
-bool BufferTree::isAggregate(odb::dbNet* /* net */)
-{
-  return false;
 }
 
 }  // namespace gui
