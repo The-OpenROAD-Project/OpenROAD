@@ -188,6 +188,7 @@ cc_library(
     }),
     deps = [
         ":gpl_private_hdrs",
+        "//bazel/kokkos",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/grt",

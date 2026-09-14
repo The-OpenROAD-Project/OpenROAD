@@ -31,6 +31,16 @@ bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
 # cannot link a host-distribution libfftw3); CPU builds pay nothing beyond
 # the lockfile entry.
 bazel_dep(name = "fftw", version = "3.3.10")
+bazel_dep(name = "kokkos", version = "4.7.02", repo_name = "kokkos_host")
+archive_override(
+    module_name = "kokkos",
+    patch_strip = 1,
+    patches = ["//bazel/kokkos:0001-add-bazel-build.patch"],
+    sha256 = "de8a1a137cf2110d391a21454406f4f5ea367c7610b540a3961f7bf1246b4ff8",
+    strip_prefix = "kokkos-4.7.02",
+    urls = ["https://github.com/kokkos/kokkos/archive/refs/tags/4.7.02.tar.gz"],
+)
+
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.18")
