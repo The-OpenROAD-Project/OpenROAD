@@ -40,6 +40,7 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "gui_utils.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -122,32 +123,12 @@ static void message_handler(QtMsgType type,
   }
 }
 
-static odb::dbBlock* getBlock(odb::dbDatabase* db)
-{
-  if (!db) {
-    return nullptr;
-  }
-
-  auto chip = db->getChip();
-  if (!chip) {
-    return nullptr;
-  }
-
-  return chip->getBlock();
-}
-
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
 // Bridges Gui to the Qt main window.  Installed once the window is built and
 // uninstalled before it is destroyed, so main_window is non-null and fully
-// alive for every call below; Gui falls back to whatever headless viewer is
-// registered outside that window.
-//
-// Only the calls Gui already routes through a backend are overridden here.
-// The display-control accessors inherited from GuiBackend stay at their
-// defaults until the Gui methods that use them are ported too; today those
-// still reach main_window directly.
+// alive for every call below -- which is why none of them check it.
 class QtGuiBackend : public GuiBackend
 {
  public:
@@ -257,6 +238,113 @@ class QtGuiBackend : public GuiBackend
   {
     main_window->getLayoutViewer()->selectionAnimation(repeat);
   }
+
+  void zoomTo(const odb::Rect& rect_dbu) override
+  {
+    main_window->zoomTo(rect_dbu);
+  }
+
+  void zoomTo(const odb::Point& focus, int diameter) override
+  {
+    main_window->zoomTo(focus, diameter);
+  }
+
+  void zoomIn() override { main_window->getLayoutViewer()->zoomIn(); }
+
+  void zoomIn(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->zoomIn(focus_dbu);
+  }
+
+  void zoomOut() override { main_window->getLayoutViewer()->zoomOut(); }
+
+  void zoomOut(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->zoomOut(focus_dbu);
+  }
+
+  void centerAt(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->centerAt(focus_dbu);
+  }
+
+  void setResolution(double pixels_per_dbu) override
+  {
+    main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
+  }
+
+  void fit() override { main_window->fit(); }
+
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       std::optional<Painter::Color> color,
+                       std::optional<int> size,
+                       std::optional<Painter::Anchor> anchor,
+                       const std::optional<std::string>& name) override
+  {
+    return main_window->addLabel(x, y, text, color, size, anchor, name);
+  }
+
+  void deleteLabel(const std::string& name) override
+  {
+    main_window->deleteLabel(name);
+  }
+
+  void clearLabels() override { main_window->clearLabels(); }
+
+  std::string addRuler(int x0,
+                       int y0,
+                       int x1,
+                       int y1,
+                       const std::string& label,
+                       const std::string& name,
+                       bool euclidian) override
+  {
+    return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
+  }
+
+  void deleteRuler(const std::string& name) override
+  {
+    main_window->deleteRuler(name);
+  }
+
+  void clearRulers() override { main_window->clearRulers(); }
+
+  bool checkDisplayControlVisible(const std::string& name) override
+  {
+    return main_window->getControls()->checkControlByPath(name, true);
+  }
+
+  bool checkDisplayControlSelectable(const std::string& name) override
+  {
+    return main_window->getControls()->checkControlByPath(name, false);
+  }
+
+  void setDisplayControlVisible(const std::string& name, bool value) override
+  {
+    main_window->getControls()->setControlByPath(
+        name, true, value ? Qt::Checked : Qt::Unchecked);
+  }
+
+  void setDisplayControlSelectable(const std::string& name, bool value) override
+  {
+    main_window->getControls()->setControlByPath(
+        name, false, value ? Qt::Checked : Qt::Unchecked);
+  }
+
+  void setDisplayControlColor(const std::string& name,
+                              const Painter::Color& color) override
+  {
+    main_window->getControls()->setControlByPath(name, toQColor(color));
+  }
+
+  void saveDisplayControls() override { main_window->getControls()->save(); }
+
+  void restoreDisplayControls() override
+  {
+    main_window->getControls()->restore();
+  }
 };
 
 static QtGuiBackend qt_backend;
@@ -269,50 +357,6 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 void Gui::setChartFactory(ChartFactory factory)
 {
   chart_factory_ = std::move(factory);
-}
-
-std::string Gui::addLabel(int x,
-                          int y,
-                          const std::string& text,
-                          std::optional<Painter::Color> color,
-                          std::optional<int> size,
-                          std::optional<Painter::Anchor> anchor,
-                          const std::optional<std::string>& name)
-{
-  if (!hasUI()) {
-    return "";
-  }
-  return main_window->addLabel(x, y, text, color, size, anchor, name);
-}
-
-void Gui::deleteLabel(const std::string& name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->deleteLabel(name);
-}
-
-std::string Gui::addRuler(int x0,
-                          int y0,
-                          int x1,
-                          int y1,
-                          const std::string& label,
-                          const std::string& name,
-                          bool euclidian)
-{
-  if (!hasUI()) {
-    return "";
-  }
-  return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
-}
-
-void Gui::deleteRuler(const std::string& name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->deleteRuler(name);
 }
 
 /**
@@ -475,22 +519,6 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
   return false;
 }
 
-void Gui::clearLabels()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearLabels();
-}
-
-void Gui::clearRulers()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearRulers();
-}
-
 std::string Gui::addToolbarButton(const std::string& name,
                                   const std::string& text,
                                   const std::string& script,
@@ -553,144 +581,6 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
     return;
   }
   main_window->getDRCViewer()->selectCategory(markers);
-}
-
-void Gui::setDisplayControlsColor(const std::string& name,
-                                  const Painter::Color& color)
-{
-  if (!hasUI()) {
-    // No Qt DisplayControls in headless mode; color is a GUI-only concept.
-    return;
-  }
-  const QColor qcolor(color.r, color.g, color.b, color.a);
-  main_window->getControls()->setControlByPath(name, qcolor);
-}
-
-void Gui::setDisplayControlsVisible(const std::string& name, bool value)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      headless_viewer_->setDisplayControlVisible(name, value);
-    }
-    return;
-  }
-  main_window->getControls()->setControlByPath(
-      name, true, value ? Qt::Checked : Qt::Unchecked);
-}
-
-bool Gui::checkDisplayControlsVisible(const std::string& name)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      return headless_viewer_->checkDisplayControlVisible(name);
-    }
-    return true;
-  }
-  return main_window->getControls()->checkControlByPath(name, true);
-}
-
-void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      headless_viewer_->setDisplayControlSelectable(name, value);
-    }
-    return;
-  }
-  main_window->getControls()->setControlByPath(
-      name, false, value ? Qt::Checked : Qt::Unchecked);
-}
-
-bool Gui::checkDisplayControlsSelectable(const std::string& name)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      return headless_viewer_->checkDisplayControlSelectable(name);
-    }
-    return false;
-  }
-  return main_window->getControls()->checkControlByPath(name, false);
-}
-
-void Gui::saveDisplayControls()
-{
-  if (!hasUI()) {
-    // Nothing to persist without the Qt DisplayControls widget.
-    return;
-  }
-  main_window->getControls()->save();
-}
-
-void Gui::restoreDisplayControls()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getControls()->restore();
-}
-
-void Gui::zoomTo(const odb::Rect& rect_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->zoomTo(rect_dbu);
-}
-
-void Gui::zoomTo(const odb::Point& focus, int diameter)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->zoomTo(focus, diameter);
-}
-
-void Gui::zoomIn()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomIn();
-}
-
-void Gui::zoomIn(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomIn(focus_dbu);
-}
-
-void Gui::zoomOut()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomOut();
-}
-
-void Gui::zoomOut(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomOut(focus_dbu);
-}
-
-void Gui::centerAt(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->centerAt(focus_dbu);
-}
-
-void Gui::setResolution(double pixels_per_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
 }
 
 void Gui::saveImage(const std::string& filename,
@@ -1110,14 +1000,6 @@ void Gui::setMainWindowTitle(const std::string& title)
 std::string Gui::getMainWindowTitle()
 {
   return main_window_title_;
-}
-
-void Gui::fit()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->fit();
 }
 
 void Gui::timingCone(Term term, bool fanin, bool fanout)

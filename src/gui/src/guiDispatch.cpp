@@ -10,6 +10,7 @@
 // gui.cpp and stub.cpp.  It moves here slice by slice.
 
 #include <any>
+#include <optional>
 #include <string>
 #include <typeinfo>
 
@@ -346,6 +347,194 @@ void Gui::clearHighlights(int highlight_group)
     return;
   }
   activeBackend()->clearHighlighted(highlight_group);
+}
+
+void Gui::zoomTo(const odb::Rect& rect_dbu)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->zoomTo(rect_dbu);
+}
+
+void Gui::zoomTo(const odb::Point& focus, int diameter)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->zoomTo(focus, diameter);
+}
+
+void Gui::zoomIn()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->zoomIn();
+}
+
+void Gui::zoomIn(const odb::Point& focus_dbu)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->zoomIn(focus_dbu);
+}
+
+void Gui::zoomOut()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->zoomOut();
+}
+
+void Gui::zoomOut(const odb::Point& focus_dbu)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->zoomOut(focus_dbu);
+}
+
+void Gui::centerAt(const odb::Point& focus_dbu)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->centerAt(focus_dbu);
+}
+
+void Gui::setResolution(double pixels_per_dbu)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->setResolution(pixels_per_dbu);
+}
+
+void Gui::fit()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->fit();
+}
+
+std::string Gui::addLabel(int x,
+                          int y,
+                          const std::string& text,
+                          std::optional<Painter::Color> color,
+                          std::optional<int> size,
+                          std::optional<Painter::Anchor> anchor,
+                          const std::optional<std::string>& name)
+{
+  if (!hasUI()) {
+    return "";
+  }
+  return activeBackend()->addLabel(x, y, text, color, size, anchor, name);
+}
+
+void Gui::deleteLabel(const std::string& name)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->deleteLabel(name);
+}
+
+void Gui::clearLabels()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->clearLabels();
+}
+
+std::string Gui::addRuler(int x0,
+                          int y0,
+                          int x1,
+                          int y1,
+                          const std::string& label,
+                          const std::string& name,
+                          bool euclidian)
+{
+  if (!hasUI()) {
+    return "";
+  }
+  return activeBackend()->addRuler(x0, y0, x1, y1, label, name, euclidian);
+}
+
+void Gui::deleteRuler(const std::string& name)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->deleteRuler(name);
+}
+
+void Gui::clearRulers()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->clearRulers();
+}
+
+// The display-control queries are the one group that always had a headless
+// path: they answered from the web viewer when no window was up.  Dispatching
+// through the backend is that same fallback, without the special case -- the
+// defaults here are the ones Gui used with nothing installed at all.
+void Gui::setDisplayControlsVisible(const std::string& name, bool value)
+{
+  if (auto* backend = activeBackend()) {
+    backend->setDisplayControlVisible(name, value);
+  }
+}
+
+bool Gui::checkDisplayControlsVisible(const std::string& name)
+{
+  if (auto* backend = activeBackend()) {
+    return backend->checkDisplayControlVisible(name);
+  }
+  return true;
+}
+
+void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
+{
+  if (auto* backend = activeBackend()) {
+    backend->setDisplayControlSelectable(name, value);
+  }
+}
+
+bool Gui::checkDisplayControlsSelectable(const std::string& name)
+{
+  if (auto* backend = activeBackend()) {
+    return backend->checkDisplayControlSelectable(name);
+  }
+  return false;
+}
+
+void Gui::setDisplayControlsColor(const std::string& name,
+                                  const Painter::Color& color)
+{
+  if (auto* backend = activeBackend()) {
+    backend->setDisplayControlColor(name, color);
+  }
+}
+
+void Gui::saveDisplayControls()
+{
+  if (auto* backend = activeBackend()) {
+    backend->saveDisplayControls();
+  }
+}
+
+void Gui::restoreDisplayControls()
+{
+  if (auto* backend = activeBackend()) {
+    backend->restoreDisplayControls();
+  }
 }
 
 }  // namespace gui

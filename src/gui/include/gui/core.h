@@ -920,6 +920,54 @@ class GuiBackend
   virtual int selectPrevious() { return 0; }
   virtual void selectionAnimation(int /* repeat */) {}
 
+  // View.  A backend with no viewport ignores these.
+  virtual void zoomTo(const odb::Rect& /* rect_dbu */) {}
+  virtual void zoomTo(const odb::Point& /* focus */, int /* diameter */) {}
+  virtual void zoomIn() {}
+  virtual void zoomIn(const odb::Point& /* focus_dbu */) {}
+  virtual void zoomOut() {}
+  virtual void zoomOut(const odb::Point& /* focus_dbu */) {}
+  virtual void centerAt(const odb::Point& /* focus_dbu */) {}
+  virtual void setResolution(double /* pixels_per_dbu */) {}
+  virtual void fit() {}
+
+  // Labels and rulers.  The add calls return the name the backend gave the
+  // new object, or an empty string if it has nowhere to put one.
+  virtual std::string addLabel(int /* x */,
+                               int /* y */,
+                               const std::string& /* text */,
+                               std::optional<Painter::Color> /* color */,
+                               std::optional<int> /* size */,
+                               std::optional<Painter::Anchor> /* anchor */,
+                               const std::optional<std::string>& /* name */)
+  {
+    return "";
+  }
+  virtual void deleteLabel(const std::string& /* name */) {}
+  virtual void clearLabels() {}
+  virtual std::string addRuler(int /* x0 */,
+                               int /* y0 */,
+                               int /* x1 */,
+                               int /* y1 */,
+                               const std::string& /* label */,
+                               const std::string& /* name */,
+                               bool /* euclidian */)
+  {
+    return "";
+  }
+  virtual void deleteRuler(const std::string& /* name */) {}
+  virtual void clearRulers() {}
+
+  // Display-control colour and persistence.  Colour is a viewport concept
+  // and the settings live with the widget, so a backend without one ignores
+  // all three.
+  virtual void setDisplayControlColor(const std::string& /* name */,
+                                      const Painter::Color& /* color */)
+  {
+  }
+  virtual void saveDisplayControls() {}
+  virtual void restoreDisplayControls() {}
+
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
   // expires.  timeout_ms == 0 means wait indefinitely.
@@ -929,11 +977,16 @@ class GuiBackend
   // can use this to gate unsafe cross-thread reads of renderer state.
   virtual bool isPaused() const = 0;
 
-  // Display-control accessors consulted by Gui::*DisplayControls* when the Qt
-  // GUI (and its DisplayControls widget) is absent.  Default implementations
-  // assume "everything visible, nothing selectable" so headless renderers draw
-  // by default without a Qt widget.  Viewers that track their own visibility
-  // model (e.g. the web viewer) may override these.
+  // Display-control state.  Gui::*DisplayControls* dispatch straight to
+  // these on whatever backend is installed -- the Qt gui answers from its
+  // DisplayControls widget, the web viewer from its own visibility model.
+  //
+  // A backend that overrides none of them shows everything and selects
+  // nothing.  That is the permissive direction deliberately: a viewer with
+  // no visibility model of its own should draw the design rather than hide
+  // it.  The cost is that a backend which forgets one of these reports
+  // "visible" rather than failing, so an override missed is an override
+  // that looks like it works.
   virtual bool checkDisplayControlVisible(const std::string& /* name */)
   {
     return true;
