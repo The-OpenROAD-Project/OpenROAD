@@ -18,8 +18,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # and the Qt gui.  Mirrors //src/gui:core in the Bazel build; keep the two
 # source lists in step.
 #
-# Not yet complete on its own: the Gui dispatch it calls into still lives in
-# gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of those too.
+# Not yet complete on its own.  It carries Gui's dispatch spine, but the Tcl
+# command surface and the startGui/initGui entry points are still implemented
+# twice, in gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of
+# those too.  Phase 3 is moving that surface here slice by slice.
 #
 # This target does not take the gui target's LTO opt-out below.  That one is
 # there for a crash in Qt plugin loading, and nothing here is Qt: no
@@ -35,6 +37,7 @@ add_library(gui_core
   src/heatMapCore.cpp
   src/heatMapPinDensity.cpp
   src/heatMapPlacementDensity.cpp
+  src/guiDispatch.cpp
   src/init_descriptors.cpp
   src/renderer.cpp
   src/staDescriptors.cpp
@@ -115,8 +118,6 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/dropdownCheckboxes.cpp
     resources/resource.qrc
   )
-
-  target_compile_definitions(gui PRIVATE ENABLE_QT)
 
   target_link_libraries(gui
     PUBLIC

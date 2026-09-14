@@ -962,9 +962,10 @@ static int addConnectedNets(gui::SelectionSet& selection_set)
 }
 
 // Descriptor actions that must not be surfaced in the web client:
-// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (guarded by
-//   ENABLE_QT in dbDescriptors.cpp); in a Qt-enabled binary running in
-//   web mode triggering them would crash — there is no QApplication.
+// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (offered only
+//   when Gui::getDialogs() is set, which Gui::init() does in a Qt build);
+//   in a Qt-enabled binary running in web mode triggering them would
+//   crash — there is no QApplication.
 // - Focus / route-guide / zoom actions call global gui::Gui methods that
 //   are stub no-ops in web builds; the web inspector already provides
 //   per-session equivalents in its toolbar.

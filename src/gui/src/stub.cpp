@@ -32,28 +32,6 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
 }
 
-Gui* gui::Gui::get()
-{
-  static Gui* singleton = new Gui();
-  return singleton;
-}
-
-bool gui::Gui::enabled()
-{
-  return Gui::get()->getHeadlessViewer() != nullptr;
-}
-
-bool gui::Gui::hasUI()
-{
-  return false;
-}
-
-void gui::Gui::registerRenderer(gui::Renderer* renderer)
-{
-  renderers_.insert(renderer);
-  redraw();
-}
-
 void HeatMapDataSource::registerHeatMap()
 {
   // gpl / other modules call this to expose their heatmap to the GUI.
@@ -63,33 +41,8 @@ void HeatMapDataSource::registerHeatMap()
   // a no-op until heatmap plumbing for ad-hoc sources lands.
 }
 
-void gui::Gui::unregisterRenderer(gui::Renderer* renderer)
-{
-  renderers_.erase(renderer);
-  redraw();
-}
-
 void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
 {
-}
-
-void gui::Gui::redraw()
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->redraw();
-  }
-}
-
-void gui::Gui::pause(int timeout)
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->pause(timeout);
-  }
-}
-
-void gui::Gui::setHeadlessViewer(HeadlessViewer* viewer)
-{
-  headless_viewer_ = viewer;
 }
 
 void gui::Gui::setChartFactory(ChartFactory factory)
@@ -97,17 +50,8 @@ void gui::Gui::setChartFactory(ChartFactory factory)
   chart_factory_ = std::move(factory);
 }
 
-void Gui::status(const std::string& /* message */)
-{
-}
-
 void Gui::triggerAction(const std::string& /* action */)
 {
-}
-
-Selected Gui::makeSelected(const std::any& object)
-{
-  return DescriptorRegistry::instance()->makeSelected(object);
 }
 
 void Gui::setSelected(const Selected& selection)
@@ -118,22 +62,6 @@ const SelectionSet& Gui::selection()
 {
   static SelectionSet dummy;
   return dummy;
-}
-
-void Gui::registerDescriptor(const std::type_info& type,
-                             const Descriptor* descriptor)
-{
-  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
-}
-
-void Gui::unregisterDescriptor(const std::type_info& type)
-{
-  DescriptorRegistry::instance()->unregisterDescriptor(type);
-}
-
-const Descriptor* Gui::getDescriptor(const std::type_info& type) const
-{
-  return DescriptorRegistry::instance()->getDescriptor(type);
 }
 
 void Gui::removeSelectedByType(const std::string& /* type */)
