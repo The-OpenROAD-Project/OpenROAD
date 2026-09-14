@@ -736,6 +736,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                               : tree_order_pv_.size() * 0.9;
   const int max_reroute_iter
       = (is_incremental_grt_ && enable_resistance_aware_) ? 5 : 0;
+  int recovered_nets = 0;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -771,6 +772,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     std::vector<int> edges_to_process(sttrees_[netID].num_edges());
     std::iota(edges_to_process.begin(), edges_to_process.end(), 0);
     int reroute_iter = 0;
+    bool recovered_edge = false;
 
     if (net->getDbNet() == debug_->net) {
       logger_->report("Edges: {}", edges_to_process.size());
@@ -1214,6 +1216,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                      nets_[netID]->getName(),
                      edgeID);
           recoverEdge(netID, edgeID);
+          recovered_edge = true;
           continue;
         }
         // get the new route for the edge and store it in gridsX[] and
@@ -1654,7 +1657,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       edges_to_process = std::move(next_retry);
       reroute_iter++;
     }  // while edges_to_process
+    if (recovered_edge) {
+      recovered_nets++;
+    }
   }  // nets loop
+
+  if (recovered_nets > 0) {
+    logger_->warn(GRT,
+                  183,
+                  "Kept original routes for edges of {} nets because the 3D "
+                  "maze router found no legal path.",
+                  recovered_nets);
+  }
 }
 
 }  // namespace grt

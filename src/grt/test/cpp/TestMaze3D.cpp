@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "FastRoute.h"
@@ -111,9 +112,9 @@ class Maze3DTest : public tst::DbFixture
     return net_id;
   }
 
-  int addBlockedNet()
+  int addBlockedNet(const char* name = "blocked")
   {
-    const int net_id = addNet("blocked",
+    const int net_id = addNet(name,
                               {{0, 0, 0},
                                {1, 0, 0},
                                {1, 0, 1},
@@ -210,6 +211,7 @@ TEST_F(Maze3DTest, RestoresRouteAndUsageAfterHeapUnderflow)
     expectSearchExhausted();
     expectRoute(blocked_net, original_grids);
     EXPECT_EQ(usage(), original_usage);
+    EXPECT_EQ(logger_.getWarningCount(), attempt + 1);
   }
 }
 
@@ -232,6 +234,31 @@ TEST_F(Maze3DTest, ContinuesRoutingAfterHeapUnderflow)
 
   expectRoute(blocked_net, original_grids);
   expectRoute(next_net, {{0, 2, 0}, {1, 2, 0}, {2, 2, 0}});
+}
+
+TEST_F(Maze3DTest, WarnsOnceWithRecoveredNetCount)
+{
+  const int first_net = addBlockedNet("first");
+  const int second_net = addBlockedNet("second");
+
+  logger_.redirectStringBegin();
+  EXPECT_NO_THROW(route({first_net, second_net}));
+  const std::string output = logger_.redirectStringEnd();
+
+  EXPECT_EQ(logger_.getWarningCount(), 1);
+  EXPECT_NE(output.find("[WARNING GRT-0183]"), std::string::npos);
+  EXPECT_NE(output.find("edges of 2 nets"), std::string::npos);
+}
+
+TEST_F(Maze3DTest, DoesNotWarnWhenNoRecoveryIsNeeded)
+{
+  const std::vector<GPoint3D> grids{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}};
+  const int net = addNet("routable", grids);
+
+  ASSERT_NO_THROW(route({net}));
+
+  expectRoute(net, grids);
+  EXPECT_EQ(logger_.getWarningCount(), 0);
 }
 
 }  // namespace grt
