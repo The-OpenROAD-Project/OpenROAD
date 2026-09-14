@@ -17,7 +17,6 @@
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
-#include "PathGroupFilter.hh"
 #include "ord/OpenRoad.hh"
 
 namespace ord {
@@ -393,7 +392,7 @@ std::string
 resolve_path_group(const char* path_group)
 {
   ensureLinked();
-  return rsz::resolvePathGroup(getResizer(), path_group);
+  return getResizer()->resolvePathGroup(path_group);
 }
 
 void

@@ -222,6 +222,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // when every path group is repaired.  Only set for the duration of one
   // repair_timing run.
   const std::string& pathGroup() const { return path_group_; }
+  // Validates a -path_group name, defining the matching OpenSTA group_path if
+  // the SDC has none yet.  Returns the group to restrict repair to, or "" to
+  // repair every path group.
+  std::string resolvePathGroup(const char* path_group);
   const GlobalSizingConfig& globalSizingConfig() const
   {
     return global_sizing_config_;

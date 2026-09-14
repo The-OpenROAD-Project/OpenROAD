@@ -211,7 +211,7 @@ PathGroupType findPathGroupType(const std::string_view name)
   return PathGroupType::kNone;
 }
 
-std::string resolvePathGroup(Resizer* resizer, const char* name)
+std::string resolvePathGroupName(Resizer* resizer, const char* name)
 {
   const std::string group_name = name != nullptr ? name : "";
   const PathGroupType type = findPathGroupType(group_name);

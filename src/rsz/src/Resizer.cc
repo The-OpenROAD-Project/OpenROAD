@@ -34,6 +34,7 @@
 #include "DelayEstimatorReporter.hh"
 #include "Optimizer.hh"
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
@@ -5311,6 +5312,11 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
 }
 
 ////////////////////////////////////////////////////////////////
+
+std::string Resizer::resolvePathGroup(const char* path_group)
+{
+  return rsz::resolvePathGroupName(this, path_group);
+}
 
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,

@@ -64,7 +64,10 @@ PathGroupType findPathGroupType(std::string_view name);
 // the command.  A supported name that the SDC has no group_path for yet gets
 // one here, so that timing reports group paths the same way repair_timing
 // optimizes them.
-std::string resolvePathGroup(Resizer* resizer, const char* name);
+//
+// Reached from Tcl through Resizer::resolvePathGroup(), which is what keeps
+// this header out of the swig wrapper.
+std::string resolvePathGroupName(Resizer* resizer, const char* name);
 
 // Decides whether the critical path at a start/endpoint belongs to the path
 // group selected with `repair_timing -path_group`.  Classification is
