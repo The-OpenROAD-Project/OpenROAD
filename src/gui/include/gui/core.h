@@ -838,19 +838,38 @@ class Dialogs
   virtual odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) = 0;
 };
 
-// Optional backend plugged in when the Qt GUI is not running (e.g. the web
-// viewer).  Lets Gui::enabled/redraw/pause work without Qt so that debug
-// graphics (gpl, cts, drt, mpl, ...) light up in headless contexts.
-// Installed via Gui::setHeadlessViewer.  The Qt GUI, when present, always
-// takes precedence: the viewer is only consulted when main_window is null.
-class HeadlessViewer
+// What Gui dispatches to: a backend of Gui, implemented by the front ends the
+// user actually sees.  The Qt gui installs one wrapping its MainWindow via
+// Gui::setBackend; a viewer with no Qt -- the web viewer -- installs one via
+// Gui::setHeadlessViewer, which is what lets debug graphics (gpl, cts, drt,
+// mpl, ...) light up in headless contexts.  A window backend takes precedence
+// when both are present.
+class GuiBackend
 {
  public:
-  virtual ~HeadlessViewer() = default;
+  virtual ~GuiBackend() = default;
+
+  // True only for a backend that owns a Qt main window.  Gui::hasUI() is
+  // this; commands needing Qt widgets gate on it, while commands that any
+  // viewer can serve gate on Gui::enabled() instead.
+  virtual bool hasWindow() const { return false; }
 
   // Called by Renderer::redraw() / Gui::redraw().  Typically broadcasts
   // a refresh notification to connected clients.
   virtual void redraw() = 0;
+
+  // Told that a renderer came or went, so a backend can build and tear down
+  // whatever UI it offers for one -- the Qt gui's display-control rows, say.
+  // The renderers themselves belong to Gui, which registers them whether a
+  // backend is installed or not and outlives any window; DisplayControls
+  // replays Gui::renderers() when it is constructed.  A backend with nothing
+  // to show for a renderer overrides neither.
+  virtual void registerRenderer(Renderer* /* renderer */) {}
+  virtual void unregisterRenderer(Renderer* /* renderer */) {}
+
+  // Show a message in whatever status surface the backend has.  A viewer
+  // with none drops it.
+  virtual void status(const std::string& /* message */) {}
 
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
@@ -883,6 +902,10 @@ class HeadlessViewer
   {
   }
 };
+
+// The web viewer installs itself through Gui::setHeadlessViewer; it is a
+// GuiBackend that reports no window.
+using HeadlessViewer = GuiBackend;
 
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
@@ -1167,6 +1190,11 @@ class Gui
   const std::set<HeatMapDataSource*>& getHeatMaps();
   HeatMapDataSource* getHeatMap(const std::string& name);
 
+  // Reset DBU formatting to plain integers.  A front-end that knows the
+  // design's units installs its own (MainWindow::init); the Qt gui calls
+  // this again when its window closes.
+  static void resetDbuConversions();
+
   // returns the Gui singleton
   static Gui* get();
 
@@ -1180,8 +1208,13 @@ class Gui
   // should gate on this rather than enabled().
   static bool hasUI();
 
-  // Install / inspect a HeadlessViewer (used when the Qt GUI is not
-  // running).  See the HeadlessViewer class comment for semantics.
+  // Install / inspect the Qt gui's backend.  MainWindow sets it when it
+  // opens and clears it when it closes.
+  void setBackend(GuiBackend* backend) { backend_ = backend; }
+  GuiBackend* getBackend() const { return backend_; }
+
+  // Install / inspect a backend for a viewer with no Qt window (the web
+  // viewer).  A window backend takes precedence over it.
   void setHeadlessViewer(HeadlessViewer* viewer);
   HeadlessViewer* getHeadlessViewer() const { return headless_viewer_; }
 
@@ -1222,6 +1255,13 @@ class Gui
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
 
+  // The backend to dispatch to: the Qt window when one is open, otherwise
+  // whatever headless viewer is installed, otherwise nothing.
+  GuiBackend* activeBackend() const
+  {
+    return backend_ != nullptr ? backend_ : headless_viewer_;
+  }
+
   bool filterSelectionProperties(const Descriptor::Properties& properties,
                                  const std::string& attribute,
                                  const std::any& value,
@@ -1251,7 +1291,9 @@ class Gui
 
   std::string main_window_title_ = "OpenROAD";
 
-  // Used when Qt GUI is not active.  Installed by the web viewer.
+  // Installed by the Qt gui's MainWindow while it is open.
+  GuiBackend* backend_ = nullptr;
+  // Used when the Qt gui is not active.  Installed by the web viewer.
   HeadlessViewer* headless_viewer_ = nullptr;
   ChartFactory chart_factory_;
   Dialogs* dialogs_ = nullptr;
