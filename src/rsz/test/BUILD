@@ -86,6 +86,7 @@ TESTS = [
     "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
+    "repair_fanout9",
     "repair_hold1",
     "repair_hold10",
     "repair_hold11",

@@ -55,6 +55,8 @@ class Shape
     kShape,
     kGridObs,
     kBlockObs,
+    // obstruction of a pad cell, which the pad's own net may overlap
+    kPadObs,
     kMacroObs,
     kObs,
     kFixed
@@ -134,6 +136,8 @@ class Shape
 
   void clearVias();
   void addVia(const ViaPtr& via);
+  // Drop the given vias from this shape.
+  void removeVias(const std::set<Via*>& vias);
   const std::vector<ViaPtr>& getVias() const { return vias_; }
 
   void addITermConnection(const odb::Rect& iterm)
@@ -242,8 +246,8 @@ class Shape
   GridComponent* grid_component_;
 
   std::vector<ViaPtr> vias_;
-  // Kept in step with vias_ by addVia()/clearVias(); a via's layers are
-  // fixed by its Connect, so the counts never go stale.
+  // Kept in step with vias_ by addVia()/removeVias()/clearVias(); a via's
+  // layers are fixed by its Connect, so the counts never go stale.
   int connections_above_ = 0;
   int connections_below_ = 0;
   std::set<odb::Rect> iterm_connections_;
