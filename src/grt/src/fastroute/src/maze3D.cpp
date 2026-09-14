@@ -866,13 +866,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
         }
 
-        // Set when the source subtree expansion exhausts the priority queue
-        // before reaching the destination subtree, i.e. no path could be
-        // found within the search region. This can happen during incremental
-        // routing after antenna repair, where jumper/diode insertion modifies
-        // a net and the constrained reroute region offers no legal path. In
-        // that case we keep the net's original route via recoverEdge() instead
-        // of aborting the flow.
+        // Track searches that cannot reach the destination subtree.
         bool heap_underflow = false;
 
         while (
@@ -1198,10 +1192,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
 
           if (src_heap_3D_.empty()) {
-            // No legal path was found from the source subtree to the
-            // destination subtree within the search region. Recover the
-            // edge's original route below instead of treating this as a
-            // fatal error (GRT-0183).
+            // Recover the original route below instead of aborting.
             heap_underflow = true;
             break;
           }

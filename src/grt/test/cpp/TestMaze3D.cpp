@@ -16,8 +16,7 @@
 
 namespace grt {
 
-// Build the routed trees directly to exercise the 3D search independently
-// of placement, antenna repair, and the preceding 2D routing passes.
+// Exercise the 3D search directly with synthetic routed trees.
 class Maze3DTest : public tst::DbFixture
 {
  protected:
@@ -122,8 +121,7 @@ class Maze3DTest : public tst::DbFixture
                                {1, 2, 1},
                                {1, 2, 0},
                                {2, 2, 0}});
-    // Model changed resources during incremental routing. The source can
-    // change layers, but neither layer has a legal planar exit.
+    // Block both planar exits while allowing layer changes at the source.
     router_->addAdjustment(0, 0, 1, 0, 1, 0, true);
     router_->addAdjustment(0, 0, 0, 1, 2, 0, true);
     return net_id;
@@ -205,7 +203,7 @@ TEST_F(Maze3DTest, RestoresRouteAndUsageAfterHeapUnderflow)
   const auto original_grids = tree(blocked_net).edges[0].route.grids;
   const auto original_usage = usage();
 
-  // A second attempt also checks for leaked usage and duplicate connections.
+  // Retry to detect usage leaks and duplicate node connections.
   for (int attempt = 0; attempt < 2; attempt++) {
     SCOPED_TRACE(attempt);
     ASSERT_NO_THROW(route({blocked_net}));
