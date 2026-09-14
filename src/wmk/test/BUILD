@@ -18,6 +18,7 @@ PASSFAIL_TESTS = [
     "cts_fanout",
     "numeric_options",
     "key_files",
+    "key_file_format",
     "cts_modes",
     "verify_nul",
     "strength_limits",
@@ -51,46 +52,9 @@ PASSFAIL_TESTS = [
     "three_stages",
 ]
 
-TESTS = [
-    "verify_evidence",
-    "verify_carriers",
-    "claim_publication",
-    "cts_empty_claims",
-    "cts_headroom",
-    "cts_fanout",
-    "numeric_options",
-    "key_files",
-    "cts_modes",
-    "verify_nul",
-    "strength_limits",
-    "cts_protected",
-    "cts_hierarchy",
-    "cts_claim_names",
-    "place_claim_names",
-    "cts",
-    "cts_drive",
-    "cts_guard",
-    "cts_endpoint_guard",
-    "cts_clock_logic",
-    "cts_liberty",
-    "cts_clock_sets",
-    "cts_skew_domains",
-    "keygen",
-    "place",
-    "place_full_rollback",
-    "place_guard",
-    "place_keyed",
-    "place_unconstrained",
+TESTS = PASSFAIL_TESTS + [
     "place_unmarked",
-    "python_api",
     "route_stat",
-    "route_verify",
-    "routing_calibration",
-    "routing_defaults",
-    "routing_lifecycle",
-    "routing_report",
-    "routing_ties",
-    "verify_malformed",
     "select",
     "verify",
     "via_layer",
@@ -100,7 +64,12 @@ filegroup(
     name = "test_resources",
     srcs = glob(
         ["**/*"],
+        # Native build and test outputs must not become Bazel inputs.
         exclude = [
+            "**/CMakeFiles/**",
+            "**/__pycache__/**",
+            "results/**",
+        ] + [
             test + "." + ext
             for test in TESTS
             for ext in [

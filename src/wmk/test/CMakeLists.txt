@@ -21,6 +21,7 @@ or_integration_tests(
     cts_fanout
     numeric_options
     key_files
+    key_file_format
     cts_modes
     verify_nul
     strength_limits

@@ -4,27 +4,71 @@
 namespace eval wmk {
 # Embedding and verification must derive the same marked population by default.
 variable default_routing_fraction 0.05
+variable key_file_header {# OpenROAD watermark key file v1}
 }
 
-# Read a key file written by generate_watermark_key -file: one "name value"
-# pair per line.
+proc wmk::key_file_error { path reason } {
+  utl::error WMK 131 "Cannot parse key file $path: $reason"
+}
+
+# Versioned files contain a Tcl list of name/value pairs, parsed as data only.
+# Legacy files have two unquoted tokens per line. Keep that interpretation for
+# them: an existing identifier containing braces or backslashes is literal.
 proc wmk::read_key_file { path } {
+  variable key_file_header
   if { [catch { open $path r } fh] } {
     utl::error WMK 130 "Cannot read key file $path: $fh"
   }
   try {
+    fconfigure $fh -encoding utf-8 -translation lf
+    gets $fh header
     set text [read $fh]
   } finally {
     close $fh
   }
-  set result [dict create]
-  foreach line [split $text \n] {
-    set line [string trim $line]
-    if { $line eq "" } {
-      continue
+  if { $header eq $key_file_header } {
+    # Tcl's list parser can include the offending data in its error message.
+    # Never propagate it: the data may contain the owner's secret key.
+    if { [catch { llength $text } count] || $count == 0 || $count % 2 != 0 } {
+      wmk::key_file_error $path "expected name/value pairs."
     }
-    if { ![regexp {^(\S+)\s+(\S+)$} $line unused name value] } {
-      utl::error WMK 131 "Cannot parse key file $path: '$line'."
+    set fields $text
+  } else {
+    set fields {}
+    set line_number 0
+    foreach line [split "$header\n$text" \n] {
+      incr line_number
+      set line [string trim $line]
+      if { $line eq "" } {
+        continue
+      }
+      if { ![regexp {^(\S+)\s+(\S+)$} $line unused name value] } {
+        wmk::key_file_error $path "expected two tokens at line $line_number."
+      }
+      lappend fields $name $value
+    }
+  }
+  set result [dict create]
+  foreach { name value } $fields {
+    if {
+      $name ni { design_id nonce_hex key_hex placement cts routing }
+      || [dict exists $result $name]
+    } {
+      wmk::key_file_error $path "unknown or duplicate field."
+    }
+    # Validate here rather than passing values to a helper: Tcl records
+    # procedure arguments in the error stack, which could expose key material.
+    if {
+      $name in { key_hex placement cts routing }
+      && ![regexp {^[0-9a-fA-F]{64}$} $value]
+    } {
+      wmk::key_file_error $path "$name must be a 64-character hex string."
+    }
+    if {
+      $name eq "nonce_hex"
+      && ![regexp {^([0-9a-fA-F]{2})*$} $value]
+    } {
+      wmk::key_file_error $path "nonce_hex must be an even-length hex string."
     }
     dict set result $name $value
   }
@@ -204,6 +248,7 @@ proc wmk::check_key_permissions { path } {
 # Exclusive creation prevents accidentally opening someone else's temporary
 # file; private material is owner-only from the moment the file is created.
 proc wmk::stage_key_file { path names result private } {
+  variable key_file_header
   set suffix [wmk::random_hex_cmd 16]
   if { $suffix eq "" } {
     utl::error WMK 117 "Could not obtain a temporary key-file name."
@@ -212,11 +257,13 @@ proc wmk::stage_key_file { path names result private } {
   set mode [expr { $private ? 0o600 : 0o666 }]
   set fh [open $temporary {WRONLY CREAT EXCL} $mode]
   try {
+    fconfigure $fh -encoding utf-8 -translation lf
     if { $private } {
       wmk::check_key_permissions $temporary
     }
+    puts $fh $key_file_header
     foreach name $names {
-      puts $fh "$name [dict get $result $name]"
+      puts $fh [list $name [dict get $result $name]]
     }
     close $fh
   } on error { message options } {

@@ -73,9 +73,16 @@ records command lines: the interactive history file (`~/.openroad_history`),
 shell history when the command is passed through a shell, and process listings
 while the command runs. Prefer `-file` at generation and `-key_file` on every
 keyed command, and keep keyed commands in scripts rather than typing them at
-the prompt. The key file format is one `name value` pair per line, and a
-keyed command takes the stage key stored in it, or derives it from `key_hex`,
-`design_id` and `nonce_hex` when only those are present.
+the prompt. A keyed command takes the stage key stored in the file, or derives
+it from `key_hex`, `design_id` and `nonce_hex` when only those are present.
+
+Generated files begin with `# OpenROAD watermark key file v1`, followed by a
+Tcl list of alternating field names and values. Values use Tcl list quoting,
+so empty values, whitespace and multiline design identifiers are preserved.
+The files use UTF-8 encoding and are parsed as data; their contents are never
+executed. Legacy files without the header remain readable as one unquoted
+`name value` pair per line. Unknown or duplicate fields and invalid keys are
+rejected, and diagnostics omit the file contents to avoid exposing secrets.
 
 ```tcl
 generate_watermark_key
@@ -577,8 +584,9 @@ Simply run the following script:
 -   A technology whose router never wires against the preferred direction has no
     routing watermarking. The stage reports this and is skipped, and ownership rests
     on placement and the clock tree. ASAP7 is such a technology.
--   Watermark tags are not serialized to distributed workers, so the routing bias
-    is not applied in distributed detailed routing.
+-   Watermarking in distributed detailed routing has not been validated. The
+    watermark property is stored in the database, but this module's regressions
+    exercise only local detailed routing.
 -   Capacity is a property of the design. A sparse or timing-tight design may
     yield few placement pairs or none, and a shallow clock tree too few leaf
     buffers to pair.
