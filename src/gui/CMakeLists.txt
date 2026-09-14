@@ -20,6 +20,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #
 # Not yet complete on its own: the Gui dispatch it calls into still lives in
 # gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of those too.
+#
+# This target does not take the gui target's LTO opt-out below.  That one is
+# there for a crash in Qt plugin loading, and nothing here is Qt: no
+# QApplication, no static QPA plugin, nothing that takes part in loading one.
+# descriptor_registry.cpp and the heatmap sources have also been built with
+# LTO all along, through the gui_descriptors and gui_heatmap_core targets this
+# replaces, and they are on the web tile renderer's hot path.
 add_library(gui_core
   src/bufferTreeDescriptor.cpp
   src/colorGenerator.cpp
