@@ -166,6 +166,16 @@ class frNet : public frBlockObject
   bool hasJumpers() { return has_jumpers_; }
   void setToBeDeleted(bool to_be_deleted) { to_be_deleted_ = to_be_deleted; }
   bool toBeDeleted() { return to_be_deleted_; }
+  // Per-net override of the global AUTO_TAPER_NDR_NETS config (on by
+  // default).  When disabled, DRT keeps this net at its full NDR width all
+  // the way to the pin instead of tapering to minimum width near pins.
+  void setAutoTaperEnabled(bool in) { auto_taper_enabled_ = in; }
+  // Effective setting: auto-taper applies only when enabled both globally
+  // and for this net.
+  bool autoTaperEnabled(bool global_enabled) const
+  {
+    return global_enabled && auto_taper_enabled_;
+  }
 
  protected:
   frString name_;
@@ -194,5 +204,7 @@ class frNet : public frBlockObject
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
   bool to_be_deleted_{false};
+  // Per-net auto-taper setting; see setAutoTaperEnabled().
+  bool auto_taper_enabled_{true};
 };
 }  // namespace drt

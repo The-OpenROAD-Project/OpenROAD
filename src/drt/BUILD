@@ -101,6 +101,8 @@ cc_library(
     visibility = ["//src/drt:__subpackages__"],
     deps = [
         ":base_types",
+        # TODO: need :drt_private_hdrs, but that reveals a cylcic dependency
+        #":drt_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.polygon",
@@ -129,7 +131,7 @@ cc_library(
         "src/ta/FlexTA.h",
     ],
     includes = ["src"],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/drt/test:__pkg__"],
     deps = [
         ":base_types",
         ":db_hdrs",

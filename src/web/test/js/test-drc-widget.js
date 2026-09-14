@@ -49,7 +49,7 @@ describe('DrcWidget', () => {
             const select = toolbar.querySelector('.drc-category-select');
             assert.ok(select, 'category select exists');
 
-            const buttons = toolbar.querySelectorAll('.drc-btn');
+            const buttons = toolbar.querySelectorAll('.or-btn');
             assert.ok(buttons.length >= 1, 'load button exists');
 
             // Should have info bar

@@ -4,11 +4,11 @@
 #include <cstdint>
 
 #include "odb/db.h"
-#include "tst/fixture.h"
+#include "tst/db_fixture.h"
 
 namespace odb {
 
-class SimpleDbFixture : public tst::Fixture
+class SimpleDbFixture : public tst::DbFixture
 {
  protected:
   static odb::dbMaster* createMaster2X1(odb::dbLib* lib,

@@ -47,17 +47,14 @@ odb::dbITerm_connect $b1_a $n2_net ;# reconnect b1/A back to original n2
 odb::dbInst_destroy $b_extra
 odb::dbNet_destroy $n_extra_net
 
-# f. Mark the affected nets dirty
-grt::add_dirty_net $n2_net
-
-# g. Call global_route -end_incremental
+# f. Call global_route -end_incremental
 global_route -end_incremental -use_cugr
 
-# h. Write guides to a result file
+# g. Write guides to a result file
 set guide_file [make_result_file "incremental_deleted_net.guide"]
 write_guides $guide_file
 
-# i. Assert the deleted intermediate net name does NOT appear in the guide file
+# h. Assert the deleted intermediate net name does NOT appear in the guide file
 check "n_extra net (deleted) does NOT have routing guides" {
   set fh [open $guide_file r]
   set content [read $fh]

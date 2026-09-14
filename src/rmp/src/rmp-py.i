@@ -2,34 +2,23 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#ifdef BAZEL
 #include <string>
+
 #include "cut/blif.h"
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "ord/OpenRoad.hh"
+#include "rmp/Restructure.h"
+#include "sta/Liberty.hh"
+#include "sta/Scene.hh"
+#include "utl/Logger.h"
 
-namespace utl {
-class Logger;
-}
-
+#ifdef BAZEL
 namespace odb {
-class dbBlock;
+class dbBlock;  // FIXME: these are from private headers.
 class dbInst;
 }
-
-namespace sta {
-class dbSta;
-}
-
-using namespace cut;
-using odb::dbInst;
 #else
-#include "rmp/Restructure.h"
-#include "cut/blif.h"
-#include "sta/Scene.hh"
-#include "ord/OpenRoad.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
-#include <string>
-
 namespace ord {
 // Defined in OpenRoad.i
 rmp::Restructure *
@@ -39,6 +28,7 @@ OpenRoad *
 getOpenRoad();
 }
 
+// FIXME: should not use using statements.
 using namespace rmp;
 using namespace cut;
 using ord::getRestructure;
@@ -51,22 +41,10 @@ using sta::Scene;
 
 %include "../../Exception-py.i"
 
-%include <typemaps.i>
-%include <std_string.i>
+%include<typemaps.i>
+%include<std_string.i>
+
 #ifdef BAZEL
-namespace utl {
-class Logger;
-}
-
-namespace odb {
-class dbBlock;
-class dbInst;
-}
-
-namespace sta {
-class dbSta;
-}
-
 namespace cut {
 class Blif
 {

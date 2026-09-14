@@ -18,6 +18,7 @@
 #include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -258,41 +259,57 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
 
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
-  int maxPwr = std::numeric_limits<int>::min();
-  int minPwr = std::numeric_limits<int>::max();
-  int maxGnd = std::numeric_limits<int>::min();
-  int minGnd = std::numeric_limits<int>::max();
+  int max_pwr = std::numeric_limits<int>::min();
+  int min_pwr = std::numeric_limits<int>::max();
+  int max_gnd = std::numeric_limits<int>::min();
+  int min_gnd = std::numeric_limits<int>::max();
 
-  bool isVdd = false;
-  bool isGnd = false;
+  bool has_pwr = false;
+  bool has_gnd = false;
+
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() == odb::dbSigType::POWER) {
-      isVdd = true;
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        // Geometry or box?
-        const int y = mpin->getBBox().yCenter();
-        minPwr = std::min(minPwr, y);
-        maxPwr = std::max(maxPwr, y);
-      }
-    } else if (mterm->getSigType() == odb::dbSigType::GROUND) {
-      isGnd = true;
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        // Geometry or box?
-        const int y = mpin->getBBox().yCenter();
-        minGnd = std::min(minGnd, y);
-        maxGnd = std::max(maxGnd, y);
+    const odb::dbSigType st = mterm->getSigType();
+    const bool is_pwr = (st == odb::dbSigType::POWER);
+    const bool is_gnd = (st == odb::dbSigType::GROUND);
+
+    if (!is_pwr && !is_gnd) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        // Skip wells, implants, cuts, and null layers
+        if (layer == nullptr
+            || layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+
+        const int y = box->getBox().yCenter();
+
+        if (is_pwr) {
+          has_pwr = true;
+          min_pwr = std::min(min_pwr, y);
+          max_pwr = std::max(max_pwr, y);
+        } else {
+          has_gnd = true;
+          min_gnd = std::min(min_gnd, y);
+          max_gnd = std::max(max_gnd, y);
+        }
       }
     }
   }
-  int topPwr = Architecture::Row::Power_UNK;
-  int botPwr = Architecture::Row::Power_UNK;
-  if (isVdd && isGnd) {
-    topPwr = (maxPwr > maxGnd) ? Architecture::Row::Power_VDD
-                               : Architecture::Row::Power_VSS;
-    botPwr = (minPwr < minGnd) ? Architecture::Row::Power_VDD
-                               : Architecture::Row::Power_VSS;
+
+  int top_pwr = Architecture::Row::Power_UNK;
+  int bot_pwr = Architecture::Row::Power_UNK;
+
+  if (has_pwr && has_gnd) {
+    top_pwr = (max_pwr > max_gnd) ? Architecture::Row::Power_VDD
+                                  : Architecture::Row::Power_VSS;
+    bot_pwr = (min_pwr < min_gnd) ? Architecture::Row::Power_VDD
+                                  : Architecture::Row::Power_VSS;
   }
-  return {topPwr, botPwr};
+  return {top_pwr, bot_pwr};
 }
 
 }  // namespace
@@ -318,6 +335,32 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   auto master_pwrs = getMasterPwrs(db_master);
   master->setTopPowerType(master_pwrs.first);
   master->setBottomPowerType(master_pwrs.second);
+  debugPrint(logger_,
+             utl::DPL,
+             "rail_align",
+             1,
+             "{}, height: {}, return: top_pwr:{} bot_pwr:{}",
+             db_master->getConstName(),
+             db_master->getHeight(),
+             master_pwrs.first,
+             master_pwrs.second);
+  if (master_pwrs.first == Architecture::Row::Power_UNK
+      || master_pwrs.second == Architecture::Row::Power_UNK) {
+    debugPrint(logger_,
+               utl::DPL,
+               "rail_align",
+               1,
+               "Master {} (type:{}, macro:{}, height:{}, multi-row:{}) has "
+               "an undetermined power rail (top:{} bot:{}); its cells will "
+               "not be power-aligned.",
+               db_master->getConstName(),
+               db_master->getType().getString(),
+               db_master->isBlock(),
+               db_master->getHeight(),
+               master->isMultiRow(),
+               master_pwrs.first,
+               master_pwrs.second);
+  }
   master->clearEdges();
   if (!drc_engine->hasCellEdgeSpacingTable()) {
     return master;

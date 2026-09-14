@@ -22,6 +22,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
@@ -70,6 +71,8 @@ std::string Grid::typeToString(Type type)
       return "Instance";
     case kExisting:
       return "Existing";
+    case kDummy:
+      return "Dummy";
   }
 
   return "Unknown";
@@ -177,6 +180,10 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
       local_obstructions,
       allow_repair_channels_,
       domain_->getPDNGen()->getDebugRenderer());
+
+  if (logger->debugCheck(utl::PDN, "Pad", 1)) {
+    PadDirectConnectionStraps::reportConnectionBalance(getGridComponents());
+  }
 }
 
 void Grid::makeRoutingObstructions(odb::dbBlock* block) const
@@ -867,19 +874,26 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
       const auto& search_obs = search_obstructions[layer];
       if (search_obs.qbegin(
               bgi::intersects(via->getArea())
-              && bgi::satisfies([this, layer](const ShapePtr& other) -> bool {
-                   if (other->shapeType() != Shape::kGridObs) {
-                     return true;
-                   }
-                   // only consider obstructions on routing layers as blocking
-                   // for grid obstructions
-                   if (layer->getType() != odb::dbTechLayerType::ROUTING) {
-                     return false;
-                   }
-                   const GridObsShape* shape
-                       = static_cast<GridObsShape*>(other.get());
-                   return !shape->belongsTo(this);
-                 }))
+              && bgi::satisfies(
+                  [this, layer, via](const ShapePtr& other) -> bool {
+                    if (other->shapeType() == Shape::kPadObs
+                        && other->getNet() != nullptr
+                        && other->getNet() == via->getNet()) {
+                      // the pad metal this via is landing on
+                      return false;
+                    }
+                    if (other->shapeType() != Shape::kGridObs) {
+                      return true;
+                    }
+                    // only consider obstructions on routing layers as blocking
+                    // for grid obstructions
+                    if (layer->getType() != odb::dbTechLayerType::ROUTING) {
+                      return false;
+                    }
+                    const GridObsShape* shape
+                        = static_cast<GridObsShape*>(other.get());
+                    return !shape->belongsTo(this);
+                  }))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(FailedViaReason::kObstructed);
@@ -895,11 +909,10 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // Remove overlapping vias and keep largest
-  Via::ViaTree overlapping_via_tree;
-  for (const auto& via : vias) {
-    overlapping_via_tree.insert(via);
-  }
+  // Remove overlapping vias and keep largest. Build the tree in one go:
+  // the packing constructor is far cheaper than inserting millions of
+  // vias one at a time, and nothing queries the tree while it is built.
+  Via::ViaTree overlapping_via_tree(vias.begin(), vias.end());
   for (const auto& via : vias) {
     if (via->isFailed()) {
       continue;
@@ -940,10 +953,30 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
+  // Drop the vias this grid made last time from the shapes they attach to.
+  // They are about to be replaced, and a shape that kept them would hold
+  // every earlier generation's vias: findRepairChannels would count stale
+  // connections, and the lists (and the vias they keep alive) grew with
+  // every repair pass -- on a large die, to tens of gigabytes.
+  {
+    std::set<Via*> old_vias;
+    std::set<Shape*> touched;
+    for (const auto& via : vias_) {
+      old_vias.insert(via.get());
+      for (const auto& shape : {via->getLowerShape(), via->getUpperShape()}) {
+        if (shape != nullptr) {
+          touched.insert(shape.get());
+        }
+      }
+    }
+    for (Shape* shape : touched) {
+      shape->removeVias(old_vias);
+    }
+  }
+
   // build via tree
-  vias_.clear();
+  vias_ = Via::ViaTree(vias.begin(), vias.end());
   for (auto& via : vias) {
-    vias_.insert(via);
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
@@ -1156,14 +1189,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
   // placed instances obs
   for (auto* inst : block->getInsts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-
     auto* master = inst->getMaster();
+
     if (master->isCore()) {
       continue;
     }
+    bool is_padframe = master->isPad();
     if (master->isEndCap()) {
       switch (master->getType()) {
         case odb::dbMasterType::ENDCAP_TOPLEFT:
@@ -1171,11 +1202,21 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
         case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
         case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
           // Master is a pad corner
+          is_padframe = true;
           break;
         default:
           // Master is a std cell endcap
           continue;
       }
+    }
+
+    // A padring is routinely handed over PLACED rather than FIXED, and
+    // CoreGrid::setupDirectConnect will happily connect to it, so a padframe
+    // cell must obstruct as soon as it has a location.
+    const bool is_positioned
+        = is_padframe ? inst->getPlacementStatus().isPlaced() : inst->isFixed();
+    if (!is_positioned) {
+      continue;
     }
 
     if (skip_insts.find(inst) != skip_insts.end()) {
@@ -1189,8 +1230,14 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
                "Get instance {} obstructions",
                inst->getName());
 
-    for (const auto& [layer, shapes] :
-         InstanceGrid::getInstanceObstructions(inst)) {
+    // A pad is the one cell the grid is expected to reach into, so its
+    // obstructions are described honestly - real metal in the rect and the
+    // spacing in the obstruction box - and the metal that sits under one of the
+    // pad's own pins is attributed to that pin's net.
+    const ShapeVectorMap inst_obs
+        = is_padframe ? InstanceGrid::getPadObstructions(inst)
+                      : InstanceGrid::getInstanceObstructions(inst);
+    for (const auto& [layer, shapes] : inst_obs) {
       obs[layer].insert(obs[layer].end(), shapes.begin(), shapes.end());
     }
   }
@@ -1320,9 +1367,11 @@ odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
+  auto net_map = std::make_shared<odb::PtrMap<odb::dbNet, int>>();
   std::vector<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
+    (*net_map)[net] = 0;
     std::vector<odb::dbITerm*> iterms;
     for (auto* iterm : net->getITerms()) {
       auto* inst = iterm->getInst();
@@ -1339,7 +1388,7 @@ void CoreGrid::setupDirectConnect(
 
     for (auto* iterm : iterms) {
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
-          this, iterm, connect_pad_layers);
+          this, iterm, connect_pad_layers, net_map);
       if (pad_connect->canConnect()) {
         straps.push_back(pad_connect.get());
         addStrap(std::move(pad_connect));
@@ -1523,6 +1572,119 @@ odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
 odb::Rect InstanceGrid::getGridBoundary() const
 {
   return getDomainBoundary();
+}
+
+ShapeVectorMap InstanceGrid::getPadObstructions(odb::dbInst* inst)
+{
+  using boost::polygon::operators::operator&=;
+  using boost::polygon::operators::operator-=;
+
+  ShapeVectorMap obs;
+
+  const odb::dbTransform transform = inst->getTransform();
+  auto* master = inst->getMaster();
+
+  // Pin metal of the pad, in master coordinates, kept per net and as a union.
+  // Only routing geometry is considered: an obstruction on a cut layer is never
+  // coincident with a pin in any useful sense.
+  odb::PtrMap<odb::dbTechLayer,
+              odb::PtrMap<odb::dbNet, odb::geom::BoostPolygon90Set>>
+      pin_metal;
+  odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygon90Set> all_pin_metal;
+  for (auto* iterm : inst->getITerms()) {
+    auto* net = iterm->getNet();
+    if (net == nullptr) {
+      // metal that belongs to nothing the grid can claim stays opaque
+      continue;
+    }
+    auto add_pin_metal
+        = [&pin_metal, &all_pin_metal, net](odb::dbTechLayer* pin_layer,
+                                            const odb::Rect& rect) {
+            if (pin_layer == nullptr) {
+              return;
+            }
+            const auto pin_poly = odb::geom::toPolygon90(rect);
+            pin_metal[pin_layer][net].insert(pin_poly);
+            all_pin_metal[pin_layer].insert(pin_poly);
+          };
+
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        if (box->isVia()) {
+          // a pin drawn as a via still puts metal on the routing layers
+          auto* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect via_rect = via_box->getBox();
+            via_transform.apply(via_rect);
+            add_pin_metal(via_box->getTechLayer(), via_rect);
+          }
+          continue;
+        }
+        add_pin_metal(box->getTechLayer(), box->getBox());
+      }
+    }
+  }
+
+  auto add_shape = [&obs, &transform](odb::dbTechLayer* layer,
+                                      const odb::Rect& rect,
+                                      odb::dbNet* net) {
+    odb::Rect placed = rect;
+    transform.apply(placed);
+    auto shape = net == nullptr
+                     ? std::make_shared<Shape>(layer, placed, Shape::kPadObs)
+                     : std::make_shared<Shape>(layer, net, placed);
+    shape->setShapeType(Shape::kPadObs);
+    // rect_ stays the real metal and obs_ carries one spacing, so a shape
+    // tested against this obstruction is charged the spacing once rather than
+    // twice.
+    shape->generateObstruction();
+    obs[layer].push_back(std::move(shape));
+  };
+
+  for (auto* ob : master->getObstructions()) {
+    auto* layer = ob->getTechLayer();
+    if (layer == nullptr) {
+      continue;
+    }
+    const odb::Rect obs_rect = ob->getBox();
+
+    const auto pins = all_pin_metal.find(layer);
+    if (pins == all_pin_metal.end()) {
+      add_shape(layer, obs_rect, nullptr);
+      continue;
+    }
+
+    // the part of the obstruction that no pin covers blocks every net
+    odb::geom::BoostPolygon90Set blocking = odb::geom::toPolygonSet90(obs_rect);
+    blocking -= pins->second;
+    for (const odb::Rect& rect : odb::geom::extractRectangles(blocking)) {
+      add_shape(layer, rect, nullptr);
+    }
+
+    // the part coincident with a pin is that net's own metal
+    for (const auto& [net, net_pins] : pin_metal[layer]) {
+      odb::geom::BoostPolygon90Set owned = odb::geom::toPolygonSet90(obs_rect);
+      owned &= net_pins;
+      for (const odb::Rect& rect : odb::geom::extractRectangles(owned)) {
+        add_shape(layer, rect, net);
+      }
+    }
+  }
+
+  // the pins themselves obstruct every net but their own
+  for (const auto& [layer, pin_shapes] : getInstancePins(inst)) {
+    for (const auto& pin_shape : pin_shapes) {
+      pin_shape->setShapeType(Shape::kPadObs);
+      pin_shape->generateObstruction();
+      obs[layer].push_back(pin_shape);
+    }
+  }
+
+  return obs;
 }
 
 ShapeVectorMap InstanceGrid::getInstanceObstructions(
@@ -1709,9 +1871,132 @@ bool InstanceGrid::isValid() const
   return true;
 }
 
+bool InstanceGrid::hasHalo() const
+{
+  for (int margin : halos_) {
+    if (margin != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+InstanceGrid::Halo InstanceGrid::suggestHalo(
+    const std::vector<odb::Rect>& rows) const
+{
+  const odb::Rect inst_box = inst_->getBBox()->getBox();
+  const odb::Rect inst_halo = applyHalo(inst_box, halos_, true, true, true);
+
+  // Whether a row shares the instance's horizontal/vertical extent.  A row
+  // that does not overlap the instance shares at most one of the two, so it
+  // can always be separated from the instance along the other axis.
+  auto overlaps_x = [&inst_box](const odb::Rect& row) {
+    return row.xMax() > inst_box.xMin() && row.xMin() < inst_box.xMax();
+  };
+  auto overlaps_y = [&inst_box](const odb::Rect& row) {
+    return row.yMax() > inst_box.yMin() && row.yMin() < inst_box.yMax();
+  };
+
+  Halo suggested = halos_;
+
+  // First pass: rows beside the instance (sharing its vertical extent) can
+  // only be cleared horizontally; rows above/below it (sharing its horizontal
+  // extent) can only be cleared vertically.  Apply these forced reductions.
+  std::vector<odb::Rect> corner_rows;
+  for (const odb::Rect& row : rows) {
+    if (overlaps_y(row)) {
+      if (row.xMin() >= inst_box.xMax()) {  // right of the instance
+        suggested[2] = std::min(suggested[2], row.xMin() - inst_box.xMax());
+      } else {  // left of the instance
+        suggested[0] = std::min(suggested[0], inst_box.xMin() - row.xMax());
+      }
+    } else if (overlaps_x(row)) {
+      if (row.yMin() >= inst_box.yMax()) {  // above the instance
+        suggested[3] = std::min(suggested[3], row.yMin() - inst_box.yMax());
+      } else {  // below the instance
+        suggested[1] = std::min(suggested[1], inst_box.yMin() - row.yMax());
+      }
+    } else {
+      corner_rows.push_back(row);
+    }
+  }
+
+  // Second pass: corner rows can be cleared on either axis.  Many are already
+  // cleared by the forced reductions above; for any that remain, retract
+  // whichever side has to move the least.
+  for (const odb::Rect& row : corner_rows) {
+    if (!inst_halo.overlaps(row)) {
+      continue;
+    }
+    const bool right = row.xMin() >= inst_box.xMax();
+    const int x_side = right ? 2 : 0;
+    const int x_halo
+        = right ? row.xMin() - inst_box.xMax() : inst_box.xMin() - row.xMax();
+    const bool above = row.yMin() >= inst_box.yMax();
+    const int y_side = above ? 3 : 1;
+    const int y_halo
+        = above ? row.yMin() - inst_box.yMax() : inst_box.yMin() - row.yMax();
+    if (suggested[x_side] - x_halo <= suggested[y_side] - y_halo) {
+      suggested[x_side] = std::min(suggested[x_side], x_halo);
+    } else {
+      suggested[y_side] = std::min(suggested[y_side], y_halo);
+    }
+  }
+
+  return suggested;
+}
+
+void InstanceGrid::checkHalo() const
+{
+  if (!hasHalo() || inst_->getMaster()->isCover()) {
+    return;
+  }
+
+  const odb::Rect inst_box = inst_->getBBox()->getBox();
+  const odb::Rect halo_box = applyHalo(inst_box, true, true, true);
+
+  // Collect rows the halo intrudes into.  Rows the instance footprint itself
+  // overlaps are skipped: no halo adjustment can clear those (the instance is
+  // placed on top of them), so they are out of scope here.
+  std::vector<odb::Rect> overlapping_rows;
+  std::string first_row;
+  for (auto* row : getBlock()->getRows()) {
+    const odb::Rect row_box = row->getBBox();
+    if (!halo_box.overlaps(row_box) || inst_box.overlaps(row_box)) {
+      continue;
+    }
+    if (overlapping_rows.empty()) {
+      first_row = row->getName();
+    }
+    overlapping_rows.push_back(row_box);
+  }
+
+  if (overlapping_rows.empty()) {
+    return;
+  }
+
+  const Halo suggested = suggestHalo(overlapping_rows);
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  getLogger()->error(
+      utl::PDN,
+      8,
+      "{} halo overlaps row {} (and {} other row(s)); reduce the halo to at "
+      "most \"{:.4f} {:.4f} {:.4f} {:.4f}\".",
+      getLongName(),
+      first_row,
+      overlapping_rows.size() - 1,
+      suggested[0] / dbus,
+      suggested[1] / dbus,
+      suggested[2] / dbus,
+      suggested[3] / dbus);
+}
+
 void InstanceGrid::checkSetup() const
 {
   Grid::checkSetup();
+
+  checkHalo();
 
   // check blockages above pins
   const auto nets = getNets(startsWithPower());
@@ -1811,6 +2096,19 @@ void InstanceGrid::checkSetup() const
       }
     }
   }
+}
+
+////////
+
+DummyInstanceGrid::DummyInstanceGrid(VoltageDomain* domain,
+                                     const std::string& name)
+    : Grid(domain, name, true, {})
+{
+}
+
+std::string DummyInstanceGrid::getLongName() const
+{
+  return getName() + " - Dummy";
 }
 
 ////////

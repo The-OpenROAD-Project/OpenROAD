@@ -61,7 +61,7 @@ Initial-placement arguments
 
 Routability-driven arguments
 - They begin with `-routability`.
-- `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+- `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_min_congestion_for_inflation`, `-routability_rc_coefficients`
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
@@ -76,6 +76,7 @@ global_placement
     [-routability_driven]\
     [-incremental]\
     [-skip_io]\
+    [-place_ios]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -104,9 +105,11 @@ global_placement
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
-    [-enable_routing_congestion]
-    [-virtual_cts]
-    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]
+    [-enable_routing_congestion]\
+    [-virtual_cts]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]
 ```
 
 #### Options
@@ -130,11 +133,14 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
+| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The resulting pin locations are written to the database but are not legalized to routing tracks or grid positions; `place_pins` must be run afterwards. Not supported on a rectilinear die. Cannot be combined with `-timing_driven`, `-routability_driven`, `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
 | `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement. Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. Virtual CTS runs before each timing-driven iteration. |
 | `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
+| `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement to explore layout variations. Default is `1`. |
+| `-perturb_dist` | Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller. |
 
 #### Initial-Placement Arguments
 
@@ -154,6 +160,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `3`, and the allowed values are floats. |
+| `-routability_min_congestion_for_inflation` | Tiles with a congestion value below this value will not be inflated. The default value is `0.95`, and the allowed values are floats `[0, 1]`. |
 | `-routability_rc_coefficients` | Set routability RC coefficients for calculating the averate routing congestion. They relate to the 0.5%, 1%, 2%, and 5% most congested tiles. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
 
 #### Timing-Driven Arguments
@@ -176,7 +183,8 @@ cluster_flops
     [-tray_weight tray_weight]\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
-    [-num_paths num_paths]
+    [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]
 ```
 
 #### Options
@@ -187,6 +195,7 @@ cluster_flops
 | `-timing_weight` | Timing weight, default value is 0.1, type `float`. |
 | `-max_split_size` | Maximum split size, default value is 500 (-1 for no decomposition), type `int`.|
 | `-num_paths` | KIV, default value is 0, type `int`. |
+| `-clock_power_weight` | Credits clock-tree power saved by banking, promoting higher banking ratios. Models a per-sink clock-tree power equal to this weight times the single-bit flop power; an N-bit tray presents one clock sink instead of N. Default value is 0.0 (legacy cost model, no clock-tree credit), type `float` (must be non-negative). Any non-negative value is accepted, including fractional weights (e.g. 0.5, 1.5); sweep it continuously (typically around 1-3) to reach the desired banking on designs where reduced clock-tree routing is the goal. |
 
 
 ### Placement Clusters
@@ -290,13 +299,8 @@ gpl.setTimingNetWeightMax(weight)
 ```
 
 There are some useful Python functions located in the file
-[grt_aux.py](test/grt_aux.py) but these are not considered a part of the *final*
+[grt_aux.py](../grt/test/grt_aux.py) but these are not considered a part of the *final*
 API and they may change.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+replace+in%3Atitle)
-about this tool.
 
 ## References
 

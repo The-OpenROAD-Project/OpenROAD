@@ -55,9 +55,13 @@ export class WebSocketManager {
         // Not yet on the wire, so cancel() can drop them for free.
         this._queue = new Map(); // id -> {msg, resolve, reject}
         // Requests sent but not yet answered by the server (the real wire
-        // window). Incremented on send, decremented when ANY reply for a sent
+        // window). Incremented on send, decremented when a reply for that sent
         // id arrives — even a stale one for a cancelled request.
         this._inFlight = 0;
+        this._inFlightIds = new Set();
+        // Payload types this build does not know, so handleMessage can report
+        // each one once instead of once per message (see there).
+        this._unknownPayloadTypes = new Set();
         this._maxInFlight = DEFAULT_MAX_IN_FLIGHT; // updated by server "config"
         this._lastRecvAt = 0;     // perf.now() of the last message of any kind
         this._bufStuckSince = 0;  // liveness: when bufferedAmount got stuck
@@ -94,6 +98,8 @@ export class WebSocketManager {
         mgr.pending = new Map();
         mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
         mgr._inFlight = 0;
+        mgr._inFlightIds = new Set();
+        mgr._unknownPayloadTypes = new Set();
         mgr._maxInFlight = DEFAULT_MAX_IN_FLIGHT;
         mgr._lastRecvAt = 0;
         mgr.reconnectDelay = 0;
@@ -120,6 +126,8 @@ export class WebSocketManager {
 
         this.socket.onopen = () => {
             console.log('WebSocket connected');
+            const isReconnect = this._everConnected === true;
+            this._everConnected = true;
             this._isConnected = true;
             this.reconnectDelay = 1000;
             this._lastRecvAt = (typeof performance !== 'undefined')
@@ -127,6 +135,12 @@ export class WebSocketManager {
             this.readyResolve();
             this.onStatusChange();
             this._pump(); // flush anything queued before the socket opened
+            // A reconnect may be talking to a restarted server (possibly
+            // serving a different design) — let the app resync any state
+            // derived from server responses (e.g. coordinate transforms).
+            if (isReconnect && this.onReconnected) {
+                this.onReconnected();
+            }
         };
 
         this.socket.onmessage = (event) => {
@@ -146,6 +160,7 @@ export class WebSocketManager {
     _handleClose() {
         this._isConnected = false;
         this._inFlight = 0;
+        this._inFlightIds.clear();
         this._bufStuckSince = 0;
         this.onStatusChange();
         for (const [id, handler] of this.pending) {
@@ -228,10 +243,11 @@ export class WebSocketManager {
             return;
         }
 
-        // Any reply for a sent id frees a wire slot — including a stale reply
-        // for a request we already cancelled. This keeps the scheduler moving
-        // and bounds the send rate to the server's response rate.
-        if (this._inFlight > 0) {
+        // Only a reply for a request counted in the wire window frees a slot.
+        // Cancel messages are fire-and-forget and have ids of their own; their
+        // acknowledgements must not free a tile-request slot.  The original
+        // tile reply still does so even after its promise was cancelled.
+        if (this._inFlightIds.delete(id) && this._inFlight > 0) {
             this._inFlight--;
         }
 
@@ -256,6 +272,35 @@ export class WebSocketManager {
             }
         } else if (type === 1) {
             handler.resolve(new Blob([payload], { type: 'image/png' }));
+        } else if (type === 3) {
+            // A tile the server drew nothing into. Resolving null rather than
+            // a transparent PNG is the point: no Blob, no decode, and no
+            // full-size bitmap held for an image with nothing in it. Every
+            // tile consumer already treats a null payload as "draw nothing".
+            handler.resolve(null);
+        } else {
+            // An unrecognised payload type must still settle the promise, or
+            // the tile it belongs to hangs unresolved forever and Leaflet
+            // never reveals it. A server newer than this client lands here.
+            //
+            // Rejected rather than resolved with null: only type 3 carries
+            // "blank tile", and this manager is shared with the JSON endpoints,
+            // whose callers would read the null as data — `tech` and `bounds`
+            // dereference the reply directly. A tile caller catches and leaves
+            // the tile blank, which is what it does for any dropped request.
+            //
+            // Reported once per type rather than per message: the cause is a
+            // version mismatch, so every reply arrives this way and a warning
+            // each would bury the first one.
+            if (!this._unknownPayloadTypes.has(type)) {
+                this._unknownPayloadTypes.add(type);
+                console.warn(
+                    `Unrecognized websocket payload type ${type}. The server `
+                    + 'is likely newer than this page — reload to pick up the '
+                    + 'current client.');
+            }
+            handler.reject(
+                new Error(`Unsupported websocket payload type ${type}`));
         }
     }
 
@@ -301,6 +346,7 @@ export class WebSocketManager {
                 reject: entry.reject,
             });
             this.socket.send(JSON.stringify(entry.msg));
+            this._inFlightIds.add(id);
             this._inFlight++;
         }
         this.onStatusChange();
@@ -318,11 +364,36 @@ export class WebSocketManager {
             this.onStatusChange();
             return;
         }
+        
         // Already sent: stop tracking the reply, but do NOT free the wire slot
         // or pump — the server still has to process those bytes, and the slot
         // frees only when its (now stale) reply arrives. Freeing it here would
         // let cancellation churn re-flood the socket.
-        this.pending.delete(id);
+        //
+        // The promise is rejected as well, for the same reason as the queued
+        // branch: dropping the handler without settling leaves the caller
+        // awaiting forever, and a caller with a `finally` never runs it. The
+        // merged tile layer frees its decoded ImageBitmaps there, so a silent
+        // drop here means every pruned or refreshed tile keeps its decodes
+        // alive — the unbounded decoded-image growth the merge exists to bound.
+        // The stale reply is still ignored: the handler is gone from `pending`.
+        const sent = this.pending.get(id);
+        const had = this.pending.delete(id);
+        if (sent) {
+            sent.reject(new Error('Request cancelled'));
+        }
+        // Tell the server to skip the now-obsolete tile render so fast
+        // pan/zoom doesn't pile up stale work (and the 'pending' set drains).
+        // Fire-and-forget: the cancel message gets its own id but is NOT
+        // tracked in `pending`, so any stray ack is harmlessly ignored.
+        if (had && !this._cache && this.socket
+                && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({
+                type: 'cancel',
+                cancel_id: id,
+                id: this.nextId++,
+            }));
+        }
         this.onStatusChange();
     }
 

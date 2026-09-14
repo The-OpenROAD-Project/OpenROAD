@@ -12,7 +12,8 @@ read_def gcd.def
 source sky130hs/sky130hs.rc
 
 define_process_corner -ext_model_index 0 X
-extract_parasitics -ext_model_file ext_pattern.rules -max_res 0 \
+set_extraction_rules_file ext_pattern.rules
+extract_parasitics -max_res 0 \
   -coupling_threshold 0.1
 
 set spef_file [make_result_file gcd.spef]

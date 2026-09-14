@@ -38,6 +38,7 @@ tapcell
     [-incnrcap_nwout_master incnrcap_nwout_master]
     [-no_cell_at_top_bottom]
     [-row_min_width min_width]
+    [-row_min_height min_height]
     [-tap_nwin2_master tap_nwin2_master]
     [-tap_nwin3_master tap_nwin3_master]
     [-tap_nwintie_master tap_nwintie_master]
@@ -52,7 +53,7 @@ tapcell
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ---------------------- | -------------------------------------- |
 | `[-cnrcap_nwin_master]` | Macro cell placed at the corners the core area according the row orientation. |
 | `[-cnrcap_nwout_master]` | Macro cell placed at the corners the core area according the row orientation. |
 | `[-disallow_one_site_gaps]` | Option is deprecated. |
@@ -65,7 +66,8 @@ tapcell
 | `[-incnrcap_nwin_master]` | Master cell placed at the corners of macros, according the row orientation. |
 | `[-incnrcap_nwout_master]` | Master cell placed at the corners of macros, according the row orientation. |
 | `[-no_cell_at_top_bottom]` | Option is deprecated. |
-| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. |
+| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. Default value is 2 * endcap_width or 0 if no endcap cell is set. |
+| `[-row_min_height]` | Minimum height (in microns) that stacked rows must have during cut rows. Default value is 2 * endcap_height + max_cell_height or 2 * max_cell_height if no endcap cell is set. |
 | `[-tap_nwin2_master]` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwintie_master` |
 | `[-tap_nwin3_master]` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwin2_master`. |
 | `[-tap_nwintie_master]` | Master cell placed at the top and bottom of macros and the core area according the row orientation. |
@@ -86,16 +88,18 @@ cut_rows
     [-halo_width_x halo_x]
     [-halo_width_y halo_y]
     [-row_min_width min_width]
+    [-row_min_height min_height]
 ```
 
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| --------------- | --------------------------------------------- |
 | `[-endcap_master]` | Master used as an endcap. |
 | `[-halo_width_x]` | Horizontal halo size (in microns) around macros during cut rows. |
 | `[-halo_width_y]` | Vertical halo size (in microns) around macros during cut rows. |
-| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. |
+| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. Default value is 2 * endcap_width or 0 if no endcap cell is set. |
+| `[-row_min_height]` | Minimum height (in microns) that stacked rows must have during cut rows. Default value is 2 * endcap_height + max_cell_height or 2 * max_cell_height if no endcap cell is set. |
 
 ### Only adding boundary/endcap cells
 
@@ -127,7 +131,7 @@ place_endcaps
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| -------------------- | ---------------------------------------- |
 | `[-bottom_edge]` | List of masters for the bottom row endcaps. (overrides `-endcap_horizontal`). |
 | `[-corner]` | Master for the corner cells on the outer corners. |
 | `[-edge_corner]` | Master for the corner cells on the inner corners. |
@@ -178,7 +182,7 @@ tapcell_ripup
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| --------------- | --------------------------------------------- |
 | `[-endcap_prefix]` | Remove endcaps with said prefix. The default value is `PHY_`. |
 | `[-tap_prefix]` | Remove tapcells with said prefix. The default value is `TAP_`. |
 
@@ -202,11 +206,6 @@ Simply run the following script:
 ```
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+tap+in%3Atitle)
-about this tool.
 
 ## License
 

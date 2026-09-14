@@ -136,7 +136,7 @@ void definComponent::begin(const char* iname, const char* mname)
     _errors++;
     return;
   }
-  if (_mode != defin::DEFAULT) {
+  if (_mode == defin::FLOORPLAN || _mode == defin::INCREMENTAL) {
     _cur_inst = _block->findInst(iname);
     if (_cur_inst == nullptr) {
       _errors++;
@@ -144,16 +144,36 @@ void definComponent::begin(const char* iname, const char* mname)
     }
     _update_cnt++;
   } else {
+    // DEFAULT and THREE_D_BLOX create the instance.
     _cur_inst = dbInst::create(_block, master, iname);
-    if (_cur_inst != nullptr) {
-      _inst_cnt++;
-      _iterm_cnt += master->getMTermCount();
-    } else {
-      _logger->warn(
-          utl::ODB, 93, "error: duplicate instance definition({})", iname);
-      _errors++;
-      return;
+    if (_cur_inst == nullptr) {
+      if (_mode == defin::THREE_D_BLOX) {
+        // THREE_D_BLOX reuses an existing instance (e.g. a bump already created
+        // from the bump map) instead of erroring on a duplicate definition.
+        _cur_inst = _block->findInst(iname);
+        if (_cur_inst->getMaster() != master) {
+          _logger->warn(utl::ODB,
+                        549,
+                        "error: 3DBlox DEF component {} already exists with "
+                        "master {} but the DEF specifies master {}",
+                        iname,
+                        _cur_inst->getMaster()->getName(),
+                        master->getName());
+          _cur_inst = nullptr;
+          _errors++;
+          return;
+        }
+        _update_cnt++;
+        return;
+      } else {
+        _logger->warn(
+            utl::ODB, 93, "error: duplicate instance definition({})", iname);
+        _errors++;
+        return;
+      }
     }
+    _inst_cnt++;
+    _iterm_cnt += master->getMTermCount();
     if (_inst_cnt % 100000 == 0) {
       _logger->info(utl::ODB, 94, "\t\tCreated {} Insts", _inst_cnt);
     }

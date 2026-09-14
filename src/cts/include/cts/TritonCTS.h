@@ -98,17 +98,20 @@ class TritonCTS
   void writeDataToDb();
 
   // NDR functions
-  std::vector<int> getAllClockTreeLevels(Clock& clockNet);
-  int applyNDRToClockLevels(Clock& clockNet,
-                            odb::dbTechNonDefaultRule* clockNDR,
-                            const std::vector<int>& targetLevels);
-
-  int applyNDRToClockLevelRange(Clock& clockNet,
-                                odb::dbTechNonDefaultRule* clockNDR,
-                                int minLevel,
-                                int maxLevel);
-  int applyNDRToFirstHalfLevels(Clock& clockNet,
-                                odb::dbTechNonDefaultRule* clockNDR);
+  // Levels of one whole clock tree, numbered from its root toward its leaves
+  // across tree builder boundaries, so that the sub trees hanging off clock
+  // gaters (or a register tree forked from a macro tree) continue the parent
+  // numbering instead of restarting at the root level.
+  struct ClockTreeLevels
+  {
+    // Nets that may take a NDR (leaf nets excluded) with their level, in the
+    // order they were walked from the root.  Level 0 is the root trunk.
+    std::vector<std::pair<odb::dbNet*, int>> nets;
+    // Deepest level held by a net in 'nets', -1 when there is none.
+    int maxLevel = -1;
+  };
+  std::vector<ClockTreeLevels> computeClockTreeLevels();
+  odb::dbTechNonDefaultRule* createClockNDR();
 
   // db functions
   bool masterExists(const std::string& master) const;
@@ -116,7 +119,7 @@ class TritonCTS
   void destroyClockModNet(sta::Pin* pin_driver);
   void writeClockNetsToDb(TreeBuilder* builder,
                           odb::PtrSet<odb::dbNet>& clkLeafNets);
-  void writeClockNDRsToDb(TreeBuilder* builder);
+  void writeClockNDRsToDb();
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
