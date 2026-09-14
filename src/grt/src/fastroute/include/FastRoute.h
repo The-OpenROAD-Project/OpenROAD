@@ -320,7 +320,7 @@ class FastRouteCore
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
 
  private:
-  friend class Maze3DTest;
+  friend class Maze3DTestPeer;
 
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
