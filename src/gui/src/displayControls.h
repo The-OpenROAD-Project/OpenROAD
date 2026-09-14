@@ -136,10 +136,10 @@ class DisplayControlModel : public QStandardItemModel
 // controls are shown in a tree view to provide grouping of
 // related options.
 //
-// It also implements the Options interface so that other clients can
+// It also implements the QtOptions interface so that other clients can
 // access the data.
 class DisplayControls : public QDockWidget,
-                        public Options,
+                        public QtOptions,
                         public sta::dbNetworkObserver,
                         public odb::dbBlockCallBackObj
 {
