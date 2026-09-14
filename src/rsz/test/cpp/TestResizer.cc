@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -224,6 +225,39 @@ class TestResizer : public tst::IntegratedFixture
     return nullptr;
   }
 };
+
+// Verify dont_touch preserves a hierarchical name and protects its flat net.
+TEST_F(TestResizer, HierarchicalNetDontTouch)
+{
+  readVerilogAndSetup("TestBufferRemoval3_feedthrough.v",
+                      /*init_default_sdc=*/false);
+
+  odb::dbModule* child_module = block_->findModule("child_mod");
+  ASSERT_NE(child_module, nullptr);
+  odb::dbModBTerm* input_port = child_module->findModBTerm("data_i");
+  ASSERT_NE(input_port, nullptr);
+  odb::dbModNet* mod_net = input_port->getModNet();
+  ASSERT_NE(mod_net, nullptr);
+  odb::dbNet* flat_net = mod_net->findRelatedNet();
+  ASSERT_NE(flat_net, nullptr);
+
+  // Compare addresses without dereferencing a potentially corrupted name.
+  const std::uintptr_t name_address
+      = reinterpret_cast<std::uintptr_t>(mod_net->getConstName());
+  const sta::Net* sta_net = db_network_->dbToSta(mod_net);
+  ASSERT_NE(sta_net, nullptr);
+
+  resizer_.setDontTouch(sta_net, true);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(mod_net->getConstName()),
+            name_address);
+  EXPECT_TRUE(flat_net->isDoNotTouch());
+  EXPECT_TRUE(resizer_.dontTouch(sta_net));
+
+  resizer_.setDontTouch(sta_net, false);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(mod_net->getConstName()),
+            name_address);
+  EXPECT_FALSE(flat_net->isDoNotTouch());
+}
 
 TEST_F(TestResizer, WeakerCellFirstOrdersHigherDriveResistanceFirst)
 {

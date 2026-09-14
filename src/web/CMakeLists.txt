@@ -20,6 +20,7 @@ set(WEB_ASSET_FILES
     src/tile-request.js
     src/device-pixels.js
     src/merged-tile-layer.js
+    src/display-state.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
@@ -29,9 +30,17 @@ set(WEB_ASSET_FILES
     src/display-controls.js
     src/inspector.js
     src/ruler.js
+    src/label-manager.js
     src/tcl-completer.js
     src/hierarchy-browser.js
     src/menu-bar.js
+    src/options-dialogs.js
+    src/context-menu.js
+    src/search-nav.js
+    src/capture.js
+    src/toolbar.js
+    src/image-export.js
+    src/edit-dialogs.js
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
@@ -40,6 +49,7 @@ set(WEB_ASSET_FILES
     src/timing-widget.js
     src/drc-widget.js
     src/3d-viewer-widget.js
+    src/selection-browser.js
     src/main.js
 )
 
@@ -56,6 +66,7 @@ add_custom_command(
     --output ${REPORT_ASSETS_CPP}
     --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
     --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-state.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
@@ -69,9 +80,17 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/label-manager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/options-dialogs.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/context-menu.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/search-nav.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/toolbar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/image-export.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/edit-dialogs.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
@@ -79,6 +98,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/selection-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
@@ -112,6 +132,7 @@ target_sources(web
     src/web.cpp
     src/web_serve.cpp
     src/web_chart.cpp
+    src/web_gif.cpp
     src/web_painter.cpp
     src/web_viewer_hook.cpp
     src/MakeWeb.cpp
@@ -124,8 +145,7 @@ target_link_libraries(web
     odb
   PRIVATE
     cli_completer
-    gui_descriptors
-    gui_heatmap_core
+    gui_core
     dbSta_lib
     lodepng
     stb_truetype

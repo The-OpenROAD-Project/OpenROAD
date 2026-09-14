@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -240,7 +241,8 @@ class OpenRoad
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);
-  void writeDb(const char* filename);
+  void writeDb(const char* filename,
+               std::optional<int> compression_level = std::nullopt);
 
   void setThreadCount(int threads, bool print_info = true);
   void setThreadCount(const char* threads, bool print_info = true);
