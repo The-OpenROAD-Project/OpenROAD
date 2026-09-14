@@ -342,7 +342,7 @@ void tmg_conn::removeShortLoops()
   if (!graph_) {
     graph_ = std::make_unique<tmg_conn_graph>();
   }
-  graph_->init(wire_points_.size(), shortV_.size());
+  graph_->init(wire_points_.size(), shorts_.size());
   std::vector<tcg_pt>& pgV = graph_->ptV_;
 
   // setup paths
@@ -357,7 +357,7 @@ void tmg_conn::removeShortLoops()
   npath++;
 
   // remove shorts to same path
-  for (tmg_rcshort& s : shortV_) {
+  for (Short& s : shorts_) {
     if (s.skip) {
       continue;
     }
@@ -366,7 +366,7 @@ void tmg_conn::removeShortLoops()
     }
   }
 
-  for (tmg_rcshort& s : shortV_) {
+  for (Short& s : shorts_) {
     if (s.skip) {
       continue;
     }
