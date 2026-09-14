@@ -71,11 +71,13 @@ cc_library(
     ],
 )
 
+# The Qt entry point's header surface: startGui and initGui.  The encoded
+# gui.tcl belongs to :gui_qt -- gui_tcl_inits is referenced only by gui.cpp,
+# which only that target compiles.  Carrying :tcl here too put a second copy
+# of the blob in every openroad-qt link, and an unreferenced one in every
+# CLI link.  CMake only encodes gui.tcl in its Qt branch for the same reason.
 cc_library(
     name = "gui",
-    srcs = [
-        ":tcl",
-    ],
     hdrs = [
         "include/gui/MakeGui.h",
         "include/gui/gui.h",
