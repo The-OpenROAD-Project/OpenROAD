@@ -199,13 +199,13 @@ void tmg_conn::loadNet(dbNet* net)
 
 void tmg_conn::loadSWire(dbNet* net)
 {
-  hasSWire_ = false;
+  has_special_wires_ = false;
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.empty()) {
     return;
   }
 
-  hasSWire_ = true;
+  has_special_wires_ = true;
   for (dbSWire* sw : swires) {
     for (dbSBox* sbox : sw->getWires()) {
       const Rect rect = sbox->getBox();
@@ -561,7 +561,7 @@ void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
   rect = pin.getBox();
 }
 
-void tmg_conn::findConnections()
+void tmg_conn::identifyShorts()
 {
   if (wire_points_.empty()) {
     return;
@@ -709,9 +709,10 @@ void tmg_conn::findConnections()
       }
     }
   }
+}
 
-  removeWireLoops();
-
+void tmg_conn::identifyTerminalWirePoints()
+{
   // detach tilPins from iterms
   detachTilePins();
 
@@ -1344,23 +1345,29 @@ void tmg_conn::analyzeNet(dbNet* net)
     checkConnOrdered();
   } else {
     loadNet(net);
+
     if (net->getWire()) {
       loadWire(net->getWire());
     }
+
     if (wire_points_.empty()) {
-      // ignoring this net
       net->setDisconnected(false);
       net->setWireOrdered(false);
       return;
     }
-    findConnections();
-    bool noConvert = false;
-    if (hasSWire_) {
+
+    identifyShorts();
+    buildWireGraph();
+    identifyTerminalWirePoints();
+
+    if (has_special_wires_) {
       net->destroySWires();
     }
+
     relocateShorts();
-    treeReorder(noConvert);
+    treeReorder(false);
   }
+
   net->setDisconnected(!connected_);
   net->setWireOrdered(true);
 }

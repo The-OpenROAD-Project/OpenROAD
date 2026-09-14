@@ -181,9 +181,10 @@ class tmg_conn
   }
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
-  void findConnections();
+  void identifyShorts();
   void removeShortLoops();
-  void removeWireLoops();
+  void buildWireGraph();
+  void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
@@ -224,38 +225,44 @@ class tmg_conn
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 
-  dbNet* net_;
+  utl::Logger* logger_;
+  std::unique_ptr<tmg_conn_search> search_;
+  std::unique_ptr<tmg_conn_graph> graph_;
 
+  dbNet* net_;
+  bool has_special_wires_;
+
+  // The description of the wire.
   std::vector<WireSection> wire_sections_;
   std::vector<WirePoint> wire_points_;
   std::vector<Terminal> terminals_;
   std::vector<Short> shorts_;
 
+  // Searching for which metal points correspond to terminals.
+  std::vector<std::array<tmg_connect_shape, 32>> csVV_;
+  std::array<tmg_connect_shape, 32>* csV_;
+  std::vector<int> csNV_;
+  int csN_;
+  WirePoint* first_for_clear_;
   int slicedTilePinCnt_;
   int stbtx1_[200];
   int stbty1_[200];
   int stbtx2_[200];
   int stbty2_[200];
   dbBTerm* slicedTileBTerm_[200];
-  std::unique_ptr<tmg_conn_search> search_;
-  std::unique_ptr<tmg_conn_graph> graph_;
-  std::vector<Terminal*> tstackV_;
-  bool hasSWire_;
-  bool connected_;
-  dbWireEncoder encoder_;
-  dbWire* newWire_;
+
+  // Graph walk and writing of the new wire encoding.
+  std::vector<Terminal*> tstackV_; // Also used when checking connectivity.
+  int last_id_;
   dbTechNonDefaultRule* net_rule_;
   dbTechNonDefaultRule* path_rule_;
   bool need_short_wire_id_;
-  std::vector<std::array<tmg_connect_shape, 32>> csVV_;
-  std::array<tmg_connect_shape, 32>* csV_;
-  std::vector<int> csNV_;
-  int csN_;
-  WirePoint* first_for_clear_;
-
-  int last_id_;
   int firstSegmentAfterVia_;
-  utl::Logger* logger_;
+  dbWireEncoder encoder_;
+  dbWire* newWire_;
+
+  // Post-process connectivity check.
+  bool connected_;
 };
 
 }  // namespace odb

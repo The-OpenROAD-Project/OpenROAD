@@ -470,7 +470,7 @@ void tmg_conn_graph::addEdges(const tmg_conn* conn,
   e2->skip = false;
 }
 
-void tmg_conn::removeWireLoops()
+void tmg_conn::buildWireGraph()
 {
   removeShortLoops();
 
