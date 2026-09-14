@@ -176,6 +176,87 @@ class QtGuiBackend : public GuiBackend
   {
     main_window->getControls()->unregisterRenderer(renderer);
   }
+
+  void setSelected(const Selected& selection) override
+  {
+    main_window->setSelected(selection);
+  }
+
+  void addSelected(const Selected& selection) override
+  {
+    main_window->addSelected(selection);
+  }
+
+  void removeSelectedByType(const std::string& type) override
+  {
+    main_window->removeSelectedByType(type);
+  }
+
+  const SelectionSet& selection() override { return main_window->selection(); }
+
+  const Selected& inspectorSelection() override
+  {
+    return main_window->getInspector()->getSelection();
+  }
+
+  bool anyObjectInSet(bool selection_set,
+                      odb::dbObjectType obj_type) const override
+  {
+    return main_window->anyObjectInSet(selection_set, obj_type);
+  }
+
+  void addHighlighted(const SelectionSet& selection,
+                      int highlight_group) override
+  {
+    main_window->addHighlighted(selection, highlight_group);
+  }
+
+  void clearHighlighted(int highlight_group) override
+  {
+    main_window->clearHighlighted(highlight_group);
+  }
+
+  void selectHighlightConnectedInsts(bool select_flag,
+                                     int highlight_group) override
+  {
+    main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
+  }
+
+  void selectHighlightConnectedNets(bool select_flag,
+                                    bool output,
+                                    bool input,
+                                    int highlight_group) override
+  {
+    main_window->selectHighlightConnectedNets(
+        select_flag, output, input, highlight_group);
+  }
+
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group) override
+  {
+    main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                     highlight_group);
+  }
+
+  int selectArea(const odb::Rect& area, bool append) override
+  {
+    return main_window->getLayoutViewer()->selectArea(area, append);
+  }
+
+  int selectNext() override
+  {
+    return main_window->getInspector()->selectNext();
+  }
+
+  int selectPrevious() override
+  {
+    return main_window->getInspector()->selectPrevious();
+  }
+
+  void selectionAnimation(int repeat) override
+  {
+    main_window->getLayoutViewer()->selectionAnimation(repeat);
+  }
 };
 
 static QtGuiBackend qt_backend;
@@ -188,176 +269,6 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 void Gui::setChartFactory(ChartFactory factory)
 {
   chart_factory_ = std::move(factory);
-}
-
-void Gui::setSelected(const Selected& selection)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->setSelected(selection);
-}
-
-void Gui::removeSelectedByType(const std::string& type)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->removeSelectedByType(type);
-}
-
-void Gui::addSelectedNet(const char* name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto net = block->findNet(name);
-  if (!net) {
-    return;
-  }
-
-  main_window->addSelected(makeSelected(net));
-}
-
-void Gui::addSelectedInst(const char* name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto inst = block->findInst(name);
-  if (!inst) {
-    return;
-  }
-
-  main_window->addSelected(makeSelected(inst));
-}
-
-const SelectionSet& Gui::selection()
-{
-  if (!hasUI()) {
-    static const SelectionSet empty_selection;
-    return empty_selection;
-  }
-  return main_window->selection();
-}
-
-bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
-{
-  if (!hasUI()) {
-    return false;
-  }
-  return main_window->anyObjectInSet(selection_set, obj_type);
-}
-
-void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
-}
-void Gui::selectHighlightConnectedNets(bool select_flag,
-                                       bool output,
-                                       bool input,
-                                       int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedNets(
-      select_flag, output, input, highlight_group);
-}
-
-void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
-                                              int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedBufferTrees(select_flag,
-                                                   highlight_group);
-}
-
-void Gui::addInstToHighlightSet(const char* name, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto inst = block->findInst(name);
-  if (!inst) {
-    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
-    return;
-  }
-  SelectionSet sel_inst_set;
-  sel_inst_set.insert(makeSelected(inst));
-  main_window->addHighlighted(sel_inst_set, highlight_group);
-}
-
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto net = block->findNet(name);
-  if (!net) {
-    logger_->error(utl::GUI, 101, "No net named {} found.", name);
-    return;
-  }
-  SelectionSet selection_set;
-  selection_set.insert(makeSelected(net));
-  main_window->addHighlighted(selection_set, highlight_group);
-}
-
-int Gui::selectAt(const odb::Rect& area, bool append)
-{
-  if (!hasUI()) {
-    return 0;
-  }
-  return main_window->getLayoutViewer()->selectArea(area, append);
-}
-
-int Gui::selectNext()
-{
-  if (!hasUI()) {
-    return 0;
-  }
-  return main_window->getInspector()->selectNext();
-}
-
-int Gui::selectPrevious()
-{
-  if (!hasUI()) {
-    return 0;
-  }
-  return main_window->getInspector()->selectPrevious();
-}
-
-void Gui::animateSelection(int repeat)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
 std::string Gui::addLabel(int x,
@@ -562,22 +473,6 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
   }
 
   return false;
-}
-
-void Gui::clearSelections()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->setSelected(Selected());
-}
-
-void Gui::clearHighlights(int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearHighlighted(highlight_group);
 }
 
 void Gui::clearLabels()
@@ -1223,15 +1118,6 @@ void Gui::fit()
     return;
   }
   main_window->fit();
-}
-
-const Selected& Gui::getInspectorSelection()
-{
-  if (!hasUI()) {
-    static const Selected empty_selection;
-    return empty_selection;
-  }
-  return main_window->getInspector()->getSelection();
 }
 
 void Gui::timingCone(Term term, bool fanin, bool fanout)

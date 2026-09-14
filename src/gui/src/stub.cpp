@@ -54,20 +54,6 @@ void Gui::triggerAction(const std::string& /* action */)
 {
 }
 
-void Gui::setSelected(const Selected& selection)
-{
-}
-
-const SelectionSet& Gui::selection()
-{
-  static SelectionSet dummy;
-  return dummy;
-}
-
-void Gui::removeSelectedByType(const std::string& /* type */)
-{
-}
-
 // using namespace odb;
 int startGui(int& argc,
              char* argv[],
@@ -178,10 +164,6 @@ void Gui::saveImage(const std::string& filename,
 {
 }
 
-void Gui::clearSelections()
-{
-}
-
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
                 const std::string& attribute,
@@ -208,14 +190,6 @@ bool Gui::checkDisplayControlsVisible(const std::string& name)
     return headless_viewer_->checkDisplayControlVisible(name);
   }
   return true;
-}
-
-void Gui::clearHighlights(int highlight_group)
-{
-}
-
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
-{
 }
 
 void Gui::addFocusNet(odb::dbNet* net)

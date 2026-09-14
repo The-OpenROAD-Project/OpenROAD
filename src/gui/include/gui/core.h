@@ -871,6 +871,55 @@ class GuiBackend
   // with none drops it.
   virtual void status(const std::string& /* message */) {}
 
+  // Selection and highlighting.  A backend with no selection model leaves
+  // these alone: nothing is selected, nothing highlights, and the queries
+  // answer empty.  Gui guards each on hasWindow() today, so only the Qt gui
+  // sees them until a viewer implements its own.
+  virtual void setSelected(const Selected& /* selection */) {}
+  virtual void addSelected(const Selected& /* selection */) {}
+  virtual void removeSelectedByType(const std::string& /* type */) {}
+  virtual const SelectionSet& selection()
+  {
+    static const SelectionSet empty;
+    return empty;
+  }
+  virtual const Selected& inspectorSelection()
+  {
+    static const Selected empty;
+    return empty;
+  }
+  virtual bool anyObjectInSet(bool /* selection_set */,
+                              odb::dbObjectType /* obj_type */) const
+  {
+    return false;
+  }
+  virtual void addHighlighted(const SelectionSet& /* selection */,
+                              int /* highlight_group */)
+  {
+  }
+  virtual void clearHighlighted(int /* highlight_group */) {}
+  virtual void selectHighlightConnectedInsts(bool /* select_flag */,
+                                             int /* highlight_group */)
+  {
+  }
+  virtual void selectHighlightConnectedNets(bool /* select_flag */,
+                                            bool /* output */,
+                                            bool /* input */,
+                                            int /* highlight_group */)
+  {
+  }
+  virtual void selectHighlightConnectedBufferTrees(bool /* select_flag */,
+                                                   int /* highlight_group */)
+  {
+  }
+  virtual int selectArea(const odb::Rect& /* area */, bool /* append */)
+  {
+    return 0;
+  }
+  virtual int selectNext() { return 0; }
+  virtual int selectPrevious() { return 0; }
+  virtual void selectionAnimation(int /* repeat */) {}
+
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
   // expires.  timeout_ms == 0 means wait indefinitely.
