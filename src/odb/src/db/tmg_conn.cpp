@@ -66,8 +66,6 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   csVV_.reserve(1024);
   csNV_.reserve(1024);
   shorts_.reserve(1024);
-  need_short_wire_id_ = false;
-  first_for_clear_ = nullptr;
 }
 
 tmg_conn::~tmg_conn() = default;

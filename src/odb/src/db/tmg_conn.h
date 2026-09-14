@@ -227,13 +227,13 @@ class tmg_conn
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 
-  utl::Logger* logger_;
+  utl::Logger* logger_{nullptr};
 
   std::unique_ptr<ShapeSearch> shape_search_;
   std::unique_ptr<ConnectionGraph> connection_graph_;
 
-  dbNet* net_;
-  bool has_special_wires_;
+  dbNet* net_{nullptr};
+  bool has_special_wires_{false};
 
   // The description of the wire.
   std::vector<WireSection> wire_sections_;
@@ -243,11 +243,11 @@ class tmg_conn
 
   // Searching for which metal points correspond to terminals.
   std::vector<std::array<tmg_connect_shape, 32>> csVV_;
-  std::array<tmg_connect_shape, 32>* csV_;
+  std::array<tmg_connect_shape, 32>* csV_{nullptr};
   std::vector<int> csNV_;
-  int csN_;
-  WirePoint* first_for_clear_;
-  int slicedTilePinCnt_;
+  int csN_{0};
+  WirePoint* first_for_clear_{nullptr};
+  int slicedTilePinCnt_{0};
   int stbtx1_[200];
   int stbty1_[200];
   int stbtx2_[200];
@@ -256,16 +256,16 @@ class tmg_conn
 
   // Graph walk and writing of the new wire encoding.
   std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.
-  int last_id_;
-  dbTechNonDefaultRule* net_rule_;
-  dbTechNonDefaultRule* path_rule_;
-  bool need_short_wire_id_;
-  int firstSegmentAfterVia_;
+  int last_id_{-1};
+  dbTechNonDefaultRule* net_rule_{nullptr};
+  dbTechNonDefaultRule* path_rule_{nullptr};
+  bool need_short_wire_id_{false};
+  int firstSegmentAfterVia_{0};
   dbWireEncoder encoder_;
-  dbWire* newWire_;
+  dbWire* newWire_{nullptr};
 
   // Post-process connectivity check.
-  bool connected_;
+  bool connected_{false};
 };
 
 }  // namespace odb
