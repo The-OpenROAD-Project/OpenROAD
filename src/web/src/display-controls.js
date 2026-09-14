@@ -1288,15 +1288,18 @@ export function populateDisplayControls(app, visibility, selectability,
     // two overlay layers along with everything else (they are in allLayers),
     // and this runs on every checkbox in the tree, not just that one.
     const applyHierarchyOverlay = () => {
-        syncHierarchyOverlay(visibility, activeHierarchySource(app));
-        if (app.hierarchyPanel) {
-            // The overlay paints with the server's default palette on its own
-            // (request_handler.cpp), so this is about the table: turning the
-            // checkbox on pulls in the tree that matches what the layout is
-            // now showing, instead of leaving an empty panel beside it.
-            app.hierarchyPanel.ensureActiveLoaded();
-            app.hierarchyPanel.refreshActiveStatus();
+        // Only when a flag actually moved: this runs for every checkbox in the
+        // tree, and the panel work below walks the whole tree of the view it
+        // is showing.
+        if (!syncHierarchyOverlay(visibility, activeHierarchySource(app))
+            || !app.hierarchyPanel) {
+            return;
         }
+        // The overlay paints with the server's default palette on its own, so
+        // the load is about the table: it brings in the tree that matches what
+        // the layout is already showing.
+        app.hierarchyPanel.ensureActiveLoaded();
+        app.hierarchyPanel.refreshActiveStatus();
     };
 
     // VisTree shares one onChange across every row of both models, so latch

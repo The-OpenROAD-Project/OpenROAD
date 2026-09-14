@@ -5281,20 +5281,25 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // The row carries its own slot, so the session side is a plain array: there
   // is no second table whose order has to be kept matching this one, and adding
   // an overlay cannot silently paint from another one's colors.
-  std::shared_ptr<const std::map<uint32_t, Color>> overlay_colors;
+  TileGenerator::OwnerColorMap overlay_colors;
   InstColorOverlay inst_colors;
+  // True when the colors below are the design's own defaults rather than this
+  // session's: the tile then depends on nothing session-specific and caches.
+  bool default_colors = false;
   if (color_overlay_active) {
-    SessionState::OwnerColors& owner = state.owner_colors[overlay->index];
-    std::lock_guard<std::mutex> lock(owner.mutex);
-    overlay_colors = owner.colors;
-  }
-  if (color_overlay_active && !overlay_colors) {
-    // This session never sent a map: paint the palette the panel starts from,
-    // so the checkbox draws with the Hierarchy tab closed, keeps drawing
-    // across a reconnect, and matches what `save_image -web` produces.  A map
-    // that IS there but empty is the opposite instruction -- the user
-    // unchecked every row -- and must keep painting nothing.
-    overlay_colors = gen_->defaultOwnerColors(overlay->index);
+    {
+      SessionState::OwnerColors& owner = state.owner_colors[overlay->index];
+      std::lock_guard<std::mutex> lock(owner.mutex);
+      overlay_colors = owner.colors;
+    }
+    // Nothing synced: paint the palette the panel starts from, so the checkbox
+    // draws with the Hierarchy tab closed and matches `save_image -web`.  A map
+    // that IS there but empty is the opposite instruction -- the user unchecked
+    // every row -- and must keep painting nothing.
+    if (!overlay_colors) {
+      overlay_colors = gen_->defaultOwnerColors(*overlay);
+      default_colors = overlay_colors != nullptr;
+    }
   }
   // The snapshot outlives both the lock and the render: the panel sending new
   // colors replaces the session's handle and drops its own reference, never the
@@ -5303,9 +5308,6 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   if (has_inst_colors) {
     inst_colors.colors[overlay->index] = overlay_colors.get();
   }
-  // The color maps are session state that the tile-cache key does not carry, so
-  // a tile actually painting from one must not be cached.
-
   // Snapshot focus nets
   std::set<uint32_t> focus_nets;
   {
@@ -5329,10 +5331,12 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
   // the cache session-independent and correct; overlay tiles render fresh.
-  // The per-instance color maps are not part of the cache key, so a colored
-  // module/cluster tile must never be cached — while the same layer with its
-  // flag off is a constant empty tile and caches fine.
-  const bool cacheable = !has_inst_colors && focus_ptr == nullptr && !vis.debug
+  // The per-instance color maps are not part of the cache key, so a tile
+  // colored from a SESSION's map must never be cached — the default palette is
+  // derived from the design (and invalidated with it), so that one caches like
+  // any other tile, as does the same layer with its flag off.
+  const bool cacheable = (!has_inst_colors || default_colors)
+                         && focus_ptr == nullptr && !vis.debug
                          && !vis.debug_renderers && !vis.debug_live;
 
   std::string cache_key;
@@ -5345,6 +5349,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     boost::json::object key_obj = req.json;
     key_obj.erase("id");
     key_obj.erase("selectable_layers");
+    // Two cacheable states share everything else: painting the design's
+    // default palette, and painting nothing because the session cleared every
+    // row.  Without this they collide on one key and the cleared view serves
+    // the painted tile.
+    if (color_overlay_active) {
+      key_obj["owner_colors"] = default_colors ? "default" : "none";
+    }
     // The color-overlay flags only change what THEIR layer draws.  Leaving them
     // in every layer's key would make toggling one overlay a full cache miss
     // for the whole screen — every metal layer re-rendered for a flag it

@@ -169,6 +169,12 @@ describe('HierarchyPanel', () => {
         panel.selectView('clusters');
         await waitForMicrotasks();
         assert.equal(count('group_hierarchy'), 0, 'nor on a source switch');
+
+        // What Display Controls calls once the checkbox is ticked.
+        app.visibility.ui_hierarchy_view = true;
+        panel.ensureActiveLoaded();
+        await waitForMicrotasks();
+        assert.equal(count('group_hierarchy'), 1);
     });
 
     // With it on, whatever is on screen has to have something to paint: the
@@ -193,6 +199,25 @@ describe('HierarchyPanel', () => {
         await waitForMicrotasks();
         assert.equal(count('module_hierarchy'), 1);
         assert.equal(count('group_hierarchy'), 1);
+    });
+
+    // A reconnect gives the server a new session with no color maps in it.
+    // Whatever a view had loaded goes back up, or the rows the user unchecked
+    // would come back as the server's defaults.
+    it('resendColors re-sends what each loaded view holds', async () => {
+        const app = createMockApp();
+        app.visibility = { ui_hierarchy_view: true };
+        const panel = new HierarchyPanel(makeContainer(), app, () => {});
+        await waitForMicrotasks();
+        const colorMsgs = (type) => app.sent.filter(m => m.type === type).length;
+        const before = colorMsgs('set_module_colors');
+
+        panel.resendColors();
+        await waitForMicrotasks();
+
+        assert.equal(colorMsgs('set_module_colors'), before + 1);
+        assert.equal(colorMsgs('set_group_colors'), 0,
+                     'the view that never loaded has nothing to re-send');
     });
 
     // A reconnect gives the server a new session with no color maps in it.
@@ -399,9 +424,7 @@ describe('HierarchyPanel', () => {
             assert.deepEqual(refreshed.slice(-2), ['_modules', '_clusters']);
         });
 
-        // The one flag a session does not get back: it costs a round trip and
-        // a repaint, and restoring it ticked showed a checkbox over a layout
-        // with nothing painted on it (review of #11122).
+        // The one flag a session does not get back (see resetHierarchyOverlay).
         it('resetHierarchyOverlay clears the checkbox and both gates', () => {
             const visibility = {
                 ui_hierarchy_view: true, module_view: true, cluster_view: true,

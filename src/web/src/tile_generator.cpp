@@ -1908,18 +1908,17 @@ void TileGenerator::dropOverlayCachesIfStale(const uint64_t rev) const
 }
 
 TileGenerator::OwnerColorMap TileGenerator::defaultOwnerColors(
-    const size_t overlay_index) const
+    const ColorOverlaySpec& spec) const
 {
   odb::dbBlock* block = getBlock();
-  if (block == nullptr || overlay_index >= kNumColorOverlays) {
+  if (block == nullptr) {
     return nullptr;
   }
   const uint64_t rev = search_->revision();
   std::lock_guard lock(overlay_cache_mutex_);
   dropOverlayCachesIfStale(rev);
-  OwnerColorMap& cached = default_owner_colors_[overlay_index];
+  OwnerColorMap& cached = default_owner_colors_[spec.index];
   if (!cached) {
-    const ColorOverlaySpec& spec = colorOverlayLayers()[overlay_index];
     cached = std::make_shared<const std::map<uint32_t, Color>>(
         spec.default_colors(block, sta_));
   }
@@ -5504,8 +5503,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       continue;
     }
     // The same map the viewer paints with before a panel sends its own.
-    owner_colors[spec.index] = defaultOwnerColors(spec.index);
-    if (!owner_colors[spec.index] || owner_colors[spec.index]->empty()) {
+    const OwnerColorMap colors = defaultOwnerColors(spec);
+    owner_colors[spec.index] = colors;
+    if (!colors || colors->empty()) {
       // Nothing to color by: warn and drop the layer saveImageLayerOrder put
       // in for the flag, rather than compositing an empty pass over the image.
       logger_->warn(utl::WEB,
@@ -5515,7 +5515,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       std::erase(layers_to_render, spec.layer);
       continue;
     }
-    inst_colors.colors[spec.index] = owner_colors[spec.index].get();
+    inst_colors.colors[spec.index] = colors.get();
   }
 
   // Snapshot the user labels once (locks labels_mutex_ + copies) instead of

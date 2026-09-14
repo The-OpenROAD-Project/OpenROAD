@@ -64,10 +64,8 @@ export function syncHierarchyOverlay(visibility, source) {
     return changed;
 }
 
-// The overlay is never restored from a saved session.  It is the one control
-// whose "on" costs a round trip and a repaint, and a session that came back
-// with it on showed a ticked checkbox over an unpainted layout until someone
-// pressed Update (review of #11122).
+// The overlay is the one control a new session does not inherit: coming back
+// with it on ticked a checkbox over a layout nobody had asked to paint.
 export function resetHierarchyOverlay(visibility) {
     visibility.ui_hierarchy_view = false;
     syncHierarchyOverlay(visibility, null);
@@ -145,14 +143,13 @@ export class HierarchyPanel {
         setCookie(SOURCE_COOKIE, name);
         // Set last: the derivation reads activeView() back off the panel.
         this.syncOverlay();
-        // After syncOverlay, which is what moves the gate to this source: the
-        // load follows the checkbox, so it has to read the flags it just set.
+        // After syncOverlay: it is what moves the gate to this source, and
+        // the load reads the flags it sets.
         this.ensureActiveLoaded();
     }
 
-    // The coloring is on, so the view on screen has to have something to paint
-    // — the checkbox is what asks for the tree, here and from Display Controls.
-    // Idempotent: each widget's ensureLoaded() requests only once.
+    // With the coloring on, the view on screen has to show the tree the layout
+    // is painting.  Idempotent: each widget loads only once.
     ensureActiveLoaded() {
         if (!this._app.visibility || !this._app.visibility.ui_hierarchy_view) {
             return;

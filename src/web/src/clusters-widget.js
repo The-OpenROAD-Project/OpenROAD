@@ -54,23 +54,15 @@ export class ClustersWidget {
         }
     }
 
-    // Load once, without anyone pressing Update.  Its own flag, not `_loaded`:
-    // update() is async, and two calls before the reply landed would both see
-    // `_loaded` still false.
-    //
-    // Waits for the socket: a restored layout builds its tabs in the same turn
-    // the connection is opened, and a request issued then is rejected outright
-    // ("WebSocket not connected") and left on the status line.
+    // Load once, without anyone pressing Update.  Waits for the socket: a
+    // restored layout builds its tabs in the same turn the connection is
+    // opened, and a request issued then is rejected outright.
     ensureLoaded() {
-        if (this._loadRequested) return;
-        this._loadRequested = true;
-        const ready = this._app.websocketManager.readyPromise;
-        (ready || Promise.resolve())
+        if (this._loaded || this._loading) return;
+        this._loading = true;
+        this._app.websocketManager.readyPromise
             .then(() => this.update())
-            // update() reports failure on the status line, not by throwing, so
-            // `_loaded` is what says whether the tree landed.  A failed load
-            // must not latch the flag: the next trigger has to try again.
-            .then(() => { this._loadRequested = this._loaded; });
+            .finally(() => { this._loading = false; });
     }
 
     _build(container) {

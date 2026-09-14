@@ -468,33 +468,6 @@ const HeatMapTileLayer = L.GridLayer.extend({
     // Upscale-only display, same as the layout tile layer: the map rests on
     // integer zoom so heatmap tiles show 1:1 with no fractional rescaling.
     _clampZoom: function(zoom) {
-    // Ask the server for one tile of the active heat map.  A null payload is
-    // an empty response -- no populated bin here, or the tile is off the grid
-    // -- and the 1x1 BLANK_TILE stands in, so nothing is decoded and onload
-    // still fires to complete the tile.
-    _requestTile: function(tile, coords) {
-        const active = this._appState.activeHeatMap;
-        if (!active) {
-            setTileSrc(tile, BLANK_TILE);
-            return;
-        }
-        this._websocketManager.request({
-            type: 'heatmap_tile',
-            name: active,
-            z: coords.z,
-            x: coords.x,
-            y: coords.y,
-            // Sized like the layer tiles beneath it; without this the heat map
-            // is a 256 px image stretched over crisp layers on any HiDPI
-            // display.
-            ...tileSizeFields(currentDpr(), this.getTileSize().x),
-        }).then(blob => {
-            setTileSrc(tile, blob ? URL.createObjectURL(blob) : BLANK_TILE);
-        }).catch(() => {
-            setTileSrc(tile, BLANK_TILE);
-        });
-    },
-
         return L.GridLayer.prototype._clampZoom.call(
             this, floorClampZoom(this, zoom));
     },

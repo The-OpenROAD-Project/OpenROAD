@@ -5046,16 +5046,16 @@ TEST_F(TileGeneratorTest, DefaultOwnerColorsAreCachedUntilTheDesignChanges)
   group->addInst(block_->findInst("buf1"));
   makeTileGen();
 
-  const size_t slot = findColorOverlay("_clusters")->index;
-  const auto first = tile_gen_->defaultOwnerColors(slot);
+  const ColorOverlaySpec& spec = *findColorOverlay("_clusters");
+  const auto first = tile_gen_->defaultOwnerColors(spec);
   ASSERT_NE(first, nullptr);
   EXPECT_EQ(first->count(group->getId()), 1u)
       << "the group the panel would color must be in the default map";
-  EXPECT_EQ(tile_gen_->defaultOwnerColors(slot), first)
+  EXPECT_EQ(tile_gen_->defaultOwnerColors(spec), first)
       << "a second call must not rebuild the map";
 
   tile_gen_->eagerInit();
-  EXPECT_NE(tile_gen_->defaultOwnerColors(slot), first)
+  EXPECT_NE(tile_gen_->defaultOwnerColors(spec), first)
       << "a design reload must drop it";
 }
 

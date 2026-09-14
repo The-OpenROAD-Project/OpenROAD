@@ -491,14 +491,11 @@ class TileGenerator
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
 
-  // The colors a color overlay paints with when no session has sent any: the
-  // palette the Hierarchy panel itself starts from (ColorOverlaySpec::
-  // default_colors).  Walking the hierarchy per tile is out of the question,
-  // so it is computed once per design, like the other design-derived caches.
-  // Shared by the tile path and the headless save path, so the viewer and
-  // `save_image -web` cannot disagree about what "on" looks like.
+  // The palette the Hierarchy panel starts from, for an overlay no session has
+  // sent colors for.  The tile path and `save_image -web` share it, so the two
+  // cannot disagree about what "on" looks like.
   using OwnerColorMap = std::shared_ptr<const std::map<uint32_t, Color>>;
-  OwnerColorMap defaultOwnerColors(size_t overlay_index) const;
+  OwnerColorMap defaultOwnerColors(const ColorOverlaySpec& spec) const;
 
   int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }

@@ -2204,10 +2204,40 @@ TEST_F(GroupHandlerTest, ColorOverlayPaintsDefaultsWithNothingSynced)
       R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
       R"("cluster_view":true})");
 
+  const size_t before = gen_->tileCacheSize();
   const auto resp = handler_->handleTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng)
       << "an overlay with no session colors must fall back to the defaults";
   EXPECT_FALSE(resp.payload.empty());
+  // Unlike a session's map, the defaults are derived from the design and are
+  // invalidated with it, so this tile is as cacheable as any other.
+  EXPECT_EQ(gen_->tileCacheSize(), before + 1);
+}
+
+// Both cacheable states of one overlay layer -- the default palette and the
+// user having unchecked every row -- must not share a cache entry, or clearing
+// the view serves the painted tile back.
+TEST_F(GroupHandlerTest, ClearedColorsDoNotHitTheDefaultPaletteTile)
+{
+  makeClusterTree();
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+  ASSERT_EQ(handler_->handleTile(req, state_).type, WebSocketResponse::kPng);
+
+  WebSocketRequest clear;
+  clear.id = 2;
+  clear.type = WebSocketRequest::kSetGroupColors;
+  clear.json = parseObj(R"({"colors":""})");
+  handler_->handleSetOwnerColors(clear, state_, slotOf("_clusters"));
+
+  req.id = 3;
+  EXPECT_EQ(handler_->handleTile(req, state_).type, WebSocketResponse::kEmpty)
+      << "the cached default-palette tile must not answer a cleared view";
 }
 
 // The other side of that rule, and the one a careless fallback would break:
