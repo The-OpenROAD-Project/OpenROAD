@@ -34,6 +34,7 @@ cc_test(
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
+        "@boost.scope_exit",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ] + select({

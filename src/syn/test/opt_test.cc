@@ -4,6 +4,7 @@
 #include <memory>
 #include <sstream>
 
+#include "flow/constant_fold.h"
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Const.h"
@@ -23,8 +24,6 @@ int main(int argc, char** argv)
 }
 
 namespace syn {
-
-void constantFold(Graph& g);
 
 TEST(OptTest, AndZero)
 {

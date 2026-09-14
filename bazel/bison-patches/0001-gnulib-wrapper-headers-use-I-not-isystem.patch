@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oyvind Harboe <oyvind.harboe@zylin.com>
+Date: Mon, 6 Jul 2026 00:00:00 +0000
+Subject: [PATCH] BUILD: let gnulib wrapper headers shadow libc via -I
+
+Gnulib generates wrapper headers (lib/stdio.h, lib/fcntl.h, ...) that
+must be found before the libc ones; they forward with #include_next and
+add gnulib decorations (_GL_ATTRIBUTE_DEALLOC etc.) that lib/*-safer.h
+and src/*.c rely on. The overlay's 'includes = ["lib"]' emits -isystem,
+which loses to toolchains that inject libc headers as earlier -isystem
+entries (e.g. the zero-sysroot hermetic-llvm BCR toolchain), and a dir
+listed as both -I and -isystem is kept as -isystem, so the -I must
+replace it, not merely accompany it.
+
+Plain -I outranks every -isystem, restoring autotools' AM_CPPFLAGS =
+-I./lib ordering. $(BINDIR) covers the generated wrappers, the source
+path the checked-in ones.
+
+Same class of fix as sed@4.9.bcr.5 (BCR #7915) and gawk@5.3.2.bcr.7
+(BCR #7989); to be proposed upstream as bison@3.8.2.bcr.8.
+---
+diff --git a/BUILD.bazel b/BUILD.bazel
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -711,7 +711,19 @@
+     tags = ["manual"],
+ )
+ 
+-BISON_COPTS = select({
++# Gnulib's wrapper headers (generated lib/stdio.h, lib/fcntl.h, ... plus
++# the checked-in lib/*-safer.h helpers) must shadow the libc headers: they
++# forward via #include_next and add gnulib decorations
++# (_GL_ATTRIBUTE_DEALLOC etc.) that lib/ and src/ sources rely on.
++# `includes = ["lib"]` emits -isystem, which loses against toolchains that
++# inject libc headers as earlier -isystem entries (e.g. the zero-sysroot
++# hermetic-llvm BCR toolchain). Plain -I outranks every -isystem (and a dir
++# listed as both -I and -isystem stays -isystem, so the -isystem form must
++# go entirely). This restores autotools' AM_CPPFLAGS = -I./lib ordering.
++BISON_COPTS = [
++    "-Iexternal/" + repo_name() + "/lib",
++    "-I$(BINDIR)/external/" + repo_name() + "/lib",
++] + select({
+     "@rules_cc//cc/compiler:clang": [
+         "-w",
+         "-std=c11",
+@@ -813,7 +825,6 @@
+         "src/scan-skel.c",
+         ":configmake_h_src",
+     ],
+-    includes = ["lib"],
+     textual_hdrs = [
+         "lib/timevar.def",
+         "lib/printf-frexp.c",
+@@ -997,6 +1008,7 @@
+         "lib/main.c",
+         "lib/yyerror.c",
+     ],
++    copts = BISON_COPTS,
+     implementation_deps = [":headers"],
+     local_defines = LOCAL_DEFINES,
+ )

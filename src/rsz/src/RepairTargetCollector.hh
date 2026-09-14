@@ -23,6 +23,10 @@
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
+namespace sta {
+class PathExpanded;
+}
+
 namespace rsz {
 
 using std::pair;
@@ -94,10 +98,6 @@ class RepairTargetCollector
   void setToEndpoint(int index);
   sta::Vertex* getCurrentEndpoint() const { return current_endpoint_; }
   sta::Slack getCurrentEndpointSlack() const;
-  sta::Slack getCurrentEndpointOriginalSlack() const
-  {
-    return current_end_original_slack_;
-  }
   int getCurrentEndpointIndex() const { return current_endpoint_index_; }
   int getMaxEndpointCount() const { return violating_endpoints_.size(); }
   int getCurrentPass() const;
@@ -266,12 +266,38 @@ class RepairTargetCollector
   std::vector<const sta::Pin*> getCriticalPinsNeverConsidered();
 
  private:
+  // === Startpoint cache ====================================================
+  // A startpoint is a top-level input or a register output, clock pins
+  // excluded. The set is fixed for the life of a collector, so it is
+  // walked once per init() and later only re-read for slacks: setup
+  // repair inserts, resizes, VT-swaps and removes cells, clones gates and
+  // swaps pins, and none of that creates or removes a register or a
+  // top-level port. Cloning is the case worth naming: CloneGenerator
+  // rejects any driver that is not isSingleOutputCombinational(), so a
+  // clone never has a register driver and never adds a startpoint.
+  //
+  // Pins are cached rather than vertices because replacing a register's
+  // cell can recreate its vertices; the vertex is looked up again per row.
+  struct CachedStartpoint
+  {
+    const sta::Pin* pin;
+    bool drvr_vertex;  // which of a bidirect pin's two vertices this was
+  };
+  // Walk the whole timing graph for the startpoint set, in graph order.
+  void walkStartpoints(std::vector<CachedStartpoint>& startpoints) const;
+  // Tripwire for the invariant above: re-walk the graph and compare
+  // against the cache. Debug-gated because the walk is the cost the cache
+  // exists to avoid; enable with -debug_level RSZ violator_collector 2.
+  void checkStartpointCache() const;
+
   // === Pin data maintenance =================================================
   void updatePinData(const sta::Pin* pin, pinData& pd);
 
   // === Internal collection helpers =========================================
   set<const sta::Pin*> collectPinsByPathEndpoint(const sta::Pin* endpoint_pin,
                                                  size_t paths_per_endpoint = 1);
+  // Worst-slack path to an endpoint pin (pure read, nullptr if none).
+  sta::Path* worstSlackPathForPin(const sta::Pin* endpoint_pin) const;
   void collectBySlack();
   void collectByPaths(int endPointIndex = 1,
                       int numEndpoints = 1,
@@ -286,6 +312,12 @@ class RepairTargetCollector
   void sortByHeuristic(float load_delay_threshold = 0.0);
   std::map<const sta::Pin*, sta::Delay> getLocalTns() const;
   sta::Delay getLocalPinTns(const sta::Pin* pin) const;
+  void collectExpandedPathDriverTargets(const sta::Path* endpoint_path,
+                                        const sta::PathExpanded& expanded,
+                                        sta::Slack path_slack,
+                                        std::vector<Target>& targets) const;
+  void collectExpandedPathDriverPins(const sta::PathExpanded& expanded,
+                                     set<const sta::Pin*>& pins) const;
 
   // === Cone traversal helpers ==============================================
   // Helper functions for cone-based collection
@@ -308,6 +340,10 @@ class RepairTargetCollector
   utl::Logger* logger_;
   sta::Sta* sta_;
   sta::Graph* graph_;
+
+  // Startpoint set for this collector; see walkStartpoints().
+  std::vector<CachedStartpoint> startpoints_;
+  bool startpoints_collected_ = false;
   sta::Network* network_;
   const sta::MinMax* max_;
   sta::Search* search_;
@@ -333,7 +369,6 @@ class RepairTargetCollector
   // Current endpoint iteration state
   bool iteration_began_;
   sta::Vertex* current_endpoint_;
-  sta::Slack current_end_original_slack_;
   int current_endpoint_index_;
 
   // === Startpoint iteration state ==========================================

@@ -39,7 +39,8 @@ class Grid
   {
     kCore,
     kInstance,
-    kExisting
+    kExisting,
+    kDummy
   };
 
   Grid(VoltageDomain* domain,
@@ -165,6 +166,12 @@ class Grid
   void ripup();
 
   virtual odb::PtrSet<odb::dbInst> getInstances() const;
+  // Instances whose obstructions this grid republishes itself and which
+  // must therefore not be collected as block level obstructions.
+  virtual odb::PtrSet<odb::dbInst> getObstructionExemptInstances() const
+  {
+    return {};
+  }
 
   bool hasShapes() const;
   bool hasVias() const;
@@ -238,6 +245,10 @@ class InstanceGrid : public Grid
 
   odb::dbInst* getInstance() const { return inst_; }
   odb::PtrSet<odb::dbInst> getInstances() const override { return {inst_}; }
+  odb::PtrSet<odb::dbInst> getObstructionExemptInstances() const override
+  {
+    return {inst_};
+  }
 
   std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 
@@ -258,6 +269,9 @@ class InstanceGrid : public Grid
   virtual bool isValid() const;
   void checkSetup() const override;
 
+  // Obstructions of a pad cell, split so that the metal coincident with a
+  // pin is attributed to that pin's net instead of blocking every net.
+  static ShapeVectorMap getPadObstructions(odb::dbInst* inst);
   static ShapeVectorMap getInstanceObstructions(odb::dbInst* inst,
                                                 const Halo& halo
                                                 = {0, 0, 0, 0});
@@ -285,6 +299,24 @@ class InstanceGrid : public Grid
                              bool rect_is_min,
                              bool apply_horizontal,
                              bool apply_vertical);
+  bool hasHalo() const;
+  void checkHalo() const;
+  Halo suggestHalo(const std::vector<odb::Rect>& rows) const;
+};
+
+class DummyInstanceGrid : public Grid
+{
+ public:
+  DummyInstanceGrid(VoltageDomain* domain, const std::string& name);
+
+  std::string getLongName() const override;
+
+  Type type() const override { return Grid::kDummy; }
+
+  odb::PtrSet<odb::dbInst> getInstances() const override { return {}; }
+
+  bool isReplaceable() const override { return true; }
+  void checkSetup() const override {};
 };
 
 class BumpGrid : public InstanceGrid

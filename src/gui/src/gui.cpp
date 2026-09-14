@@ -30,6 +30,7 @@
 #endif
 #include <cmath>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -49,6 +50,7 @@
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "ord/OpenRoad.hh"
+#include "qtDialogs.h"
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "third-party/gif-h/gif.h"
@@ -61,89 +63,6 @@ extern int cmd_argc;
 extern char** cmd_argv;
 
 namespace gui {
-
-// Default Options implementation for Painters without a real Options
-// (e.g. the web viewer's ShapeCollector).  Returns sensible defaults:
-// everything visible, no exclusive modes.
-class DefaultOptions : public Options
-{
- public:
-  QColor background() override { return Qt::black; }
-  QColor color(const odb::dbTechLayer*) override { return Qt::white; }
-  Qt::BrushStyle pattern(const odb::dbTechLayer*) override
-  {
-    return Qt::SolidPattern;
-  }
-  QColor placementBlockageColor() override { return Qt::darkGray; }
-  Qt::BrushStyle placementBlockagePattern() override
-  {
-    return Qt::SolidPattern;
-  }
-  QColor regionColor() override { return Qt::darkGray; }
-  Qt::BrushStyle regionPattern() override { return Qt::SolidPattern; }
-  QColor instanceNameColor() override { return Qt::white; }
-  QFont instanceNameFont() override { return {}; }
-  QColor itermLabelColor() override { return Qt::white; }
-  QFont itermLabelFont() override { return {}; }
-  QColor siteColor(odb::dbSite*) override { return Qt::darkGray; }
-  bool isVisible(const odb::dbTechLayer*) override { return true; }
-  bool isSelectable(const odb::dbTechLayer*) override { return true; }
-  bool isNetVisible(odb::dbNet*) override { return true; }
-  bool isNetSelectable(odb::dbNet*) override { return true; }
-  bool isInstanceVisible(odb::dbInst*) override { return true; }
-  bool isInstanceSelectable(odb::dbInst*) override { return true; }
-  bool areInstanceNamesVisible() override { return true; }
-  bool areInstancePinsVisible() override { return true; }
-  bool areInstancePinsSelectable() override { return true; }
-  bool areInstancePinNamesVisible() override { return true; }
-  bool areInstanceBlockagesVisible() override { return true; }
-  bool areBlockagesVisible() override { return true; }
-  bool areBlockagesSelectable() override { return true; }
-  bool areObstructionsVisible() override { return true; }
-  bool areObstructionsSelectable() override { return true; }
-  bool areSitesVisible() override { return false; }
-  bool areSitesSelectable() override { return false; }
-  bool isSiteSelectable(odb::dbSite*) override { return false; }
-  bool isSiteVisible(odb::dbSite*) override { return false; }
-  bool arePrefTracksVisible() override { return false; }
-  bool areNonPrefTracksVisible() override { return false; }
-  bool areIOPinsVisible() const override { return true; }
-  bool areIOPinsSelectable() const override { return true; }
-  bool areIOPinNamesVisible() const override { return true; }
-  QFont ioPinMarkersFont() const override { return {}; }
-  bool areRoutingSegmentsVisible() const override { return true; }
-  bool areRoutingViasVisible() const override { return true; }
-  bool areSpecialRoutingSegmentsVisible() const override { return true; }
-  bool areSpecialRoutingViasVisible() const override { return true; }
-  bool areFillsVisible() const override { return true; }
-  QColor rulerColor() override { return Qt::cyan; }
-  QFont rulerFont() override { return {}; }
-  bool areRulersVisible() override { return true; }
-  bool areRulersSelectable() override { return true; }
-  QFont labelFont() override { return {}; }
-  bool areLabelsVisible() override { return true; }
-  bool areLabelsSelectable() override { return true; }
-  bool isDetailedVisibility() override { return false; }
-  bool areSelectedVisible() override { return true; }
-  bool isScaleBarVisible() const override { return false; }
-  bool areAccessPointsVisible() const override { return false; }
-  bool areRegionsVisible() const override { return true; }
-  bool areRegionsSelectable() const override { return true; }
-  bool isManufacturingGridVisible() const override { return false; }
-  bool isModuleView() const override { return false; }
-  bool isGCellGridVisible() const override { return false; }
-  bool isFlywireHighlightOnly() const override { return false; }
-  bool areFocusedNetsGuidesVisible() const override { return false; }
-};
-
-Options* Painter::getOptions()
-{
-  if (!options_) {
-    static DefaultOptions defaults;
-    return &defaults;
-  }
-  return options_;
-}
 
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
@@ -161,6 +80,14 @@ static void message_handler(QtMsgType type,
         && msg.contains("This plugin does not support")) {
       suppress = true;
     }
+  }
+
+  // A Bazel-installed binary has no reachable ICU data directory (see
+  // bazel/icu-patches), so QCollator legitimately cannot open a collator.
+  // Qt already falls back to a plain, non-locale-aware string compare in
+  // that case (qcollator_icu.cpp), so this is harmless -- just noisy.
+  if (msg.contains("Could not create collator")) {
+    suppress = true;
   }
 #endif
 
@@ -314,16 +241,25 @@ Selected Gui::makeSelected(const std::any& object)
 
 void Gui::setSelected(const Selected& selection)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->setSelected(selection);
 }
 
 void Gui::removeSelectedByType(const std::string& type)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->removeSelectedByType(type);
 }
 
 void Gui::addSelectedNet(const char* name)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -339,6 +275,9 @@ void Gui::addSelectedNet(const char* name)
 
 void Gui::addSelectedInst(const char* name)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -354,16 +293,26 @@ void Gui::addSelectedInst(const char* name)
 
 const SelectionSet& Gui::selection()
 {
+  if (!hasUI()) {
+    static const SelectionSet empty_selection;
+    return empty_selection;
+  }
   return main_window->selection();
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 {
+  if (!hasUI()) {
+    return false;
+  }
   return main_window->anyObjectInSet(selection_set, obj_type);
 }
 
 void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 void Gui::selectHighlightConnectedNets(bool select_flag,
@@ -371,6 +320,9 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
                                        bool input,
                                        int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
 }
@@ -378,12 +330,18 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
 void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
                                               int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->selectHighlightConnectedBufferTrees(select_flag,
                                                    highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -401,6 +359,9 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 
 void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -418,21 +379,33 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 
 int Gui::selectAt(const odb::Rect& area, bool append)
 {
+  if (!hasUI()) {
+    return 0;
+  }
   return main_window->getLayoutViewer()->selectArea(area, append);
 }
 
 int Gui::selectNext()
 {
+  if (!hasUI()) {
+    return 0;
+  }
   return main_window->getInspector()->selectNext();
 }
 
 int Gui::selectPrevious()
 {
+  if (!hasUI()) {
+    return 0;
+  }
   return main_window->getInspector()->selectPrevious();
 }
 
 void Gui::animateSelection(int repeat)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
@@ -444,11 +417,17 @@ std::string Gui::addLabel(int x,
                           std::optional<Painter::Anchor> anchor,
                           const std::optional<std::string>& name)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addLabel(x, y, text, color, size, anchor, name);
 }
 
 void Gui::deleteLabel(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->deleteLabel(name);
 }
 
@@ -460,11 +439,17 @@ std::string Gui::addRuler(int x0,
                           const std::string& name,
                           bool euclidian)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
 }
 
 void Gui::deleteRuler(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->deleteRuler(name);
 }
 
@@ -507,6 +492,9 @@ int Gui::select(const std::string& type,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
+  if (!hasUI()) {
+    return 0;
+  }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   // Define case sensitivity options for QRegularExpression
   const QRegularExpression::PatternOptions options
@@ -627,21 +615,33 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
 
 void Gui::clearSelections()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->setSelected(Selected());
 }
 
 void Gui::clearHighlights(int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->clearHighlighted(highlight_group);
 }
 
 void Gui::clearLabels()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->clearLabels();
 }
 
 void Gui::clearRulers()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->clearRulers();
 }
 
@@ -650,12 +650,18 @@ std::string Gui::addToolbarButton(const std::string& name,
                                   const std::string& script,
                                   bool echo)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addToolbarButton(
       name, QString::fromStdString(text), QString::fromStdString(script), echo);
 }
 
 void Gui::removeToolbarButton(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->removeToolbarButton(name);
 }
 
@@ -666,6 +672,9 @@ std::string Gui::addMenuItem(const std::string& name,
                              const std::string& shortcut,
                              bool echo)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addMenuItem(name,
                                   QString::fromStdString(path),
                                   QString::fromStdString(text),
@@ -676,97 +685,165 @@ std::string Gui::addMenuItem(const std::string& name,
 
 void Gui::removeMenuItem(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->removeMenuItem(name);
 }
 
 std::string Gui::requestUserInput(const std::string& title,
                                   const std::string& question)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->requestUserInput(QString::fromStdString(title),
                                        QString::fromStdString(question));
 }
 
 void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getDRCViewer()->selectCategory(markers);
 }
 
 void Gui::setDisplayControlsColor(const std::string& name,
                                   const Painter::Color& color)
 {
+  if (!hasUI()) {
+    // No Qt DisplayControls in headless mode; color is a GUI-only concept.
+    return;
+  }
   const QColor qcolor(color.r, color.g, color.b, color.a);
   main_window->getControls()->setControlByPath(name, qcolor);
 }
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      headless_viewer_->setDisplayControlVisible(name, value);
+    }
+    return;
+  }
   main_window->getControls()->setControlByPath(
       name, true, value ? Qt::Checked : Qt::Unchecked);
 }
 
 bool Gui::checkDisplayControlsVisible(const std::string& name)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      return headless_viewer_->checkDisplayControlVisible(name);
+    }
+    return true;
+  }
   return main_window->getControls()->checkControlByPath(name, true);
 }
 
 void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      headless_viewer_->setDisplayControlSelectable(name, value);
+    }
+    return;
+  }
   main_window->getControls()->setControlByPath(
       name, false, value ? Qt::Checked : Qt::Unchecked);
 }
 
 bool Gui::checkDisplayControlsSelectable(const std::string& name)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      return headless_viewer_->checkDisplayControlSelectable(name);
+    }
+    return false;
+  }
   return main_window->getControls()->checkControlByPath(name, false);
 }
 
 void Gui::saveDisplayControls()
 {
+  if (!hasUI()) {
+    // Nothing to persist without the Qt DisplayControls widget.
+    return;
+  }
   main_window->getControls()->save();
 }
 
 void Gui::restoreDisplayControls()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getControls()->restore();
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->zoomTo(rect_dbu);
 }
 
 void Gui::zoomTo(const odb::Point& focus, int diameter)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->zoomTo(focus, diameter);
 }
 
 void Gui::zoomIn()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomIn();
 }
 
 void Gui::zoomIn(const odb::Point& focus_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomIn(focus_dbu);
 }
 
 void Gui::zoomOut()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomOut();
 }
 
 void Gui::zoomOut(const odb::Point& focus_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomOut(focus_dbu);
 }
 
 void Gui::centerAt(const odb::Point& focus_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->centerAt(focus_dbu);
 }
 
 void Gui::setResolution(double pixels_per_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
 }
 
@@ -806,7 +883,7 @@ void Gui::saveImage(const std::string& filename,
     save_region.bloat(bloat, save_region);
   }
 
-  if (!enabled()) {
+  if (!hasUI()) {
     const double dbu_per_micron = db_->getDbuPerMicron();
 
     std::string save_cmds;
@@ -855,7 +932,7 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
                              int width_px,
                              int height_px)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   std::optional<int> width;
@@ -875,7 +952,7 @@ void Gui::saveHistogramImage(const std::string& filename,
                              int width_px,
                              int height_px)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   std::optional<int> width;
@@ -894,7 +971,7 @@ void Gui::saveHistogramImage(const std::string& filename,
 
 void Gui::showWorstTimingPath(bool setup)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   main_window->getTimingWidget()->showWorstTimingPath(setup);
@@ -902,7 +979,7 @@ void Gui::showWorstTimingPath(bool setup)
 
 void Gui::clearTimingPath()
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   main_window->getTimingWidget()->clearSelection();
@@ -911,7 +988,7 @@ void Gui::clearTimingPath()
 void Gui::selectClockviewerClock(const std::string& clock_name,
                                  std::optional<int> depth)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   main_window->getClockViewer()->selectClock(clock_name, depth);
@@ -921,6 +998,10 @@ static QWidget* findWidget(const std::string& name)
 {
   if (name == "main_window" || name == "OpenROAD") {
     return main_window;
+  }
+
+  if (main_window == nullptr) {
+    return nullptr;
   }
 
   const QString find_name = QString::fromStdString(name);
@@ -1017,8 +1098,32 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
   heat_maps_.erase(heatmap);
 }
 
+void Gui::syncHeatMapChips()
+{
+  if (hasUI() || db_ == nullptr) {
+    return;
+  }
+
+  // Console and headless sessions do not receive MainWindow::setBlock().
+  auto* chip = db_->getChip();
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getChip() != chip) {
+      heat_map->setChip(chip);
+      heat_map->destroyMap();
+    }
+  }
+}
+
+const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
+{
+  syncHeatMapChips();
+  return heat_maps_;
+}
+
 HeatMapDataSource* Gui::getHeatMap(const std::string& name)
 {
+  syncHeatMapChips();
+
   HeatMapDataSource* source = nullptr;
 
   for (auto* heat_map : heat_maps_) {
@@ -1161,234 +1266,11 @@ std::string Gui::getMainWindowTitle()
   return main_window_title_;
 }
 
-Renderer::~Renderer()
-{
-  gui::Gui::get()->unregisterRenderer(this);
-}
-
-void Renderer::redraw()
-{
-  Gui::get()->redraw();
-}
-
-bool Renderer::checkDisplayControl(const std::string& name)
-{
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    return Gui::get()->checkDisplayControlsVisible(name);
-  }
-  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
-}
-
-void Renderer::setDisplayControl(const std::string& name, bool value)
-{
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    Gui::get()->setDisplayControlsVisible(name, value);
-  } else {
-    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
-  }
-}
-
-void Renderer::addDisplayControl(
-    const std::string& name,
-    bool initial_visible,
-    const DisplayControlCallback& setup,
-    const std::vector<std::string>& mutual_exclusivity)
-{
-  auto& control = controls_[name];
-
-  control.visibility = initial_visible;
-  control.interactive_setup = setup;
-  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
-                                    mutual_exclusivity.end());
-}
-
-Renderer::Settings Renderer::getSettings()
-{
-  Settings settings;
-  for (const auto& [key, init_value] : controls_) {
-    settings[key] = checkDisplayControl(key);
-  }
-  return settings;
-}
-
-void Renderer::setSettings(const Renderer::Settings& settings)
-{
-  for (auto& [key, control] : controls_) {
-    setSetting<bool>(settings, key, control.visibility);
-    setDisplayControl(key, control.visibility);
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-
-void SpectrumGenerator::drawLegend(
-    Painter& painter,
-    const std::vector<std::pair<int, std::string>>& legend_key) const
-{
-  const int color_count = getColorCount();
-  std::vector<Painter::Color> colors;
-  colors.reserve(color_count);
-  for (int i = 0; i < color_count; i += kLegendColorIncrement) {
-    const double color_idx = (color_count - 1 - i) / scale_;
-    colors.push_back(getColor(color_idx / color_count));
-  }
-  std::vector<std::pair<Painter::Color, std::string>> legend_key_colors;
-  for (const auto& [legend_value, legend_text] : legend_key) {
-    const int idx = std::clamp(legend_value / kLegendColorIncrement,
-                               0,
-                               static_cast<int>(colors.size()) - 1);
-    legend_key_colors.push_back({colors[idx], legend_text});
-  }
-  LinearLegend legend(colors);
-  legend.setLegendKey(legend_key_colors);
-  legend.draw(painter);
-}
-
-/////////////////////////////////////////////////
-
-LinearLegend::LinearLegend(const std::vector<Painter::Color>& colors)
-    : colors_(colors)
-{
-}
-
-void LinearLegend::setLegendKey(
-    const std::vector<std::pair<Painter::Color, std::string>>& legend_key)
-{
-  legend_key_ = legend_key;
-}
-
-void LinearLegend::draw(Painter& painter) const
-{
-  const odb::Rect& bounds = painter.getBounds();
-  const double pixel_per_dbu = painter.getPixelsPerDBU();
-  const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
-  const double box_height = 1 / pixel_per_dbu;   // 1 pixels
-  const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
-  const int text_offset = 2 / pixel_per_dbu;
-  const int legend_top = bounds.yMax() - legend_offset;
-  const int legend_right = bounds.xMax() - legend_offset;
-  const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
-
-  odb::Rect legend_bounds(
-      legend_left, legend_top, legend_right + text_offset, legend_top);
-
-  const int color_count = colors_.size();
-
-  std::vector<std::pair<odb::Point, std::string>> legend_key_points;
-  for (const auto& [legend_color, legend_text] : legend_key_) {
-    const auto find_color = std::ranges::find(colors_, legend_color);
-    if (find_color == colors_.end()) {
-      continue;
-    }
-    const int legend_value
-        = std::distance(colors_.begin(), find_color);  // index in colors_
-
-    const int text_right = legend_left - text_offset;
-    const int box_top
-        = legend_top - ((color_count - legend_value) * box_height);
-
-    legend_key_points.push_back({{text_right, box_top}, legend_text});
-    const odb::Rect text_bounds = painter.stringBoundaries(
-        text_right, box_top, key_anchor, legend_text);
-
-    legend_bounds.merge(text_bounds);
-  }
-
-  // draw background
-  painter.setPen(Painter::kDarkGray, true);
-  painter.setBrush(Painter::kDarkGray);
-  painter.drawRect(legend_bounds, 10, 10);
-
-  // draw color map
-  double box_top = legend_top;
-  for (int i = 0; i < color_count; i++) {
-    painter.setPen(colors_[i], true);
-    painter.drawLine(odb::Point(legend_left, box_top),
-                     odb::Point(legend_right, box_top));
-    box_top -= box_height;
-  }
-
-  // draw key values
-  painter.setPen(Painter::kBlack, true);
-  painter.setBrush(Painter::kTransparent);
-  for (const auto& [pt, text] : legend_key_points) {
-    painter.drawString(pt.x(), pt.y(), key_anchor, text);
-  }
-  painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
-}
-
-/////////////////////////////////////////////////
-
-void DiscreteLegend::addLegendKey(const Painter::Color& color,
-                                  const std::string& text)
-{
-  color_key_.emplace_back(color, text);
-}
-
-void DiscreteLegend::draw(Painter& painter) const
-{
-  const odb::Rect& bounds = painter.getBounds();
-  const double pixel_per_dbu = painter.getPixelsPerDBU();
-  const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
-  const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
-  const int text_offset = 2 / pixel_per_dbu;
-  const int color_offset = 2 * text_offset;
-  const int legend_top = bounds.yMax() - legend_offset;
-  const int legend_right = bounds.xMax() - legend_offset;
-  const int legend_left = legend_right - legend_width;
-
-  odb::Rect legend_bounds(
-      legend_left, legend_top, legend_right + text_offset, legend_top);
-
-  std::vector<std::pair<odb::Rect, std::string>> legend_key_rects;
-  std::vector<std::pair<odb::Rect, Painter::Color>> legend_color_rects;
-  int last_text_top = legend_top;
-  for (const auto& [legend_color, legend_text] : color_key_) {
-    const int text_right = legend_left - text_offset;
-
-    const odb::Rect key_rect = painter.stringBoundaries(
-        text_right, last_text_top, Painter::Anchor::kTopRight, legend_text);
-
-    last_text_top = key_rect.yMin();
-
-    legend_key_rects.push_back({key_rect, legend_text});
-    legend_color_rects.push_back({{legend_left + color_offset,
-                                   key_rect.yMin() + color_offset,
-                                   legend_right - color_offset,
-                                   key_rect.yMax() - color_offset},
-                                  legend_color});
-    legend_bounds.merge(key_rect);
-  }
-
-  // draw background
-  painter.setPen(Painter::kDarkGray, true);
-  painter.setBrush(Painter::kDarkGray);
-  painter.drawRect(legend_bounds, 10, 10);
-
-  // draw color map
-  painter.setPen(Painter::kBlack, true);
-  for (const auto& [rect, color] : legend_color_rects) {
-    painter.setBrush(color);
-    painter.drawRect(rect);
-  }
-
-  // draw key values
-  painter.setBrush(Painter::kTransparent);
-  for (const auto& [rect, text] : legend_key_rects) {
-    painter.drawString(
-        rect.xMax(), rect.yCenter(), Painter::Anchor::kRightCenter, text);
-  }
-}
-
-/////////////////////////////////////////////////
-
 void Gui::fit()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->fit();
 }
 
@@ -1410,26 +1292,42 @@ void Gui::unregisterDescriptor(const std::type_info& type)
 
 const Selected& Gui::getInspectorSelection()
 {
+  if (!hasUI()) {
+    static const Selected empty_selection;
+    return empty_selection;
+  }
   return main_window->getInspector()->getSelection();
 }
 
 void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->timingCone(term, fanin, fanout);
 }
 
 void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->timingPathsThrough(terms);
 }
 
 void Gui::addFocusNet(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->addFocusNet(net);
 }
 
 void Gui::addRouteGuides(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
@@ -1448,36 +1346,57 @@ Chart* Gui::addChart(const std::string& name,
 
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->removeRouteGuides(net);
 }
 
 void Gui::addNetTracks(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->addNetTracks(net);
 }
 
 void Gui::removeNetTracks(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->removeNetTracks(net);
 }
 
 void Gui::removeFocusNet(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->removeFocusNet(net);
 }
 
 void Gui::clearFocusNets()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->clearFocusNets();
 }
 
 void Gui::clearRouteGuides()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->clearRouteGuides();
 }
 
 void Gui::clearNetTracks()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->clearNetTracks();
 }
 
@@ -1490,7 +1409,7 @@ void Gui::setLogger(utl::Logger* logger)
   logger_ = logger;
   qInstallMessageHandler(message_handler);
 
-  if (enabled()) {
+  if (hasUI()) {
     // gui already requested, so go ahead and set the logger
     main_window->setLogger(logger);
   }
@@ -1498,6 +1417,9 @@ void Gui::setLogger(utl::Logger* logger)
 
 void Gui::hideGui()
 {
+  if (!hasUI()) {
+    return;
+  }
   // ensure continue after close is true, since we want to return to tcl
   setContinueAfterClose();
   main_window->exit();
@@ -1519,11 +1441,17 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
 
 void Gui::minimize()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->showMinimized();
 }
 
 void Gui::unminimize()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->showNormal();
 }
 
@@ -1532,9 +1460,16 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   db_ = db;
   setLogger(logger);
 
+  // Lets the descriptors offer the actions that need a modal dialog.  Only
+  // this file is Qt-only, so a build without Qt leaves the hook null and
+  // those actions are not offered.
+  static QtDialogs dialogs;
+  setDialogs(&dialogs);
+
   auto* registry = DescriptorRegistry::instance();
   registry->setLogger(logger);
   registry->initDescriptors(db, sta);
+
   registerBuiltinHeatMapSources(sta, logger);
   for (const auto& source : getRegisteredHeatMapSources()) {
     const bool already_registered = std::ranges::any_of(
@@ -1553,7 +1488,7 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 
 void Gui::selectHelp(const std::string& item)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
 
@@ -1562,7 +1497,7 @@ void Gui::selectHelp(const std::string& item)
 
 void Gui::selectChart(const std::string& name)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
 
@@ -1573,12 +1508,15 @@ void Gui::selectChart(const std::string& name)
 
 void Gui::updateTimingReport()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getTimingWidget()->populatePaths();
 }
 
 int Gui::gifStart(const std::string& filename)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
   }
 
@@ -1598,6 +1536,9 @@ void Gui::gifAddFrame(std::optional<int> key,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
+  if (!hasUI()) {
+    return;
+  }
   if (!key.has_value()) {
     key = gifs_.size() - 1;
   }
@@ -1614,10 +1555,8 @@ void Gui::gifAddFrame(std::optional<int> key,
 
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen
-      = main_window == nullptr
-        || main_window->testAttribute(
-            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
+  const bool is_offscreen = main_window->testAttribute(
+      Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
   if (is_offscreen
       && use_die_area) {  // if gui is active and interactive the visible are of
                           // the layout viewer will be used.

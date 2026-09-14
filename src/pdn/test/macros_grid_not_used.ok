@@ -1,0 +1,83 @@
+[INFO ODB-0227] LEF file: ihp_ethmac/tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp_ethmac/sg13g2.lef, created 78 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2007): NAMESCASESENSITIVE statement is obsolete in version 5.6 and later.
+The LEF parser will ignore this statement.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef at line 2.
+
+[INFO ODB-0227] LEF file: ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef, created 1 library cells
+[INFO ODB-0128] Design: ethmac
+[INFO ODB-0130]     Created 216 pins.
+[INFO ODB-0131]     Created 1 components and 269 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 3 connections.
+[WARNING PDN-1051] No instances found for grid (sg13g2_sram_R90).
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: grid
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: Metal1
+    Width: 0.4400
+    Spacing: 0.0000
+    Pitch: 7.5600
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: Metal5
+    Width: 2.2000
+    Spacing: 35.6000
+    Pitch: 75.6000
+    Offset: 37.8000
+    Snap to grid: false
+  Type: Strap
+    Layer: TopMetal1
+    Width: 2.0000
+    Spacing: 35.8000
+    Pitch: 75.6000
+    Offset: 37.8000
+    Snap to grid: false
+  Type: Strap
+    Layer: TopMetal2
+    Width: 2.0000
+    Spacing: 35.8000
+    Pitch: 75.6000
+    Offset: 37.8000
+    Snap to grid: false
+Connect:
+  Connect layers Metal1 -> Metal5
+  Connect layers Metal5 -> TopMetal1
+  Connect layers TopMetal1 -> TopMetal2
+Pin layers: TopMetal2
+Grid name: sg13g2_sram_R0 - wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory
+Type: Instance
+Straps:
+  Type: Strap
+    Layer: TopMetal1
+    Width: 2.0000
+    Spacing: 8.0000
+    Pitch: 20.0000
+    Offset: 1.0000
+    Snap to grid: false
+Connect:
+  Connect layers Metal4 -> TopMetal1
+  Connect layers TopMetal1 -> TopMetal2
+Halo:
+  Left: 1.0000
+  Bottom: 1.0000
+  Right: 1.0000
+  Top: 1.0000
+Grid name: sg13g2_sram_R90 - Dummy
+Type: Dummy
+Straps:
+  Type: Strap
+    Layer: Metal5
+    Width: 2.2000
+    Spacing: 8.8000
+    Pitch: 22.0000
+    Offset: 11.0000
+    Snap to grid: false
+Connect:
+  Connect layers Metal4 -> Metal5
+  Connect layers Metal5 -> TopMetal1
+  Connect layers TopMetal1 -> TopMetal2

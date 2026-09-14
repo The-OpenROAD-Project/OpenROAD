@@ -9,16 +9,16 @@
 namespace odb {
 
 class tmg_conn;
-struct tmg_rcshort;
+struct Short;
 
 struct tcg_edge
 {
   tcg_edge* next;
   tcg_edge* reverse;
-  tmg_rcshort* s;
+  Short* s;
   int fr;
   int to;
-  int k;  // index to _rcV
+  int k;  // index to wire_sections_
   bool visited;
   bool skip;
 };
