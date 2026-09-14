@@ -183,20 +183,69 @@ Or "nuke it from orbit":
     sudo pkill -9 java
     sudo rm -rf ~/.cache/bazel
 
-## Run tests with [address sanetizers](https://github.com/google/sanitizers/wiki/addresssanitizer):
+## Run tests with the [address sanitizer](https://github.com/google/sanitizers/wiki/addresssanitizer):
 
-    bazelisk test --config=asan src/...
+    bazelisk test --config=asan --test_tag_filters=-py src/...
 
-Example output:
+Or to get an instrumented binary to run under ORFS:
 
-```
-[deleted]
-Direct leak of 18191 byte(s) in 2525 object(s) allocated from:
-    #0 0x5f8556654e04  (/home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/external/org_swig/swig+0x37de04) (BuildId: f982b51b51338154ba961612c62b330f)
-[deleted]
-SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
-[deleted]
-```
+    bazelisk build --config=asan :openroad
+
+The first `--config=asan` invocation builds compiler-rt's asan runtime from
+source, so expect a few minutes before any OpenROAD source is compiled.
+
+Instrumented code runs roughly 2x slower and uses several times the memory, so
+prefer the smallest design that reproduces the problem.
+
+ASan bundles LeakSanitizer, which reports every allocation still reachable at
+exit. OpenROAD keeps a great deal of state for the life of the process --
+`pdn::PdnGen` holds its grid vias, `sta::TimingArcSet` its arcs -- and none of
+it is freed before `main` returns, so LSan reports all of it. With leak
+checking on, 2648 of 3997 tests fail that way and 17 on an actual memory
+error, which is the wrong signal to leave on by default. The config therefore
+sets `detect_leaks=0`. To go leak hunting anyway:
+
+    bazelisk test --config=asan --test_tag_filters=-py --test_env=ASAN_OPTIONS=detect_leaks=1 src/...
+
+`--test_tag_filters=-py` skips the Python tests; see "Sanitizers and the
+Python extension modules" below for why.
+
+### Known findings
+
+A `--config=asan --test_tag_filters=-py src/...` sweep reports 1053 of 3997
+tests failing, but all but 19 come from one external binary.
+
+The hierarchy conformance suite and `TestLec` shell out to `kepler-formal`,
+which is a prebuilt, uninstrumented binary. It trips a container-overflow
+report and exits 1, failing 1034 tests that have nothing wrong with them:
+
+| Origin | Tests |
+| --- | --- |
+| `//src/dbSta/test:dbsta_hier_conformance_case_*` | 1033 |
+| `//src/tst:TestLec` | 1 |
+
+Both pass under
+`--test_env=ASAN_OPTIONS=detect_leaks=0:detect_container_overflow=0`. The
+config does not set that globally, because the container-overflow asan reports
+in OpenROAD's own code are real -- see `ScanStitch.cpp` below.
+
+That leaves 18 tests on a genuine finding, to be fixed separately:
+
+| Site | Check | Tests |
+| --- | --- | --- |
+| eigen `Core/arch/SSE/PacketMath.h`, `Core/functors/AssignmentFunctors.h` | `heap-buffer-overflow` | 10, via `psm` |
+| `src/dft/src/stitch/ScanStitch.cpp:102` | `container-overflow` | 5 |
+| `src/sta/search/Path.cc:383` | `heap-use-after-free` | 1, via `dbSta` |
+| `src/odb/include/odb/dbCommon.h:26` | `stack-use-after-scope` | 1, in `web` |
+| `spdlog::logger::should_log` reached through `utl::Logger` | `SEGV` | 1, in `web` |
+
+The `dft` one is a plain read past the end: the loop at `ScanStitch.cpp:100`
+runs while `it != scan_cells.end()` and dereferences `*(it + 1)`, so the last
+iteration reads `end()`.
+
+One further test, `//src/grt/test:repair_antennas_post_drt_cugr-tcl_test`,
+times out rather than failing -- instrumented code is slow enough to push it
+past its limit.
 
 ## Run tests with the [thread sanitizer](https://github.com/google/sanitizers/wiki/threadsanitizercppmanual):
 
@@ -304,9 +353,9 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 
 ## Sanitizers and the Python extension modules
 
-`--config=tsan` and `--config=ubsan` cover the C++ and Tcl tests, which run
-the instrumented `openroad` binary. They do **not** work for the `py`-tagged
-tests, which import OpenROAD as a Python extension module:
+`--config=asan`, `--config=tsan` and `--config=ubsan` cover the C++ and Tcl
+tests, which run the instrumented `openroad` binary. They do **not** work for
+the `py`-tagged tests, which import OpenROAD as a Python extension module:
 
     ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
 
@@ -340,6 +389,7 @@ rule takes the binary from there instead. Only the binary under test moves;
 swig, bison and the other exec-configuration tools stay uninstrumented, and
 because exactly one of the two attributes is ever set `openroad` is still
 built once.
+
 ## GPU build (`--config=gpu`)
 
 `--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
