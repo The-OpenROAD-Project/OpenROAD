@@ -58,6 +58,8 @@ BOOST_VERSION_BIG="1.89"
 BOOST_VERSION_SMALL="${BOOST_VERSION_BIG}.0"
 BOOST_CHECKSUM="187b577ce9f485314fcf17bcba2fb542"
 EIGEN_VERSION="3.4"
+KOKKOS_VERSION="4.7.02"
+KOKKOS_BACKEND=""
 CUDD_VERSION="3.0.0"
 LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
@@ -567,6 +569,80 @@ _install_eigen() {
 }
 
 # ------------------------------------------------------------------------------
+# Kokkos
+# ------------------------------------------------------------------------------
+_install_kokkos() {
+    local kokkos_prefix=${PREFIX:-"/usr/local"}
+    local kokkos_config="${kokkos_prefix}/include/KokkosCore_config.h"
+    local kokkos_installed_version="none"
+    local major minor patch
+    IFS=. read -r major minor patch <<< "${KOKKOS_VERSION}"
+    local required_version=$((10#${major} * 10000 + 10#${minor} * 100 + 10#${patch}))
+    if [[ -f "${kokkos_config}" ]]; then
+        kokkos_installed_version=$(awk '/^#define KOKKOS_VERSION / {print $3}' "${kokkos_config}")
+    fi
+
+    local backend=${KOKKOS_BACKEND}
+    if [[ -z "${backend}" ]]; then
+        # Preserve an existing Threads backend unless explicitly overridden.
+        if [[ -f "${kokkos_config}" ]] && grep -q '^#define KOKKOS_ENABLE_THREADS$' "${kokkos_config}"; then
+            backend=threads
+        else
+            backend=openmp
+        fi
+    fi
+    local enable_openmp=OFF enable_threads=OFF backend_define
+    case "${backend}" in
+        openmp) enable_openmp=ON; backend_define=OPENMP ;;
+        threads) enable_threads=ON; backend_define=THREADS ;;
+        serial) backend_define=SERIAL ;;
+        *) error "Unsupported Kokkos backend: ${backend}" ;;
+    esac
+
+    # Reuse a matching host installation with the selected backend.
+    log "Checking Kokkos (System: ${kokkos_installed_version}, Required: ${KOKKOS_VERSION})"
+    if [[ "${kokkos_installed_version}" != "${required_version}" ]] \
+        || ! grep -q "^#define KOKKOS_ENABLE_${backend_define}$" "${kokkos_config}" \
+        || grep -Eq '^#define KOKKOS_ENABLE_(CUDA|HIP|SYCL|OPENMPTARGET|OPENACC|NEXTSILICON)$' "${kokkos_config}"; then
+        (
+            cd "${BASE_DIR}"
+            _execute "Cloning Kokkos..." git clone --depth=1 -b "${KOKKOS_VERSION}" https://github.com/kokkos/kokkos.git
+            local cmake_bin=cmake
+            if [[ -n "${PREFIX}" && -x "${PREFIX}/bin/cmake" ]]; then
+                cmake_bin="${PREFIX}/bin/cmake"
+            fi
+            local openmp_args=()
+            if [[ "$(uname -s)" == "Darwin" && "${enable_openmp}" == "ON" ]]; then
+                local libomp_prefix
+                libomp_prefix=$(brew --prefix libomp)
+                openmp_args=(
+                    "-DOpenMP_CXX_FLAGS=-Xpreprocessor -fopenmp"
+                    "-DOpenMP_CXX_LIB_NAMES=omp"
+                    "-DOpenMP_omp_LIBRARY=${libomp_prefix}/lib/libomp.dylib"
+                    "-DOpenMP_CXX_INCLUDE_DIR=${libomp_prefix}/include"
+                )
+            fi
+            _execute "Configuring Kokkos..." "${cmake_bin}" -S kokkos -B kokkos/build \
+                -DCMAKE_INSTALL_PREFIX="${kokkos_prefix}" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_CXX_STANDARD=20 \
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DKokkos_ENABLE_OPENMP="${enable_openmp}" \
+                -DKokkos_ENABLE_THREADS="${enable_threads}" \
+                -DKokkos_ENABLE_SERIAL=ON \
+                -DKokkos_ENABLE_TESTS=OFF \
+                -DKokkos_ENABLE_EXAMPLES=OFF "${openmp_args[@]}"
+            _execute "Building and installing Kokkos..." "${cmake_bin}" --build kokkos/build -j "${NUM_THREADS}" --target install
+        )
+        INSTALL_SUMMARY+=("Kokkos: system=${kokkos_installed_version}, required=${KOKKOS_VERSION}, path=${kokkos_prefix}, status=installed")
+    else
+        INSTALL_SUMMARY+=("Kokkos: system=${kokkos_installed_version}, required=${KOKKOS_VERSION}, path=${kokkos_prefix}, status=skipped")
+    fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Kokkos_ROOT=$(realpath "${kokkos_prefix}") "
+}
+
+# ------------------------------------------------------------------------------
 # CUDD
 # ------------------------------------------------------------------------------
 _install_cudd() {
@@ -1069,6 +1145,7 @@ _install_common_dev() {
     _install_swig
     _install_boost
     _install_eigen
+    _install_kokkos
     _install_cudd
     _install_cusp
     _install_lemon
@@ -1322,6 +1399,7 @@ Options:
   -skip-system-or-tools       Skip searching for a system-installed or-tools library.
   -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
+  -kokkos-backend=<BACKEND>    Select openmp, threads, or serial (preserve existing Threads, otherwise openmp).
   -threads=<N>                Limit the number of compiling threads.
   -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
@@ -1378,6 +1456,13 @@ main() {
                 ;;
             -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
             -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
+            -kokkos-backend=*)
+                KOKKOS_BACKEND="${1#*=}"
+                case "${KOKKOS_BACKEND}" in
+                    openmp|threads|serial) ;;
+                    *) error "Unsupported Kokkos backend: ${KOKKOS_BACKEND}" ;;
+                esac
+                ;;
             -threads=*) NUM_THREADS="${1#*=}" ;;
             -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
             *)
@@ -1518,11 +1603,13 @@ main() {
             ;;
         "Darwin")
             _install_darwin_packages
+            local kokkos_prefix=${PREFIX:-"$(brew --prefix)/opt/openroad-kokkos"}
+            PREFIX="${kokkos_prefix}" _install_kokkos
             cat <<EOF
 
 To install or run OpenROAD, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk@8)/bin:\${PATH}"
-    export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
+    export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools):${kokkos_prefix}
 EOF
             ;;
         "openSUSE Leap")
