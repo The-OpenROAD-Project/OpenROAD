@@ -27,6 +27,10 @@
 #include "tile_generator.h"
 #include "utl/Logger.h"
 
+namespace gui {
+class HeatMapSourceRegistration;
+}
+
 namespace web {
 
 class RequestDispatcher;
@@ -588,6 +592,10 @@ class TileHandler
   }
 
   void initializeHeatMaps(SessionState& state);
+  // Add any sources registered since initializeHeatMaps ran, leaving the
+  // instances already present (and their session-local settings) untouched.
+  // Caller holds state.heatmap_mutex.
+  void syncHeatMapsLocked(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
@@ -621,6 +629,12 @@ class TileHandler
                                  SessionState& state);
 
  private:
+  // Build one session's instance of a registered source.  Defaults the chip
+  // to the root only when the factory left it unset, so a source bound to a
+  // specific chiplet keeps its binding.
+  std::shared_ptr<gui::HeatMapDataSource> createHeatMapInstance(
+      const gui::HeatMapSourceRegistration& registration) const;
+
   static WebSocketResponse serializeBounds(uint32_t id,
                                            const TileGenerator& gen);
   static WebSocketResponse serializeTech(uint32_t id, const TileGenerator& gen);

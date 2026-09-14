@@ -54,6 +54,7 @@
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
+#include "utl/CsvParser.h"
 #include "utl/Logger.h"
 #include "web_assets.h"
 #include "web_chart.h"
@@ -2161,6 +2162,120 @@ void WebServer::clearLabels()
     generator_->clearLabels();
     broadcastLabels();
   }
+}
+
+// A session builds its heat-map instances once, in its constructor, from
+// gui::getRegisteredHeatMapSources().  Registering a source afterwards is
+// therefore invisible to the clients already connected, so tell them to
+// re-request the set.  The push carries no payload: the instance still has
+// to be created per session, which handleHeatMaps does on the round-trip.
+void WebServer::broadcastHeatMapsChanged()
+{
+  if (!viewer_hook_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "heatmaps_changed";
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+}
+
+std::string WebServer::loadChipletHeatMap(const std::string& file_path)
+{
+  TileGenerator& gen = ensureGenerator();
+
+  // Row 0 = (chiplet_name, heatmap_name); rows 1+ = x0,y0,x1,y1,value.
+  const auto csv_rows = utl::readCsv(file_path, logger_);
+  if (csv_rows.empty()) {
+    logger_->error(utl::WEB, 82, "No data in CSV file: {}", file_path);
+  }
+  if (csv_rows[0].size() != 2) {
+    logger_->error(utl::WEB,
+                   83,
+                   "Invalid CSV file: {} - expected 2 columns in first row; "
+                   "(chiplet_name, heatmap_name), got {}",
+                   file_path,
+                   csv_rows[0].size());
+  }
+  const std::string chiplet_name = csv_rows[0][0];
+  const std::string heat_map_name = csv_rows[0][1];
+
+  std::vector<gui::ExternalHeatMapDataSource::Entry> data;
+  data.reserve(csv_rows.size() - 1);
+  for (size_t i = 1; i < csv_rows.size(); ++i) {
+    const auto& row = csv_rows[i];
+    if (row.size() != 5) {
+      logger_->error(
+          utl::WEB,
+          84,
+          "Invalid CSV file: {} - expected 5 columns in row {}, got {}",
+          file_path,
+          i,
+          row.size());
+    }
+    try {
+      data.push_back({std::stod(row[0]),
+                      std::stod(row[1]),
+                      std::stod(row[2]),
+                      std::stod(row[3]),
+                      std::stod(row[4])});
+    } catch (const std::exception& e) {
+      logger_->error(utl::WEB,
+                     85,
+                     "Invalid CSV file: {} - exception in row {}: {}",
+                     file_path,
+                     i,
+                     std::string(e.what()));
+    }
+  }
+
+  // collectChiplets() is what the renderer itself places chiplets with, so
+  // resolving here means the heat map lands exactly where the chiplet is
+  // drawn.  Accept either the short name or the hierarchical path, since a
+  // master placed more than once has one name but distinct paths.
+  const ChipletNode* node = nullptr;
+  std::string known;
+  for (const ChipletNode& candidate : gen.chiplets()) {
+    if (!known.empty()) {
+      known += ", ";
+    }
+    known += candidate.path;
+    if (node == nullptr
+        && (candidate.path == chiplet_name || candidate.name == chiplet_name
+            || (candidate.chip != nullptr
+                && candidate.chip->getName() == chiplet_name))) {
+      node = &candidate;
+    }
+  }
+  if (node == nullptr) {
+    logger_->error(utl::WEB,
+                   86,
+                   "Chiplet {} not found in the loaded design. Known: [{}]",
+                   chiplet_name,
+                   known);
+  }
+
+  const std::string short_name
+      = "Chiplet_" + std::to_string(++chiplet_heat_map_count_);
+  // Sessions each build their own instance from this factory, so the parsed
+  // rows outlive this call and are shared rather than copied per session.
+  auto entries = std::make_shared<const std::vector<
+      gui::ExternalHeatMapDataSource::Entry>>(std::move(data));
+  odb::dbChip* const chip = node->chip;
+  const odb::dbTransform transform = node->world_xfm;
+  gui::registerHeatMapSource(
+      heat_map_name,
+      short_name,
+      "WebChipletHeatMap" + short_name,
+      [logger = logger_, heat_map_name, short_name, entries, chip, transform] {
+        auto source = std::make_shared<gui::ExternalHeatMapDataSource>(
+            logger, heat_map_name, short_name, *entries);
+        source->setChip(chip);
+        source->setTransform(transform);
+        return source;
+      });
+
+  broadcastHeatMapsChanged();
+  return short_name;
 }
 
 void WebServer::saveDisplayControls(const std::string& filename)

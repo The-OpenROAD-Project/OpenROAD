@@ -262,6 +262,39 @@ web_save_report timing.html
 web_save_report -setup_paths 200 -hold_paths 200 timing.html
 ```
 
+### Load Chiplet Heatmap
+
+Load a heatmap from a CSV file and attach it to a chiplet of the design. The
+new heatmap joins the built-in ones in the viewer's Heat Maps panel; already
+connected browsers pick it up without a reload. Returns the short name used to
+reference it.
+
+CSV format:
+- Row 0: `chiplet_name,heatmap_name`
+- Rows 1+: `x0,y0,x1,y1,value` (coordinates in the chiplet's local frame, in
+  microns)
+
+The chiplet name is matched against the hierarchical path (`top.soc_inst`), the
+instance name, or the chip name. The chiplet's world transform is applied
+automatically so the data renders in the correct place in a multi-die view.
+
+```tcl
+web_load_chiplet_heatmap
+    file_path
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `file_path` | path to the CSV file to load. |
+
+#### Examples
+
+```tcl
+web_load_chiplet_heatmap thermal.csv
+```
+
 ### Save Display Controls
 
 Write the display-controls state of the connected viewer to a JSON file, so a

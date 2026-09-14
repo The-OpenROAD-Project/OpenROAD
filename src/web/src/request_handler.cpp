@@ -5011,9 +5011,35 @@ void TileHandler::initializeHeatMaps(SessionState& state)
   std::lock_guard<std::mutex> lock(state.heatmap_mutex);
   state.heatmaps.clear();
   for (const auto& source_handle : gui::getRegisteredHeatMapSources()) {
-    auto source = source_handle->createInstance();
+    state.heatmaps[source_handle->getShortName()]
+        = createHeatMapInstance(*source_handle);
+  }
+}
+
+std::shared_ptr<gui::HeatMapDataSource> TileHandler::createHeatMapInstance(
+    const gui::HeatMapSourceRegistration& registration) const
+{
+  auto source = registration.createInstance();
+  // A chiplet heat map (web_load_chiplet_heatmap) binds itself to the one
+  // chiplet its data describes, so only default the un-bound built-ins to
+  // the root chip -- overriding here would drag the data back to the top.
+  if (source->getChip() == nullptr) {
     source->setChip(gen_->getChip());
-    state.heatmaps[source_handle->getShortName()] = std::move(source);
+  }
+  return source;
+}
+
+// Sources can be registered after a session is built (web_load_chiplet_heatmap
+// from Tcl), so pick up anything missing before answering.  Existing entries
+// are left alone: their settings and the active selection are session state
+// the client expects to survive.
+void TileHandler::syncHeatMapsLocked(SessionState& state)
+{
+  for (const auto& source_handle : gui::getRegisteredHeatMapSources()) {
+    const std::string& name = source_handle->getShortName();
+    if (state.heatmaps.find(name) == state.heatmaps.end()) {
+      state.heatmaps[name] = createHeatMapInstance(*source_handle);
+    }
   }
 }
 
@@ -5734,6 +5760,8 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+    syncHeatMapsLocked(state);
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
