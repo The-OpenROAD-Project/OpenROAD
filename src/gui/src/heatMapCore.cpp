@@ -441,10 +441,6 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 odb::PtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
 {
   odb::PtrSet<odb::dbInst> selected_insts;
-  // TODO: drop the guard once Gui's dispatch lives in a Qt-free library that
-  // this one can depend on.  Today gui_heatmap_core is linked on its own by
-  // tests that define no Gui at all.
-#ifdef ENABLE_QT
   if (!useSelectedOnly() || !gui::Gui::enabled()) {
     return selected_insts;
   }
@@ -453,7 +449,6 @@ odb::PtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
       selected_insts.insert(std::any_cast<odb::dbInst*>(item.getObject()));
     }
   }
-#endif
   return selected_insts;
 }
 

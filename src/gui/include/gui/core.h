@@ -704,9 +704,10 @@ class Renderer
                          const std::string& key,
                          T& value)
   {
-    if (settings.count(key) == 1) {
+    const auto setting = settings.find(key);
+    if (setting != settings.end()) {
       try {
-        value = std::get<T>(settings.at(key));
+        value = std::get<T>(setting->second);
         // NOLINTNEXTLINE(bugprone-empty-catch)
       } catch (const std::bad_variant_access&) {
         // Stay with current value
