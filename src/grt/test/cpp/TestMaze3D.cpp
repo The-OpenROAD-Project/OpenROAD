@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -79,12 +80,14 @@ class Maze3DTestPeer
   static SearchState getSearchState(const FastRouteCore& router)
   {
     const auto marked = [](bool value) { return value; };
-    return {router.src_heap_3D_.empty(),
-            !std::ranges::any_of(router.pop_heap2_3D_, marked),
-            !std::any_of(
-                router.in_region_.data(),
-                router.in_region_.data() + router.in_region_.num_elements(),
-                marked)};
+    return {
+        router.src_heap_3D_.empty(),
+        !std::any_of(
+            router.pop_heap2_3D_.begin(), router.pop_heap2_3D_.end(), marked),
+        !std::any_of(
+            router.in_region_.data(),
+            router.in_region_.data() + router.in_region_.num_elements(),
+            marked)};
   }
 };
 
@@ -168,7 +171,8 @@ class Maze3DTest : public tst::DbFixture
     tree.num_terminals = pins.size();
     std::vector<GPoint3D> points = pins;
     points.insert(points.end(), steiner_points.begin(), steiner_points.end());
-    for (int i = 0; i < points.size(); i++) {
+    const int num_points = static_cast<int>(points.size());
+    for (int i = 0; i < num_points; i++) {
       const auto& point = points[i];
       if (i < tree.num_terminals) {
         tree.node_to_pin_idx[i] = i;
@@ -265,7 +269,7 @@ class Maze3DTest : public tst::DbFixture
     EXPECT_EQ(edge.route.type, RouteType::MazeRoute);
     EXPECT_EQ(edge.route.routelen, expected.size() - 1);
     ASSERT_EQ(edge.route.grids.size(), expected.size());
-    for (int i = 0; i < expected.size(); i++) {
+    for (std::size_t i = 0; i < expected.size(); i++) {
       SCOPED_TRACE(i);
       EXPECT_EQ(edge.route.grids[i].x, expected[i].x);
       EXPECT_EQ(edge.route.grids[i].y, expected[i].y);
@@ -277,7 +281,7 @@ class Maze3DTest : public tst::DbFixture
   {
     const auto actual = tree(net_id);
     ASSERT_EQ(actual.nodes.size(), expected.nodes.size());
-    for (int i = 0; i < actual.nodes.size(); i++) {
+    for (std::size_t i = 0; i < actual.nodes.size(); i++) {
       SCOPED_TRACE(i);
       const auto& node = actual.nodes[i];
       const auto& original = expected.nodes[i];
@@ -439,7 +443,8 @@ TEST_F(Maze3DTest, RecoversMultipleEdgesOfOneMultiPinNet)
   const std::string output = logger_.redirectStringEnd();
 
   expectSearchExhausted();
-  for (int edge_id = 0; edge_id < original_tree.edges.size(); edge_id++) {
+  const int num_edges = static_cast<int>(original_tree.edges.size());
+  for (int edge_id = 0; edge_id < num_edges; edge_id++) {
     SCOPED_TRACE(edge_id);
     expectRoute(net, original_tree.edges[edge_id].route.grids, edge_id);
     const std::string diagnostic
