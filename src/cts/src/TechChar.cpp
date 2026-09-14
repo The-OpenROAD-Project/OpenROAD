@@ -838,8 +838,9 @@ void TechChar::createDelayBufList()
       }
 
       for (sta::LibertyCell* buffer : *lib->buffers()) {
-        if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
-            || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+        if (buffer->dontUse() || (resizer_ && resizer_->dontUse(buffer))
+            || buffer->alwaysOn() || buffer->isIsolationCell()
+            || buffer->isLevelShifter()) {
           continue;
         }
         const std::string footprint = buffer->footprint();
@@ -883,7 +884,7 @@ void TechChar::createDelayBufList()
       prevDrvrRes = drvrRes;
       prevInternalDelay = intrinsicDelay;
       delay_buffers.push_back(buffer);
-    } else if ((drvrRes - prevDrvrRes) / drvrRes > 0.1) {
+    } else if (drvrRes && ((drvrRes - prevDrvrRes) / drvrRes > 0.1)) {
       delay_buffers.push_back(buffer);
       prevDrvrRes = drvrRes;
       prevInternalDelay = intrinsicDelay;
@@ -1012,21 +1013,39 @@ float TechChar::getMaxCapLimit(const std::string& buf)
 float TechChar::getDrvrResistance(const std::string& buf)
 {
   odb::dbMaster* master = db_->findMaster(buf.c_str());
+  if (!master) {
+    return 0.0f;
+  }
   sta::Cell* masterCell = db_network_->dbToSta(master);
+  if (!masterCell) {
+    return 0.0f;
+  }
   sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  if (!libCell) {
+    return 0.0f;
+  }
   sta::LibertyPort *in, *out;
   libCell->bufferPorts(in, out);
-  return out->driveResistance();
+  return out ? out->driveResistance() : 0.0f;
 }
 
 float TechChar::getinternalDelay(const std::string& buf)
 {
   odb::dbMaster* master = db_->findMaster(buf.c_str());
+  if (!master) {
+    return 0.0f;
+  }
   sta::Cell* masterCell = db_network_->dbToSta(master);
+  if (!masterCell) {
+    return 0.0f;
+  }
   sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  if (!libCell) {
+    return 0.0f;
+  }
   sta::LibertyPort *in, *out;
   libCell->bufferPorts(in, out);
-  return out->intrinsicDelay(openSta_);
+  return out ? sta::delayAsFloat(out->intrinsicDelay(openSta_)) : 0.0f;
 }
 
 void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
