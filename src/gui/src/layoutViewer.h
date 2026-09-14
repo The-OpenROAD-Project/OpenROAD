@@ -116,7 +116,7 @@ class LayoutViewer : public QWidget
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
   LayoutViewer(
-      Options* options,
+      QtOptions* options,
       ScriptWidget* output_widget,
       const SelectionSet& selected,
       const HighlightSet& highlighted,
@@ -360,7 +360,7 @@ class LayoutViewer : public QWidget
   void populateModuleColors();
 
   odb::dbChip* chip_;
-  Options* options_;
+  QtOptions* options_;
   ScriptWidget* output_widget_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
