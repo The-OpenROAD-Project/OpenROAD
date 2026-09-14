@@ -177,6 +177,12 @@ void DiscreteLegend::addLegendKey(const Painter::Color& color,
 
 void DiscreteLegend::draw(Painter& painter) const
 {
+  if (color_key_.empty()) {
+    // The keys are the whole legend; without them the bounds below stay
+    // zero-height and the background draws as a sliver in the corner.
+    return;
+  }
+
   const odb::Rect& bounds = painter.getBounds();
   const double pixel_per_dbu = painter.getPixelsPerDBU();
   const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
