@@ -36,6 +36,7 @@ cc_library(
     ],
     hdrs = [
         "include/gui/MakeGui.h",
+        "include/gui/core.h",
         "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
         "include/gui/heatMap.h",
@@ -107,6 +108,7 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
+            "include/gui/core.h",
             "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
             "include/gui/heatMap.h",
