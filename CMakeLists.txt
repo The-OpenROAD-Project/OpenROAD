@@ -98,7 +98,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 
-# GPU backend wiring (opt-in). All Kokkos / CUDA / HIP / SYCL detection,
+find_package(Kokkos 4.7 REQUIRED)
+
+# GPU backend wiring (opt-in). CUDA / HIP / SYCL detection,
 # compiler probing, and language enablement live in cmake/KokkosBackend.cmake
 # and are loaded only when the user opts in via ENABLE_GPU=ON.
 if(ENABLE_GPU)

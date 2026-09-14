@@ -44,7 +44,7 @@ cc_library(
     ],
 )
 
-# The Kokkos/CUDA backends plus fft.cpp. fft.cpp itself includes only
+# The Kokkos/CUDA backends plus kokkosRuntime.cpp and fft.cpp. fft.cpp includes only
 # Kokkos-free PIMPL headers, but it is compiled as CUDA here to mirror
 # the CMake flow's set_source_files_properties(... LANGUAGE CUDA) list in
 # src/gpl/CMakeLists.txt, keeping the two builds behaviorally identical.
@@ -89,6 +89,8 @@ cc_library(
         "src/gpu/regionDensityField_kokkos.h",
         "src/gpu/wirelengthOp.cpp",
         "src/gpu/wirelengthOp.h",
+        "src/kokkosRuntime.cpp",
+        "src/kokkosRuntime.h",
         "src/hpwlBackend.h",
         "src/wirelengthGradientBackend.h",
     ],
@@ -168,6 +170,8 @@ cc_library(
             # On the GPU build fft.cpp moves to :gpl_kokkos, where it is
             # compiled as CUDA; on the CPU build it is a plain C++ TU here.
             "src/fft.cpp",
+            "src/kokkosRuntime.cpp",
+            "src/kokkosRuntime.h",
         ],
     }),
     hdrs = [

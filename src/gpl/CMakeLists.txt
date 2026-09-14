@@ -35,6 +35,7 @@ add_library(gpl_lib
   src/fftsg.cpp
   src/fftsg2d.cpp
   src/hpwl.cpp
+  src/kokkosRuntime.cpp
   src/wirelengthGradient.cpp
   src/densityGradient.cpp
   src/routeBase.cpp
@@ -75,7 +76,7 @@ if(ENABLE_GPU)
   # under src/gpu/ need that on the include path explicitly because
   # the compiler's default same-dir lookup points into src/gpu/ instead.
   target_include_directories(gpl_lib PRIVATE src)
-  # The src/gpu/ TUs are device kernels. gpu/gpuRuntime.cpp carries no device
+  # The src/gpu/ TUs are device kernels. kokkosRuntime.cpp carries no device
   # code itself, but it includes <Kokkos_Core.hpp> for the lazy Kokkos
   # initialize()/finalize(): when Kokkos is built with the CUDA (or HIP)
   # backend, that header bakes KOKKOS_ENABLE_CUDA into its config and refuses
@@ -94,7 +95,7 @@ if(ENABLE_GPU)
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
       src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/gpu/nesterovOp.cpp src/gpu/nesterovDeviceContext.cpp
-      src/fft.cpp
+      src/fft.cpp src/kokkosRuntime.cpp
       PROPERTIES LANGUAGE CUDA)
   elseif(Kokkos_ENABLE_HIP)
     set_source_files_properties(
@@ -104,7 +105,7 @@ if(ENABLE_GPU)
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
       src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/gpu/nesterovOp.cpp src/gpu/nesterovDeviceContext.cpp
-      src/fft.cpp
+      src/fft.cpp src/kokkosRuntime.cpp
       PROPERTIES LANGUAGE HIP)
   endif()
   # Disable FP contraction for kernels that share gpl_lib's compile
@@ -115,7 +116,7 @@ if(ENABLE_GPU)
     $<$<COMPILE_LANGUAGE:CUDA>:--fmad=false>
     $<$<COMPILE_LANGUAGE:HIP>:-ffp-contract=off>
   )
-  target_link_libraries(gpl_lib Kokkos::kokkos KokkosFFT::fft)
+  target_link_libraries(gpl_lib KokkosFFT::fft)
   if(Kokkos_ENABLE_CUDA)
     # cuda runtime symbols are referenced from the CUDA TU; expose cudart
     # so that gpl_lib (and the openroad binary) link against libcudart.
@@ -153,6 +154,7 @@ target_include_directories(gpl_lib
 target_link_libraries(gpl_lib
     utl_lib
     Eigen3::Eigen
+    Kokkos::kokkos
     odb
     OpenSTA
     dbSta_lib
