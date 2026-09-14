@@ -153,6 +153,7 @@ or_integration_tests(
     region_temp_sensor
     region_temp_sensor_different_region_name
     repair_channel_inf_loop
+    repair_channel_out_of_options
     repair_vias
     report
     reset

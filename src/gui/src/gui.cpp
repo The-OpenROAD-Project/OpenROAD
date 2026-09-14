@@ -139,104 +139,55 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
-static void resetConversions()
+// Bridges Gui to the Qt main window.  Installed once the window is built and
+// uninstalled before it is destroyed, so main_window is non-null and fully
+// alive for every call below; Gui falls back to whatever headless viewer is
+// registered outside that window.
+//
+// Only the calls Gui already routes through a backend are overridden here.
+// The display-control accessors inherited from GuiBackend stay at their
+// defaults until the Gui methods that use them are ported too; today those
+// still reach main_window directly.
+class QtGuiBackend : public GuiBackend
 {
-  Descriptor::Property::convert_dbu
-      = [](int value, bool) { return std::to_string(value); };
-  Descriptor::Property::convert_string
-      = [](const std::string& value, bool*) { return 0; };
-}
+ public:
+  bool hasWindow() const override { return true; }
 
-Gui* Gui::get()
-{
-  static Gui* singleton = new Gui();
+  void redraw() override { main_window->redraw(); }
 
-  return singleton;
-}
+  void pause(int timeout_ms) override { main_window->pause(timeout_ms); }
 
-Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
-{
-  resetConversions();
-}
+  bool isPaused() const override
+  {
+    return main_window->getScriptWidget()->isPaused();
+  }
 
-bool Gui::enabled()
-{
-  Gui* self = Gui::get();
-  return main_window != nullptr || self->headless_viewer_ != nullptr;
-}
+  void status(const std::string& message) override
+  {
+    main_window->status(message);
+  }
 
-bool Gui::hasUI()
-{
-  return main_window != nullptr;
-}
-
-void Gui::registerRenderer(Renderer* renderer)
-{
-  if (main_window != nullptr) {
+  void registerRenderer(Renderer* renderer) override
+  {
     main_window->getControls()->registerRenderer(renderer);
   }
 
-  renderers_.insert(renderer);
-  redraw();
-}
-
-void Gui::unregisterRenderer(Renderer* renderer)
-{
-  if (!renderers_.contains(renderer)) {
-    return;
-  }
-
-  if (main_window != nullptr) {
+  void unregisterRenderer(Renderer* renderer) override
+  {
     main_window->getControls()->unregisterRenderer(renderer);
   }
+};
 
-  renderers_.erase(renderer);
-  redraw();
-}
+static QtGuiBackend qt_backend;
 
-void Gui::redraw()
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
-  if (main_window != nullptr) {
-    main_window->redraw();
-    return;
-  }
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->redraw();
-  }
-}
-
-void Gui::status(const std::string& message)
-{
-  if (main_window != nullptr) {
-    main_window->status(message);
-  }
-  // No status surface in headless mode; silently drop.
-}
-
-void Gui::pause(int timeout)
-{
-  if (main_window != nullptr) {
-    main_window->pause(timeout);
-    return;
-  }
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->pause(timeout);
-  }
-}
-
-void Gui::setHeadlessViewer(HeadlessViewer* viewer)
-{
-  headless_viewer_ = viewer;
+  resetDbuConversions();
 }
 
 void Gui::setChartFactory(ChartFactory factory)
 {
   chart_factory_ = std::move(factory);
-}
-
-Selected Gui::makeSelected(const std::any& object)
-{
-  return DescriptorRegistry::instance()->makeSelected(object);
 }
 
 void Gui::setSelected(const Selected& selection)
@@ -1274,22 +1225,6 @@ void Gui::fit()
   main_window->fit();
 }
 
-void Gui::registerDescriptor(const std::type_info& type,
-                             const Descriptor* descriptor)
-{
-  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
-}
-
-const Descriptor* Gui::getDescriptor(const std::type_info& type) const
-{
-  return DescriptorRegistry::instance()->getDescriptor(type);
-}
-
-void Gui::unregisterDescriptor(const std::type_info& type)
-{
-  DescriptorRegistry::instance()->unregisterDescriptor(type);
-}
-
 const Selected& Gui::getInspectorSelection()
 {
   if (!hasUI()) {
@@ -1711,6 +1646,7 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
+  gui->setBackend(&qt_backend);
   if (minimize) {
     main_window->showMinimized();
   }
@@ -1825,12 +1761,20 @@ int startGui(int& argc,
 
   main_window->exit();
 
+  // Uninstall before destroying the window, not after.  ~MainWindow destroys
+  // its children in construction order, so DisplayControls (the first one)
+  // is already gone when DRCWidget and the clock viewer destroy the
+  // Renderers they own.  Each ~Renderer calls Gui::unregisterRenderer, and
+  // with the backend still installed that would reach
+  // main_window->getControls() on a freed DisplayControls.
+  Gui::get()->setBackend(nullptr);
+
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
   application = nullptr;
 
-  resetConversions();
+  Gui::resetDbuConversions();
 
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();

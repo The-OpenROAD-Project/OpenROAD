@@ -13,10 +13,11 @@ set(TEST_LIBS
 
 # Every test compiles in the headless gui stub, mirroring the Bazel targets,
 # which all depend on //src/gui:gui_stub.  gui_core carries the descriptors,
-# the heatmap core and the rendering API but no Gui dispatch of its own, so
-# anything that reaches gui::Gui::{get,enabled,selection,setHeadlessViewer,
-# setChartFactory} needs this to link.  Linking the Qt gui library instead
-# would drag in the whole application.
+# the heatmap core, the rendering API and Gui's dispatch spine, but not yet
+# the Tcl command surface -- selection(), setChartFactory(), the gif and
+# image calls, Gui's own constructor -- so a test reaching any of those needs
+# this to link.  Linking the Qt gui library instead would drag in the whole
+# application.
 #
 # The stub's initGui() calls DescriptorRegistry::initDescriptors(); the
 # descriptor implementations behind it come from gui_core.
