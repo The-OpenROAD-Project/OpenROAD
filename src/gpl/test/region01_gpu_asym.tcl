@@ -12,7 +12,7 @@
 # cannot distinguish. With per-region RegionDensityField the GPU result tracks
 # the CPU result.
 #
-# Run on the GPU path (ENABLE_GPU=1, pinned in CMake); checks total HPWL
+# Run on the GPU path (ENABLE_GPU=1, pinned by CMake and Bazel); checks total HPWL
 # against the CPU reference within tolerance (the GPU Poisson FFT diverges
 # ~1e-4 from the CPU Ooura FFT, so an exact DEF diff is not used).
 source helpers.tcl

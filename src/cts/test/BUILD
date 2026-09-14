@@ -282,7 +282,10 @@ py_test(
     name = "cts_man_tcl_check",
     srcs = ["cts_man_tcl_check.py"],
     data = ["//src/cts:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

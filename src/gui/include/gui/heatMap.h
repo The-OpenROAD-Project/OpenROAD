@@ -17,7 +17,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 

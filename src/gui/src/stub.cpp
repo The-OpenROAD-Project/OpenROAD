@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "bufferTreeDescriptor.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -28,13 +27,6 @@ struct GifWriter
 };
 
 namespace gui {
-
-Options* Painter::getOptions()
-{
-  return options_;
-}
-
-////
 
 Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
@@ -110,57 +102,6 @@ void Gui::status(const std::string& /* message */)
 }
 
 void Gui::triggerAction(const std::string& /* action */)
-{
-}
-
-void Renderer::redraw()
-{
-  Gui::get()->redraw();
-}
-
-Renderer::~Renderer()
-{
-  Gui::get()->unregisterRenderer(this);
-}
-
-void DiscreteLegend::addLegendKey(const Painter::Color& color,
-                                  const std::string& text)
-{
-}
-
-void DiscreteLegend::draw(Painter& painter) const
-{
-}
-
-bool Renderer::checkDisplayControl(const std::string& name)
-{
-  auto it = controls_.find(name);
-  if (it != controls_.end()) {
-    return it->second.visibility;
-  }
-  return false;
-}
-
-void Renderer::addDisplayControl(
-    const std::string& name,
-    bool initial_visible,
-    const DisplayControlCallback& setup,
-    const std::vector<std::string>& mutual_exclusivity)
-{
-  DisplayControl control;
-  control.visibility = initial_visible;
-  control.interactive_setup = setup;
-  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
-                                    mutual_exclusivity.end());
-  controls_[name] = std::move(control);
-}
-
-Renderer::Settings Renderer::getSettings()
-{
-  return {};
-}
-
-void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
@@ -323,8 +264,22 @@ int Gui::select(const std::string& type,
   return 0;
 }
 
+// The display-control state belongs to whatever front-end is installed, which
+// for a no-Qt binary is the headless viewer (e.g. the web viewer).  Without a
+// viewer everything is visible so headless renderers draw by default.
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->setDisplayControlVisible(name, value);
+  }
+}
+
+bool Gui::checkDisplayControlsVisible(const std::string& name)
+{
+  if (headless_viewer_ != nullptr) {
+    return headless_viewer_->checkDisplayControlVisible(name);
+  }
+  return true;
 }
 
 void Gui::clearHighlights(int highlight_group)
@@ -365,19 +320,6 @@ void Gui::timingCone(Term term, bool fanin, bool fanout)
 
 void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
-}
-
-// BufferTree stubs — the real implementation is in bufferTreeDescriptor.cpp
-// which is only compiled in the Qt build.
-sta::dbSta* BufferTree::sta_ = nullptr;
-
-BufferTree::BufferTree(odb::dbNet* /* net */)
-{
-}
-
-bool BufferTree::isAggregate(odb::dbNet* /* net */)
-{
-  return false;
 }
 
 }  // namespace gui

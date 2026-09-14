@@ -156,35 +156,6 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 61 long wires.
 [INFO RSZ-0048] Inserted 82 buffers in 61 nets.
-[INFO DPL-0006] Core area: 24399648.00 um^2
-[INFO DPL-0007] Movable instances area: 12362.62 um^2
-[INFO DPL-0008] Fixed instances area within core: 20250000.00 um^2
-[INFO DPL-0009] Utilization: 83.0%
-[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1102] Legalizing using negotiation legalizer.
-[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
-	Automatic search window extension enabled.
-	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
-[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
-[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 3292 cells
-[INFO DPL-0393]   height 215 row(s): 225 cells
-          |      Total |  Illegal |  Illegal
-Iteration | Violations |    Cells |    Sites
----------------------------------------------
-        0 |        212 |        30 |       182
-        1 |         29 |         5 |        24
-        2 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 2.
-Placement Analysis
----------------------------------
-total displacement       7659.7 u
-average displacement        2.2 u
-max displacement          146.4 u
-original HPWL          292246.9 u
-legalized HPWL         292687.3 u
-delta HPWL                    0 %
-
 Clock clk
    1.16 source latency inst_12_3/clk ^
   -1.26 target latency inst_13_3/clk ^
@@ -204,12 +175,12 @@ Path Type: max
    0.00    0.00 ^ clk (in)
    0.05    0.05 ^ wire7/Z (BUF_X16)
    0.05    0.10 ^ wire6/Z (BUF_X16)
-   0.06    0.16 ^ wire5/Z (BUF_X32)
-   0.06    0.22 ^ wire4/Z (BUF_X32)
-   0.06    0.28 ^ wire3/Z (BUF_X8)
-   0.03    0.31 ^ wire2/Z (BUF_X16)
+   0.07    0.16 ^ wire5/Z (BUF_X32)
+   0.06    0.23 ^ wire4/Z (BUF_X32)
+   0.05    0.28 ^ wire3/Z (BUF_X8)
+   0.04    0.32 ^ wire2/Z (BUF_X16)
    0.06    0.37 ^ wire1/Z (BUF_X16)
-   0.07    0.44 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.06    0.44 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    0.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    0.51 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.04    0.55 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
@@ -217,7 +188,7 @@ Path Type: max
    0.04    0.62 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    0.66 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    0.69 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.73 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.72 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    0.76 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    0.80 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    0.83 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -226,11 +197,11 @@ Path Type: max
    0.04    0.94 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.03    0.97 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
    0.03    1.01 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.04    1.05 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.04    1.04 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
    0.04    1.08 ^ clkbuf_6_0_0_clk/Z (BUF_X4)
    0.03    1.12 ^ clkbuf_7_1_0_clk/Z (BUF_X4)
    0.04    1.15 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    1.16 ^ inst_1_1/clk (array_tile)
+   0.00    1.15 ^ inst_1_1/clk (array_tile)
    0.21    1.37 ^ inst_1_1/e_out (array_tile)
    0.00    1.37 ^ inst_2_1/w_in (array_tile)
            1.37   data arrival time
@@ -240,12 +211,12 @@ Path Type: max
    0.00    5.00 ^ clk (in)
    0.05    5.05 ^ wire7/Z (BUF_X16)
    0.05    5.10 ^ wire6/Z (BUF_X16)
-   0.06    5.16 ^ wire5/Z (BUF_X32)
-   0.06    5.22 ^ wire4/Z (BUF_X32)
-   0.06    5.28 ^ wire3/Z (BUF_X8)
-   0.03    5.31 ^ wire2/Z (BUF_X16)
+   0.07    5.16 ^ wire5/Z (BUF_X32)
+   0.06    5.23 ^ wire4/Z (BUF_X32)
+   0.05    5.28 ^ wire3/Z (BUF_X8)
+   0.04    5.32 ^ wire2/Z (BUF_X16)
    0.06    5.37 ^ wire1/Z (BUF_X16)
-   0.07    5.44 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.06    5.44 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    5.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    5.51 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.04    5.55 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
@@ -253,7 +224,7 @@ Path Type: max
    0.04    5.62 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    5.66 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    5.69 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    5.73 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.72 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    5.76 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    5.80 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    5.83 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -289,12 +260,12 @@ Path Type: max
    0.00    0.00 ^ clk (in)
    0.05    0.05 ^ wire7/Z (BUF_X16)
    0.05    0.10 ^ wire6/Z (BUF_X16)
-   0.06    0.16 ^ wire5/Z (BUF_X32)
-   0.06    0.22 ^ wire4/Z (BUF_X32)
-   0.06    0.28 ^ wire3/Z (BUF_X8)
-   0.03    0.31 ^ wire2/Z (BUF_X16)
+   0.07    0.16 ^ wire5/Z (BUF_X32)
+   0.06    0.23 ^ wire4/Z (BUF_X32)
+   0.05    0.28 ^ wire3/Z (BUF_X8)
+   0.04    0.32 ^ wire2/Z (BUF_X16)
    0.06    0.37 ^ wire1/Z (BUF_X16)
-   0.07    0.44 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.06    0.44 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    0.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    0.51 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.04    0.55 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
@@ -302,7 +273,7 @@ Path Type: max
    0.04    0.62 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    0.66 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    0.69 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.73 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.72 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    0.76 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    0.80 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    0.83 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -325,12 +296,12 @@ Path Type: max
    0.00    5.00 ^ clk (in)
    0.05    5.05 ^ wire7/Z (BUF_X16)
    0.05    5.10 ^ wire6/Z (BUF_X16)
-   0.06    5.16 ^ wire5/Z (BUF_X32)
-   0.06    5.22 ^ wire4/Z (BUF_X32)
-   0.06    5.28 ^ wire3/Z (BUF_X8)
-   0.03    5.31 ^ wire2/Z (BUF_X16)
+   0.07    5.16 ^ wire5/Z (BUF_X32)
+   0.06    5.23 ^ wire4/Z (BUF_X32)
+   0.05    5.28 ^ wire3/Z (BUF_X8)
+   0.04    5.32 ^ wire2/Z (BUF_X16)
    0.06    5.37 ^ wire1/Z (BUF_X16)
-   0.07    5.44 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.06    5.44 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    5.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    5.51 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.04    5.55 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
@@ -338,7 +309,7 @@ Path Type: max
    0.04    5.62 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    5.66 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    5.69 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    5.73 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.72 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    5.76 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    5.80 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    5.83 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -347,16 +318,16 @@ Path Type: max
    0.04    5.94 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.03    5.97 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
    0.03    6.01 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.04    6.05 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.04    6.04 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
    0.04    6.08 ^ clkbuf_6_0_0_clk/Z (BUF_X4)
    0.03    6.12 ^ clkbuf_7_1_0_clk/Z (BUF_X4)
    0.04    6.15 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    6.16 ^ inst_1_1/clk (array_tile)
-   0.00    6.16   clock reconvergence pessimism
-  -0.05    6.11   library setup time
-           6.11   data required time
+   0.00    6.15 ^ inst_1_1/clk (array_tile)
+   0.00    6.15   clock reconvergence pessimism
+  -0.05    6.10   library setup time
+           6.10   data required time
 ---------------------------------------------------------
-           6.11   data required time
+           6.10   data required time
           -1.35   data arrival time
 ---------------------------------------------------------
            4.76   slack (MET)
