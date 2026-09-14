@@ -134,11 +134,12 @@ struct Short
 // is_via = 0 ==> wire
 //        = 1 ==> via
 //        = 2 ==> pin
-class tmg_conn_search
+class ShapeSearch
 {
  public:
-  tmg_conn_search();
-  ~tmg_conn_search();
+  ShapeSearch();
+  ~ShapeSearch();
+
   void clear();
   void addShape(int level, const Rect& bounds, int is_via, int id);
   void searchStart(int level, const Rect& bounds, int is_via);
@@ -149,7 +150,7 @@ class tmg_conn_search
   std::unique_ptr<Impl> impl_;
 };
 
-class tmg_conn_graph;
+class ConnectionGraph;
 struct tmg_connect_shape
 {
   int k;
@@ -162,6 +163,7 @@ class tmg_conn
  public:
   tmg_conn(utl::Logger* logger);
   ~tmg_conn();
+
   void analyzeNet(dbNet* net);
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
@@ -183,7 +185,7 @@ class tmg_conn
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void identifyShorts();
   void removeShortLoops();
-  void buildWireGraph();
+  void buildConnectionGraph();
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
@@ -226,8 +228,9 @@ class tmg_conn
   void copyWireIdToVisitedShorts(int j);
 
   utl::Logger* logger_;
-  std::unique_ptr<tmg_conn_search> search_;
-  std::unique_ptr<tmg_conn_graph> graph_;
+
+  std::unique_ptr<ShapeSearch> shape_search_;
+  std::unique_ptr<ConnectionGraph> connection_graph_;
 
   dbNet* net_;
   bool has_special_wires_;
@@ -252,7 +255,7 @@ class tmg_conn
   dbBTerm* slicedTileBTerm_[200];
 
   // Graph walk and writing of the new wire encoding.
-  std::vector<Terminal*> tstackV_; // Also used when checking connectivity.
+  std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.
   int last_id_;
   dbTechNonDefaultRule* net_rule_;
   dbTechNonDefaultRule* path_rule_;
