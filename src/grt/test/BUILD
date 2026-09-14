@@ -237,6 +237,30 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestGuideRestore",
+    size = "small",
+    srcs = ["cpp/TestGuideRestore.cpp"],
+    data = [
+        "remove_buffers1.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/grt",
+        "//src/grt:groute",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],
