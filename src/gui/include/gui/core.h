@@ -968,6 +968,34 @@ class GuiBackend
   virtual void saveDisplayControls() {}
   virtual void restoreDisplayControls() {}
 
+  // Per-net overlays the layout draws on top of the design.  A backend with
+  // no layout keeps no such sets.
+  virtual void addFocusNet(odb::dbNet* /* net */) {}
+  virtual void removeFocusNet(odb::dbNet* /* net */) {}
+  virtual void clearFocusNets() {}
+  virtual void addRouteGuides(odb::dbNet* /* net */) {}
+  virtual void removeRouteGuides(odb::dbNet* /* net */) {}
+  virtual void clearRouteGuides() {}
+  virtual void addNetTracks(odb::dbNet* /* net */) {}
+  virtual void removeNetTracks(odb::dbNet* /* net */) {}
+  virtual void clearNetTracks() {}
+
+  // Render one of the auxiliary views to an image file.  Width and height
+  // are unset when the caller wants the backend's own sizing.
+  virtual void saveClockTreeImage(const std::string& /* clock_name */,
+                                  const std::string& /* filename */,
+                                  const std::string& /* scene */,
+                                  std::optional<int> /* width_px */,
+                                  std::optional<int> /* height_px */)
+  {
+  }
+  virtual void saveHistogramImage(const std::string& /* filename */,
+                                  const std::string& /* mode */,
+                                  std::optional<int> /* width_px */,
+                                  std::optional<int> /* height_px */)
+  {
+  }
+
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
   // expires.  timeout_ms == 0 means wait indefinitely.

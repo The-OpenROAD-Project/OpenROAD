@@ -155,33 +155,6 @@ int Gui::select(const std::string& type,
   return 0;
 }
 
-// The display-control state belongs to whatever front-end is installed, which
-// for a no-Qt binary is the headless viewer (e.g. the web viewer).  Without a
-// viewer everything is visible so headless renderers draw by default.
-void Gui::addFocusNet(odb::dbNet* net)
-{
-}
-
-void Gui::removeFocusNet(odb::dbNet* net)
-{
-}
-
-void Gui::addRouteGuides(odb::dbNet* net)
-{
-}
-
-void Gui::removeRouteGuides(odb::dbNet* net)
-{
-}
-
-void Gui::addNetTracks(odb::dbNet* net)
-{
-}
-
-void Gui::removeNetTracks(odb::dbNet* net)
-{
-}
-
 void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
 }

@@ -345,6 +345,71 @@ class QtGuiBackend : public GuiBackend
   {
     main_window->getControls()->restore();
   }
+
+  void addFocusNet(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addFocusNet(net);
+  }
+
+  void removeFocusNet(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeFocusNet(net);
+  }
+
+  void clearFocusNets() override
+  {
+    main_window->getLayoutTabs()->clearFocusNets();
+  }
+
+  void addRouteGuides(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addRouteGuides(net);
+  }
+
+  void removeRouteGuides(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeRouteGuides(net);
+  }
+
+  void clearRouteGuides() override
+  {
+    main_window->getLayoutTabs()->clearRouteGuides();
+  }
+
+  void addNetTracks(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addNetTracks(net);
+  }
+
+  void removeNetTracks(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeNetTracks(net);
+  }
+
+  void clearNetTracks() override
+  {
+    main_window->getLayoutTabs()->clearNetTracks();
+  }
+
+  void saveClockTreeImage(const std::string& clock_name,
+                          const std::string& filename,
+                          const std::string& scene,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override
+  {
+    main_window->getClockViewer()->saveImage(
+        clock_name, filename, scene, width_px, height_px);
+  }
+
+  void saveHistogramImage(const std::string& filename,
+                          const std::string& mode,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override
+  {
+    auto* charts = main_window->getChartsWidget();
+    charts->saveImage(
+        filename, charts->modeFromString(mode), width_px, height_px);
+  }
 };
 
 static QtGuiBackend qt_backend;
@@ -662,49 +727,6 @@ void Gui::saveImage(const std::string& filename,
   }
 }
 
-void Gui::saveClockTreeImage(const std::string& clock_name,
-                             const std::string& filename,
-                             const std::string& scene,
-                             int width_px,
-                             int height_px)
-{
-  if (!hasUI()) {
-    return;
-  }
-  std::optional<int> width;
-  std::optional<int> height;
-  if (width_px > 0) {
-    width = width_px;
-  }
-  if (height_px > 0) {
-    height = height_px;
-  }
-  main_window->getClockViewer()->saveImage(
-      clock_name, filename, scene, width, height);
-}
-
-void Gui::saveHistogramImage(const std::string& filename,
-                             const std::string& mode,
-                             int width_px,
-                             int height_px)
-{
-  if (!hasUI()) {
-    return;
-  }
-  std::optional<int> width;
-  std::optional<int> height;
-  if (width_px > 0) {
-    width = width_px;
-  }
-  if (height_px > 0) {
-    height = height_px;
-  }
-  const ChartsWidget::Mode chart_mode
-      = main_window->getChartsWidget()->modeFromString(mode);
-  main_window->getChartsWidget()->saveImage(
-      filename, chart_mode, width, height);
-}
-
 void Gui::showWorstTimingPath(bool setup)
 {
   if (!hasUI()) {
@@ -1018,22 +1040,6 @@ void Gui::timingPathsThrough(const std::set<Term>& terms)
   main_window->timingPathsThrough(terms);
 }
 
-void Gui::addFocusNet(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addFocusNet(net);
-}
-
-void Gui::addRouteGuides(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addRouteGuides(net);
-}
-
 Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
@@ -1045,62 +1051,6 @@ Chart* Gui::addChart(const std::string& name,
     return chart_factory_(name, x_label, y_labels);
   }
   return nullptr;
-}
-
-void Gui::removeRouteGuides(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeRouteGuides(net);
-}
-
-void Gui::addNetTracks(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addNetTracks(net);
-}
-
-void Gui::removeNetTracks(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeNetTracks(net);
-}
-
-void Gui::removeFocusNet(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeFocusNet(net);
-}
-
-void Gui::clearFocusNets()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearFocusNets();
-}
-
-void Gui::clearRouteGuides()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearRouteGuides();
-}
-
-void Gui::clearNetTracks()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)

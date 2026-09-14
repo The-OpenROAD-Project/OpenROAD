@@ -151,6 +151,17 @@ odb::dbBlock* getBlock(odb::dbDatabase* db)
   return chip->getBlock();
 }
 
+// A width or height of zero means "size it yourself"; that is the wire format
+// the Tcl image commands use, and it becomes an unset optional here so the
+// backend does not have to know the convention.
+std::optional<int> sizeOrAuto(int px)
+{
+  if (px > 0) {
+    return px;
+  }
+  return std::nullopt;
+}
+
 }  // namespace
 
 void Gui::setSelected(const Selected& selection)
@@ -535,6 +546,103 @@ void Gui::restoreDisplayControls()
   if (auto* backend = activeBackend()) {
     backend->restoreDisplayControls();
   }
+}
+
+void Gui::addFocusNet(odb::dbNet* net)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->addFocusNet(net);
+}
+
+void Gui::removeFocusNet(odb::dbNet* net)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->removeFocusNet(net);
+}
+
+void Gui::clearFocusNets()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->clearFocusNets();
+}
+
+void Gui::addRouteGuides(odb::dbNet* net)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->addRouteGuides(net);
+}
+
+void Gui::removeRouteGuides(odb::dbNet* net)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->removeRouteGuides(net);
+}
+
+void Gui::clearRouteGuides()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->clearRouteGuides();
+}
+
+void Gui::addNetTracks(odb::dbNet* net)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->addNetTracks(net);
+}
+
+void Gui::removeNetTracks(odb::dbNet* net)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->removeNetTracks(net);
+}
+
+void Gui::clearNetTracks()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->clearNetTracks();
+}
+
+void Gui::saveClockTreeImage(const std::string& clock_name,
+                             const std::string& filename,
+                             const std::string& scene,
+                             int width_px,
+                             int height_px)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->saveClockTreeImage(
+      clock_name, filename, scene, sizeOrAuto(width_px), sizeOrAuto(height_px));
+}
+
+void Gui::saveHistogramImage(const std::string& filename,
+                             const std::string& mode,
+                             int width_px,
+                             int height_px)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->saveHistogramImage(
+      filename, mode, sizeOrAuto(width_px), sizeOrAuto(height_px));
 }
 
 }  // namespace gui
