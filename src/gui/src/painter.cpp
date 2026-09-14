@@ -224,12 +224,12 @@ void GuiPainter::drawRuler(int x0,
                            int y1,
                            const std::string& label)
 {
-  const QColor ruler_color_qt = getOptions()->rulerColor();
+  const QColor ruler_color_qt = qt_options_->rulerColor();
   const Color ruler_color(ruler_color_qt.red(),
                           ruler_color_qt.green(),
                           ruler_color_qt.blue(),
                           ruler_color_qt.alpha());
-  const QFont ruler_font = getOptions()->rulerFont();
+  const QFont ruler_font = qt_options_->rulerFont();
   const QFont restore_font = painter_->font();
 
   setPen(ruler_color, true);
