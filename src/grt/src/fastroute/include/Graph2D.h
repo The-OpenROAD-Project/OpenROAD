@@ -150,9 +150,9 @@ class Graph2D
   // cap_ndr drift (see reserveNDRCapLayer/releaseNDRCapLayer).
   struct NDRUsage
   {
-    bool charged_overflow = false;  // net was charged the overflow edge cost
     int16_t layer = -1;             // layer whose cap_ndr was debited
     int8_t amount = 0;              // amount debited from that layer
+    bool charged_overflow = false;  // net was charged the overflow edge cost
   };
 
   NDRUsage reserveNDRCapLayer(int x, int y, FrNet* net, EdgeDirection dir);
