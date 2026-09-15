@@ -759,6 +759,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")) {
         lefTechLayerCutEnclosureRuleParser encParser(this);
         encParser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURETABLE")) {
+        lefTechLayerCutEnclosureTableRuleParser encTableParser(this);
+        encTableParser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
