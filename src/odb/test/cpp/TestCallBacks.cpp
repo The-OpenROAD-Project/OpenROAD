@@ -86,6 +86,38 @@ TEST_F(CallbackFixture, test_inst_and_iterm)
   EXPECT_EQ(cb_.events[3], "Destroy inst i1");
 }
 
+TEST_F(CallbackFixture, test_inst_parent_change)
+{
+  createSimpleDB();
+  dbBlock* block = db_->getChip()->getBlock();
+  cb_.addOwner(block);
+
+  dbInst* inst = dbInst::create(block, db_->findMaster("and2"), "i1");
+  EXPECT_EQ(cb_.events.size(), 4);
+  cb_.clearEvents();
+
+  dbModule* parent = dbModule::create(block, "parent");
+  parent->addInst(inst);
+  ASSERT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Change parent of inst i1 to parent");
+  cb_.clearEvents();
+
+  parent->addInst(inst);
+  EXPECT_TRUE(cb_.events.empty());
+
+  dbModule* top = block->getTopModule();
+  top->addInst(inst);
+  ASSERT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0],
+            "Change parent of inst i1 to " + std::string(top->getName()));
+  cb_.clearEvents();
+
+  top->addInst(inst);
+  EXPECT_TRUE(cb_.events.empty());
+
+  dbInst::destroy(inst);
+}
+
 TEST_F(CallbackFixture, test_net)
 {
   createSimpleDB();

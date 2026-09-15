@@ -24,6 +24,7 @@ class _dbGroup;
 class _dbChipBump;
 class _dbChipRegion;
 class dbInst;
+class dbModule;
 class dbIStream;
 class dbOStream;
 
@@ -63,6 +64,9 @@ class _dbInst : public _dbObject
   void collectMemInfo(MemInfo& info);
   static void setInstBBox(_dbInst* inst);
 
+  dbId<_dbModule> getModuleId() const { return module_; }
+  void setModule(dbId<_dbModule> module);
+
   _dbInstFlags flags_;
   char* name_;
   int x_;
@@ -72,14 +76,16 @@ class _dbInst : public _dbObject
   dbId<_dbInstHdr> inst_hdr_;
   dbId<_dbBox> bbox_;
   dbId<_dbRegion> region_;
-  // WARNING: re-parenting an existing instance changes its full SDC
-  // path. dbModule::addInst() fires inDbPostInstParentChange in that
-  // case so downstream caches (e.g., dbSdcNetwork's path-to-instance
-  // map) stay consistent. The callback is suppressed on the initial
-  // assignment during dbInst::create -- that path's accounting belongs
-  // to inDbInstCreate. Prefer dbModule::addInst() over assigning this
-  // field directly.
+
+ private:
+  friend class dbModule;
+  friend class _dbModule;
+  friend dbIStream& operator>>(dbIStream& stream, _dbInst& inst);
+
   dbId<_dbModule> module_;
+  void setModuleQuiet(dbId<_dbModule> module) { module_ = module; }
+
+ public:
   dbId<_dbGroup> group_;
   dbId<_dbInst> region_next_;
   dbId<_dbInst> module_next_;
