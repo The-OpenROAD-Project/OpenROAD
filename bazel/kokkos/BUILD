@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+# Bazel-built Kokkos and KokkosFFT for the opt-in GPU build. This package holds
+# the BUILD overlays for the pinned source archives (BUILD.kokkos.bazel,
+# BUILD.kokkos_fft.bazel, referenced from MODULE.bazel) and the configuration
+# headers their CMake builds would have generated: the arch-dependent
+# KokkosCore_config.h is expanded from the template by configure.bzl, the rest
+# are hand-maintained copies under config/. Everything here is GPU-only.
+
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel/gpu:defs.bzl", "GPU_ONLY")
+load(":configure.bzl", "kokkos_config_header")
+
+package(default_visibility = ["//visibility:private"])
+
+exports_files(
+    [
+        "BUILD.kokkos.bazel",
+        "BUILD.kokkos_fft.bazel",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+kokkos_config_header(
+    name = "configured_header",
+    out = "generated/KokkosCore_config.h",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+)
+
+cc_library(
+    name = "config_header",
+    hdrs = [":configured_header"],
+    strip_include_prefix = "generated",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+)
+
+cc_library(
+    name = "config_common",
+    hdrs = glob([
+        "config/KokkosCore_Config_*.hpp",
+        "config/desul/**/*.hpp",
+    ]),
+    strip_include_prefix = "config",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+)
+
+cc_library(
+    name = "config",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":config_common",
+        ":config_header",
+    ],
+)
+
+cc_library(
+    name = "fft_config",
+    hdrs = ["config/KokkosFFT_config.hpp"],
+    strip_include_prefix = "config",
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+    visibility = ["//visibility:public"],
+)
