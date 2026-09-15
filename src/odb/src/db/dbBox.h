@@ -51,7 +51,8 @@ struct _dbBoxFlags
   uint32_t octilinear : 1;
   uint32_t is_tech_via : 1;
   uint32_t is_block_via : 1;
-  uint32_t layer_id : 9;
+  uint32_t is_sub_via : 1 = 0;
+  uint32_t layer_id : 8;
   uint32_t via_id : 13;
   uint32_t layer_mask : 2;
 };

@@ -94,6 +94,9 @@ Pin* Network::addPin(odb::dbITerm* term)
         if (layer == nullptr) {
           continue;
         }
+        // if (box->isSubVia()) {
+        //   std::cerr << "Using sub via box" << std::endl << std::flush;
+        // }
         if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
           continue;
         }
