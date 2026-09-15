@@ -79,6 +79,42 @@ set_annealing_initial_ops(int set_annealing_initial_ops)
 }
 
 void
+set_emap_create_po_buffers(bool create_po_buffers)
+{
+  getRestructure()->setEmapCreatePoBuffers(create_po_buffers);
+}
+
+void
+set_emap_insert_buffers(bool insert_buffers)
+{
+  getRestructure()->setEmapInsertBuffers(insert_buffers);
+}
+
+void
+set_emap_map_multioutput(bool map_multioutput)
+{
+  getRestructure()->setEmapMapMultioutput(map_multioutput);
+}
+
+void
+set_emap_verbose(bool verbose)
+{
+  getRestructure()->setEmapVerbose(verbose);
+}
+
+void
+set_emap_max_drive_resistance(double max_drive_resistance)
+{
+  getRestructure()->setEmapMaxDriveResistance(max_drive_resistance);
+}
+
+void
+set_emap_min_drive_resistance(double min_drive_resistance)
+{
+  getRestructure()->setEmapMinDriveResistance(min_drive_resistance);
+}
+
+void
 set_genetic_seed(int genetic_seed)
 {
   getRestructure()->setGeneticSeed(genetic_seed);
@@ -91,7 +127,7 @@ set_genetic_population_size(int genetic_population_size)
 }
 
 void
-  set_genetic_mutation_probability(float genetic_mutation_probability)
+set_genetic_mutation_probability(float genetic_mutation_probability)
 {
   getRestructure()->setGeneticMutationProbability(genetic_mutation_probability);
 }
@@ -126,15 +162,21 @@ set_genetic_initial_ops(int genetic_initial_ops)
   getRestructure()->setGeneticInitialOps(genetic_initial_ops);
 }
 
-void resynth_cmd(Scene* corner) {
-  getRestructure()->resynth(corner);
+void
+resynth_cmd(Scene* scene)
+{
+  getRestructure()->resynth(scene);
 }
 
-void resynth_annealing_cmd(Scene* corner) {
-  getRestructure()->resynthAnnealing(corner);
+void
+resynth_annealing_cmd(Scene* scene)
+{
+  getRestructure()->resynthAnnealing(scene);
 }
 
-void resynth_genetic_cmd(Scene* corner) {
+void
+resynth_genetic_cmd(Scene* corner)
+{
   getRestructure()->resynthGenetic(corner);
 }
 
@@ -162,6 +204,12 @@ void blif_dump(cut::Blif* blif_, const char* file_name){
 
 int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
+}
+
+void
+resynth_emap_cmd(Scene* scene)
+{
+  getRestructure()->resynthEmap(scene);
 }
 
 %}

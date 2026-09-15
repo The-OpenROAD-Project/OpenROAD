@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2023-2025, The OpenROAD Authors
+// Copyright (c) 2023-2026, The OpenROAD Authors
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
@@ -25,6 +25,7 @@
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "helper.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "misc/vec/vecPtr.h"
@@ -57,68 +58,9 @@ using cut::LogicCut;
 using cut::LogicExtractorFactory;
 using ::testing::Contains;
 
-static std::once_flag init_abc_flag;
-
-static const std::string kPrefix("_main/src/cut/test/");
-
-class AbcTest : public tst::Fixture
+class AbcTest : public CutFixture
 {
  protected:
-  void SetUp() override
-  {
-    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
-    library_ = readLiberty(kPrefix + "Nangate45/Nangate45_typ.lib");
-
-    odb::dbTech* tech
-        = loadTechLef("nangate45", kPrefix + "Nangate45/Nangate45_tech.lef");
-    loadLibaryLef(
-        tech, "nangate45", kPrefix + "Nangate45/Nangate45_stdcell.lef");
-
-    sta::Units* units = library_->units();
-    power_unit_ = units->powerUnit();
-  }
-
-  void LoadVerilog(const std::string& file_name, const std::string& top = "top")
-  {
-    // Assumes module name is "top" and clock name is "clk"
-    sta::dbNetwork* network = sta_->getDbNetwork();
-    ord::dbVerilogNetwork verilog_network(sta_.get());
-
-    sta::VerilogReader verilog_reader(&verilog_network);
-    verilog_reader.read(getFilePath(file_name).c_str());
-
-    ord::dbLinkDesign(top.c_str(),
-                      &verilog_network,
-                      db_.get(),
-                      &logger_,
-                      /*hierarchy = */ false);
-
-    sta_->postReadDb(db_.get());
-
-    sta::Cell* top_cell = network->cell(network->topInstance());
-    sta::Port* clk_port = network->findPort(top_cell, "clk");
-    sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
-
-    sta::PinSet pinset(network);
-    pinset.insert(clk_pin);
-
-    // 0.5ns
-    double period = sta_->units()->timeUnit()->userToSta(0.5);
-    sta::FloatSeq waveform;
-    waveform.push_back(0);
-    waveform.push_back(period / 2.0);
-
-    sta_->makeClock("core_clock",
-                    pinset,
-                    /*add_to_pins=*/false,
-                    /*period=*/period,
-                    waveform,
-                    /*comment=*/"",
-                    /*mode=*/sta_->cmdMode());
-
-    sta_->ensureGraph();
-    sta_->ensureLevelized();
-  }
   std::map<std::string, int> AbcLogicNetworkNameToPrimaryOutputIds(
       abc::Abc_Ntk_t* network)
   {
@@ -131,17 +73,12 @@ class AbcTest : public tst::Fixture
 
     return primary_output_name_to_index;
   }
-
-  sta::Unit* power_unit_;
-  sta::LibertyLibrary* library_;
 };
 
 class AbcTestSky130 : public AbcTest
 {
-  void SetUp() override
+  void InitLibrary() override
   {
-    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
-
     library_
         = readLiberty(kPrefix + "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
 
@@ -150,18 +87,13 @@ class AbcTestSky130 : public AbcTest
         tech, "sky130", kPrefix + "sky130/sky130hd_std_cell.lef");
 
     sta_->postReadLef(tech, lib);
-
-    sta::Units* units = library_->units();
-    power_unit_ = units->powerUnit();
   }
 };
 
 class AbcTestAsap7 : public AbcTest
 {
-  void SetUp() override
+  void InitLibrary() override
   {
-    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
-
     std::array<const char*, 5> liberty_paths
         = {"asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
            "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
@@ -179,9 +111,6 @@ class AbcTestAsap7 : public AbcTest
         tech, "asap7", kPrefix + "asap7/asap7sc7p5t_28_R_1x_220121a.lef");
 
     sta_->postReadLef(tech, lib);
-
-    sta::Units* units = library_->units();
-    power_unit_ = units->powerUnit();
   }
 };
 
