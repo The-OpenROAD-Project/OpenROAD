@@ -214,7 +214,7 @@ class tmg_conn
   void addITerm(dbITerm* iterm);
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
-  void connectTerm(int j, bool soft);
+  void connectTerm(int terminal_index, bool soft);
   void connectTermSoft(int j, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
   void relocateShorts();
@@ -251,10 +251,8 @@ class tmg_conn
 
   // Used for determining the wire points that represent the connection
   // with terminals.
-  std::vector<CandidateSections> csVV_;
-  CandidateSections* csV_{nullptr};
-  std::vector<int> csNV_;
-  int csN_{0};
+  std::vector<CandidateSections> candidate_sections_;
+  std::vector<int> candidate_section_count_;
   WirePoint* first_for_clear_{nullptr};
   int slicedTilePinCnt_{0};
   int stbtx1_[200];
