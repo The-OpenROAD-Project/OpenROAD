@@ -64,5 +64,15 @@ bool ScanCellMock::isPlaced() const
   return false;
 }
 
+odb::Point ScanCellMock::getScanInLocation() const
+{
+  return odb::Point();
+}
+
+odb::Point ScanCellMock::getScanOutLocation() const
+{
+  return odb::Point();
+}
+
 }  // namespace test
 }  // namespace dft
