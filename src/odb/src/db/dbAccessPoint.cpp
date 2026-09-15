@@ -436,10 +436,10 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
     }
     for (const auto& iterm_id : _ap->iterms_) {
       _dbITerm* iterm = block->iterm_tbl_->getPtr(iterm_id);
-      auto ap_itr = iterm->aps_.begin();
-      while (ap_itr != iterm->aps_.end()) {
+      auto ap_itr = iterm->aps().begin();
+      while (ap_itr != iterm->aps().end()) {
         if ((*ap_itr).second == ap->getImpl()->getOID()) {
-          iterm->aps_.erase(ap_itr);
+          iterm->aps().erase(ap_itr);
           break;
         }
         ++ap_itr;
