@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -74,6 +75,50 @@ TEST_F(SimpleDbFixture, test_default)
             ->getPrefAccessPoints();
   EXPECT_EQ(aps.size(), 0);
   dbDatabase::destroy(db2);
+}
+
+TEST_F(SimpleDbFixture, SwapMasterClearsAndInvalidatesAccessPoints)
+{
+  createSimpleDB();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbLib* lib = db_->findLib("lib1");
+  ASSERT_NE(lib, nullptr);
+  dbMaster* old_master = db_->findMaster("and2");
+  ASSERT_NE(old_master, nullptr);
+  dbMaster* new_master
+      = createMaster2X1(lib, "and2_x4", 2000, 1000, "a", "b", "o");
+  ASSERT_NE(new_master, nullptr);
+  dbMTerm* old_term = old_master->findMTerm("a");
+  ASSERT_NE(old_term, nullptr);
+  dbMTerm* new_term = new_master->findMTerm("a");
+  ASSERT_NE(new_term, nullptr);
+
+  // Create APs on both masters so a stale pin-access index would be visible.
+  dbMPin* old_pin = dbMPin::create(old_term);
+  ASSERT_NE(old_pin, nullptr);
+  dbAccessPoint* old_ap = dbAccessPoint::create(block, old_pin, 0);
+  ASSERT_NE(old_ap, nullptr);
+  dbMPin* new_pin = dbMPin::create(new_term);
+  ASSERT_NE(new_pin, nullptr);
+  dbAccessPoint* new_ap = dbAccessPoint::create(block, new_pin, 0);
+  ASSERT_NE(new_ap, nullptr);
+
+  dbInst* inst = dbInst::create(block, old_master, "i1");
+  ASSERT_NE(inst, nullptr);
+  dbITerm* iterm = inst->getITerm(old_term);
+  ASSERT_NE(iterm, nullptr);
+  inst->setPinAccessIdx(0);
+  iterm->setAccessPoint(old_pin, old_ap);
+  ASSERT_EQ(iterm->getPrefAccessPoints().size(), 1);
+  ASSERT_EQ(iterm->getAccessPoints().at(old_pin).size(), 1);
+
+  ASSERT_TRUE(inst->swapMaster(new_master));
+  dbITerm* swapped_iterm = inst->findITerm("a");
+  ASSERT_NE(swapped_iterm, nullptr);
+
+  EXPECT_EQ(inst->getPinAccessIdx(), static_cast<uint32_t>(-1));
+  EXPECT_TRUE(swapped_iterm->getPrefAccessPoints().empty());
+  EXPECT_TRUE(swapped_iterm->getAccessPoints().empty());
 }
 
 }  // namespace

@@ -81,40 +81,7 @@ proc make_rows { args } {
 
 proc make_rows_helper { key_array } {
   array set keys $key_array
-  set site ""
-  if { [info exists keys(-site)] } {
-    set site [ifp::find_site $keys(-site)]
-  } else {
-    utl::error IFP 35 "use -site to add placement rows."
-  }
-
-  set additional_sites {}
-  if { [info exists keys(-additional_sites)] } {
-    foreach sitename $keys(-additional_sites) {
-      lappend additional_sites [ifp::find_site $sitename]
-    }
-  }
-
-  set flipped_sites {}
-  if { [info exists keys(-flip_sites)] } {
-    foreach sitename $keys(-flip_sites) {
-      lappend flipped_sites [ifp::find_site $sitename]
-    }
-  }
-
-  set row_parity "NONE"
-  if { [info exists keys(-row_parity)] } {
-    set row_parity $keys(-row_parity)
-    if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
-      utl::error IFP 57 "-row_parity must be NONE, ODD or EVEN"
-    }
-  }
-
-  # Get gap space
-  set gap [expr -(2 ** 31)]
-  if { [info exists keys(-gap)] } {
-    set gap [ord::microns_to_dbu $keys(-gap)]
-  }
+  lassign [ifp::parse_row_params keys] site additional_sites flipped_sites row_parity gap
 
   if { [info exists keys(-core_area)] } {
     if { [info exists keys(-core_space)] } {
@@ -193,7 +160,7 @@ proc make_tracks { args } {
     keys {-x_pitch -y_pitch -x_offset -y_offset} \
     flags {}
 
-  sta::check_argc_eq0or1 "initialize_floorplan" $args
+  sta::check_argc_eq0or1 "make_tracks" $args
 
   set tech [ord::get_db_tech]
 
@@ -211,8 +178,8 @@ proc make_tracks { args } {
 
     if { [info exists keys(-x_pitch)] } {
       set x_pitch $keys(-x_pitch)
-      set x_pitch [ifp::microns_to_mfg_grid $x_pitch]
       sta::check_positive_float "-x_pitch" $x_pitch
+      set x_pitch [ifp::microns_to_mfg_grid $x_pitch]
     } else {
       set x_pitch [$layer getPitchX]
     }
@@ -227,8 +194,8 @@ proc make_tracks { args } {
 
     if { [info exists keys(-y_pitch)] } {
       set y_pitch $keys(-y_pitch)
-      set y_pitch [ifp::microns_to_mfg_grid $y_pitch]
       sta::check_positive_float "-y_pitch" $y_pitch
+      set y_pitch [ifp::microns_to_mfg_grid $y_pitch]
     } else {
       set y_pitch [$layer getPitchY]
     }
@@ -286,6 +253,45 @@ proc insert_tiecells { args } {
 }
 
 namespace eval ifp {
+proc parse_row_params { key_array_name } {
+  upvar $key_array_name keys
+
+  if { [info exists keys(-site)] } {
+    set site [find_site $keys(-site)]
+  } else {
+    utl::error IFP 35 "use -site to add placement rows."
+  }
+
+  set additional_sites {}
+  if { [info exists keys(-additional_sites)] } {
+    foreach sitename $keys(-additional_sites) {
+      lappend additional_sites [find_site $sitename]
+    }
+  }
+
+  set flipped_sites {}
+  if { [info exists keys(-flip_sites)] } {
+    foreach sitename $keys(-flip_sites) {
+      lappend flipped_sites [find_site $sitename]
+    }
+  }
+
+  set row_parity "NONE"
+  if { [info exists keys(-row_parity)] } {
+    set row_parity $keys(-row_parity)
+    if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
+      utl::error IFP 57 "-row_parity must be NONE, ODD or EVEN"
+    }
+  }
+
+  set gap [expr -(2 ** 31)]
+  if { [info exists keys(-gap)] } {
+    set gap [ord::microns_to_dbu $keys(-gap)]
+  }
+
+  return [list $site $additional_sites $flipped_sites $row_parity $gap]
+}
+
 proc microns_to_mfg_grid { microns } {
   set tech [ord::get_db_tech]
   if { [$tech hasManufacturingGrid] } {
@@ -392,11 +398,6 @@ proc make_polygon_die_helper { key_array } {
       utl::error IFP 78 "Invalid die polygon coordinate\
       at position [expr $point_count*2]: '$x $y' - must be numeric"
     }
-    # Check for negative coordinates
-    # if {$x < 0 || $y < 0} {
-    #   utl::error IFP 79 "Die polygon coordinates must be non-negative. Found: ($x, $y)"
-    # }
-
     lappend polygon_vertices [ord::microns_to_dbu $x]
     lappend polygon_vertices [ord::microns_to_dbu $y]
 
@@ -416,44 +417,7 @@ proc make_polygon_rows_helper { key_array } {
     utl::error IFP 85 "no -core_area specified for polygonal floorplan."
   }
 
-  # Get the site information (required for polygon rows)
-  set site ""
-  if { [info exists keys(-site)] } {
-    set site [ifp::find_site $keys(-site)]
-  } else {
-    utl::error IFP 80 "use -site to add placement rows for polygon floorplan."
-  }
-
-  # Get additional sites
-  set additional_sites {}
-  if { [info exists keys(-additional_sites)] } {
-    foreach sitename $keys(-additional_sites) {
-      lappend additional_sites [ifp::find_site $sitename]
-    }
-  }
-
-  # Get flipped sites
-  set flipped_sites {}
-  if { [info exists keys(-flip_sites)] } {
-    foreach sitename $keys(-flip_sites) {
-      lappend flipped_sites [ifp::find_site $sitename]
-    }
-  }
-
-  # Get row parity
-  set row_parity "NONE"
-  if { [info exists keys(-row_parity)] } {
-    set row_parity $keys(-row_parity)
-    if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
-      utl::error IFP 81 "-row_parity must be NONE, ODD or EVEN"
-    }
-  }
-
-  # Get gap space
-  set gap [expr -(2 ** 31)]
-  if { [info exists keys(-gap)] } {
-    set gap [ord::microns_to_dbu $keys(-gap)]
-  }
+  lassign [parse_row_params keys] site additional_sites flipped_sites row_parity gap
 
   # Handle core polygon - this is the key difference from rectangular rows
   if { [info exists keys(-core_area)] } {

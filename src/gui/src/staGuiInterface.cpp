@@ -15,6 +15,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -37,6 +38,7 @@
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VisitPathEnds.hh"
 #include "utl/Logger.h"
 
@@ -224,7 +226,7 @@ void TimingPath::populateNodeList(sta::Path* path,
     }
 
     float cap = 0.0;
-    if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
+    if (is_driver && (clock_expanded || (!network->isCheckClk(pin) && i))) {
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
       cap = graph_delay_calc->loadCap(
           pin, ref->transition(sta), ref->scene(sta), ref->minMax(sta));
@@ -547,7 +549,11 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
       level_(0),
       subtree_visibility_(true)
 {
-  net_ = getNet(*clock_->pins().begin());
+  // A virtual clock has no pins; net_ stays null and ClockWidget::populate
+  // skips the tree. Dereferencing pins().begin() here would be UB.
+  if (!clock_->pins().empty()) {
+    net_ = getNet(*clock_->pins().begin());
+  }
 }
 
 std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility = false) const
@@ -677,7 +683,7 @@ int ClockTree::getMaxLeaves(bool visibility = false) const
 
 sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 {
-  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+  sta::Delay minimum = std::numeric_limits<float>::max();
   if (!visibility or isVisible()) {
     for (const auto& [driver, arrival] : drivers_) {
       minimum = std::min(minimum, arrival);
@@ -699,7 +705,7 @@ sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 
 sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 {
-  sta::Delay maximum = std::numeric_limits<sta::Delay>::min();
+  sta::Delay maximum = std::numeric_limits<float>::min();
   if (!visibility or isVisible()) {
     for (const auto& [driver, arrival] : drivers_) {
       maximum = std::max(maximum, arrival);
@@ -721,12 +727,12 @@ sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 
 sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
 {
-  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+  sta::Delay minimum = std::numeric_limits<float>::max();
   if (!visibility or isVisible()) {
     if (parent_ != nullptr) {
       for (const auto& [driver, arrival] : drivers_) {
         const auto& [parent_sink, time] = parent_->getPairedSink(driver);
-        minimum = std::min(minimum, arrival - time);
+        minimum = std::min(minimum, sta::Delay(arrival - time));
       }
     }
   }
@@ -740,9 +746,9 @@ sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
   return minimum;
 }
 
-std::set<odb::dbNet*> ClockTree::getNets(bool visibility = false) const
+odb::PtrSet<odb::dbNet> ClockTree::getNets(bool visibility = false) const
 {
-  std::set<odb::dbNet*> nets;
+  odb::PtrSet<odb::dbNet> nets;
 
   if (!visibility or subtree_visibility_) {
     if (net_ != nullptr) {
@@ -851,12 +857,23 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
 
   std::vector<std::pair<const sta::Pin*, const sta::Pin*>> path;
 
+  if (drivers_.empty()) {
+    // No driver, so there is no root to walk towards.
+    return path;
+  }
+
   // looking for path to root
   const sta::Pin* root = drivers_.begin()->first;
 
   const sta::Pin* search_pin = pin;
   while (search_pin != root) {
     const auto& connections = pin_map[search_pin];
+
+    if (connections.empty()) {
+      // search_pin is not connected to anything in this tree, so the walk
+      // cannot reach the root.
+      break;
+    }
 
     for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);
@@ -959,7 +976,8 @@ void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
         return;
       }
     }
-    worst_slack_ = std::min(worst_slack_, path_end->slack(sta_));
+    worst_slack_
+        = std::min(worst_slack_, sta::delayAsFloat(path_end->slack(sta_)));
     if (!has_slack_) {
       has_slack_ = true;
     }
@@ -1005,7 +1023,7 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
   std::set<std::string> group_paths_names;
   sta::Sdc* sdc = scene_->sdc();
   sta::GroupPathMap group_paths_map = sdc->groupPaths();
-  for (const auto [name, group_paths] : group_paths_map) {
+  for (const auto& [name, group_paths] : group_paths_map) {
     group_paths_names.insert(name);
   }
   return group_paths_names;
@@ -1016,7 +1034,7 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 // when running "report_checks".
 void STAGuiInterface::updatePathGroups()
 {
-  sta::StdStringSeq empty_group_names;
+  sta::StringSeq empty_group_names;
   for (sta::Mode* mode : sta_->modes()) {
     mode->makePathGroups(1,                 /* group count */
                          1,                 /* endpoint count*/
@@ -1177,7 +1195,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
                                  scene_->sdc());
   }
 
-  sta::StdStringSeq group_names;
+  sta::StringSeq group_names;
   if (!path_group_name.empty()) {
     group_names = {path_group_name};
   }

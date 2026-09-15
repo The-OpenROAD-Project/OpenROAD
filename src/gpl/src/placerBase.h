@@ -121,7 +121,7 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
+  Pin(odb::dbBTerm* bTerm, utl::Logger* logger, bool placeIosMode = false);
   ~Pin();
 
   odb::dbITerm* getDbITerm() const;
@@ -188,7 +188,9 @@ class Pin
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
 
-  void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
+  void updateCoordi(odb::dbBTerm* bTerm,
+                    utl::Logger* logger,
+                    bool placeIosMode = false);
 };
 
 class Net
@@ -276,6 +278,7 @@ struct PlacerBaseVars
   const int padLeft;
   const int padRight;
   const bool skipIoMode;
+  const bool placeIosMode;
   const bool disablePinDensityAdjust;
 };
 
@@ -358,6 +361,7 @@ class PlacerBase
   PlacerBase(odb::dbDatabase* db,
              std::shared_ptr<PlacerBaseCommon> pbCommon,
              utl::Logger* log,
+             bool check_density,
              odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
@@ -383,7 +387,7 @@ class PlacerBase
   int getSiteSizeY() const { return siteSizeY_; }
 
   int64_t getHpwl() const;
-  void printInfo() const;
+  void printInfo(bool check_density) const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
@@ -427,7 +431,7 @@ class PlacerBase
   std::shared_ptr<PlacerBaseCommon> pbCommon_;
   odb::dbGroup* group_ = nullptr;
 
-  void init();
+  void init(bool check_density);
   void initInstsForUnusableSites();
 
   void reset();

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "grid_component.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -65,7 +66,7 @@ class Straps : public GridComponent
   }
 
   void report() const override;
-  Type type() const override { return GridComponent::Strap; }
+  Type type() const override { return GridComponent::kStrap; }
 
   void checkLayerSpecifications() const override;
 
@@ -77,6 +78,11 @@ class Straps : public GridComponent
   bool checkLayerOffsetSpecification(bool error = false) const;
   std::string getNetString() const;
 
+  // True when offset_ is written in the grid's as-drawn frame and therefore
+  // has to be mirrored for a flipped instance.  Components that resolve their
+  // own absolute position return false.
+  virtual bool honorsGridFlip() const { return true; }
+
  private:
   odb::dbTechLayer* layer_;
   int width_;
@@ -86,15 +92,19 @@ class Straps : public GridComponent
   int number_of_straps_;
   odb::dbTechLayerDir direction_;
   bool snap_ = false;
-  ExtensionMode extend_mode_ = ExtensionMode::CORE;
+  ExtensionMode extend_mode_ = ExtensionMode::kCore;
   int strap_start_ = 0;
   int strap_end_ = 0;
   bool allow_out_of_core_ = false;
 
-  void makeStraps(int x_start,
-                  int y_start,
-                  int x_end,
-                  int y_end,
+  // Sweep the strap positions along one axis.  extent_start/extent_end are the
+  // fixed span of every strap on the other axis; offset_ is measured from
+  // pos_origin and the sweep advances towards pos_limit, so pos_limit sitting
+  // below pos_origin is what makes the sweep run backwards for a mirrored grid.
+  void makeStraps(int extent_start,
+                  int extent_end,
+                  int pos_origin,
+                  int pos_limit,
                   int abs_start,
                   int abs_end,
                   bool is_delta_x,
@@ -109,14 +119,17 @@ class FollowPins : public Straps
 
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 
-  Type type() const override { return GridComponent::Followpin; }
+  Type type() const override { return GridComponent::kFollowpin; }
 
   void checkLayerSpecifications() const override;
 
  private:
+  int row_height_;
+
   // search for the shape of the power pins in the standard cells to determine
   // the width if possible
   void determineWidth();
+  void determinePitch();
 };
 
 class PadDirectConnectionStraps : public Straps
@@ -125,19 +138,22 @@ class PadDirectConnectionStraps : public Straps
   PadDirectConnectionStraps(
       Grid* grid,
       odb::dbITerm* iterm,
-      const std::vector<odb::dbTechLayer*>& connect_pad_layers);
+      const std::vector<odb::dbTechLayer*>& connect_pad_layers,
+      std::shared_ptr<odb::PtrMap<odb::dbNet, int>>& net_to_pin_count);
 
   // true if the iterm can be connected to a ring
   bool canConnect() const;
 
   void setTargetType(odb::dbWireShapeType type) { target_shapes_type_ = type; }
 
+  bool make(Shape::ShapeTreeMap& shapes,
+            Shape::ObstructionTreeMap& obstructions) override;
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
   bool refineShapes(Shape::ShapeTreeMap& all_shapes,
                     Shape::ObstructionTreeMap& all_obstructions) override;
 
   void report() const override;
-  Type type() const override { return GridComponent::PadConnect; }
+  Type type() const override { return GridComponent::kPadConnect; }
 
   // disable layer spec checks
   void checkLayerSpecifications() const override {}
@@ -152,12 +168,16 @@ class PadDirectConnectionStraps : public Straps
   static void unifyConnectionTypes(
       const std::vector<PadDirectConnectionStraps*>& straps);
 
+  // report how the connections made to the pads are distributed over the nets
+  static void reportConnectionBalance(
+      const std::vector<GridComponent*>& components);
+
  private:
   enum class ConnectionType
   {
-    None,
-    Edge,
-    OverPads
+    kNone,
+    kEdge,
+    kOverPads
   };
 
   odb::dbITerm* iterm_;
@@ -165,10 +185,21 @@ class PadDirectConnectionStraps : public Straps
   std::map<Shape*, Shape*> target_shapes_;
   std::map<Shape*, odb::Rect> target_pin_shape_;
   odb::dbDirection pad_edge_;
-  ConnectionType type_ = ConnectionType::None;
+  ConnectionType type_ = ConnectionType::kNone;
   std::vector<odb::dbTechLayer*> layers_;
 
   std::vector<odb::dbBox*> pins_;
+
+  std::shared_ptr<odb::PtrMap<odb::dbNet, int>> net_to_pin_count_;
+
+  // shape this strap is currently attempting to reach and the pin it
+  // originated from, used to check if the strap survived cutting
+  ShapePtr target_;
+  odb::Rect target_pin_;
+
+  // number of times the connections on this pad have been built
+  static constexpr int kMaxGroupBuildAttempts = 2;
+  int group_attempts_ = 0;
 
   std::string getName() const;
 
@@ -179,10 +210,38 @@ class PadDirectConnectionStraps : public Straps
 
   std::vector<odb::dbBox*> getPinsFacingCore();
   std::vector<odb::dbBox*> getPinsFormingRing();
-  std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> getPinsByLayer() const;
+  odb::PtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> getPinsByLayer()
+      const;
 
   void makeShapesFacingCore(const Shape::ShapeTreeMap& other_shapes);
-  void makeShapesOverPads(const Shape::ShapeTreeMap& other_shapes);
+
+  // the connections on a pad are built together so that they can be placed
+  // with knowledge of each other and balanced across the nets
+  bool buildGroup(Shape::ShapeTreeMap& shapes,
+                  Shape::ObstructionTreeMap& obstructions);
+  // build this strap at a given position on the pad, returns true if the
+  // strap survives cutting and still reaches the shape it is targeting
+  bool buildOverPadAt(int offset,
+                      const Shape::ShapeTreeMap& other_shapes,
+                      const Shape::ObstructionTreeMap& obstructions);
+  bool makeShapeOverPad(int offset, const Shape::ShapeTreeMap& other_shapes);
+  // find a position on the pad where this strap can reach the ring
+  bool buildOverPad(int index,
+                    const Shape::ShapeTreeMap& other_shapes,
+                    const Shape::ObstructionTreeMap& obstructions);
+  // determine the width and spacing shared by the straps on this pad
+  bool computeOverPadLanes(int group_size, int& width, int& spacing) const;
+  // position the strap at index would historically have been built at
+  int getDefaultLaneOffset(int index, int width, int spacing) const;
+  odb::Rect getMergedPinShape() const;
+  void clearOverPadShapes();
+  // discard the shapes that no longer reach anything on the net after cutting
+  bool keepShapesReachingTarget(const Shape::ShapeTreeMap& other_shapes);
+  Shape* findConnectableShape(const odb::Rect& rect,
+                              const Shape::ShapeTreeMap& other_shapes) const;
+
+  int getNetConnectionCount() const;
+  void addNetConnection();
 
   std::vector<PadDirectConnectionStraps*> getAssociatedStraps() const;
   const std::vector<odb::dbBox*>& getPins() const { return pins_; }
@@ -204,8 +263,8 @@ class PadDirectConnectionStraps : public Straps
 
   bool refineShape(Shape* shape,
                    const odb::Rect& pin_shape,
-                   Shape::ShapeTreeMap& all_shapes,
-                   Shape::ObstructionTreeMap& all_obstructions);
+                   const Shape::ShapeTreeMap& all_shapes,
+                   const Shape::ObstructionTreeMap& all_obstructions);
   bool isTargetShape(const Shape* shape) const;
 };
 
@@ -216,12 +275,12 @@ class RepairChannelStraps : public Straps
                       Straps* target,
                       odb::dbTechLayer* connect_to,
                       const Shape::ObstructionTreeMap& other_shapes,
-                      const std::set<odb::dbNet*>& nets,
+                      const odb::PtrSet<odb::dbNet>& nets,
                       const odb::Rect& area,
                       const odb::Rect& available_area,
                       const odb::Rect& obs_check_area);
 
-  Type type() const override { return GridComponent::RepairChannel; }
+  Type type() const override { return GridComponent::kRepairChannel; }
 
   void report() const override;
 
@@ -241,7 +300,7 @@ class RepairChannelStraps : public Straps
 
   bool isAutoInserted() const override { return true; }
 
-  void addNets(const std::set<odb::dbNet*>& nets)
+  void addNets(const odb::PtrSet<odb::dbNet>& nets)
   {
     nets_.insert(nets.begin(), nets.end());
   }
@@ -262,13 +321,19 @@ class RepairChannelStraps : public Straps
     odb::Rect obs_area;
     Straps* target;
     odb::dbTechLayer* connect_to;
-    std::set<odb::dbNet*> nets;
+    odb::PtrSet<odb::dbNet> nets;
   };
   // find all straps in grid that are not connected for anything
   static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
 
+ protected:
+  // determineOffset resolves an absolute position from the channel geometry and
+  // converts it to a low-edge offset, so it is already in the placed frame and
+  // must not be mirrored again
+  bool honorsGridFlip() const override { return false; }
+
  private:
-  std::set<odb::dbNet*> nets_;
+  odb::PtrSet<odb::dbNet> nets_;
   odb::dbTechLayer* connect_to_;
   odb::Rect area_;
   odb::Rect available_area_;

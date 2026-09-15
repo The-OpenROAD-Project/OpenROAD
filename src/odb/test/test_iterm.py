@@ -54,6 +54,28 @@ class TestITerm(odbUnitTest.TestCase):
         self.assertIsNone(self.iterm_a.getNet())
         self.assertFalse(self.iterm_a.isConnected())
 
+    def test_equality(self):
+        n = odb.dbNet_create(self.block, "n1")
+        self.iterm_a.connect(n)
+
+        iterm_via_find = self.inst.findITerm("a")
+        iterm_via_net = n.getITerms()[0]
+
+        self.assertEqual(iterm_via_find, self.iterm_a)
+        self.assertEqual(iterm_via_net, self.iterm_a)
+        self.assertEqual(iterm_via_find, iterm_via_net)
+        self.assertFalse(iterm_via_find != self.iterm_a)
+        self.assertFalse(iterm_via_net != self.iterm_a)
+        self.assertEqual(hash(iterm_via_find), hash(self.iterm_a))
+        self.assertEqual(hash(iterm_via_net), hash(self.iterm_a))
+        iterm_set = {self.iterm_a, iterm_via_find, iterm_via_net}
+        self.assertEqual(len(iterm_set), 1)
+
+        # Different iterms must not compare equal.
+        iterm_b = self.inst.findITerm("b")
+        self.assertNotEqual(self.iterm_a, iterm_b)
+        self.assertTrue(self.iterm_a != iterm_b)
+
     def test_avgxy_R0(self):
         result, x, y = self.iterm_a.getAvgXY()
         self.assertFalse(result)  # no mpin to work on

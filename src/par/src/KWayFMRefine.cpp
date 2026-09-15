@@ -64,7 +64,7 @@ float KWayFMRefine::Pass(
   // fixed vertices will not be identified as boundary vertices
   std::vector<int> boundary_vertices
       = FindBoundaryVertices(hgraph, net_degs, visited_vertices_flag);
-  if (boundary_vertices.empty() == true) {
+  if (boundary_vertices.empty()) {
     return 0.0f;  // no vertices are available
   }
   // Initialize current gain in a multi-thread manner
@@ -247,7 +247,7 @@ std::shared_ptr<VertexGain> KWayFMRefine::PickMoveKWay(
 
   // checking the first elements in each bucket
   for (int i = 0; i < num_parts_; ++i) {
-    if (buckets[i]->GetStatus() == false) {
+    if (!buckets[i]->GetStatus()) {
       continue;  // This bucket is empty
     }
     auto ele = buckets[i]->GetMax();
@@ -261,8 +261,7 @@ std::shared_ptr<VertexGain> KWayFMRefine::PickMoveKWay(
                                    hgraph,
                                    curr_block_balance,
                                    upper_block_balance,
-                                   lower_block_balance)
-               == true) {
+                                   lower_block_balance)) {
       to_pid = i;
       candidate = ele;
     }
@@ -351,7 +350,7 @@ void KWayFMRefine::UpdateSingleGainBucket(
     auto gain_cell = CalculateVertexGain(
         v, from_part, part, hgraph, solution, cur_paths_cost, net_degs);
     // check if the vertex exists in current bucket
-    if (buckets[part]->CheckIfVertexExists(v) == true) {
+    if (buckets[part]->CheckIfVertexExists(v)) {
       // update the bucket with new gain
       buckets[part]->ChangePriority(v, gain_cell);
     } else {

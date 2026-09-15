@@ -1,6 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -55,6 +57,9 @@ COMPULSORY_TESTS = [
     "annealing_mirrored3",
     "annealing_mirrored4",
     "annealing_mirrored5",
+    "annealing_mirrored_hang",
+    "annealing_pdn_boundary",
+    "annealing_polygon",
     "blocked_region",
     "cells_not_placed",
     "exclude1",
@@ -94,9 +99,20 @@ COMPULSORY_TESTS = [
     "no_instance_pins",
     "no_pins",
     "no_tracks",
+    "obstruction_boundary",
     "on_grid",
     "partial_tracks",
     "partial_tracks_error",
+    "pdn_boundary_mirrored_pins",
+    "pdn_boundary_pg_pins",
+    "pdn_boundary_place_pin",
+    "pdn_boundary_stripes",
+    "pdn_boundary_stripes_length",
+    "pdn_boundary_stripes_no_pins",
+    "pdn_boundary_stripes_polygon",
+    "pdn_boundary_vias",
+    "pdn_near_boundary_stripes",
+    "pdn_near_boundary_stripes_length",
     "pin_extension",
     "pin_length",
     "pin_length_error",
@@ -108,6 +124,7 @@ COMPULSORY_TESTS = [
     "place_pin5",
     "place_pin6",
     "place_pin7",
+    "place_pin_blocked_edge",
     "place_pin_error1",
     "place_pin_error2",
     "place_pin_error3",
@@ -122,6 +139,7 @@ COMPULSORY_TESTS = [
     "top_layer7",
     "top_layer_error",
     "top_layer_error2",
+    "top_layer_pdn_spacing",
     "write_pin_placement1",
     "write_pin_placement2",
     "write_pin_placement3",
@@ -130,13 +148,7 @@ COMPULSORY_TESTS = [
     "write_pin_placement6",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "ppl_man_tcl_check",
-    "ppl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -190,3 +202,23 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "ppl_man_tcl_check",
+    srcs = ["ppl_man_tcl_check.py"],
+    data = ["//src/ppl:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "ppl_readme_msgs_check",
+    data = [
+        "//src/ppl:doc_files",
+        "//src/ppl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

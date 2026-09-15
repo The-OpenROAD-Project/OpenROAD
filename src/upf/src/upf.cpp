@@ -1468,7 +1468,7 @@ bool create_or_update_level_shifter(
   for (auto& c : upper_case_func_eqv) {
     c = toupper(c);
   }
-  ls->setUseFunctionalEquivalence(upper_case_func_eqv == "TRUE" ? true : false);
+  ls->setUseFunctionalEquivalence(upper_case_func_eqv == "TRUE");
 
   return true;
 }

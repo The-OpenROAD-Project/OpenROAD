@@ -469,7 +469,7 @@ decode_loop: {
       goto decode_loop;
 
     case kRule:
-      if (found_width == false) {
+      if (!found_width) {
         found_width = true;
 
         if (opcode & WOP_BLOCK_RULE) {
@@ -556,7 +556,8 @@ state_machine_update: {
     }
   } else if (state <= 3) {
     if ((opcode & WOP_EXTENSION) && !ignore_ext) {
-      cur_ext = wire->data_[idx + 1];
+      const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+      cur_ext = wire_op == kColinear ? wire->data_[idx] : wire->data_[idx + 1];
       has_cur_ext = true;
     }
   }
@@ -573,7 +574,7 @@ state_machine_update: {
 }
 }
 
-  while ((layer == nullptr) || (found_width == false)) {
+  while ((layer == nullptr) || (!found_width)) {
     assert(idx >= 0);
     opcode = wire->opcodes_[idx];
 
@@ -720,7 +721,7 @@ decode_loop: {
       goto decode_loop;
 
     case kRule:
-      if (found_width == false) {
+      if (!found_width) {
         found_width = true;
 
         if (opcode & WOP_BLOCK_RULE) {
@@ -786,7 +787,8 @@ state_machine_update: {
     }
   } else if (state <= 3) {
     if ((opcode & WOP_EXTENSION) && !ignore_ext) {
-      cur_ext = wire->data_[idx + 1];
+      const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+      cur_ext = wire_op == kColinear ? wire->data_[idx] : wire->data_[idx + 1];
       has_cur_ext = true;
     }
   }
@@ -803,7 +805,7 @@ state_machine_update: {
 }
 }
 
-  while (found_width == false) {
+  while (!found_width) {
     assert(idx >= 0);
     opcode = wire->opcodes_[idx];
 

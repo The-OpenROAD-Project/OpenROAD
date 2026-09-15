@@ -12,6 +12,7 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <string>
 #include <variant>
 
 #include "gui/heatMap.h"
@@ -40,6 +41,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
       max_range_selector_(new QDoubleSpinBox(this)),
       show_maxs_(new QCheckBox(this)),
       alpha_selector_(new QSpinBox(this)),
+      use_selected_only_(new QCheckBox(this)),
       rebuild_(new QPushButton("Rebuild data", this)),
       close_(new QPushButton("Close", this))
 {
@@ -65,6 +67,11 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   form->addRow(tr("Show numbers"), show_numbers_);
 
   form->addRow(tr("Show legend"), show_legend_);
+
+  const std::string selection_filter_label = source_.getSelectionFilterLabel();
+  if (!selection_filter_label.empty()) {
+    form->addRow(tr(selection_filter_label.c_str()), use_selected_only_);
+  }
 
   QHBoxLayout* grid_layout = new QHBoxLayout;
   if (!use_dbu_) {
@@ -195,6 +202,11 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           this,
           &HeatMapSetup::updateAlpha);
 
+  connect(use_selected_only_,
+          &QCheckBox::stateChanged,
+          this,
+          &HeatMapSetup::updateUseSelectedOnly);
+
   connect(this, &HeatMapSetup::changed, this, &HeatMapSetup::updateWidgets);
 
   connect(rebuild_, &QPushButton::pressed, this, &HeatMapSetup::destroyMap);
@@ -251,6 +263,8 @@ void HeatMapSetup::updateWidgets()
                                                         : Qt::Unchecked);
   show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked
                                                       : Qt::Unchecked);
+  use_selected_only_->setCheckState(source_.useSelectedOnly() ? Qt::Checked
+                                                              : Qt::Unchecked);
 }
 
 void HeatMapSetup::destroyMap()
@@ -317,6 +331,12 @@ void HeatMapSetup::updateGridSize()
 void HeatMapSetup::updateAlpha(int alpha)
 {
   source_.setColorAlpha(alpha);
+  emit changed();
+}
+
+void HeatMapSetup::updateUseSelectedOnly(int option)
+{
+  source_.setUseSelectedOnly(option == Qt::Checked);
   emit changed();
 }
 

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="555" height="345"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_TIME"
+      xlink:title="K_TIME">
+      <rect x="71" y="3" width="66" height="32"/>
+      <rect x="69" y="1" width="66" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="21">K_TIME</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_NANOSECONDS"
+      xlink:title="K_NANOSECONDS">
+      <rect x="157" y="3" width="132" height="32"/>
+      <rect x="155" y="1" width="132" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="165" y="21">K_NANOSECONDS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CAPACITANCE"
+      xlink:title="K_CAPACITANCE">
+      <rect x="71" y="47" width="124" height="32"/>
+      <rect x="69" y="45" width="124" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="65">K_CAPACITANCE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_PICOFARADS"
+      xlink:title="K_PICOFARADS">
+      <rect x="215" y="47" width="116" height="32"/>
+      <rect x="213" y="45" width="116" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="223" y="65">K_PICOFARADS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RESISTANCE"
+      xlink:title="K_RESISTANCE">
+      <rect x="71" y="91" width="114" height="32"/>
+      <rect x="69" y="89" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="109">K_RESISTANCE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OHMS"
+      xlink:title="K_OHMS">
+      <rect x="205" y="91" width="72" height="32"/>
+      <rect x="203" y="89" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="213" y="109">K_OHMS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_POWER"
+      xlink:title="K_POWER">
+      <rect x="71" y="135" width="82" height="32"/>
+      <rect x="69" y="133" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="153">K_POWER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_MILLIWATTS"
+      xlink:title="K_MILLIWATTS">
+      <rect x="173" y="135" width="114" height="32"/>
+      <rect x="171" y="133" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="181" y="153">K_MILLIWATTS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CURRENT"
+      xlink:title="K_CURRENT">
+      <rect x="71" y="179" width="94" height="32"/>
+      <rect x="69" y="177" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="197">K_CURRENT</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_MILLIAMPS"
+      xlink:title="K_MILLIAMPS">
+      <rect x="185" y="179" width="104" height="32"/>
+      <rect x="183" y="177" width="104" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="193" y="197">K_MILLIAMPS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_VOLTAGE"
+      xlink:title="K_VOLTAGE">
+      <rect x="71" y="223" width="92" height="32"/>
+      <rect x="69" y="221" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="241">K_VOLTAGE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_VOLTS"
+      xlink:title="K_VOLTS">
+      <rect x="183" y="223" width="76" height="32"/>
+      <rect x="181" y="221" width="76" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="191" y="241">K_VOLTS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_DATABASE"
+      xlink:title="K_DATABASE">
+      <rect x="71" y="267" width="100" height="32"/>
+      <rect x="69" y="265" width="100" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="285">K_DATABASE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_MICRONS"
+      xlink:title="K_MICRONS">
+      <rect x="191" y="267" width="94" height="32"/>
+      <rect x="189" y="265" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="199" y="285">K_MICRONS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="371" y="3" width="92" height="32"/>
+      <rect x="369" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="379" y="21">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_FREQUENCY"
+      xlink:title="K_FREQUENCY">
+      <rect x="51" y="311" width="110" height="32"/>
+      <rect x="49" y="309" width="110" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="329">K_FREQUENCY</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_MEGAHERTZ"
+      xlink:title="K_MEGAHERTZ">
+      <rect x="181" y="311" width="112" height="32"/>
+      <rect x="179" y="309" width="112" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="189" y="329">K_MEGAHERTZ</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="313" y="311" width="72" height="32"/>
+      <rect x="311" y="309" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="321" y="329">NUMBER</text>
+   </a>
+   <rect x="503" y="3" width="24" height="32" rx="10"/>
+   <rect x="501"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="511" y="21">;</text>
+   <path class="line"
+         d="m17 17 h2 m40 0 h10 m66 0 h10 m0 0 h10 m132 0 h10 m0 0 h42 m-300 0 h20 m280 0 h20 m-320 0 q10 0 10 10 m300 0 q0 -10 10 -10 m-310 10 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m124 0 h10 m0 0 h10 m116 0 h10 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m114 0 h10 m0 0 h10 m72 0 h10 m0 0 h54 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m82 0 h10 m0 0 h10 m114 0 h10 m0 0 h44 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m94 0 h10 m0 0 h10 m104 0 h10 m0 0 h42 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m92 0 h10 m0 0 h10 m76 0 h10 m0 0 h72 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m100 0 h10 m0 0 h10 m94 0 h10 m0 0 h46 m20 -264 h10 m92 0 h10 m-452 0 h20 m432 0 h20 m-472 0 q10 0 10 10 m452 0 q0 -10 10 -10 m-462 10 v288 m452 0 v-288 m-452 288 q0 10 10 10 m432 0 q10 0 10 -10 m-442 10 h10 m110 0 h10 m0 0 h10 m112 0 h10 m0 0 h10 m72 0 h10 m0 0 h78 m20 -308 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="545 17 553 13 553 21"/>
+   <polygon points="545 17 537 13 537 21"/>
+</svg>

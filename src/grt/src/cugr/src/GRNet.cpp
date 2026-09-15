@@ -1,6 +1,7 @@
 #include "GRNet.h"
 
 #include <cstdint>
+#include <optional>
 #include <unordered_set>
 #include <vector>
 
@@ -13,29 +14,32 @@
 
 namespace grt {
 
-GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
+GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
 {
-  index_ = baseNet.getIndex();
-  db_net_ = baseNet.getDbNet();
-  const int numPins = baseNet.getNumPins();
-  pin_access_points_.resize(numPins);
-  layer_range_ = baseNet.getLayerRange();
+  index_ = base_net.getIndex();
+  db_net_ = base_net.getDbNet();
+  const int num_pins = base_net.getNumPins();
+  pin_access_points_.resize(num_pins);
+  layer_range_ = base_net.getLayerRange();
   slack_ = 0;
   is_critical_ = false;
 
-  int pin_index = 0;
-  for (CUGRPin& pin : baseNet.getPins()) {
-    const std::vector<BoxOnLayer> pinShapes = pin.getPinShapes();
+  odb::dbObject* driver_term = db_net_->getFirstDriverTerm();
+  for (CUGRPin& pin : base_net.getPins()) {
+    const std::vector<BoxOnLayer> pin_shapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
-    for (const auto& pinShape : pinShapes) {
-      const BoxT cells = gridGraph->rangeSearchCells(pinShape);
+    for (const auto& pin_shape : pin_shapes) {
+      const BoxT cells = grid_graph->rangeSearchCells(pin_shape);
+      if (!cells.isValid()) {
+        continue;
+      }
       for (int x = cells.lx(); x <= cells.hx(); x++) {
         for (int y = cells.ly(); y <= cells.hy(); y++) {
-          const GRPoint point(pinShape.getLayerIdx(), x, y);
-          const uint64_t hash = gridGraph->hashCell(point);
+          const GRPoint point(pin_shape.getLayerIdx(), x, y);
+          const uint64_t hash = grid_graph->hashCell(point);
           if (included.find(hash) == included.end()) {
             pin_access_points_[pin.getIndex()].emplace_back(
-                pinShape.getLayerIdx(), x, y);
+                pin_shape.getLayerIdx(), x, y);
             included.insert(hash);
           }
         }
@@ -43,18 +47,32 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
     }
 
     if (pin.isPort()) {
-      pin_index_to_bterm_[pin_index] = pin.getBTerm();
+      pin_index_to_bterm_[pin.getIndex()] = pin.getBTerm();
+      if (pin.getBTerm() == driver_term) {
+        driver_pin_index_ = pin.getIndex();
+      }
     } else {
-      pin_index_to_iterm_[pin_index] = pin.getITerm();
+      pin_index_to_iterm_[pin.getIndex()] = pin.getITerm();
+      if (pin.getITerm() == driver_term) {
+        driver_pin_index_ = pin.getIndex();
+      }
     }
-    pin_index++;
   }
 
-  for (const auto& accessPoints : pin_access_points_) {
-    for (const auto& point : accessPoints) {
-      bounding_box_.Update(point);
+  for (const auto& access_points : pin_access_points_) {
+    for (const auto& point : access_points) {
+      bounding_box_.update(point);
     }
   }
+}
+
+std::optional<PointT> GRNet::getDriverAccessPoint() const
+{
+  if (const auto it = preferred_aps_.find(driver_pin_index_);
+      it != preferred_aps_.end()) {
+    return it->second.point;
+  }
+  return std::nullopt;
 }
 
 bool GRNet::isInsideLayerRange(int layer_index) const
@@ -63,57 +81,20 @@ bool GRNet::isInsideLayerRange(int layer_index) const
          && layer_index <= layer_range_.max_layer;
 }
 
-void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
-{
-  if (auto it = pin_index_to_iterm_.find(pin_index);
-      it != pin_index_to_iterm_.end()) {
-    odb::dbITerm* iterm = it->second;
-    iterm_to_ap_[iterm] = ap;
-  } else if (auto it = pin_index_to_bterm_.find(pin_index);
-             it != pin_index_to_bterm_.end()) {
-    odb::dbBTerm* bterm = it->second;
-    bterm_to_ap_[bterm] = ap;
-  }
-}
-
-void GRNet::addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap)
-{
-  bterm_to_ap_[bterm] = ap;
-}
-
-void GRNet::addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap)
-{
-  iterm_to_ap_[iterm] = ap;
-}
-
 bool GRNet::isLocal() const
 {
-  bool is_local = true;
-  PointT first_ap;
-
-  if (!iterm_to_ap_.empty()) {
-    first_ap = iterm_to_ap_.begin()->second.point;
-  } else if (!bterm_to_ap_.empty()) {
-    first_ap = bterm_to_ap_.begin()->second.point;
-  } else {
+  if (preferred_aps_.empty()) {
     return true;
   }
 
-  for (const auto& [_, ap] : iterm_to_ap_) {
-    const PointT& ap_pos = ap.point;
-    if (ap_pos != first_ap) {
-      is_local = false;
+  const PointT first_ap = preferred_aps_.begin()->second.point;
+  for (const auto& [_, ap] : preferred_aps_) {
+    if (ap.point != first_ap) {
+      return false;
     }
   }
 
-  for (const auto& [_, ap] : bterm_to_ap_) {
-    const PointT& ap_pos = ap.point;
-    if (ap_pos != first_ap) {
-      is_local = false;
-    }
-  }
-
-  return is_local;
+  return true;
 }
 
 }  // namespace grt

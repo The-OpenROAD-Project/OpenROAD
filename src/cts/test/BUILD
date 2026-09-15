@@ -1,8 +1,9 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -13,6 +14,8 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_no_max_cap",
+    "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
@@ -25,20 +28,23 @@ COMPULSORY_TESTS = [
     "check_max_fanout3",
     "check_wire_rc_cts",
     "clock_buffer_footprint",
+    "colocated_sinks",
     "dummy_load",
     "find_clock",
-    #   cmake gives 17.47 um ave sink WL vs. bazel 11.54 um
-    #    "find_clock_pad",
+    "find_clock_pad",
     "gated_clock1",
     "gated_clock2",
     "gated_clock3",
     "gated_clock4",
     "gated_clock5",
+    "gated_clock_ndr_full",
+    "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
     "inverters",
     "lvt_lib",
     "max_cap",
+    "max_wl_two_sinks",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",
@@ -49,15 +55,10 @@ COMPULSORY_TESTS = [
     "sink_clustering_collision",
     "skip_nets",
     "twice",
+    "virtual_clock_latency",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "cts_man_tcl_check",
-    "cts_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -117,6 +118,10 @@ filegroup(
                 "array_tile.lib",
                 "array_max_wl.defok",
             ],
+            "buffer_no_max_cap": [
+                "16sinks.def",
+                "Nangate45/Nangate45_typ_no_max_cap.lib",
+            ],
             "check_buffer_inference1": [
                 "ModNangate45/ModNangate45_typ.lib",
                 "check_buffers.def",
@@ -172,6 +177,14 @@ filegroup(
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
             ],
+            "gated_clock_ndr_full": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
+            "gated_clock_ndr_root": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
@@ -221,6 +234,9 @@ filegroup(
             "twice": [
                 "16sinks.def",
             ],
+            "virtual_clock_latency": [
+                "16sinks.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -230,7 +246,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -239,11 +255,31 @@ filegroup(
 cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
-    features = ["-layering_check"],  # TODO: accesses private headers
     deps = [
         "//src/cts",
+        "//src/cts:private_hdrs",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "cts_man_tcl_check",
+    srcs = ["cts_man_tcl_check.py"],
+    data = ["//src/cts:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "cts_readme_msgs_check",
+    data = [
+        "//src/cts:doc_files",
+        "//src/cts:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

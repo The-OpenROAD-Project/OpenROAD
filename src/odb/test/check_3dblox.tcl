@@ -25,6 +25,7 @@ set p [odb::Point3D]
 $p set $x1 $y1 [expr $z1 + $t1]
 $inst2 setLoc $p
 
+$db constructUnfoldedModel
 check_3dblox
 check "Touching chips not floating" { get_3dblox_marker_count "Floating chips" } 0
 
@@ -33,6 +34,7 @@ check "Touching chips not floating" { get_3dblox_marker_count "Floating chips" }
 $p set $x1 $y1 [expr $z1 + $t1 + 10000]
 $inst2 setLoc $p
 
+$db constructUnfoldedModel
 check_3dblox
 check "Vertical gap detected as floating" { get_3dblox_marker_count "Floating chips" } 1
 
@@ -42,6 +44,7 @@ set inst3 [odb::dbChipInst_create $top_chip $master1 "inst3"]
 $p set [expr $x1 + 10 * $w1] [expr $y1 + 10 * $h1] $z1
 $inst3 setLoc $p
 
+$db constructUnfoldedModel
 check_3dblox
 # Should find 2 sets of floating chips (inst1, inst2 and inst3 are all separate from each other)
 check "Multiple floating sets detected" { get_3dblox_marker_count "Floating chips" } 2
@@ -52,6 +55,7 @@ set p [odb::Point3D]
 $p set [expr $x1 + $w1 / 4] [expr $y1 + $h1 / 4] [expr $z1 + $t1 / 2]
 $inst2 setLoc $p
 
+$db constructUnfoldedModel
 check_3dblox
 check "Partial overlap detected" { get_3dblox_marker_count "Overlapping chips" } 1
 

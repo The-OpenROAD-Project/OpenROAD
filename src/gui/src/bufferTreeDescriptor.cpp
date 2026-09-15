@@ -12,7 +12,7 @@
 #include "colorGenerator.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -108,9 +108,9 @@ bool BufferTree::isAggregate(odb::dbInst* inst)
 BufferTreeDescriptor::BufferTreeDescriptor(
     odb::dbDatabase* db,
     sta::dbSta* sta,
-    const std::set<odb::dbNet*>& focus_nets,
-    const std::set<odb::dbNet*>& guide_nets,
-    const std::set<odb::dbNet*>& tracks_nets)
+    const odb::PtrSet<odb::dbNet>& focus_nets,
+    const odb::PtrSet<odb::dbNet>& guide_nets,
+    const odb::PtrSet<odb::dbNet>& tracks_nets)
     : db_(db),
       net_descriptor_(Gui::get()->getDescriptor<odb::dbNet*>()),
       focus_nets_(focus_nets),

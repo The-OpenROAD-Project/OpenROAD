@@ -533,10 +533,6 @@ bool extMeasureRC::useWeightedAvg(int& dist1, int& dist2, int underMet)
   dist2 = maxDist;
 
   // if ((dist1<0 || dist2<0) && underMet>0)
-  if (dist1 < 0 || dist2 < 0) {
-    return false;
-  }
-
-  return true;
+  return dist1 >= 0 && dist2 >= 0;
 }
 }  // namespace rcx

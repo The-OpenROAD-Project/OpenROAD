@@ -30,6 +30,9 @@ target_include_directories(grt_lib
     include
   PRIVATE
     src
+    # Header-only abstract interface published by drt; avoid linking
+    # drt_lib to keep grt's dependency surface small.
+    ../drt/include
 )
 
 target_link_libraries(grt_lib
@@ -53,6 +56,7 @@ target_sources(grt
     src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
+    src/cugr/src/CugrRenderer.cpp
 )
 
 target_include_directories(grt
@@ -60,12 +64,14 @@ target_include_directories(grt
     include
   PRIVATE
     src
+    src/cugr/include
 )
 
 target_link_libraries(grt
     grt_lib
     dbSta
     gui
+    gui_core
     stt
     rsz
 )
@@ -94,6 +100,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dpl_lib
       dbSta
       gui
+      gui_core
       stt
       OpenSTA
       Boost::boost

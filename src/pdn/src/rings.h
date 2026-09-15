@@ -6,6 +6,7 @@
 #include <array>
 #include <vector>
 
+#include "grid.h"
 #include "grid_component.h"
 #include "odb/geom.h"
 #include "shape.h"
@@ -15,7 +16,6 @@ class dbTechLayer;
 }  // namespace odb
 
 namespace pdn {
-class Grid;
 
 class Rings : public GridComponent
 {
@@ -29,9 +29,11 @@ class Rings : public GridComponent
 
   Rings(Grid* grid, const Layer& layer0, const Layer& layer1);
 
-  void setOffset(const std::array<int, 4>& offset);
-  const std::array<int, 4>& getOffset() const { return offset_; }
-  void setPadOffset(const std::array<int, 4>& offset);
+  // the offset is given in the grid's as-drawn frame and is remapped onto the
+  // placed instance; offset_ is always in the placed frame
+  void setOffset(const EdgeSpec& offset);
+  const EdgeSpec& getOffset() const { return offset_; }
+  void setPadOffset(const EdgeSpec& offset);
 
   void setExtendToBoundary(bool value);
   void setAllowOutsideDieArea() { allow_outside_die_ = true; }
@@ -46,7 +48,7 @@ class Rings : public GridComponent
   void getTotalWidth(int& hor, int& ver) const;
 
   void report() const override;
-  Type type() const override { return GridComponent::Ring; }
+  Type type() const override { return GridComponent::kRing; }
 
   void checkLayerSpecifications() const override;
 
@@ -59,7 +61,7 @@ class Rings : public GridComponent
  private:
   Layer layer0_;
   Layer layer1_;
-  std::array<int, 4> offset_ = {0, 0, 0, 0};
+  EdgeSpec offset_;
   bool extend_to_boundary_ = false;
   bool allow_outside_die_ = false;
 

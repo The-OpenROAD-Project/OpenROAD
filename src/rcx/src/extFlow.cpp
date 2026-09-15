@@ -245,11 +245,7 @@ bool extMain::isIncluded(Rect& r, uint32_t dir, const int* ll, const int* ur)
   int rLL[2] = {r.xMin(), r.yMin()};
   int rUR[2] = {r.xMax(), r.yMax()};
 
-  if ((rUR[dir] < ll[dir]) || (rLL[dir] > ur[dir])) {
-    return false;
-  }
-
-  return true;
+  return (rUR[dir] >= ll[dir]) && (rLL[dir] <= ur[dir]);
 }
 
 void extMain::GetDBcoords2(Rect& r)
@@ -281,7 +277,7 @@ uint32_t extMain::initSearchForNets(int* X1,
     maxRect = extRect;
   } else {
     maxRect = _block->getDieArea();
-    if (!((maxRect.dx() > 0) && (maxRect.dy() > 0))) {
+    if ((maxRect.dx() <= 0) || (maxRect.dy() <= 0)) {
       logger_->error(
           RCX, 81, "Die Area for the block has 0 size, or is undefined!");
     }
@@ -319,10 +315,14 @@ uint32_t extMain::initSearchForNets(int* X1,
 
     dbTrackGrid* tg = _block->findTrackGrid(layer);
     if (tg) {
+      // A layer may have tracks in only one direction; fall back to the block
+      // origin for the missing direction rather than indexing an empty grid.
       tg->getGridX(trackXY);
-      X1[n] = trackXY[0] - layer->getWidth() / 2;
+      X1[n] = trackXY.empty() ? maxRect.xMin()
+                              : trackXY[0] - layer->getWidth() / 2;
       tg->getGridY(trackXY);
-      Y1[n] = trackXY[0] - layer->getWidth() / 2;
+      Y1[n] = trackXY.empty() ? maxRect.yMin()
+                              : trackXY[0] - layer->getWidth() / 2;
     } else {
       X1[n] = maxRect.xMin();
       Y1[n] = maxRect.yMin();

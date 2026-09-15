@@ -47,7 +47,7 @@ struct _dbBoxFlagsWithoutMask
 struct _dbBoxFlags
 {
   dbBoxOwner::Value owner_type : 4;
-  uint32_t visited : 1;
+  uint32_t soft : 1;
   uint32_t octilinear : 1;
   uint32_t is_tech_via : 1;
   uint32_t is_block_via : 1;
@@ -101,6 +101,7 @@ class _dbBox : public _dbObject
   uint32_t owner_;
   dbId<_dbBox> next_box_;
   int design_rule_width_;
+  int min_spacing_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBox& box);

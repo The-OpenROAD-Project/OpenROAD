@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include "dbAlignmentMarkerRule.h"
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipConn.h"
@@ -15,6 +16,11 @@
 #include "dbCore.h"
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "dbUnfoldedChipBumpInst.h"
+#include "dbUnfoldedChipConn.h"
+#include "dbUnfoldedChipInst.h"
+#include "dbUnfoldedChipNet.h"
+#include "dbUnfoldedChipRegionInst.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
@@ -55,6 +61,14 @@
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
+#include "dbTechLayer.h"
+#include "dbTechLayerAreaRule.h"
+#include "dbTechLayerCutSpacingRule.h"
+#include "dbTechLayerMinCutRule.h"
+#include "dbTechLayerSpacingRule.h"
+#include "dbUnfoldedBuilder.h"
+#include "dbUnfoldedChipBumpInstItr.h"
+#include "dbUnfoldedChipRegionInstItr.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
@@ -78,6 +92,7 @@ static std::atomic<uint32_t> db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (master_id_ != rhs.master_id_) {
     return false;
   }
@@ -85,6 +100,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
     return false;
   }
   if (dbu_per_micron_ != rhs.dbu_per_micron_) {
+    return false;
+  }
+  if (*alignment_marker_rule_tbl_ != *rhs.alignment_marker_rule_tbl_) {
     return false;
   }
   if (*chip_tbl_ != *rhs.chip_tbl_) {
@@ -111,6 +129,21 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*chip_net_tbl_ != *rhs.chip_net_tbl_) {
     return false;
   }
+  if (*unfolded_chip_inst_tbl_ != *rhs.unfolded_chip_inst_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_region_inst_tbl_ != *rhs.unfolded_chip_region_inst_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_bump_inst_tbl_ != *rhs.unfolded_chip_bump_inst_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_conn_tbl_ != *rhs.unfolded_chip_conn_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_net_tbl_ != *rhs.unfolded_chip_net_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
   //
@@ -135,6 +168,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbDatabase::operator<(const _dbDatabase& rhs) const
@@ -153,6 +187,11 @@ bool _dbDatabase::operator<(const _dbDatabase& rhs) const
 _dbDatabase::_dbDatabase(_dbDatabase* db)
 {
   dbu_per_micron_ = 0;
+  alignment_marker_rule_tbl_ = new dbTable<_dbAlignmentMarkerRule>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbAlignmentMarkerRuleObj);
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
   chip_hash_.setTable(chip_tbl_);
@@ -174,6 +213,31 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
                                      dbChipBumpInstObj);
   chip_net_tbl_ = new dbTable<_dbChipNet>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
+  unfolded_chip_inst_tbl_ = new dbTable<_dbUnfoldedChipInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipInstObj);
+  unfolded_chip_region_inst_tbl_ = new dbTable<_dbUnfoldedChipRegionInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipRegionInstObj);
+  unfolded_chip_bump_inst_tbl_ = new dbTable<_dbUnfoldedChipBumpInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipBumpInstObj);
+  unfolded_chip_conn_tbl_ = new dbTable<_dbUnfoldedChipConn>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipConnObj);
+  unfolded_chip_net_tbl_ = new dbTable<_dbUnfoldedChipNet>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipNetObj);
   // User Code Begin Constructor
   magic1_ = kMagic1;
   magic2_ = kMagic2;
@@ -207,6 +271,12 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
+
+  unfolded_region_itr_
+      = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
+
+  unfolded_bump_itr_
+      = new dbUnfoldedChipBumpInstItr(unfolded_chip_bump_inst_tbl_);
   // User Code End Constructor
 }
 
@@ -280,6 +350,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_net_tbl_;
   }
+  if (obj.isSchema(kSchemaChipAlignmentMarkerRule)) {
+    stream >> *obj.alignment_marker_rule_tbl_;
+  }
   if (obj.isSchema(kSchemaDbuPerMicron)) {
     if (obj.isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
       // Should already have a value from dbTech, so only need to update this if
@@ -312,6 +385,49 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     }
   }
 
+  dbDatabase* db = (dbDatabase*) &obj;
+  // Fix area scaling
+  if (!obj.isSchema(kSchemaStoreAreaAsInt64)) {
+    const int64_t dbu_per_micron = obj.dbu_per_micron_;
+    const int64_t single_dbu_scale = 20000 / dbu_per_micron;
+    const int64_t double_dbu_scaling
+        = (20000 * 20000) / (dbu_per_micron * dbu_per_micron);
+    // Fix techlayer area
+    for (dbTech* tech : db->getTechs()) {
+      for (dbTechLayer* layer : tech->getLayers()) {
+        _dbTechLayer* layer_impl = (_dbTechLayer*) layer;
+        layer_impl->area_ /= double_dbu_scaling;
+
+        for (dbTechLayerAreaRule* area_rule : layer->getTechLayerAreaRules()) {
+          _dbTechLayerAreaRule* area_rule_impl
+              = (_dbTechLayerAreaRule*) area_rule;
+          area_rule_impl->area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerCutSpacingRule* cut_spacing_rule :
+             layer->getTechLayerCutSpacingRules()) {
+          _dbTechLayerCutSpacingRule* cut_spacing_rule_impl
+              = (_dbTechLayerCutSpacingRule*) cut_spacing_rule;
+          cut_spacing_rule_impl->cut_area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerMinCutRule* min_cut_rule :
+             layer->getTechLayerMinCutRules()) {
+          _dbTechLayerMinCutRule* min_cut_rule_impl
+              = (_dbTechLayerMinCutRule*) min_cut_rule;
+          min_cut_rule_impl->area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerSpacingRule* spacing_rule :
+             layer->getV54SpacingRules()) {
+          _dbTechLayerSpacingRule* spacing_rule_impl
+              = (_dbTechLayerSpacingRule*) spacing_rule;
+          spacing_rule_impl->cut_area_ /= single_dbu_scale;
+        }
+      }
+    }
+  }
+
   // Fix up the owner id of properties of this db, this value changes.
   const uint32_t oid = obj.getId();
 
@@ -324,7 +440,6 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   obj.schema_minor_ = kSchemaMinor;
 
   // Set the chipinsts_map_ of the chip
-  dbDatabase* db = (dbDatabase*) &obj;
   for (const auto& inst : db->getChipInsts()) {
     _dbChip* parent_chip = (_dbChip*) inst->getParentChip();
     parent_chip->chipinsts_map_[inst->getName()] = inst->getId();
@@ -335,6 +450,11 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
         = chip_region_inst->getId();
   }
+  if (db->getChips().size() > 1) {
+    // Construct unfolded model only if there are multiple chips
+    db->constructUnfoldedModel();
+  }
+
   // User Code End >>
   return stream;
 }
@@ -361,6 +481,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_conn_tbl_;
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
+  stream << *obj.alignment_marker_rule_tbl_;
   stream << obj.dbu_per_micron_;
   stream << obj.hierarchy_;
   // User Code End <<
@@ -370,6 +491,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
 dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
+    case dbAlignmentMarkerRuleObj:
+      return alignment_marker_rule_tbl_;
     case dbChipObj:
       return chip_tbl_;
     case dbPropertyObj:
@@ -384,6 +507,16 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return chip_bump_inst_tbl_;
     case dbChipNetObj:
       return chip_net_tbl_;
+    case dbUnfoldedChipInstObj:
+      return unfolded_chip_inst_tbl_;
+    case dbUnfoldedChipRegionInstObj:
+      return unfolded_chip_region_inst_tbl_;
+    case dbUnfoldedChipBumpInstObj:
+      return unfolded_chip_bump_inst_tbl_;
+    case dbUnfoldedChipConnObj:
+      return unfolded_chip_conn_tbl_;
+    case dbUnfoldedChipNetObj:
+      return unfolded_chip_net_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return tech_tbl_;
@@ -404,19 +537,26 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  alignment_marker_rule_tbl_->collectMemInfo(
+      info.children["alignment_marker_rule_tbl_"]);
   chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
-
+  info.children["chip_hash"].add(chip_hash_);
   prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
-
   chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
-
   chip_region_inst_tbl_->collectMemInfo(info.children["chip_region_inst_tbl_"]);
-
   chip_conn_tbl_->collectMemInfo(info.children["chip_conn_tbl_"]);
-
   chip_bump_inst_tbl_->collectMemInfo(info.children["chip_bump_inst_tbl_"]);
-
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
+  unfolded_chip_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_inst_tbl_"]);
+  unfolded_chip_region_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_region_inst_tbl_"]);
+  unfolded_chip_bump_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_bump_inst_tbl_"]);
+  unfolded_chip_conn_tbl_->collectMemInfo(
+      info.children["unfolded_chip_conn_tbl_"]);
+  unfolded_chip_net_tbl_->collectMemInfo(
+      info.children["unfolded_chip_net_tbl_"]);
 
   // User Code Begin collectMemInfo
   tech_tbl_->collectMemInfo(info.children["tech"]);
@@ -428,6 +568,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
 _dbDatabase::~_dbDatabase()
 {
+  delete alignment_marker_rule_tbl_;
   delete chip_tbl_;
   delete prop_tbl_;
   delete chip_inst_tbl_;
@@ -435,6 +576,11 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_tbl_;
   delete chip_bump_inst_tbl_;
   delete chip_net_tbl_;
+  delete unfolded_chip_inst_tbl_;
+  delete unfolded_chip_region_inst_tbl_;
+  delete unfolded_chip_bump_inst_tbl_;
+  delete unfolded_chip_conn_tbl_;
+  delete unfolded_chip_net_tbl_;
   // User Code Begin Destructor
   delete tech_tbl_;
   delete lib_tbl_;
@@ -446,12 +592,14 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_itr_;
   delete chip_bump_inst_itr_;
   delete chip_net_itr_;
+  delete unfolded_region_itr_;
+  delete unfolded_bump_itr_;
   // User Code End Destructor
 }
 
 // User Code Begin PrivateMethods
 //
-// This constructor is use by dbDatabase::clear(), so the the unique-id is
+// This constructor is used by dbDatabase::clear(), so the unique-id is
 // reset.
 //
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
@@ -495,6 +643,12 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
+
+  unfolded_region_itr_
+      = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
+
+  unfolded_bump_itr_
+      = new dbUnfoldedChipBumpInstItr(unfolded_chip_bump_inst_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -530,6 +684,12 @@ uint32_t dbDatabase::getDbuPerMicron() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return obj->dbu_per_micron_;
+}
+
+dbSet<dbAlignmentMarkerRule> dbDatabase::getAlignmentMarkerRules() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbAlignmentMarkerRule>(obj, obj->alignment_marker_rule_tbl_);
 }
 
 dbSet<dbChip> dbDatabase::getChips() const
@@ -578,6 +738,37 @@ dbSet<dbChipNet> dbDatabase::getChipNets() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbChipNet>(obj, obj->chip_net_tbl_);
+}
+
+dbSet<dbUnfoldedChipInst> dbDatabase::getUnfoldedChipInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipInst>(obj, obj->unfolded_chip_inst_tbl_);
+}
+
+dbSet<dbUnfoldedChipRegionInst> dbDatabase::getUnfoldedChipRegionInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipRegionInst>(obj,
+                                         obj->unfolded_chip_region_inst_tbl_);
+}
+
+dbSet<dbUnfoldedChipBumpInst> dbDatabase::getUnfoldedChipBumpInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipBumpInst>(obj, obj->unfolded_chip_bump_inst_tbl_);
+}
+
+dbSet<dbUnfoldedChipConn> dbDatabase::getUnfoldedChipConns() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipConn>(obj, obj->unfolded_chip_conn_tbl_);
+}
+
+dbSet<dbUnfoldedChipNet> dbDatabase::getUnfoldedChipNets() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipNet>(obj, obj->unfolded_chip_net_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods
@@ -642,7 +833,7 @@ int dbDatabase::removeUnusedMasters()
 
   for (auto lib : libs) {
     dbSet<dbMaster> masters = lib->getMasters();
-    // Collect all dbMasters for later comparision
+    // Collect all dbMasters for later comparison
     for (auto master : masters) {
       unused_masters.push_back(master);
     }
@@ -683,6 +874,23 @@ dbChip* dbDatabase::getChip()
   }
 
   return (dbChip*) db->chip_tbl_->getPtr(db->chip_);
+}
+
+void dbDatabase::constructUnfoldedModel()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  dbUnfoldedBuilder builder(db);
+  builder.build();
+}
+
+dbUnfoldedChipInst* dbDatabase::findUnfoldedChip(const std::string& path) const
+{
+  for (dbUnfoldedChipInst* chip : getUnfoldedChipInsts()) {
+    if (chip->getName() == path) {
+      return chip;
+    }
+  }
+  return nullptr;
 }
 
 dbTech* dbDatabase::getTech()
@@ -728,6 +936,7 @@ void dbDatabase::write(std::ostream& file)
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *db;
+  stream.flush();
   file.flush();
 }
 
@@ -872,9 +1081,11 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   if (block->journal_) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->journal_;
+    stream.flush();
   } else if (!block->journal_stack_.empty()) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->journal_stack_.top();
+    stream.flush();
   }
 }
 

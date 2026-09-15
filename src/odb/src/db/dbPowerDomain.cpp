@@ -30,6 +30,7 @@ template class dbTable<_dbPowerDomain>;
 
 bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -53,6 +54,7 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbPowerDomain::operator<(const _dbPowerDomain& rhs) const
@@ -116,12 +118,13 @@ void _dbPowerDomain::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["elements"].add(elements_);
   info.children["power_switch"].add(power_switch_);
   info.children["isolation"].add(isolation_);
   info.children["levelshifters"].add(levelshifters_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

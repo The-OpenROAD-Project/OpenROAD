@@ -12,6 +12,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -31,7 +32,7 @@ class Via;
 using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
 
-using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapePtr>>;
+using ShapeVectorMap = odb::PtrMap<odb::dbTechLayer, std::vector<ShapePtr>>;
 
 class Grid;
 class GridComponent;
@@ -51,21 +52,23 @@ class Shape
   };
   enum ShapeType
   {
-    SHAPE,
-    GRID_OBS,
-    BLOCK_OBS,
-    MACRO_OBS,
-    OBS,
-    FIXED
+    kShape,
+    kGridObs,
+    kBlockObs,
+    // obstruction of a pad cell, which the pad's own net may overlap
+    kPadObs,
+    kMacroObs,
+    kObs,
+    kFixed
   };
   struct RectIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ShapePtr& t) const { return t->getRect(); }
   };
   struct ObstructionIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ShapePtr& t) const
     {
       return t->getObstruction();
@@ -77,8 +80,8 @@ class Shape
   using ObstructionTree = bgi::
       rtree<ShapePtr, bgi::quadratic<16>, Shape::ObstructionIndexableGetter>;
 
-  using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
-  using ObstructionTreeMap = std::map<odb::dbTechLayer*, ObstructionTree>;
+  using ShapeTreeMap = odb::PtrMap<odb::dbTechLayer, ShapeTree>;
+  using ObstructionTreeMap = odb::PtrMap<odb::dbTechLayer, ObstructionTree>;
 
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
@@ -131,10 +134,11 @@ class Shape
   // true if shape can be modified (cut or shortened) by trimming
   virtual bool isModifiable() const;
 
-  void clearVias() { vias_.clear(); }
-  void addVia(const ViaPtr& via) { vias_.push_back(via); }
+  void clearVias();
+  void addVia(const ViaPtr& via);
+  // Drop the given vias from this shape.
+  void removeVias(const std::set<Via*>& vias);
   const std::vector<ViaPtr>& getVias() const { return vias_; }
-  void removeVia(const ViaPtr& via);
 
   void addITermConnection(const odb::Rect& iterm)
   {
@@ -177,7 +181,8 @@ class Shape
 
   std::unique_ptr<Shape> extendTo(
       const odb::Rect& rect,
-      const ObstructionTree& obstructions,
+      const Shape::ShapeTree& shapes,
+      const Shape::ObstructionTree& obstructions,
       Shape* orig_shape,
       const std::function<bool(const ShapePtr&)>& obs_filter
       = [](const ShapePtr&) { return true; }) const;
@@ -204,7 +209,7 @@ class Shape
   static std::string getRectText(const odb::Rect& rect, double dbu_to_micron);
 
   std::vector<odb::dbBox*> writeToDb(odb::dbSWire* swire,
-                                     bool add_pins,
+                                     odb::dbBTerm* bterm,
                                      bool make_rect_as_pin) const;
 
   // copy existing shapes into the map
@@ -241,11 +246,15 @@ class Shape
   GridComponent* grid_component_;
 
   std::vector<ViaPtr> vias_;
+  // Kept in step with vias_ by addVia()/removeVias()/clearVias(); a via's
+  // layers are fixed by its Connect, so the counts never go stale.
+  int connections_above_ = 0;
+  int connections_below_ = 0;
   std::set<odb::Rect> iterm_connections_;
   std::set<odb::Rect> bterm_connections_;
 
   // add rect as bterm to database
-  odb::dbBox* addBPinToDb(const odb::Rect& rect) const;
+  odb::dbBox* addBPinToDb(odb::dbBTerm* bterm, const odb::Rect& rect) const;
 
   void updateIBTermConnections(std::set<odb::Rect>& terms);
 
@@ -278,7 +287,7 @@ class FollowPinShape : public Shape
            std::vector<std::unique_ptr<Shape>>& replacements) const override;
 
  private:
-  std::set<odb::dbRow*> rows_;
+  odb::PtrSet<odb::dbRow> rows_;
 };
 
 class GridObsShape : public Shape

@@ -22,6 +22,7 @@ Tech::Tech(Tcl_Interp* interp,
            const char* metrics_filename)
     : app_(new OpenRoad())
 {
+  OpenRoad::setOpenRoad(app_, /* reinit_ok */ true);
   if (!interp) {
     interp = Tcl_CreateInterp();
     Tcl_Init(interp);
@@ -31,6 +32,9 @@ Tech::Tech(Tcl_Interp* interp,
 
 Tech::~Tech()
 {
+  if (OpenRoad::openRoad() == app_) {
+    OpenRoad::setOpenRoad(nullptr, /* reinit_ok */ true);
+  }
   delete app_;
 }
 
@@ -65,8 +69,9 @@ void Tech::readLef(const std::string& file_name)
     lib_name.erase(lib_name.begin() + dot_pos, lib_name.end());
   }
 
+  const char* tech_name = make_tech ? lib_name.c_str() : "";
   app_->readLef(
-      file_name.c_str(), lib_name.c_str(), "", make_tech, make_library);
+      file_name.c_str(), lib_name.c_str(), tech_name, make_tech, make_library);
 }
 
 void Tech::readLiberty(const std::string& file_name)

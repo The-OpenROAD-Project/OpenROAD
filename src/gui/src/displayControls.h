@@ -32,6 +32,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "options.h"
@@ -135,10 +136,10 @@ class DisplayControlModel : public QStandardItemModel
 // controls are shown in a tree view to provide grouping of
 // related options.
 //
-// It also implements the Options interface so that other clients can
+// It also implements the QtOptions interface so that other clients can
 // access the data.
 class DisplayControls : public QDockWidget,
-                        public Options,
+                        public QtOptions,
                         public sta::dbNetworkObserver,
                         public odb::dbBlockCallBackObj
 {
@@ -553,7 +554,7 @@ class DisplayControls : public QDockWidget,
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
-  std::set<odb::dbTech*> techs_;
+  odb::PtrSet<odb::dbTech> techs_;
   utl::Logger* logger_;
   sta::dbSta* sta_;
   DbInstDescriptor* inst_descriptor_;

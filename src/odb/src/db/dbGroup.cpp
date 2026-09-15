@@ -35,6 +35,7 @@ template class dbTable<_dbGroup>;
 
 bool _dbGroup::operator==(const _dbGroup& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.type != rhs.flags_.type) {
     return false;
   }
@@ -79,6 +80,7 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGroup::operator<(const _dbGroup& rhs) const
@@ -147,10 +149,11 @@ void _dbGroup::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["power_nets"].add(power_nets_);
   info.children["ground_nets"].add(ground_nets_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

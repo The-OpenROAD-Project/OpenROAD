@@ -47,6 +47,7 @@
 #include "highlightGroupDialog.h"
 #include "label.h"
 #include "mainWindow.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -54,6 +55,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "renderThread.h"
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "search.h"
@@ -94,16 +96,16 @@ using odb::Rect;
 using utl::GUI;
 
 LayoutViewer::LayoutViewer(
-    Options* options,
+    QtOptions* options,
     ScriptWidget* output_widget,
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     const std::vector<std::unique_ptr<Label>>& labels,
-    const std::map<odb::dbModule*, ModuleSettings>& module_settings,
-    const std::set<odb::dbNet*>& focus_nets,
-    const std::set<odb::dbNet*>& route_guides,
-    const std::set<odb::dbNet*>& net_tracks,
+    const odb::PtrMap<odb::dbModule, ModuleSettings>& module_settings,
+    const odb::PtrSet<odb::dbNet>& focus_nets,
+    const odb::PtrSet<odb::dbNet>& route_guides,
+    const odb::PtrSet<odb::dbNet>& net_tracks,
     Gui* gui,
     const std::function<bool()>& using_dbu,
     const std::function<bool()>& show_ruler_as_euclidian,
@@ -191,9 +193,9 @@ void LayoutViewer::setChip(odb::dbChip* chip)
   fit();
 }
 
-std::map<odb::dbChipInst*, odb::dbChip*> LayoutViewer::getChips() const
+odb::PtrMap<odb::dbChipInst, odb::dbChip*> LayoutViewer::getChips() const
 {
-  std::map<odb::dbChipInst*, odb::dbChip*> chips;
+  odb::PtrMap<odb::dbChipInst, odb::dbChip*> chips;
   if (getChip() == nullptr) {
     return chips;
   }
@@ -391,11 +393,7 @@ bool LayoutViewer::isCursorInsideViewport()
   QPoint mouse_pos = scroller_->mapFromGlobal(QCursor::pos());
   QRect layout_boundaries = scroller_->viewport()->rect();
 
-  if (layout_boundaries.contains(mouse_pos)) {
-    return true;
-  }
-
-  return false;
+  return layout_boundaries.contains(mouse_pos);
 }
 
 void LayoutViewer::updateCursorCoordinates()
@@ -2127,9 +2125,7 @@ void LayoutViewer::selectHighlightConnectedBufferTrees(bool select_flag,
 
 void LayoutViewer::updateContextMenuItems()
 {
-  if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
-      == false)  // No Instance in selected set
-  {
+  if (!Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)) {
     menu_actions_[kSelectOutputNetsAct]->setDisabled(true);
     menu_actions_[kSelectInputNetsAct]->setDisabled(true);
     menu_actions_[kSelectAllNetsAct]->setDisabled(true);
@@ -2151,8 +2147,7 @@ void LayoutViewer::updateContextMenuItems()
     highlight_color_menu_->setDisabled(false);
   }
 
-  if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
-      == false) {  // No Net in selected set
+  if (!Gui::get()->anyObjectInSet(true, odb::dbNetObj)) {
     menu_actions_[kSelectConnectedInstAct]->setDisabled(true);
     menu_actions_[kHighlightConnectedInstAct]->setDisabled(true);
   } else {
@@ -2507,11 +2502,7 @@ bool LayoutViewer::hasDesign() const
   }
 
   const Rect bounds = getBounds();
-  if (bounds.dx() == 0 || bounds.dy() == 0) {
-    return false;
-  }
-
-  return true;
+  return bounds.dx() != 0 && bounds.dy() != 0;
 }
 
 bool LayoutViewer::isNetVisible(odb::dbNet* net)

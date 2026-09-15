@@ -23,6 +23,7 @@
 #include "dbxParser.h"
 #include "dbxWriter.h"
 #include "objects.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -37,6 +38,7 @@
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "verilogWriter.h"
 namespace odb {
 
 static std::map<std::string, std::string> dup_orient_map
@@ -114,31 +116,12 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
     return;
   }
 
-  // Pre-process master chips to map port names to bumps
-  std::map<dbChip*, std::map<std::string, dbChipBump*>> master_bump_map;
-  for (auto* inst : chip->getChipInsts()) {
-    dbChip* master = inst->getMasterChip();
-
-    // Skip if already processed
-    if (master_bump_map.contains(master)) {
-      continue;
-    }
-
-    for (auto* region : master->getChipRegions()) {
-      for (auto* bump : region->getChipBumps()) {
-        if (auto* bterm = bump->getBTerm()) {
-          master_bump_map[master][bterm->getName()] = bump;
-        }
-      }
-    }
-  }
-
   // Process nets
   std::unique_ptr<sta::NetIterator> net_iter(
       temp_network.netIterator(top_inst));
   while (net_iter->hasNext()) {
     auto* net = net_iter->next();
-    const char* net_name = temp_network.name(net);
+    const std::string net_name = temp_network.name(net);
     auto* chip_net = dbChipNet::create(chip, net_name);
 
     debugPrint(logger_,
@@ -164,15 +147,17 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
         continue;
       }
 
-      const char* port_name = temp_network.name(temp_network.port(pin));
+      const std::string port_name = temp_network.name(temp_network.port(pin));
       dbChip* master = chip_inst->getMasterChip();
 
-      auto bump_it = master_bump_map[master].find(port_name);
-      if (bump_it == master_bump_map[master].end()) {
+      dbBTerm* bterm = master->getBlock()->findBTerm(port_name.c_str());
+      if (!bterm) {
         continue;
       }
-
-      dbChipBump* bump = bump_it->second;
+      dbChipBump* bump = bterm->getChipBump();
+      if (!bump) {
+        continue;
+      }
       auto* region_inst = chip_inst->findChipRegionInst(bump->getChipRegion());
       if (!region_inst) {
         continue;
@@ -205,12 +190,21 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
     createConnection(connection);
   }
   calculateSize(chip);
+  for (const auto& [_, assertion] : data.path_assertions) {
+    dbChipPath* chip_path = dbChipPath::create(chip, assertion.name.c_str());
+    for (const auto& entry : assertion.entries) {
+      // Resolve the dotted path string to a live DB object
+      std::vector<dbChipInst*> path_insts;
+      dbChipRegionInst* region_inst = resolvePath(entry.region, path_insts);
+      chip_path->addEntry(path_insts, region_inst, entry.negated);
+    }
+  }
 }
 
 void ThreeDBlox::check()
 {
-  Checker checker(logger_);
-  checker.check(db_->getChip());
+  Checker checker(logger_, db_);
+  checker.check();
 }
 
 namespace {
@@ -318,8 +312,21 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
 
   writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
 
+  // Write the Verilog connectivity file for this HIER chiplet.
+  writeVerilog(current_dir_path + chip->getName() + ".v", chip);
+
   DbxWriter writer(logger_, db_);
   writer.writeChiplet(dbx_file, chip);
+}
+
+void ThreeDBlox::writeVerilog(const std::string& verilog_file,
+                              odb::dbChip* chip)
+{
+  if (chip == nullptr) {
+    return;
+  }
+  VerilogWriter writer(logger_);
+  writer.writeChiplet(verilog_file, chip);
 }
 
 void ThreeDBlox::writeBMap(const std::string& bmap_file,
@@ -336,8 +343,8 @@ void ThreeDBlox::calculateSize(dbChip* chip)
   for (auto inst : chip->getChipInsts()) {
     cuboid.merge(inst->getCuboid());
   }
-  chip->setWidth(cuboid.dx());
-  chip->setHeight(cuboid.dy());
+  chip->setWidth(cuboid.xMax());
+  chip->setHeight(cuboid.yMax());
   chip->setThickness(cuboid.dz());
 }
 
@@ -446,19 +453,6 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
         db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
   }
 
-  // Read DEF file
-  if (!chiplet.external.def_file.empty()) {
-    odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
-    std::vector<odb::dbLib*> search_libs;
-    for (odb::dbLib* lib : db_->getLibs()) {
-      search_libs.push_back(lib);
-    }
-    // No callbacks here as we are going to give one postRead3Dbx later
-    def_reader.readChip(search_libs,
-                        chiplet.external.def_file.c_str(),
-                        chip,
-                        /*issue_callback*/ false);
-  }
   const int dbu_per_micron = db_->getDbuPerMicron();
   if (chiplet.design_width != -1.0) {
     chip->setWidth(std::round(chiplet.design_width * dbu_per_micron));
@@ -494,8 +488,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   chip->setOffset(Point(std::round(chiplet.offset.x * dbu_per_micron),
                         std::round(chiplet.offset.y * dbu_per_micron)));
-  if (chip->getChipType() != dbChip::ChipType::HIER
-      && chip->getBlock() == nullptr) {
+  if (chip->getChipType() != dbChip::ChipType::HIER) {
     // blackbox stage, create block
     auto block = odb::dbBlock::create(chip, chiplet.name.c_str());
     const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
@@ -507,6 +500,40 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   }
   for (const auto& [_, region] : chiplet.regions) {
     createRegion(region, chip);
+  }
+
+  // Read the DEF file (if any) onto the block created above. The block and its
+  // bumps already exist, so the read uses the 3DBlox defin mode, which
+  // find-or-creates and dedups data shared with the bump map instead of
+  // erroring because a block is already present.
+  if (!chiplet.external.def_file.empty()) {
+    readDefForChip(chip, chiplet.external.def_file);
+  }
+}
+
+void ThreeDBlox::readDefForChip(dbChip* chip, const std::string& def_file)
+{
+  // Each chiplet may be given at most one DEF file, either by its definition
+  // (3dbv) or by one of its instances (3dbx). The chip is marked read even if
+  // the read fails so a later DEF cannot silently paper over the error.
+  if (!chips_with_def_.insert(chip).second) {
+    logger_->error(utl::ODB,
+                   547,
+                   "3DBlox Parser Error: a DEF file was already specified for "
+                   "chiplet {}",
+                   chip->getName());
+  }
+  odb::defin def_reader(db_, logger_, odb::defin::THREE_D_BLOX);
+  std::vector<odb::dbLib*> search_libs;
+  search_libs.assign(db_->getLibs().begin(), db_->getLibs().end());
+  // No callbacks here as we are going to give one postRead3Dbx later.
+  if (!def_reader.readChip(
+          search_libs, def_file.c_str(), chip, /*issue_callback*/ false)) {
+    logger_->error(utl::ODB,
+                   550,
+                   "Failed to read DEF file {} for chiplet {}",
+                   def_file,
+                   chip->getName());
   }
 }
 
@@ -691,6 +718,13 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
       static_cast<int>(std::round(chip_inst.loc.y * dbu_per_micron)),
       static_cast<int>(std::round(chip_inst.z * dbu_per_micron)),
   });
+
+  // Per the 3DBlox standard, the DEF file may be associated with the chiplet
+  // instance (ChipletInst.external) rather than the chiplet definition. Read it
+  // onto the referenced master chip's block.
+  if (!chip_inst.external.def_file.empty()) {
+    readDefForChip(chip, chip_inst.external.def_file);
+  }
 }
 static std::vector<std::string> splitPath(const std::string& path)
 {
@@ -797,7 +831,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   };
 
   // Populate where the bpins should be made
-  std::map<odb::dbMaster*, BPinInfo> bpininfo;
+  odb::PtrMap<odb::dbMaster, BPinInfo> bpininfo;
   for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
     if (bpininfo.contains(master)) {

@@ -3,48 +3,36 @@
 
 #pragma once
 
-#include "odb/db.h"
-#include "odb/unfoldedModel.h"
-#include "utl/Logger.h"
+namespace utl {
+class Logger;
+}
 
 namespace sta {
 class Sta;
 }
 
 namespace odb {
-class dbChip;
+class dbDatabase;
 class dbMarkerCategory;
-
-struct MatingSurfaces
-{
-  bool valid;
-  int top_z;
-  int bot_z;
-};
 
 class Checker
 {
  public:
-  Checker(utl::Logger* logger);
+  Checker(utl::Logger* logger, dbDatabase* db);
   ~Checker() = default;
-  void check(dbChip* chip);
+  void check();
 
  private:
-  void checkLogicalConnectivity(dbMarkerCategory* top_cat,
-                                const UnfoldedModel& model);
-  void checkFloatingChips(dbMarkerCategory* top_cat,
-                          const UnfoldedModel& model);
-  void checkOverlappingChips(dbMarkerCategory* top_cat,
-                             const UnfoldedModel& model);
-  void checkInternalExtUsage(dbMarkerCategory* top_cat,
-                             const UnfoldedModel& model);
-  void checkConnectionRegions(dbMarkerCategory* top_cat,
-                              const UnfoldedModel& model);
-  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
-                                  const UnfoldedModel& model);
-  void checkNetConnectivity(dbMarkerCategory* top_cat,
-                            const UnfoldedModel& model);
+  void checkLogicalConnectivity(dbMarkerCategory* top_cat);
+  void checkFloatingChips(dbMarkerCategory* top_cat);
+  void checkOverlappingChips(dbMarkerCategory* top_cat);
+  void checkInternalExtUsage(dbMarkerCategory* top_cat);
+  void checkConnectionRegions(dbMarkerCategory* top_cat);
+  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat);
+  void checkNetConnectivity(dbMarkerCategory* top_cat);
+  void checkAlignmentMarkers(dbMarkerCategory* top_cat);
   utl::Logger* logger_;
+  dbDatabase* db_;
 };
 
 }  // namespace odb

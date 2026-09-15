@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "odb/db.h"
@@ -20,6 +21,28 @@ namespace rcx {
 class NameTable;
 class Parser;
 
+struct SpefHeader
+{
+  std::string string(utl::Logger* logger) const;
+
+  std::string design_name;
+  std::string version;
+  std::string divider{"/"};
+  std::string delimiter{":"};
+  std::string bus_delimiter{"[]"};
+  std::string time_unit_word{"NS"};
+  std::string capacitance_unit_word{"FF"};
+  std::string resistance_unit_word{"OHM"};
+  std::string inductance_unit_word{"HENRY"};
+};
+
+// For converting db values (FF and OHM) to the declared units.
+struct ScaleFactors
+{
+  double capacitance{1.0};
+  double resistance{1.0};
+};
+
 class extSpef
 {
  public:
@@ -29,6 +52,9 @@ class extSpef
           const char* version,
           extMain* extmain);
   ~extSpef();
+
+  static ScaleFactors computeScaleFactors(const std::string& capacitance_unit,
+                                          const std::string& resistance_unit);
 
   void reinit();
   bool setOutSpef(const char* filename);
@@ -185,7 +211,6 @@ class extSpef
   uint32_t getBTermId(uint32_t id);
 
   bool readHeaderInfo(uint32_t debug, bool skip = false);
-  void writeHeaderInfo();
   bool readPorts();
   bool readNameMap(uint32_t debug, bool skip = false);
 
@@ -298,7 +323,6 @@ class extSpef
   void copyCap(double* totCap, const double* cap, uint32_t n = 0);
   void adjustCap(double* totCap, const double* cap, uint32_t n = 0);
 
-  char* getDelimiter();
   void writeNameNode(odb::dbCapNode* node);
   void writeCapName(odb::dbCapNode* capNode, uint32_t capIndex);
 
@@ -328,24 +352,11 @@ class extSpef
   odb::dbTech* _tech;
   odb::dbBlock* _block;
   odb::dbBlock* _cornerBlock;
-  const char* _version = nullptr;
   bool _useBaseCornerRc = false;
   uint32_t _blockId = 0;
 
-  char _design[1024];
-  char _bus_delimiter[5];
-  char _delimiter[5];
-  char _divider[5];
-
-  char _res_unit_word[5];
-  char _cap_unit_word[5];
-  char _time_unit_word[5];
-  char _ind_unit_word[7];
-
-  double _res_unit = 1.0;
-  double _cap_unit = 1.0;
-  int _time_unit = 1;
-  int _ind_unit = 1;
+  SpefHeader spef_header_;
+  ScaleFactors scale_factors_;
 
   uint32_t _cornerCnt = 0;
   uint32_t _cornersPerBlock;

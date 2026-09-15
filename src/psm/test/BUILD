@@ -1,6 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -14,18 +16,25 @@ COMPULSORY_TESTS = [
     "aes_test_vdd",
     "aes_test_vss",
     "check_power_grid",
+    "check_power_grid_backside",
     "check_power_grid_disconnected",
     "check_power_grid_disconnected_macro",
+    "check_power_grid_empty_net",
     "check_power_grid_floorplanning",
     "check_power_grid_macros",
     "check_power_grid_ok_disconnected",
     "check_power_grid_require_bterms_fail",
     "check_power_grid_require_bterms_pass",
+    "check_power_grid_short",
+    "check_power_grid_short_iterms",
+    "check_power_grid_short_obstructions",
     "corners",
     "corners_assign_power",
     "gcd_all_vss_source_res",
     "gcd_all_vss",
     "gcd_em_test_vdd",
+    "gcd_gt2n_backside",
+    "gcd_gt2n_backside_wo_pins",
     "gcd_no_vsrc",
     "gcd_no_vsrc_reuse",
     "gcd_sky130_vdd",
@@ -38,6 +47,7 @@ COMPULSORY_TESTS = [
     "insert_decap_with_padding1",
     "missing_resistance",
     "pad_connected_by_abutment",
+    "report_writers_require_solution",
     "switch_top_grid",
     "top_grid_settings",
     "zerosoc_pads",
@@ -45,13 +55,7 @@ COMPULSORY_TESTS = [
     "zerosoc_pads_check_only_disconnected",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "psm_man_tcl_check",
-    "psm_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -116,11 +120,20 @@ filegroup(
         "asap7_data/asap7.lib",
         "asap7_data/fakeram7_256x32.lef",
         "asap7_data/riscv.def",
+        "backside_data/backside.def",
+        "backside_data/backside.lef",
         "gcd_all_vss-em.rptok",
         "gcd_all_vss-spice.spok",
         "gcd_all_vss-voltage.rptok",
         "gcd_em_test_vdd-em.rptok",
         "gcd_test_vdd-voltage.rptok",
+        "gt2n_data/gt2_6t_w31_svt.lef",
+        "gt2n_data/gt2_6t_w31_svt_tt_0p7v25c.lib.gz",
+        "gt2n_data/gt2_tech.lef",
+        "gt2n_data/setRC.tcl",
+        "gt2n_gcd_data/gcd.def",
+        "gt2n_gcd_data/gcd.sdc",
+        "gt2n_gcd_data/gcd_pins.def",
         "helpers.tcl",
         "ihp-sg13g2_data/IOLib.lef",
         "ihp-sg13g2_data/IOLib_dummy.lib",
@@ -128,6 +141,8 @@ filegroup(
         "ihp-sg13g2_data/sg13g2_stdcell.lef",
         "ihp-sg13g2_data/sg13g2_stdcell_typ_1p20V_25C.lib",
         "ihp-sg13g2_data/sg13g2_tech.lef",
+        "short_obs.lef",
+        "short_pads.lef",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
@@ -177,3 +192,23 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "psm_man_tcl_check",
+    srcs = ["psm_man_tcl_check.py"],
+    data = ["//src/psm:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "psm_readme_msgs_check",
+    data = [
+        "//src/psm:doc_files",
+        "//src/psm:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

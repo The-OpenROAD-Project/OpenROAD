@@ -9,17 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include "db/grObj/grShape.h"
-#include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frGuide.h"
-#include "db/obj/frNode.h"
-#include "db/obj/frRPin.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
-#include "global.h"
 #include "odb/dbTypes.h"
 
 namespace drt {
@@ -48,23 +44,6 @@ class frNet : public frBlockObject
   const std::list<std::unique_ptr<frShape>>& getPatchWires() const
   {
     return pwires_;
-  }
-  std::list<std::unique_ptr<grShape>>& getGRShapes() { return grShapes_; }
-  const std::list<std::unique_ptr<grShape>>& getGRShapes() const
-  {
-    return grShapes_;
-  }
-  std::list<std::unique_ptr<grVia>>& getGRVias() { return grVias_; }
-  const std::list<std::unique_ptr<grVia>>& getGRVias() const { return grVias_; }
-  std::list<std::unique_ptr<frNode>>& getNodes() { return nodes_; }
-  const std::list<std::unique_ptr<frNode>>& getNodes() const { return nodes_; }
-  frNode* getRoot() { return root_; }
-  frNode* getRootGCellNode() { return rootGCellNode_; }
-  frNode* getFirstNonRPinNode() { return firstNonRPinNode_; }
-  std::vector<std::unique_ptr<frRPin>>& getRPins() { return rpins_; }
-  const std::vector<std::unique_ptr<frRPin>>& getRPins() const
-  {
-    return rpins_;
   }
   const std::vector<std::unique_ptr<frGuide>>& getGuides() const
   {
@@ -117,40 +96,6 @@ class frNet : public frBlockObject
     rptr->setIter(--pwires_.end());
     all_pinfigs_.push_back(rptr);
   }
-  void addGRShape(std::unique_ptr<grShape>& in)
-  {
-    in->addToNet(this);
-    auto rptr = in.get();
-    grShapes_.push_back(std::move(in));
-    rptr->setIter(--grShapes_.end());
-  }
-  void addGRVia(std::unique_ptr<grVia>& in)
-  {
-    in->addToNet(this);
-    auto rptr = in.get();
-    grVias_.push_back(std::move(in));
-    rptr->setIter(--grVias_.end());
-  }
-  void addNode(std::unique_ptr<frNode>& in)
-  {
-    in->addToNet(this);
-    auto rptr = in.get();
-    if (nodes_.empty()) {
-      rptr->setId(0);
-    } else {
-      rptr->setId(nodes_.back()->getId() + 1);
-    }
-    nodes_.push_back(std::move(in));
-    rptr->setIter(--nodes_.end());
-  }
-  void setRoot(frNode* in) { root_ = in; }
-  void setRootGCellNode(frNode* in) { rootGCellNode_ = in; }
-  void setFirstNonRPinNode(frNode* in) { firstNonRPinNode_ = in; }
-  void addRPin(std::unique_ptr<frRPin>& in)
-  {
-    in->addToNet(this);
-    rpins_.push_back(std::move(in));
-  }
   void addGuide(std::unique_ptr<frGuide> in)
   {
     auto rptr = in.get();
@@ -158,26 +103,16 @@ class frNet : public frBlockObject
     in->setIndexInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
-  void clearRPins() { rpins_.clear(); }
   void clearGuides() { guides_.clear(); }
   void clearOrigGuides() { orig_guides_.clear(); }
   void clearConns()
   {
     instTerms_.clear();
     bterms_.clear();
-    nodes_.clear();
-    root_ = nullptr;
-    rootGCellNode_ = nullptr;
-    firstNonRPinNode_ = nullptr;
   }
   void removeShape(frShape* in) { shapes_.erase(in->getIter()); }
   void removeVia(frVia* in) { vias_.erase(in->getIter()); }
   void removePatchWire(frShape* in) { pwires_.erase(in->getIter()); }
-  void removeGRShape(grShape* in) { grShapes_.erase(in->getIter()); }
-  void clearGRShapes() { grShapes_.clear(); }
-  void removeGRVia(grVia* in) { grVias_.erase(in->getIter()); }
-  void clearGRVias() { grVias_.clear(); }
-  void removeNode(frNode* in) { nodes_.erase(in->getIter()); }
   void setModified(bool in) { modified_ = in; }
   void setIsFake(bool in) { isFakeNet_ = in; }
   void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
@@ -231,27 +166,25 @@ class frNet : public frBlockObject
   bool hasJumpers() { return has_jumpers_; }
   void setToBeDeleted(bool to_be_deleted) { to_be_deleted_ = to_be_deleted; }
   bool toBeDeleted() { return to_be_deleted_; }
+  // Per-net override of the global AUTO_TAPER_NDR_NETS config (on by
+  // default).  When disabled, DRT keeps this net at its full NDR width all
+  // the way to the pin instead of tapering to minimum width near pins.
+  void setAutoTaperEnabled(bool in) { auto_taper_enabled_ = in; }
+  // Effective setting: auto-taper applies only when enabled both globally
+  // and for this net.
+  bool autoTaperEnabled(bool global_enabled) const
+  {
+    return global_enabled && auto_taper_enabled_;
+  }
 
  protected:
   frString name_;
   RouterConfiguration* router_cfg_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frBTerm*> bterms_;
-  // dr
   std::list<std::unique_ptr<frShape>> shapes_;
   std::list<std::unique_ptr<frVia>> vias_;
   std::list<std::unique_ptr<frShape>> pwires_;
-  // gr
-  std::list<std::unique_ptr<grShape>> grShapes_;
-  std::list<std::unique_ptr<grVia>> grVias_;
-  //
-  std::list<std::unique_ptr<frNode>>
-      nodes_;  // the nodes at the beginning of the list correspond to rpins
-               // there is no guarantee that first element is root
-  frNode* root_{nullptr};
-  frNode* rootGCellNode_{nullptr};
-  frNode* firstNonRPinNode_{nullptr};
-  std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
   std::vector<frRect> orig_guides_;
   odb::dbSigType type_{odb::dbSigType::SIGNAL};
@@ -271,5 +204,7 @@ class frNet : public frBlockObject
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
   bool to_be_deleted_{false};
+  // Per-net auto-taper setting; see setAutoTaperEnabled().
+  bool auto_taper_enabled_{true};
 };
 }  // namespace drt

@@ -3,10 +3,15 @@
 
 #include "dbBox.h"
 
+#include <array>
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <memory>
+#include <span>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 #include "dbBPin.h"
@@ -24,7 +29,7 @@
 #include "dbObstruction.h"
 #include "dbPolygon.h"
 #include "dbRegion.h"
-#include "dbSWire.h"
+#include "dbSWire.h"  // IWYU pragma: keep
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
@@ -41,6 +46,44 @@
 #include "utl/Logger.h"
 
 namespace odb {
+
+namespace {
+
+static_assert(std::is_trivially_copyable_v<Oct>);
+static_assert(std::is_trivially_copyable_v<Rect>);
+static_assert(sizeof(Oct) == 20);
+static_assert(sizeof(Rect) == 16);
+
+_dbBoxFlags read_legacy_flags(dbIStream& stream, bool is_box_layer_bits)
+{
+  _dbBoxFlags flags;
+  uint32_t bit_field;
+  stream >> bit_field;
+  if (is_box_layer_bits) {
+    auto old = std::bit_cast<_dbBoxFlagsWithoutMask>(bit_field);
+    flags.owner_type = old.owner_type;
+    flags.soft = 0;
+    flags.octilinear = old.octilinear;
+    flags.is_tech_via = old.is_tech_via;
+    flags.is_block_via = old.is_block_via;
+    flags.layer_id = old.layer_id;
+    flags.via_id = old.via_id;
+    flags.layer_mask = 0;
+  } else {
+    auto old = std::bit_cast<_dbBoxFlagsBackwardCompatability>(bit_field);
+    flags.owner_type = old.owner_type;
+    flags.soft = 0;
+    flags.octilinear = old.octilinear;
+    flags.is_tech_via = old.is_tech_via;
+    flags.is_block_via = old.is_block_via;
+    flags.layer_id = old.layer_id;
+    flags.via_id = old.via_id;
+    flags.layer_mask = 0;
+  }
+  return flags;
+}
+
+}  // namespace
 
 template class dbTable<_dbBox>;
 
@@ -94,6 +137,9 @@ bool _dbBox::operator==(const _dbBox& rhs) const
   if (design_rule_width_ != rhs.design_rule_width_) {
     return false;
   }
+  if (min_spacing_ != rhs.min_spacing_) {
+    return false;
+  }
   return true;
 }
 
@@ -144,6 +190,9 @@ int _dbBox::equal(const _dbBox& rhs) const
     return false;
   }
   if (design_rule_width_ != rhs.design_rule_width_) {
+    return false;
+  }
+  if (min_spacing_ != rhs.min_spacing_) {
     return false;
   }
   if (isOct() && shape_.oct != rhs.shape_.oct) {
@@ -572,6 +621,18 @@ void dbBox::setDesignRuleWidth(const int width)
   box->design_rule_width_ = width;
 }
 
+int dbBox::getMinSpacing() const
+{
+  const _dbBox* box = (const _dbBox*) this;
+  return box->min_spacing_;
+}
+
+void dbBox::setMinSpacing(const int spacing)
+{
+  _dbBox* box = (_dbBox*) this;
+  box->min_spacing_ = spacing;
+}
+
 Point dbBox::getViaXY() const
 {
   const _dbBox* box = (const _dbBox*) this;
@@ -986,7 +1047,7 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   box->flags_.octilinear = false;
   box->flags_.owner_type = dbBoxOwner::INST;
   box->owner_ = inst->getOID();
-  box->shape_.rect.init(x1, y1, x2, y2);
+  box->shape_.rect.reset(x1, y1, x2, y2);
   inst->halo_ = box->getOID();
   return (dbBox*) box;
 }
@@ -1047,15 +1108,15 @@ dbBox* dbBox::getBox(dbMaster* master_, uint32_t dbid_)
   return (dbBox*) master->box_tbl_->getPtr(dbid_);
 }
 
-bool dbBox::isVisited() const
+bool dbBox::isSoft() const
 {
   const _dbBox* box = (const _dbBox*) this;
-  return box->flags_.visited == 1;
+  return box->flags_.soft == 1;
 }
-void dbBox::setVisited(const bool value)
+void dbBox::setSoft(const bool value)
 {
   _dbBox* box = (_dbBox*) this;
-  box->flags_.visited = (value == true) ? 1 : 0;
+  box->flags_.soft = (value) ? 1 : 0;
 }
 
 void _dbBox::collectMemInfo(MemInfo& info) const
@@ -1072,17 +1133,19 @@ _dbBox::_dbBox(_dbDatabase*)
   flags_.layer_id = 0;
   flags_.layer_mask = 0;
   flags_.via_id = 0;
-  flags_.visited = 0;
+  flags_.soft = 0;
   flags_.octilinear = false;
   owner_ = 0;
   design_rule_width_ = -1;
+  min_spacing_ = -1;
 }
 
 _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
     : flags_(b.flags_),
       owner_(b.owner_),
       next_box_(b.next_box_),
-      design_rule_width_(b.design_rule_width_)
+      design_rule_width_(b.design_rule_width_),
+      min_spacing_(b.min_spacing_)
 {
   if (b.isOct()) {
     new (&shape_.oct) Oct();
@@ -1095,59 +1158,84 @@ _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
 
 dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 {
-  uint32_t* bit_field = (uint32_t*) &box.flags_;
-  stream << *bit_field;
   if (box.isOct()) {
-    stream << box.shape_.oct;
+    stream.writeValues(box.flags_,
+                       box.shape_.oct,
+                       box.owner_,
+                       box.next_box_,
+                       box.design_rule_width_,
+                       box.min_spacing_);
   } else {
-    stream << box.shape_.rect;
+    stream.writeValues(box.flags_,
+                       box.shape_.rect,
+                       box.owner_,
+                       box.next_box_,
+                       box.design_rule_width_,
+                       box.min_spacing_);
   }
-  stream << box.owner_;
-  stream << box.next_box_;
-  stream << box.design_rule_width_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
   if (box.getDatabase()->isSchema(kSchemaDbBoxMask)) {
-    uint32_t* bit_field = (uint32_t*) &box.flags_;
-    stream >> *bit_field;
-  } else if (box.getDatabase()->isSchema(kSchemaBoxLayerBits)) {
-    _dbBoxFlagsWithoutMask old;
-    uint32_t* bit_field = (uint32_t*) &old;
-    stream >> *bit_field;
-    box.flags_.owner_type = old.owner_type;
-    box.flags_.visited = old.visited;
-    box.flags_.octilinear = old.octilinear;
-    box.flags_.is_tech_via = old.is_tech_via;
-    box.flags_.is_block_via = old.is_block_via;
-    box.flags_.layer_id = old.layer_id;
-    box.flags_.via_id = old.via_id;
-    box.flags_.layer_mask = 0;
+    const bool has_min_spacing
+        = box.getDatabase()->isSchema(kSchemaDbBoxMinSpacing);
+
+    stream.readValues(box.flags_);
+
+    if (box.isOct()) {
+      std::construct_at(&box.shape_.oct);
+      if (has_min_spacing) {
+        stream.readValues(box.shape_.oct,
+                          box.owner_,
+                          box.next_box_,
+                          box.design_rule_width_,
+                          box.min_spacing_);
+      } else {
+        box.min_spacing_ = -1;
+        stream.readValues(
+            box.shape_.oct, box.owner_, box.next_box_, box.design_rule_width_);
+      }
+    } else {
+      std::construct_at(&box.shape_.rect);
+      if (has_min_spacing) {
+        stream.readValues(box.shape_.rect,
+                          box.owner_,
+                          box.next_box_,
+                          box.design_rule_width_,
+                          box.min_spacing_);
+      } else {
+        box.min_spacing_ = -1;
+        stream.readValues(
+            box.shape_.rect, box.owner_, box.next_box_, box.design_rule_width_);
+      }
+    }
+    return stream;
+  }
+
+  // Backward compatibility paths
+  if (box.getDatabase()->isSchema(kSchemaBoxLayerBits)) {
+    box.flags_ = read_legacy_flags(stream, true);
   } else {
-    _dbBoxFlagsBackwardCompatability old;
-    uint32_t* bit_field = (uint32_t*) &old;
-    stream >> *bit_field;
-    box.flags_.owner_type = old.owner_type;
-    box.flags_.visited = old.visited;
-    box.flags_.octilinear = old.octilinear;
-    box.flags_.is_tech_via = old.is_tech_via;
-    box.flags_.is_block_via = old.is_block_via;
-    box.flags_.layer_id = old.layer_id;
-    box.flags_.via_id = old.via_id;
-    box.flags_.layer_mask = 0;
+    box.flags_ = read_legacy_flags(stream, false);
   }
 
   if (box.isOct()) {
-    new (&box.shape_.oct) Oct();
+    std::construct_at(&box.shape_.oct);
     stream >> box.shape_.oct;
   } else {
+    std::construct_at(&box.shape_.rect);
     stream >> box.shape_.rect;
   }
   stream >> box.owner_;
   stream >> box.next_box_;
   stream >> box.design_rule_width_;
+  if (box.getDatabase()->isSchema(kSchemaDbBoxMinSpacing)) {
+    stream >> box.min_spacing_;
+  } else {
+    box.min_spacing_ = -1;
+  }
   return stream;
 }
 

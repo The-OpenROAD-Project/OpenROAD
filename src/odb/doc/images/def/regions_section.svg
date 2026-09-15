@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="523" height="71"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 51 1 47 1 55"/>
+   <polygon points="17 51 9 47 9 55"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#regions_start"
+      xlink:title="regions_start">
+      <rect x="31" y="37" width="106" height="32"/>
+      <rect x="29" y="35" width="106" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="55">regions_start</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#regions_stmt"
+      xlink:title="regions_stmt">
+      <rect x="177" y="3" width="104" height="32"/>
+      <rect x="175" y="1" width="104" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="185" y="21">regions_stmt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_END"
+      xlink:title="K_END">
+      <rect x="321" y="37" width="62" height="32"/>
+      <rect x="319" y="35" width="62" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="329" y="55">K_END</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_REGIONS"
+      xlink:title="K_REGIONS">
+      <rect x="403" y="37" width="92" height="32"/>
+      <rect x="401" y="35" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="411" y="55">K_REGIONS</text>
+   </a>
+   <path class="line"
+         d="m17 51 h2 m0 0 h10 m106 0 h10 m20 0 h10 m0 0 h114 m-144 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m124 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-124 0 h10 m104 0 h10 m20 34 h10 m62 0 h10 m0 0 h10 m92 0 h10 m3 0 h-3"/>
+   <polygon points="513 51 521 47 521 55"/>
+   <polygon points="513 51 505 47 505 55"/>
+</svg>

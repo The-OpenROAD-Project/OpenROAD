@@ -50,7 +50,6 @@ void detailed_route_set_unidirectional_layer(const char* layerName)
 
 void detailed_route_cmd(const char* outputMazeFile,
                         const char* outputDrcFile,
-                        const char* outputCmapFile,
                         const char* outputGuideCoverageFile,
                         const char* dbProcessNode,
                         bool enableViaGen,
@@ -71,14 +70,9 @@ void detailed_route_cmd(const char* outputMazeFile,
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  std::optional<int> drcReportIterStepOpt;
-  if (drcReportIterStep > 0) {
-    drcReportIterStepOpt = drcReportIterStep;
-  }
   router->setParams({outputMazeFile,
                     outputDrcFile,
-                    drcReportIterStepOpt,
-                    outputCmapFile,
+                    drcReportIterStep,
                     outputGuideCoverageFile,
                     dbProcessNode,
                     enableViaGen,

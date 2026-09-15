@@ -58,11 +58,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
   // skip if non convex edge
   auto prevEdge = edge->getPrevEdge();
   auto nextEdge = edge->getNextEdge();
-  if (!(gtl::orientation(*prevEdge, *edge) == 1
-        && gtl::orientation(*edge, *nextEdge) == 1)) {
-    return false;
-  }
-  return true;
+  return gtl::orientation(*prevEdge, *edge) == 1
+         && gtl::orientation(*edge, *nextEdge) == 1;
 }
 
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
@@ -655,6 +652,10 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   if (edge->isFixed() && ptr->isFixed()) {
     return;
   }
+  if (edge->getNet()->getMinSpacing() != -1
+      || ptr->getNet()->getMinSpacing() != -1) {
+    return;
+  }
 
   // skip if non oppo-dir edge
   if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
@@ -774,10 +775,7 @@ bool FlexGCWorker::Impl::qualifiesAsEol(gcSegment* edge,
     return false;
   }
   triggered = checkMetalEndOfLine_eol_hasMinMaxLength(edge, constraint);
-  if (!triggered) {
-    return false;
-  }
-  return true;
+  return triggered;
 }
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_TN(gcSegment* edge,

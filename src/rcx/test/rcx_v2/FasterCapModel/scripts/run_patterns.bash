@@ -1,4 +1,6 @@
-#!/bin/bash -f
+#!/usr/bin/env bash
+
+set -o noglob
 
 if [ $# -lt 4 ] 
 then

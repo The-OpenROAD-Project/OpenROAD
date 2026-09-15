@@ -60,31 +60,31 @@ bool ArraySpacingParser::parse(const std::string& s)
 {
   rule_ = dbTechLayerArraySpacingRule::create(layer_);
 
-  qi::rule<std::string::const_iterator, space_type> CUTCLASS
+  qi::rule<std::string::const_iterator, space_type> cut_class_rule
       = (lit("CUTCLASS")
          >> _string[boost::bind(&ArraySpacingParser::setCutClass, this, _1)]);
-  qi::rule<std::string::const_iterator, space_type> VIA_WIDTH
+  qi::rule<std::string::const_iterator, space_type> via_width_rule
       = (lit("WIDTH")
          >> double_[boost::bind(&ArraySpacingParser::setViaWidth, this, _1)]);
-  qi::rule<std::string::const_iterator, space_type> ARRAYCUTS
+  qi::rule<std::string::const_iterator, space_type> array_cuts_rule
       = (lit("ARRAYCUTS") >> int_ >> lit("SPACING") >> double_)[boost::bind(
           &ArraySpacingParser::setArraySpacing, this, _1)];
-  qi::rule<std::string::const_iterator, space_type> WITHIN
+  qi::rule<std::string::const_iterator, space_type> within_rule
       = (lit("WITHIN") >> double_ >> lit("ARRAYWIDTH")
          >> double_)[boost::bind(&ArraySpacingParser::setWithin, this, _1)];
 
-  qi::rule<std::string::const_iterator, space_type> LEF58_ARRAYSPACING
-      = (lit("ARRAYSPACING") >> -(CUTCLASS)
+  qi::rule<std::string::const_iterator, space_type> lef58_array_spacing_rule
+      = (lit("ARRAYSPACING") >> -(cut_class_rule)
          >> -lit("PARALLELOVERLAP")[boost::bind(
              &dbTechLayerArraySpacingRule::setParallelOverlap, rule_, true)]
          >> -lit("LONGARRAY")[boost::bind(
              &dbTechLayerArraySpacingRule::setLongArray, rule_, true)]
-         >> -VIA_WIDTH >> -WITHIN >> lit("CUTSPACING")
+         >> -via_width_rule >> -within_rule >> lit("CUTSPACING")
          >> double_[boost::bind(&ArraySpacingParser::setCutSpacing, this, _1)]
-         >> +ARRAYCUTS >> lit(";"));
+         >> +array_cuts_rule >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, LEF58_ARRAYSPACING, space)
+  bool valid = qi::phrase_parse(first, last, lef58_array_spacing_rule, space)
                && first == last;
 
   if (!valid && rule_ != nullptr) {  // fail if we did not get a full match

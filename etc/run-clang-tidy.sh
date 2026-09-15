@@ -5,6 +5,15 @@
 # to clang-tidy as-is, e.g. if you only want to run a particular check and
 # the auto-fix
 #   run-clang-tidy.sh --checks="-*,modernize-loop-convert" --fix
+#
+# To restrict processing to a subset of paths, pass one or more --filter=REGEX
+# args (matched with regex_search against each candidate path), e.g.
+#   run-clang-tidy.sh --filter='src/odb/'
+#   run-clang-tidy.sh --filter='src/odb/' --filter='src/cts/'
+#
+# To list the files that would be checked (one per line on stdout) and exit
+# without running clang-tidy, pass --list-files, e.g.
+#   run-clang-tidy.sh --filter='src/odb/' --list-files
 
 set -eu
 
@@ -15,7 +24,7 @@ fi
 
 # Use either CLANG_TIDY provided by the user as environment variable or use
 # our own from the toolchain we configured in the MODULE.bazel
-export CLANG_TIDY="${CLANG_TIDY:-$("${BAZEL}" run -c opt --run_under='echo' @llvm_toolchain//:clang-tidy 2>/dev/null)}"
+export CLANG_TIDY="${CLANG_TIDY:-$("${BAZEL}" run -c opt --run_under='echo' @llvm//tools:clang-tidy 2>/dev/null)}"
 
 # The user should keep the compilation DB fresh, but refresh here
 # if substantial things changed or it is not there in the first place.

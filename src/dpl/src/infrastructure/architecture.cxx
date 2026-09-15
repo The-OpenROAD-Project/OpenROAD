@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "architecture.h"
+#include "infrastructure/architecture.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,11 +12,11 @@
 #include <utility>
 #include <vector>
 
-#include "Objects.h"
-#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
-#include "network.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 
@@ -272,16 +272,10 @@ bool Architecture::powerCompatible(const Node* ndi,
 
     const int ndBot = ndi->getBottomPower();
     const int ndTop = ndi->getTopPower();
-    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
-         || rowBot == Architecture::Row::Power_UNK)
-        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
-            || rowTop == Architecture::Row::Power_UNK)) {
-      // Power matches as it is.
-      flip = false;
-    } else {
-      // Assume we need to flip.
-      flip = true;
-    }
+    flip = (ndBot != rowBot && ndBot != Architecture::Row::Power_UNK
+            && rowBot != Architecture::Row::Power_UNK)
+           || (ndTop != rowTop && ndTop != Architecture::Row::Power_UNK
+               && rowTop != Architecture::Row::Power_UNK);
 
     return true;
   }

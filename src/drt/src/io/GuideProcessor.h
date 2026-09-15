@@ -14,9 +14,9 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/tech/frTechObject.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -286,6 +286,7 @@ class GuidePathFinder
                   frNet* net,
                   bool force_feed_through,
                   const std::vector<frRect>& rects,
+                  const std::vector<frBlockObject*>& pins,
                   const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   int getNodeCount() const { return node_count_; }
   int getGuideCount() const { return guide_count_; }
@@ -338,10 +339,16 @@ class GuidePathFinder
     int cost;
     bool operator<(const Wavefront& b) const
     {
-      if (cost == b.cost) {
+      // Total order so that priority_queue pop order (and therefore the
+      // chosen predecessor on cost ties) does not depend on the standard
+      // library's heap implementation.
+      if (cost != b.cost) {
+        return cost > b.cost;
+      }
+      if (node_idx != b.node_idx) {
         return node_idx > b.node_idx;
       }
-      return cost > b.cost;
+      return prev_idx > b.prev_idx;
     }
   };
   /**
@@ -467,6 +474,7 @@ class GuidePathFinder
   std::vector<bool> visited_;
   std::vector<bool> is_on_path_;
   std::vector<int> prev_idx_;
+  std::vector<frBlockObject*> pins_;
   frBlockObjectMap<std::set<Point3D>> pin_gcell_map_;
   std::vector<frRect> rects_;
 };

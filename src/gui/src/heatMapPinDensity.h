@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 
@@ -15,6 +17,11 @@ class PinDensityDataSource : public RealValueHeatMapDataSource,
   PinDensityDataSource(utl::Logger* logger);
 
   odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+
+  std::string getSelectionFilterLabel() const override
+  {
+    return "Only use selected instances";
+  }
 
   void onShow() override;
   void onHide() override;

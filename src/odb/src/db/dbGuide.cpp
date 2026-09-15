@@ -25,6 +25,7 @@ template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (net_ != rhs.net_) {
     return false;
   }
@@ -51,6 +52,7 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGuide::operator<(const _dbGuide& rhs) const

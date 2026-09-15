@@ -7,13 +7,14 @@
 
 #include <algorithm>
 #include <cassert>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/util.h"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
@@ -259,7 +260,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
   //
   odb::dbNet* source_db_net = source_pin->getNet();
   odb::dbNet* dest_db_net = dest_pin->getNet();
-  if (db_network_->hasHierarchy() == false) {
+  if (!db_network_->hasHierarchy()) {
     // If both source pin and dest pin do not have a corresponding flat net,
     // Create a new net and connect it with source pin.
     if (source_db_net == nullptr && dest_db_net == nullptr) {
@@ -467,7 +468,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
   odb::dbModBTerm* dest_mod_bterm = dest_pin->getChildModBTerm();
   odb::dbModNet* dest_mod_bterm_net = dest_mod_bterm->getModNet();
 
-  std::set<odb::dbITerm*> load_iterms;
+  odb::PtrSet<odb::dbITerm> load_iterms;
   odb::dbModInst* dest_mod_inst = dest_pin->getParent();
   for (odb::dbITerm* iterm : dest_mod_bterm_net->getITerms()) {
     if (iterm == source_pin) {
@@ -586,7 +587,7 @@ void dbEditHierarchy::cleanUnusedHierPins(
     const std::vector<odb::dbModule*>& source_parent_tree,
     const std::vector<odb::dbModule*>& dest_parent_tree) const
 {
-  std::set<odb::dbModInst*> cleaned_up;
+  odb::PtrSet<odb::dbModInst> cleaned_up;
   for (auto module_to_clean_up : source_parent_tree) {
     odb::dbModInst* mi = module_to_clean_up->getModInst();
     if (mi) {
@@ -619,21 +620,15 @@ std::string dbEditHierarchy::makeUniqueName(odb::dbModule* module,
     base_name = name;
   }
 
-  std::string unique_name = base_name;
-  int id = 0;
+  // Newly punched hierarchy ports and nets are scalar objects.
+  base_name = odb::replaceBracketsWithUnderscores(base_name);
 
-  Instance* inst = db_network_->dbToSta(module->getModInst());
-  if (inst == nullptr) {
-    inst = db_network_->topInstance();
-  }
-
-  // Check collision with both hierarchical ports and flat & hier nets
-  while (module->findModBTerm(unique_name.c_str())
-         || db_network_->findNet(inst, unique_name.c_str())) {
-    id++;
-    unique_name = fmt::format("{}_{}", base_name, id);
-  }
-  return unique_name;
+  odb::dbBlock* block = db_network_->block();
+  std::string full = block->makeNewNetName(
+      module,
+      base_name.c_str(),
+      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  return std::string(block->getBaseName(full.c_str()));
 }
 
 const char* dbEditHierarchy::getBaseName(const char* connection_name) const

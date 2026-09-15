@@ -4,6 +4,7 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <optional>
 #include <set>
@@ -11,6 +12,7 @@
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -103,20 +105,24 @@ void Rudy::getResourceReductions()
   for (int x = 0; x < grid_.size(); x++) {
     for (int y = 0; y < grid_[x].size(); y++) {
       Tile& tile = getEditableTile(x, y);
-      uint8_t tile_cap = cap_usage_data[x][y].capacity;
-      float tile_reduction = cap_usage_data[x][y].reduction;
-      float cap_usage_data = tile_reduction / tile_cap;
-      tile.addRudy(cap_usage_data * 100);
+      const uint8_t tile_cap = cap_usage_data[x][y].capacity;
+      const float tile_reduction = cap_usage_data[x][y].reduction;
+      if (tile_cap == 0) {
+        // No nominal capacity at all, so there is nothing here to route on.
+        tile.setBlockage(1.0f);
+        continue;
+      }
+      tile.setBlockage(std::min(tile_reduction / tile_cap, 1.0f));
     }
   }
 }
 
-void Rudy::calculateRudy(std::optional<std::set<odb::dbNet*>*> selection)
+void Rudy::calculateRudy(std::optional<odb::PtrSet<odb::dbNet>*> selection)
 {
   // Clear previous computation
   for (auto& grid_column : grid_) {
     for (auto& tile : grid_column) {
-      tile.clearRudy();
+      tile.clear();
     }
   }
 
@@ -144,40 +150,37 @@ void Rudy::processNet(odb::dbNet* net)
 
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
 {
-  const auto net_area = net_rect.area();
-  if (net_area == 0) {
-    // TODO: handle nets with 0 area from getTermBBox()
-    return;
+  visitNetTiles(net_rect, [this](int x, int y, float demand) {
+    getEditableTile(x, y).addDemand(demand);
+  });
+}
+
+std::vector<std::pair<odb::dbNet*, float>> Rudy::getNetDemandInTiles(
+    const std::vector<bool>& selected) const
+{
+  std::vector<std::pair<odb::dbNet*, float>> net_demand;
+  if (tile_cnt_y_ == 0) {
+    return net_demand;
   }
-  const auto hpwl = static_cast<float>(net_rect.dx() + net_rect.dy());
-  const auto wire_area = hpwl * wire_width_;
-  const auto net_congestion = wire_area / net_area;
 
-  // Calculate the intersection range
-  const int min_x_index
-      = std::max(0, (net_rect.xMin() - grid_block_.xMin()) / tile_size_);
-  const int max_x_index = std::min(
-      tile_cnt_x_ - 1, (net_rect.xMax() - grid_block_.xMin()) / tile_size_);
-  const int min_y_index
-      = std::max(0, (net_rect.yMin() - grid_block_.yMin()) / tile_size_);
-  const int max_y_index = std::min(
-      tile_cnt_y_ - 1, (net_rect.yMax() - grid_block_.yMin()) / tile_size_);
-
-  // Iterate over the tiles in the calculated range
-  for (int x = min_x_index; x <= max_x_index; ++x) {
-    for (int y = min_y_index; y <= max_y_index; ++y) {
-      Tile& tile = getEditableTile(x, y);
-      const auto tile_box = tile.getRect();
-      if (net_rect.overlaps(tile_box)) {
-        const auto intersect_area = net_rect.intersect(tile_box).area();
-        const auto tile_area = tile_box.area();
-        const auto tile_net_box_ratio = static_cast<float>(intersect_area)
-                                        / static_cast<float>(tile_area);
-        const auto rudy = net_congestion * tile_net_box_ratio * 100;
-        tile.addRudy(rudy);
-      }
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    float demand = 0;
+    visitNetTiles(net->getTermBBox(),
+                  [&selected, &demand, this](int x, int y, float tile_demand) {
+                    const size_t index
+                        = static_cast<size_t>(x) * tile_cnt_y_ + y;
+                    if (index < selected.size() && selected[index]) {
+                      demand += tile_demand;
+                    }
+                  });
+    if (demand > 0) {
+      net_demand.emplace_back(net, demand);
     }
   }
+  return net_demand;
 }
 
 std::pair<int, int> Rudy::getGridSize() const
@@ -193,9 +196,20 @@ void Rudy::Tile::setRect(int lx, int ly, int ux, int uy)
   rect_ = odb::Rect(lx, ly, ux, uy);
 }
 
-void Rudy::Tile::addRudy(float rudy)
+void Rudy::Tile::addDemand(float demand)
 {
-  rudy_ += rudy;
+  demand_ += demand;
+}
+
+void Rudy::Tile::setBlockage(float blockage)
+{
+  blockage_ = blockage;
+}
+
+void Rudy::Tile::clear()
+{
+  demand_ = 0.0;
+  blockage_ = 0.0;
 }
 
 }  // namespace grt

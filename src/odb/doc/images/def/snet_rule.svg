@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="415" height="71"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 51 1 47 1 55"/>
+   <polygon points="17 51 9 47 9 55"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#net_and_connections"
+      xlink:title="net_and_connections">
+      <rect x="31" y="37" width="156" height="32"/>
+      <rect x="29" y="35" width="156" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="55">net_and_connections</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#snet_option"
+      xlink:title="snet_option">
+      <rect x="227" y="3" width="96" height="32"/>
+      <rect x="225" y="1" width="96" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="235" y="21">snet_option</text>
+   </a>
+   <rect x="363" y="37" width="24" height="32" rx="10"/>
+   <rect x="361"
+         y="35"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="371" y="55">;</text>
+   <path class="line"
+         d="m17 51 h2 m0 0 h10 m156 0 h10 m20 0 h10 m0 0 h106 m-136 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m116 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-116 0 h10 m96 0 h10 m20 34 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="405 51 413 47 413 55"/>
+   <polygon points="405 51 397 47 397 55"/>
+</svg>

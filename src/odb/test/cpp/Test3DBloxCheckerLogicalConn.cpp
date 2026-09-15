@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -75,6 +76,7 @@ class CheckerLogicalConnFixture : public CheckerFixture
   void check()
   {
     utl::Logger logger;
+    db_->constructUnfoldedModel();
     ThreeDBlox three_dblox(&logger, db_.get());
     three_dblox.check();
   }
@@ -102,7 +104,7 @@ TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_matching_nets)
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
 
-  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
   auto inst1_bump1 = *ri1->getChipBumpInsts().begin();
@@ -137,7 +139,7 @@ TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_mismatching_nets)
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
 
-  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
   auto inst1_bump1 = *ri1->getChipBumpInsts().begin();

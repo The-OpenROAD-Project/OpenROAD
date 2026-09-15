@@ -44,6 +44,7 @@ template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -67,6 +68,7 @@ bool _dbModule::operator==(const _dbModule& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModule::operator<(const _dbModule& rhs) const
@@ -213,7 +215,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (isTop() == false && _inst->flags_.physical_only) {
+  if (!isTop() && _inst->flags_.physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -234,7 +236,12 @@ void dbModule::addInst(dbInst* inst)
         _inst->name_);
   }
 
-  if (_inst->module_ != 0) {
+  // Distinguish a real reparent (inst already had a module) from the
+  // initial assignment during dbInst::create (module_ is unset). Only
+  // the former should fire inDbPostInstParentChange -- otherwise every
+  // create would falsely trigger downstream subtree-invalidation paths.
+  const bool is_reparent = (_inst->module_ != 0);
+  if (is_reparent) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
     ((_dbModule*) mod)->removeInst(inst);
   }
@@ -251,6 +258,12 @@ void dbModule::addInst(dbInst* inst)
     _inst->module_next_ = module->insts_;
     module->insts_ = _inst->getOID();
     cur_head->module_prev_ = _inst->getOID();
+  }
+
+  if (is_reparent) {
+    for (dbBlockCallBackObj* cb : block->callbacks_) {
+      cb->inDbPostInstParentChange(inst);
+    }
   }
 }
 
@@ -542,18 +555,23 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 
 dbModBTerm* dbModule::findModBTerm(const char* name) const
 {
-  std::string modbterm_name(name);
-  const char hier_delimiter = getOwner()->getHierarchyDelimiter();
-  size_t last_idx = modbterm_name.find_last_of(hier_delimiter);
-  if (last_idx != std::string::npos) {
-    modbterm_name = modbterm_name.substr(last_idx + 1);
-  }
   const _dbModule* obj = (const _dbModule*) this;
   const _dbBlock* par = (const _dbBlock*) obj->getOwner();
-  auto it = obj->modbterm_hash_.find(modbterm_name);
+
+  // Try the full name first.  modbterm names may legitimately contain the
+  // hierarchy delimiter (e.g. escaped-identifier ports emitted by other
+  // EDA tools), so unconditionally truncating at the last '/' would miss
+  // them.  Fall back to the trailing segment for callers that pass a
+  // hierarchical path to a non-hierarchical port name.
+  auto it = obj->modbterm_hash_.find(name);
+  if (it == obj->modbterm_hash_.end()) {
+    const char* base_name = getOwner()->getBaseName(name);
+    if (base_name != name) {
+      it = obj->modbterm_hash_.find(base_name);
+    }
+  }
   if (it != obj->modbterm_hash_.end()) {
-    auto db_id = (*it).second;
-    return (dbModBTerm*) par->modbterm_tbl_->getPtr(db_id);
+    return (dbModBTerm*) par->modbterm_tbl_->getPtr((*it).second);
   }
   return nullptr;
 }
@@ -910,7 +928,7 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       dbModNet* old_mod_net = old_iterm->getModNet();
       bool has_parent_modnet
           = (old_mod_net && old_mod_net->getFirstParentModNet());
-      if (old_net->isInternalTo(old_module) == false && has_parent_modnet) {
+      if (!old_net->isInternalTo(old_module) && has_parent_modnet) {
         // Skip external net crossing module boundary.
         // It will be connected later.
         debugPrint(logger,

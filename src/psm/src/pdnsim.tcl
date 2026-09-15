@@ -111,8 +111,13 @@ proc insert_decap { args } {
     set target_cap [expr [sta::capacitance_ui_sta $target_cap] / [sta::distance_ui_sta 1.0]]
   }
 
-  # Check even size
+  if { ![info exists keys(-cells)] } {
+    utl::error PSM 182 "Missing mandatory argument -cells."
+  }
+
   set cells_and_decap $keys(-cells)
+
+  # Check even size
   if { [llength $cells_and_decap] % 2 != 0 } {
     utl::error PSM 181 "-cells must be a list of cell and decap pairs"
   }

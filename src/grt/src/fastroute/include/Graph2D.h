@@ -55,6 +55,7 @@ class Graph2D
   void init(int x_grid, int y_grid, int num_layers, utl::Logger* logger);
   void InitEstUsage();
   void InitLastUsage(int upType);
+  void copyRoutingStateFrom(const Graph2D& other, bool include_ndr_state);
   void clear();
   void clearUsed();
   bool hasEdges() const;
@@ -115,12 +116,10 @@ class Graph2D
                    double cap);
 
   void clearNDRnets();
-  std::vector<NDRCongestion> getCongestedNDRnets() { return congested_ndrs_; };
   void clearCongestedNDRnets() { congested_ndrs_.clear(); };
   void addCongestedNDRnet(int net_id, uint16_t num_edges);
   void sortCongestedNDRnets();
-  int getOneCongestedNDRnet();
-  std::vector<int> getMultipleCongestedNDRnet();
+  std::vector<int> getCongestedNDRnetsByFraction(double fraction);
 
  private:
   int x_grid_ = 0;

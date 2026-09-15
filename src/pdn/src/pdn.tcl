@@ -9,7 +9,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-check_only] \
                                [-failed_via_report file] \
                                [-verbose]
-} ;#checker off
+}
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -61,10 +61,7 @@ proc pdngen { args } {
     set failed_via_report $keys(-failed_via_report)
   }
 
-  pdn::check_setup
-  pdn::build_grids $trim
-  pdn::write_to_db $add_pins $failed_via_report
-  pdn::reset_shapes
+  pdn::run_pdngen $trim $add_pins $failed_via_report
 }
 
 sta::define_cmd_args "set_voltage_domain" {-name domain_name \
@@ -172,7 +169,7 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-power_control_network (STAR|DAISY)] \
                                         [-connect_to_pads] \
                                         [-connect_to_pad_layers layers]
-} ;#checker off
+}
 
 proc define_pdn_grid { args } {
   set is_macro 0
@@ -398,7 +395,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]\
                                      [-allow_out_of_die]
-                                     } ;#checker off
+                                     }
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
@@ -549,13 +546,15 @@ sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         [-max_rows rows] \
                                         [-max_columns columns] \
                                         [-ongrid ongrid_layers] \
+                                        [-min_width_layers min_width_layers] \
                                         [-split_cuts split_cuts_mapping] \
                                         [-split_cuts_staggered]
 }
 
 proc add_pdn_connect { args } {
   sta::parse_key_args "add_pdn_connect" args \
-    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts \
+    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid \
+      -min_width_layers -split_cuts \
       -dont_use_vias} \
     flags {-split_cuts_staggered}
 
@@ -619,6 +618,13 @@ proc add_pdn_connect { args } {
     }
   }
 
+  set min_width_layers {}
+  if { [info exists keys(-min_width_layers)] } {
+    foreach l $keys(-min_width_layers) {
+      lappend min_width_layers [pdn::get_layer $l]
+    }
+  }
+
   set split_cuts_layers {}
   set split_cuts_pitches {}
   set split_cuts_staggered false
@@ -645,6 +651,7 @@ proc add_pdn_connect { args } {
     $max_rows \
     $max_columns \
     $ongrid \
+    $min_width_layers \
     $split_cuts_layers \
     $split_cuts_pitches \
     $split_cuts_staggered \
@@ -670,6 +677,19 @@ proc add_sroute_connect { args } {
       -metalspaces -ongrid -insts} \
     flags {}
 
+  if { ![info exists keys(-layers)] } {
+    utl::error PDN 1193 "The -layers argument is required."
+  }
+  if { [llength $keys(-layers)] != 2 } {
+    utl::error PDN 1195 "The -layers argument must be a list of 2 layers."
+  }
+  if { ![info exists keys(-cut_pitch)] } {
+    utl::error PDN 1194 "The -cut_pitch argument is required."
+  }
+  if { [llength $keys(-cut_pitch)] != 2 } {
+    utl::error PDN 1196 "The -cut_pitch argument must be a list of 2 pitch values."
+  }
+
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
   set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
 
@@ -678,10 +698,10 @@ proc add_sroute_connect { args } {
   set cut_pitch_x [lindex $keys(-cut_pitch) 0]
   set cut_pitch_y [lindex $keys(-cut_pitch) 1]
 
-  set net ""
-  if { [info exists keys(-net)] } {
-    set net $keys(-net)
+  if { ![info exists keys(-net)] } {
+    utl::error PDN 1197 "The -net argument is required."
   }
+  set net $keys(-net) ;# always set after validation
 
   set outerNet ""
   if { [info exists keys(-outerNet)] } {
@@ -845,7 +865,7 @@ proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
       -power_control -power_control_network -connect_to_pad_layers} \
-    flags {-connect_to_pads} ;# checker off
+    flags {-connect_to_pads}
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -1000,7 +1020,10 @@ proc define_pdn_grid_macro { args } {
     utl::error PDN 1029 "-name is required"
   }
   if { [has_grid $keys(-name)] } {
-    utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+    remove_dummy_grid $keys(-name)
+    if { [has_grid $keys(-name)] } {
+      utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+    }
   }
 
   set start_with_power 0
@@ -1036,8 +1059,8 @@ proc define_pdn_grid_macro { args } {
 
   set is_bump [info exists flags(-bump)]
 
+  set insts {}
   if { [info exists keys(-instances)] } {
-    set insts {}
     foreach inst_pattern $keys(-instances) {
       set sub_insts [get_insts $inst_pattern]
       if { [llength $sub_insts] == 0 } {
@@ -1054,23 +1077,6 @@ proc define_pdn_grid_macro { args } {
     }
 
     set insts [lsort -unique -command name_cmp $insts]
-    foreach inst $insts {
-      # must match orientation, if provided
-      if { [match_orientation $orients [$inst getOrient]] != 0 } {
-        foreach domain $domains {
-          pdn::make_instance_grid \
-            $domain \
-            $keys(-name) \
-            $start_with_power \
-            $inst \
-            {*}$halo \
-            $pg_pins_to_boundary \
-            $default_grid \
-            $obstructions \
-            $is_bump
-        }
-      }
-    }
   } else {
     set cells {}
     foreach cell_pattern $keys(-cells) {
@@ -1095,22 +1101,38 @@ proc define_pdn_grid_macro { args } {
       foreach inst [[ord::get_db_block] getInsts] {
         # inst must match cells
         if { [$inst getMaster] == $cell } {
-          # must match orientation, if provided
-          if { [match_orientation $orients [$inst getOrient]] != 0 } {
-            foreach domain $domains {
-              pdn::make_instance_grid \
-                $domain $keys(-name) \
-                $start_with_power \
-                $inst \
-                {*}$halo \
-                $pg_pins_to_boundary \
-                $default_grid \
-                $obstructions \
-                $is_bump
-            }
-          }
+          lappend insts $inst
         }
       }
+    }
+  }
+
+  set created false
+  foreach inst $insts {
+    # must match orientation, if provided
+    if { [match_orientation $orients [$inst getOrient]] != 0 } {
+      foreach domain $domains {
+        pdn::make_instance_grid \
+          $domain \
+          $keys(-name) \
+          $start_with_power \
+          $inst \
+          {*}$halo \
+          $pg_pins_to_boundary \
+          $default_grid \
+          $obstructions \
+          $is_bump
+        set created true
+      }
+    }
+  }
+
+  if { !$created } {
+    utl::warn PDN 1051 "No instances found for grid (${keys(-name)})."
+    foreach domain $domains {
+      pdn::make_dummy_inst_grid \
+        $domain \
+        $keys(-name)
     }
   }
 }

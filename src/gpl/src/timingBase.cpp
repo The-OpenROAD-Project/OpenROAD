@@ -4,6 +4,7 @@
 #include "timingBase.h"
 
 #include <algorithm>
+#include <boost/scope_exit.hpp>
 #include <cmath>
 #include <cstddef>
 #include <functional>
@@ -117,15 +118,29 @@ void TimingBase::setTimingNetWeightMax(float max)
   net_weight_max_ = max;
 }
 
-bool TimingBase::executeTimingDriven(bool run_journal_restore)
+void TimingBase::setTimingNetsPercentage(float percentage)
 {
-  rs_->findResizeSlacks(run_journal_restore);
+  nets_percentage_ = percentage;
+}
 
-  if (!run_journal_restore) {
-    nbc_->fixPointers();
+bool TimingBase::executeTimingDriven(bool run_journal_restore,
+                                     bool enable_repair_timing)
+{
+  {
+    BOOST_SCOPE_EXIT_ALL(&)
+    {
+      if (!run_journal_restore) {
+        nbc_->fixPointers();
+      }
+    };
+
+    rs_->findResizeSlacks(run_journal_restore,
+                          (enable_repair_timing && repair_timing_),
+                          repair_tns_end_percent_);
   }
 
   // get worst resize nets
+  rs_->setWorstSlackNetsPercent(nets_percentage_);
   sta::NetSeq worst_slack_nets = rs_->resizeWorstSlackNets();
 
   if (worst_slack_nets.empty()) {
@@ -142,7 +157,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
       = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
             .value();
 
-  log_->info(GPL, 106, "Timing-driven: worst slack {:.3g}", slack_min);
+  log_->info(GPL, 106, "Timing-driven: worst slack {}", slack_min);
 
   if (sta::fuzzyInf(slack_min)) {
     log_->warn(GPL,

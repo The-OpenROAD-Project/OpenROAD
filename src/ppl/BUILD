@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -37,19 +38,15 @@ cc_library(
         "include/ppl/MakeIoplacer.h",
         "include/ppl/Parameters.h",
     ],
-    copts = [
-        "-Isrc/ppl/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":munkres",
         "//:ord",
-        "//src/dbSta",
         "//src/gui",
-        "//src/odb",
-        "//src/sta:opensta_lib",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.container_hash",
         "@boost.random",
@@ -114,5 +111,21 @@ python_wrap_cc(
     ],
     deps = [
         "//src/odb:swig-py",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/IOPlacer.tcl",
+    ],
+    visibility = ["//src/ppl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/ppl/test:__pkg__",
     ],
 )

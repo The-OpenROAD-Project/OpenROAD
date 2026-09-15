@@ -191,4 +191,24 @@ GROUPS 1 ;
     - group1 _d0_ _g0_ + REGION region1 + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 
     realrangeprop 25.25  ;
 END GROUPS
+
+SCANCHAINS 2 ;
+
+- chain1
++ START _d0_ D
++ FLOATING
+  _d2_ ( IN D ) ( OUT Q )
++ PARTITION part1
++ STOP _d1_ Q ;
+
+- chain2
++ START PIN inp0
++ ORDERED
+  _d3_ ( IN D ) ( OUT Q )
+  _d4_ ( IN D ) ( OUT Q )
++ PARTITION part2
++ STOP PIN out[0] ;
+
+END SCANCHAINS
+
 END DESIGN

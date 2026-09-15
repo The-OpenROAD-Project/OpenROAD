@@ -2,6 +2,7 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <map>
@@ -73,10 +74,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
 
   // initialize the nbrcnt for treenodes
   const int sizeV = 2 * nets_[ind]->getNumPins();
-  std::vector<int> nbrcnt(sizeV);
-  for (int i = 0; i < numnodes; i++) {
-    nbrcnt[i] = 0;
-  }
+  std::vector<int> nbrcnt(sizeV, 0);
 
   int edgecnt = 0;
   // original rsmt has 2*d-2 branch (one is a loop for root), in StTree 2*d-3
@@ -89,11 +87,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
     const int y2 = rsmt.branch[n].y;
     treenodes[i].x = x1;
     treenodes[i].y = y1;
-    if (i < d) {
-      treenodes[i].status = 2;
-    } else {
-      treenodes[i].status = 0;
-    }
+    treenodes[i].status = (i < d) ? 2 : 0;
     if (n != i) {  // not root
       treeedges[edgecnt].len = abs(x1 - x2) + abs(y1 - y2);
       // make x1 always less than x2
@@ -165,46 +159,15 @@ void FastRouteCore::fluteNormal(const int netID,
     t.branch[1].n = 1;
   } else if (d == 3) {
     t.deg = 3;
-    int x_max, x_min, x_mid;
-    if (x[0] < x[1]) {
-      if (x[0] < x[2]) {
-        x_min = x[0];
-        std::tie(x_mid, x_max) = std::minmax(x[1], x[2]);
-      } else {
-        x_min = x[2];
-        x_mid = x[0];
-        x_max = x[1];
-      }
-    } else {
-      if (x[0] < x[2]) {
-        x_min = x[1];
-        x_mid = x[0];
-        x_max = x[2];
-      } else {
-        std::tie(x_min, x_mid) = std::minmax(x[1], x[2]);
-        x_max = x[0];
-      }
-    }
-    int y_max, y_min, y_mid;
-    if (y[0] < y[1]) {
-      if (y[0] < y[2]) {
-        y_min = y[0];
-        std::tie(y_mid, y_max) = std::minmax(y[1], y[2]);
-      } else {
-        y_min = y[2];
-        y_mid = y[0];
-        y_max = y[1];
-      }
-    } else {
-      if (y[0] < y[2]) {
-        y_min = y[1];
-        y_mid = y[0];
-        y_max = y[2];
-      } else {
-        std::tie(y_min, y_mid) = std::minmax(y[1], y[2]);
-        y_max = y[0];
-      }
-    }
+    // Sort the 3 pin coordinates to find the bounding box extents (min/max)
+    // and the middle value, which becomes the Steiner point position.
+    std::array<int, 3> xs_arr = {x[0], x[1], x[2]};
+    std::ranges::sort(xs_arr);
+    const auto [x_min, x_mid, x_max] = xs_arr;
+
+    std::array<int, 3> ys_arr = {y[0], y[1], y[2]};
+    std::ranges::sort(ys_arr);
+    const auto [y_min, y_mid, y_max] = ys_arr;
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
     t.branch.resize(4);
@@ -292,14 +255,14 @@ void FastRouteCore::fluteNormal(const int netID,
       gs_[netID][i] = s[i];
 
       tmp_xs[i] = xs[i] * 100;
-      tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
+      tmp_ys[i] = ys[i] * static_cast<int>(100 * coeffV);
     }
 
     t = stt_builder_->makeSteinerTree(tmp_xs, tmp_ys, s, acc);
 
     for (auto& branch : t.branch) {
       branch.x /= 100;
-      branch.y /= ((int) (100 * coeffV));
+      branch.y /= static_cast<int>(100 * coeffV);
     }
 
     delete[] pt;
@@ -328,46 +291,15 @@ void FastRouteCore::fluteCongest(const int netID,
     t.branch[1].n = 1;
   } else if (d == 3) {
     t.deg = 3;
-    int x_max, x_min, x_mid;
-    if (x[0] < x[1]) {
-      if (x[0] < x[2]) {
-        x_min = x[0];
-        std::tie(x_mid, x_max) = std::minmax(x[1], x[2]);
-      } else {
-        x_min = x[2];
-        x_mid = x[0];
-        x_max = x[1];
-      }
-    } else {
-      if (x[0] < x[2]) {
-        x_min = x[1];
-        x_mid = x[0];
-        x_max = x[2];
-      } else {
-        std::tie(x_min, x_mid) = std::minmax(x[1], x[2]);
-        x_max = x[0];
-      }
-    }
-    int y_max, y_min, y_mid;
-    if (y[0] < y[1]) {
-      if (y[0] < y[2]) {
-        y_min = y[0];
-        std::tie(y_mid, y_max) = std::minmax(y[1], y[2]);
-      } else {
-        y_min = y[2];
-        y_mid = y[0];
-        y_max = y[1];
-      }
-    } else {
-      if (y[0] < y[2]) {
-        y_min = y[1];
-        y_mid = y[0];
-        y_max = y[2];
-      } else {
-        std::tie(y_min, y_mid) = std::minmax(y[1], y[2]);
-        y_max = y[0];
-      }
-    }
+    // Sort the 3 pin coordinates to find the bounding box extents (min/max)
+    // and the middle value, which becomes the Steiner point position.
+    std::array<int, 3> xs_arr = {x[0], x[1], x[2]};
+    std::ranges::sort(xs_arr);
+    const auto [x_min, x_mid, x_max] = xs_arr;
+
+    std::array<int, 3> ys_arr = {y[0], y[1], y[2]};
+    std::ranges::sort(ys_arr);
+    const auto [y_min, y_mid, y_max] = ys_arr;
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
     t.branch.resize(4);
@@ -495,17 +427,16 @@ bool FastRouteCore::netCongestion(const int netID)
 
 bool FastRouteCore::VTreeSuite(const int netID)
 {
-  int xmax = 0;
-  int ymax = 0;
-  int xmin = BIG_INT;
-  int ymin = BIG_INT;
+  int xmax = 0, ymax = 0;
+  int xmin = BIG_INT, ymin = BIG_INT;
 
-  const int deg = nets_[netID]->getNumPins();
+  const FrNet* net = nets_[netID];
+  const int deg = net->getNumPins();
   for (int i = 0; i < deg; i++) {
-    xmin = std::min(xmin, nets_[netID]->getPinX(i));
-    xmax = std::max(xmax, nets_[netID]->getPinX(i));
-    ymin = std::min(ymin, nets_[netID]->getPinY(i));
-    ymax = std::max(ymax, nets_[netID]->getPinY(i));
+    xmin = std::min(xmin, net->getPinX(i));
+    xmax = std::max(xmax, net->getPinX(i));
+    ymin = std::min(ymin, net->getPinY(i));
+    ymax = std::max(ymax, net->getPinY(i));
   }
 
   return (ymax - ymin) > 3 * (xmax - xmin);
@@ -513,17 +444,16 @@ bool FastRouteCore::VTreeSuite(const int netID)
 
 bool FastRouteCore::HTreeSuite(const int netID)
 {
-  int xmax = 0;
-  int ymax = 0;
-  int xmin = BIG_INT;
-  int ymin = BIG_INT;
+  int xmax = 0, ymax = 0;
+  int xmin = BIG_INT, ymin = BIG_INT;
 
-  const int deg = nets_[netID]->getNumPins();
+  const FrNet* net = nets_[netID];
+  const int deg = net->getNumPins();
   for (int i = 0; i < deg; i++) {
-    xmin = std::min(xmin, nets_[netID]->getPinX(i));
-    xmax = std::max(xmax, nets_[netID]->getPinX(i));
-    ymin = std::min(ymin, nets_[netID]->getPinY(i));
-    ymax = std::max(ymax, nets_[netID]->getPinY(i));
+    xmin = std::min(xmin, net->getPinX(i));
+    xmax = std::max(xmax, net->getPinX(i));
+    ymin = std::min(ymin, net->getPinY(i));
+    ymax = std::max(ymax, net->getPinY(i));
   }
 
   return 5 * (ymax - ymin) < (xmax - xmin);
@@ -531,17 +461,16 @@ bool FastRouteCore::HTreeSuite(const int netID)
 
 float FastRouteCore::coeffADJ(const int netID)
 {
-  const int deg = nets_[netID]->getNumPins();
-  int xmax = 0;
-  int ymax = 0;
-  int xmin = BIG_INT;
-  int ymin = BIG_INT;
+  FrNet* net = nets_[netID];
+  const int deg = net->getNumPins();
+  int xmax = 0, ymax = 0;
+  int xmin = BIG_INT, ymin = BIG_INT;
 
   for (int i = 0; i < deg; i++) {
-    xmin = std::min(xmin, nets_[netID]->getPinX(i));
-    xmax = std::max(xmax, nets_[netID]->getPinX(i));
-    ymin = std::min(ymin, nets_[netID]->getPinY(i));
-    ymax = std::max(ymax, nets_[netID]->getPinY(i));
+    xmin = std::min(xmin, net->getPinX(i));
+    xmax = std::max(xmax, net->getPinX(i));
+    ymin = std::min(ymin, net->getPinY(i));
+    ymax = std::max(ymax, net->getPinY(i));
   }
 
   int Hcap = 0;
@@ -551,26 +480,26 @@ float FastRouteCore::coeffADJ(const int netID)
   float coef;
   if (xmin == xmax) {
     for (int j = ymin; j < ymax; j++) {
-      Vcap += getEdgeCapacity(nets_[netID], xmin, j, EdgeDirection::Vertical);
+      Vcap += getEdgeCapacity(net, xmin, j, EdgeDirection::Vertical);
       Vusage += graph2d_.getEstUsageV(xmin, j);
     }
     coef = 1;
   } else if (ymin == ymax) {
     for (int i = xmin; i < xmax; i++) {
-      Hcap += getEdgeCapacity(nets_[netID], i, ymin, EdgeDirection::Horizontal);
+      Hcap += getEdgeCapacity(net, i, ymin, EdgeDirection::Horizontal);
       Husage += graph2d_.getEstUsageH(i, ymin);
     }
     coef = 1;
   } else {
     for (int j = ymin; j <= ymax; j++) {
       for (int i = xmin; i < xmax; i++) {
-        Hcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Horizontal);
+        Hcap += getEdgeCapacity(net, i, j, EdgeDirection::Horizontal);
         Husage += graph2d_.getEstUsageH(i, j);
       }
     }
     for (int j = ymin; j < ymax; j++) {
       for (int i = xmin; i <= xmax; i++) {
-        Vcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Vertical);
+        Vcap += getEdgeCapacity(net, i, j, EdgeDirection::Vertical);
         Vusage += graph2d_.getEstUsageV(i, j);
       }
     }
@@ -616,14 +545,14 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
           // only route the non-degraded edges (len>0)
           if (sttrees_[netID].edges[j].len > 0) {
-            const TreeEdge* treeedge = &(treeedges[j]);
-            const int n1 = treeedge->n1;
-            const int n2 = treeedge->n2;
+            const TreeEdge& treeedge = treeedges[j];
+            const int n1 = treeedge.n1;
+            const int n2 = treeedge.n2;
             const int x1 = treenodes[n1].x;
             const int y1 = treenodes[n1].y;
             const int x2 = treenodes[n2].x;
             const int y2 = treenodes[n2].y;
-            newRipup(treeedge, x1, y1, x2, y2, netID);
+            newRipup(&treeedge, x1, y1, x2, y2, netID);
           }
         }
       } else {

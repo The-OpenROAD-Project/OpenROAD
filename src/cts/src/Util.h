@@ -14,10 +14,7 @@ namespace cts {
 
 inline bool fuzzyEqual(double x1, double x2, double epsilon = 1e-6)
 {
-  if (fabs(x1 - x2) < epsilon) {
-    return true;
-  }
-  return false;
+  return fabs(x1 - x2) < epsilon;
 }
 
 // x1 >= x2
@@ -76,11 +73,8 @@ class Point
 
   bool equal(const Point<T>& other, double epsilon = 1e-6) const
   {
-    if ((fabs(getX() - other.getX()) < epsilon)
-        && (fabs(getY() - other.getY()) < epsilon)) {
-      return true;
-    }
-    return false;
+    return (fabs(getX() - other.getX()) < epsilon)
+           && (fabs(getY() - other.getY()) < epsilon);
   }
 
   bool operator<(const Point<T>& other) const
@@ -92,23 +86,9 @@ class Point
     return getY() < other.getY();
   }
 
-  bool operator==(const Point<T>& other) const
-  {
-    if (equal(other)) {
-      return true;
-    }
+  bool operator==(const Point<T>& other) const { return equal(other); }
 
-    return false;
-  }
-
-  bool operator!=(const Point<T>& other) const
-  {
-    if (equal(other)) {
-      return false;
-    }
-
-    return true;
-  }
+  bool operator!=(const Point<T>& other) const { return !equal(other); }
 
   friend std::ostream& operator<<(std::ostream& out, const Point<T>& point)
   {

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="681" height="69"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_MAXVIASTACK"
+      xlink:title="K_MAXVIASTACK">
+      <rect x="31" y="3" width="124" height="32"/>
+      <rect x="29" y="1" width="124" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="21">K_MAXVIASTACK</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="175" y="3" width="92" height="32"/>
+      <rect x="173" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="183" y="21">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RANGE"
+      xlink:title="K_RANGE">
+      <rect x="307" y="35" width="78" height="32"/>
+      <rect x="305" y="33" width="78" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="315" y="53">K_RANGE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="405" y="35" width="82" height="32"/>
+      <rect x="403" y="33" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="413" y="53">T_STRING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="507" y="35" width="82" height="32"/>
+      <rect x="505" y="33" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="515" y="53">T_STRING</text>
+   </a>
+   <rect x="629" y="3" width="24" height="32" rx="10"/>
+   <rect x="627"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="637" y="21">;</text>
+   <path class="line"
+         d="m17 17 h2 m0 0 h10 m124 0 h10 m0 0 h10 m92 0 h10 m20 0 h10 m0 0 h292 m-322 0 h20 m302 0 h20 m-342 0 q10 0 10 10 m322 0 q0 -10 10 -10 m-332 10 v12 m322 0 v-12 m-322 12 q0 10 10 10 m302 0 q10 0 10 -10 m-312 10 h10 m78 0 h10 m0 0 h10 m82 0 h10 m0 0 h10 m82 0 h10 m20 -32 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="671 17 679 13 679 21"/>
+   <polygon points="671 17 663 13 663 21"/>
+</svg>

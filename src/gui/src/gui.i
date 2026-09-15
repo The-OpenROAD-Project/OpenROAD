@@ -13,7 +13,7 @@ using utl::GUI;
 bool check_gui(const char* command)
 {
   auto logger = ord::OpenRoad::openRoad()->getLogger(); 
-  if (!gui::Gui::enabled()) {
+  if (!gui::Gui::hasUI()) {
     logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
@@ -78,8 +78,16 @@ bool enabled()
   return gui::Gui::enabled();
 }
 
+// True only while the Qt main window is running.  Tcl commands that a
+// non-Qt viewer also implements dispatch on this, so the non-Qt stub
+// defines it too (see stub.cpp) and it is always callable.
+bool has_ui()
+{
+  return gui::Gui::hasUI();
+}
+
 void
-selection_add_net(const char* name)
+selection_add_net(const std::string& name)
 {
   if (!check_gui("selection_add_net")) {
     return;
@@ -99,7 +107,7 @@ selection_add_nets(const char* name)
 }
 
 void
-selection_add_inst(const char* name)
+selection_add_inst(const std::string& name)
 {
   if (!check_gui("selection_add_inst")) {
     return;
@@ -118,7 +126,7 @@ selection_add_insts(const char* name)
   gui->select("Inst", name);
 }
 
-void highlight_inst(const char* name, int highlight_group = 0)
+void highlight_inst(const std::string& name, int highlight_group = 0)
 {
   if (!check_gui("highlight_inst")) {
     return;
@@ -127,7 +135,7 @@ void highlight_inst(const char* name, int highlight_group = 0)
   gui->addInstToHighlightSet(name, highlight_group);
 }
 
-void highlight_net(const char* name, int highlight_group = 0)
+void highlight_net(const std::string& name, int highlight_group = 0)
 {
   if (!check_gui("highlight_net")) {
     return;
@@ -505,7 +513,9 @@ const std::string input_dialog(const char* title, const char* question)
 // language to avoid conflicts in C++.
 void gui_pause(int timeout = 0)
 {
-  if (!check_gui("pause")) {
+  if (!gui::Gui::enabled()) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->info(GUI, 96, "Command pause is not usable in non-GUI mode");
     return;
   }
   auto gui = gui::Gui::get();

@@ -101,18 +101,18 @@ void dbRSeg::addAllRes(double* res)
 bool dbRSeg::updatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_.update_cap == 1 ? true : false);
+  return (seg->flags_.update_cap == 1);
 }
 bool dbRSeg::allocatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_.allocated_cap == 1 ? true : false);
+  return (seg->flags_.allocated_cap == 1);
 }
 
 bool dbRSeg::pathLowToHigh()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_.path_dir == 0 ? true : false);
+  return (seg->flags_.path_dir == 0);
 }
 
 void dbRSeg::addRSegCapacitance(dbRSeg* other)
@@ -363,7 +363,7 @@ void dbRSeg::adjustCapacitance(float factor)
   }
 }
 
-double dbRSeg::getCapacitance(int corner)
+double dbRSeg::getGroundCapacitance(int corner)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
@@ -376,6 +376,11 @@ double dbRSeg::getCapacitance(int corner)
   }
   assert((corner >= 0) && ((uint32_t) corner < cornerCnt));
   return (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
+}
+
+double dbRSeg::getTotalCapacitance(int corner)
+{
+  return getCapacitance(corner, 1.0);
 }
 
 void dbRSeg::getGndCap(double* gndcap, double* totalcap)
@@ -422,20 +427,6 @@ void dbRSeg::addGndCap(double* gndcap, double* totalcap)
   }
 }
 
-double dbRSeg::getSourceCapacitance(int corner)
-{
-  //_dbBlock * block = (_dbBlock *) getOwner();
-
-  _dbRSeg* seg = (_dbRSeg*) this;
-
-  if (seg->flags_.allocated_cap == 0) {
-    _dbBlock* block = (_dbBlock*) seg->getOwner();
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->source_);
-    return node->getCapacitance(corner);
-  }
-  return 0.0;
-}
-
 dbCapNode* dbRSeg::getTargetCapNode()
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
@@ -464,7 +455,7 @@ dbCapNode* dbRSeg::getSourceCapNode()
 
 double dbRSeg::getCapacitance(const int corner, const double miller_mult)
 {
-  const double cap = getCapacitance(corner);
+  const double cap = getGroundCapacitance(corner);
 
   dbCapNode* targetCapNode = getTargetCapNode();
 

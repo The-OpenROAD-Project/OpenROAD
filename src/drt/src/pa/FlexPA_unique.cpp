@@ -12,11 +12,13 @@
 
 #include "db/obj/frAccess.h"
 #include "db/obj/frInst.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frTrackPattern.h"
 #include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 
@@ -150,15 +152,30 @@ bool UniqueInsts::hasTrackPattern(frTrackPattern* tp,
   const frCoord low = tp->getStartCoord();
   const frCoord high = low + tp->getTrackSpacing() * (tp->getNumTracks() - 1);
   if (is_vertical_track) {
-    return !(low > box.xMax() || high < box.xMin());
+    return low <= box.xMax() && high >= box.xMin();
   }
-  return !(low > box.yMax() || high < box.yMin());
+  return low <= box.yMax() && high >= box.yMin();
 }
 
 bool UniqueInsts::isNDRInst(frInst* inst) const
 {
   for (const auto& a : inst->getInstTerms()) {
     if (a->getNet() && a->getNet()->getNondefaultRule()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool UniqueInsts::isNoAutoTaperNDRInst(frInst* inst) const
+{
+  // An instance whose pin access must be computed without auto-taper:
+  // it touches an NDR net for which auto-taper is off, either globally
+  // (!AUTO_TAPER_NDR_NETS) or per-net.
+  for (const auto& a : inst->getInstTerms()) {
+    auto* net = a->getNet();
+    if (net && net->hasNDR()
+        && !net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
       return true;
     }
   }
@@ -194,7 +211,7 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
   }
   // Special case for NDR instances, create a separate unique class for them
   frInst* ndr_inst = nullptr;
-  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(inst)) {
+  if (isNoAutoTaperNDRInst(inst)) {
     ndr_inst = inst;
   }
   std::set<frTerm*> stubborn_terms;

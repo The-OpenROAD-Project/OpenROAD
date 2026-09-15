@@ -3,16 +3,11 @@
 
 #include "dbDescriptors.h"
 
-#include <QInputDialog>
-#include <QMessageBox>
-#include <QString>
-#include <QStringList>
 #include <algorithm>
 #include <any>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <functional>
 #include <limits>
 #include <map>
@@ -31,8 +26,8 @@
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "insertBufferDialog.h"
+#include "gui/core.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -40,7 +35,7 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
-#include "options.h"
+#include "odb/geom_boost.h"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
@@ -232,47 +227,34 @@ static void addTimingActions(T obj,
                      }});
 }
 
-// get list of tech layers as EditorOption list
-static void addLayersToOptions(odb::dbTech* tech,
-                               std::vector<Descriptor::EditorOption>& options)
-{
-  for (auto layer : tech->getLayers()) {
-    options.push_back({layer->getName(), layer});
-  }
-}
-
-// request user input to select tech layer, returns nullptr or current if none
-// was selected
+// Ask the user to pick a tech layer, with `current` preselected.  Returns
+// nullptr if the pick was cancelled, so the caller can distinguish that from
+// a pick that happens to land back on `current`.  Only called when
+// Gui::getDialogs() is set.
 static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
                                            odb::dbTechLayer* current = nullptr)
 {
-  std::vector<Descriptor::EditorOption> options;
-  addLayersToOptions(tech, options);
-  QStringList layers;
-  for (const auto& [name, layer] : options) {
-    layers.append(QString::fromStdString(name));
+  std::vector<odb::dbTechLayer*> layers;
+  std::vector<std::string> names;
+  for (auto* layer : tech->getLayers()) {
+    layers.push_back(layer);
+    names.push_back(layer->getName());
   }
-  bool okay;
-  int default_selection
-      = current == nullptr
-            ? 0
-            : layers.indexOf(QString::fromStdString(current->getName()));
-  QString selection = QInputDialog::getItem(nullptr,
-                                            "Select technology layer",
-                                            "Layer",
-                                            layers,
-                                            default_selection,  // current layer
-                                            false,
-                                            &okay);
-  if (okay) {
-    int selection_idx = layers.indexOf(selection);
-    if (selection_idx != -1) {
-      return std::any_cast<odb::dbTechLayer*>(options[selection_idx].value);
+
+  int default_selection = 0;
+  if (current != nullptr) {
+    const auto found = std::ranges::find(layers, current);
+    if (found != layers.end()) {
+      default_selection = std::distance(layers.begin(), found);
     }
-    // selection not found, return current
-    return current;
   }
-  return current;
+
+  const std::optional<int> selection = Gui::get()->getDialogs()->chooseItem(
+      "Select technology layer", "Layer", names, default_selection);
+  if (!selection.has_value()) {
+    return nullptr;
+  }
+  return layers[selection.value()];
 }
 
 //////////////////////////////////////////////////
@@ -741,7 +723,7 @@ void DbInstDescriptor::makeMasterOptions(
     odb::dbMaster* master,
     std::vector<EditorOption>& options) const
 {
-  std::set<odb::dbMaster*> masters;
+  odb::PtrSet<odb::dbMaster> masters;
   DbMasterDescriptor::getMasterEquivalent(sta_, master, masters);
   for (auto master : masters) {
     options.push_back({master->getConstName(), master});
@@ -839,14 +821,14 @@ bool DbMasterDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
   master->getPlacementBoundary(bbox);
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbMasterDescriptor::highlight(const std::any& object,
                                    Painter& painter) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
-  std::set<odb::dbInst*> insts;
+  odb::PtrSet<odb::dbInst> insts;
   getInstances(master, insts);
   for (auto inst : insts) {
     if (!inst->getPlacementStatus().isPlaced()) {
@@ -887,7 +869,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   props.emplace_back("Symmetry", symmetry);
 
   SelectionSet equivalent;
-  std::set<odb::dbMaster*> equivalent_masters;
+  odb::PtrSet<odb::dbMaster> equivalent_masters;
   getMasterEquivalent(sta_, master, equivalent_masters);
   for (auto other_master : equivalent_masters) {
     if (other_master != master) {
@@ -896,7 +878,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   }
   props.emplace_back("Equivalent", equivalent);
   SelectionSet instances;
-  std::set<odb::dbInst*> insts;
+  odb::PtrSet<odb::dbInst> insts;
   getInstances(master, insts);
   for (auto inst : insts) {
     instances.insert(gui->makeSelected(inst));
@@ -922,11 +904,14 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
 }
 
 // get list of equivalent masters as EditorOptions
-void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
-                                             odb::dbMaster* master,
-                                             std::set<odb::dbMaster*>& masters)
+void DbMasterDescriptor::getMasterEquivalent(
+    sta::dbSta* sta,
+    odb::dbMaster* master,
+    odb::PtrSet<odb::dbMaster>& masters)
 {
-  // mirrors method used in Resizer.cpp
+  // The only remaining user of the OpenSTA equivalence table, which filters on
+  // liberty dont_use.  Resizer::makeEquivCells builds its own, so the two
+  // disagree once set_dont_use or unset_dont_use has been used.
   auto network = sta->getDbNetwork();
 
   sta::LibertyLibrarySeq libs;
@@ -956,7 +941,7 @@ void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
 
 // get list of instances of that type
 void DbMasterDescriptor::getInstances(odb::dbMaster* master,
-                                      std::set<odb::dbInst*>& insts)
+                                      odb::PtrSet<odb::dbInst>& insts)
 {
   for (auto inst : master->getDb()->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster() == master) {
@@ -979,9 +964,9 @@ void DbMasterDescriptor::visitAllObjects(
 
 DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db,
                                  sta::dbSta* sta,
-                                 const std::set<odb::dbNet*>& focus_nets,
-                                 const std::set<odb::dbNet*>& guide_nets,
-                                 const std::set<odb::dbNet*>& tracks_nets)
+                                 const odb::PtrSet<odb::dbNet>& focus_nets,
+                                 const odb::PtrSet<odb::dbNet>& guide_nets,
+                                 const odb::PtrSet<odb::dbNet>& tracks_nets)
     : BaseDbDescriptor<odb::dbNet>(db),
       sta_(sta),
       focus_nets_(focus_nets),
@@ -1004,20 +989,17 @@ bool DbNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto net = getObject(object);
   auto wire = net->getWire();
-  bool has_box = false;
   bbox.mergeInit();
   if (wire) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
       bbox.merge(opt_bbox.value());
-      has_box = true;
     }
   }
-  if (!has_box) {
+  if (bbox.isInverted()) {
     // a wire bbox was not found, try using guides
     for (odb::dbGuide* guide : net->getGuides()) {
       bbox.merge(guide->getBox());
-      has_box = true;
     }
   }
 
@@ -1026,17 +1008,15 @@ bool DbNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
       continue;
     }
     bbox.merge(inst_term->getBBox());
-    has_box = true;
   }
 
   for (auto blk_term : net->getBTerms()) {
     for (auto pin : blk_term->getBPins()) {
       bbox.merge(pin->getBBox());
-      has_box = true;
     }
   }
 
-  return has_box;
+  return !bbox.isInverted();
 }
 
 void DbNetDescriptor::findSourcesAndSinks(
@@ -1464,9 +1444,9 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
     bool is_sink;
     bool is_source;
   };
-  std::map<odb::dbObject*, DbIO> io_map;
+  odb::PtrMap<odb::dbObject, DbIO> io_map;
 
-  std::map<odb::dbTechLayer*, std::map<odb::dbObject*, std::set<odb::Rect>>>
+  odb::PtrMap<odb::dbTechLayer, odb::PtrMap<odb::dbObject, std::set<odb::Rect>>>
       terms;
   for (odb::dbITerm* term : net->getITerms()) {
     if (!term->getInst()->isPlaced()) {
@@ -1725,7 +1705,8 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
           }
           painter.saveState();
           painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
-          for (const odb::Polygon& outline : odb::Polygon::merge(guide_rects)) {
+          for (const odb::Polygon& outline :
+               odb::geom::mergePolygons(guide_rects)) {
             painter.drawPolygon(outline);
           }
           painter.restoreState();
@@ -1861,7 +1842,7 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
   }
   props.emplace_back("BTerms", bterms);
 
-  std::set<odb::dbModNet*> modnet_set;
+  odb::PtrSet<odb::dbModNet> modnet_set;
   if (net->findRelatedModNets(modnet_set)) {
     SelectionSet mod_nets;
     for (odb::dbModNet* mod_net : modnet_set) {
@@ -2010,52 +1991,16 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
     }
   }
 
-  if (drivers <= 1) {
-    actions.push_back(
-        {"Insert Buffer", [this, net]() {
-           InsertBufferDialog dialog(net, sta_, nullptr);
-           if (dialog.exec() == QDialog::Accepted) {
-             odb::dbMaster* master = dialog.getSelectedMaster();
-             odb::dbObject* driver = nullptr;
-             std::set<odb::dbObject*> loads;
-             dialog.getSelection(driver, loads);
-
-             std::string buf_name = dialog.getBufferName().toStdString();
-             std::string net_name = dialog.getNetName().toStdString();
-             const char* buf_p
-                 = buf_name.empty() ? kDefaultBufBaseName : buf_name.c_str();
-             const char* net_p
-                 = net_name.empty() ? kDefaultNetBaseName : net_name.c_str();
-
-             try {
-               odb::dbInst* buffer_inst = nullptr;
-               if (driver) {
-                 buffer_inst = net->insertBufferAfterDriver(
-                     driver,
-                     master,
-                     nullptr,
-                     buf_p,
-                     net_p,
-                     odb::dbNameUniquifyType::IF_NEEDED);
-               } else if (!loads.empty()) {
-                 buffer_inst = net->insertBufferBeforeLoads(
-                     loads,
-                     master,
-                     nullptr,
-                     buf_p,
-                     net_p,
-                     odb::dbNameUniquifyType::IF_NEEDED);
-               }
-               Gui::get()->redraw();
-               if (buffer_inst) {
-                 return Gui::get()->makeSelected(buffer_inst);
-               }
-             } catch (const std::exception& e) {
-               QMessageBox::critical(nullptr, "Error", e.what());
-             }
-           }
-           return makeSelected(net);
-         }});
+  if (drivers <= 1 && Gui::get()->getDialogs() != nullptr) {
+    actions.push_back({"Insert Buffer", [this, net]() {
+                         odb::dbInst* buffer_inst
+                             = Gui::get()->getDialogs()->insertBuffer(net,
+                                                                      sta_);
+                         if (buffer_inst != nullptr) {
+                           return Gui::get()->makeSelected(buffer_inst);
+                         }
+                         return makeSelected(net);
+                       }});
   }
   return actions;
 }
@@ -2147,7 +2092,7 @@ bool DbITermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   auto iterm = std::any_cast<odb::dbITerm*>(object);
   if (iterm->getInst()->getPlacementStatus().isPlaced()) {
     bbox = iterm->getBBox();
-    return true;
+    return !bbox.isInverted();
   }
   return false;
 }
@@ -2484,7 +2429,7 @@ bool DbMTermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto mterm = std::any_cast<odb::dbMTerm*>(object);
   bbox = mterm->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbMTermDescriptor::highlight(const std::any& object,
@@ -2728,7 +2673,7 @@ bool DbBlockageDescriptor::getBBox(const std::any& object,
   auto* blockage = std::any_cast<odb::dbBlockage*>(object);
   odb::dbBox* box = blockage->getBBox();
   bbox = box->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbBlockageDescriptor::highlight(const std::any& object,
@@ -2845,7 +2790,7 @@ bool DbObstructionDescriptor::getBBox(const std::any& object,
   auto obs = std::any_cast<odb::dbObstruction*>(object);
   odb::dbBox* box = obs->getBBox();
   bbox = box->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbObstructionDescriptor::highlight(const std::any& object,
@@ -2895,30 +2840,31 @@ Descriptor::Actions DbObstructionDescriptor::getActions(
     const std::any& object) const
 {
   auto obs = std::any_cast<odb::dbObstruction*>(object);
-  return Actions(
-      {{"Copy to layer",
-        [obs]() {
-          odb::dbBox* box = obs->getBBox();
-          odb::dbTechLayer* layer = getLayerSelection(
-              obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
-          auto gui = gui::Gui::get();
-          if (layer == nullptr) {
-            // select old layer again
-            return gui->makeSelected(obs);
-          }
-          auto new_obs = odb::dbObstruction::create(obs->getBlock(),
-                                                    layer,
-                                                    box->xMin(),
-                                                    box->yMin(),
-                                                    box->xMax(),
-                                                    box->yMax());
-          // does not copy other parameters
-          return gui->makeSelected(new_obs);
-        }},
-       {"Delete", [obs]() {
-          odb::dbObstruction::destroy(obs);
-          return Selected();  // unselect since this object is now gone
-        }}});
+  Actions actions;
+  if (Gui::get()->getDialogs() != nullptr) {
+    actions.push_back(
+        {"Copy to layer", [obs]() {
+           odb::dbBox* box = obs->getBBox();
+           odb::dbTechLayer* layer = getLayerSelection(
+               obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
+           auto gui = gui::Gui::get();
+           if (layer == nullptr) {
+             return gui->makeSelected(obs);
+           }
+           auto new_obs = odb::dbObstruction::create(obs->getBlock(),
+                                                     layer,
+                                                     box->xMin(),
+                                                     box->yMin(),
+                                                     box->xMax(),
+                                                     box->yMax());
+           return gui->makeSelected(new_obs);
+         }});
+  }
+  actions.push_back({"Delete", [obs]() {
+                       odb::dbObstruction::destroy(obs);
+                       return Selected();
+                     }});
+  return actions;
 }
 
 void DbObstructionDescriptor::visitAllObjects(
@@ -3018,9 +2964,9 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
                        Property::convert_dbu(layer->getSpacing(), true));
   }
   if (layer->hasArea()) {
-    props.emplace_back(
-        "Minimum area",
-        convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m²");
+    const double dbu_per_meter = db_->getDbuPerMicron() * 1e6;
+    const double area = layer->getArea() / (dbu_per_meter * dbu_per_meter);
+    props.emplace_back("Minimum area", convertUnits(area, true) + "m²");
   }
   if (layer->getResistance() != 0.0) {
     props.emplace_back("Resistance",
@@ -3284,7 +3230,7 @@ bool DbTermAccessPointDescriptor::getBBox(const std::any& object,
     xform.apply(pt);
   }
   bbox = {pt, pt};
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbTermAccessPointDescriptor::highlight(const std::any& object,
@@ -3423,7 +3369,7 @@ bool DbGroupDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   auto* region = group->getRegion();
   if (region != nullptr && region->getBoundaries().size() == 1) {
     bbox = region->getBoundaries().begin()->getBox();
-    return true;
+    return !bbox.isInverted();
   }
   return false;
 }
@@ -3535,7 +3481,7 @@ bool DbRegionDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
     odb::Rect box_rect = box->getBox();
     bbox.merge(box_rect);
   }
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbRegionDescriptor::highlight(const std::any& object,
@@ -4177,7 +4123,7 @@ Descriptor::Properties DbTechViaDescriptor::getDBProperties(
 
   Properties props({{"Tech", gui->makeSelected(via->getTech())}});
 
-  std::map<odb::dbTechLayer*, odb::Rect> shapes;
+  odb::PtrMap<odb::dbTechLayer, odb::Rect> shapes;
   odb::dbTechLayer* cut_layer = nullptr;
   for (auto* box : via->getBoxes()) {
     auto* box_layer = box->getTechLayer();
@@ -4748,7 +4694,7 @@ bool DbSiteDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   if (isSpecificSite(object)) {
     bbox = getRect(object);
-    return true;
+    return !bbox.isInverted();
   }
 
   return false;
@@ -4891,7 +4837,7 @@ bool DbRowDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto* row = std::any_cast<odb::dbRow*>(object);
   bbox = row->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbRowDescriptor::highlight(const std::any& object, Painter& painter) const
@@ -4956,12 +4902,10 @@ bool DbMarkerCategoryDescriptor::getBBox(const std::any& object,
 {
   auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
   bbox.mergeInit();
-  bool has_bbox = false;
   for (odb::dbMarker* marker : category->getAllMarkers()) {
     bbox.merge(marker->getBBox());
-    has_bbox = true;
   }
-  return has_bbox;
+  return !bbox.isInverted();
 }
 
 void DbMarkerCategoryDescriptor::highlight(const std::any& object,
@@ -5056,7 +5000,7 @@ bool DbMarkerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto* marker = std::any_cast<odb::dbMarker*>(object);
   bbox = marker->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbMarkerDescriptor::highlight(const std::any& object,
@@ -5194,7 +5138,7 @@ bool DbScanInstDescriptor::getBBox(const std::any& object,
   auto* scan_inst = std::any_cast<odb::dbScanInst*>(object);
   auto* inst = scan_inst->getInst();
   bbox = inst->getBBox()->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbScanInstDescriptor::highlight(const std::any& object,
@@ -5522,6 +5466,9 @@ bool DbBoxDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   bbox = getObject(object)->getBox();
   const auto xform = getTransform(object);
+  if (bbox.isInverted()) {
+    return false;
+  }
   xform.apply(bbox);
   return true;
 }
@@ -5688,7 +5635,7 @@ std::string DbSBoxDescriptor::getTypeName() const
 bool DbSBoxDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   bbox = getObject(object)->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbSBoxDescriptor::highlight(const std::any& object, Painter& painter) const
@@ -5772,7 +5719,7 @@ void DbMasterEdgeTypeDescriptor::highlightEdge(
     painter.setPenWidth(pen_width.value());
   }
 
-  std::set<odb::dbInst*> insts;
+  odb::PtrSet<odb::dbInst> insts;
   DbMasterDescriptor::getInstances(master, insts);
   for (auto inst : insts) {
     if (!inst->getPlacementStatus().isPlaced()) {
@@ -5983,7 +5930,7 @@ bool DbWireDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   const auto box = obj->getBBox();
   if (box.has_value()) {
     bbox = *box;
-    return true;
+    return !bbox.isInverted();
   }
   return false;
 }
@@ -6063,7 +6010,7 @@ bool DbSWireDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   for (auto* box : obj->getWires()) {
     bbox.merge(box->getBox());
   }
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbSWireDescriptor::highlight(const std::any& object,

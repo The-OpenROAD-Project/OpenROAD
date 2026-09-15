@@ -1,0 +1,56 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+SITE coreSite
+  CLASS CORE ;
+  SIZE 0.190 BY 1.400 ;
+  SYMMETRY Y ;
+END coreSite
+
+LAYER M1
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  WIDTH 0.070 ;
+  PITCH 0.190 ;
+  SPACING 0.070 ;
+END M1
+
+MACRO bridge_tap
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.380 BY 1.400 ;
+  SYMMETRY X Y ;
+  SITE coreSite ;
+  PROPERTY LEF58_BACKSIDE_BRIDGE "BACKSIDEBRIDGE ;" ;
+  PIN vdd
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+        RECT 0.060 0.050 0.130 1.350 ;
+    END
+  END vdd
+END bridge_tap
+
+MACRO ordinary_cell
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.190 BY 1.400 ;
+  SYMMETRY X Y ;
+  SITE coreSite ;
+  PIN vdd
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+        RECT 0.040 0.050 0.110 1.350 ;
+    END
+  END vdd
+END ordinary_cell
+
+END LIBRARY

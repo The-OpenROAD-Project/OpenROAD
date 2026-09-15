@@ -12,8 +12,8 @@ add_library(3dblox
   bmapWriter.cpp
   dbvWriter.cpp
   dbxWriter.cpp
+  verilogWriter.cpp
   3dblox.cpp
-  unfoldedModel.cpp
   checker.cpp
 )
 
@@ -23,6 +23,11 @@ target_link_libraries(3dblox
     utl_lib
     yaml-cpp
     OpenSTA
+  PRIVATE
+    defin
+    defout
+    lefin
+    lefout
 )
 
 target_include_directories(3dblox

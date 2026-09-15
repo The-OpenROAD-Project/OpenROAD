@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="199" height="301"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nd_layer"
+      xlink:title="nd_layer">
+      <rect x="51" y="3" width="76" height="32"/>
+      <rect x="49" y="1" width="76" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">nd_layer</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#via"
+      xlink:title="via">
+      <rect x="51" y="47" width="38" height="32"/>
+      <rect x="49" y="45" width="38" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">via</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#spacing_rule"
+      xlink:title="spacing_rule">
+      <rect x="51" y="91" width="100" height="32"/>
+      <rect x="49" y="89" width="100" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">spacing_rule</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nd_prop"
+      xlink:title="nd_prop">
+      <rect x="51" y="135" width="72" height="32"/>
+      <rect x="49" y="133" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">nd_prop</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#usevia"
+      xlink:title="usevia">
+      <rect x="51" y="179" width="60" height="32"/>
+      <rect x="49" y="177" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="197">usevia</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#useviarule"
+      xlink:title="useviarule">
+      <rect x="51" y="223" width="86" height="32"/>
+      <rect x="49" y="221" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="241">useviarule</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#mincuts"
+      xlink:title="mincuts">
+      <rect x="51" y="267" width="68" height="32"/>
+      <rect x="49" y="265" width="68" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="285">mincuts</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m76 0 h10 m0 0 h24 m-140 0 h20 m120 0 h20 m-160 0 q10 0 10 10 m140 0 q0 -10 10 -10 m-150 10 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m38 0 h10 m0 0 h62 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m100 0 h10 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m72 0 h10 m0 0 h28 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m60 0 h10 m0 0 h40 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m86 0 h10 m0 0 h14 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m68 0 h10 m0 0 h32 m23 -264 h-3"/>
+   <polygon points="189 17 197 13 197 21"/>
+   <polygon points="189 17 181 13 181 21"/>
+</svg>

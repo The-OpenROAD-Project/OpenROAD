@@ -74,12 +74,8 @@ uint32_t extRCModel::measureWithVar(extMeasure* measure)
           } else {
             s = measure->_spaceTable.get(sIndex);  // layout
           }
-          if (sIndex == scnt - 1 && wIndex == wcnt - 1
-              && !measure->_overUnder) {
-            measure->_plate = true;
-          } else {
-            measure->_plate = false;
-          }
+          measure->_plate = sIndex == scnt - 1 && wIndex == wcnt - 1
+                            && !measure->_overUnder;
         } else {
           s = measure->_diagSpaceTable0.get(sIndex);
         }
@@ -190,7 +186,7 @@ uint32_t extRCModel::linesOver(uint32_t wireCnt,
   openCapLogFile();
   uint32_t cnt = 0;
 
-  extMeasure measure(nullptr);
+  extMeasure measure(logger_);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -244,7 +240,7 @@ uint32_t extRCModel::linesDiagUnder(uint32_t wireCnt,
   openCapLogFile();
   uint32_t cnt = 0;
 
-  extMeasure measure(nullptr);
+  extMeasure measure(logger_);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -458,7 +454,7 @@ uint32_t extRCModel::linesUnder(uint32_t wireCnt,
   openCapLogFile();
   uint32_t cnt = 0;
 
-  extMeasure measure(nullptr);
+  extMeasure measure(logger_);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -531,7 +527,7 @@ uint32_t extRCModel::linesOverUnder(uint32_t wireCnt,
   openCapLogFile();
   uint32_t cnt = 0;
 
-  extMeasure measure(nullptr);
+  extMeasure measure(logger_);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;

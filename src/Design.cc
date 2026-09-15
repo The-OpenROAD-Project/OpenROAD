@@ -98,9 +98,10 @@ void Design::writeDb(std::ostream& stream)
   getOpenRoad()->writeDb(stream);
 }
 
-void Design::writeDb(const std::string& file_name)
+void Design::writeDb(const std::string& file_name,
+                     std::optional<int> compression_level)
 {
-  getOpenRoad()->writeDb(file_name.c_str());
+  getOpenRoad()->writeDb(file_name.c_str(), compression_level);
 }
 
 void Design::writeDef(const std::string& file_name)
@@ -190,7 +191,7 @@ bool Design::isSequential(odb::dbMaster* master)
   if (!lib_cell) {
     return false;
   }
-  return lib_cell->hasSequentials();
+  return lib_cell->isSequential();
 }
 
 bool Design::isInClock(odb::dbInst* inst)
@@ -207,10 +208,7 @@ bool Design::isInClock(odb::dbInst* inst)
 bool Design::isInClock(odb::dbITerm* iterm)
 {
   auto* net = iterm->getNet();
-  if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
-    return true;
-  }
-  return false;
+  return net != nullptr && net->getSigType() == odb::dbSigType::CLOCK;
 }
 
 std::string Design::getITermName(odb::dbITerm* pin)

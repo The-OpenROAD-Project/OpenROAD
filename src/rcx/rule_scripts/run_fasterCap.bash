@@ -1,9 +1,11 @@
-#!/bin/bash -f
+#!/usr/bin/env bash
 # python_script=~/z/72424/scripts/UniversalFormat2FasterCap.py
 # works python_script=~/z/72424/scripts/UniversalFormat2FasterCap_923.py
 # works fasterCap=/home/dimitris-ic/fasterCap/920/FasterCAP_v2/FasterCap_v2/build_fasterCap_920/FasterCap
 
 #README - DKF - 092524 : change ext_y and ext_z from 0 to ext_x
+
+set -o noglob
 
 if [ $# -lt 7 ] 
 then

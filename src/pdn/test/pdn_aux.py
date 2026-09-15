@@ -1,8 +1,9 @@
 import re
 import utl
-import pdn
 import odb
 from collections import defaultdict
+
+import pdn
 
 
 #  In tcl land, this lives in OpenRoad.tcl. However, it seems to be only called
@@ -250,7 +251,7 @@ def define_pdn_grid_real(
                 get_layer(design, l) for l in connect_to_pad_layers
             ]
 
-    starts_with = pdn.POWER if starts_with_power else pdn.GROUND
+    starts_with = pdn.kPower if starts_with_power else pdn.kGround
     for domain in domains:
         pdngen.makeCoreGrid(
             domain,
@@ -338,7 +339,7 @@ def define_pdn_grid_macro(
     obst_list = get_obstructions(design, obstructions)
     orient_list = get_orientations(orient)
 
-    starts_with = pdn.POWER if starts_with_power else pdn.GROUND
+    starts_with = pdn.kPower if starts_with_power else pdn.kGround
 
     if bool(instances):
         insts = []
@@ -445,7 +446,7 @@ def add_pdn_stripe(
     spacing = design.micronToDBU(spacing)
     offset = design.micronToDBU(offset)
 
-    extend = pdn.CORE
+    extend = pdn.kCore
     if extend_to_core_ring and extend_to_boundary:
         utl.error(
             utl.PDN,
@@ -454,9 +455,9 @@ def add_pdn_stripe(
             + "'extend_to_boundary' are mutually exclusive.",
         )
     elif extend_to_core_ring:
-        extend = pdn.RINGS
+        extend = pdn.kRings
     elif extend_to_boundary:
-        extend = pdn.BOUNDARY
+        extend = pdn.kBoundary
 
     if followpins:
         for g in pdngen.findGrid(grid):
@@ -464,11 +465,11 @@ def add_pdn_stripe(
 
     else:
         if not bool(starts_with):
-            starts_with = pdn.GRID
+            starts_with = pdn.kGrid
         elif starts_with.upper() == "POWER":
-            starts_with = pdn.POWER
+            starts_with = pdn.kPower
         elif starts_with.upper() == "GROUND":
-            starts_with = pdn.GROUND
+            starts_with = pdn.kGround
         else:
             utl.error(utl.PDN, 607, "Invalid starts_with. Must be POWER or GROUND")
 
@@ -532,6 +533,7 @@ def add_pdn_connect(
     max_rows=0,
     max_columns=0,
     ongrid=[],  # list of layer names that should be on grid?
+    min_width_layers=[],  # list of pass-through layers to keep at min width
     split_cuts={},  # dictionary of layer name to pitch,
     split_cuts_staggered=False,
     dont_use_vias="",
@@ -564,7 +566,8 @@ def add_pdn_connect(
         if bool(generate_via):
             fixed_generate_vias.append(generate_via)
 
-    ongrid_list = [get_layer(l) for l in ongrid]
+    ongrid_list = [get_layer(design, l) for l in ongrid]
+    min_width_list = [get_layer(design, l) for l in min_width_layers]
 
     split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
@@ -584,6 +587,7 @@ def add_pdn_connect(
             max_rows,
             max_columns,
             ongrid_list,
+            min_width_list,
             split_cuts_dict,
             dont_use_vias,
         )
@@ -661,11 +665,11 @@ def add_pdn_ring(
         pad_offsets = [0, 0, 0, 0]
 
     if not bool(starts_with):
-        starts_with = pdn.GRID
+        starts_with = pdn.kGrid
     elif starts_with.upper() == "POWER":
-        starts_with = pdn.POWER
+        starts_with = pdn.kPower
     elif starts_with.upper() == "GROUND":
-        starts_with = pdn.GROUND
+        starts_with = pdn.kGround
     else:
         utl.error(
             utl.PDN, 608, "Invalid starts_with. Must be unspecified or POWER or GROUND"
@@ -800,16 +804,16 @@ def repair_pdn_vias(design, *, net=None, all=False):
     if not bool(net) and not all:
         utl.error(utl.PDN, 31192, "Must use either 'net' or 'all' arguments.")
 
-    nets = []
+    nets = pdn.net_set()
     if bool(net):
         net = design.getBlock().findNet(net)
         if net is None:
             utl.error(utl.PDN, 31190, f"Unable to find net: {net}")
-        nets.append(net)
+        nets.insert(net)
 
     if all:
         for net in design.getBlock().getNets():
             if net.getSigType() == "POWER" or net.getSigType() == "GROUND":
-                nets.append(net)
+                nets.insert(net)
 
     pdngen.repairVias(nets)

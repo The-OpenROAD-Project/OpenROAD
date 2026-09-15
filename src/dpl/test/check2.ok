@@ -5,5 +5,5 @@
  _285_ (NOR2_X1) overlaps _284_ (NOR2_X1)
 [WARNING DPL-0011] Padding check failed (1).
  _285_
-[ERROR DPL-0033] detailed placement checks failed.
+[ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033

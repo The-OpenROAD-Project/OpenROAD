@@ -20,13 +20,17 @@ using ord::getPDNSim;
 using psm::PDNSim;
 using sta::Scene;
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 %}
 
 // OpenSTA swig rules
 %include "tcl/StaTclTypes.i"
 
 %typemap(in) psm::GeneratedSourceType {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
 
   if (strcmp(arg, "BUMPS") == 0) {
@@ -119,4 +123,3 @@ set_inst_power(odb::dbInst* inst, Scene* corner, float power)
 }
 
 %} // inline
-

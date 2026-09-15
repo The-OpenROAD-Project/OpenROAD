@@ -26,6 +26,7 @@ template class dbTable<_dbBusPort>;
 
 bool _dbBusPort::operator==(const _dbBusPort& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_ != rhs.flags_) {
     return false;
   }
@@ -49,6 +50,7 @@ bool _dbBusPort::operator==(const _dbBusPort& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbBusPort::operator<(const _dbBusPort& rhs) const
@@ -246,10 +248,7 @@ int dbBusPort::getSize() const
 bool dbBusPort::getUpdown() const
 {
   _dbBusPort* obj = (_dbBusPort*) this;
-  if (obj->to_ >= obj->from_) {
-    return true;
-  }
-  return false;
+  return obj->to_ >= obj->from_;
 }
 
 dbBusPort* dbBusPort::create(dbModule* parentModule,

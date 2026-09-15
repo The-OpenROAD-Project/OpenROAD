@@ -225,7 +225,7 @@ void dbSwapMasterSanityChecker::checkHierNetConnectivity()
         break;
       }
     }
-    if (found == false) {
+    if (!found) {
       error(
           "{}: ModNet '{}' does not contain ModITerm '{}' in its "
           "ModITerms list",
@@ -523,7 +523,7 @@ void dbSwapMasterSanityChecker::checkCombinationalLoops()
               in_loop = true;
             }
             if (in_loop) {
-              if (loop_path.empty() == false) {
+              if (!loop_path.empty()) {
                 loop_path += " -> ";
               }
               loop_path += insts[idx]->getName();

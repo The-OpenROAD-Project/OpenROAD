@@ -202,6 +202,13 @@ proc diff_files { file1 file2 { ignore "" } } {
   }
 }
 
+proc require_snapshot_batched_activity { test_name } {
+  if { [grt::get_snapshot_batch_count] <= 0 } {
+    utl::error GRT 713 \
+      "$test_name did not execute snapshot-batched routing."
+  }
+}
+
 proc run_unit_test_and_exit { relative_path } {
   set test_dir [pwd]
   set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
@@ -296,6 +303,20 @@ suppress_message ORD 30
 # suppress grt message with the suggested adjustment
 suppress_message GRT 303
 suppress_message GRT 704
+
+# suppress elapsed time messages (non-deterministic)
+suppress_message CTS 500
+suppress_message DPL 500
+suppress_message DRT 501
+suppress_message GPL 500
+suppress_message IFP 500
+suppress_message IFP 501
+suppress_message MPL 500
+suppress_message RSZ 504
+suppress_message RSZ 505
+suppress_message RSZ 506
+suppress_message RSZ 507
+suppress_message PDN 500
 
 proc get_3dblox_marker_count { category_name } {
   set top_chip [[ord::get_db] getChip]

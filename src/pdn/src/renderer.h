@@ -15,6 +15,10 @@ namespace odb {
 class Rect;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+}  // namespace utl
+
 namespace pdn {
 
 class PdnGen;
@@ -23,7 +27,7 @@ class PdnGen;
 class PDNRenderer : public gui::Renderer
 {
  public:
-  explicit PDNRenderer(PdnGen* pdn);
+  PDNRenderer(PdnGen* pdn, utl::Logger* logger);
 
   void update();
 
@@ -38,10 +42,13 @@ class PDNRenderer : public gui::Renderer
     initial_obstructions_ = initial_obstructions;
   }
 
-  void pause();
+  // Halt the flow so the current state can be inspected in the GUI.  The
+  // reason is reported so the pause is actionable.
+  void pause(const std::string& reason);
 
  private:
   PdnGen* pdn_;
+  utl::Logger* logger_;
   Shape::ShapeTreeMap shapes_;
   Shape::ObstructionTreeMap grid_obstructions_;
   Shape::ObstructionTreeMap initial_obstructions_;
@@ -56,22 +63,22 @@ class PDNRenderer : public gui::Renderer
   };
   std::vector<RepairChannel> repair_;
 
-  static const gui::Painter::Color ring_color_;
-  static const gui::Painter::Color strap_color_;
-  static const gui::Painter::Color followpin_color_;
-  static const gui::Painter::Color via_color_;
-  static const gui::Painter::Color obstruction_color_;
-  static const gui::Painter::Color repair_color_;
-  static const gui::Painter::Color repair_outline_color_;
+  static const gui::Painter::Color kRingColor;
+  static const gui::Painter::Color kStrapColor;
+  static const gui::Painter::Color kFollowpinColor;
+  static const gui::Painter::Color kViaColor;
+  static const gui::Painter::Color kObstructionColor;
+  static const gui::Painter::Color kRepairColor;
+  static const gui::Painter::Color kRepairOutlineColor;
 
-  static constexpr const char* grid_obs_text_ = "Grid obstructions";
-  static constexpr const char* initial_obs_text_ = "Initial obstructions";
-  static constexpr const char* obs_text_ = "Obstructions";
-  static constexpr const char* rings_text_ = "Rings";
-  static constexpr const char* straps_text_ = "Straps";
-  static constexpr const char* followpins_text_ = "Followpin";
-  static constexpr const char* vias_text_ = "Vias";
-  static constexpr const char* repair_text_ = "Repair channels";
+  static constexpr const char* kGridObsText = "Grid obstructions";
+  static constexpr const char* kInitialObsText = "Initial obstructions";
+  static constexpr const char* kObsText = "Obstructions";
+  static constexpr const char* kRingsText = "Rings";
+  static constexpr const char* kStrapsText = "Straps";
+  static constexpr const char* kFollowpinsText = "Followpin";
+  static constexpr const char* kViasText = "Vias";
+  static constexpr const char* kRepairText = "Repair channels";
 };
 
 }  // namespace pdn

@@ -17,6 +17,7 @@
 
 #include "dbHashTable.h"
 #include "dbModulePortItr.h"
+#include "odb/PtrSetMap.h"
 // User Code End Includes
 
 namespace odb {
@@ -52,8 +53,8 @@ class _dbModule : public _dbObject
   void removeInst(dbInst* inst);
 
   // Copy and uniquify a given module based on current instance
-  using modBTMap = std::map<dbModBTerm*, dbModBTerm*>;
-  using ITMap = std::map<dbITerm*, dbITerm*>;
+  using modBTMap = odb::PtrMap<dbModBTerm, dbModBTerm*>;
+  using ITMap = odb::PtrMap<dbITerm, dbITerm*>;
 
   static void copy(dbModule* old_module,
                    dbModule* new_module,

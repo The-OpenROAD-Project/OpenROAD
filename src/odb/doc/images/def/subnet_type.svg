@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="199" height="169"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_FIXED"
+      xlink:title="K_FIXED">
+      <rect x="51" y="3" width="74" height="32"/>
+      <rect x="49" y="1" width="74" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">K_FIXED</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_COVER"
+      xlink:title="K_COVER">
+      <rect x="51" y="47" width="78" height="32"/>
+      <rect x="49" y="45" width="78" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">K_COVER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ROUTED"
+      xlink:title="K_ROUTED">
+      <rect x="51" y="91" width="86" height="32"/>
+      <rect x="49" y="89" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">K_ROUTED</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_NOSHIELD"
+      xlink:title="K_NOSHIELD">
+      <rect x="51" y="135" width="100" height="32"/>
+      <rect x="49" y="133" width="100" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">K_NOSHIELD</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m74 0 h10 m0 0 h26 m-140 0 h20 m120 0 h20 m-160 0 q10 0 10 10 m140 0 q0 -10 10 -10 m-150 10 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m78 0 h10 m0 0 h22 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m86 0 h10 m0 0 h14 m-130 -10 v20 m140 0 v-20 m-140 20 v24 m140 0 v-24 m-140 24 q0 10 10 10 m120 0 q10 0 10 -10 m-130 10 h10 m100 0 h10 m23 -132 h-3"/>
+   <polygon points="189 17 197 13 197 21"/>
+   <polygon points="189 17 181 13 181 21"/>
+</svg>

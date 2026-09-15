@@ -1,11 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "abutting_macros_step",
+    "abutting_macros_step_no_corners",
     "aes_gf180",
     "allow_one_site_gaps",
     "avoid_overlap",
@@ -15,8 +19,15 @@ COMPULSORY_TESTS = [
     "boundary_macros_separate2",
     "boundary_macros_tapcell",
     "cut_rows",
+    "cut_rows_asymmetric_halo",
     "cut_rows_halo",
+    "cut_rows_l_macro",
+    "cut_rows_min_step_bottom_left",
+    "cut_rows_min_step_bottom_right",
+    "cut_rows_min_step_top_left",
+    "cut_rows_min_step_top_right",
     "cut_rows_min_width",
+    "cut_rows_short_core",
     "cut_rows_with_endcaps",
     "disallow_one_site_gaps",
     "disallow_one_site_gaps2",
@@ -25,6 +36,7 @@ COMPULSORY_TESTS = [
     "endcap_autoselection_error3",
     "endcap_autoselection_error4",
     "endcap_corners",
+    "endcap_separate_edges",
     "gcd_asap7",
     "gcd_fakeram",
     "gcd_nangate45",
@@ -33,21 +45,18 @@ COMPULSORY_TESTS = [
     "gcd_sky130",
     "gcd_sky130_separate",
     "invalid_cells",
+    "invalid_master_class",
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
     "overlap_cover",
     "region1",
+    "single_row_macros",
+    "single_row_macros_offset",
     "symmetry",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "tap_man_tcl_check",
-    "tap_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -87,6 +96,7 @@ filegroup(
         "Nangate45_data/Nangate45_stdcell.lef",
         "Nangate45_data/Nangate45_stdcell_x1.lef",
         "Nangate45_data/endcaps.lef",
+        "Nangate45_data/endcaps_separate_edges.lef",
         "Nangate45_data/endcaps_symmetric.lef",
         "Nangate45_data/macros.def",
         "asap7/asap7_tech_1x_201209.lef",
@@ -143,15 +153,33 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abutting_macros_step": [],
+            "abutting_macros_step_no_corners": ["abutting_macros_step.def"],
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
+            "cut_rows_asymmetric_halo": [
+                "Nangate45_data/l_macro.lef",
+                "cut_rows_min_step.def",
+            ],
+            "cut_rows_l_macro": [
+                "Nangate45_data/l_macro.lef",
+                "cut_rows_min_step.def",
+            ],
+            "cut_rows_min_step_bottom_left": ["cut_rows_min_step.def"],
+            "cut_rows_min_step_bottom_right": ["cut_rows_min_step.def"],
+            "cut_rows_min_step_top_left": ["cut_rows_min_step.def"],
+            "cut_rows_min_step_top_right": ["cut_rows_min_step.def"],
+            "cut_rows_short_core": [],
             "disallow_one_site_gaps2": [
                 "disallow_one_site_gaps.def",
                 "disallow_one_site_gaps.defok",
             ],
+            "endcap_separate_edges": ["endcap_corners.v"],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
+            "single_row_macros": [],
+            "single_row_macros_offset": [],
         }.get(
             test_name,
             ["boundary_macros.def"],
@@ -169,3 +197,23 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "tap_man_tcl_check",
+    srcs = ["tap_man_tcl_check.py"],
+    data = ["//src/tap:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "tap_readme_msgs_check",
+    data = [
+        "//src/tap:doc_files",
+        "//src/tap:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

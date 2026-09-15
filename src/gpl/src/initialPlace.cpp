@@ -30,7 +30,8 @@ InitialPlaceVars::InitialPlaceVars(const PlaceOptions& options,
       maxFanout(options.initialPlaceMaxFanout),
       netWeightScale(options.initialPlaceNetWeightScale),
       debug(debug),
-      forceCenter(options.forceCenterInitialPlace)
+      forceCenter(options.forceCenterInitialPlace),
+      placeIosMode(options.placeIosMode)
 {
 }
 
@@ -191,6 +192,14 @@ void InitialPlace::setPlaceInstExtId()
   }
 }
 
+// Only movable IO port pins are excluded from the initial B2B solve;
+// fixed ports (LOCKED/FIRM/COVER) keep anchoring cells here.
+static bool isMovableIoPin(const Pin* pin, bool place_ios_mode)
+{
+  return place_ios_mode && pin->isBTerm()
+         && !pin->getDbBTerm()->getFirstPinPlacementStatus().isFixed();
+}
+
 void InitialPlace::updatePinInfo()
 {
   // reset all MinMax attributes
@@ -209,6 +218,9 @@ void InitialPlace::updatePinInfo()
 
     // Mark B2B info on Pin structures
     for (auto& pin : net->getPins()) {
+      if (isMovableIoPin(pin, ipVars_.placeIosMode)) {
+        continue;
+      }
       if (lx > pin->cx()) {
         if (pinMinX) {
           pinMinX->unsetMinPinX();
@@ -283,8 +295,16 @@ void InitialPlace::createSparseMatrix()
     instLocVecY_(idx) = inst->cy();
 
     fixedInstForceVecX_(idx) = fixedInstForceVecY_(idx) = 0;
+
+    if (inst->isLocked()) {
+      listX.emplace_back(idx, idx, 1.0f);
+      listY.emplace_back(idx, idx, 1.0f);
+      fixedInstForceVecX_(idx) = inst->cx();
+      fixedInstForceVecY_(idx) = inst->cy();
+    }
   }
 
+  std::vector<Pin*> solve_pins;
   // for each net
   for (auto& net : pbc_->getNets()) {
     // skip for small nets.
@@ -299,14 +319,17 @@ void InitialPlace::createSparseMatrix()
     }
 
     float netWeight = ipVars_.netWeightScale / (net->getPins().size() - 1);
-
+    solve_pins.clear();
+    for (Pin* pin : net->getPins()) {
+      if (!isMovableIoPin(pin, ipVars_.placeIosMode)) {
+        solve_pins.push_back(pin);
+      }
+    }
     // foreach two pins in single nets.
-    auto& pins = net->getPins();
-    for (int pinIdx1 = 1; pinIdx1 < pins.size(); ++pinIdx1) {
-      Pin* pin1 = pins[pinIdx1];
+    for (int pinIdx1 = 1; pinIdx1 < solve_pins.size(); ++pinIdx1) {
+      Pin* pin1 = solve_pins[pinIdx1];
       for (int pinIdx2 = 0; pinIdx2 < pinIdx1; ++pinIdx2) {
-        Pin* pin2 = pins[pinIdx2];
-
+        Pin* pin2 = solve_pins[pinIdx2];
         // no need to fill in when instance is same
         if (pin1->getInstance() == pin2->getInstance()) {
           continue;
@@ -325,24 +348,40 @@ void InitialPlace::createSparseMatrix()
 
           // both pin cames from instance
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
-            const int inst1 = pin1->getInstance()->getExtId();
-            const int inst2 = pin2->getInstance()->getExtId();
+            Instance* instance1 = pin1->getInstance();
+            Instance* instance2 = pin2->getInstance();
+            const int inst1 = instance1->getExtId();
+            const int inst2 = instance2->getExtId();
+            const bool locked1 = instance1->isLocked();
+            const bool locked2 = instance2->isLocked();
 
-            listX.emplace_back(inst1, inst1, weightX);
-            listX.emplace_back(inst2, inst2, weightX);
+            if (!locked1 && !locked2) {
+              // Both movable: standard B2B matrix terms
+              listX.emplace_back(inst1, inst1, weightX);
+              listX.emplace_back(inst2, inst2, weightX);
+              listX.emplace_back(inst1, inst2, -weightX);
+              listX.emplace_back(inst2, inst1, -weightX);
 
-            listX.emplace_back(inst1, inst2, -weightX);
-            listX.emplace_back(inst2, inst1, -weightX);
-
-            fixedInstForceVecX_(inst1)
-                += -weightX
-                   * ((pin1->cx() - pin1->getInstance()->cx())
-                      - (pin2->cx() - pin2->getInstance()->cx()));
-
-            fixedInstForceVecX_(inst2)
-                += -weightX
-                   * ((pin2->cx() - pin2->getInstance()->cx())
-                      - (pin1->cx() - pin1->getInstance()->cx()));
+              fixedInstForceVecX_(inst1)
+                  += -weightX
+                     * ((pin1->cx() - instance1->cx())
+                        - (pin2->cx() - instance2->cx()));
+              fixedInstForceVecX_(inst2)
+                  += -weightX
+                     * ((pin2->cx() - instance2->cx())
+                        - (pin1->cx() - instance1->cx()));
+            } else if (locked1 && !locked2) {
+              // inst1 is fixed: treat pin1 as a fixed terminal for inst2
+              listX.emplace_back(inst2, inst2, weightX);
+              fixedInstForceVecX_(inst2)
+                  += weightX * (pin1->cx() - (pin2->cx() - instance2->cx()));
+            } else if (!locked1 && locked2) {
+              // inst2 is fixed: treat pin2 as a fixed terminal for inst1
+              listX.emplace_back(inst1, inst1, weightX);
+              fixedInstForceVecX_(inst1)
+                  += weightX * (pin2->cx() - (pin1->cx() - instance1->cx()));
+            }
+            // both locked: no matrix or RHS contribution needed
           }
           // pin1 from IO port / pin2 from Instance
           else if (!pin1->isPlaceInstConnected()
@@ -379,24 +418,40 @@ void InitialPlace::createSparseMatrix()
 
           // both pin cames from instance
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
-            const int inst1 = pin1->getInstance()->getExtId();
-            const int inst2 = pin2->getInstance()->getExtId();
+            Instance* instance1 = pin1->getInstance();
+            Instance* instance2 = pin2->getInstance();
+            const int inst1 = instance1->getExtId();
+            const int inst2 = instance2->getExtId();
+            const bool locked1 = instance1->isLocked();
+            const bool locked2 = instance2->isLocked();
 
-            listY.emplace_back(inst1, inst1, weightY);
-            listY.emplace_back(inst2, inst2, weightY);
+            if (!locked1 && !locked2) {
+              // Both movable: standard B2B matrix terms
+              listY.emplace_back(inst1, inst1, weightY);
+              listY.emplace_back(inst2, inst2, weightY);
+              listY.emplace_back(inst1, inst2, -weightY);
+              listY.emplace_back(inst2, inst1, -weightY);
 
-            listY.emplace_back(inst1, inst2, -weightY);
-            listY.emplace_back(inst2, inst1, -weightY);
-
-            fixedInstForceVecY_(inst1)
-                += -weightY
-                   * ((pin1->cy() - pin1->getInstance()->cy())
-                      - (pin2->cy() - pin2->getInstance()->cy()));
-
-            fixedInstForceVecY_(inst2)
-                += -weightY
-                   * ((pin2->cy() - pin2->getInstance()->cy())
-                      - (pin1->cy() - pin1->getInstance()->cy()));
+              fixedInstForceVecY_(inst1)
+                  += -weightY
+                     * ((pin1->cy() - instance1->cy())
+                        - (pin2->cy() - instance2->cy()));
+              fixedInstForceVecY_(inst2)
+                  += -weightY
+                     * ((pin2->cy() - instance2->cy())
+                        - (pin1->cy() - instance1->cy()));
+            } else if (locked1 && !locked2) {
+              // inst1 is fixed: treat pin1 as a fixed terminal for inst2
+              listY.emplace_back(inst2, inst2, weightY);
+              fixedInstForceVecY_(inst2)
+                  += weightY * (pin1->cy() - (pin2->cy() - instance2->cy()));
+            } else if (!locked1 && locked2) {
+              // inst2 is fixed: treat pin2 as a fixed terminal for inst1
+              listY.emplace_back(inst1, inst1, weightY);
+              fixedInstForceVecY_(inst1)
+                  += weightY * (pin2->cy() - (pin1->cy() - instance1->cy()));
+            }
+            // both locked: no matrix or RHS contribution needed
           }
           // pin1 from IO port / pin2 from Instance
           else if (!pin1->isPlaceInstConnected()

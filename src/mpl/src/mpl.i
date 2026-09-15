@@ -34,8 +34,6 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const int max_num_level,
                           const float coarsening_ratio,
                           const int large_net_threshold,
-                          const float halo_width,
-                          const float halo_height,
                           const float fence_lx,
                           const float fence_ly,
                           const float fence_ux,
@@ -47,11 +45,12 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float fence_weight,
                           const float boundary_weight,
                           const float notch_weight,
-                          const float macro_blockage_weight,
+                          const float soft_blockage_weight,
                           const float target_util,
                           const float min_ar,
                           const char* report_directory,
-                          const bool keep_clustering_data) {
+                          const bool keep_clustering_data,
+                          const bool use_full_halo) {
 
   auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
@@ -69,8 +68,6 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              max_num_level,
                              coarsening_ratio,
                              large_net_threshold,
-                             block->micronsToDbu(halo_width),
-                             block->micronsToDbu(halo_height),
                              global_fence,
                              area_weight,
                              outline_weight,
@@ -79,11 +76,12 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              fence_weight,
                              boundary_weight,
                              notch_weight,
-                             macro_blockage_weight,
+                             soft_blockage_weight,
                              target_util,
                              min_ar,
                              report_directory,
-                             keep_clustering_data);
+                             keep_clustering_data,
+                             use_full_halo);
 }
 
 void set_debug_cmd(odb::dbBlock* block,
@@ -136,8 +134,21 @@ add_guidance_region(odb::dbInst* macro,
 }
 
 void
-set_macro_halo(odb::dbInst* macro, 
-               float left, 
+set_base_halo(float left,
+              float bottom,
+              float right,
+              float top)
+{
+  odb::dbBlock* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  getMacroPlacer()->setBaseHalo(block->micronsToDbu(left),
+                                block->micronsToDbu(bottom),
+                                block->micronsToDbu(right),
+                                block->micronsToDbu(top));
+}
+
+void
+set_macro_halo(odb::dbInst* macro,
+               float left,
                float bottom,
                float right,
                float top) 
@@ -156,6 +167,12 @@ void
 set_macro_placement_file(std::string file_name)
 {
   getMacroPlacer()->setMacroPlacementFile(file_name);
+}
+
+void
+block_macro_channels()
+{
+  getMacroPlacer()->blockMacroChannels();
 }
 
 } // namespace

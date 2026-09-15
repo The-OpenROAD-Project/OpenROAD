@@ -1,0 +1,51 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'MeasuredVtSwapPolicy' selected. Do not use this for production.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 1 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 2 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 3 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 4 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 5 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 6 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 7 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 8 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 9 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 10 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 11 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 12 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 13 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 14 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 15 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 16 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 17 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 18 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 19 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 20 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 21 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 22 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 23 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 24 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 25 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 26 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 27 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 28 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 29 / 30 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 30 / 30 moves.
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
+------------------------------------------------------------------------------------------------------------------------------
+    final |       0 |      30 |        0 |      0 |     0 |    +0.0% |  -24.700 |     -469.6 |     -469.0 |     40 | resp_msg[13]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 30 instances: 0 up, 0 up match, 0 down, 30 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Pre-ECO:   WNS= -66.849   TNS=-1781.146   Area=      45 um^2   Power= 1.273356e-03 W
+Post-ECO:  WNS= -24.700   TNS=-468.966   Area=      45 um^2   Power= 1.304851e-03 W
+Delta:     WNS=  42.150   TNS=1312.180   Area=      +0 um^2   Power=+3.149570e-05 W

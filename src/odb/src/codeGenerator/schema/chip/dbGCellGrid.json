@@ -77,8 +77,7 @@
       "flags": [
         "private",
         "no-serial",
-        "no-template"
-      ]
+        "no-template", "no-meminfo"]
     }
   ],
   "structs": [
@@ -88,13 +87,11 @@
         {
           "name": "usage",
           "type": "float",
-          "flags": [],
           "default": 0
         },
         {
           "name": "capacity",
           "type": "float",
-          "flags": [],
           "default": 0
         }
       ],

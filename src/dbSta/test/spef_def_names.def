@@ -1,0 +1,40 @@
+VERSION 5.5 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN top ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+
+# Names exercise three patterns:
+#   - plain identifier (baseline)              : b_plain, n_plain
+#   - flat name with literal '/' (CTS-style)   : cts/leaf_buf, cts/leaf_net
+#   - flat name with literal '[]' (bus-bit)    : bus[0],       bus_n[0]
+COMPONENTS 6 ;
+- b_plain      BUF_X1 ;
+- cts/leaf_buf BUF_X1 ;
+- bus[0]       BUF_X1 ;
+- b_sink_a     BUF_X1 ;
+- b_sink_b     BUF_X1 ;
+- b_sink_c     BUF_X1 ;
+END COMPONENTS
+
+PINS 2 ;
+- in  + NET in  + DIRECTION INPUT  ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+NETS 7 ;
+- in            ( PIN in )       ( b_plain A ) ( cts/leaf_buf A ) ( bus[0] A ) ;
+- n_plain       ( b_plain Z )    ( b_sink_a A ) ;
+- cts/leaf_net  ( cts/leaf_buf Z ) ( b_sink_b A ) ;
+- bus_n[0]      ( bus[0] Z )     ( b_sink_c A ) ;
+- s_a           ( b_sink_a Z ) ;
+- s_b           ( b_sink_b Z ) ;
+- out           ( b_sink_c Z )   ( PIN out ) ;
+END NETS
+
+END DESIGN

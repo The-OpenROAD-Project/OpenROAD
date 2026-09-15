@@ -5,11 +5,20 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
+
+# rule_scripts/ and calibration/ have no BUILD file of their own, so
+# they're part of this package; exported here so test/BUILD can depend
+# on them.
+exports_files([
+    "rule_scripts/UniversalFormat2FasterCap_923.py",
+    "calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+])
 
 cc_library(
     name = "rcx",
@@ -57,6 +66,9 @@ cc_library(
         "src/grids.cpp",
         "src/gs.cpp",
         "src/gseq.h",
+        "src/interChipModel.cpp",
+        "src/multiChipExtractor.cpp",
+        "src/multiChipSpefWriter.cpp",
         "src/name.cpp",
         "src/name.h",
         "src/netRC.cpp",
@@ -83,6 +95,9 @@ cc_library(
         "include/rcx/ext_options.h",
         "include/rcx/extprocess.h",
         "include/rcx/grids.h",
+        "include/rcx/interChipModel.h",
+        "include/rcx/multiChipExtractor.h",
+        "include/rcx/multiChipSpefWriter.h",
         "include/rcx/rcx.h",
         "include/rcx/util.h",
     ],
@@ -90,7 +105,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )
@@ -105,16 +120,13 @@ cc_library(
     hdrs = [
         "include/rcx/MakeOpenRCX.h",
     ],
-    copts = [
-        "-Isrc/rcx/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rcx",
         "//:ord",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -162,5 +174,22 @@ python_wrap_cc(
     ],
     deps = [
         "//src/odb:swig-py",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/OpenRCX.tcl",
+        "src/OpenRCX_process.tcl",
+    ],
+    visibility = ["//src/rcx/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rcx/test:__pkg__",
     ],
 )

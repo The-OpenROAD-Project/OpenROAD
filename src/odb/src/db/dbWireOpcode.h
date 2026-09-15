@@ -115,7 +115,7 @@ prevOpCode:
       if (get_layer) {
         pnt.layer = dbTechLayer::getTechLayer(tech, data[idx]);
 
-        if ((look_for_x == false) && (look_for_y == false)) {
+        if ((!look_for_x) && (!look_for_y)) {
           return;
         }
 
@@ -136,7 +136,7 @@ prevOpCode:
         look_for_x = false;
         pnt.x = data[idx];
 
-        if ((look_for_y == false) && (get_layer == false)) {
+        if ((!look_for_y) && (!get_layer)) {
           return;
         }
       }
@@ -150,7 +150,7 @@ prevOpCode:
         look_for_y = false;
         pnt.y = data[idx];
 
-        if ((look_for_x == false) && (get_layer == false)) {
+        if ((!look_for_x) && (!get_layer)) {
           return;
         }
       }
@@ -169,7 +169,7 @@ prevOpCode:
           pnt.layer = via->getBottomLayer();
         }
 
-        if ((look_for_x == false) && (look_for_y == false)) {
+        if ((!look_for_x) && (!look_for_y)) {
           return;
         }
 
@@ -190,7 +190,7 @@ prevOpCode:
           pnt.layer = via->getBottomLayer();
         }
 
-        if ((look_for_x == false) && (look_for_y == false)) {
+        if ((!look_for_x) && (!look_for_y)) {
           return;
         }
 

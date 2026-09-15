@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: backside_data/backside.lef, created 4 layers, 2 library cells
+[INFO ODB-0128] Design: backside_top
+[INFO ODB-0131]     Created 5 components and 10 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO PSM-0040] All shapes on net vdd are connected.
+[INFO PSM-0040] All shapes on net vss are connected.

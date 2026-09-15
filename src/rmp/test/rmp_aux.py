@@ -51,10 +51,27 @@ def restructure(
     workdir_name=".",
     tielo_port=None,
     tiehi_port=None,
-    abc_logfile=""
+    abc_logfile="",
 ):
     os.makedirs(workdir_name, exist_ok=True)
     rst = design.getRestructure()
+    if not hasattr(rst, "setMode"):
+        args = [
+            "restructure",
+            f'-liberty_file "{liberty_file_name}"',
+            f'-target "{target}"',
+            f"-slack_threshold {slack_threshold}",
+            f"-depth_threshold {depth_threshold}",
+            f'-work_dir "{workdir_name}"',
+        ]
+        if abc_logfile:
+            args.append(f'-abc_logfile "{abc_logfile}"')
+        if tielo_port is not None:
+            args.append(f'-tielo_port "{tielo_port}"')
+        if tiehi_port is not None:
+            args.append(f'-tiehi_port "{tiehi_port}"')
+        design.evalTclString(" ".join(args))
+        return
     set_tielo(design, tielo_port)
     set_tiehi(design, tiehi_port)
     rst.setMode(target)

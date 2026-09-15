@@ -9,7 +9,6 @@
 #include <iterator>
 #include <string>
 
-#include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -23,7 +22,6 @@
 #include "sta/SdcClass.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
-#include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 
@@ -31,64 +29,46 @@ namespace tst {
 
 IntegratedFixture::IntegratedFixture(Technology tech,
                                      const std::string& test_root_path)
-    : stt_(db_.get(), &logger_),
-      callback_handler_(&logger_),
+    : stt_(&logger_),
+      service_registry_(&logger_),
       dp_(db_.get(), &logger_),
       ant_(db_.get(), &logger_),
       grt_(&logger_,
-           &callback_handler_,
+           &service_registry_,
            &stt_,
            db_.get(),
            sta_.get(),
            &ant_,
            &dp_),
-      ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
+      ep_(&logger_, &service_registry_, db_.get(), sta_.get(), &stt_, &grt_),
       resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_),
       test_root_path_(test_root_path)
 {
-  switch (tech) {
-    case Technology::Nangate45: {
-      const std::string nangate45_tech_path = "_main/test/Nangate45/";
-      readLiberty(getFilePath(nangate45_tech_path + "Nangate45_typ.lib"));
-      lib_ = loadTechAndLib("Nangate45",
-                            "Nangate45",
-                            getFilePath(nangate45_tech_path + "Nangate45.lef"));
-      break;
-    }
-
-    case Technology::Sky130hd: {
-      const std::string sky130hd_tech_path = "_main/test/sky130hd/";
-      readLiberty(getFilePath(sky130hd_tech_path + "sky130_fd_sc_hd_tt.lib"));
-      lib_ = loadTechAndLib(
-          "sky130",
-          "sky130_fd_sc_hd",
-          getFilePath(sky130hd_tech_path + "sky130_fd_sc_hd.tlef"));
-      break;
-    }
-  }
+  lib_ = loadTechnology(tech, db_.get(), sta_.get(), &logger_);
 
   db_->setLogger(&logger_);
   db_network_ = sta_->getDbNetwork();
+
+  // This fixture has always been hierarchical from construction, and tests
+  // that build their netlist by hand instead of calling readVerilogAndSetup
+  // (e.g. TestInsertBuffer, which creates its own dbChip/dbBlock in SetUp)
+  // depend on it: checkAxioms walks a dbModule netlist and needs the flag set.
+  // readVerilogAndLink sets it again per its own `hierarchy` argument.
   db_network_->setHierarchy();
 }
 
 void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file,
-                                            bool init_default_sdc)
+                                            bool init_default_sdc,
+                                            bool hierarchy)
 {
-  ord::dbVerilogNetwork verilog_network(sta_.get());
-  sta::VerilogReader verilog_reader(&verilog_network);
-  verilog_reader.read(
-      getFilePath(test_root_path_ + "cpp/" + verilog_file).c_str());
-
-  ord::dbLinkDesign(
-      "top", &verilog_network, db_.get(), &logger_, true /*hierarchy = */);
-
-  sta_->postReadDb(db_.get());
-
-  block_ = db_->getChip()->getBlock();
-  block_->setDefUnits(lib_->getTech()->getLefUnits());
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-  sta_->postReadDef(block_);
+  block_
+      = readVerilogAndLink(getFilePath(test_root_path_ + "cpp/" + verilog_file),
+                           "top",
+                           hierarchy,
+                           db_.get(),
+                           sta_.get(),
+                           &logger_,
+                           lib_);
 
   if (init_default_sdc) {
     initStaDefaultSdc();
@@ -105,25 +85,21 @@ void IntegratedFixture::initStaDefaultSdc()
     sta::Pin* clk_pin
         = db_network_->findPin(db_network_->topInstance(), clk_port);
 
-    // STA frees the 'clk_pins' after use.
-    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-    sta::PinSet* clk_pins = new sta::PinSet(db_network_);
-    clk_pins->insert(clk_pin);
+    sta::PinSet clk_pins(db_network_);
+    clk_pins.insert(clk_pin);
 
     // Clock period = 0.5ns
     double period = sta_->units()->timeUnit()->userToSta(0.5);
-    // STA takes the ownership of 'waveform'.
-    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
 
     sta_->makeClock("clk",
                     clk_pins,
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr,
+                    /*comment=*/"",
                     /*mode=*/sta_->cmdMode());
 
     sta::Sdc* sdc = sta_->cmdMode()->sdc();
@@ -191,7 +167,7 @@ void IntegratedFixture::dumpVerilogAndOdb(const std::string& name) const
 void IntegratedFixture::removeFile(const std::string& path)
 {
   if (std::remove(path.c_str()) != 0) {
-    logger_.warn(utl::RSZ, 0, "Could not remove '{}'.", path);
+    logger_.warn(utl::TST, 1, "Could not remove '{}'.", path);
   }
 }
 

@@ -502,7 +502,7 @@ void extMeasureRC::segInfo(FILE* fp,
             : "Wire";
   dbNet* net1 = dbNet::getNet(_block, netId);
 
-  double gndCap = rseg->getCapacitance(0);
+  double gndCap = rseg->getGroundCapacitance(0);
   double cc = getCC(rsegId);
   double totCap = gndCap + cc;
   double res = rseg->getResistance();

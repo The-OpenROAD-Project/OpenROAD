@@ -14,6 +14,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -154,9 +155,9 @@ class TimingPath
 
   TimingPath();
 
-  void setStartClock(const char* name) { start_clk_ = name; }
+  void setStartClock(const std::string& name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
-  void setEndClock(const char* name) { end_clk_ = name; }
+  void setEndClock(const std::string& name) { end_clk_ = name; }
   const std::string& getEndClock() const { return end_clk_; }
 
   float getPathArrivalTime() const { return arr_time_; }
@@ -279,7 +280,7 @@ class ClockTree
   sta::Delay getMinimumDriverDelay(bool visibility) const;
   int getSinkCount() const;
 
-  std::set<odb::dbNet*> getNets(bool visibility) const;
+  odb::PtrSet<odb::dbNet> getNets(bool visibility) const;
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 

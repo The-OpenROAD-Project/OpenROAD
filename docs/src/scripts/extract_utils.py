@@ -6,20 +6,72 @@
 import re
 
 
+def outside_fences(text):
+    """
+    Predicate: is this offset outside every fenced code block?
+
+    Tcl comments open with `#`, so `# Either run` inside a synopsis block reads
+    as a level-1 heading to a plain regex. That misplaces every heading after
+    it and, in turn, the section each code block belongs to.
+    """
+    spans = [
+        (m.start(), m.end())
+        for m in re.finditer(r"^```.*?^```", text, flags=re.DOTALL | re.MULTILINE)
+    ]
+    return lambda pos: not any(start <= pos < end for start, end in spans)
+
+
 def extract_headers(text, level=1):
     assert isinstance(level, int) and level >= 1
+    outside = outside_fences(text)
     pattern = r"^#{%d}\s+(.*)$" % level
-    headers = re.findall(pattern, text, flags=re.MULTILINE)
+    headers = [
+        m.group(1)
+        for m in re.finditer(pattern, text, flags=re.MULTILINE)
+        if outside(m.start())
+    ]
     # TODO: Handle developer commands
     # if "Useful Developer Commands" in headers: headers.remove("Useful Developer Commands")
     return headers
 
 
+def synopsis_tcl_blocks(text):
+    """
+    The ```tcl block holding each command's synopsis, in document order.
+
+    One `### <command>` section describes one command, so its synopsis is the
+    first tcl block inside it -- the same block `extract_description` stops at.
+    Any later tcl in the section is a worked example, and tcl before the first
+    `###` is introductory usage. Counting those as commands too yielded more
+    names and synopses than descriptions and options, and that count mismatch
+    aborts the whole man2 build. Note the synopsis does not have to sit
+    directly under the `###`: a section may open with `####` prose first.
+    """
+    outside = outside_fences(text)
+    headings = [
+        (m.start(), len(m.group(1)))
+        for m in re.finditer(r"^(#{1,6})\s", text, flags=re.MULTILINE)
+        if outside(m.start())
+    ]
+    synopsis = re.compile(r"```tcl\s+(.*?)```", flags=re.DOTALL)
+    blocks = []
+    for i, (start, level) in enumerate(headings):
+        if level != 3:
+            continue
+        # The section ends at the next heading of the same or higher rank.
+        end = next(
+            (pos for pos, lvl in headings[i + 1 :] if lvl <= 3),
+            len(text),
+        )
+        m = synopsis.search(text, start, end)
+        if m:
+            blocks.append(m)
+    return blocks
+
+
 def extract_tcl_command(text):
     # objective is to extract tcl command from the synopsis
-    pattern = r"```tcl\s*(.*?)\s"
-    headers = re.findall(pattern, text, flags=re.MULTILINE)
-    return headers
+    return [m.group(1).split()[0] for m in synopsis_tcl_blocks(text)]
 
 
 def extract_description(text):
@@ -31,12 +83,19 @@ def extract_description(text):
     return [custom_string[1].strip() for custom_string in custom_strings]
 
 
-def extract_tcl_code(text):
-    pattern = r"```tcl\s+(.*?)```"
-    tcl_code_matches = re.findall(pattern, text, flags=re.DOTALL)
-    # remove the last tcl match
-    tcl_code_matches = [x for x in tcl_code_matches if "./test/gcd.tcl" not in x]
-    return tcl_code_matches
+def extract_tcl_code(text, skip_markers=True):
+    # Find all ```tcl blocks along with their position to check for skip markers.
+    results = []
+    for m in synopsis_tcl_blocks(text):
+        # Check the text immediately before this block for a skip marker.
+        if skip_markers:
+            preceding = text[: m.start()]
+            if "<!-- checker: skip -->" in preceding.split("\n")[-3:]:
+                continue
+        block = m.group(1)
+        if "./test/gcd.tcl" not in block:
+            results.append(block)
+    return results
 
 
 def extract_arguments(text):
@@ -48,18 +107,32 @@ def extract_arguments(text):
     # form these 2 regex styles.
     # ### Header 1 {text} ### Header2; ### Header n-2 {text} ### Header n-1
     # ### Header n {text} ## closest_level2_header
+    # Headers are literal text, so escape them the way extract_description
+    # does. `## C++` (odb) would otherwise read as a possessive quantifier and
+    # capture the wrong span, and `## ... (min-cut partitioning)` (par) as a
+    # group, so the section would not match at all and match[0] below would
+    # raise IndexError.
     first = [
-        rf"### ({level3[i]})(.*?)### ({level3[i+1]})" for i in range(len(level3) - 1)
+        rf"### ({re.escape(level3[i])})(.*?)### ({re.escape(level3[i + 1])})"
+        for i in range(len(level3) - 1)
     ]
 
     # find the next closest level2 header to the last level3 header.
     closest_level2 = [
         text.find(f"## {x}") - text.find(f"### {level3[-1]}") for x in level2
     ]
-    closest_level2_idx = [idx for idx, x in enumerate(closest_level2) if x > 0][0]
+    trailing_level2 = [idx for idx, x in enumerate(closest_level2) if x > 0]
 
     # This will disambiguate cases where different level headers share the same name.
-    second = [rf"### ({level3[-1]})(.*?)## ({level2[closest_level2_idx]})"]
+    if trailing_level2:
+        last3, next2 = level3[-1], level2[trailing_level2[0]]
+        second = [rf"### ({re.escape(last3)})(.*?)## ({re.escape(next2)})"]
+    else:
+        # No level2 header follows, so the last command section runs to the end
+        # of the file. Most READMEs close with `## Authors`/`## License`, which
+        # is what bounded this section; without that the lookup used to raise
+        # IndexError and drop the module's man pages entirely.
+        second = [rf"### ({re.escape(level3[-1])})(.*?)$"]
     final_options, final_args = [], []
     for idx, regex in enumerate(first + second):
         match = re.findall(regex, text, flags=re.DOTALL)
@@ -99,20 +172,32 @@ def extract_tables(text):
 
 
 def extract_help(text):
-    # Logic now captures everything between { to earliest "proc"
-    help_pattern = re.compile(
-        r"""
-                sta::define_cmd_args\s+
-                "(.*?)"\s*
-                (.*?)proc\s
-                """,
-        re.VERBOSE | re.DOTALL,
-    )
-
-    matches = re.findall(help_pattern, text)
-
-    # remove nodocs (usually dev commands)
-    matches = [tup for tup in matches if ";#checkeroff" not in tup[1].replace(" ", "")]
+    # Match each sta::define_cmd_args block independently by tracking
+    # brace depth, instead of spanning to the next "proc" keyword which
+    # breaks when sta::proc_redirect is used between commands.
+    matches = []
+    for m in re.finditer(r'sta::define_cmd_args\s+"([^"]+)"\s*', text):
+        name = m.group(1)
+        after = text[m.end() :]
+        # Walk through the args block tracking brace depth.
+        depth = 0
+        end = 0
+        for j, ch in enumerate(after):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = j
+                    break
+        rest_of_line = after[end + 1 :].split("\n")[0]
+        args_block = after[: end + 1] + rest_of_line
+        if ";#checkeroff" in args_block.replace(" ", ""):
+            continue
+        # Only count commands that have a matching proc or proc_redirect.
+        proc_pat = rf"(?:proc|sta::proc_redirect)\s+{re.escape(name)}\s"
+        if re.search(proc_pat, text):
+            matches.append((name, args_block))
     return matches
 
 

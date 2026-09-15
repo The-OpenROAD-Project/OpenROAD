@@ -247,7 +247,7 @@ nextOpCode:
         layer_ = via->getBottomLayer();
       }
 
-      if (has_width_ == false) {
+      if (!has_width_) {
         dw_ = layer_->getWidth() >> 1;
       }
 
@@ -279,7 +279,7 @@ nextOpCode:
         layer_ = via->getBottomLayer();
       }
 
-      if (has_width_ == false) {
+      if (!has_width_) {
         dw_ = layer_->getWidth() >> 1;
       }
 

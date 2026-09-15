@@ -13,6 +13,9 @@ void GRTreeNode::preorder(
     const std::shared_ptr<GRTreeNode>& node,
     const std::function<void(const std::shared_ptr<GRTreeNode>&)>& visit)
 {
+  if (!node) {
+    return;
+  }
   visit(node);
   for (auto& child : node->children_) {
     preorder(child, visit);

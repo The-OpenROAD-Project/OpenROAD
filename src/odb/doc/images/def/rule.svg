@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="299" height="961"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#design_section"
+      xlink:title="design_section">
+      <rect x="51" y="3" width="116" height="32"/>
+      <rect x="49" y="1" width="116" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">design_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#assertions_section"
+      xlink:title="assertions_section">
+      <rect x="51" y="47" width="140" height="32"/>
+      <rect x="49" y="45" width="140" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">assertions_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#blockage_section"
+      xlink:title="blockage_section">
+      <rect x="51" y="91" width="130" height="32"/>
+      <rect x="49" y="89" width="130" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">blockage_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#comps_section"
+      xlink:title="comps_section">
+      <rect x="51" y="135" width="114" height="32"/>
+      <rect x="49" y="133" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">comps_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#constraint_section"
+      xlink:title="constraint_section">
+      <rect x="51" y="179" width="136" height="32"/>
+      <rect x="49" y="177" width="136" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="197">constraint_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#extension_section"
+      xlink:title="extension_section">
+      <rect x="51" y="223" width="136" height="32"/>
+      <rect x="49" y="221" width="136" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="241">extension_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#fill_section"
+      xlink:title="fill_section">
+      <rect x="51" y="267" width="88" height="32"/>
+      <rect x="49" y="265" width="88" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="285">fill_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#comps_maskShift_section"
+      xlink:title="comps_maskShift_section">
+      <rect x="51" y="311" width="184" height="32"/>
+      <rect x="49" y="309" width="184" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="329">comps_maskShift_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#floorplan_contraints_section"
+      xlink:title="floorplan_contraints_section">
+      <rect x="51" y="355" width="200" height="32"/>
+      <rect x="49" y="353" width="200" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="373">floorplan_contraints_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#groups_section"
+      xlink:title="groups_section">
+      <rect x="51" y="399" width="118" height="32"/>
+      <rect x="49" y="397" width="118" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="417">groups_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#iotiming_section"
+      xlink:title="iotiming_section">
+      <rect x="51" y="443" width="124" height="32"/>
+      <rect x="49" y="441" width="124" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="461">iotiming_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nets_section"
+      xlink:title="nets_section">
+      <rect x="51" y="487" width="102" height="32"/>
+      <rect x="49" y="485" width="102" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="505">nets_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nondefaultrule_section"
+      xlink:title="nondefaultrule_section">
+      <rect x="51" y="531" width="166" height="32"/>
+      <rect x="49" y="529" width="166" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="549">nondefaultrule_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#partitions_section"
+      xlink:title="partitions_section">
+      <rect x="51" y="575" width="134" height="32"/>
+      <rect x="49" y="573" width="134" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="593">partitions_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pin_props_section"
+      xlink:title="pin_props_section">
+      <rect x="51" y="619" width="136" height="32"/>
+      <rect x="49" y="617" width="136" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="637">pin_props_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#regions_section"
+      xlink:title="regions_section">
+      <rect x="51" y="663" width="120" height="32"/>
+      <rect x="49" y="661" width="120" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="681">regions_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#scanchains_section"
+      xlink:title="scanchains_section">
+      <rect x="51" y="707" width="142" height="32"/>
+      <rect x="49" y="705" width="142" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="725">scanchains_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#slot_section"
+      xlink:title="slot_section">
+      <rect x="51" y="751" width="96" height="32"/>
+      <rect x="49" y="749" width="96" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="769">slot_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#snets_section"
+      xlink:title="snets_section">
+      <rect x="51" y="795" width="108" height="32"/>
+      <rect x="49" y="793" width="108" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="813">snets_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#styles_section"
+      xlink:title="styles_section">
+      <rect x="51" y="839" width="110" height="32"/>
+      <rect x="49" y="837" width="110" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="857">styles_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#timingdisables_section"
+      xlink:title="timingdisables_section">
+      <rect x="51" y="883" width="164" height="32"/>
+      <rect x="49" y="881" width="164" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="901">timingdisables_section</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#via_section"
+      xlink:title="via_section">
+      <rect x="51" y="927" width="92" height="32"/>
+      <rect x="49" y="925" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="945">via_section</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m116 0 h10 m0 0 h84 m-240 0 h20 m220 0 h20 m-260 0 q10 0 10 10 m240 0 q0 -10 10 -10 m-250 10 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m140 0 h10 m0 0 h60 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m130 0 h10 m0 0 h70 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m114 0 h10 m0 0 h86 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m136 0 h10 m0 0 h64 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m136 0 h10 m0 0 h64 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m88 0 h10 m0 0 h112 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m184 0 h10 m0 0 h16 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m200 0 h10 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m118 0 h10 m0 0 h82 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m124 0 h10 m0 0 h76 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m102 0 h10 m0 0 h98 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m166 0 h10 m0 0 h34 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m134 0 h10 m0 0 h66 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m136 0 h10 m0 0 h64 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m120 0 h10 m0 0 h80 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m142 0 h10 m0 0 h58 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m96 0 h10 m0 0 h104 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m108 0 h10 m0 0 h92 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m110 0 h10 m0 0 h90 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m164 0 h10 m0 0 h36 m-230 -10 v20 m240 0 v-20 m-240 20 v24 m240 0 v-24 m-240 24 q0 10 10 10 m220 0 q10 0 10 -10 m-230 10 h10 m92 0 h10 m0 0 h108 m23 -924 h-3"/>
+   <polygon points="289 17 297 13 297 21"/>
+   <polygon points="289 17 281 13 281 21"/>
+</svg>

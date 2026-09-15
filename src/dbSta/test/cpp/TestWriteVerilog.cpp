@@ -32,7 +32,7 @@ class TestWriteVerilog : public tst::IntegratedFixture
 {
  public:
   TestWriteVerilog()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/dbSta/test/")
   {
   }
@@ -105,7 +105,7 @@ TEST_F(TestWriteVerilog, RemoveCellsIdCollision)
                            /*nocase=*/false,
                            sta_->tclInterp());
     CellSeq cells = network->findCellsMatching(lib, &inv_match);
-    if (cells.empty() == false) {
+    if (!cells.empty()) {
       inv_cell = cells[0];
       break;
     }

@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
+#include <string_view>
+
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "sta/ConcreteLibrary.hh"
@@ -29,7 +31,7 @@ class dbVerilogNetwork : public sta::ConcreteNetwork
 {
  public:
   dbVerilogNetwork(sta::dbSta* sta);
-  sta::Cell* findAnyCell(const char* name) override;
+  sta::Cell* findAnyCell(std::string_view name) override;
   bool isBlackBox(sta::ConcreteCell* cell);
   sta::dbNetwork* getDbNetwork()
   {

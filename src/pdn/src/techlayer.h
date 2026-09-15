@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,14 +31,21 @@ class TechLayer
 
   int getMinWidth() const { return layer_->getMinWidth(); }
   int getMaxWidth() const { return layer_->getMaxWidth(); }
-  odb::Rect adjustToMinArea(const odb::Rect& rect) const;
+  odb::Rect adjustToMinArea(const odb::Rect& rect,
+                            const std::optional<odb::dbTechLayerDir>& dir
+                            = std::nullopt) const;
   // get the spacing by also checking for spacing constraints not normally
   // checked for
   int getSpacing(int width, int length = 0) const;
 
   void populateGrid(odb::dbBlock* block,
                     odb::dbTechLayerDir dir = odb::dbTechLayerDir::NONE);
-  int snapToGrid(int pos, int greater_than = 0) const;
+  // snap pos onto the routing grid, ignoring tracks outside
+  // [greater_than, less_than]; the bounds keep successive straps in a group
+  // from landing on the same track, in either sweep direction
+  int snapToGrid(int pos,
+                 int greater_than = 0,
+                 int less_than = std::numeric_limits<int>::max()) const;
   int snapToGridInterval(odb::dbBlock* block, int dist) const;
   bool hasGrid() const { return !grid_.empty(); }
   const std::vector<int>& getGrid() const { return grid_; }

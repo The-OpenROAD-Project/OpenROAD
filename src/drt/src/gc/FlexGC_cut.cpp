@@ -13,11 +13,11 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "gc/FlexGC_impl.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -111,10 +111,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
                                    isSide2,
                                    odb::dbTechLayerCutSpacingTableDefRule::MIN);
     reqSpcSqr *= reqSpcSqr;
-    if (distSquare < reqSpcSqr) {
-      return true;
-    }
-    return false;
+    return distSquare < reqSpcSqr;
   }
   if (class1 == class2 && !dbRule->isLayerValid()) {
     bool exactlyAligned = false;

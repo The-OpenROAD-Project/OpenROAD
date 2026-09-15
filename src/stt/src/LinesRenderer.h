@@ -23,7 +23,7 @@ class LinesRenderer : public gui::Renderer
   void highlight(const LineSegments& lines, const gui::Painter::Color& color);
   void drawObjects(gui::Painter& /* painter */) override;
   // singleton for debug functions
-  static LinesRenderer* lines_renderer;
+  static LinesRenderer* lines_renderer_;
 
  private:
   LineSegments lines_;

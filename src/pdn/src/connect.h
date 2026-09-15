@@ -5,12 +5,14 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -45,7 +47,9 @@ class Connect
 
   void setOnGrid(const std::vector<odb::dbTechLayer*>& layers);
 
-  void setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits);
+  void setMinWidthLayers(const std::vector<odb::dbTechLayer*>& layers);
+
+  void setSplitCuts(const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits);
   int getSplitCutPitch(odb::dbTechLayer* layer) const;
   bool getSplitCutStagger(odb::dbTechLayer* layer) const;
 
@@ -90,7 +94,7 @@ class Connect
 
   void printViaReport() const;
 
-  void addFailedVia(failedViaReason reason,
+  void addFailedVia(FailedViaReason reason,
                     const odb::Rect& rect,
                     odb::dbNet* net);
   void recordFailedVias() const;
@@ -107,8 +111,9 @@ class Connect
   int max_rows_ = 0;
   int max_columns_ = 0;
 
-  std::set<odb::dbTechLayer*> ongrid_;
-  std::map<odb::dbTechLayer*, SplitCut> split_cuts_;
+  odb::PtrSet<odb::dbTechLayer> ongrid_;
+  odb::PtrSet<odb::dbTechLayer> min_width_layers_;
+  odb::PtrMap<odb::dbTechLayer, SplitCut> split_cuts_;
 
   // map of built vias, where the key is the width and height of the via
   // intersection, and the value points of the associated via stack.
@@ -120,7 +125,7 @@ class Connect
   std::vector<odb::dbTechLayer*> intermediate_layers_;
   std::vector<odb::dbTechLayer*> intermediate_routing_layers_;
 
-  std::map<failedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>>
+  std::map<FailedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>>
       failed_vias_;
 
   DbVia* makeSingleLayerVia(
@@ -132,6 +137,10 @@ class Connect
       odb::dbTechLayer* upper,
       const std::set<odb::Rect>& upper_rects,
       const ViaGenerator::Constraint& upper_constraint) const;
+
+  bool updateSharedLayerWidths(
+      const std::vector<std::unique_ptr<DbVia>>& stack,
+      std::vector<std::optional<int>>& shared_widths) const;
 
   void populateDBVias();
   void populateGenerateRules();

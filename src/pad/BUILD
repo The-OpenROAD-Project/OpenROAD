@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -19,10 +20,12 @@ cc_library(
         "src/PadPlacer.h",
         "src/RDLGui.cpp",
         "src/RDLGui.h",
-        "src/RDLRoute.cpp",
-        "src/RDLRoute.h",
+        "src/RDLNet.cpp",
+        "src/RDLNet.h",
         "src/RDLRouter.cpp",
         "src/RDLRouter.h",
+        "src/RDLSegment.cpp",
+        "src/RDLSegment.h",
         "src/Utilities.cpp",
         "src/Utilities.h",
         ":swig",
@@ -38,7 +41,7 @@ cc_library(
     deps = [
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.graph",
@@ -72,5 +75,21 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/pad.tcl",
+    ],
+    visibility = ["//src/pad/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/pad/test:__pkg__",
     ],
 )
