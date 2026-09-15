@@ -3,15 +3,11 @@
 
 include("openroad")
 
-# For Multithread
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Eigen3 REQUIRED)
 find_package(ortools REQUIRED)
 find_package(LEMON NAMES LEMON lemon REQUIRED)
-find_package(OpenMP REQUIRED)
 
 message(STATUS "Found OR-Tools: ${ortools_DIR} (version: ${ortools_VERSION})")
 
@@ -84,8 +80,6 @@ if(ENABLE_GPU)
   # applies to src/fft.cpp, whose makeFftBackend() factory includes
   # gpu/gpuFftBackend.h (Kokkos-dependent) to construct a GpuFftBackend. All
   # such TUs are flagged with the device language to match the Kokkos backend.
-  # src/hpwl.cpp stays a plain CXX TU — gpu/gpuHpwlBackend.h is Kokkos-free, so
-  # its makeHpwlBackend() factory needs no device language.
   # src/fftsg.cpp / src/fftsg2d.cpp are pure C++ Ooura code — left as CXX.
   if(Kokkos_ENABLE_CUDA)
     set_source_files_properties(
@@ -95,7 +89,8 @@ if(ENABLE_GPU)
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
       src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/gpu/nesterovOp.cpp src/gpu/nesterovDeviceContext.cpp
-      src/fft.cpp src/kokkosRuntime.cpp
+      src/fft.cpp src/kokkosRuntime.cpp src/densityGradient.cpp
+      src/hpwl.cpp src/wirelengthGradient.cpp src/nesterovBase.cpp src/mbff.cpp
       PROPERTIES LANGUAGE CUDA)
   elseif(Kokkos_ENABLE_HIP)
     set_source_files_properties(
@@ -105,7 +100,8 @@ if(ENABLE_GPU)
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
       src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/gpu/nesterovOp.cpp src/gpu/nesterovDeviceContext.cpp
-      src/fft.cpp src/kokkosRuntime.cpp
+      src/fft.cpp src/kokkosRuntime.cpp src/densityGradient.cpp
+      src/hpwl.cpp src/wirelengthGradient.cpp src/nesterovBase.cpp src/mbff.cpp
       PROPERTIES LANGUAGE HIP)
   endif()
   # Disable FP contraction for kernels that share gpl_lib's compile
@@ -162,7 +158,6 @@ target_link_libraries(gpl_lib
     grt_lib
     ortools::ortools
     Threads::Threads
-    OpenMP::OpenMP_CXX
 )
 
 target_link_libraries(gpl
@@ -177,7 +172,6 @@ target_link_libraries(gpl
     grt
     ortools::ortools
     Threads::Threads
-    OpenMP::OpenMP_CXX
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)

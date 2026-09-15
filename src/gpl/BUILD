@@ -44,16 +44,15 @@ cc_library(
     ],
 )
 
-# The Kokkos/CUDA backends plus kokkosRuntime.cpp and fft.cpp. fft.cpp includes only
-# Kokkos-free PIMPL headers, but it is compiled as CUDA here to mirror
-# the CMake flow's set_source_files_properties(... LANGUAGE CUDA) list in
-# src/gpl/CMakeLists.txt, keeping the two builds behaviorally identical.
-# hpwl.cpp stays a plain C++ TU in :gpl, also mirroring CMake.
+# With --config=gpu, the selected Kokkos package enables CUDA, so sources
+# including its headers must use the CUDA compiler, even for host loops.
 cc_library(
     name = "gpl_kokkos",
     srcs = [
         "include/gpl/Replace.h",
+        "src/AbstractGraphics.h",
         "src/backendContext.h",
+        "src/densityGradient.cpp",
         "src/densityGradientBackend.h",
         "src/fft.cpp",
         "src/fft.h",
@@ -91,7 +90,12 @@ cc_library(
         "src/gpu/wirelengthOp.h",
         "src/kokkosRuntime.cpp",
         "src/kokkosRuntime.h",
+        "src/hpwl.cpp",
         "src/hpwlBackend.h",
+        "src/mbff.cpp",
+        "src/mbff.h",
+        "src/nesterovBase.cpp",
+        "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ],
     additional_compiler_inputs = [
@@ -116,12 +120,27 @@ cc_library(
     visibility = ["//src/gpl/test:__pkg__"],
     deps = [
         ":gpl_private_hdrs",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/grt",
         "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
         "//src/utl",
+        "@abseil-cpp//absl/container:inlined_vector",
+        "@boost.polygon",
+        "@boost.random",
+        "@boost.scope_exit",
         "@boost.unordered",
+        "@coin-or-lemon//:lemon",
+        "@eigen",
         "@kokkos",
         "@kokkos_fft",
         "@openmp",
+        "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/linear_solver:linear_solver_base",
+        "@or-tools//ortools/sat:cp_model",
+        "@or-tools//ortools/util:sorted_interval_list",
     ],
 )
 
@@ -132,7 +151,6 @@ cc_library(
         "src/backendContext.h",
         "src/clockBase.cpp",
         "src/clockBase.h",
-        "src/densityGradient.cpp",
         "src/densityGradientBackend.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
@@ -140,12 +158,9 @@ cc_library(
         "src/gpu/nesterovDeviceContext.h",
         "src/gpu/regionDensityField.h",
         "src/graphicsNone.cpp",
-        "src/hpwl.cpp",
         "src/hpwlBackend.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
-        "src/mbff.cpp",
-        "src/nesterovBase.cpp",
         "src/nesterovPlace.cpp",
         "src/placerBase.cpp",
         "src/replace.cpp",
@@ -154,7 +169,6 @@ cc_library(
         "src/solver.h",
         "src/timingBase.cpp",
         "src/timingBase.h",
-        "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ] + select({
         "//:gpu_cuda": [
@@ -172,6 +186,11 @@ cc_library(
             "src/fft.cpp",
             "src/kokkosRuntime.cpp",
             "src/kokkosRuntime.h",
+            "src/densityGradient.cpp",
+            "src/hpwl.cpp",
+            "src/mbff.cpp",
+            "src/nesterovBase.cpp",
+            "src/wirelengthGradient.cpp",
         ],
     }),
     hdrs = [
@@ -180,9 +199,10 @@ cc_library(
         "src/graphicsNone.h",
         "src/mbff.h",
     ],
-    copts = [
-        "-fopenmp",
-    ],
+    copts = select({
+        "@kokkos_host//:openmp": ["-fopenmp"],
+        "//conditions:default": [],
+    }),
     includes = [
         "include",
     ],
@@ -206,7 +226,6 @@ cc_library(
         "@boost.scope_exit",
         "@coin-or-lemon//:lemon",
         "@eigen",
-        "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
         "@or-tools//ortools/sat:cp_model",

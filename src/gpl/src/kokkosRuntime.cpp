@@ -27,4 +27,15 @@ void ensureKokkosInitialized()
   });
 }
 
+Kokkos::DefaultHostExecutionSpace hostExecutionSpace(
+    [[maybe_unused]] int num_threads)
+{
+  ensureKokkosInitialized();
+#ifdef KOKKOS_ENABLE_OPENMP
+  return Kokkos::DefaultHostExecutionSpace(num_threads);
+#else
+  return Kokkos::DefaultHostExecutionSpace();
+#endif
+}
+
 }  // namespace gpl
