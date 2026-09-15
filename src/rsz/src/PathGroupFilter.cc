@@ -11,6 +11,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/Mode.hh"
@@ -68,6 +69,20 @@ EndpointKind groupEndpointKind(const PathGroupType type)
 bool groupStartsAtInput(const PathGroupType type)
 {
   return groupStartpointKind(type) == StartpointKind::kPrimaryInput;
+}
+
+// Labels for the "path_group" debug channel.
+const char* endpointKindName(const EndpointKind kind)
+{
+  switch (kind) {
+    case EndpointKind::kRegister:
+      return "register";
+    case EndpointKind::kPrimaryOutput:
+      return "primary_output";
+    case EndpointKind::kGatedClockEnable:
+      return "gated_clock_enable";
+  }
+  return "?";
 }
 
 // The name OpenSTA knows the group by.  Only gated_clock differs: OpenSTA
@@ -243,6 +258,7 @@ std::string resolvePathGroupName(Resizer* resizer, const char* name)
 PathGroupFilter::PathGroupFilter(Resizer* resizer)
     : sta_(resizer->sta()),
       network_(resizer->network()),
+      logger_(resizer->logger()),
       type_(findPathGroupType(resizer->pathGroup()))
 {
   if (enabled()) {
@@ -316,25 +332,63 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
   // Endpoint side is structural: a primary output ends *2out paths, a clock
   // gate enable ends gated_clock paths, a register/latch data pin ends *2reg
   // paths.
-  if (endpointKind(endpoint) != groupEndpointKind(type_)) {
+  const EndpointKind kind = endpointKind(endpoint);
+  if (kind != groupEndpointKind(type_)) {
+    debugPrint(logger_,
+               utl::RSZ,
+               "path_group",
+               2,
+               "{} rejected from {}: endpoint is {}",
+               network_->pathName(endpoint->pin()),
+               staPathGroupName(type_),
+               endpointKindName(kind));
     return false;
   }
   if (groupStartpointKind(type_) == StartpointKind::kAny) {
     return true;
   }
 
-  // Startpoint side needs the path itself.  The worst slack path is the one
-  // repair_timing works on for this endpoint, so it decides the group.
+  // Startpoint side needs the path itself.  Only the worst slack path to this
+  // endpoint is classified, so an endpoint whose worst path leaves the group
+  // is dropped even when a lesser path of its own stays inside it.
   sta::Path* path = sta_->vertexWorstSlackPath(endpoint, min_max);
   if (path == nullptr || path->isNull()) {
+    debugPrint(logger_,
+               utl::RSZ,
+               "path_group",
+               2,
+               "{} rejected from {}: no worst slack path",
+               network_->pathName(endpoint->pin()),
+               staPathGroupName(type_));
     return false;
   }
   const sta::PathExpanded expanded(path, sta_);
   const sta::Path* start_path = expanded.startPath();
   if (start_path == nullptr) {
+    debugPrint(logger_,
+               utl::RSZ,
+               "path_group",
+               2,
+               "{} rejected from {}: worst slack path has no startpoint",
+               network_->pathName(endpoint->pin()),
+               staPathGroupName(type_));
     return false;
   }
-  return isPrimaryInput(start_path->pin(sta_)) == groupStartsAtInput(type_);
+  const sta::Pin* start_pin = start_path->pin(sta_);
+  const bool in_group
+      = isPrimaryInput(start_pin) == groupStartsAtInput(type_);
+  debugPrint(logger_,
+             utl::RSZ,
+             "path_group",
+             2,
+             "{} {} {}: worst slack {} path starts at {} ({})",
+             network_->pathName(endpoint->pin()),
+             in_group ? "kept in" : "rejected from",
+             staPathGroupName(type_),
+             sta::delayAsString(sta_->slack(endpoint, min_max), 4, sta_),
+             network_->pathName(start_pin),
+             isPrimaryInput(start_pin) ? "primary_input" : "register");
+  return in_group;
 }
 
 bool PathGroupFilter::startpointInGroup(sta::Vertex* startpoint) const

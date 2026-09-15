@@ -822,13 +822,28 @@ void RepairTargetCollector::collectViolatingEndpoints()
   violating_endpoints_.clear();
 
   const PathGroupFilter path_group_filter(resizer_);
+  int path_group_rejects = 0;
   const sta::VertexSet& endpoints = sta_->endpoints();
   for (sta::Vertex* endpoint : endpoints) {
     const sta::Slack slack = sta_->slack(endpoint, max_);
-    if (sta::fuzzyLess(slack, slack_margin_)
-        && path_group_filter.endpointInGroup(endpoint, max_)) {
-      violating_endpoints_.emplace_back(endpoint->pin(), slack);
+    if (sta::fuzzyLess(slack, slack_margin_)) {
+      if (path_group_filter.endpointInGroup(endpoint, max_)) {
+        violating_endpoints_.emplace_back(endpoint->pin(), slack);
+      } else {
+        ++path_group_rejects;
+      }
     }
+  }
+  if (path_group_filter.enabled()) {
+    debugPrint(logger_,
+               RSZ,
+               "path_group",
+               1,
+               "Path group '{}' kept {} and dropped {} violating endpoints. "
+               "Use -debug_level RSZ path_group 2 for the per endpoint reason.",
+               resizer_->pathGroup(),
+               violating_endpoints_.size(),
+               path_group_rejects);
   }
 
   // Preserve equal-slack STA endpoint order for legacy QoR parity.

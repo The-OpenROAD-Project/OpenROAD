@@ -15,6 +15,10 @@ class Sta;
 class Vertex;
 }  // namespace sta
 
+namespace utl {
+class Logger;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -101,6 +105,7 @@ class PathGroupFilter
 
   sta::Sta* sta_;
   sta::Network* network_;
+  utl::Logger* logger_;
   PathGroupType type_;
 };
 
