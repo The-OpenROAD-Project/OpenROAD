@@ -21,54 +21,54 @@ inline constexpr int kMaxCandidateSections = 32;
 
 using CandidateSections = std::array<CandidateSection, kMaxCandidateSections>;
 
-class tmg_rc_sh
-{
- public:
-  tmg_rc_sh(Rect rect,
-            dbTechLayer* layer,
-            dbTechVia* tech_via,
-            dbVia* block_via,
-            dbTechNonDefaultRule* rule = nullptr)
-      : rect_(rect),
-        layer_(layer),
-        tech_via_(tech_via),
-        block_via_(block_via),
-        rule_(rule)
-  {
-  }
-
-  const Rect& rect() const { return rect_; }
-  int xMin() const { return rect_.xMin(); }
-  int xMax() const { return rect_.xMax(); }
-  int yMin() const { return rect_.yMin(); }
-  int yMax() const { return rect_.yMax(); }
-  uint32_t getDX() const { return (rect_.xMax() - rect_.xMin()); }
-  uint32_t getDY() const { return (rect_.yMax() - rect_.yMin()); }
-
-  bool isVia() const { return (tech_via_ || block_via_); }
-  dbTechVia* getTechVia() const { return tech_via_; }
-  dbVia* getVia() const { return block_via_; }
-  dbTechLayer* getTechLayer() const { return layer_; }
-  dbTechNonDefaultRule* getRule() const { return rule_; }
-
-  void setXmin(int x) { rect_.set_xlo(x); }
-  void setXmax(int x) { rect_.set_xhi(x); }
-  void setYmin(int y) { rect_.set_ylo(y); }
-  void setYmax(int y) { rect_.set_yhi(y); }
-
- private:
-  Rect rect_;
-  dbTechLayer* layer_{nullptr};
-  dbTechVia* tech_via_{nullptr};
-  dbVia* block_via_{nullptr};
-  dbTechNonDefaultRule* rule_{nullptr};
-};
-
 struct WireSection
 {
+  class Shape
+  {
+   public:
+    Shape(Rect rect,
+          dbTechLayer* layer,
+          dbTechVia* tech_via,
+          dbVia* block_via,
+          dbTechNonDefaultRule* rule = nullptr)
+        : rect_(rect),
+          layer_(layer),
+          tech_via_(tech_via),
+          block_via_(block_via),
+          rule_(rule)
+    {
+    }
+
+    const Rect& rect() const { return rect_; }
+    int xMin() const { return rect_.xMin(); }
+    int xMax() const { return rect_.xMax(); }
+    int yMin() const { return rect_.yMin(); }
+    int yMax() const { return rect_.yMax(); }
+    uint32_t getDX() const { return (rect_.xMax() - rect_.xMin()); }
+    uint32_t getDY() const { return (rect_.yMax() - rect_.yMin()); }
+
+    bool isVia() const { return (tech_via_ || block_via_); }
+    dbTechVia* getTechVia() const { return tech_via_; }
+    dbVia* getVia() const { return block_via_; }
+    dbTechLayer* getTechLayer() const { return layer_; }
+    dbTechNonDefaultRule* getRule() const { return rule_; }
+
+    void setXmin(int x) { rect_.set_xlo(x); }
+    void setXmax(int x) { rect_.set_xhi(x); }
+    void setYmin(int y) { rect_.set_ylo(y); }
+    void setYmax(int y) { rect_.set_yhi(y); }
+
+   private:
+    Rect rect_;
+    dbTechLayer* layer_{nullptr};
+    dbTechVia* tech_via_{nullptr};
+    dbVia* block_via_{nullptr};
+    dbTechNonDefaultRule* rule_{nullptr};
+  };
+
   WireSection(const int from_idx,
               const int to_idx,
-              const tmg_rc_sh& shape,
+              const Shape& shape,
               const bool is_vertical,
               const int width,
               const int default_ext)
@@ -83,7 +83,7 @@ struct WireSection
 
   const int from_idx;  // index to wire_points_
   int to_idx;
-  tmg_rc_sh shape;
+  Shape shape;
   const bool is_vertical;
   const int width;
   const int default_ext;
@@ -213,7 +213,7 @@ class tmg_conn
                       int to_idx,
                       dbTechNonDefaultRule* rule = nullptr);
   void addWireSection(int k,
-                      const tmg_rc_sh& s,
+                      const WireSection::Shape& s,
                       int from_idx,
                       int to_idx,
                       int xmin,
@@ -264,14 +264,14 @@ class tmg_conn
   WirePoint* first_for_clear_{nullptr};
 
   // Graph walk and writing of the new wire encoding.
-  std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.
+  std::vector<Terminal*> restart_terminals_;
   int last_id_{-1};
   dbTechNonDefaultRule* net_rule_{nullptr};
   dbTechNonDefaultRule* path_rule_{nullptr};
   bool need_short_wire_id_{false};
-  int firstSegmentAfterVia_{0};
+  bool first_segment_after_via_{false};
   dbWireEncoder encoder_;
-  dbWire* newWire_{nullptr};
+  dbWire* new_wire_{nullptr};
 
   // Post-process connectivity check.
   bool connected_{false};
