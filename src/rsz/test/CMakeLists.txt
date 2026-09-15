@@ -146,6 +146,7 @@ or_integration_tests(
     repair_setup_undo2
     repair_timing_path_group1
     repair_timing_path_group2
+    repair_timing_path_group3
     repair_slew1
     repair_slew2
     repair_slew3

@@ -826,12 +826,26 @@ void RepairTargetCollector::collectViolatingEndpoints()
   const sta::VertexSet& endpoints = sta_->endpoints();
   for (sta::Vertex* endpoint : endpoints) {
     const sta::Slack slack = sta_->slack(endpoint, max_);
-    if (sta::fuzzyLess(slack, slack_margin_)) {
-      if (path_group_filter.endpointInGroup(endpoint, max_)) {
-        violating_endpoints_.emplace_back(endpoint->pin(), slack);
-      } else {
-        ++path_group_rejects;
-      }
+    // The endpoint's own slack is the worst over all of its paths, so it
+    // bounds every path group's slack here. Endpoints that pass this cheap
+    // test are the only ones worth the path group query below.
+    if (!sta::fuzzyLess(slack, slack_margin_)) {
+      continue;
+    }
+    if (!path_group_filter.enabled()) {
+      violating_endpoints_.emplace_back(endpoint->pin(), slack);
+      continue;
+    }
+    // Record the group's slack, not the endpoint's: the endpoint's worst path
+    // usually belongs to another group, and driving WNS/TNS and the repair
+    // order off it would optimize paths outside the requested group.
+    const std::optional<sta::Slack> group_slack
+        = path_group_filter.groupSlack(endpoint, max_);
+    if (group_slack.has_value()
+        && sta::fuzzyLess(*group_slack, slack_margin_)) {
+      violating_endpoints_.emplace_back(endpoint->pin(), *group_slack);
+    } else {
+      ++path_group_rejects;
     }
   }
   if (path_group_filter.enabled()) {
@@ -840,7 +854,8 @@ void RepairTargetCollector::collectViolatingEndpoints()
                "path_group",
                1,
                "Path group '{}' kept {} and dropped {} violating endpoints. "
-               "Use -debug_level RSZ path_group 2 for the per endpoint reason.",
+               "Use 'set_debug_level RSZ path_group 2' for the per endpoint "
+               "reason.",
                resizer_->pathGroup(),
                violating_endpoints_.size(),
                path_group_rejects);
@@ -1148,6 +1163,12 @@ sta::Slack RepairTargetCollector::getEndpointWns(
   // Return worst negative slack for this endpoint
   sta::Vertex* vertex = graph_->pinLoadVertex(endpoint_pin);
   if (vertex) {
+    if (restrictedToPathGroup()) {
+      // Report the group's slack so WNS/TNS describe the paths being
+      // repaired, not the endpoint's worst path in some other group.
+      const PathGroupFilter path_group_filter(resizer_);
+      return path_group_filter.groupSlack(vertex, max_).value_or(0.0);
+    }
     return sta_->slack(vertex, max_);
   }
   return 0.0;

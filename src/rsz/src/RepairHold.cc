@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -82,8 +83,17 @@ bool RepairHold::repairHold(
   const PathGroupFilter path_group_filter(resizer_);
   sta::VertexSeq ends1;
   for (sta::Vertex* end : ends) {
-    // Hold paths are min delay paths, so classify the group against min_.
-    if (path_group_filter.endpointInGroup(end, min_)) {
+    if (!path_group_filter.enabled()) {
+      ends1.push_back(end);
+      continue;
+    }
+    // Hold paths are min delay paths, so ask the group against min_. Keep the
+    // endpoint only when the group's own hold slack is what needs repairing;
+    // merely hosting some in-group path would let nearly every register
+    // through and defeat the restriction.
+    const std::optional<sta::Slack> group_slack
+        = path_group_filter.groupSlack(end, min_);
+    if (group_slack.has_value() && sta::fuzzyLess(*group_slack, hold_margin)) {
       ends1.push_back(end);
     }
   }

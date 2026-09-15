@@ -95,14 +95,14 @@ Path Type: max
 [INFO RSZ-0051] Resized 8 instances: 8 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-[INFO RSZ-0046] Found 6 endpoints with hold violations.
+[INFO RSZ-0046] Found 35 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |   0.123 |   0.000 | _862_/D
-    final |       0 |       4 |            0 |    +0.5% |   0.123 |   0.000 | _862_/D
+    final |       0 |      92 |            0 |   +10.6% |   0.146 |   0.000 | _864_/D
 --------------------------------------------------------------------------------------
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
-[INFO RSZ-0032] Inserted 4 hold buffers.
+[INFO RSZ-0032] Inserted 92 hold buffers.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
@@ -110,9 +110,9 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -4.4 |       -0.4 |     26 | _877_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.2% |   -0.028 |       -4.3 |       -0.3 |     26 | _877_/D
-      26* |       4 |       1 |        1 |      0 |     1 |    -0.7% |   -0.004 |       -4.3 |       -0.0 |     26 | _879_/D
-    final |       4 |       1 |        1 |      0 |     1 |    -0.7% |   -0.004 |       -4.3 |       -0.0 |      2 | _879_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.028 |       -4.3 |       -0.3 |     26 | _877_/D
+      26* |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -4.3 |       -0.0 |     26 | _879_/D
+    final |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -4.3 |       -0.0 |      2 | _879_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
 [INFO RSZ-0040] Inserted 1 buffers.

@@ -275,19 +275,29 @@ repair_timing
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging of the repair progress. |
 
-Use `-path_group` to focus optimization on one class of paths. An endpoint is
-repaired only when its worst slack path belongs to the group, where a path
+Use `-path_group` to focus optimization on one class of paths, where a path
 starts at a primary input (`in`) or a register clock pin (`reg`) and ends at a
 register data pin (`reg`) or a primary output (`out`). `gated_clock` is the
 group of clock gating checks, whose endpoints are the enable inputs of gates
 driving the clock network; those paths are never part of `reg2reg` or `in2reg`,
-matching how OpenSTA reports them. Together the five groups partition every
-endpoint, so repairing each in turn covers the same endpoints as an
-unrestricted run.
+matching how OpenSTA reports them.
 
-The reported WNS and TNS describe the selected group rather than the whole
-design. The startpoint TNS column only reflects the start side of the group,
-since a startpoint's worst path can leave the group.
+An endpoint is repaired when the group's own worst path at that endpoint
+violates, and the slack that drives WNS, TNS and the repair order is that
+group's slack rather than the endpoint's. This matters because an endpoint
+hosts paths from several groups at once: a register data pin fed by both a
+primary input and another register is in `in2reg` and `reg2reg` at the same
+time, and its overall worst path decides neither group on its own. The groups
+therefore overlap rather than partition - the same endpoint can be repaired
+under two of them - and `repair_timing -path_group G` agrees with
+`report_checks -path_group G` on which paths are violating.
+
+Group membership comes from OpenSTA, so a `-path_group` run costs one path
+query per violating endpoint per pass. On a design with a few hundred
+violating endpoints this is roughly 15% on top of an unrestricted run.
+
+The startpoint TNS column only reflects the start side of the group, since a
+startpoint's worst path can leave the group.
 
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that

@@ -3,14 +3,18 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include "sta/Delay.hh"
 
 namespace sta {
 class MinMax;
 class Network;
 class Pin;
+class Sdc;
 class Sta;
 class Vertex;
 }  // namespace sta
@@ -88,9 +92,20 @@ class PathGroupFilter
 
   bool enabled() const { return type_ != PathGroupType::kNone; }
 
-  // True when the worst slack path to `endpoint` for `min_max` is in the
-  // selected group.  Always true when no group is selected.
+  // True when `endpoint` has any path in the selected group for `min_max`.
+  // Always true when no group is selected.
   bool endpointInGroup(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
+
+  // Worst slack among the paths to `endpoint` that OpenSTA puts in the
+  // selected group, or nullopt when the endpoint hosts no path in the group.
+  //
+  // An endpoint hosts paths from several groups at once, and its overall
+  // worst path often belongs to a different group than the one being
+  // repaired, so the group's own slack has to come from OpenSTA rather than
+  // from the endpoint's worst path.  Returns the endpoint's plain slack when
+  // no group is selected.
+  std::optional<sta::Slack> groupSlack(sta::Vertex* endpoint,
+                                       const sta::MinMax* min_max) const;
 
   // True when `startpoint` can launch a path in the selected group.  Only the
   // start side of the group is checked here; the end side is enforced by
@@ -105,6 +120,7 @@ class PathGroupFilter
 
   sta::Sta* sta_;
   sta::Network* network_;
+  sta::Sdc* sdc_;
   utl::Logger* logger_;
   PathGroupType type_;
 };

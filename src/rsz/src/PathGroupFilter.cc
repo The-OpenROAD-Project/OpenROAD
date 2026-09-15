@@ -17,12 +17,12 @@
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PathGroup.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
@@ -258,6 +258,7 @@ std::string resolvePathGroupName(Resizer* resizer, const char* name)
 PathGroupFilter::PathGroupFilter(Resizer* resizer)
     : sta_(resizer->sta()),
       network_(resizer->network()),
+      sdc_(resizer->sta()->cmdSdc()),
       logger_(resizer->logger()),
       type_(findPathGroupType(resizer->pathGroup()))
 {
@@ -344,51 +345,82 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
                endpointKindName(kind));
     return false;
   }
-  if (groupStartpointKind(type_) == StartpointKind::kAny) {
-    return true;
-  }
-
-  // Startpoint side needs the path itself.  Only the worst slack path to this
-  // endpoint is classified, so an endpoint whose worst path leaves the group
-  // is dropped even when a lesser path of its own stays inside it.
-  sta::Path* path = sta_->vertexWorstSlackPath(endpoint, min_max);
-  if (path == nullptr || path->isNull()) {
+  // The endpoint kind above is exact and cheap, but it cannot tell reg2reg
+  // from in2reg (nor reg2out from in2out) because those groups share their
+  // endpoints and differ only in where the path started.  Ask OpenSTA for the
+  // group's own slack at this endpoint rather than guessing from the
+  // endpoint's overall worst path, which frequently belongs to another group.
+  const std::optional<sta::Slack> slack = groupSlack(endpoint, min_max);
+  if (!slack.has_value()) {
     debugPrint(logger_,
                utl::RSZ,
                "path_group",
                2,
-               "{} rejected from {}: no worst slack path",
+               "{} rejected from {}: no path in group",
                network_->pathName(endpoint->pin()),
                staPathGroupName(type_));
     return false;
   }
-  const sta::PathExpanded expanded(path, sta_);
-  const sta::Path* start_path = expanded.startPath();
-  if (start_path == nullptr) {
-    debugPrint(logger_,
-               utl::RSZ,
-               "path_group",
-               2,
-               "{} rejected from {}: worst slack path has no startpoint",
-               network_->pathName(endpoint->pin()),
-               staPathGroupName(type_));
-    return false;
-  }
-  const sta::Pin* start_pin = start_path->pin(sta_);
-  const bool in_group
-      = isPrimaryInput(start_pin) == groupStartsAtInput(type_);
   debugPrint(logger_,
              utl::RSZ,
              "path_group",
              2,
-             "{} {} {}: worst slack {} path starts at {} ({})",
+             "{} kept in {}: group slack {} (endpoint slack {})",
              network_->pathName(endpoint->pin()),
-             in_group ? "kept in" : "rejected from",
              staPathGroupName(type_),
-             sta::delayAsString(sta_->slack(endpoint, min_max), 4, sta_),
-             network_->pathName(start_pin),
-             isPrimaryInput(start_pin) ? "primary_input" : "register");
-  return in_group;
+             sta::delayAsString(*slack, 4, sta_),
+             sta::delayAsString(sta_->slack(endpoint, min_max), 4, sta_));
+  return true;
+}
+
+std::optional<sta::Slack> PathGroupFilter::groupSlack(
+    sta::Vertex* endpoint,
+    const sta::MinMax* min_max) const
+{
+  if (!enabled()) {
+    return sta_->slack(endpoint, min_max);
+  }
+  if (endpoint == nullptr) {
+    return std::nullopt;
+  }
+
+  // findPathEnds takes ownership of the ExceptionTo.
+  auto* to_pins = new sta::PinSet(network_);
+  to_pins->insert(endpoint->pin());
+  sta::ExceptionTo* to = sta_->makeExceptionTo(to_pins,
+                                               /*to_clks=*/nullptr,
+                                               /*to_insts=*/nullptr,
+                                               sta::RiseFallBoth::riseFall(),
+                                               sta::RiseFallBoth::riseFall(),
+                                               sdc_);
+
+  const bool setup = min_max == sta::MinMax::max();
+  sta::StringSeq group_names{std::string(staPathGroupName(type_))};
+  const sta::PathEndSeq ends = sta_->findPathEnds(
+      /*from=*/nullptr,
+      /*thrus=*/nullptr,
+      to,
+      /*unconstrained=*/false,
+      sta_->scenes(),
+      setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+      /*group_path_count=*/1,
+      /*endpoint_path_count=*/1,
+      /*unique_pins=*/true,
+      /*unique_edges=*/false,
+      -sta::INF,
+      sta::INF,
+      /*sort_by_slack=*/true,
+      group_names,
+      /*setup=*/setup,
+      /*hold=*/!setup,
+      /*recovery=*/false,
+      /*removal=*/false,
+      /*clk_gating_setup=*/setup,
+      /*clk_gating_hold=*/!setup);
+  if (ends.empty()) {
+    return std::nullopt;
+  }
+  return ends[0]->slack(sta_);
 }
 
 bool PathGroupFilter::startpointInGroup(sta::Vertex* startpoint) const
