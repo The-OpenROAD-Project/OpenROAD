@@ -4381,6 +4381,69 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
   }
 }
 
+// check_power_grid builds PSM/<net>/<check>, so the same subcategory name
+// appears under every net. Toggling one must address it by its full path.
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityByPath)
+{
+  auto* psm = odb::dbMarkerCategory::create(chip_, "PSM");
+  auto* vdd = odb::dbMarkerCategory::create(psm, "VDD");
+  auto* vdd_check = odb::dbMarkerCategory::create(vdd, "Unconnected shape");
+  auto* vss = odb::dbMarkerCategory::create(psm, "VSS");
+  auto* vss_check = odb::dbMarkerCategory::create(vss, "Unconnected shape");
+  for (int i = 0; i < 2; ++i) {
+    odb::dbMarker::create(vdd_check)->addShape(odb::Rect(0, i, 500, i + 500));
+    odb::dbMarker::create(vss_check)->addShape(odb::Rect(0, i, 500, i + 500));
+  }
+
+  // Selecting the top-level category starts every marker invisible.
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.json = parseObj(R"({"category":"PSM"})");
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 202;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(
+      R"({"path":["PSM","VDD","Unconnected shape"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"category\":\"Unconnected shape\""), std::string::npos);
+
+  // Only the VDD markers flipped; the same-named VSS subcategory is untouched.
+  for (odb::dbMarker* m : vdd_check->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
+  }
+  for (odb::dbMarker* m : vss_check->getAllMarkers()) {
+    EXPECT_FALSE(m->isVisible());
+  }
+
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_EQ(state_.drc_rects.size(), 2u);
+}
+
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityUnknownPathErrors)
+{
+  createTestCategory("DRC", 1);
+
+  WebSocketRequest req;
+  req.id = 203;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(R"({"path":["DRC","NoSuchSubcat"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Category not found: DRC/NoSuchSubcat"),
+            std::string::npos);
+}
+
 //------------------------------------------------------------------------------
 // Schematic handler tests — verify leaf cells are classified into standard
 // logic-gate schematic symbols (Yosys primitives understood by netlistsvg)
