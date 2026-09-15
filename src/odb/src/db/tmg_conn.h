@@ -17,7 +17,6 @@ namespace odb {
 struct CandidateSection;
 
 using CandidateSections = std::array<CandidateSection, 32>;
-using CandidateSectionsPerTerminal = std::vector<CandidateSections>;
 
 class tmg_rc_sh
 {
@@ -163,7 +162,7 @@ class ConnectionGraph;
 struct CandidateSection
 {
   int index;
-  int routing_level; // From the database.
+  int routing_level;  // From the database.
   Rect terminal_box;
 };
 
@@ -216,7 +215,7 @@ class tmg_conn
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
   void connectTerm(int j, bool soft);
-  void connectTermSoft(int j, int rt, Rect& rect, int k);
+  void connectTermSoft(int j, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();
@@ -252,7 +251,7 @@ class tmg_conn
 
   // Used for determining the wire points that represent the connection
   // with terminals.
-  CandidateSectionsPerTerminal csVV_;
+  std::vector<CandidateSections> csVV_;
   CandidateSections* csV_{nullptr};
   std::vector<int> csNV_;
   int csN_{0};
