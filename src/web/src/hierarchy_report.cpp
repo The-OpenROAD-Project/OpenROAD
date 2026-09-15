@@ -3,9 +3,10 @@
 
 #include "hierarchy_report.h"
 
+#include <cassert>
 #include <cstdint>
 #include <map>
-#include <set>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -332,98 +333,86 @@ boost::json::object serializeHierarchyResult(const HierarchyResult& result)
   return out;
 }
 
+// ─── Effective-owner-color rule (shared with group_report) ─────────────
+
+std::vector<char> hasChildrenByIndex(const size_t node_count,
+                                     const std::vector<int>& parent_ids)
+{
+  std::vector<char> has_children(node_count, 0);
+  for (const int parent_id : parent_ids) {
+    if (parent_id >= 0) {
+      has_children[parent_id] = 1;
+    }
+  }
+  return has_children;
+}
+
+std::map<uint32_t, Color> computeEffectiveOwnerColors(
+    const std::vector<OwnerColorNode>& nodes)
+{
+  // One pass, since a parent always precedes its children.  `inheriting`
+  // carries "the HIGHEST collapsed ancestor wins" down the tree: an expanded
+  // node inside a collapsed one must not hand its own color on.
+  //
+  // `paint[i]` is the color node i hands down, empty when it has none to give —
+  // the panels' structural rows ("Leaf instances", the per-type folders) are
+  // colorless, and must not paint the subtree below them.
+  std::vector<std::optional<Color>> paint(nodes.size());
+  std::vector<bool> inheriting(nodes.size(), false);
+  std::map<uint32_t, Color> colors;
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    const OwnerColorNode& node = nodes[i];
+    // `parent` indexes this vector, and both callers build it in DFS order with
+    // id == index, so a parent is always already resolved.  The guard keeps a
+    // producer that reorders the vector from reading entries not yet written;
+    // the assert makes that a test failure instead of silently wrong colors.
+    const bool has_parent
+        = node.parent >= 0 && static_cast<size_t>(node.parent) < i;
+    assert(node.parent < 0 || has_parent);
+    inheriting[i]
+        = has_parent
+          && (nodes[node.parent].collapsed || inheriting[node.parent]);
+    const std::optional<Color> from_ancestor
+        = inheriting[i] ? paint[node.parent] : std::nullopt;
+    paint[i] = from_ancestor    ? from_ancestor
+               : node.has_color ? std::optional<Color>(node.color)
+                                : std::nullopt;
+    if (node.has_color) {
+      colors[node.odb_id] = *paint[i];
+    }
+  }
+  return colors;
+}
+
 // ─── Default module color computation ──────────────────────────────────
 
 std::map<uint32_t, Color> computeDefaultModuleColors(
     const HierarchyResult& result)
 {
-  // Build tree: children map + node lookup.
-  std::map<int, std::vector<int>> children;
-  std::map<int, const HierarchyNode*> node_map;
+  // Mirror the widget's default state (HierarchyBrowser._buildTree): the leaf
+  // and type folders start collapsed, as does every module below the top.
+  std::vector<int> parent_ids;
+  parent_ids.reserve(result.nodes.size());
   for (const auto& n : result.nodes) {
-    children[n.id];
-    node_map[n.id] = &n;
-    if (n.parent_id >= 0) {
-      auto it = children.find(n.parent_id);
-      if (it != children.end()) {
-        it->second.push_back(n.id);
-      }
-    }
+    parent_ids.push_back(n.parent_id);
   }
+  const std::vector<char> has_children
+      = hasChildrenByIndex(result.nodes.size(), parent_ids);
 
-  // Default collapse state + read palette colors.
-  struct ModState
-  {
-    Color color;
-    Color effective_color;
-  };
-  std::map<unsigned int, ModState> mod_state;
-  std::set<int> collapsed;
-
+  std::vector<OwnerColorNode> nodes;
+  nodes.reserve(result.nodes.size());
   for (const auto& n : result.nodes) {
-    const bool has_kids = !children[n.id].empty();
-    if (has_kids) {
-      if (n.node_kind == HierarchyNodeKind::kLeafGroup
-          || n.node_kind == HierarchyNodeKind::kTypeGroup) {
-        collapsed.insert(n.id);
-      } else if (n.node_kind == HierarchyNodeKind::kModule
-                 && n.parent_id >= 0) {
-        collapsed.insert(n.id);
-      }
-    }
-    if (n.node_kind == HierarchyNodeKind::kModule) {
-      mod_state[n.odb_id] = {.color = n.color, .effective_color = n.color};
-    }
+    const bool kids = has_children[n.id] != 0;
+    const bool is_module = n.node_kind == HierarchyNodeKind::kModule;
+    nodes.push_back({.parent = n.parent_id,
+                     .odb_id = n.odb_id,
+                     .color = n.color,
+                     .collapsed = kids && (!is_module || n.parent_id >= 0),
+                     .has_color = is_module});
   }
-
-  // Effective colors: collapsed ancestors override descendant colors.
-  for (const auto& n : result.nodes) {
-    if (n.node_kind != HierarchyNodeKind::kModule) {
-      continue;
-    }
-    auto it = mod_state.find(n.odb_id);
-    if (it == mod_state.end()) {
-      continue;
-    }
-    Color inherited;
-    bool found_ancestor = false;
-    int pid = n.parent_id;
-    while (pid >= 0) {
-      auto nit = node_map.find(pid);
-      if (nit == node_map.end()) {
-        break;
-      }
-      const HierarchyNode* parent = nit->second;
-      if (parent->node_kind == HierarchyNodeKind::kModule
-          && collapsed.contains(parent->id)) {
-        auto pit = mod_state.find(parent->odb_id);
-        if (pit != mod_state.end()) {
-          inherited = pit->second.effective_color;
-          found_ancestor = true;
-        }
-      }
-      pid = parent->parent_id;
-    }
-    if (found_ancestor) {
-      it->second.effective_color = inherited;
-    }
-  }
-
-  // Build color map: every visible module contributes its effective color.
-  // The tile renderer looks up each instance's direct module, so parent
-  // and child colors don't conflict.
-  std::map<uint32_t, Color> colors;
-  for (const auto& n : result.nodes) {
-    if (n.node_kind != HierarchyNodeKind::kModule) {
-      continue;
-    }
-    auto it = mod_state.find(n.odb_id);
-    if (it == mod_state.end()) {
-      continue;
-    }
-    colors[n.odb_id] = it->second.effective_color;
-  }
-  return colors;
+  // getReport() emits nodes in DFS order with id == index, which is the
+  // parent-before-child order computeEffectiveOwnerColors requires.
+  return computeEffectiveOwnerColors(nodes);
 }
 
 }  // namespace web

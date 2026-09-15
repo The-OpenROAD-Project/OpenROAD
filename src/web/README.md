@@ -91,6 +91,10 @@ When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
+The image is opaque: it is painted on the Background color of the browser that
+last synced its display state, and on black — the default of both GUIs — when
+none has, as with a plain headless run.
+
 #### Display option keys (web mode)
 
 Display options control which elements are rendered when using `-web`.
@@ -112,6 +116,30 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `module_view` | false | Color each instance by the `dbModule` it belongs to |
+| `cluster_view` | false | Color each instance by the `dbGroup` it belongs to |
+
+Group coloring reads the `dbGroup`s stored in the database, whatever put them
+there — power domains, regions, the clustering
+[`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes, or any
+other command that creates groups. Each group gets its own palette color, and a
+group whose subtree is not expanded lends its color to all of its descendants —
+the same default the viewer's Instance Groups view shows. When the design has no
+groups the option warns and the image is rendered as if it were off.
+
+In the viewer both of the Hierarchy panel's views drive this coloring — Verilog
+Modules through `module_view`, Instance Groups through `cluster_view`. A row's
+checkbox decides whether that module or group paints, and in the Instance
+Groups view a double click takes the view to the group. The colors show only
+while the matching overlay is on, and the view's status line says so when it is
+off. One "Hierarchy view" checkbox in Display Controls turns on whichever
+overlay goes with the source the tab is showing; the two flags above are how the
+headless `save_image` path asks for either one directly.
+
+Turning that checkbox on loads the tree of the source the tab is showing, so it
+paints without anyone pressing Update. It is the one control a new session does
+not inherit: it always starts off, since a restored "on" would tick a box over a
+layout with nothing painted on it.
 
 #### Examples
 
@@ -138,6 +166,12 @@ save_image -web -display_option {routing false} \
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
+
+# Plot the instance groups, here MPL's clustering (one color per group)
+rtl_macro_placer -keep_clustering_data
+save_image -web -width 1200 \
+                -display_option {cluster_view true} \
+                clusters.png
 ```
 
 ### Save Animated GIF
@@ -189,8 +223,9 @@ zoom the GUI is at.
 
 On the web path, the first frame fixes the GIF's dimensions; a later frame that
 comes out a different size — because the design's bounding box grew, say — is
-rescaled to match rather than starting a second GIF. Area outside the design is
-left transparent, which most viewers show as black. Ending a stream that never
+rescaled to match rather than starting a second GIF. Area outside the design
+comes out black: the GIF encoder ignores alpha, so it writes the frame's
+uncomposited pixels. Ending a stream that never
 received a frame writes no file and warns. The maximum frame dimension is 16384
 pixels, as for `save_image`; larger requests are clamped.
 
@@ -477,7 +512,8 @@ them — something the single-window Qt GUI cannot do.
   paths, and view per-level statistics.
 - **Hierarchy browser** — Navigate the module tree with instance counts and area
   statistics. Toggle visibility and assign colors per module using a 31-color
-  palette.
+  palette. The same panel's Instance Groups view does this for the `dbGroup`s
+  in the database, whatever created them.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
   rows, tracks). The panel state can be saved to and restored from a file with

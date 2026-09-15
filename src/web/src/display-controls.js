@@ -4,6 +4,8 @@
 // Display controls — layer checkboxes and visibility tree.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
+import { activeHierarchySource, syncHierarchyOverlay }
+    from './hierarchy-panel.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
 import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
@@ -167,37 +169,36 @@ export function populateDisplayControls(app, visibility, selectability,
         };
     }
 
-    // Create a pseudo-layer tile layer and register it on the app.
-    // `appProp` names the app.<prop> slot (null = anonymous); `addToMap`
-    // attaches it immediately (layers whose toggle is default-ON).
-    function addPseudoLayer(name, appProp, zIndex, addToMap) {
+    // `appProp` names the app.<prop> slot (null = anonymous); `gate` names the
+    // visibility flag the layer is switched by (null = no toggle).
+    function addPseudoLayer(name, appProp, zIndex, gate) {
         const layer = new WebSocketTileLayer(app.websocketManager, name, {
             zIndex,
+            gate,
         });
-        if (addToMap) layer.addTo(app.map);
+        layer.addTo(app.map);
         if (appProp) app[appProp] = layer;
         app.allLayers.push(layer);
         return layer;
     }
 
-    // The initial attach state must follow `visibility`, which was already
-    // restored from the or_visibility cookie: a hardcoded attach leaves the
-    // checkbox (rendered from `visibility`) out of sync with the map until
-    // the first toggle runs redrawAllLayers.
+    // Pseudo layers stay mounted and are switched by their `gate` flag, which
+    // travels in the tile payload (see _gatedOff).  Mounting per toggle made the
+    // map's layer set a second record of the flag, and the two drifted.
 
     // Instance borders layer (always below routing layers; no toggle)
-    addPseudoLayer('_instances', null, 0, true);
+    addPseudoLayer('_instances', null, 0, null);
     // IO pin markers layer (between instances and routing layers)
-    addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
+    addPseudoLayer('_pins', 'pinsLayer', 1, 'pins');
     // Module coloring overlay (Module view)
-    addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
+    addPseudoLayer('_modules', 'modulesLayer', 2, 'module_view');
     // Access-point markers overlay (Misc > Access Points)
-    addPseudoLayer(
-        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
+    addPseudoLayer('_access_points', 'accessPointsLayer', 1000,
+                   'access_points');
     // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
-    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
+    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, 'mfg_grid');
     // GCell-grid lines overlay (topmost, GUI paint order)
-    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
+    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, 'gcell_grid');
 
     // Region boundaries overlay (above access points, GUI paint order).
     // Only created when the design has dbRegions — the layer is default-ON
@@ -206,7 +207,7 @@ export function populateDisplayControls(app, visibility, selectability,
     // need a page reload to appear.)
     app.regionsLayer = null;
     if (techData && techData.has_regions) {
-        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
+        addPseudoLayer('_regions', 'regionsLayer', 1001, 'regions');
     }
 
     // --- Layers group (using CheckboxTreeModel) ---
@@ -392,6 +393,13 @@ export function populateDisplayControls(app, visibility, selectability,
             }),
         };
     }
+
+    // Cluster coloring goes ABOVE the routing panes, which occupy zIndex
+    // 3..(pane count + 2), and below the heat map.  Counted off leafletLayers,
+    // not techData.layers: the latter is deduplicated by name across techs,
+    // while there is one pane per (chiplet, layer).
+    addPseudoLayer('_clusters', 'clustersLayer', leafletLayers.length + 5,
+                   'cluster_view');
 
     // ─── Build the merged panes ──────────────────────────────────────────
     //
@@ -1275,11 +1283,33 @@ export function populateDisplayControls(app, visibility, selectability,
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
     // Subtrees that opt into a second "selectable" checkbox column mirror
     // the Qt GUI's selectability column (see displayControls.cpp).
+    // The Hierarchy view checkbox governs two flags, and which one it turns on
+    // depends on the tab's source.  Derive only: redrawAllLayers repaints the
+    // two overlay layers along with everything else (they are in allLayers),
+    // and this runs on every checkbox in the tree, not just that one.
+    const applyHierarchyOverlay = () => {
+        // Only when a flag actually moved: this runs for every checkbox in the
+        // tree, and the panel work below walks the whole tree of the view it
+        // is showing.
+        if (!syncHierarchyOverlay(visibility, activeHierarchySource(app))
+            || !app.hierarchyPanel) {
+            return;
+        }
+        // The overlay paints with the server's default palette on its own, so
+        // the load is about the table: it brings in the tree that matches what
+        // the layout is already showing.
+        app.hierarchyPanel.ensureActiveLoaded();
+        app.hierarchyPanel.refreshActiveStatus();
+    };
+
     // VisTree shares one onChange across every row of both models, so latch
     // the only value that changes the per-renderer answer instead of paying a
     // round trip for each of the ~100 unrelated toggles.
     let lastDebugRenderers = !!visibility.debug_renderers;
     const visTree = new VisTree(visibility, selectability, () => {
+        // Before the redraw: the tile requests it issues carry the two flags
+        // this derives from the single Hierarchy view checkbox.
+        applyHierarchyOverlay();
         redrawAllLayers();
         if (!!visibility.debug_renderers !== lastDebugRenderers) {
             lastDebugRenderers = !!visibility.debug_renderers;
@@ -1378,7 +1408,11 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'focused_nets_guides', label: 'Focused nets guides' },
         { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
-    visTree.add({ key: 'module_view', label: 'Module view' });
+    // One control for both hierarchy overlays -- module colors and instance
+    // group colors.  Which of the two paints comes from the Hierarchy tab's
+    // Source dropdown, so the two can never stack on the same instance; see
+    // syncHierarchyOverlay.
+    visTree.add({ key: 'ui_hierarchy_view', label: 'Hierarchy view' });
     // Developer overlays.  All three are plain leaves under a visKey-less
     // group: giving the group `visKey: 'debug_renderers'` would tie the
     // renderer overlay to the group's tri-state, so ticking the unrelated
@@ -1392,6 +1426,9 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'debug', label: 'Tiles' },
     ]});
     visTree.render(app.displayControlsEl);
+    // render() syncs the DOM and the visibility map but does not run onChange,
+    // so the restored Hierarchy view checkbox needs its flags derived once here.
+    applyHierarchyOverlay();
 
     // ─── Per-renderer display controls ──────────────────────────────────────
     // The rows Qt's DisplayControls builds from Renderer::getDisplayControls()

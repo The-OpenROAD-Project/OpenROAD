@@ -43,6 +43,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "group_report.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
@@ -133,6 +134,25 @@ bool parseIntExact(std::string_view s, T& out, int base = 10)
   const char* const last = first + s.size();
   const auto res = std::from_chars(first, last, out, base);
   return res.ec == std::errc{} && res.ptr == last;
+}
+
+// "rrggbb", with or without a leading '#', to an opaque Color.  False for
+// anything else: the /image query parameter writes it bare, the viewer's
+// or_bg_color cookie carries the '#'.
+bool parseHexColor(std::string_view s, Color& out)
+{
+  if (!s.empty() && s.front() == '#') {
+    s.remove_prefix(1);
+  }
+  unsigned rgb = 0;
+  if (s.size() != 6 || !parseIntExact(s, rgb, 16)) {
+    return false;
+  }
+  out = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+              .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+              .b = static_cast<unsigned char>(rgb & 0xFF),
+              .a = 255};
+  return true;
 }
 
 // Percent-decode a URL query value (e.g. the JSON `vis` payload).
@@ -250,18 +270,12 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   }
 
   // Background color (RRGGBB hex) so the saved image matches the viewer's
-  // background; absent => transparent.
+  // background; absent or malformed => transparent.
   Color bg{};  // {0,0,0,0}
   const auto bg_it = params.find("bg");
-  unsigned rgb = 0;
-  if (bg_it != params.end() && bg_it->second.size() == 6
-      && parseIntExact(bg_it->second, rgb, 16)) {
-    bg = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-               .b = static_cast<unsigned char>(rgb & 0xFF),
-               .a = 255};
+  if (bg_it != params.end()) {
+    parseHexColor(bg_it->second, bg);
   }
-  // Malformed/absent bg: keep transparent.
 
   const std::vector<unsigned char> png = generator->renderImagePng(
       region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
@@ -1769,9 +1783,26 @@ void WebServer::saveReport(const std::string& filename,
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
 
-  auto module_colors = computeDefaultModuleColors(hier_result);
-  const std::map<uint32_t, Color>* mod_colors_ptr
-      = module_colors.empty() ? nullptr : &module_colors;
+  // ── Serialize group (cluster) hierarchy ──
+
+  GroupReport group_report(block);
+  auto group_result = group_report.getReport();
+  const std::string groups_json
+      = boost::json::serialize(serializeGroupResult(group_result));
+
+  // Not via ColorOverlaySpec::default_colors: both reports are already built
+  // above, and the table would compute each tree a second time.
+  std::array<std::map<uint32_t, Color>, kNumColorOverlays> owner_colors;
+  owner_colors[findColorOverlay("_modules")->index]
+      = computeDefaultModuleColors(hier_result);
+  owner_colors[findColorOverlay("_clusters")->index]
+      = computeDefaultGroupColors(group_result);
+  InstColorOverlay inst_colors;
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (!owner_colors[spec.index].empty()) {
+      inst_colors.colors[spec.index] = &owner_colors[spec.index];
+    }
+  }
 
   // ── Render tiles at a fixed zoom level ──
 
@@ -1782,6 +1813,11 @@ void WebServer::saveReport(const std::string& filename,
   const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
+  // The renderer gates these overlays on the flags, so the pre-rendered tiles
+  // must be produced with them on or the saved HTML caches empty ones.
+  vis.module_view = true;
+  vis.cluster_view = true;
+
   // An image the renderer drew nothing into.  Asked of the encoding rather than
   // of its size: the tile entry points hand back one shared buffer per size for
   // a fully transparent image, so this is exact, where a byte threshold has to
@@ -1791,14 +1827,17 @@ void WebServer::saveReport(const std::string& filename,
     return png.empty() || TileGenerator::isBlankTilePng(png);
   };
 
-  // All layers to cache tiles for.
-  std::vector<std::string> all_layers;
-  all_layers.emplace_back("_instances");
-  for (const auto& name : tech_layers) {
-    all_layers.push_back(name);
+  // In the z order save_image composites them, derived from `vis`, so a new
+  // layer is cached here without this code learning about it.
+  std::vector<std::string> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
+  // An overlay with no colors renders nothing, so caching its tiles would only
+  // grow the HTML.
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (inst_colors.colors[spec.index] == nullptr) {
+      std::erase(all_layers, spec.layer);
+    }
   }
-  all_layers.emplace_back("_modules");
-  all_layers.emplace_back("_pins");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
   std::vector<std::pair<std::string, std::string>> tile_entries;
@@ -1806,7 +1845,7 @@ void WebServer::saveReport(const std::string& filename,
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
         auto png = generator_->generateTile(
-            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
+            layer, kZ, tx, ty, vis, {}, {}, {}, {}, &inst_colors);
         if (!is_blank(png)) {
           std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
@@ -1911,7 +1950,9 @@ window.__STATIC_CACHE__ = {
     "chart_filters": )"
       << filters << R"(,
     "module_hierarchy": )"
-      << hierarchy_json << R"(
+      << hierarchy_json << R"(,
+    "group_hierarchy": )"
+      << groups_json << R"(
   },
   tiles: {)";
 
@@ -2028,6 +2069,30 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   }
   return vis;
 }
+
+// The background the saved image is painted on: whatever the viewer is showing
+// when a client has synced its state, else black -- the default both GUIs use
+// (--bg-map in style.css, background_color_ in displayControls.cpp).  Never
+// transparent: an image file is looked at on its own, not composited.
+Color savedBackgroundColor(WebViewerHook* hook)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  if (hook == nullptr) {
+    return kBlack;
+  }
+  // The snapshot is {"version":1,"entries":{"or_bg_color":"#rrggbb",...}}.
+  std::error_code ec;
+  const boost::json::value state
+      = boost::json::parse(hook->getDisplayState(), ec);
+  const auto* color
+      = ec ? nullptr : state.find_pointer("/entries/or_bg_color", ec);
+  Color parsed{};
+  if (color != nullptr && color->is_string()
+      && parseHexColor(color->get_string(), parsed)) {
+    return parsed;
+  }
+  return kBlack;
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -2044,7 +2109,12 @@ void WebServer::saveImage(const std::string& filename,
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
-  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+  generator_->saveImage(filename,
+                        region,
+                        width_px,
+                        dbu_per_pixel,
+                        vis,
+                        savedBackgroundColor(viewer_hook_.get()));
 }
 
 namespace {
