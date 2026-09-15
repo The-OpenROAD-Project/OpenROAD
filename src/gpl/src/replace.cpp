@@ -196,6 +196,11 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   locked_options.overflow = std::max(options.overflow, 0.2f);
   locked_options.nesterovPlaceMaxIter = 300;
 
+  // Use uniform density for incremental runs to fill gaps effectively
+  if (!options.uniformTargetDensityMode) {
+    locked_options.uniformTargetDensityMode = true;
+  }
+
   doInitialPlace(threads, locked_options);
   const int iter = doNesterovPlace(threads, locked_options);
 
@@ -207,6 +212,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 
   if (options.overflow < locked_options.overflow) {
     PlaceOptions final_options = options;
+    final_options.uniformTargetDensityMode = true;
     final_options.initDensityPenaltyFactor = 1;
 
     doNesterovPlace(threads, final_options, iter + 1);
@@ -436,6 +442,14 @@ void Replace::reportHpwlMetric()
   log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
 }
 
+NesterovBase* Replace::getTopLevelNB() const
+{
+  if (nbVec_.empty()) {
+    log_->error(GPL, 97, "Top-level NesterovBase is not initialized.");
+  }
+  return nbVec_[0].get();
+}
+
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
                                        const int threads)
 {
@@ -447,7 +461,7 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
 
   float density = 1.0f;
   if (initNesterovPlace(options_no_io, threads, false)) {
-    density = nbVec_[0]->getUniformTargetDensity();
+    density = getTopLevelNB()->getUniformTargetDensity();
   }
 
   log_->redirectStringEnd();  // discard output
@@ -492,7 +506,7 @@ float Replace::estimateTargetDensity(const PlaceOptions& options,
   log_->redirectStringEnd();  // discard output
 
   if (initialized) {
-    density = nbVec_[0]->estimateTargetDensity(options_no_io.overflow);
+    density = getTopLevelNB()->estimateTargetDensity(options_no_io.overflow);
   }
 
   return density;

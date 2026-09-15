@@ -3356,10 +3356,7 @@ float NesterovBase::estimateTargetDensity(float overflow)
     return uniformTargetDensity_;
   }
 
-  // The constructor never populates each bin's placed-instance area --
-  // that normally only happens once the Nesterov solve starts moving
-  // cells -- so without this, the search below would run against bins
-  // that report zero placed area for every movable instance.
+  // Populates each bin's placed-instance area
   bg_.updateBinsGCellDensityArea(nb_gcells_,
                                  static_cast<int>(nbc_->getNumThreads()));
 
