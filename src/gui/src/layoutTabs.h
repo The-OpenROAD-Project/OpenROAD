@@ -18,6 +18,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "options.h"
 
 namespace gui {
 
@@ -33,7 +34,7 @@ class LayoutTabs : public QTabWidget
   Q_OBJECT
 
  public:
-  LayoutTabs(Options* options,
+  LayoutTabs(QtOptions* options,
              ScriptWidget* output_widget,
              const SelectionSet& selected,
              const HighlightSet& highlighted,
@@ -123,7 +124,7 @@ class LayoutTabs : public QTabWidget
   LayoutViewer* current_viewer_ = nullptr;
   std::vector<LayoutViewer*> viewers_;
 
-  Options* options_;
+  QtOptions* options_;
   ScriptWidget* output_widget_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;

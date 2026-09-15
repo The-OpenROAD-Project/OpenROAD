@@ -71,7 +71,7 @@ target_link_libraries(grt
     grt_lib
     dbSta
     gui
-    gui_heatmap_core
+    gui_core
     stt
     rsz
 )
@@ -100,7 +100,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dpl_lib
       dbSta
       gui
-      gui_heatmap_core
+      gui_core
       stt
       OpenSTA
       Boost::boost

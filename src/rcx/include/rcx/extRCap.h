@@ -2131,8 +2131,6 @@ class extMain
 
   void setCornerCount();
 
-  Array1D<extCorner*>* getProcessCornerTable() { return _processCornerTable; }
-
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
                    odb::dbWirePath& path,
@@ -2669,6 +2667,16 @@ class extMain
 
   utl::Logger* getLogger() { return logger_; }
 
+  const Array1D<extCorner*>* getProcessCornerTable() const
+  {
+    return _processCornerTable;
+  }
+
+  void setDeleteModelAtExtraction(bool delete_model_at_extraction)
+  {
+    delete_model_at_extraction_ = delete_model_at_extraction;
+  }
+
  private:
   utl::Logger* logger_;
 
@@ -2679,6 +2687,7 @@ class extMain
   Array1D<extCorner*>* _scaledCornerTable = nullptr;
 
   Array1D<extRCModel*>* _modelTable;
+  bool delete_model_at_extraction_{true};
   Array1D<uint32_t> _modelMap;  // TO_TEST
   Array1D<extMetRCTable*> _metRCTable;
   double _resistanceTable[20][20];
