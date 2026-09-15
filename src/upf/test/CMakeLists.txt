@@ -5,5 +5,6 @@ or_integration_tests(
     write
     isolation
     isolation_select
+    supply
 )
 
