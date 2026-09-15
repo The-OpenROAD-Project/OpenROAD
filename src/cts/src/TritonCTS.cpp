@@ -1519,7 +1519,7 @@ bool TritonCTS::separateMacroRegSinks(
           nonSinkMacro &= invertedTerm->getInst()->isBlock();
         } else {
           logger_->warn(CTS,
-                        111,
+                        136,
                         "Inverter {} output net has no signal input; "
                         "treating as a dangling clock inverter.",
                         inst->getName());
