@@ -1445,6 +1445,114 @@ describe('canonicalizeForSkin', () => {
 });
 
 describe('SchematicWidget label placement', () => {
+    function makeLabelCells(widget, displays = [null, 'inline', 'none', null]) {
+        const svg = document.createElementNS(svgNS, 'svg');
+        const cells = {};
+        const groups = [];
+        const labels = [];
+        displays.forEach((display, index) => {
+            const instName = `u${index}`;
+            const group = document.createElementNS(svgNS, 'g');
+            const label = document.createElementNS(svgNS, 'text');
+            group.id = `cell_${instName}`;
+            group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
+            group.getBoundingClientRect = () => rect(index * 100, 0, index * 100 + 30, 30);
+            label.setAttribute('data-openroad-label', 'instance');
+            label.setAttribute('x', '15');
+            label.setAttribute('y', '-4');
+            if (display !== null) label.setAttribute('display', display);
+            label.getBoundingClientRect = () => {
+                const x = Number(label.getAttribute('x')) + index * 100;
+                const y = Number(label.getAttribute('y'));
+                return rect(x - 4, y - 6, x + 4, y);
+            };
+            group.appendChild(label);
+            svg.appendChild(group);
+            cells[instName] = {};
+            groups.push(group);
+            labels.push(label);
+        });
+        widget.svgContainer.replaceChildren(svg);
+        widget._svgEl = svg;
+        return { svg, groups, labels, netlist: { modules: { top: { cells } } } };
+    }
+
+    it('keeps body measurement layout flushes constant as the cell count grows', () => {
+        const { widget, container } = makeWidget();
+        const displays = Array.from({ length: 20 }, (_, index) =>
+            [null, 'inline', 'none'][index % 3]);
+        const { groups, labels, netlist } = makeLabelCells(widget, displays);
+        let layoutDirty = true;
+        let layoutFlushes = 0;
+        const readLayout = () => {
+            if (layoutDirty) layoutFlushes += 1;
+            layoutDirty = false;
+        };
+        // Model a layout flush when a geometry read follows a display write.
+        for (const label of labels) {
+            const setAttribute = label.setAttribute.bind(label);
+            const removeAttribute = label.removeAttribute.bind(label);
+            label.setAttribute = (name, value) => {
+                if (name === 'display') layoutDirty = true;
+                setAttribute(name, value);
+            };
+            label.removeAttribute = (name) => {
+                if (name === 'display') layoutDirty = true;
+                removeAttribute(name);
+            };
+        }
+        for (const group of groups) {
+            for (const method of ['getBBox', 'getBoundingClientRect']) {
+                const measure = group[method].bind(group);
+                group[method] = () => {
+                    readLayout();
+                    return measure();
+                };
+            }
+        }
+        // Isolate body measurements from the separate candidate-scoring phase.
+        widget._labelPlacementCandidates = () => [];
+
+        widget._layoutInstanceLabels(netlist);
+
+        assert.ok(layoutFlushes <= 2, `body measurements flushed layout ${layoutFlushes} times`);
+        assert.deepEqual(labels.map((label) => label.getAttribute('display')), displays);
+        container.element.remove();
+    });
+
+    it('restores original label display attributes if obstacle measurement fails', () => {
+        const { widget, container } = makeWidget();
+        const { svg, labels, netlist } = makeLabelCells(widget);
+        const obstacle = document.createElementNS(svgNS, 'text');
+        obstacle.getBoundingClientRect = () => { throw new Error('measurement failed'); };
+        svg.appendChild(obstacle);
+
+        assert.throws(() => widget._layoutInstanceLabels(netlist), /measurement failed/);
+
+        assert.deepEqual(labels.map((label) => label.getAttribute('display')),
+            [null, 'inline', 'none', null]);
+        container.element.remove();
+    });
+
+    it('avoids wires and fixed text while skipping an unmeasurable cell', () => {
+        const { widget, container } = makeWidget();
+        const { svg, groups, labels, netlist } = makeLabelCells(widget, [null, 'inline', null]);
+        const wire = document.createElementNS(svgNS, 'path');
+        wire.getBoundingClientRect = () => rect(-15, -23, 45, -17);
+        const portLabel = document.createElementNS(svgNS, 'text');
+        portLabel.getBoundingClientRect = () => rect(85, -23, 145, -17);
+        svg.append(wire, portLabel);
+        groups[2].getBBox = () => { throw new Error('unmeasurable cell'); };
+
+        widget._layoutInstanceLabels(netlist);
+
+        assert.equal(labels[0].getAttribute('y'), '44');
+        assert.equal(labels[1].getAttribute('y'), '44');
+        assert.equal(labels[2].getAttribute('y'), '-4');
+        assert.deepEqual(labels.map((label) => label.getAttribute('display')), [null, 'inline', null]);
+        container.element.remove();
+    });
+
     it('creates OpenROAD port labels from skin pin markers', () => {
         const { widget, container } = makeWidget();
         const svg = document.createElementNS(svgNS, 'svg');

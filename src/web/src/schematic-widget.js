@@ -1119,7 +1119,7 @@ export class SchematicWidget {
 
         const bitRemap = new Map();
         for (const [netName, addedNet] of Object.entries(addedCloneTop.netnames)) {
-            const addedBits = Array.isArray(addedNet.bits) ? addedNet.bits : [];
+            const netBits = Array.isArray(addedNet.bits) ? addedNet.bits : [];
             let mergedBits = null;
             if (Object.prototype.hasOwnProperty.call(mergedTop.netnames, netName)
                 && Array.isArray(mergedTop.netnames[netName].bits)) {
@@ -1128,13 +1128,13 @@ export class SchematicWidget {
             } else {
                 // addedCloneTop is already a deep clone, so its nets can be
                 // rebased and adopted into the merge result directly.
-                mergedBits = addedBits.map((bit) =>
+                mergedBits = netBits.map((bit) =>
                     Number.isInteger(bit) && bit > 1 ? allocateBit() : bit);
                 addedNet.bits = mergedBits;
                 mergedTop.netnames[netName] = addedNet;
             }
 
-            addedBits.forEach((bit, index) => {
+            netBits.forEach((bit, index) => {
                 if (Number.isInteger(bit)
                     && bit > 1
                     && index < mergedBits.length) {
@@ -1587,16 +1587,6 @@ export class SchematicWidget {
         return null;
     }
 
-    _groupBoundsWithoutLabel(group, label) {
-        return this._measureHidden([label], () => group.getBBox());
-    }
-
-    _groupScreenRectWithoutLabel(group, label, padding = 4) {
-        return this._measureHidden(
-            [label],
-            () => expandRect(group.getBoundingClientRect(), padding));
-    }
-
     _setLabelPosition(label, placement) {
         label.setAttribute('x', String(placement.x));
         label.setAttribute('y', String(placement.y));
@@ -1688,21 +1678,33 @@ export class SchematicWidget {
         if (records.length === 0) return;
 
         const cellGroups = records.map(({ group }) => group);
-        const wireRects = this._wireObstacleRects(cellGroups);
         const movableLabels = new Set(records.map(({ label }) => label));
-        // Treat existing text, wires, and cell bodies as label obstacles.
-        const occupiedRects = Array.from(this._svgEl.querySelectorAll('text'))
-            .filter((text) => !movableLabels.has(text))
-            .map((text) => this._expandedScreenRect(text, 2))
-            .filter((rect) => rect.width > 0 && rect.height > 0);
-        for (const record of records) {
-            try {
-                const rect = this._groupScreenRectWithoutLabel(record.group, record.label, 5);
-                if (rect.width > 0 && rect.height > 0) occupiedRects.push(rect);
-            } catch (_) {
-                // Ignore groups that cannot be measured yet.
+        const bodyBounds = new Map();
+        let wireRects;
+        let occupiedRects;
+        // Hide all movable labels before measuring, then restore them together
+        // so body measurements do not alternate DOM writes and layout reads.
+        this._measureHidden(movableLabels, () => {
+            wireRects = this._wireObstacleRects(cellGroups);
+            // Treat existing text, wires, and cell bodies as label obstacles.
+            occupiedRects = Array.from(this._svgEl.querySelectorAll('text'))
+                .filter((text) => !movableLabels.has(text))
+                .map((text) => this._expandedScreenRect(text, 2))
+                .filter((rect) => rect.width > 0 && rect.height > 0);
+            for (const record of records) {
+                try {
+                    const rect = this._expandedScreenRect(record.group, 5);
+                    if (rect.width > 0 && rect.height > 0) occupiedRects.push(rect);
+                } catch (_) {
+                    // Ignore groups that cannot be measured yet.
+                }
+                try {
+                    bodyBounds.set(record, record.group.getBBox());
+                } catch (_) {
+                    // Skip label placement for groups without measurable bounds.
+                }
             }
-        }
+        });
 
         // Pre-measure each group once. Calling getBoundingClientRect() from
         // inside the comparator would force a synchronous layout on every
@@ -1716,15 +1718,11 @@ export class SchematicWidget {
         });
 
         for (const record of records) {
-            let bodyBounds;
-            try {
-                bodyBounds = this._groupBoundsWithoutLabel(record.group, record.label);
-            } catch (_) {
-                continue;
-            }
+            const bounds = bodyBounds.get(record);
+            if (!bounds) continue;
 
             let best = null;
-            for (const candidate of this._labelPlacementCandidates(bodyBounds, record.label)) {
+            for (const candidate of this._labelPlacementCandidates(bounds, record.label)) {
                 this._setLabelPosition(record.label, candidate);
                 const rect = this._expandedScreenRect(record.label, 3);
                 const wireOverlap = wireRects.reduce(
