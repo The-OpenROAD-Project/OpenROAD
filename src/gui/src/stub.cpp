@@ -7,7 +7,6 @@
 #include <any>
 #include <cstdio>
 #include <map>
-#include <optional>
 #include <set>
 #include <string>
 #include <typeinfo>
@@ -21,16 +20,7 @@
 #include "odb/geom.h"
 #include "tcl.h"
 
-// empty gif writer class
-struct GifWriter
-{
-};
-
 namespace gui {
-
-Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
-{
-}
 
 void HeatMapDataSource::registerHeatMap()
 {
@@ -108,23 +98,6 @@ void initGui(Tcl_Interp* interp,
       "  }"
       "}");
   Tcl_Eval(interp, cmd_has_ui.c_str());
-}
-
-int Gui::gifStart(const std::string& filename)
-{
-  return 0;
-}
-
-void Gui::gifEnd(std::optional<int> key)
-{
-}
-
-void Gui::gifAddFrame(std::optional<int> key,
-                      const odb::Rect& region,
-                      int width_px,
-                      double dbu_per_pixel,
-                      std::optional<int> delay)
-{
 }
 
 Chart* Gui::addChart(const std::string& name,
