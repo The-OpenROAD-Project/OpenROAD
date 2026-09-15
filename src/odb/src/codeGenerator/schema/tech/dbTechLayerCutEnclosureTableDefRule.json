@@ -22,7 +22,7 @@
     },
     {
       "name": "width_rows_",
-      "type": "dbVector<std::tuple<int,int,int,int,int,int,bool>>",
+      "type": "dbVector<std::tuple<int,int,int,int,int,int>>",
       "flags": [
         "no-template",
         "no-get",
