@@ -261,6 +261,31 @@ proc placement_cluster { args } {
   gpl::placement_cluster_cmd $insts
 }
 
+sta::define_cmd_args "estimate_target_density" {\
+    [-bin_grid_count grid_count]\
+    [-overflow overflow]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+}
+
+proc estimate_target_density { args } {
+  sta::parse_key_args "estimate_target_density" args \
+    keys {-bin_grid_count -overflow \
+      -pad_left -pad_right} \
+    flags {}
+  sta::check_argc_eq0 "estimate_target_density" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 187 "No design block found."
+  }
+
+  set density_estimation [gpl::estimate_target_density_cmd \
+    [array get keys] [array get flags]]
+  gpl::replace_reset_cmd
+
+  return $density_estimation
+}
+
 namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {

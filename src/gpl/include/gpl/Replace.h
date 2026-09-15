@@ -150,6 +150,7 @@ class Replace
 
   // Query for uniform density value
   float getUniformTargetDensity(const PlaceOptions& options, int threads);
+  float estimateTargetDensity(const PlaceOptions& options, int threads);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
@@ -169,6 +170,8 @@ class Replace
   void checkHasCoreRows();
   void checkPlaceIosSupported(const PlaceOptions& options);
   void reportHpwlMetric();
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
