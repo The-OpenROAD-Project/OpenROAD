@@ -751,19 +751,19 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   EXPECT_EQ(rule->getCutClass(), cutClass);
 
   rule->addDefaultRow(0, 40, 40, 60, 60);
-  rule->addWidthRow(300, 1, 20, 20, 40, 40, false);
-  rule->addWidthRow(300, 2, 50, 60, 0, 0, true);
+  rule->addWidthRow(300, 1, 20, 20, 40, 40);
+  rule->addWidthRow(300, 2, 50, 60, 0, 0);
 
   std::vector<std::tuple<int, int, int, int, int>> defaultRows;
   rule->getDefaultRows(defaultRows);
   ASSERT_EQ(defaultRows.size(), 1);
   EXPECT_EQ(defaultRows[0], std::make_tuple(0, 40, 40, 60, 60));
 
-  std::vector<std::tuple<int, int, int, int, int, int, bool>> widthRows;
+  std::vector<std::tuple<int, int, int, int, int, int>> widthRows;
   rule->getWidthRows(widthRows);
   ASSERT_EQ(widthRows.size(), 2);
-  EXPECT_EQ(widthRows[0], std::make_tuple(300, 1, 20, 20, 40, 40, false));
-  EXPECT_EQ(widthRows[1], std::make_tuple(300, 2, 50, 60, 0, 0, true));
+  EXPECT_EQ(widthRows[0], std::make_tuple(300, 1, 20, 20, 40, 40));
+  EXPECT_EQ(widthRows[1], std::make_tuple(300, 2, 50, 60, 0, 0));
 
   auto rules = layer->getTechLayerCutEnclosureTableDefRules();
   EXPECT_EQ(rules.size(), 1);

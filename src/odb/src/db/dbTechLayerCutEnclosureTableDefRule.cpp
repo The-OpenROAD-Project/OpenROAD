@@ -15,12 +15,8 @@
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
 #include "odb/db.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerCutEnclosureTableDefRule>;
-// User Code Begin Static
-// User Code End Static
 
 bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
@@ -33,8 +29,6 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
 }
@@ -42,8 +36,6 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
 bool _dbTechLayerCutEnclosureTableDefRule::operator<(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -51,8 +43,6 @@ _dbTechLayerCutEnclosureTableDefRule::_dbTechLayerCutEnclosureTableDefRule(
     _dbDatabase* db)
 {
   flags_ = {};
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 dbIStream& operator>>(dbIStream& stream,
@@ -65,8 +55,6 @@ dbIStream& operator>>(dbIStream& stream,
   stream >> obj.cut_class_;
   stream >> obj.default_rows_;
   stream >> obj.width_rows_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -80,8 +68,6 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.cut_class_;
   stream << obj.default_rows_;
   stream << obj.width_rows_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -92,13 +78,7 @@ void _dbTechLayerCutEnclosureTableDefRule::collectMemInfo(MemInfo& info)
 
   info.children["default_rows"].add(default_rows_);
   info.children["width_rows"].add(width_rows_);
-
-  // User Code Begin collectMemInfo
-  // User Code End collectMemInfo
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -176,12 +156,11 @@ void dbTechLayerCutEnclosureTableDefRule::addWidthRow(int width,
                                                       int oh1,
                                                       int oh2,
                                                       int oh3,
-                                                      int oh4,
-                                                      bool minSum)
+                                                      int oh4)
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  obj->width_rows_.push_back({width, aboveBelow, oh1, oh2, oh3, oh4, minSum});
+  obj->width_rows_.push_back({width, aboveBelow, oh1, oh2, oh3, oh4});
 }
 
 void dbTechLayerCutEnclosureTableDefRule::getDefaultRows(
@@ -193,7 +172,7 @@ void dbTechLayerCutEnclosureTableDefRule::getDefaultRows(
 }
 
 void dbTechLayerCutEnclosureTableDefRule::getWidthRows(
-    std::vector<std::tuple<int, int, int, int, int, int, bool>>& rows) const
+    std::vector<std::tuple<int, int, int, int, int, int>>& rows) const
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;

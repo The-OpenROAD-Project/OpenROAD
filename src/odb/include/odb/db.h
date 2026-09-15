@@ -10176,12 +10176,11 @@ class dbTechLayerCutEnclosureTableDefRule : public dbObject
                    int oh1,
                    int oh2,
                    int oh3,
-                   int oh4,
-                   bool minSum);
+                   int oh4);
   void getDefaultRows(
       std::vector<std::tuple<int, int, int, int, int>>& rows) const;
   void getWidthRows(
-      std::vector<std::tuple<int, int, int, int, int, int, bool>>& rows) const;
+      std::vector<std::tuple<int, int, int, int, int, int>>& rows) const;
   // User Code End dbTechLayerCutEnclosureTableDefRule
 };
 
