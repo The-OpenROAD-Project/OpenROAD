@@ -22,6 +22,7 @@ class ScanArchitectConfig
   };
 
   void setClockMixing(ClockMixing clock_mixing);
+  ClockMixing getClockMixing() const;
 
   // The max length in bits that a scan chain can have
   void setMaxLength(uint64_t max_length);
@@ -30,8 +31,6 @@ class ScanArchitectConfig
   // The max number of scan chains (per clock in NoMixe mode) to generate
   void setMaxChains(uint64_t max_chains);
   const std::optional<uint64_t>& getMaxChains() const;
-
-  ClockMixing getClockMixing() const;
 
   // Prints using logger->report the config used by Scan Architect
   void report(utl::Logger* logger) const;

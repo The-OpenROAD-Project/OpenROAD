@@ -18,7 +18,7 @@ odb::dbNet* ScanPin::getNet() const
 {
   return std::visit(
       overloaded{[](odb::dbITerm* iterm) { return iterm->getNet(); },
-                 [](odb::dbBTerm* iterm) { return iterm->getNet(); }},
+                 [](odb::dbBTerm* bterm) { return bterm->getNet(); }},
       value_);
 }
 
@@ -27,13 +27,23 @@ std::string_view ScanPin::getName() const
   return std::visit(
       overloaded{
           [](odb::dbITerm* iterm) { return iterm->getMTerm()->getConstName(); },
-          [](odb::dbBTerm* iterm) { return iterm->getConstName(); }},
+          [](odb::dbBTerm* bterm) { return bterm->getConstName(); }},
       value_);
 }
 
 const std::variant<odb::dbBTerm*, odb::dbITerm*>& ScanPin::getValue() const
 {
   return value_;
+}
+
+bool ScanPin::getLocation(int& x, int& y) const
+{
+  return std::visit(
+      overloaded{[&](odb::dbITerm* iterm) { return iterm->getAvgXY(&x, &y); },
+                 [&](odb::dbBTerm* bterm) {
+                   return bterm->getFirstPinLocation(x, y);
+                 }},
+      value_);
 }
 
 ScanLoad::ScanLoad(std::variant<odb::dbBTerm*, odb::dbITerm*> term)
