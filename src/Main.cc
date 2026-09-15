@@ -102,6 +102,7 @@ static bool no_settings = false;
 static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
+static const char* web_bind_arg = nullptr;
 
 static const char* init_filename = ".openroad";
 
@@ -216,6 +217,9 @@ static void handler(int sig)
 
 int main(int argc, char* argv[])
 {
+  // Idle OpenMP workers sleep instead of spinning between parallel regions.
+  // A user-set OMP_WAIT_POLICY takes precedence.
+  setenv("OMP_WAIT_POLICY", "passive", 0);
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
   std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
@@ -261,6 +265,7 @@ int main(int argc, char* argv[])
   minimize = findCmdLineFlag(argc, argv, "-minimize");
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
+  web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -399,6 +404,17 @@ static int tclAppInit(int& argc,
           exit(EXIT_FAILURE);
         }
       }
+      // Check the address here, not in serve(): serve() reports a bad one with
+      // utl::error, which throws, and nothing on this path catches it.
+      if (web_bind_arg
+          && web::classifyBindAddress(web_bind_arg)
+                 == web::BindAddressKind::kInvalid) {
+        fprintf(stderr,
+                "Error: invalid -web_bind value '%s'; %s\n",
+                web_bind_arg,
+                web::kBindAddressHint);
+        exit(EXIT_FAILURE);
+      }
       ord::OpenRoad::openRoad()->getWebServer()->initLogger();
     }
 
@@ -490,7 +506,8 @@ static int tclAppInit(int& argc,
     // for the GUI).  After this returns, fall through to readline.
     if (web_enabled) {
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      server->serve(web_port);
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      server->serve(web_port, web_bind_arg ? web_bind_arg : "");
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are
@@ -557,6 +574,10 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -web                  start in web viewer mode\n");
   printf("  -web_port port        web server port (default auto-assigned)\n");
+  printf(
+      "  -web_bind address     web server bind address (default 127.0.0.1;\n"
+      "                        a wider bind exposes a Tcl shell to the "
+      "network)\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3

@@ -15,6 +15,10 @@
 //
 // `icon`/`tooltip` and `toggle` are web-only extensions over Qt's text-only,
 // stateless create_toolbar_button.
+//
+// Qt's view toolbar (Fit/Find/Inspect/Timing) has no counterpart here on
+// purpose: those actions already live in the View and Windows menus, with
+// their keyboard shortcuts, so a third route to them would be noise.
 import { runTclScript } from './ui-utils.js';
 
 export function createToolbar(app) {
@@ -36,7 +40,7 @@ export function createToolbar(app) {
 
         for (const btn of buttons) {
             const el = document.createElement('button');
-            el.className = 'toolbar-button';
+            el.className = 'or-btn or-btn-sm toolbar-button';
             el.dataset.key = btn.key;
             if (btn.tooltip) el.title = btn.tooltip;
 

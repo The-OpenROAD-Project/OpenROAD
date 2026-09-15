@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <array>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -24,6 +26,10 @@ class GlyphCache
 {
   // Per-glyph rendering info.
  public:
+  // Printable ASCII, space (32) through '~' (126): the range every cached
+  // table is sized for.
+  static constexpr int kGlyphCount = 95;
+
   struct GlyphInfo
   {
     const unsigned char* alpha;  // bitmap, bmp_width * bmp_height bytes
@@ -50,8 +56,14 @@ class GlyphCache
     int cell_height = 0;
     int ascent = 0;
     float scale = 0;
-    CachedGlyph glyphs[95];            // ASCII 32-126
+    CachedGlyph glyphs[kGlyphCount];
     std::vector<unsigned char> alpha;  // packed glyph bitmaps
+    // Kerning for every pair of cached glyphs, indexed [first][second].
+    // Resolving one pair through stbtt searches the cmap twice and walks the
+    // GPOS table; textWidth() asks for a pair between every adjacent pair of
+    // characters, so a label's width costs as much as rasterizing it.  The
+    // table is 18 KB per size and only a handful of sizes are ever built.
+    std::array<int16_t, static_cast<size_t>(kGlyphCount) * kGlyphCount> kern{};
   };
 
  public:
@@ -67,9 +79,8 @@ class GlyphCache
 
    private:
     friend class GlyphCache;
-    FontSize(const SizeSlot& slot, const stbtt_fontinfo* font_info);
+    explicit FontSize(const SizeSlot& slot);
     const SizeSlot& slot_;
-    const stbtt_fontinfo* font_info_;
   };
 
   // Initialize from raw TTF data (must remain valid for the cache lifetime).

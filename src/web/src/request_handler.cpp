@@ -26,6 +26,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -52,6 +53,7 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/web.h"
 
 namespace web {
 
@@ -322,6 +324,94 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+bool webSocketOriginAllowed(const std::string_view origin,
+                            const std::string_view host)
+{
+  // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
+  // forge its Origin, so a foreign page is rejected below.  A non-browser
+  // client controls every header (it can omit Origin or spoof any value), so
+  // this check cannot authenticate one — that requires binding to loopback
+  // (issue #11167, F-02), on which this guard depends.
+  //
+  // Absent Origin: browsers always send it on a WS handshake, so its absence
+  // is a non-browser client; allow it (F-02 is what keeps such a client local).
+  if (origin.empty()) {
+    return true;
+  }
+  // The authority is what follows "scheme://", up to the first '/'.  An Origin
+  // without a scheme (e.g. the opaque "null") has no authority and is rejected.
+  const size_t scheme = origin.find("://");
+  if (scheme == std::string_view::npos) {
+    return false;
+  }
+  std::string_view authority = origin.substr(scheme + 3);
+  const size_t slash = authority.find('/');
+  if (slash != std::string_view::npos) {
+    authority = authority.substr(0, slash);
+  }
+  // Strict same-origin: the page was served by this very viewer.  Nothing else
+  // is accepted — not even another localhost:<port>, which could be an XSS'd
+  // local service.  The server opens the browser at the same host:port it
+  // reports, so a legitimate viewer always matches; a user who manually swaps
+  // the loopback spelling (127.0.0.1 vs localhost) must use the reported one.
+  //
+  // The comparison ignores case: a host is case-insensitive (RFC 3986 3.2.2)
+  // and a proxy or non-browser client may vary it, which would otherwise 403 a
+  // legitimate handshake.  Hosts are ASCII (IDNs arrive punycoded), so lower
+  // without std::tolower and its locale.
+  const auto ascii_lower = [](const char c) {
+    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+  };
+  return std::equal(authority.begin(),
+                    authority.end(),
+                    host.begin(),
+                    host.end(),
+                    [&ascii_lower](const char a, const char b) {
+                      return ascii_lower(a) == ascii_lower(b);
+                    });
+}
+
+BindAddressKind classifyBindAddress(const std::string_view address)
+{
+  // make_address parses IP literals only — it never resolves a name, so
+  // "localhost" lands here as invalid rather than silently binding somewhere.
+  boost::system::error_code ec;
+  const auto parsed = boost::asio::ip::make_address(address, ec);
+  if (ec) {
+    return BindAddressKind::kInvalid;
+  }
+  // is_loopback() covers 127.0.0.0/8 and ::1, but not ::ffff:127.0.0.1 — an
+  // IPv4 bind wearing a v6 literal, which would otherwise be reported as
+  // exposed.  Unwrap those and judge them by their IPv4 half.  Everything
+  // else, the unspecified 0.0.0.0/:: included, is reachable off-machine.
+  bool loopback = parsed.is_loopback();
+  if (parsed.is_v6() && parsed.to_v6().is_v4_mapped()) {
+    loopback = boost::asio::ip::make_address_v4(boost::asio::ip::v4_mapped,
+                                                parsed.to_v6())
+                   .is_loopback();
+  }
+  return loopback ? BindAddressKind::kLoopback : BindAddressKind::kExposed;
+}
+
+std::string browserHostForBind(const boost::asio::ip::address& address)
+{
+  // "localhost" reads better than a literal, but it resolves to the canonical
+  // loopback only — naming it for the whole 127.0.0.0/8 range would send the
+  // browser to 127.0.0.1 while the listener sits on, say, 127.0.0.2.  The
+  // wildcard is not a destination at all, and localhost is inside it.
+  if (address.is_unspecified()
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v4::loopback())
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v6::loopback())) {
+    return "localhost";
+  }
+  const std::string literal = address.to_string();
+  return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
 WebSocketResponse errorResponse(const uint32_t id,
                                 const std::string_view message)
 {
@@ -383,16 +473,15 @@ bool parseTileCoords(const boost::json::object& json,
 // (moving an instance outside the block bbox, deleting an edge instance),
 // which shifts the tile georeference — clients must resync their
 // coordinate transforms or every later click/highlight lands offset.
-// Bounds use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
-// response.
+// Both rects use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
+// response, and mean the same things there: `bounds` georeferences the tile
+// grid, `fit_bounds` is what the client zooms to fit.
 static std::string refreshBroadcastPayload(const TileGenerator& gen)
 {
-  const odb::Rect bounds = gen.getBounds();
   boost::json::object o;
   o["type"] = "refresh";
-  o["bounds"]
-      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
-                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  o["bounds"] = boundsArray(gen.getBounds());
+  o["fit_bounds"] = boundsArray(gen.getFitBounds());
   return boost::json::serialize(o);
 }
 
@@ -686,10 +775,10 @@ static void collectNetFlightLines(odb::dbNet* net,
 //
 // Reproduced rather than delegated to DbNetDescriptor because the descriptor
 // cannot be made to honor the mode from here: its gate is
-// painter.getOptions()->isFlywireHighlightOnly(), and gui::Options is a private
-// Qt-dependent interface (QColor/QFont), so a non-Qt module has no way to
-// implement it — ShapeCollector's null Options resolves to DefaultOptions,
-// which answers false.  Going through Gui::getDescriptor<odb::dbSWire*>() for
+// painter.getOptions()->isFlywireHighlightOnly(), and ShapeCollector passes no
+// Options, so Painter::getOptions() resolves to the default gui::Options
+// instance, which answers false.  Going through
+// Gui::getDescriptor<odb::dbSWire*>() for
 // just the tail is no better: an unregistered descriptor makes
 // DescriptorRegistry emit GUI-0053, which is fatal, and nothing registers the
 // odb descriptors in the web unit tests.
@@ -873,9 +962,10 @@ static int addConnectedNets(gui::SelectionSet& selection_set)
 }
 
 // Descriptor actions that must not be surfaced in the web client:
-// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (guarded by
-//   ENABLE_QT in dbDescriptors.cpp); in a Qt-enabled binary running in
-//   web mode triggering them would crash — there is no QApplication.
+// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (offered only
+//   when Gui::getDialogs() is set, which Gui::init() does in a Qt build);
+//   in a Qt-enabled binary running in web mode triggering them would
+//   crash — there is no QApplication.
 // - Focus / route-guide / zoom actions call global gui::Gui methods that
 //   are stub no-ops in web builds; the web inspector already provides
 //   per-session equivalents in its toolbar.
@@ -1269,6 +1359,11 @@ static boost::json::object serializeHeatMap(gui::HeatMapDataSource& source,
   o["alpha_min"] = source.getColorAlphaMinimum();
   o["alpha_max"] = source.getColorAlphaMaximum();
   o["bounds"] = bboxArray(source.getBounds());
+  // Qt's HeatMapSetup shows this checkbox only for sources that name it
+  // (getSelectionFilterLabel() non-empty), so the label doubles as the
+  // "offer the control" flag.
+  o["selection_filter_label"] = source.getSelectionFilterLabel();
+  o["use_selected_only"] = source.useSelectedOnly();
 
   boost::json::array options;
   for (const auto& option : source.getMapSettings()) {
@@ -1326,6 +1421,27 @@ WebSocketResponse TileHandler::serializeTech(const uint32_t id,
   writePayload(resp, serializeTechResponse(gen));
   return resp;
 }
+
+// Send a tile the renderer drew nothing into as an empty response.  Most of
+// the tiles in a viewport are that: every layer with no geometry where the user
+// is looking, and the highlight overlay whenever nothing is selected.  The
+// transparent PNG they would otherwise carry still decodes to a full-size
+// bitmap on the client, which is what the decoded-image budget in tile-merge.js
+// is spent on.
+//
+// Applied in the handlers rather than in the generator so every other caller of
+// the tile entry points -- save_image, the GIF recorder, the tests -- keeps
+// getting an image back.
+namespace {
+void markEmptyIfBlank(WebSocketResponse& resp)
+{
+  if (resp.type == WebSocketResponse::kPng
+      && TileGenerator::isBlankTilePng(resp.payload)) {
+    resp.type = WebSocketResponse::kEmpty;
+    resp.payload.clear();
+  }
+}
+}  // namespace
 
 WebSocketResponse TileHandler::renderTile(
     const uint32_t id,
@@ -4353,14 +4469,17 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(is_setup);
       if (path_index < static_cast<int>(paths.size())) {
-        odb::dbBlock* block = gen_->getBlock();
-        collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);
+        // chiplets() covers both cases: for a single-die design its root node
+        // carries the top block with an identity transform.
+        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+        collectTimingPathShapes(
+            chiplets, paths[path_index], new_rects, new_lines);
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm] = resolvePin(block, pin_name);
+          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
 
           odb::dbNet* net = nullptr;
           if (iterm) {
@@ -4377,7 +4496,8 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
                              nullptr,
                              kStageColor,
                              new_rects,
-                             new_lines);
+                             new_lines,
+                             node->world_xfm);
           }
         }
       }
@@ -4403,7 +4523,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 namespace {
 
 // Center of a cone pin in DBU: ITerm average pin location (fallback: instance
-// center), or the first BPin box center for a BTerm.
+// center), or the first placed BPin box center for a BTerm.
 odb::Point conePinCenter(const TimingConeNode& node)
 {
   if (node.iterm) {
@@ -4416,9 +4536,10 @@ odb::Point conePinCenter(const TimingConeNode& node)
     return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
   }
   if (node.bterm) {
-    for (odb::dbBPin* bpin : node.bterm->getBPins()) {
-      const odb::Rect r = bpin->getBBox();
-      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+    int x = 0;
+    int y = 0;
+    if (node.bterm->getFirstPinLocation(x, y)) {
+      return {x, y};
     }
   }
   return {0, 0};
@@ -4619,8 +4740,7 @@ WebSocketResponse TimingHandler::handleFanoutHistogram(
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    odb::dbBlock* block = gen_->getBlock();
-    auto histogram = computeFanoutHistogram(block);
+    auto histogram = computeFanoutHistogram(gen_->blocks());
     writePayload(resp, serializeFanoutHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -5020,7 +5140,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     if (gen_->tileCacheGet(cache_key, cached)) {
       WebSocketResponse resp;
       resp.id = req.id;
-      resp.type = WebSocketResponse::kPng;
+      // An empty cache entry is a tile the renderer drew nothing into; it is
+      // stored that way so a blank tile costs an LRU slot and not the bytes of
+      // a transparent PNG nobody will decode.
+      resp.type = cached.empty() ? WebSocketResponse::kEmpty
+                                 : WebSocketResponse::kPng;
       resp.payload = std::move(cached);
       debugPrint(gen_->getLogger(),
                  utl::WEB,
@@ -5056,7 +5180,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       nullptr,
                                       dpr,
                                       tile_px);
-  if (cacheable && resp.type == WebSocketResponse::kPng) {
+  markEmptyIfBlank(resp);
+  // An empty payload under kPng is a failed encode, not a blank tile; caching
+  // it would make the next hit read back as kEmpty and hide the failure.
+  const bool worth_caching
+      = resp.type == WebSocketResponse::kEmpty
+        || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
+  if (cacheable && worth_caching) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
 
@@ -5115,13 +5245,25 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     //    would redraw from live here, so they have to be rebuilt on this
     //    side or the highlight stays at the old placement;
     //  - debug renderers are active — instance positions change between
-    //    frames, so the highlight must track the moving instance.
+    //    frames, so the highlight must track the moving instance;
+    //  - Options > "Show polygon decomposition" flipped, which changes the
+    //    shapes an ITerm/MTerm highlight draws.  The setting is
+    //    server-global (it lives in gui::Gui, where the descriptors read it)
+    //    but travels on the request like flywires_only, so this file stays
+    //    free of gui::Gui -- the deliberate layering that lets the web
+    //    library link without the gui one.  The client is told the value by
+    //    the poly_decomp handler's reply and its broadcast, so a stale
+    //    request can only delay a re-derivation to the next tile, never
+    //    change what is drawn.
     const bool flywires_only = jsonOr(req.json, "flywires_only", false);
     const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+    const bool poly_decomp = jsonOr(req.json, "poly_decomp", false);
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
-      const bool flipped = (flywires_only != state.flywires_only);
+      const bool flipped = (flywires_only != state.flywires_only)
+                           || (poly_decomp != state.poly_decomp);
       state.flywires_only = flywires_only;
+      state.poly_decomp = poly_decomp;
       const bool live
           = state.highlight_source != SessionState::HighlightSource::kNone;
       // exchange() once: both the selection and the group shapes below are
@@ -5259,20 +5401,24 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
         = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
     resp.type = WebSocketResponse::kPng;
-    resp.payload = gen_->generateOverlayTile(z,
-                                             x,
-                                             y,
-                                             rects,
-                                             polys,
-                                             colored,
-                                             lines,
-                                             route_guide_ptr,
-                                             has_vis_layers,
-                                             vis_layers,
-                                             dpr,
-                                             tile_px,
-                                             colored_polys,
-                                             labels);
+    resp.payload
+        = gen_->generateOverlayTile(z,
+                                    x,
+                                    y,
+                                    rects,
+                                    polys,
+                                    colored,
+                                    lines,
+                                    route_guide_ptr,
+                                    has_vis_layers,
+                                    vis_layers,
+                                    dpr,
+                                    tile_px,
+                                    colored_polys,
+                                    labels,
+                                    debug_renderers,
+                                    jsonOr(req.json, "debug_live", false));
+    markEmptyIfBlank(resp);
 
     // The selection highlight the client draws over the layer tiles comes from
     // here, so the shape counts say whether a "missing" highlight was never
@@ -5346,12 +5492,17 @@ LabelFields parseLabelFields(const boost::json::object& obj)
   if (!isValidAnchor(anchor)) {
     throw std::runtime_error("anchor not recognized: " + anchor);
   }
-  return {.pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
-                            static_cast<int>(obj.at("y").as_int64())),
-          .text = std::string(obj.at("text").as_string()),
-          .size = static_cast<int>(jsonOr<int64_t>(obj, "size", 0)),
-          .anchor = anchor,
-          .color = parseLabelColor(obj)};
+  return {
+      .pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
+                        static_cast<int>(obj.at("y").as_int64())),
+      .text = std::string(obj.at("text").as_string()),
+      // Bounded by addLabel/updateLabel, which the Tcl entry point reaches
+      // too; narrowed here only so a colossal int64 does not wrap on the
+      // way.
+      .size = static_cast<int>(std::clamp<int64_t>(
+          jsonOr<int64_t>(obj, "size", 0), 0, TileGenerator::kMaxLabelSize)),
+      .anchor = std::move(anchor),
+      .color = parseLabelColor(obj)};
 }
 
 }  // namespace
@@ -5650,6 +5801,10 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
     if (option == "rebuild") {
       source.destroyMap();
       source.ensureMap();
+    } else if (option == "use_selected_only") {
+      // Not one of getSettings()' entries: Qt's dialog drives the setter
+      // directly, which invalidates the map on its own.
+      source.setUseSelectedOnly(req.json.at("value").as_bool());
     } else {
       auto settings = source.getSettings();
       auto setting_itr = settings.find(option);
@@ -5719,6 +5874,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       source = source_itr->second;
     }
     resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
+    markEmptyIfBlank(resp);
     debugPrint(gen_->getLogger(),
                utl::WEB,
                "tile",
@@ -6014,23 +6170,27 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
 
   try {
-    auto [block, chip] = getBlockAndChip();
+    // The viewer asks for categories as soon as it connects, so having no
+    // design yet is a normal state with no categories, not a failed request.
+    odb::dbChip* chip = gen_->getChip();
 
     boost::json::object root;
     boost::json::array categories;
-    for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
-      boost::json::object o;
-      o["name"] = std::string(category->getName());
-      o["count"] = category->getMarkerCount();
-      const std::string desc = category->getDescription();
-      if (!desc.empty()) {
-        o["description"] = desc;
+    if (chip != nullptr) {
+      for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
+        boost::json::object o;
+        o["name"] = std::string(category->getName());
+        o["count"] = category->getMarkerCount();
+        const std::string desc = category->getDescription();
+        if (!desc.empty()) {
+          o["description"] = desc;
+        }
+        const std::string source = category->getSource();
+        if (!source.empty()) {
+          o["source"] = source;
+        }
+        categories.emplace_back(std::move(o));
       }
-      const std::string source = category->getSource();
-      if (!source.empty()) {
-        o["source"] = source;
-      }
-      categories.emplace_back(std::move(o));
     }
     root["categories"] = std::move(categories);
     writePayload(resp, root);

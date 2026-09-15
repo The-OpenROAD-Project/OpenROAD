@@ -32,16 +32,16 @@ tcg_edge* tmg_conn_graph::newEdge(const tmg_conn* conn,
   tcg_edge* e = &eV_.emplace_back();
   e->k = -1;
   e->skip = false;
-  const int ndx = conn->pt(to).x;
-  const int ndy = conn->pt(to).y;
+  const int ndx = conn->wirePoint(to).x;
+  const int ndy = conn->wirePoint(to).y;
   tcg_edge* prev_edge = nullptr;
   tcg_edge* edge = ptV_[fr].edges;
-  while (edge && !edge->s && ndx > conn->pt(edge->to).x) {
+  while (edge && !edge->s && ndx > conn->wirePoint(edge->to).x) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && !edge->s && ndx == conn->pt(edge->to).x
-         && ndy > conn->pt(edge->to).y) {
+  while (edge && !edge->s && ndx == conn->wirePoint(edge->to).x
+         && ndy > conn->wirePoint(edge->to).y) {
     prev_edge = edge;
     edge = edge->next;
   }
@@ -61,22 +61,23 @@ tcg_edge* tmg_conn_graph::newShortEdge(const tmg_conn* conn,
   tcg_edge* e = &eV_.emplace_back();
   e->k = -1;
   e->skip = false;
-  const int ned = conn->ptDist(fr, to);
-  const int ndx = conn->pt(to).x;
-  const int ndy = conn->pt(to).y;
+  const int ned = conn->distance(fr, to);
+  const int ndx = conn->wirePoint(to).x;
+  const int ndy = conn->wirePoint(to).y;
   tcg_edge* prev_edge = nullptr;
   tcg_edge* edge = ptV_[fr].edges;
-  while (edge && ned > conn->ptDist(edge->fr, edge->to)) {
+  while (edge && ned > conn->distance(edge->fr, edge->to)) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && ned == conn->ptDist(edge->fr, edge->to)
-         && ndx > conn->pt(edge->to).x) {
+  while (edge && ned == conn->distance(edge->fr, edge->to)
+         && ndx > conn->wirePoint(edge->to).x) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && ned == conn->ptDist(edge->fr, edge->to)
-         && ndx == conn->pt(edge->to).x && ndy > conn->pt(edge->to).y) {
+  while (edge && ned == conn->distance(edge->fr, edge->to)
+         && ndx == conn->wirePoint(edge->to).x
+         && ndy > conn->wirePoint(edge->to).y) {
     prev_edge = edge;
     edge = edge->next;
   }
@@ -104,8 +105,8 @@ void tmg_conn_graph::getEdgeRefCoord(const tmg_conn* conn,
                                      int& rx,
                                      int& ry)
 {
-  rx = conn->pt(pe->to).x;
-  ry = conn->pt(pe->to).y;
+  rx = conn->wirePoint(pe->to).x;
+  ry = conn->wirePoint(pe->to).y;
   if (pe->s == nullptr) {
     return;
   }
@@ -116,8 +117,8 @@ void tmg_conn_graph::getEdgeRefCoord(const tmg_conn* conn,
   if (se == nullptr) {
     return;
   }
-  rx = conn->pt(se->to).x;
-  ry = conn->pt(se->to).y;
+  rx = conn->wirePoint(se->to).x;
+  ry = conn->wirePoint(se->to).y;
 }
 
 bool tmg_conn_graph::isBadShort(tcg_edge* pe, const tmg_conn* conn)
@@ -125,8 +126,8 @@ bool tmg_conn_graph::isBadShort(tcg_edge* pe, const tmg_conn* conn)
   if (pe->s == nullptr) {
     return false;
   }
-  const tmg_rcpt& from = conn->pt(pe->fr);
-  const tmg_rcpt& to = conn->pt(pe->to);
+  const WirePoint& from = conn->wirePoint(pe->fr);
+  const WirePoint& to = conn->wirePoint(pe->to);
   return from.x != to.x || from.y != to.y;
 }
 
@@ -341,22 +342,22 @@ void tmg_conn::removeShortLoops()
   if (!graph_) {
     graph_ = std::make_unique<tmg_conn_graph>();
   }
-  graph_->init(ptV_.size(), shortV_.size());
+  graph_->init(wire_points_.size(), shorts_.size());
   std::vector<tcg_pt>& pgV = graph_->ptV_;
 
   // setup paths
   int npath = -1;
-  for (size_t j = 0; j < rcV_.size(); j++) {
-    if (j == 0 || rcV_[j].from_idx != rcV_[j - 1].to_idx) {
+  for (size_t j = 0; j < wire_sections_.size(); j++) {
+    if (j == 0 || wire_sections_[j].from_idx != wire_sections_[j - 1].to_idx) {
       ++npath;
     }
-    pgV[rcV_[j].from_idx].ipath = npath;
-    pgV[rcV_[j].to_idx].ipath = npath;
+    pgV[wire_sections_[j].from_idx].ipath = npath;
+    pgV[wire_sections_[j].to_idx].ipath = npath;
   }
   npath++;
 
   // remove shorts to same path
-  for (tmg_rcshort& s : shortV_) {
+  for (Short& s : shorts_) {
     if (s.skip) {
       continue;
     }
@@ -365,7 +366,7 @@ void tmg_conn::removeShortLoops()
     }
   }
 
-  for (tmg_rcshort& s : shortV_) {
+  for (Short& s : shorts_) {
     if (s.skip) {
       continue;
     }
@@ -393,14 +394,14 @@ void tmg_conn::removeShortLoops()
     e2->visited = false;
   }
 
-  for (int j = 0; j < ptV_.size(); j++) {
+  for (int j = 0; j < wire_points_.size(); j++) {
     pgV[j].visited = 0;
   }
 
   // remove all short loops
   graph_->clearVisited();
 
-  for (int jstart = 0; jstart < ptV_.size(); jstart++) {
+  for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
     tcg_edge* e = graph_->getFirstEdge(jstart);
     if (!e) {
       continue;
@@ -424,7 +425,7 @@ void tmg_conn::removeShortLoops()
 
   // count components, and remaining loops
   graph_->clearVisited();
-  for (int jstart = 0; jstart < ptV_.size(); jstart++) {
+  for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
     tcg_edge* e = graph_->getFirstEdge(jstart);
     if (!e) {
       continue;
@@ -474,12 +475,13 @@ void tmg_conn::removeWireLoops()
   removeShortLoops();
 
   // loops involving only shorts have already been handled
-  if (rcV_.empty()) {
+  if (wire_sections_.empty()) {
     return;
   }
   // add all path edges
-  for (size_t j = 0; j < rcV_.size(); j++) {
-    graph_->addEdges(this, rcV_[j].from_idx, rcV_[j].to_idx, j);
+  for (size_t j = 0; j < wire_sections_.size(); j++) {
+    graph_->addEdges(
+        this, wire_sections_[j].from_idx, wire_sections_[j].to_idx, j);
   }
 
   // remove loops that have shorts by removing
@@ -494,7 +496,7 @@ void tmg_conn::removeWireLoops()
     int loop_removed = 0;
     done = true;
     graph_->clearVisited();
-    for (int jstart = 0; jstart < ptV_.size(); jstart++) {
+    for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
       tcg_edge* e = graph_->getFirstEdge(jstart);
       if (!e) {
         continue;
@@ -516,8 +518,9 @@ void tmg_conn::removeWireLoops()
             if (!eloop->s) {
               continue;
             }
-            const int dist = abs(pt(eloop->fr).x - pt(eloop->to).x)
-                             + abs(pt(eloop->fr).y - pt(eloop->to).y);
+            const int dist
+                = abs(wirePoint(eloop->fr).x - wirePoint(eloop->to).x)
+                  + abs(wirePoint(eloop->fr).y - wirePoint(eloop->to).y);
             if (dist >= max_dist) {
               max_dist = dist;
               max_k = k;
@@ -556,7 +559,7 @@ void tmg_conn::removeWireLoops()
 
   // report all remaining loops, and count components
   graph_->clearVisited();
-  for (int jstart = 0; jstart < ptV_.size(); jstart++) {
+  for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
     tcg_edge* e = graph_->getFirstEdge(jstart);
     if (!e) {
       continue;
@@ -638,7 +641,7 @@ int tmg_conn::isVisited(int j) const
 void tmg_conn::checkVisited()
 {
   std::vector<tcg_pt>& pgV = graph_->ptV_;
-  for (int j = 0; j < ptV_.size(); j++) {
+  for (int j = 0; j < wire_points_.size(); j++) {
     if (!pgV[j].visited) {
       connected_ = false;
       break;
@@ -648,14 +651,14 @@ void tmg_conn::checkVisited()
 
 int tmg_conn::getDisconnectedStart()
 {
-  for (int j = 0; j < ptV_.size(); j++) {
+  for (int j = 0; j < wire_points_.size(); j++) {
     if (!graph_->pt(j).visited) {
       if (graph_->pt(j).edges && !graph_->pt(j).edges->next) {
         return j;
       }
     }
   }
-  for (int j = 0; j < ptV_.size(); j++) {
+  for (int j = 0; j < wire_points_.size(); j++) {
     if (!graph_->pt(j).visited) {
       if (graph_->pt(j).edges) {
         return j;
@@ -667,11 +670,11 @@ int tmg_conn::getDisconnectedStart()
 
 void tmg_conn::copyWireIdToVisitedShorts(const int j)
 {
-  // copy pt(j)._dbwire_id to visited points shorted to j
-  const int wire_id = pt(j).dbwire_id;
-  tmg_rcpt* x0 = &pt(j);
-  for (tmg_rcpt* x = x0->sring; x && x != x0; x = x->sring) {
-    if (x->dbwire_id < 0 && graph_->pt(x - ptV_.data()).visited) {
+  // copy wirePoint(j)._dbwire_id to visited points shorted to j
+  const int wire_id = wirePoint(j).dbwire_id;
+  WirePoint* x0 = &wirePoint(j);
+  for (WirePoint* x = x0->sring; x && x != x0; x = x->sring) {
+    if (x->dbwire_id < 0 && graph_->pt(x - wire_points_.data()).visited) {
       x->dbwire_id = wire_id;
     }
   }

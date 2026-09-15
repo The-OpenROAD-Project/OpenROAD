@@ -129,6 +129,9 @@ or_integration_tests(
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
     pads_ihp_sg13g2_balance
+    pads_placed_not_fixed
+    pads_straps_through_pads
+    pads_via_repair_through_pads
     power_switch
     power_switch_cut_rows
     power_switch_daisy
@@ -143,6 +146,7 @@ or_integration_tests(
     region_temp_sensor
     region_temp_sensor_different_region_name
     repair_channel_inf_loop
+    repair_channel_out_of_options
     repair_vias
     report
     reset

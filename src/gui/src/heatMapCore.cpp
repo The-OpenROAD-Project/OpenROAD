@@ -24,7 +24,7 @@
 #include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
@@ -441,7 +441,6 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 odb::PtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
 {
   odb::PtrSet<odb::dbInst> selected_insts;
-#ifdef ENABLE_QT
   if (!useSelectedOnly() || !gui::Gui::enabled()) {
     return selected_insts;
   }
@@ -450,7 +449,6 @@ odb::PtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
       selected_insts.insert(std::any_cast<odb::dbInst*>(item.getObject()));
     }
   }
-#endif
   return selected_insts;
 }
 
