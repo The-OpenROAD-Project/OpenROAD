@@ -1,0 +1,40 @@
+{
+  "name": "dbTechLayerCutEnclosureTableDefRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bit",
+      "name": "cut_class_valid"
+    },
+    {
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "cut_class_",
+      "parent": "dbTechLayer"
+    },
+    {
+      "name": "default_rows_",
+      "type": "dbVector<std::tuple<int,int,int,int,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
+    },
+    {
+      "name": "width_rows_",
+      "type": "dbVector<std::tuple<int,int,int,int,int,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
+    }
+  ],
+  "h_includes": [
+    "dbVector.h"
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbTechLayerCutClassRule.h"
+  ]
+}

@@ -707,6 +707,14 @@ struct less<odb::dbTechLayerCutEnclosureRule*>
 };
 
 template <>
+struct less<odb::dbTechLayerCutEnclosureTableDefRule*>
+{
+  bool operator()(const odb::dbTechLayerCutEnclosureTableDefRule* lhs,
+                  const odb::dbTechLayerCutEnclosureTableDefRule* rhs) const
+      = delete;
+};
+
+template <>
 struct less<odb::dbTechLayerCutSpacingRule*>
 {
   bool operator()(const odb::dbTechLayerCutSpacingRule* lhs,
