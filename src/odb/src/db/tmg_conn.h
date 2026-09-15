@@ -14,6 +14,11 @@
 
 namespace odb {
 
+struct CandidateSection;
+
+using CandidateSections = std::array<CandidateSection, 32>;
+using CandidateSectionsPerTerminal = std::vector<CandidateSections>;
+
 class tmg_rc_sh
 {
  public:
@@ -151,11 +156,15 @@ class ShapeSearch
 };
 
 class ConnectionGraph;
-struct tmg_connect_shape
+
+// A wire section whose geometry is touching a terminal's shape, so it
+// is considered a candidate to possess the wire point that represents
+// the connection of the wire with that terminal.
+struct CandidateSection
 {
-  int k;
-  Rect rect;
-  int rtlev;
+  int index;
+  int routing_level; // From the database.
+  Rect terminal_box;
 };
 
 class tmg_conn
@@ -241,9 +250,10 @@ class tmg_conn
   std::vector<Terminal> terminals_;
   std::vector<Short> shorts_;
 
-  // Searching for which metal points correspond to terminals.
-  std::vector<std::array<tmg_connect_shape, 32>> csVV_;
-  std::array<tmg_connect_shape, 32>* csV_{nullptr};
+  // Used for determining the wire points that represent the connection
+  // with terminals.
+  CandidateSectionsPerTerminal csVV_;
+  CandidateSections* csV_{nullptr};
   std::vector<int> csNV_;
   int csN_{0};
   WirePoint* first_for_clear_{nullptr};
