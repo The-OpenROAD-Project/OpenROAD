@@ -79,11 +79,11 @@ TEST_F(TestBlockMacroChannels, DefHaloOnly)
 }
 
 // Base halo is floored by the DEF halo per side: the larger of the two wins.
-TEST_F(TestBlockMacroChannels, BaseHaloFloorsDefHalo)
+TEST_F(TestBlockMacroChannels, MinChannelFloorsDefHalo)
 {
   odb::dbInst* instance = createFixedMacro("macro", macro_x_, macro_y_);
   instance->setHalo(5000, 5000, 5000, 5000, /*is_soft=*/false);
-  macro_placer_->setBaseHalo(10000, 1000, 10000, 1000);
+  macro_placer_->setMinChannelSize(20000, 2000);
 
   macro_placer_->blockMacroChannels();
 
@@ -93,44 +93,29 @@ TEST_F(TestBlockMacroChannels, BaseHaloFloorsDefHalo)
   EXPECT_EQ(blockages[0], odb::Rect(40000, 45000, 160000, 155000));
 }
 
-// Per-macro halo has top priority over both the base halo and the DEF halo.
-TEST_F(TestBlockMacroChannels, PerMacroHaloOverrides)
-{
-  odb::dbInst* instance = createFixedMacro("macro", macro_x_, macro_y_);
-  instance->setHalo(5000, 5000, 5000, 5000, /*is_soft=*/false);
-  macro_placer_->setBaseHalo(10000, 10000, 10000, 10000);
-  macro_placer_->setMacroHalo(instance, 20000, 20000, 20000, 20000);
-
-  macro_placer_->blockMacroChannels();
-
-  const std::vector<odb::Rect> blockages = getBlockages();
-  ASSERT_EQ(blockages.size(), 1);
-  EXPECT_EQ(blockages[0], odb::Rect(30000, 30000, 170000, 170000));
-}
-
-// Macros with a soft DEF halo are skipped even when a base halo is set.
+// Macros with a soft DEF halo are skipped even when a min channel is set.
 TEST_F(TestBlockMacroChannels, SoftDefHaloSkipped)
 {
   odb::dbInst* instance = createFixedMacro("macro", macro_x_, macro_y_);
   instance->setHalo(5000, 5000, 5000, 5000, /*is_soft=*/true);
-  macro_placer_->setBaseHalo(10000, 10000, 10000, 10000);
+  macro_placer_->setMinChannelSize(20000, 20000);
 
   macro_placer_->blockMacroChannels();
 
   EXPECT_TRUE(getBlockages().empty());
 }
 
-// When the macro has no DEF halo, the base halo alone defines the blockage.
-TEST_F(TestBlockMacroChannels, BaseHaloOnly)
+// When the macro has no DEF halo, the channel size alone defines the blockage.
+TEST_F(TestBlockMacroChannels, MinChannelOnly)
 {
   createFixedMacro("macro", macro_x_, macro_y_);
-  macro_placer_->setBaseHalo(8000, 4000, 6000, 2000);
+  macro_placer_->setMinChannelSize(16000, 8000);
 
   macro_placer_->blockMacroChannels();
 
   const std::vector<odb::Rect> blockages = getBlockages();
   ASSERT_EQ(blockages.size(), 1);
-  EXPECT_EQ(blockages[0], odb::Rect(42000, 46000, 156000, 152000));
+  EXPECT_EQ(blockages[0], odb::Rect(42000, 46000, 158000, 154000));
 }
 
 // Unplaced macros are ignored.
