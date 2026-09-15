@@ -474,7 +474,7 @@ void NesterovPlace::runTimingDriven(int iter,
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
     // }
 
-    nbVec_[0]->setTrueReprintIterHeader();
+    getTopLevelNB()->setTrueReprintIterHeader();
     ++timing_driven_count;
 
     const int nbc_total_gcells_delta
@@ -748,7 +748,7 @@ void NesterovPlace::runRoutability(int iter,
   if (npVars_.routability_driven_mode && is_routability_need_
       && average_overflow_unscaled_ <= npVars_.routability_end_overflow
       && isPlacementSettled()) {
-    nbVec_[0]->setTrueReprintIterHeader();
+    getTopLevelNB()->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
     if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
@@ -895,6 +895,14 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
     return true;
   }
   return false;
+}
+
+NesterovBase* NesterovPlace::getTopLevelNB() const
+{
+  if (nbVec_.empty()) {
+    log_->error(GPL, 93, "Top-level NesterovBase is not initialized.");
+  }
+  return nbVec_[0].get();
 }
 
 std::string NesterovPlace::getReportsDir() const
@@ -1342,7 +1350,7 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 
   odb::dbRegion* region = db_inst->getRegion();
   if (!region) {
-    nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+    getTopLevelNB()->createCbkGCell(db_inst, gcell_index);
     return;
   }
 
