@@ -28,11 +28,6 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                   3
-negotiation finish   phase 1 (converged)
-total iterations              1
-  phase 1 iterations          1
-  phase 2 iterations          0
-diamond recoveries            0
 total displacement          3.0 u
 average displacement        1.0 u
 max displacement            2.8 u
