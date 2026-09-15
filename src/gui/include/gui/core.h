@@ -1066,10 +1066,10 @@ class Gui
   }
 
   // Add a net to the selection set
-  void addSelectedNet(const char* name);
+  void addSelectedNet(const std::string& name);
 
   // Add an instance to the selection set
-  void addSelectedInst(const char* name);
+  void addSelectedInst(const std::string& name);
 
   // Return the selected set
   const SelectionSet& selection();
@@ -1084,8 +1084,8 @@ class Gui
                                     int highlight_group = 0);
   void selectHighlightConnectedBufferTrees(bool select_flag,
                                            int highlight_group = 0);
-  void addInstToHighlightSet(const char* name, int highlight_group = 0);
-  void addNetToHighlightSet(const char* name, int highlight_group = 0);
+  void addInstToHighlightSet(const std::string& name, int highlight_group = 0);
+  void addNetToHighlightSet(const std::string& name, int highlight_group = 0);
 
   int selectAt(const odb::Rect& area, bool append = true);
   int selectNext();

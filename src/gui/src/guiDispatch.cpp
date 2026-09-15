@@ -180,7 +180,7 @@ void Gui::removeSelectedByType(const std::string& type)
   activeBackend()->removeSelectedByType(type);
 }
 
-void Gui::addSelectedNet(const char* name)
+void Gui::addSelectedNet(const std::string& name)
 {
   if (!hasUI()) {
     return;
@@ -190,7 +190,7 @@ void Gui::addSelectedNet(const char* name)
     return;
   }
 
-  auto* net = block->findNet(name);
+  auto* net = block->findNet(name.c_str());
   if (net == nullptr) {
     return;
   }
@@ -198,7 +198,7 @@ void Gui::addSelectedNet(const char* name)
   activeBackend()->addSelected(makeSelected(net));
 }
 
-void Gui::addSelectedInst(const char* name)
+void Gui::addSelectedInst(const std::string& name)
 {
   if (!hasUI()) {
     return;
@@ -208,7 +208,7 @@ void Gui::addSelectedInst(const char* name)
     return;
   }
 
-  auto* inst = block->findInst(name);
+  auto* inst = block->findInst(name.c_str());
   if (inst == nullptr) {
     return;
   }
@@ -272,7 +272,7 @@ void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
                                                        highlight_group);
 }
 
-void Gui::addInstToHighlightSet(const char* name, int highlight_group)
+void Gui::addInstToHighlightSet(const std::string& name, int highlight_group)
 {
   if (!hasUI()) {
     return;
@@ -282,7 +282,7 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
     return;
   }
 
-  auto* inst = block->findInst(name);
+  auto* inst = block->findInst(name.c_str());
   if (inst == nullptr) {
     logger_->error(utl::GUI, 100, "No instance named {} found.", name);
     return;
@@ -292,7 +292,7 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
   activeBackend()->addHighlighted(sel_inst_set, highlight_group);
 }
 
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
+void Gui::addNetToHighlightSet(const std::string& name, int highlight_group)
 {
   if (!hasUI()) {
     return;
@@ -302,7 +302,7 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
     return;
   }
 
-  auto* net = block->findNet(name);
+  auto* net = block->findNet(name.c_str());
   if (net == nullptr) {
     logger_->error(utl::GUI, 101, "No net named {} found.", name);
     return;
