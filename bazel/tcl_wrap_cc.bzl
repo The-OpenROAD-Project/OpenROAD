@@ -170,3 +170,22 @@ tcl_wrap_cc = rule(
         ),
     },
 )
+
+def _swig_defs_impl(ctx):
+    return [TclSwigInfo(
+        transitive_srcs = depset(),
+        includes = depset(),
+        swig_options = depset(ctx.attr.swig_options),
+    )]
+
+swig_defs = rule(
+    implementation = _swig_defs_impl,
+    doc = "Carries swig options into tcl_wrap_cc deps without generating " +
+          "code, letting a package (e.g. a submodule) declare options to " +
+          "its dependents.",
+    attrs = {
+        "swig_options": attr.string_list(
+            doc = "args to pass directly to the swig binary",
+        ),
+    },
+)

@@ -56,6 +56,27 @@ config_setting(
     },
 )
 
+# Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
+# A string flag rather than a bool leaves room for a "hip" value, mirroring
+# the backend branches in cmake/KokkosBackend.cmake.
+string_flag(
+    name = "gpu",
+    build_setting_default = "none",
+    values = [
+        "none",
+        "cuda",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "gpu_cuda",
+    flag_values = {
+        ":gpu": "cuda",
+    },
+    visibility = ["//visibility:public"],
+)
+
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
     "//src/ant",
@@ -119,6 +140,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
+    "//src/wmk",
+    "//src/wmk:ui",
     ":ord",
 ]
 
@@ -403,6 +426,8 @@ cc_binary(
         "//src/stt",
         "//src/tap",
         "//src/utl",
+        "//src/wmk",
+        "//src/wmk:hmac_sha256",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -457,6 +482,7 @@ python_wrap_cc(
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
+        "//src/wmk:swig-py",
     ],
 )
 
