@@ -636,8 +636,15 @@ diamond recovery: recovered 2/2 stuck cells.
 Negotiation phase 2: isolation point active, 1000 iterations.
       400 |          0 |         0 |         0
 Negotiation phase 2 converged at iteration 0.
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves               61224
+negotiation finish   phase 2 (converged)
+total iterations             44
+  phase 1 iterations         43
+  phase 2 iterations          1
+diamond recoveries            1
 total displacement     772619.5 u
 average displacement       17.1 u
 max displacement          647.5 u
@@ -707,10 +714,15 @@ Detailed placement improvement.
 [INFO DPL-0314] Found 0 site alignment problems.
 [INFO DPL-0311] Found 0 overlaps between adjacent cells.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
-Detailed Improvement Results
-------------------------------------------
-Original HPWL          2391468.8 u ( 1376890.3,  1014578.5)
-Final HPWL             2135126.1 u ( 1216403.4,   918722.8)
-Delta HPWL                 -10.7 % (     -11.7,       -9.4)
+Place Optimization Analysis
+---------------------------------
+total attempts          9034800
+relocated cells           38634
+total displacement     666113.2 u
+average displacement       17.2 u
+max displacement          470.4 u
+original HPWL         2391468.8 u
+improved HPWL         2135126.1 u
+delta HPWL                  -11 %
 
 No differences found.

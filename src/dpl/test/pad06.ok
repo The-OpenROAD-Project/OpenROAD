@@ -26,8 +26,15 @@ Iteration | Violations |    Cells |    Sites
         1 |          1 |         1 |         0
         2 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 2.
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   3
+negotiation finish   phase 1 (converged)
+total iterations              3
+  phase 1 iterations          3
+  phase 2 iterations          0
+diamond recoveries            0
 total displacement          4.1 u
 average displacement        2.0 u
 max displacement            4.1 u
