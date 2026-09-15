@@ -1355,7 +1355,7 @@ void tmg_conn::analyzeNet(dbNet* net)
     }
 
     identifyShorts();
-    buildConnectionGraph();
+    removeWireLoops();
     identifyTerminalWirePoints();
 
     if (has_special_wires_) {

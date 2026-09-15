@@ -185,7 +185,7 @@ class tmg_conn
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void identifyShorts();
   void removeShortLoops();
-  void buildConnectionGraph();
+  void removeWireLoops();
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
