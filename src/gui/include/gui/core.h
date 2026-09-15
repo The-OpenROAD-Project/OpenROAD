@@ -838,19 +838,163 @@ class Dialogs
   virtual odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) = 0;
 };
 
-// Optional backend plugged in when the Qt GUI is not running (e.g. the web
-// viewer).  Lets Gui::enabled/redraw/pause work without Qt so that debug
-// graphics (gpl, cts, drt, mpl, ...) light up in headless contexts.
-// Installed via Gui::setHeadlessViewer.  The Qt GUI, when present, always
-// takes precedence: the viewer is only consulted when main_window is null.
-class HeadlessViewer
+// What Gui dispatches to: a backend of Gui, implemented by the front ends the
+// user actually sees.  The Qt gui installs one wrapping its MainWindow via
+// Gui::setBackend; a viewer with no Qt -- the web viewer -- installs one via
+// Gui::setHeadlessViewer, which is what lets debug graphics (gpl, cts, drt,
+// mpl, ...) light up in headless contexts.  A window backend takes precedence
+// when both are present.
+class GuiBackend
 {
  public:
-  virtual ~HeadlessViewer() = default;
+  virtual ~GuiBackend() = default;
+
+  // True only for a backend that owns a Qt main window.  Gui::hasUI() is
+  // this; commands needing Qt widgets gate on it, while commands that any
+  // viewer can serve gate on Gui::enabled() instead.
+  virtual bool hasWindow() const { return false; }
 
   // Called by Renderer::redraw() / Gui::redraw().  Typically broadcasts
   // a refresh notification to connected clients.
   virtual void redraw() = 0;
+
+  // Told that a renderer came or went, so a backend can build and tear down
+  // whatever UI it offers for one -- the Qt gui's display-control rows, say.
+  // The renderers themselves belong to Gui, which registers them whether a
+  // backend is installed or not and outlives any window; DisplayControls
+  // replays Gui::renderers() when it is constructed.  A backend with nothing
+  // to show for a renderer overrides neither.
+  virtual void registerRenderer(Renderer* /* renderer */) {}
+  virtual void unregisterRenderer(Renderer* /* renderer */) {}
+
+  // Show a message in whatever status surface the backend has.  A viewer
+  // with none drops it.
+  virtual void status(const std::string& /* message */) {}
+
+  // Selection and highlighting.  A backend with no selection model leaves
+  // these alone: nothing is selected, nothing highlights, and the queries
+  // answer empty.  Gui guards each on hasWindow() today, so only the Qt gui
+  // sees them until a viewer implements its own.
+  virtual void setSelected(const Selected& /* selection */) {}
+  virtual void addSelected(const Selected& /* selection */) {}
+  virtual void removeSelectedByType(const std::string& /* type */) {}
+  virtual const SelectionSet& selection()
+  {
+    static const SelectionSet empty;
+    return empty;
+  }
+  virtual const Selected& inspectorSelection()
+  {
+    static const Selected empty;
+    return empty;
+  }
+  virtual bool anyObjectInSet(bool /* selection_set */,
+                              odb::dbObjectType /* obj_type */) const
+  {
+    return false;
+  }
+  virtual void addHighlighted(const SelectionSet& /* selection */,
+                              int /* highlight_group */)
+  {
+  }
+  virtual void clearHighlighted(int /* highlight_group */) {}
+  virtual void selectHighlightConnectedInsts(bool /* select_flag */,
+                                             int /* highlight_group */)
+  {
+  }
+  virtual void selectHighlightConnectedNets(bool /* select_flag */,
+                                            bool /* output */,
+                                            bool /* input */,
+                                            int /* highlight_group */)
+  {
+  }
+  virtual void selectHighlightConnectedBufferTrees(bool /* select_flag */,
+                                                   int /* highlight_group */)
+  {
+  }
+  virtual int selectArea(const odb::Rect& /* area */, bool /* append */)
+  {
+    return 0;
+  }
+  virtual int selectNext() { return 0; }
+  virtual int selectPrevious() { return 0; }
+  virtual void selectionAnimation(int /* repeat */) {}
+
+  // View.  A backend with no viewport ignores these.
+  virtual void zoomTo(const odb::Rect& /* rect_dbu */) {}
+  virtual void zoomTo(const odb::Point& /* focus */, int /* diameter */) {}
+  virtual void zoomIn() {}
+  virtual void zoomIn(const odb::Point& /* focus_dbu */) {}
+  virtual void zoomOut() {}
+  virtual void zoomOut(const odb::Point& /* focus_dbu */) {}
+  virtual void centerAt(const odb::Point& /* focus_dbu */) {}
+  virtual void setResolution(double /* pixels_per_dbu */) {}
+  virtual void fit() {}
+
+  // Labels and rulers.  The add calls return the name the backend gave the
+  // new object, or an empty string if it has nowhere to put one.
+  virtual std::string addLabel(int /* x */,
+                               int /* y */,
+                               const std::string& /* text */,
+                               std::optional<Painter::Color> /* color */,
+                               std::optional<int> /* size */,
+                               std::optional<Painter::Anchor> /* anchor */,
+                               const std::optional<std::string>& /* name */)
+  {
+    return "";
+  }
+  virtual void deleteLabel(const std::string& /* name */) {}
+  virtual void clearLabels() {}
+  virtual std::string addRuler(int /* x0 */,
+                               int /* y0 */,
+                               int /* x1 */,
+                               int /* y1 */,
+                               const std::string& /* label */,
+                               const std::string& /* name */,
+                               bool /* euclidian */)
+  {
+    return "";
+  }
+  virtual void deleteRuler(const std::string& /* name */) {}
+  virtual void clearRulers() {}
+
+  // Display-control colour and persistence.  Colour is a viewport concept
+  // and the settings live with the widget, so a backend without one ignores
+  // all three.
+  virtual void setDisplayControlColor(const std::string& /* name */,
+                                      const Painter::Color& /* color */)
+  {
+  }
+  virtual void saveDisplayControls() {}
+  virtual void restoreDisplayControls() {}
+
+  // Per-net overlays the layout draws on top of the design.  A backend with
+  // no layout keeps no such sets.
+  virtual void addFocusNet(odb::dbNet* /* net */) {}
+  virtual void removeFocusNet(odb::dbNet* /* net */) {}
+  virtual void clearFocusNets() {}
+  virtual void addRouteGuides(odb::dbNet* /* net */) {}
+  virtual void removeRouteGuides(odb::dbNet* /* net */) {}
+  virtual void clearRouteGuides() {}
+  virtual void addNetTracks(odb::dbNet* /* net */) {}
+  virtual void removeNetTracks(odb::dbNet* /* net */) {}
+  virtual void clearNetTracks() {}
+
+  // Render one of the auxiliary views to an image file.  Width and height
+  // are unset when the caller wants the backend's own sizing.
+  virtual void saveClockTreeImage(const std::string& /* clock_name */,
+                                  const std::string& /* filename */,
+                                  const std::string& /* scene */,
+                                  std::optional<int> /* width_px */,
+                                  std::optional<int> /* height_px */)
+  {
+  }
+  virtual void saveHistogramImage(const std::string& /* filename */,
+                                  const std::string& /* mode */,
+                                  std::optional<int> /* width_px */,
+                                  std::optional<int> /* height_px */)
+  {
+  }
 
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
@@ -861,11 +1005,16 @@ class HeadlessViewer
   // can use this to gate unsafe cross-thread reads of renderer state.
   virtual bool isPaused() const = 0;
 
-  // Display-control accessors consulted by Gui::*DisplayControls* when the Qt
-  // GUI (and its DisplayControls widget) is absent.  Default implementations
-  // assume "everything visible, nothing selectable" so headless renderers draw
-  // by default without a Qt widget.  Viewers that track their own visibility
-  // model (e.g. the web viewer) may override these.
+  // Display-control state.  Gui::*DisplayControls* dispatch straight to
+  // these on whatever backend is installed -- the Qt gui answers from its
+  // DisplayControls widget, the web viewer from its own visibility model.
+  //
+  // A backend that overrides none of them shows everything and selects
+  // nothing.  That is the permissive direction deliberately: a viewer with
+  // no visibility model of its own should draw the design rather than hide
+  // it.  The cost is that a backend which forgets one of these reports
+  // "visible" rather than failing, so an override missed is an override
+  // that looks like it works.
   virtual bool checkDisplayControlVisible(const std::string& /* name */)
   {
     return true;
@@ -883,6 +1032,10 @@ class HeadlessViewer
   {
   }
 };
+
+// The web viewer installs itself through Gui::setHeadlessViewer; it is a
+// GuiBackend that reports no window.
+using HeadlessViewer = GuiBackend;
 
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
@@ -913,10 +1066,10 @@ class Gui
   }
 
   // Add a net to the selection set
-  void addSelectedNet(const char* name);
+  void addSelectedNet(const std::string& name);
 
   // Add an instance to the selection set
-  void addSelectedInst(const char* name);
+  void addSelectedInst(const std::string& name);
 
   // Return the selected set
   const SelectionSet& selection();
@@ -931,8 +1084,8 @@ class Gui
                                     int highlight_group = 0);
   void selectHighlightConnectedBufferTrees(bool select_flag,
                                            int highlight_group = 0);
-  void addInstToHighlightSet(const char* name, int highlight_group = 0);
-  void addNetToHighlightSet(const char* name, int highlight_group = 0);
+  void addInstToHighlightSet(const std::string& name, int highlight_group = 0);
+  void addNetToHighlightSet(const std::string& name, int highlight_group = 0);
 
   int selectAt(const odb::Rect& area, bool append = true);
   int selectNext();
@@ -1167,6 +1320,11 @@ class Gui
   const std::set<HeatMapDataSource*>& getHeatMaps();
   HeatMapDataSource* getHeatMap(const std::string& name);
 
+  // Reset DBU formatting to plain integers.  A front-end that knows the
+  // design's units installs its own (MainWindow::init); the Qt gui calls
+  // this again when its window closes.
+  static void resetDbuConversions();
+
   // returns the Gui singleton
   static Gui* get();
 
@@ -1180,8 +1338,13 @@ class Gui
   // should gate on this rather than enabled().
   static bool hasUI();
 
-  // Install / inspect a HeadlessViewer (used when the Qt GUI is not
-  // running).  See the HeadlessViewer class comment for semantics.
+  // Install / inspect the Qt gui's backend.  MainWindow sets it when it
+  // opens and clears it when it closes.
+  void setBackend(GuiBackend* backend) { backend_ = backend; }
+  GuiBackend* getBackend() const { return backend_; }
+
+  // Install / inspect a backend for a viewer with no Qt window (the web
+  // viewer).  A window backend takes precedence over it.
   void setHeadlessViewer(HeadlessViewer* viewer);
   HeadlessViewer* getHeadlessViewer() const { return headless_viewer_; }
 
@@ -1222,6 +1385,13 @@ class Gui
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
 
+  // The backend to dispatch to: the Qt window when one is open, otherwise
+  // whatever headless viewer is installed, otherwise nothing.
+  GuiBackend* activeBackend() const
+  {
+    return backend_ != nullptr ? backend_ : headless_viewer_;
+  }
+
   bool filterSelectionProperties(const Descriptor::Properties& properties,
                                  const std::string& attribute,
                                  const std::any& value,
@@ -1251,7 +1421,9 @@ class Gui
 
   std::string main_window_title_ = "OpenROAD";
 
-  // Used when Qt GUI is not active.  Installed by the web viewer.
+  // Installed by the Qt gui's MainWindow while it is open.
+  GuiBackend* backend_ = nullptr;
+  // Used when the Qt gui is not active.  Installed by the web viewer.
   HeadlessViewer* headless_viewer_ = nullptr;
   ChartFactory chart_factory_;
   Dialogs* dialogs_ = nullptr;

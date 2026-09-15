@@ -8,6 +8,8 @@
 #include "drt/TritonRoute.h"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
+#include "drt-global.h"
+#include "dr/WatermarkCost.h"
 %}
 
 %include "../../Exception.i"
@@ -46,6 +48,30 @@ void detailed_route_set_unidirectional_layer(const char* layerName)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setUnidirectionalLayer(layerName);
+}
+
+// Routing watermark: set the multiplier applied to the non-preferred-
+// direction ("wrong-way") grid cost when the detailed router is
+// routing a watermark-tagged net. Higher values tighten the paper's
+// "limit way" constraint. Default is defined in drt-global.h
+// (WATERMARK_WRONGWAY_MULT).
+void set_routing_watermark_strength_cmd(double strength)
+{
+  if (!drt::isValidWatermarkStrength(strength)) {
+    ord::OpenRoad::openRoad()->getLogger()->error(
+        utl::DRT, 802,
+        "Routing watermark strength must be finite and between 0 and {:.0f}.",
+        drt::maxWatermarkStrength());
+  }
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->getRouterConfiguration()->WATERMARK_WRONGWAY_MULT
+      = static_cast<float>(strength);
+}
+
+double get_routing_watermark_strength_cmd()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  return router->getRouterConfiguration()->WATERMARK_WRONGWAY_MULT;
 }
 
 void detailed_route_cmd(const char* outputMazeFile,

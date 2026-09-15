@@ -32,28 +32,6 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
 }
 
-Gui* gui::Gui::get()
-{
-  static Gui* singleton = new Gui();
-  return singleton;
-}
-
-bool gui::Gui::enabled()
-{
-  return Gui::get()->getHeadlessViewer() != nullptr;
-}
-
-bool gui::Gui::hasUI()
-{
-  return false;
-}
-
-void gui::Gui::registerRenderer(gui::Renderer* renderer)
-{
-  renderers_.insert(renderer);
-  redraw();
-}
-
 void HeatMapDataSource::registerHeatMap()
 {
   // gpl / other modules call this to expose their heatmap to the GUI.
@@ -63,80 +41,12 @@ void HeatMapDataSource::registerHeatMap()
   // a no-op until heatmap plumbing for ad-hoc sources lands.
 }
 
-void gui::Gui::unregisterRenderer(gui::Renderer* renderer)
-{
-  renderers_.erase(renderer);
-  redraw();
-}
-
-void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
-{
-}
-
-void gui::Gui::redraw()
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->redraw();
-  }
-}
-
-void gui::Gui::pause(int timeout)
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->pause(timeout);
-  }
-}
-
-void gui::Gui::setHeadlessViewer(HeadlessViewer* viewer)
-{
-  headless_viewer_ = viewer;
-}
-
 void gui::Gui::setChartFactory(ChartFactory factory)
 {
   chart_factory_ = std::move(factory);
 }
 
-void Gui::status(const std::string& /* message */)
-{
-}
-
 void Gui::triggerAction(const std::string& /* action */)
-{
-}
-
-Selected Gui::makeSelected(const std::any& object)
-{
-  return DescriptorRegistry::instance()->makeSelected(object);
-}
-
-void Gui::setSelected(const Selected& selection)
-{
-}
-
-const SelectionSet& Gui::selection()
-{
-  static SelectionSet dummy;
-  return dummy;
-}
-
-void Gui::registerDescriptor(const std::type_info& type,
-                             const Descriptor* descriptor)
-{
-  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
-}
-
-void Gui::unregisterDescriptor(const std::type_info& type)
-{
-  DescriptorRegistry::instance()->unregisterDescriptor(type);
-}
-
-const Descriptor* Gui::getDescriptor(const std::type_info& type) const
-{
-  return DescriptorRegistry::instance()->getDescriptor(type);
-}
-
-void Gui::removeSelectedByType(const std::string& /* type */)
 {
 }
 
@@ -217,21 +127,6 @@ void Gui::gifAddFrame(std::optional<int> key,
 {
 }
 
-void Gui::deleteLabel(const std::string& name)
-{
-}
-
-std::string Gui::addLabel(int x,
-                          int y,
-                          const std::string& text,
-                          std::optional<Painter::Color> color,
-                          std::optional<int> size,
-                          std::optional<Painter::Anchor> anchor,
-                          const std::optional<std::string>& name)
-{
-  return "";
-}
-
 Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
@@ -250,10 +145,6 @@ void Gui::saveImage(const std::string& filename,
 {
 }
 
-void Gui::clearSelections()
-{
-}
-
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
                 const std::string& attribute,
@@ -262,56 +153,6 @@ int Gui::select(const std::string& type,
                 int highlight_group)
 {
   return 0;
-}
-
-// The display-control state belongs to whatever front-end is installed, which
-// for a no-Qt binary is the headless viewer (e.g. the web viewer).  Without a
-// viewer everything is visible so headless renderers draw by default.
-void Gui::setDisplayControlsVisible(const std::string& name, bool value)
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->setDisplayControlVisible(name, value);
-  }
-}
-
-bool Gui::checkDisplayControlsVisible(const std::string& name)
-{
-  if (headless_viewer_ != nullptr) {
-    return headless_viewer_->checkDisplayControlVisible(name);
-  }
-  return true;
-}
-
-void Gui::clearHighlights(int highlight_group)
-{
-}
-
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
-{
-}
-
-void Gui::addFocusNet(odb::dbNet* net)
-{
-}
-
-void Gui::removeFocusNet(odb::dbNet* net)
-{
-}
-
-void Gui::addRouteGuides(odb::dbNet* net)
-{
-}
-
-void Gui::removeRouteGuides(odb::dbNet* net)
-{
-}
-
-void Gui::addNetTracks(odb::dbNet* net)
-{
-}
-
-void Gui::removeNetTracks(odb::dbNet* net)
-{
 }
 
 void Gui::timingCone(Term term, bool fanin, bool fanout)

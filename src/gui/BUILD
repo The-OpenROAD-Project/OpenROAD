@@ -27,6 +27,7 @@ CORE_SRCS = [
     "src/heatMapCore.cpp",
     "src/heatMapPinDensity.cpp",
     "src/heatMapPlacementDensity.cpp",
+    "src/guiDispatch.cpp",
     "src/init_descriptors.cpp",
     "src/renderer.cpp",
     "src/staDescriptors.cpp",
@@ -38,8 +39,10 @@ CORE_SRCS = [
 # :gui_qt, so the Qt build no longer carries a second, separately compiled
 # copy of these objects.
 #
-# Not yet complete on its own: the Gui dispatch it calls into still lives in
-# gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of those too.
+# Not yet complete on its own.  It carries Gui's dispatch spine, but the Tcl
+# command surface and the startGui/initGui entry points are still implemented
+# twice, in gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of
+# those too.  Phase 3 is moving that surface here slice by slice.
 cc_library(
     name = "core",
     srcs = CORE_SRCS + [
@@ -138,7 +141,6 @@ QT_GUI_PLATFORMS = {
             # object in the same link as :core's.
             exclude = CORE_SRCS + [
                 "src/stub.cpp",
-                "src/stub_heatMap.cpp",
             ],
         ) + [
             ":gui_swig",
