@@ -116,7 +116,8 @@ ViaRepair::LayerViaTree ViaRepair::collectVias()
         wire->getViaBoxes(via_boxes);
         for (const auto& via_box : via_boxes) {
           auto* layer = via_box.getTechLayer();
-          if (layer->getType() == odb::dbTechLayerType::CUT) {
+          if (layer != nullptr
+              && layer->getType() == odb::dbTechLayerType::CUT) {
             cut_layer = layer;
             via_count_[layer]++;
           }
@@ -176,7 +177,7 @@ ViaRepair::ObsRect ViaRepair::collectNetObstructions(odb::dbBlock* block)
       odb::dbShape::getViaBoxes(shape, via_boxes);
       for (const auto& via_box : via_boxes) {
         auto* layer = via_box.getTechLayer();
-        if (layer->getType() != odb::dbTechLayerType::CUT) {
+        if (layer == nullptr || layer->getType() != odb::dbTechLayerType::CUT) {
           continue;
         }
         obstructions[layer].insert(via_box.getBox());
@@ -201,7 +202,7 @@ ViaRepair::ObsRect ViaRepair::collectInstanceObstructions(odb::dbBlock* block)
     odb::dbMaster* master = inst->getMaster();
     for (auto* obs : master->getObstructions()) {
       auto* layer = obs->getTechLayer();
-      if (layer->getType() != odb::dbTechLayerType::CUT) {
+      if (layer == nullptr || layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
       odb::Rect obs_rect = obs->getBox();
@@ -210,7 +211,7 @@ ViaRepair::ObsRect ViaRepair::collectInstanceObstructions(odb::dbBlock* block)
     }
 
     for (const auto& [layer, shapes] : InstanceGrid::getInstancePins(inst)) {
-      if (layer->getType() != odb::dbTechLayerType::CUT) {
+      if (layer == nullptr || layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
       auto& layer_obs = obstructions[layer];

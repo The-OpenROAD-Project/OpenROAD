@@ -992,7 +992,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
 void InitFloorplan::makeTracks()
 {
   for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
-    if (layer->getType() == dbTechLayerType::ROUTING
+    if (layer != nullptr && layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
       if (layer->getFirstLastPitch() > 0) {
         makeTracksNonUniform(layer,

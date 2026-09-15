@@ -467,7 +467,7 @@ void FlexGridGraph::initTracks(
     const odb::Rect& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
-    if (layer->getType() != dbTechLayerType::ROUTING) {
+    if (layer == nullptr || layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frLayerNum currLayerNum = layer->getLayerNum();

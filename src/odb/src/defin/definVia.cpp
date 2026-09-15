@@ -262,7 +262,7 @@ void definVia::viaEnd()
   bool has_cut = false;
   for (dbBox* box : boxes) {
     dbTechLayer* layer = box->getTechLayer();
-    if (layer->getType() == dbTechLayerType::CUT) {
+    if (layer && layer->getType() == dbTechLayerType::CUT) {
       has_cut = true;
       break;
     }
