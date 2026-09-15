@@ -10,10 +10,12 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
+#include "sta/TimingArc.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
@@ -270,13 +272,25 @@ TEST_F(TestDbSta, ReassociateModITermPin)
 //   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
 //                                   nd1/A2 <- in2
 //
-// Flow:
-//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin name
-//   2. Delete upstream b1 + updateTiming -> free
-//   3. Add a fresh BUF + clock + updateTiming -> recycle
-//   4. Assert the captured Path's prev slot has been recycled: pin()
-//      decodes to data that belongs to a different instance than nd1's
-//      real input.
+// rsz's sizing moves need the *input* LibertyPort of the driver cell on a
+// path.  Reading it from drvr_path->prevPath()->pin() is unsafe: the netlist
+// edits repair_timing performs free and recycle the per-vertex Path arena, so
+// a Path* captured before an edit decodes to whatever now occupies the slot.
+// In #10210 that yielded a port name absent from the driver's swappable
+// cells, findLibertyPort() returned null, and upsizeCell() crashed.  The fix
+// reads the port from drvr_path->prevArc()->from(), which is carried on the
+// path itself and stays consistent with the driver.
+//
+// This test deliberately never dereferences a Path across a netlist edit --
+// doing so is the undefined behavior the fix exists to avoid, and asan traps
+// it.  Instead it re-queries the driver path after every edit and checks the
+// invariant the fix relies on, plus the graph rebuild the edits should cause:
+//   1. Baseline: prevArc()->from() is an input port of nd1's own cell, and
+//      the critical path into nd1/ZN arrives through A1 (the clk cone).
+//   2. Delete upstream b1 + updateTiming: the A1 cone loses its driver, so a
+//      fresh query must show the critical path now arriving through A2.
+//   3. Add a fresh BUF + clock + updateTiming: the invariant still holds and
+//      the network stays self-consistent.
 TEST_F(TestDbSta, StalePrevPath)
 {
   const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
@@ -287,21 +301,72 @@ TEST_F(TestDbSta, StalePrevPath)
 
   Network* network = sta_->network();
 
-  Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
-  Path* drvr_path = sta_->vertexWorstArrivalPath(
-      sta_->ensureGraph()->pinDrvrVertex(network->findPin(nd1, "ZN")),
-      MinMax::max());
-  ASSERT_NE(drvr_path, nullptr);
-  ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
-  const Path* pre_addr = drvr_path->prevPath();
-  ASSERT_NE(pre_addr, nullptr);
-  const std::string pre_pin_name = network->pathName(pre_addr->pin(sta_.get()));
+  // Re-query nd1's driver path from the live graph.  The result is only valid
+  // until the next netlist edit, so it is used immediately and never stored.
+  auto nd1_drvr_path = [&]() -> Path* {
+    Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
+    EXPECT_NE(nd1, nullptr);
+    if (nd1 == nullptr) {
+      return nullptr;
+    }
+    Pin* zn = network->findPin(nd1, "ZN");
+    EXPECT_NE(zn, nullptr);
+    if (zn == nullptr) {
+      return nullptr;
+    }
+    return sta_->vertexWorstArrivalPath(sta_->ensureGraph()->pinDrvrVertex(zn),
+                                        MinMax::max());
+  };
 
-  // 2. Free upstream Path[] slots.
+  // The invariant rsz depends on: the driver's input port comes from the
+  // path's own timing arc, so it always resolves on the driver's cell -- which
+  // is exactly the lookup upsizeCell()/downsizeCell() perform by name on the
+  // candidate replacement cells.  Returns the port name for the caller.
+  auto drvr_in_port_name = [&](Path* drvr_path) -> std::string {
+    EXPECT_NE(drvr_path, nullptr);
+    if (drvr_path == nullptr) {
+      return {};
+    }
+    const Pin* drvr_pin = drvr_path->pin(sta_.get());
+    EXPECT_EQ(network->pathName(drvr_pin), "nd1/ZN");
+
+    const TimingArc* in_arc = drvr_path->prevArc(sta_.get());
+    EXPECT_NE(in_arc, nullptr);
+    if (in_arc == nullptr) {
+      return {};
+    }
+    const LibertyPort* in_port = in_arc->from();
+    EXPECT_NE(in_port, nullptr);
+    if (in_port == nullptr) {
+      return {};
+    }
+
+    const LibertyCell* drvr_cell
+        = network->libertyCell(network->instance(drvr_pin));
+    EXPECT_NE(drvr_cell, nullptr);
+    if (drvr_cell != nullptr) {
+      EXPECT_EQ(in_port->libertyCell(), drvr_cell);
+      EXPECT_EQ(drvr_cell->findLibertyPort(in_port->name()), in_port);
+    }
+    return in_port->name();
+  };
+
+  // 1. Baseline: the clk cone through b1/inv1 wins, so the arc is A1 -> ZN.
+  const std::string pre_in_port = drvr_in_port_name(nd1_drvr_path());
+  EXPECT_EQ(pre_in_port, "A1");
+
+  // 2. Delete the driver of the A1 cone and rebuild timing.
   sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
   sta_->updateTiming(true);
 
-  // 3. Recycle freed slots via a single fresh BUF driven by a new clock.
+  const std::string post_in_port = drvr_in_port_name(nd1_drvr_path());
+  EXPECT_EQ(post_in_port, "A2")
+      << "critical path into nd1/ZN should move to the in2 cone once b1 is "
+         "deleted";
+  EXPECT_NE(pre_in_port, post_in_port);
+
+  // 3. Add a fresh BUF driven by a new clock; the arena slots freed in step 2
+  //    get reused here.  A freshly queried path must still be self-consistent.
   odb::dbNet* in3_net = odb::dbNet::create(block_, "in3");
   odb::dbBTerm* new_bt = odb::dbBTerm::create(in3_net, "in3");
   new_bt->setIoType(odb::dbIoType::INPUT);
@@ -318,17 +383,8 @@ TEST_F(TestDbSta, StalePrevPath)
       "clk2", clk2_pins, false, 0.2f, clk2_waveform, "", sta_->cmdMode());
   sta_->updateTiming(true);
 
-  // 4. Staleness evidence. Pointer address is same but pin name has changed.
-  const Path* post_addr = drvr_path->prevPath();
-  const std::string post_pin_name
-      = post_addr ? network->pathName(post_addr->pin(sta_.get()))
-                  : std::string("<null>");
-
-  EXPECT_EQ(pre_addr, post_addr)
-      << "stale-pointer signature: prev_path_ address unchanged";
-  EXPECT_NE(pre_pin_name, post_pin_name)
-      << "but slot content should differ after free+reuse. before="
-      << pre_pin_name << " after=" << post_pin_name;
+  EXPECT_EQ(drvr_in_port_name(nd1_drvr_path()), "A2");
+  db_network_->checkAxioms();
 }
 
 }  // namespace sta
