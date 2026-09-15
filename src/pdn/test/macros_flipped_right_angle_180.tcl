@@ -1,18 +1,15 @@
-# test that a right-angle rotated instance's straps honor the flip, not the
-# rotation
+# test the half-turn half of the right-angle orientations
 #
-# A strap's direction comes from its layer, which is fixed in the die frame and
-# cannot turn with the instance, so a rotated macro's grid has to be written in
-# the rotated frame to begin with.  R90 is that frame, and the offsets are
-# measured against it:
-#   - R90 (W) is the reference, so nothing moves
-#   - MXR90 (FW) is R90 with the placed x mirrored, so the vertical (metal6)
-#     offsets are measured from the right edge instead
-# The horizontal (metal5) offsets stay put for both, so each macro is the
-# control for the other's unmirrored axis.  macros_flipped_right_angle_180
-# covers the two orientations that are a half turn from these, and
-# macros_flipped_right_angle_halo covers -halo and ring -core_offsets, which
-# name edges rather than directions and so do turn with the instance.
+# macros_flipped_right_angle covers W and FW; the other two right-angle
+# orientations are each of those turned 180, and a half turn reverses both
+# placed axes.  Measured against R90, the frame a rotated macro's grid is
+# written in:
+#   - MYR90 (FE) is R90 with the placed y mirrored, so the horizontal (metal5)
+#     offsets are measured from the top edge and the vertical (metal6) ones
+#     stay put
+#   - R270 (E) is R90 turned 180, so both mirror
+# Between the two tests all four right-angle orientations, and all four
+# combinations of the two mirror flags, are covered.
 #
 # No halo here: the core is fully rowed, so any halo intrudes into rows the
 # instance does not cover (PDN-0008).  macros_flipped_right_angle_halo covers
@@ -52,8 +49,8 @@ proc place_rotated { name orient x y } {
 
 unplace_std_cells
 
-place_rotated "frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem" "R90" 49970 100800
-place_rotated "dcache.data.data_arrays_0.data_arrays_0_ext.mem" "MXR90" 199880 100800
+place_rotated "frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem" "MYR90" 49970 100800
+place_rotated "dcache.data.data_arrays_0.data_arrays_0_ext.mem" "R270" 199880 100800
 
 # re-cut the rows for where the macros actually sit, so the followpins stop at
 # the macro edges instead of running through them
@@ -76,26 +73,26 @@ add_pdn_stripe -layer metal7 -width 1.4 -pitch 40.0 -offset 2.5
 add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal4 metal7}
 
-define_pdn_grid -macro -name "sram_r90" \
+define_pdn_grid -macro -name "sram_fe" \
   -instances "frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem"
-add_pdn_stripe -grid "sram_r90" -layer metal5 -width 0.93 -spacing 1.5 -pitch 6.0 -offset 1.5
-add_pdn_stripe -grid "sram_r90" -layer metal6 -width 0.93 -spacing 1.5 -pitch 15.0 -offset 2.5
+add_pdn_stripe -grid "sram_fe" -layer metal5 -width 0.93 -spacing 1.5 -pitch 6.0 -offset 1.5
+add_pdn_stripe -grid "sram_fe" -layer metal6 -width 0.93 -spacing 1.5 -pitch 15.0 -offset 2.5
 
-add_pdn_connect -grid "sram_r90" -layers {metal4 metal5}
-add_pdn_connect -grid "sram_r90" -layers {metal5 metal6}
-add_pdn_connect -grid "sram_r90" -layers {metal6 metal7}
+add_pdn_connect -grid "sram_fe" -layers {metal4 metal5}
+add_pdn_connect -grid "sram_fe" -layers {metal5 metal6}
+add_pdn_connect -grid "sram_fe" -layers {metal6 metal7}
 
-define_pdn_grid -macro -name "sram_fw" \
+define_pdn_grid -macro -name "sram_r270" \
   -instances "dcache.data.data_arrays_0.data_arrays_0_ext.mem"
-add_pdn_stripe -grid "sram_fw" -layer metal5 -width 0.93 -spacing 1.5 -pitch 6.0 -offset 1.5
-add_pdn_stripe -grid "sram_fw" -layer metal6 -width 0.93 -spacing 1.5 -pitch 15.0 -offset 2.5
+add_pdn_stripe -grid "sram_r270" -layer metal5 -width 0.93 -spacing 1.5 -pitch 6.0 -offset 1.5
+add_pdn_stripe -grid "sram_r270" -layer metal6 -width 0.93 -spacing 1.5 -pitch 15.0 -offset 2.5
 
-add_pdn_connect -grid "sram_fw" -layers {metal4 metal5}
-add_pdn_connect -grid "sram_fw" -layers {metal5 metal6}
-add_pdn_connect -grid "sram_fw" -layers {metal6 metal7}
+add_pdn_connect -grid "sram_r270" -layers {metal4 metal5}
+add_pdn_connect -grid "sram_r270" -layers {metal5 metal6}
+add_pdn_connect -grid "sram_r270" -layers {metal6 metal7}
 
 pdngen
 
-set def_file [make_result_file macros_flipped_right_angle.def]
+set def_file [make_result_file macros_flipped_right_angle_180.def]
 write_def $def_file
-diff_files macros_flipped_right_angle.defok $def_file
+diff_files macros_flipped_right_angle_180.defok $def_file

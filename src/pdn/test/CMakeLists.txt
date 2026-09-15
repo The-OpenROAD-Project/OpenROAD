@@ -106,6 +106,8 @@ or_integration_tests(
     macros_flipped_narrow_channel
     macros_flipped_number_of_straps
     macros_flipped_right_angle
+    macros_flipped_right_angle_180
+    macros_flipped_right_angle_halo
     macros_flipped_straps
     macros_grid_check
     macros_grid_not_used

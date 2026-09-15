@@ -47,20 +47,69 @@ Grid::Grid(VoltageDomain* domain,
 
 Grid::~Grid() = default;
 
-// R0, MY, MX and R180 keep the axes, so they are measured against the master as
-// it was drawn and the answer is just the orientation's own sign flips.
+// Where each drawn edge ends up once the cell is placed.
 //
-// The right-angle orientations are measured against their own base rotation
-// instead.  A rotated macro is given its own define_pdn_grid, whose widths,
-// pitches and offsets are already written in the rotated frame, so applying the
-// rotation again would double-count it; only the flip half is honored.  In
-// DEF's decomposition every F orientation is its base rotation with the placed
-// x negated, which is why all four right-angle flips mirror x and none mirror
-// y.
+// dbTransform rotates as well as mirrors, so the right-angle orientations
+// cycle the edge labels -- R90 puts the drawn left edge on the placed bottom --
+// rather than merely swapping opposite pairs.  An EdgeSpec is a set of
+// distances off the four edges with no direction of its own, so the whole
+// transform applies to it; this matches dbInst::getTransformedHalo, which
+// remaps a DEF halo the same way.
+EdgeSpec EdgeSpec::transform(const odb::dbOrientType orient) const
+{
+  switch (orient) {
+    // axis preserving: opposite edges swap
+    case odb::dbOrientType::R0:  // N
+      return {left, bottom, right, top};
+    case odb::dbOrientType::MY:  // FN
+      return {right, bottom, left, top};
+    case odb::dbOrientType::MX:  // FS
+      return {left, top, right, bottom};
+    case odb::dbOrientType::R180:  // S
+      return {right, top, left, bottom};
+    // axis swapping: the edge labels turn with the cell
+    case odb::dbOrientType::R90:  // W
+      return {top, left, bottom, right};
+    case odb::dbOrientType::MXR90:  // FW
+      return {bottom, left, top, right};
+    case odb::dbOrientType::MYR90:  // FE
+      return {top, right, bottom, left};
+    case odb::dbOrientType::R270:  // E
+      return {bottom, right, top, left};
+  }
+  return *this;
+}
+
+EdgeSpec EdgeSpec::untransform(const odb::dbOrientType orient) const
+{
+  // Six of the eight remappings are a pair of edge swaps and so are their own
+  // inverse; the two quarter turns invert into each other.
+  switch (orient) {
+    case odb::dbOrientType::R90:
+      return transform(odb::dbOrientType::R270);
+    case odb::dbOrientType::R270:
+      return transform(odb::dbOrientType::R90);
+    default:
+      return transform(orient);
+  }
+}
+
+// Sign flips of a placed orientation relative to the orientation the grid's
+// straps are written against: R0 for the four that keep the axes, R90 for the
+// four that swap them.
+//
+// A strap pattern cannot turn with the instance the way an EdgeSpec does,
+// because a strap's direction comes from its layer and layers are fixed in the
+// die frame.  A grid on a right-angle instance therefore has to be written in
+// the rotated frame to begin with, and R90 is that frame.  Measured that way
+// each group holds the same four axis-preserving transforms of its own
+// reference -- identity, mirror x, mirror y, both -- so a grid written for N
+// covers S, FN and FS, and one written for W covers E, FW and FE, without
+// being rewritten per orientation.
 Grid::AxisMirror Grid::getAxisMirror(const odb::dbOrientType orient)
 {
   switch (orient) {
-    // axis preserving, measured against the master as drawn
+    // axis preserving, measured against R0
     case odb::dbOrientType::R0:  // N
       return {false, false};
     case odb::dbOrientType::MY:  // FN
@@ -69,37 +118,17 @@ Grid::AxisMirror Grid::getAxisMirror(const odb::dbOrientType orient)
       return {false, true};
     case odb::dbOrientType::R180:  // S
       return {true, true};
-    // axis swapping, measured against R90 / R270
-    case odb::dbOrientType::R90:   // W
-    case odb::dbOrientType::R270:  // E
+    // axis swapping, measured against R90
+    case odb::dbOrientType::R90:  // W
       return {false, false};
-    case odb::dbOrientType::MXR90:  // FW
-    case odb::dbOrientType::MYR90:  // FE
+    case odb::dbOrientType::MXR90:  // FW, R90 with the placed x mirrored
       return {true, false};
+    case odb::dbOrientType::MYR90:  // FE, R90 with the placed y mirrored
+      return {false, true};
+    case odb::dbOrientType::R270:  // E, R90 turned 180, so both mirror
+      return {true, true};
   }
   return {false, false};
-}
-
-// defined here, alongside the mirror table the remapping is driven by
-EdgeSpec EdgeSpec::transform(const odb::dbOrientType orient) const
-{
-  const Grid::AxisMirror mirror = Grid::getAxisMirror(orient);
-
-  EdgeSpec placed = *this;
-  if (mirror.x) {
-    std::swap(placed.left, placed.right);
-  }
-  if (mirror.y) {
-    std::swap(placed.bottom, placed.top);
-  }
-  return placed;
-}
-
-EdgeSpec EdgeSpec::untransform(const odb::dbOrientType orient) const
-{
-  // every remapping transform() can produce is a pair of independent edge
-  // swaps, so it is its own inverse
-  return transform(orient);
 }
 
 bool Grid::mirrorsX() const

@@ -33,9 +33,9 @@ class PadDirectConnectionStraps;
 class PdnGen;
 
 // Distances off the four edges of a cell, as -halo and -core_offsets are given.
-// The values name the edges of the cell as it was drawn, so placing the cell in
-// a flipped orientation moves a value to the opposite edge; transform() does
-// that remapping.
+// The values name the edges of the cell as it was drawn, so placing the cell
+// moves a value to whichever edge that one becomes: the opposite edge for a
+// flip, an adjacent edge for a quarter turn.  transform() does that remapping.
 struct EdgeSpec
 {
   int left = 0;
@@ -142,7 +142,8 @@ class Grid
   }
 
   // Whether an orientation mirrors the placed x and y axes relative to the
-  // frame a grid's offsets are written in.
+  // orientation a grid's straps are written against -- R0 for the four
+  // orientations that keep the axes, R90 for the four that swap them.
   struct AxisMirror
   {
     bool x;
@@ -151,7 +152,10 @@ class Grid
   static AxisMirror getAxisMirror(odb::dbOrientType orient);
 
   // True when this grid's frame is mirrored along x (y), so that an offset
-  // measured from the low edge belongs at the high edge instead.
+  // measured from the low edge belongs at the high edge instead.  Unlike
+  // EdgeSpec::transform these never account for the quarter turn itself: a
+  // strap's direction comes from its layer, which does not turn with the
+  // instance.
   bool mirrorsX() const;
   bool mirrorsY() const;
 

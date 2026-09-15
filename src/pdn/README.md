@@ -143,7 +143,7 @@ define_pdn_grid
 | `[-default]` | For a macro, specifies this is a default grid that can be overwritten. |
 | `[-existing]` | Flag to enable defining for existing routing solution. |
 | `[-grid_over_pg_pins]`, `[-grid_over_boundary]` | Place the power grid over the power ground pins of the macro. (Default True), or Place the power grid over the entire macro. |
-| `[-halo]` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define hard halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). The sides are those of the macro as it is drawn, so for a flipped instance the values follow the flip: `MY` swaps left and right, `MX` swaps bottom and top, and `R180` swaps both. |
+| `[-halo]` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define hard halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). The sides are those of the macro as it is drawn, so for a placed instance each value follows its side: `MY` swaps left and right, `MX` swaps bottom and top, `R180` swaps both, and a quarter turn moves each value to the side that one becomes (`R90` puts the drawn left value on the placed bottom). |
 | `[-instances]` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
 | `[-macro]` | Defines the type of grid being added as a macro. |
 | `[-name]` | Defines a name to use when referring to this grid definition. |
@@ -326,7 +326,7 @@ add_pdn_ring
 | `[-add_connect]` | Automatically add a connection between the two layers. |
 | `[-connect_to_pad_layers]` | Restrict the pad pins layers to this list. |
 | `[-connect_to_pads]` | The core side of the pad pins will be connected to the ring. |
-| `[-core_offsets]` | Value for the offset of the ring from the grid region. On an instance grid the four values are the sides of the macro as it is drawn and follow the flip, the same way `define_pdn_grid -halo` does. |
+| `[-core_offsets]` | Value for the offset of the ring from the grid region. On an instance grid the four values are the sides of the macro as it is drawn and follow the instance's orientation, the same way `define_pdn_grid -halo` does. |
 | `[-extend_to_boundary]` | Extend the rings to the grid boundary. |
 | `[-grid]` | Specifies the name of the grid to which this ring defintion will be added. (Default: Last grid created by `define_pdn_grid`). |
 | `[-nets]` | Limit straps to just this list of nets. |

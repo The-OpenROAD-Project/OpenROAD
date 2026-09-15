@@ -7,6 +7,6 @@
 [INFO ODB-0133]     Created 269 nets and 0 connections.
 [INFO ODB-0303] The initial 209 rows (80249 sites) were cut with 2 shapes for a total of 209 rows (73535 sites).
 [INFO PDN-0001] Inserting grid: Core
-[INFO PDN-0001] Inserting grid: sram_r90 - frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem
-[INFO PDN-0001] Inserting grid: sram_fw - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+[INFO PDN-0001] Inserting grid: sram_fe - frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem
+[INFO PDN-0001] Inserting grid: sram_r270 - dcache.data.data_arrays_0.data_arrays_0_ext.mem
 No differences found.
