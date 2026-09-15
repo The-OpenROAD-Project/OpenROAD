@@ -3,6 +3,7 @@
 #include "ClaimFile.h"
 
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for mkdtemp()
+#include <unistd.h>  // macOS declares mkdtemp() here rather than in stdlib.h
 
 #include <cerrno>
 #include <exception>
