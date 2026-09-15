@@ -825,6 +825,16 @@ describe('SchematicWidget timing path overlay', () => {
         return group.querySelectorAll('.schematic-timing-node');
     }
 
+    // CSS colors can serialize as hex or rgb across jsdom versions.
+    function assertColor(actual, expected) {
+        const normalize = (color) => {
+            const style = document.createElement('span').style;
+            style.color = color;
+            return style.color;
+        };
+        assert.equal(normalize(actual), normalize(expected));
+    }
+
     it('colors each path cell by styling the actual SVG shape', () => {
         const { widget, container } = makeWidget();
         const { groups } = makeCells(widget, ['u1', 'u2']);
@@ -833,8 +843,8 @@ describe('SchematicWidget timing path overlay', () => {
 
         assert.equal(overlayIn(groups.u1).length, 1);
         assert.equal(overlayIn(groups.u2).length, 1);
-        assert.equal(groups.u1.querySelector('path').style.stroke, '#ff0000');
-        assert.equal(groups.u2.querySelector('path').style.stroke, '#ff0000');
+        assertColor(groups.u1.querySelector('path').style.stroke, '#ff0000');
+        assertColor(groups.u2.querySelector('path').style.stroke, '#ff0000');
         assert.equal(groups.u1.querySelector('text'), null);
         container.element.remove();
     });
@@ -852,8 +862,8 @@ describe('SchematicWidget timing path overlay', () => {
             node('u1'),
         ]));
 
-        assert.equal(groups.ff1.querySelector('path').style.stroke, '#00ffff');
-        assert.equal(groups.u1.querySelector('path').style.stroke, '#ff0000');
+        assertColor(groups.ff1.querySelector('path').style.stroke, '#00ffff');
+        assertColor(groups.u1.querySelector('path').style.stroke, '#ff0000');
         container.element.remove();
     });
 
@@ -870,7 +880,7 @@ describe('SchematicWidget timing path overlay', () => {
         assert.match(legend.textContent, /capture/);
         const drawn = groups.u1.querySelector('path');
         const swatch = legend.querySelectorAll('line')[1];
-        assert.equal(swatch.getAttribute('stroke'), drawn.style.stroke);
+        assertColor(swatch.getAttribute('stroke'), drawn.style.stroke);
         container.element.remove();
     });
 
@@ -899,12 +909,12 @@ describe('SchematicWidget timing path overlay', () => {
         shape.style.strokeWidth = '1';
 
         widget.showTimingPath(timingPath([node('u1')]));
-        assert.equal(shape.style.stroke, '#ff0000');
+        assertColor(shape.style.stroke, '#ff0000');
         assert.equal(shape.style.strokeWidth, '1');
 
         widget.showTimingPath(null);
         assert.equal(overlayIn(groups.u1).length, 0);
-        assert.equal(shape.style.stroke, '#123456');
+        assertColor(shape.style.stroke, '#123456');
         assert.equal(shape.style.strokeWidth, '1');
         assert.equal(legendOf(widget).hidden, true);
         assert.equal(widget.controls.querySelector('#schematic-status').textContent,
@@ -968,7 +978,7 @@ describe('SchematicWidget timing path overlay', () => {
         };
 
         widget.showTimingPath(path, path.data_nodes);
-        assert.equal(wire.style.stroke, '#ff0000');
+        assertColor(wire.style.stroke, '#ff0000');
         assert.equal(wire.style.strokeWidth, '1');
         container.element.remove();
     });
@@ -996,8 +1006,8 @@ describe('SchematicWidget timing path overlay', () => {
 
         widget.showTimingPath(path, path.capture_nodes);
 
-        assert.equal(groups.cap1.querySelector('path').style.stroke, '#00ff00');
-        assert.equal(wire.style.stroke, '#00ff00');
+        assertColor(groups.cap1.querySelector('path').style.stroke, '#00ff00');
+        assertColor(wire.style.stroke, '#00ff00');
         container.element.remove();
     });
 
@@ -1143,7 +1153,7 @@ describe('SchematicWidget timing path overlay', () => {
 
         await widget.showTimingPath(path, path.data_nodes);
         const dataSvg = widget._svgEl;
-        assert.equal(dataSvg.querySelector('path').style.stroke, '#ff0000');
+        assertColor(dataSvg.querySelector('path').style.stroke, '#ff0000');
         assert.equal(legendOf(widget).hidden, false);
 
         await widget.showTimingPath(path, path.capture_nodes);
@@ -1160,7 +1170,7 @@ describe('SchematicWidget timing path overlay', () => {
         assert.ok(!widget.svgContainer.classList.contains('schematic-empty'));
         assert.equal(widget.svgContainer.querySelector('.schematic-empty-state'), null);
         assert.equal(widget._svgEl.getAttribute('aria-hidden'), null);
-        assert.equal(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
+        assertColor(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
         assert.equal(legendOf(widget).hidden, false);
         container.element.remove();
     });
@@ -1173,7 +1183,7 @@ describe('SchematicWidget timing path overlay', () => {
         });
         const { svg, groups } = makeCells(widget, ['old']);
         await widget.showTimingPath(timingPath([node('old')]));
-        assert.equal(groups.old.querySelector('path').style.stroke, '#ff0000');
+        assertColor(groups.old.querySelector('path').style.stroke, '#ff0000');
 
         widget._netlistsvgReady = true;
         await widget.showTimingPath(timingPath([node('new')]));

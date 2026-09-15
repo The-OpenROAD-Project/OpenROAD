@@ -236,11 +236,30 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestMaze3D",
+    size = "small",
+    srcs = ["cpp/TestMaze3D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],
     data = ["//src/grt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

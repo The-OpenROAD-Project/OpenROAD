@@ -133,6 +133,9 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_straps",
     "pads_connect_from_non_pref_edge",
     "pads_ihp_sg13g2_balance",
+    "pads_placed_not_fixed",
+    "pads_straps_through_pads",
+    "pads_via_repair_through_pads",
     "power_switch",
     "power_switch_cut_rows",
     "power_switch_daisy",
@@ -147,6 +150,7 @@ COMPULSORY_TESTS = [
     "region_temp_sensor",
     "region_temp_sensor_different_region_name",
     "repair_channel_inf_loop",
+    "repair_channel_out_of_options",
     "repair_vias",
     "report",
     "reset",
@@ -247,6 +251,9 @@ filegroup(
         "pdn_aux.py",
         "repair_channel_inf_loop/floorplan.def",
         "repair_channel_inf_loop/tech_macro.lef",
+        "repair_channel_out_of_options/fakeram45_32x32.lef",
+        "repair_channel_out_of_options/fakeram45_64x62.lef",
+        "repair_channel_out_of_options/floorplan.def",
         "sky130_gcd/floorplan.def",
         "sky130_multiheight_rows/floorplan.def",
         "sky130_multiheight_rows/floorplan_multisite.def",
@@ -336,6 +343,18 @@ filegroup(
                 "ihp_tensorcore/sg13g2_io.lef",
                 "ihp_tensorcore/floorplan.def",
             ],
+            "pads_placed_not_fixed": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_tensorcore/sg13g2_io.lef",
+                "ihp_tensorcore/floorplan.def",
+            ],
+            "pads_straps_through_pads": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_tensorcore/sg13g2_io.lef",
+                "ihp_tensorcore/floorplan.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -355,7 +374,10 @@ py_test(
     name = "pdn_man_tcl_check",
     srcs = ["pdn_man_tcl_check.py"],
     data = ["//src/pdn:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

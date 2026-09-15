@@ -50,7 +50,10 @@ py_test(
     name = "gui_man_tcl_check",
     srcs = ["gui_man_tcl_check.py"],
     data = ["//src/gui:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

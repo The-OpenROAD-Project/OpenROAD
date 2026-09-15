@@ -147,6 +147,7 @@ py_library(
         name = test_name,
         srcs = [test_name + ".py"],
         data = [":" + test_name + "_resources"],
+        tags = ["py"],
         deps = [
             ":helpers",
             "//python/openroad:openroadpy",
@@ -214,7 +215,10 @@ py_test(
     name = "drt_man_tcl_check",
     srcs = ["drt_man_tcl_check.py"],
     data = ["//src/drt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
