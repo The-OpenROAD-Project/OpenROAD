@@ -20,12 +20,11 @@ lefTechLayerCutEnclosureTableRuleParser::
 
 void lefTechLayerCutEnclosureTableRuleParser::checkCutClass(
     const std::string& val,
-    odb::dbTechLayer* layer,
-    bool& found)
+    odb::dbTechLayer* layer)
 {
   auto cutClass = layer->findTechLayerCutClassRule(val.c_str());
-  found = (cutClass != nullptr);
-  if (!found) {
+  if (cutClass == nullptr) {
+    ruleValid_ = false;
     lefin_->warning(
         602,
         "cut class {} not found for LEF58_ENCLOSURETABLE rule for layer {}",
@@ -43,17 +42,14 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
   // still needs a real std::string to parse against.
   const std::string value(s);
 
-  // A cut class name that fails to resolve makes the whole property invalid
-  // rather than a warning we merely note and carry on past.
-  bool cutClassFound = true;
+  ruleValid_ = true;
 
   qi::rule<std::string::const_iterator, space_type> cut_class_rule
       = (lit("CUTCLASS") >> _string)[boost::bind(
           &lefTechLayerCutEnclosureTableRuleParser::checkCutClass,
           this,
           _1,
-          layer,
-          boost::ref(cutClassFound))];
+          layer)];
 
   qi::rule<std::string::const_iterator, space_type> above_below_rule
       = (lit("ABOVE") | lit("BELOW"));
@@ -84,7 +80,7 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
   auto first = value.begin();
   auto last = value.end();
   bool valid = qi::phrase_parse(first, last, enclosure_table_rule, space)
-               && first == last && cutClassFound;
+               && first == last && ruleValid_;
   if (!valid) {
     lefin_->warning(603,
                     "parse mismatch in layer property LEF58_ENCLOSURETABLE "

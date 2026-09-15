@@ -154,9 +154,12 @@ class lefTechLayerCutEnclosureTableRuleParser
 
  private:
   lefinReader* lefin_;
-  void checkCutClass(const std::string& val,
-                     odb::dbTechLayer* layer,
-                     bool& found);
+  // Tracks whether the property parsed so far is still valid. Any
+  // intermediate check (e.g. a reference that fails to resolve) that finds a
+  // problem sets this to false via a warning of its own; the overall parse
+  // is then rejected even if the grammar matched syntactically.
+  bool ruleValid_{true};
+  void checkCutClass(const std::string& val, odb::dbTechLayer* layer);
 };
 
 class lefTechLayerEolExtensionRuleParser
