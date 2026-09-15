@@ -871,6 +871,131 @@ class GuiBackend
   // with none drops it.
   virtual void status(const std::string& /* message */) {}
 
+  // Selection and highlighting.  A backend with no selection model leaves
+  // these alone: nothing is selected, nothing highlights, and the queries
+  // answer empty.  Gui guards each on hasWindow() today, so only the Qt gui
+  // sees them until a viewer implements its own.
+  virtual void setSelected(const Selected& /* selection */) {}
+  virtual void addSelected(const Selected& /* selection */) {}
+  virtual void removeSelectedByType(const std::string& /* type */) {}
+  virtual const SelectionSet& selection()
+  {
+    static const SelectionSet empty;
+    return empty;
+  }
+  virtual const Selected& inspectorSelection()
+  {
+    static const Selected empty;
+    return empty;
+  }
+  virtual bool anyObjectInSet(bool /* selection_set */,
+                              odb::dbObjectType /* obj_type */) const
+  {
+    return false;
+  }
+  virtual void addHighlighted(const SelectionSet& /* selection */,
+                              int /* highlight_group */)
+  {
+  }
+  virtual void clearHighlighted(int /* highlight_group */) {}
+  virtual void selectHighlightConnectedInsts(bool /* select_flag */,
+                                             int /* highlight_group */)
+  {
+  }
+  virtual void selectHighlightConnectedNets(bool /* select_flag */,
+                                            bool /* output */,
+                                            bool /* input */,
+                                            int /* highlight_group */)
+  {
+  }
+  virtual void selectHighlightConnectedBufferTrees(bool /* select_flag */,
+                                                   int /* highlight_group */)
+  {
+  }
+  virtual int selectArea(const odb::Rect& /* area */, bool /* append */)
+  {
+    return 0;
+  }
+  virtual int selectNext() { return 0; }
+  virtual int selectPrevious() { return 0; }
+  virtual void selectionAnimation(int /* repeat */) {}
+
+  // View.  A backend with no viewport ignores these.
+  virtual void zoomTo(const odb::Rect& /* rect_dbu */) {}
+  virtual void zoomTo(const odb::Point& /* focus */, int /* diameter */) {}
+  virtual void zoomIn() {}
+  virtual void zoomIn(const odb::Point& /* focus_dbu */) {}
+  virtual void zoomOut() {}
+  virtual void zoomOut(const odb::Point& /* focus_dbu */) {}
+  virtual void centerAt(const odb::Point& /* focus_dbu */) {}
+  virtual void setResolution(double /* pixels_per_dbu */) {}
+  virtual void fit() {}
+
+  // Labels and rulers.  The add calls return the name the backend gave the
+  // new object, or an empty string if it has nowhere to put one.
+  virtual std::string addLabel(int /* x */,
+                               int /* y */,
+                               const std::string& /* text */,
+                               std::optional<Painter::Color> /* color */,
+                               std::optional<int> /* size */,
+                               std::optional<Painter::Anchor> /* anchor */,
+                               const std::optional<std::string>& /* name */)
+  {
+    return "";
+  }
+  virtual void deleteLabel(const std::string& /* name */) {}
+  virtual void clearLabels() {}
+  virtual std::string addRuler(int /* x0 */,
+                               int /* y0 */,
+                               int /* x1 */,
+                               int /* y1 */,
+                               const std::string& /* label */,
+                               const std::string& /* name */,
+                               bool /* euclidian */)
+  {
+    return "";
+  }
+  virtual void deleteRuler(const std::string& /* name */) {}
+  virtual void clearRulers() {}
+
+  // Display-control colour and persistence.  Colour is a viewport concept
+  // and the settings live with the widget, so a backend without one ignores
+  // all three.
+  virtual void setDisplayControlColor(const std::string& /* name */,
+                                      const Painter::Color& /* color */)
+  {
+  }
+  virtual void saveDisplayControls() {}
+  virtual void restoreDisplayControls() {}
+
+  // Per-net overlays the layout draws on top of the design.  A backend with
+  // no layout keeps no such sets.
+  virtual void addFocusNet(odb::dbNet* /* net */) {}
+  virtual void removeFocusNet(odb::dbNet* /* net */) {}
+  virtual void clearFocusNets() {}
+  virtual void addRouteGuides(odb::dbNet* /* net */) {}
+  virtual void removeRouteGuides(odb::dbNet* /* net */) {}
+  virtual void clearRouteGuides() {}
+  virtual void addNetTracks(odb::dbNet* /* net */) {}
+  virtual void removeNetTracks(odb::dbNet* /* net */) {}
+  virtual void clearNetTracks() {}
+
+  // Render one of the auxiliary views to an image file.  Width and height
+  // are unset when the caller wants the backend's own sizing.
+  virtual void saveClockTreeImage(const std::string& /* clock_name */,
+                                  const std::string& /* filename */,
+                                  const std::string& /* scene */,
+                                  std::optional<int> /* width_px */,
+                                  std::optional<int> /* height_px */)
+  {
+  }
+  virtual void saveHistogramImage(const std::string& /* filename */,
+                                  const std::string& /* mode */,
+                                  std::optional<int> /* width_px */,
+                                  std::optional<int> /* height_px */)
+  {
+  }
+
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
   // expires.  timeout_ms == 0 means wait indefinitely.
@@ -880,11 +1005,16 @@ class GuiBackend
   // can use this to gate unsafe cross-thread reads of renderer state.
   virtual bool isPaused() const = 0;
 
-  // Display-control accessors consulted by Gui::*DisplayControls* when the Qt
-  // GUI (and its DisplayControls widget) is absent.  Default implementations
-  // assume "everything visible, nothing selectable" so headless renderers draw
-  // by default without a Qt widget.  Viewers that track their own visibility
-  // model (e.g. the web viewer) may override these.
+  // Display-control state.  Gui::*DisplayControls* dispatch straight to
+  // these on whatever backend is installed -- the Qt gui answers from its
+  // DisplayControls widget, the web viewer from its own visibility model.
+  //
+  // A backend that overrides none of them shows everything and selects
+  // nothing.  That is the permissive direction deliberately: a viewer with
+  // no visibility model of its own should draw the design rather than hide
+  // it.  The cost is that a backend which forgets one of these reports
+  // "visible" rather than failing, so an override missed is an override
+  // that looks like it works.
   virtual bool checkDisplayControlVisible(const std::string& /* name */)
   {
     return true;
@@ -936,10 +1066,10 @@ class Gui
   }
 
   // Add a net to the selection set
-  void addSelectedNet(const char* name);
+  void addSelectedNet(const std::string& name);
 
   // Add an instance to the selection set
-  void addSelectedInst(const char* name);
+  void addSelectedInst(const std::string& name);
 
   // Return the selected set
   const SelectionSet& selection();
@@ -954,8 +1084,8 @@ class Gui
                                     int highlight_group = 0);
   void selectHighlightConnectedBufferTrees(bool select_flag,
                                            int highlight_group = 0);
-  void addInstToHighlightSet(const char* name, int highlight_group = 0);
-  void addNetToHighlightSet(const char* name, int highlight_group = 0);
+  void addInstToHighlightSet(const std::string& name, int highlight_group = 0);
+  void addNetToHighlightSet(const std::string& name, int highlight_group = 0);
 
   int selectAt(const odb::Rect& area, bool append = true);
   int selectNext();
