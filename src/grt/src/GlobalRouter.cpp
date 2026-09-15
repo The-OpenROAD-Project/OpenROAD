@@ -6920,7 +6920,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
-          opendp_->detailedPlacement(0, 0, "");
+          opendp_->detailedPlacementQuiet();
           updateDirtyNets(dirty_nets);
           for (auto& it : dirty_nets) {
             congestion_nets.insert(it->getDbNet());
