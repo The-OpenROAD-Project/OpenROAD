@@ -154,7 +154,9 @@ class lefTechLayerCutEnclosureTableRuleParser
 
  private:
   lefinReader* lefin_;
-  void checkCutClass(const std::string& val, odb::dbTechLayer* layer);
+  void checkCutClass(const std::string& val,
+                     odb::dbTechLayer* layer,
+                     bool& found);
 };
 
 class lefTechLayerEolExtensionRuleParser
