@@ -390,17 +390,20 @@ void Opendp::reportLegalizationStats() const
       = use_diamond_legalizer_ ? "diamond search" : "negotiation";
   logger_->report("legalizer            {}", legalizer_name);
   logger_->metric("dpl__legalizer__type", legalizer_name);
-  logger_->report("total moves          {:10d}", total_moves_);
   logger_->metric("dpl__total__moves", total_moves_);
+
+  logger_->report("total moves          {:10d}", total_moves_);
   if (isUseNegotiationLegalizer()) {
-    logger_->report("negotiation finish   {}", negotiation_finish_);
     const int negotiation_iters
         = negotiation_iters_phase1_ + negotiation_iters_phase2_;
-    logger_->report("total iterations     {:10d}", negotiation_iters);
-    logger_->report("  phase 1 iterations {:10d}", negotiation_iters_phase1_);
-    logger_->report("  phase 2 iterations {:10d}", negotiation_iters_phase2_);
-    logger_->report("diamond recoveries   {:10d}",
-                    negotiation_diamond_recoveries_);
+    if (logger_->debugCheck(utl::GPL, "negotiation", 1)) {
+      logger_->report("negotiation finish   {}", negotiation_finish_);
+      logger_->report("total iterations     {:10d}", negotiation_iters);
+      logger_->report("  phase 1 iterations {:10d}", negotiation_iters_phase1_);
+      logger_->report("  phase 2 iterations {:10d}", negotiation_iters_phase2_);
+      logger_->report("diamond recoveries   {:10d}",
+                      negotiation_diamond_recoveries_);
+    }
     logger_->metric("dpl__negotiation__iterations__total", negotiation_iters);
     // Phase that converged (1 or 2), -1 when negotiation did not converge,
     // 0 when it never ran because every cell was already legal.
