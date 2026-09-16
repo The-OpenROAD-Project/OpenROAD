@@ -6,7 +6,9 @@
 # BUILD.kokkos_fft.bazel, referenced from MODULE.bazel) and the configuration
 # headers their CMake builds would have generated: the arch-dependent
 # KokkosCore_config.h is expanded from the template by configure.bzl, the rest
-# are hand-maintained copies under config/. Everything here is GPU-only.
+# are hand-maintained copies under config/. It lives under bazel/gpu because
+# Kokkos exists in this repo only as part of --config=gpu; everything here is
+# GPU-only.
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel/gpu:defs.bzl", "GPU_ONLY")

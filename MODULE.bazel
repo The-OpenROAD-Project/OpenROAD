@@ -511,7 +511,7 @@ alias(
 # them. The CUDA toolkit remains system-provided and is wrapped separately.
 http_archive(
     name = "kokkos",
-    build_file = "//bazel/kokkos:BUILD.kokkos.bazel",
+    build_file = "//bazel/gpu/kokkos:BUILD.kokkos.bazel",
     sha256 = "d6557aaef39302282a15f9c770433d1fcdf4e961dfd6d9ed726b9d0d0f546b9f",
     strip_prefix = "kokkos-5.2.2",
     urls = ["https://github.com/kokkos/kokkos/releases/download/5.2.2/kokkos-5.2.2.tar.gz"],
@@ -519,7 +519,7 @@ http_archive(
 
 http_archive(
     name = "kokkos_fft",
-    build_file = "//bazel/kokkos:BUILD.kokkos_fft.bazel",
+    build_file = "//bazel/gpu/kokkos:BUILD.kokkos_fft.bazel",
     sha256 = "f2c1f7b848e68aa214f2dea7820c22e729564167a4d4010170b01c81ad3a0714",
     strip_prefix = "kokkos-fft-2.0.0",
     # KokkosFFT 2.0.0 has no release tarball asset, so use GitHub's generated

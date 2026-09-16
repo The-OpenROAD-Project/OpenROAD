@@ -57,6 +57,6 @@ cc_library(
     linkopts = ["-ldl"],
     deps = [
         "@cuda_local//:cudart",
-        "@openroad//bazel/kokkos:config",
+        "@openroad//bazel/gpu/kokkos:config",
     ],
 )

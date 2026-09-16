@@ -7,7 +7,7 @@ One dict maps each --//:cuda_arch value to the Kokkos_ARCH_* macros Kokkos's
 CMake would define for it. Keeping the sm_* list and the Kokkos define map
 together guarantees that the flag's accepted values (BUILD.bazel), the
 --cuda-gpu-arch select (copts.bzl) and the generated KokkosCore_config.h
-(bazel/kokkos/configure.bzl) always cover the same set.
+(bazel/gpu/kokkos/configure.bzl) always cover the same set.
 """
 
 CUDA_ARCH_DEFINES = {

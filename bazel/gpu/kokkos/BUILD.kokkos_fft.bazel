@@ -19,6 +19,6 @@ cc_library(
         "@cuda_local//:cufft",
         "@fftw",
         "@kokkos",
-        "@openroad//bazel/kokkos:fft_config",
+        "@openroad//bazel/gpu/kokkos:fft_config",
     ],
 )
