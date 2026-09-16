@@ -36,7 +36,7 @@ void Opendp::checkPlacement(const bool verbose,
   groupAssignCellRegions();
 
   CheckPlacementFailures failures;
-  const auto row_coords = grid_->getRowCoordinates();
+  const auto& row_coords = grid_->getRowCoordinates();
   for (auto& cell : network_->getNodes()) {
     if (cell->getType() != Node::CELL) {
       continue;
