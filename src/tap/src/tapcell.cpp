@@ -577,6 +577,10 @@ std::vector<odb::Point> toRectilinearOutline(const PointRange& range)
     }
   }
 
+  if (outline.size() < 3) {
+    return outline;
+  }
+
   if (odb::polygon_is_clockwise(outline)) {
     std::ranges::reverse(outline);
   }
@@ -595,6 +599,12 @@ std::vector<odb::Point> toRectilinearOutline(const PointRange& range)
 template <typename Polygon>
 bool startsBefore(const Polygon& lhs, const Polygon& rhs)
 {
+  if (lhs.begin() == lhs.end()) {
+    return rhs.begin() != rhs.end();
+  }
+  if (rhs.begin() == rhs.end()) {
+    return false;
+  }
   const auto l = *lhs.begin();
   const auto r = *rhs.begin();
   return odb::Point(l.x(), l.y()) < odb::Point(r.x(), r.y());
@@ -1444,9 +1454,14 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
   const int edge_max = std::max(edge.pt0.getX(), edge.pt1.getX());
 
   // A fragmented row may cover only part of the edge, so fill each row
-  // along the edge within its own extent.  Spans filled along this edge are
-  // tracked so overlapping rows at the same height do not fill twice.
-  std::vector<std::pair<int, int>> edge_filled;
+  // along the edge within its own extent.  Cells already placed in any row on
+  // the edge block the fill, so overlapping rows at the same height neither
+  // fill twice nor cover each other's corners.
+  std::vector<std::pair<int, int>> edge_blocked;
+  for (odb::dbRow* row : rows) {
+    const std::vector<std::pair<int, int>> spans = occupiedSpans(row);
+    edge_blocked.insert(edge_blocked.end(), spans.begin(), spans.end());
+  }
   for (odb::dbRow* row : rows) {
     const std::vector<odb::dbMaster*>& masters
         = row->getOrient() == odb::dbOrientType::R0 ? r0_masters
@@ -1458,18 +1473,18 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
     const odb::Rect row_bbox = row->getBBox();
     const int x_start = std::max(edge_min, row_bbox.xMin());
     const int x_end = std::min(edge_max, row_bbox.xMax());
+    if (x_start >= x_end) {
+      continue;
+    }
 
     // Fill only x-ranges not already covered by a corner or endcap cell.
-    std::vector<std::pair<int, int>> blocked = occupiedSpans(row);
-    blocked.insert(blocked.end(), edge_filled.begin(), edge_filled.end());
-
     std::vector<std::pair<int, int>>& occupied = occupied_row_spans_[row];
     for (const auto& [span_start, span_end] :
-         computeOpenSpans(x_start, x_end, std::move(blocked))) {
+         computeOpenSpans(x_start, x_end, edge_blocked)) {
       insts += fillEndcapEdge(
           row, span_start, span_end, masters, edge.type, options.prefix);
       occupied.emplace_back(span_start, span_end);
-      edge_filled.emplace_back(span_start, span_end);
+      edge_blocked.emplace_back(span_start, span_end);
     }
   }
 
