@@ -752,7 +752,7 @@ void tmg_conn::identifyTerminalWirePoints()
                   if (ii < candidate_section_count) {
                     continue;
                   }
-                  if (candidate_section_count == 32) {
+                  if (candidate_section_count == kMaxCandidateSections) {
                     break;
                   }
                   CandidateSection& candidate_section
@@ -783,7 +783,7 @@ void tmg_conn::identifyTerminalWirePoints()
                   if (ii < candidate_section_count) {
                     continue;
                   }
-                  if (candidate_section_count == 32) {
+                  if (candidate_section_count == kMaxCandidateSections) {
                     break;
                   }
                   CandidateSection& candidate_section
@@ -816,7 +816,7 @@ void tmg_conn::identifyTerminalWirePoints()
                       && candidate_section_count >= 8) {
                     continue;
                   }
-                  if (candidate_section_count == 32) {
+                  if (candidate_section_count == kMaxCandidateSections) {
                     break;
                   }
                   CandidateSection& candidate_section
@@ -858,7 +858,7 @@ void tmg_conn::identifyTerminalWirePoints()
               if (ii < candidate_section_count) {
                 continue;
               }
-              if (candidate_section_count == 32) {
+              if (candidate_section_count == kMaxCandidateSections) {
                 break;
               }
               CandidateSection& candidate_section

@@ -16,7 +16,9 @@ namespace odb {
 
 struct CandidateSection;
 
-using CandidateSections = std::array<CandidateSection, 32>;
+inline constexpr int kMaxCandidateSections = 32;
+
+using CandidateSections = std::array<CandidateSection, kMaxCandidateSections>;
 
 class tmg_rc_sh
 {
