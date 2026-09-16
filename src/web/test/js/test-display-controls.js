@@ -799,3 +799,177 @@ describe('renderer display controls', () => {
                      'Background closes the panel');
     });
 });
+
+// Issue #11329: a chiplet can sit face-down in the stack (3DBlox "MZ").  Its
+// layers then reach the viewer in reverse — the backside on top, M1 above
+// Mtop — so the draw order of everything under that chiplet has to turn over
+// with it.  The backend marks such a node `flipped` in layer_hierarchy.
+describe('flipped chiplet layer order', () => {
+    let app;
+
+    class FakeTileLayer {
+        constructor(wm, name, opts) {
+            this.name = name;
+            this.options = opts || {};
+        }
+        addTo() { return this; }
+        refreshTiles() {}
+    }
+    class FakeHeatMapLayer {
+        constructor() {}
+    }
+
+    beforeEach(() => {
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: { hasLayer: () => false, removeLayer() {} },
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+        };
+    });
+
+    // One die holding two routing layers plus a Backside folder, as the
+    // backend emits it.  `flipped` is what the test varies.
+    function techDataWith(flipped) {
+        return {
+            layers: ['metal1', 'metal2', 'bs1'],
+            sites: [],
+            chiplets: [
+                { path: 'top', name: 'top', parent: null, depth: 0 },
+                { path: 'top.die0', name: 'die0', parent: 'top', depth: 1 },
+            ],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', flipped: false,
+                layers: [],
+                instances: [{
+                    name: 'die0', type: 'instance', path: 'top.die0',
+                    flipped,
+                    layers: [
+                        { name: 'metal1', color: [1, 2, 3] },
+                        { name: 'metal2', color: [4, 5, 6] },
+                    ],
+                    instances: [{
+                        name: 'Backside', type: 'category', flipped,
+                        layers: [{ name: 'bs1', color: [7, 8, 9] }],
+                        instances: [],
+                    }],
+                }],
+            },
+        };
+    }
+
+    // The draw order: app.allLayers in the order the panes were created, which
+    // is also the order their z-indices ascend.
+    function drawOrder(flipped) {
+        populateDisplayControls(app, {}, {}, FakeTileLayer,
+                                techDataWith(flipped), () => {},
+                                FakeHeatMapLayer);
+        return app.allLayers
+            .filter(l => ['metal1', 'metal2', 'bs1'].includes(l.name))
+            .map(l => l.name);
+    }
+
+    it('paints an upright chiplet backside-first, then M1 up to Mtop', () => {
+        assert.deepEqual(drawOrder(false), ['bs1', 'metal1', 'metal2']);
+    });
+
+    it('reverses the whole stack of a face-down chiplet', () => {
+        // Mtop first (it is now furthest from the viewer) and the backside
+        // last, which puts it on top where a flipped die actually shows it.
+        assert.deepEqual(drawOrder(true), ['metal2', 'metal1', 'bs1']);
+    });
+
+    it('keeps z-indices ascending in draw order either way', () => {
+        for (const flipped of [false, true]) {
+            app.allLayers = [];
+            populateDisplayControls(app, {}, {}, FakeTileLayer,
+                                    techDataWith(flipped), () => {},
+                                    FakeHeatMapLayer);
+            const z = app.allLayers
+                .filter(l => ['metal1', 'metal2', 'bs1'].includes(l.name))
+                .map(l => l.options.zIndex);
+            assert.deepEqual(z, [...z].sort((a, b) => a - b),
+                             `z-indices out of order (flipped=${flipped})`);
+            assert.equal(new Set(z).size, z.length,
+                         `duplicate z-index (flipped=${flipped})`);
+        }
+    });
+
+    // A flipped HIER wrapper holding two dies. The backend already emits
+    // child chiplets ordered by WORLD z — collectChiplets sorts on global_z,
+    // which has the mirror applied — so the wrapper's own flip must not
+    // reorder them again. Reversing here too would paint the lower die on
+    // top of the upper one.
+    it('does not reorder child chiplets of a flipped wrapper', () => {
+        const techData = {
+            layers: ['m'],
+            sites: [],
+            chiplets: [
+                { path: 'top', name: 'top', parent: null, depth: 0 },
+                { path: 'top.w', name: 'w', parent: 'top', depth: 1 },
+            ],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', flipped: false,
+                layers: [],
+                instances: [{
+                    // The wrapper is face-down and owns no layers of its own.
+                    name: 'w', type: 'instance', path: 'top.w', flipped: true,
+                    layers: [],
+                    instances: [
+                        // Emitted lower-world-z first, as the backend sorts.
+                        { name: 'lower', type: 'instance', path: 'top.w.lower',
+                          flipped: true,
+                          layers: [{ name: 'lo', color: [1, 2, 3] }],
+                          instances: [] },
+                        { name: 'upper', type: 'instance', path: 'top.w.upper',
+                          flipped: true,
+                          layers: [{ name: 'up', color: [4, 5, 6] }],
+                          instances: [] },
+                    ],
+                }],
+            },
+        };
+        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
+                                () => {}, FakeHeatMapLayer);
+        const order = app.allLayers
+            .filter(l => ['lo', 'up'].includes(l.name))
+            .sort((a, b) => a.options.zIndex - b.options.zIndex)
+            .map(l => l.name);
+        assert.deepEqual(order, ['lo', 'up'],
+                         'the lower die must still be painted first');
+    });
+
+    // The palette slot is a fallback color index. It follows the tech's own
+    // layer order, so turning a die over must not recolor it.
+    it('does not recolor a chiplet when its draw order reverses', () => {
+        const colorIndexByName = (flipped) => {
+            app.allLayers = [];
+            app.displayControlsEl = document.createElement('div');
+            populateDisplayControls(app, {}, {}, FakeTileLayer,
+                                    techDataWith(flipped), () => {},
+                                    FakeHeatMapLayer);
+            const out = {};
+            for (const row of
+                     app.displayControlsEl.querySelectorAll('.vis-leaf')) {
+                const name = row.querySelector('.vis-name');
+                const swatch = row.querySelector('.layer-color');
+                if (name && swatch) {
+                    out[name.textContent] = swatch.style.backgroundColor;
+                }
+            }
+            return out;
+        };
+        assert.deepEqual(colorIndexByName(true), colorIndexByName(false));
+    });
+});
