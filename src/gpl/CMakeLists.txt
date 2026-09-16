@@ -92,6 +92,11 @@ if(ENABLE_GPU)
       src/fft.cpp src/kokkosRuntime.cpp src/densityGradient.cpp
       src/hpwl.cpp src/wirelengthGradient.cpp src/nesterovBase.cpp src/mbff.cpp
       PROPERTIES LANGUAGE CUDA)
+    if(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+      # MBFF uses host loops and Boost.Math operations unsupported on the device.
+      set_property(SOURCE src/mbff.cpp APPEND PROPERTY
+        COMPILE_OPTIONS --cuda-host-only)
+    endif()
   elseif(Kokkos_ENABLE_HIP)
     set_source_files_properties(
       src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp

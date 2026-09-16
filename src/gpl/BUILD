@@ -88,11 +88,10 @@ cc_library(
         "src/gpu/regionDensityField_kokkos.h",
         "src/gpu/wirelengthOp.cpp",
         "src/gpu/wirelengthOp.h",
-        "src/kokkosRuntime.cpp",
-        "src/kokkosRuntime.h",
         "src/hpwl.cpp",
         "src/hpwlBackend.h",
-        "src/mbff.cpp",
+        "src/kokkosRuntime.cpp",
+        "src/kokkosRuntime.h",
         "src/mbff.h",
         "src/nesterovBase.cpp",
         "src/wirelengthGradient.cpp",
@@ -136,6 +135,46 @@ cc_library(
         "@eigen",
         "@kokkos",
         "@kokkos_fft",
+        "@openmp",
+        "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/linear_solver:linear_solver_base",
+        "@or-tools//ortools/sat:cp_model",
+        "@or-tools//ortools/util:sorted_interval_list",
+    ],
+)
+
+# MBFF uses Kokkos host loops. Avoid compiling its Boost.Math dependencies
+# for the device, where long-double operations are unsupported.
+cc_library(
+    name = "mbff_kokkos",
+    srcs = [
+        "src/AbstractGraphics.h",
+        "src/kokkosRuntime.h",
+        "src/mbff.cpp",
+        "src/mbff.h",
+    ],
+    additional_compiler_inputs = [
+        "//bazel/gpu:cuda_placement_new.h",
+        "@cuda_local//:compiler_inputs",
+    ],
+    copts = CUDA_COPTS + ["--cuda-host-only"],
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+    deps = [
+        ":gpl_private_hdrs",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abseil-cpp//absl/container:inlined_vector",
+        "@coin-or-lemon//:lemon",
+        "@kokkos",
         "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
@@ -231,7 +270,10 @@ cc_library(
         "@or-tools//ortools/sat:cp_model",
         "@or-tools//ortools/util:sorted_interval_list",
     ] + select({
-        "//:gpu_cuda": [":gpl_kokkos"],
+        "//:gpu_cuda": [
+            ":gpl_kokkos",
+            ":mbff_kokkos",
+        ],
         "//conditions:default": [],
     }),
 )

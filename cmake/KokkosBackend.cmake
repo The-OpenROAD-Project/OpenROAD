@@ -124,6 +124,12 @@ if(Kokkos_ENABLE_CUDA)
   # only. Project-wide CXX compilation is unaffected.
   add_compile_definitions(
     $<$<COMPILE_LANGUAGE:CUDA>:FMT_USE_NONTYPE_TEMPLATE_ARGS=0>)
+  # Boost.Core disables empty-base optimization for Clang CUDA. Restore
+  # it so embedded Boost containers have the same layout as in C++ TUs.
+  if(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+    add_compile_definitions(
+      $<$<COMPILE_LANGUAGE:CUDA>:BOOST_DETAIL_EMPTY_VALUE_BASE>)
+  endif()
   # On aarch64, Boost's unordered_flat_map detects __ARM_NEON and includes
   # <arm_neon.h> for SIMD-accelerated hashing.  nvcc cannot parse gcc's
   # arm_neon.h (it contains gcc-specific intrinsics), so disable the NEON

@@ -1478,8 +1478,8 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 // * Note that wlCoeffX and wlCoeffY is 1/gamma
 // in ePlace paper.
 //
-// _native is the CPU Kokkos loop body. The public updateWireLengthForceWA
-// dispatcher lives in wirelengthGradient.cpp and routes through
+// _native runs these loops in Kokkos's host execution space. The public
+// updateWireLengthForceWA dispatcher lives in wirelengthGradient.cpp and uses
 // wl_grad_backend_ (CPU or GPU). CpuWirelengthGradientBackend calls into
 // this method.
 void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
