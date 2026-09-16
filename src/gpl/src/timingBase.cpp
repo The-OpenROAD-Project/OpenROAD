@@ -24,6 +24,10 @@ namespace gpl {
 
 using utl::GPL;
 
+// Percentile of the worst-slack net set that anchors the bottom of the timing
+// weight ramp. 0 reproduces using the single worst net.
+static constexpr size_t kSlackMinPercentile = 1;
+
 // TimingBase
 TimingBase::TimingBase() = default;
 
@@ -151,13 +155,21 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
     return false;
   }
 
-  // min/max slack for worst nets
-  auto slack_min = rs_->resizeNetSlack(worst_slack_nets[0]).value();
+  // The bottom of the ramp is an order statistic, not the single worst net:
+  // one outlier would otherwise rescale the weights of every other net.
+  const size_t slack_min_index
+      = std::min<size_t>(worst_slack_nets.size() - 1,
+                         worst_slack_nets.size() * kSlackMinPercentile / 100);
+  auto slack_min
+      = rs_->resizeNetSlack(worst_slack_nets[slack_min_index]).value();
   auto slack_max
       = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
             .value();
 
-  log_->info(GPL, 106, "Timing-driven: worst slack {}", slack_min);
+  log_->info(GPL,
+             106,
+             "Timing-driven: worst slack {}",
+             rs_->resizeNetSlack(worst_slack_nets[0]).value());
 
   if (sta::fuzzyInf(slack_min)) {
     log_->warn(GPL,
@@ -180,11 +192,14 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
         if (slack_max == slack_min) {
           gNet->setTimingWeight(1.0);
         } else {
-          // weight(min_slack) = net_weight_max_
-          // weight(max_slack) = 1
-          const float weight = 1
-                               + (net_weight_max_ - 1) * (slack_max - net_slack)
-                                     / (slack_max - slack_min);
+          // weight(min_slack) = net_weight_max_, weight(max_slack) = 1.
+          // Nets past slack_min saturate rather than exceeding the max.
+          const float weight
+              = 1
+                + (net_weight_max_ - 1)
+                      * std::min(1.0f,
+                                 (float) ((slack_max - net_slack)
+                                          / (slack_max - slack_min)));
           gNet->setTimingWeight(weight);
         }
         weighted_net_count++;
