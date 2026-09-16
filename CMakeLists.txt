@@ -232,8 +232,8 @@ endif()
 add_subdirectory(src)
 add_subdirectory(test)
 
-# Not currently used but may become useful again with Kokkos
-target_compile_definitions(openroad PRIVATE GPU)
+# Reported by the startup banner (+GPU/-GPU); see OpenRoad::getGPUCompileOption.
+target_compile_definitions(openroad PRIVATE GPU=$<IF:$<BOOL:${ENABLE_GPU}>,true,false>)
 
 if(BUILD_PYTHON)
   target_compile_definitions(openroad PRIVATE BUILD_PYTHON=1)

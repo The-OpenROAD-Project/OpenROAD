@@ -25,6 +25,7 @@ compiler=gcc
 compilerSet=no
 useBazel=yes
 bazelLto=no
+bazelGpu=no
 noGui=no
 installPrefix=""
 
@@ -57,7 +58,9 @@ OPTIONS:
                                                  or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
-  -gpu                                          Enable GPU to accelerate the process
+  -gpu                                          Build the opt-in GPU (Kokkos/CUDA)
+                                                 placement backends: -DENABLE_GPU=ON
+                                                 with CMake, --config=gpu with Bazel.
   -cmake-build                                  Use CMake instead of Bazel to build.
                                                  By default OpenROAD is built with Bazel.
   -lto                                          Bazel only: build with --config=opt to
@@ -171,7 +174,8 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=("-DGPU=ON")
+            cmakeOptions+=("-DENABLE_GPU=ON")
+            bazelGpu=yes
             ;;
         -cmake-build)
             useBazel=no
@@ -399,6 +403,9 @@ if [[ "$useBazel" == "yes" ]]; then
     bazelArgs=("--jobs=${numThreads}" "--config=release")
     if [[ "$bazelLto" == "yes" ]]; then
         bazelArgs+=("--config=opt")
+    fi
+    if [[ "$bazelGpu" == "yes" ]]; then
+        bazelArgs+=("--config=gpu")
     fi
     if [[ "$noGui" == "yes" ]]; then
         bazelArgs+=("--//:platform=cli")
