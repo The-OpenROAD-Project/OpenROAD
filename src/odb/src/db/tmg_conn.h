@@ -217,7 +217,7 @@ class tmg_conn
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
   void connectTerm(int terminal_index, bool soft);
-  void connectTermSoft(int j, int rt, const Rect& rect, int k);
+  void connectTermSoft(int terminal_index, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();

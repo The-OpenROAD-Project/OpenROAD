@@ -1243,7 +1243,7 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
   first_for_clear_ = nullptr;
 }
 
-void tmg_conn::connectTermSoft(const int j,
+void tmg_conn::connectTermSoft(const int terminal_index,
                                const int rt,
                                const Rect& rect,
                                const int k)
@@ -1274,7 +1274,7 @@ void tmg_conn::connectTermSoft(const int j,
   }
   WirePoint* pt = &wire_points_[choose_bfr ? bfr : bto];
   WirePoint* pother = &wire_points_[choose_bfr ? bto : bfr];
-  if (pt->tindex == j) {
+  if (pt->tindex == terminal_index) {
     return;
   }
 
@@ -1288,7 +1288,7 @@ void tmg_conn::connectTermSoft(const int j,
       && wire_points_[bfr].y == wire_points_[bto].y) {
     // if wire shape k is an isolated square,
     // then connect to other point if available
-    if (pother->tindex == j) {
+    if (pother->tindex == terminal_index) {
       return;  // already connected
     }
     if (pother->tindex < 0) {
@@ -1314,8 +1314,8 @@ void tmg_conn::connectTermSoft(const int j,
   if (pt->tindex >= 0) {
     return;  // skip soft if conflicts with hard
   }
-  pt->tindex = j;
-  Terminal* x = &terminals_[j];
+  pt->tindex = terminal_index;
+  Terminal* x = &terminals_[terminal_index];
   addPointToTerm(pt, x);
   pt->fre = false;
   if (has_alt) {
