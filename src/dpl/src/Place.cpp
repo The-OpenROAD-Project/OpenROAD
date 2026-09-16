@@ -381,6 +381,7 @@ void Opendp::place()
   std::ranges::sort(sorted_cells, CellPlaceOrderLess(core_, this));
 
   int count = 0;
+  int moves = 0;
   for (Node* cell : sorted_cells) {
     if (iterative_debug_) {
       count++;
@@ -391,6 +392,7 @@ void Opendp::place()
                       100.0 * count / sorted_cells.size());
     }
 
+    const odb::Point pos_before = getDplLocation(cell);
     bool diamond_move = diamondMove(cell);
     bool rip_up_move = false;
 
@@ -404,10 +406,13 @@ void Opendp::place()
     }
     diamond_move == 1 ? success_diamond_move++ : failed_diamond_move++;
 
+    if (getDplLocation(cell) != pos_before) {
+      moves++;
+    }
+
     if (iterative_debug_) {
-      odb::Point initial_location = getOdbLocation(cell);
       odb::Point final_location = getDplLocation(cell);
-      float len = odb::Point::squaredDistance(initial_location, final_location);
+      float len = odb::Point::squaredDistance(pos_before, final_location);
       if (len > 0) {
         report_placement(cell, diamond_move, rip_up_move);
       }
@@ -415,6 +420,7 @@ void Opendp::place()
   }
 
   const size_t total_cells = sorted_cells.size();
+  total_moves_ = moves;
   const int success_rip_up = failed_diamond_move - failed_rip_up;
 
   logger_->report("Movements Summary");
