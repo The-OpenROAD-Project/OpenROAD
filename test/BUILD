@@ -148,6 +148,7 @@ filegroup(
 # From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
     "commands_without_load",
+    "upf_aes",
 ]
 
 COMPULSORY_TESTS = [
@@ -156,7 +157,6 @@ COMPULSORY_TESTS = [
     "ord_tclsh_completion",
     "place_inst",
     "upf_test",
-    "upf_aes",
     "write_db",
 ] + PASSFAIL_TESTS
 
@@ -204,14 +204,11 @@ BIG_TESTS = [
 # <design>.metrics_limits file; without one the check fails with "missing metrics
 # limits file" rather than quietly running the flow and asserting nothing.
 #
-# upf_aes does its own diff internally (regions-only under BAZEL_TEST) since
-# the full DEF output is not bit-stable across Bazel/CMake; the Tcl script
-# fails the test on mismatch, so the log diff against .ok is suppressed.
 [
     regression_test(
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
-        check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS + ["upf_aes"] else True,
+        check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS else True,
         check_metrics = True if test_name in BIG_TESTS else False,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
