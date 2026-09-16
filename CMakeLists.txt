@@ -98,7 +98,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 
-find_package(Kokkos 4.7 REQUIRED)
+find_package(Kokkos 5.2.2 REQUIRED)
 
 # GPU backend wiring (opt-in). CUDA / HIP / SYCL detection,
 # compiler probing, and language enablement live in cmake/KokkosBackend.cmake
