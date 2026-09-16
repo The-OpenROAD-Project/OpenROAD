@@ -70,10 +70,11 @@ void tcs_level::add_shape(tcs_shape* shape, bool update_bounds)
   num_shapes++;
 }
 
-class tmg_conn_search::Impl
+class ShapeSearch::Impl
 {
  public:
   Impl();
+
   void clear();
   void addShape(int level, const Rect& bounds, int is_via, int id);
   void searchStart(int level, const Rect& bounds, int is_via);
@@ -102,12 +103,12 @@ class tmg_conn_search::Impl
   static constexpr int kSortThreshold = 1024;
 };
 
-tmg_conn_search::Impl::Impl()
+ShapeSearch::Impl::Impl()
 {
   clear();
 }
 
-void tmg_conn_search::Impl::clear()
+void ShapeSearch::Impl::clear()
 {
   shapes_.clear();
   levels_.clear();
@@ -118,10 +119,10 @@ void tmg_conn_search::Impl::clear()
   sorted_ = false;
 }
 
-void tmg_conn_search::Impl::addShape(const int level,
-                                     const Rect& bounds,
-                                     const int is_via,
-                                     const int id)
+void ShapeSearch::Impl::addShape(const int level,
+                                 const Rect& bounds,
+                                 const int is_via,
+                                 const int id)
 {
   tcs_shape* shape = &shapes_.emplace_back();
   shape->level = level;
@@ -141,9 +142,9 @@ void tmg_conn_search::Impl::addShape(const int level,
   slev->num_shapes++;
 }
 
-void tmg_conn_search::Impl::searchStart(const int level,
-                                        const Rect& bounds,
-                                        const int is_via)
+void ShapeSearch::Impl::searchStart(const int level,
+                                    const Rect& bounds,
+                                    const int is_via)
 {
   if (!sorted_) {
     sort();
@@ -154,7 +155,7 @@ void tmg_conn_search::Impl::searchStart(const int level,
   search_via_ = is_via;
 }
 
-bool tmg_conn_search::Impl::searchNext(int* id)
+bool ShapeSearch::Impl::searchNext(int* id)
 {
   *id = -1;
   if (!search_bin_) {
@@ -256,7 +257,7 @@ static void tcs_level_wrap(tcs_level* bin)
   }
 }
 
-void tmg_conn_search::Impl::sort_level(tcs_level* bin)
+void ShapeSearch::Impl::sort_level(tcs_level* bin)
 {
   if (bin->num_shapes < kSortThreshold) {
     return;
@@ -300,7 +301,7 @@ void tmg_conn_search::Impl::sort_level(tcs_level* bin)
   sort_level(right);
 }
 
-void tmg_conn_search::Impl::sort()
+void ShapeSearch::Impl::sort()
 {
   sorted_ = true;
   for (tcs_level* level : root_for_level_) {
@@ -310,32 +311,29 @@ void tmg_conn_search::Impl::sort()
 
 /////////////////////////////////////////////
 
-tmg_conn_search::tmg_conn_search()
+ShapeSearch::ShapeSearch()
 {
   impl_ = std::make_unique<Impl>();
 }
 
-tmg_conn_search::~tmg_conn_search() = default;
+ShapeSearch::~ShapeSearch() = default;
 
-void tmg_conn_search::clear()
+void ShapeSearch::clear()
 {
   impl_->clear();
 }
 
-void tmg_conn_search::addShape(int level,
-                               const Rect& bounds,
-                               int is_via,
-                               int id)
+void ShapeSearch::addShape(int level, const Rect& bounds, int is_via, int id)
 {
   impl_->addShape(level, bounds, is_via, id);
 }
 
-void tmg_conn_search::searchStart(int level, const Rect& bounds, int is_via)
+void ShapeSearch::searchStart(int level, const Rect& bounds, int is_via)
 {
   impl_->searchStart(level, bounds, is_via);
 }
 
-bool tmg_conn_search::searchNext(int* id)
+bool ShapeSearch::searchNext(int* id)
 {
   return impl_->searchNext(id);
 }
