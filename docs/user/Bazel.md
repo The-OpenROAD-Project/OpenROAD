@@ -505,15 +505,16 @@ built from source by Bazel (the `fftw` module in `MODULE.bazel`), so no system
 FFTW is needed at build time.
 
 ```bash
-git clone https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
+git clone --branch v2.0.0 --depth 1 https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
 cmake -S . -B build \
   -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-fft-libcxx \
   -DCMAKE_CXX_COMPILER="$CLANGXX" \
   -DCMAKE_CXX_STANDARD=20 \
   -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
   -DKokkos_ROOT=/usr/local/kokkos-libcxx \
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
   -DKokkosFFT_ENABLE_FFTW=ON \
-  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARKS=OFF
+  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARK=OFF
 sudo cmake --install build
 ```
 
