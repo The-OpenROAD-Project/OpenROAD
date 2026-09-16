@@ -233,7 +233,7 @@ add_subdirectory(src)
 add_subdirectory(test)
 
 # Reported by the startup banner (+GPU/-GPU); see OpenRoad::getGPUCompileOption.
-target_compile_definitions(openroad PRIVATE GPU=$<IF:$<BOOL:${ENABLE_GPU}>,true,false>)
+target_compile_definitions(openroad PRIVATE GPU=$<IF:$<BOOL:${ENABLE_GPU}>,1,0>)
 
 if(BUILD_PYTHON)
   target_compile_definitions(openroad PRIVATE BUILD_PYTHON=1)
