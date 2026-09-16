@@ -2,8 +2,10 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "PlacementDRC.h"
@@ -25,63 +27,21 @@ using utl::DPL;
 using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
 void Opendp::checkPlacement(const bool verbose,
-                            const std::string& report_file_name)
+                            const std::string& report_file_name,
+                            const bool fixed_only)
 {
-  importDb();
+  importDb(fixed_only);
   adjustNodesOrient();
-
-  std::vector<Node*> placed_failures;
-  std::vector<Node*> in_rows_failures;
-  std::vector<Node*> overlap_failures;
-  std::vector<Node*> padding_failures;
-  std::vector<Node*> one_site_gap_failures;
-  std::vector<Node*> site_align_failures;
-  std::vector<Node*> region_placement_failures;
-  std::vector<Node*> edge_spacing_failures;
-  std::vector<Node*> blocked_layers_failures;
-
   initGrid();
   groupAssignCellRegions();
-  const auto& row_coords = grid_->getRowCoordinates();
+
+  CheckPlacementFailures failures;
+  const auto row_coords = grid_->getRowCoordinates();
   for (auto& cell : network_->getNodes()) {
     if (cell->getType() != Node::CELL) {
       continue;
     }
-    if (cell->isStdCell()) {
-      // Site alignment check
-      if (cell->getLeft() % grid_->getSiteWidth() != 0
-          || row_coords.find(cell->getBottom().v) == row_coords.end()) {
-        site_align_failures.push_back(cell.get());
-        continue;
-      }
-
-      if (!checkInRows(*cell)) {
-        in_rows_failures.push_back(cell.get());
-      }
-      if (!checkRegionPlacement(cell.get())) {
-        region_placement_failures.push_back(cell.get());
-      }
-    }
-    // Placed check
-    if (!isPlaced(cell.get())) {
-      placed_failures.push_back(cell.get());
-    }
-    // Overlap check
-    if (checkOverlap(*cell)) {
-      overlap_failures.push_back(cell.get());
-    }
-    // Padding check
-    if (!drc_engine_->checkPadding(cell.get())) {
-      padding_failures.emplace_back(cell.get());
-    }
-    grid_->paintCellPadding(cell.get());
-    // EdgeSpacing check
-    if (!drc_engine_->checkEdgeSpacing(cell.get())) {
-      edge_spacing_failures.emplace_back(cell.get());
-    }
-    if (!drc_engine_->checkBlockedLayers(cell.get())) {
-      blocked_layers_failures.emplace_back(cell.get());
-    }
+    checkCellPlacement(cell.get(), row_coords, failures);
   }
   // This loop is separate because it needs to be done after the overlap check
   // The overlap check assigns the overlap cell to its pixel
@@ -92,50 +52,109 @@ void Opendp::checkPlacement(const bool verbose,
     for (auto& cell : network_->getNodes()) {
       // One site gap check
       if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell)) {
-        one_site_gap_failures.push_back(cell.get());
+        failures.one_site_gap.push_back(cell.get());
       }
     }
   }
-  saveFailures(placed_failures,
-               in_rows_failures,
-               overlap_failures,
-               padding_failures,
-               one_site_gap_failures,
-               site_align_failures,
-               region_placement_failures,
-               {},
-               edge_spacing_failures,
-               blocked_layers_failures);
+  const size_t violations
+      = reportCheckPlacement(failures, verbose, fixed_only, report_file_name);
+  if (fixed_only) {
+    // Filler and decap placement reuse a populated network without
+    // re-importing, so do not leave one without the movable cells behind.
+    importClear();
+  }
+  if (violations == 0) {
+    return;
+  }
+  if (fixed_only) {
+    logger_->error(DPL,
+                   40,
+                   "placement checks failed for fixed instances during check "
+                   "placement.");
+  }
+  logger_->error(
+      DPL, 33, "detailed placement checks failed during check placement.");
+}
+
+void Opendp::checkCellPlacement(Node* cell,
+                                const std::unordered_set<int>& row_coords,
+                                CheckPlacementFailures& failures)
+{
+  if (cell->isStdCell()) {
+    // Site alignment check
+    if (cell->getLeft() % grid_->getSiteWidth() != 0
+        || row_coords.find(cell->getBottom().v) == row_coords.end()) {
+      failures.site_align.push_back(cell);
+      return;
+    }
+
+    if (!checkInRows(*cell)) {
+      failures.in_rows.push_back(cell);
+    }
+    if (!checkRegionPlacement(cell)) {
+      failures.region_placement.push_back(cell);
+    }
+  }
+  // Placed check
+  if (!isPlaced(cell)) {
+    failures.placed.push_back(cell);
+  }
+  // Overlap check
+  if (checkOverlap(*cell)) {
+    failures.overlap.push_back(cell);
+  }
+  // Padding check
+  if (!drc_engine_->checkPadding(cell)) {
+    failures.padding.emplace_back(cell);
+  }
+  grid_->paintCellPadding(cell);
+  // EdgeSpacing check
+  if (!drc_engine_->checkEdgeSpacing(cell)) {
+    failures.edge_spacing.emplace_back(cell);
+  }
+  if (!drc_engine_->checkBlockedLayers(cell)) {
+    failures.blocked_layers.emplace_back(cell);
+  }
+}
+
+// Saves markers, writes the report and logs the per-check warnings.
+// Returns the number of violations that make the check fail.
+size_t Opendp::reportCheckPlacement(const CheckPlacementFailures& failures,
+                                    const bool verbose,
+                                    const bool fixed_only,
+                                    const std::string& report_file_name)
+{
+  saveFailures(failures);
   if (!report_file_name.empty()) {
     writeJsonReport(report_file_name);
   }
-  reportFailures(placed_failures, 3, "Placed", verbose);
-  reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
+  reportFailures(failures.placed, 3, "Placed", verbose);
+  reportFailures(failures.in_rows, 4, "Placed in rows", verbose);
   reportFailures(
-      overlap_failures, 5, "Overlap", verbose, [&](Node* cell) -> void {
+      failures.overlap, 5, "Overlap", verbose, [&](Node* cell) -> void {
         reportOverlapFailure(cell);
       });
-  reportFailures(padding_failures, 11, "Padding", verbose);
-  reportFailures(site_align_failures, 6, "Site aligned", verbose);
-  reportFailures(one_site_gap_failures, 7, "One site gap", verbose);
-  reportFailures(region_placement_failures, 8, "Region placement", verbose);
+  reportFailures(failures.padding, 11, "Padding", verbose);
+  reportFailures(failures.site_align, 6, "Site aligned", verbose);
+  reportFailures(failures.one_site_gap, 7, "One site gap", verbose);
+  reportFailures(failures.region_placement, 8, "Region placement", verbose);
   reportFailures(
-      edge_spacing_failures, 9, "LEF58_CELLEDGESPACINGTABLE", verbose);
-  reportFailures(blocked_layers_failures, 10, "Blocked layers", verbose);
-  logger_->metric("design__violations",
-                  placed_failures.size() + in_rows_failures.size()
-                      + overlap_failures.size() + padding_failures.size()
-                      + site_align_failures.size());
+      failures.edge_spacing, 9, "LEF58_CELLEDGESPACINGTABLE", verbose);
+  reportFailures(failures.blocked_layers, 10, "Blocked layers", verbose);
 
-  if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
-          + padding_failures.size() + site_align_failures.size()
-          + (disallow_one_site_gaps_ ? one_site_gap_failures.size() : 0)
-          + region_placement_failures.size() + edge_spacing_failures.size()
-          + blocked_layers_failures.size()
-      > 0) {
-    logger_->error(
-        DPL, 33, "detailed placement checks failed during check placement.");
-  }
+  const size_t metric_violations
+      = failures.placed.size() + failures.in_rows.size()
+        + failures.overlap.size() + failures.padding.size()
+        + failures.site_align.size();
+  // A fixed-only run validates the floorplan, so it reports under its own
+  // metric instead of overwriting the detailed placement one.
+  logger_->metric(fixed_only ? "floorplan__violations" : "design__violations",
+                  metric_violations);
+
+  return metric_violations
+         + (disallow_one_site_gaps_ ? failures.one_site_gap.size() : 0)
+         + failures.region_placement.size() + failures.edge_spacing.size()
+         + failures.blocked_layers.size();
 }
 
 void Opendp::saveViolations(const std::vector<Node*>& failures,
@@ -184,17 +203,18 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
   }
 }
 
-void Opendp::saveFailures(const vector<Node*>& placed_failures,
-                          const vector<Node*>& in_rows_failures,
-                          const vector<Node*>& overlap_failures,
-                          const vector<Node*>& padding_failures,
-                          const vector<Node*>& one_site_gap_failures,
-                          const vector<Node*>& site_align_failures,
-                          const vector<Node*>& region_placement_failures,
-                          const vector<Node*>& placement_failures,
-                          const vector<Node*>& edge_spacing_failures,
-                          const vector<Node*>& blocked_layers_failures)
+void Opendp::saveFailures(const CheckPlacementFailures& failures)
 {
+  const auto& placed_failures = failures.placed;
+  const auto& in_rows_failures = failures.in_rows;
+  const auto& overlap_failures = failures.overlap;
+  const auto& padding_failures = failures.padding;
+  const auto& one_site_gap_failures = failures.one_site_gap;
+  const auto& site_align_failures = failures.site_align;
+  const auto& region_placement_failures = failures.region_placement;
+  const auto& placement_failures = failures.placement;
+  const auto& edge_spacing_failures = failures.edge_spacing;
+  const auto& blocked_layers_failures = failures.blocked_layers;
   if (placed_failures.empty() && in_rows_failures.empty()
       && overlap_failures.empty() && padding_failures.empty()
       && one_site_gap_failures.empty() && site_align_failures.empty()

@@ -139,10 +139,16 @@ remove_fillers
 The `check_placement` command checks the placement legality. It returns
 `0` if the placement is legal.
 
+With `-fixed_only`, only fixed instances and macros (e.g. macros, tapcells
+and endcaps) are checked. This validates the floorplan before the standard
+cells are placed, and reports the `floorplan__violations` metric instead of
+`design__violations`.
+
 ```tcl
 check_placement
     [-verbose]
     [-disallow_one_site_gaps]
+    [-fixed_only]
     [-report_file_name filename]
 ```
 
@@ -152,6 +158,7 @@ check_placement
 | ----- | ----- |
 | `-verbose` | Enable verbose logging. |
 | `-disallow_one_site_gaps` | Option is deprecated. |
+| `-fixed_only` | Check only fixed instances and macros, ignoring movable cells. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 
 ### Optimize Mirroring
