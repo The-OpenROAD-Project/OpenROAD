@@ -20,6 +20,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
+#include "odb/poly_decomp.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -543,6 +544,64 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
   }
 }
 
+namespace {
+
+// Convert a closed boost point sequence into the counter-clockwise vertex
+// list expected by the edge and corner classification: no repeated closing
+// point, no duplicate or collinear vertices.
+template <typename PointRange>
+std::vector<odb::Point> toRectilinearOutline(const PointRange& range)
+{
+  std::vector<odb::Point> pts;
+  for (const auto& boost_pt : range) {
+    const odb::Point pt(boost_pt.x(), boost_pt.y());
+    if (pts.empty() || pts.back() != pt) {
+      pts.push_back(pt);
+    }
+  }
+  if (pts.size() > 1 && pts.front() == pts.back()) {
+    pts.pop_back();
+  }
+
+  auto collinear
+      = [](const odb::Point& a, const odb::Point& b, const odb::Point& c) {
+          return (a.getX() == b.getX() && b.getX() == c.getX())
+                 || (a.getY() == b.getY() && b.getY() == c.getY());
+        };
+  std::vector<odb::Point> outline;
+  for (size_t i = 0; i < pts.size(); i++) {
+    const odb::Point& prev = pts[(i + pts.size() - 1) % pts.size()];
+    const odb::Point& next = pts[(i + 1) % pts.size()];
+    if (!collinear(prev, pts[i], next)) {
+      outline.push_back(pts[i]);
+    }
+  }
+
+  if (odb::polygon_is_clockwise(outline)) {
+    std::ranges::reverse(outline);
+  }
+
+  // Start at the lowest of the leftmost vertices (odb::Point orders by x then
+  // y) so the boundary is walked bottom, right, top, left.  This only fixes
+  // the order cells are created in, keeping their names stable.
+  std::ranges::rotate(outline, std::ranges::min_element(outline));
+
+  return outline;
+}
+
+// Order polygons by their first (lowest leftmost) vertex.  The boost point
+// iterator hands out a reference to a point it owns, so copy the point before
+// the temporary iterator goes away.
+template <typename Polygon>
+bool startsBefore(const Polygon& lhs, const Polygon& rhs)
+{
+  const auto l = *lhs.begin();
+  const auto r = *rhs.begin();
+  return odb::Point(l.x(), l.y()) < odb::Point(r.x(), r.y());
+}
+
+}  // namespace
+
 std::vector<odb::geom::BoostPolygon90WithHoles> Tapcell::getBoundaryAreas()
     const
 {
@@ -573,38 +632,41 @@ std::vector<odb::geom::BoostPolygon90WithHoles> Tapcell::getBoundaryAreas()
   core_area_set += core_area;
   core_area_set -= core_mask;
 
-  std::vector<odb::geom::BoostPolygon90WithHoles> core_areas;
-  core_area_set.get_polygons(core_areas);
+  // The 90-degree polygon formation can fold an enclosed hole into the outer
+  // boundary through a doubled segment when the hole is flush with another
+  // boundary edge (e.g. two macro voids separated by a narrow strip of rows).
+  // Such an outline has edges crossing rows that are not on the boundary, so
+  // hand the merged area to the general polygon formation as rectangles,
+  // bypassing the 90-degree formation entirely; it reports holes as holes.
+  const odb::geom::BoostPolygonSet core_area_general
+      = odb::geom::toPolygonSet(odb::geom::extractRectangles(core_area_set));
+  std::vector<boost::polygon::polygon_with_holes_data<int>> core_areas;
+  core_area_general.get(core_areas);
 
   // build list of core outlines
   std::vector<odb::geom::BoostPolygon90WithHoles> core_outlines;
   for (const auto& core : core_areas) {
-    std::vector<odb::Point> outline;
+    const std::vector<odb::Point> outline = toRectilinearOutline(core);
 
-    for (const auto& boost_pt : core) {
-      const odb::Point pt(boost_pt.x(), boost_pt.y());
-      auto check = std::ranges::find(outline, pt);
-      if (check == outline.end()) {
-        outline.push_back(pt);
-      } else {
-        // delete everything from the found point on
-        outline.erase(check, outline.end());
-      }
+    std::vector<odb::geom::BoostPolygon90> holes;
+    for (auto itr = core.begin_holes(); itr != core.end_holes(); itr++) {
+      const std::vector<odb::Point> hole = toRectilinearOutline(*itr);
+      odb::geom::BoostPolygon90 hole_p;
+      hole_p.set(hole.begin(), hole.end());
+      holes.push_back(hole_p);
     }
+    std::ranges::sort(holes, startsBefore<odb::geom::BoostPolygon90>);
 
     odb::geom::BoostPolygon90WithHoles core_p;
     core_p.set(outline.begin(), outline.end());
+    core_p.set_holes(holes.begin(), holes.end());
     core_outlines.push_back(core_p);
   }
+  std::ranges::sort(core_outlines,
+                    startsBefore<odb::geom::BoostPolygon90WithHoles>);
 
-  for (auto& core : core_outlines) {
-    const odb::geom::BoostPolygon90Set core_holes = core_mask & core;
-    std::vector<odb::geom::BoostPolygon90WithHoles> holes;
-    core_holes.get_polygons(holes);
-
-    core.set_holes(holes.begin(), holes.end());
-
-    if (logger_->debugCheck(utl::TAP, "Endcap", 1)) {
+  if (logger_->debugCheck(utl::TAP, "Endcap", 1)) {
+    for (const auto& core : core_outlines) {
       logger_->report("Core");
       logger_->report(" All pts");
       for (const auto& pt : core) {
@@ -914,6 +976,29 @@ std::vector<odb::dbRow*> Tapcell::getRows(const Tapcell::Edge& edge,
         // no on the edge
         continue;
       }
+      // Only rows on the inside of the edge belong to it; a row that merely
+      // touches the edge from the outside (e.g. a row fragment ending where a
+      // bottom edge runs) must not receive its endcaps.
+      bool inside = true;
+      switch (edge.type) {
+        case EdgeType::kBottom:
+          inside = row_bbox.yMin() == search.yMin();
+          break;
+        case EdgeType::kTop:
+          inside = row_bbox.yMax() == search.yMin();
+          break;
+        case EdgeType::kLeft:
+          inside = row_bbox.xMin() == search.xMin();
+          break;
+        case EdgeType::kRight:
+          inside = row_bbox.xMax() == search.xMin();
+          break;
+        case EdgeType::kUnknown:
+          break;
+      }
+      if (!inside) {
+        continue;
+      }
       rows.push_back(row);
 
       debugPrint(logger_,
@@ -1063,7 +1148,7 @@ std::pair<int, int> Tapcell::placeEndcaps(
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
     if (std::ranges::find(filled_edges_, edge) == filled_edges_.end()) {
-      endcaps += placeEndcapEdge(edge, placed_corners_, options);
+      endcaps += placeEndcapEdge(edge, options);
       filled_edges_.push_back(edge);
     }
   }
@@ -1301,13 +1386,12 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
 }
 
 int Tapcell::placeEndcapEdge(const Tapcell::Edge& edge,
-                             const Tapcell::CornerMap& corners,
                              const EndcapCellOptions& options)
 {
   switch (edge.type) {
     case EdgeType::kBottom:
     case EdgeType::kTop:
-      return placeEndcapEdgeHorizontal(edge, corners, options);
+      return placeEndcapEdgeHorizontal(edge, options);
       break;
     case EdgeType::kLeft:
     case EdgeType::kRight:
@@ -1321,7 +1405,6 @@ int Tapcell::placeEndcapEdge(const Tapcell::Edge& edge,
 }
 
 int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
-                                       const Tapcell::CornerMap& corners,
                                        const EndcapCellOptions& options)
 {
   int insts = 0;
@@ -1337,79 +1420,57 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
       site = master->getSite();
     }
   }
-  auto rows = getRows(edge, site);
+  const auto rows = getRows(edge, site);
   if (rows.empty()) {
     return 0;
   }
 
-  // there should only be one row
-  odb::dbRow* row = rows[0];
+  // The top-edge masters serve a top edge in an R0 row and a bottom edge in a
+  // flipped row, and vice versa.  Sort widest first once for each case.
+  auto sorted_masters = [](const std::vector<odb::dbMaster*>& source) {
+    std::vector<odb::dbMaster*> masters = source;
+    std::ranges::sort(masters, [](auto* rhs, auto* lhs) {
+      return rhs->getWidth() > lhs->getWidth();
+    });
+    return masters;
+  };
+  const bool is_top = edge.type == EdgeType::kTop;
+  const std::vector<odb::dbMaster*> r0_masters
+      = sorted_masters(is_top ? options.top_edge : options.bottom_edge);
+  const std::vector<odb::dbMaster*> flipped_masters
+      = sorted_masters(is_top ? options.bottom_edge : options.top_edge);
 
-  std::vector<odb::dbMaster*> masters;
-  switch (edge.type) {
-    case EdgeType::kTop:
-      if (row->getOrient() == odb::dbOrientType::R0) {
-        masters.insert(
-            masters.end(), options.top_edge.begin(), options.top_edge.end());
-      } else {
-        masters.insert(masters.end(),
-                       options.bottom_edge.begin(),
-                       options.bottom_edge.end());
-      }
-      break;
-    case EdgeType::kBottom:
-      if (row->getOrient() == odb::dbOrientType::R0) {
-        masters.insert(masters.end(),
-                       options.bottom_edge.begin(),
-                       options.bottom_edge.end());
-      } else {
-        masters.insert(
-            masters.end(), options.top_edge.begin(), options.top_edge.end());
-      }
-      break;
-    case EdgeType::kLeft:
-    case EdgeType::kRight:
-    case EdgeType::kUnknown:
-      break;
-  }
+  const int edge_min = std::min(edge.pt0.getX(), edge.pt1.getX());
+  const int edge_max = std::max(edge.pt0.getX(), edge.pt1.getX());
 
-  if (masters.empty()) {
-    return 0;
-  }
-
-  std::ranges::sort(masters, [](auto* rhs, auto* lhs) {
-    return rhs->getWidth() > lhs->getWidth();
-  });
-
-  odb::Point e0 = edge.pt0;
-  odb::Point e1 = edge.pt1;
-  if (e0.getX() > e1.getX()) {
-    std::swap(e0, e1);
-  }
-
-  // adjust for corners
-  auto check_row = corners.find(row);
-  if (check_row != corners.end()) {
-    for (auto* inst : check_row->second) {
-      const auto bbox = inst->getBBox()->getBox();
-
-      if (bbox.xMin() == e0.getX()) {
-        e0.setX(bbox.xMax());
-      }
-      if (bbox.xMax() == e1.getX()) {
-        e1.setX(bbox.xMin());
-      }
+  // A fragmented row may cover only part of the edge, so fill each row
+  // along the edge within its own extent.  Spans filled along this edge are
+  // tracked so overlapping rows at the same height do not fill twice.
+  std::vector<std::pair<int, int>> edge_filled;
+  for (odb::dbRow* row : rows) {
+    const std::vector<odb::dbMaster*>& masters
+        = row->getOrient() == odb::dbOrientType::R0 ? r0_masters
+                                                    : flipped_masters;
+    if (masters.empty()) {
+      continue;
     }
-  }
 
-  // Fill only x-ranges not already covered by another endcap or corner cell.
-  std::vector<std::pair<int, int>>& occupied = occupied_row_spans_[row];
+    const odb::Rect row_bbox = row->getBBox();
+    const int x_start = std::max(edge_min, row_bbox.xMin());
+    const int x_end = std::min(edge_max, row_bbox.xMax());
 
-  for (const auto& [span_start, span_end] :
-       computeOpenSpans(e0.getX(), e1.getX(), occupiedSpans(row))) {
-    insts += fillEndcapEdge(
-        row, span_start, span_end, masters, edge.type, options.prefix);
-    occupied.emplace_back(span_start, span_end);
+    // Fill only x-ranges not already covered by a corner or endcap cell.
+    std::vector<std::pair<int, int>> blocked = occupiedSpans(row);
+    blocked.insert(blocked.end(), edge_filled.begin(), edge_filled.end());
+
+    std::vector<std::pair<int, int>>& occupied = occupied_row_spans_[row];
+    for (const auto& [span_start, span_end] :
+         computeOpenSpans(x_start, x_end, std::move(blocked))) {
+      insts += fillEndcapEdge(
+          row, span_start, span_end, masters, edge.type, options.prefix);
+      occupied.emplace_back(span_start, span_end);
+      edge_filled.emplace_back(span_start, span_end);
+    }
   }
 
   return insts;
