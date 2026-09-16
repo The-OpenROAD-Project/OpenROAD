@@ -550,7 +550,8 @@ namespace {
 // list expected by the edge and corner classification: no repeated closing
 // point, no duplicate or collinear vertices.
 template <typename PointRange>
-std::vector<odb::Point> toRectilinearOutline(const PointRange& range)
+std::vector<odb::Point> toRectilinearOutline(const PointRange& range,
+                                             utl::Logger* logger)
 {
   std::vector<odb::Point> pts;
   for (const auto& boost_pt : range) {
@@ -577,8 +578,13 @@ std::vector<odb::Point> toRectilinearOutline(const PointRange& range)
     }
   }
 
-  if (outline.size() < 3) {
-    return outline;
+  // A rectilinear ring has at least four corners; anything less means the
+  // polygon formation returned something that is not a boundary.
+  if (outline.size() < 4) {
+    logger->error(utl::TAP,
+                  37,
+                  "Boundary outline is degenerate: {} vertices.",
+                  outline.size());
   }
 
   if (odb::polygon_is_clockwise(outline)) {
@@ -599,12 +605,6 @@ std::vector<odb::Point> toRectilinearOutline(const PointRange& range)
 template <typename Polygon>
 bool startsBefore(const Polygon& lhs, const Polygon& rhs)
 {
-  if (lhs.begin() == lhs.end()) {
-    return rhs.begin() != rhs.end();
-  }
-  if (rhs.begin() == rhs.end()) {
-    return false;
-  }
   const auto l = *lhs.begin();
   const auto r = *rhs.begin();
   return odb::Point(l.x(), l.y()) < odb::Point(r.x(), r.y());
@@ -656,11 +656,11 @@ std::vector<odb::geom::BoostPolygon90WithHoles> Tapcell::getBoundaryAreas()
   // build list of core outlines
   std::vector<odb::geom::BoostPolygon90WithHoles> core_outlines;
   for (const auto& core : core_areas) {
-    const std::vector<odb::Point> outline = toRectilinearOutline(core);
+    const std::vector<odb::Point> outline = toRectilinearOutline(core, logger_);
 
     std::vector<odb::geom::BoostPolygon90> holes;
     for (auto itr = core.begin_holes(); itr != core.end_holes(); itr++) {
-      const std::vector<odb::Point> hole = toRectilinearOutline(*itr);
+      const std::vector<odb::Point> hole = toRectilinearOutline(*itr, logger_);
       odb::geom::BoostPolygon90 hole_p;
       hole_p.set(hole.begin(), hole.end());
       holes.push_back(hole_p);
