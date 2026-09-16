@@ -121,9 +121,12 @@ class lefout
   void writeObstructions(std::ostream& out, dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(std::ostream& out, const std::string& indent, dbBox* box);
+  void writeBox(std::ostream& out,
+                const std::string& indent,
+                dbPolygon* polygon);
   void writePolygon(std::ostream& out,
                     const std::string& indent,
-                    dbPolygon* polygon);
+                    const Polygon& polygon);
   void writeRect(std::ostream& out,
                  const std::string& indent,
                  const Rect& rect);

@@ -646,6 +646,21 @@ IRSolver::LayerPolygons IRSolver::getMasterTerms(odb::dbMTerm* mterm) const
           odb::geom::toPolygonSet(pin->getPolygon()));
     }
     for (odb::dbBox* pin : mpin->getGeometry(false)) {
+      if (pin->isVia()) {
+        // a via has no layer of its own, expand it into the boxes it
+        // holds on each layer
+        std::vector<odb::dbShape> via_boxes;
+        pin->getViaBoxes(via_boxes);
+        for (const odb::dbShape& via_box : via_boxes) {
+          odb::dbTechLayer* layer = via_box.getTechLayer();
+          if (layer == nullptr) {
+            // via box
+            continue;
+          }
+          terms[layer].insert(odb::geom::toPolygonSet(via_box.getBox()));
+        }
+        continue;
+      }
       terms[pin->getTechLayer()].insert(odb::geom::toPolygonSet(pin->getBox()));
     }
   }
@@ -694,6 +709,24 @@ IRSolver::LayerPolygons IRSolver::getMasterObstructions(
             odb::geom::toPolygonSet(geom->getPolygon()) + 1);
       }
       for (odb::dbBox* geom : mpin->getGeometry(false)) {
+        if (geom->isVia()) {
+          // a via has no layer of its own, expand it into the boxes it
+          // holds on each layer so its enclosures come out of the
+          // obstructions too
+          std::vector<odb::dbShape> via_boxes;
+          geom->getViaBoxes(via_boxes);
+          for (const odb::dbShape& via_box : via_boxes) {
+            odb::dbTechLayer* layer = via_box.getTechLayer();
+            if (layer == nullptr) {
+              // via box
+              continue;
+            }
+            odb::Rect pin;
+            via_box.getBox().bloat(1, pin);
+            pins[layer].insert(odb::geom::toPolygonSet(pin));
+          }
+          continue;
+        }
         odb::Rect pin;
         geom->getBox().bloat(1, pin);
         pins[geom->getTechLayer()].insert(odb::geom::toPolygonSet(pin));
