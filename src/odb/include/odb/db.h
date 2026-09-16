@@ -10171,18 +10171,28 @@ class dbTechLayerCutEnclosureTableDefRule : public dbObject
   static dbTechLayerCutEnclosureTableDefRule* create(dbTechLayer* parent);
   static void destroy(dbTechLayerCutEnclosureTableDefRule* obj);
   // User Code Begin dbTechLayerCutEnclosureTableDefRule
-  // aboveBelow: 0 = both, 1 = above, 2 = below
-  void addDefaultRow(int aboveBelow, int oh1, int oh2, int oh3, int oh4);
-  void addWidthRow(int width,
-                   int aboveBelow,
-                   int oh1,
-                   int oh2,
-                   int oh3,
-                   int oh4);
-  void getDefaultRows(
-      std::vector<std::tuple<int, int, int, int, int>>& rows) const;
-  void getWidthRows(
-      std::vector<std::tuple<int, int, int, int, int, int>>& rows) const;
+  // above_below: 0 = both, 1 = above, 2 = below
+  struct DefaultRow
+  {
+    int above_below;
+    int overhang1;
+    int overhang2;
+    int overhang3;
+    int overhang4;
+  };
+  struct WidthRow
+  {
+    int width;
+    int above_below;
+    int overhang1;
+    int overhang2;
+    int overhang3;
+    int overhang4;
+  };
+  void addDefaultRow(const DefaultRow& row);
+  void addWidthRow(const WidthRow& row);
+  void getDefaultRows(std::vector<DefaultRow>& rows) const;
+  void getWidthRows(std::vector<WidthRow>& rows) const;
   // User Code End dbTechLayerCutEnclosureTableDefRule
 };
 

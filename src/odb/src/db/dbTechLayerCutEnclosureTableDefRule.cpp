@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutEnclosureTableDefRule.h"
 
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <tuple>
@@ -29,6 +30,14 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     return false;
   }
 
+  // User Code Begin ==
+  if (default_rows_ != rhs.default_rows_) {
+    return false;
+  }
+  if (width_rows_ != rhs.width_rows_) {
+    return false;
+  }
+  // User Code End ==
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
 }
@@ -36,7 +45,7 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
 bool _dbTechLayerCutEnclosureTableDefRule::operator<(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
 {
-  return true;
+  return false;
 }
 
 _dbTechLayerCutEnclosureTableDefRule::_dbTechLayerCutEnclosureTableDefRule(
@@ -140,43 +149,54 @@ void dbTechLayerCutEnclosureTableDefRule::destroy(
       (_dbTechLayerCutEnclosureTableDefRule*) obj);
 }
 // User Code Begin dbTechLayerCutEnclosureTableDefRulePublicMethods
-void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(int aboveBelow,
-                                                        int oh1,
-                                                        int oh2,
-                                                        int oh3,
-                                                        int oh4)
+void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 {
+  assert(row.above_below >= 0 && row.above_below <= 2);
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  obj->default_rows_.push_back({aboveBelow, oh1, oh2, oh3, oh4});
+  obj->default_rows_.push_back({row.above_below,
+                                row.overhang1,
+                                row.overhang2,
+                                row.overhang3,
+                                row.overhang4});
 }
 
-void dbTechLayerCutEnclosureTableDefRule::addWidthRow(int width,
-                                                      int aboveBelow,
-                                                      int oh1,
-                                                      int oh2,
-                                                      int oh3,
-                                                      int oh4)
+void dbTechLayerCutEnclosureTableDefRule::addWidthRow(const WidthRow& row)
 {
+  assert(row.above_below >= 0 && row.above_below <= 2);
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  obj->width_rows_.push_back({width, aboveBelow, oh1, oh2, oh3, oh4});
+  obj->width_rows_.push_back({row.width,
+                              row.above_below,
+                              row.overhang1,
+                              row.overhang2,
+                              row.overhang3,
+                              row.overhang4});
 }
 
 void dbTechLayerCutEnclosureTableDefRule::getDefaultRows(
-    std::vector<std::tuple<int, int, int, int, int>>& rows) const
+    std::vector<DefaultRow>& rows) const
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  rows.assign(obj->default_rows_.begin(), obj->default_rows_.end());
+  rows.clear();
+  rows.reserve(obj->default_rows_.size());
+  for (const auto& [above_below, oh1, oh2, oh3, oh4] : obj->default_rows_) {
+    rows.push_back({above_below, oh1, oh2, oh3, oh4});
+  }
 }
 
 void dbTechLayerCutEnclosureTableDefRule::getWidthRows(
-    std::vector<std::tuple<int, int, int, int, int, int>>& rows) const
+    std::vector<WidthRow>& rows) const
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  rows.assign(obj->width_rows_.begin(), obj->width_rows_.end());
+  rows.clear();
+  rows.reserve(obj->width_rows_.size());
+  for (const auto& [width, above_below, oh1, oh2, oh3, oh4] :
+       obj->width_rows_) {
+    rows.push_back({width, above_below, oh1, oh2, oh3, oh4});
+  }
 }
 // User Code End dbTechLayerCutEnclosureTableDefRulePublicMethods
 }  // namespace odb
