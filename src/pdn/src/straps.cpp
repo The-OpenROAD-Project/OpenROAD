@@ -2594,18 +2594,14 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
     auto* grid_compomponent = shape->getGridComponent();
-    if (grid_compomponent->type() != GridComponent::kStrap
-        && grid_compomponent->type() != GridComponent::kFollowpin) {
-      // only attempt to repair straps and followpins
+    if (!grid_compomponent->checkForRepairChannels()) {
+      // only attempt to repair straps, followpins and earlier repairs
       continue;
     }
 
-    if (grid_compomponent->type() == GridComponent::kStrap) {
-      if (shape->getNumberOfConnections() == 0
-          || !shape->hasInternalConnections()) {
-        // strap is floating and will be removed
-        continue;
-      }
+    if (shape->isFloating()) {
+      // strap is floating and will be removed
+      continue;
     }
 
     auto* grid_strap = dynamic_cast<Straps*>(grid_compomponent);

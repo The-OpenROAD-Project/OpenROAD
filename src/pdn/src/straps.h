@@ -171,6 +171,7 @@ class PadDirectConnectionStraps : public Straps
   // report how the connections made to the pads are distributed over the nets
   static void reportConnectionBalance(
       const std::vector<GridComponent*>& components);
+  bool checkForRepairChannels() const override { return false; }
 
  private:
   enum class ConnectionType
@@ -325,6 +326,7 @@ class RepairChannelStraps : public Straps
   };
   // find all straps in grid that are not connected for anything
   static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
+  bool allowDbPins() const override { return false; }
 
  protected:
   // determineOffset resolves an absolute position from the channel geometry and

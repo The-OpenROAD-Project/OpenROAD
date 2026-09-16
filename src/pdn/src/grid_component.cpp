@@ -377,8 +377,9 @@ std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
     odb::dbBTerm* bterm
         = bterm_itr == bterm_map.end() ? nullptr : bterm_itr->second;
 
-    const bool is_pin_layer = convert_layer_to_pin.find(shape->getLayer())
-                              != convert_layer_to_pin.end();
+    const bool is_pin_layer = allowDbPins()
+                              && convert_layer_to_pin.find(shape->getLayer())
+                                     != convert_layer_to_pin.end();
 
     shape_map[shape.get()] = shape->writeToDb(wire, bterm, is_pin_layer);
   }
