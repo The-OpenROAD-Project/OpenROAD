@@ -350,26 +350,18 @@ class dbIStream
         f_.setstate(std::ios_base::eofbit | std::ios_base::failbit);
         return;
       }
-#if defined(__cpp_exceptions) && __cpp_exceptions
       ScopedExceptionToggle toggle(f_);
-#endif
       f_.read(data, static_cast<std::streamsize>(len));
       if (f_.eof()) {
         eof_reached_ = true;
       }
-#if defined(__cpp_exceptions) && __cpp_exceptions
       toggle.restore();
-#endif
     } else {
       // Buffered path
-#if defined(__cpp_exceptions) && __cpp_exceptions
       ScopedExceptionToggle toggle(f_);
-#endif
       if (!refill_buffer()) {
         f_.setstate(std::ios_base::eofbit | std::ios_base::failbit);
-#if defined(__cpp_exceptions) && __cpp_exceptions
         toggle.restore();
-#endif
         return;
       }
 
@@ -384,9 +376,7 @@ class dbIStream
       size_t chunk = std::min(len, buffer_size_);
       std::memcpy(data, buffer_.data(), chunk);
       buffer_pos_ = chunk;
-#if defined(__cpp_exceptions) && __cpp_exceptions
       toggle.restore();
-#endif
     }
   }
 
