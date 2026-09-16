@@ -41,30 +41,12 @@ void HeatMapDataSource::registerHeatMap()
   // a no-op until heatmap plumbing for ad-hoc sources lands.
 }
 
-void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
-{
-}
-
 void gui::Gui::setChartFactory(ChartFactory factory)
 {
   chart_factory_ = std::move(factory);
 }
 
 void Gui::triggerAction(const std::string& /* action */)
-{
-}
-
-void Gui::setSelected(const Selected& selection)
-{
-}
-
-const SelectionSet& Gui::selection()
-{
-  static SelectionSet dummy;
-  return dummy;
-}
-
-void Gui::removeSelectedByType(const std::string& /* type */)
 {
 }
 
@@ -145,21 +127,6 @@ void Gui::gifAddFrame(std::optional<int> key,
 {
 }
 
-void Gui::deleteLabel(const std::string& name)
-{
-}
-
-std::string Gui::addLabel(int x,
-                          int y,
-                          const std::string& text,
-                          std::optional<Painter::Color> color,
-                          std::optional<int> size,
-                          std::optional<Painter::Anchor> anchor,
-                          const std::optional<std::string>& name)
-{
-  return "";
-}
-
 Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
@@ -178,10 +145,6 @@ void Gui::saveImage(const std::string& filename,
 {
 }
 
-void Gui::clearSelections()
-{
-}
-
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
                 const std::string& attribute,
@@ -190,56 +153,6 @@ int Gui::select(const std::string& type,
                 int highlight_group)
 {
   return 0;
-}
-
-// The display-control state belongs to whatever front-end is installed, which
-// for a no-Qt binary is the headless viewer (e.g. the web viewer).  Without a
-// viewer everything is visible so headless renderers draw by default.
-void Gui::setDisplayControlsVisible(const std::string& name, bool value)
-{
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->setDisplayControlVisible(name, value);
-  }
-}
-
-bool Gui::checkDisplayControlsVisible(const std::string& name)
-{
-  if (headless_viewer_ != nullptr) {
-    return headless_viewer_->checkDisplayControlVisible(name);
-  }
-  return true;
-}
-
-void Gui::clearHighlights(int highlight_group)
-{
-}
-
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
-{
-}
-
-void Gui::addFocusNet(odb::dbNet* net)
-{
-}
-
-void Gui::removeFocusNet(odb::dbNet* net)
-{
-}
-
-void Gui::addRouteGuides(odb::dbNet* net)
-{
-}
-
-void Gui::removeRouteGuides(odb::dbNet* net)
-{
-}
-
-void Gui::addNetTracks(odb::dbNet* net)
-{
-}
-
-void Gui::removeNetTracks(odb::dbNet* net)
-{
 }
 
 void Gui::timingCone(Term term, bool fanin, bool fanout)
