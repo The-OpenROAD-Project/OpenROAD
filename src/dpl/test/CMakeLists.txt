@@ -18,6 +18,7 @@ or_integration_tests(
     check7
     check8
     check9
+    check_fixed_only
     diamond01
     diamond_multi_height
     diamond_one_site_gap
