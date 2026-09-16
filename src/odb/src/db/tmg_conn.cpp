@@ -66,8 +66,6 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   csVV_.reserve(1024);
   csNV_.reserve(1024);
   shorts_.reserve(1024);
-  need_short_wire_id_ = false;
-  first_for_clear_ = nullptr;
 }
 
 tmg_conn::~tmg_conn() = default;
@@ -199,13 +197,13 @@ void tmg_conn::loadNet(dbNet* net)
 
 void tmg_conn::loadSWire(dbNet* net)
 {
-  hasSWire_ = false;
+  has_special_wires_ = false;
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.empty()) {
     return;
   }
 
-  hasSWire_ = true;
+  has_special_wires_ = true;
   for (dbSWire* sw : swires) {
     for (dbSBox* sbox : sw->getWires()) {
       const Rect rect = sbox->getBox();
@@ -291,10 +289,10 @@ void tmg_conn::splitBySj(const int j,
 {
   tmg_rc_sh* sj = &(wire_sections_[j].shape);
   const int isVia = sj->isVia() ? 1 : 0;
-  search_->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
+  shape_search_->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   int klast = -1;
   int k;
-  while (search_->searchNext(&k)) {
+  while (shape_search_->searchNext(&k)) {
     if (k == klast || k == j) {
       continue;
     }
@@ -385,7 +383,7 @@ void tmg_conn::splitBySj(const int j,
                    nymin,
                    nxmax,
                    nymax);
-    search_->addShape(
+    shape_search_->addShape(
         rt, {nxmin, nymin, nxmax, nymax}, 0, wire_sections_.size() - 1);
   }
 }
@@ -561,15 +559,15 @@ void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
   rect = pin.getBox();
 }
 
-void tmg_conn::findConnections()
+void tmg_conn::identifyShorts()
 {
   if (wire_points_.empty()) {
     return;
   }
-  if (!search_) {
-    search_ = std::make_unique<tmg_conn_search>();
+  if (!shape_search_) {
+    shape_search_ = std::make_unique<ShapeSearch>();
   }
-  search_->clear();
+  shape_search_->clear();
 
   for (auto& pt : wire_points_) {
     pt.fre = true;
@@ -610,27 +608,27 @@ void tmg_conn::findConnections()
       const int rt_t = layt->getRoutingLevel();
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
-          search_->addShape(rt_b,
-                            {via_x + b->xMin(),
-                             via_y + b->yMin(),
-                             via_x + b->xMax(),
-                             via_y + b->yMax()},
-                            1,
-                            j);
+          shape_search_->addShape(rt_b,
+                                  {via_x + b->xMin(),
+                                   via_y + b->yMin(),
+                                   via_x + b->xMax(),
+                                   via_y + b->yMax()},
+                                  1,
+                                  j);
         } else if (b->getTechLayer() == layt) {
-          search_->addShape(rt_t,
-                            {via_x + b->xMin(),
-                             via_y + b->yMin(),
-                             via_x + b->xMax(),
-                             via_y + b->yMax()},
-                            1,
-                            j);
+          shape_search_->addShape(rt_t,
+                                  {via_x + b->xMin(),
+                                   via_y + b->yMin(),
+                                   via_x + b->xMax(),
+                                   via_y + b->yMax()},
+                                  1,
+                                  j);
         }
       }
 
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      search_->addShape(rt, s->rect(), 0, j);
+      shape_search_->addShape(rt, s->rect(), 0, j);
     }
   }
 
@@ -665,25 +663,25 @@ void tmg_conn::findConnections()
       const int rt_t = layt->getRoutingLevel();
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
-          search_->searchStart(rt_b,
-                               {via_x + b->xMin(),
-                                via_y + b->yMin(),
-                                via_x + b->xMax(),
-                                via_y + b->yMax()},
-                               1);
+          shape_search_->searchStart(rt_b,
+                                     {via_x + b->xMin(),
+                                      via_y + b->yMin(),
+                                      via_x + b->xMax(),
+                                      via_y + b->yMax()},
+                                     1);
         } else if (b->getTechLayer() == layt) {
-          search_->searchStart(rt_t,
-                               {via_x + b->xMin(),
-                                via_y + b->yMin(),
-                                via_x + b->xMax(),
-                                via_y + b->yMax()},
-                               1);
+          shape_search_->searchStart(rt_t,
+                                     {via_x + b->xMin(),
+                                      via_y + b->yMin(),
+                                      via_x + b->xMax(),
+                                      via_y + b->yMax()},
+                                     1);
         } else {
           continue;  // cut layer
         }
         int klast = -1;
         int k;
-        while (search_->searchNext(&k)) {
+        while (shape_search_->searchNext(&k)) {
           if (k != klast && k > j) {
             if (k == j + 1 && conn_next) {
               continue;
@@ -695,10 +693,10 @@ void tmg_conn::findConnections()
       }
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      search_->searchStart(rt, s->rect(), 0);
+      shape_search_->searchStart(rt, s->rect(), 0);
       int klast = -1;
       int k;
-      while (search_->searchNext(&k)) {
+      while (shape_search_->searchNext(&k)) {
         if (k != klast && k > j) {
           if (k == j + 1 && conn_next) {
             continue;
@@ -709,9 +707,10 @@ void tmg_conn::findConnections()
       }
     }
   }
+}
 
-  removeWireLoops();
-
+void tmg_conn::identifyTerminalWirePoints()
+{
   // detach tilPins from iterms
   detachTilePins();
 
@@ -735,10 +734,10 @@ void tmg_conn::findConnections()
               }
               Rect rect = box->getBox();
               transform.apply(rect);
-              search_->searchStart(rt_t, rect, 2);
+              shape_search_->searchStart(rt_t, rect, 2);
               int klast = -1;
               int k;
-              while (search_->searchNext(&k)) {
+              while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
                   klast = k;
                   int ii;
@@ -763,9 +762,9 @@ void tmg_conn::findConnections()
               if (rt_b == 0) {
                 continue;
               }
-              search_->searchStart(rt_b, rect, 2);
+              shape_search_->searchStart(rt_b, rect, 2);
               klast = -1;
-              while (search_->searchNext(&k)) {
+              while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
                   klast = k;
                   int ii;
@@ -790,10 +789,10 @@ void tmg_conn::findConnections()
               const int rt = box->getTechLayer()->getRoutingLevel();
               Rect rect = box->getBox();
               transform.apply(rect);
-              search_->searchStart(rt, rect, 2);
+              shape_search_->searchStart(rt, rect, 2);
               int klast = -1;
               int k;
-              while (search_->searchNext(&k)) {
+              while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
                   klast = k;
                   int ii;
@@ -828,10 +827,10 @@ void tmg_conn::findConnections()
           const int rt = pin.getTechLayer()->getRoutingLevel();
           Rect rect;
           getBTermSearchBox(x->bterm, pin, rect);
-          search_->searchStart(rt, rect, 2);
+          shape_search_->searchStart(rt, rect, 2);
           int klast = -1;
           int k;
-          while (search_->searchNext(&k)) {
+          while (shape_search_->searchNext(&k)) {
             if (k != klast) {
               klast = k;
               int ii;
@@ -1344,23 +1343,29 @@ void tmg_conn::analyzeNet(dbNet* net)
     checkConnOrdered();
   } else {
     loadNet(net);
+
     if (net->getWire()) {
       loadWire(net->getWire());
     }
+
     if (wire_points_.empty()) {
-      // ignoring this net
       net->setDisconnected(false);
       net->setWireOrdered(false);
       return;
     }
-    findConnections();
-    bool noConvert = false;
-    if (hasSWire_) {
+
+    identifyShorts();
+    removeWireLoops();
+    identifyTerminalWirePoints();
+
+    if (has_special_wires_) {
       net->destroySWires();
     }
+
     relocateShorts();
-    treeReorder(noConvert);
+    treeReorder(false);
   }
+
   net->setDisconnected(!connected_);
   net->setWireOrdered(true);
 }

@@ -26,14 +26,15 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
-# True under --config=tsan / --config=ubsan. The regression tests run the
-# openroad binary from the exec configuration, which those configs leave
-# uninstrumented on purpose (so swig, bison and the other build tools stay
+# True under --config=asan / --config=tsan / --config=ubsan. The regression
+# tests run the openroad binary from the exec configuration, which those configs
+# leave uninstrumented on purpose (so swig, bison and the other build tools stay
 # clean). test/regression.bzl uses this to take the binary under test from the
 # target configuration instead, which is where the instrumentation lives.
 selects.config_setting_group(
     name = "sanitizer_build",
     match_any = [
+        "@llvm//config:asan_enabled",
         "@llvm//config:tsan_enabled",
         "@llvm//config:ubsan_enabled",
     ],
