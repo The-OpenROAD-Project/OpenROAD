@@ -505,7 +505,6 @@ bool dbBox::isSubVia() const
   return box->flags_.is_sub_via != 0;
 }
 
-
 dbTechVia* dbBox::getTechVia() const
 {
   const _dbBox* box = (const _dbBox*) this;
@@ -966,7 +965,7 @@ dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
   box->next_box_ = pin->geoms_;
   pin->geoms_ = box->getOID();
 
-  auto sub_layer = ((dbBox*)box)->getTechVia()->getTopLayer();
+  auto sub_layer = ((dbBox*) box)->getTechVia()->getTopLayer();
   auto sub_box = dbBox::create(pin_, sub_layer, xmin, ymin, xmax, ymax);
   ((_dbBox*) sub_box)->flags_.is_sub_via = 1;
 

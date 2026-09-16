@@ -276,13 +276,11 @@ uint32_t dbBoxItr<page_size>::next(uint32_t id, ...) const
     }
     if (include_sub_vias_) {
       return next_box_id;
-    }
-    else {
+    } else {
       auto next_box = box_tbl_->getPtr(next_box_id);
       if (next_box->flags_.is_sub_via) {
         return next(next_box_id);
-      }
-      else {
+      } else {
         return next_box_id;
       }
     }

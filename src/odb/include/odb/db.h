@@ -5875,7 +5875,8 @@ class dbMPin : public dbObject
   ///
   /// Get the geometry of this pin.
   ///
-  dbSet<dbBox> getGeometry(bool include_decomposed_polygons = true, bool substitute_via_boxes = true);
+  dbSet<dbBox> getGeometry(bool include_decomposed_polygons = true,
+                           bool substitute_via_boxes = true);
 
   ///
   /// Get the polygon geometry of this pin.
