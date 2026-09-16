@@ -85,6 +85,16 @@ void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
 {
   debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
   for (const std::string& buffer : options_->getDlyBufferList()) {
+    if (db_->findMaster(buffer.c_str()) == nullptr) {
+      // Liberty only cell, it cannot be instantiated
+      debugPrint(logger_,
+                 CTS,
+                 "insertion delay",
+                 3,
+                 "{} : skipped, no master",
+                 buffer);
+      continue;
+    }
     const int64_t bufDelay = std::llround(
         techChar_->computeBufferDelay(buffer, buffer, extra_out_cap) * dpUnit_);
     if (bufDelay <= 0) {
@@ -118,11 +128,20 @@ int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load,
 
   if (!load.empty()) {
     odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
-    sta::LibertyCell* libertyLoadCell
-        = network_->libertyCell(network_->dbToSta(loadMaster));
-    sta::LibertyPort *input, *output;
-    libertyLoadCell->bufferPorts(input, output);
-    totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    if (loadMaster) {
+      sta::Cell* loadCell = network_->dbToSta(loadMaster);
+      if (loadCell) {
+        sta::LibertyCell* libertyLoadCell = network_->libertyCell(loadCell);
+        if (libertyLoadCell) {
+          sta::LibertyPort *input, *output;
+          libertyLoadCell->bufferPorts(input, output);
+          if (input) {
+            totalCap += input->capacitance(sta::RiseFall::rise(),
+                                           sta::MinMax::max());
+          }
+        }
+      }
+    }
   }
 
   return wireRes * totalCap * dpUnit_;
@@ -589,22 +608,23 @@ DPResult LatencyBalancer::solveDP(int64_t target,
     }
   }
 
-  // Pick best solution
+  // Pick best solution; the empty chain (no buffers, 0 delay) is the baseline
   int64_t bestW = 0;
   int bestJ = -1;
-  for (int64_t w = 0; w <= maxW; w++) {
+  int64_t bestDist = target;
+  int32_t bestLen = 0;
+  for (int64_t w = 1; w <= maxW; w++) {
     for (size_t j = 0; j < nBuffers; j++) {
-      if (dp[state(w, j)] == kUnset) {
+      const int32_t chainLen = dp[state(w, j)];
+      if (chainLen == kUnset) {
         continue;
       }
-      int64_t dist = std::abs(w - target);
-      int64_t bestDist = (bestJ == -1) ? std::numeric_limits<int64_t>::max()
-                                       : std::abs(bestW - target);
-
-      if (dist < bestDist
-          || (dist == bestDist && dp[state(w, j)] < dp[state(bestW, bestJ)])) {
+      const int64_t dist = std::abs(w - target);
+      if (dist < bestDist || (dist == bestDist && chainLen < bestLen)) {
         bestW = w;
         bestJ = static_cast<int>(j);
+        bestDist = dist;
+        bestLen = chainLen;
       }
     }
   }
@@ -620,7 +640,7 @@ DPResult LatencyBalancer::solveDP(int64_t target,
   int64_t w = bestW;
   int cur = bestJ;
   // dp holds the chain length, bounding the walk
-  for (int32_t left = dp[state(bestW, bestJ)]; cur != -1 && left > 0; left--) {
+  for (int32_t left = dp[state(bestW, bestJ)]; cur >= 0 && left > 0; left--) {
     result.buffers.push_back(dlyBuffers[cur]);
     const int32_t next = nxt[state(w, cur)];
     if (next == kDrivesSinks) {

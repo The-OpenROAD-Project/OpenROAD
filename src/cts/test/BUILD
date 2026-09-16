@@ -267,7 +267,11 @@ cc_test(
 cc_test(
     name = "TestDelayBufList",
     srcs = ["cpp/TestDelayBufList.cc"],
-    data = ["ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib"],
+    data = [
+        "clkdly_footprint.lib",
+        "clkdly_name.lib",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+    ],
     deps = [
         "//src/cts",
         "//src/dbSta:dbNetwork",

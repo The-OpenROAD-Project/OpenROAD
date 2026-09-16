@@ -484,12 +484,14 @@ void TechChar::initCharacterization()
     logger_->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
 
-  createDelayBufList();
   // Announce root and sink buffers
   finalizeRootSinkBuffers();
 
   // Trim and sort buffer list in ascending order of max cap limit
   trimSortBufferList(masterVector);
+
+  // Runs after the buffer list sanity checks in trimSortBufferList
+  createDelayBufList();
 
   float maxBuffCap = 0.0;
   std::string bufMasterName;
@@ -807,14 +809,6 @@ bool TechChar::isClkDlyCell(const std::string& cellName)
   return (!cellName.empty() && (cellName.find("clkdly") != std::string::npos));
 }
 
-bool TechChar::isDlyCell(const std::string& cellName)
-{
-  return (!cellName.empty()
-          && (cellName.find("DEL") != std::string::npos
-              || cellName.find("DLY") != std::string::npos
-              || cellName.find("dlygate") != std::string::npos));
-}
-
 static bool containsIgnoreCase(const std::string& str,
                                const std::string& substr)
 {
@@ -833,9 +827,7 @@ void TechChar::createDelayBufList()
     const char* lib_name
         = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
     std::vector<std::string> footprintClkDly;
-    std::vector<std::string> footprintDly;
     std::vector<std::string> nameClkDly;
-    std::vector<std::string> nameDly;
     std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
         db_network_->libertyLibraryIterator());
     while (lib_iter->hasNext()) {
@@ -846,8 +838,9 @@ void TechChar::createDelayBufList()
       }
 
       for (sta::LibertyCell* buffer : *lib->buffers()) {
-        if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
-            || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+        if (buffer->dontUse() || (resizer_ && resizer_->dontUse(buffer))
+            || buffer->alwaysOn() || buffer->isIsolationCell()
+            || buffer->isLevelShifter()) {
           continue;
         }
         const std::string footprint = buffer->footprint();
@@ -855,18 +848,9 @@ void TechChar::createDelayBufList()
           footprintClkDly.push_back(std::string(buffer->name()));
         }
 
-        if (isDlyCell(footprint)) {
-          footprintDly.push_back(std::string(buffer->name()));
-        }
-
         if (containsIgnoreCase(buffer->name(), "CLKDLY")
             || containsIgnoreCase(buffer->name(), "CLKDEL")) {
           nameClkDly.push_back(std::string(buffer->name()));
-        }
-
-        if (containsIgnoreCase(buffer->name(), "DLY")
-            || containsIgnoreCase(buffer->name(), "DEL")) {
-          nameDly.push_back(std::string(buffer->name()));
         }
       }
     }
@@ -878,12 +862,6 @@ void TechChar::createDelayBufList()
     } else if (!nameClkDly.empty()) {
       properDlyBuffers = nameClkDly;
       debugPrint(logger_, CTS, "insertion delay", 1, "Using name for clkdly");
-    } else if (!footprintDly.empty()) {
-      properDlyBuffers = footprintDly;
-      debugPrint(logger_, CTS, "insertion delay", 1, "Using footprint for dly");
-    } else if (!nameDly.empty()) {
-      properDlyBuffers = nameDly;
-      debugPrint(logger_, CTS, "insertion delay", 1, "Using name for dly");
     }
   }
 
@@ -906,7 +884,7 @@ void TechChar::createDelayBufList()
       prevDrvrRes = drvrRes;
       prevInternalDelay = intrinsicDelay;
       delay_buffers.push_back(buffer);
-    } else if ((drvrRes - prevDrvrRes) / drvrRes > 0.1) {
+    } else if (drvrRes && ((drvrRes - prevDrvrRes) / drvrRes > 0.1)) {
       delay_buffers.push_back(buffer);
       prevDrvrRes = drvrRes;
       prevInternalDelay = intrinsicDelay;
@@ -1035,21 +1013,39 @@ float TechChar::getMaxCapLimit(const std::string& buf)
 float TechChar::getDrvrResistance(const std::string& buf)
 {
   odb::dbMaster* master = db_->findMaster(buf.c_str());
+  if (!master) {
+    return 0.0f;
+  }
   sta::Cell* masterCell = db_network_->dbToSta(master);
+  if (!masterCell) {
+    return 0.0f;
+  }
   sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  if (!libCell) {
+    return 0.0f;
+  }
   sta::LibertyPort *in, *out;
   libCell->bufferPorts(in, out);
-  return out->driveResistance();
+  return out ? out->driveResistance() : 0.0f;
 }
 
 float TechChar::getinternalDelay(const std::string& buf)
 {
   odb::dbMaster* master = db_->findMaster(buf.c_str());
+  if (!master) {
+    return 0.0f;
+  }
   sta::Cell* masterCell = db_network_->dbToSta(master);
+  if (!masterCell) {
+    return 0.0f;
+  }
   sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  if (!libCell) {
+    return 0.0f;
+  }
   sta::LibertyPort *in, *out;
   libCell->bufferPorts(in, out);
-  return out->intrinsicDelay(openSta_);
+  return out ? sta::delayAsFloat(out->intrinsicDelay(openSta_)) : 0.0f;
 }
 
 void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
