@@ -266,32 +266,34 @@ TEST_F(TestDbSta, ReassociateModITermPin)
   db_network_->checkAxioms();
 }
 
-// Regression for #10210 (stale Path* dereference in rsz).
+// Driver-path resolution stays consistent across incremental netlist edits.
 //
-// Topology (TestDbSta_StalePrevPath.v):
+// Topology (TestDbSta_DriverInputPortAcrossNetlistEdits.v):
 //   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
 //                                   nd1/A2 <- in2
 //
-// rsz's sizing moves need the *input* LibertyPort of the driver cell on a
-// path.  Reading it from drvr_path->prevPath()->pin() is unsafe: the netlist
-// edits repair_timing performs free and recycle the per-vertex Path arena, so
-// a Path* captured before an edit decodes to whatever now occupies the slot.
-// In #10210 that yielded a port name absent from the driver's swappable
-// cells, findLibertyPort() returned null, and upsizeCell() crashed.  The fix
-// reads the port from drvr_path->prevArc()->from(), which is carried on the
-// path itself and stays consistent with the driver.
+// A Path* is only valid until the next netlist edit: updateTiming() runs
+// Search::arrivalsInvalid() -> Search::deletePaths() -> Vertex::deletePaths(),
+// which frees the per-vertex Path arena.  Holding a Path* across an edit and
+// dereferencing it afterwards is a use-after-free that asan traps (#10833);
+// this test therefore re-queries the driver path after every edit.
 //
-// This test deliberately never dereferences a Path across a netlist edit --
-// doing so is the undefined behavior the fix exists to avoid, and asan traps
-// it.  Instead it re-queries the driver path after every edit and checks the
-// invariant the fix relies on, plus the graph rebuild the edits should cause:
-//   1. Baseline: prevArc()->from() is an input port of nd1's own cell, and
-//      the critical path into nd1/ZN arrives through A1 (the clk cone).
+// What it checks, on freshly queried paths only:
+//   1. Baseline: drvr_path->prevArc()->from() resolves on nd1's own
+//      LibertyCell and round-trips through findLibertyPort(), and the
+//      critical path into nd1/ZN arrives through A1 (the clk cone).
 //   2. Delete upstream b1 + updateTiming: the A1 cone loses its driver, so a
 //      fresh query must show the critical path now arriving through A2.
-//   3. Add a fresh BUF + clock + updateTiming: the invariant still holds and
-//      the network stays self-consistent.
-TEST_F(TestDbSta, StalePrevPath)
+//   3. Add a fresh BUF + clock + updateTiming: both still hold and the
+//      network stays self-consistent.
+//
+// Scope note: this exercises dbSta/OpenSTA path queries only.  It is not a
+// regression test for #10210 -- it does not drive any rsz consumer, so
+// reverting rsz to the faulty prevPath()->pin() lookup leaves it green.  The
+// two expressions coincide on a healthy path and diverge only under a stale
+// Path or PathExpanded pin-collapsing, so real #10210 coverage needs an
+// rsz-side test; none exists today.
+TEST_F(TestDbSta, DriverInputPortAcrossNetlistEdits)
 {
   const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::string test_name
