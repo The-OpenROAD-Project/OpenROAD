@@ -40,6 +40,7 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "gui_utils.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -122,32 +123,12 @@ static void message_handler(QtMsgType type,
   }
 }
 
-static odb::dbBlock* getBlock(odb::dbDatabase* db)
-{
-  if (!db) {
-    return nullptr;
-  }
-
-  auto chip = db->getChip();
-  if (!chip) {
-    return nullptr;
-  }
-
-  return chip->getBlock();
-}
-
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
 // Bridges Gui to the Qt main window.  Installed once the window is built and
 // uninstalled before it is destroyed, so main_window is non-null and fully
-// alive for every call below; Gui falls back to whatever headless viewer is
-// registered outside that window.
-//
-// Only the calls Gui already routes through a backend are overridden here.
-// The display-control accessors inherited from GuiBackend stay at their
-// defaults until the Gui methods that use them are ported too; today those
-// still reach main_window directly.
+// alive for every call below -- which is why none of them check it.
 class QtGuiBackend : public GuiBackend
 {
  public:
@@ -176,6 +157,259 @@ class QtGuiBackend : public GuiBackend
   {
     main_window->getControls()->unregisterRenderer(renderer);
   }
+
+  void setSelected(const Selected& selection) override
+  {
+    main_window->setSelected(selection);
+  }
+
+  void addSelected(const Selected& selection) override
+  {
+    main_window->addSelected(selection);
+  }
+
+  void removeSelectedByType(const std::string& type) override
+  {
+    main_window->removeSelectedByType(type);
+  }
+
+  const SelectionSet& selection() override { return main_window->selection(); }
+
+  const Selected& inspectorSelection() override
+  {
+    return main_window->getInspector()->getSelection();
+  }
+
+  bool anyObjectInSet(bool selection_set,
+                      odb::dbObjectType obj_type) const override
+  {
+    return main_window->anyObjectInSet(selection_set, obj_type);
+  }
+
+  void addHighlighted(const SelectionSet& selection,
+                      int highlight_group) override
+  {
+    main_window->addHighlighted(selection, highlight_group);
+  }
+
+  void clearHighlighted(int highlight_group) override
+  {
+    main_window->clearHighlighted(highlight_group);
+  }
+
+  void selectHighlightConnectedInsts(bool select_flag,
+                                     int highlight_group) override
+  {
+    main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
+  }
+
+  void selectHighlightConnectedNets(bool select_flag,
+                                    bool output,
+                                    bool input,
+                                    int highlight_group) override
+  {
+    main_window->selectHighlightConnectedNets(
+        select_flag, output, input, highlight_group);
+  }
+
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group) override
+  {
+    main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                     highlight_group);
+  }
+
+  int selectArea(const odb::Rect& area, bool append) override
+  {
+    return main_window->getLayoutViewer()->selectArea(area, append);
+  }
+
+  int selectNext() override
+  {
+    return main_window->getInspector()->selectNext();
+  }
+
+  int selectPrevious() override
+  {
+    return main_window->getInspector()->selectPrevious();
+  }
+
+  void selectionAnimation(int repeat) override
+  {
+    main_window->getLayoutViewer()->selectionAnimation(repeat);
+  }
+
+  void zoomTo(const odb::Rect& rect_dbu) override
+  {
+    main_window->zoomTo(rect_dbu);
+  }
+
+  void zoomTo(const odb::Point& focus, int diameter) override
+  {
+    main_window->zoomTo(focus, diameter);
+  }
+
+  void zoomIn() override { main_window->getLayoutViewer()->zoomIn(); }
+
+  void zoomIn(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->zoomIn(focus_dbu);
+  }
+
+  void zoomOut() override { main_window->getLayoutViewer()->zoomOut(); }
+
+  void zoomOut(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->zoomOut(focus_dbu);
+  }
+
+  void centerAt(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->centerAt(focus_dbu);
+  }
+
+  void setResolution(double pixels_per_dbu) override
+  {
+    main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
+  }
+
+  void fit() override { main_window->fit(); }
+
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       std::optional<Painter::Color> color,
+                       std::optional<int> size,
+                       std::optional<Painter::Anchor> anchor,
+                       const std::optional<std::string>& name) override
+  {
+    return main_window->addLabel(x, y, text, color, size, anchor, name);
+  }
+
+  void deleteLabel(const std::string& name) override
+  {
+    main_window->deleteLabel(name);
+  }
+
+  void clearLabels() override { main_window->clearLabels(); }
+
+  std::string addRuler(int x0,
+                       int y0,
+                       int x1,
+                       int y1,
+                       const std::string& label,
+                       const std::string& name,
+                       bool euclidian) override
+  {
+    return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
+  }
+
+  void deleteRuler(const std::string& name) override
+  {
+    main_window->deleteRuler(name);
+  }
+
+  void clearRulers() override { main_window->clearRulers(); }
+
+  bool checkDisplayControlVisible(const std::string& name) override
+  {
+    return main_window->getControls()->checkControlByPath(name, true);
+  }
+
+  bool checkDisplayControlSelectable(const std::string& name) override
+  {
+    return main_window->getControls()->checkControlByPath(name, false);
+  }
+
+  void setDisplayControlVisible(const std::string& name, bool value) override
+  {
+    main_window->getControls()->setControlByPath(
+        name, true, value ? Qt::Checked : Qt::Unchecked);
+  }
+
+  void setDisplayControlSelectable(const std::string& name, bool value) override
+  {
+    main_window->getControls()->setControlByPath(
+        name, false, value ? Qt::Checked : Qt::Unchecked);
+  }
+
+  void setDisplayControlColor(const std::string& name,
+                              const Painter::Color& color) override
+  {
+    main_window->getControls()->setControlByPath(name, toQColor(color));
+  }
+
+  void saveDisplayControls() override { main_window->getControls()->save(); }
+
+  void restoreDisplayControls() override
+  {
+    main_window->getControls()->restore();
+  }
+
+  void addFocusNet(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addFocusNet(net);
+  }
+
+  void removeFocusNet(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeFocusNet(net);
+  }
+
+  void clearFocusNets() override
+  {
+    main_window->getLayoutTabs()->clearFocusNets();
+  }
+
+  void addRouteGuides(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addRouteGuides(net);
+  }
+
+  void removeRouteGuides(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeRouteGuides(net);
+  }
+
+  void clearRouteGuides() override
+  {
+    main_window->getLayoutTabs()->clearRouteGuides();
+  }
+
+  void addNetTracks(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addNetTracks(net);
+  }
+
+  void removeNetTracks(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeNetTracks(net);
+  }
+
+  void clearNetTracks() override
+  {
+    main_window->getLayoutTabs()->clearNetTracks();
+  }
+
+  void saveClockTreeImage(const std::string& clock_name,
+                          const std::string& filename,
+                          const std::string& scene,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override
+  {
+    main_window->getClockViewer()->saveImage(
+        clock_name, filename, scene, width_px, height_px);
+  }
+
+  void saveHistogramImage(const std::string& filename,
+                          const std::string& mode,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override
+  {
+    auto* charts = main_window->getChartsWidget();
+    charts->saveImage(
+        filename, charts->modeFromString(mode), width_px, height_px);
+  }
 };
 
 static QtGuiBackend qt_backend;
@@ -188,220 +422,6 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 void Gui::setChartFactory(ChartFactory factory)
 {
   chart_factory_ = std::move(factory);
-}
-
-void Gui::setSelected(const Selected& selection)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->setSelected(selection);
-}
-
-void Gui::removeSelectedByType(const std::string& type)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->removeSelectedByType(type);
-}
-
-void Gui::addSelectedNet(const char* name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto net = block->findNet(name);
-  if (!net) {
-    return;
-  }
-
-  main_window->addSelected(makeSelected(net));
-}
-
-void Gui::addSelectedInst(const char* name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto inst = block->findInst(name);
-  if (!inst) {
-    return;
-  }
-
-  main_window->addSelected(makeSelected(inst));
-}
-
-const SelectionSet& Gui::selection()
-{
-  if (!hasUI()) {
-    static const SelectionSet empty_selection;
-    return empty_selection;
-  }
-  return main_window->selection();
-}
-
-bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
-{
-  if (!hasUI()) {
-    return false;
-  }
-  return main_window->anyObjectInSet(selection_set, obj_type);
-}
-
-void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
-}
-void Gui::selectHighlightConnectedNets(bool select_flag,
-                                       bool output,
-                                       bool input,
-                                       int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedNets(
-      select_flag, output, input, highlight_group);
-}
-
-void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
-                                              int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedBufferTrees(select_flag,
-                                                   highlight_group);
-}
-
-void Gui::addInstToHighlightSet(const char* name, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto inst = block->findInst(name);
-  if (!inst) {
-    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
-    return;
-  }
-  SelectionSet sel_inst_set;
-  sel_inst_set.insert(makeSelected(inst));
-  main_window->addHighlighted(sel_inst_set, highlight_group);
-}
-
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  auto net = block->findNet(name);
-  if (!net) {
-    logger_->error(utl::GUI, 101, "No net named {} found.", name);
-    return;
-  }
-  SelectionSet selection_set;
-  selection_set.insert(makeSelected(net));
-  main_window->addHighlighted(selection_set, highlight_group);
-}
-
-int Gui::selectAt(const odb::Rect& area, bool append)
-{
-  if (!hasUI()) {
-    return 0;
-  }
-  return main_window->getLayoutViewer()->selectArea(area, append);
-}
-
-int Gui::selectNext()
-{
-  if (!hasUI()) {
-    return 0;
-  }
-  return main_window->getInspector()->selectNext();
-}
-
-int Gui::selectPrevious()
-{
-  if (!hasUI()) {
-    return 0;
-  }
-  return main_window->getInspector()->selectPrevious();
-}
-
-void Gui::animateSelection(int repeat)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->selectionAnimation(repeat);
-}
-
-std::string Gui::addLabel(int x,
-                          int y,
-                          const std::string& text,
-                          std::optional<Painter::Color> color,
-                          std::optional<int> size,
-                          std::optional<Painter::Anchor> anchor,
-                          const std::optional<std::string>& name)
-{
-  if (!hasUI()) {
-    return "";
-  }
-  return main_window->addLabel(x, y, text, color, size, anchor, name);
-}
-
-void Gui::deleteLabel(const std::string& name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->deleteLabel(name);
-}
-
-std::string Gui::addRuler(int x0,
-                          int y0,
-                          int x1,
-                          int y1,
-                          const std::string& label,
-                          const std::string& name,
-                          bool euclidian)
-{
-  if (!hasUI()) {
-    return "";
-  }
-  return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
-}
-
-void Gui::deleteRuler(const std::string& name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->deleteRuler(name);
 }
 
 /**
@@ -564,38 +584,6 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
   return false;
 }
 
-void Gui::clearSelections()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->setSelected(Selected());
-}
-
-void Gui::clearHighlights(int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearHighlighted(highlight_group);
-}
-
-void Gui::clearLabels()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearLabels();
-}
-
-void Gui::clearRulers()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearRulers();
-}
-
 std::string Gui::addToolbarButton(const std::string& name,
                                   const std::string& text,
                                   const std::string& script,
@@ -658,144 +646,6 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
     return;
   }
   main_window->getDRCViewer()->selectCategory(markers);
-}
-
-void Gui::setDisplayControlsColor(const std::string& name,
-                                  const Painter::Color& color)
-{
-  if (!hasUI()) {
-    // No Qt DisplayControls in headless mode; color is a GUI-only concept.
-    return;
-  }
-  const QColor qcolor(color.r, color.g, color.b, color.a);
-  main_window->getControls()->setControlByPath(name, qcolor);
-}
-
-void Gui::setDisplayControlsVisible(const std::string& name, bool value)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      headless_viewer_->setDisplayControlVisible(name, value);
-    }
-    return;
-  }
-  main_window->getControls()->setControlByPath(
-      name, true, value ? Qt::Checked : Qt::Unchecked);
-}
-
-bool Gui::checkDisplayControlsVisible(const std::string& name)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      return headless_viewer_->checkDisplayControlVisible(name);
-    }
-    return true;
-  }
-  return main_window->getControls()->checkControlByPath(name, true);
-}
-
-void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      headless_viewer_->setDisplayControlSelectable(name, value);
-    }
-    return;
-  }
-  main_window->getControls()->setControlByPath(
-      name, false, value ? Qt::Checked : Qt::Unchecked);
-}
-
-bool Gui::checkDisplayControlsSelectable(const std::string& name)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      return headless_viewer_->checkDisplayControlSelectable(name);
-    }
-    return false;
-  }
-  return main_window->getControls()->checkControlByPath(name, false);
-}
-
-void Gui::saveDisplayControls()
-{
-  if (!hasUI()) {
-    // Nothing to persist without the Qt DisplayControls widget.
-    return;
-  }
-  main_window->getControls()->save();
-}
-
-void Gui::restoreDisplayControls()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getControls()->restore();
-}
-
-void Gui::zoomTo(const odb::Rect& rect_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->zoomTo(rect_dbu);
-}
-
-void Gui::zoomTo(const odb::Point& focus, int diameter)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->zoomTo(focus, diameter);
-}
-
-void Gui::zoomIn()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomIn();
-}
-
-void Gui::zoomIn(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomIn(focus_dbu);
-}
-
-void Gui::zoomOut()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomOut();
-}
-
-void Gui::zoomOut(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomOut(focus_dbu);
-}
-
-void Gui::centerAt(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->centerAt(focus_dbu);
-}
-
-void Gui::setResolution(double pixels_per_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
 }
 
 void Gui::saveImage(const std::string& filename,
@@ -875,49 +725,6 @@ void Gui::saveImage(const std::string& filename,
     // restore settings
     main_window->getControls()->restore();
   }
-}
-
-void Gui::saveClockTreeImage(const std::string& clock_name,
-                             const std::string& filename,
-                             const std::string& scene,
-                             int width_px,
-                             int height_px)
-{
-  if (!hasUI()) {
-    return;
-  }
-  std::optional<int> width;
-  std::optional<int> height;
-  if (width_px > 0) {
-    width = width_px;
-  }
-  if (height_px > 0) {
-    height = height_px;
-  }
-  main_window->getClockViewer()->saveImage(
-      clock_name, filename, scene, width, height);
-}
-
-void Gui::saveHistogramImage(const std::string& filename,
-                             const std::string& mode,
-                             int width_px,
-                             int height_px)
-{
-  if (!hasUI()) {
-    return;
-  }
-  std::optional<int> width;
-  std::optional<int> height;
-  if (width_px > 0) {
-    width = width_px;
-  }
-  if (height_px > 0) {
-    height = height_px;
-  }
-  const ChartsWidget::Mode chart_mode
-      = main_window->getChartsWidget()->modeFromString(mode);
-  main_window->getChartsWidget()->saveImage(
-      filename, chart_mode, width, height);
 }
 
 void Gui::showWorstTimingPath(bool setup)
@@ -1217,23 +1024,6 @@ std::string Gui::getMainWindowTitle()
   return main_window_title_;
 }
 
-void Gui::fit()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->fit();
-}
-
-const Selected& Gui::getInspectorSelection()
-{
-  if (!hasUI()) {
-    static const Selected empty_selection;
-    return empty_selection;
-  }
-  return main_window->getInspector()->getSelection();
-}
-
 void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
   if (!hasUI()) {
@@ -1250,22 +1040,6 @@ void Gui::timingPathsThrough(const std::set<Term>& terms)
   main_window->timingPathsThrough(terms);
 }
 
-void Gui::addFocusNet(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addFocusNet(net);
-}
-
-void Gui::addRouteGuides(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addRouteGuides(net);
-}
-
 Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
@@ -1277,62 +1051,6 @@ Chart* Gui::addChart(const std::string& name,
     return chart_factory_(name, x_label, y_labels);
   }
   return nullptr;
-}
-
-void Gui::removeRouteGuides(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeRouteGuides(net);
-}
-
-void Gui::addNetTracks(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addNetTracks(net);
-}
-
-void Gui::removeNetTracks(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeNetTracks(net);
-}
-
-void Gui::removeFocusNet(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeFocusNet(net);
-}
-
-void Gui::clearFocusNets()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearFocusNets();
-}
-
-void Gui::clearRouteGuides()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearRouteGuides();
-}
-
-void Gui::clearNetTracks()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)

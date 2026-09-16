@@ -1195,12 +1195,17 @@ NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
 
 ////////////////////////////////////////////////
 // NesterovPlaceVars
-NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
+NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
+                                     int64_t design_hpwl)
     : maxNesterovIter(options.nesterovPlaceMaxIter),
       initDensityPenalty(options.initDensityPenaltyFactor),
       initWireLengthCoef(options.initWireLengthCoef),
       targetOverflow(options.overflow),
-      referenceHpwl(options.referenceHpwl),
+      referenceHpwl(options.referenceHpwl > 0
+                        ? options.referenceHpwl
+                        : std::max(kReferenceHpwlFloor,
+                                   kReferenceHpwlFraction
+                                       * static_cast<float>(design_hpwl))),
       routability_end_overflow(options.routabilityCheckOverflow),
       routability_snapshot_overflow(options.routabilitySnapshotOverflow),
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
@@ -4274,6 +4279,8 @@ void NesterovBase::updateNextIter(const int iter)
   densityPenalty_ *= phiCoef;
   prev_hpwl_ = hpwl;
 
+  peak_coordi_distance_ = std::max(peak_coordi_distance_, coordiDistance_);
+
   if (iter > 50 && minSumOverflow_ > sum_overflow_unscaled_) {
     minSumOverflow_ = sum_overflow_unscaled_;
     hpwlWithMinSumOverflow_ = prev_hpwl_;
@@ -4555,6 +4562,20 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
   return false;
 }
 
+// Displacement is not monotone over a run: it is small while the penalty is
+// still weak, peaks as the cells spread, and falls again as the placement
+// settles. So "settled" cannot mean "small" - it has to mean "down from the
+// peak". The quiet opening stretch also reads as settled by that test, which
+// is harmless because every caller conjoins this with an overflow gate that
+// the opening stretch cannot pass.
+bool NesterovBase::isSettled() const
+{
+  if (peak_coordi_distance_ <= 0) {
+    return false;
+  }
+  return coordiDistance_ <= kSettleFraction * peak_coordi_distance_;
+}
+
 bool NesterovBase::checkDivergence()
 {
   if (sum_overflow_unscaled_ < 0.2f
@@ -4564,9 +4585,16 @@ bool NesterovBase::checkDivergence()
     log_->warn(GPL, 323, "Divergence detected between consecutive iterations");
   }
 
-  // Check if both overflow and HPWL increase
-  if (minSumOverflow_ < 0.2f && prev_reported_overflow_unscaled_ > 0
-      && prev_reported_hpwl_ > 0) {
+  // Check if both overflow and HPWL increase.
+  //
+  // This holds at any overflow. It used to be gated on the descent having
+  // reached 0.2, which was standing in for "not across a routability revert" -
+  // a revert resets minSumOverflow_, so the gate stayed shut until overflow
+  // came back down. revertToSnapshot() now clears the reported baseline
+  // itself, so the gate is no longer load bearing, and a design whose overflow
+  // stalls above 0.2 is no longer left with divergence detection switched off
+  // for the rest of the run.
+  if (prev_reported_overflow_unscaled_ > 0 && prev_reported_hpwl_ > 0) {
     float overflow_change
         = sum_overflow_unscaled_ - prev_reported_overflow_unscaled_;
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
@@ -4622,6 +4650,14 @@ bool NesterovBase::revertToSnapshot()
 #endif
 
   isDiverged_ = false;
+
+  // A revert moves overflow and HPWL discontinuously, so the reported values
+  // carried over from before it describe a placement that no longer exists.
+  // Divergence is a claim about a trend, and there is no trend across a jump:
+  // clear the baseline so the next comparison starts from where the revert
+  // landed.
+  prev_reported_hpwl_ = 0;
+  prev_reported_overflow_unscaled_ = 0;
 
   return true;
 }

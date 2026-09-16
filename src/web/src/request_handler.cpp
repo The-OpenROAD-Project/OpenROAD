@@ -6030,6 +6030,61 @@ std::pair<odb::dbBlock*, odb::dbChip*> DRCHandler::getBlockAndChip()
   return {block, chip};
 }
 
+namespace {
+
+// The chain of category names a DRC request addresses, from the top-level
+// category down to the target. A path is what identifies a subcategory,
+// because names are unique only among siblings: check_power_grid builds both
+// "PSM/VDD/Unconnected shape" and "PSM/VSS/Unconnected shape". `path` carries
+// the chain; `category` names a top-level category on its own.
+std::vector<std::string> categoryPathFromRequest(
+    const boost::json::object& json)
+{
+  std::vector<std::string> path;
+  if (const boost::json::value* val = json.if_contains("path")) {
+    for (const boost::json::value& elem : val->as_array()) {
+      path.emplace_back(elem.as_string());
+    }
+  }
+  if (path.empty()) {
+    if (const boost::json::value* val = json.if_contains("category")) {
+      std::string name(val->as_string());
+      if (!name.empty()) {
+        path.push_back(std::move(name));
+      }
+    }
+  }
+  return path;
+}
+
+odb::dbMarkerCategory* findCategoryByPath(odb::dbChip* chip,
+                                          const std::vector<std::string>& path)
+{
+  odb::dbMarkerCategory* category = nullptr;
+  for (const std::string& name : path) {
+    category = category ? category->findMarkerCategory(name.c_str())
+                        : chip->findMarkerCategory(name.c_str());
+    if (category == nullptr) {
+      return nullptr;
+    }
+  }
+  return category;
+}
+
+std::string joinCategoryPath(const std::vector<std::string>& path)
+{
+  std::string joined;
+  for (const std::string& name : path) {
+    if (!joined.empty()) {
+      joined += '/';
+    }
+    joined += name;
+  }
+  return joined;
+}
+
+}  // namespace
+
 odb::dbMarker* DRCHandler::findMarkerById(SessionState& state,
                                           odb::dbChip* chip,
                                           int marker_id)
@@ -6470,16 +6525,17 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const std::string cat_name
-        = std::string(req.json.at("category").as_string());
+    const std::vector<std::string> path = categoryPathFromRequest(req.json);
+    if (path.empty()) {
+      throw std::runtime_error("No category given");
+    }
     const bool visible = req.json.at("visible").as_bool();
     auto [block, chip] = getBlockAndChip();
 
     std::lock_guard<std::mutex> lock(state.drc_mutex);
-    odb::dbMarkerCategory* category
-        = chip->findMarkerCategory(cat_name.c_str());
+    odb::dbMarkerCategory* category = findCategoryByPath(chip, path);
     if (!category) {
-      throw std::runtime_error("Category not found: " + cat_name);
+      throw std::runtime_error("Category not found: " + joinCategoryPath(path));
     }
 
     int count = 0;
@@ -6489,9 +6545,15 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
     }
     refreshDRCOverlay(state);
 
+    boost::json::array path_arr;
+    for (const std::string& name : path) {
+      path_arr.emplace_back(name);
+    }
+
     boost::json::object root;
     root["ok"] = 1;
-    root["category"] = cat_name;
+    root["category"] = path.back();
+    root["path"] = std::move(path_arr);
     root["visible"] = visible;
     root["count"] = count;
     writePayload(resp, root);

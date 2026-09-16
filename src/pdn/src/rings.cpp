@@ -33,7 +33,8 @@ void Rings::checkLayerSpecifications() const
     const TechLayer techlayer(layer.layer);
     techlayer.checkIfManufacturingGrid(layer.width, getLogger(), "Width");
     techlayer.checkIfManufacturingGrid(layer.spacing, getLogger(), "Spacing");
-    for (const auto& off : offset_) {
+    for (const int off :
+         {offset_.left, offset_.bottom, offset_.right, offset_.top}) {
       techlayer.checkIfManufacturingGrid(off, getLogger(), "Core offset");
     }
   }
@@ -80,12 +81,12 @@ void Rings::checkDieArea() const
   }
 }
 
-void Rings::setOffset(const std::array<int, 4>& offset)
+void Rings::setOffset(const EdgeSpec& offset)
 {
-  offset_ = offset;
+  offset_ = offset.transform(getGrid()->getOrientation());
 }
 
-void Rings::setPadOffset(const std::array<int, 4>& offset)
+void Rings::setPadOffset(const EdgeSpec& offset)
 {
   odb::Rect die_area = getBlock()->getDieArea();
   odb::Rect core = getBlock()->getCoreArea();
@@ -156,14 +157,13 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
              "Pads inner: {}",
              Shape::getRectText(pads_inner, getBlock()->getDbUnitsPerMicron()));
 
-  std::array<int, 4> core_offset{
-      core.xMin() - pads_inner.xMin() - offset[0] - ver_width,
-      core.yMin() - pads_inner.yMin() - offset[1] - hor_width,
-      pads_inner.xMax() - core.xMax() - offset[2] - ver_width,
-      pads_inner.yMax() - core.yMax() - offset[3] - hor_width};
-
-  // apply pad offset as core offset
-  setOffset(core_offset);
+  // this is already resolved against the placed pad ring, so it bypasses the
+  // as-drawn remapping setOffset does (pads only ever sit on a core grid,
+  // which is never flipped, but the intent should not depend on that)
+  offset_ = {core.xMin() - pads_inner.xMin() - offset.left - ver_width,
+             core.yMin() - pads_inner.yMin() - offset.bottom - hor_width,
+             pads_inner.xMax() - core.xMax() - offset.right - ver_width,
+             pads_inner.yMax() - core.yMax() - offset.top - hor_width};
 }
 
 void Rings::getTotalWidth(int& hor, int& ver) const
@@ -185,10 +185,10 @@ odb::Rect Rings::getInnerRingOutline() const
 {
   auto* grid = getGrid();
   odb::Rect core = grid->getDomainArea();
-  core.set_xlo(core.xMin() - offset_[0]);
-  core.set_ylo(core.yMin() - offset_[1]);
-  core.set_xhi(core.xMax() + offset_[2]);
-  core.set_yhi(core.yMax() + offset_[3]);
+  core.set_xlo(core.xMin() - offset_.left);
+  core.set_ylo(core.yMin() - offset_.bottom);
+  core.set_xhi(core.xMax() + offset_.right);
+  core.set_yhi(core.yMax() + offset_.top);
 
   return core;
 }
@@ -351,10 +351,10 @@ void Rings::report() const
   const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
 
   logger->report("  Core offset:");
-  logger->report("    Left: {:.4f}", offset_[0] / dbu_per_micron);
-  logger->report("    Bottom: {:.4f}", offset_[1] / dbu_per_micron);
-  logger->report("    Right: {:.4f}", offset_[2] / dbu_per_micron);
-  logger->report("    Top: {:.4f}", offset_[3] / dbu_per_micron);
+  logger->report("    Left: {:.4f}", offset_.left / dbu_per_micron);
+  logger->report("    Bottom: {:.4f}", offset_.bottom / dbu_per_micron);
+  logger->report("    Right: {:.4f}", offset_.right / dbu_per_micron);
+  logger->report("    Top: {:.4f}", offset_.top / dbu_per_micron);
 
   for (const auto& layer : {layer0_, layer1_}) {
     logger->report("  Layer: {}", layer.layer->getName());
