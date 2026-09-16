@@ -1487,7 +1487,7 @@ describe('SchematicWidget label placement', () => {
         return { svg, groups, labels, netlist: { modules: { top: { cells } } } };
     }
 
-    it('keeps body measurement layout flushes constant as the cell count grows', () => {
+    it('keeps label layout flushes constant as the cell count grows', () => {
         const { widget, container } = makeWidget();
         const displays = Array.from({ length: 20 }, (_, index) =>
             [null, 'inline', 'none'][index % 3]);
@@ -1498,34 +1498,32 @@ describe('SchematicWidget label placement', () => {
             if (layoutDirty) layoutFlushes += 1;
             layoutDirty = false;
         };
-        // Model a layout flush when a geometry read follows a display write.
+        // Model a layout flush when a geometry read follows a label write.
         for (const label of labels) {
             const setAttribute = label.setAttribute.bind(label);
             const removeAttribute = label.removeAttribute.bind(label);
             label.setAttribute = (name, value) => {
-                if (name === 'display') layoutDirty = true;
+                layoutDirty = true;
                 setAttribute(name, value);
             };
             label.removeAttribute = (name) => {
-                if (name === 'display') layoutDirty = true;
+                layoutDirty = true;
                 removeAttribute(name);
             };
         }
-        for (const group of groups) {
+        for (const element of [...groups, ...labels]) {
             for (const method of ['getBBox', 'getBoundingClientRect']) {
-                const measure = group[method].bind(group);
-                group[method] = () => {
+                if (typeof element[method] !== 'function') continue;
+                const measure = element[method].bind(element);
+                element[method] = () => {
                     readLayout();
                     return measure();
                 };
             }
         }
-        // Isolate body measurements from the separate candidate-scoring phase.
-        widget._labelPlacementCandidates = () => [];
-
         widget._layoutInstanceLabels(netlist);
 
-        assert.ok(layoutFlushes <= 2, `body measurements flushed layout ${layoutFlushes} times`);
+        assert.ok(layoutFlushes <= 7, `label layout flushed layout ${layoutFlushes} times`);
         assert.deepEqual(labels.map((label) => label.getAttribute('display')), displays);
         container.element.remove();
     });

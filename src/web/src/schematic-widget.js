@@ -1719,12 +1719,29 @@ export class SchematicWidget {
 
         for (const record of records) {
             const bounds = bodyBounds.get(record);
-            if (!bounds) continue;
+            record.placements = bounds
+                ? this._labelPlacementCandidates(bounds, record.label)
+                    .map((candidate) => ({ candidate }))
+                : [];
+        }
 
+        // Measure each placement option in a batch to preserve SVG text metrics
+        // and transforms without alternating writes and reads for every label.
+        const placementCount = Math.max(...records.map((record) => record.placements.length));
+        for (let index = 0; index < placementCount; index += 1) {
+            for (const record of records) {
+                const placement = record.placements[index];
+                if (placement) this._setLabelPosition(record.label, placement.candidate);
+            }
+            for (const record of records) {
+                const placement = record.placements[index];
+                if (placement) placement.rect = this._expandedScreenRect(record.label, 3);
+            }
+        }
+
+        for (const record of records) {
             let best = null;
-            for (const candidate of this._labelPlacementCandidates(bounds, record.label)) {
-                this._setLabelPosition(record.label, candidate);
-                const rect = this._expandedScreenRect(record.label, 3);
+            for (const { candidate, rect } of record.placements) {
                 const wireOverlap = wireRects.reduce(
                     (sum, wire) => sum + this._rectOverlapArea(rect, wire),
                     0);
@@ -1734,7 +1751,7 @@ export class SchematicWidget {
                 // Prefer avoiding wires first, then labels/cell bodies; placement
                 // preference only breaks ties between similarly clear positions.
                 const score = wireOverlap * 1000 + overlap * 100 + candidate.preference;
-                if (!best || score < best.score) best = { candidate, score };
+                if (!best || score < best.score) best = { candidate, score, rect };
                 if (wireOverlap === 0 && overlap === 0 && score === candidate.preference) {
                     break;
                 }
@@ -1742,7 +1759,7 @@ export class SchematicWidget {
 
             if (best) {
                 this._setLabelPosition(record.label, best.candidate);
-                occupiedRects.push(this._expandedScreenRect(record.label, 4));
+                occupiedRects.push(expandRect(best.rect, 1));
             }
         }
     }
