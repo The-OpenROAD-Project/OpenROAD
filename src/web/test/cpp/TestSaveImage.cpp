@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "boost/json/parse.hpp"
+#include "color.h"
 #include "gtest/gtest.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -111,6 +112,27 @@ class SaveImageTest : public tst::Nangate45Fixture
     return false;
   }
 
+  // True if any visible pixel isn't part of the always-on die/core outline,
+  // which getBounds() now guarantees is in every saved image.  Matches
+  // TileGeneratorTest::hasNonOutlinePixel: the outline is kOutlineGray and
+  // alpha is NOT checked, because tiles are rasterized supersampled and
+  // decimated, so its edge pixels come back at partial coverage while the RGB
+  // stays put.  Testing by colour rather than by carving out a border keeps
+  // the die edge itself in scope — that is where pin markers are drawn.
+  static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
+  {
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i + 3] == 0) {
+        continue;
+      }
+      if (rgba[i] != kOutlineGray.r || rgba[i + 1] != kOutlineGray.g
+          || rgba[i + 2] != kOutlineGray.b) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static size_t countNonTransparentPixels(
       const std::vector<unsigned char>& rgba)
   {
@@ -190,12 +212,13 @@ TEST_F(SaveImageTest, VisibilityStdcellsOff)
   const std::string path = tempPng("vis_off");
   TileVisibility vis;
   vis.stdcells = false;
-  // With stdcells hidden and no routing, the _instances layer should be empty.
+  // With stdcells hidden and no routing, the _instances layer holds nothing
+  // but the die outline, which Qt draws regardless of instance visibility.
   tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
 
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
 }
 
 TEST_F(SaveImageTest, VisibilityPinsOff_Markers)
@@ -278,8 +301,11 @@ TEST_F(SaveImageTest, EmptyDesign)
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
   EXPECT_EQ(w, 256u);
-  // Empty design should produce a transparent image.
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  // A design with no shapes still has a floorplan: the die outline is drawn
+  // and nothing else.
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "the die outline should still be drawn";
 }
 
 TEST_F(SaveImageTest, LargeWidthClamped)
@@ -456,6 +482,64 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
       << "Enabling rudy heatmap should render additional heatmap pixels";
 }
 
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
+{
+  const std::vector<std::string> tech_layers = {"metal1", "metal2", "metal3"};
+  TileVisibility vis;
+  vis.has_visible_layers = true;
+  vis.visible_layers = {"metal2"};
+  vis.pins = false;
+  vis.regions = false;
+  vis.mfg_grid = false;
+  vis.access_points = false;
+  vis.gcell_grid = false;
+  vis.rudy = false;
+
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+            (std::vector<std::string>{"_instances", "metal2"}))
+      << "tech layers hidden via visible_layers must not be composited";
+}
+
+TEST_F(SaveImageTest, HiddenTechLayerIsNotDrawn)
+{
+  placeInst("BUF_X16", "buf2", 50000, 50000);
+  makeTileGen();
+  const odb::Rect region = tile_gen_->getBounds();
+
+  TileVisibility all;
+  const auto with_all = tile_gen_->renderImageBuffer(region, 512, 0, all);
+  TileVisibility none;
+  none.has_visible_layers = true;  // visible_layers empty: hide every one
+  const auto with_none = tile_gen_->renderImageBuffer(region, 512, 0, none);
+
+  ASSERT_FALSE(with_all.empty());
+  ASSERT_EQ(with_all.size(), with_none.size());
+  EXPECT_LT(countNonTransparentPixels(with_none),
+            countNonTransparentPixels(with_all))
+      << "hiding all tech layers must remove their pixels";
+}
+
+// Tiles are rendered concurrently into disjoint output rectangles, so the
+// result must not depend on the thread count.  This is the test that catches
+// a shared-state race in the render path.
+TEST_F(SaveImageTest, ThreadCountDoesNotChangeOutput)
+{
+  for (int i = 0; i < 40; ++i) {
+    placeInst("BUF_X16", ("b" + std::to_string(i)).c_str(), 2000 * i, 3000 * i);
+  }
+  makeTileGen();
+  const odb::Rect region = tile_gen_->getBounds();
+  TileVisibility vis;
+
+  tile_gen_->setThreadCount(1);
+  const auto one = tile_gen_->renderImageBuffer(region, 1024, 0, vis);
+  tile_gen_->setThreadCount(8);
+  const auto eight = tile_gen_->renderImageBuffer(region, 1024, 0, vis);
+
+  ASSERT_FALSE(one.empty());
+  EXPECT_EQ(one, eight);
+}
+
 // Qt gates drawLabels on the Misc/"Labels" control, and its save_image goes
 // through the same painter, so a saved image reproduces a view with labels
 // hidden.  save_image -display_option {labels false} has to do the same here.
@@ -487,6 +571,57 @@ TEST_F(SaveImageTest, LabelsFollowTheVisibilityFlag)
   EXPECT_NE(shown, before) << "label did not change the image";
   // ...and with it off the image is the one from before the label existed.
   EXPECT_EQ(hidden, before) << "label still drawn with labels off";
+}
+
+//------------------------------------------------------------------------------
+// Debug graphics in save_image.  The layer loop carries only the per-layer
+// Renderer::drawLayer half, so the layer-independent drawObjects pass needs a
+// composite step of its own -- once per tile, where it used to be stamped once
+// per visible layer.
+//------------------------------------------------------------------------------
+
+TEST_F(SaveImageTest, DebugRendererObjectsPassCompositedOncePerTile)
+{
+  int object_calls = 0;
+  std::vector<std::string> layer_calls;
+  TileGenerator::setRendererHooks({.draw = [&](std::vector<unsigned char>&,
+                                               const TileFrame&,
+                                               bool,
+                                               odb::dbTechLayer* layer) {
+    if (layer != nullptr) {
+      layer_calls.emplace_back(layer->getName());
+    } else {
+      ++object_calls;
+    }
+  }});
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  // 256 px wide => a single tile, so the count is exactly the per-tile count.
+  tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, vis);
+  TileGenerator::setRendererHooks({});
+
+  EXPECT_EQ(object_calls, 1)
+      << "drawObjects must be composited once, not once per rendered layer";
+  EXPECT_GT(layer_calls.size(), 1u)
+      << "the per-layer drawLayer pass still runs for every layer";
+}
+
+TEST_F(SaveImageTest, DebugRendererPassIsSkippedWhenToggledOff)
+{
+  int calls = 0;
+  TileGenerator::setRendererHooks(
+      {.draw = [&calls](std::vector<unsigned char>&,
+                        const TileFrame&,
+                        bool,
+                        odb::dbTechLayer*) { ++calls; }});
+
+  TileVisibility vis;  // debug_renderers defaults off
+  tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, vis);
+  TileGenerator::setRendererHooks({});
+
+  EXPECT_EQ(calls, 0);
 }
 
 }  // namespace

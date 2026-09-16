@@ -1,6 +1,7 @@
 # mirrored pins must not land on slots blocked by boundary PDN shapes:
 # the matcher avoids them when possible and errors out when not
 source "helpers.tcl"
+source "pdn_helpers.tcl"
 
 # slot count and HPWL change once boundary PDN shapes block slots
 suppress_message PPL 1
@@ -25,32 +26,7 @@ set_io_pin_constraint -region bottom:40-60 -pin_names {req_msg\[0\]}
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
   -min_distance 0.12
 
-# count mirrored pin shapes overlapping the strap
-proc count_strap_overlaps { } {
-  set block [ord::get_db_block]
-  set violations 0
-  foreach name [list {req_msg\[0\]} {req_msg\[1\]}] {
-    set bterm [$block findBTerm $name]
-    foreach bpin [$bterm getBPins] {
-      foreach box [$bpin getBoxes] {
-        set layer [$box getTechLayer]
-        if { [$layer getName] != "metal2" } {
-          continue
-        }
-        if {
-          [$box xMin] < 104000 && 100000 < [$box xMax] && [$box yMin] < 296000
-          && 292000 < [$box yMax]
-        } {
-          puts "pin [$bterm getName] overlaps the VDD strap"
-          incr violations
-        }
-      }
-    }
-  }
-  return $violations
-}
-
-puts "mirrored pin overlaps with strap: [count_strap_overlaps]"
+puts "mirrored pin overlaps with strap: [count_pdn_shape_violations overlap]"
 
 # a region whose mirrored slots are all blocked must error, not overlap
 clear_io_pin_constraints

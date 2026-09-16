@@ -11,6 +11,7 @@ or_integration_tests(
     mbff_orig_name
     mbff_clock_power_off
     mbff_clock_power_on
+    mt_invariance01
     convergence01
     core01
     density01
@@ -167,14 +168,39 @@ target_sources(mbff_test
   mbff_test.cpp
 )
 
-add_dependencies(build_and_test fft_test mbff_test)
+add_executable(placer_base_test
+  placer_base_test.cpp
+)
+
+target_include_directories(placer_base_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(placer_base_test PUBLIC
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+  tst
+)
+
+gtest_discover_tests(placer_base_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME placer_base_test_load_sentinel
+           COMMAND $<TARGET_FILE:placer_base_test> --gtest_list_tests)
+endif()
+
+add_dependencies(build_and_test fft_test mbff_test placer_base_test)
 
 # GPU FFT correctness test. Built only on ENABLE_GPU=ON: it links the GPU FFT
 # backend (src/gpl/src/gpu/gpuFftBackend.cpp) via gpl_lib and, with the default
 # environment (gpl::gpuEnabled() true), runs the GPU FFT, checking it against
 # a baked-in CPU-FFT reference within a relative tolerance. It cannot run in
-# CI (no GPU) and is CMake-only -- not registered in src/gpl/BUILD, exactly
-# like the rest of the GPU code path.
+# CI (no GPU). The Bazel counterpart is //src/gpl/test:fft_gpu_test under
+# --config=gpu.
 if(ENABLE_GPU)
   add_executable(fft_gpu_test fft_gpu_test.cc)
 
@@ -211,7 +237,7 @@ if(ENABLE_GPU)
   # Unlike fft_gpu_test it includes Kokkos-laden headers directly
   # (deviceState_kokkos.h / wirelengthOp.h), so the TU must be compiled with
   # the device language, same as the src/gpu/ sources in ../CMakeLists.txt.
-  # CMake-only, like the rest of the GPU code path.
+  # The Bazel counterpart is //src/gpl/test:wl_gpu_test under --config=gpu.
   add_executable(wl_gpu_test wl_gpu_test.cc)
 
   if(Kokkos_ENABLE_CUDA)

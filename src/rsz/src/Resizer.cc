@@ -54,6 +54,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
@@ -280,17 +281,8 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
     return false;
   }
 
-  const bool input_modnet_has_input_port = std::ranges::any_of(
-      input_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::INPUT;
-      });
-
-  const bool output_modnet_has_output_port = std::ranges::any_of(
-      output_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::OUTPUT;
-      });
-
-  return input_modnet_has_input_port && output_modnet_has_output_port;
+  return input_modnet->isConnectedToInputPort()
+         && output_modnet->isConnectedToOutputPort();
 }
 
 float inputPinCapacitance(sta::Network* network,
@@ -2982,14 +2974,25 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_net_name;
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
-    new_net_name = db_removed->getName();
-    // The rename exists to keep the ModNet name in sync with the flat net
-    // name.  Feedthrough is the exception: removed_modnet is the output
-    // ModNet, so syncing would name the ModNet after the output port and
-    // write_verilog would then drop the assign statement.  On a feedthrough
-    // the ModNet name must always stay the input port name.
-    if (removed_modnet != nullptr && !creates_feedthrough) {
-      new_modnet_name = removed_modnet->getName();
+    const bool preserve_port_name
+        = survivor_modnet != nullptr
+          && survivor_modnet->isConnectedToInputPort();
+    if (!preserve_port_name) {
+      // Normally both names follow the shallower removed net.
+      new_net_name = db_removed->getName();
+      if (removed_modnet != nullptr) {
+        new_modnet_name = removed_modnet->getName();
+      }
+    } else {
+      // Keep input/inout port names so write_verilog retains required
+      // feedthrough assigns. Use the shallower flat name only if it remains
+      // represented after the ModNet merge.
+      const bool shallower_name_survives
+          = removed_modnet == nullptr
+            || removed_modnet->getHierarchicalName() != db_removed->getName();
+      if (shallower_name_survives) {
+        new_net_name = db_removed->getName();
+      }
     }
   }
 
@@ -4529,6 +4532,51 @@ float Resizer::portFanoutLoad(sta::LibertyPort* port) const
     return fanout_load;
   }
   return 0.0;
+}
+
+bool Resizer::checkFanout(const sta::Pin* drvr_pin,
+                          const sta::Mode* mode,
+                          const sta::MinMax* min_max,
+                          // Return values.
+                          float& fanout,
+                          float& max_fanout,
+                          float& fanout_slack) const
+{
+  sta_->checkFanout(drvr_pin, mode, min_max, fanout, max_fanout, fanout_slack);
+
+  // Preserve the library and SDC fanout-load semantics when a constraint
+  // exists. The default is an RSZ-only load-pin backstop.
+  if (min_max != sta::MinMax::max() || max_fanout < sta::INF) {
+    return false;
+  }
+
+  // Match the pins OpenSTA excludes from fanout checking.
+  if (!network_->isDriver(drvr_pin) || sta_->isConstant(drvr_pin, mode)
+      || mode->sdc()->isDisabledConstraint(drvr_pin)
+      || mode->clkNetwork()->isIdealClock(drvr_pin)) {
+    return false;
+  }
+
+  const int load_count = fanoutLoadCount(drvr_pin);
+  if (load_count == 0) {
+    return false;
+  }
+
+  fanout = load_count;
+  max_fanout = kDefaultMaxFanout;
+  fanout_slack = max_fanout - fanout;
+  return true;
+}
+
+int Resizer::fanoutLoadCount(const sta::Pin* drvr_pin) const
+{
+  sta::PinSeq loads;
+  sta::PinSeq drvrs;
+  sta::PinSet visited_drvrs(db_network_);
+  sta::FindNetDrvrLoads visitor(
+      drvr_pin, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin, visitor);
+  return static_cast<int>(loads.size());
 }
 
 float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,

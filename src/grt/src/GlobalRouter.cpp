@@ -1200,6 +1200,7 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
+  dedupViaSegments(routes_[db_net]);
   addImplicitVias(routes_[db_net]);
 
   // Validate that the restored routing covers every pin; on failure fall back
@@ -3060,6 +3061,7 @@ void GlobalRouter::loadGuidesFromDB()
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
+    dedupViaSegments(route);
     addImplicitVias(route);
     mergeSegments(pins, route);
   }
@@ -3181,6 +3183,26 @@ void GlobalRouter::updateVias()
       }
     }
   }
+}
+
+void GlobalRouter::dedupViaSegments(GRoute& route)
+{
+  if (route.empty()) {
+    return;
+  }
+
+  // saveGuides() emits a guide on each layer for vias covering pins.
+  std::set<std::tuple<int, int, int, int>> seen_vias;  // x, y, lo, hi
+  std::erase_if(route, [&seen_vias](const GSegment& seg) {
+    if (!seg.isVia() || seg.init_layer == seg.final_layer) {
+      return false;
+    }
+    const int lo = std::min(seg.init_layer, seg.final_layer);
+    const int hi = std::max(seg.init_layer, seg.final_layer);
+    const std::tuple<int, int, int, int> key{seg.init_x, seg.init_y, lo, hi};
+    // Keep the first occurrence to preserve segment order.
+    return !seen_vias.insert(key).second;
+  });
 }
 
 void GlobalRouter::addImplicitVias(GRoute& route)
@@ -6640,6 +6662,19 @@ void GlobalRouter::setDebugEdges3D(bool edges3D)
 void GlobalRouter::setSttInputFilename(const char* file_name)
 {
   fastroute_->setSttInputFilename(file_name);
+}
+void GlobalRouter::initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer)
+{
+  cugr_->initDebugRenderer(std::move(renderer));
+}
+AbstractCugrRenderer* GlobalRouter::getDebugCugr() const
+{
+  return cugr_->getDebugRenderer();
+}
+void GlobalRouter::setDebugCugrNet(odb::dbNet* net,
+                                   const CugrDebugStages& stages)
+{
+  cugr_->setDebugNet(net, stages);
 }
 
 // For rsz::makeBufferedNetGlobalRoute so Pin/Net classes do not have to be

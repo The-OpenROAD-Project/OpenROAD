@@ -69,6 +69,8 @@ class RoutingTracks;
 class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
+class AbstractCugrRenderer;
+struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
@@ -312,6 +314,11 @@ class GlobalRouter
   void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
 
+  // CUGR stage-by-stage topology debug (global_route_debug).
+  void initDebugCugr(std::unique_ptr<AbstractCugrRenderer> renderer);
+  AbstractCugrRenderer* getDebugCugr() const;
+  void setDebugCugrNet(odb::dbNet* net, const CugrDebugStages& stages);
+
   void saveSttInputFile(Net* net);
 
   // Report the wire length on each layer.
@@ -327,6 +334,9 @@ class GlobalRouter
   // grid point but no via connects them, so the route handed to parasitics
   // estimation is electrically connected (correct-by-construction).
   void addImplicitVias(GRoute& route);
+
+  // Remove duplicate vias from ODB guides, including reversed layer pairs.
+  void dedupViaSegments(GRoute& route);
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,

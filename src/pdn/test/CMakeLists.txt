@@ -100,6 +100,15 @@ or_integration_tests(
     macros_cells_overlapping_ports
     macros_cells_via_failure
     macros_different_nets
+    macros_flipped_180
+    macros_flipped_halo_blocking
+    macros_flipped_halo_rings
+    macros_flipped_narrow_channel
+    macros_flipped_number_of_straps
+    macros_flipped_right_angle
+    macros_flipped_right_angle_180
+    macros_flipped_right_angle_halo
+    macros_flipped_straps
     macros_grid_check
     macros_grid_not_used
     macros_grid_through
@@ -129,6 +138,9 @@ or_integration_tests(
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
     pads_ihp_sg13g2_balance
+    pads_placed_not_fixed
+    pads_straps_through_pads
+    pads_via_repair_through_pads
     power_switch
     power_switch_cut_rows
     power_switch_daisy
@@ -143,6 +155,7 @@ or_integration_tests(
     region_temp_sensor
     region_temp_sensor_different_region_name
     repair_channel_inf_loop
+    repair_channel_out_of_options
     repair_vias
     report
     reset
@@ -150,6 +163,7 @@ or_integration_tests(
     sky130_spm_floating_bpin
     sky130_spm_halo_too_big
     sroute_test
+    stacked_via_merged_enclosure
     widthtable
 )
 

@@ -13,8 +13,8 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
-    watchDevicePixelRatio, tileSizeFields,
+    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
@@ -22,11 +22,15 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
-import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
-         buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
-         formatDbu, formatDistance, isCurrentSelection, isStaticMode,
-         maxUsefulZoom, parseDbu, rafCoalesce, showToast, unitLabel }
+import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
+         buildMapOptions, buildVisibilityFlags, clampArrowStep,
+         computeBoundsTransforms, computeScaleBar, decorateTabIcons,
+         fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
+         isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
+         rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
+import { clampFontScale, showAppFontDialog, showArrowStepDialog }
+    from './options-dialogs.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
@@ -49,6 +53,10 @@ import { captureLayout } from './capture.js';
 const statusDiv = document.getElementById('websocket-status');
 let disconnectTimeout = null;
 const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
+// Outstanding tile requests are normal while panning; this many at once means
+// the server is not keeping up, which is worth a number rather than just the
+// progress line.
+const PENDING_BACKLOG = 20;
 
 function updateStatus() {
     const isConnected = app.websocketManager && app.websocketManager.isConnected;
@@ -70,30 +78,60 @@ function updateStatus() {
             }, DISCONNECT_DELAY_MS);
         }
     } else {
-        // Connected - clear timeout and show pending indicator if needed
         if (disconnectTimeout) {
             clearTimeout(disconnectTimeout);
             disconnectTimeout = null;
         }
-        
-        if (pendingCount === 0) {
-            statusDiv.style.display = 'none';
-        } else {
-            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+        // Ordinary tile traffic is the progress line's job.  The count only
+        // earns space on screen once the queue is long enough to be the
+        // explanation for a viewer that feels stuck.
+        if (pendingCount > PENDING_BACKLOG) {
+            statusDiv.innerHTML = '<div class="or-hud or-hud-top-right '
+                + `pending-indicator">pending: ${pendingCount}</div>`;
             statusDiv.style.display = 'block';
-            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
-            statusDiv.querySelector('.pending-indicator').style.color = color;
+        } else {
+            statusDiv.style.display = 'none';
         }
     }
+    setTileProgress(pendingCount);
+}
+
+// Show the tile-request line while requests are outstanding.  A no-op when the
+// Layout panel is closed, which is the only place the line lives.
+function setTileProgress(pendingCount) {
+    const el = app.tileProgressEl;
+    if (!el) return;
+    el.classList.toggle('active', pendingCount > 0);
+    // The count is worth keeping for anyone diagnosing a slow server, just not
+    // worth a chip on screen.
+    el.title = pendingCount > 0 ? `${pendingCount} tile requests pending` : '';
 }
 
 // ─── Component Factories ────────────────────────────────────────────────────
+
+// Cookies hold values verbatim (their writers encode), and a CSS font stack
+// carries commas, quotes and spaces, so the font family round-trips
+// URI-encoded.  A malformed percent escape would throw out of the app's
+// initialization, so a corrupt cookie falls back to the default instead.
+function decodeCookie(value) {
+    if (!value) {
+        return '';
+    }
+    try {
+        return decodeURIComponent(value);
+    } catch (_) {
+        return '';
+    }
+}
 
 // Shared application state — replaces scattered module-level globals.
 // Components receive this via closure now; when extracted to separate files
 // they'll receive it as an explicit parameter.
 const app = {
     map: null,
+    // Zoom-to-fit box in latlng, Qt's 5% margin per dimension already added
+    // (computeBoundsTransforms).  Anything wanting the design's own extent
+    // has to work from the DBU rects, not from this.
     fitBounds: null,
     lastSelectionBounds: null,  // Leaflet bounds of the last selected object
     selHasInst: false,          // selection contains any instance
@@ -142,6 +180,21 @@ const app = {
     // Default style for NEW rulers (2.12): 'euclidian' | 'manhattan'.
     rulerStyle: getCookie('or_ruler_style') === 'manhattan'
         ? 'manhattan' : 'euclidian',
+    // ── Options-menu preferences (2.15) ──
+    // Qt's "Mouse wheel mapped to zoom by default".  Qt defaults it off (wheel
+    // pans); the web viewer has always zoomed, so absent cookie means on.
+    wheelZoom: getCookie('or_wheel_zoom') !== '0',
+    // Qt's "Arrow keys scroll step", in CSS px.
+    arrowStep: clampArrowStep(getCookie('or_arrow_step')),
+    // Qt's "Application font", split into the CSS family and a percentage
+    // scale over the stylesheet's authored sizes.  Empty family = the
+    // stylesheet default.
+    fontFamily: decodeCookie(getCookie('or_font_family')),
+    fontScale: clampFontScale(getCookie('or_font_scale')),
+    // Qt's "Show polygon decomposition".  Server-global (the ITerm/MTerm
+    // descriptors read it), so it is fetched on connect rather than stored in
+    // a cookie, and a change from another client arrives as a push.
+    polyDecomp: false,
     labelManager: null,
     selectableLayers: new Set(),
     heatMapData: null,
@@ -384,9 +437,6 @@ const WebSocketTileLayer = createWebSocketTileLayer(
         app,
     }, { dpr: currentDpr });
 })();
-const BLANK_TILE
-    = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
 const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
@@ -441,7 +491,11 @@ const HeatMapTileLayer = L.GridLayer.extend({
             // display.
             ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
-            tile.src = URL.createObjectURL(blob);
+            // A null payload is an empty response: the heat map has no
+            // populated bin in this tile, or the tile is off the grid.  The
+            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
+            // is decoded and onload still fires to complete the tile.
+            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
         }).catch(() => {
             tile.src = BLANK_TILE;
         });
@@ -458,6 +512,12 @@ const HeatMapTileLayer = L.GridLayer.extend({
             const coords = tileInfo.coords;
             const active = this._appState.activeHeatMap;
             if (!active) {
+                // Release the decode before dropping it: turning the heat map
+                // off walks every tile on screen, so skipping this strands one
+                // object URL per tile.
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
                 tile.src = BLANK_TILE;
                 continue;
             }
@@ -472,7 +532,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
                 }
-                tile.src = URL.createObjectURL(blob);
+                // Null means the tile is empty now; assigning BLANK_TILE also
+                // drops whatever image it was holding, which matters when a
+                // refresh follows an edit that emptied a bin.
+                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
             }).catch(() => {
                 tile.src = BLANK_TILE;
             });
@@ -631,11 +694,46 @@ function createLayoutViewer(container) {
     container.element.appendChild(mapDiv);
 
     const heatMapLegend = document.createElement('div');
-    heatMapLegend.className = 'heatmap-map-legend hidden';
+    heatMapLegend.className = 'or-hud or-hud-bottom-right heatmap-map-legend hidden';
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
-    app.map = L.map(mapDiv, buildMapOptions());
+    // Tile requests in flight, as a line along the top of the canvas.  Held on
+    // app because updateStatus runs from the socket callbacks, which know
+    // nothing about this panel -- and the panel can be closed, so every write
+    // to it goes through setTileProgress below.
+    const progress = document.createElement('div');
+    progress.className = 'or-progress';
+    mapDiv.appendChild(progress);
+    app.tileProgressEl = progress;
+
+    // Closing the panel discards this DOM, so drop the references to it.  Both
+    // readers null-check (setTileProgress here, updateHeatMapLegend in
+    // display-controls.js), and createLayoutViewer sets them again if the panel
+    // is reopened.
+    //
+    // app.map is deliberately left alone.  Calling map.remove() and nulling it
+    // would be the matching cleanup, but ~140 call sites across eleven modules
+    // reach app.map, many of them unguarded -- the View menu's zoom items, the
+    // inspector's zoom-to, the rulers, the display controls -- so nulling it
+    // turns a detached-but-harmless map into a dozen ways to throw while the
+    // panel is closed.  Guarding those is a lifecycle change, not a styling
+    // one.
+    container.on('destroy', () => {
+        app.tileProgressEl = null;
+        app.heatMapLegendEl = null;
+    });
+
+    app.map = L.map(mapDiv, buildMapOptions(undefined, {
+        wheelZoom: app.wheelZoom,
+        arrowStep: app.arrowStep,
+    }));
+    // Wheel pan/zoom per the Options preference (2.15).  Skipped in a static
+    // report, which deliberately locks the zoom to the one pre-rendered level
+    // and turns Leaflet's own wheel zoom off.
+    if (!isStaticMode(app)) {
+        installWheelPanning(app.map, () => app.wheelZoom);
+    }
     // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
     // boundaries mid-device-pixel and they show as dark hairlines; this nudges
     // each tile container back onto the grid after every move.
@@ -673,10 +771,35 @@ function createLayoutViewer(container) {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
 
-    // Coordinate readout overlay (bottom-left of the layout viewer).
+    // Scale bar and coordinate readout share one HUD at the bottom-left of
+    // the viewer.  The scale bar is a display option and hides on its own, so
+    // the divider beside it goes when it does, and the HUD itself disappears
+    // when neither readout has anything to show -- otherwise an empty chip
+    // sits on the layout before the pointer has ever entered it.
+    const hud = document.createElement('div');
+    hud.className = 'or-hud or-hud-bottom-left hidden';
+    const scaleBar = document.createElement('div');
+    scaleBar.id = 'scale-bar';
+    const hudDivider = document.createElement('span');
+    hudDivider.className = 'or-hud-divider';
     const coordBar = document.createElement('div');
     coordBar.id = 'coord-bar';
-    mapDiv.appendChild(coordBar);
+    hud.appendChild(scaleBar);
+    hud.appendChild(hudDivider);
+    hud.appendChild(coordBar);
+    mapDiv.appendChild(hud);
+
+    function syncHud() {
+        // Content, not just the display property: the scale bar starts out
+        // display:'' but empty -- updateScaleBar has not run yet -- and an
+        // empty div would otherwise count as a visible readout.
+        const scale = scaleBar.style.display !== 'none'
+            && scaleBar.childElementCount > 0;
+        const coord = coordBar.textContent !== '';
+        hudDivider.style.display = (scale && coord) ? '' : 'none';
+        hud.classList.toggle('hidden', !scale && !coord);
+    }
+    syncHud();
 
     app.map.on('mousemove', (e) => {
         app.lastMouseLatLng = e.latlng;
@@ -685,14 +808,21 @@ function createLayoutViewer(container) {
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
             app.designOriginX, app.designOriginY);
         coordBar.textContent = `X: ${app.formatDbu(dbuX)}  Y: ${app.formatDbu(dbuY)}`;
+        syncHud();
     });
-    app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
-
-    // Scale bar overlay (bottom-left, above coord bar).  Content is an
-    // inline SVG rebuilt on each update (bracket + ticks + 0/total labels).
-    const scaleBar = document.createElement('div');
-    scaleBar.id = 'scale-bar';
-    mapDiv.appendChild(scaleBar);
+    app.map.on('mouseout', (e) => {
+        // Leaflet raises mouseout for a move onto anything inside the
+        // container too -- a zoom control, a marker, the HUD itself -- and
+        // both the readout and the zoom anchor should hold their values for
+        // those.  Only a move that actually leaves the viewer clears them.
+        const to = e.originalEvent && e.originalEvent.relatedTarget;
+        if (to && mapDiv.contains(to)) {
+            return;
+        }
+        app.lastMouseLatLng = null;
+        coordBar.textContent = '';
+        syncHud();
+    });
 
     const SB_H = 22;       // svg height
     const SB_BAR_H = 8;    // bracket height
@@ -731,6 +861,7 @@ function createLayoutViewer(container) {
     function updateScaleBar() {
         if (!app.designScale || !visibility.scale_bar) {
             scaleBar.style.display = 'none';
+            syncHud();
             return;
         }
         // Pixels per DBU at current zoom: designScale * 2^zoom.
@@ -745,10 +876,12 @@ function createLayoutViewer(container) {
         });
         if (!sb) {
             scaleBar.style.display = 'none';
+            syncHud();
             return;
         }
         scaleBar.style.display = '';
         renderScaleBar(sb.barPx, sb.label, sb.segments);
+        syncHud();
     }
 
     // Coalesce updates during continuous zoom gestures so the bar tracks
@@ -957,7 +1090,10 @@ function createStubPanel(container, title, description) {
 
 // ─── Layout Configuration ───────────────────────────────────────────────────
 
+const kHeaderHeight = 28;
+
 const defaultLayoutConfig = {
+    dimensions: { headerHeight: kHeaderHeight },
     root: {
         type: 'row',
         content: [
@@ -1090,7 +1226,7 @@ if (staticCache) {
     // different design) — resync the coordinate transforms; a bounds
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
-        resyncBounds(null, { reloadOnChange: true }).catch(() => {});
+        resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
     };
 }
 
@@ -1103,7 +1239,11 @@ const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
 if (savedLayout && savedVersion === LAYOUT_VERSION) {
     try {
         const resolved = JSON.parse(savedLayout);
-        app.goldenLayout.loadLayout(LayoutConfig.fromResolved(resolved));
+        const restored = LayoutConfig.fromResolved(resolved);
+        restored.dimensions = {
+            ...restored.dimensions, headerHeight: kHeaderHeight,
+        };
+        app.goldenLayout.loadLayout(restored);
     } catch (e) {
         app.goldenLayout.loadLayout(defaultLayoutConfig);
     }
@@ -1111,10 +1251,22 @@ if (savedLayout && savedVersion === LAYOUT_VERSION) {
     app.goldenLayout.loadLayout(defaultLayoutConfig);
 }
 localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
+addTabIcons();
+
+// Add the per-panel tab icons and, if any were added, make Golden Layout
+// measure the headers again -- it chose which tabs fit before the icons
+// widened them, so without this the tabs that no longer fit overlap the
+// stack's controls instead of moving into the overflow dropdown.
+function addTabIcons() {
+    if (decorateTabIcons() > 0) {
+        app.goldenLayout.updateSize();
+    }
+}
 
 // Persist layout on changes (drag, resize, close, etc.)
 app.goldenLayout.on('stateChanged', () => {
     localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
+    addTabIcons();
 });
 
 // Resize GoldenLayout to the space #gl-container actually has.  The container
@@ -1202,7 +1354,81 @@ app.toggleShowDbu = function() {
 app.toggleRulerStyle = function() {
     app.rulerStyle = app.rulerStyle === 'manhattan' ? 'euclidian' : 'manhattan';
     setCookie('or_ruler_style', app.rulerStyle);
+    scheduleSyncDisplayState();
 };
+
+// ─── Options-menu preferences (2.15) ────────────────────────────────────────
+
+// Qt's Options > "Mouse wheel mapped to zoom by default".  The wheel handler
+// reads app.wheelZoom on every event, so nothing has to be re-installed.
+app.toggleWheelZoom = function() {
+    app.wheelZoom = !app.wheelZoom;
+    setCookie('or_wheel_zoom', app.wheelZoom ? '1' : '0');
+    scheduleSyncDisplayState();
+};
+
+// Qt's Options > "Arrow keys scroll step".  Leaflet caches the pan distance in
+// its keyboard handler's key map, so the new step has to be pushed into it:
+// see applyArrowStep.
+app.setArrowStep = function(step) {
+    app.arrowStep = clampArrowStep(step);
+    setCookie('or_arrow_step', String(app.arrowStep));
+    applyArrowStep(app.map, app.arrowStep);
+    scheduleSyncDisplayState();
+};
+
+// Qt's Options > "Application font" (QApplication::setFont).  Only the chrome:
+// layout text is drawn server-side from the font atlas.
+app.setAppFont = function({ family, scale }) {
+    app.fontFamily = family ?? app.fontFamily;
+    app.fontScale = clampFontScale(scale ?? app.fontScale);
+    setCookie('or_font_family', encodeURIComponent(app.fontFamily));
+    setCookie('or_font_scale', String(app.fontScale));
+    app.applyAppFont();
+    scheduleSyncDisplayState();
+};
+
+// Push the stored font preference into the two CSS custom properties the
+// stylesheet reads.  An empty family removes the override so the stylesheet's
+// own default applies, rather than pinning it to a copy that would drift.
+app.applyAppFont = function() {
+    const root = document.documentElement;
+    if (app.fontFamily) {
+        root.style.setProperty('--or-font-family', app.fontFamily);
+    } else {
+        root.style.removeProperty('--or-font-family');
+    }
+    root.style.setProperty('--or-font-scale', String(app.fontScale / 100));
+    // Canvas widgets measure text themselves, so they need a re-render.
+    if (app.chartsWidget) app.chartsWidget.render();
+    if (app.clockTreeWidget) app.clockTreeWidget.render();
+};
+
+app.showArrowStepDialog = () => showArrowStepDialog(app);
+app.showAppFontDialog = () => showAppFontDialog(app);
+
+// Qt's Options > "Show polygon decomposition".  The server owns the value, so
+// the local flag and the menu tick only move once it has confirmed; every
+// other client learns about it from the broadcast the handler sends.
+app.togglePolyDecomp = function() {
+    if (!app.websocketManager) return;
+    app.websocketManager
+        .request({ type: 'poly_decomp', value: !app.polyDecomp })
+        .then((resp) => applyPolyDecomp(resp.value))
+        .catch(() => {});
+};
+
+function applyPolyDecomp(value) {
+    app.polyDecomp = !!value;
+    if (app.rebuildMenuBar) app.rebuildMenuBar();
+    // The highlight shapes are derived server-side; the overlay handler
+    // re-derives them when it sees the flag has moved.
+    if (app.refreshOverlay) app.refreshOverlay();
+}
+
+// Apply the persisted font before the panels are built so nothing renders at
+// the default size first and then jumps.
+app.applyAppFont();
 
 // ─── Menu Bar & Toolbar ──────────────────────────────────────────────────────
 
@@ -1281,10 +1507,12 @@ function ensureDebugContinueButton() {
 // whenever the server reports different bounds — otherwise every later
 // click and highlight lands offset from the re-rendered tiles.
 
-function applyBounds(designBounds) {
+// `designBounds` georeferences the tile grid; `fitRect` is what Fit frames.
+// They differ by the pin-label margin the server adds to the former.
+function applyBounds(designBounds, fitRect) {
     // The map's whole coordinate system is defined in units of one tile, so
     // this must be the size the layers actually use.
-    const t = computeBoundsTransforms(designBounds, tileSizeCss());
+    const t = computeBoundsTransforms(designBounds, tileSizeCss(), fitRect);
     if (!t) return false;
     app.currentBounds = designBounds;
     app.designScale = t.scale;
@@ -1300,19 +1528,24 @@ function applyBounds(designBounds) {
     return true;
 }
 
-async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
+async function resyncBounds(inlineBounds, inlineFitBounds,
+                            { reloadOnChange = false } = {}) {
     // Returns true when it already redrew the layers (bounds changed), so
     // callers can avoid a second redundant redraw.
     if (isStaticMode(app) || !app.map) return false;
     let designBounds = inlineBounds;
+    let fitRect = inlineFitBounds;
     if (!designBounds) {
         try {
             const data = await app.websocketManager.request({ type: 'bounds' });
             designBounds = data.bounds;
+            fitRect = data.fit_bounds;
         } catch (err) {
             return false;
         }
     }
+    // `bounds` alone is the sentinel: both rects come out of the same union of
+    // block bboxes and die areas, so neither moves without the other.
     if (!designBounds || boundsEqual(app.currentBounds, designBounds)) {
         return false;
     }
@@ -1331,7 +1564,7 @@ async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
                       app.designScale, app.designMaxDXDY,
                       app.designOriginX, app.designOriginY)
         : null;
-    if (!applyBounds(designBounds)) return false;
+    if (!applyBounds(designBounds, fitRect)) return false;
     if (center) {
         const ll = dbuToLatLng(center.dbuX, center.dbuY, app.designScale,
                                app.designMaxDXDY, app.designOriginX,
@@ -1355,12 +1588,19 @@ app.websocketManager.onPush = (msg) => {
         // tile georeference); resync transforms before/along the redraw.
         // resyncBounds already redraws when the bounds changed, so only
         // redraw here when it didn't (same bounds, edited geometry).
-        resyncBounds(msg.bounds)
+        resyncBounds(msg.bounds, msg.fit_bounds)
             .then((redrew) => { if (!redrew) redrawAllLayers(); })
             .catch(() => redrawAllLayers());
         // The design may have been edited by another session's
         // set_property; refresh the inspected object's properties.
         if (app.refreshInspector) app.refreshInspector();
+    } else if (msg.type === 'renderer_controls_changed') {
+        // A control was toggled — by this client or another one.  This is the
+        // single trigger for both halves, so the sender does not also
+        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // toggle sends one message per row and the echoes must coalesce.
+        if (app.refreshRendererControls) app.refreshRendererControls();
+        scheduleRedrawAllLayers();
     } else if (msg.type === 'selection_invalidated') {
         // A design object was destroyed (trigger_action or Tcl); the
         // server dropped this session's selection state.  Clear the
@@ -1389,6 +1629,12 @@ app.websocketManager.onPush = (msg) => {
             }
         }, 500);
     } else if (msg.type === 'debug_paused') {
+        // A paused run is when the renderer set is stable and when the user
+        // can act on it, so this is where the control list is picked up.
+        // Renderer::redraw() broadcasts debug_refresh many times a second
+        // during a run; the design-mutation `refresh` is not about renderers
+        // at all.
+        if (app.refreshRendererControls) app.refreshRendererControls();
         ensureDebugContinueButton().style.display = 'block';
         // Refetch tiles so the user sees the current paused state.
         // Use the debounced version so that a debug_refresh arriving
@@ -1425,6 +1671,9 @@ app.websocketManager.onPush = (msg) => {
         // Tcl-registered menu items / toolbar buttons changed (e.g. a
         // create_toolbar_button typed in any client's console). Re-render.
         applyCustomUi(msg);
+    } else if (msg.type === 'poly_decomp') {
+        // Another client toggled the server-global setting.
+        applyPolyDecomp(msg.value);
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
         // Disable auto-reconnect and show a clear message. Note that
@@ -1455,11 +1704,30 @@ app.websocketManager.readyPromise.then(async () => {
             .then(applyCustomUi)
             .catch(() => {});
 
+        // Options > "Show polygon decomposition" is server-global; read it so
+        // this client's menu tick matches what the server is drawing.
+        app.websocketManager.request({ type: 'poly_decomp' })
+            .then((resp) => applyPolyDecomp(resp.value))
+            .catch(() => {});
+
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
+        const fitRect = boundsData.fit_bounds;
+
+        // Size the tiles so the fit below lands on an integer zoom level.
+        // Must precede applyBounds, which derives the map's coordinate scale
+        // from the tile size, and populateDisplayControls, which builds the
+        // layers with it.  Static reports are pre-rasterized at a fixed size
+        // (useStaticTileSize above), so they are not free to choose.
+        if (!staticCache) {
+            const viewport = app.map.getSize();
+            useFittedTileSize(fittedTileSizeCss({
+                designBounds, fitRect, viewW: viewport.x, viewH: viewport.y,
+            }));
+        }
 
         // No design loaded — skip map setup, let user open a DB via menu.
-        const hasDesign = applyBounds(designBounds);
+        const hasDesign = applyBounds(designBounds, fitRect);
         if (hasDesign) {
             // Load any server-side text labels (2.12) now that applyBounds
             // has set the coordinate transform, so their handles can be
@@ -1479,10 +1747,18 @@ app.websocketManager.readyPromise.then(async () => {
                 app.map.boxZoom.disable();
                 app.map.doubleClickZoom.disable();
 
-                // Path highlight overlay image.
-                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
-                    opacity: 1, interactive: false, zIndex: 1000,
-                });
+                // Path highlight overlay image.  NOT app.fitBounds, which
+                // carries Qt's framing margin: renderOverlayPng frames these
+                // on the GEOREFERENCE rect, the one the tile grid is built
+                // on, so the image has to be stretched over that same rect or
+                // it lands offset from the tiles under it.
+                app.pathOverlay = L.imageOverlay(
+                    '',
+                    dbuRectToBounds(designBounds[0][1], designBounds[0][0],
+                                    designBounds[1][1], designBounds[1][0],
+                                    app.designScale, app.designMaxDXDY,
+                                    app.designOriginX, app.designOriginY),
+                    { opacity: 1, interactive: false, zIndex: 1000 });
                 staticCache.setPathOverlay = (src) => {
                     if (src) {
                         app.pathOverlay.setUrl(src);

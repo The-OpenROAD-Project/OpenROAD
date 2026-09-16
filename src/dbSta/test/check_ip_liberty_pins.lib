@@ -1,0 +1,48 @@
+library (check_ip_liberty_pins) {
+  delay_model : table_lookup;
+  capacitive_load_unit (1,pf);
+  current_unit : "1A";
+  pulling_resistance_unit : "1kohm";
+  time_unit : "1ns";
+  voltage_unit : "1V";
+
+  cell (lef_lib_pins_match) {
+    area : 1;
+    pin (A) {
+      capacitance : 0.001;
+      direction : input;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lef_lib_pin_missing) {
+    area : 1;
+    pin (A) {
+      capacitance : 0.001;
+      direction : input;
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lef_lib_direction_mismatch) {
+    area : 1;
+    pin (A) {
+      direction : output;
+      function : "1";
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+}

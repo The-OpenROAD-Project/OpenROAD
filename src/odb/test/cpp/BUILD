@@ -106,6 +106,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGCellTileSize",
+    srcs = ["TestGCellTileSize.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGDSIn",
     srcs = ["TestGDSIn.cpp"],
     data = ["//src/odb/test:regression_resources"],
@@ -357,6 +368,19 @@ cc_test(
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSwapMasterLeaf",
+    srcs = [
+        "TestSwapMasterLeaf.cpp",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

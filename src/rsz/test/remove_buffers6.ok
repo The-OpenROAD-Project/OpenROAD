@@ -25,11 +25,11 @@
 [INFO DPL-0393]   height 1 row(s): 17 cells
 Placement Analysis
 ---------------------------------
-total displacement         16.5 u
+total displacement         16.2 u
 average displacement        1.0 u
 max displacement            2.1 u
 original HPWL            2531.1 u
-legalized HPWL           2533.3 u
+legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
 worst slack max -0.38

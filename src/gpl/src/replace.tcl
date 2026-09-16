@@ -29,6 +29,10 @@ sta::define_cmd_args "global_placement" {\
     [-routability_max_density routability_max_density]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
+    [-routability_min_congestion_for_inflation routability_min_congestion_for_inflation]\
+    [-routability_max_inflation_total routability_max_inflation_total]\
+    [-routability_net_weight_max routability_net_weight_max]\
+    [-routability_congested_nets_percentage routability_congested_nets_percentage]\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-keep_resize_below_overflow keep_resize_below_overflow]\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
@@ -57,6 +61,10 @@ proc global_placement { args } {
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
+      -routability_min_congestion_for_inflation \
+      -routability_max_inflation_total \
+      -routability_net_weight_max \
+      -routability_congested_nets_percentage \
       -routability_rc_coefficients \
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \

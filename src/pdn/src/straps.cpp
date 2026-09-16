@@ -4,7 +4,6 @@
 #include "straps.h"
 
 #include <algorithm>
-#include <array>
 #include <cstdlib>
 #include <functional>
 #include <iterator>
@@ -17,7 +16,6 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
@@ -25,6 +23,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
 #include "pdn/PdnGen.hh"
 #include "renderer.h"
 #include "shape.h"
@@ -226,35 +225,35 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       Shape::getRectText(core, layer.getLefUnits()),
       Shape::getRectText(boundary, layer.getLefUnits()));
 
+  // On a flipped instance grid the offset is written against the macro as it
+  // was drawn, so it has to be measured from the mirrored edge and the sweep
+  // has to run towards the other one.
+  const bool mirror = honorsGridFlip()
+                      && (isHorizontal() ? grid->mirrorsY() : grid->mirrorsX());
+
   if (isHorizontal()) {
-    const int x_start = boundary.xMin();
-    const int x_end = boundary.xMax();
+    const int core_far = allow_out_of_core_ ? die.yMax() : core.yMax();
+    const int core_near = allow_out_of_core_ ? die.yMin() : core.yMin();
 
-    const int abs_min = die.yMin();
-    const int abs_max = die.yMax();
-
-    makeStraps(x_start,
-               core.yMin(),
-               x_end,
-               allow_out_of_core_ ? die.yMax() : core.yMax(),
-               abs_min,
-               abs_max,
+    makeStraps(boundary.xMin(),
+               boundary.xMax(),
+               mirror ? core.yMax() : core.yMin(),
+               mirror ? core_near : core_far,
+               die.yMin(),
+               die.yMax(),
                false,
                layer,
                avoid);
   } else {
-    const int y_start = boundary.yMin();
-    const int y_end = boundary.yMax();
+    const int core_far = allow_out_of_core_ ? die.xMax() : core.xMax();
+    const int core_near = allow_out_of_core_ ? die.xMin() : core.xMin();
 
-    const int abs_min = die.xMin();
-    const int abs_max = die.xMax();
-
-    makeStraps(core.xMin(),
-               y_start,
-               allow_out_of_core_ ? die.xMax() : core.xMax(),
-               y_end,
-               abs_min,
-               abs_max,
+    makeStraps(boundary.yMin(),
+               boundary.yMax(),
+               mirror ? core.xMax() : core.xMin(),
+               mirror ? core_near : core_far,
+               die.xMin(),
+               die.xMax(),
                true,
                layer,
                avoid);
@@ -268,50 +267,70 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
              layer_->getName());
 }
 
-void Straps::makeStraps(int x_start,
-                        int y_start,
-                        int x_end,
-                        int y_end,
-                        int abs_start,
-                        int abs_end,
-                        bool is_delta_x,
+void Straps::makeStraps(const int extent_start,
+                        const int extent_end,
+                        const int pos_origin,
+                        const int pos_limit,
+                        const int abs_start,
+                        const int abs_end,
+                        const bool is_delta_x,
                         const TechLayer& layer,
                         const Shape::ObstructionTree& avoid)
 {
   const int half_width = width_ / 2;
   int strap_count = 0;
 
-  int pos = is_delta_x ? x_start : y_start;
-  const int pos_end = is_delta_x ? x_end : y_end;
+  // pos_limit sits on the far side of pos_origin, so which way the sweep runs
+  // falls out of the two bounds; when it runs backwards the pitch, the group
+  // pitch and therefore the net order inside a group all invert too
+  const bool mirror = pos_limit < pos_origin;
+  const int step = mirror ? -1 : 1;
 
   const auto nets = getNets();
 
   const int group_pitch = spacing_ + width_;
 
+  // true once pos has swept past pos_limit
+  auto beyond_limit = [mirror, pos_limit](const int pos) {
+    return mirror ? pos < pos_limit : pos > pos_limit;
+  };
+  // true once pos has reached pos_limit, so that a strap edge sitting exactly
+  // on the limit leaves no part of the strap inside it
+  auto at_or_beyond_limit = [mirror, pos_limit](const int pos) {
+    return mirror ? pos <= pos_limit : pos >= pos_limit;
+  };
+
   debugPrint(getLogger(),
              utl::PDN,
              "Straps",
              2,
-             "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, "
-             "{:.4f}) with an {}-offset of {:.4f} and must be within {:.4f} "
-             "and {:.4f}",
+             "Generating straps on {} along {} from {:.4f} with an offset of "
+             "{:.4f} towards {:.4f}, spanning {:.4f} to {:.4f} and must be "
+             "within {:.4f} and {:.4f}",
              layer_->getName(),
-             layer.dbuToMicron(x_start),
-             layer.dbuToMicron(y_start),
-             layer.dbuToMicron(x_end),
-             layer.dbuToMicron(y_end),
              is_delta_x ? "x" : "y",
+             layer.dbuToMicron(pos_origin),
              layer.dbuToMicron(offset_),
+             layer.dbuToMicron(pos_limit),
+             layer.dbuToMicron(extent_start),
+             layer.dbuToMicron(extent_end),
              layer.dbuToMicron(abs_start),
              layer.dbuToMicron(abs_end));
 
-  int next_minimum_track = std::numeric_limits<int>::lowest();
-  for (pos += offset_; pos <= pos_end; pos += pitch_) {
+  // the track already claimed by the previous net in the group, which the next
+  // one must stay clear of on whichever side the sweep is heading
+  int next_track = mirror ? std::numeric_limits<int>::max()
+                          : std::numeric_limits<int>::lowest();
+  for (int pos = pos_origin + step * offset_; !beyond_limit(pos);
+       pos += step * pitch_) {
     int group_pos = pos;
     for (auto* net : nets) {
       // snap to grid if needed
       const int org_group_pos = group_pos;
-      group_pos = layer.snapToGrid(org_group_pos, next_minimum_track);
+      group_pos = mirror ? layer.snapToGrid(org_group_pos,
+                                            std::numeric_limits<int>::lowest(),
+                                            next_track)
+                         : layer.snapToGrid(org_group_pos, next_track);
       const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
       debugPrint(getLogger(),
@@ -325,23 +344,25 @@ void Straps::makeStraps(int x_start,
                  layer.dbuToMicron(strap_start),
                  layer.dbuToMicron(strap_end));
 
-      if (strap_start >= pos_end) {
+      if (at_or_beyond_limit(mirror ? strap_end : strap_start)) {
         // no portion of the strap is inside the limit
         return;
       }
-      if (group_pos > pos_end) {
+      if (beyond_limit(group_pos)) {
         // strap center is outside of alotted area
         return;
       }
 
       odb::Rect strap_rect;
       if (is_delta_x) {
-        strap_rect = odb::Rect(strap_start, y_start, strap_end, y_end);
+        strap_rect
+            = odb::Rect(strap_start, extent_start, strap_end, extent_end);
       } else {
-        strap_rect = odb::Rect(x_start, strap_start, x_end, strap_end);
+        strap_rect
+            = odb::Rect(extent_start, strap_start, extent_end, strap_end);
       }
-      group_pos += group_pitch;
-      next_minimum_track = group_pos;
+      group_pos += step * group_pitch;
+      next_track = group_pos;
 
       if (avoid.qbegin(bgi::intersects(strap_rect)) != avoid.qend()) {
         // dont add this strap as it intersects an avoidance
@@ -2105,22 +2126,57 @@ bool RepairChannelStraps::isAtEndOfRepairOptions() const
 void RepairChannelStraps::continueRepairs(
     const Shape::ObstructionTreeMap& other_shapes)
 {
+  if (isAtEndOfRepairOptions()) {
+    // every width and spacing has been tried, so there is nothing to continue
+    return;
+  }
+
   clearShapes();
-  const int next_width = getNextWidth();
-  debugPrint(
-      getLogger(),
-      utl::PDN,
-      "Channel",
-      1,
-      "Continue repair at {} on {} with straps on {} for {}: changing width "
-      "from {} um to {} um",
-      Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
-      connect_to_->getName(),
-      getLayer()->getName(),
-      getNetString(),
-      getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
-      next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
-  setWidth(next_width);
+
+  const TechLayer layer(getLayer());
+  const int min_width = layer.getMinWidth();
+
+  // isAtEndOfRepairOptions() reports the end of the width and spacing sequence
+  // that determineParameters() walks, so this must advance that sequence on
+  // every call or the end is never reached. determineParameters() alone is not
+  // enough: it keeps the current parameters when they already fit, which for a
+  // strap already at the minimum width leaves everything unchanged and makes
+  // repairGridChannels() rebuild the same strap forever.
+  if (getWidth() > min_width) {
+    const int next_width = getNextWidth();
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Continue repair at {} on {} with straps on {} for {}: changing width "
+        "from {} um to {} um",
+        Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+        connect_to_->getName(),
+        getLayer()->getName(),
+        getNetString(),
+        getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+        next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+    setWidth(next_width);
+  } else {
+    // the width is at the layer minimum, so the spacing is all that is left
+    const int next_spacing = layer.getSpacing(min_width, getMaxLength());
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Continue repair at {} on {} with straps on {} for {}: changing "
+        "spacing from {} um to {} um",
+        Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+        connect_to_->getName(),
+        getLayer()->getName(),
+        getNetString(),
+        getSpacing() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+        next_spacing / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+    setSpacing(next_spacing);
+  }
+
   determineParameters(other_shapes);
 }
 
@@ -2528,15 +2584,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     return {};
   }
 
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
   const auto grid_core = grid->getDomainBoundary();
 
   std::vector<Shape*> shapes_used;
-  Polygon90Set shape_set;
+  odb::geom::BoostPolygon90Set shape_set;
   for (const auto& shape : shapes) {
     if (shape->getNumberOfConnectionsAbove() != 0) {
       // shape already connected to something
@@ -2562,32 +2613,19 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
-    // determine bloat factor
-    const int bloat = grid_strap->getPitch();
-    const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
-    const int bloat_y = grid_strap->isHorizontal() ? bloat : 0;
-
-    const auto& min_corner = shape->getRect().ll();
-    const auto& max_corner = shape->getRect().ur();
-    std::array<Pt, 4> pts
-        = {Pt(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, max_corner.y() + bloat_y),
-           Pt(min_corner.x() - bloat_x, max_corner.y() + bloat_y)};
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
+    // bloat by the strap pitch across the strap, so neighboring straps merge
+    // and the gaps left between them are the channels
+    const odb::Rect bloated_shape = shape->getRect().bloat(
+        grid_strap->getPitch(),
+        grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
 
     shapes_used.push_back(shape.get());
-    shape_set.insert(poly);
+    shape_set.insert(odb::geom::toPolygon90(bloated_shape));
   }
 
   // get all possible channel rects
   std::set<odb::Rect> channels_rects;
-  std::vector<Rectangle> channel_set;
-  shape_set.get_rectangles(channel_set);
-  for (const auto& channel : channel_set) {
-    const odb::Rect area(xl(channel), yl(channel), xh(channel), yh(channel));
-
+  for (const odb::Rect& area : odb::geom::extractRectangles(shape_set)) {
     if (area.intersects(grid_core)) {
       channels_rects.insert(area.intersect(grid_core));
     }
@@ -2749,6 +2787,8 @@ void RepairChannelStraps::repairGridChannels(
         if (repair_strap->getLayer() == channel.target->getLayer()
             && channel.area == repair_strap->getArea()) {
           if (!repair_strap->isAtEndOfRepairOptions()) {
+            const std::set<odb::Rect> prev_shapes = strap->getShapeRects();
+
             repair_strap->addNets(channel.nets);
             repair_strap->removeShapes(local_shapes);
             repair_strap->removeObstructions(obstructions);
@@ -2757,7 +2797,12 @@ void RepairChannelStraps::repairGridChannels(
             if (repair_strap->testBuild(local_shapes, obstructions)) {
               strap->getShapes(local_shapes);  // need new shapes
               strap->getObstructions(obstructions);
-              areas_repaired.insert(channel.area);
+              // a rebuild that reproduces the same shapes has not repaired
+              // anything, and counting it would make repairGridChannels()
+              // recurse on an unchanged grid
+              if (strap->getShapeRects() != prev_shapes) {
+                areas_repaired.insert(channel.area);
+              }
             }
           }
         }
@@ -2786,6 +2831,35 @@ void RepairChannelStraps::repairGridChannels(
                  "Channel",
                  1,
                  "Skipping repair at {} in {}.",
+                 Shape::getRectText(channel.area,
+                                    grid->getBlock()->getDbUnitsPerMicron()),
+                 channel.target->getLayer()->getName());
+      continue;
+    }
+
+    // A repair strap already at this channel that has run out of widths and
+    // spacings has tried everything a new strap would try. Building another
+    // one restarts that sequence and repairGridChannels() recurses on it, so
+    // leave the channel to be reported as remaining instead.
+    bool options_exhausted = false;
+    for (const auto& strap : grid->getStraps()) {
+      if (strap->type() != GridComponent::kRepairChannel) {
+        continue;
+      }
+      auto* repair_strap = static_cast<RepairChannelStraps*>(strap.get());
+      if (repair_strap->getLayer() == channel.target->getLayer()
+          && repair_strap->getArea() == channel.area
+          && repair_strap->isAtEndOfRepairOptions()) {
+        options_exhausted = true;
+        break;
+      }
+    }
+    if (options_exhausted) {
+      debugPrint(grid->getLogger(),
+                 utl::PDN,
+                 "Channel",
+                 1,
+                 "No repair options left at {} in {}.",
                  Shape::getRectText(channel.area,
                                     grid->getBlock()->getDbUnitsPerMicron()),
                  channel.target->getLayer()->getName());

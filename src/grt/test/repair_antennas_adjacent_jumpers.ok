@@ -25,8 +25,9 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 0.
+        0 |          1 |         1 |         0
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
 [INFO GRT-0015] Inserted 4 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

@@ -23,33 +23,38 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |       3643 |       831 |      2410
-        1 |       3642 |       870 |      2637
-        2 |       2624 |       738 |      1781
-        3 |       1978 |       678 |      1300
-        4 |       1702 |       638 |      1040
-        5 |       1363 |       527 |       836
-        6 |       1327 |       485 |       842
-        7 |        901 |       403 |       498
-        8 |        813 |       351 |       462
-        9 |        782 |       308 |       465
-       10 |        586 |       250 |       336
-       20 |        180 |        78 |       102
-       30 |         17 |        11 |         6
-       40 |         13 |         9 |         4
-       50 |          5 |         5 |         0
-       60 |         21 |         5 |        16
-       70 |          8 |         2 |         6
+        0 |       5043 |       951 |      3447
+        1 |       3595 |       875 |      2466
+        2 |       3311 |       851 |      2340
+        3 |       2435 |       781 |      1594
+        4 |       1704 |       696 |      1008
+        5 |       1366 |       648 |       709
+        6 |       1359 |       609 |       750
+        7 |       1238 |       554 |       672
+        8 |        970 |       486 |       481
+        9 |        805 |       427 |       375
+       10 |        761 |       383 |       378
+       20 |        323 |       163 |       160
+       30 |        153 |        87 |        66
+       40 |         40 |        40 |         0
+       50 |         50 |        38 |        12
+       60 |         39 |        24 |        15
+       70 |         17 |        17 |         0
        80 |          1 |         1 |         0
-       83 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 83.
+       86 |          2 |         2 |         0
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 2 for 3 consecutive iterations.
+Using old diamond search for 2 remaining illegal cells.
+diamond recovery: recovered 1/2 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |          0 |         0 |         0
+Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement     300806.6 u
-average displacement       25.6 u
-max displacement         1402.7 u
+total displacement     293102.3 u
+average displacement       24.9 u
+max displacement         1398.0 u
 original HPWL         1353118.6 u
-legalized HPWL        1395741.9 u
+legalized HPWL        1389257.7 u
 delta HPWL                    3 %
 
 No differences found.
