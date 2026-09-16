@@ -1535,21 +1535,19 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     }
   }
 
-  {
-    const auto space = hostExecutionSpace(num_threads_);
-    Kokkos::parallel_for(
-        "gpl::clusterSilhouettes", HostRange(space, 2, 9), [&](int k) {
-          std::vector<std::vector<Flop>> k_clust;
-          KMeans(flops, k, k_clust, rand_nums[k - 2]);
-          std::vector<Point> centers;
-          for (int i = 0; i < k; i++) {
-            centers.push_back(k_clust[i].back().pt);
-            k_clust[i].pop_back();
-          }
-          float cur_silh = GetKSilh(k_clust, centers);
-          all_silhs[k] = cur_silh;
-        });
-  }
+  const auto space = hostExecutionSpace(num_threads_);
+  Kokkos::parallel_for(
+      "gpl::clusterSilhouettes", HostRange(space, 2, 9), [&](int k) {
+        std::vector<std::vector<Flop>> k_clust;
+        KMeans(flops, k, k_clust, rand_nums[k - 2]);
+        std::vector<Point> centers;
+        for (int i = 0; i < k; i++) {
+          centers.push_back(k_clust[i].back().pt);
+          k_clust[i].pop_back();
+        }
+        float cur_silh = GetKSilh(k_clust, centers);
+        all_silhs[k] = cur_silh;
+      });
 
   for (int i = 2; i <= 8; i++) {
     if (all_silhs[i] > best_silh) {
@@ -1561,24 +1559,21 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
   std::vector<std::vector<std::vector<Flop>>> tmp_clusters(multistart_);
   std::vector<float> tmp_costs(multistart_);
 
-  {
-    const auto space = hostExecutionSpace(num_threads_);
-    Kokkos::parallel_for(
-        "gpl::clusterMultistart", HostRange(space, 0, multistart_), [&](int i) {
-          KMeans(flops, best_k, tmp_clusters[i], rand_nums[i + 7]);
+  Kokkos::parallel_for(
+      "gpl::clusterMultistart", HostRange(space, 0, multistart_), [&](int i) {
+        KMeans(flops, best_k, tmp_clusters[i], rand_nums[i + 7]);
 
-          /* cur_cost = sum of distances between flops and its
-          matching cluster's center */
-          float cur_cost = 0;
-          for (int j = 0; j < best_k; j++) {
-            for (size_t k = 0; k + 1 < tmp_clusters[i][j].size(); k++) {
-              cur_cost += GetDist(tmp_clusters[i][j][k].pt,
-                                  tmp_clusters[i][j].back().pt);
-            }
+        /* cur_cost = sum of distances between flops and its
+        matching cluster's center */
+        float cur_cost = 0;
+        for (int j = 0; j < best_k; j++) {
+          for (size_t k = 0; k + 1 < tmp_clusters[i][j].size(); k++) {
+            cur_cost += GetDist(tmp_clusters[i][j][k].pt,
+                                tmp_clusters[i][j].back().pt);
           }
-          tmp_costs[i] = cur_cost;
-        });
-  }
+        }
+        tmp_costs[i] = cur_cost;
+      });
 
   float best_cost = std::numeric_limits<float>::max();
   std::vector<std::vector<Flop>> k_means_ret;
@@ -1727,66 +1722,59 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
   std::vector<std::vector<std::pair<int, int>>> all_mappings(num_pointsets);
   std::vector<std::vector<Tray>> all_final_trays(num_pointsets);
 
-  {
-    const auto space = hostExecutionSpace(num_threads_);
-    Kokkos::parallel_reduce(
-        "gpl::clusterFlops",
-        HostRange(space, 0, num_pointsets),
-        [&](int t, float& cost) {
-          std::vector<std::vector<Tray>> cur_trays;
-          RunMultistart(
-              cur_trays, pointsets[t], all_start_trays[t], array_mask);
+  const auto space = hostExecutionSpace(num_threads_);
+  Kokkos::parallel_reduce(
+      "gpl::clusterFlops",
+      HostRange(space, 0, num_pointsets),
+      [&](int t, float& cost) {
+        std::vector<std::vector<Tray>> cur_trays;
+        RunMultistart(cur_trays, pointsets[t], all_start_trays[t], array_mask);
 
-          // run capacitated k-means per tray size
-          const int num_flops = pointsets[t].size();
-          for (int i = 1; i < num_sizes_; i++) {
-            if (best_master_[array_mask][i] != nullptr) {
-              const int bit_cnt = GetBitCnt(i);
-              const int num_trays
-                  = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
+        // run capacitated k-means per tray size
+        const int num_flops = pointsets[t].size();
+        for (int i = 1; i < num_sizes_; i++) {
+          if (best_master_[array_mask][i] != nullptr) {
+            const int bit_cnt = GetBitCnt(i);
+            const int num_trays
+                = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
 
-              for (int j = 0; j < num_trays; j++) {
-                GetSlots(cur_trays[i][j].pt,
-                         bit_cnt,
-                         cur_trays[i][j].slots,
-                         array_mask);
-              }
+            for (int j = 0; j < num_trays; j++) {
+              GetSlots(cur_trays[i][j].pt,
+                       bit_cnt,
+                       cur_trays[i][j].slots,
+                       array_mask);
+            }
 
-              std::vector<std::pair<int, int>> cluster;
-              RunCapacitatedKMeans(pointsets[t],
-                                   cur_trays[i],
-                                   GetBitCnt(i),
-                                   35,
-                                   cluster,
-                                   array_mask);
-              MinCostFlow(pointsets[t], cur_trays[i], GetBitCnt(i), cluster);
-              for (int j = 0; j < num_trays; j++) {
-                GetSlots(cur_trays[i][j].pt,
-                         bit_cnt,
-                         cur_trays[i][j].slots,
-                         array_mask);
-              }
+            std::vector<std::pair<int, int>> cluster;
+            RunCapacitatedKMeans(pointsets[t],
+                                 cur_trays[i],
+                                 GetBitCnt(i),
+                                 35,
+                                 cluster,
+                                 array_mask);
+            MinCostFlow(pointsets[t], cur_trays[i], GetBitCnt(i), cluster);
+            for (int j = 0; j < num_trays; j++) {
+              GetSlots(cur_trays[i][j].pt,
+                       bit_cnt,
+                       cur_trays[i][j].slots,
+                       array_mask);
             }
           }
-          for (int i = 0; i < num_sizes_; i++) {
-            if (!i || best_master_[array_mask][i] != nullptr) {
-              all_final_trays[t].insert(all_final_trays[t].end(),
-                                        cur_trays[i].begin(),
-                                        cur_trays[i].end());
-            }
+        }
+        for (int i = 0; i < num_sizes_; i++) {
+          if (!i || best_master_[array_mask][i] != nullptr) {
+            all_final_trays[t].insert(all_final_trays[t].end(),
+                                      cur_trays[i].begin(),
+                                      cur_trays[i].end());
           }
-          std::vector<std::pair<int, int>> mapping(num_flops);
-          const float cur_ans = RunILP(pointsets[t],
-                                       all_final_trays[t],
-                                       mapping,
-                                       alpha,
-                                       beta,
-                                       array_mask);
-          all_mappings[t] = std::move(mapping);
-          cost += cur_ans;
-        },
-        Kokkos::Sum<float>(ans));
-  }
+        }
+        std::vector<std::pair<int, int>> mapping(num_flops);
+        const float cur_ans = RunILP(
+            pointsets[t], all_final_trays[t], mapping, alpha, beta, array_mask);
+        all_mappings[t] = std::move(mapping);
+        cost += cur_ans;
+      },
+      Kokkos::Sum<float>(ans));
 
   for (int t = 0; t < num_pointsets; t++) {
     ModifyPinConnections(

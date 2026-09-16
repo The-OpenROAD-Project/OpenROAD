@@ -81,13 +81,11 @@ void applyNetBoxesParallel(std::vector<GNet>& gNetStor,
                            const int num_threads)
 {
   const int n_nets = static_cast<int>(gNetStor.size());
-  {
-    const auto space = hostExecutionSpace(num_threads);
-    Kokkos::parallel_for(
-        "gpl::applyNetBoxes", HostRange(space, 0, n_nets), [&](int i) {
-          gNetStor[i].setBox(lx[i], ly[i], ux[i], uy[i]);
-        });
-  }
+  const auto space = hostExecutionSpace(num_threads);
+  Kokkos::parallel_for(
+      "gpl::applyNetBoxes", HostRange(space, 0, n_nets), [&](int i) {
+        gNetStor[i].setBox(lx[i], ly[i], ux[i], uy[i]);
+      });
 }
 #endif
 
