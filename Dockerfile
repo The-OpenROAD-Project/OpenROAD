@@ -59,8 +59,10 @@ WORKDIR /OpenROAD
 COPY --chown=user:user . .
 # Keep Bazel's build cache out of the published builder image.
 RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 <<EOF
+set -e
 OPENROAD_VERSION="${orVersion}" \
     bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
+test -x /OpenROAD/install/bin/openroad
 # Preserve the path used by builder-image consumers.
 mkdir -p build/bin
 ln -s ../../install/bin/openroad build/bin/openroad
