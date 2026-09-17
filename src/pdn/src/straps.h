@@ -171,6 +171,7 @@ class PadDirectConnectionStraps : public Straps
   // report how the connections made to the pads are distributed over the nets
   static void reportConnectionBalance(
       const std::vector<GridComponent*>& components);
+  bool checkForRepairChannels() const override { return false; }
 
  private:
   enum class ConnectionType
@@ -325,6 +326,7 @@ class RepairChannelStraps : public Straps
   };
   // find all straps in grid that are not connected for anything
   static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
+  bool allowDbPins() const override { return false; }
 
  protected:
   // determineOffset resolves an absolute position from the channel geometry and
@@ -354,6 +356,18 @@ class RepairChannelStraps : public Straps
       odb::dbTechLayer* layer);
   static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
+
+  // the layer a repair strap on layer is powered from, and whether that layer
+  // is above it
+  static odb::dbTechLayer* getFeedLayer(Grid* grid,
+                                        odb::dbTechLayer* layer,
+                                        odb::dbTechLayer* connect_to,
+                                        bool& is_above);
+  // grow the channel along the strap direction until every net reaches a shape
+  // of its own net that can power it
+  static void extendChannelToFeed(Grid* grid,
+                                  RepairChannelArea& channel,
+                                  const odb::Rect& grid_core);
 
   int getNextWidth() const;
   int getMaxLength() const;
