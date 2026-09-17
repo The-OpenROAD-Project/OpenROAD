@@ -13,20 +13,35 @@ struct Short;
 
 struct tcg_edge
 {
-  tcg_edge* next;
-  tcg_edge* reverse;
-  Short* s;
-  int fr;
+  int from;
   int to;
-  int k;  // index to wire_sections_
+  tcg_edge* next;
+
+  // The same edge in the other direction. Every connection between
+  // two points is stored twice in the graph, once per direction, so
+  // a walk can leave a point along any of its edges.
+  tcg_edge* reverse;
+
+  // An edge is either a path or a short:
+  // If wire_short is nullptr and wire_section_index is != -1,
+  // the edge is a path. The opposite for a short.
+  Short* wire_short;
+  int wire_section_index;
+
+  // When this edge is marked as visited, it's reverse version is also
+  // marked as visited.
   bool visited;
+
+  // When an edge is removed from the graph, the latter is not rebuilt.
+  // Instead, that edge is marked as "skip" and the walkers will ignore
+  // it when traversing. I.e., this edge was removed from the graph.
   bool skip;
 };
 
 struct tcg_pt
 {
-  tcg_edge* edges;
-  int ipath;
+  tcg_edge* first_edge; // Head of the chain of edges that leave this point.
+  int path_index;
   int visited;  // 1= from another descent, 2+k= _stackV[k]->fr
 };
 
