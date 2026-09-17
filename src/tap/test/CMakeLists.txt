@@ -29,6 +29,8 @@ or_integration_tests(
     endcap_autoselection_error3
     endcap_autoselection_error4
     endcap_corners
+    endcap_hole_strip
+    endcap_row_fragments
     endcap_separate_edges
     gcd_asap7
     gcd_fakeram
@@ -48,4 +50,3 @@ or_integration_tests(
     single_row_macros_offset
     symmetry
 )
-
