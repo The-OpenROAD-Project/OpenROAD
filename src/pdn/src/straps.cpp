@@ -592,8 +592,8 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 
   // How far a rail at `band` may be run out on the side `normal` points to.
   // Every mode resolves this against what is actually beside the rail, so a
-  // rail in the tall arm of an L reaches that arm's ring or that arm's die
-  // edge and not the ones belonging to the wide arm.  On a rectangular core
+  // rail in the tall leg of an L reaches that leg's ring or that leg's die
+  // edge and not the ones belonging to the wide leg.  On a rectangular core
   // there is only one of each, and this is the boundary it always was.
   const ExtensionMode mode = getExtendMode();
   const auto reach = [&](const odb::Rect& band, const odb::Point& normal) {
@@ -675,7 +675,7 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     // extended to sits.  Asking the outline whether there is any core further
     // along is what says so: comparing against the bounding box instead, as
     // this did, only recognises the rows reaching the widest part of a polygon
-    // core and leaves every rail in a narrower arm short of the ring beside it.
+    // core and leaves every rail in a narrower leg short of the ring beside it.
     const bool extend_low
         = domain.getMarginBeyond(bbox, odb::Point(-1, 0)) == 0;
     const bool extend_high

@@ -1,7 +1,7 @@
 # A ring around a U-shaped core: two concave corners, and a notch enclosed on
 # three sides.
 #
-# nangate_polygon/floorplan_u.def is a 152x56 base with two 32.3um arms rising
+# nangate_polygon/floorplan_u.def is a 152x56 base with two 32.3um legs rising
 # from its ends, so the core
 #   (9.5 8.4) (142.5 8.4) (142.5 103.6) (110.2 103.6) (110.2 50.4)
 #   (41.8 50.4) (41.8 103.6) (9.5 103.6)
@@ -9,15 +9,15 @@
 # (110.2 50.4).  Everything the L fixture exercises it exercises with a single
 # concave corner; this is the shape that says whether the edge walk, the corner
 # convexity and the ring reach hold when there is more than one, and when the
-# empty area between the arms is closed on three sides rather than open at a
+# empty area between the legs is closed on three sides rather than open at a
 # die corner.
 #
 # The ring must follow all eight sides -- four on each layer -- turning inwards
 # at both concave corners and back out again, and every one of the eight
 # corners must carry a via.
 #
-# And the notch between the arms must stay clear.  A rail in the left arm ends
-# where that arm ends and is run out to the ring beside it, 42.6 or 43.6; the
+# And the notch between the legs must stay clear.  A rail in the left leg ends
+# where that leg ends and is run out to the ring beside it, 42.6 or 43.6; the
 # ring on the far side of the notch is alongside the same rail and just as
 # reachable by a search that only asks which ring is furthest out, which would
 # run the rail to 144.3 and straight across the notch.  Bounding the search by
@@ -27,7 +27,7 @@
 #
 #   * the ring's own sides along the notch floor, metal5 at y 50.6..51.2 and
 #     51.6..52.2 -- a ring outside a concave core edge is a ring in the notch;
-#   * the ring sides along the inner edge of each arm, which is why arm rails
+#   * the ring sides along the inner edge of each leg, which is why leg rails
 #     reach x 42.6 and 43.6 rather than stopping at 41.8;
 #   * the top rail of ROW_29 at y 50.315..50.485, spanning the full width from
 #     8.7 to 143.3.  ROW_29 is the last full-width row, y 49.0..50.4, and its
@@ -56,7 +56,7 @@
 # At 0.6 the ring also carries six more metal1-to-metal6 vias than at 0.2, 228
 # against 222, with the same 37 rails reaching it.
 #
-# One rail per arm still stops at the core edge instead of reaching the ring --
+# One rail per leg still stops at the core edge instead of reaching the ring --
 # the VDD rail at y = 51.8, the first above the notch floor at 50.4.  Each ring
 # net wraps the concave corner further into the notch than the last, so net 1's
 # vertical side starts at 52.0, above that rail, and there is nothing beside it

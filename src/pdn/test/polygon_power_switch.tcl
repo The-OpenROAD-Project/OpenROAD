@@ -12,22 +12,22 @@
 # still cross the real die boundary.  The core height is a whole number of
 # double rows measured from the core origin, because the switch cell is two
 # rows tall and sits in the unithddbl row set: 94 unithd rows and 47 unithddbl
-# rows, the latter 22 across the base and 25 up the arm.
+# rows, the latter 22 across the base and 25 up the leg.
 #
 # Power switch insertion reads rows and straps, and both of those follow the
 # outline by the time it runs, so it is expected to work here without knowing
 # anything about polygons.  This test is what says so.  Measured: 298 switches,
-# in all 47 double rows, 202 across the base and 96 up the arm.  The arm is
+# in all 47 double rows, 202 across the base and 96 up the leg.  The leg is
 # 122.36um wide against the 255.76um of the base, and the switches respect it --
-# the rightmost in the arm ends at x = 115.00 against 250.70 in the base -- as
+# the rightmost in the leg ends at x = 115.00 against 250.70 in the base -- as
 # do the straps that carry them: the met4 straps at x > 132.48 stop at the
-# notch floor and the met5 straps above it stop at the arm.  None of the 298
+# notch floor and the met5 straps above it stop at the leg.  None of the 298
 # lands in the die notch, and PDN-0223, which withdraws a switch that did not
 # find two rows to sit in, does not fire.
 #
 # One bounding box does survive in this path.  GridSwitchedPower::build hands
 # getCoreArea() to computeLocations, which uses only its xMin() as the origin
-# to measure site widths from.  Both arms of a core start on the same site
+# to measure site widths from.  Both legs of a core start on the same site
 # grid, so that is the same value the rows themselves are built from; it would
 # take a floorplan whose rows do not share an origin to make it wrong, which
 # initialize_floorplan cannot produce.

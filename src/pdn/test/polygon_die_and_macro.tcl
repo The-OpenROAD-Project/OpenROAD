@@ -38,7 +38,7 @@
 # metal4 strap at x = 41.500 stopped at y = 59.700 rather than reaching down to
 # y = 54.515, having lost the rails it connects to there.  Those rails sit over
 # real rows.  polygon_two_macros measures the same thing on a macro that fills
-# its arm.
+# its leg.
 source "helpers.tcl"
 
 read_lef Nangate45/Nangate45.lef

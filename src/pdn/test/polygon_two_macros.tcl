@@ -1,7 +1,7 @@
-# Two polygon macros on a U-shaped die, one in each arm.
+# Two polygon macros on a U-shaped die, one in each leg.
 #
 # nangate_polygon/floorplan_two_macros.def gives the U-shaped die a core whose
-# arms are exactly as wide as the macro that fills each of them, and mirrors
+# legs are exactly as wide as the macro that fills each of them, and mirrors
 # the right macro so the two notches face each other across the gap:
 #
 #   die          (0 0) (152 0) (152 112) (104.5 112) (104.5 56) (47.5 56)
@@ -11,7 +11,7 @@
 #   macro_left   bbox (9.5 33.6) - (38 103.6), R0, notch at its upper right
 #   macro_right  bbox (114 33.6) - (142.5 103.6), MY, notch at its upper left
 #
-# Each macro fills its arm from side to side and runs to the top of the core,
+# Each macro fills its leg from side to side and runs to the top of the core,
 # so the area it occupies is not a hole in the row footprint but a bite out of
 # the boundary, and filling holes does not recover it.  What is left of the
 # footprint is three disjoint islands -- 30 rows across the base, 16 in each
@@ -22,11 +22,11 @@
 #
 # Without that union the footprint fails the one-piece well-formedness check
 # and the domain falls back to the core bounding box, which is the whole U
-# including the gap between the arms.  Measured: 9 of the metal4 straps then
+# including the gap between the legs.  Measured: 9 of the metal4 straps then
 # run past the top of the core at y = 50.4 and stop at y = 56, which is not
 # the core boundary but the floor of the die notch, where odb's obstruction
-# begins; and all 10 metal7 straps in the arms reach the wall of the die notch
-# at x = 47.5 and 104.5 rather than stopping at the core arm.  Both hold now.
+# begins; and all 10 metal7 straps in the legs reach the wall of the die notch
+# at x = 47.5 and 104.5 rather than stopping at the core leg.  Both hold now.
 #
 # The macros also pin CoreGrid::cleanupShapes, which drops core shapes that
 # lie inside a macro.  Measured against the bounding-box version of that test:

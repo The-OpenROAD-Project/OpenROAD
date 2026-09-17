@@ -554,9 +554,9 @@ int Grid::getRingReach(const odb::Rect& band, const odb::Point& normal) const
 {
   // The furthest edge of any ring lying beside this band, on the side the
   // normal points to.  getRingArea() answers the same question for the grid as
-  // a whole, which on a polygon core is the wrong answer for any arm narrower
-  // than the widest: it would send a shape in the tall arm of an L out to
-  // where the ring around the wide arm is, crossing the core-to-die margin to
+  // a whole, which on a polygon core is the wrong answer for any leg narrower
+  // than the widest: it would send a shape in the tall leg of an L out to
+  // where the ring around the wide leg is, crossing the core-to-die margin to
   // get there.
   const bool horizontal_reach = normal.x() != 0;
   const bool towards_high = horizontal_reach ? normal.x() > 0 : normal.y() > 0;

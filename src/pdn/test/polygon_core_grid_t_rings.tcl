@@ -9,7 +9,7 @@
 #
 # polygon_core_grid_u_rings is the same corner count the other way up, and the
 # difference is what this fixture is for.  In the U both concave corners sit on
-# one horizontal edge, so the notch between the arms is a single pocket bounded
+# one horizontal edge, so the notch between the legs is a single pocket bounded
 # by both of them and the ring crosses it in one run.  In the T each concave
 # corner bounds a pocket of its own -- one either side of the stem -- so the
 # complement of the core is disconnected, and the edge the ring has to break

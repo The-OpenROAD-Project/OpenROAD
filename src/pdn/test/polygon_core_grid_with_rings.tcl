@@ -15,19 +15,19 @@
 # measurement.
 #
 # The ring must follow the L, which has six edges, so each layer carries three
-# sides and not two: metal5 the bottom, the top of the lower arm and the top of
-# the tall arm, metal6 the left, the right of the lower arm and the right of the
-# tall arm.  Consecutive sides have to overlap by width x width so a via lands
+# sides and not two: metal5 the bottom, the top of the lower leg and the top of
+# the tall leg, metal6 the left, the right of the lower leg and the right of the
+# tall leg.  Consecutive sides have to overlap by width x width so a via lands
 # there -- at the concave corner as much as at the five convex ones.
 #
 # The followpins carry -extend_to_core_ring, so each rail has to reach the ring
-# of the arm it is in: 45.5 and 44.5 in the tall arm, 87.3 and 86.3 in the wide
+# of the leg it is in: 45.5 and 44.5 in the tall leg, 87.3 and 86.3 in the wide
 # one.  Resolving that against the bounding box of all the rings instead sends
-# a rail in the tall arm out across the core-to-die margin towards the wide
-# arm's ring; resolving it against the core bounding box, as this did, leaves
-# every rail in the tall arm at 43.7, short of the ring beside it.  Two rails
+# a rail in the tall leg out across the core-to-die margin towards the wide
+# leg's ring; resolving it against the core bounding box, as this did, leaves
+# every rail in the tall leg at 43.7, short of the ring beside it.  Two rails
 # out of 37 still stop at the core edge, both on the row boundary where the two
-# arms meet and two rows share a rail.
+# legs meet and two rows share a rail.
 #
 # A ring built from the core bounding box instead runs through the notch, where
 # the system obstructions chop it into disconnected segments and the trim pass
