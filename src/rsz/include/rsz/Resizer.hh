@@ -197,6 +197,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
           dpl::Opendp* opendp,
           est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
+  void gpuSizeGates();
+  int rebufferNetAfterPreamble(const sta::Pin* drvr_pin);
+  bool okToBufferNet(const sta::Pin* driver_pin) const;
 
   // Core area (meters).
   double coreArea() const;
@@ -919,7 +922,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // True when an instance is a mutable std-cell with a DB-backed Liberty cell.
   bool isEditableLogicStdCell(const sta::Instance* inst);
 
-  bool okToBufferNet(const sta::Pin* driver_pin) const;
   sta::LibertyCell* lowestDriveBufferCell() const;
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,

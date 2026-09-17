@@ -303,6 +303,14 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
+gpu_size_gates_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->gpuSizeGates();
+}
+
+void
 repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,

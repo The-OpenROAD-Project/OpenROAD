@@ -42,6 +42,7 @@ add_library(rsz_lib
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
     RepairTargetCollector.cc
+    GpuBufferPass.cc
 
     move/BufferCandidate.cc
     move/BufferGenerator.cc
@@ -72,6 +73,15 @@ add_library(rsz_lib
     move/VtSwapMtCandidate.cc
     move/VtSwapMtGenerator.cc
 )
+
+if (ENABLE_RSZ_GPU)
+  target_sources(rsz_lib PRIVATE
+    rsz_gpu_db.cc
+    rsz_kernels.cu
+  )
+  target_include_directories(rsz_lib PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+  target_link_libraries(rsz_lib PUBLIC CUDA::cudart)
+endif()
 
 target_sources(rsz
   PRIVATE

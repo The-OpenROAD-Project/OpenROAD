@@ -1601,7 +1601,8 @@ void Rebuffer::findLongWireAsymptotics(int layer, Rebuffer::BufferSize& size)
   sta::LibertyPort *in, *out;
   size.cell->bufferPorts(in, out);
 
-  for (int i = 0; i < 3; i++) {
+  int max_buffer_rounds = fast_mode_ ? 1 : 3;
+  for (int i = 0; i < max_buffer_rounds; i++) {
     const float buffer_load
         = wire_cap * length
           + in->scenePort(corner_, sta::MinMax::max())->capacitance();
@@ -2237,7 +2238,8 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(bft_runtime);
-      for (int i = 0; i < 3; i++) {
+      int max_buffer_rounds = fast_mode_ ? 1 : 3;
+      for (int i = 0; i < max_buffer_rounds; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
           logger_->warn(
@@ -2444,14 +2446,17 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
-    sta_->findRequireds();
+    if (!skip_find_requireds_) {
+      sta_->findRequireds();
+    }
     annotateLoadSlacks(bnet, drvr);
 
     const bool allow_topology_rewrite
         = (estimate_parasitics_->getParasiticsSrc()
-           == est::ParasiticsSrc::kPlacement);
+           == est::ParasiticsSrc::kPlacement) && !fast_mode_;
 
-    for (int i = 0; i < 3; i++) {
+    int max_buffer_rounds = (fast_mode_ && !allow_topology_rewrite) ? 1 : 3;
+    for (int i = 0; i < max_buffer_rounds; i++) {
       bnet = bufferForTiming(bnet, allow_topology_rewrite);
       if (!bnet) {
         logger_->warn(
@@ -2478,8 +2483,9 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
     FixedDelay target
         = slackAtDriverPin(bnet) - FixedDelay(relaxation, resizer_);
 
-    for (int i = 0; i < 5 && bnet; i++) {
-      bnet = recoverArea(bnet, target, ((float) (1 + i)) / 5);
+    int max_recover_rounds = fast_mode_ ? 1 : 5;
+    for (int i = 0; i < max_recover_rounds && bnet; i++) {
+      bnet = recoverArea(bnet, target, ((float) (1 + i)) / max_recover_rounds);
     }
 
     if (!bnet) {

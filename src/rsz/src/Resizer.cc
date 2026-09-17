@@ -97,6 +97,14 @@
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
+#include <chrono>
+
+#ifdef ENABLE_RSZ_GPU
+#include "rsz_gpu_db.cuh"
+#include "rsz_kernels.cuh"
+#endif
+#include "GpuBufferPass.hh"
+
 namespace rsz {
 
 namespace {
@@ -5035,6 +5043,501 @@ bool Resizer::isFuncOneZero(const sta::Pin* drvr_pin)
 
 ////////////////////////////////////////////////////////////////
 
+#ifdef ENABLE_RSZ_GPU
+namespace {
+struct SetupSlackScan
+{
+  int violators = 0;
+  float wns = 0.0f;
+};
+
+struct SetupTargetScan
+{
+  int endpoints = 0;
+  int unique_drivers = 0;
+  float wns = 0.0f;
+  std::unordered_set<sta::Instance*> drivers;
+};
+
+SetupSlackScan scanSetupSlacks(sta::Sta* sta, sta::Network* network)
+{
+  SetupSlackScan scan;
+  bool any = false;
+  float wns = 0.0f;
+  sta::Instance* top = network->topInstance();
+  if (top == nullptr) {
+    return scan;
+  }
+  sta::InstanceChildIterator* child_iter = network->childIterator(top);
+  while (child_iter->hasNext()) {
+    sta::Instance* inst = child_iter->next();
+    if (network->libertyCell(inst) == nullptr) {
+      continue;
+    }
+    float worst = 1e9f;
+    sta::InstancePinIterator* pin_iter = network->pinIterator(inst);
+    while (pin_iter->hasNext()) {
+      sta::Pin* pin = pin_iter->next();
+      if (!network->direction(pin)->isOutput()) {
+        continue;
+      }
+      sta::Vertex* vertex = sta->graph()->pinDrvrVertex(pin);
+      if (vertex == nullptr) {
+        continue;
+      }
+      sta::Slack s = sta->slack(vertex, sta::MinMax::max());
+      if (s != sta::INF && static_cast<float>(s) < worst) {
+        worst = static_cast<float>(s);
+      }
+    }
+    delete pin_iter;
+    if (worst < 0.0f) {
+      scan.violators++;
+      if (!any || worst < wns) {
+        wns = worst;
+        any = true;
+      }
+    }
+  }
+  delete child_iter;
+  scan.wns = any ? wns : 0.0f;
+  return scan;
+}
+
+// Same objects as repair_timing: STA endpoints, then unique path drivers.
+SetupTargetScan scanSetupTargets(Resizer* resizer)
+{
+  SetupTargetScan scan;
+  RepairTargetCollector collector(resizer);
+  collector.init(0.0f);
+  scan.endpoints = collector.getNumViolatingEndpoints();
+  scan.wns = static_cast<float>(collector.getOverallEndpointWns());
+  const std::vector<Target> targets = collector.collectCritPathDriverPinTargets(
+      [](sta::Pin*) { return true; });
+  sta::Network* network = resizer->network();
+  for (const Target& target : targets) {
+    if (target.driver_pin == nullptr) {
+      continue;
+    }
+    sta::Instance* inst = network->instance(target.driver_pin);
+    if (inst != nullptr) {
+      scan.drivers.insert(inst);
+    }
+  }
+  scan.unique_drivers = static_cast<int>(scan.drivers.size());
+  return scan;
+}
+
+std::vector<sta::Instance*> collectLibertyInstances(sta::Network* network)
+{
+  std::vector<sta::Instance*> inst_list;
+  sta::Instance* top_inst = network->topInstance();
+  if (top_inst == nullptr) {
+    return inst_list;
+  }
+  sta::InstanceChildIterator* child_iter = network->childIterator(top_inst);
+  while (child_iter->hasNext()) {
+    sta::Instance* inst = child_iter->next();
+    if (network->libertyCell(inst)) {
+      inst_list.push_back(inst);
+    }
+  }
+  delete child_iter;
+  return inst_list;
+}
+}  // namespace
+#endif
+
+void Resizer::gpuSizeGates()
+{
+  using Clock = std::chrono::steady_clock;
+  auto ms_since = [](Clock::time_point t) {
+    return std::chrono::duration<double, std::milli>(Clock::now() - t).count();
+  };
+  const auto t_all = Clock::now();
+  double sta_ms = 0.0;
+  double cuda_init_ms = 0.0;
+  double db_upload_ms = 0.0;
+  double candgen_ms = 0.0;
+  double kernel_ms = 0.0;
+  double d2h_ms = 0.0;
+  double replace_ms = 0.0;
+  double iter_sta_ms = 0.0;
+  double post_size_sta_ms = 0.0;
+  double iter_batch_sta_ms = 0.0;
+  double collect_inst_ms = 0.0;
+  GpuBufferPassStats buf_stats;
+
+  init();
+  logger_->info(utl::RSZ,
+                1010,
+                "Starting GPU-Accelerated Parallel Gate Sizer (setup repair)...");
+
+#ifdef ENABLE_RSZ_GPU
+  
+  // STA first — cheap compared with CUDA init / liberty upload.
+  auto t0 = Clock::now();
+  updateParasiticsAndTiming();
+  double m1 = ms_since(t0);
+  auto t1 = Clock::now();
+  sta_->ensureGraph();
+  double m2 = ms_since(t1);
+  auto t2 = Clock::now();
+  sta_->searchPreamble();
+  double m3 = ms_since(t2);
+  auto t3 = Clock::now();
+  sta_->ensureLevelized();
+  double m4 = ms_since(t3);
+  auto t4 = Clock::now();
+  sta_->updateTiming(false);
+  double m5 = ms_since(t4);
+  auto t5 = Clock::now();
+  sta_->findRequireds();
+  double m6 = ms_since(t5);
+
+  auto t6_ = Clock::now();
+  SetupSlackScan inst_scan = scanSetupSlacks(sta_, network_);
+  SetupTargetScan targets = scanSetupTargets(this);
+  double m7 = ms_since(t6_);
+  
+  logger_->info(utl::RSZ, 1120, "PROFILE INITIAL: parasitics={}ms graph={}ms preamble={}ms levelized={}ms updatetiming={}ms reqs={}ms scan={}ms",
+        m1, m2, m3, m4, m5, m6, m7);
+
+  sta_ms = ms_since(t0);
+  logger_->info(utl::RSZ,
+                1021,
+                "Setup violators: {}, WNS: {:.4g} ns.",
+                targets.endpoints,
+                targets.wns * 1e9f);
+  logger_->info(utl::RSZ,
+                1025,
+                "Setup endpoints: {}, unique path-driver instances: {}, "
+                "output-instance violators: {}.",
+                targets.endpoints,
+                targets.unique_drivers,
+                inst_scan.violators);
+
+  if (targets.endpoints == 0) {
+    logger_->info(utl::RSZ,
+                  1022,
+                  "No setup violations — skipping GPU sizing (no CUDA init).");
+    logger_->report(
+        "PHASE_STA_MS: {:.3f}\nPHASE_SUM_MS: {:.3f}\nPHASE_TOTAL_MS: {:.3f}",
+        sta_ms,
+        sta_ms,
+        ms_since(t_all));
+    return;
+  }
+
+  t0 = Clock::now();
+  cudaFree(0);
+  cuda_init_ms = ms_since(t0);
+
+  t0 = Clock::now();
+  rsz::gpu::GpuResizerDb gpu_db;
+  gpu_db.init(network_);
+  db_upload_ms = ms_since(t0);
+
+  const int num_instances = gpu_db.getNumInstances();
+  const int num_cells = gpu_db.getNumCells();
+  logger_->info(utl::RSZ,
+                1011,
+                "GPU DB: {} instances, {} library cells loaded.",
+                num_instances,
+                num_cells);
+
+  if (num_instances == 0) {
+    logger_->warn(utl::RSZ, 1019, "No instances found — skipping GPU sizing.");
+    return;
+  }
+
+  // Passed to the kernel for API compatibility. Selection weights by
+  // |slack|/|WNS| rather than dropping cells below a hard WNS ratio.
+  const float criticality_ratio = 0.35f;
+  const int kMaxIters = 3;
+  const float kMaxAreaRatio = 2.5f;
+  int total_applied = 0;
+  int total_skipped = 0;
+  int total_candidates = 0;
+  int repeat_prevented = 0;
+  std::unordered_set<int> sized_instance_indices;
+
+  int* d_colors = nullptr;
+  t0 = Clock::now();
+  cudaMalloc(&d_colors, num_instances * sizeof(int));
+  int num_colors = 0;
+  rsz::gpu::launchIndependentSetSelection(
+      gpu_db.getDeviceInstances(), num_instances, d_colors, num_colors);
+  candgen_ms += ms_since(t0);
+  logger_->info(utl::RSZ,
+                1016,
+                "Partitioned {} instances into {} color groups for parallel "
+                "sizing.",
+                num_instances,
+                num_colors);
+
+  t0 = Clock::now();
+  std::vector<sta::Instance*> inst_list = collectLibertyInstances(network_);
+  collect_inst_ms = ms_since(t0);
+
+  for (int iter = 0; iter < kMaxIters; ++iter) {
+    if (iter > 0) {
+      t0 = Clock::now();
+      sta_->ensureGraph();
+      sta_->updateTiming(false);
+      sta_->findRequireds();
+      targets = scanSetupTargets(this);
+      iter_sta_ms += ms_since(t0);
+      if (targets.endpoints == 0) {
+        logger_->info(utl::RSZ,
+                      1023,
+                      "GPU iter {}: no remaining setup violations.",
+                      iter);
+        break;
+      }
+    }
+
+    t0 = Clock::now();
+    gpu_db.updateTimingSlacks(sta_, network_);
+    if (targets.unique_drivers > 0
+        && inst_list.size() == static_cast<size_t>(num_instances)) {
+      std::vector<uint8_t> keep(num_instances, 0);
+      int marked = 0;
+      for (int i = 0; i < num_instances; i++) {
+        if (targets.drivers.contains(inst_list[i])
+            && !sized_instance_indices.contains(i)) {
+          keep[i] = 1;
+          marked++;
+        }
+      }
+      if (marked > 0) {
+        gpu_db.keepOnlyTargetSlacks(keep);
+      }
+    }
+    candgen_ms += ms_since(t0);
+    logger_->info(utl::RSZ, 1015, "Timing slacks uploaded to GPU.");
+    logger_->info(utl::RSZ,
+                  1026,
+                  "GPU sizing candidates (unique path drivers): {}.",
+                  targets.unique_drivers);
+
+    t0 = Clock::now();
+    for (int c = 0; c < num_colors; ++c) {
+      rsz::gpu::launchSensitivityAnalysis(gpu_db.getDeviceCells(),
+                                          num_cells,
+                                          gpu_db.getDeviceInstances(),
+                                          num_instances,
+                                          d_colors,
+                                          c,
+                                          targets.wns,
+                                          criticality_ratio);
+    }
+    kernel_ms += ms_since(t0);
+
+    t0 = Clock::now();
+    auto swap_results = gpu_db.readSwapResults();
+    d2h_ms += ms_since(t0);
+    total_candidates += static_cast<int>(swap_results.size());
+    int applied = 0;
+    int skipped = 0;
+
+    t0 = Clock::now();
+    for (const auto& swap : swap_results) {
+      if (swap.instance_index < 0
+          || swap.instance_index >= static_cast<int>(inst_list.size())
+          || swap.new_cell_index < 0
+          || swap.new_cell_index >= num_cells) {
+        skipped++;
+        continue;
+      }
+      const rsz::gpu::GpuInstanceInfo& ginst
+          = gpu_db.hostInstance(swap.instance_index);
+      if (ginst.sensitivity <= 0.0f) {
+        skipped++;
+        continue;
+      }
+      if (ginst.cell_index < 0 || ginst.cell_index >= num_cells) {
+        skipped++;
+        continue;
+      }
+      const rsz::gpu::GpuCellInfo& old_cell = gpu_db.hostCell(ginst.cell_index);
+      const rsz::gpu::GpuCellInfo& new_cell
+          = gpu_db.hostCell(swap.new_cell_index);
+      if (new_cell.drive_strength <= old_cell.drive_strength) {
+        skipped++;
+        continue;
+      }
+      if (new_cell.area > old_cell.area * kMaxAreaRatio) {
+        skipped++;
+        continue;
+      }
+      sta::Instance* inst = inst_list[swap.instance_index];
+      const std::string& new_cell_name = gpu_db.getCellName(swap.new_cell_index);
+      sta::LibertyCell* new_lib_cell
+          = network_->findLibertyCell(new_cell_name.c_str());
+      if (new_lib_cell) {
+        sta_->replaceCell(inst, new_lib_cell);
+        gpu_db.noteSwap(swap.instance_index, swap.new_cell_index);
+        applied++;
+      } else {
+        skipped++;
+      }
+    }
+    replace_ms += ms_since(t0);
+
+    total_applied += applied;
+    total_skipped += skipped;
+    logger_->info(utl::RSZ,
+                  1024,
+                  "GPU iter {}: {} swaps applied, {} rejected.",
+                  iter,
+                  applied,
+                  skipped);
+
+    if (applied == 0) {
+      break;
+    }
+    t0 = Clock::now();
+    sta_->ensureGraph();
+    sta_->findDelays();
+    iter_sta_ms += ms_since(t0);
+  }
+
+  cudaFree(d_colors);
+
+  logger_->info(utl::RSZ, 1017, "GPU sensitivity and sizing loops complete.");
+  logger_->info(utl::RSZ,
+                1018,
+                "Gate swaps: {} applied, {} skipped. Total candidates: {}.",
+                total_applied,
+                total_skipped,
+                total_candidates);
+
+  t0 = Clock::now();
+  sta_->ensureGraph();
+  double mv1 = ms_since(t0);
+  auto tv1 = Clock::now();
+  sta_->findDelays();
+  double mv2 = ms_since(tv1);
+  auto tv2 = Clock::now();
+  sta_->findRequireds();
+  double mv3 = ms_since(tv2);
+  auto tv3 = Clock::now();
+  targets = scanSetupTargets(this);
+  double mv4 = ms_since(tv3);
+
+  logger_->info(utl::RSZ, 1113, "PROFILE VT_PRE: graph={}ms delays={}ms reqs={}ms scan={}ms",
+        mv1, mv2, mv3, mv4);
+
+  post_size_sta_ms = ms_since(t0);
+
+  auto rebuf_t0 = Clock::now();
+  Rebuffer& rebuffer = this->rebuffer();
+  rebuffer.init();
+  rebuffer.initOnCorner(sta_->cmdScene());
+  rebuffer.setSkipFindRequireds(true);
+  rebuffer.setFastMode(true);
+  const double rebuffer_init_ms = std::chrono::duration<double, std::milli>(Clock::now() - rebuf_t0).count();
+  logger_->report("PHASE_REBUFFER_INIT_MS: {:.3f}", rebuffer_init_ms);
+
+  std::unordered_set<const sta::Pin*> failed_pins;
+  int buf_pass_limit = 20;
+  while (targets.endpoints > 0 && buf_pass_limit-- > 0) {
+    GpuBufferPassStats iter_buf_stats = runGpuBufferPass(this, /*max_nets=*/32, targets.wns, &failed_pins);
+    if (iter_buf_stats.candidates == 0) {
+      break;
+    }
+
+    buf_stats.sta_ms += iter_buf_stats.sta_ms;
+    buf_stats.rank_ms += iter_buf_stats.rank_ms;
+    buf_stats.rebuffer_ms += iter_buf_stats.rebuffer_ms;
+    buf_stats.post_ms += iter_buf_stats.post_ms;
+    buf_stats.candidates += iter_buf_stats.candidates;
+    buf_stats.nets_buffered += iter_buf_stats.nets_buffered;
+    buf_stats.buffers_inserted += iter_buf_stats.buffers_inserted;
+
+    t0 = Clock::now();
+    if (estimate_parasitics_->isIncrementalParasiticsEnabled()) {
+        estimate_parasitics_->updateParasitics();
+    } else {
+        estimate_parasitics_->estimateParasitics(estimate_parasitics_->getParasiticsSrc());
+    }
+    double ms_parasitics = ms_since(t0);
+
+    auto t1 = Clock::now();
+    // sta_->ensureGraph(); // Redundant
+    double ms_graph = ms_since(t1);
+
+    auto t2 = Clock::now();
+    // sta_->searchPreamble(); // Redundant
+    double ms_preamble = ms_since(t2);
+
+    auto t3 = Clock::now();
+    // sta_->ensureLevelized(); // Redundant
+    double ms_levelized = ms_since(t3);
+
+    auto t4 = Clock::now();
+    sta_->updateTiming(false);
+    double ms_updatetiming = ms_since(t4);
+
+    auto t5 = Clock::now();
+    sta_->findRequireds();
+    double ms_reqs = ms_since(t5);
+
+    auto t6 = Clock::now();
+    targets = scanSetupTargets(this);
+    double ms_scan = ms_since(t6);
+
+    logger_->info(utl::RSZ, 1111, "PROFILE BATCH: parasitics={}ms graph={}ms preamble={}ms levelized={}ms updatetiming={}ms reqs={}ms scan={}ms",
+        ms_parasitics, ms_graph, ms_preamble, ms_levelized, ms_updatetiming, ms_reqs, ms_scan);
+
+    iter_batch_sta_ms += ms_since(t0);
+  }
+#else
+  logger_->info(utl::RSZ, 1013, "GPU support was disabled at compile time.");
+#endif
+
+  logger_->info(utl::RSZ, 1014, "GPU-Accelerated Gate Sizing complete.");
+
+#ifdef ENABLE_RSZ_GPU
+  const double buffer_sta_ms = buf_stats.sta_ms + buf_stats.post_ms;
+  const double phase_sum = sta_ms + cuda_init_ms + db_upload_ms + candgen_ms
+                           + kernel_ms + d2h_ms + replace_ms + iter_sta_ms
+                           + post_size_sta_ms + iter_batch_sta_ms + buf_stats.rank_ms
+                           + buf_stats.rebuffer_ms + buffer_sta_ms
+                           + collect_inst_ms;
+  const double total_ms = ms_since(t_all);
+  const double other_ms = total_ms - phase_sum;
+  logger_->report("PHASE_STA_MS: {:.3f}", sta_ms);
+  logger_->report("PHASE_CUDA_INIT_MS: {:.3f}", cuda_init_ms);
+  logger_->report("PHASE_DB_UPLOAD_MS: {:.3f}", db_upload_ms);
+  logger_->report("PHASE_GPU_LIBERTY_MS: {:.3f}", gpu_db.liberty_ms);
+  logger_->report("PHASE_GPU_EQUIV_MS: {:.3f}", gpu_db.equiv_ms);
+  logger_->report("PHASE_GPU_INST_EXTRACT_MS: {:.3f}", gpu_db.inst_extract_ms);
+  logger_->report("PHASE_GPU_MALLOC_MS: {:.3f}", gpu_db.malloc_ms);
+  logger_->report("PHASE_GPU_H2D_MS: {:.3f}", gpu_db.h2d_ms);
+  logger_->report("PHASE_SLACK_HOST_MS: {:.3f}", gpu_db.slack_host_ms);
+  logger_->report("PHASE_SLACK_H2D_MS: {:.3f}", gpu_db.slack_h2d_ms);
+  logger_->report("PHASE_D2H_MEMCPY_MS: {:.3f}", gpu_db.d2h_memcpy_ms);
+  logger_->report("PHASE_CANDGEN_MS: {:.3f}", candgen_ms);
+  logger_->report("PHASE_KERNEL_MS: {:.3f}", kernel_ms);
+  logger_->report("PHASE_D2H_MS: {:.3f}", d2h_ms);
+  logger_->report("PHASE_REPLACE_MS: {:.3f}", replace_ms);
+  logger_->report("PHASE_ITER_STA_MS: {:.3f}", iter_sta_ms);
+  logger_->report("PHASE_POST_SIZE_STA_MS: {:.3f}", post_size_sta_ms);
+  logger_->report("PHASE_ITER_BATCH_STA_MS: {:.3f}", iter_batch_sta_ms);
+  logger_->report("PHASE_BUFFER_RANK_MS: {:.3f}", buf_stats.rank_ms);
+  logger_->report("PHASE_REBUFFER_MS: {:.3f}", buf_stats.rebuffer_ms);
+  logger_->report("PHASE_BUFFER_STA_MS: {:.3f}", buffer_sta_ms);
+  logger_->report("PHASE_COLLECT_INST_MS: {:.3f}", collect_inst_ms);
+  logger_->report("PHASE_OTHER_MS: {:.3f}", other_ms);
+  logger_->report("PHASE_SUM_MS: {:.3f}", phase_sum);
+  logger_->report("PHASE_TOTAL_MS: {:.3f}", total_ms);
+#endif
+}
+
+
+
 void Resizer::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
@@ -5398,6 +5901,11 @@ void Resizer::rebufferNet(const sta::Pin* drvr_pin)
 {
   resizePreamble();
   rebuffer_->rebufferNet(drvr_pin);
+}
+
+int Resizer::rebufferNetAfterPreamble(const sta::Pin* drvr_pin)
+{
+  return rebuffer_->rebufferPin(drvr_pin);
 }
 
 ////////////////////////////////////////////////////////////////

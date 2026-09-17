@@ -141,6 +141,12 @@ proc balance_row_usage { args } {
   rsz::balance_row_usage_cmd
 }
 
+sta::define_cmd_args "gpu_size_gates" {}
+
+proc gpu_size_gates { } {
+  rsz::gpu_size_gates_cmd
+}
+
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \

@@ -45,10 +45,13 @@ class Rebuffer : public sta::dbStaState
   Rebuffer(Resizer* resizer);
   void fullyRebuffer(sta::Pin* user_pin = nullptr);
   void rebufferNet(const sta::Pin* drvr_pin);
-
- protected:
   void init();
   void initOnCorner(sta::Scene* corner);
+  int rebufferPin(const sta::Pin* drvr_pin);
+  void setSkipFindRequireds(bool skip) { skip_find_requireds_ = skip; }
+  void setFastMode(bool fast_mode) { fast_mode_ = fast_mode; }
+
+ protected:
 
   void annotateLoadSlacks(BufferedNetPtr& tree, sta::Vertex* root_vertex);
   void annotateTiming(const BufferedNetPtr& tree);
@@ -149,8 +152,10 @@ class Rebuffer : public sta::dbStaState
                               int extra_wire_length = 0);
 
   bool hasTopLevelOutputPort(sta::Net* net);
-  int rebufferPin(const sta::Pin* drvr_pin);
 
+  bool skip_find_requireds_ = false;
+  bool fast_mode_ = false;
+  
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_ = nullptr;

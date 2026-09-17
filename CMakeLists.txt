@@ -202,6 +202,14 @@ if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
   add_link_options("$<${DEBUG_CONFIG_GENEX}:-gz=zlib>")
 endif()
 
+option(ENABLE_RSZ_GPU "Enable Resizer GPU sizing" OFF)
+if(ENABLE_RSZ_GPU)
+  enable_language(CUDA)
+  find_package(CUDAToolkit REQUIRED)
+  set(CMAKE_CUDA_STANDARD 17)
+  add_compile_definitions(ENABLE_RSZ_GPU)
+endif()
+
 # configure a header file to pass some of the CMake settings
 configure_file(
   ${OPENROAD_HOME}/include/ord/Version.hh.cmake
