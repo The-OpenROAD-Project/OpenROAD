@@ -104,6 +104,7 @@ static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
 static const char* web_bind_arg = nullptr;
+static bool tcl_source = false;
 
 static const char* init_filename = ".openroad";
 
@@ -267,6 +268,7 @@ int main(int argc, char* argv[])
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
   web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
+  tcl_source = findCmdLineFlag(argc, argv, "-tcl_source");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -481,7 +483,26 @@ static int tclAppInit(int& argc,
         char* cmd_file = argv[1];
         if (cmd_file) {
           if (!gui_enabled) {
-            int result = sourceTclFile(cmd_file, false, false, interp);
+            int result;
+            if (tcl_source) {
+              // sta::include_file reads the file one command at a time,
+              // which is what supports -echo, -verbose,
+              // sta_continue_on_error and gzipped files, but an error is
+              // then reported without the tcl stack trace that produced
+              // it.  Tcl_EvalFile is the C api behind the tcl source
+              // command; the gui path below already uses source.
+              result = Tcl_EvalFile(interp, cmd_file);
+              if (result == TCL_ERROR) {
+                // Get a backtrace for the error.
+                const char* error_info
+                    = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+                if (error_info != nullptr) {
+                  fprintf(stderr, "%s\n", error_info);
+                }
+              }
+            } else {
+              result = sourceTclFile(cmd_file, false, false, interp);
+            }
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
               Tcl_Exit(exit_code);
@@ -563,6 +584,7 @@ int ord::tclInit(Tcl_Interp* interp)
 static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
+  printf("[-tcl_source] ");
   printf("[-gui] [-web] [-threads count|max] [-log file_name] ");
   printf("[-metrics file_name] [-db file_name] [-no_settings] [-minimize] ");
   printf("cmd_file\n");
@@ -572,6 +594,12 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -threads count|max    use count threads\n");
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
+  printf(
+      "  -tcl_source           read cmd_file with the tcl source command\n"
+      "                        instead of sta::include_file, which reads\n"
+      "                        it one command at a time; -echo, -verbose,\n"
+      "                        sta_continue_on_error and gzipped files do\n"
+      "                        not apply to it\n");
   printf("  -gui                  start in gui mode\n");
   printf("  -web                  start in web viewer mode\n");
   printf("  -web_port port        web server port (default auto-assigned)\n");
