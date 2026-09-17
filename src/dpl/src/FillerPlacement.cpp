@@ -9,6 +9,7 @@
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -98,6 +99,15 @@ void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
   }
 
   const auto filtered_masters = filterFillerMasters(filler_masters);
+
+  // Update classification and padding for masters explicitly passed to filler_placement
+  // Commercial PDKs (e.g. TSMC 28HPC+) specify CLASS CORE ; for filler cells without SPACER.
+  for (auto* master : filtered_masters) {
+    if (master->getType() == odb::dbMasterType::CORE) {
+      master->setType(odb::dbMasterType::CORE_SPACER);
+    }
+    padding_->setPadding(master, GridX{0}, GridX{0});
+  }
 
   auto filler_masters_by_implant = splitByImplant(filtered_masters);
 
