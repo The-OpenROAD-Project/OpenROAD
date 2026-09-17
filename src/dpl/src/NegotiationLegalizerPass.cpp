@@ -659,6 +659,12 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       return;
     }
 
+    // Disallow one-site gaps if requested (hard constraint)
+    if (node != nullptr && opendp_->disallow_one_site_gaps_
+        && !opendp_->drc_engine_->checkOneSiteGap(node, GridX{target_x}, GridY{target_y})) {
+      return;
+    }
+
     // Add a DRC penalty so clean positions are strongly preferred,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).

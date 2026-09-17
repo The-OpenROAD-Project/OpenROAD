@@ -413,8 +413,9 @@ Node* Opendp::checkOneSiteGaps(Node& cell) const
         if (site_exists && !abuttment_exists) {
           // check the 1 site gap pixel
           const Pixel* gap_pixel = grid_->gridPixel(x + GridX{2 * abut_x.v}, y);
-          if (gap_pixel) {
-            gap_cell = gap_pixel->cell;
+          // 1-site gap occurs if neighbor site has a cell OR is boundary (not valid / out of bounds)
+          if (gap_pixel == nullptr || !gap_pixel->is_valid || gap_pixel->cell != nullptr) {
+            gap_cell = &cell;
           }
         }
       });

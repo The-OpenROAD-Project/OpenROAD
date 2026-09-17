@@ -399,29 +399,27 @@ bool PlacementDRC::checkOneSiteGap(const Node* cell,
   if (!disallow_one_site_gap_) {
     return true;
   }
-  const GridX x_begin = x - 1;
-  const GridY y_begin = y;
-  // inclusive search, so we don't add 1 to the end
   const GridX x_finish = x + grid_->gridWidth(cell);
   const GridY y_finish
       = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
 
-  auto isAbutted = [this](const GridX x, const GridY y) {
+  auto isValidEmptySite = [this](const GridX x, const GridY y) {
     const Pixel* pixel = grid_->gridPixel(x, y);
-    return (pixel == nullptr || pixel->cell);
+    return (pixel != nullptr && pixel->is_valid && pixel->cell == nullptr);
   };
 
-  auto cellAtSite = [this](const GridX x, const GridY y) {
+  auto hasCellOrIsBoundary = [this](const GridX x, const GridY y) {
     const Pixel* pixel = grid_->gridPixel(x, y);
-    return (pixel == nullptr || pixel->cell);
+    return (pixel == nullptr || !pixel->is_valid || pixel->cell != nullptr);
   };
-  for (GridY y = y_begin; y < y_finish; ++y) {
-    // left side
-    if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+
+  for (GridY row_y = y; row_y < y_finish; ++row_y) {
+    // Left side: 1-site gap exists if site (x - 1) is empty and site (x - 2) has a cell or is boundary
+    if (isValidEmptySite(x - 1, row_y) && hasCellOrIsBoundary(x - 2, row_y)) {
       return false;
     }
-    // right side
-    if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+    // Right side: 1-site gap exists if site (x_finish) is empty and site (x_finish + 1) has a cell or is boundary
+    if (isValidEmptySite(x_finish, row_y) && hasCellOrIsBoundary(x_finish + 1, row_y)) {
       return false;
     }
   }

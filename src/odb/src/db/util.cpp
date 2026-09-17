@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <set>
 #include <map>
 #include <numeric>
 #include <ranges>
@@ -433,6 +434,17 @@ bool dbHasCoreRows(dbDatabase* db)
 
 bool hasOneSiteMaster(dbDatabase* db)
 {
+  std::vector<dbSite*> row_sites;
+  if (db->getChip() && db->getChip()->getBlock()) {
+    for (odb::dbRow* row : db->getChip()->getBlock()->getRows()) {
+      if (row->getSite() != nullptr) {
+        if (std::find(row_sites.begin(), row_sites.end(), row->getSite()) == row_sites.end()) {
+          row_sites.push_back(row->getSite());
+        }
+      }
+    }
+  }
+
   for (dbLib* lib : db->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
       if (master->isBlock() || master->isPad() || master->isCover()) {
@@ -454,6 +466,11 @@ bool hasOneSiteMaster(dbDatabase* db)
       }
 
       if (site->getClass() == dbSiteClass::PAD) {
+        continue;
+      }
+
+      if (!row_sites.empty()
+          && std::find(row_sites.begin(), row_sites.end(), site) == row_sites.end()) {
         continue;
       }
 
