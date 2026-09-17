@@ -113,6 +113,10 @@ class Shape
 
   // check if shape is valid for the given layer
   bool isValid() const;
+  virtual bool isFloating() const
+  {
+    return getNumberOfConnections() == 0 || !hasInternalConnections();
+  }
 
   const odb::Rect& getObstruction() const { return obs_; }
   // generates the obstruction box needed to avoid DRC violations with
@@ -277,6 +281,7 @@ class FollowPinShape : public Shape
 
   // followpins cannot be removed
   bool isRemovable(bool assume_bterm) const override { return false; }
+  bool isFloating() const override { return false; }
 
   void setAllowsNonPreferredDirectionChange() override {}
 

@@ -7,3 +7,6 @@ or_integration_tests(
     isolation_select
 )
 
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

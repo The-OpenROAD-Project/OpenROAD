@@ -225,35 +225,35 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       Shape::getRectText(core, layer.getLefUnits()),
       Shape::getRectText(boundary, layer.getLefUnits()));
 
+  // On a flipped instance grid the offset is written against the macro as it
+  // was drawn, so it has to be measured from the mirrored edge and the sweep
+  // has to run towards the other one.
+  const bool mirror = honorsGridFlip()
+                      && (isHorizontal() ? grid->mirrorsY() : grid->mirrorsX());
+
   if (isHorizontal()) {
-    const int x_start = boundary.xMin();
-    const int x_end = boundary.xMax();
+    const int core_far = allow_out_of_core_ ? die.yMax() : core.yMax();
+    const int core_near = allow_out_of_core_ ? die.yMin() : core.yMin();
 
-    const int abs_min = die.yMin();
-    const int abs_max = die.yMax();
-
-    makeStraps(x_start,
-               core.yMin(),
-               x_end,
-               allow_out_of_core_ ? die.yMax() : core.yMax(),
-               abs_min,
-               abs_max,
+    makeStraps(boundary.xMin(),
+               boundary.xMax(),
+               mirror ? core.yMax() : core.yMin(),
+               mirror ? core_near : core_far,
+               die.yMin(),
+               die.yMax(),
                false,
                layer,
                avoid);
   } else {
-    const int y_start = boundary.yMin();
-    const int y_end = boundary.yMax();
+    const int core_far = allow_out_of_core_ ? die.xMax() : core.xMax();
+    const int core_near = allow_out_of_core_ ? die.xMin() : core.xMin();
 
-    const int abs_min = die.xMin();
-    const int abs_max = die.xMax();
-
-    makeStraps(core.xMin(),
-               y_start,
-               allow_out_of_core_ ? die.xMax() : core.xMax(),
-               y_end,
-               abs_min,
-               abs_max,
+    makeStraps(boundary.yMin(),
+               boundary.yMax(),
+               mirror ? core.xMax() : core.xMin(),
+               mirror ? core_near : core_far,
+               die.xMin(),
+               die.xMax(),
                true,
                layer,
                avoid);
@@ -267,50 +267,70 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
              layer_->getName());
 }
 
-void Straps::makeStraps(int x_start,
-                        int y_start,
-                        int x_end,
-                        int y_end,
-                        int abs_start,
-                        int abs_end,
-                        bool is_delta_x,
+void Straps::makeStraps(const int extent_start,
+                        const int extent_end,
+                        const int pos_origin,
+                        const int pos_limit,
+                        const int abs_start,
+                        const int abs_end,
+                        const bool is_delta_x,
                         const TechLayer& layer,
                         const Shape::ObstructionTree& avoid)
 {
   const int half_width = width_ / 2;
   int strap_count = 0;
 
-  int pos = is_delta_x ? x_start : y_start;
-  const int pos_end = is_delta_x ? x_end : y_end;
+  // pos_limit sits on the far side of pos_origin, so which way the sweep runs
+  // falls out of the two bounds; when it runs backwards the pitch, the group
+  // pitch and therefore the net order inside a group all invert too
+  const bool mirror = pos_limit < pos_origin;
+  const int step = mirror ? -1 : 1;
 
   const auto nets = getNets();
 
   const int group_pitch = spacing_ + width_;
 
+  // true once pos has swept past pos_limit
+  auto beyond_limit = [mirror, pos_limit](const int pos) {
+    return mirror ? pos < pos_limit : pos > pos_limit;
+  };
+  // true once pos has reached pos_limit, so that a strap edge sitting exactly
+  // on the limit leaves no part of the strap inside it
+  auto at_or_beyond_limit = [mirror, pos_limit](const int pos) {
+    return mirror ? pos <= pos_limit : pos >= pos_limit;
+  };
+
   debugPrint(getLogger(),
              utl::PDN,
              "Straps",
              2,
-             "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, "
-             "{:.4f}) with an {}-offset of {:.4f} and must be within {:.4f} "
-             "and {:.4f}",
+             "Generating straps on {} along {} from {:.4f} with an offset of "
+             "{:.4f} towards {:.4f}, spanning {:.4f} to {:.4f} and must be "
+             "within {:.4f} and {:.4f}",
              layer_->getName(),
-             layer.dbuToMicron(x_start),
-             layer.dbuToMicron(y_start),
-             layer.dbuToMicron(x_end),
-             layer.dbuToMicron(y_end),
              is_delta_x ? "x" : "y",
+             layer.dbuToMicron(pos_origin),
              layer.dbuToMicron(offset_),
+             layer.dbuToMicron(pos_limit),
+             layer.dbuToMicron(extent_start),
+             layer.dbuToMicron(extent_end),
              layer.dbuToMicron(abs_start),
              layer.dbuToMicron(abs_end));
 
-  int next_minimum_track = std::numeric_limits<int>::lowest();
-  for (pos += offset_; pos <= pos_end; pos += pitch_) {
+  // the track already claimed by the previous net in the group, which the next
+  // one must stay clear of on whichever side the sweep is heading
+  int next_track = mirror ? std::numeric_limits<int>::max()
+                          : std::numeric_limits<int>::lowest();
+  for (int pos = pos_origin + step * offset_; !beyond_limit(pos);
+       pos += step * pitch_) {
     int group_pos = pos;
     for (auto* net : nets) {
       // snap to grid if needed
       const int org_group_pos = group_pos;
-      group_pos = layer.snapToGrid(org_group_pos, next_minimum_track);
+      group_pos = mirror ? layer.snapToGrid(org_group_pos,
+                                            std::numeric_limits<int>::lowest(),
+                                            next_track)
+                         : layer.snapToGrid(org_group_pos, next_track);
       const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
       debugPrint(getLogger(),
@@ -324,23 +344,25 @@ void Straps::makeStraps(int x_start,
                  layer.dbuToMicron(strap_start),
                  layer.dbuToMicron(strap_end));
 
-      if (strap_start >= pos_end) {
+      if (at_or_beyond_limit(mirror ? strap_end : strap_start)) {
         // no portion of the strap is inside the limit
         return;
       }
-      if (group_pos > pos_end) {
+      if (beyond_limit(group_pos)) {
         // strap center is outside of alotted area
         return;
       }
 
       odb::Rect strap_rect;
       if (is_delta_x) {
-        strap_rect = odb::Rect(strap_start, y_start, strap_end, y_end);
+        strap_rect
+            = odb::Rect(strap_start, extent_start, strap_end, extent_end);
       } else {
-        strap_rect = odb::Rect(x_start, strap_start, x_end, strap_end);
+        strap_rect
+            = odb::Rect(extent_start, strap_start, extent_end, strap_end);
       }
-      group_pos += group_pitch;
-      next_minimum_track = group_pos;
+      group_pos += step * group_pitch;
+      next_track = group_pos;
 
       if (avoid.qbegin(bgi::intersects(strap_rect)) != avoid.qend()) {
         // dont add this strap as it intersects an avoidance
@@ -2551,6 +2573,139 @@ odb::dbTechLayer* RepairChannelStraps::getHighestStrapLayer(Grid* grid)
   return highest_layer;
 }
 
+odb::dbTechLayer* RepairChannelStraps::getFeedLayer(
+    Grid* grid,
+    odb::dbTechLayer* layer,
+    odb::dbTechLayer* connect_to,
+    bool& is_above)
+{
+  odb::dbTechLayer* above = nullptr;
+  for (const auto& connect : grid->getConnect()) {
+    if (connect->getLowerLayer() != layer) {
+      continue;
+    }
+    auto* upper = connect->getUpperLayer();
+    if (above == nullptr || upper->getNumber() < above->getNumber()) {
+      above = upper;
+    }
+  }
+
+  if (above != nullptr) {
+    is_above = true;
+    return above;
+  }
+
+  // At the top of the stack nothing can feed the strap from above, and two
+  // parallel straps on the same layer never touch, so the only thing left to
+  // reach is a strap on the layer below that crosses it.
+  is_above = false;
+  return connect_to;
+}
+
+// A repair strap only carries power if it reaches the grid that feeds it. The
+// channel is derived from the shapes that need repairing, and for an isolated
+// pocket of rows that is smaller than the pitch of the feeding layer, so a
+// strap confined to it would connect the pocket to itself and to nothing else.
+// Grow the channel along the strap direction until every net reaches the
+// nearest shape of that same net that can power it, on both sides, so the
+// repair is fed symmetrically the way an ordinary strap of that length would
+// be.
+void RepairChannelStraps::extendChannelToFeed(Grid* grid,
+                                              RepairChannelArea& channel,
+                                              const odb::Rect& grid_core)
+{
+  bool feed_is_above = false;
+  odb::dbTechLayer* feed_layer = getFeedLayer(
+      grid, channel.target->getLayer(), channel.connect_to, feed_is_above);
+  if (feed_layer == nullptr) {
+    return;
+  }
+
+  const auto& all_shapes = grid->getShapes();
+  const auto feed_shapes = all_shapes.find(feed_layer);
+  if (feed_shapes == all_shapes.end()) {
+    return;
+  }
+
+  const bool is_horizontal = channel.target->isHorizontal();
+  // the strap runs along the length axis and is crossed by the shapes feeding
+  // it
+  const auto len_lo = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.xMin() : r.yMin();
+  };
+  const auto len_hi = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.xMax() : r.yMax();
+  };
+  const auto cross_lo = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.yMin() : r.xMin();
+  };
+  const auto cross_hi = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.yMax() : r.xMax();
+  };
+
+  int extend_lo = len_lo(channel.area);
+  int extend_hi = len_hi(channel.area);
+
+  for (auto* net : channel.nets) {
+    bool net_is_fed = false;
+    int nearest_lo = std::numeric_limits<int>::min();
+    int nearest_hi = std::numeric_limits<int>::max();
+
+    for (const auto& shape : feed_shapes->second) {
+      if (shape->getNet() != net) {
+        // a strap can only be fed on its own net
+        continue;
+      }
+      if (!feed_is_above && shape->getNumberOfConnectionsAbove() == 0) {
+        // A strap below can only pass on power it already has, and one with
+        // nothing above it has none. This also excludes the shapes of the
+        // channel being repaired, which are on this layer and are exactly the
+        // ones that need feeding.
+        continue;
+      }
+      const odb::Rect& rect = shape->getRect();
+      if (cross_hi(rect) < cross_lo(channel.area)
+          || cross_lo(rect) > cross_hi(channel.area)) {
+        // does not cross the strap, so the strap can never reach it
+        continue;
+      }
+      if (len_hi(rect) >= len_lo(channel.area)
+          && len_lo(rect) <= len_hi(channel.area)) {
+        net_is_fed = true;
+        break;
+      }
+      if (len_hi(rect) < len_lo(channel.area)) {
+        nearest_lo = std::max(nearest_lo, len_lo(rect));
+      } else {
+        nearest_hi = std::min(nearest_hi, len_hi(rect));
+      }
+    }
+
+    if (net_is_fed) {
+      // leave channels that already reach the grid alone
+      continue;
+    }
+
+    // reach the far edge of the feeding shape so the whole of it is crossed
+    if (nearest_lo != std::numeric_limits<int>::min()
+        && nearest_lo >= len_lo(grid_core)) {
+      extend_lo = std::min(extend_lo, nearest_lo);
+    }
+    if (nearest_hi != std::numeric_limits<int>::max()
+        && nearest_hi <= len_hi(grid_core)) {
+      extend_hi = std::max(extend_hi, nearest_hi);
+    }
+  }
+
+  if (is_horizontal) {
+    channel.area.set_xlo(extend_lo);
+    channel.area.set_xhi(extend_hi);
+  } else {
+    channel.area.set_ylo(extend_lo);
+    channel.area.set_yhi(extend_hi);
+  }
+}
+
 std::vector<RepairChannelStraps::RepairChannelArea>
 RepairChannelStraps::findRepairChannels(Grid* grid,
                                         const Shape::ShapeTree& shapes,
@@ -2572,18 +2727,14 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
     auto* grid_compomponent = shape->getGridComponent();
-    if (grid_compomponent->type() != GridComponent::kStrap
-        && grid_compomponent->type() != GridComponent::kFollowpin) {
-      // only attempt to repair straps and followpins
+    if (!grid_compomponent->checkForRepairChannels()) {
+      // only attempt to repair straps, followpins and earlier repairs
       continue;
     }
 
-    if (grid_compomponent->type() == GridComponent::kStrap) {
-      if (shape->getNumberOfConnections() == 0
-          || !shape->hasInternalConnections()) {
-        // strap is floating and will be removed
-        continue;
-      }
+    if (shape->isFloating()) {
+      // strap is floating and will be removed
+      continue;
     }
 
     auto* grid_strap = dynamic_cast<Straps*>(grid_compomponent);
@@ -2591,11 +2742,18 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
-    // bloat by the strap pitch across the strap, so neighboring straps merge
-    // and the gaps left between them are the channels
+    // Bloat by the strap pitch across the strap, so neighboring straps merge
+    // and the gaps left between them are the channels. A strap with no pitch
+    // does not repeat, so the only distance that means anything is the one
+    // between the straps of its own group; without it each net of the group
+    // lands in a channel of its own and the repairs are then placed with no
+    // knowledge of each other instead of as a spaced pair.
+    int bloat = grid_strap->getPitch();
+    if (bloat == 0) {
+      bloat = grid_strap->getWidth() + grid_strap->getSpacing();
+    }
     const odb::Rect bloated_shape = shape->getRect().bloat(
-        grid_strap->getPitch(),
-        grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
+        bloat, grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
 
     shapes_used.push_back(shape.get());
     shape_set.insert(odb::geom::toPolygon90(bloated_shape));
@@ -2617,6 +2775,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     int followpin_count = 0;
     int strap_count = 0;
+    int repair_count = 0;
     // find all the nets in a given repair area
     for (auto* shape : shapes_used) {
       const auto& shape_rect = shape->getRect();
@@ -2626,6 +2785,9 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
         channel.nets.insert(shape->getNet());
         if (shape->getType() == odb::dbWireShapeType::FOLLOWPIN) {
           followpin_count++;
+        } else if (shape->getGridComponent()->type()
+                   == GridComponent::kRepairChannel) {
+          repair_count++;
         } else {
           strap_count++;
         }
@@ -2634,9 +2796,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     // all followpins must be repaired
     const bool channel_has_followpin = followpin_count >= 1;
+    // an earlier repair that never reached the layer above leaves everything
+    // it connects floating, so it is a channel even on its own
+    const bool channel_has_repair = repair_count >= 1;
     // single straps can be skipped
     const bool channel_has_more_than_one_strap = strap_count > 1;
-    if (channel_has_followpin || channel_has_more_than_one_strap) {
+    if (channel_has_followpin || channel_has_repair
+        || channel_has_more_than_one_strap) {
       if (!channel.area.intersects(grid_core)) {
         // channel is not in the core
         continue;
@@ -2644,6 +2810,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
       // ensure areas are inside the core
       channel.area = channel.area.intersect(grid_core);
+
+      // a strap confined to the channel may not reach the grid above it
+      extendChannelToFeed(grid, channel, grid_core);
+
       channel.available_area = channel.area;
 
       // trim area of channel if it is partially covered by an exisiting shape
