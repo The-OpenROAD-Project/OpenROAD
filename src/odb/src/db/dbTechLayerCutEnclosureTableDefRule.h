@@ -5,10 +5,10 @@
 #pragma once
 
 #include <cstdint>
-#include <tuple>
 
 #include "dbCore.h"
 #include "dbVector.h"
+#include "odb/db.h"
 #include "odb/dbId.h"
 
 namespace odb {
@@ -38,8 +38,8 @@ class _dbTechLayerCutEnclosureTableDefRule : public _dbObject
 
   dbTechLayerCutEnclosureTableDefRuleFlags flags_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
-  dbVector<std::tuple<int, int, int, int, int>> default_rows_;
-  dbVector<std::tuple<int, int, int, int, int, int>> width_rows_;
+  dbVector<dbTechLayerCutEnclosureTableDefRule::DefaultRow> default_rows_;
+  dbVector<dbTechLayerCutEnclosureTableDefRule::WidthRow> width_rows_;
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutEnclosureTableDefRule& obj);

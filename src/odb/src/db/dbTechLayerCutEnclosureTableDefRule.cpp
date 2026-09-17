@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
-#include <tuple>
 
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -18,6 +17,23 @@
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerCutEnclosureTableDefRule>;
+
+static bool operator==(
+    const dbTechLayerCutEnclosureTableDefRule::DefaultRow& lhs,
+    const dbTechLayerCutEnclosureTableDefRule::DefaultRow& rhs)
+{
+  return lhs.above_below == rhs.above_below && lhs.overhang1 == rhs.overhang1
+         && lhs.overhang2 == rhs.overhang2 && lhs.overhang3 == rhs.overhang3
+         && lhs.overhang4 == rhs.overhang4;
+}
+
+static bool operator==(const dbTechLayerCutEnclosureTableDefRule::WidthRow& lhs,
+                       const dbTechLayerCutEnclosureTableDefRule::WidthRow& rhs)
+{
+  return lhs.width == rhs.width && lhs.above_below == rhs.above_below
+         && lhs.overhang1 == rhs.overhang1 && lhs.overhang2 == rhs.overhang2
+         && lhs.overhang3 == rhs.overhang3 && lhs.overhang4 == rhs.overhang4;
+}
 
 bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
@@ -54,6 +70,28 @@ _dbTechLayerCutEnclosureTableDefRule::_dbTechLayerCutEnclosureTableDefRule(
   flags_ = {};
 }
 
+static dbIStream& operator>>(
+    dbIStream& stream,
+    dbTechLayerCutEnclosureTableDefRule::DefaultRow& obj)
+{
+  stream >> obj.above_below;
+  stream >> obj.overhang1;
+  stream >> obj.overhang2;
+  stream >> obj.overhang3;
+  stream >> obj.overhang4;
+  return stream;
+}
+static dbIStream& operator>>(dbIStream& stream,
+                             dbTechLayerCutEnclosureTableDefRule::WidthRow& obj)
+{
+  stream >> obj.width;
+  stream >> obj.above_below;
+  stream >> obj.overhang1;
+  stream >> obj.overhang2;
+  stream >> obj.overhang3;
+  stream >> obj.overhang4;
+  return stream;
+}
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutEnclosureTableDefRule& obj)
 {
@@ -67,6 +105,29 @@ dbIStream& operator>>(dbIStream& stream,
   return stream;
 }
 
+static dbOStream& operator<<(
+    dbOStream& stream,
+    const dbTechLayerCutEnclosureTableDefRule::DefaultRow& obj)
+{
+  stream << obj.above_below;
+  stream << obj.overhang1;
+  stream << obj.overhang2;
+  stream << obj.overhang3;
+  stream << obj.overhang4;
+  return stream;
+}
+static dbOStream& operator<<(
+    dbOStream& stream,
+    const dbTechLayerCutEnclosureTableDefRule::WidthRow& obj)
+{
+  stream << obj.width;
+  stream << obj.above_below;
+  stream << obj.overhang1;
+  stream << obj.overhang2;
+  stream << obj.overhang3;
+  stream << obj.overhang4;
+  return stream;
+}
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutEnclosureTableDefRule& obj)
 {
@@ -154,11 +215,7 @@ void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
   assert(row.above_below >= 0 && row.above_below <= 2);
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  obj->default_rows_.push_back({row.above_below,
-                                row.overhang1,
-                                row.overhang2,
-                                row.overhang3,
-                                row.overhang4});
+  obj->default_rows_.push_back(row);
 }
 
 void dbTechLayerCutEnclosureTableDefRule::addWidthRow(const WidthRow& row)
@@ -166,12 +223,7 @@ void dbTechLayerCutEnclosureTableDefRule::addWidthRow(const WidthRow& row)
   assert(row.above_below >= 0 && row.above_below <= 2);
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  obj->width_rows_.push_back({row.width,
-                              row.above_below,
-                              row.overhang1,
-                              row.overhang2,
-                              row.overhang3,
-                              row.overhang4});
+  obj->width_rows_.push_back(row);
 }
 
 void dbTechLayerCutEnclosureTableDefRule::getDefaultRows(
@@ -179,11 +231,7 @@ void dbTechLayerCutEnclosureTableDefRule::getDefaultRows(
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  rows.clear();
-  rows.reserve(obj->default_rows_.size());
-  for (const auto& [above_below, oh1, oh2, oh3, oh4] : obj->default_rows_) {
-    rows.push_back({above_below, oh1, oh2, oh3, oh4});
-  }
+  rows.assign(obj->default_rows_.begin(), obj->default_rows_.end());
 }
 
 void dbTechLayerCutEnclosureTableDefRule::getWidthRows(
@@ -191,12 +239,7 @@ void dbTechLayerCutEnclosureTableDefRule::getWidthRows(
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
-  rows.clear();
-  rows.reserve(obj->width_rows_.size());
-  for (const auto& [width, above_below, oh1, oh2, oh3, oh4] :
-       obj->width_rows_) {
-    rows.push_back({width, above_below, oh1, oh2, oh3, oh4});
-  }
+  rows.assign(obj->width_rows_.begin(), obj->width_rows_.end());
 }
 // User Code End dbTechLayerCutEnclosureTableDefRulePublicMethods
 }  // namespace odb

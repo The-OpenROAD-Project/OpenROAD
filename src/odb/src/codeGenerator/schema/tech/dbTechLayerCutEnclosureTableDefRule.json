@@ -13,21 +13,44 @@
     },
     {
       "name": "default_rows_",
-      "type": "dbVector<std::tuple<int,int,int,int,int>>",
+      "type": "dbVector<dbTechLayerCutEnclosureTableDefRule::DefaultRow>",
       "flags": [
-        "no-template",
         "no-get",
         "no-set"
       ]
     },
     {
       "name": "width_rows_",
-      "type": "dbVector<std::tuple<int,int,int,int,int,int>>",
+      "type": "dbVector<dbTechLayerCutEnclosureTableDefRule::WidthRow>",
       "flags": [
-        "no-template",
         "no-get",
         "no-set"
       ]
+    }
+  ],
+  "structs": [
+    {
+      "name": "DefaultRow",
+      "fields": [
+        { "name": "above_below", "type": "int" },
+        { "name": "overhang1", "type": "int" },
+        { "name": "overhang2", "type": "int" },
+        { "name": "overhang3", "type": "int" },
+        { "name": "overhang4", "type": "int" }
+      ],
+      "public": true
+    },
+    {
+      "name": "WidthRow",
+      "fields": [
+        { "name": "width", "type": "int" },
+        { "name": "above_below", "type": "int" },
+        { "name": "overhang1", "type": "int" },
+        { "name": "overhang2", "type": "int" },
+        { "name": "overhang3", "type": "int" },
+        { "name": "overhang4", "type": "int" }
+      ],
+      "public": true
     }
   ],
   "h_includes": [
@@ -36,5 +59,8 @@
   "cpp_includes": [
     "dbTechLayer.h",
     "dbTechLayerCutClassRule.h"
+  ],
+  "cpp_sys_includes": [
+    "cassert"
   ]
 }
