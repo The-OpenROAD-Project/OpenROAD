@@ -80,6 +80,10 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
                            const FlexMazeIdx& dstMazeIdx2,
+                           const odb::Point& dstPoint1,
+                           const odb::Point& dstPoint2,
+                           frCoord dstZHeight1,
+                           frCoord dstZHeight2,
                            const odb::Point& centerPt,
                            bool route_with_jumpers)
 {
@@ -96,6 +100,10 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
       = getEstCost(FlexMazeIdx(currGrid.x(), currGrid.y(), currGrid.z()),
                    dstMazeIdx1,
                    dstMazeIdx2,
+                   dstPoint1,
+                   dstPoint2,
+                   dstZHeight1,
+                   dstZHeight2,
                    dir);
   nextPathCost = getNextPathCost(currGrid, dir, route_with_jumpers);
   odb::Point currPt;
@@ -177,6 +185,14 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   // non-buffer enablement is faster for ripup all
   // commit grid prev direction if needed
   auto tailIdx = getTailIdx(nextIdx, nextWavefrontGrid);
+  if (drWorker_->getDRIter() >= debugMazeIter) {
+    std::cout << "Creating " << nextWavefrontGrid.x() << " "
+              << nextWavefrontGrid.y() << " " << nextWavefrontGrid.z()
+              << " coords: " << xCoords_[nextWavefrontGrid.x()] << " "
+              << yCoords_[nextWavefrontGrid.y()] << " cost "
+              << nextWavefrontGrid.getCost() << " g "
+              << nextWavefrontGrid.getPathCost() << "\n";
+  }
   if (tailDir != frDirEnum::UNKNOWN) {
     if (getPrevAstarNodeDir(tailIdx) == frDirEnum::UNKNOWN
         || getPrevAstarNodeDir(tailIdx) == tailDir) {
@@ -186,7 +202,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
         nextWavefrontGrid.setParentId(currGrid.getId());
         printExpansion(nextWavefrontGrid, "Pushing");
       }
-      wavefront_.push(nextWavefrontGrid);
+      wavefront_.push(std::move(nextWavefrontGrid));
     }
   } else {
     // add to wavefront
@@ -195,21 +211,17 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
       nextWavefrontGrid.setParentId(currGrid.getId());
       printExpansion(nextWavefrontGrid, "Pushing");
     }
-    wavefront_.push(nextWavefrontGrid);
-  }
-  if (drWorker_->getDRIter() >= debugMazeIter) {
-    std::cout << "Creating " << nextWavefrontGrid.x() << " "
-              << nextWavefrontGrid.y() << " " << nextWavefrontGrid.z()
-              << " coords: " << xCoords_[nextWavefrontGrid.x()] << " "
-              << yCoords_[nextWavefrontGrid.y()] << " cost "
-              << nextWavefrontGrid.getCost() << " g "
-              << nextWavefrontGrid.getPathCost() << "\n";
+    wavefront_.push(std::move(nextWavefrontGrid));
   }
 }
 
 void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx1,
                                     const FlexMazeIdx& dstMazeIdx2,
+                                    const odb::Point& dstPoint1,
+                                    const odb::Point& dstPoint2,
+                                    frCoord dstZHeight1,
+                                    frCoord dstZHeight2,
                                     const odb::Point& centerPt,
                                     bool route_with_jumpers)
 {
@@ -219,6 +231,10 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
              dir,
              dstMazeIdx1,
              dstMazeIdx2,
+             dstPoint1,
+             dstPoint2,
+             dstZHeight1,
+             dstZHeight2,
              centerPt,
              route_with_jumpers);
     }
@@ -228,6 +244,10 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
 frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
                                  const FlexMazeIdx& dstMazeIdx1,
                                  const FlexMazeIdx& dstMazeIdx2,
+                                 const odb::Point& dstPoint1,
+                                 const odb::Point& dstPoint2,
+                                 frCoord dstZHeight1,
+                                 frCoord dstZHeight2,
                                  const frDirEnum& dir) const
 {
   int gridX = src.x();
@@ -238,16 +258,14 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // bend cost
   int bendCnt = 0;
   int forbiddenPenalty = 0;
-  odb::Point srcPoint, dstPoint1, dstPoint2;
+  odb::Point srcPoint;
   getPoint(srcPoint, gridX, gridY);
-  getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
-  getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
   frCoord minCostX = std::max(
       {dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x(), 0});
   frCoord minCostY = std::max(
       {dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y(), 0});
-  frCoord minCostZ = std::max({getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
-                               getZHeight(gridZ) - getZHeight(dstMazeIdx2.z()),
+  frCoord minCostZ = std::max({dstZHeight1 - getZHeight(gridZ),
+                               getZHeight(gridZ) - dstZHeight2,
                                0});
 
   bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
@@ -268,8 +286,6 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   if (src.z() == dstMazeIdx1.z() && dstMazeIdx1.z() == dstMazeIdx2.z()) {
   }
 
-  odb::Point nextPoint;
-  getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
   bool isForbidden = false;
@@ -279,7 +295,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
     if (!router_cfg_->USENONPREFTRACKS || layer->isUnidirectional()) {
       bool isH = layer->isHorizontal();
       if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
-        auto gap = abs(nextPoint.y() - dstPoint1.y());
+        auto gap = abs(srcPoint.y() - dstPoint1.y());
         if (gap
             && (layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER
                 || getTech()->isVia2ViaForbiddenLen(
@@ -290,7 +306,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
           isForbidden = true;
         }
       } else if (!isH && dstMazeIdx1.x() == dstMazeIdx2.x()) {
-        auto gap = abs(nextPoint.x() - dstPoint1.x());
+        auto gap = abs(srcPoint.x() - dstPoint1.x());
         if (gap
             && (layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER
                 || getTech()->isVia2ViaForbiddenLen(
@@ -311,6 +327,24 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
     }
   }
   return (minCostX + minCostY + minCostZ + bendCnt + forbiddenPenalty);
+}
+
+frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
+                                 const FlexMazeIdx& dstMazeIdx1,
+                                 const FlexMazeIdx& dstMazeIdx2,
+                                 const frDirEnum& dir) const
+{
+  odb::Point dstPoint1, dstPoint2;
+  getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
+  getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
+  return getEstCost(src,
+                    dstMazeIdx1,
+                    dstMazeIdx2,
+                    dstPoint1,
+                    dstPoint2,
+                    getZHeight(dstMazeIdx1.z()),
+                    getZHeight(dstMazeIdx2.z()),
+                    dir);
 }
 
 frDirEnum FlexGridGraph::getLastDir(
@@ -552,7 +586,8 @@ frCost FlexGridGraph::getNextPathCostImpl(const FlexWavefrontGrid& currGrid,
                                            dir,
                                            layer,
                                            useNDRCosts(currGrid),
-                                           route_with_jumpers);
+                                           route_with_jumpers,
+                                           edgeLength);
 
   if constexpr (kWatermark) {
     // A saturated watermark edge must not wrap when added to the path.
@@ -585,23 +620,98 @@ frCost FlexGridGraph::getCostsImpl(frMIdx gridX,
                                    frDirEnum dir,
                                    frLayer* layer,
                                    bool considerNDR,
-                                   bool route_with_jumpers) const
+                                   bool route_with_jumpers,
+                                   frCoord edgeLength) const
 {
-  bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
-  bool apCost = hasApCost(gridX, gridY, gridZ, dir);
-  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
-  bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
-  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
-  bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
-  bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
-  frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
+  if (edgeLength < 0) {
+    edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
+  }
+
+  frMIdx canX = gridX;
+  frMIdx canY = gridY;
+  frMIdx canZ = gridZ;
+  frDirEnum canDir = dir;
+  correct(canX, canY, canZ, canDir);
+
+  const auto canIdx = getIdx(canX, canY, canZ);
+  const Node& canNode = nodes_[canIdx];
+
+  bool gridCost = false;
+  bool apCost = false;
+  bool blockCost = false;
+  switch (canDir) {
+    case frDirEnum::E:
+      gridCost = canNode.hasGridCostEast;
+      apCost = canNode.hasApCostEast;
+      blockCost = isValid(canX, canY, canZ) && canNode.isBlockedEast;
+      break;
+    case frDirEnum::N:
+      gridCost = canNode.hasGridCostNorth;
+      apCost = canNode.hasApCostNorth;
+      blockCost = isValid(canX, canY, canZ) && canNode.isBlockedNorth;
+      break;
+    default:
+      gridCost = canNode.hasGridCostUp;
+      apCost = canNode.hasApCostUp;
+      blockCost = isValid(canX, canY, canZ) && canNode.isBlockedUp;
+      break;
+  }
+
+  frMIdx destX = gridX;
+  frMIdx destY = gridY;
+  frMIdx destZ = gridZ;
+  getNextGrid(destX, destY, destZ, dir);
+  const auto destIdx = getIdx(destX, destY, destZ);
+
+  bool drcCost = false;
+  bool markerCost = false;
+  bool shapeCost = false;
+
+  if (dir == frDirEnum::U || dir == frDirEnum::D) {
+    drcCost = (considerNDR
+                   ? std::max(canNode.routeShapeCostVia,
+                              canNode.routeShapeCostViaNDR)
+                   : canNode.routeShapeCostVia)
+              != 0;
+    markerCost = (canNode.markerCostVia != 0);
+    if (!canNode.overrideShapeCostVia) {
+      shapeCost = (considerNDR
+                       ? std::max(canNode.fixedShapeCostVia,
+                                  canNode.fixedShapeCostViaNDR)
+                       : canNode.fixedShapeCostVia)
+                  != 0;
+    }
+  } else {
+    const Node& destNode = nodes_[destIdx];
+    drcCost = (considerNDR
+                   ? std::max(destNode.routeShapeCostPlanar,
+                              destNode.routeShapeCostPlanarNDR)
+                   : destNode.routeShapeCostPlanar)
+              != 0;
+    markerCost = (destNode.markerCostPlanar != 0);
+    if (dir == frDirEnum::E || dir == frDirEnum::W) {
+      shapeCost = (considerNDR
+                       ? std::max(destNode.fixedShapeCostPlanarHorz,
+                                  destNode.fixedShapeCostPlanarHorzNDR)
+                       : destNode.fixedShapeCostPlanarHorz)
+                  != 0;
+    } else {
+      shapeCost = (considerNDR
+                       ? std::max(destNode.fixedShapeCostPlanarVert,
+                                  destNode.fixedShapeCostPlanarVertNDR)
+                       : destNode.fixedShapeCostPlanarVert)
+                  != 0;
+    }
+  }
+
+  bool guideCost = guides_[destIdx];
 
   // increase cost when a net has jumper
   frUInt4 jumper_cost = route_with_jumpers ? 10 : 1;
 
   if constexpr (!kWatermark) {
     // temporarily disable guideCost
-    return getEdgeLength(gridX, gridY, gridZ, dir)
+    return edgeLength
            + (gridCost || apCost ? router_cfg_->GRIDCOST * edgeLength : 0)
            + (drcCost ? ggDRCCost_ * edgeLength : 0)
            + (markerCost ? ggMarkerCost_ * edgeLength : 0)
@@ -695,15 +805,16 @@ FlexMazeIdx FlexGridGraph::getTailIdx(const FlexMazeIdx& currIdx,
 bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
                                  frDirEnum dir) const
 {
+  if (currGrid.getLastDir() == dir) {
+    return false;
+  }
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
   frMIdx gridZ = currGrid.z();
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   reverse(gridX, gridY, gridZ, dir);
   if (!hg || isSrc(gridX, gridY, gridZ)
-      || (getPrevAstarNodeDir({gridX, gridY, gridZ}) != frDirEnum::UNKNOWN)
-      ||  // comment out for non-buffer enablement
-      currGrid.getLastDir() == dir) {
+      || (getPrevAstarNodeDir({gridX, gridY, gridZ}) != frDirEnum::UNKNOWN)) {
     return false;
   }
   if (ndr_) {
@@ -829,6 +940,12 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                     std::max(dstMazeIdx2.z(), mi.z()));
   }
 
+  odb::Point dstPoint1, dstPoint2;
+  getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
+  getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
+  const frCoord dstZHeight1 = getZHeight(dstMazeIdx1.z());
+  const frCoord dstZHeight2 = getZHeight(dstMazeIdx2.z());
+
   wavefront_.cleanup();
   // init wavefront
   odb::Point currPt;
@@ -849,7 +966,14 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
         std::numeric_limits<frCoord>::max(),
         currDist,
         0,
-        getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
+        getEstCost(idx,
+                   dstMazeIdx1,
+                   dstMazeIdx2,
+                   dstPoint1,
+                   dstPoint2,
+                   dstZHeight1,
+                   dstZHeight2,
+                   frDirEnum::UNKNOWN));
     if (ndr_ && router_cfg_->AUTO_TAPER_NDR_NETS) {
       auto it = mazeIdx2TaperBox.find(idx);
       if (it != mazeIdx2TaperBox.end()) {
@@ -886,8 +1010,15 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
       return true;
     }
     // expand and update wavefront
-    expandWavefront(
-        currGrid, dstMazeIdx1, dstMazeIdx2, centerPt, route_with_jumpers);
+    expandWavefront(currGrid,
+                    dstMazeIdx1,
+                    dstMazeIdx2,
+                    dstPoint1,
+                    dstPoint2,
+                    dstZHeight1,
+                    dstZHeight2,
+                    centerPt,
+                    route_with_jumpers);
   }
   return false;
 }

@@ -163,6 +163,7 @@ class FlexWavefront
   const FlexWavefrontGrid& top() const { return wavefrontPQ_.top(); }
   void pop() { wavefrontPQ_.pop(); }
   void push(const FlexWavefrontGrid& in) { wavefrontPQ_.push(in); }
+  void push(FlexWavefrontGrid&& in) { wavefrontPQ_.push(std::move(in)); }
   unsigned int size() const { return wavefrontPQ_.size(); }
   void cleanup() { wavefrontPQ_.cleanup(); }
   void fit() { wavefrontPQ_.fit(); }

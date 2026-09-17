@@ -1018,7 +1018,8 @@ class FlexGridGraph
                       frDirEnum dir,
                       frLayer* layer,
                       bool considerNDR,
-                      bool route_with_jumpers) const;
+                      bool route_with_jumpers,
+                      frCoord edgeLength = -1) const;
 
   frNonDefaultRule* getNDR() const { return ndr_; }
   const frBox3D* getDstTaperBox() const { return dstTaperBox_; }
@@ -1371,6 +1372,14 @@ class FlexGridGraph
   frCost getEstCost(const FlexMazeIdx& src,
                     const FlexMazeIdx& dstMazeIdx1,
                     const FlexMazeIdx& dstMazeIdx2,
+                    const odb::Point& dstPoint1,
+                    const odb::Point& dstPoint2,
+                    frCoord dstZHeight1,
+                    frCoord dstZHeight2,
+                    const frDirEnum& dir) const;
+  frCost getEstCost(const FlexMazeIdx& src,
+                    const FlexMazeIdx& dstMazeIdx1,
+                    const FlexMazeIdx& dstMazeIdx2,
                     const frDirEnum& dir) const;
   frCost getNextPathCost(const FlexWavefrontGrid& currGrid,
                          const frDirEnum& dir,
@@ -1384,6 +1393,10 @@ class FlexGridGraph
   void expandWavefront(FlexWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
+                       const odb::Point& dstPoint1,
+                       const odb::Point& dstPoint2,
+                       frCoord dstZHeight1,
+                       frCoord dstZHeight2,
                        const odb::Point& centerPt,
                        bool route_with_jumpers);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
@@ -1393,6 +1406,10 @@ class FlexGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
+              const odb::Point& dstPoint1,
+              const odb::Point& dstPoint2,
+              frCoord dstZHeight1,
+              frCoord dstZHeight2,
               const odb::Point& centerPt,
               bool route_with_jumpers);
   bool hasAlignedUpDefTrack(
