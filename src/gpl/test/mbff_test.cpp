@@ -3,13 +3,18 @@
 
 #include "src/gpl/src/mbff.h"
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <memory>
+#include <numeric>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "ant/AntennaChecker.hh"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
@@ -40,6 +45,15 @@ class MBFFTestPeer
   }
 
   static void ReadLibs(MBFF* uut) { uut->ReadLibs(); }
+
+  static void KMeans(MBFF* uut,
+                     const std::vector<Flop>& flops,
+                     int knn,
+                     std::vector<std::vector<Flop>>& clusters,
+                     const std::vector<int>& rand_nums)
+  {
+    uut->KMeans(flops, knn, clusters, rand_nums);
+  }
 };
 
 namespace {
@@ -174,6 +188,169 @@ TEST_F(MBFFTestFixture, ReadLibsSuccessfullyProcessesTestCells)
   // nested inside a test_cell block. Without consistent Liberty cell views,
   // GetPinMapping returns empty vectors and triggers an out-of-bounds crash.
   EXPECT_NO_FATAL_FAILURE(MBFFTestPeer::ReadLibs(mbff_.get()));
+}
+
+TEST_F(MBFFTestFixture, KMeansHandlesColocatedFlopsWithoutCrashing)
+{
+  // When all candidate flip-flops share the exact same location,
+  // tot_sum becomes 0 in KMeans. This must not divide by zero or crash.
+  std::vector<Flop> flops = {
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 0, .prob = 0.0},
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 1, .prob = 0.0},
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 2, .prob = 0.0},
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 3, .prob = 0.0},
+  };
+  std::vector<std::vector<Flop>> clusters;
+  std::vector<int> rand_nums = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+  EXPECT_NO_FATAL_FAILURE(
+      MBFFTestPeer::KMeans(mbff_.get(), flops, /*knn=*/2, clusters, rand_nums));
+  ASSERT_EQ(clusters.size(), 2);
+  // KMeans appends the cluster center to the back of each cluster vector.
+  int total_assigned = 0;
+  for (auto& cluster : clusters) {
+    ASSERT_FALSE(cluster.empty());
+    cluster.pop_back();  // remove center
+    total_assigned += cluster.size();
+  }
+  EXPECT_EQ(total_assigned, flops.size());
+}
+
+TEST_F(MBFFTestFixture, KMeansHandlesColocatedFlopsWithMultipleClusters)
+{
+  std::vector<Flop> flops = {
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 0, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 1, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 2, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 3, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 4, .prob = 0.0},
+  };
+  std::vector<std::vector<Flop>> clusters;
+  std::vector<int> rand_nums = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+
+  EXPECT_NO_FATAL_FAILURE(
+      MBFFTestPeer::KMeans(mbff_.get(), flops, /*knn=*/3, clusters, rand_nums));
+  ASSERT_EQ(clusters.size(), 3);
+  int total_assigned = 0;
+  for (auto& cluster : clusters) {
+    ASSERT_FALSE(cluster.empty());
+    cluster.pop_back();
+    total_assigned += cluster.size();
+  }
+  EXPECT_EQ(total_assigned, flops.size());
+}
+
+TEST_F(MBFFTestFixture, KMeansTimingComparison)
+{
+  const int num_flops = 1000;
+  const int knn = 4;
+  std::vector<int> rand_nums(50);
+  for (int i = 0; i < 50; ++i) {
+    rand_nums[i] = i * 17 + 3;
+  }
+
+  // 1. Co-located flops (exercises our fallback path)
+  std::vector<Flop> colocated_flops;
+  colocated_flops.reserve(num_flops);
+  for (int i = 0; i < num_flops; ++i) {
+    colocated_flops.push_back(
+        Flop{.pt = Point{.x = 100.0f, .y = 100.0f}, .idx = i, .prob = 0.0f});
+  }
+
+  // 2. Spread-out flops (exercises the normal probability path)
+  std::vector<Flop> spread_flops;
+  spread_flops.reserve(num_flops);
+  for (int i = 0; i < num_flops; ++i) {
+    const int col = i % 32;
+    const int row = i / 32;
+    spread_flops.push_back(
+        Flop{.pt = Point{.x = static_cast<float>(col) * 10.0f,
+                         .y = static_cast<float>(row) * 10.0f},
+             .idx = i,
+             .prob = 0.0f});
+  }
+
+  // Warmup both paths to eliminate initial cold-cache effects
+  std::vector<std::vector<Flop>> clusters;
+  for (int i = 0; i < 5; ++i) {
+    clusters.clear();
+    MBFFTestPeer::KMeans(
+        mbff_.get(), colocated_flops, knn, clusters, rand_nums);
+    clusters.clear();
+    MBFFTestPeer::KMeans(mbff_.get(), spread_flops, knn, clusters, rand_nums);
+  }
+
+  // Run 30 interleaved rounds with AB / BA alternation to eliminate noise,
+  // order bias, and CPU throttling effects.
+  constexpr int kRounds = 30;
+  std::vector<double> colocated_us(kRounds);
+  std::vector<double> spread_us(kRounds);
+
+  auto run_colocated = [&]() {
+    clusters.clear();
+    const auto t0 = std::chrono::steady_clock::now();
+    MBFFTestPeer::KMeans(
+        mbff_.get(), colocated_flops, knn, clusters, rand_nums);
+    const auto t1 = std::chrono::steady_clock::now();
+    return static_cast<double>(
+               std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0)
+                   .count())
+           / 1000.0;
+  };
+
+  auto run_spread = [&]() {
+    clusters.clear();
+    const auto t0 = std::chrono::steady_clock::now();
+    MBFFTestPeer::KMeans(mbff_.get(), spread_flops, knn, clusters, rand_nums);
+    const auto t1 = std::chrono::steady_clock::now();
+    return static_cast<double>(
+               std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0)
+                   .count())
+           / 1000.0;
+  };
+
+  for (int r = 0; r < kRounds; ++r) {
+    if (r % 2 == 0) {
+      colocated_us[r] = run_colocated();
+      spread_us[r] = run_spread();
+    } else {
+      spread_us[r] = run_spread();
+      colocated_us[r] = run_colocated();
+    }
+  }
+
+  struct Stats
+  {
+    double mean;
+    double median;
+    double stddev;
+  };
+
+  auto calc_stats = [](std::vector<double> v) -> Stats {
+    const double sum = std::accumulate(v.begin(), v.end(), 0.0);
+    const double mean = sum / v.size();
+    double sq_sum = 0.0;
+    for (double x : v) {
+      sq_sum += (x - mean) * (x - mean);
+    }
+    const double stddev = std::sqrt(sq_sum / v.size());
+    std::ranges::sort(v);
+    const double median = (v[v.size() / 2 - 1] + v[v.size() / 2]) / 2.0;
+    return Stats{.mean = mean, .median = median, .stddev = stddev};
+  };
+
+  const Stats c_stats = calc_stats(colocated_us);
+  const Stats s_stats = calc_stats(spread_us);
+
+  std::cout << "[TIMING] 30 Interleaved Runs (AB/BA Alternating), " << num_flops
+            << " flops, " << knn << " clusters:\n"
+            << "  Co-located (Fallback): Mean = " << c_stats.mean << " us (+/- "
+            << c_stats.stddev << "), Median = " << c_stats.median << " us\n"
+            << "  Spread-out (Standard): Mean = " << s_stats.mean << " us (+/- "
+            << s_stats.stddev << "), Median = " << s_stats.median << " us\n"
+            << "  Speedup Factor: " << s_stats.mean / c_stats.mean << "x\n";
+  // Timing comparison is for logging purposes; timing assertions are omitted
+  // to avoid CI flakiness on shared runners.
 }
 
 }  // namespace
