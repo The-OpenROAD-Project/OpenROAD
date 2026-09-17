@@ -722,33 +722,41 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
     }
   }
 }
-namespace {
-bool isPolygonCorner(const frCoord x,
-                     const frCoord y,
-                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+void FlexGCWorker::Impl::initNet_pins_polygonCorners_getFixedPolygonCorners(
+    gcNet* net,
+    std::vector<std::vector<odb::Point>>& fixedPolygonCorners)
 {
-  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
-  poly_set.get(polygons);
-  for (const auto& polygon : polygons) {
-    for (const auto& pt : polygon) {
-      if (pt.x() == x && pt.y() == y) {
-        return true;
-      }
+  int numLayers = getTech()->getLayers().size();
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+  for (int i = 0; i < numLayers; i++) {
+    const auto& poly_set = net->getPolygons(i, true);
+    if (gtl::empty(poly_set)) {
+      continue;
     }
-    for (auto hole_itr = polygon.begin_holes(); hole_itr != polygon.end_holes();
-         ++hole_itr) {
-      for (const auto& pt : (*hole_itr)) {
-        if (pt.x() == x && pt.y() == y) {
-          return true;
+    polys.clear();
+    poly_set.get(polys);
+    for (const auto& poly : polys) {
+      for (const auto& pt : poly) {
+        fixedPolygonCorners[i].push_back(odb::Point(pt.x(), pt.y()));
+      }
+      for (auto holeIt = poly.begin_holes(); holeIt != poly.end_holes();
+           holeIt++) {
+        for (const auto& pt : *holeIt) {
+          fixedPolygonCorners[i].push_back(odb::Point(pt.x(), pt.y()));
         }
       }
     }
+    std::sort(fixedPolygonCorners[i].begin(), fixedPolygonCorners[i].end());
+    fixedPolygonCorners[i].erase(
+        std::unique(fixedPolygonCorners[i].begin(),
+                    fixedPolygonCorners[i].end()),
+        fixedPolygonCorners[i].end());
   }
-  return false;
 }
-}  // namespace
-void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
-                                                            gcPin* pin)
+void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(
+    gcNet* net,
+    gcPin* pin,
+    const std::vector<std::vector<odb::Point>>& fixedPolygonCorners)
 {
   for (auto& edges : pin->getPolygonEdges()) {
     std::vector<std::unique_ptr<gcCorner>> tmpCorners;
@@ -822,9 +830,13 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         }
 
       } else {
-        currCorner->setFixed(isPolygonCorner(currCorner->x(),
-                                             currCorner->y(),
-                                             net->getPolygons(true)[layerNum]));
+        const auto& layerCorners = fixedPolygonCorners[layerNum];
+        currCorner->setFixed(
+            !layerCorners.empty()
+            && std::binary_search(
+                layerCorners.begin(),
+                layerCorners.end(),
+                odb::Point(currCorner->x(), currCorner->y())));
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 
@@ -847,9 +859,11 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
 void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
+  std::vector<std::vector<odb::Point>> fixedPolygonCorners(numLayers);
+  initNet_pins_polygonCorners_getFixedPolygonCorners(net, fixedPolygonCorners);
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
-      initNet_pins_polygonCorners_helper(net, pin.get());
+      initNet_pins_polygonCorners_helper(net, pin.get(), fixedPolygonCorners);
     }
   }
 }
@@ -965,7 +979,6 @@ void FlexGCWorker::Impl::initRegionQuery()
 // init initializes all nets from frDesign if no drWorker is provided
 void FlexGCWorker::Impl::init(const frDesign* design)
 {
-  // ProfileTask profile("GC:init");
   addNet(design->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
   addNet(design->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
   initDesign(design, true);
