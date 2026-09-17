@@ -3,6 +3,9 @@
 
 add_library(syn_flow
   abc.cc
+  acd.cc
+  acd_resynth.cc
+  acd_timing.cc
   bitblast.cc
   combinational_mapper.cc
   combinational_mapper_npn.cc
@@ -12,10 +15,11 @@ add_library(syn_flow
   constant_fold.cc
   opt_gatefusion.cc
   sequential_mapper.cc
+  target_index.cc
 )
 
 set(_syn_flow_stage ${CMAKE_CURRENT_BINARY_DIR}/include/flow)
-foreach(_h combinational_mapper_npn.h constant_fold.h export.h import.h opt_gatefusion.h)
+foreach(_h acd.h acd_resynth.h combinational_mapper_npn.h constant_fold.h export.h import.h opt_gatefusion.h target_index.h)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_h} ${_syn_flow_stage}/${_h} COPYONLY)
 endforeach()
 

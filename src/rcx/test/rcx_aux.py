@@ -1,4 +1,3 @@
-import utl
 import rcx
 
 # Thin wrapper over api defined in ext.i (and reused by ext-py.i)
@@ -7,6 +6,10 @@ import rcx
 
 def define_process_corner(design, *, ext_model_index=0, filename=""):
     design.getOpenRCX().define_process_corner(ext_model_index, filename)
+
+
+def set_extraction_rules_file(design, *, filename=""):
+    design.getOpenRCX().setExtractionRulesFile(filename)
 
 
 def extract_parasitics(
@@ -28,20 +31,10 @@ def extract_parasitics(
     dbg=0
 ):
 
-    if ext_model_file is not None:
-        utl.warn(
-            utl.RCX,
-            514,
-            "The ext_model_file option is deprecated. Use "
-            "set_extraction_rules_file command instead.",
-        )
-
-        # We may have multiple technologies loaded, so use the current block's
-        # tech to prevent an error resolving an ambiguous default tech.
-        db_tech = design.getBlock().getTech()
-        db_tech.setExtractionRulesFile(ext_model_file)
-
     opts = rcx.ExtractOptions()
+
+    if ext_model_file is not None:
+        opts.ext_model_file = ext_model_file
 
     opts.corner_cnt = corner_cnt
     opts.corner = corner

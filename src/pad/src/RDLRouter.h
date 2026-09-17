@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -55,6 +56,8 @@ struct DbITermPtrLess
 };
 
 class RDLRouter;
+class RDLNet;
+class RDLSegment;
 
 using GridGraph
     = boost::adjacency_list<boost::listS,
@@ -110,7 +113,7 @@ class RDLRouter
   {
     odb::Point source;
     odb::Point target;
-    float weight;
+    int64_t weight;
   };
   struct NetRoute
   {
@@ -135,7 +138,7 @@ class RDLRouter
       = odb::PtrMap<odb::dbNet,
                     odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>>>;
 
-  using RDLRoutePtr = std::shared_ptr<RDLRoute>;
+  using RDLRoutePtr = std::shared_ptr<RDLNet>;
 
   RDLRouter(utl::Logger* logger,
             odb::dbBlock* block,
@@ -178,7 +181,7 @@ class RDLRouter
     return routing_targets_;
   }
   const std::vector<RDLRoutePtr>& getRoutes() const { return routes_; }
-  std::vector<RDLRoutePtr> getFailedRoutes() const;
+  std::vector<RDLSegment*> getFailedRoutes() const;
 
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
   void setRDLDebugNet(odb::dbNet* net) { debug_net_ = net; }
@@ -192,14 +195,20 @@ class RDLRouter
   static bool isCoverTerm(odb::dbITerm* term);
 
  private:
+  struct AddEdgeConfig
+  {
+    std::optional<int64_t> weight = {};
+    bool check_obstructions = true;
+    bool check_routes = true;
+  };
+
   void makeGraph();
   bool addGraphVertex(const odb::Point& point);
   void removeGraphVertex(const odb::Point& point);
+  bool addGraphInitialEdge(const odb::Point& point0, const odb::Point& point1);
   bool addGraphEdge(const odb::Point& point0,
                     const odb::Point& point1,
-                    float edge_weight_scale = 1.0,
-                    bool check_obstructions = true,
-                    bool check_routes = true);
+                    const AddEdgeConfig& config);
   GridEdge removeGraphEdge(const GridGraphEdge& edge);
 
   std::vector<GridGraphVertex> run(const odb::Point& source,
@@ -243,8 +252,7 @@ class RDLRouter
   GridGraphEdgeSet getVertexEdges(const GridGraphVertex& vertex) const;
 
   void buildIntialRouteSet();
-  int reportFailedRoutes(
-      const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routed_pairs) const;
+  int reportFailedRoutes() const;
   odb::PtrSet<odb::dbITerm> getRoutedTerms() const;
   int getRoutingTermCount() const;
 
@@ -283,7 +291,7 @@ class RDLRouter
 
   // Routing information
   NetRoutingTargetMap routing_targets_;
-  std::vector<RDLRoutePtr> routes_;
+  std::vector<std::shared_ptr<RDLNet>> routes_;
 
   // Debugging
   RDLGui* gui_;

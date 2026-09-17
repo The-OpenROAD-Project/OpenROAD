@@ -396,17 +396,26 @@ std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
+  rsz::Resizer* resizer = design_->getResizer();
   sta::Cell* cell = network->dbToSta(master);
   std::vector<odb::dbMaster*> master_seq;
   if (cell) {
     sta::LibertyCell* libcell = network->libertyCell(cell);
-    sta::LibertyCellSeq* equiv_cells = sta->equivCells(libcell);
+    sta::LibertyCellSeq* equiv_cells = resizer->equivCells(libcell);
     if (equiv_cells) {
       for (sta::LibertyCell* equiv_cell : *equiv_cells) {
+        // The classes are built without dont_use filtering.  The cell asked
+        // about is always reported, dont_use or not.
+        if (equiv_cell != libcell && resizer->dontUse(equiv_cell)) {
+          continue;
+        }
         odb::dbMaster* equiv_master = network->staToDb(equiv_cell);
-        master_seq.emplace_back(equiv_master);
+        if (equiv_master != nullptr) {
+          master_seq.emplace_back(equiv_master);
+        }
       }
-    } else {
+    }
+    if (master_seq.empty()) {
       master_seq.emplace_back(master);
     }
   }

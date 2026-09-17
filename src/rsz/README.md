@@ -140,6 +140,10 @@ during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
 to compensate.
 
+When neither the liberty libraries nor the SDC constrain fanout,
+`repair_design` uses a default limit of 50 load pins to build a buffer tree
+for high-fanout nets. Use `set_max_fanout` to constrain fanout explicitly.
+
 ```tcl
 repair_design 
     [-max_wire_length max_length]
@@ -149,6 +153,7 @@ repair_design
     [-pre_placement]
     [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
+    [-reroute]
     [-verbose]
 ```
 
@@ -163,6 +168,7 @@ repair_design
 | `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
 | `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
+| `-reroute` | Enable resistance-aware wire rerouting to fix slew violations post-GRT (experimental). |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 #### Instance Name Prefixes
@@ -779,11 +785,6 @@ There are also some useful `Python` functions located in the
 wrappers with unit conversions (microns → metres, nanoseconds → seconds,
 percentages → fractions), but these are not considered part of the *final*
 API and may be subject to change.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
-about this tool.
 
 ## License
 

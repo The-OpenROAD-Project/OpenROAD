@@ -17,9 +17,11 @@ class frBlockage : public frBlockObject
   // getters
   frBPin* getPin() const { return pin_.get(); }
   frCoord getDesignRuleWidth() const { return design_rule_width_; }
+  frCoord getMinSpacing() const { return min_spacing_; }
   // setters
   void setPin(std::unique_ptr<frBPin> in) { pin_ = std::move(in); }
   void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
+  void setMinSpacing(frCoord spacing) { min_spacing_ = spacing; }
   // others
   frBlockObjectEnum typeId() const override { return frcBlockage; }
   void setIndexInOwner(int in) { index_in_owner_ = in; }
@@ -28,6 +30,7 @@ class frBlockage : public frBlockObject
  private:
   std::unique_ptr<frBPin> pin_;
   frCoord design_rule_width_{-1};
+  frCoord min_spacing_{-1};
   int index_in_owner_{0};
 };
 }  // namespace drt

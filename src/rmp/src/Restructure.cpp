@@ -345,10 +345,19 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   sta::VertexSet& end_points = sta_state->endpoints();
   std::size_t path_found = end_points.size();
   logger_->report("Number of paths for restructure are {}", path_found);
+  if (!is_area_mode_) {
+    // vertexWorstSlackPath reads back worst-slack paths, which only exist
+    // after an arrival/required search; searchPreamble computes delays only.
+    open_sta_->worstSlack(sta::MinMax::max());
+  }
   for (auto& end_point : end_points) {
     if (!is_area_mode_) {
       sta::Path* path
           = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
+      if (path == nullptr) {
+        // Unconstrained endpoints have no worst-slack path.
+        continue;
+      }
       sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);

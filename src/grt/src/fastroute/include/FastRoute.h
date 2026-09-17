@@ -320,6 +320,8 @@ class FastRouteCore
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
 
  private:
+  friend class Maze3DTestPeer;
+
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
       int grid_count,
@@ -369,10 +371,6 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void findNetsNearPosition(odb::PtrSet<odb::dbNet>& congestion_nets,
-                            const odb::Point& position,
-                            bool is_horizontal,
-                            int& radius);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(int net_id);
   bool areEdgesOverlapping(int net_id,
@@ -783,6 +781,10 @@ class FastRouteCore
   bool verbose_;
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
+  bool is_fixed_nets_percentage_ = false;
+  static constexpr float kInitialResAwareNetsPercentage = 15.0f;
+  static constexpr float kMidResAwareNetsPercentage = 30.0f;
+  static constexpr float kFinalResAwareNetsPercentage = 100.0f;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;

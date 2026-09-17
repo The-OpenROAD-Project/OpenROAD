@@ -1643,6 +1643,16 @@ void FlexDRWorker::mazeNetInit(drNet* net)
 {
   gridGraph_.resetStatus();
   gridGraph_.setNDR(net->getFrNet()->getNondefaultRule());
+  // Routing watermark: if this net is a watermark net, inflate the
+  // non-preferred-direction ("wrong-way") grid cost so that the maze
+  // strongly prefers preferred-direction edges, approximating the
+  // IC Craftsman "limit way = 1" rule used in Kahng et al. (ISPD'98).
+  if (net->getFrNet() && net->getFrNet()->isWatermark()) {
+    gridGraph_.setWrongWayWatermarkMultiplier(
+        router_cfg_->WATERMARK_WRONGWAY_MULT);
+  } else {
+    gridGraph_.setWrongWayWatermarkMultiplier(1.0f);
+  }
   // sub term / instterm cost when net is about to route
   initMazeCost_terms(net->getFrNetTerms(), false, true);
   // sub via access cost when net is about to route
@@ -1669,6 +1679,9 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   initMazeCost_boundary_helper(net, true);
   gridGraph_.setNDR(nullptr);
   gridGraph_.setDstTaperBox(nullptr);
+  // Reset watermark multiplier so subsequent non-watermark nets route
+  // with the router's default non-preferred-direction cost.
+  gridGraph_.setWrongWayWatermarkMultiplier(1.0f);
 }
 
 void FlexDRWorker::writeGCPatchesToDRWorker(
@@ -2229,7 +2242,7 @@ void FlexDRWorker::routeNet_prep(
     }
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
-      if (router_cfg_->AUTO_TAPER_NDR_NETS
+      if (net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)
           && pin->isInstPin()) {  // create a taper box for each pin
         auto [l, h] = pin->getAPBbox();
         frCoord pitch
@@ -2648,7 +2661,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
-        if (net->hasNDR() && router_cfg_->AUTO_TAPER_NDR_NETS) {
+        if (net->hasNDR()
+            && net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
           if (isInsideTaperBox(endX, endY, startZ, endZ, mazeIdx2TaperBox)) {
             currVia->setTapered(true);
           }
@@ -2818,7 +2832,8 @@ bool FlexDRWorker::splitPathSeg(frMIdx& midX,
                                 drNet* net)
 {
   taperFirstPiece = false;
-  if (!net->hasNDR() || !router_cfg_->AUTO_TAPER_NDR_NETS) {
+  if (!net->hasNDR()
+      || !net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
     return false;
   }
   frBox3D* bx = nullptr;

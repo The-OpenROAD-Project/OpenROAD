@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
 #include "gui/gui.h"
@@ -23,6 +24,14 @@
 #include "utl/Logger.h"
 
 namespace dpl {
+
+namespace {
+
+using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+using BoostRect = boost::polygon::rectangle_data<int>;
+
+}  // namespace
 
 Graphics::Graphics(Opendp* dp,
                    const odb::dbInst* debug_instance,
@@ -49,7 +58,12 @@ Graphics::Graphics(Opendp* dp,
 
 void Graphics::startPlacement(odb::dbBlock* block)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   block_ = block;
+  // Graphics outlives one placement run, so drop searches from the previous
+  // one. Cleared inline rather than via clearAllDiamondSearches(), which
+  // relocks.
+  searched_diamond_.clear();
 }
 
 void Graphics::drawSelected(odb::dbInst* instance, bool force)
@@ -77,15 +91,66 @@ void Graphics::binSearch(const Node* cell,
                          GridX xh,
                          GridY yh)
 {
-  if (!debug_instance_ || cell->getDbInst() != debug_instance_) {
+  const odb::dbInst* inst = cell->getDbInst();
+  if (!inst) {
     return;
   }
-  odb::Rect core = dp_->grid_->getCore();
-  int xl_dbu = core.xMin() + gridToDbu(xl, dp_->grid_->getSiteWidth()).v;
-  int yl_dbu = core.yMin() + dp_->grid_->gridYToDbu(yl).v;
-  int xh_dbu = core.xMin() + gridToDbu(xh, dp_->grid_->getSiteWidth()).v;
-  int yh_dbu = core.yMin() + dp_->grid_->gridYToDbu(yh).v;
-  searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+  // Skip cells with no search started: canBePlaced() is also called outside
+  // any search (Opendp::setInitialGridCells).
+  auto it = searched_diamond_.find(inst);
+  if (it == searched_diamond_.end()) {
+    return;
+  }
+  const odb::Rect core = dp_->grid_->getCore();
+  const DbuX site_width = dp_->grid_->getSiteWidth();
+  const int x_lo = core.xMin() + gridToDbu(xl, site_width).v;
+  const int y_lo = core.yMin() + dp_->grid_->gridYToDbu(yl).v;
+  const int x_hi = core.xMin() + gridToDbu(xh, site_width).v;
+  const int y_hi = core.yMin() + dp_->grid_->gridYToDbu(yh).v;
+
+  DiamondSearch& search = it->second;
+  search.last = odb::Rect(x_lo, y_lo, x_hi, y_hi);
+  search.boundaries_valid = false;
+
+  // Widen the span of this candidate's row, or start one.
+  auto row = std::lower_bound(
+      search.rows.begin(),
+      search.rows.end(),
+      y_lo,
+      [](const RowSpan& span, const int y) { return span.y_lo < y; });
+  if (row != search.rows.end() && row->y_lo == y_lo) {
+    row->y_hi = std::max(row->y_hi, y_hi);
+    row->x_lo = std::min(row->x_lo, x_lo);
+    row->x_hi = std::max(row->x_hi, x_hi);
+  } else {
+    search.rows.insert(row, RowSpan{y_lo, y_hi, x_lo, x_hi});
+  }
+}
+
+void Graphics::clearDiamondSearch(const Node* cell)
+{
+  const odb::dbInst* inst = cell->getDbInst();
+  if (!inst) {
+    return;
+  }
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+  // Creating the entry is what lets binSearch() record for this cell.
+  DiamondSearch& search = searched_diamond_[inst];
+  if (search.rows.capacity() > kMaxRetainedRows) {
+    std::vector<RowSpan>().swap(search.rows);
+  } else {
+    search.rows.clear();
+  }
+  search.last = odb::Rect();
+  search.boundaries.clear();
+  search.boundaries_valid = false;
+}
+
+void Graphics::clearAllDiamondSearches()
+{
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+  searched_diamond_.clear();
 }
 
 void Graphics::redrawAndPause()
@@ -97,6 +162,9 @@ void Graphics::redrawAndPause()
 
 void Graphics::drawObjects(gui::Painter& painter)
 {
+  // Held for the whole draw: placement runs concurrently on the main thread.
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+
   if (!block_) {
     return;
   }
@@ -115,14 +183,16 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    if (!cell->isPlaced()) {
-      auto color = gui::Painter::kDarkMagenta;
-      painter.setPen(color);
-      painter.setBrush(color);
-      odb::Rect bbox;
-      bbox = cell->getDbInst()->getBBox()->getBox();
-      painter.drawRect(bbox);
-      continue;
+    if (!dp_->isUseNegotiationLegalizer()) {
+      if (!cell->isPlaced()) {
+        auto color = gui::Painter::kDarkMagenta;
+        painter.setPen(color);
+        painter.setBrush(color);
+        odb::Rect bbox;
+        bbox = cell->getDbInst()->getBBox()->getBox();
+        painter.drawRect(bbox);
+        continue;
+      }
     }
 
     if (cell->getDbInst()->isFixed()) {
@@ -192,13 +262,74 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
-  // Diamond search range
-  auto color = gui::Painter::kCyan;
-  color.a = 100;
-  painter.setPen(color);
-  painter.setBrush(color);
-  for (auto& rect : searched_) {
-    painter.drawRect(rect);
+  // Diamond search range, outline only.  Searches are recorded for every cell,
+  // so draw the ones the user is looking at: the debug instance plus whatever
+  // is selected in the GUI.
+  if (!searched_diamond_.empty()) {
+    using boost::polygon::operators::operator+=;
+
+    auto addBoundary
+        = [](const auto& ring, std::vector<std::vector<odb::Point>>& out) {
+            std::vector<odb::Point> points;
+            for (auto itr = ring.begin(); itr != ring.end(); itr++) {
+              const auto point = *itr;
+              points.emplace_back(point.x(), point.y());
+            }
+            if (points.size() > 2) {
+              out.push_back(std::move(points));
+            }
+          };
+
+    std::unordered_set<const odb::dbInst*> draw_insts;
+    if (debug_instance_) {
+      draw_insts.insert(debug_instance_);
+    }
+    for (odb::dbInst* inst : selected_insts) {
+      draw_insts.insert(inst);
+    }
+
+    painter.setBrush(gui::Painter::kTransparent);
+    for (const odb::dbInst* inst : draw_insts) {
+      auto it = searched_diamond_.find(inst);
+      if (it == searched_diamond_.end() || it->second.rows.empty()) {
+        continue;
+      }
+      DiamondSearch& search = it->second;
+
+      // Row spans abut and overlap, so union them and stroke just the exterior
+      // boundary.  Cached, since this runs on every repaint.
+      if (!search.boundaries_valid) {
+        Polygon90Set searched_area;
+        for (const RowSpan& row : search.rows) {
+          searched_area += BoostRect{row.x_lo, row.y_lo, row.x_hi, row.y_hi};
+        }
+        std::vector<Polygon90> searched_polygons;
+        searched_area.get_polygons(searched_polygons);
+
+        search.boundaries.clear();
+        for (const Polygon90& polygon : searched_polygons) {
+          addBoundary(polygon, search.boundaries);
+          for (auto hole = polygon.begin_holes(); hole != polygon.end_holes();
+               hole++) {
+            addBoundary(*hole, search.boundaries);
+          }
+        }
+        search.boundaries_valid = true;
+      }
+
+      painter.setPen(
+          gui::Painter::kPink, /* cosmetic */ true, kSearchOutlineWidth);
+      for (const std::vector<odb::Point>& boundary : search.boundaries) {
+        painter.drawPolygon(boundary);
+      }
+
+      // Last candidate tried: the position the cell takes when the search
+      // succeeds.  Deep pink to stand out from the pale region boundary.
+      painter.setPen(gui::Painter::Color{0xff, 0x14, 0x93, 0xff},
+                     /* cosmetic */ true,
+                     kSearchOutlineWidth);
+      painter.drawRect(search.last);
+    }
   }
 
   if (paint_pixels_) {
@@ -343,14 +474,14 @@ void Graphics::drawObjects(gui::Painter& painter)
 
       // Init-position search window
       auto init_color = gui::Painter::kCyan;
-      painter.setPen(init_color, /* cosmetic */ true);
+      painter.setPen(init_color, /* cosmetic */ true, kSearchOutlineWidth);
       painter.drawRect(init_win);
 
       // Current-position window (only when the cell is displaced).
       if (!curr_win.isInverted() && curr_win.area() > 0) {
         auto curr_color = gui::Painter::kWhite;
         curr_color.a = 200;
-        painter.setPen(curr_color, /* cosmetic */ true);
+        painter.setPen(curr_color, /* cosmetic */ true, kSearchOutlineWidth);
         painter.drawRect(curr_win);
       }
     }
@@ -366,6 +497,7 @@ void Graphics::setNegotiationPixels(
     int site_width,
     const std::vector<int>& row_y_dbu)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_pixels_ = pixels;
   negotiation_grid_w_ = grid_w;
   negotiation_grid_h_ = grid_h;
@@ -377,6 +509,7 @@ void Graphics::setNegotiationPixels(
 
 void Graphics::clearNegotiationPixels()
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_pixels_.clear();
   negotiation_row_y_dbu_.clear();
   negotiation_grid_w_ = 0;
@@ -388,11 +521,13 @@ void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
                                           const odb::Rect& init_window,
                                           const odb::Rect& curr_window)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_search_windows_[inst] = {init_window, curr_window};
 }
 
 void Graphics::clearNegotiationSearchWindows()
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_search_windows_.clear();
   // Force the next drawObjects() call to re-log the window size, since a new
   // iteration means the window for the selected instance may have changed.
@@ -419,10 +554,16 @@ void Graphics::addNegotiationPhase2Marker(int iter)
   }
 }
 
-void Graphics::setCurrentIterMovers(
-    const std::unordered_set<odb::dbInst*>& movers)
+void Graphics::addCurrentIterMover(odb::dbInst* inst)
 {
-  current_iter_movers_ = movers;
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+  current_iter_movers_.insert(inst);
+}
+
+void Graphics::clearCurrentIterMovers()
+{
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+  current_iter_movers_.clear();
 }
 
 /* static */

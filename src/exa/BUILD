@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -20,10 +21,7 @@ cc_library(
         "src",
     ],
     visibility = ["//visibility:private"],
-    deps = [
-        "//src/odb/src/db",
-        "//src/utl",
-    ],
+    deps = ["//src/odb/src/db"],
 )
 
 cc_library(
@@ -111,4 +109,10 @@ python_wrap_cc(
         "include",
         "src",
     ],
+)
+
+exports_files(["README.md"])
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

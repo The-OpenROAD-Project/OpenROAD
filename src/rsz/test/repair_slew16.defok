@@ -1,0 +1,53 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN hi_fanout ;
+
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 25000 30000 ) ;
+COMPONENTS 21 ;
+- drvr DFF_X1 + PLACED ( 1000 1000 ) N ;
+- load0 DFF_X1 + PLACED (  0 0 ) N ;
+- load1 DFF_X1 + PLACED (  5000 0 ) N ;
+- load2 DFF_X1 + PLACED (  10000 0 ) N ;
+- load3 DFF_X1 + PLACED (  15000 0 ) N ;
+- load4 DFF_X1 + PLACED (  0 5000 ) N ;
+- load5 DFF_X1 + PLACED (  5000 5000 ) N ;
+- load6 DFF_X1 + PLACED (  10000 5000 ) N ;
+- load7 DFF_X1 + PLACED (  15000 5000 ) N ;
+- load8 DFF_X1 + PLACED (  0 10000 ) N ;
+- load9 DFF_X1 + PLACED (  5000 10000 ) N ;
+- load10 DFF_X1 + PLACED (  10000 10000 ) N ;
+- load11 DFF_X1 + PLACED (  15000 10000 ) N ;
+- load12 DFF_X1 + PLACED (  0 15000 ) N ;
+- load13 DFF_X1 + PLACED (  5000 15000 ) N ;
+- load14 DFF_X1 + PLACED (  10000 15000 ) N ;
+- load15 DFF_X1 + PLACED (  15000 15000 ) N ;
+- load16 DFF_X1 + PLACED (  0 20000 ) N ;
+- load17 DFF_X1 + PLACED (  5000 20000 ) N ;
+- load18 DFF_X1 + PLACED (  10000 20000 ) N ;
+- load19 DFF_X1 + PLACED (  15000 20000 ) N ;
+END COMPONENTS
+PINS 1 ;
+- clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
++ LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 2 ;
+- clk1 ( PIN clk1 ) ( drvr CK ) ( load0 CK )
+ ( load1 CK ) ( load2 CK ) ( load3 CK ) ( load4 CK ) ( load5 CK ) ( load6 CK ) ( load7 CK ) ( load8 CK ) ( load9 CK ) ( load10 CK )
+ ( load11 CK ) ( load12 CK ) ( load13 CK ) ( load14 CK ) ( load15 CK ) ( load16 CK ) ( load17 CK ) ( load18 CK ) ( load19 CK ) ;
+- net0 ( drvr Q )
+ ( load0 D )
+ ( load1 D ) ( load2 D ) ( load3 D ) ( load4 D ) ( load5 D ) ( load6 D ) ( load7 D ) ( load8 D ) ( load9 D ) ( load10 D )
+ ( load11 D ) ( load12 D ) ( load13 D ) ( load14 D ) ( load15 D ) ( load16 D ) ( load17 D ) ( load18 D ) ( load19 D ) ;
+END NETS
+END DESIGN

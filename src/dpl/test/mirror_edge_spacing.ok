@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: mirror_edge_spacing.lef, created 1 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0131]     Created 6 components and 24 component-terminals.
+[INFO ODB-0133]     Created 3 nets and 6 connections.
+[INFO DPL-0020] Mirrored 1 instances
+[INFO DPL-0021] HPWL before               8.1 u
+[INFO DPL-0022] HPWL after                7.4 u
+[INFO DPL-0023] HPWL delta               -8.2 %
+[INFO DPL-0024] Skipped 1 instances that would violate cell edge spacing rules when mirrored
+No differences found.

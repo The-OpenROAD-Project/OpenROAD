@@ -74,7 +74,7 @@ void PdnGen::buildGrids(bool trim)
   // connect instances already assigned to grids
   odb::PtrSet<odb::dbInst> insts_in_grids;
   for (auto* grid : grids) {
-    auto insts_in_grid = grid->getInstances();
+    auto insts_in_grid = grid->getObstructionExemptInstances();
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
@@ -218,7 +218,8 @@ void PdnGen::trimShapes()
         // if pin layer, do not modify the shapes, but allow them to be
         // removed if they are not connected to anything
         const bool is_pin_layer
-            = pin_layers.find(shape->getLayer()) != pin_layers.end();
+            = shape->getGridComponent()->allowDbPins()
+              && pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
         const odb::Rect min_rect = shape->getMinimumRect();
@@ -583,8 +584,9 @@ void PdnGen::makeInstanceGrid(
     grid = std::make_unique<InstanceGrid>(
         domain, name, starts_with == kPower, inst, generate_obstructions);
   }
-  if (!std::ranges::all_of(halo, [](int v) { return v == 0; })) {
-    grid->addHalo(halo);
+  const EdgeSpec halo_spec = EdgeSpec::fromArray(halo);
+  if (!halo_spec.isZero()) {
+    grid->addHalo(halo_spec);
   }
   grid->setGridToBoundary(pg_pins_to_boundary);
 
@@ -626,9 +628,10 @@ void PdnGen::makeRing(Grid* grid,
   auto ring = std::make_unique<Rings>(grid,
                                       Rings::Layer{layer0, width0, spacing0},
                                       Rings::Layer{layer1, width1, spacing1});
-  ring->setOffset(offset);
-  if (std::ranges::any_of(pad_offset, [](int o) { return o != 0; })) {
-    ring->setPadOffset(pad_offset);
+  ring->setOffset(EdgeSpec::fromArray(offset));
+  const EdgeSpec pad_offset_spec = EdgeSpec::fromArray(pad_offset);
+  if (!pad_offset_spec.isZero()) {
+    ring->setPadOffset(pad_offset_spec);
   }
   ring->setExtendToBoundary(extend);
   if (starts_with != kGrid) {
@@ -738,7 +741,7 @@ void PdnGen::setDebugRenderer(bool on)
 {
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
-      debug_renderer_ = std::make_unique<PDNRenderer>(this);
+      debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
   } else {
@@ -881,7 +884,34 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
-  std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
+  const auto shape_less = [](const Shape* lhs, const Shape* rhs) {
+    const int lhs_layer = lhs->getLayer()->getNumber();
+    const int rhs_layer = rhs->getLayer()->getNumber();
+    if (lhs_layer != rhs_layer) {
+      return lhs_layer < rhs_layer;
+    }
+
+    auto* lhs_net = lhs->getNet();
+    auto* rhs_net = rhs->getNet();
+    if (lhs_net != rhs_net) {
+      if (lhs_net == nullptr) {
+        return true;
+      }
+      if (rhs_net == nullptr) {
+        return false;
+      }
+      const auto lhs_net_id = lhs_net->getId();
+      const auto rhs_net_id = rhs_net->getId();
+      if (lhs_net_id != rhs_net_id) {
+        return lhs_net_id < rhs_net_id;
+      }
+    }
+
+    return lhs->getRect() < rhs->getRect();
+  };
+
+  std::map<Shape*, std::vector<odb::dbBox*>, decltype(shape_less)> shape_map(
+      shape_less);
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
       const auto db_shapes
@@ -892,7 +922,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
-  // Cleanup floating shapes due to failed vias
+  // Cleanup floating shapes due to failed vias.
   for (const auto& [shape, db_shapes] : shape_map) {
     if (!shape->isLocked() && !shape->hasInternalConnections()) {
       for (odb::dbBox* db_box : db_shapes) {

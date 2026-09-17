@@ -94,6 +94,8 @@
 #include "utl/decode.h"
 #include "web/MakeWeb.h"
 #include "web/web.h"
+#include "wmk/MakeWatermark.h"
+#include "wmk/Watermark.h"
 
 namespace ord {
 extern const char* ord_tcl_inits[];
@@ -154,6 +156,7 @@ OpenRoad::~OpenRoad()
   delete stt_builder_;
   delete dft_;
   delete estimate_parasitics_;
+  delete watermark_;
   delete logger_;
   delete verilog_reader_;
   delete service_registry_;
@@ -215,7 +218,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
   verilog_network_ = new dbVerilogNetwork(sta_);
   ioPlacer_ = new ppl::IOPlacer(db_, logger_);
-  stt_builder_ = new stt::SteinerTreeBuilder(db_, logger_);
+  stt_builder_ = new stt::SteinerTreeBuilder(logger_);
   antenna_checker_ = new ant::AntennaChecker(db_, logger_);
   opendp_ = new dpl::Opendp(db_, logger_);
   global_router_ = new grt::GlobalRouter(logger_,
@@ -274,6 +277,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
+  watermark_
+      = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -315,10 +320,16 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft::initDft(tcl_interp);
   est::initTcl(tcl_interp);
   web::initWeb(tcl_interp);
+  wmk::initWatermark(tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // "$handle method args..." on an odb handle resolves here.  Installed after
+  // OpenSTA's handler, which odb_unknown falls back to for everything that is
+  // not an odb handle.
+  Tcl_Eval(tcl_interp, "odb_install_unknown");
 
   // Initialize tcl history
   if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
@@ -597,9 +608,10 @@ void OpenRoad::writeDb(std::ostream& stream)
   db_->write(stream);
 }
 
-void OpenRoad::writeDb(const char* filename)
+void OpenRoad::writeDb(const char* filename,
+                       std::optional<int> compression_level)
 {
-  utl::OutStreamHandler stream_handler(filename, true);
+  utl::OutStreamHandler stream_handler(filename, true, compression_level);
   writeDb(stream_handler.getStream());
 }
 

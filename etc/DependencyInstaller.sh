@@ -183,8 +183,22 @@ _install_yosys() {
             cd "${BASE_DIR}"
             _execute "Cloning Yosys ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys
             cd yosys
-            _execute "Building Yosys..." make -j "${NUM_THREADS}" PREFIX="${yosys_prefix}" ABC_ARCHFLAGS=-Wno-register
-            _execute "Installing Yosys..." make install PREFIX="${yosys_prefix}"
+            if [[ -f Makefile ]]; then
+                _execute "Building Yosys..." make -j "${NUM_THREADS}" PREFIX="${yosys_prefix}" ABC_ARCHFLAGS=-Wno-register
+                _execute "Installing Yosys..." make install PREFIX="${yosys_prefix}"
+            else
+                # Yosys v0.67 and later dropped the Makefile in favor of CMake.
+                local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
+                if [[ ! -f "${cmake_bin}" ]]; then
+                    cmake_bin="cmake"
+                fi
+                # CMAKE_PACKAGE_ROOT_ARGS already has bison/swig/boost paths
+                # here; pass them to Yosys too, or its CMake may pick a
+                # system copy instead.
+                _execute "Configuring Yosys..." "${cmake_bin}" -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${yosys_prefix}" ${CMAKE_PACKAGE_ROOT_ARGS} .
+                _execute "Building Yosys..." "${cmake_bin}" --build build -j "${NUM_THREADS}"
+                _execute "Installing Yosys..." "${cmake_bin}" --build build --target install
+            fi
         )
         INSTALL_SUMMARY+=("Yosys: system=${yosys_installed_version}, required=${required_version}, path=${yosys_prefix}, status=installed")
     else
@@ -339,26 +353,30 @@ _install_bison() {
     if [[ "${bison_installed_version}" != "${BISON_VERSION}" ]]; then
         (
             cd "${BASE_DIR}"
-            local mirrors=(
-                "https://ftp.gnu.org/gnu/bison"
-                "https://ftpmirror.gnu.org/bison"
-                "https://mirrors.kernel.org/gnu/bison"
-                "https://mirrors.dotsrc.org/gnu/bison"
-            )
-            local success=0
-            for mirror in "${mirrors[@]}"; do
-                local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
-                log "Trying to download bison from: $url"
-                if wget $OPT_NOCERT "$url"; then
-                    success=1
-                    break
-                else
-                    warn "Failed to download from $mirror"
+            _download_bison() {
+                local mirrors=(
+                    "https://ftp.gnu.org/gnu/bison"
+                    "https://ftpmirror.gnu.org/bison"
+                    "https://mirrors.kernel.org/gnu/bison"
+                    "https://mirrors.dotsrc.org/gnu/bison"
+                )
+                local success=0
+                for mirror in "${mirrors[@]}"; do
+                    local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
+                    log "Trying to download bison from: $url"
+                    if wget $OPT_NOCERT "$url"; then
+                        success=1
+                        break
+                    else
+                        warn "Failed to download from $mirror"
+                    fi
+                done
+                if [[ ${success} -ne 1 ]]; then
+                    warn "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
+                    return 1
                 fi
-            done
-            if [[ ${success} -ne 1 ]]; then
-                error "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
-            fi
+            }
+            _execute "Downloading Bison" _download_bison
             _verify_checksum "${BISON_CHECKSUM}" "bison-${BISON_VERSION}.tar.gz" || error "Bison checksum failed."
             _execute "Extracting Bison..." tar xf "bison-${BISON_VERSION}.tar.gz"
             cd "bison-${BISON_VERSION}"
@@ -675,25 +693,31 @@ _install_abseil() {
     local absl_prefix_found=""
     local absl_version_file=""
 
-    # Check in default/user-specified prefix first (lib64 on RHEL, lib elsewhere).
-    for absl_version_file_default in \
-        "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
-        "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
-        if [[ -f "${absl_version_file_default}" ]]; then
-            absl_prefix_found="${absl_prefix_install}"
-            absl_version_file="${absl_version_file_default}"
-            break
-        fi
-    done
-
-    # If not found, check in or-tools path
-    if [[ -z "${absl_prefix_found}" && -n "${OR_TOOLS_PATH}" ]]; then
+    # Prefer the Abseil bundled with or-tools (lib64 on RHEL, lib elsewhere).
+    # Prebuilt or-tools links its own Abseil copy, so building OpenROAD
+    # against any other copy loads two Abseils at runtime and crashes at
+    # startup with a duplicate-flag ODR error ("Inconsistency between flag
+    # object and registration for flag 'flagfile'").
+    if [[ -n "${OR_TOOLS_PATH}" ]]; then
         for absl_version_file_or_tools in \
             "${OR_TOOLS_PATH}/lib64/cmake/absl/abslConfigVersion.cmake" \
             "${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"; do
             if [[ -f "${absl_version_file_or_tools}" ]]; then
                 absl_prefix_found="${OR_TOOLS_PATH}"
                 absl_version_file="${absl_version_file_or_tools}"
+                break
+            fi
+        done
+    fi
+
+    # Fall back to a copy in the default/user-specified prefix.
+    if [[ -z "${absl_prefix_found}" ]]; then
+        for absl_version_file_default in \
+            "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_default}" ]]; then
+                absl_prefix_found="${absl_prefix_install}"
+                absl_version_file="${absl_version_file_default}"
                 break
             fi
         done
@@ -707,6 +731,16 @@ _install_abseil() {
     local required_version="${ABSL_VERSION%.*}"
     log "Checking Abseil (System: ${absl_installed_version}, Required: ${required_version})"
     if [[ "${absl_installed_version}" != "${required_version}" ]]; then
+        if [[ -n "${absl_prefix_found}" && "${absl_prefix_found}" == "${OR_TOOLS_PATH}" ]]; then
+            warn "or-tools bundles Abseil ${absl_installed_version} but ${required_version} is required."
+            warn "Building a separate Abseil copy; keep OR_TOOLS_VERSION_BIG and ABSL_VERSION in sync to avoid runtime ODR errors."
+        fi
+        # Remove any stale Abseil from the install prefix so the new version
+        # does not overlay a mix of old and new headers/libraries.
+        rm -rf "${absl_prefix_install}/include/absl" \
+            "${absl_prefix_install}"/lib/cmake/absl "${absl_prefix_install}"/lib64/cmake/absl \
+            "${absl_prefix_install}"/lib/libabsl_* "${absl_prefix_install}"/lib64/libabsl_* \
+            "${absl_prefix_install}"/lib/pkgconfig/absl_*.pc "${absl_prefix_install}"/lib64/pkgconfig/absl_*.pc
         (
             cd "${BASE_DIR}"
             _execute "Downloading Abseil..." wget $OPT_NOCERT "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
@@ -728,6 +762,11 @@ _install_abseil() {
         done
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
     else
+        if [[ "${absl_prefix_found}" == "${OR_TOOLS_PATH}" ]] &&
+            [[ -d "${absl_prefix_install}/lib/cmake/absl" || -d "${absl_prefix_install}/lib64/cmake/absl" ]]; then
+            warn "Stale Abseil found in ${absl_prefix_install} alongside the or-tools copy."
+            warn "Remove include/absl, lib*/cmake/absl and lib*/libabsl_* from ${absl_prefix_install} to avoid runtime ODR errors."
+        fi
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
@@ -856,14 +895,29 @@ _install_or_tools() {
 _install_bazel() {
     local bazel_prefix=${PREFIX:-"/usr/local"}
     log "Checking Bazel (via bazelisk)"
+    # bazelisk and the libraries a Bazel build needs are installed
+    # independently: something else may already have put bazelisk on PATH (the
+    # -ci package set does), and skipping the libraries in that case would leave
+    # a system that has bazelisk but cannot link.
     if _command_exists "bazelisk"; then
         log "bazelisk already installed, skipping."
         INSTALL_SUMMARY+=("Bazel: system=found, required=any, status=skipped")
-        return
-    fi
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
         _execute "Installing bazelisk via Homebrew..." brew install bazelisk
+        INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
     else
+        # curl fetches bazelisk below but is not in every base image, and
+        # nothing else here guarantees it: the -ci package set installs it, but
+        # -ci only applies to Ubuntu.
+        if ! _command_exists "curl"; then
+            if _command_exists "apt-get"; then
+                _execute "Updating package lists..." apt-get -y update
+                _execute "Installing curl..." \
+                    apt-get -y install --no-install-recommends curl ca-certificates
+            elif _command_exists "yum"; then
+                _execute "Installing curl..." yum install -y curl ca-certificates
+            fi
+        fi
         local arch
         arch=$(uname -m)
         local bazelisk_arch="amd64"
@@ -882,6 +936,12 @@ _install_bazel() {
             chmod +x bazelisk
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
+        INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
+    fi
+
+    # Runtime libraries for the prebuilt LLVM toolchain and, unless -no-gui, for
+    # the Qt GUI binary. Homebrew resolves these itself on macOS.
+    if [[ "$OSTYPE" != "darwin"* ]]; then
         if _command_exists "apt-get"; then
             # Ubuntu 26.04 ships the libxml2 runtime with soname
             # libxml2.so.16, but the prebuilt LLVM toolchain (lld) pulled in
@@ -896,6 +956,9 @@ _install_bazel() {
             if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
                 libxml2_pkg="libxml2-dev"
             fi
+            # -bazel can be the only mode a user runs, so refresh the lists
+            # here rather than relying on -base having already done it.
+            _execute "Updating package lists..." apt-get -y update
             _execute "Installing bazel required libraries..." \
                 apt-get -y install --no-install-recommends \
                 libc6-dev "${libxml2_pkg}" libtinfo6 zlib1g libstdc++6
@@ -918,29 +981,41 @@ _install_bazel() {
                 glibc-devel libxml2 ncurses-libs zlib libstdc++
         fi
         if [[ "${NO_GUI}" != "yes" ]]; then
-            # Install xcb libraries needed for GUI support with Bazel builds
+            # Runtime xcb libraries only, no -dev/-devel: Qt comes from the
+            # qt-bazel prebuilts, so nothing compiles against system xcb
+            # headers. The GUI binary resolves these at load time, which is the
+            # whole reason they are here. The -devel variants also live in
+            # PowerTools/CRB on RHEL-likes, which is not enabled by default.
             if _command_exists "apt-get"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     apt-get -y install --no-install-recommends \
-                    libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
-                    libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
-                    libxcb-xinerama0-dev libxcb-xkb-dev \
-                    libx11-xcb1 libx11-6 libsm6 libice6 \
-                    libxcb-cursor0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
+                    libx11-6 libx11-xcb1 libsm6 libice6 \
+                    libxcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+                    libxcb-keysyms1 libxcb-randr0 libxcb-render0 \
+                    libxcb-render-util0 libxcb-shape0 libxcb-shm0 libxcb-sync1 \
+                    libxcb-util1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1 \
                     libdbus-1-3 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0
             elif _command_exists "yum"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     yum install -y \
-                    libxcb-devel xcb-util-devel xcb-util-image-devel \
-                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel \
+                    libxcb xcb-util xcb-util-image xcb-util-keysyms \
+                    xcb-util-renderutil xcb-util-wm \
                     libX11-xcb libX11 libSM libICE \
-                    xcb-util-cursor libxcb \
                     dbus-libs fontconfig \
                     libxkbcommon libxkbcommon-x11
+                # On RHEL 8 xcb-util-cursor comes from EPEL rather than the
+                # default repositories (9 ships it in AppStream), so it is there
+                # after -base but not for a standalone -bazel on a bare image.
+                # Probe rather than hard-fail: without it the GUI binary cannot
+                # open a window, but the cli binary links and runs fine.
+                if yum -q info xcb-util-cursor > /dev/null 2>&1; then
+                    _execute "Installing xcb-util-cursor..." yum install -y xcb-util-cursor
+                else
+                    log "xcb-util-cursor unavailable on this release; skipping (the GUI binary will not run here)."
+                fi
             fi
         fi
     fi
-    INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
 }
 
 # ------------------------------------------------------------------------------

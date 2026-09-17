@@ -48,6 +48,7 @@ class HeatMapRenderer : public Renderer
 
     if (first_paint_) {
       first_paint_ = false;
+      datasource_.ensureMap();
       datasource_.onShow();
     }
 

@@ -10,21 +10,20 @@ Found 1 cap violations
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       106
-    final |     +2.5% |       1 |       2 |             1 |         0
+    final |     +3.0% |       0 |       4 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0039] Resized 1 instances.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-rdrv/Y                                  1.49    0.31    1.19 (MET)
+fanout3/X                               1.50    0.87    0.62 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-r0/Q                                    0.16    0.00    0.16 (MET)
+rdrv/Y                                  0.05    0.02    0.03 (MET)
 

@@ -1,0 +1,34 @@
+/* Minimal buffer cell with output pin on metal3 (see buf_m3.lef). */
+library (buf_m3) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  capacitive_load_unit (1,ff);
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  nom_process : 1.0;
+  nom_temperature : 25.0;
+  nom_voltage : 1.1;
+
+  cell (BUF_M3X1) {
+    area : 0.798;
+    pin (A) {
+      direction : input;
+      capacitance : 0.8;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 60.0;
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values("0.05"); }
+        cell_fall (scalar) { values("0.05"); }
+        rise_transition (scalar) { values("0.03"); }
+        fall_transition (scalar) { values("0.03"); }
+      }
+    }
+  }
+}
