@@ -5796,6 +5796,11 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
         throw std::runtime_error("invalid heat map");
       }
       state.active_heatmap = name;
+      // Build before showing, as the Qt renderer does: onShow() warns
+      // (GUI-0066) when the source is not populated yet, and the payload
+      // below would otherwise be what finally populates it.  ensureMap() is
+      // idempotent, so that later call becomes a no-op.
+      next->second->ensureMap();
       next->second->onShow();
     }
 

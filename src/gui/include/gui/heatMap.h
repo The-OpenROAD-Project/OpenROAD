@@ -344,7 +344,12 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
  public:
   PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
 
-  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+  // See PinDensityDataSource::getBounds(): no block means no core to measure.
+  odb::Rect getBounds() const override
+  {
+    odb::dbBlock* block = getBlock();
+    return block != nullptr ? block->getCoreArea() : odb::Rect();
+  }
 
   std::string getSelectionFilterLabel() const override
   {
