@@ -86,6 +86,7 @@ TESTS = [
     "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
+    "repair_fanout9",
     "repair_hold1",
     "repair_hold10",
     "repair_hold11",
@@ -270,6 +271,15 @@ PASSFAIL_TESTS = [
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+# Hierarchical Verilog netlists reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
+# the conformance suite references them by relative path from its manifest.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = glob(["cpp/*.v"]),
+    visibility = ["//visibility:public"],
+)
 
 filegroup(
     name = "test_resources",
@@ -488,6 +498,7 @@ cc_test(
         "cpp/TestResizer*.lib",
         "cpp/TestResizer*.v",
     ]) + [
+        "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
     ],
@@ -645,6 +656,7 @@ py_test(
     srcs = ["gcd_resize.py"],
     data = [":test_resources"],
     main = "gcd_resize.py",
+    tags = ["py"],
     deps = [
         ":helpers",
         ":rsz_aux",
@@ -656,7 +668,10 @@ py_test(
     name = "rsz_man_tcl_check",
     srcs = ["rsz_man_tcl_check.py"],
     data = ["//src/rsz:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

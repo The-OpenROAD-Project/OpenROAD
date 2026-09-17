@@ -217,4 +217,5 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-1008]     - For 80% usage of free space: 0.2016
 [INFO GPL-1009]     - For 50% usage of free space: 0.3226
 [INFO GPL-1014] Final placement area: 7451.24 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 13846.06
 No differences found.

@@ -18,7 +18,7 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |         25 |         5 |        14
+        0 |         42 |         8 |        25
         1 |         17 |         3 |         8
         2 |         17 |         3 |         8
         3 |         17 |         3 |         8
@@ -34,12 +34,12 @@ diamond recovery: recovered 0/3 stuck cells.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 3
 Placement Analysis
 ---------------------------------
-total displacement         18.4 u
-average displacement        1.0 u
-max displacement            3.1 u
+total displacement         19.2 u
+average displacement        1.1 u
+max displacement            3.3 u
 original HPWL             100.7 u
-legalized HPWL             95.3 u
-delta HPWL                   -5 %
+legalized HPWL             91.3 u
+delta HPWL                   -9 %
 
 No differences found.
 No differences found.

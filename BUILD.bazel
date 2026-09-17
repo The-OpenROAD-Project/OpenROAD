@@ -11,6 +11,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     features = [
@@ -53,6 +54,27 @@ config_setting(
     flag_values = {
         ":platform": "gui",
     },
+)
+
+# Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
+# A string flag rather than a bool leaves room for a "hip" value, mirroring
+# the backend branches in cmake/KokkosBackend.cmake.
+string_flag(
+    name = "gpu",
+    build_setting_default = "none",
+    values = [
+        "none",
+        "cuda",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "gpu_cuda",
+    flag_values = {
+        ":gpu": "cuda",
+    },
+    visibility = ["//visibility:public"],
 )
 
 OPENROAD_LIBRARY_DEPS = [
@@ -118,6 +140,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
+    "//src/wmk",
+    "//src/wmk:ui",
     ":ord",
 ]
 
@@ -402,6 +426,8 @@ cc_binary(
         "//src/stt",
         "//src/tap",
         "//src/utl",
+        "//src/wmk",
+        "//src/wmk:hmac_sha256",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -456,6 +482,7 @@ python_wrap_cc(
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
+        "//src/wmk:swig-py",
     ],
 )
 
@@ -509,6 +536,13 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+# The ORD messages, which live in src/ itself rather than in a module
+# subdirectory.
+messages_txt(
+    recursive = False,
+    visibility = ["//visibility:public"],
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
@@ -518,8 +552,25 @@ alias(
 sh_test(
     name = "dup_id_test",
     srcs = ["//etc:find_dup_ids.sh"],
-    data = ["//etc:find_messages.py"],
-    tags = ["local"],
+    data = [
+        # The handle the script uses to find the source tree it scans.
+        "MODULE.bazel",
+        "//etc:find_messages.py",
+        # The interpreter itself, so the script runs on the one the toolchain
+        # resolved rather than whatever python3 the host has on PATH.
+        "@rules_python//python:current_py_toolchain",
+    ],
+    env = {
+        "PYTHON3_ROOTPATH": "$(PYTHON3_ROOTPATH)",
+    },
+    # external: the sources being scanned are not declared inputs, so nothing
+    # invalidates a cached result when one of them gains a duplicate ID. Without
+    # this the check reports "(cached) PASSED" over a tree it never looked at.
+    tags = [
+        "external",
+        "local",
+    ],
+    toolchains = ["@rules_python//python:current_py_toolchain"],
 )
 
 # Make sure the Qt GUI variant keeps building. :openroad is exercised by
@@ -536,6 +587,13 @@ build_test(
 # bazelisk test //:lint_test               — run all lint checks
 # bazelisk run  //:fix_lint                — auto-fix then lint in OpenROAD
 # bazelisk run  //tools/OpenROAD:fix_lint  — auto-fix then lint in ORFS / downstream repos
+#
+# Every check below enumerates the git worktree (git_ls_files.sh) rather than
+# taking the files it inspects as declared inputs -- that is what lets one
+# target cover the whole repo, including files no Bazel target references. The
+# cost is that editing a file cannot invalidate a cached result, so each test is
+# tagged "external" to force it to re-run. Without that they report
+# "(cached) PASSED" over a worktree they never read.
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -554,7 +612,10 @@ sh_test(
         "//bazel:tclint",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -574,7 +635,10 @@ sh_test(
         "//bazel:tclfmt",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -613,7 +677,10 @@ sh_test(
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -633,7 +700,10 @@ sh_test(
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -672,7 +742,10 @@ sh_test(
         "//bazel:yamlfix",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 

@@ -58,6 +58,70 @@ describe('WebSocketManager', () => {
             assert.deepEqual(result, { status: 'ok', value: 123 });
         });
 
+        it('resolves an empty tile response as null', async () => {
+            // Payload type 3 is a tile the server drew nothing into.  It has
+            // to resolve, and it has to resolve to null rather than to an
+            // empty Blob: every tile consumer keys "draw nothing" off null,
+            // and a Blob would be decoded into a full-size bitmap.
+            const mgr = new WebSocketManager('ws://fake');
+            const promise = new Promise((resolve, reject) => {
+                mgr.pending.set(11, { resolve, reject });
+            });
+            mgr.handleMessage(buildFrame(11, 3, new Uint8Array(0)));
+            assert.equal(await promise, null);
+        });
+
+        it('warns once per unknown payload type, not once per message',
+           async () => {
+            // A version mismatch makes every tile in the viewport arrive with
+            // the same unknown type, so a warning each would bury the first.
+            const mgr = new WebSocketManager('ws://fake');
+            const warnings = [];
+            const saved = console.warn;
+            console.warn = (msg) => warnings.push(msg);
+            try {
+                for (let i = 0; i < 5; i++) {
+                    const id = 200 + i;
+                    const promise = new Promise((resolve, reject) => {
+                        mgr.pending.set(id, { resolve, reject });
+                    });
+                    mgr.handleMessage(buildFrame(id, 99, new Uint8Array(0)));
+                    await assert.rejects(promise);
+                }
+                // A second unknown type is its own report.
+                const promise = new Promise((resolve, reject) => {
+                    mgr.pending.set(300, { resolve, reject });
+                });
+                mgr.handleMessage(buildFrame(300, 98, new Uint8Array(0)));
+                await assert.rejects(promise);
+            } finally {
+                console.warn = saved;
+            }
+            assert.equal(warnings.length, 2);
+            assert.match(warnings[0], /99/);
+            assert.match(warnings[1], /98/);
+        });
+
+        it('rejects an unknown payload type rather than hanging', async () => {
+            // A server newer than this client must not leave a promise pending
+            // forever -- Leaflet keeps such a tile hidden and its load event
+            // never completes.  It must not resolve null either: only type 3
+            // means "blank tile", and the JSON callers on this same manager
+            // would read the null as data.
+            const mgr = new WebSocketManager('ws://fake');
+            const promise = new Promise((resolve, reject) => {
+                mgr.pending.set(12, { resolve, reject });
+            });
+            const saved = console.warn;
+            console.warn = () => {};
+            try {
+                mgr.handleMessage(buildFrame(12, 99, new Uint8Array(0)));
+                await assert.rejects(promise, /Unsupported websocket payload/);
+            } finally {
+                console.warn = saved;
+            }
+        });
+
         it('resolves PNG response as Blob', async () => {
             // Blob is not available in Node 18 test runner without setup,
             // but handleMessage uses `new Blob(...)` which exists in Node 18.
@@ -745,6 +809,22 @@ describe('WebSocketManager.fromCache', () => {
             for (const p of cached) {
                 assert.equal(p._originalIndex, undefined);
             }
+        });
+    });
+
+    describe('onReconnected hook', () => {
+        it('fires on reconnect but not on the first connection', async () => {
+            const mgr = new WebSocketManager('ws://fake');
+            let calls = 0;
+            mgr.onReconnected = () => { calls++; };
+            await new Promise(r => setTimeout(r, 0));  // first onopen
+            assert.equal(calls, 0, 'first connection is not a reconnect');
+
+            // Server restart: socket closes, manager reconnects.
+            mgr.reconnectDelay = 0;
+            mgr.socket.onclose();
+            await new Promise(r => setTimeout(r, 5));  // reconnect + onopen
+            assert.equal(calls, 1, 'reconnect fires the hook');
         });
     });
 });

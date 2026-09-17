@@ -31,6 +31,7 @@ py_test(
     srcs = [
         "test_block.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -44,6 +45,7 @@ py_test(
     srcs = [
         "test_bterm.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -57,6 +59,7 @@ py_test(
     srcs = [
         "test_destroy.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -70,6 +73,7 @@ py_test(
     srcs = [
         "test_group.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -83,6 +87,7 @@ py_test(
     srcs = [
         "test_inst.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -96,6 +101,7 @@ py_test(
     srcs = [
         "test_iterm.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -109,6 +115,7 @@ py_test(
     srcs = [
         "test_module.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -122,6 +129,7 @@ py_test(
     srcs = [
         "test_net.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -135,6 +143,7 @@ py_test(
     srcs = [
         "test_wire_codec.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -146,6 +155,8 @@ py_test(
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
+    "abstract_polygon",
+    "abstract_polygon_no_overlap",
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
@@ -187,6 +198,8 @@ COMPULSORY_TESTS = [
     "read_def_virtual",
     "read_def58",
     "read_lef",
+    "read_lef_dup_macro",
+    "read_lef_minwidth_wrongdirection",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",
@@ -199,7 +212,6 @@ COMPULSORY_TESTS = [
     "row_settings",
     "sky130hd_multi_patterned",
     "smash_vias",
-    "swap_master",
     "transform",
     "wire_encoder",
     "write_cdl",
@@ -225,6 +237,7 @@ PASSFAIL_TESTS = [
     "test_iterm",
     "test_module",
     "test_net",
+    "test_tcl_handles",
     "test_wire_codec",
 ]
 
@@ -299,7 +312,9 @@ filegroup(
         "data/lef58_antennagateplusdiff.lef",
         "data/lef58_celledgespacing_numeric.lef",
         "data/lef58_macro_edgetype_numeric.lef",
+        "data/lef58_minwidth_wrongdirection.lef",
         "data/lef58class_gscl45nm.lef",
+        "data/lef_dup_macro.lef",
         "data/mask.lef",
         "data/ndr.def",
         "data/parser_test.def",
@@ -342,6 +357,14 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# Hierarchical Verilog reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = ["replace_hier_mod1.v"],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "design_odb_data",
     srcs = ["data/design.odb"],
@@ -359,6 +382,13 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abstract_polygon": [
+                "abstract_polygon_bloat.lefok",
+            ],
+            "abstract_polygon_no_overlap": [
+                "abstract_polygon.def",
+                "abstract_polygon_no_overlap_bloat.lefok",
+            ],
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
             ],
@@ -403,7 +433,10 @@ py_test(
     name = "odb_man_tcl_check",
     srcs = ["odb_man_tcl_check.py"],
     data = ["//src/odb:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -426,6 +459,7 @@ test_suite(
         "//src/odb/test/cpp:TestAccessPoint",
         "//src/odb/test/cpp:TestCallBacks",
         "//src/odb/test/cpp:TestChips",
+        "//src/odb/test/cpp:TestDbStream",
         "//src/odb/test/cpp:TestDbWire",
         "//src/odb/test/cpp:TestGCellGrid",
         "//src/odb/test/cpp:TestGDSIn",
@@ -440,6 +474,7 @@ test_suite(
         "//src/odb/test/cpp:TestObjectType",
         "//src/odb/test/cpp:TestPolygonalFloorplan",
         "//src/odb/test/cpp:TestSwapMaster",
+        "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
         "//src/odb/test/cpp:TestWriteReadDbHier",
     ],

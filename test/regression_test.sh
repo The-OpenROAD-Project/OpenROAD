@@ -3,8 +3,10 @@
 set -e
 set -o pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${RESULTS_DIR:-results}"
 LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"
+METRICS_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.metrics"
 
 mkdir -p ${RESULTS_DIR}
 
@@ -23,7 +25,12 @@ python)
     fi
     ;;
 *)
-    CMD="$OPENROAD_EXE -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
+    # -metrics makes openroad write the json the limits are compared against.
+    METRICS_OPT=""
+    if [ "$TEST_CHECK_METRICS" == "True" ]; then
+        METRICS_OPT="-metrics $METRICS_FILE"
+    fi
+    CMD="$OPENROAD_EXE -no_splash -no_init -exit $METRICS_OPT $TEST_NAME.$TEST_EXT"
     ;;
 esac
 
@@ -70,4 +77,11 @@ if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then
         echo "Test did not report pass/OK on the last line of: $LOG_FILE"
         exit 1
     fi
+fi
+
+if [ "$TEST_CHECK_METRICS" == "True" ]; then
+    echo "Metrics:   $METRICS_FILE vs $TEST_NAME.metrics_limits"
+    METRICS_FILE="$METRICS_FILE" \
+    METRICS_LIMITS_FILE="$TEST_NAME.metrics_limits" \
+        "$OPENROAD_EXE" -no_splash -no_init -exit "$SCRIPT_DIR/check_metrics.tcl"
 fi

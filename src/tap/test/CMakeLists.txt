@@ -12,12 +12,15 @@ or_integration_tests(
     boundary_macros_separate2
     boundary_macros_tapcell
     cut_rows
+    cut_rows_asymmetric_halo
     cut_rows_halo
+    cut_rows_l_macro
     cut_rows_min_step_bottom_left
     cut_rows_min_step_bottom_right
     cut_rows_min_step_top_left
     cut_rows_min_step_top_right
     cut_rows_min_width
+    cut_rows_short_core
     cut_rows_with_endcaps
     disallow_one_site_gaps
     disallow_one_site_gaps2
@@ -26,6 +29,8 @@ or_integration_tests(
     endcap_autoselection_error3
     endcap_autoselection_error4
     endcap_corners
+    endcap_hole_strip
+    endcap_row_fragments
     endcap_separate_edges
     gcd_asap7
     gcd_fakeram
@@ -45,4 +50,3 @@ or_integration_tests(
     single_row_macros_offset
     symmetry
 )
-

@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     ChartsWidget,
-    computeHistogramLayout, hitTestColumn,
+    computeHistogramLayout, hitTestColumn, buildChartCsv,
     kLeftMargin, kRightMargin, kTopMargin, kBottomMargin,
 } from '../../src/charts-widget.js';
 
@@ -257,6 +257,13 @@ describe('hitTestColumn', () => {
 });
 
 describe('ChartsWidget debug charts', () => {
+    const gplChart = {
+        name: 'GPL',
+        x_label: 'iter',
+        y_labels: ['hpwl'],
+        points: [{ x: 5, ys: [42] }],
+    };
+
     it('ignores histogram hover and click handlers while a debug chart is active', async () => {
         const { app, widget } = createWidget();
         widget._histogramData = {
@@ -269,16 +276,14 @@ describe('ChartsWidget debug charts', () => {
         widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
         widget._hoveredBar = widget._bars[0];
         widget._tooltip.style.display = 'block';
+
+        widget.setDebugCharts([gplChart]);
+        // Engine charts are on-demand: they populate the dropdown but do not
+        // hijack the view.  Explicitly activate the generic chart.
+        widget._activeDebugChart = 0;
         widget._render = () => {
             throw new Error('histogram render should not run in debug mode');
         };
-
-        widget.setDebugCharts([{
-            name: 'GPL',
-            x_label: 'iter',
-            y_labels: ['hpwl'],
-            points: [{ x: 5, ys: [42] }],
-        }]);
 
         widget._handleHover({ clientX: 10, clientY: 10 });
         assert.equal(widget._hoveredBar, null);
@@ -292,12 +297,97 @@ describe('ChartsWidget debug charts', () => {
 
     it('renders a single-point debug chart without NaN axis coordinates', () => {
         const { widget } = createWidget();
-        widget.setDebugCharts([{
-            name: 'GPL',
-            x_label: 'iter',
-            y_labels: ['hpwl'],
-            points: [{ x: 5, ys: [42] }],
-        }]);
+        widget.setDebugCharts([gplChart]);
+        widget._activeDebugChart = 0;
+        widget._syncView();  // fillText stub asserts finite coordinates
+    });
+
+    it('lists engine charts in the type dropdown', () => {
+        const { widget } = createWidget();
+        widget.setDebugCharts([gplChart]);
+        const values = Array.from(widget._chartSelect.options, (o) => o.value);
+        assert.ok(values.includes('gen:0'), 'generic chart is selectable');
+        assert.ok(values.includes('setup'), 'built-in charts remain');
+    });
+
+    it('fetches engine charts on update (not only during debug pause)',
+        async () => {
+            const { app, widget } = createWidget({
+                slack_histogram: { bins: [], time_unit: 'ns' },
+                debug_charts: { charts: [gplChart] },
+            });
+            await widget.update();
+            assert.equal(
+                app.requests.filter((r) => r.type === 'debug_charts').length,
+                1);
+            assert.equal(widget._debugCharts.length, 1);
+        });
+});
+
+describe('ChartsWidget net length', () => {
+    const netLenResponse = {
+        bins: [
+            { lower: 0, upper: 5, count: 4 },
+            { lower: 5, upper: 10, count: 9 },
+        ],
+        total_nets: 13,
+        length_unit: 'µm',
+    };
+
+    it('requests net_length_histogram on the netlength type', async () => {
+        const { app, widget } = createWidget({
+            net_length_histogram: netLenResponse,
+        });
+        widget._selectTab('netlength');
+        await widget.update();
+        assert.ok(app.requests.some((r) => r.type === 'net_length_histogram'));
+        assert.match(widget._statusLabel.textContent, /13 nets/);
+    });
+
+    it('double-click selects the nets in the bin', async () => {
+        const { app, widget } = createWidget({
+            net_length_histogram: netLenResponse,
+        });
+        app.showDbu = true;
+        widget._selectTab('netlength');
+        await widget.update();
+        widget._bars = [{
+            x: 0, y: 0, width: 160, height: 120, count: 9, lower: 5, upper: 10,
+        }];
+        widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+        await widget._handleDblClick({ clientX: 50, clientY: 50 });
+        const sel = app.requests.find(
+            (r) => r.type === 'select_net_length_bin');
+        assert.ok(sel, 'select_net_length_bin is requested');
+        assert.equal(sel.lower, 5);
+        assert.equal(sel.upper, 10);
+        assert.equal(sel.use_dbu, true);
+    });
+});
+
+describe('buildChartCsv', () => {
+    it('serializes a histogram with stacked series', () => {
+        const csv = buildChartCsv('histogram', {
+            bins: [{ lower: 0, upper: 1, count: 3 },
+                   { lower: 1, upper: 2, count: 5 }],
+            series: [{ name: 'grpA', counts: [1, 2] },
+                     { name: 'grpB', counts: [2, 3] }],
+        });
+        const lines = csv.split('\n');
+        assert.equal(lines[0], 'lower,upper,count,grpA,grpB');
+        assert.equal(lines[1], '0,1,3,1,2');
+        assert.equal(lines[2], '1,2,5,2,3');
+    });
+
+    it('serializes a line chart', () => {
+        const csv = buildChartCsv('generic', {
+            name: 'GPL', x_label: 'iter', y_labels: ['hpwl', 'ovf'],
+            points: [{ x: 0, ys: [10, 1] }, { x: 1, ys: [8, 0.5] }],
+        });
+        const lines = csv.split('\n');
+        assert.equal(lines[0], 'x,hpwl,ovf');
+        assert.equal(lines[1], '0,10,1');
+        assert.equal(lines[2], '1,8,0.5');
     });
 });
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,6 +41,9 @@ class GRNet
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
   {
     routing_tree_ = std::move(tree);
+    // A newly installed tree is native (direction-legal) unless the
+    // caller marks it adopted afterwards.
+    adopted_ = false;
   }
   void setSlack(float slack) { slack_ = slack; }
   float getSlack() const { return slack_; }
@@ -149,11 +153,18 @@ class GRNet
   {
     return pin_index_to_iterm_;
   }
+  // Grid point of the driver pin's selected access point, if any.
+  std::optional<PointT> getDriverAccessPoint() const;
   bool isLocal() const;
+  // Set when the routing tree was adopted from detailed routes, which may
+  // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
+  bool isAdopted() const { return adopted_; }
+  void setAdopted(bool adopted) { adopted_ = adopted; }
 
  private:
   int index_;
   odb::dbNet* db_net_;
+  int driver_pin_index_ = -1;
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
@@ -164,6 +175,7 @@ class GRNet
   float slack_;
   bool is_critical_;
   bool is_res_aware_ = false;
+  bool adopted_ = false;
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;

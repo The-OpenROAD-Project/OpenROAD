@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -122,4 +123,16 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+exports_files(["README.md"])
+
+# Synthesis keeps most of its logger calls below src/: flow/ is covered by the
+# macro's recursive glob, elab/ and ir/ are their own packages.
+messages_txt(
+    extra_srcs = [
+        "//src/syn/src/elab:message_srcs",
+        "//src/syn/src/ir:message_srcs",
+    ],
+    visibility = ["//docs:__pkg__"],
 )
