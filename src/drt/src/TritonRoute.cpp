@@ -1093,6 +1093,7 @@ int TritonRoute::main()
     endFR();
   }
   logger_->info(DRT, 501, "Runtime: {:.2f}s", timer.elapsed());
+  ProfileRegistry::get().report("TRITONROUTE CUMULATIVE TOTAL");
   return 0;
 }
 

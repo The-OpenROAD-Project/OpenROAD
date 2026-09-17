@@ -239,8 +239,14 @@ void FlexPA::applyPatternsFile(const char* file_path)
 void FlexPA::prep()
 {
   ProfileTask profile("PA:prep");
-  genAllAccessPoints();
-  revertAccessPoints();
+  {
+    ProfileTask pGen("PA:genAllAccessPoints");
+    genAllAccessPoints();
+  }
+  {
+    ProfileTask pRev("PA:revertAccessPoints");
+    revertAccessPoints();
+  }
   if (isDistributed()) {
     std::vector<paUpdate> updates;
     paUpdate update;
@@ -283,7 +289,10 @@ void FlexPA::prep()
       logger_->error(utl::DRT, 331, "Error sending UPDATE_PA Job to cloud");
     }
   }
-  prepPattern();
+  {
+    ProfileTask pPat("PA:prepPattern");
+    prepPattern();
+  }
 }
 
 void FlexPA::prepPattern()
@@ -498,6 +507,7 @@ int FlexPA::main()
     logger_->info(DRT, 166, "Complete pin access.");
     t.print(logger_);
   }
+  ProfileRegistry::get().report("PIN ACCESS");
   return 0;
 }
 

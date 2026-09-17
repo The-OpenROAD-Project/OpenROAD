@@ -272,15 +272,20 @@ int FlexDRWorker::main(frDesign* design)
     }
   }
   if (!skipRouting_) {
+    ProfileTask pInit("DRW:init");
     init(design);
   }
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
+    ProfileTask pRoute("DRW:route_queue");
     route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   const int num_markers = getNumMarkers();
-  cleanup();
+  {
+    ProfileTask pClean("DRW:cleanup");
+    cleanup();
+  }
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
   using std::chrono::duration;
@@ -2199,6 +2204,7 @@ int FlexDR::main()
     t.print(logger_);
     std::cout << std::endl;
   }
+  ProfileRegistry::get().report("DETAILED ROUTING");
   return 0;
 }
 
