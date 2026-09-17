@@ -371,6 +371,8 @@ void TritonRoute::resetDb(const char* file_name)
 void TritonRoute::clearDesign()
 {
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
+  pa_params_cache_.valid = false;
+  pa_.reset();
 }
 
 static void deserializeUpdate(frDesign* design,
@@ -1097,10 +1099,91 @@ int TritonRoute::main()
   return 0;
 }
 
+bool TritonRoute::isPinAccessValid(
+    const std::vector<odb::dbInst*>& target_insts) const
+{
+  if (!target_insts.empty()) {
+    return false;
+  }
+  if (distributed_) {
+    return false;
+  }
+  if (pa_ == nullptr || design_ == nullptr
+      || design_->getTopBlock() == nullptr) {
+    return false;
+  }
+  if (db_ == nullptr || db_->getChip() == nullptr
+      || db_->getChip()->getBlock() == nullptr) {
+    return false;
+  }
+  auto* block = db_->getChip()->getBlock();
+  if (block->getAccessPoints().empty()) {
+    return false;
+  }
+  if (pa_->hasDirtyInsts()) {
+    return false;
+  }
+  if (!pa_params_cache_.valid
+      || pa_params_cache_.dbProcessNode != router_cfg_->DBPROCESSNODE
+      || pa_params_cache_.viaAccessLayer != router_cfg_->VIA_ACCESS_LAYER_NAME
+      || pa_params_cache_.minAccessPointsStdCell
+             != router_cfg_->MINNUMACCESSPOINT_STDCELLPIN
+      || pa_params_cache_.minAccessPointsMacroCell
+             != router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN
+      || pa_params_cache_.viaInPinBottomLayer
+             != router_cfg_->VIAINPIN_BOTTOMLAYER_NAME
+      || pa_params_cache_.viaInPinTopLayer
+             != router_cfg_->VIAINPIN_TOPLAYER_NAME) {
+    return false;
+  }
+  const auto db_insts = block->getInsts();
+  const auto& fr_insts = design_->getTopBlock()->getInsts();
+  if (db_insts.size() != fr_insts.size()) {
+    return false;
+  }
+  for (auto* db_inst : db_insts) {
+    auto* fr_inst = design_->getTopBlock()->getInst(db_inst->getName());
+    if (fr_inst == nullptr) {
+      return false;
+    }
+    if (fr_inst->getOrigin() != db_inst->getLocation()) {
+      return false;
+    }
+    if (fr_inst->getOrient() != db_inst->getOrient()) {
+      return false;
+    }
+    if (fr_inst->getMaster()->getName() != db_inst->getMaster()->getName()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void TritonRoute::updatePAParamsCache()
+{
+  pa_params_cache_.dbProcessNode = router_cfg_->DBPROCESSNODE;
+  pa_params_cache_.viaAccessLayer = router_cfg_->VIA_ACCESS_LAYER_NAME;
+  pa_params_cache_.minAccessPointsStdCell
+      = router_cfg_->MINNUMACCESSPOINT_STDCELLPIN;
+  pa_params_cache_.minAccessPointsMacroCell
+      = router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN;
+  pa_params_cache_.viaInPinBottomLayer = router_cfg_->VIAINPIN_BOTTOMLAYER_NAME;
+  pa_params_cache_.viaInPinTopLayer = router_cfg_->VIAINPIN_TOPLAYER_NAME;
+  pa_params_cache_.valid = true;
+}
+
 void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
 {
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
+  }
+
+  if (isPinAccessValid(target_insts)) {
+    logger_->info(utl::DRT,
+                  189,
+                  "Reusing existing valid pin access data; design state is "
+                  "unchanged.");
+    return;
   }
   if (distributed_) {
     asio::post(*dist_pool_, [this]() {
@@ -1130,6 +1213,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   pa_->main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get(), true);
+  updatePAParamsCache();
 }
 
 void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)

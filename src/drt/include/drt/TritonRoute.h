@@ -80,6 +80,17 @@ struct ParamStruct
   int num_threads = 1;
 };
 
+struct PAParamsCache
+{
+  std::string dbProcessNode;
+  std::string viaAccessLayer;
+  int minAccessPointsStdCell = -1;
+  int minAccessPointsMacroCell = -1;
+  std::string viaInPinBottomLayer;
+  std::string viaInPinTopLayer;
+  bool valid = false;
+};
+
 class TritonRoute : public PinAccessService
 {
  public:
@@ -105,6 +116,7 @@ class TritonRoute : public PinAccessService
   void endFR();
   void pinAccess(const std::vector<odb::dbInst*>& target_insts
                  = std::vector<odb::dbInst*>());
+  bool isPinAccessValid(const std::vector<odb::dbInst*>& target_insts = {}) const;
   void stepDR(int size,
               int offset,
               int mazeEndIter,
@@ -212,6 +224,9 @@ class TritonRoute : public PinAccessService
   std::optional<boost::asio::thread_pool> dist_pool_;
   std::unique_ptr<FlexPA> pa_{nullptr};
   std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
+  PAParamsCache pa_params_cache_;
+
+  void updatePAParamsCache();
 
   void initDesign();
   void initGraphics();

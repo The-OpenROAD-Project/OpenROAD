@@ -120,6 +120,9 @@ class FlexPA
   void removeFromInstsSet(frInst* inst);
   void addToInstsSet(frInst* inst);
 
+  bool hasDirtyInsts() const { return !dirty_insts_.empty(); }
+  size_t getNumDirtyInsts() const { return dirty_insts_.size(); }
+
   int main();
 
  private:

@@ -22,6 +22,10 @@ void DesignCallBack::inDbInstCreate(odb::dbInst* db_inst)
                     router_->getRouterConfiguration());
 
   parser.setInst(db_inst);
+  auto inst = design->getTopBlock()->getInst(db_inst->getName());
+  if (inst != nullptr) {
+    router_->addInstancePAData(inst);
+  }
 }
 
 void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
