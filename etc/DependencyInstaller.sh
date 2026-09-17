@@ -1571,6 +1571,10 @@ main() {
                 _install_rhel_packages "${rhel_version}"
             fi
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+                if [[ "${rhel_version}" == "8" ]]; then
+                    export CC=${CC:-/opt/rh/gcc-toolset-13/root/usr/bin/gcc}
+                    export CXX=${CXX:-/opt/rh/gcc-toolset-13/root/usr/bin/g++}
+                fi
                 _install_common_dev
                 local os_id
                 os_id=$(awk -F= '/^ID/{print $2}' /etc/os-release | sed 's/"//g')
