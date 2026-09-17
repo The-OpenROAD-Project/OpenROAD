@@ -805,7 +805,17 @@ FlexMazeIdx FlexGridGraph::getTailIdx(const FlexMazeIdx& currIdx,
 bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
                                  frDirEnum dir) const
 {
-  if (currGrid.getLastDir() == dir) {
+  frDirEnum revDir = frDirEnum::UNKNOWN;
+  switch (dir) {
+    case frDirEnum::E: revDir = frDirEnum::W; break;
+    case frDirEnum::W: revDir = frDirEnum::E; break;
+    case frDirEnum::N: revDir = frDirEnum::S; break;
+    case frDirEnum::S: revDir = frDirEnum::N; break;
+    case frDirEnum::U: revDir = frDirEnum::D; break;
+    case frDirEnum::D: revDir = frDirEnum::U; break;
+    default: break;
+  }
+  if (currGrid.getLastDir() == revDir) {
     return false;
   }
   frMIdx gridX = currGrid.x();
