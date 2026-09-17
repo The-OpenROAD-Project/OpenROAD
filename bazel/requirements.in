@@ -6,7 +6,6 @@ numpy==2.5.2
 scipy==1.18.0
 pandas==3.0.5
 
-black==25.1.0
 tclint==0.7.0
 yamlfix==1.19.1
 

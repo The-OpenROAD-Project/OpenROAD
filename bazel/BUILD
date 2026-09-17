@@ -43,7 +43,8 @@ selects.config_setting_group(
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt / yamlfix binaries from pip — version pinned in requirements.in
+# tclint / tclfmt / yamlfix / black binaries from pip — versions pinned in
+# requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
@@ -64,7 +65,7 @@ py_console_script_binary(
 
 py_console_script_binary(
     name = "black",
-    pkg = "@openroad-pip//black",
+    pkg = "@openroad-black-pip//black",
     visibility = ["//visibility:public"],
 )
 
@@ -73,6 +74,13 @@ compile_pip_requirements(
     src = "requirements.in",
     python_version = "3.13",
     requirements_txt = "requirements_lock_3_13.txt",
+)
+
+compile_pip_requirements(
+    name = "requirements_black",
+    src = "requirements_black.in",
+    python_version = "3.13",
+    requirements_txt = "requirements_black_lock_3_13.txt",
 )
 
 # Various tcl libraries that we want to embed into the binary.

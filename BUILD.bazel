@@ -781,13 +781,14 @@ sh_test(
     data = [
         "MODULE.bazel",
         "//bazel:black",
+        "//bazel:git_ls_files.sh",
         "@git",
     ],
-    # This test reads Git workspace state that is not a declared Bazel input.
     tags = [
         "external",
         "local",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Python auto-format only (black) --------------------------------------
@@ -802,8 +803,10 @@ sh_binary(
     ],
     data = [
         "//bazel:black",
+        "//bazel:git_ls_files.sh",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Umbrella targets ------------------------------------------------------
@@ -843,8 +846,6 @@ sh_binary(
         "$(rootpath //bazel:yamlfix)",
         "$(rootpath //bazel:py_tidy.sh)",
         "$(rootpath //bazel:black)",
-        "$(rootpath //bazel:py_fmt_test.sh)",
-        "$(rootpath //bazel:black)",
     ],
     data = [
         "MODULE.bazel",
@@ -855,7 +856,6 @@ sh_binary(
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
         "//bazel:git_ls_files.sh",
-        "//bazel:py_fmt_test.sh",
         "//bazel:py_tidy.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
