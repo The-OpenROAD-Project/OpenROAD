@@ -218,7 +218,8 @@ void PdnGen::trimShapes()
         // if pin layer, do not modify the shapes, but allow them to be
         // removed if they are not connected to anything
         const bool is_pin_layer
-            = pin_layers.find(shape->getLayer()) != pin_layers.end();
+            = shape->getGridComponent()->allowDbPins()
+              && pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
         const odb::Rect min_rect = shape->getMinimumRect();

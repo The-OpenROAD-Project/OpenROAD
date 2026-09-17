@@ -99,6 +99,11 @@ class GridComponent
   void setNets(const std::vector<odb::dbNet*>& nets);
 
   virtual bool isAutoInserted() const { return false; }
+  virtual bool checkForRepairChannels() const { return true; }
+  // components that the user did not ask for should not become block pins:
+  // the pins of a block are its power interface and are expected to follow the
+  // requested grid
+  virtual bool allowDbPins() const { return true; }
 
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,
