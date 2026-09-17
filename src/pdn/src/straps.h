@@ -357,6 +357,23 @@ class RepairChannelStraps : public Straps
   static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
 
+  // the layer a repair strap on layer is powered from, and whether that layer
+  // is above it
+  static odb::dbTechLayer* getFeedLayer(Grid* grid,
+                                        odb::dbTechLayer* layer,
+                                        odb::dbTechLayer* connect_to,
+                                        bool& is_above);
+  // grow the channel along the strap direction until every net reaches a shape
+  // of its own net that can power it
+  static void extendChannelToFeed(Grid* grid,
+                                  RepairChannelArea& channel,
+                                  const odb::Rect& grid_core);
+  // a repair is only worth keeping if the straps it built actually reach the
+  // grid, which cutShapes may have prevented by trimming them at an obstruction
+  static bool reachesFeed(Grid* grid,
+                          const RepairChannelArea& channel,
+                          const GridComponent* strap);
+
   int getNextWidth() const;
   int getMaxLength() const;
 };

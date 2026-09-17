@@ -2573,6 +2573,182 @@ odb::dbTechLayer* RepairChannelStraps::getHighestStrapLayer(Grid* grid)
   return highest_layer;
 }
 
+odb::dbTechLayer* RepairChannelStraps::getFeedLayer(
+    Grid* grid,
+    odb::dbTechLayer* layer,
+    odb::dbTechLayer* connect_to,
+    bool& is_above)
+{
+  odb::dbTechLayer* above = nullptr;
+  for (const auto& connect : grid->getConnect()) {
+    if (connect->getLowerLayer() != layer) {
+      continue;
+    }
+    auto* upper = connect->getUpperLayer();
+    if (above == nullptr || upper->getNumber() < above->getNumber()) {
+      above = upper;
+    }
+  }
+
+  if (above != nullptr) {
+    is_above = true;
+    return above;
+  }
+
+  // At the top of the stack nothing can feed the strap from above, and two
+  // parallel straps on the same layer never touch, so the only thing left to
+  // reach is a strap on the layer below that crosses it.
+  is_above = false;
+  return connect_to;
+}
+
+// A repair strap only carries power if it reaches the grid that feeds it. The
+// channel is derived from the shapes that need repairing, and for an isolated
+// pocket of rows that is smaller than the pitch of the feeding layer, so a
+// strap confined to it would connect the pocket to itself and to nothing else.
+// Grow the channel along the strap direction until every net reaches the
+// nearest shape of that same net that can power it, on both sides, so the
+// repair is fed symmetrically the way an ordinary strap of that length would
+// be.
+void RepairChannelStraps::extendChannelToFeed(Grid* grid,
+                                              RepairChannelArea& channel,
+                                              const odb::Rect& grid_core)
+{
+  bool feed_is_above = false;
+  odb::dbTechLayer* feed_layer = getFeedLayer(
+      grid, channel.target->getLayer(), channel.connect_to, feed_is_above);
+  if (feed_layer == nullptr) {
+    return;
+  }
+
+  const auto& all_shapes = grid->getShapes();
+  const auto feed_shapes = all_shapes.find(feed_layer);
+  if (feed_shapes == all_shapes.end()) {
+    return;
+  }
+
+  const bool is_horizontal = channel.target->isHorizontal();
+  // the strap runs along the length axis and is crossed by the shapes feeding
+  // it
+  const auto len_lo = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.xMin() : r.yMin();
+  };
+  const auto len_hi = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.xMax() : r.yMax();
+  };
+  const auto cross_lo = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.yMin() : r.xMin();
+  };
+  const auto cross_hi = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.yMax() : r.xMax();
+  };
+
+  int extend_lo = len_lo(channel.area);
+  int extend_hi = len_hi(channel.area);
+
+  for (auto* net : channel.nets) {
+    bool net_is_fed = false;
+    int nearest_lo = std::numeric_limits<int>::min();
+    int nearest_hi = std::numeric_limits<int>::max();
+
+    for (const auto& shape : feed_shapes->second) {
+      if (shape->getNet() != net) {
+        // a strap can only be fed on its own net
+        continue;
+      }
+      if (!feed_is_above && shape->getNumberOfConnectionsAbove() == 0) {
+        // A strap below can only pass on power it already has, and one with
+        // nothing above it has none. This also excludes the shapes of the
+        // channel being repaired, which are on this layer and are exactly the
+        // ones that need feeding.
+        continue;
+      }
+      const odb::Rect& rect = shape->getRect();
+      if (cross_hi(rect) < cross_lo(channel.area)
+          || cross_lo(rect) > cross_hi(channel.area)) {
+        // does not cross the strap, so the strap can never reach it
+        continue;
+      }
+      if (len_hi(rect) >= len_lo(channel.area)
+          && len_lo(rect) <= len_hi(channel.area)) {
+        net_is_fed = true;
+        break;
+      }
+      if (len_hi(rect) < len_lo(channel.area)) {
+        nearest_lo = std::max(nearest_lo, len_lo(rect));
+      } else {
+        nearest_hi = std::min(nearest_hi, len_hi(rect));
+      }
+    }
+
+    if (net_is_fed) {
+      // leave channels that already reach the grid alone
+      continue;
+    }
+
+    // reach the far edge of the feeding shape so the whole of it is crossed
+    if (nearest_lo != std::numeric_limits<int>::min()
+        && nearest_lo >= len_lo(grid_core)) {
+      extend_lo = std::min(extend_lo, nearest_lo);
+    }
+    if (nearest_hi != std::numeric_limits<int>::max()
+        && nearest_hi <= len_hi(grid_core)) {
+      extend_hi = std::max(extend_hi, nearest_hi);
+    }
+  }
+
+  if (is_horizontal) {
+    channel.area.set_xlo(extend_lo);
+    channel.area.set_xhi(extend_hi);
+  } else {
+    channel.area.set_ylo(extend_lo);
+    channel.area.set_yhi(extend_hi);
+  }
+}
+
+bool RepairChannelStraps::reachesFeed(Grid* grid,
+                                      const RepairChannelArea& channel,
+                                      const GridComponent* strap)
+{
+  bool feed_is_above = false;
+  odb::dbTechLayer* feed_layer = getFeedLayer(
+      grid, channel.target->getLayer(), channel.connect_to, feed_is_above);
+  if (feed_layer == nullptr) {
+    return true;
+  }
+
+  if (feed_is_above) {
+    // a strap that falls short of the layer above can still be picked up by a
+    // repair built on that layer, which findRepairChannels() looks for on the
+    // next pass. Only the top of the stack has no further chance.
+    return true;
+  }
+
+  const auto& all_shapes = grid->getShapes();
+  const auto feed_shapes = all_shapes.find(feed_layer);
+  if (feed_shapes == all_shapes.end()) {
+    return true;
+  }
+
+  for (const auto& [layer, layer_shapes] : strap->getShapes()) {
+    for (const auto& shape : layer_shapes) {
+      for (const auto& feed : feed_shapes->second) {
+        if (feed->getNet() != shape->getNet()) {
+          continue;
+        }
+        if (!feed_is_above && feed->getNumberOfConnectionsAbove() == 0) {
+          continue;
+        }
+        if (feed->getRect().overlaps(shape->getRect())) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 std::vector<RepairChannelStraps::RepairChannelArea>
 RepairChannelStraps::findRepairChannels(Grid* grid,
                                         const Shape::ShapeTree& shapes,
@@ -2609,11 +2785,18 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
-    // bloat by the strap pitch across the strap, so neighboring straps merge
-    // and the gaps left between them are the channels
+    // Bloat by the strap pitch across the strap, so neighboring straps merge
+    // and the gaps left between them are the channels. A strap with no pitch
+    // does not repeat, so the only distance that means anything is the one
+    // between the straps of its own group; without it each net of the group
+    // lands in a channel of its own and the repairs are then placed with no
+    // knowledge of each other instead of as a spaced pair.
+    int bloat = grid_strap->getPitch();
+    if (bloat == 0) {
+      bloat = grid_strap->getWidth() + grid_strap->getSpacing();
+    }
     const odb::Rect bloated_shape = shape->getRect().bloat(
-        grid_strap->getPitch(),
-        grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
+        bloat, grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
 
     shapes_used.push_back(shape.get());
     shape_set.insert(odb::geom::toPolygon90(bloated_shape));
@@ -2635,6 +2818,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     int followpin_count = 0;
     int strap_count = 0;
+    int repair_count = 0;
     // find all the nets in a given repair area
     for (auto* shape : shapes_used) {
       const auto& shape_rect = shape->getRect();
@@ -2644,6 +2828,9 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
         channel.nets.insert(shape->getNet());
         if (shape->getType() == odb::dbWireShapeType::FOLLOWPIN) {
           followpin_count++;
+        } else if (shape->getGridComponent()->type()
+                   == GridComponent::kRepairChannel) {
+          repair_count++;
         } else {
           strap_count++;
         }
@@ -2652,9 +2839,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     // all followpins must be repaired
     const bool channel_has_followpin = followpin_count >= 1;
+    // an earlier repair that never reached the layer above leaves everything
+    // it connects floating, so it is a channel even on its own
+    const bool channel_has_repair = repair_count >= 1;
     // single straps can be skipped
     const bool channel_has_more_than_one_strap = strap_count > 1;
-    if (channel_has_followpin || channel_has_more_than_one_strap) {
+    if (channel_has_followpin || channel_has_repair
+        || channel_has_more_than_one_strap) {
       if (!channel.area.intersects(grid_core)) {
         // channel is not in the core
         continue;
@@ -2662,6 +2853,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
       // ensure areas are inside the core
       channel.area = channel.area.intersect(grid_core);
+
+      // a strap confined to the channel may not reach the grid above it
+      extendChannelToFeed(grid, channel, grid_core);
+
       channel.available_area = channel.area;
 
       // trim area of channel if it is partially covered by an exisiting shape
@@ -2893,6 +3088,21 @@ void RepairChannelStraps::repairGridChannels(
 
     if (!built_straps) {
       // nothing was built so move on
+      continue;
+    }
+
+    if (!reachesFeed(grid, channel, strap.get())) {
+      // cutShapes trimmed the straps back at an obstruction before they got to
+      // the grid, so this repairs nothing and must not be counted as one, or
+      // the channel is silently left floating
+      debugPrint(grid->getLogger(),
+                 utl::PDN,
+                 "Channel",
+                 1,
+                 "Repair at {} on {} does not reach the grid.",
+                 Shape::getRectText(channel.area,
+                                    grid->getBlock()->getDbUnitsPerMicron()),
+                 channel.target->getLayer()->getName());
       continue;
     }
 
