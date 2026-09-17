@@ -11,8 +11,8 @@
 #include "bufferTreeDescriptor.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
+#include "gui/core.h"
 #include "gui/descriptor_registry.h"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -61,10 +61,16 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
       db, sta, empty_net_set, empty_net_set, empty_net_set));
   registerDescriptor<odb::dbWire*>(new DbWireDescriptor(db));
   registerDescriptor<odb::dbSWire*>(new DbSWireDescriptor(db));
+  // Read the shared Gui flag rather than a hard-coded false, so a front-end
+  // with no MainWindow -- the web viewer -- can still offer Qt's Options >
+  // "Show polygon decomposition".  MainWindow::init() re-registers these two
+  // against its own QAction when a window opens.
+  const auto poly_decomp_view
+      = []() { return Gui::get()->usePolyDecompView(); };
   registerDescriptor<odb::dbITerm*>(
-      new DbITermDescriptor(db, []() { return false; }));
+      new DbITermDescriptor(db, poly_decomp_view));
   registerDescriptor<odb::dbMTerm*>(
-      new DbMTermDescriptor(db, []() { return false; }));
+      new DbMTermDescriptor(db, poly_decomp_view));
   registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db));
   registerDescriptor<odb::dbBPin*>(new DbBPinDescriptor(db));
   registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db));
@@ -121,10 +127,16 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
   registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
+  // The empty sets are the same compromise made for DbNetDescriptor above;
+  // MainWindow::init() re-registers this with the real widget-owned sets when
+  // a window opens.  Registered here so that DbNetDescriptor's "Buffer tree"
+  // property -- gated on BufferTree::isAggregate() -- has something to build a
+  // Selected with in a build with no Qt, rather than warning GUI-33.
+  registerDescriptor<BufferTree>(new BufferTreeDescriptor(
+      db, sta, empty_net_set, empty_net_set, empty_net_set));
+
   // Note: RulerDescriptor and LabelDescriptor are GUI-only and are registered
-  // in MainWindow::init().  BufferTreeDescriptor needs Qt as well, so it is
-  // registered in Gui::init() (which runs in any Qt binary, window or not)
-  // and re-registered by MainWindow::init(); see the comment there.
+  // in MainWindow::init().
 }
 
 }  // namespace gui

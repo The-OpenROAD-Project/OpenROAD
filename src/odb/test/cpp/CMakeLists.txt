@@ -29,6 +29,7 @@ add_executable(Test3DBloxChecker Test3DBloxChecker.cpp Test3DBloxCheckerLogicalC
 add_executable(Test3DBloxVerilogWriter Test3DBloxVerilogWriter.cpp)
 add_executable(TestSwapMaster TestSwapMaster.cpp)
 add_executable(TestSwapMasterUnusedPort TestSwapMasterUnusedPort.cpp)
+add_executable(TestSwapMasterLeaf TestSwapMasterLeaf.cpp)
 add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 add_executable(TestObjectType TestObjectType.cpp)
 add_executable(TestDbStream TestDbStream.cpp)
@@ -160,6 +161,11 @@ target_link_libraries(TestSwapMasterUnusedPort
         utl_lib
         ${GTEST_LIBS}
 )
+target_link_libraries(TestSwapMasterLeaf
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
 target_link_libraries(TestWriteReadDbHier
         db
         tst_integrated_fixture
@@ -205,6 +211,7 @@ add_dependencies(build_and_test
         Test3DBloxVerilogWriter
         TestSwapMaster
         TestSwapMasterUnusedPort
+        TestSwapMasterLeaf
         TestWriteReadDbHier
         OdbGTests
         TestObjectType
