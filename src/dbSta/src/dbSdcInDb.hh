@@ -35,6 +35,15 @@ class dbSta;
 // Two encodings live under block properties, and a block carries at most
 // one of them:
 //
+// sta holds one Sdc per mode, so both payloads carry every mode, each
+// tagged with its name; a record with a single mode is restored into
+// whatever mode the reader is in, because a lone mode's name says
+// nothing and a flow may have renamed it. What a mode is made of beyond
+// its constraints -- its scenes, and the liberty and parasitics they
+// bind -- is not in the .odb and stays the flow's to define. Constraints
+// scoped to an analysis corner are not encoded: write_db -sdc refuses to
+// store anything at all rather than store a record that leaves them out.
+//
 //   sta.sdc.native  A line-oriented record of the Sdc where every pin,
 //                   instance and net is an odb object id. Restoring it is
 //                   a linear walk that calls the Sta constraint makers

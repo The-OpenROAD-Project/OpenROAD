@@ -35,20 +35,27 @@
 #include "sta/ExceptionPath.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/PortDelay.hh"
 #include "sta/RiseFallMinMax.hh"
+#include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
 #include "sta/Variables.hh"
 #include "utl/Logger.h"
+
+// Fork-only OpenSTA extension; stock OpenSTA has no analysis corners.
+#if __has_include("sta/AnalysisCorner.hh")
+#include "sta/AnalysisCorner.hh"
+#endif
 
 namespace sta {
 
 namespace {
 
 constexpr std::string_view kNativeMagic = "sdc-in-odb";
-constexpr std::string_view kNativeVersion = "1";
+constexpr std::string_view kNativeVersion = "2";
 
 // The objects a record refers to, by kind letter and odb id, in canonical
 // order: what the digest is computed over.
@@ -657,16 +664,19 @@ class TempSdcFile
 class NativeEncoder
 {
  public:
-  NativeEncoder(dbSta* sta, odb::dbBlock* block, const Sdc* sdc)
-      : sta_(sta), network_(sta->getDbNetwork()), block_(block), sdc_(sdc)
+  NativeEncoder(dbSta* sta, odb::dbBlock* block)
+      : network_(sta->getDbNetwork()), block_(block)
   {
   }
 
-  // Returns the encoding, or an empty string with `offender` set if the
-  // Sdc holds something the native form does not represent. `empty` is
-  // set when the Sdc holds no constraints at all.
-  std::string encode(std::string& offender, bool& empty)
+  // Append one mode's constraints, tagged with the mode name. Every mode
+  // is tagged, a lone one included: a record that does not say which mode
+  // it came from cannot be put back into the right one.
+  void encodeMode(Mode* mode)
   {
+    sdc_ = mode->sdc();
+    out_ << "M " << encodeString(mode->name()) << '\n';
+    const std::ostringstream::pos_type before = out_.tellp();
     encodeClocks();
     encodeClockLatencies();
     encodeClockInsertions();
@@ -677,12 +687,21 @@ class NativeEncoder
     encodeLogicValues(sdc_->logicValues(), 'V');
     encodeClockGroups();
     encodeLimits();
+    if (out_.tellp() != before) {
+      constrained_ = true;
+    }
+  }
+
+  // Returns the encoding, or an empty string with `offender` set if a
+  // mode holds something the native form does not represent. `empty` is
+  // set when no mode holds any constraint at all.
+  std::string finish(std::string& offender, bool& empty)
+  {
     if (!ok_) {
       offender = offender_;
       return {};
     }
-    const std::string records = out_.str();
-    empty = records.empty();
+    empty = !constrained_;
     // Header: magic, version, digest of the referenced objects' names;
     // then the references themselves so the restore can recompute the
     // digest before it applies a single record.
@@ -694,7 +713,7 @@ class NativeEncoder
       head << ' ' << ref.first << ref.second;
     }
     head << '\n';
-    return head.str() + records;
+    return head.str() + out_.str();
   }
 
  private:
@@ -1054,12 +1073,12 @@ class NativeEncoder
          << encodeFloat(value) << '\n';
   }
 
-  dbSta* sta_;
   dbNetwork* network_;
   odb::dbBlock* block_;
-  const Sdc* sdc_;
+  const Sdc* sdc_{nullptr};
   std::ostringstream out_;
   ObjectRefs refs_;
+  bool constrained_ = false;
   bool ok_ = true;
   std::string offender_;
 };
@@ -1170,6 +1189,15 @@ class NativeDecoder
       throw ParseError("truncated record");
     }
     checkDigest(Tokens(line), digest);
+    // A single-mode record goes into whatever mode the reader is in: a
+    // lone mode's name carries no information, and a flow that renamed
+    // its mode must still get its constraints back. With more than one
+    // there is no such freedom, so each section goes into the mode it
+    // names, created if the reader does not have it, and the mode the
+    // reader was in is restored afterwards.
+    const bool by_name = countModes(text) > 1;
+    const std::string cmd_mode = sta_->cmdMode()->name();
+    ModeRestorer restore_cmd_mode(by_name ? sta_ : nullptr, cmd_mode);
     while (std::getline(in, line)) {
       if (line.empty()) {
         continue;
@@ -1236,6 +1264,15 @@ class NativeDecoder
               pin, static_cast<LogicValue>(tokens.nextInt()), mode_);
           break;
         }
+        case 'M': {
+          const std::string name = tokens.nextString();
+          if (by_name) {
+            sta_->setCmdMode(name);
+            sdc_ = sta_->cmdSdc();
+            mode_ = sta_->cmdMode();
+          }
+          break;
+        }
         case 'K':
           decodeClockGroups(tokens);
           break;
@@ -1252,6 +1289,43 @@ class NativeDecoder
   }
 
  private:
+  // Puts the command mode back however the decode ends, so a record that
+  // throws part way through does not leave the reader in one of the
+  // record's modes. Only if that mode is still there: sta drops a lone
+  // default mode when the first named one is created, and setCmdMode
+  // would make it again.
+  class ModeRestorer
+  {
+   public:
+    ModeRestorer(dbSta* sta, std::string mode)
+        : sta_(sta), mode_(std::move(mode))
+    {
+    }
+    ~ModeRestorer()
+    {
+      if (sta_ != nullptr && sta_->findMode(mode_) != nullptr) {
+        sta_->setCmdMode(mode_);
+      }
+    }
+
+   private:
+    dbSta* sta_;
+    std::string mode_;
+  };
+
+  static size_t countModes(const std::string& text)
+  {
+    size_t count = 0;
+    std::istringstream in(text);
+    std::string line;
+    while (std::getline(in, line)) {
+      if (line.rfind("M ", 0) == 0) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   // Recompute the digest over the objects the record names, as they are
   // in this block, before anything is applied.
   void checkDigest(Tokens tokens, const std::string& expected)
@@ -1631,6 +1705,47 @@ void setProperty(odb::dbBlock* block,
   }
 }
 
+// A mode name the text payload can fence with set_mode {...}.
+bool tclSafeModeName(const std::string& name)
+{
+  return !name.empty()
+         && name.find_first_of("{}\\[]$\" \t\n") == std::string::npos;
+}
+
+#if __has_include("sta/AnalysisCorner.hh")
+// The fork's analysis corners: constraints written under a corner scope
+// go to a (mode, corner) overlay Sdc, and corner-scoped clock
+// uncertainties go on the corner itself. Neither is part of the record.
+bool hasCornerScopedConstraints(dbSta* sta,
+                                const ModeSeq& modes,
+                                std::string& corner)
+{
+  for (Mode* mode : modes) {
+    if (!mode->cornerSdcs().empty()) {
+      corner = mode->cornerSdcs().begin()->first->name();
+      return true;
+    }
+  }
+  for (AnalysisCorner* analysis_corner : sta->findAnalysisCorners("*")) {
+    for (Mode* mode : modes) {
+      for (const Clock* clk : mode->sdc()->clocks()) {
+        if (analysis_corner->clockUncertainty(clk) != nullptr) {
+          corner = analysis_corner->name();
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+#else
+// Stock OpenSTA has no analysis corners, so there is nothing to refuse.
+bool hasCornerScopedConstraints(dbSta*, const ModeSeq&, std::string&)
+{
+  return false;
+}
+#endif
+
 }  // namespace
 
 ////////////////////////////////////////////////////////////////
@@ -1645,26 +1760,52 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
   if (!network->isLinked() || network->defaultLibertyLibrary() == nullptr) {
     return;
   }
-  Sdc* sdc = sta->cmdSdc();
-  if (sdc == nullptr) {
+  // Every mode, not just the command mode: sta holds one Sdc per mode,
+  // and a record that carried only the mode that happened to be current
+  // would lose the others without saying so.
+  ModeSeq modes = sta->findModes("*");
+  if (modes.empty()) {
     return;
   }
 
-  // Decide from the Sdc itself whether the native form covers it. Only
-  // when it does not is write_sdc run, for the text payload.
+  // Constraints scoped to an analysis corner live in overlay Sdcs and on
+  // the corner itself, neither of which this record encodes. Refuse the
+  // whole record rather than store one that silently drops them.
+  std::string corner;
+  if (hasCornerScopedConstraints(sta, modes, corner)) {
+    logger->warn(utl::STA,
+                 3013,
+                 "constraints scoped to analysis corner {} cannot be stored "
+                 "in the database; no constraints were stored.",
+                 corner);
+    clear(block);
+    return;
+  }
+
+  // Decide from the Sdcs themselves whether the native form covers them.
+  // Only when it does not is write_sdc run, for the text payload.
   std::string native;
   std::string offender;
-  Coverage coverage(sta, sdc);
-  if (coverage.check(offender)) {
-    NativeEncoder encoder(sta, block, sdc);
+  bool covered = true;
+  for (Mode* mode : modes) {
+    Coverage coverage(sta, mode->sdc());
+    if (!coverage.check(offender)) {
+      covered = false;
+      break;
+    }
+  }
+  if (covered) {
+    NativeEncoder encoder(sta, block);
+    for (Mode* mode : modes) {
+      encoder.encodeMode(mode);
+    }
     bool empty = false;
-    native = encoder.encode(offender, empty);
+    native = encoder.finish(offender, empty);
     if (empty) {
       // A linked design with no constraints at all. Store nothing, so
       // read_db -sdc reports that the .odb carries none and a flow falls
       // back to its .sdc file.
-      setProperty(block, kNativeProperty, {});
-      setProperty(block, kTextProperty, {});
+      clear(block);
       return;
     }
   }
@@ -1677,16 +1818,46 @@ void SdcInDb::save(dbSta* sta, odb::dbBlock* block)
                1,
                "storing constraints as text: native form does not cover: {}",
                offender);
+    // write_sdc writes one mode. With more than one, each mode's text is
+    // fenced by the set_mode that puts it back where it came from, and
+    // the mode the writer was in is restored at the end.
+    const bool by_name = modes.size() > 1;
+    const std::string cmd_mode = sta->cmdMode()->name();
+    if (by_name) {
+      std::string unwritable = tclSafeModeName(cmd_mode) ? "" : cmd_mode;
+      for (Mode* mode : modes) {
+        if (!tclSafeModeName(mode->name())) {
+          unwritable = mode->name();
+        }
+      }
+      if (!unwritable.empty()) {
+        logger->warn(utl::STA,
+                     3014,
+                     "mode {} cannot be named in the timing constraints "
+                     "stored in the database; no constraints were stored.",
+                     unwritable);
+        clear(block);
+        return;
+      }
+    }
     try {
-      TempSdcFile temp;
-      sta->writeSdc(sdc,
-                    temp.path().string(),
-                    /* leaf */ false,
-                    /* native */ true,
-                    /* digits */ 4,
-                    /* gzip */ false,
-                    /* no_timestamp */ true);
-      text = temp.read();
+      for (Mode* mode : modes) {
+        if (by_name) {
+          text += "set_mode {" + mode->name() + "}\n";
+        }
+        TempSdcFile temp;
+        sta->writeSdc(mode->sdc(),
+                      temp.path().string(),
+                      /* leaf */ false,
+                      /* native */ true,
+                      /* digits */ 4,
+                      /* gzip */ false,
+                      /* no_timestamp */ true);
+        text += temp.read();
+      }
+      if (by_name) {
+        text += "set_mode {" + cmd_mode + "}\n";
+      }
     } catch (const std::exception& e) {
       // Capturing constraints must never break write_db. A flow that
       // cannot write its constraints still gets the same .odb it got

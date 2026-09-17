@@ -49,6 +49,23 @@ proc run_child { script } {
   return [exec $::argv0 -no_init -no_splash -exit $script 2>@1]
 }
 
+# A key=value line the child reported (see sdc_in_db_modes.tcl).
+proc child_value { output key } {
+  if { [regexp -line "^$key=(.*)$" $output -> value] } {
+    return $value
+  }
+  return "unreported"
+}
+
+# The modes the native record carries, in sorted order.
+proc record_modes { } {
+  set modes {}
+  foreach line [regexp -all -inline -line {^M .*$} [native_record]] {
+    lappend modes [lindex $line 1]
+  }
+  return [lsort $modes]
+}
+
 # The kind the child saw after read_db -sdc (see sdc_in_db_restore.tcl).
 proc child_kind { output } {
   if { [regexp {stored form: (\w+)} $output -> kind] } {

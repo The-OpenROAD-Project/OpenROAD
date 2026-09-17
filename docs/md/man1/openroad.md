@@ -109,6 +109,12 @@ OpenROAD binary.
     design is written without constraints (any record the database carried
     is dropped, since it could be stale); an odb-only session with no
     liberty carries an existing record through unchanged.
+    Every mode's constraints are stored, each tagged with its mode name,
+    and read_db puts them back mode by mode; the scenes that bind a mode
+    to liberty and parasitics are not in the database and remain the
+    flow's to define. Constraints scoped to an analysis corner are not
+    stored: rather than leave them out silently, write_db -sdc stores
+    nothing and says which corner stopped it.
 
 - write_abstract_lef filename
 
