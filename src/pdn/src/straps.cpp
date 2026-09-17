@@ -2706,49 +2706,6 @@ void RepairChannelStraps::extendChannelToFeed(Grid* grid,
   }
 }
 
-bool RepairChannelStraps::reachesFeed(Grid* grid,
-                                      const RepairChannelArea& channel,
-                                      const GridComponent* strap)
-{
-  bool feed_is_above = false;
-  odb::dbTechLayer* feed_layer = getFeedLayer(
-      grid, channel.target->getLayer(), channel.connect_to, feed_is_above);
-  if (feed_layer == nullptr) {
-    return true;
-  }
-
-  if (feed_is_above) {
-    // a strap that falls short of the layer above can still be picked up by a
-    // repair built on that layer, which findRepairChannels() looks for on the
-    // next pass. Only the top of the stack has no further chance.
-    return true;
-  }
-
-  const auto& all_shapes = grid->getShapes();
-  const auto feed_shapes = all_shapes.find(feed_layer);
-  if (feed_shapes == all_shapes.end()) {
-    return true;
-  }
-
-  for (const auto& [layer, layer_shapes] : strap->getShapes()) {
-    for (const auto& shape : layer_shapes) {
-      for (const auto& feed : feed_shapes->second) {
-        if (feed->getNet() != shape->getNet()) {
-          continue;
-        }
-        if (!feed_is_above && feed->getNumberOfConnectionsAbove() == 0) {
-          continue;
-        }
-        if (feed->getRect().overlaps(shape->getRect())) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
 std::vector<RepairChannelStraps::RepairChannelArea>
 RepairChannelStraps::findRepairChannels(Grid* grid,
                                         const Shape::ShapeTree& shapes,
@@ -3088,21 +3045,6 @@ void RepairChannelStraps::repairGridChannels(
 
     if (!built_straps) {
       // nothing was built so move on
-      continue;
-    }
-
-    if (!reachesFeed(grid, channel, strap.get())) {
-      // cutShapes trimmed the straps back at an obstruction before they got to
-      // the grid, so this repairs nothing and must not be counted as one, or
-      // the channel is silently left floating
-      debugPrint(grid->getLogger(),
-                 utl::PDN,
-                 "Channel",
-                 1,
-                 "Repair at {} on {} does not reach the grid.",
-                 Shape::getRectText(channel.area,
-                                    grid->getBlock()->getDbUnitsPerMicron()),
-                 channel.target->getLayer()->getName());
       continue;
     }
 

@@ -368,11 +368,6 @@ class RepairChannelStraps : public Straps
   static void extendChannelToFeed(Grid* grid,
                                   RepairChannelArea& channel,
                                   const odb::Rect& grid_core);
-  // a repair is only worth keeping if the straps it built actually reach the
-  // grid, which cutShapes may have prevented by trimming them at an obstruction
-  static bool reachesFeed(Grid* grid,
-                          const RepairChannelArea& channel,
-                          const GridComponent* strap);
 
   int getNextWidth() const;
   int getMaxLength() const;

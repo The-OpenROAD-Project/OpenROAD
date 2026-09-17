@@ -11,6 +11,7 @@ or_integration_tests(
     asap7_offcenter_via
     asap7_repair_channel_blocked_extend
     asap7_repair_channel_one_net_extend
+    asap7_repair_channel_macro_gap
     asap7_repair_channel_extend
     asap7_taper
     asap7_vias
