@@ -1,0 +1,31 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+worst slack max -0.03
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.050 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+    final |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.03
+tns max -0.031
+[INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.262 | r2/D
+    final |       0 |       3 |            0 |   +10.8% |  -0.076 |  -0.193 | r2/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 3 hold buffers.
+worst slack min -0.08
+tns min -0.189
