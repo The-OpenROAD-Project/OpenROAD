@@ -17,9 +17,9 @@ via_45.set_resistance(tech)
 
 rcx_aux.define_process_corner(design, ext_model_index=0, filename="X")
 
-rcx_aux.extract_parasitics(
-    design, ext_model_file="45_patterns.rules", max_res=0, coupling_threshold=0.1
-)
+rcx_aux.set_extraction_rules_file(design, filename="45_patterns.rules")
+
+rcx_aux.extract_parasitics(design, max_res=0, coupling_threshold=0.1)
 
 spef_file = helpers.make_result_file("45_gcd.spef")
 rcx_aux.write_spef(design, filename=spef_file, nets=test_nets)

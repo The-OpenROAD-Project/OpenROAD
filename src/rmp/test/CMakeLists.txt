@@ -22,6 +22,10 @@ or_integration_tests(
     gcd_annealing2
     aes_genetic
     gcd_genetic
+  PASSFAIL_TESTS
+    # ABC resynthesis output is nondeterministic/threaded; this test self-checks
+    # invariants and prints "pass" instead of diffing a flaky golden log.
+    gcd_restructure_delay
 )
 
 

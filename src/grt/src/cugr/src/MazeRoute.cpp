@@ -25,8 +25,8 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
   // 0. Create pseudo pins
   const auto selected_access_points = grid_graph_->selectAccessPoints(net_);
   pseudo_pins_.reserve(selected_access_points.size());
-  for (const auto& selected_point : selected_access_points) {
-    pseudo_pins_.push_back(selected_point);
+  for (const auto& [point, layers] : selected_access_points) {
+    pseudo_pins_.push_back({.point = point, .layers = layers});
   }
   // Sort for deterministic vertex index assignment across hash set orderings.
   std::ranges::stable_sort(pseudo_pins_,

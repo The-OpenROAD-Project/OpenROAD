@@ -720,6 +720,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   if (enable_resistance_aware_) {
     updateSlacks();
+    // Final maze route 3D call will increase nets percentage
+    if (!is_fixed_nets_percentage_) {
+      res_aware_nets_percentage_ = kFinalResAwareNetsPercentage;
+    }
     netpinOrderInc();
     // More flexible during repair stages
     setDetourPenalty(is_incremental_grt_ ? kLowDetourPenalty
@@ -728,11 +732,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   // Don't need to reroute every net during first GRT run, let it for the
   // incremental optimizations
-  const int endIND = (enable_resistance_aware_ && is_incremental_grt_)
-                         ? tree_order_pv_.size()
-                         : tree_order_pv_.size() * 0.9;
+  const int endIND = enable_resistance_aware_ ? tree_order_pv_.size()
+                                              : tree_order_pv_.size() * 0.9;
   const int max_reroute_iter
       = (is_incremental_grt_ && enable_resistance_aware_) ? 5 : 0;
+  int recovered_nets = 0;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -751,6 +755,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     // Enable resistance aware routing only if the net needs it
     if (enable_resistance_aware_) {
       resistance_aware_ = net->isResAware();
+      // Don't reroute nets with positive slack
+      if (!is_incremental_grt_ && net->getSlack() >= 0) {
+        continue;
+      }
     }
 
     int enlarge = expand;
@@ -764,6 +772,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     std::vector<int> edges_to_process(sttrees_[netID].num_edges());
     std::iota(edges_to_process.begin(), edges_to_process.end(), 0);
     int reroute_iter = 0;
+    bool recovered_edge = false;
 
     if (net->getDbNet() == debug_->net) {
       logger_->report("Edges: {}", edges_to_process.size());
@@ -858,6 +867,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         for (auto& i : dest_heap_3D_) {
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
         }
+
+        // Track searches that cannot reach the destination subtree.
+        bool heap_underflow = false;
 
         while (
             !pop_heap2_3D_[ind1])  // stop until the grid position been popped
@@ -1182,10 +1194,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
 
           if (src_heap_3D_.empty()) {
-            logger_->error(GRT,
-                           183,
-                           "Net {}: heap underflow during 3D maze routing.",
-                           nets_[netID]->getName());
+            // Recover the original route below instead of aborting.
+            heap_underflow = true;
+            break;
           }
           // update ind1 for next loop
           ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
@@ -1193,6 +1204,20 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
         for (auto& i : dest_heap_3D_) {
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = false;
+        }
+
+        if (heap_underflow) {
+          debugPrint(logger_,
+                     GRT,
+                     "maze_3d",
+                     1,
+                     "Net {}: no 3D maze path found for edge {}; "
+                     "recovering original route.",
+                     nets_[netID]->getName(),
+                     edgeID);
+          recoverEdge(netID, edgeID);
+          recovered_edge = true;
+          continue;
         }
         // get the new route for the edge and store it in gridsX[] and
         // gridsY[] temporarily
@@ -1632,7 +1657,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       edges_to_process = std::move(next_retry);
       reroute_iter++;
     }  // while edges_to_process
+    if (recovered_edge) {
+      recovered_nets++;
+    }
   }  // nets loop
+
+  if (recovered_nets > 0) {
+    logger_->warn(GRT,
+                  183,
+                  "Kept original routes for edges of {} nets because the 3D "
+                  "maze router found no legal path.",
+                  recovered_nets);
+  }
 }
 
 }  // namespace grt

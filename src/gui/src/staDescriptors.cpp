@@ -3,10 +3,6 @@
 
 #include "staDescriptors.h"
 
-#ifdef ENABLE_QT
-#include <QInputDialog>
-#include <QStringList>
-#endif
 #include <algorithm>
 #include <any>
 #include <array>
@@ -22,7 +18,7 @@
 #include "boost/algorithm/string.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -292,7 +288,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   }
   add_if_true(props, "Dont Use", cell->dontUse());
   props.push_back({"Filename", cell->filename()});
-  add_if_true(props, "Has Sequentials", cell->hasSequentials());
+  add_if_true(props, "Has Sequentials", cell->isSequential());
   add_if_true(props, "Is Always On", cell->alwaysOn());
   add_if_true(props, "Is Buffer", cell->isBuffer());
   add_if_true(props, "Is Clock Cell", cell->isClockCell());

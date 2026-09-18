@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
+#include "clockBase.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
@@ -101,6 +102,7 @@ void Replace::reset()
 
   tb_.reset();
   rb_.reset();
+  cb_.reset();
 }
 
 void Replace::addPlacementCluster(const Cluster& cluster)
@@ -115,6 +117,21 @@ void Replace::checkHasCoreRows()
         GPL,
         130,
         "No rows defined in design. Use initialize_floorplan to add rows.");
+  }
+}
+
+// Runs before PlacerBaseCommon is built: -place_ios makes an unplaced port a
+// normal state there, so an unsupported design has to be rejected first.
+void Replace::checkPlaceIosSupported(const PlaceOptions& options)
+{
+  if (!options.placeIosMode) {
+    return;
+  }
+  if (db_->getChip()->getBlock()->getDieAreaPolygon().getPoints().size() > 5) {
+    log_->error(GPL,
+                173,
+                "Concurrent IO placement does not support non-rectangular die. "
+                "Please drop -place_ios or use a rectangular die.");
   }
 }
 
@@ -213,6 +230,7 @@ void Replace::doPlace(const int threads, const PlaceOptions& options)
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
+  checkPlaceIosSupported(options);
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
@@ -251,7 +269,8 @@ void Replace::runMBFF(const int max_sz,
                       const float alpha,
                       const float beta,
                       const int threads,
-                      const int num_paths)
+                      const int num_paths,
+                      const float clock_power_weight)
 {
   MBFF pntset(db_,
               sta_,
@@ -262,7 +281,7 @@ void Replace::runMBFF(const int max_sz,
               num_paths,
               gui_debug_,
               graphics_->MakeNew(log_));
-  pntset.Run(max_sz, alpha, beta);
+  pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
 bool Replace::initNesterovPlace(const PlaceOptions& options,
@@ -318,8 +337,27 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_->setRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent);
   }
 
+  if (!cb_ && options.virtualCtsMode) {
+    float skew_fraction = options.virtualCtsMaxSkewFraction;
+    // Clamp to a sane range; a negative value yields negative insertion
+    // delays and values above the clock period make no physical sense.
+    if (skew_fraction < 0.0f || skew_fraction > 1.0f) {
+      log_->warn(GPL,
+                 165,
+                 "virtual_cts_max_skew_fraction {} out of range [0, 1]; "
+                 "clamping.",
+                 skew_fraction);
+      skew_fraction = std::clamp(skew_fraction, 0.0f, 1.0f);
+    }
+    cb_ = std::make_shared<ClockBase>(sta_, db_, log_);
+    cb_->setMaxSkewFraction(skew_fraction);
+  }
+
   if (!np_) {
-    NesterovPlaceVars npVars(options);
+    // The controller's proportional band is set by referenceHpwl, so it has to
+    // be on the design's own scale. Resolve the default from the HPWL the
+    // initial placement produced.
+    NesterovPlaceVars npVars(options, nbc_->getHpwl());
 
     npVars.debug = gui_debug_;
     npVars.debug_pause_iterations = gui_debug_pause_iterations_;
@@ -343,6 +381,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
                                           nbVec_,
                                           rb_,
                                           tb_,
+                                          cb_,
                                           graphics_->MakeNew(log_),
                                           log_);
   }
@@ -357,6 +396,12 @@ int Replace::doNesterovPlace(const int threads,
                              const int start_iter)
 {
   checkHasCoreRows();
+  checkPlaceIosSupported(options);
+
+  if (options.placeIosMode) {
+    log_->info(GPL, 168, "Concurrent IO placement enabled.");
+  }
+
   if (!initNesterovPlace(options, threads, true)) {
     return 0;
   }
@@ -369,6 +414,8 @@ int Replace::doNesterovPlace(const int threads,
   auto start = std::chrono::high_resolution_clock::now();
 
   int return_do_nesterov = np_->doNesterovPlace(start_iter);
+
+  reportHpwlMetric();
 
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
@@ -386,6 +433,16 @@ int Replace::doNesterovPlace(const int threads,
     fr_->globalRoute();
   }
   return return_do_nesterov;
+}
+
+// Same evaluator dpl reports route__wirelength__estimated with, so the
+// global and detailed placement numbers are directly comparable.
+void Replace::reportHpwlMetric()
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  const int64_t hpwl = odb::WireLengthEvaluator(block).hpwl();
+  log_->info(GPL, 1018, "Final HPWL (um): {:.2f}", block->dbuToMicrons(hpwl));
+  log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
 }
 
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
@@ -443,7 +500,7 @@ void PlaceOptions::validate(utl::Logger* logger)
   val.check_range("overflow", overflow, 0.0f, 1.0f, 406);
   val.check_non_negative("pad_left", padLeft, 407);
   val.check_non_negative("pad_right", padRight, 408);
-  val.check_positive("reference_hpwl", referenceHpwl, 409);
+  val.check_non_negative("reference_hpwl", referenceHpwl, 409);
 
   val.check_non_negative("initial_place_max_iter", initialPlaceMaxIter, 410);
   val.check_positive("initial_place_max_fanout", initialPlaceMaxFanout, 411);
@@ -463,6 +520,15 @@ void PlaceOptions::validate(utl::Logger* logger)
       "routability_inflation_ratio_coef", routabilityInflationRatioCoef, 416);
   val.check_positive(
       "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
+  val.check_positive(
+      "routability_max_inflation_total", routabilityMaxInflationTotal, 426);
+  val.check_positive(
+      "routability_net_weight_max", routabilityNetWeightMax, 427);
+  val.check_range("routability_congested_nets_percentage",
+                  routabilityCongestedNetsPercentage,
+                  0.0f,
+                  100.0f,
+                  428);
   val.check_non_negative(
       "routability_rc_coefficients k1", routabilityRcK1, 418);
   val.check_non_negative(

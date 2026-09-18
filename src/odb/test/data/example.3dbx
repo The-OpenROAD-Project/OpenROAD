@@ -16,13 +16,12 @@ ChipletInst:
     external:
       verilog_file: "soc.v"
       sdc_file: "/path/to/soc.sdc"
-      def_file: "/path/to/soc.def"
+      def_file: ../fake_macros.def
   soc_inst_duplicate:
     reference: SoC
     external:
       verilog_file: "soc.v"
       sdc_file: "/path/to/soc.sdc"
-      def_file: "/path/to/soc.def"
 
 Stack:
   soc_inst:

@@ -30,7 +30,8 @@ class DbxParser : public BaseParser
                          const YAML::Node& instances_node);
   void parseChipletInst(ChipletInst& instance, const YAML::Node& instance_node);
   void parseChipletInstExternal(ChipletInstExternal& external,
-                                const YAML::Node& external_node);
+                                const YAML::Node& external_node,
+                                const std::string& instance_name);
   void parseStack(std::map<std::string, ChipletInst>& instances,
                   const YAML::Node& stack_node);
   void parseStackInstance(ChipletInst& instance,

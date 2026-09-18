@@ -35,6 +35,13 @@ gui::Chart* GraphicsImpl::routing_chart_ = nullptr;
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
+}
+
+void GraphicsImpl::registerWithGui()
+{
+  if (!gui::Gui::enabled()) {
+    return;
+  }
   gui::Gui::get()->registerRenderer(this);
 }
 
@@ -50,6 +57,7 @@ void GraphicsImpl::debugForMbff()
 {
   setDebugOn(true);
   mode_ = Mbff;
+  registerWithGui();
 }
 
 void GraphicsImpl::debugForInitialPlace(
@@ -60,6 +68,7 @@ void GraphicsImpl::debugForInitialPlace(
   pbc_ = std::move(pbc);
   pbVec_ = pbVec;
   mode_ = Initial;
+  registerWithGui();
 }
 
 void GraphicsImpl::debugForNesterovPlace(
@@ -88,7 +97,8 @@ void GraphicsImpl::debugForNesterovPlace(
   if (debug_on_) {
     initCharts();
     addDisplayControl(kDrawInstances, true);
-    gui::Gui::get()->registerRenderer(this);
+    addDisplayControl(kDrawTimingNets, false);
+    registerWithGui();
 
     if (debug_inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -346,6 +356,35 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
   painter.drawRect({xl, yl, xh, yh});
 }
 
+void GraphicsImpl::drawTimingNets(gui::Painter& painter)
+{
+  const auto& gnets = nbc_->getGNets();
+
+  float max_weight = 1.0f;
+  for (const GNet* net : gnets) {
+    max_weight = std::max(max_weight, net->getTimingWeight());
+  }
+
+  if (max_weight <= 1.0f) {
+    return;
+  }
+
+  painter.setBrush(gui::Painter::kTransparent);
+
+  for (const GNet* net : gnets) {
+    const float w = net->getTimingWeight();
+    if (w <= 1.0f) {
+      continue;
+    }
+
+    const float t = (w - 1.0f) / (max_weight - 1.0f);
+    const int r = static_cast<int>(std::min(1.0f, 2.0f * t) * 255);
+    const int g = static_cast<int>(std::min(1.0f, 2.0f * (1.0f - t)) * 255);
+    painter.setPen({r, g, 0, 180}, /*cosmetic=*/true);
+    painter.drawRect({net->lx(), net->ly(), net->ux(), net->uy()});
+  }
+}
+
 void GraphicsImpl::drawNesterov(gui::Painter& painter)
 {
   drawBounds(painter);
@@ -378,6 +417,10 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
       const auto& nb = nbVec_[nb_idx];
       drawCells(nb->getGCells(), painter, nb_idx);
     }
+  }
+
+  if (checkDisplayControl(kDrawTimingNets)) {
+    drawTimingNets(painter);
   }
 
   // Create lighter versions of the region_colors_ with alpha 50

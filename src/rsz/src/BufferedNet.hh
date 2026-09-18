@@ -217,18 +217,10 @@ class BufferedNet
 
   struct Metrics
   {
-    int max_load_wl;
     FixedDelay slack = FixedDelay::ZERO;
     float cap;
     float max_load_slew;
     float fanout;
-
-    Metrics withMaxLoadWl(int max_load_wl)
-    {
-      Metrics ret = *this;
-      ret.max_load_wl = max_load_wl;
-      return ret;
-    }
 
     Metrics withSlack(FixedDelay slack)
     {
@@ -247,8 +239,7 @@ class BufferedNet
 
   Metrics metrics() const
   {
-    return Metrics{.max_load_wl = maxLoadWireLength(),
-                   .slack = slack(),
+    return Metrics{.slack = slack(),
                    .cap = cap(),
                    .max_load_slew = maxLoadSlew(),
                    .fanout = fanout()};

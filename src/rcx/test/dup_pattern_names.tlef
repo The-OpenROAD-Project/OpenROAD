@@ -1,0 +1,87 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+#
+# Minimal routing-only technology that reproduces the bench_wires pattern name
+# collision from OpenROAD issue #7897. The layer geometry is what matters:
+#
+#   DATABASE MICRONS 2000 - the pattern name scales spacings by 1000/dbunit,
+#                           so a coarse database unit widens the collision.
+#   Metal3 WIDTH 2.200 / SPACING 1.800 / PITCH 4.000
+#                         - the resistance pattern spacing table holds both
+#                           SPACING and PITCH-WIDTH. Those are equal here in
+#                           exact arithmetic but differ by one ULP as doubles,
+#                           and both round to 1800nm in the pattern name.
+#
+# Do not "tidy" these numbers: rounding them to nicer values removes the
+# collision and the test stops covering anything.
+
+VERSION 5.7 ;
+
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+    DATABASE MICRONS 2000 ;
+    CAPACITANCE PICOFARADS 1 ;
+    CURRENT MILLIAMPS 1 ;
+    RESISTANCE OHMS 1 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+LAYER Metal1
+    TYPE ROUTING ;
+    DIRECTION HORIZONTAL ;
+    PITCH 0.56 ;
+    OFFSET 0.0 ;
+    MINWIDTH 0.230 ;
+    WIDTH 0.230 ;
+    SPACING 0.230 ;
+    THICKNESS 0.54 ;
+    CAPACITANCE CPERSQDIST 0.0000394 ;
+    RESISTANCE RPERSQ 0.090000 ;
+END Metal1
+
+LAYER Via1
+    TYPE CUT ;
+    SPACING 0.26 ;
+    WIDTH 0.26 ;
+    ENCLOSURE BELOW 0.00 0.06 ;
+    ENCLOSURE ABOVE 0.01 0.06 ;
+END Via1
+
+LAYER Metal2
+    TYPE ROUTING ;
+    DIRECTION VERTICAL ;
+    PITCH 0.56 ;
+    OFFSET 0.0 ;
+    MINWIDTH 0.280 ;
+    WIDTH 0.280 ;
+    SPACING 0.280 ;
+    THICKNESS 0.54 ;
+    CAPACITANCE CPERSQDIST 0.0000394 ;
+    RESISTANCE RPERSQ 0.090000 ;
+END Metal2
+
+LAYER Via2
+    TYPE CUT ;
+    SPACING 0.26 ;
+    WIDTH 0.26 ;
+    ENCLOSURE BELOW 0.01 0.06 ;
+    ENCLOSURE ABOVE 0.42 0.00 ;
+END Via2
+
+LAYER Metal3
+    TYPE ROUTING ;
+    DIRECTION HORIZONTAL ;
+    PITCH 4.000 ;
+    OFFSET 0.0 ;
+    MINWIDTH 2.200 ;
+    WIDTH 2.200 ;
+    SPACING 1.800 ;
+    THICKNESS 3.00 ;
+    CAPACITANCE CPERSQDIST 0.0000206 ;
+    RESISTANCE RPERSQ 0.010000 ;
+END Metal3
+
+END LIBRARY

@@ -95,7 +95,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     auto master_name = master->getName();
 
     std::string current_gate
-        = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + master_name;
+        = ((cell->isSequential()) ? ".mlatch " : ".gate ") + master_name;
     std::string current_connections, current_clock;
     std::set<std::string> current_clocks;
 
@@ -250,10 +250,10 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
     current_gate += current_connections;
 
-    if (cell->hasSequentials() && current_clocks.size() != 1) {
+    if (cell->isSequential() && current_clocks.size() != 1) {
       continue;
     }
-    if (cell->hasSequentials()) {
+    if (cell->isSequential()) {
       current_gate += " " + current_clock;
     }
 

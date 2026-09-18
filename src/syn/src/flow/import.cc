@@ -5,6 +5,8 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <map>
+#include <string_view>
 #include <utility>
 
 #include "sta/Liberty.hh"
@@ -31,7 +33,8 @@ void importTargets(Graph& g, sta::Network* network, utl::Logger* logger)
       return;
     }
 
-    // Build expected input/output widths from liberty cell ports.
+    std::map<std::string_view, uint32_t> lib_input_offset;
+    std::map<std::string_view, uint32_t> lib_output_offset;
     uint32_t lib_input_width = 0;
     uint32_t lib_output_width = 0;
     sta::LibertyCellPortIterator port_iter(cell);
@@ -42,10 +45,14 @@ void importTargets(Graph& g, sta::Network* network, utl::Logger* logger)
       }
       sta::PortDirection* dir = port->direction();
       if (dir->isInput()) {
+        lib_input_offset[port->name()] = lib_input_width;
         lib_input_width += port->size();
       } else if (dir->isOutput()) {
+        lib_output_offset[port->name()] = lib_output_width;
         lib_output_width += port->size();
       } else if (dir->isBidirect()) {
+        lib_input_offset[port->name()] = lib_input_width;
+        lib_output_offset[port->name()] = lib_output_width;
         lib_input_width += port->size();
         lib_output_width += port->size();
       }
@@ -66,8 +73,7 @@ void importTargets(Graph& g, sta::Network* network, utl::Logger* logger)
       logger->error(utl::SYN,
                     10,
                     "importTargets: cell '{}' input width mismatch:"
-                    " Other has {} bits, Liberty has {} bits. This is an "
-                    "internal tool error.",
+                    " Verilog instantiation has {} bits, Liberty has {} bits.",
                     other->cellType(),
                     other_input_width,
                     lib_input_width);
@@ -77,26 +83,89 @@ void importTargets(Graph& g, sta::Network* network, utl::Logger* logger)
       logger->error(utl::SYN,
                     11,
                     "importTargets: cell '{}' output width mismatch:"
-                    " Other has {} bits, Liberty has {} bits. This is an "
-                    "internal tool error.",
+                    " Verilog instantiation has {} bits, Liberty has {} bits.",
                     other->cellType(),
                     other_output_width,
                     lib_output_width);
     }
 
     // Concatenate all input port values into a single Bundle.
-    Bundle inputs;
+    Bundle inputs = Bundle::sentinel(lib_input_width);
     for (auto& port : other->ports()) {
       if (port.direction == Other::Port::kInput
           || port.direction == Other::Port::kInOut) {
-        inputs = inputs.concat(port.value);
+        sta::LibertyPort* lib_port = cell->findLibertyPort(port.name);
+        if (!lib_port || !lib_input_offset.contains(port.name)) {
+          logger->error(
+              utl::SYN,
+              35,
+              "importTargets: cell '{}' Liberty definition is missing "
+              "port '{}' connected in Verilog instantiation.",
+              other->cellType(),
+              port.name);
+        }
+
+        if (((uint32_t) lib_port->size()) != port.width) {
+          logger->error(
+              utl::SYN,
+              36,
+              "importTargets: cell '{}' instantiated with mismatched width "
+              "of port '{}': {} in Verilog vs {} in Liberty",
+              other->cellType(),
+              port.name,
+              port.width,
+              lib_port->size());
+        }
+
+        uint32_t offset = lib_input_offset.at(port.name);
+        for (uint32_t i = 0; i < port.width; i++) {
+          inputs.mutableNet(offset + i) = port.value[i];
+        }
       }
     }
 
     // Create Target and replace outputs.
     BundleView old_output = g.output(other);
-    Bundle new_output = g.add<Target>(cell, std::move(inputs));
-    g.forceReplace(old_output, BundleView(new_output));
+    Bundle target_output = g.add<Target>(cell, std::move(inputs));
+    Bundle output_replacement = Bundle::sentinel(lib_output_width);
+
+    uint32_t offset = 0;
+    for (auto& port : other->ports()) {
+      if (port.direction == Other::Port::kOutput
+          || port.direction == Other::Port::kInOut) {
+        sta::LibertyPort* lib_port = cell->findLibertyPort(port.name);
+        if (!lib_port || !lib_output_offset.contains(port.name)) {
+          logger->error(
+              utl::SYN,
+              37,
+              "importTargets: cell '{}' Liberty definition is missing "
+              "port '{}' connected in Verilog instantiation.",
+              other->cellType(),
+              port.name);
+        }
+
+        if (((uint32_t) lib_port->size()) != port.width) {
+          logger->error(
+              utl::SYN,
+              38,
+              "importTargets: cell '{}' instantiated with mismatched width "
+              "of port '{}': {} in Verilog vs {} in Liberty",
+              other->cellType(),
+              port.name,
+              port.width,
+              lib_port->size());
+        }
+
+        uint32_t lib_offset = lib_output_offset.at(port.name);
+        for (uint32_t i = 0; i < port.width; i++) {
+          output_replacement.mutableNet(offset + i)
+              = target_output[lib_offset + i];
+        }
+        offset += port.width;
+      }
+    }
+
+    g.forceReplace(old_output, BundleView(output_replacement));
     g.removeInstance(
         const_cast<Instance*>(static_cast<const Instance*>(other)));
   });

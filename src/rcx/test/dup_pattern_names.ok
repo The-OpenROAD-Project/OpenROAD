@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: dup_pattern_names.tlef, created 5 layers
+[INFO RCX-0055] Finished 72 bench measurements for pattern MET_OVER_MET
+[INFO RCX-0055] Finished 176 bench measurements for pattern MET_OVER_MET
+[INFO RCX-0007] Finished 12 measurements for pattern MET_UNDER_MET
+[INFO RCX-0057] Finished 36 bench measurements for pattern MET_UNDER_MET
+[INFO RCX-0058] Finished 39 bench measurements for pattern MET_DIAGUNDER_MET
+nets: 14650
+R6_M3oM0_W2200W2200_S00000S01800_3 has 2 bterms
+R6_M3oM0_W2200W2200_S00000S01800_4 has 2 bterms

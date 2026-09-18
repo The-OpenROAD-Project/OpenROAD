@@ -748,7 +748,7 @@ void RamGen::findMasters()
             return false;
           }
           auto cell = port->libertyCell();
-          if (!cell->hasSequentials()) {
+          if (!cell->isSequential()) {
             return false;
           }
           bool has_latch_data = false;
@@ -1053,6 +1053,7 @@ void RamGen::ramPdngen(const char* power_net_name,
                        0,
                        {},
                        {},
+                       {},
                        "");
   pdngen_->makeConnect(grid,
                        pdn_tech->findLayer(ver_name),
@@ -1063,6 +1064,7 @@ void RamGen::ramPdngen(const char* power_net_name,
                        {},
                        0,
                        0,
+                       {},
                        {},
                        {},
                        "");

@@ -47,8 +47,8 @@ class GridComponent
   Grid* getGrid() const { return grid_; }
   VoltageDomain* getDomain() const;
 
-  bool make(Shape::ShapeTreeMap& shapes,
-            Shape::ObstructionTreeMap& obstructions);
+  virtual bool make(Shape::ShapeTreeMap& shapes,
+                    Shape::ObstructionTreeMap& obstructions);
 
   virtual void makeShapes(const Shape::ShapeTreeMap& other_shapes) = 0;
   virtual bool refineShapes(Shape::ShapeTreeMap& all_shapes,
@@ -66,6 +66,7 @@ class GridComponent
                     std::vector<std::unique_ptr<Shape>>& replacements);
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
+  std::set<odb::Rect> getShapeRects() const;
 
   virtual void getConnectableShapes(Shape::ShapeTreeMap& shapes) const {}
 
@@ -98,6 +99,11 @@ class GridComponent
   void setNets(const std::vector<odb::dbNet*>& nets);
 
   virtual bool isAutoInserted() const { return false; }
+  virtual bool checkForRepairChannels() const { return true; }
+  // components that the user did not ask for should not become block pins:
+  // the pins of a block are its power interface and are expected to follow the
+  // requested grid
+  virtual bool allowDbPins() const { return true; }
 
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,

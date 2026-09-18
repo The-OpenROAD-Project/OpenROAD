@@ -387,6 +387,8 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
       odb::dbDatabase::create(), odb::dbDatabase::destroy);
   TileGenerator gen(db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
   const odb::Rect dbu_tile(0, 0, 256, 256);
+  const TileFrame frame{
+      .origin_x = 0.0, .origin_y = 0.0, .scale = 1.0, .cull = dbu_tile};
 
   WebPainter narrow(dbu_tile, 1.0);
   narrow.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/1);
@@ -399,8 +401,8 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
   const int image_bytes = 256 * 256 * 4;
   std::vector<unsigned char> narrow_image(image_bytes, 0);
   std::vector<unsigned char> wide_image(image_bytes, 0);
-  gen.rasterizeWebPainterOps(narrow_image, narrow.ops(), dbu_tile, 1.0);
-  gen.rasterizeWebPainterOps(wide_image, wide.ops(), dbu_tile, 1.0);
+  gen.rasterizeWebPainterOps(narrow_image, narrow.ops(), frame);
+  gen.rasterizeWebPainterOps(wide_image, wide.ops(), frame);
 
   const auto alpha_at
       = [](const std::vector<unsigned char>& image, int x, int y) {
@@ -409,6 +411,66 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
   const int screen_y = 255 - 128;
   EXPECT_EQ(alpha_at(narrow_image, 20, screen_y - 1), 0);
   EXPECT_GT(alpha_at(wide_image, 20, screen_y - 1), 0);
+}
+
+//------------------------------------------------------------------------------
+// Per-renderer display controls.  gui::Renderer::checkDisplayControl routes
+// "Group/Name" here through Gui::checkDisplayControlsVisible when there is no
+// Qt window; the HeadlessViewer default answers "visible" for everything,
+// which made every renderer sub-control read as on.
+//------------------------------------------------------------------------------
+
+TEST(WebViewerHookTest, UnknownDisplayControlKeepsTheHeadlessDefaults)
+{
+  WebViewerHook hook;
+  // A renderer asking about a control nobody registered should draw rather
+  // than vanish.
+  EXPECT_TRUE(hook.checkDisplayControlVisible("Nothing/Registered"));
+}
+
+TEST(WebViewerHookTest, DisplayControlVisibilityRoundTrips)
+{
+  WebViewerHook hook;
+  hook.setDisplayControlVisible("Detailed Router/Graph edges", false);
+  EXPECT_FALSE(hook.checkDisplayControlVisible("Detailed Router/Graph edges"));
+  hook.setDisplayControlVisible("Detailed Router/Graph edges", true);
+  EXPECT_TRUE(hook.checkDisplayControlVisible("Detailed Router/Graph edges"));
+}
+
+// The seed carries each control's own default (FlexDRGraphics registers ten,
+// six of them off), which is the whole point: without it they all read true.
+TEST(WebViewerHookTest, SeedInstallsTheRenderersOwnDefault)
+{
+  WebViewerHook hook;
+  hook.seedDisplayControlVisible("Detailed Router/Graph edges", false);
+  hook.seedDisplayControlVisible("Detailed Router/Route guides", true);
+  EXPECT_FALSE(hook.checkDisplayControlVisible("Detailed Router/Graph edges"));
+  EXPECT_TRUE(hook.checkDisplayControlVisible("Detailed Router/Route guides"));
+}
+
+// Seeding runs on every paint, and a renderer re-registering (a second
+// placement run) must not undo what the user chose.
+// The render path calls the seeding walk on every tile, so it must only pay
+// for it once per renderer.
+TEST(WebViewerHookTest, ARendererIsOfferedForSeedingOnlyOnce)
+{
+  WebViewerHook hook;
+  int marker = 0;
+  EXPECT_TRUE(hook.markRendererSeeded(&marker));
+  EXPECT_FALSE(hook.markRendererSeeded(&marker));
+  int other = 0;
+  EXPECT_TRUE(hook.markRendererSeeded(&other))
+      << "a second renderer is still seeded";
+}
+
+TEST(WebViewerHookTest, SeedDoesNotClobberAUserChoice)
+{
+  WebViewerHook hook;
+  hook.seedDisplayControlVisible("PDN/Vias", false);
+  hook.setDisplayControlVisible("PDN/Vias", true);
+  hook.seedDisplayControlVisible("PDN/Vias", false);
+  EXPECT_TRUE(hook.checkDisplayControlVisible("PDN/Vias"))
+      << "the second seed must not reset the control";
 }
 
 }  // namespace

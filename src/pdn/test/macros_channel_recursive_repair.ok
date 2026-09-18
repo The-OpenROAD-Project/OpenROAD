@@ -9,6 +9,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0130]     Created 216 pins.
 [INFO ODB-0131]     Created 1 components and 269 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 3 connections.
+[WARNING PDN-1051] No instances found for grid (sg13g2_sram_R90).
 [INFO PDN-0001] Inserting grid: grid
 [INFO PDN-0001] Inserting grid: sg13g2_sram_R0 - wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory
 No differences found.

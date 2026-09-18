@@ -108,7 +108,12 @@ class IntervalT
 
   // Getters
   int center() const { return (high_ + low_) / 2; }
-  int range() const { return high_ - low_; }
+  // An empty interval still holds the set() sentinel (low = INT_MAX,
+  // high = INT_MIN), where high_ - low_ overflows. A net whose pins yield no
+  // access points leaves its bounding box in that state, and GRNet's sort
+  // comparator asks it for hp(). Report no extent instead, matching the
+  // isValid() guard unionWith() already uses.
+  int range() const { return isValid() ? high_ - low_ : 0; }
 
   // Update
   // update() is always safe, fastUpdate() assumes existing values

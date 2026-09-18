@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -14,15 +15,36 @@ exports_files(
         "bzl_lint_test.sh",
         "bzl_tidy.sh",
         "fix_lint.sh",
+        "git_ls_files.sh",
         "install.sh",
+        "py_fmt_test.sh",
+        "py_tidy.sh",
         "tcl_fmt_test.sh",
         "tcl_lint_test.sh",
         "tcl_tidy.sh",
+        "yaml_fmt_test.sh",
+        "yaml_tidy.sh",
     ],
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt binaries from pip — version pinned in requirements.in
+# True under --config=asan / --config=tsan / --config=ubsan. The regression
+# tests run the openroad binary from the exec configuration, which those configs
+# leave uninstrumented on purpose (so swig, bison and the other build tools stay
+# clean). test/regression.bzl uses this to take the binary under test from the
+# target configuration instead, which is where the instrumentation lives.
+selects.config_setting_group(
+    name = "sanitizer_build",
+    match_any = [
+        "@llvm//config:asan_enabled",
+        "@llvm//config:tsan_enabled",
+        "@llvm//config:ubsan_enabled",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# tclint / tclfmt / yamlfix / black binaries from pip — versions pinned in
+# requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
@@ -35,11 +57,30 @@ py_console_script_binary(
     visibility = ["//visibility:public"],
 )
 
+py_console_script_binary(
+    name = "yamlfix",
+    pkg = "@openroad-pip//yamlfix",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "black",
+    pkg = "@openroad-black-pip//black",
+    visibility = ["//visibility:public"],
+)
+
 compile_pip_requirements(
     name = "requirements",
     src = "requirements.in",
     python_version = "3.13",
     requirements_txt = "requirements_lock_3_13.txt",
+)
+
+compile_pip_requirements(
+    name = "requirements_black",
+    src = "requirements_black.in",
+    python_version = "3.13",
+    requirements_txt = "requirements_black_lock_3_13.txt",
 )
 
 # Various tcl libraries that we want to embed into the binary.

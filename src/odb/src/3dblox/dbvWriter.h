@@ -37,7 +37,6 @@ class DbvWriter : public BaseWriter
   void writeRegion(YAML::Node& region_node, odb::dbChipRegion* region);
   void writeExternal(YAML::Node& external_node, odb::dbChip* chiplet);
   void writeLef(YAML::Node& external_node, odb::dbChip* chiplet);
-  void writeDef(YAML::Node& external_node, odb::dbChip* chiplet);
 };
 
 }  // namespace odb
