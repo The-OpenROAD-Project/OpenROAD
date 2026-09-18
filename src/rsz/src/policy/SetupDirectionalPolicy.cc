@@ -278,7 +278,7 @@ void SetupDirectionalPolicy::repairSetupDirectional(
                  "repair_setup",
                  1,
                  "{}{} Phase: Threshold {}/3: {} slack {} -> {} (imp: {}), "
-                 "WNS {} -> {}, EnTNS {} -> {}, StTNS {} -> {}{}",
+                 "WNS {} -> {}, TNS {} -> {}, StTNS {} -> {}{}",
                  phase_name,
                  phase_marker,
                  point_pass_count,

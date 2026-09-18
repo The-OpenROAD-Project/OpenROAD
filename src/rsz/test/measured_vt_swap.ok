@@ -39,10 +39,10 @@
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 28 / 30 moves.
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 29 / 30 moves.
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 30 / 30 moves.
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts |  St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
-    final |       0 |      30 |        0 |      0 |     0 |    +0.0% |  -24.700 |     -469.6 |     -469.0 |     40 | resp_msg[13]
+    final |       0 |      30 |        0 |      0 |     0 |    +0.0% |  -24.700 |     -469.0 |     40 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 30 instances: 0 up, 0 up match, 0 down, 30 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

@@ -11,12 +11,12 @@
 [INFO RSZ-0100] Repair move sequence: VtSwapMove 
 [INFO RSZ-0094] Found 46 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 46 out of 46 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts |  St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1407.4 |    -1781.1 |     46 | resp_msg[13]
-     147* |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -465.4 |     -162.6 |     46 | resp_msg[13]
-    final |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -465.4 |     -162.6 |     18 | resp_msg[13]
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.1 |     46 | resp_msg[13]
+     147* |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -162.6 |     46 | resp_msg[13]
+    final |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -162.6 |     18 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 60 instances: 0 up, 0 up match, 0 down, 60 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

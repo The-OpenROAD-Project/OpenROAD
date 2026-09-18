@@ -9,14 +9,14 @@
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
 [DEBUG RSZ-move_tracker] Scanned 29 driver pins, found 6 with negative slack
 [DEBUG RSZ-move_tracker] Scanned 34 endpoints, found 4 with negative slack
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts |  St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
-       9* |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |        0.0 |      4 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
+       9* |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      4 | r2/D
 [DEBUG RSZ-move_tracker] LEGACY Phase Endpoint Profiler: No endpoint statistics collected
 [DEBUG RSZ-move_tracker] LAST_GASP Phase Endpoint Profiler: No endpoint statistics collected
-    final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |        0.0 |      0 | r2/D
+    final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      0 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0211] 
 [INFO RSZ-0212] === Optimization Analysis Reports ===

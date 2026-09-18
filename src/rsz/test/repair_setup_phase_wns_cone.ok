@@ -45,13 +45,13 @@ Path Type: max
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
 [INFO RSZ-0221] Using custom phase sequence: WNS_CONE
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts |  St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
 [INFO RSZ-0219] Adaptive cone threshold: no margin yielded target range, using endpoint slack as threshold=-0.333, collecting 4 of 6 pins (66.7%)
-       3* |       1 |       2 |        0 |      0 |     0 |    +0.0% |   -0.225 |       -0.2 |       -0.2 |      4 | r2/D
-    final |       1 |       2 |        0 |      0 |     0 |    +0.0% |   -0.225 |       -0.2 |       -0.2 |      1 | r2/D
+       3* |       1 |       2 |        0 |      0 |     0 |    +0.0% |   -0.225 |       -0.2 |      4 | r2/D
+    final |       1 |       2 |        0 |      0 |     0 |    +0.0% |   -0.225 |       -0.2 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 1 buffers.
 [INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT

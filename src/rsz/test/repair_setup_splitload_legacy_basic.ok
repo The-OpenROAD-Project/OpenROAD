@@ -8,12 +8,12 @@ worst slack max -0.17
 [INFO RSZ-0100] Repair move sequence: SplitLoadMove 
 [INFO RSZ-0094] Found 40 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts |  St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.174 |       -0.2 |       -6.9 |     40 | load35/D
-      56* |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -0.1 |       -3.9 |     40 | load18/D
-    final |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -0.1 |       -3.9 |     40 | load18/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.174 |       -6.9 |     40 | load35/D
+      56* |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -3.9 |     40 | load18/D
+    final |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -3.9 |     40 | load18/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 6 buffers, 6 to split loads.
 [WARNING RSZ-0062] Unable to repair all setup violations.
