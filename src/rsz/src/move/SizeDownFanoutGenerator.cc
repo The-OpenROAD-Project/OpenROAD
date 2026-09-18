@@ -611,8 +611,10 @@ sta::LibertyCell* selectReplacementCell(
     // Use >= so that among cells of equal input capacitance the last one wins:
     // rankSwappableCells orders equal-cap cells with the smaller intrinsic
     // delay last, so this keeps the better candidate for that capacitance step.
+    // Allow equal area (<=) so a Vt swap, which keeps the same footprint while
+    // lowering the input capacitance, is still accepted as a candidate.
     if (cap < load_ctx.input_cap && cap >= step_cap
-        && swappable->area() < load_ctx.load_cell->area()) {
+        && swappable->area() <= load_ctx.load_cell->area()) {
       step_cap = cap;
       step_down = swappable;
     }
