@@ -91,6 +91,7 @@ proc crpr_options::run_case { entry setup hold skip_setup skip_hold } {
   assert_equal [sta::crpr_enabled] $entry "getter restoration"
   assert_equal $::sta_crpr_enabled $entry "trace restoration"
   assert_equal $result $setup "repair result"
+  puts "case=entry${entry}_setup${setup}_hold${hold}_skip_setup${skip_setup}_skip_hold${skip_hold} phases=$phase_calls setters=$setter_calls"
 }
 
 rename sta::set_crpr_enabled sta::set_crpr_enabled_real
@@ -155,6 +156,7 @@ try {
     "power recovery result"
   crpr_options::assert_equal $::crpr_options::phase_calls {} "power recovery phases"
   crpr_options::assert_equal $::crpr_options::setter_calls {} "power recovery setters"
+  puts "case=recover_power phases=$::crpr_options::phase_calls setters=$::crpr_options::setter_calls"
 
   # An ordinary setup error restores CRPR and prevents hold dispatch.
   set ::sta_crpr_enabled 1
@@ -168,6 +170,7 @@ try {
   crpr_options::assert_equal $::crpr_options::phase_calls {{setup 0 0}} "setup error phases"
   crpr_options::assert_equal $::crpr_options::setter_calls {0 1} "setup error setters"
   crpr_options::assert_equal [sta::crpr_enabled] 1 "setup error restoration"
+  puts "case=setup_error phases=$::crpr_options::phase_calls setters=$::crpr_options::setter_calls restored=[sta::crpr_enabled]"
 
   # An ordinary hold error restores CRPR after successful setup dispatch.
   set ::sta_crpr_enabled 1
@@ -181,6 +184,7 @@ try {
   crpr_options::assert_equal $::crpr_options::phase_calls {{setup 1 1} {hold 0 0}} "hold error phases"
   crpr_options::assert_equal $::crpr_options::setter_calls {0 1} "hold error setters"
   crpr_options::assert_equal [sta::crpr_enabled] 1 "hold error restoration"
+  puts "case=hold_error phases=$::crpr_options::phase_calls setters=$::crpr_options::setter_calls restored=[sta::crpr_enabled]"
 
   # Unknown options fail before phase dispatch or a CRPR transition.
   set ::crpr_options::fail_phase ""
@@ -190,6 +194,7 @@ try {
   crpr_options::assert_equal $code 1 "unknown option status"
   crpr_options::assert_equal $::crpr_options::phase_calls {} "unknown option phases"
   crpr_options::assert_equal $::crpr_options::setter_calls {} "unknown option setters"
+  puts "case=unknown_option phases=$::crpr_options::phase_calls setters=$::crpr_options::setter_calls"
 
   # A false repair result is returned unchanged when no violation is repaired.
   set ::sta_crpr_enabled 1
@@ -199,8 +204,8 @@ try {
   set ::crpr_options::hold_result 0
   crpr_options::assert_equal [repair_timing -setup] 0 "false repair result"
   crpr_options::assert_equal $::crpr_options::setter_calls {} "false repair setters"
+  puts "case=false_repair phases=$::crpr_options::phase_calls setters=$::crpr_options::setter_calls result=0"
 
-  puts "pass"
 } finally {
   rename rsz::set_max_utilization {}
   rename rsz::set_max_utilization_real rsz::set_max_utilization

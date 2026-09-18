@@ -1,0 +1,155 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.031 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.031 |       -0.0 |       -0.0 |      1 | r3/D
+    final |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.031 |       -0.0 |       -0.0 |      1 | r3/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.258 | r2/D
+    final |       0 |       4 |            0 |   +14.5% |  -0.076 |  -0.165 | r2/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 4 hold buffers.
+case=default crpr_on_setup=-0.03286190856891249 crpr_off_setup=-0.04951635075454645
+metrics=-0.07649132932446591 -0.031197198485344888 -0.16500058730799663 -0.031197198485344888
+pass
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.050 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+    final |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.258 | r2/D
+    final |       0 |       4 |            0 |   +14.5% |  -0.076 |  -0.165 | r2/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 4 hold buffers.
+case=setup_off crpr_on_setup=-0.03286190856891249 crpr_off_setup=-0.04951635075454645
+metrics=-0.07649132932446591 -0.031197198485344888 -0.16500058730799663 -0.031197198485344888
+pass
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.031 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.031 |       -0.0 |       -0.0 |      1 | r3/D
+    final |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.031 |       -0.0 |       -0.0 |      1 | r3/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.262 | r2/D
+    final |       0 |       3 |            0 |   +10.8% |  -0.076 |  -0.193 | r2/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 3 hold buffers.
+case=hold_off crpr_on_setup=-0.03286190856891249 crpr_off_setup=-0.04951635075454645
+metrics=-0.07649132932446591 -0.031197198485344888 -0.18875415653634386 -0.031197198485344888
+pass
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.050 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+    final |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.262 | r2/D
+    final |       0 |       3 |            0 |   +10.8% |  -0.076 |  -0.193 | r2/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 3 hold buffers.
+case=both_off crpr_on_setup=-0.03286190856891249 crpr_off_setup=-0.04951635075454645
+metrics=-0.07649132932446591 -0.031197198485344888 -0.18875415653634386 -0.031197198485344888
+pass
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.050 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+    final |       0 |       1 |        0 |      0 |     0 |    +1.2% |   -0.048 |       -0.0 |       -0.0 |      1 | r3/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.262 | r2/D
+    final |       0 |       3 |            0 |   +10.8% |  -0.076 |  -0.193 | r2/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 3 hold buffers.
+case=entry_off crpr_on_setup=-0.03286190856891249 crpr_off_setup=-0.04951635075454645
+metrics=-0.07649132932446591 -0.04785164067097885 -0.19281472797481214 -0.04785164067097885
+pass
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[ERROR RSZ-0217] Unknown phase name 'INVALID_CRPR_TEST'. Valid phase names are: LEGACY, WNS, WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, LAST_GASP, CRIT_VT_SWAP, REROUTE, GLOBAL_SIZING
+case=error crpr_on_setup=-0.03286190856891249 crpr_off_setup=-0.04951635075454645
+metrics=-0.0965447610294832 -0.03286190856891249 -0.25680480691056123 -0.03286190856891249
+pass
+pass
