@@ -106,7 +106,7 @@ Reviewers should hold PRs to these.
    chooses to store. `read_db` restores what the block carries when it
    can use it, with no flag. A reader that cannot use it leaves it
    untouched.
-3. **Nothing existing changes result.** A flow that does not opt in
+3. **No changes to existing results.** A flow that does not opt in
    produces the same files and runs the same way.
 4. **Older OpenROAD reads the file unchanged.** New state is additive.
 5. **No new dependency from odb to a tool.** If a tool owns the model,
