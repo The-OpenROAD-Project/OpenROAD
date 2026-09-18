@@ -821,10 +821,12 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
   frMIdx gridZ = currGrid.z();
-  bool hg = hasEdge(gridX, gridY, gridZ, dir);
+  if (!hasEdge(gridX, gridY, gridZ, dir)) {
+    return false;
+  }
   reverse(gridX, gridY, gridZ, dir);
   const auto nextIdx = getIdx(gridX, gridY, gridZ);
-  if (!hg || srcs_[nextIdx] || prevDirs_[nextIdx] != 0) {
+  if (srcs_[nextIdx] || prevDirs_[nextIdx] != 0) {
     return false;
   }
   if (ndr_) {
