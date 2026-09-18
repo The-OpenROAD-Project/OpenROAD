@@ -1272,8 +1272,10 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
 
     // Preserve exact modulo arithmetic for normal tot_sum values so existing
     // K-Means cluster center choices remain unchanged, while avoiding
-    // modulo-by-zero when tot_sum * 100 < 1.0f (e.g., co-located flops) and
-    // UBSan float-cast-overflow when tot_sum * 100 >= INT_MAX.
+    // modulo-by-zero when tot_sum * 100 < 1.0f (e.g., when flops overlap at
+    // identical (x, y) coordinates prior to legalization, or when fewer than
+    // knn unique coordinates exist) and UBSan float-cast-overflow when
+    // tot_sum * 100 >= INT_MAX.
     float prob = 0.0f;
     const float scaled_sum = tot_sum * 100.0f;
     const int rand_val = rand_nums[rand_ind++ % rand_nums.size()];
