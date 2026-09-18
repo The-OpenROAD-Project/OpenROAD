@@ -131,7 +131,7 @@ int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load,
       if (loadCell) {
         sta::LibertyCell* libertyLoadCell = network_->libertyCell(loadCell);
         if (libertyLoadCell) {
-          sta::LibertyPort *input, *output;
+          sta::LibertyPort *input = nullptr, *output = nullptr;
           libertyLoadCell->bufferPorts(input, output);
           if (input) {
             totalCap += input->capacitance(sta::RiseFall::rise(),
