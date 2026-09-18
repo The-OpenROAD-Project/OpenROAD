@@ -394,6 +394,9 @@ proc repair_timing { args } {
     set hold_crpr_enabled [expr {$entry_crpr_enabled && !$skip_crpr_hold}]
     try {
       if { $setup } {
+        if { $skip_crpr_setup } {
+          utl::info RSZ 225 "CRPR disabled during setup repair."
+        }
         if { [sta::crpr_enabled] != $setup_crpr_enabled } {
           sta::set_crpr_enabled $setup_crpr_enabled
         }
@@ -404,6 +407,9 @@ proc repair_timing { args } {
           $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
       }
       if { $hold } {
+        if { $skip_crpr_hold } {
+          utl::info RSZ 226 "CRPR disabled during hold repair."
+        }
         if { [sta::crpr_enabled] != $hold_crpr_enabled } {
           sta::set_crpr_enabled $hold_crpr_enabled
         }
