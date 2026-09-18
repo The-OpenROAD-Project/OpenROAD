@@ -97,9 +97,9 @@ void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
   srcs_.clear();
   dsts_.clear();
 
-  prevDirs_.resize(static_cast<std::size_t>(capacity) * 3, false);
-  srcs_.resize(capacity, false);
-  dsts_.resize(capacity, false);
+  prevDirs_.resize(capacity, 0);
+  srcs_.resize(capacity, 0);
+  dsts_.resize(capacity, 0);
   guides_.clear();
   if (followGuide) {
     guides_.resize(capacity, false);
@@ -528,17 +528,17 @@ void FlexGridGraph::resetStatus()
 
 void FlexGridGraph::resetSrc()
 {
-  srcs_.assign(srcs_.size(), false);
+  std::memset(srcs_.data(), 0, srcs_.size());
 }
 
 void FlexGridGraph::resetDst()
 {
-  dsts_.assign(dsts_.size(), false);
+  std::memset(dsts_.data(), 0, dsts_.size());
 }
 
 void FlexGridGraph::resetPrevNodeDir()
 {
-  prevDirs_.assign(prevDirs_.size(), false);
+  std::memset(prevDirs_.data(), 0, prevDirs_.size());
 }
 
 // print the grid graph with edge and vertex for debug purpose

@@ -764,16 +764,16 @@ class FlexGridGraph
   }
 
   // unsafe access, no idx check
-  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = true; }
+  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = 1; }
   void setSrc(const FlexMazeIdx& mi)
   {
-    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = true;
+    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
   }
   // unsafe access, no idx check
-  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = true; }
+  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = 1; }
   void setDst(const FlexMazeIdx& mi)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = true;
+    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
   }
   // unsafe access
   void setSVia(frMIdx x, frMIdx y, frMIdx z)
@@ -841,20 +841,20 @@ class FlexGridGraph
   // unsafe access, no idx check
   void resetSrc(frMIdx x, frMIdx y, frMIdx z)
   {
-    srcs_[getIdx(x, y, z)] = false;
+    srcs_[getIdx(x, y, z)] = 0;
   }
   void resetSrc(const FlexMazeIdx& mi)
   {
-    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = false;
+    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = 0;
   }
   // unsafe access, no idx check
   void resetDst(frMIdx x, frMIdx y, frMIdx z)
   {
-    dsts_[getIdx(x, y, z)] = false;
+    dsts_[getIdx(x, y, z)] = 0;
   }
   void resetDst(const FlexMazeIdx& mi)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = false;
+    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 0;
   }
   void resetGridCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
@@ -1063,6 +1063,8 @@ class FlexGridGraph
   {
     nodes_.clear();
     nodes_.shrink_to_fit();
+    prevDirs_.clear();
+    prevDirs_.shrink_to_fit();
     srcs_.clear();
     srcs_.shrink_to_fit();
     dsts_.clear();
@@ -1181,9 +1183,9 @@ class FlexGridGraph
   static_assert(sizeof(Node) == 16);
 #endif
   frVector<Node> nodes_;
-  std::vector<bool> prevDirs_;
-  std::vector<bool> srcs_;
-  std::vector<bool> dsts_;
+  std::vector<uint8_t> prevDirs_;
+  std::vector<uint8_t> srcs_;
+  std::vector<uint8_t> dsts_;
   std::vector<bool> guides_;
   frVector<frCoord> xCoords_;
   frVector<frCoord> yCoords_;
@@ -1217,36 +1219,49 @@ class FlexGridGraph
   // unsafe access, no idx check
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
-    auto baseIdx = static_cast<std::size_t>(getIdx(x, y, z)) * 3;
-    prevDirs_[baseIdx] = ((uint16_t) dir >> 2) & 1;
-    prevDirs_[baseIdx + 1] = ((uint16_t) dir >> 1) & 1;
-    prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
+    prevDirs_[getIdx(x, y, z)] = static_cast<uint8_t>(dir);
+  }
+  void setPrevAstarNodeDir(frMIdx idx, frDirEnum dir)
+  {
+    prevDirs_[idx] = static_cast<uint8_t>(dir);
   }
 
   // unsafe access, no check
   frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
-    auto baseIdx
-        = static_cast<std::size_t>(getIdx(idx.x(), idx.y(), idx.z())) * 3;
-    return (frDirEnum) (((uint16_t) (prevDirs_[baseIdx]) << 2)
-                        + ((uint16_t) (prevDirs_[baseIdx + 1]) << 1)
-                        + ((uint16_t) (prevDirs_[baseIdx + 2]) << 0));
+    return static_cast<frDirEnum>(prevDirs_[getIdx(idx.x(), idx.y(), idx.z())]);
+  }
+  frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
+  {
+    return static_cast<frDirEnum>(prevDirs_[getIdx(x, y, z)]);
+  }
+  frDirEnum getPrevAstarNodeDir(frMIdx idx) const
+  {
+    return static_cast<frDirEnum>(prevDirs_[idx]);
   }
 
   // unsafe access, no check
   bool isSrc(frMIdx x, frMIdx y, frMIdx z) const
   {
-    return srcs_[getIdx(x, y, z)];
+    return srcs_[getIdx(x, y, z)] != 0;
+  }
+  bool isSrc(frMIdx idx) const
+  {
+    return srcs_[idx] != 0;
   }
   // unsafe access, no check
   bool isDst(frMIdx x, frMIdx y, frMIdx z) const
   {
-    return dsts_[getIdx(x, y, z)];
+    return dsts_[getIdx(x, y, z)] != 0;
+  }
+  bool isDst(frMIdx idx) const
+  {
+    return dsts_[idx] != 0;
   }
   bool isDst(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     getNextGrid(x, y, z, dir);
-    bool b = dsts_[getIdx(x, y, z)];
+    bool b = (dsts_[getIdx(x, y, z)] != 0);
     getPrevGrid(x, y, z, dir);
     return b;
   }

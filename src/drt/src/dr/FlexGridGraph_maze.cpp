@@ -194,8 +194,8 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
               << nextWavefrontGrid.getPathCost() << "\n";
   }
   if (tailDir != frDirEnum::UNKNOWN) {
-    if (getPrevAstarNodeDir(tailIdx) == frDirEnum::UNKNOWN
-        || getPrevAstarNodeDir(tailIdx) == tailDir) {
+    const auto currTailDir = getPrevAstarNodeDir(tailIdx);
+    if (currTailDir == frDirEnum::UNKNOWN || currTailDir == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
       if (debug_) {
         nextWavefrontGrid.setId(curr_id_++);
@@ -823,8 +823,8 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
   frMIdx gridZ = currGrid.z();
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   reverse(gridX, gridY, gridZ, dir);
-  if (!hg || isSrc(gridX, gridY, gridZ)
-      || (getPrevAstarNodeDir({gridX, gridY, gridZ}) != frDirEnum::UNKNOWN)) {
+  const auto nextIdx = getIdx(gridX, gridY, gridZ);
+  if (!hg || srcs_[nextIdx] || prevDirs_[nextIdx] != 0) {
     return false;
   }
   if (ndr_) {
@@ -832,7 +832,7 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
         = (frCoord) getTech()->getLayer(getLayerNum(currGrid.z()))->getWidth()
           / 2;
     if (ndr_->getWidth(currGrid.z()) > 2 * halfWidth
-        && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
+        && !srcs_[getIdx(currGrid.x(), currGrid.y(), currGrid.z())]) {
       halfWidth = ndr_->getWidth(currGrid.z()) / 2;
       // if the expansion goes parallel to a die border and the wire goes out of
       // the die box, forbid expansion
@@ -1002,8 +1002,8 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
       printExpansion(currGrid, "Popping");
     }
     wavefront_.pop();
-    if (getPrevAstarNodeDir({currGrid.x(), currGrid.y(), currGrid.z()})
-        != frDirEnum::UNKNOWN) {
+    const auto currIdx = getIdx(currGrid.x(), currGrid.y(), currGrid.z());
+    if (prevDirs_[currIdx] != 0) {
       continue;
     }
     if (graphics_) {
@@ -1015,7 +1015,7 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                 << yCoords_[currGrid.y()] << " cost " << currGrid.getCost()
                 << " g " << currGrid.getPathCost() << "\n";
     }
-    if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
+    if (dsts_[currIdx]) {
       traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
       return true;
     }
