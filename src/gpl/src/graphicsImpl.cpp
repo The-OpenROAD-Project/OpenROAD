@@ -35,6 +35,13 @@ gui::Chart* GraphicsImpl::routing_chart_ = nullptr;
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
+}
+
+void GraphicsImpl::registerWithGui()
+{
+  if (!gui::Gui::enabled()) {
+    return;
+  }
   gui::Gui::get()->registerRenderer(this);
 }
 
@@ -50,6 +57,7 @@ void GraphicsImpl::debugForMbff()
 {
   setDebugOn(true);
   mode_ = Mbff;
+  registerWithGui();
 }
 
 void GraphicsImpl::debugForInitialPlace(
@@ -60,6 +68,7 @@ void GraphicsImpl::debugForInitialPlace(
   pbc_ = std::move(pbc);
   pbVec_ = pbVec;
   mode_ = Initial;
+  registerWithGui();
 }
 
 void GraphicsImpl::debugForNesterovPlace(
@@ -89,7 +98,7 @@ void GraphicsImpl::debugForNesterovPlace(
     initCharts();
     addDisplayControl(kDrawInstances, true);
     addDisplayControl(kDrawTimingNets, false);
-    gui::Gui::get()->registerRenderer(this);
+    registerWithGui();
 
     if (debug_inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {

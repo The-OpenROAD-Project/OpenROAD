@@ -183,6 +183,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   static gui::Chart* routing_chart_;
   bool debug_on_{false};
 
+  void registerWithGui();
   void initCharts();
   void initDebugHeatmap();
   void drawNesterov(gui::Painter& painter);
