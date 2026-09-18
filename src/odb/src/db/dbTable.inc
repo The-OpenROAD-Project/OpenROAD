@@ -790,7 +790,7 @@ void dbTable<T, page_size>::readBlock(dbIStream& stream,
       const std::vector<uint32_t>& group = members[klass];
       column.resize(group.size());
       for (uint32_t j = 0; j < classes[klass]; ++j) {
-        stream.readBytes(column);
+        stream.read_bytes(column);
         for (size_t i = 0; i < group.size(); ++i) {
           buffer[group[i] + j] = column[i];
         }
