@@ -28,6 +28,8 @@ entries:
         title: Code Generator
       - file: main/src/odb/test/unitTestsPython/README
         title: Unit Tests (Python)
+      - file: main/src/odb/doc/Direction
+        title: Direction of the .odb
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
       - file: main/src/odb/doc/LEF_Grammar
