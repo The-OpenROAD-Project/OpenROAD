@@ -4862,7 +4862,7 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   odb::dbTech* tech = db_->getTech();
   std::vector<std::pair<int, int>> pitches(tech->getRoutingLayerCount() + 1);
   for (auto const& [level, layer] : routing_layers_) {
-    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::ROUTING) {
+    if (layer->getType() != odb::dbTechLayerType::ROUTING) {
       continue;
     }
     if (level > max_layer && max_layer > -1) {
@@ -5318,9 +5318,6 @@ void GlobalRouter::makeItermPins(Net* net,
 
       for (odb::dbBox* box : mterm->getGeometry()) {
         odb::dbTechLayer* tech_layer = box->getTechLayer();
-        if (tech_layer == nullptr) {
-          continue;
-        }
         if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;
         }
@@ -5385,9 +5382,6 @@ void GlobalRouter::makeBtermPins(Net* net,
 
       for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
         odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
-        if (tech_layer == nullptr) {
-          continue;
-        }
         if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;
         }

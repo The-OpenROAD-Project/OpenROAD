@@ -948,7 +948,7 @@ void IRSolver::assertResistanceMap(sta::Scene* corner) const
       continue;
     }
 
-    if (layer && res == 0.0
+    if (res == 0.0
         && (layer->getType() == odb::dbTechLayerType::CUT
             || layer->getType() == odb::dbTechLayerType::ROUTING)) {
       logger_->warn(utl::PSM, 20, "{} has zero resistance.", layer->getName());
@@ -970,9 +970,6 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Scene* corner) const
 
   for (auto* layer : tech->getLayers()) {
     Connection::Resistance res = 0.0;
-    if (layer == nullptr) {
-      continue;
-    }
 
     switch (layer->getType()) {
       case odb::dbTechLayerType::ROUTING: {

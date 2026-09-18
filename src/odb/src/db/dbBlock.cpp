@@ -2361,8 +2361,7 @@ void dbBlock::setDieArea(const Polygon& new_area)
 
       // Create routing blockages
       for (dbTechLayer* tech_layer : tech_layers) {
-        if (tech_layer == nullptr
-            || tech_layer->getType() == odb::dbTechLayerType::OVERLAP) {
+        if (tech_layer->getType() == odb::dbTechLayerType::OVERLAP) {
           continue;
         }
 
@@ -2528,8 +2527,7 @@ int dbBlock::getGCellTileSize()
     odb::dbTechLayer* tech_layer = nullptr;
     int count = 0;
     for (auto* layer : tech->getLayers()) {
-      if (layer == nullptr || layer->getType() != dbTechLayerType::ROUTING
-          || layer->isBackside()) {
+      if (layer->getType() != dbTechLayerType::ROUTING || layer->isBackside()) {
         continue;
       }
       if (++count == layer_idx) {

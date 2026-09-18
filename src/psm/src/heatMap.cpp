@@ -56,7 +56,7 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
       [this]() {
         std::vector<std::string> layers;
         for (auto* layer : tech_->getLayers()) {
-          if (layer && layer->getType() == odb::dbTechLayerType::ROUTING) {
+          if (layer->getType() == odb::dbTechLayerType::ROUTING) {
             layers.push_back(layer->getName());
           }
         }

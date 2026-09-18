@@ -91,9 +91,6 @@ Pin* Network::addPin(odb::dbITerm* term)
     for (auto pin : term->getMTerm()->getMPins()) {
       for (auto box : pin->getGeometry()) {
         auto layer = box->getTechLayer();
-        if (layer == nullptr) {
-          continue;
-        }
         if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
           continue;
         }
