@@ -32,7 +32,7 @@ struct RepairSetupContext
   float initial_tns{0.0f};
   float previous_tns{0.0f};
   bool progress_header_printed{false};
-  bool progress_show_startpoint_metrics{false};
+  bool progress_header_show_startpoint_metrics{false};
   // Design area for the progress table, and the committer's netlist edit
   // count it was computed at; -1 means not yet computed. Reset to -1 at
   // every phase start, since a phase can edit outside the committer.

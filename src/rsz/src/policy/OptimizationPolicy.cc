@@ -115,22 +115,23 @@ bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
 {
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
-                     setup_context_.progress_show_startpoint_metrics);
+                     setup_context_.progress_header_show_startpoint_metrics);
   printFinalProgress(final_targets, initial_design_area);
   committer_.printTrackerFinalReports(finalReportPins());
   return reportRepairSummary();
 }
 
-void OptimizationPolicy::printProgressHeader(
-    const bool show_startpoint_metrics) const
+void OptimizationPolicy::printProgressHeader() const
 {
+  const bool show_startpoint_metrics = showStartpointMetrics();
   if (setup_context_.progress_header_printed
-      && setup_context_.progress_show_startpoint_metrics
+      && setup_context_.progress_header_show_startpoint_metrics
              == show_startpoint_metrics) {
     return;
   }
   setup_context_.progress_header_printed = true;
-  setup_context_.progress_show_startpoint_metrics = show_startpoint_metrics;
+  setup_context_.progress_header_show_startpoint_metrics
+      = show_startpoint_metrics;
   if (show_startpoint_metrics) {
     logger_->report(
         "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
@@ -155,7 +156,9 @@ void OptimizationPolicy::printFinalProgress(
     const RepairTargetCollector& target_collector,
     const double initial_design_area) const
 {
-  printProgressHeader(setup_context_.progress_show_startpoint_metrics);
+  if (!setup_context_.progress_header_printed) {
+    printProgressHeader();
+  }
 
   const sta::Slack wns = target_collector.getWns();
   const sta::Slack en_tns = target_collector.getTns(false);
@@ -168,7 +171,7 @@ void OptimizationPolicy::printFinalProgress(
     area_growth_percent = area_growth / initial_design_area * 100.0;
   }
 
-  if (setup_context_.progress_show_startpoint_metrics) {
+  if (setup_context_.progress_header_show_startpoint_metrics) {
     const sta::Slack st_tns = target_collector.getTns(true);
     logger_->report(
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "

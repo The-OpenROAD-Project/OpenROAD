@@ -26,6 +26,9 @@ class SetupDirectionalPolicy : public SetupLegacyBase
   const char* name() const override { return "SetupDirectionalPolicy"; }
   void iterate() override;
 
+ protected:
+  bool showStartpointMetrics() const override { return use_starts_; }
+
  private:
   void repairSetupDirectional(bool use_startpoints,
                               float setup_slack_margin,

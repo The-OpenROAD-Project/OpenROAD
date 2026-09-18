@@ -122,7 +122,8 @@ class OptimizationPolicy
   sta::Slack totalNegativeSlack(const sta::MinMax* max) const;
   void prewarmStaForPrepareStage() const;
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
-  void printProgressHeader(bool show_startpoint_metrics) const;
+  virtual bool showStartpointMetrics() const { return false; }
+  void printProgressHeader() const;
   void printFinalProgress(const RepairTargetCollector& target_collector,
                           double initial_design_area) const;
   virtual const std::vector<const sta::Pin*>& finalReportPins() const;

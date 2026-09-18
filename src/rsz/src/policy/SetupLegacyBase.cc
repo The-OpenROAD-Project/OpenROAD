@@ -831,31 +831,31 @@ int SetupLegacyBase::totalMoves(const MoveType type) const
 
 void SetupLegacyBase::printProgress(const int iteration,
                                     const bool force,
-                                    const char phase_marker,
-                                    const bool use_startpoint_metrics) const
+                                    const char phase_marker) const
 {
+  const bool show_startpoint_metrics = showStartpointMetrics();
   const bool start = iteration == 0;
   const bool metrics_changed
       = setup_context_.progress_header_printed
-        && setup_context_.progress_show_startpoint_metrics
-               != use_startpoint_metrics;
+        && setup_context_.progress_header_show_startpoint_metrics
+               != show_startpoint_metrics;
 
   if (start || metrics_changed) {
-    printProgressHeader(use_startpoint_metrics);
+    printProgressHeader();
   }
 
   if (iteration % print_interval_ != 0 && !force) {
     return;
   }
 
-  if (use_startpoint_metrics) {
+  if (show_startpoint_metrics) {
     target_collector_->collectViolatingStartpoints();
   }
 
   const sta::Slack wns = target_collector_->getWns();
   const sta::Slack en_tns = target_collector_->getTns(false);
   const sta::Pin* worst_pin
-      = target_collector_->getWorstPin(use_startpoint_metrics);
+      = target_collector_->getWorstPin(show_startpoint_metrics);
 
   std::string itr_field = fmt::format("{}{}", iteration, phase_marker);
 
@@ -892,7 +892,7 @@ void SetupLegacyBase::printProgress(const int iteration,
       delayAsString(wns, 3, sta_));
 
   const std::string startpoint_tns_field
-      = use_startpoint_metrics
+      = show_startpoint_metrics
             ? fmt::format(
                   " | {: >10s}",
                   delayAsString(target_collector_->getTns(true), 1, sta_))
