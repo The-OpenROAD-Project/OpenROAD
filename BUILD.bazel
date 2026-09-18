@@ -768,12 +768,54 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
+# --- Python formatting check (black --check) ------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_py_test",
+    srcs = ["//bazel:py_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:black)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "//bazel:black",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    tags = [
+        "external",
+        "local",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# --- Python auto-format only (black) --------------------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_py",
+    srcs = ["//bazel:py_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:black)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "//bazel:black",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
         ":fmt_bzl_test",
+        ":fmt_py_test",
         ":fmt_tcl_test",
         ":fmt_yaml_test",
         ":lint_bzl_test",
@@ -802,15 +844,19 @@ sh_binary(
         "$(rootpath @git)",
         "$(rootpath //bazel:yaml_tidy.sh)",
         "$(rootpath //bazel:yamlfix)",
+        "$(rootpath //bazel:py_tidy.sh)",
+        "$(rootpath //bazel:black)",
     ],
     data = [
         "MODULE.bazel",
         "tclint.toml",
         "yamlfix.ignore",
         "yamlfix.toml",
+        "//bazel:black",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
         "//bazel:git_ls_files.sh",
+        "//bazel:py_tidy.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
