@@ -865,6 +865,9 @@ void GlobalRouter::routeSecondaryPowerNets()
     for (Pin& pin : net->getPins()) {
       odb::Point pin_pt = pin.getPosition();
       int pin_level = pin.getConnectionLayer();
+      if (pin_level < 1) {
+        continue;
+      }
 
       // Find the closest point on any SWire box
       odb::Point closest_pt;
@@ -890,7 +893,7 @@ void GlobalRouter::routeSecondaryPowerNets()
           int64_t dist = std::abs(pin_pt.x() - closest_x)
                          + std::abs(pin_pt.y() - closest_y);
           // Prefer straps closer in routing layers
-          constexpr int64_t kLayerPenalty = 1000;
+          const int64_t kLayerPenalty = db_->getTech()->getDbUnitsPerMicron();
           dist += kLayerPenalty * std::abs(pin_level - swire_level);
 
           if (dist < min_dist) {
@@ -942,14 +945,6 @@ void GlobalRouter::routeSecondaryPowerNets()
                            closest_grid_pt.x(),
                            closest_grid_pt.y(),
                            l + 1);
-      }
-      if (min_l < max_l) {
-        route.emplace_back(closest_grid_pt.x(),
-                           closest_grid_pt.y(),
-                           max_l,
-                           closest_grid_pt.x(),
-                           closest_grid_pt.y(),
-                           max_l);
       }
     }
   }
