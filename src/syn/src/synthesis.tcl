@@ -23,7 +23,7 @@ proc synthesize { args } {
   syn::liveness_opt_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
-    syn::abc_roundtrip {&ps; &st; &fraig -v -w;} $naming_threshold
+    syn::abc_roundtrip_cmd {&ps; &st; &fraig -v -w;} $naming_threshold
   }
 
   # now bitblast incl. arithmetic
@@ -31,15 +31,15 @@ proc synthesize { args } {
   syn::opt_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
-    syn::abc_roundtrip {&ps; &st; &dc2 -v; &dc2 -v; &if -g -K 6; &dc2 -v; &dc2 -v; &dc2 -v; &ps} \
-      $naming_threshold
+    set script {&ps; &st; &dc2 -v; &dc2 -v; &if -g -K 6; &dc2 -v; &dc2 -v; &dc2 -v; &ps}
+    syn::abc_roundtrip_cmd $script $naming_threshold
   }
 
-  syn::map_sequentials
-  syn::map_combinationals
+  syn::map_sequentials_cmd
+  syn::map_combinationals_cmd
   syn::gate_fuse_opt_cmd
   syn::stats
-  syn::export_to_odb
+  syn::export_to_odb_cmd
 }
 
 namespace eval syn {

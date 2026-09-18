@@ -22,6 +22,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
@@ -45,6 +46,100 @@ Grid::Grid(VoltageDomain* domain,
 }
 
 Grid::~Grid() = default;
+
+// Where each drawn edge ends up once the cell is placed.
+//
+// dbTransform rotates as well as mirrors, so the right-angle orientations
+// cycle the edge labels -- R90 puts the drawn left edge on the placed bottom --
+// rather than merely swapping opposite pairs.  An EdgeSpec is a set of
+// distances off the four edges with no direction of its own, so the whole
+// transform applies to it; this matches dbInst::getTransformedHalo, which
+// remaps a DEF halo the same way.
+EdgeSpec EdgeSpec::transform(const odb::dbOrientType orient) const
+{
+  switch (orient) {
+    // axis preserving: opposite edges swap
+    case odb::dbOrientType::R0:  // N
+      return {left, bottom, right, top};
+    case odb::dbOrientType::MY:  // FN
+      return {right, bottom, left, top};
+    case odb::dbOrientType::MX:  // FS
+      return {left, top, right, bottom};
+    case odb::dbOrientType::R180:  // S
+      return {right, top, left, bottom};
+    // axis swapping: the edge labels turn with the cell
+    case odb::dbOrientType::R90:  // W
+      return {top, left, bottom, right};
+    case odb::dbOrientType::MXR90:  // FW
+      return {bottom, left, top, right};
+    case odb::dbOrientType::MYR90:  // FE
+      return {top, right, bottom, left};
+    case odb::dbOrientType::R270:  // E
+      return {bottom, right, top, left};
+  }
+  return *this;
+}
+
+EdgeSpec EdgeSpec::untransform(const odb::dbOrientType orient) const
+{
+  // Six of the eight remappings are a pair of edge swaps and so are their own
+  // inverse; the two quarter turns invert into each other.
+  switch (orient) {
+    case odb::dbOrientType::R90:
+      return transform(odb::dbOrientType::R270);
+    case odb::dbOrientType::R270:
+      return transform(odb::dbOrientType::R90);
+    default:
+      return transform(orient);
+  }
+}
+
+// Sign flips of a placed orientation relative to the orientation the grid's
+// straps are written against: R0 for the four that keep the axes, R90 for the
+// four that swap them.
+//
+// A strap pattern cannot turn with the instance the way an EdgeSpec does,
+// because a strap's direction comes from its layer and layers are fixed in the
+// die frame.  A grid on a right-angle instance therefore has to be written in
+// the rotated frame to begin with, and R90 is that frame.  Measured that way
+// each group holds the same four axis-preserving transforms of its own
+// reference -- identity, mirror x, mirror y, both -- so a grid written for N
+// covers S, FN and FS, and one written for W covers E, FW and FE, without
+// being rewritten per orientation.
+Grid::AxisMirror Grid::getAxisMirror(const odb::dbOrientType orient)
+{
+  switch (orient) {
+    // axis preserving, measured against R0
+    case odb::dbOrientType::R0:  // N
+      return {false, false};
+    case odb::dbOrientType::MY:  // FN
+      return {true, false};
+    case odb::dbOrientType::MX:  // FS
+      return {false, true};
+    case odb::dbOrientType::R180:  // S
+      return {true, true};
+    // axis swapping, measured against R90
+    case odb::dbOrientType::R90:  // W
+      return {false, false};
+    case odb::dbOrientType::MXR90:  // FW, R90 with the placed x mirrored
+      return {true, false};
+    case odb::dbOrientType::MYR90:  // FE, R90 with the placed y mirrored
+      return {false, true};
+    case odb::dbOrientType::R270:  // E, R90 turned 180, so both mirror
+      return {true, true};
+  }
+  return {false, false};
+}
+
+bool Grid::mirrorsX() const
+{
+  return getAxisMirror(getOrientation()).x;
+}
+
+bool Grid::mirrorsY() const
+{
+  return getAxisMirror(getOrientation()).y;
+}
 
 odb::dbBlock* Grid::getBlock() const
 {
@@ -469,6 +564,7 @@ void Grid::report() const
   auto* logger = getLogger();
   logger->report("Grid name: {}", getLongName());
   logger->report("Type: {}", typeToString(type()));
+  reportHeader();
 
   if (!rings_.empty()) {
     logger->report("Rings:");
@@ -873,19 +969,26 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
       const auto& search_obs = search_obstructions[layer];
       if (search_obs.qbegin(
               bgi::intersects(via->getArea())
-              && bgi::satisfies([this, layer](const ShapePtr& other) -> bool {
-                   if (other->shapeType() != Shape::kGridObs) {
-                     return true;
-                   }
-                   // only consider obstructions on routing layers as blocking
-                   // for grid obstructions
-                   if (layer->getType() != odb::dbTechLayerType::ROUTING) {
-                     return false;
-                   }
-                   const GridObsShape* shape
-                       = static_cast<GridObsShape*>(other.get());
-                   return !shape->belongsTo(this);
-                 }))
+              && bgi::satisfies(
+                  [this, layer, via](const ShapePtr& other) -> bool {
+                    if (other->shapeType() == Shape::kPadObs
+                        && other->getNet() != nullptr
+                        && other->getNet() == via->getNet()) {
+                      // the pad metal this via is landing on
+                      return false;
+                    }
+                    if (other->shapeType() != Shape::kGridObs) {
+                      return true;
+                    }
+                    // only consider obstructions on routing layers as blocking
+                    // for grid obstructions
+                    if (layer->getType() != odb::dbTechLayerType::ROUTING) {
+                      return false;
+                    }
+                    const GridObsShape* shape
+                        = static_cast<GridObsShape*>(other.get());
+                    return !shape->belongsTo(this);
+                  }))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(FailedViaReason::kObstructed);
@@ -901,11 +1004,10 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // Remove overlapping vias and keep largest
-  Via::ViaTree overlapping_via_tree;
-  for (const auto& via : vias) {
-    overlapping_via_tree.insert(via);
-  }
+  // Remove overlapping vias and keep largest. Build the tree in one go:
+  // the packing constructor is far cheaper than inserting millions of
+  // vias one at a time, and nothing queries the tree while it is built.
+  Via::ViaTree overlapping_via_tree(vias.begin(), vias.end());
   for (const auto& via : vias) {
     if (via->isFailed()) {
       continue;
@@ -946,10 +1048,30 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
+  // Drop the vias this grid made last time from the shapes they attach to.
+  // They are about to be replaced, and a shape that kept them would hold
+  // every earlier generation's vias: findRepairChannels would count stale
+  // connections, and the lists (and the vias they keep alive) grew with
+  // every repair pass -- on a large die, to tens of gigabytes.
+  {
+    std::set<Via*> old_vias;
+    std::set<Shape*> touched;
+    for (const auto& via : vias_) {
+      old_vias.insert(via.get());
+      for (const auto& shape : {via->getLowerShape(), via->getUpperShape()}) {
+        if (shape != nullptr) {
+          touched.insert(shape.get());
+        }
+      }
+    }
+    for (Shape* shape : touched) {
+      shape->removeVias(old_vias);
+    }
+  }
+
   // build via tree
-  vias_.clear();
+  vias_ = Via::ViaTree(vias.begin(), vias.end());
   for (auto& via : vias) {
-    vias_.insert(via);
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
@@ -1107,12 +1229,12 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
   for (const auto& ring : rings_) {
     int hor_size, ver_size;
     ring->getTotalWidth(hor_size, ver_size);
-    auto offset = ring->getOffset();
+    const EdgeSpec& offset = ring->getOffset();
 
-    const odb::Rect ring_rect(core.xMin() - ver_size - offset[0],
-                              core.yMin() - hor_size - offset[1],
-                              core.xMax() + ver_size + offset[2],
-                              core.yMax() + hor_size + offset[3]);
+    const odb::Rect ring_rect(core.xMin() - ver_size - offset.left,
+                              core.yMin() - hor_size - offset.bottom,
+                              core.xMax() + ver_size + offset.right,
+                              core.yMax() + hor_size + offset.top);
     for (auto* layer : ring->getLayers()) {
       auto obs = std::make_shared<GridObsShape>(layer, ring_rect, this);
       obs->generateObstruction();
@@ -1162,14 +1284,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
   // placed instances obs
   for (auto* inst : block->getInsts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-
     auto* master = inst->getMaster();
+
     if (master->isCore()) {
       continue;
     }
+    bool is_padframe = master->isPad();
     if (master->isEndCap()) {
       switch (master->getType()) {
         case odb::dbMasterType::ENDCAP_TOPLEFT:
@@ -1177,11 +1297,21 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
         case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
         case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
           // Master is a pad corner
+          is_padframe = true;
           break;
         default:
           // Master is a std cell endcap
           continue;
       }
+    }
+
+    // A padring is routinely handed over PLACED rather than FIXED, and
+    // CoreGrid::setupDirectConnect will happily connect to it, so a padframe
+    // cell must obstruct as soon as it has a location.
+    const bool is_positioned
+        = is_padframe ? inst->getPlacementStatus().isPlaced() : inst->isFixed();
+    if (!is_positioned) {
+      continue;
     }
 
     if (skip_insts.find(inst) != skip_insts.end()) {
@@ -1195,8 +1325,14 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
                "Get instance {} obstructions",
                inst->getName());
 
-    for (const auto& [layer, shapes] :
-         InstanceGrid::getInstanceObstructions(inst)) {
+    // A pad is the one cell the grid is expected to reach into, so its
+    // obstructions are described honestly - real metal in the rect and the
+    // spacing in the obstruction box - and the metal that sits under one of the
+    // pad's own pins is attributed to that pin's net.
+    const ShapeVectorMap inst_obs
+        = is_padframe ? InstanceGrid::getPadObstructions(inst)
+                      : InstanceGrid::getInstanceObstructions(inst);
+    for (const auto& [layer, shapes] : inst_obs) {
       obs[layer].insert(obs[layer].end(), shapes.begin(), shapes.end());
     }
   }
@@ -1437,11 +1573,12 @@ InstanceGrid::InstanceGrid(
 {
   auto* halo = inst->getHalo();
   if (halo != nullptr && !halo->isSoft()) {
-    odb::Rect halo_box = inst->getTransformedHalo();
+    // getTransformedHalo has already mapped the halo onto the placed
+    // instance, so it is assigned rather than passed through addHalo
+    const odb::Rect halo_box = inst->getTransformedHalo();
 
-    // copy halo from db
-    addHalo(
-        {halo_box.xMin(), halo_box.yMin(), halo_box.xMax(), halo_box.yMax()});
+    halos_
+        = {halo_box.xMin(), halo_box.yMin(), halo_box.xMax(), halo_box.yMax()};
   }
 }
 
@@ -1450,9 +1587,9 @@ std::string InstanceGrid::getLongName() const
   return getName() + " - " + inst_->getName();
 }
 
-void InstanceGrid::addHalo(const std::array<int, 4>& halos)
+void InstanceGrid::addHalo(const Halo& halos)
 {
-  halos_ = halos;
+  halos_ = halos.transform(getOrientation());
 }
 
 void InstanceGrid::setGridToBoundary(bool value)
@@ -1515,12 +1652,12 @@ odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
 {
   odb::Rect halo_rect = rect;
   if (apply_horizontal) {
-    halo_rect.set_xlo(halo_rect.xMin() - halo[0]);
-    halo_rect.set_xhi(halo_rect.xMax() + halo[2]);
+    halo_rect.set_xlo(halo_rect.xMin() - halo.left);
+    halo_rect.set_xhi(halo_rect.xMax() + halo.right);
   }
   if (apply_vertical) {
-    halo_rect.set_ylo(halo_rect.yMin() - halo[1]);
-    halo_rect.set_yhi(halo_rect.yMax() + halo[3]);
+    halo_rect.set_ylo(halo_rect.yMin() - halo.bottom);
+    halo_rect.set_yhi(halo_rect.yMax() + halo.top);
   }
   if (rect_is_min) {
     halo_rect.merge(rect);
@@ -1531,6 +1668,119 @@ odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
 odb::Rect InstanceGrid::getGridBoundary() const
 {
   return getDomainBoundary();
+}
+
+ShapeVectorMap InstanceGrid::getPadObstructions(odb::dbInst* inst)
+{
+  using boost::polygon::operators::operator&=;
+  using boost::polygon::operators::operator-=;
+
+  ShapeVectorMap obs;
+
+  const odb::dbTransform transform = inst->getTransform();
+  auto* master = inst->getMaster();
+
+  // Pin metal of the pad, in master coordinates, kept per net and as a union.
+  // Only routing geometry is considered: an obstruction on a cut layer is never
+  // coincident with a pin in any useful sense.
+  odb::PtrMap<odb::dbTechLayer,
+              odb::PtrMap<odb::dbNet, odb::geom::BoostPolygon90Set>>
+      pin_metal;
+  odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygon90Set> all_pin_metal;
+  for (auto* iterm : inst->getITerms()) {
+    auto* net = iterm->getNet();
+    if (net == nullptr) {
+      // metal that belongs to nothing the grid can claim stays opaque
+      continue;
+    }
+    auto add_pin_metal
+        = [&pin_metal, &all_pin_metal, net](odb::dbTechLayer* pin_layer,
+                                            const odb::Rect& rect) {
+            if (pin_layer == nullptr) {
+              return;
+            }
+            const auto pin_poly = odb::geom::toPolygon90(rect);
+            pin_metal[pin_layer][net].insert(pin_poly);
+            all_pin_metal[pin_layer].insert(pin_poly);
+          };
+
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        if (box->isVia()) {
+          // a pin drawn as a via still puts metal on the routing layers
+          auto* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect via_rect = via_box->getBox();
+            via_transform.apply(via_rect);
+            add_pin_metal(via_box->getTechLayer(), via_rect);
+          }
+          continue;
+        }
+        add_pin_metal(box->getTechLayer(), box->getBox());
+      }
+    }
+  }
+
+  auto add_shape = [&obs, &transform](odb::dbTechLayer* layer,
+                                      const odb::Rect& rect,
+                                      odb::dbNet* net) {
+    odb::Rect placed = rect;
+    transform.apply(placed);
+    auto shape = net == nullptr
+                     ? std::make_shared<Shape>(layer, placed, Shape::kPadObs)
+                     : std::make_shared<Shape>(layer, net, placed);
+    shape->setShapeType(Shape::kPadObs);
+    // rect_ stays the real metal and obs_ carries one spacing, so a shape
+    // tested against this obstruction is charged the spacing once rather than
+    // twice.
+    shape->generateObstruction();
+    obs[layer].push_back(std::move(shape));
+  };
+
+  for (auto* ob : master->getObstructions()) {
+    auto* layer = ob->getTechLayer();
+    if (layer == nullptr) {
+      continue;
+    }
+    const odb::Rect obs_rect = ob->getBox();
+
+    const auto pins = all_pin_metal.find(layer);
+    if (pins == all_pin_metal.end()) {
+      add_shape(layer, obs_rect, nullptr);
+      continue;
+    }
+
+    // the part of the obstruction that no pin covers blocks every net
+    odb::geom::BoostPolygon90Set blocking = odb::geom::toPolygonSet90(obs_rect);
+    blocking -= pins->second;
+    for (const odb::Rect& rect : odb::geom::extractRectangles(blocking)) {
+      add_shape(layer, rect, nullptr);
+    }
+
+    // the part coincident with a pin is that net's own metal
+    for (const auto& [net, net_pins] : pin_metal[layer]) {
+      odb::geom::BoostPolygon90Set owned = odb::geom::toPolygonSet90(obs_rect);
+      owned &= net_pins;
+      for (const odb::Rect& rect : odb::geom::extractRectangles(owned)) {
+        add_shape(layer, rect, net);
+      }
+    }
+  }
+
+  // the pins themselves obstruct every net but their own
+  for (const auto& [layer, pin_shapes] : getInstancePins(inst)) {
+    for (const auto& pin_shape : pin_shapes) {
+      pin_shape->setShapeType(Shape::kPadObs);
+      pin_shape->generateObstruction();
+      obs[layer].push_back(pin_shape);
+    }
+  }
+
+  return obs;
 }
 
 ShapeVectorMap InstanceGrid::getInstanceObstructions(
@@ -1550,10 +1800,15 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
     auto* layer = ob->getTechLayer();
     odb::Rect spacing_rect;
     obs_rect.bloat(layer->getSpacing(), spacing_rect);
+
+    // the halo is held in the placed frame, so it has to be applied after the
+    // obstruction has been moved there; this matches the pin shapes below,
+    // which are already transformed by getInstancePins
+    transform.apply(obs_rect);
+    transform.apply(spacing_rect);
     obs_rect = applyHalo(obs_rect, halo, true, true, true);
     obs_rect.merge(spacing_rect);
 
-    transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::kBlockObs);
 
     obs[layer].push_back(std::move(shape));
@@ -1689,6 +1944,12 @@ std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
   return nets;
 }
 
+void InstanceGrid::reportHeader() const
+{
+  // the offsets and halo reported below are all resolved against this
+  getLogger()->report("Orientation: {}", getOrientation().getString());
+}
+
 void InstanceGrid::report() const
 {
   Grid::report();
@@ -1696,10 +1957,10 @@ void InstanceGrid::report() const
 
   const double units = getDomain()->getBlock()->getDbUnitsPerMicron();
   logger->report("Halo:");
-  logger->report("  Left: {:.4f}", halos_[0] / units);
-  logger->report("  Bottom: {:.4f}", halos_[1] / units);
-  logger->report("  Right: {:.4f}", halos_[2] / units);
-  logger->report("  Top: {:.4f}", halos_[3] / units);
+  logger->report("  Left: {:.4f}", halos_.left / units);
+  logger->report("  Bottom: {:.4f}", halos_.bottom / units);
+  logger->report("  Right: {:.4f}", halos_.right / units);
+  logger->report("  Top: {:.4f}", halos_.top / units);
 }
 
 bool InstanceGrid::isValid() const
@@ -1719,12 +1980,7 @@ bool InstanceGrid::isValid() const
 
 bool InstanceGrid::hasHalo() const
 {
-  for (int margin : halos_) {
-    if (margin != 0) {
-      return true;
-    }
-  }
-  return false;
+  return !halos_.isZero();
 }
 
 InstanceGrid::Halo InstanceGrid::suggestHalo(
@@ -1752,15 +2008,17 @@ InstanceGrid::Halo InstanceGrid::suggestHalo(
   for (const odb::Rect& row : rows) {
     if (overlaps_y(row)) {
       if (row.xMin() >= inst_box.xMax()) {  // right of the instance
-        suggested[2] = std::min(suggested[2], row.xMin() - inst_box.xMax());
+        suggested.right
+            = std::min(suggested.right, row.xMin() - inst_box.xMax());
       } else {  // left of the instance
-        suggested[0] = std::min(suggested[0], inst_box.xMin() - row.xMax());
+        suggested.left = std::min(suggested.left, inst_box.xMin() - row.xMax());
       }
     } else if (overlaps_x(row)) {
       if (row.yMin() >= inst_box.yMax()) {  // above the instance
-        suggested[3] = std::min(suggested[3], row.yMin() - inst_box.yMax());
+        suggested.top = std::min(suggested.top, row.yMin() - inst_box.yMax());
       } else {  // below the instance
-        suggested[1] = std::min(suggested[1], inst_box.yMin() - row.yMax());
+        suggested.bottom
+            = std::min(suggested.bottom, inst_box.yMin() - row.yMax());
       }
     } else {
       corner_rows.push_back(row);
@@ -1775,17 +2033,17 @@ InstanceGrid::Halo InstanceGrid::suggestHalo(
       continue;
     }
     const bool right = row.xMin() >= inst_box.xMax();
-    const int x_side = right ? 2 : 0;
+    int& x_edge = right ? suggested.right : suggested.left;
     const int x_halo
         = right ? row.xMin() - inst_box.xMax() : inst_box.xMin() - row.xMax();
     const bool above = row.yMin() >= inst_box.yMax();
-    const int y_side = above ? 3 : 1;
+    int& y_edge = above ? suggested.top : suggested.bottom;
     const int y_halo
         = above ? row.yMin() - inst_box.yMax() : inst_box.yMin() - row.yMax();
-    if (suggested[x_side] - x_halo <= suggested[y_side] - y_halo) {
-      suggested[x_side] = std::min(suggested[x_side], x_halo);
+    if (x_edge - x_halo <= y_edge - y_halo) {
+      x_edge = std::min(x_edge, x_halo);
     } else {
-      suggested[y_side] = std::min(suggested[y_side], y_halo);
+      y_edge = std::min(y_edge, y_halo);
     }
   }
 
@@ -1821,7 +2079,10 @@ void InstanceGrid::checkHalo() const
     return;
   }
 
-  const Halo suggested = suggestHalo(overlapping_rows);
+  // suggestHalo works in the placed frame; report the suggestion in the
+  // master's frame so the user can type it back into -halo unchanged
+  const Halo suggested
+      = suggestHalo(overlapping_rows).untransform(getOrientation());
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
   getLogger()->error(
@@ -1832,10 +2093,10 @@ void InstanceGrid::checkHalo() const
       getLongName(),
       first_row,
       overlapping_rows.size() - 1,
-      suggested[0] / dbus,
-      suggested[1] / dbus,
-      suggested[2] / dbus,
-      suggested[3] / dbus);
+      suggested.left / dbus,
+      suggested.bottom / dbus,
+      suggested.right / dbus,
+      suggested.top / dbus);
 }
 
 void InstanceGrid::checkSetup() const

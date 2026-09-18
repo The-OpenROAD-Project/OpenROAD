@@ -14,6 +14,12 @@
 
 namespace odb {
 
+struct CandidateSection;
+
+inline constexpr int kMaxCandidateSections = 32;
+
+using CandidateSections = std::array<CandidateSection, kMaxCandidateSections>;
+
 class tmg_rc_sh
 {
  public:
@@ -57,14 +63,14 @@ class tmg_rc_sh
   dbTechNonDefaultRule* rule_{nullptr};
 };
 
-struct tmg_rc
+struct WireSection
 {
-  tmg_rc(const int from_idx,
-         const int to_idx,
-         const tmg_rc_sh& shape,
-         const bool is_vertical,
-         const int width,
-         const int default_ext)
+  WireSection(const int from_idx,
+              const int to_idx,
+              const tmg_rc_sh& shape,
+              const bool is_vertical,
+              const int width,
+              const int default_ext)
       : from_idx(from_idx),
         to_idx(to_idx),
         shape(shape),
@@ -73,7 +79,8 @@ struct tmg_rc
         default_ext(default_ext)
   {
   }
-  const int from_idx;  // index to _ptV
+
+  const int from_idx;  // index to wire_points_
   int to_idx;
   tmg_rc_sh shape;
   const bool is_vertical;
@@ -81,17 +88,18 @@ struct tmg_rc
   const int default_ext;
 };
 
-struct tmg_rcpt
+struct WirePoint
 {
-  tmg_rcpt(int x, int y, dbTechLayer* layer) : x(x), y(y), layer(layer) {}
+  WirePoint(int x, int y, dbTechLayer* layer) : x(x), y(y), layer(layer) {}
+
   const int x;  // nominal point
   const int y;
   dbTechLayer* const layer;
-  int tindex{-1};  // index to _termV
-  tmg_rcpt* next_for_term{nullptr};
-  tmg_rcpt* t_alt{nullptr};
-  tmg_rcpt* next_for_clear{nullptr};
-  tmg_rcpt* sring{nullptr};
+  int tindex{-1};  // index to terminals_
+  WirePoint* next_for_term{nullptr};
+  WirePoint* t_alt{nullptr};
+  WirePoint* next_for_clear{nullptr};
+  WirePoint* sring{nullptr};
   int dbwire_id{-1};
   bool fre{false};
   bool jct{false};
@@ -99,19 +107,25 @@ struct tmg_rcpt
   bool c2pinpt{false};
 };
 
-struct tmg_rcterm
+struct Terminal
 {
-  tmg_rcterm(dbITerm* iterm) : iterm(iterm), bterm(nullptr) {}
-  tmg_rcterm(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
-  dbITerm* const iterm;
-  dbBTerm* const bterm;
-  tmg_rcpt* pt;        // list of points
-  tmg_rcpt* first_pt;  // first point in dfs
+  Terminal(dbITerm* iterm) : iterm(iterm) {}
+  Terminal(dbBTerm* bterm) : bterm(bterm) {}
+
+  dbITerm* const iterm{nullptr};
+  dbBTerm* const bterm{nullptr};
+  WirePoint* pt{nullptr};        // list of points
+  WirePoint* first_pt{nullptr};  // first point in dfs
 };
 
-struct tmg_rcshort
+// This is how we keep the information that two sections from different paths
+// are touching each other: two points, one from each section. Each point is
+// the end of the section that is closest to where the two touch.
+// Usually, the two points are the same spot, but not necessarily.
+struct Short
 {
-  tmg_rcshort(int i0, int i1) : i0(i0), i1(i1) {}
+  Short(int i0, int i1) : i0(i0), i1(i1) {}
+
   const int i0;
   const int i1;
   bool skip{false};
@@ -126,11 +140,12 @@ struct tmg_rcshort
 // is_via = 0 ==> wire
 //        = 1 ==> via
 //        = 2 ==> pin
-class tmg_conn_search
+class ShapeSearch
 {
  public:
-  tmg_conn_search();
-  ~tmg_conn_search();
+  ShapeSearch();
+  ~ShapeSearch();
+
   void clear();
   void addShape(int level, const Rect& bounds, int is_via, int id);
   void searchStart(int level, const Rect& bounds, int is_via);
@@ -141,12 +156,16 @@ class tmg_conn_search
   std::unique_ptr<Impl> impl_;
 };
 
-class tmg_conn_graph;
-struct tmg_connect_shape
+class ConnectionGraph;
+
+// A wire section whose geometry is touching a terminal's shape, so it
+// is considered a candidate to possess the wire point that represents
+// the connection of the wire with that terminal.
+struct CandidateSection
 {
-  int k;
-  Rect rect;
-  int rtlev;
+  int index;
+  int routing_level;  // From the database.
+  Rect terminal_box;
 };
 
 class tmg_conn
@@ -154,43 +173,51 @@ class tmg_conn
  public:
   tmg_conn(utl::Logger* logger);
   ~tmg_conn();
+
   void analyzeNet(dbNet* net);
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
   bool isConnected() { return connected_; }
-  int ptDist(int fr, int to) const;
-  const tmg_rcpt& pt(const int index) const { return ptV_[index]; }
+  int distance(int fr, int to) const;
+  const WirePoint& wirePoint(const int point_index) const
+  {
+    return wire_points_[point_index];
+  }
   void checkConnOrdered();
 
  private:
-  tmg_rcpt& pt(const int index) { return ptV_[index]; }
+  WirePoint& wirePoint(const int point_index)
+  {
+    return wire_points_[point_index];
+  }
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
-  void findConnections();
+  void identifyShorts();
   void removeShortLoops();
   void removeWireLoops();
+  void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
-  tmg_rcpt* allocPt(int x, int y, dbTechLayer* layer);
-  void addRc(const dbShape& s,
-             int from_idx,
-             int to_idx,
-             dbTechNonDefaultRule* rule = nullptr);
-  void addRc(int k,
-             const tmg_rc_sh& s,
-             int from_idx,
-             int to_idx,
-             int xmin,
-             int ymin,
-             int xmax,
-             int ymax);
+  WirePoint* addWirePoint(int x, int y, dbTechLayer* layer);
+  void addWireSection(const dbShape& s,
+                      int from_idx,
+                      int to_idx,
+                      dbTechNonDefaultRule* rule = nullptr);
+  void addWireSection(int k,
+                      const tmg_rc_sh& s,
+                      int from_idx,
+                      int to_idx,
+                      int xmin,
+                      int ymin,
+                      int xmax,
+                      int ymax);
   void addITerm(dbITerm* iterm);
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
-  void connectTerm(int j, bool soft);
-  void connectTermSoft(int j, int rt, Rect& rect, int k);
+  void connectTerm(int terminal_index, bool soft);
+  void connectTermSoft(int terminal_index, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();
@@ -203,44 +230,51 @@ class tmg_conn
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
   int isVisited(int j) const;
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
-  int getExtension(int ipt, const tmg_rc* rc);
-  int addPoint(int ipt, const tmg_rc* rc);
-  int addPoint(int from_idx, int ipt, const tmg_rc* rc);
-  int addPointIfExt(int ipt, const tmg_rc* rc);
-  tmg_rc* addRcPatch(int from_idx, int to_idx);
+  int getExtension(int ipt, const WireSection* wire_section);
+  int addPoint(int ipt, const WireSection* wire_section);
+  int addPoint(int from_idx, int ipt, const WireSection* wire_section);
+  int addPointIfExt(int ipt, const WireSection* wire_section);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 
-  int slicedTilePinCnt_;
+  utl::Logger* logger_{nullptr};
+
+  std::unique_ptr<ShapeSearch> shape_search_;
+  std::unique_ptr<ConnectionGraph> connection_graph_;
+
+  dbNet* net_{nullptr};
+  bool has_special_wires_{false};
+
+  // The description of the wire.
+  std::vector<WireSection> wire_sections_;
+  std::vector<WirePoint> wire_points_;
+  std::vector<Terminal> terminals_;
+  std::vector<Short> shorts_;
+
+  // Used for determining the wire points that represent the connection
+  // with terminals.
+  std::vector<CandidateSections> candidate_sections_;
+  std::vector<int> candidate_section_count_;
+  WirePoint* first_for_clear_{nullptr};
+  int slicedTilePinCnt_{0};
   int stbtx1_[200];
   int stbty1_[200];
   int stbtx2_[200];
   int stbty2_[200];
   dbBTerm* slicedTileBTerm_[200];
-  std::unique_ptr<tmg_conn_search> search_;
-  std::unique_ptr<tmg_conn_graph> graph_;
-  std::vector<tmg_rc> rcV_;
-  std::vector<tmg_rcpt> ptV_;
-  std::vector<tmg_rcterm> termV_;
-  std::vector<tmg_rcterm*> tstackV_;
-  std::vector<tmg_rcshort> shortV_;
-  dbNet* net_;
-  bool hasSWire_;
-  bool connected_;
-  dbWireEncoder encoder_;
-  dbWire* newWire_;
-  dbTechNonDefaultRule* net_rule_;
-  dbTechNonDefaultRule* path_rule_;
-  bool need_short_wire_id_;
-  std::vector<std::array<tmg_connect_shape, 32>> csVV_;
-  std::array<tmg_connect_shape, 32>* csV_;
-  std::vector<int> csNV_;
-  int csN_;
-  tmg_rcpt* first_for_clear_;
 
-  int last_id_;
-  int firstSegmentAfterVia_;
-  utl::Logger* logger_;
+  // Graph walk and writing of the new wire encoding.
+  std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.
+  int last_id_{-1};
+  dbTechNonDefaultRule* net_rule_{nullptr};
+  dbTechNonDefaultRule* path_rule_{nullptr};
+  bool need_short_wire_id_{false};
+  int firstSegmentAfterVia_{0};
+  dbWireEncoder encoder_;
+  dbWire* newWire_{nullptr};
+
+  // Post-process connectivity check.
+  bool connected_{false};
 };
 
 }  // namespace odb

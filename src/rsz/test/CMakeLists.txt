@@ -70,6 +70,7 @@ or_integration_tests(
     repair_fanout6
     repair_fanout7
     repair_fanout8
+    repair_fanout9
     repair_hold1
     repair_hold1_hier
     repair_hold2

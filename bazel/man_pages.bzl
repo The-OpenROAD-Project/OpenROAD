@@ -7,8 +7,8 @@ The output filenames aren't known at analysis time (they depend on which
 modules exist under src/*/), so outputs are declared as TreeArtifacts and
 the real work is delegated to the `bazel-manpages` Makefile target.
 
-Host requirements: pandoc, nroff (groff), col (bsdextrautils). Python comes
-from the Bazel toolchain, not the host.
+Host requirements: nroff (groff), col (bsdextrautils). Python comes from the
+Bazel toolchain and pandoc from a pinned wheel, not the host.
 """
 
 _PY_TOOLCHAIN_TYPE = "@rules_python//python:toolchain_type"
@@ -42,6 +42,20 @@ def _man_pages_impl(ctx):
         # A platform runtime instead: an absolute path on the host.
         python = py3_runtime.interpreter_path
 
+    # Same reasoning for pandoc, which renders every man and html page: the
+    # host's version decides the output and RHEL 8 has no pandoc package at
+    # all. The pypandoc-binary wheel (pinned in bazel/requirements.in) ships a
+    # statically linked pandoc, so take the binary out of the wheel rather than
+    # off PATH. The wheel's other files are the Python bindings, which the doc
+    # build does not use, so only the binary becomes an action input.
+    pandoc = None
+    for f in ctx.files.pandoc:
+        if f.basename == "pandoc":
+            pandoc = f
+            break
+    if not pandoc:
+        fail("no 'pandoc' binary among the files of %s" % ctx.attr.pandoc.label)
+
     command = """
 set -euo pipefail
 CAT_OUT="$PWD/{cat_out}"
@@ -51,9 +65,9 @@ HTML_OUT="$PWD/{html_out}"
 # md_roff_compat.py looks for <root>/src/<module>/messages.txt and
 # <root>/messages.txt, which is exactly the bin dir's layout.
 export MESSAGES_ROOT_DIR="$PWD/{bin_dir}"
-# use_default_shell_env passes the client's environment through (pandoc, groff
-# and col are found on PATH). Drop the two variables that would redirect the
-# toolchain interpreter at a host installation's stdlib.
+# use_default_shell_env passes the client's environment through (groff and col
+# are found on PATH). Drop the two variables that would redirect the toolchain
+# interpreter at a host installation's stdlib.
 unset PYTHONHOME PYTHONPATH
 # Two phases: 'preprocess' (serial) generates the md/man*/*.md sources, then
 # 'cat web' fan out pandoc/nroff in parallel. They cannot share one -j make
@@ -71,11 +85,12 @@ JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 make -s --no-print-directory -C docs -f Makefile preprocess \\
     PYTHON="{python}" CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
 make -s --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
-    CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
+    PANDOC="$PWD/{pandoc}" CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
 """.format(
         bin_dir = ctx.bin_dir.path,
         cat_out = cat_dir.path,
         html_out = html_dir.path,
+        pandoc = pandoc.path,
         python = python,
     )
 
@@ -84,7 +99,7 @@ make -s --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
         outputs = [cat_dir, html_dir],
         inputs = depset(
             ctx.files.docs_srcs + ctx.files.scripts + ctx.files.readmes +
-            ctx.files.messages,
+            ctx.files.messages + [pandoc],
             transitive = interpreter_files,
         ),
         command = command,
@@ -109,6 +124,14 @@ man_pages = rule(
         "messages": attr.label_list(
             doc = "Module messages.txt files needed for man3 page generation.",
             allow_files = [".txt"],
+        ),
+        "pandoc": attr.label(
+            doc = "Wheel files holding the pandoc binary the Makefile runs.",
+            default = "@openroad-pip//pypandoc_binary:extracted_whl_files",
+            allow_files = True,
+            # pandoc runs during the build, so pick the wheel for the platform
+            # that executes the action, not the one being built for.
+            cfg = "exec",
         ),
         "readmes": attr.label_list(
             doc = "Module README.md files (src/*/README.md).",

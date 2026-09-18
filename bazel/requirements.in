@@ -9,6 +9,15 @@ pandas==3.0.5
 tclint==0.7.0
 yamlfix==1.19.1
 
+# pandoc for the man page build (//docs:man_pages). The wheel ships a
+# statically linked pandoc binary for linux/macOS x86_64 and arm64, so the
+# Bazel doc build neither needs the host to have pandoc installed nor depends
+# on which version it happens to have. Pandoc itself is GPL-2.0-or-later; it
+# is invoked as a separate process by the doc build and never linked, and no
+# OpenROAD artifact embeds it. See:
+#   https://github.com/The-OpenROAD-Project/OpenROAD/issues/11291
+pypandoc-binary==1.17
+
 # Sphinx documentation build (replicates ReadTheDocs CI check)
 # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/9885
 sphinx==5.3.0

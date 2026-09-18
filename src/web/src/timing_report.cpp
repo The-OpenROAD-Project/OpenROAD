@@ -65,6 +65,7 @@ void TimingReport::expandPath(sta::Path* path,
   sta::PathExpanded expand(path, sta_);
   auto* graph = sta_->graph();
   auto* network = sta_->network();
+  auto* db_network = sta_->getDbNetwork();
   auto* mode = sta_->cmdMode();
   auto* sdc = mode->sdc();
 
@@ -107,13 +108,25 @@ void TimingReport::expandPath(sta::Path* path,
     odb::dbITerm* term;
     odb::dbBTerm* port;
     odb::dbModITerm* moditerm;
-    sta_->getDbNetwork()->staToDb(pin, term, port, moditerm);
+    db_network->staToDb(pin, term, port, moditerm);
 
     std::string pin_name;
+    odb::dbBlock* block = nullptr;
     if (term) {
       pin_name = term->getName();
+      block = term->getBlock();
     } else if (port) {
       pin_name = port->getName();
+      block = port->getBlock();
+    }
+
+    // 3DBlox: the name above is local to the chiplet's block, so prefix the
+    // chip-inst that placed it -- what resolvePin (tile_generator.cpp) strips
+    // back off, and what dbNetwork composes for the unfolded model.
+    if (block != nullptr) {
+      if (odb::dbChipInst* chip_inst = db_network->chipInstOf(block)) {
+        pin_name.insert(0, chip_inst->getName() + "/");
+      }
     }
 
     // Arrival and slew
@@ -984,24 +997,27 @@ boost::json::object serializeChartFilters(const ChartFilters& f)
 
 // ── Net fanout histogram ──
 
-FanoutHistogramResult computeFanoutHistogram(odb::dbBlock* block)
+FanoutHistogramResult computeFanoutHistogram(
+    const std::vector<odb::dbBlock*>& blocks)
 {
   FanoutHistogramResult result;
-  if (!block) {
-    return result;
-  }
 
   std::vector<int> fanouts;
   int max_fanout = 0;
-  for (odb::dbNet* net : block->getNets()) {
-    if (net->getSigType().isSupply()) {
+  for (odb::dbBlock* block : blocks) {
+    if (!block) {
       continue;
     }
-    const int term_count = static_cast<int>(net->getITermCount())
-                           + static_cast<int>(net->getBTermCount());
-    const int fanout = std::max(0, term_count - 1);
-    fanouts.push_back(fanout);
-    max_fanout = std::max(max_fanout, fanout);
+    for (odb::dbNet* net : block->getNets()) {
+      if (net->getSigType().isSupply()) {
+        continue;
+      }
+      const int term_count = static_cast<int>(net->getITermCount())
+                             + static_cast<int>(net->getBTermCount());
+      const int fanout = std::max(0, term_count - 1);
+      fanouts.push_back(fanout);
+      max_fanout = std::max(max_fanout, fanout);
+    }
   }
   result.total_nets = static_cast<int>(fanouts.size());
   if (fanouts.empty()) {

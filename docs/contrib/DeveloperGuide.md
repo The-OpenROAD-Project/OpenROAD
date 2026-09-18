@@ -279,6 +279,7 @@ Tool namespaces are usually three-lettered lowercase letters.
 - Graphical User Interface ([gui](../main/src/gui/README.md))
 - Static IR analyzer ([psm](../main/src/psm/README.md))
 - Example tool ([exa](../main/src/exa/README.md))
+- Physical design watermarking ([wmk](../main/src/wmk/README.md))
 
 ## Tool Checklist
 
