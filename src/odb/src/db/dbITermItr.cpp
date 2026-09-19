@@ -40,8 +40,8 @@ void dbNetITermItr::reverse(dbObject* parent)
 
   while (id != 0) {
     _dbITerm* iterm = iterm_tbl_->getPtr(id);
-    uint32_t n = iterm->next_net_iterm_;
-    iterm->next_net_iterm_ = list;
+    uint32_t n = iterm->next_net_iterm();
+    iterm->next_net_iterm() = list;
     list = id;
     id = n;
   }
@@ -51,9 +51,9 @@ void dbNetITermItr::reverse(dbObject* parent)
 
   while (id != 0) {
     _dbITerm* iterm = iterm_tbl_->getPtr(id);
-    iterm->prev_net_iterm_ = prev;
+    iterm->prev_net_iterm() = prev;
     prev = id;
-    id = iterm->next_net_iterm_;
+    id = iterm->next_net_iterm();
   }
 
   net->iterms_ = list;
@@ -91,7 +91,7 @@ uint32_t dbNetITermItr::end(dbObject* /* unused: parent */) const
 uint32_t dbNetITermItr::next(uint32_t id, ...) const
 {
   _dbITerm* iterm = iterm_tbl_->getPtr(id);
-  return iterm->next_net_iterm_;
+  return iterm->next_net_iterm();
 }
 
 dbObject* dbNetITermItr::getObject(uint32_t id, ...)
@@ -157,9 +157,9 @@ uint32_t dbInstITermItr::next(uint32_t id, ...) const
 {
   _dbITerm* iterm = _iterm_tbl->getPtr(id);
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->inst_tbl_->getPtr(iterm->inst_);
+  _dbInst* inst = block->inst_tbl_->getPtr(iterm->inst());
   uint32_t cnt = inst->iterms_.size();
-  uint32_t idx = iterm->flags_.mterm_idx + 1;
+  uint32_t idx = iterm->flags().mterm_idx + 1;
 
   if (idx == cnt) {
     return 0;

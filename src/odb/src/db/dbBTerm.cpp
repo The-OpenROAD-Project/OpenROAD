@@ -702,9 +702,9 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 
     _dbITerm* iterm = parent_block->iterm_tbl_->create();
     inst_impl->iterms_.push_back(iterm->getOID());
-    iterm->flags_.mterm_idx = mterm->order_id_;
-    iterm->inst_ = inst_impl->getOID();
-    iterm->mterm_ = mterm;
+    iterm->flags().mterm_idx = mterm->order_id_;
+    iterm->inst() = inst_impl->getOID();
+    iterm->mterm() = mterm;
 
     bterm->parent_block_ = parent_block->getOID();
     bterm->parent_iterm_ = inst_impl->iterms_[mterm->order_id_];
@@ -989,14 +989,14 @@ dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint32_t oid)
 
 uint32_t dbBTerm::staVertexId()
 {
-  _dbBTerm* iterm = (_dbBTerm*) this;
-  return iterm->sta_vertex_id_;
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->sta_vertex_id_;
 }
 
 void dbBTerm::staSetVertexId(uint32_t id)
 {
-  _dbBTerm* iterm = (_dbBTerm*) this;
-  iterm->sta_vertex_id_ = id;
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->sta_vertex_id_ = id;
 }
 
 void dbBTerm::setConstraintRegion(const Rect& constraint_region)
