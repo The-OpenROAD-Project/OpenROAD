@@ -5,8 +5,10 @@
 // property editing (server descriptor editors).
 
 import { dbuRectToBounds } from './coordinates.js';
-import { beginSelection, isCurrentSelection, isStaticMode, showConfirmModal,
-         showToast } from './ui-utils.js';
+import {
+    beginSelection, isCurrentSelection, isStaticMode, showConfirmModal,
+    showToast, zoomToBBox as sharedZoomToBBox,
+} from './ui-utils.js';
 
 // Delete: trash can (Material "delete")
 const DELETE_SVG =
@@ -970,10 +972,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     }
 
     function zoomToBBox(bbox) {
-        if (!bbox || !app.map || !app.designScale) return;
-        const [x1, y1, x2, y2] = bbox;
-        app.map.fitBounds(dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY),
-                          { padding: [20, 20] });
+        sharedZoomToBBox(app, bbox);
     }
 
     function updateInspector(data) {

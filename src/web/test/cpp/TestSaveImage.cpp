@@ -20,6 +20,7 @@
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/web.h"
 
 namespace web {
 namespace {
@@ -163,6 +164,154 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_GT(h, 0u);
   // Should contain visible content (placed instance).
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+  // No background named, so what the tiles did not draw stays transparent --
+  // which is what the GIF frames want.
+  EXPECT_EQ(pixels[3], 0) << "the corner is outside the die";
+}
+
+// A saved image is looked at on its own, not composited over something else,
+// so it carries a background the way the Qt save_image does (which passes
+// options_->background()).  Everything the tiles leave untouched must come out
+// in that color, opaque.
+TEST_F(SaveImageTest, BackgroundFillsWhatTheTilesDoNotDraw)
+{
+  const std::string path = tempPng("bg_blue");
+  const Color blue{.r = 0x12, .g = 0x34, .b = 0x56, .a = 255};
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}, blue);
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(path, w, h);
+  ASSERT_GT(w * h, 0u);
+  for (size_t i = 3; i < pixels.size(); i += 4) {
+    ASSERT_EQ(pixels[i], 255) << "transparent pixel at " << (i / 4);
+  }
+  // The corner is outside the die, so nothing composites over it.
+  EXPECT_EQ(pixels[0], blue.r);
+  EXPECT_EQ(pixels[1], blue.g);
+  EXPECT_EQ(pixels[2], blue.b);
+}
+
+// `save_image -web` goes through WebServer, which picks the background out of
+// the state the browser last synced -- that is what makes the file match what
+// the user is looking at.  Anything else, a plain headless run with no browser
+// included, falls back to black.
+TEST_F(SaveImageTest, BackgroundComesFromTheViewerState)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  struct Case
+  {
+    const char* label;
+    const char* state;  // nullptr: nothing ever synced
+    Color want;
+  };
+  const Case cases[] = {
+      {"nostate", nullptr, kBlack},
+      {"color",
+       R"({"version":1,"entries":{"or_bg_color":"#123456"}})",
+       Color{.r = 0x12, .g = 0x34, .b = 0x56, .a = 255}},
+      {"garbage",
+       R"({"version":1,"entries":{"or_bg_color":"nonsense"}})",
+       kBlack},
+  };
+
+  for (const Case& c : cases) {
+    WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+    if (c.state != nullptr) {
+      server.initLogger();  // creates the hook that holds the synced state
+      server.setDisplayState(c.state);
+    }
+    const std::string path = tempPng(c.label);
+    server.saveImage(path, 0, 0, 0, 0, /*width_px=*/0, /*dbu_per_pixel=*/0, "");
+
+    unsigned w = 0, h = 0;
+    const auto pixels = decodePngFile(path, w, h);
+    ASSERT_GE(pixels.size(), 4u) << c.label;
+    // The corner is outside the die: the background and nothing else.
+    EXPECT_EQ(pixels[0], c.want.r) << c.label;
+    EXPECT_EQ(pixels[1], c.want.g) << c.label;
+    EXPECT_EQ(pixels[2], c.want.b) << c.label;
+    EXPECT_EQ(pixels[3], c.want.a) << c.label;
+  }
+}
+
+// `save_image -web -display_option {cluster_view true}` is the headless path
+// to the per-cluster plot the MPL clustering data exists for: it must paint
+// the palette color of each instance's dbGroup on top of the base layers.
+TEST_F(SaveImageTest, ClusterViewColorsInstancesByGroup)
+{
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(block_->findInst("buf1"));
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const std::string path = tempPng("cluster_view");
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  ASSERT_TRUE(std::filesystem::exists(path));
+  unsigned w = 0, h = 0;
+  auto pixels = decodePngFile(path, w, h);
+  EXPECT_EQ(w, 512u);
+
+  // The first palette color is opaque red at alpha 100, blended over the
+  // instance's own dark fill, so look for a pixel whose red channel clearly
+  // dominates instead of an exact match.
+  bool reddish = false;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i + 3] > 0 && pixels[i] > 60 && pixels[i] > 2 * pixels[i + 1]
+        && pixels[i] > 2 * pixels[i + 2]) {
+      reddish = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(reddish) << "no cluster-colored pixel in the saved image";
+}
+
+// The sibling overlay: both save paths go through colorOverlayLayers() so that
+// neither one can be wired up without the other.
+TEST_F(SaveImageTest, ModuleViewColorsInstancesByModule)
+{
+  // Needs a generator with STA: the module report — and so the default color
+  // map — is empty without one.  The fixture's instances already belong to the
+  // top module, which is what the overlay colors them by.
+  TileGenerator gen(getDb(), getSta(), getLogger());
+  gen.eagerInit();
+
+  const std::string plain_path = tempPng("module_off");
+  gen.saveImage(plain_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  TileVisibility vis;
+  vis.module_view = true;
+  const std::string module_path = tempPng("module_on");
+  gen.saveImage(module_path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto plain = decodePngFile(plain_path, w1, h1);
+  auto with_option = decodePngFile(module_path, w2, h2);
+  ASSERT_EQ(w1, w2);
+  ASSERT_EQ(h1, h2);
+  EXPECT_NE(plain, with_option)
+      << "module_view produced the same image as no option at all";
+}
+
+// Without any group in the database the option must not change the output —
+// and must not error out either, just warn.
+TEST_F(SaveImageTest, ClusterViewWithoutGroupsMatchesTheDefaultImage)
+{
+  const std::string plain_path = tempPng("cluster_off");
+  tile_gen_->saveImage(plain_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const std::string cluster_path = tempPng("cluster_on_nogroups");
+  tile_gen_->saveImage(cluster_path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto plain = decodePngFile(plain_path, w1, h1);
+  auto with_option = decodePngFile(cluster_path, w2, h2);
+  EXPECT_EQ(w1, w2);
+  EXPECT_EQ(h1, h2);
+  EXPECT_EQ(plain, with_option);
 }
 
 TEST_F(SaveImageTest, WidthOption)
