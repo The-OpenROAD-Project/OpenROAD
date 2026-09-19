@@ -6,18 +6,11 @@
 
 #include <any>
 #include <cstdio>
-#include <map>
-#include <set>
 #include <string>
-#include <typeinfo>
-#include <utility>
-#include <vector>
 
-#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
-#include "odb/geom.h"
 #include "tcl.h"
 
 namespace gui {
@@ -29,15 +22,6 @@ void HeatMapDataSource::registerHeatMap()
   // gui::getRegisteredHeatMapSources() (factory-backed sources) so this
   // one-off pathway does nothing here for now.  Left intentionally as
   // a no-op until heatmap plumbing for ad-hoc sources lands.
-}
-
-void gui::Gui::setChartFactory(ChartFactory factory)
-{
-  chart_factory_ = std::move(factory);
-}
-
-void Gui::triggerAction(const std::string& /* action */)
-{
 }
 
 // using namespace odb;
@@ -98,16 +82,6 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, cmd_has_ui.c_str());
 }
 
-Chart* Gui::addChart(const std::string& name,
-                     const std::string& x_label,
-                     const std::vector<std::string>& y_labels)
-{
-  if (chart_factory_) {
-    return chart_factory_(name, x_label, y_labels);
-  }
-  return nullptr;
-}
-
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
                 const std::string& attribute,
@@ -116,14 +90,6 @@ int Gui::select(const std::string& type,
                 int highlight_group)
 {
   return 0;
-}
-
-void Gui::timingCone(Term term, bool fanin, bool fanout)
-{
-}
-
-void Gui::timingPathsThrough(const std::set<Term>& terms)
-{
 }
 
 }  // namespace gui

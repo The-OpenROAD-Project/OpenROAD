@@ -42,6 +42,11 @@ class HeatMapDataSource;
 class Painter;
 class Selected;
 
+// One end of a connection, which is what a timing cone or a path is anchored
+// to.  Gui::Term names the same type; it is declared here so GuiBackend, which
+// comes before Gui, can take one.
+using Term = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+
 // Pixels handed back by a backend that can draw: 8-bit RGBA, row-major,
 // width * height * 4 bytes.  An empty one means the backend cannot render.
 struct RenderedImage
@@ -1050,6 +1055,27 @@ class GuiBackend
     return {};
   }
 
+  // Add a chart to the backend's charts surface.  Gui::addChart asks a
+  // backend only while it reports a window, and uses the chart factory
+  // otherwise, so a backend with no charts surface is never called here and
+  // the default stands only to keep it from having to say so.
+  virtual Chart* addChart(const std::string& /* name */,
+                          const std::string& /* x_label */,
+                          const std::vector<std::string>& /* y_labels */)
+  {
+    return nullptr;
+  }
+
+  // Drive the timing views.  A backend with no timing widgets ignores both.
+  virtual void timingCone(Term /* term */, bool /* fanin */, bool /* fanout */)
+  {
+  }
+  virtual void timingPathsThrough(const std::set<Term>& /* terms */) {}
+
+  // Activate a named control -- a menu action or a button -- by its widget
+  // path.  Scripted UI driving, so a backend with no widgets does nothing.
+  virtual void triggerAction(const std::string& /* name */) {}
+
   // Called by Gui::pause().  Should block the calling thread until some
   // external signal (e.g. a client click) releases it, or until timeout_ms
   // expires.  timeout_ms == 0 means wait indefinitely.
@@ -1269,7 +1295,7 @@ class Gui
   std::string requestUserInput(const std::string& title,
                                const std::string& question);
 
-  using Term = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+  using Term = gui::Term;
   void timingCone(Term term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<Term>& terms);
 
