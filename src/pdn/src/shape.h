@@ -135,7 +135,6 @@ class Shape
   // clear of, and metal may abut a die edge -- on a rectangular die it does,
   // because no obstruction is created there at all.  Applying a spacing here
   // would stop a shape short of the wall of a notch, which is the same edge.
-  bool isDieAbsence() const { return die_absence_; }
   void setIsDieAbsence() { die_absence_ = true; }
 
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }

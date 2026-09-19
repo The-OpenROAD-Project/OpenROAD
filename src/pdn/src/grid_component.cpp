@@ -81,6 +81,18 @@ bool GridComponent::make(Shape::ShapeTreeMap& shapes,
   return shape_count != getShapeCount();
 }
 
+const Region* GridComponent::getDieRegion() const
+{
+  if (!die_region_.has_value()) {
+    const odb::Polygon die = getBlock()->getDieAreaPolygon();
+    // A rectangular die has no interior wall to find, so there is nothing to
+    // build and nothing to ask: the bounding-box comparison beside every call
+    // is the whole test there.
+    die_region_ = die.isRect() ? Region() : Region(die);
+  }
+  return die_region_->isEmpty() ? nullptr : &die_region_.value();
+}
+
 ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 {
   debugPrint(getLogger(),

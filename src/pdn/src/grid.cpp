@@ -591,8 +591,11 @@ int Grid::getRingReach(const odb::Rect& band, const odb::Point& normal) const
         // getRingArea() decides it: a side only bounds the axis it is thin
         // along, and a square corner piece bounds both.
         const bool square = ring_shape.dx() == ring_shape.dy();
-        const bool bounds_x = square || ring_shape.dx() < ring_shape.dy();
-        if (horizontal_reach != bounds_x) {
+        const bool bounds
+            = square
+              || (horizontal_reach ? ring_shape.dx() < ring_shape.dy()
+                                   : ring_shape.dx() > ring_shape.dy());
+        if (!bounds) {
           continue;
         }
 

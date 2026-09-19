@@ -575,20 +575,6 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   auto* grid = getGrid();
 
   const Region domain = grid->getDomainRegion();
-  odb::Rect boundary;
-  switch (getExtendMode()) {
-    case kCore:
-    case kFixed:
-      // use core area for follow pins
-      boundary = grid->getDomainArea();
-      break;
-    case kRings:
-      boundary = grid->getRingArea();
-      break;
-    case kBoundary:
-      boundary = grid->getGridBoundary();
-      break;
-  }
 
   // How far a rail at `band` may be run out on the side `normal` points to.
   // Every mode resolves this against what is actually beside the rail, so a

@@ -68,7 +68,8 @@ class Rings : public GridComponent
 
   void checkDieArea() const;
   // X and Y overrun of the ring past the die, per side of the core
-  std::pair<int, int> getDieAreaDeficit(const Region& die_area) const;
+  std::pair<int, int> getDieAreaDeficit(const Region& die_area,
+                                        const Region& ring_outline) const;
 
   // The inner boundary of the ring: the domain outline pushed out by the
   // offsets.  getInnerRingRect() is its bounding box, which is what the

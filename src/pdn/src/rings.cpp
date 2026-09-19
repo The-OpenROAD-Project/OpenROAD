@@ -77,7 +77,7 @@ void Rings::checkDieArea() const
   }
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
-  const auto [xbounds, ybounds] = getDieAreaDeficit(die_area);
+  const auto [xbounds, ybounds] = getDieAreaDeficit(die_area, ring_outline);
   getLogger()->error(
       utl::PDN,
       351,
@@ -88,7 +88,8 @@ void Rings::checkDieArea() const
       ybounds / dbus);
 }
 
-std::pair<int, int> Rings::getDieAreaDeficit(const Region& die_area) const
+std::pair<int, int> Rings::getDieAreaDeficit(const Region& die_area,
+                                             const Region& ring_outline) const
 {
   int hor_width;
   int ver_width;
@@ -120,6 +121,19 @@ std::pair<int, int> Rings::getDieAreaDeficit(const Region& die_area) const
     } else {
       xbounds = std::max(xbounds, deficit);
     }
+  }
+
+  if (xbounds == 0 && ybounds == 0) {
+    // The walk measures each side of the domain against the room beyond it,
+    // which is the number a user can act on, but it only ever looks at sides.
+    // A ring that leaves the die where two of its sides meet -- the corner
+    // square, which reaches past the end of both edges -- is seen by neither,
+    // and "0 um in X and 0 um in Y" tells nobody anything.  Fall back to how
+    // far the part that is actually outside reaches.
+    const odb::Rect outside
+        = ring_outline.subtract(die_area).getEnclosingRect();
+    xbounds = outside.dx();
+    ybounds = outside.dy();
   }
 
   return {xbounds, ybounds};
