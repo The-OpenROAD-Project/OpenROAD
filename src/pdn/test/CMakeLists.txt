@@ -150,6 +150,7 @@ or_integration_tests(
     polygon_core_grid_extend_to_boundary
     polygon_core_grid_rings_asymmetric
     polygon_core_grid_rings_outside_die
+    polygon_core_grid_rings_outside_die_corner
     polygon_core_grid_single_layer_ring
     polygon_core_grid_t_rings
     polygon_core_grid_u_extend_to_boundary
