@@ -256,6 +256,7 @@ TESTS = [
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "repair_timing_crpr",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
     "inferred_clock_gator_time_borrow_repair_pin",
@@ -270,6 +271,9 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+]
+
+PASSFAIL_NO_GOLDEN_TESTS = [
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -332,6 +336,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_log = False if test_name in PASSFAIL_NO_GOLDEN_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )
