@@ -401,6 +401,15 @@ class QtGuiBackend : public GuiBackend
         clock_name, filename, scene, width_px, height_px);
   }
 
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region,
+                 int width_px,
+                 double dbu_per_pixel) override
+  {
+    main_window->getLayoutViewer()->saveImage(
+        filename.c_str(), region, width_px, dbu_per_pixel);
+  }
+
   void saveHistogramImage(const std::string& filename,
                           const std::string& mode,
                           std::optional<int> width_px,
@@ -450,6 +459,19 @@ class QtGuiBackend : public GuiBackend
 };
 
 static QtGuiBackend qt_backend;
+
+// Opens a gui to run a script in, for the callers that need one rendering
+// and have none -- see GuiLauncher.
+class QtGuiLauncher : public GuiLauncher
+{
+ public:
+  void openAndRun(const std::string& cmds) override
+  {
+    Gui::get()->showGui(cmds, false);
+  }
+};
+
+static QtGuiLauncher qt_launcher;
 
 void Gui::setChartFactory(ChartFactory factory)
 {
@@ -678,85 +700,6 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
     return;
   }
   main_window->getDRCViewer()->selectCategory(markers);
-}
-
-void Gui::saveImage(const std::string& filename,
-                    const odb::Rect& region,
-                    int width_px,
-                    double dbu_per_pixel,
-                    const std::map<std::string, bool>& display_settings)
-{
-  if (db_ == nullptr) {
-    logger_->error(utl::GUI, 15, "No design loaded.");
-  }
-  odb::Rect save_region = region;
-  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen
-      = main_window == nullptr
-        || main_window->testAttribute(
-            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
-  if (is_offscreen
-      && use_die_area) {  // if gui is active and interactive the visible are of
-                          // the layout viewer will be used.
-    auto* chip = db_->getChip();
-    if (chip == nullptr) {
-      logger_->error(utl::GUI, 64, "No design loaded.");
-    }
-    save_region = chip->getBBox();
-    auto* block = chip->getBlock();
-
-    if (block != nullptr) {
-      save_region = block->getBBox()->getBox();
-    }
-
-    // get die area since screen area is not reliable
-    const double bloat_by = 0.05;  // 5%
-    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
-
-    save_region.bloat(bloat, save_region);
-  }
-
-  if (!hasUI()) {
-    const double dbu_per_micron = db_->getDbuPerMicron();
-
-    std::string save_cmds;
-
-    // build display control commands
-    save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
-    for (const auto& [control, value] : display_settings) {
-      // first save current setting
-      save_cmds += fmt::format(
-                       "$::gui::display_settings set \"{}\" {}", control, value)
-                   + "\n";
-    }
-    // save command
-    save_cmds += "gui::save_image ";
-    save_cmds += "\"" + filename + "\" ";
-    save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(width_px) + " ";
-    save_cmds += std::to_string(dbu_per_pixel) + " ";
-    save_cmds += "$::gui::display_settings\n";
-    // delete display settings map
-    save_cmds += "rename $::gui::display_settings \"\"\n";
-    save_cmds += "unset ::gui::display_settings\n";
-    // end with hide to return
-    save_cmds += "gui::hide";
-    showGui(save_cmds, false);
-  } else {
-    // save current display settings and apply new
-    main_window->getControls()->save();
-    for (const auto& [control, value] : display_settings) {
-      setDisplayControlsVisible(control, value);
-    }
-
-    main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, width_px, dbu_per_pixel);
-    // restore settings
-    main_window->getControls()->restore();
-  }
 }
 
 void Gui::showWorstTimingPath(bool setup)
@@ -1142,20 +1085,16 @@ void Gui::unminimize()
 
 void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
-  db_ = db;
+  initCommon(db, sta, logger);
   setLogger(logger);
 
-  // Lets the descriptors offer the actions that need a modal dialog.  Only
-  // this file is Qt-only, so a build without Qt leaves the hook null and
-  // those actions are not offered.
+  // Lets the descriptors offer the actions that need a modal dialog, and
+  // saveImage reopen the gui when no window is up.  Only this file is
+  // Qt-only, so a build without Qt leaves both hooks null.
   static QtDialogs dialogs;
   setDialogs(&dialogs);
+  setLauncher(&qt_launcher);
 
-  auto* registry = DescriptorRegistry::instance();
-  registry->setLogger(logger);
-  registry->initDescriptors(db, sta);
-
-  registerBuiltinHeatMapSources(sta, logger);
   for (const auto& source : getRegisteredHeatMapSources()) {
     const bool already_registered = std::ranges::any_of(
         heat_maps_, [&source](HeatMapDataSource* heatmap) {

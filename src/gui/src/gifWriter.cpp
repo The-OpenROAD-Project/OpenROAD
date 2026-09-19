@@ -4,9 +4,9 @@
 // Gui's GIF recording.  The backend renders each frame to RGBA pixels and
 // this file writes them, so nothing here is Qt.
 //
-// It is also the one translation unit in :core that completes GifWriter, so
-// Gui's constructor lives here: GIF holds a unique_ptr<GifWriter>, whose
-// destructor Gui's own constructor has to instantiate.
+// This is the one translation unit in :core that completes GifWriter, which
+// is why GIF's constructor and destructor are defined here rather than left
+// implicit in the header.
 
 #include <algorithm>
 #include <cstdint>
@@ -29,10 +29,8 @@
 
 namespace gui {
 
-Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
-{
-  resetDbuConversions();
-}
+GIF::GIF() = default;
+GIF::~GIF() = default;
 
 int Gui::gifStart(const std::string& filename)
 {
