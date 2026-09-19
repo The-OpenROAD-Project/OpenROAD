@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <map>
@@ -24,6 +25,7 @@
 #include <mutex>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -32,6 +34,7 @@
 #include "DmpCeffLambertWDelayCalc.hh"
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
+#include "dbSdcInDb.hh"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/PtrSetMap.h"
@@ -445,6 +448,48 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   // and announcing "STA active" on every read is noise. The structural
   // counts are available on demand via report_3dic_summary.
 }
+
+////////////////////////////////////////////////////////////////
+// Timing constraints in odb: see dbSdcInDb.hh.
+
+void dbSta::saveSdcToDb()
+{
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return;
+  }
+  SdcInDb::save(this, block);
+}
+
+void dbSta::clearSdcInDb()
+{
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return;
+  }
+  SdcInDb::clear(block);
+}
+
+bool dbSta::restoreSdcFromDb()
+{
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return false;
+  }
+  return SdcInDb::restore(this, block) != SdcInDb::Kind::kNone;
+}
+
+const char* dbSta::sdcInDbKind()
+{
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  return SdcInDb::kindName(SdcInDb::kind(block));
+}
+
+////////////////////////////////////////////////////////////////
 
 void dbSta::postReadDb(odb::dbDatabase* db)
 {

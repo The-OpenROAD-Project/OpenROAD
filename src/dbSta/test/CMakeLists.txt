@@ -63,6 +63,21 @@ or_integration_tests(
     sta3
     sta4
     sta5
+    sdc_in_db1
+    sdc_in_db10
+    sdc_in_db11
+    sdc_in_db12
+    sdc_in_db13
+    sdc_in_db14
+    sdc_in_db15
+    sdc_in_db2
+    sdc_in_db3
+    sdc_in_db4
+    sdc_in_db5
+    sdc_in_db6
+    sdc_in_db7
+    sdc_in_db8
+    sdc_in_db9
     sta_to_db1
     sta_to_db1_hier
     write_sdc1
