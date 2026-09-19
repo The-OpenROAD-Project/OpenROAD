@@ -67,7 +67,7 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
-                         const std::vector<size_t>& skip_indices);
+                         const std::vector<char>& skip_mask);
 
 static float getSecondNorm(const std::vector<FloatPoint>& a);
 
@@ -3751,6 +3751,24 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
   return stepLength_;
 }
 
+// The IO pin GCells left out of the step-length norms, as a mask over
+// nb_gcells_ positions. Callbacks may reorder nb_gcells_, so the mask is
+// rebuilt from io_stor_index_to_nb_index_ on every call rather than cached.
+const std::vector<char>& NesterovBase::ioSkipMask(const size_t size)
+{
+  if (io_stor_index_to_nb_index_.empty()) {
+    io_skip_mask_.clear();
+    return io_skip_mask_;
+  }
+  io_skip_mask_.assign(size, 0);
+  for (const size_t i : io_stor_index_to_nb_index_) {
+    if (i < size) {
+      io_skip_mask_[i] = 1;
+    }
+  }
+  return io_skip_mask_;
+}
+
 float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& prevSLPCoordi_,
     const std::vector<FloatPoint>& prevSLPSumGrads_,
@@ -3782,10 +3800,9 @@ float NesterovBase::getStepLength(
 
   // IO pin GCells only slide along the perimeter, so letting them into the
   // norm would distort the step length.
-  coordiDistance_
-      = getDistance(prevSLPCoordi_, curSLPCoordi_, io_stor_index_to_nb_index_);
-  gradDistance_ = getDistance(
-      prevSLPSumGrads_, curSLPSumGrads_, io_stor_index_to_nb_index_);
+  const std::vector<char>& skip_mask = ioSkipMask(curSLPCoordi_.size());
+  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_, skip_mask);
+  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_, skip_mask);
   debugPrint(log_,
              GPL,
              "getStepLength",
@@ -4297,6 +4314,22 @@ bool NesterovBase::nesterovUpdateStepLength()
       curSLPCoordi_, curSLPSumGrads_, nextSLPCoordi_, nextSLPSumGrads_);
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
+
+  // The step length is the coordinate distance over the gradient distance.
+  // A gradient distance of zero means the gradients did not change at all
+  // between the two points: the solve has stopped moving and there is no
+  // Barzilai-Borwein step left to take. That is a placement that is over,
+  // not one that blew up, so finish this region instead of reporting the
+  // infinity it divides out to as a divergence.
+  if (gradDistance_ == 0.0f) {
+    log_->warn(GPL,
+               186,
+               "Gradient unchanged between steps at overflow {:.4f}; "
+               "nothing left to move, finishing global placement.",
+               sum_overflow_unscaled_);
+    isConverged_ = true;
+    return true;
+  }
 
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
@@ -5733,23 +5766,34 @@ static float fastExp(float exp)
   return exp;
 }
 
-// skip_indices holds the nb_gcells_ positions to leave out of the norm, in any
-// order. Subtracting them keeps the no-IO-pin path a plain loop over floats.
+// skip_mask, when not empty, marks the nb_gcells_ positions to leave out of
+// the norm. The skipped terms are never accumulated: an IO pin crossing the
+// die dwarfs the movement of the cells, and a sum that first adds those terms
+// and then subtracts them again loses the cells to rounding and can even come
+// out negative, which sqrt turns into a NaN step length.
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
-                         const std::vector<size_t>& skip_indices)
+                         const std::vector<char>& skip_mask)
 {
   float sumDistance = 0.0f;
-  for (size_t i = 0; i < a.size(); i++) {
-    sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
-    sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
-  }
-  for (const size_t i : skip_indices) {
-    sumDistance -= (a[i].x - b[i].x) * (a[i].x - b[i].x);
-    sumDistance -= (a[i].y - b[i].y) * (a[i].y - b[i].y);
+  size_t n = 0;
+  if (skip_mask.empty()) {
+    for (size_t i = 0; i < a.size(); i++) {
+      sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
+      sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
+    }
+    n = a.size();
+  } else {
+    for (size_t i = 0; i < a.size(); i++) {
+      if (skip_mask[i]) {
+        continue;
+      }
+      sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
+      sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
+      n++;
+    }
   }
 
-  const size_t n = a.size() - skip_indices.size();
   if (n == 0) {
     return 0.0f;
   }
