@@ -471,10 +471,30 @@ void tmg_conn::setSring()
   }
 }
 
-void tmg_conn::detachTilePins()
+// A bterm shape may overlap with an iterm shape. In such cases we
+// resolve that overlap by slicing the bterm shape into a smaller
+// rect. The true result of that slice may be a polygon, however,
+// we ignore one portion of the resulting slice for simplicity:
+//
+// Overlap:                  True slice:            What we keep:
+// iterm
+// +-----------+
+// |           |
+// |     +-----+-----+             +-----+                +-----+
+// |     |     |     |             |     |                |     |
+// |     |     |     |             |     |                |     |
+// +-----+-----+     |       +-----+     |                |     |
+//       |           |       |           |                |     |
+//       +-----------+       +-----------+                +-----+
+//       bterm
+//
+// The final trimmed shape depends only on the order of the four branches:
+// right, left, up, down. The first one that matches wins. Nothing looks at
+// where the wire enters the bterm, so, if it enters through the dropped part
+// of the shape, the candidate search for this bterm looks in the wrong place.
+void tmg_conn::sliceBPinsOverlappingITerms()
 {
-  slicedTilePinCnt_ = 0;
-  for (const Terminal& term : terminals_) {
+  for (Terminal& term : terminals_) {
     if (term.iterm) {
       continue;
     }
@@ -516,8 +536,10 @@ void tmg_conn::detachTilePins()
             }
           }
           if (recti.contains(rectb)) {
-            logger_->error(
-                ODB, 420, "tmg_conn::detachTilePins: tilepin inside iterm.");
+            logger_->error(ODB,
+                           420,
+                           "Cannot resolve full overlap between instance "
+                           "terminal and block terminal.");
           }
 
           if (!recti.overlaps(rectb)) {
@@ -536,27 +558,21 @@ void tmg_conn::detachTilePins()
           } else if (y1 < recti.yMin() && y2 < recti.yMax()) {
             y2 = recti.yMin();
           }
-          stbtx1_[slicedTilePinCnt_] = x1 + 1;
-          stbty1_[slicedTilePinCnt_] = y1 + 1;
-          stbtx2_[slicedTilePinCnt_] = x2 - 1;
-          stbty2_[slicedTilePinCnt_] = y2 - 1;
-          slicedTileBTerm_[slicedTilePinCnt_++] = bterm;
+
+          // We shrink by one unit so that the slice never touches the iterm.
+          // Trick from the original implementation: we use Rect::reset instead
+          // of the Rect ctor, because the latter sorts the corners and for a
+          // slice only one unit wide, it would cause the slice to touch the
+          // iterm again.
+          Rect sliced_bpin_box;
+          sliced_bpin_box.reset(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
+
+          term.sliced_bpin_box = sliced_bpin_box;
           sliceDone = true;
         }
       }
     }
   }
-}
-
-void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
-{
-  for (int ii = 0; ii < slicedTilePinCnt_; ii++) {
-    if (slicedTileBTerm_[ii] == bterm) {
-      rect.reset(stbtx1_[ii], stbty1_[ii], stbtx2_[ii], stbty2_[ii]);
-      return;
-    }
-  }
-  rect = pin.getBox();
 }
 
 void tmg_conn::identifyShorts()
@@ -711,8 +727,7 @@ void tmg_conn::identifyShorts()
 
 void tmg_conn::identifyTerminalWirePoints()
 {
-  // detach tilPins from iterms
-  detachTilePins();
+  sliceBPinsOverlappingITerms();
 
   // connect pins
   for (int terminal_index = 0; terminal_index < terminals_.size();
@@ -839,8 +854,7 @@ void tmg_conn::identifyTerminalWirePoints()
           // TODO
         } else {
           const int rt = pin.getTechLayer()->getRoutingLevel();
-          Rect rect;
-          getBTermSearchBox(x->bterm, pin, rect);
+          const Rect rect = x->sliced_bpin_box.value_or(pin.getBox());
           shape_search_->searchStart(rt, rect, 2);
           int klast = -1;
           int k;
