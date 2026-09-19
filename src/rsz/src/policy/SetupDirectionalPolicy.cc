@@ -98,7 +98,6 @@ void SetupDirectionalPolicy::repairSetupDirectional(
   target_collector_->collectViolatingPoints(use_startpoints);
   const int max_point_count
       = target_collector_->getMaxPointCount(use_startpoints);
-  printProgress(opto_iteration, false, phase_marker);
   if (max_point_count == 0) {
     debugPrint(logger_,
                RSZ,
@@ -110,6 +109,12 @@ void SetupDirectionalPolicy::repairSetupDirectional(
                point_type);
     return;
   }
+
+  if (!use_startpoints) {
+    // ENDPOINT_FANIN uses both endpoint and startpoint TNS to accept a journal.
+    target_collector_->collectViolatingStartpoints();
+  }
+  printProgress(opto_iteration, false, phase_marker);
 
   debugPrint(logger_,
              RSZ,

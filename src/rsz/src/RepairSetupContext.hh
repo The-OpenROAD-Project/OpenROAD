@@ -31,6 +31,7 @@ struct RepairSetupContext
   int violation_count{0};
   float initial_tns{0.0f};
   float previous_tns{0.0f};
+  // Remember the last progress layout so phase changes can update the header.
   bool progress_header_printed{false};
   bool progress_header_show_startpoint_metrics{false};
   // Design area for the progress table, and the committer's netlist edit

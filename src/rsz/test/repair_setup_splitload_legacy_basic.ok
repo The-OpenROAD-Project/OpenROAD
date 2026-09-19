@@ -9,7 +9,7 @@ worst slack max -0.17
 [INFO RSZ-0094] Found 40 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | St/EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.174 |       -6.9 |     40 | load35/D
       56* |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -3.9 |     40 | load18/D

@@ -136,7 +136,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0094] Found 33 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 33 (1.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | St/EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.030 |       -0.6 |     33 | _542_/D
        1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     33 | _539_/D

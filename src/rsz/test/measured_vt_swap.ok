@@ -40,7 +40,7 @@
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 29 / 30 moves.
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 30 / 30 moves.
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | St/EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
 ------------------------------------------------------------------------------------------------------------------------------
     final |       0 |      30 |        0 |      0 |     0 |    +0.0% |  -24.700 |     -469.0 |     40 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------

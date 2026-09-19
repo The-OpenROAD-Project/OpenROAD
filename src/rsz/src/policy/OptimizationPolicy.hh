@@ -122,6 +122,7 @@ class OptimizationPolicy
   sta::Slack totalNegativeSlack(const sta::MinMax* max) const;
   void prewarmStaForPrepareStage() const;
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
+  // Only startpoint-oriented policies opt in to StTNS progress reporting.
   virtual bool showStartpointMetrics() const { return false; }
   void printProgressHeader() const;
   void printFinalProgress(const RepairTargetCollector& target_collector,

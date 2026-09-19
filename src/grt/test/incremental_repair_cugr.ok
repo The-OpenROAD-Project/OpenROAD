@@ -121,7 +121,7 @@ delta HPWL                    0 %
 [INFO RSZ-0094] Found 32 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | St/EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.317 |       -8.6 |     32 | _881_/D
      339* |      55 |     113 |       39 |      0 |    21 |   +13.3% |   -0.146 |       -3.9 |     32 | _866_/D
