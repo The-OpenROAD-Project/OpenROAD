@@ -1289,28 +1289,38 @@ size_t TileGenerator::tileCacheSize() const
 
 namespace {
 
-// Cheap-to-compute fingerprint of the current chiplet hierarchy:
-// total dbChipInst count reachable from `root`.  If the count changes
-// the cache is rebuilt — covers the common Tcl mutation patterns
-// (create/destroy chiplet instances) that ODB doesn't notify about.
-size_t countChipInsts(odb::dbChip* root)
+// Cheap-to-compute fingerprint of the current chiplet hierarchy: every
+// dbChipInst reachable from `root`, folded in with its placement.  Covers the
+// Tcl mutation patterns ODB doesn't notify about — create/destroy, and also
+// setLoc/setOrient, which move or flip a chiplet without changing the count.
+size_t hashChipInsts(odb::dbChip* root)
 {
   if (!root) {
     return 0;
   }
-  size_t total = 0;
+  size_t hash = 0;
   std::vector<odb::dbChip*> stack{root};
   while (!stack.empty()) {
     odb::dbChip* curr = stack.back();
     stack.pop_back();
     for (odb::dbChipInst* inst : curr->getChipInsts()) {
-      ++total;
+      // getTransform() reads the stored origin and orientation directly;
+      // getLoc() would derive them through the master chip's cuboid, which is
+      // far more work for the same answer on a path this hot.
+      const odb::dbTransform xfm = inst->getTransform();
+      const odb::Point3D offset = xfm.getOffset3D();
+      odb::hash_combine(hash, inst->getId());
+      odb::hash_combine(hash, static_cast<size_t>(offset.x()));
+      odb::hash_combine(hash, static_cast<size_t>(offset.y()));
+      odb::hash_combine(hash, static_cast<size_t>(offset.z()));
+      odb::hash_combine(hash, static_cast<size_t>(xfm.getOrient().getValue()));
+      odb::hash_combine(hash, xfm.isMirrorZ() ? 1 : 0);
       if (odb::dbChip* master = inst->getMasterChip()) {
         stack.push_back(master);
       }
     }
   }
-  return total;
+  return hash;
 }
 
 }  // namespace
@@ -1319,8 +1329,8 @@ const std::vector<ChipletNode>& TileGenerator::chiplets() const
 {
   // ODB itself is not thread-safe, so callers serialize web requests
   // against design mutations.  The fingerprint check (root pointer +
-  // dbChipInst count) only needs to detect *sequential* Tcl mutations
-  // — taking the lock before reading root/count keeps the fingerprint
+  // chiplet placement hash) only needs to detect *sequential* Tcl mutations
+  // — taking the lock before reading root/hash keeps the fingerprint
   // and the cached values consistent with each other.
   //
   // Lifetime contract: the returned reference is valid only as long as
@@ -1330,13 +1340,22 @@ const std::vector<ChipletNode>& TileGenerator::chiplets() const
   // eagerInit while iterating the returned vector.
   std::lock_guard lock(chiplets_mutex_);
   odb::dbChip* root = db_->getChip();
-  const size_t inst_count = countChipInsts(root);
-  const bool fingerprint_changed = chiplets_cache_root_ != root
-                                   || chiplets_cache_inst_count_ != inst_count;
+  const size_t inst_hash = hashChipInsts(root);
+  const bool fingerprint_changed
+      = chiplets_cache_root_ != root || chiplets_cache_inst_hash_ != inst_hash;
   if (!chiplets_cache_valid_ || fingerprint_changed) {
-    chiplets_cache_ = collectChiplets(root);
+    // ODB builds the unfolded model at load and never refreshes it on edits
+    // (#10228, closed as not planned).  Rebuilding it here is not an option:
+    // this is a read path — reached from the save_image thread pool and from
+    // handlers that do not hold tcl_eval_->mutex — and constructUnfoldedModel()
+    // would free objects a concurrent check_3dblox is iterating.  An edited
+    // hierarchy is walked instead, which mutates nothing and yields the same
+    // nodes.  Only a design load (eagerInit, which clears the cache) brings a
+    // fresh model, so "valid cache + changed fingerprint" is exactly "edited".
+    const bool model_stale = chiplets_cache_valid_ && fingerprint_changed;
+    chiplets_cache_ = collectChiplets(root, !model_stale);
     chiplets_cache_root_ = root;
-    chiplets_cache_inst_count_ = inst_count;
+    chiplets_cache_inst_hash_ = inst_hash;
     chiplets_cache_valid_ = true;
     ++chiplets_cache_generation_;
   }
@@ -2423,7 +2442,6 @@ void collectChipletsRec(odb::dbChip* chip,
                         const odb::dbTransform& parent_world_xfm,
                         const std::string& parent_path,
                         const int depth,
-                        const int parent_global_z,
                         std::vector<ChipletNode>& out)
 {
   if (!chip) {
@@ -2441,7 +2459,13 @@ void collectChipletsRec(odb::dbChip* chip,
     node.world_xfm = local;
     node.name = inst->getName();
     node.path = parent_path + "." + node.name;
-    node.global_z = parent_global_z + inst->getLoc().z();
+    // The master's box pushed through the accumulated transform, which is
+    // what dbUnfoldedChipInst::getCuboid() does — summing each level's local
+    // getLoc().z() instead would skew under a mirrored ancestor, and the two
+    // routes have to agree (see CollectChipletsAgreesWithTheUnfoldedModel).
+    odb::Cuboid cuboid = chip->getCuboid();
+    node.world_xfm.apply(cuboid);
+    node.global_z = cuboid.lll().z();
   } else {
     node.world_xfm = parent_world_xfm;
     if (node.block) {
@@ -2450,7 +2474,7 @@ void collectChipletsRec(odb::dbChip* chip,
       node.name = "top";
     }
     node.path = node.name;
-    node.global_z = parent_global_z;
+    node.global_z = 0;
   }
   out.push_back(node);
 
@@ -2460,21 +2484,115 @@ void collectChipletsRec(odb::dbChip* chip,
                        node.world_xfm,
                        node.path,
                        depth + 1,
-                       node.global_z,
                        out);
   }
 }
 
 }  // namespace
 
-std::vector<ChipletNode> collectChiplets(odb::dbChip* root)
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
+                                         const bool use_unfolded_model)
 {
   std::vector<ChipletNode> out;
   if (!root) {
     return out;
   }
-  collectChipletsRec(
-      root, nullptr, odb::dbTransform{}, std::string{}, 0, 0, out);
+
+  odb::dbDatabase* db = root->getDb();
+  odb::dbSet<odb::dbUnfoldedChipInst> unfolded = db->getUnfoldedChipInsts();
+  if (!use_unfolded_model || unfolded.empty()) {
+    // Single-chip designs, load paths that leave the unfolded model unbuilt,
+    // and hierarchies edited since it was built.  Same composition the
+    // builder performs, so the nodes match either way.
+    collectChipletsRec(
+        root, nullptr, odb::dbTransform{}, std::string{}, 0, out);
+  } else {
+    ChipletNode root_node;
+    root_node.chip = root;
+    root_node.block = root->getBlock();
+    root_node.name = root_node.block ? root_node.block->getName() : "top";
+    root_node.path = root_node.name;
+    out.push_back(root_node);
+
+    // Intermediate nodes are shared between leaves, so they are created once
+    // and their index kept for the later leaves that pass through them.
+    std::unordered_map<std::string, size_t> node_at;
+
+    for (odb::dbUnfoldedChipInst* uf : unfolded) {
+      const std::vector<odb::dbChipInst*> inst_path = uf->getChipInstPath();
+      if (inst_path.empty()) {
+        continue;
+      }
+
+      // Already in world space, so a mirrored ancestor cannot skew it the way
+      // summing each level's local getLoc().z() would.  Read before the
+      // descent so each ancestor can take its own z from it on the way down.
+      const int leaf_z = uf->getCuboid().lll().z();
+
+      // HIER ancestors: absent from the unfolded model (they own no dbBlock,
+      // so nothing draws them) but present in the UI trees as grouping nodes.
+      // Their transform is the one thing here the unfolded model cannot
+      // supply, so it is composed once per ancestor and then read back by
+      // the later leaves that share it.
+      odb::dbTransform ancestor_xfm;
+      // Paths are the web's own notation ("top.soc_inst.leaf"): the unfolded
+      // model names chips with '/' and omits the top chip, but this string is
+      // the key of the per-chiplet visibility filter and of the
+      // or_hidden_chiplets cookie, so its shape is fixed.  It grows one
+      // segment per level — descending a leaf costs one append per level
+      // rather than rebuilding the whole prefix at each — and `parent_path`
+      // is the value it held one level up.
+      std::string node_path = root_node.path;
+      std::string parent_path;
+      for (size_t i = 0; i + 1 < inst_path.size(); ++i) {
+        odb::dbChipInst* inst = inst_path[i];
+        parent_path = node_path;
+        node_path += '.';
+        node_path += inst->getName();
+
+        if (const auto at = node_at.find(node_path); at != node_at.end()) {
+          ChipletNode& group = out[at->second];
+          // A group sits at the lowest z it contains, so it sorts next to its
+          // own leaves.
+          group.global_z = std::min(group.global_z, leaf_z);
+          ancestor_xfm = group.world_xfm;
+          continue;
+        }
+        odb::dbTransform local = inst->getTransform();
+        local.concat(ancestor_xfm);
+        ancestor_xfm = local;
+
+        ChipletNode node;
+        node.inst = inst;
+        node.chip = inst->getMasterChip();
+        node.block = node.chip ? node.chip->getBlock() : nullptr;
+        node.world_xfm = ancestor_xfm;
+        node.depth = static_cast<int>(i) + 1;
+        node.name = inst->getName();
+        node.path = node_path;
+        node.parent_path = parent_path;
+        // Lowest leaf seen under this group so far; later leaves lower it.
+        node.global_z = leaf_z;
+        node_at[node_path] = out.size();
+        out.push_back(std::move(node));
+      }
+
+      ChipletNode leaf;
+      leaf.inst = inst_path.back();
+      leaf.chip = leaf.inst->getMasterChip();
+      leaf.block = leaf.chip ? leaf.chip->getBlock() : nullptr;
+      // Composed by dbUnfoldedBuilder, mirror_z included.
+      leaf.world_xfm = uf->getTransform();
+      leaf.depth = static_cast<int>(inst_path.size());
+      leaf.name = leaf.inst->getName();
+      leaf.parent_path = std::move(node_path);
+      leaf.path = leaf.parent_path;
+      leaf.path += '.';
+      leaf.path += leaf.name;
+      leaf.global_z = leaf_z;
+      out.push_back(std::move(leaf));
+    }
+  }
 
   std::ranges::stable_sort(out, [](const ChipletNode& a, const ChipletNode& b) {
     if (a.global_z != b.global_z) {
@@ -2849,7 +2967,7 @@ void TileGenerator::drawOrientationTag(std::vector<unsigned char>& image,
 }
 
 /* static */
-void TileGenerator::drawInstanceName(std::vector<unsigned char>& image,
+void TileGenerator::drawInstanceName(const TextSink& emit,
                                      odb::dbInst* inst,
                                      const TileFrame& frame,
                                      const int dim,
@@ -2916,13 +3034,14 @@ void TileGenerator::drawInstanceName(std::vector<unsigned char>& image,
     const int64_t px = cx - font_h / 2;
     const int64_t py = cy - text_w / 2;
     if (px > -font_h && px < dim && py > -text_w && py < dim) {
-      drawTextRotated(image, (int) px, (int) py, name, inst_font, kLabelYellow);
+      emit((int) px, (int) py, name, inst_font, kLabelYellow, /*rotated=*/true);
     }
   } else {
     const int64_t px = cx - text_w / 2;
     const int64_t py = cy - font_h / 2;
     if (px > -text_w && px < dim && py > -font_h && py < dim) {
-      drawText(image, (int) px, (int) py, name, inst_font, kLabelYellow);
+      emit(
+          (int) px, (int) py, name, inst_font, kLabelYellow, /*rotated=*/false);
     }
   }
 }
@@ -3214,13 +3333,19 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
     const std::vector<std::string>& tech_layers)
 {
-  // Bottom to top, by the SAME z order the client stacks the layers in on
-  // screen (addPseudoLayer / the layer loop in display-controls.js): Leaflet
-  // paints by zIndex, so a PNG composited in any other order is not the view
-  // the user saw.  Compositing in registry order — every pseudo layer last —
-  // put the manufacturing grid over the routing and the pin markers over the
-  // tech layers.  These three mirror the client's non-pseudo values;
+  // Bottom to top, by the z order the client stacks the layers in on screen
+  // (addPseudoLayer / the layer loop in display-controls.js): Leaflet paints
+  // by zIndex, so a PNG composited in any other order is not the view the
+  // user saw.  Compositing in registry order — every pseudo layer last — put
+  // the manufacturing grid over the routing and the pin markers over the tech
+  // layers.  These three mirror the client's non-pseudo values;
   // PseudoLayerDef::z_index carries the overlays'.
+  //
+  // Known divergence: the client reverses the stack of a face-down chiplet
+  // (issue #11329), which this cannot follow — it is handed tech-layer NAMES,
+  // and a name is not per chiplet.  Saved images therefore show every die in
+  // the tech's own layer order.  Fixing it needs the paint unit to become
+  // (chiplet, layer) on both sides, not a reordering here.
   constexpr int kInstancesZ = 0;
   constexpr int kPinsZ = 1;
   constexpr int kTechLayerZBase = 3;
@@ -3285,6 +3410,25 @@ TileGenerator::pseudoLayerDefs()
   }};
   return defs;
 }
+
+namespace {
+
+// A label a non-R0 chiplet wants drawn, held until its buffer has been
+// composited into world space.  Coordinates are still in the chiplet's own
+// pixel frame; flushDeferredLabels() maps them out.  See the emit_text
+// lambda in renderTileBuffer().
+struct DeferredLabel
+{
+  int px = 0;
+  int py = 0;
+  int text_w = 0;  // the emit site measured it to cull; do not measure twice
+  std::string text;
+  GlyphCache::FontSize font;
+  Color color;
+  bool rotated = false;
+};
+
+}  // namespace
 
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
@@ -3458,6 +3602,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // "_instances" pass: instance borders only (no routing) + the always-on
     // die/core outlines.
     const bool instances_only = (layer == "_instances");
+    // Held across chiplets so its capacity is reused rather than regrown per
+    // chiplet; cleared at the top of each iteration.  Empty and untouched on
+    // the R0 fast path.
+    std::vector<DeferredLabel> deferred_labels;
+
     for (const ChipletNode& node : chiplet_nodes) {
       if (!vis.isChipletVisible(node.path)) {
         continue;
@@ -3478,15 +3627,20 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // Translation-only fast path: the local tile is the world tile
       // shifted by -offset, and pixel coordinates land in the same place
       // because both shape coords and tile origin are in the same local
-      // frame.  Non-R0 orientations need full per-shape transforms; for
-      // now we render them as if R0 (visible, but slightly misplaced).
+      // frame.  A non-R0 orientation instead renders the chiplet into a
+      // buffer of its own and reverse-maps that buffer into world space
+      // below, which places it exactly; what it costs is a nearest-neighbour
+      // resample of the fills (the Lanczos decimate downstream hides most of
+      // it) and labels, which are held back rather than resampled.
       std::vector<unsigned char> local_image_buffer;
       // We only branch on the 2D part of the orient.  3DBlox "MZ"
       // (mirror about Z) is stored as {orient_2d=R0, mirror_z_=true} in
       // dbOrientType3D / dbTransform; in the XY plane that's the
-      // identity, so the R0 fast-path produces correct pixels.  If
-      // future renderers need to react to mirror_z_ (e.g. flipped pin
-      // labels or 3D viewer parity) this branch is the place.
+      // identity, so the R0 fast-path produces correct pixels for a
+      // face-down chiplet too.  What a flip does change is the order the
+      // layers stack towards the viewer, and that is paint order, not
+      // pixels: the frontend reverses a flipped chiplet's draw list from
+      // `flipped` in the layer hierarchy.
       const bool use_local
           = (node.world_xfm.getOrient() != odb::dbOrientType::R0);
       if (use_local) {
@@ -3499,6 +3653,39 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // back onto world_image_buffer.
       auto& image_buffer = use_local ? local_image_buffer : super_buffer;
 
+      // Labels of a non-R0 chiplet are held back rather than drawn into the
+      // local buffer: the reverse mapping that places that buffer would
+      // rotate and mirror the glyphs with it, and an MX or MY chiplet would
+      // read its pin and instance names backwards.  A label's *position*
+      // belongs to the chiplet and has to travel; its glyphs do not.  So the
+      // position is mapped to world space below and the text is drawn upright
+      // into the world buffer after compositing.
+      deferred_labels.clear();
+      auto emit_text = [&](const int px,
+                           const int py,
+                           std::string_view text,
+                           const GlyphCache::FontSize& font,
+                           const Color& color,
+                           const bool rotated) {
+        if (!use_local) {
+          if (rotated) {
+            drawTextRotated(image_buffer, px, py, text, font, color);
+          } else {
+            drawText(image_buffer, px, py, text, font, color);
+          }
+          return;
+        }
+        deferred_labels.push_back(DeferredLabel{
+            .px = px,
+            .py = py,
+            .text_w = getTextWidth(text, font),
+            .text = std::string(text),
+            .font = font,
+            .color = color,
+            .rotated = rotated,
+        });
+      };
+
       // This tile expressed in the chiplet's own frame.  A translation moves
       // the exact origin by exactly the offset; the query window moves with it.
       TileFrame frame = world_frame;
@@ -3506,9 +3693,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         odb::dbTransform inv_xfm = node.world_xfm;
         inv_xfm.invert();
         inv_xfm.apply(frame.cull);
-        // Non-R0 chiplets are drawn as if R0 (see above), so their origin comes
-        // from the transformed window instead of an exact mapping of the world
-        // corner — one more approximation in a path that is already one.
+        // Every orientation is a multiple of 90° with an integer offset, so
+        // the inverse maps the DBU grid onto itself and the window keeps its
+        // size: the transformed corner is the local origin.  It is taken off
+        // the already-rounded cull rather than off world_frame's exact
+        // origin, which costs the same sub-DBU as the fast path.
         frame.origin_x = frame.cull.xMin();
         frame.origin_y = frame.cull.yMin();
       } else {
@@ -3922,13 +4111,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                          .g = marker_color.g,
                                          .b = marker_color.b,
                                          .a = 255};
-                  if (rotated) {
-                    drawTextRotated(
-                        image_buffer, px, py, name, pin_label_font, text_color);
-                  } else {
-                    drawText(
-                        image_buffer, px, py, name, pin_label_font, text_color);
-                  }
+                  emit_text(px, py, name, pin_label_font, text_color, rotated);
                 }
               }
             }
@@ -4192,24 +4375,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                       const int py = cy - text_w / 2;
                       if (px > -iterm_font_h && px < super && py > -text_w
                           && py < super) {
-                        drawTextRotated(image_buffer,
-                                        px,
-                                        py,
-                                        name,
-                                        iterm_font,
-                                        kLabelYellow);
+                        emit_text(px,
+                                  py,
+                                  name,
+                                  iterm_font,
+                                  kLabelYellow,
+                                  /*rotated=*/true);
                       }
                     } else {
                       const int px = cx - text_w / 2;
                       const int py = cy - iterm_font_h / 2;
                       if (px > -text_w && px < super && py > -iterm_font_h
                           && py < super) {
-                        drawText(image_buffer,
-                                 px,
-                                 py,
-                                 name,
-                                 iterm_font,
-                                 kLabelYellow);
+                        emit_text(px,
+                                  py,
+                                  name,
+                                  iterm_font,
+                                  kLabelYellow,
+                                  /*rotated=*/false);
                       }
                     }
 
@@ -4311,16 +4494,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     const int py = cy - text_w / 2;
                     if (px > -iterm_font_h && px < super && py > -text_w
                         && py < super) {
-                      drawTextRotated(
-                          image_buffer, px, py, name, iterm_font, kLabelYellow);
+                      emit_text(px,
+                                py,
+                                name,
+                                iterm_font,
+                                kLabelYellow,
+                                /*rotated=*/true);
                     }
                   } else {
                     const int px = cx - text_w / 2;
                     const int py = cy - iterm_font_h / 2;
                     if (px > -text_w && px < super && py > -iterm_font_h
                         && py < super) {
-                      drawText(
-                          image_buffer, px, py, name, iterm_font, kLabelYellow);
+                      emit_text(px,
+                                py,
+                                name,
+                                iterm_font,
+                                kLabelYellow,
+                                /*rotated=*/false);
                     }
                   }
 
@@ -4504,9 +4695,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         }
 
         // Instance names last, as in Qt: every hatch this tile carries is
-        // already down, so none of them can cross a label.
-        for (odb::dbInst* named : named_insts) {
-          drawInstanceName(image_buffer, named, frame, super, inst_name_font);
+        // already down, so none of them can cross a label.  The sink is
+        // wrapped once, not once per instance: emit_text's captures overflow
+        // std::function's small-object buffer, so a per-instance temporary
+        // would heap-allocate inside the tile loop.
+        if (!named_insts.empty()) {
+          const TextSink name_sink = emit_text;
+          for (odb::dbInst* named : named_insts) {
+            drawInstanceName(name_sink, named, frame, super, inst_name_font);
+          }
         }
 
         // Draw routing obstructions (dbObstruction) on per-layer tiles.
@@ -4804,6 +5001,54 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 .a = a_src,
             };
             blendPixel(super_buffer, px_w, py_w, src_color);
+          }
+        }
+      }
+
+      // Labels held back above, now drawn upright into the world buffer.
+      // Only the anchor moves: the text block's centre is mapped through the
+      // chiplet's transform and the block re-centred there, so a label stays
+      // on the shape it names while staying readable.  A 90° rotation swaps
+      // the block's width and height, and with them which of the two text
+      // directions fits, so `rotated` flips with it.
+      if (!deferred_labels.empty()) {
+        const bool quarter_turn
+            = node.world_xfm.getOrient().isRightAngleRotation();
+        for (const DeferredLabel& label : deferred_labels) {
+          const int text_w = label.text_w;
+          const int text_h = getTextHeight(label.font);
+          // Extent of the block as it was laid out in the local frame.
+          const int block_w = label.rotated ? text_h : text_w;
+          const int block_h = label.rotated ? text_w : text_h;
+
+          // Local block centre (pixels) → local DBU → world DBU.
+          odb::Point centre(
+              std::lround(dbu_x_min + (label.px + block_w / 2.0) / scale),
+              std::lround(dbu_y_min
+                          + (super - 1 - (label.py + block_h / 2.0)) / scale));
+          node.world_xfm.apply(centre);
+
+          // World DBU → world pixels, then back off to the block's corner.
+          const bool rotated = label.rotated != quarter_turn;
+          const int out_w = rotated ? text_h : text_w;
+          const int out_h = rotated ? text_w : text_h;
+          const int px_w
+              = static_cast<int>(std::lround(world_frame.pxX(centre.x())))
+                - out_w / 2;
+          const int py_w
+              = super - 1
+                - static_cast<int>(std::lround(world_frame.pxY(centre.y())))
+                - out_h / 2;
+          if (px_w <= -out_w || px_w >= super || py_w <= -out_h
+              || py_w >= super) {
+            continue;
+          }
+          if (rotated) {
+            drawTextRotated(
+                super_buffer, px_w, py_w, label.text, label.font, label.color);
+          } else {
+            drawText(
+                super_buffer, px_w, py_w, label.text, label.font, label.color);
           }
         }
       }
@@ -7086,6 +7331,9 @@ boost::json::object buildLayerHierarchy(
   json_node["name"] = node.name;
   json_node["type"] = (node.inst == nullptr) ? "block" : "instance";
   json_node["path"] = node.path;
+  // Face-down: the frontend paints this node's subtree back-to-front so the
+  // stack reads the way it physically sits under the viewer.
+  json_node["flipped"] = node.isFlipped();
 
   // Classify tech layers into the same groups the Qt GUI uses
   // (displayControls.cpp): routing/cut layers stay in the main "Layers"
@@ -7146,19 +7394,23 @@ boost::json::object buildLayerHierarchy(
     }
   }
   // Emit category folders, mirroring the Backside node.  Each is a pure UI
-  // grouping (no chiplet path) and is only added when it has layers.
-  auto emit_category
-      = [&instances_arr](const char* name, boost::json::array&& cat_layers) {
-          if (cat_layers.empty()) {
-            return;
-          }
-          boost::json::object cat_node;
-          cat_node["name"] = name;
-          cat_node["type"] = "category";
-          cat_node["layers"] = std::move(cat_layers);
-          cat_node["instances"] = boost::json::array{};
-          instances_arr.emplace_back(std::move(cat_node));
-        };
+  // grouping (no chiplet path) and is only added when it has layers.  A
+  // category inherits its owning chiplet's `flipped`, the same way it
+  // inherits ownerPath in the frontend: it holds that chiplet's layers, so
+  // it has to be ordered with them.
+  auto emit_category = [&instances_arr, flipped = node.isFlipped()](
+                           const char* name, boost::json::array&& cat_layers) {
+    if (cat_layers.empty()) {
+      return;
+    }
+    boost::json::object cat_node;
+    cat_node["name"] = name;
+    cat_node["type"] = "category";
+    cat_node["flipped"] = flipped;
+    cat_node["layers"] = std::move(cat_layers);
+    cat_node["instances"] = boost::json::array{};
+    instances_arr.emplace_back(std::move(cat_node));
+  };
   emit_category("Backside", std::move(backside_layers_arr));
   emit_category("Implant", std::move(implant_layers_arr));
   emit_category("Other", std::move(other_layers_arr));
@@ -7238,9 +7490,6 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   // flat array the frontend exposes as `chiplets`.  Both outputs read
   // identity (name, path) straight from collectChipletsRec, so
   // layer_hierarchy.path stays byte-identical to chiplets[*].path.
-  auto orientStr = [](const odb::dbOrientType& o) {
-    return std::string(odb::dbOrientType(o).getString());
-  };
   std::unordered_map<std::string, std::vector<const ChipletNode*>>
       children_by_parent;
   const ChipletNode* root_node = nullptr;
@@ -7277,7 +7526,8 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
     }
     const odb::Point off = n.world_xfm.getOffset();
     entry["world_origin_dbu"] = boost::json::array{off.x(), off.y()};
-    entry["orient"] = orientStr(n.world_xfm.getOrient());
+    entry["orient"] = n.orientString();
+    entry["mirror_z"] = n.isFlipped();
     chiplets.emplace_back(std::move(entry));
   }
   if (root_node) {

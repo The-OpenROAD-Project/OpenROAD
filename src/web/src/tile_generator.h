@@ -189,15 +189,45 @@ struct ChipletNode
   std::string name;                 // "top" or inst->getName()
   int depth = 0;
   int global_z = 0;
+
+  // Face-down: the accumulated transform mirrors Z, so the die's layer stack
+  // runs top-down in world space.  Derived, not stored — dbTransform::concat
+  // XORs mirror_z down the hierarchy, so the transform is already the answer.
+  // In the XY plane a mirror about Z is the identity, so this changes paint
+  // order rather than geometry.
+  bool isFlipped() const { return world_xfm.isMirrorZ(); }
+
+  // The full 3D orientation ("R0", "MX", "MZ", "MZ_R90", …).  Reporting only
+  // the 2D half would collapse a face-down chiplet onto "R0".
+  std::string orientString() const
+  {
+    return odb::dbOrientType3D(world_xfm.getOrient(), isFlipped()).getString();
+  }
 };
 
-// Walk the dbChip → dbChipInst → masterChip hierarchy depth-first and
-// return a flat list with each chiplet's accumulated world transform.
+// Walk the chiplet hierarchy and return a flat list with each chiplet's
+// accumulated world transform.
+//
+// Leaves come from ODB's unfolded model (dbUnfoldedChipInst), which already
+// composes the dbChipInst transforms top-down — the web does not redo that
+// arithmetic.  The unfolded model holds leaves only: dbUnfoldedBuilder skips
+// ChipType::HIER chips, which own no dbBlock and so have no geometry.  Those
+// intermediate nodes still group the UI trees, so they are synthesized here
+// from the prefixes of each leaf's getChipInstPath(), as is the root (the
+// unfolded model has no entry for the top chip).
+//
+// With use_unfolded_model=false, or when the model is empty (single-chip
+// designs, load paths that never build it), the hierarchy is walked instead
+// and the transforms composed here.  Both routes produce the same nodes; the
+// walk is what a caller uses when the model may be out of date, since ODB
+// does not refresh it on edits and refreshing it from a read path is not safe.
+//
 // Related Qt code: `LayoutViewer::getChips()` returns a flat
 // (dbChipInst → dbChip) PtrMap with no transform composition — this
-// function additionally accumulates `dbTransform`s top-down and assigns
+// function additionally carries `dbTransform`s and assigns
 // stable hierarchical paths so the web renderer can place each chiplet.
-std::vector<ChipletNode> collectChiplets(odb::dbChip* root);
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
+                                         bool use_unfolded_model = true);
 
 // Coarse instance category, derived once per inst and reused by both
 // isInstVisible and isInstSelectable so the two stay in lock-step.
@@ -966,14 +996,15 @@ class TileGenerator
 
   // Cached chiplet traversal.  See chiplets().  Invalidated in
   // eagerInit() and also auto-invalidated when the chiplet hierarchy
-  // signature (root pointer + total dbChipInst count) changes — this
-  // catches Tcl-driven dbChipInst::create/destroy between eagerInit
-  // calls, which dbBlockCallBackObj does not surface.
+  // signature (root pointer + a hash over each dbChipInst's id, location
+  // and orientation) changes — this catches Tcl-driven create/destroy and
+  // setLoc/setOrient between eagerInit calls, which dbBlockCallBackObj
+  // does not surface.
   mutable std::mutex chiplets_mutex_;
   mutable std::vector<ChipletNode> chiplets_cache_;
   mutable bool chiplets_cache_valid_ = false;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
-  mutable size_t chiplets_cache_inst_count_ = 0;
+  mutable size_t chiplets_cache_inst_hash_ = 0;
   // See chipletsGeneration().
   mutable uint64_t chiplets_cache_generation_ = 0;
 
@@ -1096,11 +1127,23 @@ class TileGenerator
                                  const TileFrame& frame,
                                  int dim,
                                  int stroke);
+  // Where a label goes, decided by the caller.  A chiplet rendered in its own
+  // frame cannot draw text into that frame — the reverse mapping that places
+  // the frame would mirror the glyphs — so the caller routes the label
+  // elsewhere and only the position travels.  Arguments mirror drawText():
+  // top-left pixel, the text, its font, its color, and whether it reads
+  // top-to-bottom.
+  using TextSink = std::function<void(int px,
+                                      int py,
+                                      std::string_view text,
+                                      const GlyphCache::FontSize& font,
+                                      const Color& color,
+                                      bool rotated)>;
   // The instance's name, centred in its bbox and elided to fit.  Called after
   // the blockage hatch rather than with the rest of the instance, the way Qt
   // defers drawInstanceNames past drawBlockages, so no hatch line crosses a
   // label.
-  static void drawInstanceName(std::vector<unsigned char>& image,
+  static void drawInstanceName(const TextSink& emit,
                                odb::dbInst* inst,
                                const TileFrame& frame,
                                int dim,

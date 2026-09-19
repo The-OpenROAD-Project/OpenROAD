@@ -1770,6 +1770,206 @@ TEST_F(TileGeneratorTest, CollectTimingPathShapesSkipsIntraCellHop)
   EXPECT_TRUE(rects.empty());
 }
 
+// ─── Chiplet orientation (issue #11329) ──────────────────────────────────
+
+// Find a chiplet by path, or null.
+const ChipletNode* findChiplet(const std::vector<ChipletNode>& chiplets,
+                               std::string_view path)
+{
+  const auto at = std::ranges::find(chiplets, path, &ChipletNode::path);
+  return at == chiplets.end() ? nullptr : &*at;
+}
+
+// The web builds its chiplet list from ODB's unfolded model, but keeps the
+// recursive walk for designs whose model was never built.  The two have to
+// agree on paths: a path is the key of the per-chiplet visibility filter and
+// of the or_hidden_chiplets cookie, so a mismatch would silently drop a user's
+// saved state on designs that take the other route.
+TEST_F(TileGeneratorTest, CollectChipletsAgreesWithTheUnfoldedModel)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+
+  // Nothing has built the unfolded model yet, so this takes the fallback.
+  const std::vector<ChipletNode> walked = collectChiplets(root);
+  getDb()->constructUnfoldedModel();
+  const std::vector<ChipletNode> unfolded = collectChiplets(root);
+
+  auto paths = [](const std::vector<ChipletNode>& nodes) {
+    std::set<std::string> out;
+    for (const ChipletNode& node : nodes) {
+      out.insert(node.path);
+    }
+    return out;
+  };
+  EXPECT_EQ(paths(walked), paths(unfolded))
+      << "the unfolded and fallback traversals disagree on chiplet paths, "
+         "which are persisted in user cookies";
+  EXPECT_EQ(paths(unfolded),
+            (std::set<std::string>{"top", "top.die0", "top.die1"}));
+}
+
+// A face-down chiplet is MZ: {orient_2d=R0, mirror_z=true}.  Reading only the
+// 2D half reports it as R0 and the viewer draws it face-up, which is the bug.
+TEST_F(TileGeneratorTest, ChipletReportsMirrorZAsFlipped)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  auto insts = root->getChipInsts().begin();
+  odb::dbChipInst* die0 = *insts;
+  odb::dbChipInst* die1 = *++insts;
+  die1->setOrient(odb::dbOrientType3D("MZ"));
+  getDb()->constructUnfoldedModel();
+
+  const std::vector<ChipletNode> chiplets = collectChiplets(root);
+  const ChipletNode* up = findChiplet(chiplets, "top." + die0->getName());
+  const ChipletNode* down = findChiplet(chiplets, "top." + die1->getName());
+  ASSERT_NE(up, nullptr);
+  ASSERT_NE(down, nullptr);
+  EXPECT_FALSE(up->isFlipped());
+  EXPECT_TRUE(down->isFlipped())
+      << "an MZ chiplet is not reported as face-down, "
+         "so the viewer cannot reverse its stack";
+  // MZ leaves XY alone, which is what lets the R0 fast path still render it.
+  EXPECT_EQ(down->world_xfm.getOrient(), odb::dbOrientType::R0);
+}
+
+// mirror_z accumulates by XOR down the hierarchy: a flipped chiplet inside a
+// flipped one is face-up again.  The transform already carries that, so the
+// node must not re-derive the flag from its own dbChipInst.
+TEST_F(TileGeneratorTest, ChipletFlipCancelsWhenNested)
+{
+  odb::dbChip* mid = odb::dbChip::create(
+      getDb(), nullptr, "mid", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* inner = odb::dbChipInst::create(mid, chip_, "inner");
+  inner->setOrient(odb::dbOrientType3D("MZ"));
+
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  getDb()->setTopChip(root);
+  odb::dbChipInst* outer = odb::dbChipInst::create(root, mid, "outer");
+  outer->setOrient(odb::dbOrientType3D("MZ"));
+  getDb()->constructUnfoldedModel();
+
+  const std::vector<ChipletNode> chiplets = collectChiplets(root);
+  const ChipletNode* leaf = findChiplet(chiplets, "top.outer.inner");
+  ASSERT_NE(leaf, nullptr) << "the HIER ancestor's leaf is missing: the "
+                              "unfolded model skips HIER chips, so its "
+                              "descendants have to be rebuilt from the path";
+  EXPECT_FALSE(leaf->isFlipped())
+      << "MZ inside MZ is face-up again, but the chiplet reports face-down";
+
+  // The HIER node itself owns no block but still groups the UI trees.
+  const ChipletNode* group = findChiplet(chiplets, "top.outer");
+  ASSERT_NE(group, nullptr) << "HIER grouping node dropped from the tree";
+  EXPECT_TRUE(group->isFlipped());
+}
+
+// The cache fingerprint used to be (root, chip-inst count), which a reorient
+// does not change: flipping a chiplet from Tcl left the viewer showing the old
+// stack until the design was reloaded.
+TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  makeTileGen();
+
+  const ChipletNode* before
+      = findChiplet(tile_gen_->chiplets(), "top." + die0->getName());
+  ASSERT_NE(before, nullptr);
+  ASSERT_FALSE(before->isFlipped());
+
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+
+  const ChipletNode* after
+      = findChiplet(tile_gen_->chiplets(), "top." + die0->getName());
+  ASSERT_NE(after, nullptr);
+  EXPECT_TRUE(after->isFlipped())
+      << "the chiplet cache did not notice setOrient, so the viewer keeps "
+         "drawing the die face-up";
+
+  // The unfolded model is a load-time snapshot and this read path must not
+  // rebuild it (that would free objects a concurrent reader is walking), so
+  // the edit has to stay visible on later calls too — not just the one that
+  // detected it.
+  const ChipletNode* later
+      = findChiplet(tile_gen_->chiplets(), "top." + die0->getName());
+  ASSERT_NE(later, nullptr);
+  EXPECT_TRUE(later->isFlipped())
+      << "the reorient was reported once and then lost, which means a stale "
+         "unfolded model was read back";
+}
+
+// Reading the model is opt-out precisely so an edited hierarchy can be walked
+// instead of rebuilt.  Both routes have to agree, or that fallback silently
+// changes what the viewer shows.
+TEST_F(TileGeneratorTest, WalkingMatchesTheUnfoldedModelAfterAReorient)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  auto insts = root->getChipInsts().begin();
+  odb::dbChipInst* die0 = *insts;
+  die0->setOrient(odb::dbOrientType3D("MZ_MX"));
+  getDb()->constructUnfoldedModel();
+
+  const std::vector<ChipletNode> from_model
+      = collectChiplets(root, /*use_unfolded_model=*/true);
+  const std::vector<ChipletNode> walked
+      = collectChiplets(root, /*use_unfolded_model=*/false);
+
+  ASSERT_EQ(from_model.size(), walked.size());
+  for (size_t i = 0; i < walked.size(); ++i) {
+    EXPECT_EQ(from_model[i].path, walked[i].path);
+    EXPECT_EQ(from_model[i].isFlipped(), walked[i].isFlipped())
+        << "flip disagrees at " << walked[i].path;
+    // The sort key: if the two routes disagree here they stack the dies
+    // differently, which is the whole feature.
+    EXPECT_EQ(from_model[i].global_z, walked[i].global_z)
+        << "z disagrees at " << walked[i].path;
+    EXPECT_EQ(from_model[i].world_xfm, walked[i].world_xfm)
+        << "transform disagrees at " << walked[i].path;
+  }
+}
+
+// What the frontend reads to reverse a flipped chiplet's draw order.
+TEST_F(TileGeneratorTest, TechResponseReportsTheFullOrientation)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+  makeTileGen();
+
+  const auto resp = serializeTechResponse(*tile_gen_);
+
+  ASSERT_TRUE(resp.contains("chiplets"));
+  const boost::json::object* die_entry = nullptr;
+  for (const auto& entry : resp.at("chiplets").as_array()) {
+    if (entry.as_object().at("name").as_string() == die0->getName()) {
+      die_entry = &entry.as_object();
+      break;
+    }
+  }
+  ASSERT_NE(die_entry, nullptr);
+  EXPECT_EQ(die_entry->at("orient").as_string(), "MZ")
+      << "the 3D orientation collapsed to its 2D half, losing the flip";
+  EXPECT_TRUE(die_entry->at("mirror_z").as_bool());
+
+  // layer_hierarchy carries it too: that is the tree the frontend walks when
+  // it assigns z-indices.
+  const auto& hier = resp.at("layer_hierarchy").as_object();
+  ASSERT_TRUE(hier.contains("flipped"));
+  EXPECT_FALSE(hier.at("flipped").as_bool()) << "the top chip is not flipped";
+  const auto& instances = hier.at("instances").as_array();
+  ASSERT_FALSE(instances.empty());
+  bool saw_flipped_die = false;
+  for (const auto& inst : instances) {
+    const auto& obj = inst.as_object();
+    if (obj.at("name").as_string() == die0->getName()) {
+      saw_flipped_die = obj.at("flipped").as_bool();
+    }
+  }
+  EXPECT_TRUE(saw_flipped_die)
+      << "layer_hierarchy does not mark the die as flipped, so the frontend "
+         "cannot reverse its layer stack";
+}
+
 // The 3DBlox case collectTimingPathShapes exists for: a top chip with no block
 // of its own, and a pin pair split across two placed chiplets.  Each end has to
 // land in top-level coordinates, or the highlight sits on the raw in-die
