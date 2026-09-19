@@ -499,6 +499,12 @@ bool dbBox::isVia() const
   return box->flags_.via_id != 0;
 }
 
+bool dbBox::isSubVia() const
+{
+  const _dbBox* box = (const _dbBox*) this;
+  return box->flags_.is_sub_via != 0;
+}
+
 dbTechVia* dbBox::getTechVia() const
 {
   const _dbBox* box = (const _dbBox*) this;
@@ -947,18 +953,12 @@ dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
   int ymin = vbbox->shape_.rect.yMin() + y;
   int xmax = vbbox->shape_.rect.xMax() + x;
   int ymax = vbbox->shape_.rect.yMax() + y;
-  _dbBox* box = master->box_tbl_->create();
-  box->flags_.octilinear = false;
-  box->flags_.owner_type = dbBoxOwner::MPIN;
-  box->owner_ = pin->getOID();
-  box->shape_.rect.init(xmin, ymin, xmax, ymax);
-  box->flags_.is_tech_via = 1;
-  box->flags_.via_id = via->getOID();
 
-  // link box to pin
-  box->next_box_ = pin->geoms_;
-  pin->geoms_ = box->getOID();
-  return (dbBox*) box;
+  auto sub_layer = via_->getTopLayer();
+  auto sub_box = dbBox::create(pin_, sub_layer, xmin, ymin, xmax, ymax);
+  ((_dbBox*) sub_box)->flags_.is_sub_via = 1;
+
+  return sub_box;
 }
 
 dbBox* dbBox::create(dbTechVia* via_,
