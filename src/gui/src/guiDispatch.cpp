@@ -848,11 +848,9 @@ void Gui::setHeatMapSetting(const std::string& name,
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
         settings[option] = *s;
-      }
-      if (auto* s = std::get_if<int>(&value)) {
+      } else if (auto* s = std::get_if<int>(&value)) {
         settings[option] = *s != 0;
-      }
-      if (auto* s = std::get_if<double>(&value)) {
+      } else if (auto* s = std::get_if<double>(&value)) {
         settings[option] = *s != 0.0;
       } else {
         logger_->error(utl::GUI, 60, "{} must be a boolean", option);
