@@ -5230,8 +5230,8 @@ void GlobalRouter::findClockNets(const std::vector<Net*>& nets,
 
 bool GlobalRouter::isSecondaryPowerNet(odb::dbNet* db_net) const
 {
-  return db_net->getSigType().isSupply() && !db_net->isSpecial()
-         && !db_net->getSWires().empty();
+  return db_net->getSigType().isSupply() && !db_net->getSWires().empty()
+         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty());
 }
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)

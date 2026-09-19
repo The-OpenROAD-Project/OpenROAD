@@ -20,6 +20,10 @@ COMPONENTS 2 ;
     - inst1 BUF_X1 + PLACED ( 3800 2800 ) N ;
     - inst2 BUF_X1 + PLACED ( 52060 2800 ) N ;
 END COMPONENTS
+SPECIALNETS 1 ;
+    - VDDD + USE POWER
+      + ROUTED metal3 2000 + SHAPE STRIPE ( 28500 0 ) ( 28500 60000 ) ;
+END SPECIALNETS
 NETS 1 ;
     - VDDD ( inst2 A ) ( inst1 A ) + USE POWER
       + ROUTED metal2 ( 3990 2380 ) ( * 4060 )

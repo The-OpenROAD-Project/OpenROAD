@@ -4,13 +4,6 @@ read_lef "Nangate45/Nangate45_tech.lef"
 read_lef "Nangate45/Nangate45_stdcell.lef"
 read_def "secondary_power.def"
 
-# Mark the net as a non-special supply net (secondary power net)
-set db [ord::get_db]
-set chip [$db getChip]
-set block [$chip getBlock]
-set net [$block findNet "VDDD"]
-$net clearSpecial
-
 set_routing_layers -signal metal1-metal4
 
 global_route -verbose

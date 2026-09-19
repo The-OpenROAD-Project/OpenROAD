@@ -56,8 +56,8 @@ namespace drt {
 
 static bool isSecondaryPowerNet(odb::dbNet* db_net)
 {
-  return db_net->getSigType().isSupply() && !db_net->isSpecial()
-         && !db_net->getSWires().empty();
+  return db_net->getSigType().isSupply() && !db_net->getSWires().empty()
+         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty());
 }
 
 io::Parser::Parser(odb::dbDatabase* dbIn,
@@ -1061,7 +1061,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   if (db_net->getSigType() == odb::dbSigType::CLOCK) {
     net_in->updateIsClock(true);
   }
-  if (is_special) {
+  if (is_special && !isSecondaryPowerNet(db_net)) {
     net_in->setIsSpecial(true);
   }
   net_in->setHasJumpers(has_jumpers);
@@ -1074,7 +1074,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
     net_in->setType(db_net->getSigType());
   }
   frNet* raw_net_in = net_in.get();
-  if (is_special) {
+  if (is_special && !isSecondaryPowerNet(db_net)) {
     getBlock()->addSNet(std::move(net_in));
   } else {
     getBlock()->addNet(std::move(net_in));
