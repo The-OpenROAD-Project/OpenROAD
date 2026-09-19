@@ -7,7 +7,6 @@
 #include <any>
 #include <cstdio>
 #include <map>
-#include <optional>
 #include <set>
 #include <string>
 #include <typeinfo>
@@ -21,16 +20,7 @@
 #include "odb/geom.h"
 #include "tcl.h"
 
-// empty gif writer class
-struct GifWriter
-{
-};
-
 namespace gui {
-
-Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
-{
-}
 
 void HeatMapDataSource::registerHeatMap()
 {
@@ -71,12 +61,10 @@ void initGui(Tcl_Interp* interp,
              sta::dbSta* sta,
              utl::Logger* logger)
 {
-  // Initialize the descriptor registry so that descriptors are available
-  // for the web viewer and other non-GUI consumers.
-  auto* registry = DescriptorRegistry::instance();
-  registry->setLogger(logger);
-  registry->initDescriptors(db, sta);
-  registerBuiltinHeatMapSources(sta, logger);
+  // Brings up the descriptor registry and the heat map sources for the web
+  // viewer and other non-Qt consumers, and gives Gui the database and logger
+  // its own dispatch reports through.
+  Gui::get()->initCommon(db, sta, logger);
 
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
@@ -110,23 +98,6 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, cmd_has_ui.c_str());
 }
 
-int Gui::gifStart(const std::string& filename)
-{
-  return 0;
-}
-
-void Gui::gifEnd(std::optional<int> key)
-{
-}
-
-void Gui::gifAddFrame(std::optional<int> key,
-                      const odb::Rect& region,
-                      int width_px,
-                      double dbu_per_pixel,
-                      std::optional<int> delay)
-{
-}
-
 Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
@@ -135,14 +106,6 @@ Chart* Gui::addChart(const std::string& name,
     return chart_factory_(name, x_label, y_labels);
   }
   return nullptr;
-}
-
-void Gui::saveImage(const std::string& filename,
-                    const odb::Rect& region,
-                    int width_px,
-                    double dbu_per_pixel,
-                    const std::map<std::string, bool>& display_settings)
-{
 }
 
 int Gui::select(const std::string& type,

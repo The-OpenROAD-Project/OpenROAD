@@ -9,13 +9,16 @@
 // The rest of Gui, the Tcl command surface, is still implemented twice, in
 // gui.cpp and stub.cpp.  It moves here slice by slice.
 
+#include <algorithm>
 #include <any>
+#include <map>
 #include <optional>
 #include <string>
 #include <typeinfo>
 
 #include "gui/core.h"
 #include "gui/descriptor_registry.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -36,9 +39,10 @@ Gui* Gui::get()
   return singleton;
 }
 
-// Gui's constructor stays with the gif machinery in gui.cpp / stub.cpp:
-// GIF holds a unique_ptr<GifWriter>, and gif.h defines non-inline free
-// functions, so only one translation unit per link may include it.
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
+{
+  resetDbuConversions();
+}
 
 bool Gui::enabled()
 {
@@ -160,6 +164,24 @@ std::optional<int> sizeOrAuto(int px)
     return px;
   }
   return std::nullopt;
+}
+
+// Quotes a string as a Tcl word.  Inside "..." Tcl still expands $variables
+// and [commands] and honours backslash escapes, so a path has to be quoted
+// before it goes into a generated script: one as ordinary as out/img[list].png
+// would otherwise reach save_image rewritten, as out/img.png.  Escaping the
+// opening bracket is enough -- a ] with no [ to match is already literal.
+std::string quoteTcl(const std::string& str)
+{
+  std::string quoted = "\"";
+  for (const char c : str) {
+    if (c == '\\' || c == '"' || c == '$' || c == '[') {
+      quoted += '\\';
+    }
+    quoted += c;
+  }
+  quoted += '"';
+  return quoted;
 }
 
 }  // namespace
@@ -643,6 +665,101 @@ void Gui::saveHistogramImage(const std::string& filename,
   }
   activeBackend()->saveHistogramImage(
       filename, mode, sizeOrAuto(width_px), sizeOrAuto(height_px));
+}
+
+void Gui::saveImage(const std::string& filename,
+                    const odb::Rect& region,
+                    int width_px,
+                    double dbu_per_pixel,
+                    const std::map<std::string, bool>& display_settings)
+{
+  if (db_ == nullptr) {
+    logger_->error(utl::GUI, 15, "No design loaded.");
+  }
+
+  odb::Rect save_region = region;
+  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
+  const GuiBackend* backend = activeBackend();
+  const bool is_offscreen = backend == nullptr || backend->isOffscreen();
+  if (is_offscreen && use_die_area) {
+    // Onscreen the visible area of the layout viewer is what the user means;
+    // offscreen it is not reliable, so use the die area instead.
+    auto* chip = db_->getChip();
+    if (chip == nullptr) {
+      logger_->error(utl::GUI, 64, "No design loaded.");
+    }
+    save_region = chip->getBBox();
+    auto* block = chip->getBlock();
+
+    if (block != nullptr) {
+      save_region = block->getBBox()->getBox();
+    }
+
+    const double bloat_by = 0.05;  // 5%
+    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
+
+    save_region.bloat(bloat, save_region);
+  }
+
+  if (hasUI()) {
+    // Apply the caller's display settings over the current ones, render, and
+    // put the panel back the way it was.
+    activeBackend()->saveDisplayControls();
+    for (const auto& [control, value] : display_settings) {
+      setDisplayControlsVisible(control, value);
+    }
+
+    activeBackend()->saveImage(filename, save_region, width_px, dbu_per_pixel);
+
+    activeBackend()->restoreDisplayControls();
+    return;
+  }
+
+  // No window, so there is nothing to render from.  Open one, have it run
+  // this same command, and close it again.  save_region is already resolved
+  // and non-empty, so the reopened gui skips the die-area fallback above
+  // rather than bloating it a second time.
+  GuiLauncher* launcher = getLauncher();
+  if (launcher == nullptr) {
+    // A build with no Qt has no gui to open.
+    return;
+  }
+
+  const double dbu_per_micron = db_->getDbuPerMicron();
+
+  std::string save_cmds;
+  save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
+  for (const auto& [control, value] : display_settings) {
+    save_cmds
+        += fmt::format(
+               "$::gui::display_settings set {} {}", quoteTcl(control), value)
+           + "\n";
+  }
+  save_cmds += "gui::save_image ";
+  save_cmds += quoteTcl(filename) + " ";
+  save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
+  save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
+  save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
+  save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
+  save_cmds += std::to_string(width_px) + " ";
+  save_cmds += std::to_string(dbu_per_pixel) + " ";
+  save_cmds += "$::gui::display_settings\n";
+  save_cmds += "rename $::gui::display_settings \"\"\n";
+  save_cmds += "unset ::gui::display_settings\n";
+  save_cmds += "gui::hide";
+  launcher->openAndRun(save_cmds);
+}
+
+void Gui::initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
+{
+  db_ = db;
+  logger_ = logger;
+
+  auto* registry = DescriptorRegistry::instance();
+  registry->setLogger(logger);
+  registry->initDescriptors(db, sta);
+
+  registerBuiltinHeatMapSources(sta, logger);
 }
 
 }  // namespace gui

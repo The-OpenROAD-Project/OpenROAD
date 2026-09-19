@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QImage>
 #include <QPushButton>
 #include <QString>
 #include <QWidget>
@@ -54,7 +55,6 @@
 #include "qtDialogs.h"
 #include "ruler.h"
 #include "scriptWidget.h"
-#include "third-party/gif-h/gif.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
@@ -401,6 +401,15 @@ class QtGuiBackend : public GuiBackend
         clock_name, filename, scene, width_px, height_px);
   }
 
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region,
+                 int width_px,
+                 double dbu_per_pixel) override
+  {
+    main_window->getLayoutViewer()->saveImage(
+        filename.c_str(), region, width_px, dbu_per_pixel);
+  }
+
   void saveHistogramImage(const std::string& filename,
                           const std::string& mode,
                           std::optional<int> width_px,
@@ -410,14 +419,59 @@ class QtGuiBackend : public GuiBackend
     charts->saveImage(
         filename, charts->modeFromString(mode), width_px, height_px);
   }
+
+  bool isOffscreen() const override
+  {
+    // Set when the gui was started non-interactively.
+    return main_window->testAttribute(Qt::WA_DontShowOnScreen);
+  }
+
+  RenderedImage renderImage(
+      const odb::Rect& region,
+      int width_px,
+      double dbu_per_pixel,
+      std::optional<std::pair<int, int>> scale_to) override
+  {
+    QImage img = main_window->getLayoutViewer()->createImage(
+        region, width_px, dbu_per_pixel);
+    if (scale_to.has_value()) {
+      img = img.scaled(scale_to->first, scale_to->second, Qt::KeepAspectRatio);
+    }
+
+    // Format_RGBA8888 is byte-ordered, so its memory layout is already the
+    // R,G,B,A this hands back and the rows can be copied whole.  Going
+    // through pixel() instead costs a bounds check, a format check and a
+    // coordinate mapping for each of the hundreds of thousands of pixels in
+    // a frame.  Copying per row rather than in one block avoids assuming
+    // bytesPerLine() has no padding.
+    const QImage rgba = img.convertToFormat(QImage::Format_RGBA8888);
+
+    RenderedImage out;
+    out.width = rgba.width();
+    out.height = rgba.height();
+    const size_t row_bytes = static_cast<size_t>(out.width) * 4;
+    out.rgba.resize(row_bytes * out.height);
+    for (int y = 0; y < out.height; y++) {
+      std::copy_n(rgba.constScanLine(y), row_bytes, &out.rgba[row_bytes * y]);
+    }
+    return out;
+  }
 };
 
 static QtGuiBackend qt_backend;
 
-Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
+// Opens a gui to run a script in, for the callers that need one rendering
+// and have none -- see GuiLauncher.
+class QtGuiLauncher : public GuiLauncher
 {
-  resetDbuConversions();
-}
+ public:
+  void openAndRun(const std::string& cmds) override
+  {
+    Gui::get()->showGui(cmds, false);
+  }
+};
+
+static QtGuiLauncher qt_launcher;
 
 void Gui::setChartFactory(ChartFactory factory)
 {
@@ -646,85 +700,6 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
     return;
   }
   main_window->getDRCViewer()->selectCategory(markers);
-}
-
-void Gui::saveImage(const std::string& filename,
-                    const odb::Rect& region,
-                    int width_px,
-                    double dbu_per_pixel,
-                    const std::map<std::string, bool>& display_settings)
-{
-  if (db_ == nullptr) {
-    logger_->error(utl::GUI, 15, "No design loaded.");
-  }
-  odb::Rect save_region = region;
-  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen
-      = main_window == nullptr
-        || main_window->testAttribute(
-            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
-  if (is_offscreen
-      && use_die_area) {  // if gui is active and interactive the visible are of
-                          // the layout viewer will be used.
-    auto* chip = db_->getChip();
-    if (chip == nullptr) {
-      logger_->error(utl::GUI, 64, "No design loaded.");
-    }
-    save_region = chip->getBBox();
-    auto* block = chip->getBlock();
-
-    if (block != nullptr) {
-      save_region = block->getBBox()->getBox();
-    }
-
-    // get die area since screen area is not reliable
-    const double bloat_by = 0.05;  // 5%
-    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
-
-    save_region.bloat(bloat, save_region);
-  }
-
-  if (!hasUI()) {
-    const double dbu_per_micron = db_->getDbuPerMicron();
-
-    std::string save_cmds;
-
-    // build display control commands
-    save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
-    for (const auto& [control, value] : display_settings) {
-      // first save current setting
-      save_cmds += fmt::format(
-                       "$::gui::display_settings set \"{}\" {}", control, value)
-                   + "\n";
-    }
-    // save command
-    save_cmds += "gui::save_image ";
-    save_cmds += "\"" + filename + "\" ";
-    save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(width_px) + " ";
-    save_cmds += std::to_string(dbu_per_pixel) + " ";
-    save_cmds += "$::gui::display_settings\n";
-    // delete display settings map
-    save_cmds += "rename $::gui::display_settings \"\"\n";
-    save_cmds += "unset ::gui::display_settings\n";
-    // end with hide to return
-    save_cmds += "gui::hide";
-    showGui(save_cmds, false);
-  } else {
-    // save current display settings and apply new
-    main_window->getControls()->save();
-    for (const auto& [control, value] : display_settings) {
-      setDisplayControlsVisible(control, value);
-    }
-
-    main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, width_px, dbu_per_pixel);
-    // restore settings
-    main_window->getControls()->restore();
-  }
 }
 
 void Gui::showWorstTimingPath(bool setup)
@@ -1110,20 +1085,16 @@ void Gui::unminimize()
 
 void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
-  db_ = db;
+  initCommon(db, sta, logger);
   setLogger(logger);
 
-  // Lets the descriptors offer the actions that need a modal dialog.  Only
-  // this file is Qt-only, so a build without Qt leaves the hook null and
-  // those actions are not offered.
+  // Lets the descriptors offer the actions that need a modal dialog, and
+  // saveImage reopen the gui when no window is up.  Only this file is
+  // Qt-only, so a build without Qt leaves both hooks null.
   static QtDialogs dialogs;
   setDialogs(&dialogs);
+  setLauncher(&qt_launcher);
 
-  auto* registry = DescriptorRegistry::instance();
-  registry->setLogger(logger);
-  registry->initDescriptors(db, sta);
-
-  registerBuiltinHeatMapSources(sta, logger);
   for (const auto& source : getRegisteredHeatMapSources()) {
     const bool already_registered = std::ranges::any_of(
         heat_maps_, [&source](HeatMapDataSource* heatmap) {
@@ -1165,138 +1136,6 @@ void Gui::updateTimingReport()
     return;
   }
   main_window->getTimingWidget()->populatePaths();
-}
-
-int Gui::gifStart(const std::string& filename)
-{
-  if (!hasUI()) {
-    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
-  }
-
-  if (filename.empty()) {
-    logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
-  }
-
-  auto gif = std::make_unique<GIF>();
-  gif->filename = filename;
-  gifs_.emplace_back(std::move(gif));
-  return gifs_.size() - 1;
-}
-
-void Gui::gifAddFrame(std::optional<int> key,
-                      const odb::Rect& region,
-                      int width_px,
-                      double dbu_per_pixel,
-                      std::optional<int> delay)
-{
-  if (!hasUI()) {
-    return;
-  }
-  if (!key.has_value()) {
-    key = gifs_.size() - 1;
-  }
-  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
-    logger_->warn(utl::GUI, 51, "GIF not active");
-    return;
-  }
-
-  if (db_ == nullptr) {
-    logger_->error(utl::GUI, 50, "No design loaded.");
-  }
-
-  auto& gif = gifs_[*key];
-
-  odb::Rect save_region = region;
-  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen = main_window->testAttribute(
-      Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
-  if (is_offscreen
-      && use_die_area) {  // if gui is active and interactive the visible are of
-                          // the layout viewer will be used.
-    auto* chip = db_->getChip();
-    if (chip == nullptr) {
-      logger_->error(utl::GUI, 79, "No design loaded.");
-    }
-
-    auto* block = chip->getBlock();
-    if (block == nullptr) {
-      logger_->error(utl::GUI, 80, "No design loaded.");
-    }
-
-    save_region
-        = block->getBBox()
-              ->getBox();  // get die area since screen area is not reliable
-    const double bloat_by = 0.05;  // 5%
-    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
-
-    save_region.bloat(bloat, save_region);
-  }
-
-  QImage img = main_window->getLayoutViewer()->createImage(
-      save_region, width_px, dbu_per_pixel);
-
-  if (gif->writer == nullptr) {
-    gif->writer = std::make_unique<GifWriter>();
-    gif->width = img.width();
-    gif->height = img.height();
-    GifBegin(gif->writer.get(),
-             gif->filename.c_str(),
-             gif->width,
-             gif->height,
-             delay.value_or(kDefaultGifDelay));
-  } else {
-    // scale IMG if not matched
-    img = img.scaled(gif->width, gif->height, Qt::KeepAspectRatio);
-  }
-
-  std::vector<uint8_t> frame(gif->width * gif->height * 4, 0);
-  for (int x = 0; x < img.width(); x++) {
-    if (x >= gif->width) {
-      continue;
-    }
-    for (int y = 0; y < img.height(); y++) {
-      if (y >= gif->height) {
-        continue;
-      }
-
-      const QRgb pixel = img.pixel(x, y);
-      const int frame_offset = (y * gif->width + x) * 4;
-      frame[frame_offset + 0] = qRed(pixel);
-      frame[frame_offset + 1] = qGreen(pixel);
-      frame[frame_offset + 2] = qBlue(pixel);
-      frame[frame_offset + 3] = qAlpha(pixel);
-    }
-  }
-
-  GifWriteFrame(gif->writer.get(),
-                frame.data(),
-                gif->width,
-                gif->height,
-                delay.value_or(kDefaultGifDelay));
-}
-
-void Gui::gifEnd(std::optional<int> key)
-{
-  if (!key.has_value()) {
-    key = gifs_.size() - 1;
-  }
-  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
-    logger_->warn(utl::GUI, 58, "GIF not active");
-    return;
-  }
-
-  auto& gif = gifs_[*key];
-  if (gif->writer == nullptr) {
-    logger_->warn(utl::GUI,
-                  107,
-                  "Nothing to save to {}. No frames added to gif.",
-                  gif->filename);
-    gif = nullptr;
-    return;
-  }
-
-  GifEnd(gif->writer.get());
-  gifs_[*key] = nullptr;
 }
 
 class SafeApplication : public QApplication

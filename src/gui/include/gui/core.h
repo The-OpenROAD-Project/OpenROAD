@@ -42,8 +42,24 @@ class HeatMapDataSource;
 class Painter;
 class Selected;
 
+// Pixels handed back by a backend that can draw: 8-bit RGBA, row-major,
+// width * height * 4 bytes.  An empty one means the backend cannot render.
+struct RenderedImage
+{
+  int width = 0;
+  int height = 0;
+  std::vector<uint8_t> rgba;
+};
+
 struct GIF
 {
+  // Declared rather than implicit, and defined in gifWriter.cpp: otherwise
+  // every translation unit that destroys a GIF -- which includes any that
+  // merely constructs a Gui, for the gifs_ member -- would need GifWriter
+  // complete, and gif.h may be included plainly by only one of them.
+  GIF();
+  ~GIF();
+
   std::string filename;
   std::unique_ptr<GifWriter> writer;
   int height = -1;
@@ -838,6 +854,20 @@ class Dialogs
   virtual odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) = 0;
 };
 
+// Opens the gui and runs a script in it.  Unlike a GuiBackend this is not
+// about an already-running front end: it is what saveImage uses when no
+// window is open, since rendering a layout needs one.  The Qt gui installs
+// it from Gui::init(), so it is there whenever Qt is linked, window or no
+// window; a build without Qt leaves it null and has nothing to open.
+class GuiLauncher
+{
+ public:
+  virtual ~GuiLauncher() = default;
+
+  // Runs cmds in a freshly opened gui and returns once it closes.
+  virtual void openAndRun(const std::string& cmds) = 0;
+};
+
 // What Gui dispatches to: a backend of Gui, implemented by the front ends the
 // user actually sees.  The Qt gui installs one wrapping its MainWindow via
 // Gui::setBackend; a viewer with no Qt -- the web viewer -- installs one via
@@ -989,11 +1019,35 @@ class GuiBackend
                                   std::optional<int> /* height_px */)
   {
   }
+  virtual void saveImage(const std::string& /* filename */,
+                         const odb::Rect& /* region */,
+                         int /* width_px */,
+                         double /* dbu_per_pixel */)
+  {
+  }
   virtual void saveHistogramImage(const std::string& /* filename */,
                                   const std::string& /* mode */,
                                   std::optional<int> /* width_px */,
                                   std::optional<int> /* height_px */)
   {
+  }
+
+  // True when the backend is not drawing to a visible screen.  The image
+  // calls use it to decide whether a viewport's own extents mean anything:
+  // offscreen they do not, so they fall back to the die area.  A backend
+  // with no viewport at all is offscreen by definition.
+  virtual bool isOffscreen() const { return true; }
+
+  // Render `region` to pixels.  scale_to, when set, asks the backend to fit
+  // the result into those dimensions keeping the aspect ratio -- gif frames
+  // after the first have to match the first one's size.
+  virtual RenderedImage renderImage(
+      const odb::Rect& /* region */,
+      int /* width_px */,
+      double /* dbu_per_pixel */,
+      std::optional<std::pair<int, int>> /* scale_to */)
+  {
+    return {};
   }
 
   // Called by Gui::pause().  Should block the calling thread until some
@@ -1373,6 +1427,18 @@ class Gui
   void setDialogs(Dialogs* dialogs) { dialogs_ = dialogs; }
   Dialogs* getDialogs() const { return dialogs_; }
 
+  // Install / inspect the thing that can open a gui.  Null in a build
+  // without Qt; see the GuiLauncher comment.
+  void setLauncher(GuiLauncher* launcher) { launcher_ = launcher; }
+  GuiLauncher* getLauncher() const { return launcher_; }
+
+  // The part of start-up that needs no Qt: seeds the database and logger the
+  // dispatch below reports through, and brings up the descriptor registry and
+  // the built-in heat map sources.  Both initGui implementations call it, so
+  // a binary without Qt gets a Gui that is as usable as its front end allows
+  // rather than one holding null pointers.
+  void initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+
   // initialize the GUI
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
@@ -1427,6 +1493,7 @@ class Gui
   HeadlessViewer* headless_viewer_ = nullptr;
   ChartFactory chart_factory_;
   Dialogs* dialogs_ = nullptr;
+  GuiLauncher* launcher_ = nullptr;
 };
 
 }  // namespace gui
