@@ -10,7 +10,7 @@
 [INFO RSZ-0094] Found 32 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.162 |       -4.1 |     32 | _869_/D
      783* |      28 |      56 |       33 |      1 |    17 |    +8.2% |   -0.079 |       -2.0 |     32 | _880_/D

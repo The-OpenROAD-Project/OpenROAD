@@ -10,7 +10,7 @@ tns max -3.964
 [INFO RSZ-0094] Found 19 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 19 out of 19 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.425 |       -4.0 |     19 | u_mid2/u_leaf3/dff2/D
       46* |       0 |      13 |        2 |      0 |     0 |    +5.9% |   -0.401 |       -4.1 |     19 | u_mid2/u_leaf3/dff2/D

@@ -48,7 +48,7 @@ Path Type: max
 [INFO RSZ-0221] Using custom phase sequence: ENDPOINT_FANIN STARTPOINT_FANOUT
 [DEBUG RSZ-repair_setup] ENDPOINT_FANIN* Phase: Iterative threshold refinement...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
 [DEBUG RSZ-repair_setup] ENDPOINT_FANIN* Phase: Processing 4 violating endpoints

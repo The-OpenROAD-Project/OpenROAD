@@ -46,7 +46,7 @@ Path Type: max
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
 [INFO RSZ-0221] Using custom phase sequence: WNS_CONE
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
 [INFO RSZ-0219] Adaptive cone threshold: no margin yielded target range, using endpoint slack as threshold=-0.333, collecting 4 of 6 pins (66.7%)

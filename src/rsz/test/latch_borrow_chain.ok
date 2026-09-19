@@ -11,7 +11,7 @@ BEFORE_SLACK -0.0230
 [INFO RSZ-0094] Found 7 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 7 out of 7 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.2 |      7 | sibling_ff0/D
       17* |       3 |       4 |        1 |      0 |     0 |    +4.8% |   -0.001 |       -0.0 |      7 | sibling_ff0/D

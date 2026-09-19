@@ -10,7 +10,7 @@
 [DEBUG RSZ-move_tracker] Scanned 29 driver pins, found 6 with negative slack
 [DEBUG RSZ-move_tracker] Scanned 34 endpoints, found 4 with negative slack
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
        9* |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      4 | r2/D
