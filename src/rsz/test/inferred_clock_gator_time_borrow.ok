@@ -9,7 +9,7 @@ BEFORE_BORROW 0.4545
 [INFO RSZ-0094] Found 7 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 7 out of 7 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts |  St/EnPt
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.3 |      7 | enable_latch/D
       28* |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.2 |      7 | enable_latch/D

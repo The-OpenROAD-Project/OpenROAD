@@ -145,7 +145,7 @@ void OptimizationPolicy::printProgressHeader() const
         "   Area   |    WNS   |    TNS     |  Viol  |  Worst");
     logger_->report(
         "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |          |            | Endpts |  St/EnPt");
+        "          |          |            | Endpts | St/EnPt");
   }
   logger_->report(
       "---------------------------------------------------------------"

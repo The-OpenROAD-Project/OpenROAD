@@ -36,9 +36,11 @@ Gui* Gui::get()
   return singleton;
 }
 
-// Gui's constructor stays with the gif machinery in gui.cpp / stub.cpp:
-// GIF holds a unique_ptr<GifWriter>, and gif.h defines non-inline free
-// functions, so only one translation unit per link may include it.
+// Gui's constructor lives in gifWriter.cpp, with the rest of the gif
+// machinery: GIF holds a unique_ptr<GifWriter>, so the constructor needs the
+// complete type to instantiate that member's destructor, and gifWriter.cpp is
+// the one translation unit per link that includes gif.h to get it.  The
+// singleton above is never deleted, so ~Gui is not instantiated here.
 
 bool Gui::enabled()
 {

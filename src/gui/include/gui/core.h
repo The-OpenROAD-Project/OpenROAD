@@ -42,6 +42,15 @@ class HeatMapDataSource;
 class Painter;
 class Selected;
 
+// Pixels handed back by a backend that can draw: 8-bit RGBA, row-major,
+// width * height * 4 bytes.  An empty one means the backend cannot render.
+struct RenderedImage
+{
+  int width = 0;
+  int height = 0;
+  std::vector<uint8_t> rgba;
+};
+
 struct GIF
 {
   std::string filename;
@@ -994,6 +1003,24 @@ class GuiBackend
                                   std::optional<int> /* width_px */,
                                   std::optional<int> /* height_px */)
   {
+  }
+
+  // True when the backend is not drawing to a visible screen.  The image
+  // calls use it to decide whether a viewport's own extents mean anything:
+  // offscreen they do not, so they fall back to the die area.  A backend
+  // with no viewport at all is offscreen by definition.
+  virtual bool isOffscreen() const { return true; }
+
+  // Render `region` to pixels.  scale_to, when set, asks the backend to fit
+  // the result into those dimensions keeping the aspect ratio -- gif frames
+  // after the first have to match the first one's size.
+  virtual RenderedImage renderImage(
+      const odb::Rect& /* region */,
+      int /* width_px */,
+      double /* dbu_per_pixel */,
+      std::optional<std::pair<int, int>> /* scale_to */)
+  {
+    return {};
   }
 
   // Called by Gui::pause().  Should block the calling thread until some
