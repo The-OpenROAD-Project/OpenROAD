@@ -48,11 +48,11 @@ static constexpr int kDelayDigits = 3;
 void SetupDirectionalPolicy::iterate()
 {
   buildMainMoveSequence(/*log_sequence=*/false);
-  repairSetupDirectional(use_starts_,
+  repairSetupDirectional(use_startpoints_,
                          config_.setup_slack_margin,
                          config_.max_passes,
                          config_.verbose);
-  if (use_starts_) {
+  if (use_startpoints_) {
     committer_.printTrackerPhaseSummary(
         "STARTPOINT_FANOUT Phase Summary",
         "STARTPOINT_FANOUT Phase Startpoint Profiler",

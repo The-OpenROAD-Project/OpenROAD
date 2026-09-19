@@ -171,47 +171,35 @@ void OptimizationPolicy::printFinalProgress(
     area_growth_percent = area_growth / initial_design_area * 100.0;
   }
 
-  if (setup_context_.progress_header_show_startpoint_metrics) {
-    const sta::Slack st_tns = target_collector.getTns(true);
-    logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
-        "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >10s} | {: >6d} | {}",
-        "final",
-        committer_.totalMoves(MoveType::kUnbuffer),
-        committer_.totalMoves(MoveType::kSizeUp)
-            + committer_.totalMoves(MoveType::kSizeDownFanout)
-            + committer_.totalMoves(MoveType::kSizeUpMatch)
-            + committer_.totalMoves(MoveType::kVtSwap),
-        committer_.totalMoves(MoveType::kBuffer)
-            + committer_.totalMoves(MoveType::kSplitLoad),
-        committer_.totalMoves(MoveType::kClone),
-        committer_.totalMoves(MoveType::kSwapPins),
-        area_growth_percent,
-        sta::delayAsString(wns, 3, sta_),
-        sta::delayAsString(st_tns, 1, sta_),
-        sta::delayAsString(en_tns, 1, sta_),
-        std::max(0, target_collector.getNumViolatingEndpoints()),
-        worst_pin != nullptr ? network_->pathName(worst_pin) : "");
-  } else {
-    logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
-        "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
-        "final",
-        committer_.totalMoves(MoveType::kUnbuffer),
-        committer_.totalMoves(MoveType::kSizeUp)
-            + committer_.totalMoves(MoveType::kSizeDownFanout)
-            + committer_.totalMoves(MoveType::kSizeUpMatch)
-            + committer_.totalMoves(MoveType::kVtSwap),
-        committer_.totalMoves(MoveType::kBuffer)
-            + committer_.totalMoves(MoveType::kSplitLoad),
-        committer_.totalMoves(MoveType::kClone),
-        committer_.totalMoves(MoveType::kSwapPins),
-        area_growth_percent,
-        sta::delayAsString(wns, 3, sta_),
-        sta::delayAsString(en_tns, 1, sta_),
-        std::max(0, target_collector.getNumViolatingEndpoints()),
-        worst_pin != nullptr ? network_->pathName(worst_pin) : "");
-  }
+  const std::string progress_prefix = fmt::format(
+      "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
+      "| {: >+7.1f}% | {: >8s}",
+      "final",
+      committer_.totalMoves(MoveType::kUnbuffer),
+      committer_.totalMoves(MoveType::kSizeUp)
+          + committer_.totalMoves(MoveType::kSizeDownFanout)
+          + committer_.totalMoves(MoveType::kSizeUpMatch)
+          + committer_.totalMoves(MoveType::kVtSwap),
+      committer_.totalMoves(MoveType::kBuffer)
+          + committer_.totalMoves(MoveType::kSplitLoad),
+      committer_.totalMoves(MoveType::kClone),
+      committer_.totalMoves(MoveType::kSwapPins),
+      area_growth_percent,
+      sta::delayAsString(wns, 3, sta_));
+
+  const std::string startpoint_tns_field
+      = setup_context_.progress_header_show_startpoint_metrics
+            ? fmt::format(
+                  " | {: >10s}",
+                  sta::delayAsString(target_collector.getTns(true), 1, sta_))
+            : "";
+
+  logger_->report("{}{} | {: >10s} | {: >6d} | {}",
+                  progress_prefix,
+                  startpoint_tns_field,
+                  sta::delayAsString(en_tns, 1, sta_),
+                  std::max(0, target_collector.getNumViolatingEndpoints()),
+                  worst_pin != nullptr ? network_->pathName(worst_pin) : "");
 
   debugPrint(logger_, utl::RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   logger_->report(
