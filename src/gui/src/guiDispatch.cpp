@@ -166,6 +166,24 @@ std::optional<int> sizeOrAuto(int px)
   return std::nullopt;
 }
 
+// Quotes a string as a Tcl word.  Inside "..." Tcl still expands $variables
+// and [commands] and honours backslash escapes, so a path has to be quoted
+// before it goes into a generated script: one as ordinary as out/img[list].png
+// would otherwise reach save_image rewritten, as out/img.png.  Escaping the
+// opening bracket is enough -- a ] with no [ to match is already literal.
+std::string quoteTcl(const std::string& str)
+{
+  std::string quoted = "\"";
+  for (const char c : str) {
+    if (c == '\\' || c == '"' || c == '$' || c == '[') {
+      quoted += '\\';
+    }
+    quoted += c;
+  }
+  quoted += '"';
+  return quoted;
+}
+
 }  // namespace
 
 void Gui::setSelected(const Selected& selection)
@@ -713,11 +731,12 @@ void Gui::saveImage(const std::string& filename,
   save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
   for (const auto& [control, value] : display_settings) {
     save_cmds
-        += fmt::format("$::gui::display_settings set \"{}\" {}", control, value)
+        += fmt::format(
+               "$::gui::display_settings set {} {}", quoteTcl(control), value)
            + "\n";
   }
   save_cmds += "gui::save_image ";
-  save_cmds += "\"" + filename + "\" ";
+  save_cmds += quoteTcl(filename) + " ";
   save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
   save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
   save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";

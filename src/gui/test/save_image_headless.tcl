@@ -64,7 +64,11 @@ if { ![gui::supported] } {
   read_lef [file join $openroad_test_dir Nangate45 Nangate45.lef]
   read_def [file join $openroad_test_dir gcd_nangate45.def]
 
-  set reopened [make_result_file save_image_reopened.png]
+  # The reopened path reaches save_image through a generated Tcl script, so its
+  # name carries the characters Tcl would act on -- a $ and a [command] that
+  # succeeds and expands to nothing.  Unquoted, this render lands in a
+  # different file and the byte comparison below finds nothing to read.
+  set reopened [make_result_file {save_image_$reopened[list].png}]
   set windowed [make_result_file save_image_windowed.png]
   set die_area [make_result_file save_image_die_area.png]
 
