@@ -53,6 +53,7 @@ TESTS = [
     "remove_buffers1",
     "remove_buffers2",
     "remove_buffers3",
+    "remove_buffers_dont_touch_rejected",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
