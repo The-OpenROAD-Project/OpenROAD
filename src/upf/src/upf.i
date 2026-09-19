@@ -37,6 +37,48 @@
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, direction); 
   }
 
+  void set_upf_version_cmd(const char* version)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::set_upf_version(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), version);
+  }
+
+  void create_supply_port_cmd(const char* name, const char* direction)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::create_supply_port(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, direction);
+  }
+
+  void create_supply_net_cmd(const char* name, const char* domain, bool reuse)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::create_supply_net(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, domain, reuse);
+  }
+
+  void connect_supply_net_cmd(const char* net, const char* port)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::connect_supply_net(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), net, port);
+  }
+
+  void set_power_domain_supply_cmd(const char* domain, const char* supply)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::set_power_domain_supply(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), domain, supply);
+  }
+
+  void set_isolation_supply_cmd(const char* isolation, const char* key, const char* value)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::set_isolation_supply(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), isolation, key, value);
+  }
+
   void create_power_switch_cmd(
       const char* name, const char* domain)
   {
