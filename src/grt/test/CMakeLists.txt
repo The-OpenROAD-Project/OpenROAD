@@ -120,6 +120,7 @@ or_integration_tests(
     resistance_aware_cugr
     resistance_aware_highres_cugr
     res_aware_nets_percentage
+    secondary_power
     set_nets_to_route1
     silence
     single_row
