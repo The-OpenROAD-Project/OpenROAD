@@ -7895,6 +7895,8 @@ class dbDft : public dbObject
 
   bool isScanInserted() const;
 
+  dbSet<dbScanPin> getScanPins() const;
+
   dbSet<dbScanChain> getScanChains() const;
 };
 
@@ -9160,6 +9162,7 @@ class dbScanChain : public dbObject
  public:
   dbSet<dbScanPartition> getScanPartitions() const;
 
+  static void destroy(dbScanChain* obj);
   // User Code Begin dbScanChain
   const std::string& getName() const;
 
@@ -9247,6 +9250,7 @@ class dbScanInst : public dbObject
 class dbScanList : public dbObject
 {
  public:
+  static void destroy(dbScanList* obj);
   // User Code Begin dbScanList
   dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
@@ -9265,6 +9269,7 @@ class dbScanPartition : public dbObject
  public:
   dbSet<dbScanList> getScanLists() const;
 
+  static void destroy(dbScanPartition* obj);
   // User Code Begin dbScanPartition
   const std::string& getName() const;
   void setName(const std::string& name);
@@ -9281,6 +9286,7 @@ class dbScanPartition : public dbObject
 class dbScanPin : public dbObject
 {
  public:
+  static void destroy(dbScanPin* obj);
   // User Code Begin dbScanPin
   std::variant<dbBTerm*, dbITerm*> getPin() const;
   void setPin(dbBTerm* bterm);

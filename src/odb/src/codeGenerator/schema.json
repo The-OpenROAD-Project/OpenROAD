@@ -420,25 +420,28 @@
       "child": "dbScanPin",
       "type": "1_n",
       "tbl_name": "scan_pins_",
-      "flags": ["no-get"]
+      "destroy": true
     },
     {
       "parent": "dbScanChain",
       "child": "dbScanPartition",
       "type": "1_n",
-      "tbl_name": "scan_partitions_"
+      "tbl_name": "scan_partitions_",
+      "destroy": true
     },
     {
       "parent": "dbScanPartition",
       "child": "dbScanList",
       "type": "1_n",
-      "tbl_name": "scan_lists_"
+      "tbl_name": "scan_lists_",
+      "destroy": true
     },
     {
       "parent": "dbDft",
       "child": "dbScanChain",
       "type": "1_n",
-      "tbl_name": "scan_chains_"
+      "tbl_name": "scan_chains_",
+      "destroy": true
     },
     {
       "parent": "dbGDSStructure",
