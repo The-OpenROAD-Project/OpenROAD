@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <unordered_map>
+
 namespace utl {
 class Logger;
 }
@@ -14,6 +16,7 @@ class Sta;
 namespace odb {
 class dbDatabase;
 class dbMarkerCategory;
+class dbChipBump;
 
 class Checker
 {
@@ -23,16 +26,24 @@ class Checker
   void check();
 
  private:
+  void computeBumpLayerMatches();
   void checkLogicalConnectivity(dbMarkerCategory* top_cat);
   void checkFloatingChips(dbMarkerCategory* top_cat);
   void checkOverlappingChips(dbMarkerCategory* top_cat);
   void checkInternalExtUsage(dbMarkerCategory* top_cat);
   void checkConnectionRegions(dbMarkerCategory* top_cat);
   void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat);
+  void checkBumpLayer(dbMarkerCategory* top_cat);
   void checkNetConnectivity(dbMarkerCategory* top_cat);
   void checkAlignmentMarkers(dbMarkerCategory* top_cat);
   utl::Logger* logger_;
   dbDatabase* db_;
+  // Whether each bump's pin geometry lands on its region's declared contact
+  // layer (dbChipRegion::getLayer()), computed once by
+  // computeBumpLayerMatches(). Absent entries mean the region declares no
+  // layer, so conformance is unverifiable. Session-only; reused by other
+  // checks (e.g. checkLogicalConnectivity).
+  std::unordered_map<dbChipBump*, bool> bump_layer_match_;
 };
 
 }  // namespace odb
