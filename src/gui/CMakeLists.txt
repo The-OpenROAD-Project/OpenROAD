@@ -37,6 +37,7 @@ add_library(gui_core
   src/heatMapCore.cpp
   src/heatMapPinDensity.cpp
   src/heatMapPlacementDensity.cpp
+  src/gifWriter.cpp
   src/guiDispatch.cpp
   src/init_descriptors.cpp
   src/renderer.cpp
@@ -59,6 +60,7 @@ target_include_directories(gui_core
     src
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
+    ${OPENROAD_HOME}
 )
 
 if (Qt5_FOUND AND BUILD_GUI)
