@@ -214,20 +214,6 @@ std::vector<odb::Rect> Region::getRects() const
   return odb::geom::extractRectangles(set_);
 }
 
-std::vector<odb::Rect> Region::getRects(Runs runs) const
-{
-  if (isEmpty()) {
-    return {};
-  }
-
-  // boost slices along the orientation it is given, so the runs come out along
-  // the other one.
-  return odb::geom::extractRectangles(set_,
-                                      runs == Runs::kHorizontal
-                                          ? boost::polygon::VERTICAL
-                                          : boost::polygon::HORIZONTAL);
-}
-
 std::vector<odb::Polygon> Region::getPolygons() const
 {
   if (isEmpty()) {

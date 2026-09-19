@@ -79,17 +79,7 @@ class Region
   // True when every part of other lies inside this region.
   bool contains(const Region& other) const;
 
-  // Which way the rectangles of a decomposition are made to run.
-  enum class Runs
-  {
-    kHorizontal,
-    kVertical
-  };
-
   std::vector<odb::Rect> getRects() const;
-  // Decomposed so that each rectangle is a maximal run in the given
-  // direction, which for a strap or a ring side is the direction it travels.
-  std::vector<odb::Rect> getRects(Runs runs) const;
   std::vector<odb::Polygon> getPolygons() const;
   std::vector<Edge> getEdges() const;
 
