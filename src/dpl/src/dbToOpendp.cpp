@@ -168,7 +168,7 @@ std::optional<bool> orientFlipsY(const odb::dbOrientType& orient)
 
 }  // namespace
 
-void Opendp::importDb()
+void Opendp::importDb(const bool fixed_only)
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
@@ -184,7 +184,7 @@ void Opendp::importDb()
   importClear();
   grid_->examineRows(block_);
   initPlacementDRC();
-  createNetwork();
+  createNetwork(fixed_only);
   createArchitecture();
   setUpPlacementGroups();
 
@@ -257,7 +257,7 @@ Rect Opendp::getBbox(odb::dbInst* inst)
 
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
-void Opendp::createNetwork()
+void Opendp::createNetwork(const bool fixed_only)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   network_->setCore(core_);
@@ -270,12 +270,10 @@ void Opendp::createNetwork()
   }
   ///////////////////////////////////
   using odb::dbInst;
-  auto block_insts = block->getInsts();
-  std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
-  std::ranges::stable_sort(
-      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
-
-  for (dbInst* inst : insts) {
+  // Select the instances to import before sorting them by name so that
+  // fixed-only mode does not sort the movable cells it discards.
+  std::vector<dbInst*> insts;
+  for (dbInst* inst : block->getInsts()) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       debugPrint(logger_,
@@ -303,6 +301,20 @@ void Opendp::createNetwork()
                  inst->getMaster()->getType().getString());
       continue;
     }
+    // Fixed-only mode keeps fixed instances and macros; a placed but unfixed
+    // macro is forced fixed below and must still be checked.  The master of
+    // a skipped movable cell is still registered so that row power inference
+    // sees the CORE masters.
+    if (fixed_only && !inst->isFixed() && !inst->isBlock()) {
+      network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
+      continue;
+    }
+    insts.push_back(inst);
+  }
+  std::ranges::stable_sort(
+      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
+
+  for (dbInst* inst : insts) {
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
     network_->addNode(inst);
     // A placed-but-not-fixed macro must be treated as an obstacle, not a
@@ -329,6 +341,23 @@ void Opendp::createNetwork()
       have_fillers_ = true;
     }
   }
+  // Connectivity is not needed to check fixed instances.  Skipping it also
+  // avoids warnings about IO pins that are not placed yet at floorplan.
+  if (!fixed_only) {
+    createNetworkConnectivity(block);
+  }
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      auto box = blockage->getBBox()->getBox();
+      box.moveDelta(-core_.xMin(), -core_.yMin());
+      network_->createAndAddBlockage(box);
+    }
+  }
+}
+
+void Opendp::createNetworkConnectivity(odb::dbBlock* block)
+{
   for (odb::dbBTerm* bterm : block->getBTerms()) {
     // Skip supply nets.
     odb::dbNet* net = bterm->getNet();
@@ -355,14 +384,6 @@ void Opendp::createNetwork()
       continue;
     }
     network_->addEdge(net);
-  }
-
-  for (odb::dbBlockage* blockage : block->getBlockages()) {
-    if (!blockage->isSoft()) {
-      auto box = blockage->getBBox()->getBox();
-      box.moveDelta(-core_.xMin(), -core_.yMin());
-      network_->createAndAddBlockage(box);
-    }
   }
 }
 ////////////////////////////////////////////////////////////////
