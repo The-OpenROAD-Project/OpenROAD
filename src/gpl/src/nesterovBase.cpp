@@ -4315,6 +4315,22 @@ bool NesterovBase::nesterovUpdateStepLength()
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
 
+  // The step length is the coordinate distance over the gradient distance.
+  // A gradient distance of zero means the gradients did not change at all
+  // between the two points: the solve has stopped moving and there is no
+  // Barzilai-Borwein step left to take. That is a placement that is over,
+  // not one that blew up, so finish this region instead of reporting the
+  // infinity it divides out to as a divergence.
+  if (gradDistance_ == 0.0f) {
+    log_->warn(GPL,
+               186,
+               "Gradient unchanged between steps at overflow {:.4f}; "
+               "nothing left to move, finishing global placement.",
+               sum_overflow_unscaled_);
+    isConverged_ = true;
+    return true;
+  }
+
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
     return false;
