@@ -190,6 +190,17 @@ void set_extra_dpl_cmd(bool enable)
   opendp->setExtraDplEnabled(enable);
 }
 
+// OpenROAD-fork: eco-legalize
+int eco_legalize_cmd(const std::vector<odb::dbInst*>& eco_insts,
+                     int max_displacement_x,
+                     int max_displacement_y,
+                     bool verbose)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  return opendp->ecoLegalizePlacement(
+      eco_insts, max_displacement_x, max_displacement_y, verbose);
+}
+
 } // namespace
 
 %} // inline
