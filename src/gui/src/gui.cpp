@@ -126,6 +126,26 @@ static void message_handler(QtMsgType type,
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
+static QWidget* findWidget(const std::string& name)
+{
+  if (name == "main_window" || name == "OpenROAD") {
+    return main_window;
+  }
+
+  if (main_window == nullptr) {
+    return nullptr;
+  }
+
+  const QString find_name = QString::fromStdString(name);
+  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
+    if (widget->objectName() == find_name
+        || widget->windowTitle() == find_name) {
+      return widget;
+    }
+  }
+  return nullptr;
+}
+
 // Bridges Gui to the Qt main window.  Installed once the window is built and
 // uninstalled before it is destroyed, so main_window is non-null and fully
 // alive for every call below -- which is why none of them check it.
@@ -456,6 +476,54 @@ class QtGuiBackend : public GuiBackend
     }
     return out;
   }
+
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels) override
+  {
+    return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
+  }
+
+  void timingCone(Term term, bool fanin, bool fanout) override
+  {
+    main_window->timingCone(term, fanin, fanout);
+  }
+
+  void timingPathsThrough(const std::set<Term>& terms) override
+  {
+    main_window->timingPathsThrough(terms);
+  }
+
+  void triggerAction(const std::string& name) override
+  {
+    const size_t dot_idx = name.find_last_of('.');
+    auto* widget = findWidget(name.substr(0, dot_idx));
+    if (widget == nullptr) {
+      return;
+    }
+
+    const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
+
+    // Find QAction
+    for (QAction* action : widget->findChildren<QAction*>()) {
+      ord::OpenRoad::openRoad()->getLogger()->report(
+          "{} {}",
+          action->objectName().toStdString(),
+          action->text().toStdString());
+      if (action->objectName() == find_name || action->text() == find_name) {
+        action->trigger();
+        return;
+      }
+    }
+
+    // Find QPushButton
+    for (QPushButton* button : widget->findChildren<QPushButton*>()) {
+      if (button->objectName() == find_name || button->text() == find_name) {
+        button->click();
+        return;
+      }
+    }
+  }
 };
 
 static QtGuiBackend qt_backend;
@@ -472,11 +540,6 @@ class QtGuiLauncher : public GuiLauncher
 };
 
 static QtGuiLauncher qt_launcher;
-
-void Gui::setChartFactory(ChartFactory factory)
-{
-  chart_factory_ = std::move(factory);
-}
 
 /**
  * @brief Checks if a Qt wildcard pattern is a simple literal string.
@@ -727,26 +790,6 @@ void Gui::selectClockviewerClock(const std::string& clock_name,
   main_window->getClockViewer()->selectClock(clock_name, depth);
 }
 
-static QWidget* findWidget(const std::string& name)
-{
-  if (name == "main_window" || name == "OpenROAD") {
-    return main_window;
-  }
-
-  if (main_window == nullptr) {
-    return nullptr;
-  }
-
-  const QString find_name = QString::fromStdString(name);
-  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
-    if (widget->objectName() == find_name
-        || widget->windowTitle() == find_name) {
-      return widget;
-    }
-  }
-  return nullptr;
-}
-
 void Gui::showWidget(const std::string& name, bool show)
 {
   auto* widget = findWidget(name);
@@ -759,36 +802,6 @@ void Gui::showWidget(const std::string& name, bool show)
     widget->raise();
   } else {
     widget->hide();
-  }
-}
-
-void Gui::triggerAction(const std::string& name)
-{
-  const size_t dot_idx = name.find_last_of('.');
-  auto* widget = findWidget(name.substr(0, dot_idx));
-  if (widget == nullptr) {
-    return;
-  }
-
-  const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
-
-  // Find QAction
-  for (QAction* action : widget->findChildren<QAction*>()) {
-    logger_->report("{} {}",
-                    action->objectName().toStdString(),
-                    action->text().toStdString());
-    if (action->objectName() == find_name || action->text() == find_name) {
-      action->trigger();
-      return;
-    }
-  }
-
-  // Find QPushButton
-  for (QPushButton* button : widget->findChildren<QPushButton*>()) {
-    if (button->objectName() == find_name || button->text() == find_name) {
-      button->click();
-      return;
-    }
   }
 }
 
@@ -997,35 +1010,6 @@ void Gui::setMainWindowTitle(const std::string& title)
 std::string Gui::getMainWindowTitle()
 {
   return main_window_title_;
-}
-
-void Gui::timingCone(Term term, bool fanin, bool fanout)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->timingCone(term, fanin, fanout);
-}
-
-void Gui::timingPathsThrough(const std::set<Term>& terms)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->timingPathsThrough(terms);
-}
-
-Chart* Gui::addChart(const std::string& name,
-                     const std::string& x_label,
-                     const std::vector<std::string>& y_labels)
-{
-  if (main_window != nullptr) {
-    return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
-  }
-  if (chart_factory_) {
-    return chart_factory_(name, x_label, y_labels);
-  }
-  return nullptr;
 }
 
 void Gui::setLogger(utl::Logger* logger)
