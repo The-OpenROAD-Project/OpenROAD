@@ -245,6 +245,7 @@ class Opendp
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void diamondDPL();
+  void checkWindowSupply(bool fatal);
   DbuPt nearestPt(const Node* cell, const DbuRect& rect) const;
   int distToRect(const Node* cell, const odb::Rect& rect) const;
   static bool checkOverlap(const odb::Rect& cell, const odb::Rect& box);
