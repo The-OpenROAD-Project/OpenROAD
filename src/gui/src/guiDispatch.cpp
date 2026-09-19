@@ -13,8 +13,11 @@
 #include <any>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <typeinfo>
+#include <utility>
+#include <vector>
 
 #include "gui/core.h"
 #include "gui/descriptor_registry.h"
@@ -748,6 +751,49 @@ void Gui::saveImage(const std::string& filename,
   save_cmds += "unset ::gui::display_settings\n";
   save_cmds += "gui::hide";
   launcher->openAndRun(save_cmds);
+}
+
+void Gui::setChartFactory(ChartFactory factory)
+{
+  chart_factory_ = std::move(factory);
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  if (hasUI()) {
+    return activeBackend()->addChart(name, x_label, y_labels);
+  }
+  // No charts widget, so a module that wants one supplies its own maker.
+  if (chart_factory_) {
+    return chart_factory_(name, x_label, y_labels);
+  }
+  return nullptr;
+}
+
+void Gui::timingCone(Term term, bool fanin, bool fanout)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->timingCone(term, fanin, fanout);
+}
+
+void Gui::timingPathsThrough(const std::set<Term>& terms)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->timingPathsThrough(terms);
+}
+
+void Gui::triggerAction(const std::string& name)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->triggerAction(name);
 }
 
 void Gui::initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
