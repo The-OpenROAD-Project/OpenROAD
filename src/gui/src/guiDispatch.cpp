@@ -188,6 +188,19 @@ std::string quoteTcl(const std::string& str)
   return quoted;
 }
 
+// The "Valid options are: ..." tail of the heat map errors below.
+std::string joinWithCommas(const std::vector<std::string>& items)
+{
+  std::string joined;
+  for (const std::string& item : items) {
+    if (!joined.empty()) {
+      joined += ", ";
+    }
+    joined += item;
+  }
+  return joined;
+}
+
 }  // namespace
 
 void Gui::setSelected(const Selected& selection)
@@ -752,6 +765,162 @@ void Gui::saveImage(const std::string& filename,
   save_cmds += "unset ::gui::display_settings\n";
   save_cmds += "gui::hide";
   launcher->openAndRun(save_cmds);
+}
+
+void Gui::syncHeatMapChips()
+{
+  if (hasUI() || db_ == nullptr) {
+    return;
+  }
+
+  // Console and headless sessions do not receive MainWindow::setBlock().
+  auto* chip = db_->getChip();
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getChip() != chip) {
+      heat_map->setChip(chip);
+      heat_map->destroyMap();
+    }
+  }
+}
+
+const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
+{
+  syncHeatMapChips();
+  return heat_maps_;
+}
+
+HeatMapDataSource* Gui::getHeatMap(const std::string& name)
+{
+  syncHeatMapChips();
+
+  HeatMapDataSource* source = nullptr;
+
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getShortName() == name) {
+      source = heat_map;
+      break;
+    }
+  }
+
+  if (source == nullptr) {
+    std::vector<std::string> options;
+    options.reserve(heat_maps_.size());
+    for (auto* heat_map : heat_maps_) {
+      options.push_back(heat_map->getShortName());
+    }
+    logger_->error(utl::GUI,
+                   28,
+                   "{} is not a known map. Valid options are: {}",
+                   name,
+                   joinWithCommas(options));
+  }
+
+  return source;
+}
+
+void Gui::setHeatMapSetting(const std::string& name,
+                            const std::string& option,
+                            const Renderer::Setting& value)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string rebuild_map_option = "rebuild";
+  if (option == rebuild_map_option) {
+    source->destroyMap();
+    source->ensureMap();
+  } else {
+    auto settings = source->getSettings();
+
+    if (!settings.contains(option)) {
+      std::vector<std::string> options{rebuild_map_option};
+      for (const auto& [key, kv] : settings) {
+        options.push_back(key);
+      }
+      logger_->error(utl::GUI,
+                     29,
+                     "{} is not a valid option. Valid options are: {}",
+                     option,
+                     joinWithCommas(options));
+    }
+
+    auto& current_value = settings[option];
+    if (std::holds_alternative<bool>(current_value)) {
+      // is bool
+      if (auto* s = std::get_if<bool>(&value)) {
+        settings[option] = *s;
+      }
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s != 0;
+      }
+      if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s != 0.0;
+      } else {
+        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
+      }
+    } else if (std::holds_alternative<int>(current_value)) {
+      // is int
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s;
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = static_cast<int>(*s);
+      } else {
+        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
+      }
+    } else if (std::holds_alternative<double>(current_value)) {
+      // is double
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = static_cast<double>(*s);
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
+      }
+    } else {
+      // is string
+      if (auto* s = std::get_if<std::string>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 63, "{} must be a string", option);
+      }
+    }
+    source->setSettings(settings);
+  }
+
+  source->redraw();
+}
+
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (!settings.contains(option)) {
+    std::vector<std::string> options;
+    options.reserve(settings.size());
+    for (const auto& [key, kv] : settings) {
+      options.push_back(key);
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   joinWithCommas(options));
+  }
+
+  return settings[option];
+}
+
+void Gui::dumpHeatMap(const std::string& name, const std::string& file)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+  source->dumpToFile(file);
 }
 
 void Gui::registerHeatMap(HeatMapDataSource* heatmap)
