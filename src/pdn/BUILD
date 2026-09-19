@@ -25,6 +25,8 @@ cc_library(
         "src/grid.h",
         "src/grid_component.cpp",
         "src/grid_component.h",
+        "src/polygon.cpp",
+        "src/polygon.h",
         "src/power_cells.cpp",
         "src/power_cells.h",
         "src/renderer.cpp",
