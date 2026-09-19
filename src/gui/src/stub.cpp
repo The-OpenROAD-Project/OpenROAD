@@ -61,12 +61,10 @@ void initGui(Tcl_Interp* interp,
              sta::dbSta* sta,
              utl::Logger* logger)
 {
-  // Initialize the descriptor registry so that descriptors are available
-  // for the web viewer and other non-GUI consumers.
-  auto* registry = DescriptorRegistry::instance();
-  registry->setLogger(logger);
-  registry->initDescriptors(db, sta);
-  registerBuiltinHeatMapSources(sta, logger);
+  // Brings up the descriptor registry and the heat map sources for the web
+  // viewer and other non-Qt consumers, and gives Gui the database and logger
+  // its own dispatch reports through.
+  Gui::get()->initCommon(db, sta, logger);
 
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
@@ -108,14 +106,6 @@ Chart* Gui::addChart(const std::string& name,
     return chart_factory_(name, x_label, y_labels);
   }
   return nullptr;
-}
-
-void Gui::saveImage(const std::string& filename,
-                    const odb::Rect& region,
-                    int width_px,
-                    double dbu_per_pixel,
-                    const std::map<std::string, bool>& display_settings)
-{
 }
 
 int Gui::select(const std::string& type,
