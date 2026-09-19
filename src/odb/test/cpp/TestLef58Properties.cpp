@@ -731,4 +731,46 @@ TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
   EXPECT_EQ(logger_.getWarningCount(), 0);
 }
 
+// Exercises dbTechLayerCutEnclosureTableDefRule directly through its C++ API
+// (no LEF parsing involved) — the LEF58_ENCLOSURETABLE parser that populates
+// this class via read_lef is covered separately.
+TEST_F(Fixture, TestEnclosureTableDefRuleApi)
+{
+  dbTech* tech = dbTech::create(db_.get(), "tech");
+  dbTechLayer* layer = dbTechLayer::create(tech, "V1", dbTechLayerType::CUT);
+  dbTechLayerCutClassRule* cutClass
+      = dbTechLayerCutClassRule::create(layer, "cls1");
+
+  dbTechLayerCutEnclosureTableDefRule* rule
+      = dbTechLayerCutEnclosureTableDefRule::create(layer);
+  EXPECT_FALSE(rule->isCutClassValid());
+
+  rule->setCutClass(cutClass);
+  rule->setCutClassValid(true);
+  EXPECT_TRUE(rule->isCutClassValid());
+  EXPECT_EQ(rule->getCutClass(), cutClass);
+
+  rule->addDefaultRow(0, 40, 40, 60, 60);
+  rule->addWidthRow(300, 1, 20, 20, 40, 40);
+  rule->addWidthRow(300, 2, 50, 60, 0, 0);
+
+  std::vector<std::tuple<int, int, int, int, int>> defaultRows;
+  rule->getDefaultRows(defaultRows);
+  ASSERT_EQ(defaultRows.size(), 1);
+  EXPECT_EQ(defaultRows[0], std::make_tuple(0, 40, 40, 60, 60));
+
+  std::vector<std::tuple<int, int, int, int, int, int>> widthRows;
+  rule->getWidthRows(widthRows);
+  ASSERT_EQ(widthRows.size(), 2);
+  EXPECT_EQ(widthRows[0], std::make_tuple(300, 1, 20, 20, 40, 40));
+  EXPECT_EQ(widthRows[1], std::make_tuple(300, 2, 50, 60, 0, 0));
+
+  auto rules = layer->getTechLayerCutEnclosureTableDefRules();
+  EXPECT_EQ(rules.size(), 1);
+  EXPECT_EQ(*rules.begin(), rule);
+
+  dbTechLayerCutEnclosureTableDefRule::destroy(rule);
+  EXPECT_EQ(layer->getTechLayerCutEnclosureTableDefRules().size(), 0);
+}
+
 }  // namespace odb
