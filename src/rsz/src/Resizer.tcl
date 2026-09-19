@@ -390,8 +390,8 @@ proc repair_timing { args } {
   } else {
     # Restore the command-entry CRPR setting after setup and hold repair.
     set entry_crpr_enabled [sta::crpr_enabled]
-    set setup_crpr_enabled [expr {$entry_crpr_enabled && !$skip_crpr_setup}]
-    set hold_crpr_enabled [expr {$entry_crpr_enabled && !$skip_crpr_hold}]
+    set setup_crpr_enabled [expr { $entry_crpr_enabled && !$skip_crpr_setup }]
+    set hold_crpr_enabled [expr { $entry_crpr_enabled && !$skip_crpr_hold }]
     try {
       if { $setup } {
         if { $skip_crpr_setup } {

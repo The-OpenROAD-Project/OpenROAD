@@ -253,6 +253,7 @@ TESTS = [
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "repair_timing_crpr",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
     "inferred_clock_gator_time_borrow_repair_pin",
@@ -267,13 +268,9 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
-    "repair_timing_crpr_options",
-    "repair_timing_crpr_timing",
 ]
 
 PASSFAIL_NO_GOLDEN_TESTS = [
-    "repair_timing_crpr_options",
-    "repair_timing_crpr_timing",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
