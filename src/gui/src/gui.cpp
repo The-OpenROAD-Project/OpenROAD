@@ -813,45 +813,6 @@ void Gui::showWidget(const std::string& name, bool show)
   }
 }
 
-void Gui::registerHeatMap(HeatMapDataSource* heatmap)
-{
-  if (heat_maps_.contains(heatmap)) {
-    return;
-  }
-  heat_maps_.insert(heatmap);
-  auto renderer = makeHeatMapRenderer(*heatmap);
-  heatmap->setRedrawCallback(
-      [renderer_ptr = renderer.get()]() { renderer_ptr->redraw(); });
-  heatmap->setSetupCallback([heatmap]() { showHeatMapSetupDialog(heatmap); });
-  heatmap->setUnregisterCallback(
-      [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
-  registerRenderer(renderer.get());
-  heat_map_renderers_[heatmap] = std::move(renderer);
-  if (main_window != nullptr) {
-    main_window->registerHeatMap(heatmap);
-  }
-}
-
-void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
-{
-  if (!heat_maps_.contains(heatmap)) {
-    return;
-  }
-
-  heatmap->setRedrawCallback({});
-  heatmap->setSetupCallback({});
-  heatmap->setUnregisterCallback({});
-  auto renderer_itr = heat_map_renderers_.find(heatmap);
-  if (renderer_itr != heat_map_renderers_.end()) {
-    unregisterRenderer(renderer_itr->second.get());
-    heat_map_renderers_.erase(renderer_itr);
-  }
-  if (main_window != nullptr) {
-    main_window->unregisterHeatMap(heatmap);
-  }
-  heat_maps_.erase(heatmap);
-}
-
 void Gui::syncHeatMapChips()
 {
   if (hasUI() || db_ == nullptr) {

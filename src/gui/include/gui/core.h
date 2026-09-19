@@ -857,6 +857,11 @@ class Dialogs
   // Returns the inserted instance, or nullptr if the user cancelled or the
   // insertion failed (in which case the dialog reports the error).
   virtual odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) = 0;
+
+  // Open the setup dialog for `source`, raising the one already open for it
+  // if there is one.  Reached from the heat map's display control, which is
+  // why the renderer needs no Qt of its own.
+  virtual void showHeatMapSetup(HeatMapDataSource* source) = 0;
 };
 
 // Opens the gui and runs a script in it.  Unlike a GuiBackend this is not
@@ -1065,6 +1070,12 @@ class GuiBackend
   {
     return nullptr;
   }
+
+  // Show or hide a heat map in the backend's own controls.  Gui keeps the
+  // set and owns the renderer either way, so a backend with no such controls
+  // simply has nothing to add.
+  virtual void registerHeatMap(HeatMapDataSource* /* heatmap */) {}
+  virtual void unregisterHeatMap(HeatMapDataSource* /* heatmap */) {}
 
   // Drive the timing views.  A backend with no timing widgets ignores both.
   virtual void timingCone(Term /* term */, bool /* fanin */, bool /* fanout */)

@@ -22,6 +22,7 @@
 #include "gui/core.h"
 #include "gui/descriptor_registry.h"
 #include "gui/heatMap.h"
+#include "heatMapRenderer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -751,6 +752,51 @@ void Gui::saveImage(const std::string& filename,
   save_cmds += "unset ::gui::display_settings\n";
   save_cmds += "gui::hide";
   launcher->openAndRun(save_cmds);
+}
+
+void Gui::registerHeatMap(HeatMapDataSource* heatmap)
+{
+  if (heat_maps_.contains(heatmap)) {
+    return;
+  }
+  heat_maps_.insert(heatmap);
+  auto renderer = makeHeatMapRenderer(*heatmap);
+  heatmap->setRedrawCallback(
+      [renderer_ptr = renderer.get()]() { renderer_ptr->redraw(); });
+  heatmap->setSetupCallback([heatmap]() {
+    // A build with no Qt has no dialog to open; the heat map is still
+    // registered and still draws, it just cannot be configured.
+    if (Dialogs* dialogs = Gui::get()->getDialogs()) {
+      dialogs->showHeatMapSetup(heatmap);
+    }
+  });
+  heatmap->setUnregisterCallback(
+      [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
+  registerRenderer(renderer.get());
+  heat_map_renderers_[heatmap] = std::move(renderer);
+  if (auto* backend = activeBackend()) {
+    backend->registerHeatMap(heatmap);
+  }
+}
+
+void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
+{
+  if (!heat_maps_.contains(heatmap)) {
+    return;
+  }
+
+  heatmap->setRedrawCallback({});
+  heatmap->setSetupCallback({});
+  heatmap->setUnregisterCallback({});
+  auto renderer_itr = heat_map_renderers_.find(heatmap);
+  if (renderer_itr != heat_map_renderers_.end()) {
+    unregisterRenderer(renderer_itr->second.get());
+    heat_map_renderers_.erase(renderer_itr);
+  }
+  if (auto* backend = activeBackend()) {
+    backend->unregisterHeatMap(heatmap);
+  }
+  heat_maps_.erase(heatmap);
 }
 
 void Gui::setChartFactory(ChartFactory factory)
