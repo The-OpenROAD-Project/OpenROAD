@@ -496,7 +496,15 @@ class QtGuiBackend : public GuiBackend
 
   void triggerAction(const std::string& name) override
   {
+    // name is widget.action: up to the last dot picks the widget, the rest
+    // names the action in it.  With no dot there is no action to look for --
+    // the whole string would stand in for both halves, and the widget would
+    // be searched for an action named after itself.
     const size_t dot_idx = name.find_last_of('.');
+    if (dot_idx == std::string::npos) {
+      return;
+    }
+
     auto* widget = findWidget(name.substr(0, dot_idx));
     if (widget == nullptr) {
       return;
