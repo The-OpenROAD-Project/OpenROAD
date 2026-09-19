@@ -53,6 +53,13 @@ struct RenderedImage
 
 struct GIF
 {
+  // Declared rather than implicit, and defined in gifWriter.cpp: otherwise
+  // every translation unit that destroys a GIF -- which includes any that
+  // merely constructs a Gui, for the gifs_ member -- would need GifWriter
+  // complete, and gif.h may be included plainly by only one of them.
+  GIF();
+  ~GIF();
+
   std::string filename;
   std::unique_ptr<GifWriter> writer;
   int height = -1;

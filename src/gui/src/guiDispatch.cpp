@@ -36,11 +36,10 @@ Gui* Gui::get()
   return singleton;
 }
 
-// Gui's constructor lives in gifWriter.cpp, with the rest of the gif
-// machinery: GIF holds a unique_ptr<GifWriter>, so the constructor needs the
-// complete type to instantiate that member's destructor, and gifWriter.cpp is
-// the one translation unit per link that includes gif.h to get it.  The
-// singleton above is never deleted, so ~Gui is not instantiated here.
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
+{
+  resetDbuConversions();
+}
 
 bool Gui::enabled()
 {
