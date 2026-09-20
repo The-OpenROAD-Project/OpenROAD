@@ -57,7 +57,7 @@
 extern int cmd_argc;
 extern char** cmd_argv;
 
-namespace gui {
+namespace web {
 
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
@@ -355,7 +355,7 @@ class QtGuiBackend : public GuiBackend
   void setDisplayControlColor(const std::string& name,
                               const Painter::Color& color) override
   {
-    main_window->getControls()->setControlByPath(name, toQColor(color));
+    main_window->getControls()->setControlByPath(name, gui::toQColor(color));
   }
 
   void saveDisplayControls() override { main_window->getControls()->save(); }
@@ -701,7 +701,7 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
+  gui::startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
 void Gui::minimize()
@@ -728,7 +728,7 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   // Lets the descriptors offer the actions that need a modal dialog, and
   // saveImage reopen the gui when no window is up.  Only this file is
   // Qt-only, so a build without Qt leaves both hooks null.
-  static QtDialogs dialogs;
+  static gui::QtDialogs dialogs;
   setDialogs(&dialogs);
   setLauncher(&qt_launcher);
 
@@ -762,7 +762,7 @@ void Gui::selectChart(const std::string& name)
     return;
   }
 
-  const ChartsWidget::Mode mode
+  const gui::ChartsWidget::Mode mode
       = main_window->getChartsWidget()->modeFromString(name);
   main_window->getChartsWidget()->setMode(mode);
 }
@@ -802,6 +802,15 @@ class SafeApplication : public QApplication
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
+}  // namespace web
+
+namespace gui {
+
+// The entry points keep their own namespace: gui/gui.h and gui/MakeGui.h
+// declare them there, and OpenRoad calls them by that name.  Everything they
+// reach for -- the window, the backend, Gui itself -- is web's now.
+using namespace web;  // NOLINT(build/namespaces)
+
 int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,

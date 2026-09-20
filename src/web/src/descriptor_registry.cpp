@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "gui/descriptor_registry.h"
+#include "web/descriptor_registry.h"
 
 #include <any>
 #include <cstdlib>
@@ -18,11 +18,11 @@
 
 #include <cstdio>
 
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace gui {
+namespace web {
 
 // Helper to format doubles with %g (equivalent to fmt "{:g}") without
 // requiring a dependency on the fmt library.
@@ -201,4 +201,4 @@ void Selected::highlight(Painter& painter,
 // references Gui::get() / Gui::zoomTo(), which are not available in the
 // lightweight gui_descriptors library.
 
-}  // namespace gui
+}  // namespace web

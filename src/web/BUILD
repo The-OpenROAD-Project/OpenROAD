@@ -187,6 +187,9 @@ cc_library(
         "include/gui/core.h",
         "include/gui/descriptor_registry.h",
         "include/gui/heatMap.h",
+        "include/web/core.h",
+        "include/web/descriptor_registry.h",
+        "include/web/heatMap.h",
         # The Qt gui's widgets build on these: its windows and views name
         # the descriptors, and its layout tabs take colours from the same
         # palette.  Private while this code and the gui shared a package;

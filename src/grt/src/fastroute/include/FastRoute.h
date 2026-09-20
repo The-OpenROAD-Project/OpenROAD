@@ -41,7 +41,7 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
-namespace gui {
+namespace web {
 class Gui;
 }
 

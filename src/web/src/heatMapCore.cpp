@@ -24,8 +24,8 @@
 #include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/core.h"
-#include "gui/heatMap.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "heatMapRenderer.h"
@@ -34,7 +34,7 @@
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 
-namespace gui {
+namespace web {
 
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
@@ -442,10 +442,10 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 odb::PtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
 {
   odb::PtrSet<odb::dbInst> selected_insts;
-  if (!useSelectedOnly() || !gui::Gui::enabled()) {
+  if (!useSelectedOnly() || !web::Gui::enabled()) {
     return selected_insts;
   }
-  for (const gui::Selected& item : gui::Gui::get()->selection()) {
+  for (const web::Selected& item : web::Gui::get()->selection()) {
     if (item.isInst()) {
       selected_insts.insert(std::any_cast<odb::dbInst*>(item.getObject()));
     }
@@ -1095,7 +1095,7 @@ void GlobalRoutingDataSource::populateXYGrid()
 
 PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
                                                utl::Logger* logger)
-    : gui::RealValueHeatMapDataSource(logger,
+    : web::RealValueHeatMapDataSource(logger,
                                       "W",
                                       "Power Density",
                                       "Power",
@@ -1432,4 +1432,4 @@ void HeatMapDataSource::registerHeatMap()
   Gui::get()->registerHeatMap(this);
 }
 
-}  // namespace gui
+}  // namespace web

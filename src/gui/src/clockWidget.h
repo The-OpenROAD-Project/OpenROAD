@@ -45,10 +45,13 @@ namespace utl {
 class Logger;
 }
 
+namespace web {
+class ColorGenerator;
+}
+
 namespace gui {
 
 class ClockNodeGraphicsViewItem;
-class ColorGenerator;
 
 enum class RendererState
 {
@@ -84,7 +87,7 @@ class ClockTreeRenderer : public Renderer
 
   void drawTree(Painter& painter,
                 const Descriptor* descriptor,
-                ColorGenerator& colorgenerator,
+                web::ColorGenerator& colorgenerator,
                 ClockTree* tree,
                 int depth);
   void setPen(Painter& painter, const Painter::Color& color);

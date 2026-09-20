@@ -84,7 +84,7 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
     return;
   }
 
-  ColorGenerator generator;
+  web::ColorGenerator generator;
   drawTree(painter, descriptor, generator, tree_, 0);
 
   if (path_to_ != nullptr) {
@@ -109,7 +109,7 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
 
 void ClockTreeRenderer::drawTree(Painter& painter,
                                  const Descriptor* descriptor,
-                                 ColorGenerator& colorgenerator,
+                                 web::ColorGenerator& colorgenerator,
                                  ClockTree* tree,
                                  int depth)
 {

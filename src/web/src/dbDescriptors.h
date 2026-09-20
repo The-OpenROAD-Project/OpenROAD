@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -29,7 +29,7 @@ namespace sta {
 class dbSta;
 }  // namespace sta
 
-namespace gui {
+namespace web {
 
 // Descriptor classes for OpenDB objects.  Eventually these should
 // become part of the database code generation.
@@ -1067,4 +1067,4 @@ class DbCellEdgeSpacingDescriptor
   Properties getDBProperties(odb::dbCellEdgeSpacing* rule) const override;
 };
 
-};  // namespace gui
+};  // namespace web

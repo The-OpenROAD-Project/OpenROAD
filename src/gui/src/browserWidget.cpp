@@ -300,7 +300,7 @@ void BrowserWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void BrowserWidget::setDBInstDescriptor(DbInstDescriptor* desciptor)
+void BrowserWidget::setDBInstDescriptor(web::DbInstDescriptor* desciptor)
 {
   inst_descriptor_ = desciptor;
 }

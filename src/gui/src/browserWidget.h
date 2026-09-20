@@ -30,8 +30,11 @@ namespace sta {
 class dbSta;
 }
 
-namespace gui {
+namespace web {
 class DbInstDescriptor;
+}
+
+namespace gui {
 class DisplayControls;
 
 class BrowserWidget : public QDockWidget,
@@ -47,7 +50,7 @@ class BrowserWidget : public QDockWidget,
                 QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta);
-  void setDBInstDescriptor(DbInstDescriptor* desciptor);
+  void setDBInstDescriptor(web::DbInstDescriptor* desciptor);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -110,7 +113,7 @@ class BrowserWidget : public QDockWidget,
 
   odb::dbBlock* block_;
   sta::dbSta* sta_;
-  DbInstDescriptor* inst_descriptor_;
+  web::DbInstDescriptor* inst_descriptor_;
   DisplayControls* display_controls_;
   QPushButton* display_controls_warning_;
   QCheckBox* include_physical_cells_;

@@ -22,14 +22,14 @@
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
-#include "gui/core.h"
-#include "gui/descriptor_registry.h"
-#include "gui/heatMap.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 #include "heatMapRenderer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-namespace gui {
+namespace web {
 
 void Gui::resetDbuConversions()
 {
@@ -1135,4 +1135,4 @@ void Gui::initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   registerBuiltinHeatMapSources(sta, logger);
 }
 
-}  // namespace gui
+}  // namespace web

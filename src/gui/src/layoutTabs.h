@@ -20,11 +20,14 @@
 #include "odb/geom.h"
 #include "options.h"
 
+namespace web {
+class Options;
+}
+
 namespace gui {
 
 class LayoutScroll;
 class LayoutViewer;
-class Options;
 class Ruler;
 class Label;
 class ScriptWidget;

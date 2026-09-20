@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -27,7 +27,7 @@
 // includes it inside an anonymous namespace to keep its copy internal.
 #include "third-party/gif-h/gif.h"
 
-namespace gui {
+namespace web {
 
 GIF::GIF() = default;
 GIF::~GIF() = default;
@@ -184,4 +184,4 @@ void Gui::gifEnd(std::optional<int> key)
   gifs_[*key] = nullptr;
 }
 
-}  // namespace gui
+}  // namespace web

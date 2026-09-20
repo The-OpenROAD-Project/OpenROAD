@@ -1,25 +1,28 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// The Qt-free half of the rendering API: Renderer's bookkeeping and the
-// legend drawing, which is expressed entirely through the abstract Painter.
+// The Qt-free half of the rendering API: Painter's name tables, Renderer's
+// bookkeeping, and the legend drawing, which is expressed entirely through
+// the abstract Painter.
 // Split out of gui.cpp so that every build, with Qt or without, gets the one
 // definition of these.
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "gui/core.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
+#include "web/core.h"
 
-namespace gui {
+namespace web {
 
 Renderer::~Renderer()
 {
-  gui::Gui::get()->unregisterRenderer(this);
+  web::Gui::get()->unregisterRenderer(this);
 }
 
 void Renderer::redraw()
@@ -236,4 +239,123 @@ void DiscreteLegend::draw(Painter& painter) const
   }
 }
 
-}  // namespace gui
+std::map<std::string, Painter::Color> Painter::colors()
+{
+  return {{"black", Painter::kBlack},
+          {"white", Painter::kWhite},
+          {"dark_gray", Painter::kDarkGray},
+          {"gray", Painter::kGray},
+          {"light_gray", Painter::kLightGray},
+          {"red", Painter::kRed},
+          {"green", Painter::kGreen},
+          {"blue", Painter::kBlue},
+          {"cyan", Painter::kCyan},
+          {"magenta", Painter::kMagenta},
+          {"yellow", Painter::kYellow},
+          {"dark_red", Painter::kDarkRed},
+          {"dark_green", Painter::kDarkGreen},
+          {"dark_blue", Painter::kDarkBlue},
+          {"dark_cyan", Painter::kDarkCyan},
+          {"dark_magenta", Painter::kDarkMagenta},
+          {"dark_yellow", Painter::kDarkYellow},
+          {"orange", Painter::kOrange},
+          {"purple", Painter::kPurple},
+          {"lime", Painter::kLime},
+          {"teal", Painter::kTeal},
+          {"pink", Painter::kPink},
+          {"brown", Painter::kBrown},
+          {"indigo", Painter::kIndigo},
+          {"turquoise", Painter::kTurquoise},
+          {"transparent", Painter::kTransparent}};
+}
+
+Painter::Color Painter::stringToColor(const std::string& color,
+                                      utl::Logger* logger)
+{
+  const auto defined_colors = colors();
+  auto find_color = defined_colors.find(color);
+  if (find_color != defined_colors.end()) {
+    return find_color->second;
+  }
+
+  if (color[0] == '#' && (color.size() == 7 || color.size() == 9)) {
+    uint32_t hex_color = 0;
+    for (int i = 1; i < color.size(); i++) {
+      const char c = std::tolower(color[i]);
+      hex_color *= 16;
+      if (c >= '0' && c <= '9') {
+        hex_color += c - '0';
+      } else if (c >= 'a' && c <= 'f') {
+        hex_color += c - 'a' + 10;
+      } else {
+        logger->error(utl::GUI, 43, "Unable to decode color: {}", color);
+      }
+    }
+    if (color.size() == 7) {
+      hex_color *= 256;
+      hex_color += 255;
+    }
+    Painter::Color new_color;
+    new_color.r = (hex_color & 0xff000000) >> 24;
+    new_color.g = (hex_color & 0x00ff0000) >> 16;
+    new_color.b = (hex_color & 0x0000ff00) >> 8;
+    new_color.a = hex_color & 0x000000ff;
+
+    return new_color;
+  }
+  logger->error(utl::GUI, 42, "Color not recognized: {}", color);
+
+  return Painter::kBlack;
+}
+
+std::string Painter::colorToString(const Color& color)
+{
+  for (const auto& [name, c] : colors()) {
+    if (c == color) {
+      return name;
+    }
+  }
+
+  return fmt::format(
+      "#{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
+}
+
+std::map<std::string, Painter::Anchor> Painter::anchors()
+{
+  return {{"bottom left", Painter::Anchor::kBottomLeft},
+          {"bottom right", Painter::Anchor::kBottomRight},
+          {"top left", Painter::Anchor::kTopLeft},
+          {"top right", Painter::Anchor::kTopRight},
+          {"center", Painter::Anchor::kCenter},
+          {"bottom center", Painter::Anchor::kBottomCenter},
+          {"top center", Painter::Anchor::kTopCenter},
+          {"left center", Painter::Anchor::kLeftCenter},
+          {"right center", Painter::Anchor::kRightCenter}};
+}
+
+Painter::Anchor Painter::stringToAnchor(const std::string& anchor,
+                                        utl::Logger* logger)
+{
+  const auto defined_anchors = anchors();
+  auto find_anchor = defined_anchors.find(anchor);
+  if (find_anchor != defined_anchors.end()) {
+    return find_anchor->second;
+  }
+
+  logger->error(utl::GUI, 45, "Anchor not recognized: {}", anchor);
+
+  return Anchor::kCenter;
+}
+
+std::string Painter::anchorToString(const Anchor& anchor)
+{
+  for (const auto& [name, c] : anchors()) {
+    if (c == anchor) {
+      return name;
+    }
+  }
+
+  return "unknown";
+}
+
+}  // namespace web

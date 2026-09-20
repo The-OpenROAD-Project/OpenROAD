@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -36,7 +36,7 @@ int penCullMarginDbu(const PenState& pen, double pixels_per_dbu)
 }  // namespace
 
 WebPainter::WebPainter(const odb::Rect& bounds, double pixels_per_dbu)
-    : gui::Painter(nullptr, bounds, pixels_per_dbu)
+    : web::Painter(nullptr, bounds, pixels_per_dbu)
 {
   pen_.color = kBlack;
   brush_.color = Color(0, 0, 0, 0);
