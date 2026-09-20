@@ -65,7 +65,7 @@ const Descriptor* DescriptorRegistry::getDescriptor(
   if (it == descriptors_.end()) {
     if (logger_) {
       logger_->error(
-          utl::GUI, 53, "Unable to find descriptor for: {}", type.name());
+          utl::WEB, 90, "Unable to find descriptor for: {}", type.name());
     }
     return nullptr;
   }
@@ -93,13 +93,13 @@ Selected DescriptorRegistry::makeSelected(const std::any& object)
       = abi::__cxa_demangle(object.type().name(), nullptr, nullptr, nullptr);
   if (logger_) {
     logger_->warn(
-        utl::GUI, 33, "No descriptor is registered for type {}.", type_name);
+        utl::WEB, 85, "No descriptor is registered for type {}.", type_name);
   }
   free(type_name);
 #else
   if (logger_) {
-    logger_->warn(utl::GUI,
-                  112,
+    logger_->warn(utl::WEB,
+                  108,
                   "No descriptor is registered for type {}.",
                   object.type().name());
   }
