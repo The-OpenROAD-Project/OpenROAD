@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-// This file is only used when we can't find Qt5 and are thus
-// disabling the GUI.  It is not included when Qt5 is found.
+// The two entry points OpenRoad calls into gui with, for a build that has no
+// Qt.  A Qt build compiles gui.cpp's versions of them instead and never sees
+// this file, so between them every binary has exactly one of each.
 
 #include <any>
 #include <cstdio>

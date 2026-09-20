@@ -40,10 +40,11 @@ CORE_SRCS = [
 # :gui_qt, so the Qt build no longer carries a second, separately compiled
 # copy of these objects.
 #
-# Not yet complete on its own.  It carries Gui's dispatch spine, but the Tcl
-# command surface and the startGui/initGui entry points are still implemented
-# twice, in gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of
-# those too.  Phase 3 is moving that surface here slice by slice.
+# Not complete on its own.  It carries Gui's dispatch spine and everything a
+# module outside gui calls, but the Qt gui's own Tcl command surface stays in
+# gui.cpp, and the startGui/initGui entry points are implemented once per
+# build -- gui.cpp for a Qt one, makeGui.cpp for a CLI one -- so a binary has
+# to link one of those too.
 cc_library(
     name = "core",
     srcs = CORE_SRCS + [
@@ -82,8 +83,15 @@ cc_library(
 # which only that target compiles.  Carrying :tcl here too put a second copy
 # of the blob in every openroad-qt link, and an unreferenced one in every
 # CLI link.  CMake only encodes gui.tcl in its Qt branch for the same reason.
+# The gui as a binary with no Qt has it: the Qt-free core, plus the entry
+# points answering that there is no gui to open.  A Qt build links :gui_qt
+# instead, which carries Qt's own versions of those, so nothing reachable
+# from :openroad-qt depends on this target.
 cc_library(
     name = "gui",
+    srcs = [
+        "src/makeGui.cpp",
+    ],
     hdrs = [
         "include/gui/MakeGui.h",
         "include/gui/gui.h",
@@ -94,30 +102,6 @@ cc_library(
     ],
     deps = [
         ":core",
-        "@tcl_lang//:tcl",
-    ],
-)
-
-# CLI-only stub implementations of GUI dispatch symbols (Gui::enabled,
-# startGui, initGui, Painter::getOptions, ...). Split out of :gui so
-# that :openroad-qt — which links //src/gui:gui_qt for the real Qt
-# implementations and pulls :gui transitively via :ui modules — does
-# NOT also link the stub. With --allow-multiple-definition in effect
-# (LLVM toolchain default), having both stub and gui_qt definitions
-# present at link time causes the stub to silently win for symbols
-# like Gui::enabled, and the GUI never opens at runtime.
-#
-# Only the CLI :openroad binary (and :_openroadpy.so) need to dep
-# :gui_stub explicitly to satisfy those undefined references in :core's
-# heatMapCore.cpp et al.
-cc_library(
-    name = "gui_stub",
-    srcs = [
-        "src/stub.cpp",
-    ],
-    deps = [
-        ":core",
-        ":gui",
         "//src/odb/src/db",
         "@tcl_lang//:tcl",
     ],
@@ -143,7 +127,7 @@ QT_GUI_PLATFORMS = {
             # separately compiled copy of every descriptor and heatmap
             # object in the same link as :core's.
             exclude = CORE_SRCS + [
-                "src/stub.cpp",
+                "src/makeGui.cpp",
             ],
         ) + [
             ":gui_swig",

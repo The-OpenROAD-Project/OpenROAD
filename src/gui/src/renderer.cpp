@@ -3,8 +3,8 @@
 
 // The Qt-free half of the rendering API: Renderer's bookkeeping and the
 // legend drawing, which is expressed entirely through the abstract Painter.
-// Split out of gui.cpp so a build with no Qt gets one definition of these
-// instead of gui.cpp's and stub.cpp's competing copies.
+// Split out of gui.cpp so that every build, with Qt or without, gets the one
+// definition of these.
 
 #include <algorithm>
 #include <iterator>

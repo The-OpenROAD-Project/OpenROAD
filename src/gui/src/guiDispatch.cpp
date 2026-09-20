@@ -6,8 +6,8 @@
 // installed -- the Qt gui's MainWindow wrapper, or a headless viewer such as
 // the web one -- so this file has no Qt in it.
 //
-// The rest of Gui, the Tcl command surface, is still implemented twice, in
-// gui.cpp and stub.cpp.  It moves here slice by slice.
+// What is left in gui.cpp is the Qt gui's own command surface: its menus and
+// widgets, the timing and clock views, and the window itself.
 
 #include <fnmatch.h>
 

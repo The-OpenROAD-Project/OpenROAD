@@ -227,7 +227,6 @@ cc_binary(
             ":platform_cli": [
                 ":openroad_lib",
                 "//src/gui",
-                "//src/gui:gui_stub",
             ],
             ":platform_gui": [
                 ":openroad_lib_qt",
@@ -415,7 +414,6 @@ cc_binary(
         "//src/grt",
         "//src/gui",
         "//src/gui:core",
-        "//src/gui:gui_stub",
         "//src/ifp",
         "//src/odb/src/db",
         "//src/par",
