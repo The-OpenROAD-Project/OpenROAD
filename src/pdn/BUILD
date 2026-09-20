@@ -59,9 +59,9 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.geometry",
         "@boost.polygon",
         "@boost.stacktrace",
