@@ -5,7 +5,7 @@
 
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/util.h"
 
@@ -15,7 +15,7 @@ class dbDatabase;
 
 namespace grt {
 
-class RUDYDataSource : public gui::GlobalRoutingDataSource,
+class RUDYDataSource : public web::GlobalRoutingDataSource,
                        public odb::dbBlockCallBackObj
 {
  public:
@@ -55,7 +55,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
   bool selection_only_;
 };
 
-gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
+web::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
                                                    grt::GlobalRouter* grouter,
                                                    odb::dbDatabase* db);
 

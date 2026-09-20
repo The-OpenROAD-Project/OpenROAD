@@ -11,7 +11,7 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_graphics.h"
 #include "frBaseTypes.h"
-#include "gui/core.h"
+#include "web/core.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_graphics.h"
 #include "ta/AbstractTAGraphics.h"

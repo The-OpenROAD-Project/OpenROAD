@@ -11,7 +11,7 @@
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/db.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_graphics.h"
@@ -38,7 +38,7 @@ void GraphicsFactory::reset(frDebugSettings* settings,
 
 bool GraphicsFactory::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 std::unique_ptr<AbstractDRGraphics> GraphicsFactory::makeUniqueDRGraphics()

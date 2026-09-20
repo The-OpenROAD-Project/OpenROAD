@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "gui/core.h"
+#include "web/core.h"
 #include "observer.h"
 #include "odb/db.h"
 
@@ -11,7 +11,7 @@
 
 namespace exa {
 
-class Graphics : public gui::Renderer, public Observer
+class Graphics : public web::Renderer, public Observer
 {
  public:
   Graphics();
@@ -20,7 +20,7 @@ class Graphics : public gui::Renderer, public Observer
   void makeInstance(odb::dbInst* instance) override;
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   static bool guiActive();
 
