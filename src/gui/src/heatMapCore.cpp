@@ -28,6 +28,7 @@
 #include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
+#include "heatMapRenderer.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "sta/PowerClass.hh"
@@ -1315,6 +1316,120 @@ void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger)
           return std::make_shared<PowerDensityDataSource>(sta, logger);
         });
   }
+}
+
+// Internal: reachable only through makeHeatMapRenderer below.
+namespace {
+
+class HeatMapRenderer : public Renderer
+{
+ public:
+  explicit HeatMapRenderer(HeatMapDataSource& datasource)
+      : datasource_(datasource), first_paint_(true)
+  {
+    addDisplayControl(datasource_.getName(),
+                      false,
+                      [this]() { datasource_.showSetup(); },
+                      {""});
+  }
+
+  const char* getDisplayControlGroupName() override { return "Heat Maps"; }
+
+  void drawObjects(Painter& painter) override
+  {
+    if (!checkDisplayControl(datasource_.getName())) {
+      if (!first_paint_) {
+        first_paint_ = true;
+        datasource_.onHide();
+      }
+      return;
+    }
+
+    if (first_paint_) {
+      first_paint_ = false;
+      datasource_.ensureMap();
+      datasource_.onShow();
+    }
+
+    for (const auto& map_point : datasource_.getVisibleMap(
+             painter.getBounds(), painter.getPixelsPerDBU())) {
+      painter.setPen(map_point.color, true);
+      painter.setBrush(map_point.color);
+      painter.drawRect(map_point.rect);
+
+      if (datasource_.getShowNumbers()) {
+        const int x = map_point.rect.xCenter();
+        const int y = map_point.rect.yCenter();
+        const Painter::Anchor text_anchor = Painter::Anchor::kCenter;
+        const double text_rect_margin = 0.8;
+
+        const std::string text
+            = datasource_.formatValue(map_point.value, false);
+        const odb::Rect text_bound
+            = painter.stringBoundaries(x, y, text_anchor, text);
+        if (text_bound.dx() < text_rect_margin * map_point.rect.dx()
+            && text_bound.dy() < text_rect_margin * map_point.rect.dy()) {
+          painter.setPen(Painter::kWhite, true);
+          painter.drawString(x, y, text_anchor, text);
+        }
+      }
+    }
+
+    if (datasource_.getShowLegend()) {
+      std::vector<std::pair<int, std::string>> legend;
+      for (const auto& [color_index, color_value] :
+           datasource_.getLegendValues()) {
+        legend.emplace_back(color_index,
+                            datasource_.formatValue(color_value, true));
+      }
+      datasource_.getColorGenerator().drawLegend(painter, legend);
+    }
+  }
+
+  std::string getSettingsGroupName() override
+  {
+    return kGroupnamePrefix + datasource_.getSettingsGroupName();
+  }
+
+  Settings getSettings() override
+  {
+    Settings settings = Renderer::getSettings();
+    for (const auto& [name, value] : datasource_.getSettings()) {
+      settings[kDatasourcePrefix + name] = value;
+    }
+    return settings;
+  }
+
+  void setSettings(const Settings& settings) override
+  {
+    Renderer::setSettings(settings);
+    Settings data_settings;
+    for (const auto& [name, value] : settings) {
+      if (name.starts_with(kDatasourcePrefix)) {
+        data_settings[name.substr(strlen(kDatasourcePrefix))] = value;
+      }
+    }
+    datasource_.setSettings(data_settings);
+  }
+
+ private:
+  HeatMapDataSource& datasource_;
+  bool first_paint_;
+
+  static constexpr char kDatasourcePrefix[] = "data#";
+  static constexpr char kGroupnamePrefix[] = "HeatMap#";
+};
+
+}  // namespace
+
+std::unique_ptr<Renderer> makeHeatMapRenderer(HeatMapDataSource& datasource)
+{
+  return std::make_unique<HeatMapRenderer>(datasource);
+}
+
+void HeatMapDataSource::registerHeatMap()
+{
+  Gui::get()->registerHeatMap(this);
 }
 
 }  // namespace gui

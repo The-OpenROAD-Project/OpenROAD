@@ -52,6 +52,7 @@ cc_library(
         "src/dbDescriptors.h",
         "src/heatMapPinDensity.h",
         "src/heatMapPlacementDensity.h",
+        "src/heatMapRenderer.h",
         "src/staDescriptors.h",
     ],
     hdrs = [

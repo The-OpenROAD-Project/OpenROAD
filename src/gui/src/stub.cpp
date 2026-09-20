@@ -15,15 +15,6 @@
 
 namespace gui {
 
-void HeatMapDataSource::registerHeatMap()
-{
-  // gpl / other modules call this to expose their heatmap to the GUI.
-  // In headless mode the web viewer enumerates heatmaps via
-  // gui::getRegisteredHeatMapSources() (factory-backed sources) so this
-  // one-off pathway does nothing here for now.  Left intentionally as
-  // a no-op until heatmap plumbing for ad-hoc sources lands.
-}
-
 // using namespace odb;
 int startGui(int& argc,
              char* argv[],
