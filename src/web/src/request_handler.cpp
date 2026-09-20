@@ -37,7 +37,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/descriptor_registry.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"

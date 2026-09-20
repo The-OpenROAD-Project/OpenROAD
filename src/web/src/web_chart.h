@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 
 namespace web {
 

@@ -22,7 +22,7 @@
 #include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
 #include "gui/descriptor_registry.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
 #include "request_handler.h"

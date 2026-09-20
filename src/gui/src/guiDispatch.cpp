@@ -59,16 +59,16 @@ bool Gui::enabled()
 bool Gui::hasUI()
 {
   // Ask the backend rather than assuming the slot it sits in implies a
-  // window: HeadlessViewer is an alias of GuiBackend, so a viewer without
-  // one type-checks into either slot, and every "if (!hasUI()) return;"
-  // guard in gui.cpp would then fall through to a null main_window.  Asking
+  // window: both slots hold a GuiBackend, so a viewer without a window
+  // type-checks into either, and every "if (!hasUI()) return;" guard in
+  // gui.cpp would then fall through to a null main_window.  Asking
   // activeBackend() rather than backend_ keeps the answer about where calls
   // actually land, which is what the guards care about.
   const GuiBackend* backend = Gui::get()->activeBackend();
   return backend != nullptr && backend->hasWindow();
 }
 
-void Gui::setHeadlessViewer(HeadlessViewer* viewer)
+void Gui::setHeadlessViewer(GuiBackend* viewer)
 {
   headless_viewer_ = viewer;
 }

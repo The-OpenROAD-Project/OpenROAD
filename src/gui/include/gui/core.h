@@ -1131,10 +1131,6 @@ class GuiBackend
   }
 };
 
-// The web viewer installs itself through Gui::setHeadlessViewer; it is a
-// GuiBackend that reports no window.
-using HeadlessViewer = GuiBackend;
-
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -1443,8 +1439,8 @@ class Gui
 
   // Install / inspect a backend for a viewer with no Qt window (the web
   // viewer).  A window backend takes precedence over it.
-  void setHeadlessViewer(HeadlessViewer* viewer);
-  HeadlessViewer* getHeadlessViewer() const { return headless_viewer_; }
+  void setHeadlessViewer(GuiBackend* viewer);
+  GuiBackend* getHeadlessViewer() const { return headless_viewer_; }
 
   // Factory for gui::Chart instances when the Qt GUI is not running.
   // The web viewer installs a factory that returns WebChart*.  When the
@@ -1534,7 +1530,7 @@ class Gui
   // Installed by the Qt gui's MainWindow while it is open.
   GuiBackend* backend_ = nullptr;
   // Used when the Qt gui is not active.  Installed by the web viewer.
-  HeadlessViewer* headless_viewer_ = nullptr;
+  GuiBackend* headless_viewer_ = nullptr;
   ChartFactory chart_factory_;
   Dialogs* dialogs_ = nullptr;
   GuiLauncher* launcher_ = nullptr;

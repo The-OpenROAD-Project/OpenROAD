@@ -222,7 +222,6 @@ cc_library(
         "//:cli_completer",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/gui",
         "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",

@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
