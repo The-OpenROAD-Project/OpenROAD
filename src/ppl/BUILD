@@ -45,7 +45,7 @@ cc_library(
     deps = [
         ":munkres",
         "//:ord",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.container_hash",

@@ -12,7 +12,7 @@
 #include "RDLNet.h"
 #include "RDLRouter.h"
 #include "RDLSegment.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

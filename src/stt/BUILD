@@ -82,7 +82,7 @@ cc_library(
     deps = [
         ":stt",
         "//:ord",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",

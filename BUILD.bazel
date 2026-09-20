@@ -414,6 +414,7 @@ cc_binary(
         "//src/gpl",
         "//src/grt",
         "//src/gui",
+        "//src/gui:core",
         "//src/gui:gui_stub",
         "//src/ifp",
         "//src/odb/src/db",
