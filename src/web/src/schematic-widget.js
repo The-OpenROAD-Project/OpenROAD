@@ -2,7 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
-// It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
+// It reaches the page as window.netlistsvg (see vendor-globals.js), which the
+// report bundle leaves out — initNetlistSVG() stands down when it is absent.
 
 import { beginSelection, isCurrentSelection } from './ui-utils.js';
 import {
@@ -298,16 +299,14 @@ export class SchematicWidget {
             }
             this.netlistsvg = window.netlistsvg;
 
-            // Load OpenROAD's custom skin (served as a local asset).  It defines
-            // proper gate symbols with correctly-placed ports and instance-name
-            // labels; renderNetlist() rewrites cell types to match it (see
-            // canonicalizeForSkin).  render() passes the skin to onml.p(), which
-            // expects a raw XML string, so fetch it as text.
-            const resp = await fetch('openroad_skin.svg');
-            if (!resp.ok) {
-                throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
+            // OpenROAD's custom skin defines proper gate symbols with
+            // correctly-placed ports and instance-name labels; renderNetlist()
+            // rewrites cell types to match it (see canonicalizeForSkin).
+            // render() passes it to onml.p(), which expects a raw XML string.
+            if (!window.openroadSkin) {
+                return;  // Not available (e.g. static report).
             }
-            this.skin = await resp.text();
+            this.skin = window.openroadSkin;
             this._netlistsvgReady = true;
             console.log('NetlistSVG ready.');
         } catch (err) {

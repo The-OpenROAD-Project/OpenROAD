@@ -3,6 +3,8 @@
 
 include("openroad")
 
+find_package(ZLIB REQUIRED)
+
 # The Qt-free half of what used to be the gui: the data model every other
 # module draws through -- Painter, Renderer, Descriptor/Selected,
 # HeatMapDataSource -- published through gui/core.h.  It lives here because
@@ -59,7 +61,6 @@ target_include_directories(gui_core
     ${OPENROAD_HOME}
 )
 
-
 swig_lib(NAME         web
          NAMESPACE    web
          I_FILE       src/web.i
@@ -69,99 +70,40 @@ swig_lib(NAME         web
                        ${ODB_HOME}/include
 )
 
-set(WEB_ASSET_FILES
-    src/index.html
-    src/style.css
-    src/theme.js
-    src/tile-merge.js
-    src/tile-request.js
-    src/device-pixels.js
-    src/layer-extents.js
-    src/merged-tile-layer.js
-    src/display-state.js
-    src/coordinates.js
-    src/ui-utils.js
-    src/checkbox-tree-model.js
-    src/vis-tree.js
-    src/websocket-manager.js
-    src/websocket-tile-layer.js
-    src/display-controls.js
-    src/inspector.js
-    src/ruler.js
-    src/label-manager.js
-    src/tcl-completer.js
-    src/hierarchy-browser.js
-    src/menu-bar.js
-    src/options-dialogs.js
-    src/context-menu.js
-    src/search-nav.js
-    src/capture.js
-    src/toolbar.js
-    src/image-export.js
-    src/edit-dialogs.js
-    src/title.js
-    src/clock-tree-widget.js
-    src/schematic-widget.js
-    src/openroad_skin.svg
-    src/charts-widget.js
-    src/timing-widget.js
-    src/drc-widget.js
-    src/3d-viewer-widget.js
-    src/selection-browser.js
-    src/main.js
-)
+# ── The browser bundles ─────────────────────────────────────────────────────
+#
+# The viewer's libraries (leaflet, golden-layout, three, elkjs, netlistsvg) come
+# from npm and are bundled and minified by esbuild, so the browser never fetches
+# code from a CDN (issue #11065).  Only Bazel can drive that pipeline, so its
+# output is checked in under dist/ and both builds read it from there -- the way
+# both builds read src/web.tcl.  See dist/README.md to regenerate it.
+set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
-# Prepend CMAKE_CURRENT_SOURCE_DIR to each asset file.
-set(WEB_ASSET_PATHS "")
-foreach(f ${WEB_ASSET_FILES})
-  list(APPEND WEB_ASSET_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
-endforeach()
+# Each asset is passed as <served path>=<file path>; embed_web_assets.py gzips
+# them itself, so this needs no gzip on the host and both build systems embed
+# identical bytes.
+set(WEB_ASSET_ARGS
+  /index.html=${WEB_BUNDLE_DIR}/index.min.html
+  /app.min.js=${WEB_BUNDLE_DIR}/app.min.js
+)
 
 set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
 add_custom_command(
   OUTPUT ${REPORT_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_report_assets.py
     --output ${REPORT_ASSETS_CPP}
-    --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
-    --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-state.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/vis-tree.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/device-pixels.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/layer-extents.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/label-manager.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/options-dialogs.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/context-menu.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/search-nav.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/toolbar.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/image-export.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/edit-dialogs.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/selection-browser.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
+    --vendor-css ${WEB_BUNDLE_DIR}/vendor.min.css
+    --theme-dark ${WEB_BUNDLE_DIR}/gl-dark.min.css
+    --theme-light ${WEB_BUNDLE_DIR}/gl-light.min.css
+    --app-css ${WEB_BUNDLE_DIR}/app.min.css
+    --js ${WEB_BUNDLE_DIR}/report.min.js
   DEPENDS
     src/embed_report_assets.py
-    ${WEB_ASSET_FILES}
+    ${WEB_BUNDLE_DIR}/vendor.min.css
+    ${WEB_BUNDLE_DIR}/gl-dark.min.css
+    ${WEB_BUNDLE_DIR}/gl-light.min.css
+    ${WEB_BUNDLE_DIR}/app.min.css
+    ${WEB_BUNDLE_DIR}/report.min.js
   COMMENT "Generating report_assets.cpp"
 )
 
@@ -170,10 +112,11 @@ add_custom_command(
   OUTPUT ${WEB_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
     --output ${WEB_ASSETS_CPP}
-    ${WEB_ASSET_PATHS}
+    ${WEB_ASSET_ARGS}
   DEPENDS
     src/embed_web_assets.py
-    ${WEB_ASSET_FILES}
+    ${WEB_BUNDLE_DIR}/index.min.html
+    ${WEB_BUNDLE_DIR}/app.min.js
   COMMENT "Generating web_assets.cpp"
 )
 
@@ -188,6 +131,7 @@ target_sources(web
     src/glyph_cache.cpp
     src/tile_generator.cpp
     src/timing_report.cpp
+    src/asset_gzip.cpp
     src/web.cpp
     src/web_serve.cpp
     src/web_chart.cpp
@@ -209,6 +153,7 @@ target_link_libraries(web
     lodepng
     stb_truetype
     utl_lib
+    ZLIB::ZLIB
 )
 
 # libdeflate compresses tile PNGs several times faster than lodepng's built-in

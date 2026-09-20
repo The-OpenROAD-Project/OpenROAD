@@ -324,6 +324,57 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+bool acceptsGzip(const std::string_view accept_encoding)
+{
+  auto trim = [](std::string_view s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t')) {
+      s.remove_prefix(1);
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t')) {
+      s.remove_suffix(1);
+    }
+    return s;
+  };
+
+  bool wildcard = false;
+  std::string_view rest = accept_encoding;
+  while (!rest.empty()) {
+    const size_t comma = rest.find(',');
+    // substr clamps the count itself, so npos means "to the end".
+    const std::string_view element = trim(rest.substr(0, comma));
+    rest = comma == std::string_view::npos ? std::string_view()
+                                           : rest.substr(comma + 1);
+    if (element.empty()) {
+      continue;
+    }
+
+    // "gzip;q=0.5" -- the coding, then its parameters.
+    const size_t semi = element.find(';');
+    const std::string_view coding = trim(element.substr(0, semi));
+
+    // Only q matters here, and only whether it is zero.  A q-value is a
+    // number in [0, 1], so it is zero exactly when it has no nonzero digit --
+    // which also treats a malformed value as "do not compress".
+    bool acceptable = true;
+    if (semi != std::string_view::npos) {
+      const std::string_view params = element.substr(semi + 1);
+      const size_t q = params.find("q=");
+      if (q != std::string_view::npos) {
+        acceptable = params.substr(q + 2).find_first_of("123456789")
+                     != std::string_view::npos;
+      }
+    }
+
+    if (coding == "gzip" || coding == "x-gzip") {
+      return acceptable;
+    }
+    if (coding == "*") {
+      wildcard = acceptable;
+    }
+  }
+  return wildcard;
+}
+
 bool webSocketOriginAllowed(const std::string_view origin,
                             const std::string_view host)
 {

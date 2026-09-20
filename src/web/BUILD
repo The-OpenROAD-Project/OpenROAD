@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm_web//:defs.bzl", "npm_link_all_packages")
+load("@npm_web//src/web:html-minifier-terser/package_json.bzl", html_minifier = "bin")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -24,138 +28,142 @@ py_binary(
     main = "src/embed_web_assets.py",
 )
 
+py_binary(
+    name = "inline_styles",
+    srcs = ["src/inline_styles.py"],
+    main = "src/inline_styles.py",
+)
+
+# ── The browser bundles ─────────────────────────────────────────────────────
+#
+# The viewer used to pull leaflet, golden-layout, three, elkjs and netlistsvg
+# from CDNs, one of them over plain http (issue #11065).  They now come from
+# npm, are bundled and minified here, and the resulting blobs are checked in
+# under dist/ so the CMake build can embed them too -- see dist/README.md.
+
+npm_link_all_packages(name = "node_modules")
+
+js_library(
+    name = "app_js",
+    srcs = glob([
+        "src/*.js",
+        "src/*.css",
+    ]) + [
+        "esbuild.config.mjs",
+        "src/openroad_skin.svg",
+    ],
+    deps = [
+        ":node_modules/elkjs",
+        ":node_modules/golden-layout",
+        ":node_modules/leaflet",
+        ":node_modules/netlistsvg",
+        ":node_modules/three",
+    ],
+)
+
+# The JS bundles.  report_bundle leaves out elk and netlistsvg -- 1.9 MB for a
+# schematic panel that needs a live server, which a saved report has not got;
+# schematic-widget.js stands down when it misses them.
+#
+# sourcemap = "" turns off the rule's "linked" default: no .map is embedded or
+# served, so the comment it leaves behind would only make the page ask for a
+# file that 404s.  (The key is ignored in esbuild.config.mjs -- it has to be
+# set here.)
+[esbuild(
+    name = name,
+    config = "esbuild.config.mjs",
+    entry_point = "src/%s" % entry,
+    minify = True,
+    output = output,
+    sourcemap = "",
+    deps = [":app_js"],
+) for name, entry, output in [
+    ("app_bundle", "entry-app.js", "app.min.js"),
+    ("report_bundle", "entry-report.js", "report.min.js"),
+    # Four stylesheets rather than one: index.html interleaves them with the
+    # two themes, and the cascade order is load-bearing.  See src/vendor.css.
+    ("vendor_css", "vendor.css", "vendor.min.css"),
+    ("app_css", "style.css", "app.min.css"),
+    ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
+    ("gl_theme_light_bundle", "gl-theme-light.css", "gl-light.min.css"),
+]]
+
+# Minified first, while it is still a source file: the stylesheets esbuild
+# produces are already minified, and stitching them in afterwards keeps the
+# minifier off a generated input.
+html_minifier.html_minifier_terser(
+    name = "minify_html",
+    srcs = ["src/index.html"],
+    outs = ["index.min.html.in"],
+    args = [
+        "src/index.html",
+        "--collapse-whitespace",
+        "--remove-comments",
+        # index.html keeps one inline script, the line that disables the light
+        # theme before theme.js runs; everything else is in the bundle.
+        "--minify-js",
+        "-o",
+        "index.min.html.in",
+    ],
+    # js_run_binary resolves paths against the package inside the bindir, so
+    # the arguments above are package-relative rather than $(location)s.
+    chdir = package_name(),
+)
+
+genrule(
+    name = "index_html",
+    srcs = [
+        ":minify_html",
+        "vendor.min.css",
+        "gl-dark.min.css",
+        "gl-light.min.css",
+        "app.min.css",
+    ],
+    outs = ["index.min.html"],
+    cmd = "$(execpath :inline_styles) --html $(location :minify_html)" +
+          " --output $@" +
+          " --style $(location vendor.min.css)" +
+          " --style $(location gl-dark.min.css)" +
+          " --style $(location gl-light.min.css)" +
+          " --style $(location app.min.css)",
+    tools = [":inline_styles"],
+)
+
+# The report's stylesheets and script.  All five are the bundler's output, so
+# nothing has to strip imports or keep a hand-written file order any more.
 genrule(
     name = "report_assets",
     srcs = [
-        "src/style.css",
-        "src/theme.js",
-        "src/display-state.js",
-        "src/3d-viewer-widget.js",
-        "src/coordinates.js",
-        "src/ui-utils.js",
-        "src/checkbox-tree-model.js",
-        "src/vis-tree.js",
-        "src/websocket-manager.js",
-        "src/tile-merge.js",
-        "src/tile-request.js",
-        "src/device-pixels.js",
-        "src/layer-extents.js",
-        "src/websocket-tile-layer.js",
-        "src/merged-tile-layer.js",
-        "src/display-controls.js",
-        "src/inspector.js",
-        "src/ruler.js",
-        "src/label-manager.js",
-        "src/tcl-completer.js",
-        "src/hierarchy-browser.js",
-        "src/menu-bar.js",
-        "src/options-dialogs.js",
-        "src/context-menu.js",
-        "src/search-nav.js",
-        "src/capture.js",
-        "src/toolbar.js",
-        "src/image-export.js",
-        "src/edit-dialogs.js",
-        "src/title.js",
-        "src/clock-tree-widget.js",
-        "src/schematic-widget.js",
-        "src/charts-widget.js",
-        "src/timing-widget.js",
-        "src/drc-widget.js",
-        "src/selection-browser.js",
-        "src/main.js",
+        "//src/web/dist:app.min.css",
+        "//src/web/dist:gl-dark.min.css",
+        "//src/web/dist:gl-light.min.css",
+        "//src/web/dist:report.min.js",
+        "//src/web/dist:vendor.min.css",
     ],
     outs = ["src/report_assets.cpp"],
     cmd = "$(execpath :embed_report_assets)" +
           " --output $@" +
-          " --css $(location src/style.css)" +
-          " --js $(location src/theme.js)" +
-          " $(location src/display-state.js)" +
-          " $(location src/3d-viewer-widget.js)" +
-          " $(location src/coordinates.js)" +
-          " $(location src/ui-utils.js)" +
-          " $(location src/checkbox-tree-model.js)" +
-          " $(location src/vis-tree.js)" +
-          " $(location src/websocket-manager.js)" +
-          " $(location src/tile-merge.js)" +
-          " $(location src/tile-request.js)" +
-          " $(location src/device-pixels.js)" +
-          " $(location src/layer-extents.js)" +
-          " $(location src/websocket-tile-layer.js)" +
-          " $(location src/merged-tile-layer.js)" +
-          " $(location src/display-controls.js)" +
-          " $(location src/inspector.js)" +
-          " $(location src/ruler.js)" +
-          " $(location src/label-manager.js)" +
-          " $(location src/tcl-completer.js)" +
-          " $(location src/hierarchy-browser.js)" +
-          " $(location src/menu-bar.js)" +
-          " $(location src/options-dialogs.js)" +
-          " $(location src/context-menu.js)" +
-          " $(location src/search-nav.js)" +
-          " $(location src/capture.js)" +
-          " $(location src/toolbar.js)" +
-          " $(location src/image-export.js)" +
-          " $(location src/edit-dialogs.js)" +
-          " $(location src/title.js)" +
-          " $(location src/clock-tree-widget.js)" +
-          " $(location src/schematic-widget.js)" +
-          " $(location src/charts-widget.js)" +
-          " $(location src/timing-widget.js)" +
-          " $(location src/drc-widget.js)" +
-          " $(location src/selection-browser.js)" +
-          " $(location src/main.js)",
+          " --vendor-css $(location //src/web/dist:vendor.min.css)" +
+          " --theme-dark $(location //src/web/dist:gl-dark.min.css)" +
+          " --theme-light $(location //src/web/dist:gl-light.min.css)" +
+          " --app-css $(location //src/web/dist:app.min.css)" +
+          " --js $(location //src/web/dist:report.min.js)",
     tools = [":embed_report_assets"],
 )
 
-_WEB_ASSET_FILES = [
-    "src/index.html",
-    "src/style.css",
-    "src/theme.js",
-    "src/tile-merge.js",
-    "src/tile-request.js",
-    "src/device-pixels.js",
-    "src/layer-extents.js",
-    "src/merged-tile-layer.js",
-    "src/display-state.js",
-    "src/3d-viewer-widget.js",
-    "src/coordinates.js",
-    "src/ui-utils.js",
-    "src/checkbox-tree-model.js",
-    "src/vis-tree.js",
-    "src/websocket-manager.js",
-    "src/websocket-tile-layer.js",
-    "src/display-controls.js",
-    "src/inspector.js",
-    "src/ruler.js",
-    "src/label-manager.js",
-    "src/tcl-completer.js",
-    "src/hierarchy-browser.js",
-    "src/menu-bar.js",
-    "src/options-dialogs.js",
-    "src/context-menu.js",
-    "src/search-nav.js",
-    "src/capture.js",
-    "src/toolbar.js",
-    "src/image-export.js",
-    "src/edit-dialogs.js",
-    "src/title.js",
-    "src/clock-tree-widget.js",
-    "src/schematic-widget.js",
-    "src/openroad_skin.svg",
-    "src/charts-widget.js",
-    "src/timing-widget.js",
-    "src/drc-widget.js",
-    "src/selection-browser.js",
-    "src/main.js",
-]
-
+# The two blobs the server hands out.  embed_web_assets.py gzips them itself,
+# so neither build system needs a gzip on the host.  Everything else the page
+# needs is inside them.
 genrule(
     name = "web_assets",
-    srcs = _WEB_ASSET_FILES,
+    srcs = [
+        "//src/web/dist:app.min.js",
+        "//src/web/dist:index.min.html",
+    ],
     outs = ["src/web_assets.cpp"],
-    cmd = "$(execpath :embed_web_assets) --output $@ " +
-          " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
+    cmd = "$(execpath :embed_web_assets) --output $@" +
+          " /index.html=$(location //src/web/dist:index.min.html)" +
+          " /app.min.js=$(location //src/web/dist:app.min.js)",
     tools = [":embed_web_assets"],
 )
 
@@ -228,6 +236,7 @@ cc_library(
 cc_library(
     name = "web",
     srcs = [
+        "src/asset_gzip.cpp",
         "src/clock_tree_report.cpp",
         "src/font_atlas.h",
         "src/font_data.cpp",
@@ -242,7 +251,6 @@ cc_library(
         "src/tile_generator.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
-        "src/web_assets.h",
         "src/web_chart.cpp",
         "src/web_gif.cpp",
         "src/web_gif.h",
@@ -269,6 +277,7 @@ cc_library(
         "src/request_handler.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
+        "src/web_assets.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -299,6 +308,7 @@ cc_library(
         "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
+        "@zlib",
     ],
 )
 

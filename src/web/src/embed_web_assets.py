@@ -2,12 +2,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Embed web asset files (HTML, JS, CSS) as C++ raw string literals
-# so the web server can serve them without a -dir argument.
+# Embed the web assets in the OpenROAD binary, so the browser never fetches code
+# from a CDN (issue #11065).  Generates a .cpp with path -> (content, MIME type).
 #
-# Generates a .cpp file with a lookup function: path -> (content, MIME type).
+# Each asset is given as "<served path>=<file path>".  Text assets are stored
+# gzipped and handed straight to a browser that accepts gzip; the compression
+# happens here rather than in either build system, so Bazel and CMake embed the
+# same bytes and neither needs a gzip on the host.
 
 import argparse
+import gzip
 import os
 
 MIME_TYPES = {
@@ -19,51 +23,122 @@ MIME_TYPES = {
 }
 
 
-def c_identifier(filename):
-    """Convert a filename to a valid C identifier."""
-    return "k_" + filename.replace(".", "_").replace("-", "_")
+def c_identifier(served_path):
+    """Convert a served path to a valid C identifier."""
+    stem = served_path.strip("/")
+    return "k_" + "".join(c if c.isalnum() else "_" for c in stem)
+
+
+# One escape per byte value, so the loop below is a table lookup rather than
+# a format call per byte.
+_OCTAL_ESCAPES = [f"\\{b:03o}" for b in range(256)]
+
+# Octal escapes are 4 chars each; 20 bytes keeps the emitted line at 80 columns.
+_BYTES_PER_LINE = 20
+
+
+def write_binary_asset(out, ident, data):
+    """Write the asset as octal escapes.  Everything embedded here is gzipped."""
+    escaped = "".join(map(_OCTAL_ESCAPES.__getitem__, data))
+    width = _BYTES_PER_LINE * 4
+    lines = (escaped[i : i + width] for i in range(0, len(escaped), width))
+    out.write(f'static const char {ident}_data[] =\n    "')
+    out.write('"\n    "'.join(lines))
+    out.write('";\n\n')
+
+
+def parse_asset_arg(arg):
+    """Parse "<served path>=<file path>"."""
+    served, sep, path = arg.partition("=")
+    if not sep:
+        raise SystemExit(f"expected <served path>=<file path>, got: {arg}")
+    if not served.startswith("/"):
+        raise SystemExit(f"served path must be absolute: {served}")
+    return served, path
+
+
+# Offset of the OS field in a gzip header, and the value meaning "unknown".
+# Python writes the host OS here, which differs between the interpreter Bazel
+# uses and the one CMake picks up -- enough to make the two builds embed
+# different bytes for identical input.
+_GZIP_OS_OFFSET = 9
+_GZIP_OS_UNKNOWN = 0xFF
+
+
+def compress(data, mime):
+    """gzip the asset, or return it as it is when that would not pay.
+
+    mtime=0 and a pinned OS byte because the embedded bytes are compared across
+    build systems and machines; both fields otherwise vary with who is building.
+    """
+    # Only what the table above recognises; the octet-stream fallback is an
+    # image or a font, already compressed.
+    if mime not in MIME_TYPES.values():
+        return data, False
+    packed = bytearray(gzip.compress(data, compresslevel=9, mtime=0))
+    packed[_GZIP_OS_OFFSET] = _GZIP_OS_UNKNOWN
+    packed = bytes(packed)
+    return (packed, True) if len(packed) < len(data) else (data, False)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
-    parser.add_argument("files", nargs="+", help="Asset files to embed")
+    parser.add_argument(
+        "assets",
+        nargs="+",
+        help="Assets to embed, as <served path>=<file path>",
+    )
     args = parser.parse_args()
 
     assets = []
-    for path in args.files:
-        filename = os.path.basename(path)
-        ext = os.path.splitext(filename)[1]
-        mime = MIME_TYPES.get(ext, "application/octet-stream")
-        with open(path, encoding="utf-8") as f:
-            content = f.read()
-        assets.append((filename, c_identifier(filename), mime, content))
+    seen = {}
+    identifiers = {}
+    for arg in args.assets:
+        served, path = parse_asset_arg(arg)
+        if served in seen:
+            raise SystemExit(
+                f"two assets are served as {served}: {seen[served]} and {path}"
+            )
+        seen[served] = path
+        # c_identifier() folds every non-alphanumeric to _, so two served paths
+        # can collide into one name.
+        ident = c_identifier(served)
+        if ident in identifiers:
+            raise SystemExit(f"{served} and {identifiers[ident]} both generate {ident}")
+        identifiers[ident] = served
+        mime = MIME_TYPES.get(os.path.splitext(served)[1], "application/octet-stream")
+        with open(path, "rb") as f:
+            data = f.read()
+        original_size = len(data)
+        data, gzipped = compress(data, mime)
+        assets.append((served, ident, mime, data, gzipped, original_size))
 
-    # Use a delimiter unlikely to appear in JS/CSS/HTML content.
-    delim = "__WEB_ASSET__"
-
-    with open(args.output, "w", encoding="utf-8") as out:
+    # Written aside and renamed: a failure must not leave a truncated .cpp newer
+    # than its inputs, which the next build would keep.
+    partial = args.output + ".tmp"
+    with open(partial, "w", encoding="utf-8") as out:
         out.write("// Auto-generated by embed_web_assets.py — do not edit.\n")
         out.write('#include "web_assets.h"\n\n')
+        out.write("#include <cstddef>\n")
         out.write("#include <string_view>\n\n")
         out.write("namespace web {\n\n")
 
-        # Write each asset as a raw string literal.
-        for filename, ident, mime, content in assets:
-            out.write(f"// {filename}\n")
-            out.write(f'static const char {ident}_data[] = R"{delim}(')
-            out.write(content)
-            out.write(f'){delim}";\n\n')
+        for served, ident, _, data, _, _ in assets:
+            out.write(f"// {served}\n")
+            write_binary_asset(out, ident, data)
 
-        # Write the lookup table.
+        # Sizes are byte counts, not sizeof - 1: every literal above is octal
+        # escapes, and a gzip stream may contain a NUL.
         out.write("static const struct {\n")
         out.write("  const char* path;\n")
         out.write("  EmbeddedAsset asset;\n")
-        out.write(f"}} kAssetTable[] = {{\n")
-        for filename, ident, mime, _ in assets:
+        out.write("} kAssetTable[] = {\n")
+        for served, ident, mime, data, gzipped, original_size in assets:
             out.write(
-                f'    {{"/{filename}", '
-                f'{{{ident}_data, sizeof({ident}_data) - 1, "{mime}"}}}},\n'
+                f'    {{"{served}", {{{ident}_data, {len(data)}, "{mime}", '
+                f"{'true' if gzipped else 'false'}, "
+                f"{original_size}}}}},\n"
             )
         out.write("};\n\n")
 
@@ -78,6 +153,8 @@ def main():
         out.write("}\n\n")
 
         out.write("}  // namespace web\n")
+
+    os.replace(partial, args.output)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,47 @@
+name: Check That Web Bundles Are Generated
+
+# Only what can make the bundles stale.  The job pulls a node toolchain, the
+# npm tree and runs six esbuild actions, and under 5% of PRs touch src/web.
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - 'src/web/**'
+    - 'MODULE.bazel'
+    - 'MODULE.bazel.lock'
+  pull_request:
+    branches:
+    - master
+    paths:
+    - 'src/web/**'
+    - 'MODULE.bazel'
+    - 'MODULE.bazel.lock'
+
+jobs:
+  Are-Web-Bundles-Generated:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+      - name: Set up bazel
+        # GitHub-hosted ubuntu-latest preinstalls bazelisk, but self-hosted
+        # runners do not. Install it explicitly so the workflow works on
+        # both runner types (same as the clang-tidy workflow).
+        uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # 0.19.0
+        with:
+          bazelisk-version: 1.x
+          bazelisk-cache: true
+
+      # The viewer's browser bundles are esbuild output, checked in under
+      # src/web/dist so the CMake build can embed them without a JS toolchain
+      # (issue #11065).  Nothing else notices when they go stale: the CMake
+      # build trusts whatever is committed, and no other job runs bazel test.
+      # This is the target write_source_files generates, and the one the docs
+      # tell developers to run.  It diffs without writing into the checked-out
+      # tree, and prints the "run this to fix" hint itself.
+      - name: Check that the web bundles match their sources
+        run: bazelisk test //src/web/dist:dist_tests

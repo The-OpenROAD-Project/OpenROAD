@@ -311,7 +311,25 @@ static http::response<http::string_body> handle_request(
         // to have done nothing until someone thinks to hard-reload.  They
         // are served from memory, so re-fetching them costs nothing.
         res.set(http::field::cache_control, "no-store");
-        res.body() = std::string(asset->content());
+        // The assets are stored gzipped.  Every browser accepts gzip, so this
+        // is the path that runs; the fallback is for curl without
+        // --compressed and for the tests.
+        if (asset->gzipped && acceptsGzip(req[http::field::accept_encoding])) {
+          res.set(http::field::content_encoding, "gzip");
+          res.body() = std::string(asset->content());
+        } else {
+          // assetText() throws when a blob and its recorded size disagree,
+          // which web_assets_test rules out at build time.  Caught anyway:
+          // this runs inside an asio completion handler, where an escaping
+          // exception takes the server down rather than the request.
+          try {
+            res.body() = assetText(*asset);
+          } catch (const std::exception& e) {
+            res.result(http::status::internal_server_error);
+            res.set(http::field::content_type, "text/plain");
+            res.body() = e.what();
+          }
+        }
       } else {
         res.result(http::status::not_found);
         res.body() = "Resource not found.";
@@ -1679,7 +1697,10 @@ WebServer::~WebServer()
 
 // Embedded JS/CSS for standalone timing report (generated at build time
 // by embed_report_assets.py → report_assets.cpp).
-extern const std::string_view kReportCSS;
+extern const std::string_view kReportVendorCSS;
+extern const std::string_view kReportThemeDark;
+extern const std::string_view kReportThemeLight;
+extern const std::string_view kReportAppCSS;
 extern const std::string_view kReportJS;
 
 static std::string base64Encode(const std::vector<unsigned char>& data)
@@ -1872,22 +1893,35 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head.  The stylesheets are the bundler's, with their icons already
+  // inlined as data: URIs.  Nothing here reaches the network, so the file opens
+  // with no server and no connection (issue #11065).
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
-<style>
-)" << kReportCSS
+)" <<  // The same four stylesheets index.html carries, in the same order: the
+       // themes have to beat goldenlayout-base, and style.css ends with a block
+       // that has to beat the themes.  See src/vendor.css.
+      R"(<style>
+)" << kReportVendorCSS
       << R"(
 </style>
+<style id="gl-theme-dark">
+)" << kReportThemeDark
+      << R"(
+</style>
+<style id="gl-theme-light">
+)" << kReportThemeLight
+      << R"(
+</style>
+<style>
+)" << kReportAppCSS
+      << R"(
+</style>
+<script>document.getElementById('gl-theme-light').disabled = true;</script>
 </head>
 <body>
 <div id="menu-bar"></div>
@@ -1967,9 +2001,7 @@ window.__STATIC_CACHE__ = {
   }
 };
 </script>
-<script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
+<script>
 )" << kReportJS
       << R"(
 </script>

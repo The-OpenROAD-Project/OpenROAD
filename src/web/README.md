@@ -249,8 +249,10 @@ The report includes:
 - **Display controls**, hierarchy browser, clock tree, and other panels from
   the live viewer (features that require server interaction show empty states).
 
-The report requires an internet connection to load Leaflet and GoldenLayout
-CSS/JS from CDN.
+The report is self-contained: the stylesheets and the script are inlined, so it
+opens from the filesystem with no server and no network. The schematic panel is
+the one exception — its libraries are 1.9 MB and it needs a live server anyway,
+so it is left out of the report and stands down when opened there.
 
 #### Examples
 
@@ -511,6 +513,65 @@ The module has two parts:
   A single-page application using Leaflet.js for the map and GoldenLayout for
   resizable panels. Communicates with the server over a binary WebSocket
   protocol.
+
+### Browser libraries
+
+The viewer used to load its libraries from CDNs, one of them over plain http
+([#11065](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065)).
+They now come from npm and are bundled into two blobs embedded in the OpenROAD
+binary, so the browser only ever talks to the OpenROAD process and the viewer
+works on a machine with no network.
+
+| Package | Used for |
+| --- | --- |
+| `leaflet` | the tiled layout view |
+| `golden-layout` | the dockable panel layout |
+| `three` | the 3D viewer |
+| `elkjs` | schematic placement and routing |
+| `netlistsvg` | schematic rendering |
+
+Versions are pinned in `package.json` and `pnpm-lock.yaml`. To add or upgrade
+one:
+
+```sh
+# edit the version in src/web/package.json, then
+bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+bazel mod deps --lockfile_mode=update      # refresh MODULE.bazel.lock
+bazel run //src/web/dist:dist              # rebuild the checked-in bundles
+```
+
+**Changing anything under `src/web/src/` needs that last step too**, then commit
+what it changed. The bundling only runs under Bazel, but the CMake build embeds
+the same assets, so the output is checked in under
+[`dist/`](dist/README.md) and both builds read it from there — the way both
+builds read `src/web.tcl`. `bazel test //src/web/dist:dist_tests` tells you
+locally whether they are in sync; the `Are-Web-Bundles-Generated` CI workflow is
+what fails the PR when they are not.
+
+`//src/web:BUILD` turns those into:
+
+| Target | Output | Where it goes |
+| --- | --- | --- |
+| `app_bundle` | `app.min.js` | served as `/app.min.js` |
+| `report_bundle` | `report.min.js` | inlined into a saved report |
+| `vendor_css`, `app_css` | `vendor.min.css`, `app.min.css` | inlined, first and last in the cascade |
+| `gl_theme_{dark,light}_bundle` | `gl-*.min.css` | inlined between them, switched by id |
+| `minify_html` + `index_html` | `index.min.html` | served as `/index.html` |
+
+Both served blobs are gzipped at build time and stored compressed; the server
+hands them over as they are when the request accepts gzip, and inflates them
+otherwise (`src/asset_gzip.cpp`).
+
+Three things about the bundle are easy to break:
+
+- `netlistsvg` reads ELK off the global scope, so `elk-global.js` has to run
+  first. A module's imports are hoisted above its own statements, which is why
+  that assignment lives in a module of its own rather than inline.
+- `leaflet` touches `window` as it loads, and nine modules use it as the global
+  `L`. It stays a global (`leaflet-global.js`) so that the pure functions in
+  those modules can still be unit-tested with no DOM.
+- The report bundle deliberately leaves out elk and netlistsvg — 1.9 MB for a
+  panel that needs a live server. `entry-report.js` is what draws that line.
 
 ## Server API
 

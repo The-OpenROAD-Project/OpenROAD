@@ -490,15 +490,15 @@ TEST(AssetPathFromTarget, StripsTheQueryString)
   EXPECT_EQ(assetPathFromTarget("/?mergetiles=0"), "/index.html");
   EXPECT_EQ(assetPathFromTarget("/?tilebudget=256&mergegroups=8"),
             "/index.html");
-  EXPECT_EQ(assetPathFromTarget("/main.js?v=2"), "/main.js");
+  EXPECT_EQ(assetPathFromTarget("/app.min.js?v=2"), "/app.min.js");
 }
 
 TEST(AssetPathFromTarget, StripsAFragment)
 {
   EXPECT_EQ(assetPathFromTarget("/#anchor"), "/index.html");
-  EXPECT_EQ(assetPathFromTarget("/main.js#top"), "/main.js");
+  EXPECT_EQ(assetPathFromTarget("/app.min.js#top"), "/app.min.js");
   // Query before fragment, and a '#' inside the query is still a fragment.
-  EXPECT_EQ(assetPathFromTarget("/main.js?a=1#top"), "/main.js");
+  EXPECT_EQ(assetPathFromTarget("/app.min.js?a=1#top"), "/app.min.js");
 }
 
 TEST(AssetPathFromTarget, MapsRootOntoTheIndexDocument)
@@ -509,8 +509,51 @@ TEST(AssetPathFromTarget, MapsRootOntoTheIndexDocument)
 
 TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
 {
-  EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
-  EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+  EXPECT_EQ(assetPathFromTarget("/app.min.js"), "/app.min.js");
+  EXPECT_EQ(assetPathFromTarget("/favicon.ico"), "/favicon.ico");
+}
+
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
 }
 
 // The cache stores blank tiles as an empty entry, so a hit has to come back as

@@ -134,8 +134,11 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
-  EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
+  // The golden-layout themes theme.js switches between, by id.
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-dark\""));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
+  // leaflet's stylesheet, bundled into the report's own <style> block.
+  EXPECT_TRUE(contains(html, ".leaflet-pane"));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)
@@ -153,26 +156,48 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   generateReport(path);
   const std::string html = readFile(path);
 
-  EXPECT_TRUE(contains(html, "class WebSocketManager"));
-  EXPECT_TRUE(contains(html, "fromCache"));
-  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
-  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
-  EXPECT_TRUE(contains(html, "function computeGroupCount"));
-  EXPECT_TRUE(contains(html, "TimingWidget"));
-  EXPECT_TRUE(contains(html, "ChartsWidget"));
+  // The script is minified, so its identifiers are gone; what survives is the
+  // strings it needs at runtime.  Size is the honest check that the bundle is
+  // really in there rather than an empty <script>.
+  EXPECT_GT(html.size(), 500u * 1024u);
+  EXPECT_TRUE(contains(html, "openroad-cone-sync"));
+  EXPECT_TRUE(contains(html, "gl-container"));
 }
 
-TEST_F(SaveReportTest, GoldenLayoutFromCDN)
+// The point of issue #11065: a saved report opens with no server and no
+// network.  It used to pull leaflet and golden-layout from CDNs and import
+// three and golden-layout from esm.sh; all four are in the bundle now.
+TEST_F(SaveReportTest, IsSelfContained)
 {
-  const std::string path = tempHtml("gl_cdn");
+  const std::string path = tempHtml("self_contained");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // GoldenLayout loaded via ES module import from CDN.
-  EXPECT_TRUE(contains(html, "type=\"module\""));
-  EXPECT_TRUE(contains(html, "esm.sh/golden-layout"));
-  // No vendored golden-layout bundle in the HTML.
-  EXPECT_FALSE(contains(html, "goldenlayout.umd"));
+  for (const char* cdn : {"unpkg.com",
+                          "cdn.jsdelivr.net",
+                          "esm.sh",
+                          "nturley.github.io",
+                          "neilturley.dev"}) {
+    EXPECT_FALSE(contains(html, cdn)) << cdn;
+  }
+  // Nothing is fetched: no <script src>, no <link href>.
+  EXPECT_FALSE(contains(html, "<script src="));
+  EXPECT_FALSE(contains(html, "<link "));
+}
+
+// The schematic libraries are 1.9 MB and the panel needs a live server, so the
+// report bundle leaves them out (see entry-report.js).
+TEST_F(SaveReportTest, LeavesTheSchematicLibrariesOut)
+{
+  const std::string path = tempHtml("no_schematic");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  // Markers from the two libraries themselves.  The schematic widget's own
+  // source stays in -- it is the widget that stands down, not the code that
+  // gets stripped -- so the netlistsvg namespace string is not a marker.
+  EXPECT_FALSE(contains(html, "org.eclipse.elk"));
+  EXPECT_FALSE(contains(html, "onml"));
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────

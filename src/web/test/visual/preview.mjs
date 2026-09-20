@@ -74,11 +74,14 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
 <style>:root{--bg-panel:#fff;--fg-primary:#111;--bg-header:#eee;--border:#ccc;
   --bg-main:#fff;--fg-muted:#999;--accent:#e05a00;--fg-white:#fff;}
   body{margin:0;background:#fff}#host svg{color:#111}</style>
-<script src="https://nturley.github.io/netlistsvg/elk.bundled.js"></script>
-<script src="https://nturley.github.io/netlistsvg/built/netlistsvg.bundle.js"></script>
+<script src="/vendor/elk.bundled.js"></script>
+<script src="/vendor/netlistsvg.bundle.js"></script>
 </head><body><div id="host" style="width:760px;height:460px"></div>
 <script type="module">
-  import { SchematicWidget } from '/schematic-widget.js';
+  // schematic-widget.js reads the skin off the global, the way vendor-globals.js
+  // sets it in the real app (issue #11065 moved it out of a runtime fetch).
+  window.openroadSkin = await (await fetch('/openroad_skin.svg')).text();
+  const { SchematicWidget } = await import('/schematic-widget.js');
   const widget = new SchematicWidget({ element: document.getElementById('host') }, {});
   window.__render = async (json) => {
     for (let i = 0; i < 300 && !widget._netlistsvgReady; i++)
@@ -91,7 +94,19 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
   window.__ready = true;
 </script></body></html>`;
 
-const MIME = { '.js': 'application/javascript', '.html': 'text/html' };
+const MIME = {
+  '.js': 'application/javascript',
+  '.html': 'text/html',
+  '.svg': 'image/svg+xml',
+};
+
+// The two libraries the widget reads off the global scope.  Served from this
+// tool's own node_modules rather than a CDN: the viewer stopped fetching code
+// from the network in issue #11065, and this harness renders the real widget.
+const VENDOR = {
+  '/vendor/elk.bundled.js': 'elkjs/lib/elk.bundled.js',
+  '/vendor/netlistsvg.bundle.js': 'netlistsvg/built/netlistsvg.bundle.js',
+};
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (url === '/preview.html' || url === '/') {
@@ -100,7 +115,10 @@ const server = http.createServer((req, res) => {
   try {
     const ext = url.slice(url.lastIndexOf('.'));
     res.setHeader('Content-Type', MIME[ext] || 'text/plain');
-    res.end(readFileSync(join(srcDir, url)));
+    const file = VENDOR[url]
+      ? join(here, 'node_modules', VENDOR[url])
+      : join(srcDir, url);
+    res.end(readFileSync(file));
   } catch (e) { res.statusCode = 404; res.end('not found'); }
 });
 await new Promise((r) => server.listen(0, r));
