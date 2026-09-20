@@ -11,29 +11,21 @@
 #include <QWidget>
 #include <algorithm>
 #include <any>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <map>
 #include <memory>
-#include <typeindex>
-#include <typeinfo>
-#include <utility>
-#include <variant>
-
-#include "gui/descriptor_registry.h"
-#include "gui/heatMap.h"
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <QRegularExpression>
-#else
-#include <QRegExp>
-#endif
-#include <cmath>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <typeindex>
+#include <typeinfo>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
@@ -41,6 +33,8 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "gui/descriptor_registry.h"
+#include "gui/heatMap.h"
 #include "gui_utils.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
@@ -186,6 +180,11 @@ class QtGuiBackend : public GuiBackend
   void addSelected(const Selected& selection) override
   {
     main_window->addSelected(selection);
+  }
+
+  void addSelected(const SelectionSet& selection, bool find_in_cts) override
+  {
+    main_window->addSelected(selection, find_in_cts);
   }
 
   void removeSelectedByType(const std::string& type) override
@@ -548,166 +547,6 @@ class QtGuiLauncher : public GuiLauncher
 };
 
 static QtGuiLauncher qt_launcher;
-
-/**
- * @brief Checks if a Qt wildcard pattern is a simple literal string.
- *
- * This function determines if a string intended for use with
- * QRegExp::WildcardUnix contains any active (i.e., unescaped) wildcard
- * characters ('*', '?', '[').
- *
- * @param pattern The wildcard pattern string to check.
- * @return True if the pattern has no active wildcards; false otherwise.
- */
-static bool isSimpleStringPattern(const std::string& pattern)
-{
-  bool previous_was_escape = false;
-  for (const char ch : pattern) {
-    if (previous_was_escape) {
-      // The previous character was '\', so this character is just a literal.
-      previous_was_escape = false;
-      continue;
-    }
-
-    if (ch == '\\') {
-      // This is an escape character for the next character in the loop.
-      previous_was_escape = true;
-    } else if (ch == '*' || ch == '?' || ch == '[') {
-      // Found an unescaped wildcard, so it's not a simple string.
-      return false;
-    }
-  }
-  // If the loop completes, no unescaped wildcards were found.
-  return true;
-}
-
-int Gui::select(const std::string& type,
-                const std::string& name_filter,
-                const std::string& attribute,
-                const std::any& value,
-                bool filter_case_sensitive,
-                int highlight_group)
-{
-  if (!hasUI()) {
-    return 0;
-  }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // Define case sensitivity options for QRegularExpression
-  const QRegularExpression::PatternOptions options
-      = filter_case_sensitive ? QRegularExpression::NoPatternOption
-                              : QRegularExpression::CaseInsensitiveOption;
-
-  // Convert the wildcard string to a regex pattern and create the
-  // object
-  const QRegularExpression reg_filter(
-      QRegularExpression::wildcardToRegularExpression(
-          QString::fromStdString(name_filter)),
-      options);
-#else
-  const QRegExp reg_filter(
-      QString::fromStdString(name_filter),
-      filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
-      QRegExp::WildcardUnix);
-#endif
-  const bool is_simple = isSimpleStringPattern(name_filter);
-  bool found = false;
-  int result = 0;
-  auto* registry = DescriptorRegistry::instance();
-  registry->forEachDescriptor([&](const Descriptor* descriptor) {
-    if (found || descriptor->getTypeName() != type) {
-      return;
-    }
-    found = true;
-    SelectionSet selected_set;
-    descriptor->visitAllObjects([&](const Selected& sel) {
-      if (!name_filter.empty()) {
-        const std::string sel_name = sel.getName();
-        if (is_simple) {
-          if (sel_name != name_filter) {
-            return;
-          }
-        } else {
-          if (
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-              !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
-#else
-              !reg_filter.exactMatch(QString::fromStdString(sel_name))
-#endif
-          ) {
-            return;
-          }
-        }
-      }
-
-      if (!attribute.empty()) {
-        bool is_valid_attribute = false;
-        Descriptor::Properties properties
-            = descriptor->getProperties(sel.getObject());
-        if (!filterSelectionProperties(
-                properties, attribute, value, is_valid_attribute)) {
-          return;  // doesn't match the attribute filter
-        }
-
-        if (!is_valid_attribute) {
-          logger_->error(
-              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
-        }
-      }
-      selected_set.insert(sel);
-    });
-
-    main_window->addSelected(selected_set, true);
-    if (highlight_group != -1) {
-      main_window->addHighlighted(selected_set, highlight_group);
-    }
-
-    result = selected_set.size();
-  });
-
-  if (!found) {
-    logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
-  }
-  return result;
-}
-
-bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
-                                    const std::string& attribute,
-                                    const std::any& value,
-                                    bool& is_valid_attribute)
-{
-  for (const Descriptor::Property& property : properties) {
-    if (attribute == property.name) {
-      is_valid_attribute = true;
-      if (auto props_selected_set
-          = std::any_cast<SelectionSet>(&property.value)) {
-        if (Descriptor::Property::toString(value) == "CONNECTED"
-            && !props_selected_set->empty()) {
-          return true;
-        }
-        for (const auto& selected : *props_selected_set) {
-          if (Descriptor::Property::toString(value) == selected.getName()) {
-            return true;
-          }
-        }
-      } else if (auto props_list
-                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
-        for (const auto& prop : *props_list) {
-          if (Descriptor::Property::toString(prop.first)
-                  == Descriptor::Property::toString(value)
-              || Descriptor::Property::toString(prop.second)
-                     == Descriptor::Property::toString(value)) {
-            return true;
-          }
-        }
-      } else if (Descriptor::Property::toString(value)
-                 == Descriptor::Property::toString(property.value)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 
 std::string Gui::addToolbarButton(const std::string& name,
                                   const std::string& text,

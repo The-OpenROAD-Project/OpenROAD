@@ -917,6 +917,13 @@ class GuiBackend
   // sees them until a viewer implements its own.
   virtual void setSelected(const Selected& /* selection */) {}
   virtual void addSelected(const Selected& /* selection */) {}
+
+  // Select a whole set at once.  find_in_cts asks a backend that has a clock
+  // tree view to reveal the objects there too.
+  virtual void addSelected(const SelectionSet& /* selection */,
+                           bool /* find_in_cts */)
+  {
+  }
   virtual void removeSelectedByType(const std::string& /* type */) {}
   virtual const SelectionSet& selection()
   {

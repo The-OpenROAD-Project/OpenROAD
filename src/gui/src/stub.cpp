@@ -73,14 +73,4 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, cmd_has_ui.c_str());
 }
 
-int Gui::select(const std::string& type,
-                const std::string& name_filter,
-                const std::string& attribute,
-                const std::any& value,
-                bool filter_case_sensitive,
-                int highlight_group)
-{
-  return 0;
-}
-
 }  // namespace gui
