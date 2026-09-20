@@ -37,7 +37,7 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
-namespace gui {
+namespace web {
 class HeatMapDataSource;
 class Painter;
 class Selected;
@@ -1309,7 +1309,7 @@ class Gui
   std::string requestUserInput(const std::string& title,
                                const std::string& question);
 
-  using Term = gui::Term;
+  using Term = web::Term;
   void timingCone(Term term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<Term>& terms);
 
@@ -1442,7 +1442,7 @@ class Gui
   void setHeadlessViewer(GuiBackend* viewer);
   GuiBackend* getHeadlessViewer() const { return headless_viewer_; }
 
-  // Factory for gui::Chart instances when the Qt GUI is not running.
+  // Factory for web::Chart instances when the Qt GUI is not running.
   // The web viewer installs a factory that returns WebChart*.  When the
   // Qt GUI is running, the main window's ChartsWidget is used instead
   // and this factory is ignored.
@@ -1536,4 +1536,4 @@ class Gui
   GuiLauncher* launcher_ = nullptr;
 };
 
-}  // namespace gui
+}  // namespace web

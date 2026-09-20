@@ -17,9 +17,9 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
-#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace odb {
 class dbBlock;
@@ -36,7 +36,7 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
-namespace gui {
+namespace web {
 class HeatMapSourceRegistration;
 
 class HeatMapDataSource
@@ -408,4 +408,4 @@ const std::vector<HeatMapSourceHandle>& getRegisteredHeatMapSources();
 HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name);
 void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger);
 
-}  // namespace gui
+}  // namespace web

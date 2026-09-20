@@ -22,14 +22,14 @@
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
-#include "gui/core.h"
-#include "gui/descriptor_registry.h"
-#include "gui/heatMap.h"
 #include "heatMapRenderer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 
-namespace gui {
+namespace web {
 
 void Gui::resetDbuConversions()
 {
@@ -326,7 +326,7 @@ void Gui::addInstToHighlightSet(const std::string& name, int highlight_group)
 
   auto* inst = block->findInst(name.c_str());
   if (inst == nullptr) {
-    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
+    logger_->error(utl::WEB, 105, "No instance named {} found.", name);
     return;
   }
   SelectionSet sel_inst_set;
@@ -346,7 +346,7 @@ void Gui::addNetToHighlightSet(const std::string& name, int highlight_group)
 
   auto* net = block->findNet(name.c_str());
   if (net == nullptr) {
-    logger_->error(utl::GUI, 101, "No net named {} found.", name);
+    logger_->error(utl::WEB, 106, "No net named {} found.", name);
     return;
   }
   SelectionSet selection_set;
@@ -694,7 +694,7 @@ void Gui::saveImage(const std::string& filename,
                     const std::map<std::string, bool>& display_settings)
 {
   if (db_ == nullptr) {
-    logger_->error(utl::GUI, 15, "No design loaded.");
+    logger_->error(utl::WEB, 82, "No design loaded.");
   }
 
   odb::Rect save_region = region;
@@ -706,7 +706,7 @@ void Gui::saveImage(const std::string& filename,
     // offscreen it is not reliable, so use the die area instead.
     auto* chip = db_->getChip();
     if (chip == nullptr) {
-      logger_->error(utl::GUI, 64, "No design loaded.");
+      logger_->error(utl::WEB, 97, "No design loaded.");
     }
     save_region = chip->getBBox();
     auto* block = chip->getBlock();
@@ -811,8 +811,8 @@ HeatMapDataSource* Gui::getHeatMap(const std::string& name)
     for (auto* heat_map : heat_maps_) {
       options.push_back(heat_map->getShortName());
     }
-    logger_->error(utl::GUI,
-                   28,
+    logger_->error(utl::WEB,
+                   83,
                    "{} is not a known map. Valid options are: {}",
                    name,
                    joinWithCommas(options));
@@ -839,8 +839,8 @@ void Gui::setHeatMapSetting(const std::string& name,
       for (const auto& [key, kv] : settings) {
         options.push_back(key);
       }
-      logger_->error(utl::GUI,
-                     29,
+      logger_->error(utl::WEB,
+                     84,
                      "{} is not a valid option. Valid options are: {}",
                      option,
                      joinWithCommas(options));
@@ -856,7 +856,7 @@ void Gui::setHeatMapSetting(const std::string& name,
       } else if (auto* s = std::get_if<double>(&value)) {
         settings[option] = *s != 0.0;
       } else {
-        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
+        logger_->error(utl::WEB, 93, "{} must be a boolean", option);
       }
     } else if (std::holds_alternative<int>(current_value)) {
       // is int
@@ -865,7 +865,7 @@ void Gui::setHeatMapSetting(const std::string& name,
       } else if (auto* s = std::get_if<double>(&value)) {
         settings[option] = static_cast<int>(*s);
       } else {
-        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
+        logger_->error(utl::WEB, 94, "{} must be an integer or double", option);
       }
     } else if (std::holds_alternative<double>(current_value)) {
       // is double
@@ -874,14 +874,14 @@ void Gui::setHeatMapSetting(const std::string& name,
       } else if (auto* s = std::get_if<double>(&value)) {
         settings[option] = *s;
       } else {
-        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
+        logger_->error(utl::WEB, 95, "{} must be an integer or double", option);
       }
     } else {
       // is string
       if (auto* s = std::get_if<std::string>(&value)) {
         settings[option] = *s;
       } else {
-        logger_->error(utl::GUI, 63, "{} must be a string", option);
+        logger_->error(utl::WEB, 96, "{} must be a string", option);
       }
     }
     source->setSettings(settings);
@@ -908,8 +908,8 @@ Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
     for (const auto& [key, kv] : settings) {
       options.push_back(key);
     }
-    logger_->error(utl::GUI,
-                   95,
+    logger_->error(utl::WEB,
+                   104,
                    "{} is not a valid option. Valid options are: {}",
                    option,
                    joinWithCommas(options));
@@ -1015,7 +1015,7 @@ int Gui::select(const std::string& type,
 
         if (!is_valid_attribute) {
           logger_->error(
-              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+              utl::WEB, 92, "Entered attribute {} is not valid.", attribute);
         }
       }
       selected_set.insert(sel);
@@ -1030,7 +1030,7 @@ int Gui::select(const std::string& type,
   });
 
   if (!found) {
-    logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+    logger_->error(utl::WEB, 86, "Unable to find descriptor for: {}", type);
   }
   return result;
 }
@@ -1135,4 +1135,4 @@ void Gui::initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   registerBuiltinHeatMapSources(sta, logger);
 }
 
-}  // namespace gui
+}  // namespace web

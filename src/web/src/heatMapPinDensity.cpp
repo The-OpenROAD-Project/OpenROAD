@@ -7,14 +7,14 @@
 #include <utility>
 #include <vector>
 
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "web/heatMap.h"
 
-namespace gui {
+namespace web {
 
 PinDensityDataSource::PinDensityDataSource(utl::Logger* logger)
     : RealValueHeatMapDataSource(logger,
@@ -145,4 +145,4 @@ void PinDensityDataSource::inDbPostMoveInst(odb::dbInst*)
   destroyMap();
 }
 
-}  // namespace gui
+}  // namespace web

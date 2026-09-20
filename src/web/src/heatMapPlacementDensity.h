@@ -5,10 +5,10 @@
 
 #include <string>
 
-#include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "web/heatMap.h"
 
-namespace gui {
+namespace web {
 
 class PlacementDensityDataSource : public HeatMapDataSource,
                                    public odb::dbBlockCallBackObj
@@ -53,4 +53,4 @@ class PlacementDensityDataSource : public HeatMapDataSource,
   bool include_io_{false};
 };
 
-}  // namespace gui
+}  // namespace web

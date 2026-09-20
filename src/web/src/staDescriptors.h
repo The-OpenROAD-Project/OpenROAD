@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace sta {
 class dbSta;
@@ -20,7 +20,7 @@ class Clock;
 class Pin;
 }  // namespace sta
 
-namespace gui {
+namespace web {
 
 // Descriptor classes for sta Liberty objects.
 
@@ -160,4 +160,4 @@ class ClockDescriptor : public Descriptor
   std::set<const sta::Pin*> getClockPins(sta::Clock* clock) const;
 };
 
-};  // namespace gui
+};  // namespace web

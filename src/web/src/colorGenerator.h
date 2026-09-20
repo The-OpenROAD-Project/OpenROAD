@@ -5,9 +5,9 @@
 
 #include <array>
 
-#include "gui/core.h"
+#include "web/core.h"
 
-namespace gui {
+namespace web {
 
 class ColorGenerator
 {
@@ -24,4 +24,4 @@ class ColorGenerator
   int index_;
 };
 
-}  // namespace gui
+}  // namespace web

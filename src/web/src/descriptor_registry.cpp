@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "gui/descriptor_registry.h"
+#include "web/descriptor_registry.h"
 
 #include <any>
 #include <cstdlib>
@@ -18,11 +18,11 @@
 
 #include <cstdio>
 
-#include "gui/core.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
-namespace gui {
+namespace web {
 
 // Helper to format doubles with %g (equivalent to fmt "{:g}") without
 // requiring a dependency on the fmt library.
@@ -65,7 +65,7 @@ const Descriptor* DescriptorRegistry::getDescriptor(
   if (it == descriptors_.end()) {
     if (logger_) {
       logger_->error(
-          utl::GUI, 53, "Unable to find descriptor for: {}", type.name());
+          utl::WEB, 90, "Unable to find descriptor for: {}", type.name());
     }
     return nullptr;
   }
@@ -93,13 +93,13 @@ Selected DescriptorRegistry::makeSelected(const std::any& object)
       = abi::__cxa_demangle(object.type().name(), nullptr, nullptr, nullptr);
   if (logger_) {
     logger_->warn(
-        utl::GUI, 33, "No descriptor is registered for type {}.", type_name);
+        utl::WEB, 85, "No descriptor is registered for type {}.", type_name);
   }
   free(type_name);
 #else
   if (logger_) {
-    logger_->warn(utl::GUI,
-                  112,
+    logger_->warn(utl::WEB,
+                  108,
                   "No descriptor is registered for type {}.",
                   object.type().name());
   }
@@ -201,4 +201,4 @@ void Selected::highlight(Painter& painter,
 // references Gui::get() / Gui::zoomTo(), which are not available in the
 // lightweight gui_descriptors library.
 
-}  // namespace gui
+}  // namespace web

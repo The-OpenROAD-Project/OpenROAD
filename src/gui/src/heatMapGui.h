@@ -4,10 +4,10 @@
 #pragma once
 
 #include "gui/gui.h"
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 
-void showHeatMapSetupDialog(HeatMapDataSource* source);
+void showHeatMapSetupDialog(web::HeatMapDataSource* source);
 
 }  // namespace gui

@@ -43,8 +43,6 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
-#include "gui/core.h"
-#include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -55,6 +53,8 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web_assets.h"
 #include "web_chart.h"
 #include "web_gif.h"
@@ -431,7 +431,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   }
 
   // Destroying any selectable object (via trigger_action or a Tcl
-  // command) leaves the session's stored gui::Selected wrappers holding
+  // command) leaves the session's stored web::Selected wrappers holding
   // dangling odb pointers.  Raise the staleness flag — handlers drop the
   // whole selection state via consumeStaleSelection() before the next
   // dereference — and tell the client once so it clears its inspector.
@@ -480,8 +480,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
 // only reached for controls already known to be in the heat map group.
 bool isRegisteredHeatMapName(const std::string& name)
 {
-  for (const gui::HeatMapSourceHandle& source :
-       gui::getRegisteredHeatMapSources()) {
+  for (const web::HeatMapSourceHandle& source :
+       web::getRegisteredHeatMapSources()) {
     if (source->getName() == name) {
       return true;
     }
@@ -494,7 +494,7 @@ void seedRendererControls(WebViewerHook* hook)
   if (hook == nullptr) {
     return;
   }
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     // The controls a renderer declares are fixed once it has registered, so
     // one pass per renderer is enough — the render path calls this on every
     // tile and must not pay for the walk each time.
@@ -514,7 +514,7 @@ void seedRendererControls(WebViewerHook* hook)
 // share a group name.  `path` is what checkDisplayControl composes and what
 // set_renderer_control takes, so the client never has to rebuild it.
 //
-// The heat maps are left out.  gui::Gui::registerHeatMap gives every source a
+// The heat maps are left out.  web::Gui::registerHeatMap gives every source a
 // HeatMapRenderer whose single control gates its drawObjects, but the web
 // draws heat maps through its own tile layer, driven by the dedicated
 // "Heat Maps" group in the display-controls panel; serving these too put a
@@ -536,7 +536,7 @@ std::string rendererControlsJson(WebViewerHook* hook)
   static constexpr const char* kHeatMapGroup = "Heat Maps";
 
   boost::json::array controls;
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string group = renderer->getDisplayControlGroupName();
     const bool heat_map_group = group == kHeatMapGroup;
     for (const auto& [name, control] : renderer->getDisplayControls()) {
@@ -579,7 +579,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
   std::string group;
   std::set<std::string> exclusivity;
   bool found = false;
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string renderer_group = renderer->getDisplayControlGroupName();
     for (const auto& [name, control] : renderer->getDisplayControls()) {
       if (renderer->displayControlPath(name) == path) {
@@ -598,7 +598,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
   }
   const bool exclude_all = exclusivity.contains("");
 
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string renderer_group = renderer->getDisplayControlGroupName();
     if (renderer_group != group) {
       continue;
@@ -859,7 +859,7 @@ WebSocketSession::WebSocketSession(
         WebSocketResponse resp;
         resp.id = req.id;
         resp.type = WebSocketResponse::kJson;
-        auto* gui = gui::Gui::get();
+        auto* gui = web::Gui::get();
         const auto* value = req.json.if_contains("value");
         if (value != nullptr && value->is_bool()) {
           const bool requested = value->get_bool();
@@ -1612,7 +1612,7 @@ TileGenerator& WebServer::ensureGenerator()
 }
 
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
-// pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
+// pull in web_serve.cpp's web::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
 void WebServer::stopAndJoinIoThreads()
 {

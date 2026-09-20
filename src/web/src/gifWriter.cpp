@@ -16,10 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 // Defines GifBegin/GifWriteFrame/GifEnd with external linkage behind only a
 // per-TU include guard, so exactly one translation unit per link may include
@@ -27,7 +27,7 @@
 // includes it inside an anonymous namespace to keep its copy internal.
 #include "third-party/gif-h/gif.h"
 
-namespace gui {
+namespace web {
 
 GIF::GIF() = default;
 GIF::~GIF() = default;
@@ -35,11 +35,11 @@ GIF::~GIF() = default;
 int Gui::gifStart(const std::string& filename)
 {
   if (!hasUI()) {
-    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
+    logger_->error(utl::WEB, 87, "Cannot generate GIF without GUI enabled");
   }
 
   if (filename.empty()) {
-    logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
+    logger_->error(utl::WEB, 103, "Filename is required to save a GIF.");
   }
 
   auto gif = std::make_unique<GIF>();
@@ -61,12 +61,12 @@ void Gui::gifAddFrame(std::optional<int> key,
     key = gifs_.size() - 1;
   }
   if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
-    logger_->warn(utl::GUI, 51, "GIF not active");
+    logger_->warn(utl::WEB, 89, "GIF not active");
     return;
   }
 
   if (db_ == nullptr) {
-    logger_->error(utl::GUI, 50, "No design loaded.");
+    logger_->error(utl::WEB, 88, "No design loaded.");
   }
 
   auto& gif = gifs_[*key];
@@ -78,12 +78,12 @@ void Gui::gifAddFrame(std::optional<int> key,
     // offscreen they are not meaningful, so fall back to the die area.
     auto* chip = db_->getChip();
     if (chip == nullptr) {
-      logger_->error(utl::GUI, 79, "No design loaded.");
+      logger_->error(utl::WEB, 101, "No design loaded.");
     }
 
     auto* block = chip->getBlock();
     if (block == nullptr) {
-      logger_->error(utl::GUI, 80, "No design loaded.");
+      logger_->error(utl::WEB, 102, "No design loaded.");
     }
 
     save_region = block->getBBox()->getBox();
@@ -108,8 +108,8 @@ void Gui::gifAddFrame(std::optional<int> key,
   // end of the pixels below.
   if (img.width <= 0 || img.height <= 0
       || img.rgba.size() < static_cast<size_t>(img.width) * img.height * 4) {
-    logger_->warn(utl::GUI,
-                  113,
+    logger_->warn(utl::WEB,
+                  109,
                   "Backend rendered no image; frame not added to {}.",
                   gif->filename);
     return;
@@ -127,7 +127,7 @@ void Gui::gifAddFrame(std::optional<int> key,
                   img.height,
                   delay.value_or(kDefaultGifDelay))) {
       logger_->error(
-          utl::GUI, 114, "Unable to open {} to write a GIF.", gif->filename);
+          utl::WEB, 110, "Unable to open {} to write a GIF.", gif->filename);
     }
     gif->width = img.width;
     gif->height = img.height;
@@ -166,13 +166,13 @@ void Gui::gifEnd(std::optional<int> key)
     key = gifs_.size() - 1;
   }
   if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
-    logger_->warn(utl::GUI, 58, "GIF not active");
+    logger_->warn(utl::WEB, 91, "GIF not active");
     return;
   }
 
   auto& gif = gifs_[*key];
   if (gif->writer == nullptr) {
-    logger_->warn(utl::GUI,
+    logger_->warn(utl::WEB,
                   107,
                   "Nothing to save to {}. No frames added to gif.",
                   gif->filename);
@@ -184,4 +184,4 @@ void Gui::gifEnd(std::optional<int> key)
   gifs_[*key] = nullptr;
 }
 
-}  // namespace gui
+}  // namespace web

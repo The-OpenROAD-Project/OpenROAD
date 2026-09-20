@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 //
 // WebServer::serve() and stop() in their own translation unit so that
-// test executables linking libweb.a don't pull in gui::Gui::get()
+// test executables linking libweb.a don't pull in web::Gui::get()
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
@@ -37,7 +37,6 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "clock_tree_report.h"
-#include "gui/core.h"
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
@@ -45,6 +44,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 #include "web/web.h"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "web_chart.h"
@@ -57,7 +57,7 @@ namespace net = boost::asio;
 using Tcp = net::ip::tcp;
 
 // Tcl command name used to stash the original `exit` while our override
-// is installed.  Mirrors gui::TclCmdInputWidget's kCommandRenamePrefix.
+// is installed.  Mirrors web::TclCmdInputWidget's kCommandRenamePrefix.
 static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
 
 // Logger sink that accumulates lines and sends them as a batch to
@@ -135,8 +135,8 @@ void WebServer::initLogger()
 
   // Create the hook object now because WebLogSink holds a raw pointer to it
   // (for sessions()).  Do NOT install it as the Gui headless viewer here:
-  // that would make gui::Gui::enabled() true during startup scripts, and
-  // gui::pause() would then block kClientConnectTimeoutSeconds (~30s)
+  // that would make web::Gui::enabled() true during startup scripts, and
+  // web::pause() would then block kClientConnectTimeoutSeconds (~30s)
   // waiting for a web client that cannot connect until serve() opens the
   // network.  The headless viewer and chart factory are installed in
   // serve() instead.
@@ -183,7 +183,7 @@ void WebServer::serve(int port, const std::string& bind_address)
     // Override Tcl's `exit` so a user typing `exit` in the browser tcl
     // widget doesn't run Tcl_Exit on the worker thread (which triggers
     // ~WebServer's self-join → std::terminate).  Same pattern as
-    // gui::TclCmdInputWidget.  The handler signals waitForStop() and
+    // web::TclCmdInputWidget.  The handler signals waitForStop() and
     // sets exit_requested_; the main thread does the real exit.
     // TclHandler::handleTclEval detects kExitResultMsg in the Tcl
     // result and sends `action: "shutdown"` to the browser.
@@ -201,10 +201,10 @@ void WebServer::serve(int port, const std::string& bind_address)
     // viewer_hook_ and the WebLogSink were created by initLogger() above.
     // Install the hook as the Gui headless viewer and chart factory now
     // that the network is about to open — deferred from initLogger() so
-    // startup scripts run with gui::Gui::enabled() == false (see
+    // startup scripts run with web::Gui::enabled() == false (see
     // initLogger()).
-    gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
-    gui::Gui::get()->setChartFactory(
+    web::Gui::get()->setHeadlessViewer(viewer_hook_.get());
+    web::Gui::get()->setChartFactory(
         [hook = viewer_hook_.get()](const std::string& name,
                                     const std::string& x_label,
                                     const std::vector<std::string>& y_labels) {
@@ -239,7 +239,7 @@ void WebServer::serve(int port, const std::string& bind_address)
         return;
       }
       seedRendererControls(hook);
-      for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+      for (web::Renderer* renderer : web::Gui::get()->renderers()) {
         // A Renderer sees the tile as a whole-DBU window (Painter's API is
         // integer DBU); only the rasterization below needs the exact
         // origin, which it takes from the frame.
@@ -267,7 +267,7 @@ void WebServer::serve(int port, const std::string& bind_address)
     // live algorithm state AND write their own (GraphicsImpl::select walks
     // nbc_->getGCells(), indexes it, and sets selected_; DebugGui::select
     // queries the solver's rtrees and fills selected_shapes_), and the Qt GUI
-    // only ever reaches them from inside gui::pause(), which spins the event
+    // only ever reaches them from inside web::pause(), which spins the event
     // loop while the algorithm is blocked.  Reading a torn frame is a garbled
     // overlay; indexing a vector mid-reallocation is a crash, and clicking a
     // gcell that is still moving buys nothing — so Live does not extend here.
@@ -278,8 +278,8 @@ void WebServer::serve(int port, const std::string& bind_address)
       if (hook == nullptr || !hook->isPaused()) {
         return;
       }
-      for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
-        for (const gui::Selected& selected : renderer->select(layer, region)) {
+      for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+        for (const web::Selected& selected : renderer->select(layer, region)) {
           odb::Rect bbox;
           if (!selected.getBBox(bbox)) {
             // Nothing to zoom to or highlight; the client keys its
@@ -523,10 +523,10 @@ void WebServer::stop()
     if (generator_) {
       generator_->setDesignChangedCallback({});
     }
-    if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
-      gui::Gui::get()->setHeadlessViewer(nullptr);
+    if (web::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
+      web::Gui::get()->setHeadlessViewer(nullptr);
     }
-    gui::Gui::get()->setChartFactory({});
+    web::Gui::get()->setChartFactory({});
   }
   if (log_sink_) {
     logger_->removeSink(log_sink_);

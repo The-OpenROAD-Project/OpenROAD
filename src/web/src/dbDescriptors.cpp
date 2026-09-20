@@ -26,7 +26,6 @@
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -41,8 +40,9 @@
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
 
-namespace gui {
+namespace web {
 
 static void populateODBProperties(Descriptor::Properties& props,
                                   odb::dbObject* object,
@@ -1704,7 +1704,7 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
             guide_rects.push_back(guide->getBox());
           }
           painter.saveState();
-          painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
+          painter.setBrush(painter.getPenColor(), web::Painter::Brush::kNone);
           for (const odb::Polygon& outline :
                odb::geom::mergePolygons(guide_rects)) {
             painter.drawPolygon(outline);
@@ -2847,7 +2847,7 @@ Descriptor::Actions DbObstructionDescriptor::getActions(
            odb::dbBox* box = obs->getBBox();
            odb::dbTechLayer* layer = getLayerSelection(
                obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
-           auto gui = gui::Gui::get();
+           auto gui = web::Gui::get();
            if (layer == nullptr) {
              return gui->makeSelected(obs);
            }
@@ -6068,4 +6068,4 @@ Descriptor::Properties DbSWireDescriptor::getDBProperties(
   return props;
 }
 
-}  // namespace gui
+}  // namespace web

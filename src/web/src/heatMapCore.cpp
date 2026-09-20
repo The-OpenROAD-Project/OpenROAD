@@ -24,8 +24,6 @@
 #include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/core.h"
-#include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "heatMapRenderer.h"
@@ -33,8 +31,10 @@
 #include "odb/db.h"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
-namespace gui {
+namespace web {
 
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
@@ -195,12 +195,12 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
   ensureMap();
 
   if (!isPopulated()) {
-    logger_->error(utl::GUI, 72, "\"{}\" is not populated with data.", name_);
+    logger_->error(utl::WEB, 99, "\"{}\" is not populated with data.", name_);
   }
 
   std::ofstream csv(file);
   if (!csv.is_open()) {
-    logger_->error(utl::GUI, 73, "Unable to open {}", file);
+    logger_->error(utl::WEB, 100, "Unable to open {}", file);
   }
 
   const double dbu_to_micron = getDbuPerMicron();
@@ -442,10 +442,10 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 odb::PtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
 {
   odb::PtrSet<odb::dbInst> selected_insts;
-  if (!useSelectedOnly() || !gui::Gui::enabled()) {
+  if (!useSelectedOnly() || !web::Gui::enabled()) {
     return selected_insts;
   }
-  for (const gui::Selected& item : gui::Gui::get()->selection()) {
+  for (const web::Selected& item : web::Gui::get()->selection()) {
     if (item.isInst()) {
       selected_insts.insert(std::any_cast<odb::dbInst*>(item.getObject()));
     }
@@ -635,7 +635,7 @@ bool HeatMapDataSource::setupMap()
   const size_t y_grid_size = map_y_grid_.size() - 1;
 
   debugPrint(logger_,
-             utl::GUI,
+             utl::WEB,
              "HeatMap",
              1,
              "{} - Generating {}x{} map",
@@ -717,7 +717,7 @@ void HeatMapDataSource::destroyMap()
   }
 
   debugPrint(
-      logger_, utl::GUI, "HeatMap", 1, "{} - destroy map requested", name_);
+      logger_, utl::WEB, "HeatMap", 1, "{} - destroy map requested", name_);
 
   destroy_map_ = true;
   redraw();
@@ -745,35 +745,35 @@ void HeatMapDataSource::ensureMap()
   absl::MutexLock lock(&ensure_mutex_);
 
   if (destroy_map_) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Destroying map", name_);
+    debugPrint(logger_, utl::WEB, "HeatMap", 1, "{} - Destroying map", name_);
     clearMap();
     destroy_map_ = false;
   }
 
   const bool build_map = map_[0][0] == nullptr;
   if (build_map) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Setting up map", name_);
+    debugPrint(logger_, utl::WEB, "HeatMap", 1, "{} - Setting up map", name_);
     if (!setupMap()) {
       debugPrint(
-          logger_, utl::GUI, "HeatMap", 1, "{} - No map available", name_);
+          logger_, utl::WEB, "HeatMap", 1, "{} - No map available", name_);
       return;
     }
   }
 
   if (build_map || !isPopulated()) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Populating map", name_);
+    debugPrint(logger_, utl::WEB, "HeatMap", 1, "{} - Populating map", name_);
     populated_ = populateMap();
 
     if (isPopulated()) {
       debugPrint(
-          logger_, utl::GUI, "HeatMap", 1, "{} - Correcting map scale", name_);
+          logger_, utl::WEB, "HeatMap", 1, "{} - Correcting map scale", name_);
       correctMapScale(map_);
     }
   }
 
   if (!colors_correct_ && isPopulated()) {
     debugPrint(
-        logger_, utl::GUI, "HeatMap", 1, "{} - Assigning map colors", name_);
+        logger_, utl::WEB, "HeatMap", 1, "{} - Assigning map colors", name_);
     assignMapColors();
   }
 }
@@ -861,8 +861,8 @@ std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
 void HeatMapDataSource::onShow()
 {
   if (!isPopulated()) {
-    logger_->warn(utl::GUI,
-                  66,
+    logger_->warn(utl::WEB,
+                  98,
                   "Heat map \"{}\" has not been populated with data.",
                   getName());
   }
@@ -1095,7 +1095,7 @@ void GlobalRoutingDataSource::populateXYGrid()
 
 PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
                                                utl::Logger* logger)
-    : gui::RealValueHeatMapDataSource(logger,
+    : web::RealValueHeatMapDataSource(logger,
                                       "W",
                                       "Power Density",
                                       "Power",
@@ -1432,4 +1432,4 @@ void HeatMapDataSource::registerHeatMap()
   Gui::get()->registerHeatMap(this);
 }
 
-}  // namespace gui
+}  // namespace web

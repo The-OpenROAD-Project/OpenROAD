@@ -4,19 +4,19 @@
 #pragma once
 
 #include "AbstractCugrRenderer.h"
-#include "gui/core.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace grt {
 
-class CugrRenderer : public gui::Renderer, public AbstractCugrRenderer
+class CugrRenderer : public web::Renderer, public AbstractCugrRenderer
 {
  public:
   CugrRenderer();
 
   void drawAndPause(CugrDebugFrame frame) override;
 
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
 
  private:
   CugrDebugFrame frame_;

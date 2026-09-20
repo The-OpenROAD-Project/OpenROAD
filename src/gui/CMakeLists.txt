@@ -12,58 +12,6 @@ find_package(OpenGL REQUIRED)
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# The Qt-free half of the gui: the data model every other module draws
-# through -- Painter, Renderer, Descriptor/Selected, HeatMapDataSource --
-# published through gui/core.h.  Compiled once and linked by both the CLI
-# and the Qt gui.  Mirrors //src/gui:core in the Bazel build; keep the two
-# source lists in step.
-#
-# Not complete on its own.  It carries Gui's dispatch spine and everything a
-# module outside gui calls, but the Qt gui's own Tcl command surface stays in
-# gui.cpp, and the startGui/initGui entry points are implemented once per
-# build -- gui.cpp for a Qt one, makeGui.cpp for a CLI one -- so a binary has
-# to link one of those too.
-#
-# This target does not take the gui target's LTO opt-out below.  That one is
-# there for a crash in Qt plugin loading, and nothing here is Qt: no
-# QApplication, no static QPA plugin, nothing that takes part in loading one.
-# descriptor_registry.cpp and the heatmap sources have also been built with
-# LTO all along, through the gui_descriptors and gui_heatmap_core targets this
-# replaces, and they are on the web tile renderer's hot path.
-add_library(gui_core
-  src/bufferTreeDescriptor.cpp
-  src/colorGenerator.cpp
-  src/dbDescriptors.cpp
-  src/descriptor_registry.cpp
-  src/heatMapCore.cpp
-  src/heatMapPinDensity.cpp
-  src/heatMapPlacementDensity.cpp
-  src/gifWriter.cpp
-  src/guiDispatch.cpp
-  src/init_descriptors.cpp
-  src/renderer.cpp
-  src/staDescriptors.cpp
-)
-target_link_libraries(gui_core
-  PUBLIC
-    odb
-  PRIVATE
-    absl::synchronization
-    dbSta_lib
-    utl_lib
-    Boost::boost
-    OpenSTA
-)
-target_include_directories(gui_core
-  PUBLIC
-    include
-  PRIVATE
-    src
-    ${OPENSTA_HOME}/include
-    ${DBSTA_HOME}/include
-    ${OPENROAD_HOME}
-)
-
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)

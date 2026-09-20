@@ -11,16 +11,16 @@
 #include "bufferTreeDescriptor.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
-#include "gui/core.h"
-#include "gui/descriptor_registry.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
 #include "sta/Scene.hh"
 #include "staDescriptors.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
 
-namespace gui {
+namespace web {
 
 // Defined here (rather than in descriptor_registry.cpp) because the "Zoom to"
 // action references Gui::get() / Gui::zoomTo(), which are not available in the
@@ -139,4 +139,4 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
   // in MainWindow::init().
 }
 
-}  // namespace gui
+}  // namespace web

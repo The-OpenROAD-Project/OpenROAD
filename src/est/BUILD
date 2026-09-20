@@ -29,9 +29,9 @@ cc_library(
         "//src/grt",
         "//src/grt:groute",
         "//src/grt:route_pt",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/web:core",
     ],
 )
 
@@ -99,10 +99,10 @@ cc_library(
         ":private_hdrs",
         "//:ord",
         "//src/dbSta:dbNetwork",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

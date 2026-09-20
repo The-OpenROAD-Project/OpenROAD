@@ -17,72 +17,6 @@ package(
     features = ["layering_check"],
 )
 
-# The .cpp sources that make up :core.  Named so :gui_qt can exclude them
-# from its glob; the matching headers are listed in :core's srcs.
-CORE_SRCS = [
-    "src/bufferTreeDescriptor.cpp",
-    "src/colorGenerator.cpp",
-    "src/dbDescriptors.cpp",
-    "src/descriptor_registry.cpp",
-    "src/heatMapCore.cpp",
-    "src/heatMapPinDensity.cpp",
-    "src/heatMapPlacementDensity.cpp",
-    "src/gifWriter.cpp",
-    "src/guiDispatch.cpp",
-    "src/init_descriptors.cpp",
-    "src/renderer.cpp",
-    "src/staDescriptors.cpp",
-]
-
-# The Qt-free half of the gui: the data model every other module draws
-# through -- Painter, Renderer, Descriptor/Selected, HeatMapDataSource --
-# published through gui/core.h.  Compiled once and linked by both :gui and
-# :gui_qt, so the Qt build no longer carries a second, separately compiled
-# copy of these objects.
-#
-# Not complete on its own.  It carries Gui's dispatch spine and everything a
-# module outside gui calls, but the Qt gui's own Tcl command surface stays in
-# gui.cpp, and the startGui/initGui entry points are implemented once per
-# build -- gui.cpp for a Qt one, makeGui.cpp for a CLI one -- so a binary has
-# to link one of those too.
-cc_library(
-    name = "core",
-    srcs = CORE_SRCS + [
-        "src/bufferTreeDescriptor.h",
-        "src/colorGenerator.h",
-        "src/dbDescriptors.h",
-        "src/heatMapPinDensity.h",
-        "src/heatMapPlacementDensity.h",
-        "src/heatMapRenderer.h",
-        "src/staDescriptors.h",
-    ],
-    hdrs = [
-        "include/gui/core.h",
-        "include/gui/descriptor_registry.h",
-        "include/gui/heatMap.h",
-    ],
-    includes = [
-        "include",
-        "src",
-    ],
-    deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//third-party/gif-h:gif_h",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.algorithm",
-        "@boost.multi_array",
-    ],
-)
-
-# The Qt entry point's header surface: startGui and initGui.  The encoded
-# gui.tcl belongs to :gui_qt -- gui_tcl_inits is referenced only by gui.cpp,
-# which only that target compiles.  Carrying :tcl here too put a second copy
-# of the blob in every openroad-qt link, and an unreferenced one in every
-# CLI link.  CMake only encodes gui.tcl in its Qt branch for the same reason.
 # The gui as a binary with no Qt has it: the Qt-free core, plus the entry
 # points answering that there is no gui to open.  A Qt build links :gui_qt
 # instead, which carries Qt's own versions of those, so nothing reachable
@@ -101,8 +35,8 @@ cc_library(
         "src",
     ],
     deps = [
-        ":core",
         "//src/odb/src/db",
+        "//src/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -122,11 +56,9 @@ QT_GUI_PLATFORMS = {
             include = [
                 "src/*.cpp",
             ],
-            # The Qt-free sources are compiled once, by :core, which this
-            # target deps on.  Globbing them here too would put a second,
-            # separately compiled copy of every descriptor and heatmap
-            # object in the same link as :core's.
-            exclude = CORE_SRCS + [
+            # makeGui.cpp answers the entry points for a build with no Qt;
+            # this target has gui.cpp's versions of them.
+            exclude = [
                 "src/makeGui.cpp",
             ],
         ) + [
@@ -150,7 +82,6 @@ QT_GUI_PLATFORMS = {
         qt_gui_platform = platform,
         uic_srcs = glob(["ui/*.ui"]) if platform == "native" else [],
         deps = [
-            ":core",
             ":qt_resources",
             "//:ord",
             "//src/dbSta",
@@ -159,6 +90,7 @@ QT_GUI_PLATFORMS = {
             "//src/odb/src/defout",
             "//src/sta:opensta_lib",
             "//src/utl",
+            "//src/web:core",
             "@abseil-cpp//absl/synchronization",
             "@boost.algorithm",
             "@boost.geometry",

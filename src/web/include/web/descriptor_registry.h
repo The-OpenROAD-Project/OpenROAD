@@ -22,7 +22,7 @@ namespace utl {
 class Logger;
 }
 
-namespace gui {
+namespace web {
 
 class Descriptor;
 class Selected;
@@ -97,4 +97,4 @@ class DescriptorRegistry
   utl::Logger* logger_ = nullptr;
 };
 
-}  // namespace gui
+}  // namespace web

@@ -5,9 +5,9 @@
 
 #include <array>
 
-#include "gui/core.h"
+#include "web/core.h"
 
-namespace gui {
+namespace web {
 
 using Color = Painter::Color;
 
@@ -38,4 +38,4 @@ Painter::Color ColorGenerator::getColor()
   return color;
 }
 
-}  // namespace gui
+}  // namespace web

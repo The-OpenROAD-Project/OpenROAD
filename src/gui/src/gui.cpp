@@ -33,8 +33,6 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
-#include "gui/descriptor_registry.h"
-#include "gui/heatMap.h"
 #include "gui_utils.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
@@ -53,11 +51,13 @@
 #include "utl/Logger.h"
 #include "utl/decode.h"
 #include "utl/exception.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 
 extern int cmd_argc;
 extern char** cmd_argv;
 
-namespace gui {
+namespace web {
 
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
@@ -355,7 +355,7 @@ class QtGuiBackend : public GuiBackend
   void setDisplayControlColor(const std::string& name,
                               const Painter::Color& color) override
   {
-    main_window->getControls()->setControlByPath(name, toQColor(color));
+    main_window->getControls()->setControlByPath(name, gui::toQColor(color));
   }
 
   void saveDisplayControls() override { main_window->getControls()->save(); }
@@ -701,7 +701,7 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
+  gui::startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
 void Gui::minimize()
@@ -728,7 +728,7 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   // Lets the descriptors offer the actions that need a modal dialog, and
   // saveImage reopen the gui when no window is up.  Only this file is
   // Qt-only, so a build without Qt leaves both hooks null.
-  static QtDialogs dialogs;
+  static gui::QtDialogs dialogs;
   setDialogs(&dialogs);
   setLauncher(&qt_launcher);
 
@@ -762,7 +762,7 @@ void Gui::selectChart(const std::string& name)
     return;
   }
 
-  const ChartsWidget::Mode mode
+  const gui::ChartsWidget::Mode mode
       = main_window->getChartsWidget()->modeFromString(name);
   main_window->getChartsWidget()->setMode(mode);
 }
@@ -802,6 +802,15 @@ class SafeApplication : public QApplication
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
+}  // namespace web
+
+namespace gui {
+
+// The entry points keep their own namespace: gui/gui.h and gui/MakeGui.h
+// declare them there, and OpenRoad calls them by that name.  Everything they
+// reach for -- the window, the backend, web::Gui itself -- is web's now.
+using namespace web;  // NOLINT(build/namespaces)
+
 int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
@@ -824,7 +833,7 @@ int startGui(int& argc,
     }
   }
 #endif
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();
 
@@ -880,7 +889,7 @@ int startGui(int& argc,
   QObject::connect(
       main_window, &MainWindow::exit, [&]() { exit_requested = true; });
 
-  // Hide the Gui if someone chooses hide from the menu in the window
+  // Hide the web::Gui if someone chooses hide from the menu in the window
   QObject::connect(main_window, &MainWindow::hide, [gui]() { gui->hideGui(); });
 
   // Save the window's status into the settings when quitting.
@@ -958,17 +967,17 @@ int startGui(int& argc,
   // Uninstall before destroying the window, not after.  ~MainWindow destroys
   // its children in construction order, so DisplayControls (the first one)
   // is already gone when DRCWidget and the clock viewer destroy the
-  // Renderers they own.  Each ~Renderer calls Gui::unregisterRenderer, and
-  // with the backend still installed that would reach
-  // main_window->getControls() on a freed DisplayControls.
-  Gui::get()->setBackend(nullptr);
+  // Renderers they own.  Each ~web::Renderer calls
+  // web::Gui::unregisterRenderer, and with the backend still installed that
+  // would reach main_window->getControls() on a freed DisplayControls.
+  web::Gui::get()->setBackend(nullptr);
 
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
   application = nullptr;
 
-  Gui::resetDbuConversions();
+  web::Gui::resetDbuConversions();
 
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
@@ -1010,7 +1019,7 @@ void initGui(Tcl_Interp* interp,
   utl::evalTclInit(interp, gui::gui_tcl_inits);
 
   // ensure gui is made
-  auto* gui = gui::Gui::get();
+  auto* gui = web::Gui::get();
   gui->init(db, sta, logger);
 }
 

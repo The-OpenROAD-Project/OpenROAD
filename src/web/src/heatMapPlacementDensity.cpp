@@ -7,14 +7,14 @@
 #include <utility>
 #include <vector>
 
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "web/heatMap.h"
 
-namespace gui {
+namespace web {
 
 PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger)
     : HeatMapDataSource(logger,
@@ -156,4 +156,4 @@ void PlacementDensityDataSource::inDbPostMoveInst(odb::dbInst*)
   destroyMap();
 }
 
-}  // namespace gui
+}  // namespace web

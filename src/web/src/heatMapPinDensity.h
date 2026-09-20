@@ -5,10 +5,10 @@
 
 #include <string>
 
-#include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "web/heatMap.h"
 
-namespace gui {
+namespace web {
 
 class PinDensityDataSource : public RealValueHeatMapDataSource,
                              public odb::dbBlockCallBackObj
@@ -49,4 +49,4 @@ class PinDensityDataSource : public RealValueHeatMapDataSource,
   bool destroyMapOnNotVisible() const override { return true; }
 };
 
-}  // namespace gui
+}  // namespace web

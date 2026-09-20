@@ -12,13 +12,13 @@
 #include "colorGenerator.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
+#include "web/core.h"
 
-namespace gui {
+namespace web {
 
 sta::dbSta* BufferTree::sta_ = nullptr;
 
@@ -296,4 +296,4 @@ Descriptor::Actions BufferTreeDescriptor::getActions(
   return actions;
 }
 
-}  // namespace gui
+}  // namespace web

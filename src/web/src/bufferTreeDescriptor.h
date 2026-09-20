@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 
-#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace utl {
 class Logger;
@@ -22,7 +22,7 @@ namespace sta {
 class dbSta;
 }
 
-namespace gui {
+namespace web {
 
 class BufferTree
 {
@@ -83,4 +83,4 @@ class BufferTreeDescriptor : public Descriptor
   const odb::PtrSet<odb::dbNet>& tracks_nets_;
 };
 
-}  // namespace gui
+}  // namespace web
