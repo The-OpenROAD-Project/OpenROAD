@@ -11,7 +11,7 @@
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_graphics.h"

@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/geom.h"
 
 namespace stt {

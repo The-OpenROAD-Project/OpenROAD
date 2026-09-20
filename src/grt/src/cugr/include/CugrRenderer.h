@@ -4,7 +4,7 @@
 #pragma once
 
 #include "AbstractCugrRenderer.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 
 namespace grt {

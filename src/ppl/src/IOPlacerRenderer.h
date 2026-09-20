@@ -7,7 +7,7 @@
 
 #include "AbstractIOPlacerRenderer.h"
 #include "Netlist.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {

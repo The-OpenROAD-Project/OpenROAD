@@ -50,7 +50,6 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/est",
-        "//src/gui",
         "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",

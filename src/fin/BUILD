@@ -34,7 +34,7 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.lexical_cast",

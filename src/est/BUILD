@@ -29,12 +29,10 @@ cc_library(
         "//src/grt",
         "//src/grt:groute",
         "//src/grt:route_pt",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
-    ] + select({
-        "//:platform_cli": ["//src/gui"],
-        "//:platform_gui": ["//src/gui:gui_qt"],
-    }),
+    ],
 )
 
 # Abstract service interface published through utl::ServiceRegistry.
@@ -101,7 +99,7 @@ cc_library(
         ":private_hdrs",
         "//:ord",
         "//src/dbSta:dbNetwork",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",

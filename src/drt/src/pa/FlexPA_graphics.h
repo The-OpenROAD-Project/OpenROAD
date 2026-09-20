@@ -12,7 +12,7 @@
 #include "db/obj/frMPin.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "pa/FlexPA_unique.h"

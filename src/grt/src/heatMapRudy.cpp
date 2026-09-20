@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "grt/GlobalRouter.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"

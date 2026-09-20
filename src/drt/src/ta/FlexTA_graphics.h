@@ -9,7 +9,7 @@
 
 #include "db/obj/frBlock.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
 

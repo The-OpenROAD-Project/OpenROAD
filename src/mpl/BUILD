@@ -124,7 +124,7 @@ cc_library(
         ":mpl_private_hdrs",
         ":pusher",
         "//:ord",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",

@@ -19,7 +19,7 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"

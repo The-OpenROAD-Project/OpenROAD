@@ -19,7 +19,7 @@
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

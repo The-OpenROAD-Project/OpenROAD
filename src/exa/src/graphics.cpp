@@ -3,7 +3,7 @@
 
 #include "graphics.h"
 
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 
 namespace exa {

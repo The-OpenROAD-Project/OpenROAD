@@ -37,7 +37,7 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "clock_tree_report.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"

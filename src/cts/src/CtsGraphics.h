@@ -12,7 +12,7 @@
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "Util.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 
 namespace utl {
 class Logger;

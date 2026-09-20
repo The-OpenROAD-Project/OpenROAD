@@ -4,7 +4,7 @@
 #pragma once
 
 #include "AbstractSteinerRenderer.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 
 namespace est {
 

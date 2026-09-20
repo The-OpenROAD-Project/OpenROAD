@@ -285,7 +285,7 @@ cc_library(
         ":drt",
         ":drt_private_hdrs",
         "//:ord",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
