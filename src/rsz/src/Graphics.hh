@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "ResizerObserver.hh"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "web/core.h"
 
 namespace rsz {
 

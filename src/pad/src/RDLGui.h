@@ -7,8 +7,8 @@
 #include <string>
 #include <utility>
 
-#include "web/core.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace utl {
 class Logger;

@@ -12,8 +12,6 @@
 #include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "dpl/Opendp.h"
-#include "web/core.h"
-#include "web/heatMap.h"
 #include "heatMap.h"
 #include "ir_network.h"
 #include "ir_solver.h"
@@ -24,6 +22,8 @@
 #include "shape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
 using odb::dbBlock;
 using odb::dbSigType;

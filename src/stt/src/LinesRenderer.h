@@ -6,8 +6,8 @@
 #include <utility>
 #include <vector>
 
-#include "web/core.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace stt {
 

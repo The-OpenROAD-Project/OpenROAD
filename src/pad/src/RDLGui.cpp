@@ -12,10 +12,10 @@
 #include "RDLNet.h"
 #include "RDLRouter.h"
 #include "RDLSegment.h"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace pad {
 

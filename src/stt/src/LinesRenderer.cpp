@@ -3,8 +3,8 @@
 
 #include "LinesRenderer.h"
 
-#include "web/core.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "web/core.h"
 
 namespace stt {
 

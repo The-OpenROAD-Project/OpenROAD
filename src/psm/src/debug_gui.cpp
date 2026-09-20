@@ -14,7 +14,6 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "connection.h"
-#include "web/core.h"
 #include "ir_network.h"
 #include "ir_solver.h"
 #include "node.h"
@@ -23,6 +22,7 @@
 #include "odb/geom.h"
 #include "shape.h"
 #include "sta/Scene.hh"
+#include "web/core.h"
 
 namespace psm {
 

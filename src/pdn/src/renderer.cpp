@@ -10,7 +10,6 @@
 #include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
@@ -18,6 +17,7 @@
 #include "straps.h"
 #include "utl/Logger.h"
 #include "via.h"
+#include "web/core.h"
 
 namespace pdn {
 

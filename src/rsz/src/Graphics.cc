@@ -4,9 +4,9 @@
 #include "Graphics.hh"
 
 #include "BufferedNet.hh"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace rsz {
 

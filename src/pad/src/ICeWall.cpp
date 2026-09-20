@@ -21,7 +21,6 @@
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -29,6 +28,7 @@
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace pad {
 

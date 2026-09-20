@@ -19,7 +19,6 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -35,6 +34,7 @@
 #include "utl/Logger.h"
 #include "via.h"
 #include "via_repair.h"
+#include "web/core.h"
 
 namespace pdn {
 
