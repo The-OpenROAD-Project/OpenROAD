@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
@@ -27,8 +27,8 @@ namespace {
 TEST(WebPainterTest, RecordsRect)
 {
   WebPainter painter(odb::Rect(0, 0, 1000, 1000), 0.256);
-  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true);
-  painter.setBrush(gui::Painter::kBlue);
+  painter.setPen(web::Painter::kRed, /*cosmetic=*/true);
+  painter.setBrush(web::Painter::kBlue);
   painter.drawRect(odb::Rect(10, 20, 100, 200));
 
   ASSERT_EQ(painter.ops().size(), 1u);
@@ -44,7 +44,7 @@ TEST(WebPainterTest, RecordsRect)
 TEST(WebPainterTest, RecordsLine)
 {
   WebPainter painter(odb::Rect(0, 0, 1000, 1000), 1.0);
-  painter.setPen(gui::Painter::kGreen, /*cosmetic=*/false, /*width=*/3);
+  painter.setPen(web::Painter::kGreen, /*cosmetic=*/false, /*width=*/3);
   painter.drawLine(odb::Point(1, 2), odb::Point(3, 4));
 
   ASSERT_EQ(painter.ops().size(), 1u);
@@ -58,7 +58,7 @@ TEST(WebPainterTest, RecordsLine)
 TEST(WebPainterTest, KeepsWideStrokeRectNearTileEdge)
 {
   WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
-  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.setPen(web::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
   painter.drawRect(odb::Rect(-2, 10, -1, 20));
 
   ASSERT_EQ(painter.ops().size(), 1u);
@@ -68,7 +68,7 @@ TEST(WebPainterTest, KeepsWideStrokeRectNearTileEdge)
 TEST(WebPainterTest, KeepsWideStrokeLineNearTileEdge)
 {
   WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
-  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.setPen(web::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
   painter.drawLine(odb::Point(-10, 101), odb::Point(110, 101));
 
   ASSERT_EQ(painter.ops().size(), 1u);
@@ -78,7 +78,7 @@ TEST(WebPainterTest, KeepsWideStrokeLineNearTileEdge)
 TEST(WebPainterTest, KeepsWideStrokeCircleNearTileEdge)
 {
   WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
-  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.setPen(web::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
   painter.drawCircle(102, 50, 1);
 
   ASSERT_EQ(painter.ops().size(), 1u);
@@ -88,9 +88,9 @@ TEST(WebPainterTest, KeepsWideStrokeCircleNearTileEdge)
 TEST(WebPainterTest, SaveRestoreState)
 {
   WebPainter painter(odb::Rect(0, 0, 1000, 1000), 1.0);
-  painter.setPen(gui::Painter::kRed);
+  painter.setPen(web::Painter::kRed);
   painter.saveState();
-  painter.setPen(gui::Painter::kGreen);
+  painter.setPen(web::Painter::kGreen);
   painter.drawRect(odb::Rect(0, 0, 10, 10));
   painter.restoreState();
   painter.drawRect(odb::Rect(0, 0, 10, 10));
@@ -365,7 +365,7 @@ TEST(WebViewerHookTest, SessionBroadcast)
 TEST(WebViewerHookTest, CreatesChartAndTracksIt)
 {
   WebViewerHook hook;
-  gui::Chart* c1 = hook.createChart("GPL", "iter", {"hpwl", "overflow"});
+  web::Chart* c1 = hook.createChart("GPL", "iter", {"hpwl", "overflow"});
   ASSERT_NE(c1, nullptr);
   c1->setXAxisFormat("%d");
   c1->addPoint(0, {1.0, 2.0});
@@ -391,11 +391,11 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
       .origin_x = 0.0, .origin_y = 0.0, .scale = 1.0, .cull = dbu_tile};
 
   WebPainter narrow(dbu_tile, 1.0);
-  narrow.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/1);
+  narrow.setPen(web::Painter::kRed, /*cosmetic=*/true, /*width=*/1);
   narrow.drawLine(odb::Point(10, 128), odb::Point(40, 128));
 
   WebPainter wide(dbu_tile, 1.0);
-  wide.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  wide.setPen(web::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
   wide.drawLine(odb::Point(10, 128), odb::Point(40, 128));
 
   const int image_bytes = 256 * 256 * 4;
@@ -414,7 +414,7 @@ TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
 }
 
 //------------------------------------------------------------------------------
-// Per-renderer display controls.  gui::Renderer::checkDisplayControl routes
+// Per-renderer display controls.  web::Renderer::checkDisplayControl routes
 // "Group/Name" here through Gui::checkDisplayControlsVisible when there is no
 // Qt window; the HeadlessViewer default answers "visible" for everything,
 // which made every renderer sub-control read as on.

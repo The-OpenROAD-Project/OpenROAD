@@ -40,7 +40,7 @@ void initGui(Tcl_Interp* interp,
   // Brings up the descriptor registry and the heat map sources for the web
   // viewer and other non-Qt consumers, and gives Gui the database and logger
   // its own dispatch reports through.
-  Gui::get()->initCommon(db, sta, logger);
+  web::Gui::get()->initCommon(db, sta, logger);
 
   // Tcl requires this to be a writable string
   std::string cmd_save_image(

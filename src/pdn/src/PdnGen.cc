@@ -19,7 +19,7 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -739,7 +739,7 @@ void PdnGen::makeConnect(
 
 void PdnGen::setDebugRenderer(bool on)
 {
-  if (on && gui::Gui::enabled()) {
+  if (on && web::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
       debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();

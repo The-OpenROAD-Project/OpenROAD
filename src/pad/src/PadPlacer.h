@@ -15,7 +15,7 @@
 
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "gui/core.h"
+#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -299,7 +299,7 @@ class PlacerPadPlacer : public PadPlacer
   odb::PtrMap<odb::dbInst, int> ideal_positions_;
 
   // debug
-  gui::Chart* chart_{nullptr};
+  web::Chart* chart_{nullptr};
 
   // constants
   static constexpr int kMaxIterations = 5000;
