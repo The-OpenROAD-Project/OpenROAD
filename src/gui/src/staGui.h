@@ -219,7 +219,7 @@ class TimingPathRenderer : public gui::Renderer
                      const gui::Descriptor* net_descriptor,
                      const gui::Descriptor* inst_descriptor,
                      const gui::Descriptor* bterm_descriptor,
-                     const Painter::Color& clock_color,
+                     const web::Painter::Color& clock_color,
                      bool draw_clock,
                      bool draw_signal);
 
@@ -267,7 +267,7 @@ class TimingConeRenderer : public gui::Renderer
   ConeDepthMap map_;
   float min_timing_;
   float max_timing_;
-  SpectrumGenerator color_generator_;
+  web::SpectrumGenerator color_generator_;
 
   bool isSupplyPin(const sta::Pin* pin) const;
 };
@@ -347,7 +347,7 @@ class PinSetWidget : public QWidget
 
  signals:
   void addRemoveTriggered(PinSetWidget*);
-  void inspect(const Selected& selected);
+  void inspect(const web::Selected& selected);
 
  public slots:
   void clearPins() { setPins({}); }
@@ -411,13 +411,13 @@ class TimingControlsDialog : public QDialog
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
   const sta::ClockSet* getClocks();
 
-  const sta::Pin* convertTerm(Gui::Term term) const;
+  const sta::Pin* convertTerm(web::Gui::Term term) const;
 
   sta::Scene* getScene() const { return sta_->getScene(); }
   void setScene(sta::Scene* scene) { sta_->setScene(scene); }
 
  signals:
-  void inspect(const Selected& selected);
+  void inspect(const web::Selected& selected);
   void expandClock(bool expand);
 
  public slots:

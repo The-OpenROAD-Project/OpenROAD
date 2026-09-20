@@ -205,7 +205,7 @@ void GuiPainter::drawRuler(int x0,
     // flip text to keep it in the right position
     painter_->scale(-1, -1);
   }
-  std::string text_length = Descriptor::Property::convert_dbu(len, false);
+  std::string text_length = web::Descriptor::Property::convert_dbu(len, false);
   if (!label.empty()) {
     // label on next to length
     drawString(0, 0, kBottomCenter, label + ": " + text_length);

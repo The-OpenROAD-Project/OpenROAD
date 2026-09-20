@@ -16,7 +16,7 @@ namespace gui {
 
 namespace {
 
-using SetupMap = std::map<HeatMapDataSource*, HeatMapSetup*>;
+using SetupMap = std::map<web::HeatMapDataSource*, HeatMapSetup*>;
 
 SetupMap& activeSetups()
 {
@@ -26,7 +26,7 @@ SetupMap& activeSetups()
 
 }  // namespace
 
-void showHeatMapSetupDialog(HeatMapDataSource* source)
+void showHeatMapSetupDialog(web::HeatMapDataSource* source)
 {
   if (source == nullptr || source->getBlock() == nullptr) {
     return;

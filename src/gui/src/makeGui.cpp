@@ -38,8 +38,8 @@ void initGui(Tcl_Interp* interp,
              utl::Logger* logger)
 {
   // Brings up the descriptor registry and the heat map sources for the web
-  // viewer and other non-Qt consumers, and gives Gui the database and logger
-  // its own dispatch reports through.
+  // viewer and other non-Qt consumers, and gives web::Gui the database and
+  // logger its own dispatch reports through.
   web::Gui::get()->initCommon(db, sta, logger);
 
   // Tcl requires this to be a writable string

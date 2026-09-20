@@ -70,10 +70,10 @@ class BrowserWidget : public QDockWidget,
   void paintEvent(QPaintEvent* event) override;
 
  signals:
-  void select(const SelectionSet& selected);
-  void removeSelect(const Selected& selected);
-  void highlight(const SelectionSet& selected);
-  void removeHighlight(const Selected& selected);
+  void select(const web::SelectionSet& selected);
+  void removeSelect(const web::Selected& selected);
+  void highlight(const web::SelectionSet& selected);
+  void removeHighlight(const web::Selected& selected);
 
   void updateModuleVisibility(odb::dbModule* module, bool visible);
   void updateModuleColor(odb::dbModule* module,
@@ -107,7 +107,7 @@ class BrowserWidget : public QDockWidget,
 
   void makeMenu();
 
-  Selected getSelectedFromIndex(const QModelIndex& index);
+  web::Selected getSelectedFromIndex(const QModelIndex& index);
 
   void toggleParent(QStandardItem* item);
 
@@ -129,12 +129,12 @@ class BrowserWidget : public QDockWidget,
   bool ignore_selection_;
 
   QMenu* menu_;
-  Selected menu_item_;
+  web::Selected menu_item_;
   static const int kSortRole;
 
   odb::PtrSet<odb::dbModule> getChildren(odb::dbModule* parent);
   odb::PtrSet<odb::dbModule> getAllChildren(odb::dbModule* parent);
-  SelectionSet getMenuItemChildren();
+  web::SelectionSet getMenuItemChildren();
 
   void updateChildren(odb::dbModule* module, const QColor& color);
   void resetChildren(odb::dbModule* module);

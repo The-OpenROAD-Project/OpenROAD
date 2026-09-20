@@ -8,6 +8,6 @@
 
 namespace gui {
 
-void showHeatMapSetupDialog(HeatMapDataSource* source);
+void showHeatMapSetupDialog(web::HeatMapDataSource* source);
 
 }  // namespace gui

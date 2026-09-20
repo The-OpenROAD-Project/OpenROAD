@@ -92,11 +92,11 @@ odb::dbInst* QtDialogs::insertBuffer(odb::dbNet* net, sta::dbSta* sta)
     return nullptr;
   }
 
-  Gui::get()->redraw();
+  web::Gui::get()->redraw();
   return buffer_inst;
 }
 
-void QtDialogs::showHeatMapSetup(HeatMapDataSource* source)
+void QtDialogs::showHeatMapSetup(web::HeatMapDataSource* source)
 {
   showHeatMapSetupDialog(source);
 }

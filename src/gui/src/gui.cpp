@@ -808,7 +808,7 @@ namespace gui {
 
 // The entry points keep their own namespace: gui/gui.h and gui/MakeGui.h
 // declare them there, and OpenRoad calls them by that name.  Everything they
-// reach for -- the window, the backend, Gui itself -- is web's now.
+// reach for -- the window, the backend, web::Gui itself -- is web's now.
 using namespace web;  // NOLINT(build/namespaces)
 
 int startGui(int& argc,
@@ -889,7 +889,7 @@ int startGui(int& argc,
   QObject::connect(
       main_window, &MainWindow::exit, [&]() { exit_requested = true; });
 
-  // Hide the Gui if someone chooses hide from the menu in the window
+  // Hide the web::Gui if someone chooses hide from the menu in the window
   QObject::connect(main_window, &MainWindow::hide, [gui]() { gui->hideGui(); });
 
   // Save the window's status into the settings when quitting.
@@ -967,17 +967,17 @@ int startGui(int& argc,
   // Uninstall before destroying the window, not after.  ~MainWindow destroys
   // its children in construction order, so DisplayControls (the first one)
   // is already gone when DRCWidget and the clock viewer destroy the
-  // Renderers they own.  Each ~Renderer calls Gui::unregisterRenderer, and
-  // with the backend still installed that would reach
-  // main_window->getControls() on a freed DisplayControls.
-  Gui::get()->setBackend(nullptr);
+  // Renderers they own.  Each ~web::Renderer calls
+  // web::Gui::unregisterRenderer, and with the backend still installed that
+  // would reach main_window->getControls() on a freed DisplayControls.
+  web::Gui::get()->setBackend(nullptr);
 
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
   application = nullptr;
 
-  Gui::resetDbuConversions();
+  web::Gui::resetDbuConversions();
 
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();

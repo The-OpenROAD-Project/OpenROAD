@@ -39,11 +39,11 @@ class LayoutTabs : public QTabWidget
  public:
   LayoutTabs(QtOptions* options,
              ScriptWidget* output_widget,
-             const SelectionSet& selected,
-             const HighlightSet& highlighted,
+             const web::SelectionSet& selected,
+             const web::HighlightSet& highlighted,
              const std::vector<std::unique_ptr<Ruler>>& rulers,
              const std::vector<std::unique_ptr<Label>>& labels,
-             Gui* gui,
+             web::Gui* gui,
              std::function<bool()> using_dbu,
              std::function<bool()> using_poly_decomp_view,
              std::function<bool()> show_ruler_as_euclidian,
@@ -83,9 +83,9 @@ class LayoutTabs : public QTabWidget
   // active viewer should be emitting signals, but all are connected
   // as signal-to-signal connections.
   void location(int x, int y);
-  void selected(const Selected& selected, bool show_connectivity = false);
-  void addSelected(const Selected& selected);
-  void addSelected(const SelectionSet& selected);
+  void selected(const web::Selected& selected, bool show_connectivity = false);
+  void addSelected(const web::Selected& selected);
+  void addSelected(const web::SelectionSet& selected);
   void addRuler(int x0, int y0, int x1, int y1);
   void focusNetsChanged();
   void routeGuidesChanged();
@@ -107,8 +107,8 @@ class LayoutTabs : public QTabWidget
   void fullRepaint();
   void startRulerBuild();
   void cancelRulerBuild();
-  void selection(const Selected& selection);
-  void selectionFocus(const Selected& focus);
+  void selection(const web::Selected& selection);
+  void selectionFocus(const web::Selected& focus);
   void updateModuleVisibility(odb::dbModule* module, bool visible);
   void updateModuleColor(odb::dbModule* module,
                          const QColor& color,
@@ -129,12 +129,12 @@ class LayoutTabs : public QTabWidget
 
   QtOptions* options_;
   ScriptWidget* output_widget_;
-  const SelectionSet& selected_;
-  const HighlightSet& highlighted_;
+  const web::SelectionSet& selected_;
+  const web::HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   const std::vector<std::unique_ptr<Label>>& labels_;
   odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings> modules_;
-  Gui* gui_;
+  web::Gui* gui_;
   std::function<bool()> using_dbu_;
   std::function<bool()> using_poly_decomp_view_;
   std::function<bool()> show_ruler_as_euclidian_;

@@ -20,8 +20,8 @@ namespace gui {
 // Adds the Qt-typed half of the display options to the Qt-free gui::Options
 // predicates.  Implemented by DisplayControls and consumed by the Qt painters
 // (GuiPainter, RenderThread), which hold a QtOptions* rather than going
-// through Painter::getOptions().
-class QtOptions : public Options
+// through web::Painter::getOptions().
+class QtOptions : public web::Options
 {
  public:
   virtual QColor background() = 0;
