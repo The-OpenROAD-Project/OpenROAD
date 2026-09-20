@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "gui/core.h"
 #include "gui/descriptor_registry.h"
 #include "gui/heatMap.h"
@@ -978,6 +979,7 @@ int Gui::select(const std::string& type,
   // how a bus bit is named: req_msg\[0\].  Unescaped brackets are a character
   // class, as in any glob, so req_msg[0] means req_msg0.
   const int match_flags = filter_case_sensitive ? 0 : FNM_CASEFOLD;
+  const bool literal = name_filter.find_first_of("*?[\\") == std::string::npos;
 
   bool found = false;
   int result = 0;
@@ -991,7 +993,13 @@ int Gui::select(const std::string& type,
     descriptor->visitAllObjects([&](const Selected& sel) {
       if (!name_filter.empty()) {
         const std::string sel_name = sel.getName();
-        if (fnmatch(name_filter.c_str(), sel_name.c_str(), match_flags) != 0) {
+        if (literal) {
+          if (filter_case_sensitive ? sel_name != name_filter
+                                    : !boost::iequals(sel_name, name_filter)) {
+            return;
+          }
+        } else if (fnmatch(name_filter.c_str(), sel_name.c_str(), match_flags)
+                   != 0) {
           return;
         }
       }

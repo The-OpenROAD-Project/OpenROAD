@@ -60,9 +60,16 @@ if { ![gui::supported] } {
     expect "prefix" { select -type Inst -name {FILLER*} } 266
     expect "case insensitive" \
       { select -type Inst -name {filler*} -case_insensitive } 266
+
+    # A literal pattern skips fnmatch, so the case-insensitive compare on that
+    # path is a separate one and needs its own case.
+    expect "case insensitive literal" \
+      { select -type Inst -name {filler_0_0_1} -case_insensitive } 1
     expect "character class" { select -type Inst -name {[Ff]ILLER*} } 266
 
-    # A bus bit: the brackets are the name, so they have to be escaped.
+    # A bus bit: the brackets are the name, so they have to be escaped.  This
+    # also guards the literal fast path: a pattern containing a backslash is
+    # not literal, and treating it as one is the bug this used to have.
     expect "escaped bus bit" { select -type Net -name {req_msg\[0\]} } 1
 
     # Unescaped they are a character class, so this asks for req_msg0,
