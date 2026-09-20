@@ -9,7 +9,7 @@
 #include "AbstractGrouteRenderer.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 

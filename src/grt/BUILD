@@ -249,7 +249,6 @@ cc_library(
         ":grt",
         ":grt_private_hdrs",
         "//:ord",
-        "//src/gui",
         "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",

@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"

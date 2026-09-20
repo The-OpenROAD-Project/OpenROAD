@@ -4,7 +4,7 @@
 #include "SteinerRenderer.h"
 
 #include "est/SteinerTree.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/geom.h"
 
 namespace est {

@@ -10,7 +10,7 @@
 
 #include "Clock.h"
 #include "Util.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 

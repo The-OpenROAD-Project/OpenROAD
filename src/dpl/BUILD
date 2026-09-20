@@ -137,7 +137,7 @@ cc_library(
         ":dpl",
         ":dpl_private_hdrs",
         "//:ord",
-        "//src/gui",
+        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.icl",

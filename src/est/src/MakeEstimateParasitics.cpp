@@ -8,7 +8,7 @@
 
 #include "SteinerRenderer.h"
 #include "est/EstimateParasitics.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "tcl.h"
 #include "utl/decode.h"
