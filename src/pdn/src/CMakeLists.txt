@@ -21,6 +21,7 @@ target_sources(pdn
     domain.cpp
     power_cells.cpp
     grid.cpp
+    polygon.cpp
     grid_component.cpp
     rings.cpp
     straps.cpp
