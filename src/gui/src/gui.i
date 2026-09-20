@@ -79,8 +79,8 @@ bool enabled()
 }
 
 // True only while the Qt main window is running.  Tcl commands that a
-// non-Qt viewer also implements dispatch on this, so the non-Qt stub
-// defines it too (see stub.cpp) and it is always callable.
+// non-Qt viewer also implements dispatch on this, so makeGui.cpp defines it
+// too and it is always callable.
 bool has_ui()
 {
   return gui::Gui::hasUI();
