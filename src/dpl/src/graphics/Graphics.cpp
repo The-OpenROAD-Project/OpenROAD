@@ -13,7 +13,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"

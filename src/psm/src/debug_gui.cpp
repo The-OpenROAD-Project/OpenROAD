@@ -14,7 +14,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "connection.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "ir_network.h"
 #include "ir_solver.h"
 #include "node.h"

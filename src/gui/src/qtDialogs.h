@@ -28,6 +28,8 @@ class QtDialogs : public Dialogs
                                 int current) override;
 
   odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) override;
+
+  void showHeatMapSetup(HeatMapDataSource* source) override;
 };
 
 }  // namespace gui

@@ -18,10 +18,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # and the Qt gui.  Mirrors //src/gui:core in the Bazel build; keep the two
 # source lists in step.
 #
-# Not yet complete on its own.  It carries Gui's dispatch spine, but the Tcl
-# command surface and the startGui/initGui entry points are still implemented
-# twice, in gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of
-# those too.  Phase 3 is moving that surface here slice by slice.
+# Not complete on its own.  It carries Gui's dispatch spine and everything a
+# module outside gui calls, but the Qt gui's own Tcl command surface stays in
+# gui.cpp, and the startGui/initGui entry points are implemented once per
+# build -- gui.cpp for a Qt one, makeGui.cpp for a CLI one -- so a binary has
+# to link one of those too.
 #
 # This target does not take the gui target's LTO opt-out below.  That one is
 # there for a crash in Qt plugin loading, and nothing here is Qt: no
@@ -157,7 +158,7 @@ else()
     message(STATUS "GUI is not enabled")
   endif()
   add_library(gui
-    src/stub.cpp
+    src/makeGui.cpp
   )
   target_link_libraries(gui
     PUBLIC

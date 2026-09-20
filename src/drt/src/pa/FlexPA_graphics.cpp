@@ -14,7 +14,7 @@
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "pa/FlexPA.h"
 #include "pa/FlexPA_unique.h"
 #include "utl/Logger.h"

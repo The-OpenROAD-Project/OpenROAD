@@ -43,7 +43,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"

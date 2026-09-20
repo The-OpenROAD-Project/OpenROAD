@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "ResizerObserver.hh"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"

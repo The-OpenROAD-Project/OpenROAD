@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "observer.h"
 #include "odb/db.h"
 

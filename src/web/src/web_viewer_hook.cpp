@@ -17,7 +17,7 @@
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "utl/Logger.h"
 #include "web_chart.h"
 

@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "heatMapGui.h"
 #include "insertBufferDialog.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -93,6 +94,11 @@ odb::dbInst* QtDialogs::insertBuffer(odb::dbNet* net, sta::dbSta* sta)
 
   Gui::get()->redraw();
   return buffer_inst;
+}
+
+void QtDialogs::showHeatMapSetup(HeatMapDataSource* source)
+{
+  showHeatMapSetupDialog(source);
 }
 
 }  // namespace gui

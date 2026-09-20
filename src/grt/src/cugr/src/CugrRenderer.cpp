@@ -9,7 +9,7 @@
 
 #include "AbstractCugrRenderer.h"
 #include "grt/GRoute.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

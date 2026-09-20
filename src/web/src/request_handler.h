@@ -20,7 +20,7 @@
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
 #include "color.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tcl.h"

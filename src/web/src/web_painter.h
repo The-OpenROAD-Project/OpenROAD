@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "polygon.h"
 
 namespace fin {

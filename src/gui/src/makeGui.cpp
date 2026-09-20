@@ -1,44 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-// This file is only used when we can't find Qt5 and are thus
-// disabling the GUI.  It is not included when Qt5 is found.
+// The two entry points OpenRoad calls into gui with, for a build that has no
+// Qt.  A Qt build compiles gui.cpp's versions of them instead and never sees
+// this file, so between them every binary has exactly one of each.
 
 #include <any>
 #include <cstdio>
-#include <map>
-#include <set>
 #include <string>
-#include <typeinfo>
-#include <utility>
-#include <vector>
 
-#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
-#include "odb/geom.h"
 #include "tcl.h"
 
 namespace gui {
-
-void HeatMapDataSource::registerHeatMap()
-{
-  // gpl / other modules call this to expose their heatmap to the GUI.
-  // In headless mode the web viewer enumerates heatmaps via
-  // gui::getRegisteredHeatMapSources() (factory-backed sources) so this
-  // one-off pathway does nothing here for now.  Left intentionally as
-  // a no-op until heatmap plumbing for ad-hoc sources lands.
-}
-
-void gui::Gui::setChartFactory(ChartFactory factory)
-{
-  chart_factory_ = std::move(factory);
-}
-
-void Gui::triggerAction(const std::string& /* action */)
-{
-}
 
 // using namespace odb;
 int startGui(int& argc,
@@ -96,34 +72,6 @@ void initGui(Tcl_Interp* interp,
       "  }"
       "}");
   Tcl_Eval(interp, cmd_has_ui.c_str());
-}
-
-Chart* Gui::addChart(const std::string& name,
-                     const std::string& x_label,
-                     const std::vector<std::string>& y_labels)
-{
-  if (chart_factory_) {
-    return chart_factory_(name, x_label, y_labels);
-  }
-  return nullptr;
-}
-
-int Gui::select(const std::string& type,
-                const std::string& name_filter,
-                const std::string& attribute,
-                const std::any& value,
-                bool filter_case_sensitive,
-                int highlight_group)
-{
-  return 0;
-}
-
-void Gui::timingCone(Term term, bool fanin, bool fanout)
-{
-}
-
-void Gui::timingPathsThrough(const std::set<Term>& terms)
-{
 }
 
 }  // namespace gui

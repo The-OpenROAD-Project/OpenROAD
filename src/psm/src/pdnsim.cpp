@@ -12,7 +12,7 @@
 #include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "dpl/Opendp.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "heatMap.h"
 #include "ir_network.h"

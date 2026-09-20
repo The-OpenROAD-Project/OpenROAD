@@ -7,7 +7,7 @@
 #include <string>
 #include <utility>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/geom.h"
 
 namespace utl {

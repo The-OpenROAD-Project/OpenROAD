@@ -10,7 +10,7 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"

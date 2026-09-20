@@ -11,7 +11,7 @@
 
 #include "boost/json.hpp"
 #include "gtest/gtest.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "gui/heatMap.h"
 #include "tst/nangate45_fixture.h"
 #include "web/web.h"

@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "boost/geometry/index/predicates.hpp"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"

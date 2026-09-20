@@ -6,7 +6,7 @@
 #include "gpl/Replace.h"
 #include "graphicsImpl.h"
 #include "graphicsNone.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"

@@ -42,7 +42,7 @@ target_link_libraries(pdn
   PRIVATE
     odb
     utl_lib
-    gui
+    gui_core
     Boost::boost
 )
 
@@ -72,7 +72,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       pdn
       odb
-      gui
+      gui_core
     )
 
 endif()

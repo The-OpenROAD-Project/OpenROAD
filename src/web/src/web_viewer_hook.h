@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 
 namespace utl {
 class Logger;
@@ -77,14 +77,14 @@ class SessionRegistry
 };
 
 // The web viewer's bridge to gui::Gui.  Installed as the Gui's
-// HeadlessViewer so renderers (gpl::GraphicsImpl, etc.) can drive pause
+// GuiBackend so renderers (gpl::GraphicsImpl, etc.) can drive pause
 // and redraw even when the Qt GUI is not present.  Also owns the
 // gui::Chart factory so addChart() returns WebChart instances.
 //
 // Lifetime: constructed by WebServer before sessions start, destroyed
 // after all sessions are torn down.  The destructor signals any thread
 // blocked in pause() so the placer doesn't hang on shutdown.
-class WebViewerHook : public gui::HeadlessViewer
+class WebViewerHook : public gui::GuiBackend
 {
  public:
   WebViewerHook();
@@ -95,7 +95,7 @@ class WebViewerHook : public gui::HeadlessViewer
   // Flush accumulated log output to all connected clients.
   void drainLogs();
 
-  // --- gui::HeadlessViewer ---
+  // --- gui::GuiBackend ---
   void redraw() override;
   void pause(int timeout_ms) override;
   bool isPaused() const override;

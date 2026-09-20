@@ -14,7 +14,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "ir_network.h"
 #include "node.h"
 #include "odb/PtrSetMap.h"

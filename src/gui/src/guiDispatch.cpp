@@ -6,19 +6,26 @@
 // installed -- the Qt gui's MainWindow wrapper, or a headless viewer such as
 // the web one -- so this file has no Qt in it.
 //
-// The rest of Gui, the Tcl command surface, is still implemented twice, in
-// gui.cpp and stub.cpp.  It moves here slice by slice.
+// What is left in gui.cpp is the Qt gui's own command surface: its menus and
+// widgets, the timing and clock views, and the window itself.
+
+#include <fnmatch.h>
 
 #include <algorithm>
 #include <any>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <typeinfo>
+#include <utility>
+#include <vector>
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "gui/core.h"
 #include "gui/descriptor_registry.h"
 #include "gui/heatMap.h"
+#include "heatMapRenderer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -52,16 +59,16 @@ bool Gui::enabled()
 bool Gui::hasUI()
 {
   // Ask the backend rather than assuming the slot it sits in implies a
-  // window: HeadlessViewer is an alias of GuiBackend, so a viewer without
-  // one type-checks into either slot, and every "if (!hasUI()) return;"
-  // guard in gui.cpp would then fall through to a null main_window.  Asking
+  // window: both slots hold a GuiBackend, so a viewer without a window
+  // type-checks into either, and every "if (!hasUI()) return;" guard in
+  // gui.cpp would then fall through to a null main_window.  Asking
   // activeBackend() rather than backend_ keeps the answer about where calls
   // actually land, which is what the guards care about.
   const GuiBackend* backend = Gui::get()->activeBackend();
   return backend != nullptr && backend->hasWindow();
 }
 
-void Gui::setHeadlessViewer(HeadlessViewer* viewer)
+void Gui::setHeadlessViewer(GuiBackend* viewer)
 {
   headless_viewer_ = viewer;
 }
@@ -182,6 +189,19 @@ std::string quoteTcl(const std::string& str)
   }
   quoted += '"';
   return quoted;
+}
+
+// The "Valid options are: ..." tail of the heat map errors below.
+std::string joinWithCommas(const std::vector<std::string>& items)
+{
+  std::string joined;
+  for (const std::string& item : items) {
+    if (!joined.empty()) {
+      joined += ", ";
+    }
+    joined += item;
+  }
+  return joined;
 }
 
 }  // namespace
@@ -748,6 +768,359 @@ void Gui::saveImage(const std::string& filename,
   save_cmds += "unset ::gui::display_settings\n";
   save_cmds += "gui::hide";
   launcher->openAndRun(save_cmds);
+}
+
+void Gui::syncHeatMapChips()
+{
+  if (hasUI() || db_ == nullptr) {
+    return;
+  }
+
+  // Console and headless sessions do not receive MainWindow::setBlock().
+  auto* chip = db_->getChip();
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getChip() != chip) {
+      heat_map->setChip(chip);
+      heat_map->destroyMap();
+    }
+  }
+}
+
+const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
+{
+  syncHeatMapChips();
+  return heat_maps_;
+}
+
+HeatMapDataSource* Gui::getHeatMap(const std::string& name)
+{
+  syncHeatMapChips();
+
+  HeatMapDataSource* source = nullptr;
+
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getShortName() == name) {
+      source = heat_map;
+      break;
+    }
+  }
+
+  if (source == nullptr) {
+    std::vector<std::string> options;
+    options.reserve(heat_maps_.size());
+    for (auto* heat_map : heat_maps_) {
+      options.push_back(heat_map->getShortName());
+    }
+    logger_->error(utl::GUI,
+                   28,
+                   "{} is not a known map. Valid options are: {}",
+                   name,
+                   joinWithCommas(options));
+  }
+
+  return source;
+}
+
+void Gui::setHeatMapSetting(const std::string& name,
+                            const std::string& option,
+                            const Renderer::Setting& value)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string rebuild_map_option = "rebuild";
+  if (option == rebuild_map_option) {
+    source->destroyMap();
+    source->ensureMap();
+  } else {
+    auto settings = source->getSettings();
+
+    if (!settings.contains(option)) {
+      std::vector<std::string> options{rebuild_map_option};
+      for (const auto& [key, kv] : settings) {
+        options.push_back(key);
+      }
+      logger_->error(utl::GUI,
+                     29,
+                     "{} is not a valid option. Valid options are: {}",
+                     option,
+                     joinWithCommas(options));
+    }
+
+    auto& current_value = settings[option];
+    if (std::holds_alternative<bool>(current_value)) {
+      // is bool
+      if (auto* s = std::get_if<bool>(&value)) {
+        settings[option] = *s;
+      } else if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s != 0;
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s != 0.0;
+      } else {
+        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
+      }
+    } else if (std::holds_alternative<int>(current_value)) {
+      // is int
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s;
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = static_cast<int>(*s);
+      } else {
+        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
+      }
+    } else if (std::holds_alternative<double>(current_value)) {
+      // is double
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = static_cast<double>(*s);
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
+      }
+    } else {
+      // is string
+      if (auto* s = std::get_if<std::string>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 63, "{} must be a string", option);
+      }
+    }
+    source->setSettings(settings);
+  }
+
+  source->redraw();
+}
+
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (!settings.contains(option)) {
+    std::vector<std::string> options;
+    options.reserve(settings.size());
+    for (const auto& [key, kv] : settings) {
+      options.push_back(key);
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   joinWithCommas(options));
+  }
+
+  return settings[option];
+}
+
+void Gui::dumpHeatMap(const std::string& name, const std::string& file)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+  source->dumpToFile(file);
+}
+
+bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
+                                    const std::string& attribute,
+                                    const std::any& value,
+                                    bool& is_valid_attribute)
+{
+  for (const Descriptor::Property& property : properties) {
+    if (attribute == property.name) {
+      is_valid_attribute = true;
+      if (auto props_selected_set
+          = std::any_cast<SelectionSet>(&property.value)) {
+        if (Descriptor::Property::toString(value) == "CONNECTED"
+            && !props_selected_set->empty()) {
+          return true;
+        }
+        for (const auto& selected : *props_selected_set) {
+          if (Descriptor::Property::toString(value) == selected.getName()) {
+            return true;
+          }
+        }
+      } else if (auto props_list
+                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
+        for (const auto& prop : *props_list) {
+          if (Descriptor::Property::toString(prop.first)
+                  == Descriptor::Property::toString(value)
+              || Descriptor::Property::toString(prop.second)
+                     == Descriptor::Property::toString(value)) {
+            return true;
+          }
+        }
+      } else if (Descriptor::Property::toString(value)
+                 == Descriptor::Property::toString(property.value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+int Gui::select(const std::string& type,
+                const std::string& name_filter,
+                const std::string& attribute,
+                const std::any& value,
+                bool filter_case_sensitive,
+                int highlight_group)
+{
+  if (!hasUI()) {
+    return 0;
+  }
+
+  // The same glob the web viewer's find uses, so the two agree about what a
+  // name pattern means.  A backslash escapes the character after it, which is
+  // how a bus bit is named: req_msg\[0\].  Unescaped brackets are a character
+  // class, as in any glob, so req_msg[0] means req_msg0.
+  const int match_flags = filter_case_sensitive ? 0 : FNM_CASEFOLD;
+  const bool literal = name_filter.find_first_of("*?[\\") == std::string::npos;
+
+  bool found = false;
+  int result = 0;
+  auto* registry = DescriptorRegistry::instance();
+  registry->forEachDescriptor([&](const Descriptor* descriptor) {
+    if (found || descriptor->getTypeName() != type) {
+      return;
+    }
+    found = true;
+    SelectionSet selected_set;
+    descriptor->visitAllObjects([&](const Selected& sel) {
+      if (!name_filter.empty()) {
+        const std::string sel_name = sel.getName();
+        if (literal) {
+          if (filter_case_sensitive ? sel_name != name_filter
+                                    : !boost::iequals(sel_name, name_filter)) {
+            return;
+          }
+        } else if (fnmatch(name_filter.c_str(), sel_name.c_str(), match_flags)
+                   != 0) {
+          return;
+        }
+      }
+
+      if (!attribute.empty()) {
+        bool is_valid_attribute = false;
+        Descriptor::Properties properties
+            = descriptor->getProperties(sel.getObject());
+        if (!filterSelectionProperties(
+                properties, attribute, value, is_valid_attribute)) {
+          return;  // doesn't match the attribute filter
+        }
+
+        if (!is_valid_attribute) {
+          logger_->error(
+              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+        }
+      }
+      selected_set.insert(sel);
+    });
+
+    activeBackend()->addSelected(selected_set, true);
+    if (highlight_group != -1) {
+      activeBackend()->addHighlighted(selected_set, highlight_group);
+    }
+
+    result = selected_set.size();
+  });
+
+  if (!found) {
+    logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+  }
+  return result;
+}
+
+void Gui::registerHeatMap(HeatMapDataSource* heatmap)
+{
+  if (heat_maps_.contains(heatmap)) {
+    return;
+  }
+  heat_maps_.insert(heatmap);
+  auto renderer = makeHeatMapRenderer(*heatmap);
+  heatmap->setRedrawCallback(
+      [renderer_ptr = renderer.get()]() { renderer_ptr->redraw(); });
+  heatmap->setSetupCallback([heatmap]() {
+    // A build with no Qt has no dialog to open; the heat map is still
+    // registered and still draws, it just cannot be configured.
+    if (Dialogs* dialogs = Gui::get()->getDialogs()) {
+      dialogs->showHeatMapSetup(heatmap);
+    }
+  });
+  heatmap->setUnregisterCallback(
+      [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
+  registerRenderer(renderer.get());
+  heat_map_renderers_[heatmap] = std::move(renderer);
+  if (auto* backend = activeBackend()) {
+    backend->registerHeatMap(heatmap);
+  }
+}
+
+void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
+{
+  if (!heat_maps_.contains(heatmap)) {
+    return;
+  }
+
+  heatmap->setRedrawCallback({});
+  heatmap->setSetupCallback({});
+  heatmap->setUnregisterCallback({});
+  auto renderer_itr = heat_map_renderers_.find(heatmap);
+  if (renderer_itr != heat_map_renderers_.end()) {
+    unregisterRenderer(renderer_itr->second.get());
+    heat_map_renderers_.erase(renderer_itr);
+  }
+  if (auto* backend = activeBackend()) {
+    backend->unregisterHeatMap(heatmap);
+  }
+  heat_maps_.erase(heatmap);
+}
+
+void Gui::setChartFactory(ChartFactory factory)
+{
+  chart_factory_ = std::move(factory);
+}
+
+Chart* Gui::addChart(const std::string& name,
+                     const std::string& x_label,
+                     const std::vector<std::string>& y_labels)
+{
+  if (hasUI()) {
+    return activeBackend()->addChart(name, x_label, y_labels);
+  }
+  // No charts widget, so a module that wants one supplies its own maker.
+  if (chart_factory_) {
+    return chart_factory_(name, x_label, y_labels);
+  }
+  return nullptr;
+}
+
+void Gui::timingCone(Term term, bool fanin, bool fanout)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->timingCone(term, fanin, fanout);
+}
+
+void Gui::timingPathsThrough(const std::set<Term>& terms)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->timingPathsThrough(terms);
+}
+
+void Gui::triggerAction(const std::string& name)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->triggerAction(name);
 }
 
 void Gui::initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)

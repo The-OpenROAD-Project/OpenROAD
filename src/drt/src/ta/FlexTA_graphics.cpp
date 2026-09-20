@@ -8,7 +8,7 @@
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "ta/FlexTA.h"
 
 namespace drt {
