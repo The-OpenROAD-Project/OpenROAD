@@ -17,9 +17,9 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace odb {
 class dbBlock;

@@ -13,13 +13,13 @@
 #include "boost/json/parse.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
-#include "web/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/heatMap.h"
 
 namespace web {
 namespace {

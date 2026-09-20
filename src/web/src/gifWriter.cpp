@@ -16,10 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 // Defines GifBegin/GifWriteFrame/GifEnd with external linkage behind only a
 // per-TU include guard, so exactly one translation unit per link may include

@@ -14,10 +14,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
+#include "web/core.h"
 #include "web_chart.h"
 #include "web_painter.h"
 #include "web_viewer_hook.h"

@@ -24,8 +24,6 @@
 #include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "web/core.h"
-#include "web/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "heatMapRenderer.h"
@@ -33,6 +31,8 @@
 #include "odb/db.h"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
 namespace web {
 

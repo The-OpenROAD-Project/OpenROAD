@@ -11,9 +11,9 @@
 
 #include "boost/json.hpp"
 #include "gtest/gtest.h"
+#include "tst/nangate45_fixture.h"
 #include "web/core.h"
 #include "web/heatMap.h"
-#include "tst/nangate45_fixture.h"
 #include "web/web.h"
 #include "web_viewer_hook.h"
 

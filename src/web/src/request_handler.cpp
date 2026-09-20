@@ -36,9 +36,6 @@
 #include "color.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "web/core.h"
-#include "web/descriptor_registry.h"
-#include "web/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -53,6 +50,9 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 #include "web/web.h"
 
 namespace web {

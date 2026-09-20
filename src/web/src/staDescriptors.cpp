@@ -18,7 +18,6 @@
 #include "boost/algorithm/string.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -34,6 +33,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace web {
 

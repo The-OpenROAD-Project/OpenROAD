@@ -7,12 +7,12 @@
 #include <utility>
 #include <vector>
 
-#include "web/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "web/heatMap.h"
 
 namespace web {
 

@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace utl {
 class Logger;

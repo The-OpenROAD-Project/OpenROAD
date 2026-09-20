@@ -22,12 +22,12 @@
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
-#include "web/core.h"
-#include "web/descriptor_registry.h"
-#include "web/heatMap.h"
 #include "heatMapRenderer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 
 namespace web {
 

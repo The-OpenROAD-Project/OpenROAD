@@ -26,7 +26,6 @@
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -41,6 +40,7 @@
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
 
 namespace web {
 

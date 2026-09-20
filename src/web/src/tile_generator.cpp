@@ -34,8 +34,6 @@
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
 #include "glyph_cache.h"
-#include "web/core.h"
-#include "web/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -50,6 +48,8 @@
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web_painter.h"
 
 namespace web {

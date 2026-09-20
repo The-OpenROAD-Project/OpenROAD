@@ -12,11 +12,11 @@
 #include "colorGenerator.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
+#include "web/core.h"
 
 namespace web {
 

@@ -37,7 +37,6 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "clock_tree_report.h"
-#include "web/core.h"
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
@@ -45,6 +44,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 #include "web/web.h"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "web_chart.h"

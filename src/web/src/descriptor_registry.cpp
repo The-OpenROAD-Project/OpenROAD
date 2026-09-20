@@ -18,9 +18,9 @@
 
 #include <cstdio>
 
-#include "web/core.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace web {
 
