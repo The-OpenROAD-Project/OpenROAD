@@ -12,7 +12,7 @@
 #include <QString>
 #include <QWidget>
 
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 

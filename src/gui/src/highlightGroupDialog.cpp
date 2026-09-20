@@ -65,7 +65,7 @@ int HighlightGroupDialog::getSelectedHighlightGroup() const
                                                      grp14RadioButton,
                                                      grp15RadioButton,
                                                      grp16RadioButton};
-  for (int i = 0; i < kNumHighlightSet; ++i) {
+  for (int i = 0; i < web::kNumHighlightSet; ++i) {
     if (highlight_group_buttons[i]->isChecked()) {
       return i;
     }

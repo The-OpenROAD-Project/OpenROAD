@@ -32,8 +32,8 @@
 #include "gui/gui.h"
 #include "gui_utils.h"
 
-Q_DECLARE_METATYPE(gui::Selected);
-Q_DECLARE_METATYPE(gui::Descriptor::Editor);
+Q_DECLARE_METATYPE(web::Selected);
+Q_DECLARE_METATYPE(web::Descriptor::Editor);
 Q_DECLARE_METATYPE(gui::EditorItemDelegate::EditType);
 Q_DECLARE_METATYPE(std::any);
 Q_DECLARE_METATYPE(std::string);

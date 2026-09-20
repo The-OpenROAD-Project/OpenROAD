@@ -567,8 +567,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   custom_controls_start_ = root->rowCount();
 
   // register renderers
-  if (gui::Gui::get() != nullptr) {
-    for (auto renderer : gui::Gui::get()->renderers()) {
+  if (web::Gui::get() != nullptr) {
+    for (auto renderer : web::Gui::get()->renderers()) {
       registerRenderer(renderer);
     }
   }

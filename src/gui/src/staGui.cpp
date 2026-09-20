@@ -59,17 +59,17 @@ Q_DECLARE_METATYPE(sta::Scene*);
 namespace gui {
 
 const web::Painter::Color TimingPathRenderer::kInstHighlightColor
-    = web::Painter::Color(gui::Painter::kHighlight, 100);
+    = web::Painter::Color(web::Painter::kHighlight, 100);
 const web::Painter::Color TimingPathRenderer::kPathInstColor
-    = web::Painter::Color(gui::Painter::kMagenta, 100);
+    = web::Painter::Color(web::Painter::kMagenta, 100);
 const web::Painter::Color TimingPathRenderer::kTermColor
-    = web::Painter::Color(gui::Painter::kBlue, 100);
+    = web::Painter::Color(web::Painter::kBlue, 100);
 const web::Painter::Color TimingPathRenderer::kSignalColor
-    = web::Painter::Color(gui::Painter::kRed, 100);
+    = web::Painter::Color(web::Painter::kRed, 100);
 const web::Painter::Color TimingPathRenderer::kClockColor
-    = web::Painter::Color(gui::Painter::kCyan, 100);
+    = web::Painter::Color(web::Painter::kCyan, 100);
 const web::Painter::Color TimingPathRenderer::kCaptureClockColor
-    = web::Painter::Color(gui::Painter::kGreen, 100);
+    = web::Painter::Color(web::Painter::kGreen, 100);
 
 static QString convertDelay(float time,
                             sta::Unit* convert,
@@ -586,10 +586,10 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
 }
 
 void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
-                                       gui::Painter& painter,
-                                       const gui::Descriptor* net_descriptor,
-                                       const gui::Descriptor* inst_descriptor,
-                                       const gui::Descriptor* bterm_descriptor,
+                                       web::Painter& painter,
+                                       const web::Descriptor* net_descriptor,
+                                       const web::Descriptor* inst_descriptor,
+                                       const web::Descriptor* bterm_descriptor,
                                        const web::Painter::Color& clock_color,
                                        bool draw_clock,
                                        bool draw_signal)
@@ -616,7 +616,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
     if (node->isSource()) {
       for (auto* sink_node : node->getPairedNodes()) {
         if (sink_node != nullptr) {
-          gui::Painter::Color wire_color
+          web::Painter::Color wire_color
               = node->isClock() ? clock_color
                                 : TimingPathRenderer::kSignalColor;
           painter.setPenAndBrush(wire_color, true);
@@ -630,7 +630,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
   }
 }
 
-void TimingPathRenderer::drawObjects(gui::Painter& painter)
+void TimingPathRenderer::drawObjects(web::Painter& painter)
 {
   absl::MutexLock guard(&rendering_);
   if (path_ == nullptr) {
@@ -672,9 +672,9 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   }
 }
 
-void TimingPathRenderer::highlightStage(gui::Painter& painter,
-                                        const gui::Descriptor* net_descriptor,
-                                        const gui::Descriptor* inst_descriptor)
+void TimingPathRenderer::highlightStage(web::Painter& painter,
+                                        const web::Descriptor* net_descriptor,
+                                        const web::Descriptor* inst_descriptor)
 {
   if (highlight_stage_.empty()) {
     return;
@@ -821,7 +821,7 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   return false;
 }
 
-void TimingConeRenderer::drawObjects(gui::Painter& painter)
+void TimingConeRenderer::drawObjects(web::Painter& painter)
 {
   if (map_.empty()) {
     return;
@@ -911,9 +911,9 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   // annotate with depth
-  const auto text_anchor = gui::Painter::Anchor::kCenter;
+  const auto text_anchor = web::Painter::Anchor::kCenter;
   const double text_margin = 2.0;
-  painter.setPen(gui::Painter::kWhite, true);
+  painter.setPen(web::Painter::kWhite, true);
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       const odb::Rect pin_rect = pin->getPinLargestBox();

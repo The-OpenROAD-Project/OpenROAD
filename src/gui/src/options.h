@@ -17,7 +17,7 @@ class dbSite;
 
 namespace gui {
 
-// Adds the Qt-typed half of the display options to the Qt-free gui::Options
+// Adds the Qt-typed half of the display options to the Qt-free web::Options
 // predicates.  Implemented by DisplayControls and consumed by the Qt painters
 // (GuiPainter, RenderThread), which hold a QtOptions* rather than going
 // through web::Painter::getOptions().

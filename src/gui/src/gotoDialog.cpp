@@ -44,7 +44,7 @@ void GotoLocationDialog::showInit()
 
 void GotoLocationDialog::goTo()
 {
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   bool convert_x_ok;
   bool convert_y_ok;
   bool convert_s_ok;

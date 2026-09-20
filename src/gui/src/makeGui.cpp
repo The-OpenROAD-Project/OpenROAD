@@ -10,9 +10,9 @@
 #include <string>
 
 #include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "tcl.h"
+#include "web/heatMap.h"
 
 namespace gui {
 

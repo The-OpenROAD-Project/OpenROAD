@@ -33,8 +33,6 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
-#include "gui/descriptor_registry.h"
-#include "gui/heatMap.h"
 #include "gui_utils.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
@@ -53,6 +51,8 @@
 #include "utl/Logger.h"
 #include "utl/decode.h"
 #include "utl/exception.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 
 extern int cmd_argc;
 extern char** cmd_argv;
@@ -833,7 +833,7 @@ int startGui(int& argc,
     }
   }
 #endif
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();
 
@@ -1019,7 +1019,7 @@ void initGui(Tcl_Interp* interp,
   utl::evalTclInit(interp, gui::gui_tcl_inits);
 
   // ensure gui is made
-  auto* gui = gui::Gui::get();
+  auto* gui = web::Gui::get();
   gui->init(db, sta, logger);
 }
 

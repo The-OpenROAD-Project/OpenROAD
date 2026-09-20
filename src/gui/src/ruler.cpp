@@ -216,7 +216,7 @@ web::Descriptor::Actions RulerDescriptor::getActions(
   auto ruler = std::any_cast<Ruler*>(object);
 
   return {{"Delete", [ruler]() {
-             gui::Gui::get()->deleteRuler(ruler->getName());
+             web::Gui::get()->deleteRuler(ruler->getName());
              return web::Selected();  // unselect since this object is now gone
            }}};
 }

@@ -182,7 +182,7 @@ void RenderThread::drawDesignLoadingMessage(web::Painter& painter,
   qpainter->setFont(design_loading_font);
 
   std::string message = "Design loading...";
-  painter.setPen(gui::Painter::kWhite, true);
+  painter.setPen(web::Painter::kWhite, true);
   painter.drawString(
       bounds.xCenter(), bounds.yCenter(), web::Painter::kCenter, message);
 

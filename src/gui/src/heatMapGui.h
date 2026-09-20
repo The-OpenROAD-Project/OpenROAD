@@ -4,7 +4,7 @@
 #pragma once
 
 #include "gui/gui.h"
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2026, The OpenROAD Authors
 
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 #include <QDialog>
 #include <QObject>

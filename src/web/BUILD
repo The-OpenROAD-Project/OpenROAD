@@ -184,9 +184,6 @@ cc_library(
         "src/staDescriptors.cpp",
     ],
     hdrs = [
-        "include/gui/core.h",
-        "include/gui/descriptor_registry.h",
-        "include/gui/heatMap.h",
         "include/web/core.h",
         "include/web/descriptor_registry.h",
         "include/web/heatMap.h",

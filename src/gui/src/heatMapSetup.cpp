@@ -15,7 +15,7 @@
 #include <string>
 #include <variant>
 
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 

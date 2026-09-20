@@ -48,7 +48,6 @@
 #include "globalConnectDialog.h"
 #include "gotoDialog.h"
 #include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "helpWidget.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -68,6 +67,7 @@
 #include "utl/Logger.h"
 #include "utl/Progress.h"
 #include "utl/algorithms.h"
+#include "web/heatMap.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -1253,7 +1253,7 @@ std::string MainWindow::addLabel(int x,
       = std::make_unique<Label>(odb::Point(x, y),
                                 text,
                                 anchor.value_or(web::Painter::Anchor::kCenter),
-                                color.value_or(gui::Painter::kWhite),
+                                color.value_or(web::Painter::kWhite),
                                 size,
                                 std::move(name));
   std::string new_name = new_label->getName();
@@ -1611,7 +1611,7 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
             continue;
           }
           connected_objects.insert(
-              web::Gui::get()->makeSelected(gui::BufferTree(net_obj)));
+              web::Gui::get()->makeSelected(web::BufferTree(net_obj)));
         }
       }
     }

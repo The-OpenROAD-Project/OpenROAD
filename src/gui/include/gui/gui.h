@@ -11,7 +11,7 @@
 
 #include <string>
 
-#include "gui/core.h"
+#include "web/core.h"
 
 struct Tcl_Interp;
 

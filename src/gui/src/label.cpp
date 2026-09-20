@@ -178,7 +178,7 @@ web::Descriptor::Actions LabelDescriptor::getActions(
   auto label = std::any_cast<Label*>(object);
 
   return {{"Delete", [label]() {
-             gui::Gui::get()->deleteLabel(label->getName());
+             web::Gui::get()->deleteLabel(label->getName());
              return web::Selected();  // unselect since this object is now gone
            }}};
 }
