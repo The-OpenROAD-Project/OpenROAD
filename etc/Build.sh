@@ -58,7 +58,7 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
-  -cmake-build                                  DEPRECATED: use the CMake build instead
+  -cmake-build                                  DEPRECATED: Force the CMake build instead
                                                  of Bazel. Bazel is the supported build
                                                  system and is used by default; CMake
                                                  support will be removed in a future
