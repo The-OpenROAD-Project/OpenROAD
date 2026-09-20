@@ -9,6 +9,8 @@
 // The rest of Gui, the Tcl command surface, is still implemented twice, in
 // gui.cpp and stub.cpp.  It moves here slice by slice.
 
+#include <fnmatch.h>
+
 #include <algorithm>
 #include <any>
 #include <map>
@@ -19,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "gui/core.h"
 #include "gui/descriptor_registry.h"
 #include "gui/heatMap.h"
@@ -919,6 +922,117 @@ void Gui::dumpHeatMap(const std::string& name, const std::string& file)
 {
   HeatMapDataSource* source = getHeatMap(name);
   source->dumpToFile(file);
+}
+
+bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
+                                    const std::string& attribute,
+                                    const std::any& value,
+                                    bool& is_valid_attribute)
+{
+  for (const Descriptor::Property& property : properties) {
+    if (attribute == property.name) {
+      is_valid_attribute = true;
+      if (auto props_selected_set
+          = std::any_cast<SelectionSet>(&property.value)) {
+        if (Descriptor::Property::toString(value) == "CONNECTED"
+            && !props_selected_set->empty()) {
+          return true;
+        }
+        for (const auto& selected : *props_selected_set) {
+          if (Descriptor::Property::toString(value) == selected.getName()) {
+            return true;
+          }
+        }
+      } else if (auto props_list
+                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
+        for (const auto& prop : *props_list) {
+          if (Descriptor::Property::toString(prop.first)
+                  == Descriptor::Property::toString(value)
+              || Descriptor::Property::toString(prop.second)
+                     == Descriptor::Property::toString(value)) {
+            return true;
+          }
+        }
+      } else if (Descriptor::Property::toString(value)
+                 == Descriptor::Property::toString(property.value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+int Gui::select(const std::string& type,
+                const std::string& name_filter,
+                const std::string& attribute,
+                const std::any& value,
+                bool filter_case_sensitive,
+                int highlight_group)
+{
+  if (!hasUI()) {
+    return 0;
+  }
+
+  // The same glob the web viewer's find uses, so the two agree about what a
+  // name pattern means.  A backslash escapes the character after it, which is
+  // how a bus bit is named: req_msg\[0\].  Unescaped brackets are a character
+  // class, as in any glob, so req_msg[0] means req_msg0.
+  const int match_flags = filter_case_sensitive ? 0 : FNM_CASEFOLD;
+  const bool literal = name_filter.find_first_of("*?[\\") == std::string::npos;
+
+  bool found = false;
+  int result = 0;
+  auto* registry = DescriptorRegistry::instance();
+  registry->forEachDescriptor([&](const Descriptor* descriptor) {
+    if (found || descriptor->getTypeName() != type) {
+      return;
+    }
+    found = true;
+    SelectionSet selected_set;
+    descriptor->visitAllObjects([&](const Selected& sel) {
+      if (!name_filter.empty()) {
+        const std::string sel_name = sel.getName();
+        if (literal) {
+          if (filter_case_sensitive ? sel_name != name_filter
+                                    : !boost::iequals(sel_name, name_filter)) {
+            return;
+          }
+        } else if (fnmatch(name_filter.c_str(), sel_name.c_str(), match_flags)
+                   != 0) {
+          return;
+        }
+      }
+
+      if (!attribute.empty()) {
+        bool is_valid_attribute = false;
+        Descriptor::Properties properties
+            = descriptor->getProperties(sel.getObject());
+        if (!filterSelectionProperties(
+                properties, attribute, value, is_valid_attribute)) {
+          return;  // doesn't match the attribute filter
+        }
+
+        if (!is_valid_attribute) {
+          logger_->error(
+              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+        }
+      }
+      selected_set.insert(sel);
+    });
+
+    activeBackend()->addSelected(selected_set, true);
+    if (highlight_group != -1) {
+      activeBackend()->addHighlighted(selected_set, highlight_group);
+    }
+
+    result = selected_set.size();
+  });
+
+  if (!found) {
+    logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+  }
+  return result;
 }
 
 void Gui::registerHeatMap(HeatMapDataSource* heatmap)
