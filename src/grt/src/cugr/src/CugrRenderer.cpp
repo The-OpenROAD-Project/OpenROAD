@@ -9,9 +9,9 @@
 
 #include "AbstractCugrRenderer.h"
 #include "grt/GRoute.h"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace grt {
 

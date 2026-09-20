@@ -6,10 +6,10 @@
 #include "gpl/Replace.h"
 #include "graphicsImpl.h"
 #include "graphicsNone.h"
-#include "web/core.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
+#include "web/core.h"
 
 extern "C" {
 extern int Gpl_Init(Tcl_Interp* interp);

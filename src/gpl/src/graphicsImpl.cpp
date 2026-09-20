@@ -17,13 +17,13 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "web/core.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace gpl {
 

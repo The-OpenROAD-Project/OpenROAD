@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "web/core.h"
 #include "observer.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 // This implements the Observer interface and renders to the GUI
 

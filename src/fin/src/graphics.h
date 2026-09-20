@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "web/core.h"
 #include "polygon.h"
+#include "web/core.h"
 
 namespace fin {
 

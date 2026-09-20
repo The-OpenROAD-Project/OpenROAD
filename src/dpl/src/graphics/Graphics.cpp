@@ -13,7 +13,6 @@
 #include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
-#include "web/core.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
@@ -22,6 +21,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace dpl {
 

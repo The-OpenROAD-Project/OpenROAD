@@ -12,10 +12,10 @@
 #include "db/obj/frMPin.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
-#include "web/core.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "pa/FlexPA_unique.h"
+#include "web/core.h"
 
 namespace odb {
 class dbDatabase;

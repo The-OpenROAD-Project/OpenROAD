@@ -9,9 +9,9 @@
 
 #include "db/obj/frBlock.h"
 #include "frBaseTypes.h"
-#include "web/core.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "web/core.h"
 
 namespace odb {
 class dbDatabase;

@@ -8,9 +8,9 @@
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
-#include "web/core.h"
 #include "odb/db.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "web/core.h"
 
 namespace grt {
 

@@ -9,8 +9,8 @@
 
 #include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
-#include "web/core.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace odb {
 class dbDatabase;

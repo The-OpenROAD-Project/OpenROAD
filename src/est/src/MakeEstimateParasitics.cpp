@@ -8,10 +8,10 @@
 
 #include "SteinerRenderer.h"
 #include "est/EstimateParasitics.h"
-#include "web/core.h"
 #include "odb/db.h"
 #include "tcl.h"
 #include "utl/decode.h"
+#include "web/core.h"
 
 extern "C" {
 extern int Est_Init(Tcl_Interp* interp);

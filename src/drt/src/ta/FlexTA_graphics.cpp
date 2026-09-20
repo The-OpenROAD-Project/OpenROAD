@@ -8,8 +8,8 @@
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "web/core.h"
 #include "ta/FlexTA.h"
+#include "web/core.h"
 
 namespace drt {
 

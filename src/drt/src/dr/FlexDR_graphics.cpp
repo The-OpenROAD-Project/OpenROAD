@@ -19,10 +19,10 @@
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
-#include "web/core.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace drt {
 

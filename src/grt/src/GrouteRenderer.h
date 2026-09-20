@@ -9,9 +9,9 @@
 #include "AbstractGrouteRenderer.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
-#include "web/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace grt {
 

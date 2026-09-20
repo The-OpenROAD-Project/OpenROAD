@@ -12,13 +12,13 @@
 #include <vector>
 
 #include "grt/GlobalRouter.h"
-#include "web/core.h"
-#include "web/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
 namespace grt {
 

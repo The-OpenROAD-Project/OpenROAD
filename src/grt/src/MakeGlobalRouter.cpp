@@ -9,11 +9,11 @@
 #include "AbstractRoutingCongestionDataSource.h"
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
-#include "web/heatMap.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
 #include "tcl.h"
 #include "utl/decode.h"
+#include "web/heatMap.h"
 
 extern "C" {
 extern int Grt_Init(Tcl_Interp* interp);
