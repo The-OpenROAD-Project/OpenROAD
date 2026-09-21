@@ -13,8 +13,8 @@
 #
 # The second layer PSM-0072 names is the connect layer, the one immediately
 # outside the source layer, whose pitch and width set the strap pattern. On a
-# backside stack that is routing level - 1, since the levels grow toward the
-# substrate, so this also covers the backside arm of that choice: the layer
+# backside stack the levels grow toward the substrate, so that layer is at
+# routing level - 1, and this test covers that side of the choice: the layer
 # named here must be further *out* than the source layer, never BM1 or BPR.
 source helpers.tcl
 

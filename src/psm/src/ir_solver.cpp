@@ -1138,6 +1138,9 @@ SourceNodes IRSolver::generateSourceNodesGenericStraps() const
   }
   const int pitch = generated_source_settings_.strap_track_pitch
                     * connect_layer->getPitch();
+  if (pitch <= 0) {
+    logger_->error(utl::PSM, 76, "Invalid pitch for strap generation.");
+  }
   const int offset = pitch / 2;
   const int width = connect_layer->getWidth();
 
