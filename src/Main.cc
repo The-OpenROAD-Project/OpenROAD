@@ -491,6 +491,7 @@ static int tclAppInit(int& argc,
               // error; the errorInfo variable may be stale when the file
               // could not be read at all.
               Tcl_Obj* options = Tcl_GetReturnOptions(interp, result);
+              Tcl_IncrRefCount(options);
               Tcl_Obj* key = Tcl_NewStringObj("-errorinfo", -1);
               Tcl_IncrRefCount(key);
               Tcl_Obj* error_info = nullptr;
@@ -499,6 +500,7 @@ static int tclAppInit(int& argc,
               printf("%s\n",
                      error_info ? Tcl_GetString(error_info)
                                 : Tcl_GetStringResult(interp));
+              Tcl_DecrRefCount(options);
             }
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
