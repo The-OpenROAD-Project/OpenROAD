@@ -234,7 +234,7 @@ add_net_to_route(odb::dbNet* net)
 void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 
@@ -259,7 +259,7 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
                                 bool tree3D,
                                 bool edges3D)
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 
@@ -286,7 +286,7 @@ void set_cugr_debug_cmd(odb::dbNet* net,
   const CugrDebugStages stages{patternRoute, resAware, detours, maze, rrr};
   GlobalRouter* global_router = getGlobalRouter();
   // No stages requested disarms; only the drawing needs a GUI and a renderer.
-  if (stages.any() && gui::Gui::enabled()
+  if (stages.any() && web::Gui::enabled()
       && global_router->getDebugCugr() == nullptr) {
     global_router->initDebugCugr(std::make_unique<CugrRenderer>());
   }

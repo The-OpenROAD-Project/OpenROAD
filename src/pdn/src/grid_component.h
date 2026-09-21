@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "polygon.h"
 #include "shape.h"
 
 namespace utl {
@@ -66,6 +68,7 @@ class GridComponent
                     std::vector<std::unique_ptr<Shape>>& replacements);
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
+  std::set<odb::Rect> getShapeRects() const;
 
   virtual void getConnectableShapes(Shape::ShapeTreeMap& shapes) const {}
 
@@ -98,6 +101,11 @@ class GridComponent
   void setNets(const std::vector<odb::dbNet*>& nets);
 
   virtual bool isAutoInserted() const { return false; }
+  virtual bool checkForRepairChannels() const { return true; }
+  // components that the user did not ask for should not become block pins:
+  // the pins of a block are its power interface and are expected to follow the
+  // requested grid
+  virtual bool allowDbPins() const { return true; }
 
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,
@@ -112,11 +120,19 @@ class GridComponent
   virtual bool areIntersectionsAllowed() const { return false; }
 
  private:
+  // The die as a region, for the notch walls addShape has to recognise.  It is
+  // wanted once per shape and the die does not move, so it is built on first
+  // use -- and not at all on a rectangular die, where the bounding box it
+  // would be compared against is the whole test.
+  const Region* getDieRegion() const;
+
   Grid* grid_;
   bool starts_with_power_;
   std::vector<odb::dbNet*> nets_;
 
   Shape::ShapeTreeMap shapes_;
+
+  mutable std::optional<Region> die_region_;
 };
 
 }  // namespace pdn

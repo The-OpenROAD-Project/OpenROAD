@@ -12,52 +12,6 @@ find_package(OpenGL REQUIRED)
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# The Qt-free half of the gui: the data model every other module draws
-# through -- Painter, Renderer, Descriptor/Selected, HeatMapDataSource --
-# published through gui/core.h.  Compiled once and linked by both the CLI
-# and the Qt gui.  Mirrors //src/gui:core in the Bazel build; keep the two
-# source lists in step.
-#
-# Not yet complete on its own: the Gui dispatch it calls into still lives in
-# gui.cpp (Qt) and stub.cpp (CLI), so a binary has to link one of those too.
-#
-# This target does not take the gui target's LTO opt-out below.  That one is
-# there for a crash in Qt plugin loading, and nothing here is Qt: no
-# QApplication, no static QPA plugin, nothing that takes part in loading one.
-# descriptor_registry.cpp and the heatmap sources have also been built with
-# LTO all along, through the gui_descriptors and gui_heatmap_core targets this
-# replaces, and they are on the web tile renderer's hot path.
-add_library(gui_core
-  src/bufferTreeDescriptor.cpp
-  src/colorGenerator.cpp
-  src/dbDescriptors.cpp
-  src/descriptor_registry.cpp
-  src/heatMapCore.cpp
-  src/heatMapPinDensity.cpp
-  src/heatMapPlacementDensity.cpp
-  src/init_descriptors.cpp
-  src/renderer.cpp
-  src/staDescriptors.cpp
-)
-target_link_libraries(gui_core
-  PUBLIC
-    odb
-  PRIVATE
-    absl::synchronization
-    dbSta_lib
-    utl_lib
-    Boost::boost
-    OpenSTA
-)
-target_include_directories(gui_core
-  PUBLIC
-    include
-  PRIVATE
-    src
-    ${OPENSTA_HOME}/include
-    ${DBSTA_HOME}/include
-)
-
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
@@ -116,8 +70,6 @@ if (Qt5_FOUND AND BUILD_GUI)
     resources/resource.qrc
   )
 
-  target_compile_definitions(gui PRIVATE ENABLE_QT)
-
   target_link_libraries(gui
     PUBLIC
       odb
@@ -154,7 +106,7 @@ else()
     message(STATUS "GUI is not enabled")
   endif()
   add_library(gui
-    src/stub.cpp
+    src/makeGui.cpp
   )
   target_link_libraries(gui
     PUBLIC

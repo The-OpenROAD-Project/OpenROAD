@@ -30,7 +30,7 @@ struct tcg_pt
   int visited;  // 1= from another descent, 2+k= _stackV[k]->fr
 };
 
-class tmg_conn_graph
+class ConnectionGraph
 {
  public:
   void init(int ptN, int shortN);

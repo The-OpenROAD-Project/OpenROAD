@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: repair_channel_out_of_options/fakeram45_32x32.lef, created 1 library cells
+[INFO ODB-0227] LEF file: repair_channel_out_of_options/fakeram45_64x62.lef, created 1 library cells
+[INFO ODB-0127] Reading DEF file: repair_channel_out_of_options/floorplan.def
+[INFO ODB-0128] Design: bp_quad
+[INFO ODB-0131]     Created 9 components and 1045 component-terminals.
+[INFO ODB-0134] Finished DEF file: repair_channel_out_of_options/floorplan.def
+[INFO PDN-0001] Inserting grid: grid
+[WARNING PDN-0178] Remaining channel (81.0600, 69.8000) - (86.9500, 75.5700) on metal1 for nets: VSS
+[WARNING PDN-0178] Remaining channel (110.7000, 69.8000) - (116.5900, 75.5700) on metal1 for nets: VSS
+[ERROR PDN-0179] Unable to repair all channels.
+PDN-0179

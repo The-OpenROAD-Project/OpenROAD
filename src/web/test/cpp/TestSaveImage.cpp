@@ -13,13 +13,13 @@
 #include "boost/json/parse.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/heatMap.h"
 
 namespace web {
 namespace {
@@ -414,11 +414,11 @@ TEST_F(SaveImageTest, ParseFromJsonRudyOption)
   EXPECT_TRUE(vis.rudy);
 }
 
-class TestRUDYHeatMap : public gui::HeatMapDataSource
+class TestRUDYHeatMap : public web::HeatMapDataSource
 {
  public:
   explicit TestRUDYHeatMap(utl::Logger* logger)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Estimated Congestion (RUDY)",
                                "RUDY",
                                "RUDY")
@@ -452,7 +452,7 @@ class TestRUDYHeatMap : public gui::HeatMapDataSource
 TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
 {
   auto logger = getLogger();
-  gui::registerHeatMapSource(
+  web::registerHeatMapSource(
       "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger]() {
         return std::make_shared<TestRUDYHeatMap>(logger);
       });
