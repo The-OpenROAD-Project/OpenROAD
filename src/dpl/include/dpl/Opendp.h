@@ -89,6 +89,14 @@ struct GlobalSwapParams
   int sampling_moves = 150;
   int normalization_interval = 1000;
 };
+
+// One routing GCell and how full it is.
+struct GCellDensity
+{
+  odb::Rect gcell;       // the GCell's extent, in block coordinates
+  double density = 1.0;  // its placement density, in [0, 1]
+};
+
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -102,6 +110,50 @@ class Opendp
 
   void legalCellPos(odb::dbInst* db_inst);  // call from rsz
   void initMacrosAndGrid();                 // call from rsz
+
+  // Builds the placement grid -- rows, sites and hard blockages -- without
+  // importing the netlist, which is the expensive half of
+  // initMacrosAndGrid().  Enough for the placement density queries below,
+  // and orders of magnitude cheaper on a large design.
+  //
+  // Both this and initMacrosAndGrid() rebuild the same grid, so a caller
+  // that also needs legalCellPos(), which reads the macros that only
+  // initMacrosAndGrid() paints into it, must use that one instead.
+  void initPlacementGrid();
+
+  ////////////////////////////////////////////////////////////////
+  // Placement density, for callers looking for room to drop a new cell into
+  // (rsz inserting a buffer) so that legalizing it displaces little.  These
+  // take and report block (DBU) coordinates and need the grid, so
+  // initPlacementGrid() (or initMacrosAndGrid()) must have run.
+  //
+  // Density is the instance area inside the region over the legal placement
+  // site area inside it (sites that are in a row and not under a hard
+  // blockage), clamped to [0, 1].  A region without any legal site holds
+  // nothing, so it reads as 1.0 rather than as empty.
+  //
+  // Nothing is cached: each call measures the placement as it stands, which
+  // costs one pass over the instances.
+
+  double getPlacementDensity(const odb::Rect& region) const;
+
+  // Every routing GCell overlapping region, with its own density.  Needs a
+  // GCell grid, so run global routing first.
+  std::vector<GCellDensity> getGCellDensities(const odb::Rect& region) const;
+
+  // The extent of the GCell holding pt grown by radius GCells in every
+  // direction, so radius 0 is that GCell alone and radius 1 its 3x3
+  // neighbourhood, clipped to the core area.  Comes back empty when the
+  // window holds no core area at all.
+  odb::Rect getGCellRegion(const odb::Point& pt, int radius) const;
+
+  // Report the density of that region.  Backs report_gcell_density.
+  void reportGCellDensity(const odb::Point& pt, int radius) const;
+
+  // Report the density of an arbitrary region.  Backs
+  // report_placement_density.
+  void reportPlacementDensity(const odb::Rect& region) const;
+  ////////////////////////////////////////////////////////////////
 
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
@@ -224,6 +276,24 @@ class Opendp
   void updateDbInstLocations();
 
   void initGrid();
+
+  // Placement density support.  Errors out when the grid hasn't been built
+  // yet.
+  odb::dbBlock* densityBlock() const;
+  // Area of the legal placement sites inside region.
+  int64_t placeableArea(const odb::Rect& region) const;
+  // Visits the block-coordinate rect of each legal placement site (in a row
+  // and not under a hard blockage) overlapping region.
+  void visitPlacementSites(
+      const odb::Rect& region,
+      const std::function<void(const odb::Rect& site)>& visitor) const;
+  // Visits the current block-coordinate bbox of each placed instance.
+  void visitPlacedInstances(
+      const std::function<void(const odb::Rect& bbox)>& visitor) const;
+  // The routing GCell boundaries: GCell (i, j) spans
+  // [x_edges[i], x_edges[i + 1]) x [y_edges[j], y_edges[j + 1]).
+  void getGCellEdges(std::vector<int>& x_edges,
+                     std::vector<int>& y_edges) const;
 
   void initPlacementDRC();
 

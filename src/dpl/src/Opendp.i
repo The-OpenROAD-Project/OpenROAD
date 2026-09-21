@@ -10,6 +10,7 @@
 #include "graphics/Graphics.h"
 #include "graphics/DplObserver.h"
 #include "dpl/Opendp.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 %}
@@ -182,6 +183,20 @@ void configure_global_swap_params_cmd(int passes,
                                     normalization_interval,
                                     profiling_excess,
                                     budget_multipliers);
+}
+
+void report_gcell_density_cmd(int x, int y, int radius)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->initPlacementGrid();
+  opendp->reportGCellDensity(odb::Point(x, y), radius);
+}
+
+void report_placement_density_cmd(int x1, int y1, int x2, int y2)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->initPlacementGrid();
+  opendp->reportPlacementDensity(odb::Rect(x1, y1, x2, y2));
 }
 
 void set_extra_dpl_cmd(bool enable)

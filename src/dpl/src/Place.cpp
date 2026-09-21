@@ -1274,6 +1274,19 @@ void Opendp::initMacrosAndGrid()
   setFixedGridCells();
 }
 
+void Opendp::initPlacementGrid()
+{
+  // The same steps importDb() takes to set up the grid, without the
+  // netlist import that dominates its runtime.  Nothing here reads the
+  // network, the architecture or the DRC engine.
+  block_ = db_->getChip()->getBlock();
+  core_ = block_->getCoreArea();
+  grid_->setCore(core_);
+  deleteGrid();
+  grid_->examineRows(block_);
+  initGrid();
+}
+
 void Opendp::convertDbToCell(odb::dbInst* db_inst, Node& cell)
 {
   cell.setType(Node::CELL);

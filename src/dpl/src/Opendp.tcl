@@ -188,6 +188,52 @@ proc optimize_mirroring { args } {
   dpl::optimize_mirroring_cmd
 }
 
+sta::define_cmd_args "report_gcell_density" { x y [-radius radius] }
+
+proc report_gcell_density { args } {
+  sta::parse_key_args "report_gcell_density" args keys {-radius} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPL 106 "No design block found."
+  }
+
+  sta::check_argc_eq2 "report_gcell_density" $args
+  lassign $args x y
+  sta::check_float "x" $x
+  sta::check_float "y" $y
+
+  set radius 0
+  if { [info exists keys(-radius)] } {
+    set radius $keys(-radius)
+    sta::check_positive_integer "-radius" $radius
+  }
+
+  dpl::report_gcell_density_cmd [ord::microns_to_dbu $x] \
+    [ord::microns_to_dbu $y] $radius
+}
+
+sta::define_cmd_args "report_placement_density" { x1 y1 x2 y2 }
+
+proc report_placement_density { args } {
+  sta::parse_key_args "report_placement_density" args keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPL 107 "No design block found."
+  }
+
+  if { [llength $args] != 4 } {
+    utl::error DPL 108 "report_placement_density requires 4 arguments: x1 y1 x2 y2."
+  }
+  lassign $args x1 y1 x2 y2
+  foreach { name value } [list x1 $x1 y1 $y1 x2 $x2 y2 $y2] {
+    sta::check_float $name $value
+  }
+
+  dpl::report_placement_density_cmd \
+    [ord::microns_to_dbu $x1] [ord::microns_to_dbu $y1] \
+    [ord::microns_to_dbu $x2] [ord::microns_to_dbu $y2]
+}
+
 sta::define_cmd_args "improve_placement" {\
     [-random_seed seed]\
     [-max_displacement disp|{disp_x disp_y}]\
