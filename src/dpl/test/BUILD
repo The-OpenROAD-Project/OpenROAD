@@ -323,7 +323,7 @@ filegroup(
 
 cc_test(
     name = "dpl_unittest",
-    srcs = ["dpl_test.cc"],
+    srcs = ["cpp/dpl_test.cc"],
     deps = [
         "//src/dpl",
         "//src/odb/src/db",
@@ -337,7 +337,7 @@ cc_test(
 
 cc_test(
     name = "placement_density_test",
-    srcs = ["placement_density_test.cpp"],
+    srcs = ["cpp/placement_density_test.cpp"],
     deps = [
         "//src/dpl",
         "//src/odb/src/db",
