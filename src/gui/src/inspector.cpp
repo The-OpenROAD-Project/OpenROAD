@@ -32,15 +32,15 @@
 #include "gui/gui.h"
 #include "gui_utils.h"
 
-Q_DECLARE_METATYPE(gui::Selected);
-Q_DECLARE_METATYPE(gui::Descriptor::Editor);
+Q_DECLARE_METATYPE(web::Selected);
+Q_DECLARE_METATYPE(web::Descriptor::Editor);
 Q_DECLARE_METATYPE(gui::EditorItemDelegate::EditType);
 Q_DECLARE_METATYPE(std::any);
 Q_DECLARE_METATYPE(std::string);
 
 namespace gui {
 
-SelectedItemModel::SelectedItemModel(const Selected& object,
+SelectedItemModel::SelectedItemModel(const web::Selected& object,
                                      const QColor& selectable,
                                      const QColor& editable,
                                      QObject* parent)
@@ -120,9 +120,10 @@ void SelectedItemModel::updateObject()
   endResetModel();
 }
 
-void SelectedItemModel::makePropertyItem(const Descriptor::Property& property,
-                                         QStandardItem*& name_item,
-                                         QStandardItem*& value_item)
+void SelectedItemModel::makePropertyItem(
+    const web::Descriptor::Property& property,
+    QStandardItem*& name_item,
+    QStandardItem*& value_item)
 {
   const std::string& name = property.name;
   const std::any& value = property.value;
@@ -133,13 +134,13 @@ void SelectedItemModel::makePropertyItem(const Descriptor::Property& property,
 
   value_item = nullptr;
 
-  // For a SelectionSet a row is created with the set items
+  // For a web::SelectionSet a row is created with the set items
   // as children rows
-  if (auto sel_set = std::any_cast<Descriptor::PropertyList>(&value)) {
+  if (auto sel_set = std::any_cast<web::Descriptor::PropertyList>(&value)) {
     value_item = makePropertyList(name_item, sel_set->begin(), sel_set->end());
-  } else if (auto sel_set = std::any_cast<PropertyTable>(&value)) {
+  } else if (auto sel_set = std::any_cast<web::PropertyTable>(&value)) {
     value_item = makePropertyTable(name_item, *sel_set);
-  } else if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
+  } else if (auto sel_set = std::any_cast<web::SelectionSet>(&value)) {
     value_item = makeList(name_item, sel_set->begin(), sel_set->end());
   } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
     value_item = makeList(name_item, v_list->begin(), v_list->end());
@@ -167,7 +168,7 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
 QStandardItem* SelectedItemModel::makeItem(const std::any& item_param,
                                            bool short_name)
 {
-  if (auto selected = std::any_cast<Selected>(&item_param)) {
+  if (auto selected = std::any_cast<web::Selected>(&item_param)) {
     QStandardItem* item = nullptr;
     if (short_name) {
       item = makeItem(QString::fromStdString(selected->getShortName()));
@@ -179,7 +180,7 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item_param,
     return item;
   }
   return makeItem(
-      QString::fromStdString(Descriptor::Property::toString(item_param)));
+      QString::fromStdString(web::Descriptor::Property::toString(item_param)));
 }
 
 template <typename Iterator>
@@ -210,8 +211,9 @@ QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item,
   return makeItem(QString(QString::number(name_item->rowCount()) + " items"));
 }
 
-QStandardItem* SelectedItemModel::makePropertyTable(QStandardItem* name_item,
-                                                    const PropertyTable& table)
+QStandardItem* SelectedItemModel::makePropertyTable(
+    QStandardItem* name_item,
+    const web::PropertyTable& table)
 {
   const int rows = table.getData().size();
   const int columns = table.getColumnHeaders().size();
@@ -255,15 +257,15 @@ QStandardItem* SelectedItemModel::makePropertyTable(QStandardItem* name_item,
 
 void SelectedItemModel::makeItemEditor(const std::string& name,
                                        QStandardItem* item,
-                                       const Selected& selected,
+                                       const web::Selected& selected,
                                        const EditorItemDelegate::EditType type,
-                                       const Descriptor::Editor& editor)
+                                       const web::Descriptor::Editor& editor)
 {
   item->setData(QVariant::fromValue(selected),
                 EditorItemDelegate::kEditorSelect);
   item->setData(QVariant::fromValue(name), EditorItemDelegate::kEditorName);
 
-  Descriptor::Editor used_editor = editor;
+  web::Descriptor::Editor used_editor = editor;
   if (type == EditorItemDelegate::kBool) {
     // for BOOL, replace options with true/false options
     used_editor.options = {{"True", true}, {"False", false}};
@@ -315,7 +317,7 @@ void EditorItemDelegate::setEditorData(QWidget* editor,
                   ->data(index, kEditorType)
                   .value<EditorItemDelegate::EditType>();
   auto [callback, values]
-      = index.model()->data(index, kEditor).value<Descriptor::Editor>();
+      = index.model()->data(index, kEditor).value<web::Descriptor::Editor>();
   QString value = index.model()->data(index, Qt::EditRole).toString();
 
   if (type != kList) {
@@ -347,7 +349,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   auto type
       = model->data(index, kEditorType).value<EditorItemDelegate::EditType>();
   auto [callback, values]
-      = model->data(index, kEditor).value<Descriptor::Editor>();
+      = model->data(index, kEditor).value<web::Descriptor::Editor>();
 
   const QString old_value = index.model()->data(index, Qt::EditRole).toString();
 
@@ -382,16 +384,16 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   QString edit_save = old_value;  // default to set to old value
   if (accepted) {
     // retrieve property again
-    auto selected = model->data(index, kEditorSelect).value<Selected>();
+    auto selected = model->data(index, kEditorSelect).value<web::Selected>();
     auto item_name = model->data(index, kEditorName).value<std::string>();
 
     auto new_property = selected.getProperty(item_name);
     if (model->data(index, kSelected).isValid()) {
-      auto new_selected = std::any_cast<Selected>(new_property);
+      auto new_selected = std::any_cast<web::Selected>(new_property);
       model->setData(index, QVariant::fromValue(new_selected), kSelected);
     }
-    edit_save
-        = QString::fromStdString(Descriptor::Property::toString(new_property));
+    edit_save = QString::fromStdString(
+        web::Descriptor::Property::toString(new_property));
     model_->selectedItemChanged(index);
   }
   model->setData(index, edit_save, Qt::EditRole);
@@ -700,8 +702,8 @@ int ActionLayout::rowWidth(ItemList& row) const
 
 ////////
 
-Inspector::Inspector(const SelectionSet& selected,
-                     const HighlightSet& highlighted,
+Inspector::Inspector(const web::SelectionSet& selected,
+                     const web::HighlightSet& highlighted,
                      QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new ObjectTree(this)),
@@ -801,8 +803,8 @@ void Inspector::showCommandsMenu(const QPoint& pos)
     return;
   }
 
-  Selected selected
-      = item->data(EditorItemDelegate::kSelected).value<Selected>();
+  web::Selected selected
+      = item->data(EditorItemDelegate::kSelected).value<web::Selected>();
 
   if (selected) {
     if (selected.getTypeName() == "ITerm") {
@@ -885,7 +887,7 @@ int Inspector::getSelectedIteratorPosition()
   return std::distance(selected_.begin(), selected_itr_);
 }
 
-void Inspector::inspect(const Selected& object)
+void Inspector::inspect(const web::Selected& object)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -958,7 +960,7 @@ void Inspector::loadActions()
     delete widget;  // no longer in the map so it's safe to delete
   }
 
-  deselect_action_ = Descriptor::ActionCallback();
+  deselect_action_ = web::Descriptor::ActionCallback();
 
   if (!selection_) {
     return;
@@ -966,33 +968,33 @@ void Inspector::loadActions()
 
   // add action buttons
   for (const auto& action : selection_.getActions()) {
-    if (action.name == Descriptor::kDeselectAction) {
+    if (action.name == web::Descriptor::kDeselectAction) {
       deselect_action_ = action.callback;
     } else {
       makeAction(action);
     }
   }
   if (isHighlighted(selection_)) {
-    makeAction({"Remove from highlight", [this]() -> Selected {
+    makeAction({"Remove from highlight", [this]() -> web::Selected {
                   emit removeHighlight({&selection_});
                   return selection_;
                 }});
   } else {
-    makeAction({"Add to highlight", [this]() -> Selected {
+    makeAction({"Add to highlight", [this]() -> web::Selected {
                   emit addHighlight({selection_});
                   return selection_;
                 }});
   }
 
   if (!navigation_history_.empty()) {
-    makeAction({"Navigate back", [this]() -> Selected {
+    makeAction({"Navigate back", [this]() -> web::Selected {
                   navigateBack();
                   return selection_;
                 }});
   }
 }
 
-void Inspector::makeAction(const Descriptor::Action& action)
+void Inspector::makeAction(const web::Descriptor::Action& action)
 {
   std::vector<std::pair<std::string, QString>> button_replacements{
       {"Delete", ":/delete.png"},
@@ -1073,7 +1075,7 @@ void Inspector::indexClicked()
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(clicked_index_);
   auto new_selected
-      = item->data(EditorItemDelegate::kSelected).value<Selected>();
+      = item->data(EditorItemDelegate::kSelected).value<web::Selected>();
   if (new_selected) {
     if (navigation_history_.empty()) {
       // add starting object
@@ -1112,7 +1114,7 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
   QVariant item_data = item->data(EditorItemDelegate::kSelected);
 
   if (item_data.isValid()) {
-    Selected sel = item_data.value<Selected>();
+    web::Selected sel = item_data.value<web::Selected>();
     if (!sel.isSlowHighlight()) {
       // emit the selected item as something to focus on
       emit focus(sel);
@@ -1122,14 +1124,14 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
 
 void Inspector::defocus()
 {
-  emit focus(Selected());
+  emit focus(web::Selected());
 }
 
-void Inspector::update(const Selected& object)
+void Inspector::update(const web::Selected& object)
 {
   if (selected_.empty()) {
     button_frame_->setVisible(false);
-    inspect(Selected());
+    inspect(web::Selected());
   } else {
     if (selected_.size() > 1) {
       button_frame_->setVisible(true);
@@ -1151,7 +1153,7 @@ void Inspector::handleAction(QWidget* action)
   // Copy the callback as the action may be deleted from within the
   // callback.
   auto callback = actions_[action];
-  Selected new_selection;
+  web::Selected new_selection;
   try {
     new_selection = callback();
   } catch (const std::runtime_error&) {
@@ -1173,7 +1175,7 @@ void Inspector::handleAction(QWidget* action)
   } else {
     if (selected_.empty()) {
       // set is empty
-      emit selected(Selected());
+      emit selected(web::Selected());
     } else {
       // determine new position in set
       itr_index = std::min(itr_index, static_cast<int>(selected_.size()) - 1);
@@ -1211,7 +1213,7 @@ void Inspector::updateSelectedFields(const QModelIndex& index)
   }
 }
 
-bool Inspector::isHighlighted(const Selected& selected)
+bool Inspector::isHighlighted(const web::Selected& selected)
 {
   for (const auto& highlight_set : highlighted_) {
     if (highlight_set.find(selected) != highlight_set.end()) {
@@ -1228,7 +1230,7 @@ void Inspector::navigateBack()
     return;
   }
 
-  Selected next;
+  web::Selected next;
   if (navigation_history_.size() == 1) {
     next = navigation_history_.back();
     navigation_history_.clear();

@@ -20,7 +20,7 @@ class dbDatabase;
 class dbNet;
 }  // namespace odb
 
-namespace gui {
+namespace web {
 class Gui;
 }
 

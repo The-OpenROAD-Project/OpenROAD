@@ -1,0 +1,111 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: size_down_fanout_hi
+[INFO ODB-0130]     Created 17 pins.
+[INFO ODB-0131]     Created 17 components and 68 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 34 connections.
+[INFO ODB-0133]     Created 18 nets and 34 connections.
+Loads on net0 (incl driver): 17
+worst slack max -0.08
+Startpoint: in1 (input port clocked by vclk)
+Endpoint: out0 (output port clocked by vclk)
+Path Group: vclk
+Path Type: max
+
+     Cap    Delay     Time   Description
+-------------------------------------------------------------------
+            0.000    0.000   clock vclk (rise edge)
+            0.000    0.000   clock network delay (ideal)
+            0.050    0.050 ^ input external delay
+   3.825    0.000    0.050 ^ in1 (in)
+ 111.371    0.078    0.128 ^ drvr/Z (BUF_X4)
+  20.000    0.034    0.162 ^ load0/Z (BUF_X8)
+            0.000    0.162 ^ out0 (out)
+                     0.162   data arrival time
+
+            0.300    0.300   clock vclk (rise edge)
+            0.000    0.300   clock network delay (ideal)
+            0.000    0.300   clock reconvergence pessimism
+           -0.220    0.080   output external delay
+                     0.080   data required time
+-------------------------------------------------------------------
+                     0.080   data required time
+                    -0.162   data arrival time
+-------------------------------------------------------------------
+                    -0.082   slack (VIOLATED)
+
+
+load cells:
+  load0 BUF_X8
+  load1 BUF_X8
+  load2 BUF_X8
+  load3 BUF_X8
+  load4 BUF_X8
+  load5 BUF_X8
+  load6 BUF_X8
+  load7 BUF_X8
+  load8 BUF_X8
+  load9 BUF_X8
+  load10 BUF_X8
+  load11 BUF_X8
+  load12 BUF_X8
+  load13 BUF_X8
+  load14 BUF_X8
+  load15 BUF_X8
+[INFO RSZ-0100] Repair move sequence: SizeDownFanoutMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.082 |       -0.1 |       -0.1 |      1 | out0
+       2* |       0 |      15 |        0 |      0 |     0 |   -41.9% |   -0.052 |       -0.1 |       -0.1 |      1 | out0
+    final |       0 |      15 |        0 |      0 |     0 |   -41.9% |   -0.052 |       -0.1 |       -0.1 |      1 | out0
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 15 instances: 0 up, 0 up match, 15 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.05
+Startpoint: in1 (input port clocked by vclk)
+Endpoint: out0 (output port clocked by vclk)
+Path Group: vclk
+Path Type: max
+
+     Cap    Delay     Time   Description
+-------------------------------------------------------------------
+            0.000    0.000   clock vclk (rise edge)
+            0.000    0.000   clock network delay (ideal)
+            0.050    0.050 ^ input external delay
+   3.825    0.000    0.050 ^ in1 (in)
+  63.622    0.051    0.101 ^ drvr/Z (BUF_X4)
+  20.000    0.031    0.132 ^ load0/Z (BUF_X8)
+            0.000    0.132 ^ out0 (out)
+                     0.132   data arrival time
+
+            0.300    0.300   clock vclk (rise edge)
+            0.000    0.300   clock network delay (ideal)
+            0.000    0.300   clock reconvergence pessimism
+           -0.220    0.080   output external delay
+                     0.080   data required time
+-------------------------------------------------------------------
+                     0.080   data required time
+                    -0.132   data arrival time
+-------------------------------------------------------------------
+                    -0.052   slack (VIOLATED)
+
+
+load cells:
+  load0 BUF_X8
+  load1 BUF_X4
+  load2 BUF_X4
+  load3 BUF_X4
+  load4 BUF_X4
+  load5 BUF_X4
+  load6 BUF_X4
+  load7 BUF_X4
+  load8 BUF_X4
+  load9 BUF_X4
+  load10 BUF_X4
+  load11 BUF_X4
+  load12 BUF_X4
+  load13 BUF_X4
+  load14 BUF_X4
+  load15 BUF_X4
