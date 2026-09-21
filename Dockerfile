@@ -50,6 +50,7 @@ ARG numThreads=NotSet
 ARG orVersion=""
 
 RUN <<EOF
+set -e
 groupadd user --gid 9000
 useradd --create-home --uid 9000 -g user --skel /etc/skel --shell /bin/bash user
 EOF
@@ -81,6 +82,7 @@ COPY --chown=root:root --from=builder /OpenROAD/install/ /usr/
 ENV OPENROAD_EXE=/usr/bin/openroad
 
 RUN <<EOF
+set -e
 groupadd user --gid 9000
 useradd --create-home --uid 9000 -g user --skel /etc/skel --shell /bin/bash user
 EOF
