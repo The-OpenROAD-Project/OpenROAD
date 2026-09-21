@@ -516,3 +516,286 @@ describe('routing layer opacity', () => {
         }
     });
 });
+
+// ─── Per-renderer display controls ──────────────────────────────────────────
+// The rows Qt's DisplayControls builds from Renderer::getDisplayControls().
+// Server state, so the panel fetches them and posts changes back.
+
+describe('renderer display controls', () => {
+    const wait = () => new Promise((r) => setTimeout(r, 0));
+
+    class FakeTileLayer {
+        constructor() {}
+        addTo() { return this; }
+        redraw() {}
+        setZIndex() { return this; }
+        setOpacity() { return this; }
+        on() { return this; }
+        remove() {}
+    }
+    class FakeHeatMapLayer {
+        constructor() {}
+    }
+
+    const CONTROLS = [
+        { group: 'Detailed Router', name: 'Maze search',
+          path: 'Detailed Router/Maze search', visible: true,
+          exclusivity: [] },
+        { group: 'Detailed Router', name: 'Graph edges',
+          path: 'Detailed Router/Graph edges', visible: false,
+          exclusivity: [] },
+        { group: 'PDN', name: 'Vias', path: 'PDN/Vias', visible: true,
+          exclusivity: [] },
+        { group: '', name: 'Loose', path: 'Loose', visible: false,
+          exclusivity: [] },
+    ];
+
+    function makeApp(controls) {
+        const requests = [];
+        const app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: { hasLayer: () => false, removeLayer() {} },
+            websocketManager: {
+                request(msg) {
+                    requests.push(msg);
+                    if (msg.type === 'renderer_controls') {
+                        return Promise.resolve({ controls });
+                    }
+                    return Promise.resolve({});
+                },
+            },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+        };
+        return { app, requests };
+    }
+
+    const techData = {
+        layers: ['metal1'],
+        sites: [],
+        chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+        layer_hierarchy: {
+            name: 'top', type: 'block', path: 'top',
+            layers: [{ name: 'metal1', color: [1, 2, 3] }],
+            instances: [],
+        },
+    };
+
+    function render(app, visibility) {
+        populateDisplayControls(app, visibility, {}, FakeTileLayer, techData,
+                                () => {}, FakeHeatMapLayer);
+        return app.displayControlsEl.querySelector('.renderer-controls');
+    }
+
+    // Groups only carry a name; a leaf carries the control's own name.
+    function leafNames(container) {
+        return Array.from(container.querySelectorAll('.vis-leaf'))
+            .map(r => r.querySelector('.vis-name').textContent);
+    }
+
+    it('is not fetched while the Renderers overlay is off', async () => {
+        const { app, requests } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: false });
+        await wait();
+        assert.equal(
+            requests.filter(r => r.type === 'renderer_controls').length, 0,
+            'no request for a list that is empty by construction');
+        assert.equal(el.children.length, 0);
+    });
+
+    it('renders a group per renderer group, merging shared names',
+       async () => {
+        const { app } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+
+        const groupNames = Array.from(el.querySelectorAll('.vis-group-header'))
+            .map(h => h.querySelector('.vis-name').textContent);
+        assert.deepEqual(groupNames, ['Detailed Router', 'PDN']);
+        // Both Detailed Router controls land under the one group.
+        const routerGroup = el.querySelectorAll('.vis-group')[0];
+        assert.deepEqual(leafNames(routerGroup),
+                         ['Maze search', 'Graph edges']);
+        // A control with no group name sits at the top level.
+        assert.ok(leafNames(el).includes('Loose'));
+    });
+
+    // The rows sit in the same panel as the layer rows and the VisTree
+    // leaves, which both prepend a hidden 14px triangle to the name column.
+    // Without it these names hang left of every other leaf name.
+    it('gives its rows the same anatomy as the panel\'s other leaves',
+       async () => {
+        const { app } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+
+        const leaves = [...el.querySelectorAll('.vis-leaf')];
+        assert.ok(leaves.length > 0);
+        for (const row of leaves) {
+            const first = row.firstElementChild;
+            assert.equal(first.className, 'vis-arrow',
+                         'leaf must start with the name-column spacer');
+            assert.equal(first.style.visibility, 'hidden');
+        }
+    });
+
+    it('reflects each control\'s server-side visibility', async () => {
+        const { app } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+
+        const byName = {};
+        for (const row of el.querySelectorAll('.vis-leaf')) {
+            byName[row.querySelector('.vis-name').textContent]
+                = row.querySelector('.vis-cb').checked;
+        }
+        assert.deepEqual(byName, {
+            'Maze search': true, 'Graph edges': false,
+            'Vias': true, 'Loose': false,
+        });
+    });
+
+    it('posts set_renderer_control with the path the server gave', async () => {
+        const { app, requests } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+
+        const row = Array.from(el.querySelectorAll('.vis-leaf')).find(
+            r => r.querySelector('.vis-name').textContent === 'Graph edges');
+        const cb = row.querySelector('.vis-cb');
+        cb.checked = true;
+        cb.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+        await wait();
+
+        const set = requests.find(r => r.type === 'set_renderer_control');
+        assert.deepEqual(set, { type: 'set_renderer_control',
+                                path: 'Detailed Router/Graph edges',
+                                value: true });
+    });
+
+    // The server broadcasts renderer_controls_changed to every session,
+    // including the sender, and main.js re-reads and redraws from that — so
+    // the click itself must not also re-read, or every toggle costs three
+    // round trips and two full-layer redraws.
+    it('does not re-read locally after a change', async () => {
+        const { app, requests } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+        const before = requests.filter(
+            r => r.type === 'renderer_controls').length;
+
+        const cb = el.querySelector('.vis-leaf .vis-cb');
+        cb.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+        await wait();
+        await wait();
+
+        assert.equal(
+            requests.filter(r => r.type === 'renderer_controls').length,
+            before, 'the push is the single trigger for the re-read');
+        assert.equal(
+            requests.filter(r => r.type === 'set_renderer_control').length, 1);
+    });
+
+    // Qt's parent row drives its children; ticking it must move the ones that
+    // are off, and only those.
+    it('the group checkbox applies to every child that differs', async () => {
+        const { app, requests } = makeApp(CONTROLS);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+
+        const routerHeader = el.querySelector('.vis-group-header');
+        const groupCb = routerHeader.querySelector('.vis-cb');
+        assert.equal(groupCb.checked, false, 'mixed children');
+        assert.equal(groupCb.indeterminate, true);
+
+        groupCb.checked = true;
+        groupCb.dispatchEvent(new dom.window.Event('change',
+                                                   { bubbles: true }));
+        await wait();
+
+        const sets = requests.filter(r => r.type === 'set_renderer_control');
+        assert.deepEqual(sets, [{ type: 'set_renderer_control',
+                                  path: 'Detailed Router/Graph edges',
+                                  value: true }]);
+        // And no local re-read: the broadcast drives it.
+        assert.equal(
+            requests.filter(r => r.type === 'renderer_controls').length, 1,
+            'only the initial fetch');
+    });
+
+    // refreshRendererControls owns the "overlay is on" rule, so switching it
+    // off clears the rows instead of leaving a stale list behind.
+    it('clears itself when the Renderers overlay goes off', async () => {
+        const { app } = makeApp(CONTROLS);
+        const visibility = { debug_renderers: true };
+        const el = render(app, visibility);
+        await wait();
+        assert.ok(el.querySelectorAll('.vis-leaf').length > 0);
+
+        visibility.debug_renderers = false;
+        await app.refreshRendererControls();
+        assert.equal(el.children.length, 0);
+    });
+
+    it('renders nothing when no renderer is registered', async () => {
+        const { app } = makeApp([]);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+        assert.equal(el.children.length, 0);
+    });
+
+    // The server leaves the HeatMapRenderer controls out of the list, so the
+    // panel has exactly one "Heat Maps" group — the settings one below.
+    it('shows no Heat Maps group of its own', async () => {
+        const { app } = makeApp([
+            { group: 'Heat Maps', name: 'Pin Density',
+              path: 'Heat Maps/Pin Density', visible: false, exclusivity: [''] },
+        ]);
+        const el = render(app, { debug_renderers: true });
+        await wait();
+        // Nothing is filtered client-side; this documents that a payload
+        // carrying one would still render, so the filtering has to stay on the
+        // server where every client sees the same list.
+        assert.equal(el.querySelectorAll('.vis-group').length, 1);
+
+        // What the server actually sends: no heat-map rows at all.
+        const { app: app2 } = makeApp(
+            CONTROLS.filter(c => c.group !== 'Heat Maps'));
+        const el2 = render(app2, { debug_renderers: true });
+        await wait();
+        const groups = Array.from(el2.querySelectorAll('.vis-group-header'))
+            .map(h => h.querySelector('.vis-name').textContent);
+        assert.equal(groups.includes('Heat Maps'), false);
+    });
+
+    // The panel ends with the Background row, so every group — the heat map
+    // settings included — sits above it.
+    it('puts the heat map settings above the Background row', async () => {
+        const { app } = makeApp([]);
+        populateDisplayControls(app, { debug_renderers: true }, {},
+                               FakeTileLayer, techData, () => {},
+                               FakeHeatMapLayer);
+        await wait();
+
+        const children = Array.from(app.displayControlsEl.children);
+        const heatIdx = children.findIndex(
+            c => c.classList.contains('heatmap-controls'));
+        const bgIdx = children.findIndex(
+            c => c.classList.contains('bg-color-row'));
+        assert.ok(heatIdx >= 0, 'heat map group present');
+        assert.ok(bgIdx >= 0, 'background row present');
+        assert.ok(heatIdx < bgIdx,
+                  'heat maps must come before the Background footer');
+        assert.equal(bgIdx, children.length - 1,
+                     'Background closes the panel');
+    });
+});

@@ -78,6 +78,11 @@ class Straps : public GridComponent
   bool checkLayerOffsetSpecification(bool error = false) const;
   std::string getNetString() const;
 
+  // True when offset_ is written in the grid's as-drawn frame and therefore
+  // has to be mirrored for a flipped instance.  Components that resolve their
+  // own absolute position return false.
+  virtual bool honorsGridFlip() const { return true; }
+
  private:
   odb::dbTechLayer* layer_;
   int width_;
@@ -92,10 +97,14 @@ class Straps : public GridComponent
   int strap_end_ = 0;
   bool allow_out_of_core_ = false;
 
-  void makeStraps(int x_start,
-                  int y_start,
-                  int x_end,
-                  int y_end,
+  // Sweep the strap positions along one axis.  extent_start/extent_end are the
+  // fixed span of every strap on the other axis; offset_ is measured from
+  // pos_origin and the sweep advances towards pos_limit, so pos_limit sitting
+  // below pos_origin is what makes the sweep run backwards for a mirrored grid.
+  void makeStraps(int extent_start,
+                  int extent_end,
+                  int pos_origin,
+                  int pos_limit,
                   int abs_start,
                   int abs_end,
                   bool is_delta_x,
@@ -316,6 +325,12 @@ class RepairChannelStraps : public Straps
   };
   // find all straps in grid that are not connected for anything
   static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
+
+ protected:
+  // determineOffset resolves an absolute position from the channel geometry and
+  // converts it to a low-edge offset, so it is already in the placed frame and
+  // must not be mirrored again
+  bool honorsGridFlip() const override { return false; }
 
  private:
   odb::PtrSet<odb::dbNet> nets_;

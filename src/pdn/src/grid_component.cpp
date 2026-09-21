@@ -553,4 +553,15 @@ int GridComponent::getNetCount() const
   return getNets().size();
 }
 
+std::set<odb::Rect> GridComponent::getShapeRects() const
+{
+  std::set<odb::Rect> rects;
+  for (const auto& [layer, layer_shapes] : shapes_) {
+    for (const auto& shape : layer_shapes) {
+      rects.insert(shape->getRect());
+    }
+  }
+  return rects;
+}
+
 }  // namespace pdn

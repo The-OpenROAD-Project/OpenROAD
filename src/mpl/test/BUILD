@@ -315,7 +315,10 @@ py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],
     data = ["//src/mpl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

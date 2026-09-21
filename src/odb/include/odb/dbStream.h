@@ -62,6 +62,23 @@ class dbOStream
     }
   }
 
+  template <typename... Ts>
+    requires(... && std::is_trivially_copyable_v<Ts>)
+  void writeValues(const Ts&... vals)
+  {
+    constexpr size_t kTotal = (0 + ... + sizeof(Ts));
+    static_assert(kTotal <= kBufferSize);
+    if constexpr (kTotal > 0) {
+      if (buffer_pos_ + kTotal > kBufferSize) {
+        flush();
+      }
+      char* p = buffer_.data() + buffer_pos_;
+      ((std::memcpy(p, std::addressof(vals), sizeof(Ts)), p += sizeof(Ts)),
+       ...);
+      buffer_pos_ += kTotal;
+    }
+  }
+
   _dbDatabase* getDatabase() { return db_; }
 
   void writeBytes(std::span<const char> bytes)
@@ -270,6 +287,25 @@ class dbIStream
   dbIStream(_dbDatabase* db, std::istream& f);
 
   _dbDatabase* getDatabase() { return db_; }
+
+  void read_bytes(std::span<char> bytes)
+  {
+    f_.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+  }
+
+  template <typename... Ts>
+    requires(... && std::is_trivially_copyable_v<Ts>)
+  void readValues(Ts&... vals)
+  {
+    constexpr size_t kTotal = (0 + ... + sizeof(Ts));
+    if constexpr (kTotal > 0) {
+      char temp[kTotal];
+      f_.read(temp, static_cast<std::streamsize>(kTotal));
+      const char* p = temp;
+      ((std::memcpy(std::addressof(vals), p, sizeof(Ts)), p += sizeof(Ts)),
+       ...);
+    }
+  }
 
   dbIStream& operator>>(bool& c)
   {

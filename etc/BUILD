@@ -23,8 +23,16 @@ exports_files(
 test_suite(
     name = "all_tests",
     tests = [
+        ":code_coverage_test",
         ":test_whittle",
     ],
+)
+
+py_test(
+    name = "code_coverage_test",
+    size = "small",
+    srcs = ["code_coverage_test.py"],
+    data = ["CodeCoverage.sh"],
 )
 
 py_test(

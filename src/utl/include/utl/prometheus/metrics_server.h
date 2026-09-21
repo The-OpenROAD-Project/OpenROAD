@@ -47,11 +47,17 @@ class PrometheusMetricsServer
  private:
   std::thread worker_thread_;
   std::shared_ptr<PrometheusRegistry> registry_ptr_{nullptr};
-  uint16_t port_;
+  // The worker thread publishes port_ (the OS-chosen port when the caller
+  // asked for 0), is_ready_ and startup_failed_; the owning thread reads them
+  // through the accessors above and in the destructor. shutdown_ travels the
+  // other way, plus the worker sets it on an unrecoverable startup failure.
+  // The default sequentially consistent ordering is what makes port_ visible
+  // to a reader that has observed is_ready_.
+  std::atomic<uint16_t> port_;
   std::atomic<utl::Logger*> logger_;
-  bool shutdown_ = false;
-  bool is_ready_ = false;
-  bool startup_failed_ = false;
+  std::atomic<bool> shutdown_ = false;
+  std::atomic<bool> is_ready_ = false;
+  std::atomic<bool> startup_failed_ = false;
 
   void RunServer();
   void WorkerFunction();

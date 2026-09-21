@@ -13,6 +13,7 @@
 
 #include "colorGenerator.h"
 #include "gui/gui.h"
+#include "gui_utils.h"
 #include "layoutViewer.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -20,7 +21,7 @@
 
 namespace gui {
 
-LayoutTabs::LayoutTabs(Options* options,
+LayoutTabs::LayoutTabs(QtOptions* options,
                        ScriptWidget* output_widget,
                        const SelectionSet& selected,
                        const HighlightSet& highlighted,
@@ -256,7 +257,7 @@ void LayoutTabs::populateModuleColors(odb::dbBlock* block)
   ColorGenerator generator;
 
   for (auto* module : block->getModules()) {
-    auto color = generator.getQColor();
+    auto color = toQColor(generator.getColor());
     modules_[module] = {color, color, color, true};
   }
 }

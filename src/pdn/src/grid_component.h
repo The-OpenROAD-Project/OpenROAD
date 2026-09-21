@@ -66,6 +66,7 @@ class GridComponent
                     std::vector<std::unique_ptr<Shape>>& replacements);
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
+  std::set<odb::Rect> getShapeRects() const;
 
   virtual void getConnectableShapes(Shape::ShapeTreeMap& shapes) const {}
 

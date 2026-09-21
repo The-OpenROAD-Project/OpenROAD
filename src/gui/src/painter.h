@@ -24,12 +24,13 @@ class GuiPainter : public Painter
 {
  public:
   GuiPainter(QPainter* painter,
-             Options* options,
+             QtOptions* options,
              const odb::Rect& bounds,
              qreal pixels_per_dbu,
              int dbu_per_micron)
       : Painter(options, bounds, pixels_per_dbu),
         painter_(painter),
+        qt_options_(options),
         dbu_per_micron_(dbu_per_micron)
   {
   }
@@ -42,7 +43,7 @@ class GuiPainter : public Painter
 
   void setPen(odb::dbTechLayer* layer, bool cosmetic) override
   {
-    QPen pen(getOptions()->color(layer));
+    QPen pen(qt_options_->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
@@ -66,8 +67,8 @@ class GuiPainter : public Painter
 
   void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
-    QColor color = getOptions()->color(layer);
-    Qt::BrushStyle brush_pattern = getOptions()->pattern(layer);
+    QColor color = qt_options_->color(layer);
+    Qt::BrushStyle brush_pattern = qt_options_->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
@@ -223,6 +224,9 @@ class GuiPainter : public Painter
 
  private:
   QPainter* painter_;
+  // Same object as Painter::getOptions(), typed so the Qt-only accessors
+  // are reachable.
+  QtOptions* qt_options_;
   int dbu_per_micron_;
 
   void drawRuler(int x0, int y0, int x1, int y1, const std::string& label);

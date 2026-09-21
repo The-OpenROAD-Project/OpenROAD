@@ -183,6 +183,9 @@ class dbNetwork : public ConcreteNetwork
   // Master block of a chiplet instance; null if the master chip is itself
   // hierarchical (no own dbBlock).
   odb::dbBlock* blockOf(odb::dbChipInst* chip_inst) const;
+  // Inverse of blockOf: the chiplet instance that placed `block`, or null if
+  // the block is not a chiplet master of the installed top chip.
+  odb::dbChipInst* chipInstOf(odb::dbBlock* block) const;
 
   // Encode/decode chip db objects as STA handles. A bump's Pin is its pad
   // inst's single dbITerm (ordinary iterm encoding). A dbChipInst (Instance)

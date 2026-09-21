@@ -1,0 +1,40 @@
+# Pads used by the check_power_grid_short* tests.  Both pins are a 1um
+# square with 0.3um corners cut at exactly 45 degrees, i.e. an octagon
+# that is not representable on the rectilinear (polygon_90) path odb uses
+# to decompose LEF polygons -- dbPolygon::getPolygon() holds the real
+# shape, dbPolygon::getGeometry() only holds an approximation of it.
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# Signal pad, used to short a signal net to a power shape on metal1.
+MACRO OCT_PAD
+  CLASS COVER ;
+  ORIGIN 0 0 ;
+  FOREIGN OCT_PAD 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  PIN PAD
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        POLYGON 0 0.3 0.3 0 0.7 0 1.0 0.3 1.0 0.7 0.7 1.0 0.3 1.0 0 0.7 ;
+    END
+  END PAD
+END OCT_PAD
+
+# Power bump, used to put a 45 degree shape on the net under test.
+MACRO OCT_BUMP
+  CLASS COVER ;
+  ORIGIN 0 0 ;
+  FOREIGN OCT_BUMP 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER metal3 ;
+        POLYGON 0 0.3 0.3 0 0.7 0 1.0 0.3 1.0 0.7 0.7 1.0 0.3 1.0 0 0.7 ;
+    END
+  END VDD
+END OCT_BUMP

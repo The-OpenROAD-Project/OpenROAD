@@ -83,6 +83,15 @@ struct RouterConfiguration
   frUInt4 VIACOST = 4;
   // new cost used
   frUInt4 GRIDCOST = 2;
+  // Multiplier applied to GRIDCOST on non-preferred-direction edges when
+  // routing a watermark net.  Higher values more strongly suppress
+  // wrong-way jogs, tightening the "limit way" watermark constraint.  At the
+  // default a wrong-way edge costs 200 per unit length: above the shape and
+  // marker costs of the early search iterations, so the router avoids
+  // wrong-way jogs on tagged nets in the first place, and below the 256 to
+  // 512 per unit those costs reach in the last iterations, so any violation
+  // left on a tagged net is still repaired ahead of the mark.
+  float WATERMARK_WRONGWAY_MULT = 100.0f;
   frUInt4 ROUTESHAPECOST = 8;
   frUInt4 MARKERCOST = 32;
   frUInt4 MARKERBLOATWIDTH = 1;  // unused

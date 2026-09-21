@@ -335,6 +335,9 @@ class GlobalRouter
   // estimation is electrically connected (correct-by-construction).
   void addImplicitVias(GRoute& route);
 
+  // Remove duplicate vias from ODB guides, including reversed layer pairs.
+  void dedupViaSegments(GRoute& route);
+
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,

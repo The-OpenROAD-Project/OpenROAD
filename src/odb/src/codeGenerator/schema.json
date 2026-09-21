@@ -324,6 +324,7 @@
       "child":"dbTechLayerCutEnclosureTableDefRule",
       "type":"1_n",
       "tbl_name":"cut_enc_table_rules_tbl_",
+      "schema":"kSchemaCutEnclosureTableDefRule",
       "create":true,
       "destroy":true
     },

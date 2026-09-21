@@ -135,6 +135,10 @@ namespace syn {
 class Synthesis;
 }
 
+namespace wmk {
+class Watermark;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -190,6 +194,7 @@ class OpenRoad
   }
   web::WebServer* getWebServer() { return web_server_; }
   syn::Synthesis* getSynthesis() { return synthesis_; }
+  wmk::Watermark* getWatermark() { return watermark_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -296,6 +301,7 @@ class OpenRoad
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
   syn::Synthesis* synthesis_ = nullptr;
+  wmk::Watermark* watermark_ = nullptr;
   utl::ServiceRegistry* service_registry_ = nullptr;
 
   int threads_ = 1;

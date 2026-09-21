@@ -119,8 +119,10 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dbNetwork",
         ":dbSta",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/utl",
     ],
 )
@@ -205,6 +207,9 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+        # The OpenSTA submodule declares its own swig options (the fork's
+        # STA_OPENROAD_FORK define; stock OpenSTA would declare none).
+        "//src/sta:sta_swig_defs",
     ],
 )
 

@@ -93,6 +93,13 @@ bool OptimizationPolicy::start()
   estimate_parasitics_ = resizer_.estimateParasitics();
   max_ = resizer_.maxAnalysisMode();
   resetRun();
+  // Start every phase with the progress table's area cache invalid. The
+  // cache is keyed on MoveCommitter::netlistEdits(), which only counts
+  // edits made through the committer; GlobalSizingPolicy replaces cells
+  // directly (applyPresize/applyDecisions), so a GLOBAL_SIZING phase
+  // between two legacy-derived phases would otherwise leave the later
+  // phase printing the pre-sizing area. One area walk per phase.
+  setup_context_.progress_area_at_edit = -1;
   loadPolicyEnvars();
   if (is_experimental) {
     logger_->warn(utl::RSZ,

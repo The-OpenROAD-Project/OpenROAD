@@ -85,7 +85,10 @@ py_test(
     name = "par_man_tcl_check",
     srcs = ["par_man_tcl_check.py"],
     data = ["//src/par:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

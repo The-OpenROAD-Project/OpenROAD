@@ -101,6 +101,47 @@ export function useDeviceExactTileSize() {
     tile_size_css = TILE_SIZE_CSS;
 }
 
+// The browser lays out on a 1/64 device-pixel grid, so "whole device pixel"
+// means whole to within a layout unit; a float32 devicePixelRatio cannot do
+// better than that anyway.
+const LAYOUT_UNIT = 1 / 64;
+
+// Step for any tile size other than TILE_SIZE_CSS itself.
+//
+// The ratios above are 5/4, 4/3, 11/8, 3/2, 5/3, 7/4, 11/6, 5/2 and 11/10, so
+// a size is whole in device pixels at ALL of them exactly when it is a
+// multiple of lcm(4,3,8,2,3,4,6,2,10) = 120.  Sizes chosen for the current
+// ratio alone would come apart the moment devicePixelRatio changes -- browser
+// zoom, or the window moving to another monitor -- and the tile panes are
+// built once, so nothing re-picks the size.  Keeping to the quantum makes the
+// choice independent of dpr and bounds the tile-cache key space the server
+// sees to two sizes instead of a continuum.
+export const TILE_SIZE_QUANTUM = 120;
+
+// Whether `size` CSS px is a whole number of device pixels at `dpr` — the
+// property TILE_SIZE_CSS exists to guarantee (see above), tested against the
+// ratio actually in force rather than against a list of plausible ones.
+export function isDeviceExactTileSize(size, dpr) {
+    if (!Number.isFinite(size) || !Number.isFinite(dpr) || size <= 0
+        || dpr <= 0) {
+        return false;
+    }
+    const device = size * dpr;
+    return Math.abs(device - Math.round(device)) < LAYOUT_UNIT;
+}
+
+// Adopt a tile size picked to make zoom-to-fit land on an integer zoom level
+// (see fittedTileSizeCss).  Like the two setters above this must run before any
+// layer is built: the map's coordinate scale is derived from it.
+//
+// Safe because the tile grid is indexed by zoom alone — tile (z,x,y) covers
+// maxDXDY/2^z DBU whatever its pixel size — so this changes the resolution the
+// server is asked for, not which tiles exist.  That the client already runs at
+// 240 while the server's kTileSizeInPixel is 256 is the same fact.
+export function useFittedTileSize(size) {
+    tile_size_css = size;
+}
+
 // Merge the device-exact tile size into a Leaflet options object without
 // overriding an explicit choice (the static path passes its own).
 export function withDeviceExactTileSize(options) {

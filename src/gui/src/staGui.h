@@ -390,6 +390,9 @@ class TimingControlsDialog : public QDialog
   void setUnconstrained(bool uncontrained);
   bool getUnconstrained() const { return sta_->isIncludeUnconstrainedPaths(); }
 
+  void setClkGatingChecks(bool value);
+  bool getClkGatingChecks() const { return sta_->isIncludeClkGatingChecks(); }
+
   void setOnePathPerEndpoint(bool value);
   bool getOnePathPerEndpoint() const { return sta_->isOnePathPerEndpoint(); }
 
@@ -433,6 +436,7 @@ class TimingControlsDialog : public QDialog
   DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;
+  QCheckBox* clk_gating_checks_;
   QCheckBox* one_path_per_endpoint_;
   QCheckBox* expand_clk_;
 

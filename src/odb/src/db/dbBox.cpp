@@ -3,10 +3,15 @@
 
 #include "dbBox.h"
 
+#include <array>
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <memory>
+#include <span>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 #include "dbBPin.h"
@@ -24,7 +29,7 @@
 #include "dbObstruction.h"
 #include "dbPolygon.h"
 #include "dbRegion.h"
-#include "dbSWire.h"
+#include "dbSWire.h"  // IWYU pragma: keep
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
@@ -41,6 +46,44 @@
 #include "utl/Logger.h"
 
 namespace odb {
+
+namespace {
+
+static_assert(std::is_trivially_copyable_v<Oct>);
+static_assert(std::is_trivially_copyable_v<Rect>);
+static_assert(sizeof(Oct) == 20);
+static_assert(sizeof(Rect) == 16);
+
+_dbBoxFlags read_legacy_flags(dbIStream& stream, bool is_box_layer_bits)
+{
+  _dbBoxFlags flags;
+  uint32_t bit_field;
+  stream >> bit_field;
+  if (is_box_layer_bits) {
+    auto old = std::bit_cast<_dbBoxFlagsWithoutMask>(bit_field);
+    flags.owner_type = old.owner_type;
+    flags.soft = 0;
+    flags.octilinear = old.octilinear;
+    flags.is_tech_via = old.is_tech_via;
+    flags.is_block_via = old.is_block_via;
+    flags.layer_id = old.layer_id;
+    flags.via_id = old.via_id;
+    flags.layer_mask = 0;
+  } else {
+    auto old = std::bit_cast<_dbBoxFlagsBackwardCompatability>(bit_field);
+    flags.owner_type = old.owner_type;
+    flags.soft = 0;
+    flags.octilinear = old.octilinear;
+    flags.is_tech_via = old.is_tech_via;
+    flags.is_block_via = old.is_block_via;
+    flags.layer_id = old.layer_id;
+    flags.via_id = old.via_id;
+    flags.layer_mask = 0;
+  }
+  return flags;
+}
+
+}  // namespace
 
 template class dbTable<_dbBox>;
 
@@ -1115,55 +1158,74 @@ _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
 
 dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 {
-  uint32_t* bit_field = (uint32_t*) &box.flags_;
-  stream << *bit_field;
   if (box.isOct()) {
-    stream << box.shape_.oct;
+    stream.writeValues(box.flags_,
+                       box.shape_.oct,
+                       box.owner_,
+                       box.next_box_,
+                       box.design_rule_width_,
+                       box.min_spacing_);
   } else {
-    stream << box.shape_.rect;
+    stream.writeValues(box.flags_,
+                       box.shape_.rect,
+                       box.owner_,
+                       box.next_box_,
+                       box.design_rule_width_,
+                       box.min_spacing_);
   }
-  stream << box.owner_;
-  stream << box.next_box_;
-  stream << box.design_rule_width_;
-  stream << box.min_spacing_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
   if (box.getDatabase()->isSchema(kSchemaDbBoxMask)) {
-    uint32_t* bit_field = (uint32_t*) &box.flags_;
-    stream >> *bit_field;
-  } else if (box.getDatabase()->isSchema(kSchemaBoxLayerBits)) {
-    _dbBoxFlagsWithoutMask old;
-    uint32_t* bit_field = (uint32_t*) &old;
-    stream >> *bit_field;
-    box.flags_.owner_type = old.owner_type;
-    box.flags_.soft = 0;
-    box.flags_.octilinear = old.octilinear;
-    box.flags_.is_tech_via = old.is_tech_via;
-    box.flags_.is_block_via = old.is_block_via;
-    box.flags_.layer_id = old.layer_id;
-    box.flags_.via_id = old.via_id;
-    box.flags_.layer_mask = 0;
+    const bool has_min_spacing
+        = box.getDatabase()->isSchema(kSchemaDbBoxMinSpacing);
+
+    stream.readValues(box.flags_);
+
+    if (box.isOct()) {
+      std::construct_at(&box.shape_.oct);
+      if (has_min_spacing) {
+        stream.readValues(box.shape_.oct,
+                          box.owner_,
+                          box.next_box_,
+                          box.design_rule_width_,
+                          box.min_spacing_);
+      } else {
+        box.min_spacing_ = -1;
+        stream.readValues(
+            box.shape_.oct, box.owner_, box.next_box_, box.design_rule_width_);
+      }
+    } else {
+      std::construct_at(&box.shape_.rect);
+      if (has_min_spacing) {
+        stream.readValues(box.shape_.rect,
+                          box.owner_,
+                          box.next_box_,
+                          box.design_rule_width_,
+                          box.min_spacing_);
+      } else {
+        box.min_spacing_ = -1;
+        stream.readValues(
+            box.shape_.rect, box.owner_, box.next_box_, box.design_rule_width_);
+      }
+    }
+    return stream;
+  }
+
+  // Backward compatibility paths
+  if (box.getDatabase()->isSchema(kSchemaBoxLayerBits)) {
+    box.flags_ = read_legacy_flags(stream, true);
   } else {
-    _dbBoxFlagsBackwardCompatability old;
-    uint32_t* bit_field = (uint32_t*) &old;
-    stream >> *bit_field;
-    box.flags_.owner_type = old.owner_type;
-    box.flags_.soft = 0;
-    box.flags_.octilinear = old.octilinear;
-    box.flags_.is_tech_via = old.is_tech_via;
-    box.flags_.is_block_via = old.is_block_via;
-    box.flags_.layer_id = old.layer_id;
-    box.flags_.via_id = old.via_id;
-    box.flags_.layer_mask = 0;
+    box.flags_ = read_legacy_flags(stream, false);
   }
 
   if (box.isOct()) {
-    new (&box.shape_.oct) Oct();
+    std::construct_at(&box.shape_.oct);
     stream >> box.shape_.oct;
   } else {
+    std::construct_at(&box.shape_.rect);
     stream >> box.shape_.rect;
   }
   stream >> box.owner_;

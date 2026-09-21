@@ -140,6 +140,10 @@ during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
 to compensate.
 
+When neither the liberty libraries nor the SDC constrain fanout,
+`repair_design` uses a default limit of 50 load pins to build a buffer tree
+for high-fanout nets. Use `set_max_fanout` to constrain fanout explicitly.
+
 ```tcl
 repair_design 
     [-max_wire_length max_length]

@@ -20,6 +20,7 @@ py_library(
         "//:openroad_py",
         "//src/odb:odb_py",
         "//src/utl:utl_py",
+        "//src/wmk:wmk_py",
     ],
 )
 

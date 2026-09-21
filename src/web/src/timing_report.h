@@ -200,7 +200,10 @@ boost::json::object serializeChartFilters(const ChartFilters& f);
 
 // Net fanout histogram (loads = term_count - 1, skipping power/ground nets).
 // Free function: depends only on odb, not STA.
-FanoutHistogramResult computeFanoutHistogram(odb::dbBlock* block);
+// Pools the nets of every block into one histogram, so a 3DBlox design (whose
+// top chip owns no block) reports across its chiplets.
+FanoutHistogramResult computeFanoutHistogram(
+    const std::vector<odb::dbBlock*>& blocks);
 boost::json::object serializeFanoutHistogram(const FanoutHistogramResult& h);
 
 // Half-perimeter wire length (HPWL) of a net's terminal bounding box, in DBU.

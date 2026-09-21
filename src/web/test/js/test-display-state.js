@@ -92,6 +92,13 @@ describe('applyDisplayStateEntries', () => {
             or_show_dbu: '1',
             or_theme: 'dark',
             or_use_true_z: '1',
+            // Options-menu preferences (2.15).  The font family is stored
+            // URI-encoded, since a CSS stack carries commas and quotes.
+            or_ruler_style: 'manhattan',
+            or_wheel_zoom: '0',
+            or_arrow_step: '120',
+            or_font_family: 'monospace',
+            or_font_scale: '125',
         };
         const { dom, mod } = await loadDisplayState();
         mod.applyDisplayStateEntries(all);

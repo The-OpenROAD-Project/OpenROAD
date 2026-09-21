@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"

@@ -1191,6 +1191,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
                                         QString("All Clocks"),
                                         this)),
       unconstrained_(new QCheckBox(this)),
+      clk_gating_checks_(new QCheckBox(this)),
       one_path_per_endpoint_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
       from_(new PinSetWidget(false, this)),
@@ -1213,6 +1214,9 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   setUnconstrained(false);
   layout_->addRow("Unconstrained:", unconstrained_);
+  // Enabled by default to match worst_slack, which includes these checks.
+  setClkGatingChecks(true);
+  layout_->addRow("Clock gating checks:", clk_gating_checks_);
   layout_->addRow("One path per endpoint:", one_path_per_endpoint_);
 
   setLayout(layout_);
@@ -1223,6 +1227,10 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   connect(unconstrained_, &QCheckBox::stateChanged, [this]() {
     sta_->setIncludeUnconstrainedPaths(unconstrained_->checkState()
                                        == Qt::Checked);
+  });
+  connect(clk_gating_checks_, &QCheckBox::stateChanged, [this]() {
+    sta_->setIncludeClkGatingChecks(clk_gating_checks_->checkState()
+                                    == Qt::Checked);
   });
   connect(one_path_per_endpoint_, &QCheckBox::stateChanged, [this]() {
     sta_->setOnePathPerEndpoint(one_path_per_endpoint_->checkState()
@@ -1282,6 +1290,12 @@ void TimingControlsDialog::setUnconstrained(bool unconstrained)
 {
   sta_->setIncludeUnconstrainedPaths(unconstrained);
   unconstrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
+}
+
+void TimingControlsDialog::setClkGatingChecks(bool value)
+{
+  sta_->setIncludeClkGatingChecks(value);
+  clk_gating_checks_->setCheckState(value ? Qt::Checked : Qt::Unchecked);
 }
 
 void TimingControlsDialog::setPathCount(int path_count)

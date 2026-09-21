@@ -84,6 +84,9 @@ get_db_block();
 %include "src/rsz/src/Resizer-py.i"
 %include "src/stt/src/SteinerTreeBuilder-py.i"
 %include "src/tap/src/tapcell-py.i"
+// CTS also exposes CtsOptions; give WMK's options a distinct binding name.
+%rename(WatermarkCtsOptions) wmk::CtsOptions;
+%include "src/wmk/src/watermark-py.i"
 %import "src/odb/src/swig/common/odb.i"
 %import "src/utl/src/Logger-py.i"
 #endif

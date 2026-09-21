@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -732,8 +733,21 @@ void NesterovPlace::runRoutability(int iter,
                                    float& curA)
 {
   // check routability using RUDY or GR
+  //
+  // The overflow gate alone says the design is spread; it does not say the
+  // cells have stopped moving, and those come apart when the penalty schedule
+  // changes pace. Measured on one design at the same overflow of 0.30: cells
+  // moving 2.02 bins per iteration read a congestion of 1.6447, and cells
+  // moving 6.44 bins per iteration - the same overflow, a faster schedule -
+  // read 2.3458. Inflation sized from the second reading is aimed at a
+  // placement that no longer exists by the time it lands. Wait for the motion
+  // to come off its peak as well.
+  //
+  // This can only ever delay the trigger, so a design already settled at its
+  // overflow gate is unaffected.
   if (npVars_.routability_driven_mode && is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
+      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+      && isPlacementSettled()) {
     nbVec_[0]->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
@@ -792,6 +806,15 @@ void NesterovPlace::runRoutability(int iter,
     is_routability_need_ = result.first;
     bool isRevertInitNeeded = result.second;
 
+    // Every routability pass inflates cells, so the design placed after this
+    // one is not the design min_hpwl_ was measured on. Held across the change,
+    // the old minimum is unbeatable - there is more cell area to place now -
+    // and is_min_hpwl_ never comes true again, so no divergence snapshot is
+    // ever taken and a later divergence has nothing to fall back on but
+    // GPL-0307. Start the search for a minimum over on the new design.
+    min_hpwl_ = std::numeric_limits<int64_t>::max();
+    is_min_hpwl_ = false;
+
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
     }
@@ -840,6 +863,18 @@ void NesterovPlace::runRoutability(int iter,
       }
     }
   }
+}
+
+// Every region has to have settled: routability acts on one congestion map
+// covering all of them.
+bool NesterovPlace::isPlacementSettled() const
+{
+  for (const auto& nb : nbVec_) {
+    if (!nb->isSettled()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool NesterovPlace::isConverged(int gpl_iter_count,

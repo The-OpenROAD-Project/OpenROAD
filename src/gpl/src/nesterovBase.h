@@ -826,7 +826,8 @@ struct NesterovBaseVars
 
 struct NesterovPlaceVars
 {
-  NesterovPlaceVars(const PlaceOptions& options);
+  // design_hpwl resolves referenceHpwl when the option is left at 0.
+  NesterovPlaceVars(const PlaceOptions& options, int64_t design_hpwl = 0);
 
   int maxNesterovIter;
   static constexpr int maxBackTrack = 10;
@@ -836,6 +837,16 @@ struct NesterovPlaceVars
   static constexpr float minPreconditioner = 1.0;  // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
   const float referenceHpwl;                       // refDeltaHpwl
+
+  // Floor for a derived referenceHpwl, the value this was hard-coded to
+  // before it was derived at all. Designs at or below this scale keep exactly
+  // the controller they had.
+  static constexpr float kReferenceHpwlFloor = 446000000.0f;
+
+  // Fraction of the design's HPWL a derived referenceHpwl spans. A wirelength
+  // change of this size is what pulls the penalty ramp from its maximum to its
+  // minimum, so it sets the controller's headroom before it saturates.
+  static constexpr float kReferenceHpwlFraction = 1.0f;
   const float routability_end_overflow;
   const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
@@ -1227,6 +1238,16 @@ class NesterovBase
   float getStoredPhiCoef() const { return phiCoef_; }
   float getStoredStepLength() const { return stepLength_; }
   float getStoredCoordiDistance() const { return coordiDistance_; }
+
+  // True once the cells have stopped moving as fast as they were: the
+  // per-iteration displacement has come down from its peak.
+  //
+  // Routability measures where wire will be from where the cells are, so it
+  // needs a placement close to where it is going. That is a statement about
+  // motion, not about density, and overflow does not capture it: the same
+  // overflow can sit at very different displacements depending on how fast
+  // the penalty schedule happens to be ramping.
+  bool isSettled() const;
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
@@ -1400,6 +1421,16 @@ class NesterovBase
   float stepLength_ = 0;
   float coordiDistance_ = 0;
   float gradDistance_ = 0;
+
+  // Largest per-iteration displacement seen so far, the yardstick isSettled()
+  // measures the current one against.
+  float peak_coordi_distance_ = 0;
+
+  // Fraction of its own peak the per-iteration displacement must fall to for
+  // the placement to count as settled. A ratio rather than a length, so it
+  // carries no bin size, no DBU constant, and no dependence on the penalty
+  // schedule's rate.
+  static constexpr float kSettleFraction = 0.6f;
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.

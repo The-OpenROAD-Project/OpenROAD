@@ -86,6 +86,7 @@ TESTS = [
     "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
+    "repair_fanout9",
     "repair_hold1",
     "repair_hold10",
     "repair_hold11",
@@ -655,6 +656,7 @@ py_test(
     srcs = ["gcd_resize.py"],
     data = [":test_resources"],
     main = "gcd_resize.py",
+    tags = ["py"],
     deps = [
         ":helpers",
         ":rsz_aux",
@@ -666,7 +668,10 @@ py_test(
     name = "rsz_man_tcl_check",
     srcs = ["rsz_man_tcl_check.py"],
     data = ["//src/rsz:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

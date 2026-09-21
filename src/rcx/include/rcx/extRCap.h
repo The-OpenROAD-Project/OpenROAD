@@ -1864,12 +1864,12 @@ class extMain
   uint32_t* _ccContextLength = nullptr;
   //  uint32_t* _ccContextLength= nullptr;
 
-  bool _skip_via_wires;
+  bool _skip_via_wires = false;
   float _version;                           // dkf: 06242024
   int _metal_flag_22;                       // dkf: 06242024
   uint32_t _wire_extracted_progress_count;  // dkf: 06242024
 
-  bool _v2;  // new flow dkf: 10302023
+  bool _v2 = false;  // new flow dkf: 10302023
 
   void skip_via_wires(bool v) { _skip_via_wires = v; };
   void printUpdateCoup(uint32_t netId1,
@@ -2130,8 +2130,6 @@ class extMain
   void getPrevControl();
 
   void setCornerCount();
-
-  Array1D<extCorner*>* getProcessCornerTable() { return _processCornerTable; }
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
@@ -2669,6 +2667,16 @@ class extMain
 
   utl::Logger* getLogger() { return logger_; }
 
+  const Array1D<extCorner*>* getProcessCornerTable() const
+  {
+    return _processCornerTable;
+  }
+
+  void setDeleteModelAtExtraction(bool delete_model_at_extraction)
+  {
+    delete_model_at_extraction_ = delete_model_at_extraction;
+  }
+
  private:
   utl::Logger* logger_;
 
@@ -2679,6 +2687,7 @@ class extMain
   Array1D<extCorner*>* _scaledCornerTable = nullptr;
 
   Array1D<extRCModel*>* _modelTable;
+  bool delete_model_at_extraction_{true};
   Array1D<uint32_t> _modelMap;  // TO_TEST
   Array1D<extMetRCTable*> _metRCTable;
   double _resistanceTable[20][20];
@@ -2702,13 +2711,13 @@ class extMain
   char* _origSpefFilePrefix = nullptr;
   char* _newSpefFilePrefix = nullptr;
   uint32_t _bufSpefCnt;
-  bool _incrNoBackSlash;
+  bool _incrNoBackSlash = false;
   uint32_t _cornerCnt = 0;
   uint32_t _extDbCnt;
 
   int _remote;
-  bool _extracted;
-  bool _allNet;
+  bool _extracted = false;
+  bool _allNet = false;
 
   bool _getBandWire = false;
   bool _printBandInfo = false;
@@ -2734,9 +2743,9 @@ class extMain
   bool _gndcModify = false;
 
   float _netGndcCalibFactor;
-  bool _netGndcCalibration;
+  bool _netGndcCalibration = false;
 
-  bool _useDbSdb;
+  bool _useDbSdb = false;
 
   Array1D<int>* _nodeTable = nullptr;   // junction id -> cap node id
   Array1D<int>* _btermTable = nullptr;  // bterm id -> cap node id
@@ -2792,7 +2801,7 @@ class extMain
   odb::dbExtControl* _prevControl = nullptr;
 
   bool _foreign = false;
-  bool _rsegCoord;
+  bool _rsegCoord = false;
   bool _diagFlow = false;
 
   std::vector<uint32_t> _rsegJid;
@@ -2816,10 +2825,10 @@ class extMain
   double _maxResTable[64][64];
 
  public:
-  bool _lef_res;
+  bool _lef_res = false;
   std::string _tmpLenStats;
   int _last_node_xy[2];
-  bool _wireInfra;
+  bool _wireInfra = false;
   odb::Rect _extMaxRect;
 
   // ----------------------------------------- 060623

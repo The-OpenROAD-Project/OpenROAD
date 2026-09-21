@@ -96,7 +96,7 @@ using odb::Rect;
 using utl::GUI;
 
 LayoutViewer::LayoutViewer(
-    Options* options,
+    QtOptions* options,
     ScriptWidget* output_widget,
     const SelectionSet& selected,
     const HighlightSet& highlighted,

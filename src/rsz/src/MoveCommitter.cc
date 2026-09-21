@@ -376,6 +376,7 @@ void MoveCommitter::recordAcceptedResult(const MoveResult& result)
   // Track committed instances by move type so later passes can avoid conflicts
   const size_t index = typeIndex(result.type);
   pending_by_type_[index] += result.move_count;
+  ++netlist_edits_;
   for (sta::Instance* inst : result.touched_instances) {
     pending_instances_by_type_[index].insert(inst);
     // Preserve legacy BaseMove semantics: once a move type touched an
@@ -392,6 +393,7 @@ void MoveCommitter::unrecordAcceptedResult(const MoveResult& result)
   // Remove the reverted move results
   const size_t index = typeIndex(result.type);
   pending_by_type_[index] -= result.move_count;
+  ++netlist_edits_;
   for (sta::Instance* inst : result.touched_instances) {
     pending_instances_by_type_[index].erase(
         pending_instances_by_type_[index].find(inst));
@@ -624,6 +626,7 @@ void MoveCommitter::rejectPendingMoves()
   resizer_.addRejectedLegacyMoveCount(move_count);
 
   std::ranges::fill(pending_by_type_, 0);
+  ++netlist_edits_;
   for (std::unordered_multiset<sta::Instance*>& pending_instances :
        pending_instances_by_type_) {
     pending_instances.clear();

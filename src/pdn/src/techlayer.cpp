@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -60,34 +59,38 @@ void TechLayer::populateGrid(odb::dbBlock* block, odb::dbTechLayerDir dir)
   }
 }
 
-int TechLayer::snapToGrid(int pos, int greater_than) const
+int TechLayer::snapToGrid(int pos, int greater_than, int less_than) const
 {
   if (grid_.empty()) {
     return pos;
   }
 
-  std::optional<int> delta_pos;
-  int delta = std::numeric_limits<int>::max();
-  for (const int grid_pos : grid_) {
-    if (grid_pos < greater_than) {
-      // ignore since it is lower than the minimum
-      continue;
-    }
-
-    // look for smallest delta
-    const int new_delta = std::abs(pos - grid_pos);
-    if (new_delta < delta) {
-      delta_pos = grid_pos;
-      delta = new_delta;
-    } else {
-      break;
-    }
+  // the grid is sorted, so the tracks inside [greater_than, less_than] form a
+  // contiguous range and the track closest to pos is one of the two that
+  // straddle pos in that range.
+  const auto range_begin
+      = std::lower_bound(grid_.begin(), grid_.end(), greater_than);
+  const auto range_end = std::upper_bound(range_begin, grid_.end(), less_than);
+  if (range_begin == range_end) {
+    // no track is within the limits
+    return pos;
   }
 
-  if (delta_pos.has_value()) {
-    return delta_pos.value();
+  const auto next = std::lower_bound(range_begin, range_end, pos);
+  if (next == range_end) {
+    // pos is above every track in range
+    return *std::prev(range_end);
   }
-  return pos;
+  if (next == range_begin) {
+    // pos is at or below every track in range
+    return *range_begin;
+  }
+
+  // look for the smallest delta, favoring the lower track when tied
+  const auto prev = std::prev(next);
+  const int64_t prev_delta = static_cast<int64_t>(pos) - *prev;
+  const int64_t next_delta = static_cast<int64_t>(*next) - pos;
+  return prev_delta <= next_delta ? *prev : *next;
 }
 
 int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
@@ -257,6 +260,14 @@ odb::Rect TechLayer::adjustToMinArea(
   }
 
   if (min_area == 0) {
+    return rect;
+  }
+
+  // Shape::getMinimumRect() returns the mergeInit() sentinel when a shape has
+  // no bterm, iterm or via to merge, and dx()/dy()/area() overflow on it. The
+  // caller already skips an inverted rect when correcting the adjusted shape,
+  // so there is nothing to adjust here either.
+  if (rect.isInverted()) {
     return rect;
   }
 

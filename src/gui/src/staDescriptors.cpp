@@ -3,10 +3,6 @@
 
 #include "staDescriptors.h"
 
-#ifdef ENABLE_QT
-#include <QInputDialog>
-#include <QStringList>
-#endif
 #include <algorithm>
 #include <any>
 #include <array>
@@ -22,7 +18,7 @@
 #include "boost/algorithm/string.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
+#include "gui/core.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"

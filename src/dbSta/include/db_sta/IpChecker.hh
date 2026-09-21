@@ -8,6 +8,10 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 
+namespace sta {
+class dbSta;
+}  // namespace sta
+
 namespace utl {
 class Logger;
 }  // namespace utl
@@ -26,11 +30,13 @@ namespace sta {
 // LEF-CHK-009: Pin geometry presence
 // LEF-CHK-010a: Pin minimum width (perpendicular to routing direction)
 // LEF-CHK-010b: Pin minimum area
+// LEF/LIB-CHK-011: Pin direction matches Liberty
+// LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
 
 class IpChecker
 {
  public:
-  IpChecker(odb::dbDatabase* db, utl::Logger* logger);
+  IpChecker(odb::dbDatabase* db, dbSta* sta, utl::Logger* logger);
 
   // Configuration
   void setMaxPolygons(int max) { max_polygons_ = max; }
@@ -84,6 +90,9 @@ class IpChecker
   // LEF-CHK-010b: Pin minimum area
   void checkPinMinArea(odb::dbMaster* master);
 
+  // LEF/LIB-CHK-011-012: Check Liberty pin presence and direction
+  void checkLibertyPins(odb::dbMaster* master);
+
   // Helper: Check if a pin shape has at least one accessible edge
   bool hasAccessibleEdge(odb::dbMaster* master,
                          const odb::Rect& pin_rect,
@@ -91,6 +100,7 @@ class IpChecker
 
   // Member variables
   odb::dbDatabase* db_;
+  dbSta* sta_;
   utl::Logger* logger_;
 
   // Configuration

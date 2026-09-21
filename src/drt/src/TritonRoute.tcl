@@ -454,6 +454,33 @@ proc detailed_route_set_unidirectional_layer { args } {
   drt::detailed_route_set_unidirectional_layer $args
 }
 
+sta::define_cmd_args "set_routing_watermark_strength" {strength}
+
+# Set the per-net non-preferred-direction cost multiplier applied by the
+# detailed router when routing nets tagged via set_routing_watermark.
+# Larger values more strongly suppress wrong-way wiring on those nets,
+# approximating the IC Craftsman "limit way = 1" rule used in
+# Kahng et al. (ISPD'98). Must be called before detailed_route.
+proc set_routing_watermark_strength { args } {
+  sta::check_argc_eq1 "set_routing_watermark_strength" $args
+  sta::parse_key_args "set_routing_watermark_strength" args keys {} flags {}
+  set strength [lindex $args 0]
+  if { ![string is double -strict $strength] || $strength < 0.0 } {
+    utl::error DRT 801 \
+      "set_routing_watermark_strength expects a non-negative number."
+  }
+  drt::set_routing_watermark_strength_cmd $strength
+}
+
+sta::define_cmd_args "get_routing_watermark_strength" {}
+
+# Return the current non-preferred-direction cost multiplier.
+proc get_routing_watermark_strength { args } {
+  sta::check_argc_eq0 "get_routing_watermark_strength" $args
+  sta::parse_key_args "get_routing_watermark_strength" args keys {} flags {}
+  return [drt::get_routing_watermark_strength_cmd]
+}
+
 namespace eval drt {
 proc step_dr { args } {
   # args match FlexDR::SearchRepairArgs

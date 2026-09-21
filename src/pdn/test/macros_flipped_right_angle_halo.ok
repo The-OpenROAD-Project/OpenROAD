@@ -1,0 +1,191 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_macros/fakeram45_64x32.lef, created 1 library cells
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 269 pins.
+[INFO ODB-0131]     Created 547 components and 1304 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1094 connections.
+[INFO ODB-0133]     Created 269 nets and 0 connections.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: R0
+Rings:
+  Core offset:
+    Left: 5.0000
+    Bottom: 6.0000
+    Right: 7.0000
+    Top: 8.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 1.0000
+  Bottom: 2.0000
+  Right: 3.0000
+  Top: 4.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: MY
+Rings:
+  Core offset:
+    Left: 7.0000
+    Bottom: 6.0000
+    Right: 5.0000
+    Top: 8.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 3.0000
+  Bottom: 2.0000
+  Right: 1.0000
+  Top: 4.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: MX
+Rings:
+  Core offset:
+    Left: 5.0000
+    Bottom: 8.0000
+    Right: 7.0000
+    Top: 6.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 1.0000
+  Bottom: 4.0000
+  Right: 3.0000
+  Top: 2.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: R180
+Rings:
+  Core offset:
+    Left: 7.0000
+    Bottom: 8.0000
+    Right: 5.0000
+    Top: 6.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 3.0000
+  Bottom: 4.0000
+  Right: 1.0000
+  Top: 2.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: R90
+Rings:
+  Core offset:
+    Left: 8.0000
+    Bottom: 5.0000
+    Right: 6.0000
+    Top: 7.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 4.0000
+  Bottom: 1.0000
+  Right: 2.0000
+  Top: 3.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: MXR90
+Rings:
+  Core offset:
+    Left: 6.0000
+    Bottom: 5.0000
+    Right: 8.0000
+    Top: 7.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 2.0000
+  Bottom: 1.0000
+  Right: 4.0000
+  Top: 3.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: MYR90
+Rings:
+  Core offset:
+    Left: 8.0000
+    Bottom: 7.0000
+    Right: 6.0000
+    Top: 5.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 4.0000
+  Bottom: 3.0000
+  Right: 2.0000
+  Top: 1.0000
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+Type: Instance
+Orientation: R270
+Rings:
+  Core offset:
+    Left: 6.0000
+    Bottom: 7.0000
+    Right: 8.0000
+    Top: 5.0000
+  Layer: metal5
+    Width: 2.0000
+    Spacing: 2.0000
+  Layer: metal6
+    Width: 2.0000
+    Spacing: 2.0000
+Halo:
+  Left: 2.0000
+  Bottom: 3.0000
+  Right: 4.0000
+  Top: 1.0000

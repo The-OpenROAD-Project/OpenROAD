@@ -1,0 +1,64 @@
+# Same two rows as check_power_grid_short.def, strapped up to metal3
+# through via1/via2 and topped with a 45 degree octagonal bump, so the net
+# under test carries wires, vias and a non-Manhattan shape.
+#
+# VDD also carries two metal1 stripes that run *along* the rows instead of
+# across them -- the failure mode reported in
+# The-OpenROAD-Project/OpenROAD#10955, where a power shape shares a layer
+# with the standard cell signal pins and runs over every pin it crosses.
+#
+# Stripe 1 (x = 0.06um - 0.325um) covers the A and ZN pins of u1/u5.
+# Stripe 2 (x = 0.44um - 0.705um) covers the A and ZN pins of u2/u6.
+# Both stripes stop short of the VSS rails so the only violations are the
+# shorts to the signal dbITerms.  The pins of u3/u4/u7/u8 are controls.
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN short_iterms ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 17100 13000 ) ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 0 2800 N DO 45 BY 1 STEP 380 0 ;
+ROW ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 0 5600 FS DO 45 BY 1 STEP 380 0 ;
+VIAS 2 ;
+    - via1_pg + RECT metal1 ( -170 -170 ) ( 170 170 )
+      + RECT via1 ( -70 -70 ) ( 70 70 )
+      + RECT metal2 ( -170 -170 ) ( 170 170 ) ;
+    - via2_pg + RECT metal2 ( -170 -170 ) ( 170 170 )
+      + RECT via2 ( -70 -70 ) ( 70 70 )
+      + RECT metal3 ( -170 -170 ) ( 170 170 ) ;
+END VIAS
+COMPONENTS 9 ;
+    - u1 INV_X1 + PLACED ( 0 2800 ) N ;
+    - u2 INV_X1 + PLACED ( 760 2800 ) N ;
+    - u3 INV_X1 + PLACED ( 1520 2800 ) N ;
+    - u4 INV_X1 + PLACED ( 2280 2800 ) N ;
+    - u5 INV_X1 + PLACED ( 0 5600 ) FS ;
+    - u6 INV_X1 + PLACED ( 760 5600 ) FS ;
+    - u7 INV_X1 + PLACED ( 1520 5600 ) FS ;
+    - u8 INV_X1 + PLACED ( 2280 5600 ) FS ;
+    - bump1 OCT_BUMP + PLACED ( 13000 10400 ) N ;
+END COMPONENTS
+SPECIALNETS 2 ;
+    - VDD ( * VDD ) + USE POWER
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 0 5600 ) ( 17100 5600 )
+      NEW metal1 530 + SHAPE STRIPE ( 385 3000 ) ( 385 8200 )
+      NEW metal1 530 + SHAPE STRIPE ( 1145 3000 ) ( 1145 8200 )
+      NEW metal1 0 + SHAPE STRIPE ( 12000 5600 ) via1_pg
+      NEW metal2 340 + SHAPE STRIPE ( 12000 5600 ) ( 12000 11400 )
+      NEW metal2 0 + SHAPE STRIPE ( 12000 11400 ) via2_pg
+      NEW metal3 340 + SHAPE STRIPE ( 11000 11400 ) ( 16000 11400 ) ;
+    - VSS ( * VSS ) + USE GROUND
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 0 2800 ) ( 17100 2800 )
+      NEW metal1 340 + SHAPE FOLLOWPIN ( 0 8400 ) ( 17100 8400 ) ;
+END SPECIALNETS
+NETS 8 ;
+    - n1 ( u1 ZN ) ( u2 A ) + USE SIGNAL ;
+    - n2 ( u2 ZN ) ( u3 A ) + USE SIGNAL ;
+    - n3 ( u3 ZN ) ( u4 A ) + USE SIGNAL ;
+    - n4 ( u4 ZN ) ( u1 A ) + USE SIGNAL ;
+    - n5 ( u5 ZN ) ( u6 A ) + USE SIGNAL ;
+    - n6 ( u6 ZN ) ( u7 A ) + USE SIGNAL ;
+    - n7 ( u7 ZN ) ( u8 A ) + USE SIGNAL ;
+    - n8 ( u8 ZN ) ( u5 A ) + USE SIGNAL ;
+END NETS
+END DESIGN

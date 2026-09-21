@@ -588,7 +588,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.cut_spacing_table_orth_tbl_;
   stream >> *obj.cut_spacing_table_def_tbl_;
   stream >> *obj.cut_enc_rules_tbl_;
-  stream >> *obj.cut_enc_table_rules_tbl_;
+  if (obj.getDatabase()->isSchema(kSchemaCutEnclosureTableDefRule)) {
+    stream >> *obj.cut_enc_table_rules_tbl_;
+  }
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;

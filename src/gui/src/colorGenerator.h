@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <QColor>
 #include <array>
 
-#include "gui/gui.h"
+#include "gui/core.h"
 
 namespace gui {
 
@@ -16,13 +15,12 @@ class ColorGenerator
   ColorGenerator();
 
   int getColorCount() const { return kColors.size(); }
-  QColor getQColor();
   Painter::Color getColor();
 
   void reset() { index_ = 0; }
 
  private:
-  static const std::array<QColor, 31> kColors;
+  static const std::array<Painter::Color, 31> kColors;
   int index_;
 };
 

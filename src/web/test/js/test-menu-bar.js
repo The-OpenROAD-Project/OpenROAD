@@ -265,3 +265,116 @@ describe('MenuBar', () => {
         assert.equal(eventShortcut(e), canonicalShortcut('Ctrl+Shift+K'));
     });
 });
+
+// ─── Options menu (2.15) ────────────────────────────────────────────────────
+
+function optionsApp(overrides = {}) {
+    return {
+        designScale: 1,
+        showDbu: false,
+        rulerStyle: 'euclidian',
+        wheelZoom: true,
+        polyDecomp: false,
+        calls: [],
+        toggleShowDbu() { this.calls.push('showDbu'); },
+        toggleRulerStyle() { this.calls.push('rulerStyle'); },
+        toggleWheelZoom() { this.calls.push('wheelZoom'); },
+        togglePolyDecomp() { this.calls.push('polyDecomp'); },
+        showArrowStepDialog() { this.calls.push('arrowStep'); },
+        showAppFontDialog() { this.calls.push('font'); },
+        focusComponent() {},
+        ...overrides,
+    };
+}
+
+// Open a top-level menu by its label and return its rows.
+function openMenu(label) {
+    const target = [...document.querySelectorAll('.menu-label')]
+        .find(el => el.textContent.startsWith(label));
+    target.click();
+    return [...target.querySelectorAll('.menu-item')];
+}
+
+// A row's own label, not its descendants': a submenu row's textContent
+// includes every child row's text, so matching on that would return the
+// "Heat maps" row for a query about one of the sources inside it.
+function rowLabel(row) {
+    for (const child of row.children) {
+        if (child.tagName !== 'SPAN') continue;
+        if (child.classList.contains('menu-check')
+            || child.classList.contains('shortcut')
+            || child.classList.contains('submenu-arrow')) {
+            continue;
+        }
+        return child.textContent;
+    }
+    return '';
+}
+
+function rowByLabel(rows, label) {
+    return rows.find(r => rowLabel(r).includes(label));
+}
+
+describe('Options menu', () => {
+    it('collects Qt\'s Options entries in one menu', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        createMenuBar(optionsApp());
+        // The menu name is the label's own text node; its textContent would
+        // also carry the whole dropdown.
+        const labels = [...document.querySelectorAll('.menu-label')]
+            .map(el => el.firstChild.textContent);
+        assert.ok(labels.includes('Options'), 'Options menu created');
+
+        const rows = openMenu('Options').map(r => r.textContent);
+        for (const entry of ['Show DBU', 'Make euclidian rulers',
+                             'Mouse wheel mapped to zoom by default',
+                             'Arrow keys scroll step', 'Application font',
+                             'Show polygon decomposition']) {
+            assert.ok(rows.some(r => r.includes(entry)), `${entry} present`);
+        }
+    });
+
+    // They used to live under View and Tools; Qt keeps them in Options and
+    // duplicating them would let the two copies disagree.
+    it('moves Show DBU out of View and euclidian rulers out of Tools', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        createMenuBar(optionsApp());
+        assert.equal(rowByLabel(openMenu('View'), 'Show DBU'), undefined);
+        assert.equal(rowByLabel(openMenu('Tools'), 'euclidian'), undefined);
+    });
+
+    it('routes each row to its handler', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const app = optionsApp();
+        createMenuBar(app);
+        const rows = openMenu('Options');
+        rowByLabel(rows, 'Show DBU').click();
+        openMenu('Options');
+        rowByLabel(openMenu('Options'), 'Make euclidian rulers').click();
+        rowByLabel(openMenu('Options'), 'Mouse wheel').click();
+        rowByLabel(openMenu('Options'), 'Arrow keys').click();
+        rowByLabel(openMenu('Options'), 'Application font').click();
+        rowByLabel(openMenu('Options'), 'polygon decomposition').click();
+        assert.deepEqual(app.calls, ['showDbu', 'rulerStyle', 'wheelZoom',
+                                     'arrowStep', 'font', 'polyDecomp']);
+    });
+
+    it('ticks the toggles that are on', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        createMenuBar(optionsApp({ showDbu: true, wheelZoom: false }));
+        const rows = openMenu('Options');
+        const tick = (label) =>
+            rowByLabel(rows, label).querySelector('.menu-check').textContent;
+        assert.equal(tick('Show DBU'), '✓');
+        assert.equal(tick('Mouse wheel'), '');
+        // rulerStyle defaults to euclidian, so this one is ticked.
+        assert.equal(tick('Make euclidian rulers'), '✓');
+    });
+
+    it('disables polygon decomposition until a design is loaded', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        createMenuBar(optionsApp({ designScale: null }));
+        const row = rowByLabel(openMenu('Options'), 'polygon decomposition');
+        assert.ok(row.classList.contains('disabled'));
+    });
+});

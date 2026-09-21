@@ -33,6 +33,17 @@ enum class FillPattern
 // (request_handler's collectNetFlightLines).
 inline constexpr Color kSelectionYellow{.r = 255, .g = 255, .b = 0, .a = 255};
 
+// Instance names and instance-pin labels.  Slightly translucent so a label
+// over dense geometry still lets the shapes read through, as Qt's does.
+inline constexpr Color kLabelYellow{.r = 255, .g = 255, .b = 0, .a = 220};
+
+// Die, core, region and instance outlines, plus the instance orientation tag.
+// Qt paints all of them with QPen(Qt::gray, 0) — drawChip, drawRegions and
+// drawInstanceOutlines in renderThread.cpp — and Qt::gray is #A0A0A4, not the
+// neutral #808080 that is Qt::darkGray.  Shared with the tests so the value
+// cannot drift back.
+inline constexpr Color kOutlineGray{.r = 160, .g = 160, .b = 164, .a = 255};
+
 // Number of entries in the built-in spectrum (Turbo) colormap.
 inline constexpr int kSpectrumColorCount = 256;
 
