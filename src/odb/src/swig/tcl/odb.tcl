@@ -1136,7 +1136,10 @@ proc set_halo { args } {
   set top_dbu [ord::microns_to_dbu $top]
   set is_soft [info exists flags(-soft)]
 
-  set block [odb::get_block]
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error ODB 564 "No block found. Please load a design before using the set_halo command."
+  }
 
   if { [info exists keys(-instance)] } {
     set name $keys(-instance)
