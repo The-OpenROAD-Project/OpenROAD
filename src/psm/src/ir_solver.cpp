@@ -1201,7 +1201,7 @@ SourceNodes IRSolver::generateSourceNodesGenericBumps() const
   logger_->info(utl::PSM,
                 73,
                 "Using bump pattern on {} with x-pitch {:.4f}um, y-pitch "
-                "{:.4f}um, and size {:.4f}um with an reduction factor of {}x.",
+                "{:.4f}um, and size {:.4f}um with a reduction factor of {}x.",
                 network_->getTopLayer()->getName(),
                 dx / dbus,
                 dy / dbus,
