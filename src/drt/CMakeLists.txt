@@ -129,7 +129,7 @@ target_include_directories(drt
 target_link_libraries(drt
   PUBLIC
     drt_lib
-    gui
+    gui_core
 )
 
 messages(

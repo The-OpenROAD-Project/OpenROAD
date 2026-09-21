@@ -155,6 +155,8 @@ py_test(
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
+    "abstract_polygon",
+    "abstract_polygon_no_overlap",
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
@@ -210,7 +212,6 @@ COMPULSORY_TESTS = [
     "row_settings",
     "sky130hd_multi_patterned",
     "smash_vias",
-    "swap_master",
     "transform",
     "wire_encoder",
     "write_cdl",
@@ -236,6 +237,7 @@ PASSFAIL_TESTS = [
     "test_iterm",
     "test_module",
     "test_net",
+    "test_tcl_handles",
     "test_wire_codec",
 ]
 
@@ -380,6 +382,13 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abstract_polygon": [
+                "abstract_polygon_bloat.lefok",
+            ],
+            "abstract_polygon_no_overlap": [
+                "abstract_polygon.def",
+                "abstract_polygon_no_overlap_bloat.lefok",
+            ],
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
             ],
@@ -465,6 +474,7 @@ test_suite(
         "//src/odb/test/cpp:TestObjectType",
         "//src/odb/test/cpp:TestPolygonalFloorplan",
         "//src/odb/test/cpp:TestSwapMaster",
+        "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
         "//src/odb/test/cpp:TestWriteReadDbHier",
     ],

@@ -438,8 +438,8 @@ sta::proc_redirect report_floating_nets {
     }
   }
 
-  utl::metric_int "timing__drv__floating__nets" $floating_net_count
-  utl::metric_int "timing__drv__floating__pins" $floating_pin_count
+  utl::metric_integer "timing__drv__floating__nets" $floating_net_count
+  utl::metric_integer "timing__drv__floating__pins" $floating_pin_count
 }
 
 sta::define_cmd_args "report_overdriven_nets" {[-include_parallel_driven] \
@@ -464,7 +464,7 @@ sta::proc_redirect report_overdriven_nets {
     }
   }
 
-  utl::metric_int "timing__drv__overdriven__nets" $overdriven_net_count
+  utl::metric_integer "timing__drv__overdriven__nets" $overdriven_net_count
 }
 
 sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]} ;# checker off

@@ -25,7 +25,7 @@ jobs:
       - name: Install Python tools
         run: |
           python3 -m venv venv
-          venv/bin/pip install tclint==0.7.0 black
+          venv/bin/pip install tclint==0.7.0 black==26.5.1
 
       - name: Cache buildifier
         id: cache-buildifier

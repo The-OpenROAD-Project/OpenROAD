@@ -17,6 +17,7 @@
 #include <mutex>
 #include <numbers>
 #include <random>
+#include <ranges>
 #include <set>
 #include <span>  // NOLINT(build/c++20)
 #include <string>
@@ -33,8 +34,6 @@
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
 #include "glyph_cache.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -49,9 +48,36 @@
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web_painter.h"
 
 namespace web {
+
+namespace {
+// Process-wide renderer bridge installed by WebServer at serve() time.  Both
+// halves may be empty, in which case the calls below are no-ops.  This
+// indirection keeps web::Gui::get() out of tile_generator.cpp so that libweb.a
+// has no undefined references to the full gui/SWIG library — test binaries can
+// link libweb without pulling in ord::OpenRoad::openRoad.
+TileGenerator::RendererHooks& rendererHooks()
+{
+  static TileGenerator::RendererHooks hooks;
+  return hooks;
+}
+
+// Guards both the struct above and the calls through it.  The calls run tool
+// code (drt, pdn, psm, gpl) that Qt only ever enters from its single
+// RenderThread, while save_image renders tiles on a thread pool; and
+// WebServer::stop() clears the hooks from the Tcl thread while the io threads
+// may still be serving a tile, so a reader must hold this across the whole
+// call, not just around it.
+std::mutex& rendererHooksMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+}  // namespace
 
 int dbuPrecision(const double dbu_per_micron)
 {
@@ -515,13 +541,18 @@ constexpr int kInstNameFontHeight = 12;    // atlas size for instance names
 // survives on its length.
 constexpr double kMinViewablePx = 5.0;
 
-// Die/core/region outline color: Qt pen Qt::gray width 0 (drawChip,
-// renderThread.cpp:1174).
-constexpr Color kOutlineGray{.r = 128, .g = 128, .b = 128, .a = 255};
-
 // Placement-blockage hatch, worn by dbBlockage shapes and by every instance's
-// own bbox+halo alike — Qt paints both in drawBlockages() with one brush.
-constexpr Color kBlockageHash{.r = 255, .g = 255, .b = 255, .a = 180};
+// own bbox+halo alike — Qt paints both in drawBlockages() with one brush,
+// QBrush(Qt::darkGray, Qt::BDiagPattern), and darkGray is #808080 opaque.
+constexpr Color kBlockageHash{.r = 128, .g = 128, .b = 128, .a = 255};
+
+// Qt's BDiagPattern is an 8x8 device-pixel bitmap carrying one lit pixel per
+// row, each row shifted one column: a 1 px line every 8 px along the axis.
+// Authored in CSS px and scaled by px_per_css like every other size here, so
+// the hatch keeps its physical size on a HiDPI display -- Qt's pattern is a
+// device-space texture and halves instead.
+constexpr int kBlockageHashPeriodCss = 8;
+constexpr int kBlockageHashWidthCss = 1;
 
 // DBU -> tile-pixel conversion shared by the drawing primitives, in double.
 // Unclamped: an oblique segment must be converted through these and clipped
@@ -563,7 +594,7 @@ inline int toPxY(int dbu_y, const TileFrame& frame, int dim)
 // literal 1 px is wrong twice over — it reads a third as thick as everything
 // else on a 3x display, and on the supersampled render path it fades to ~1/S
 // intensity once lanczos2Downsample decimates the buffer back.  See
-// penWidthCss for the 3 CSS px pen the gui::Painter ops default to.
+// penWidthCss for the 3 CSS px pen the web::Painter ops default to.
 inline int hairlineCss(const TileFrame& frame)
 {
   return std::max(1, static_cast<int>(std::lround(frame.px_per_css)));
@@ -685,7 +716,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   }
 
   // Per-layer fill pattern for the requested layer (int mirrors FillPattern /
-  // gui::Painter::Brush).  Defaults to solid; clamp unknown values so a bad
+  // web::Painter::Brush).  Defaults to solid; clamp unknown values so a bad
   // payload can't index outside the enum.
   const int64_t pattern
       = jsonOr<int64_t>(json, "pattern", static_cast<int>(FillPattern::kSolid));
@@ -1474,20 +1505,20 @@ void TileGenerator::setPixel(std::vector<unsigned char>& image,
 
 namespace {
 
-// FillPattern (color.h) is a web-local mirror of gui::Painter::Brush so the
+// FillPattern (color.h) is a web-local mirror of web::Painter::Brush so the
 // tile server, the JS frontend and the Qt GUI all agree on the integer
 // ordering the "pattern" request field carries.  Keep them locked together.
 static_assert(static_cast<int>(FillPattern::kNone)
-                      == static_cast<int>(gui::Painter::Brush::kNone)
+                      == static_cast<int>(web::Painter::Brush::kNone)
                   && static_cast<int>(FillPattern::kSolid)
-                         == static_cast<int>(gui::Painter::Brush::kSolid)
+                         == static_cast<int>(web::Painter::Brush::kSolid)
                   && static_cast<int>(FillPattern::kDiagonal)
-                         == static_cast<int>(gui::Painter::Brush::kDiagonal)
+                         == static_cast<int>(web::Painter::Brush::kDiagonal)
                   && static_cast<int>(FillPattern::kCross)
-                         == static_cast<int>(gui::Painter::Brush::kCross)
+                         == static_cast<int>(web::Painter::Brush::kCross)
                   && static_cast<int>(FillPattern::kDots)
-                         == static_cast<int>(gui::Painter::Brush::kDots),
-              "web::FillPattern must mirror gui::Painter::Brush values");
+                         == static_cast<int>(web::Painter::Brush::kDots),
+              "web::FillPattern must mirror web::Painter::Brush values");
 
 // How the web layer tree groups a tech layer, mirroring the Qt GUI
 // (displayControls.cpp).  Single source of truth shared by getLayers() (which
@@ -1634,17 +1665,16 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
   }
 }
 
-odb::Rect TileGenerator::getBounds() const
+odb::Rect TileGenerator::getFitBounds() const
 {
   // Union of every reachable chiplet's block bbox AND die area, in world
-  // coordinates.  Mirrors LayoutViewer::getBounds() in the Qt GUI.
+  // coordinates.  Mirrors LayoutViewer::getBounds() in the Qt GUI, and this is
+  // what the client frames on: the Qt Fit zooms to exactly this rect.
   //
   // The die area must be in the union: dbBlock::getBBox() covers the placed
   // SHAPES, not the die, so a design whose content sits in a corner of a much
   // larger die (one macro in an empty floorplan) would frame on the content
-  // alone.  This rect is not just the zoom-to-fit box — it also georeferences
-  // the tile grid, whose indices are clamped to it, so anything outside is
-  // never rasterized at all and the die simply has no tiles (issue #11280).
+  // alone.
   odb::dbChip* root = getChip();
   if (!root) {
     return {};
@@ -1671,12 +1701,24 @@ odb::Rect TileGenerator::getBounds() const
   if (!any) {
     return {};
   }
-  if (pin_label_margin_dbu_ > 0) {
-    bounds.set_xlo(bounds.xMin() - pin_label_margin_dbu_);
-    bounds.set_ylo(bounds.yMin() - pin_label_margin_dbu_);
-    bounds.set_xhi(bounds.xMax() + pin_label_margin_dbu_);
-    bounds.set_yhi(bounds.yMax() + pin_label_margin_dbu_);
+  return bounds;
+}
+
+odb::Rect TileGenerator::getBounds() const
+{
+  // getFitBounds() grown by the pin-label margin.  This rect georeferences the
+  // tile grid, whose indices are clamped to it, so anything outside is never
+  // rasterized at all and the die simply has no tiles (issue #11280) -- which
+  // is why the labels that hang outward from the die edge need room here.
+  //
+  // Deliberately NOT the zoom-to-fit box: framing on the margin as well shrinks
+  // the design in the viewport, and with the map resting on integer zoom levels
+  // it can cost a whole level (issue #11338).  The client fits getFitBounds().
+  odb::Rect bounds = getFitBounds();
+  if (bounds == odb::Rect{} || pin_label_margin_dbu_ <= 0) {
+    return bounds;
   }
+  bounds.bloat(pin_label_margin_dbu_, bounds);
   return bounds;
 }
 
@@ -1742,7 +1784,7 @@ std::vector<std::string> TileGenerator::getLayers() const
   return layers;
 }
 
-// Build per-layer colors that match gui::DisplayControls::techInit.  The two
+// Build per-layer colors that match web::DisplayControls::techInit.  The two
 // must stay in sync so the GUI and web frontend show the same colors for the
 // same design.  Walks every dbTechLayer in tech order (not just routing/cut)
 // because the random fallback shares one PRNG and the iteration order is what
@@ -2094,6 +2136,55 @@ TileGenerator::SnapResult TileGenerator::snapAt(
   return result;
 }
 
+std::vector<SelectionResult> TileGenerator::selectFromRenderers(
+    const odb::Rect& region,
+    const TileVisibility& vis,
+    const std::set<std::string>& visible_layers) const
+{
+  std::vector<SelectionResult> results;
+  // Held across the whole walk: Qt issues the per-layer calls and the final
+  // nullptr one as one sequence, and gpl::select mutates renderer state, so
+  // two clients picking at once must not interleave.
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
+  const auto& select = rendererHooks().select;
+  if (!select) {
+    return results;
+  }
+
+  // Reverse layer order, and only layers that are both visible and
+  // selectable: LayoutViewer::selectAt walks `rev_layers` under exactly those
+  // two conditions.  Names are deduplicated across techs the way getLayers()
+  // merges them, so a layer name shared by two chiplet techs is offered once.
+  std::set<std::string> asked;
+  for (odb::dbTech* tech : db_->getTechs()) {
+    // dbSet has no reverse iterator, so materialize and walk backwards.
+    std::vector<odb::dbTechLayer*> layers;
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      layers.push_back(layer);
+    }
+    for (odb::dbTechLayer* layer : std::ranges::reverse_view(layers)) {
+      const std::string name = layer->getName();
+      if (!asked.insert(name).second) {
+        continue;
+      }
+      // An empty visible_layers set means the client sent no layer list, in
+      // which case nothing is filtered (same reading as the searches below).
+      if (!visible_layers.empty() && !visible_layers.contains(name)) {
+        continue;
+      }
+      if (!vis.isLayerSelectable(name)) {
+        continue;
+      }
+      select(layer, region, results);
+    }
+  }
+  // The layer-independent pass, last: psm::DebugGui::select clears its
+  // selection state here, so anything it collected per layer must already be
+  // in `results`.
+  select(nullptr, region, results);
+  return results;
+}
+
 std::vector<SelectionResult> TileGenerator::selectAt(
     const int dbu_x,
     const int dbu_y,
@@ -2124,6 +2215,15 @@ std::vector<SelectionResult> TileGenerator::selectAt(
              dbuToMicronString(margin, dbu_per_micron));
 
   odb::PtrSet<odb::dbNet> seen_nets;
+
+  // Renderer::select, before the odb searches — the order Qt uses, so a
+  // renderer's own object wins a click over whatever geometry lies under it.
+  // Kept in its own vector because the sort at the end of this function
+  // deliberately promotes instances, which would bury these.
+  const odb::Rect click_region(
+      dbu_x - margin, dbu_y - margin, dbu_x + margin, dbu_y + margin);
+  std::vector<SelectionResult> renderer_results
+      = selectFromRenderers(click_region, vis, visible_layers);
 
   // Iterate every chiplet so clicks inside a translated/rotated
   // dbChipInst land on the right object.  We map the world click into
@@ -2285,6 +2385,13 @@ std::vector<SelectionResult> TileGenerator::selectAt(
     }
     return a.bbox.area() > b.bbox.area();
   });
+
+  // Renderer hits go in front of the sorted design objects, as in Qt.
+  if (!renderer_results.empty()) {
+    results.insert(results.begin(),
+                   std::make_move_iterator(renderer_results.begin()),
+                   std::make_move_iterator(renderer_results.end()));
+  }
 
   debugPrint(
       logger_,
@@ -2473,7 +2580,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const double dpr,
     const int requested_tile_px,
     const std::vector<ColoredPolygon>& colored_polys,
-    const std::vector<TextLabel>& labels) const
+    const std::vector<TextLabel>& labels,
+    const bool debug_renderers,
+    const bool debug_live) const
 {
   // Same contract as renderTileBuffer: the client states the device-pixel
   // square it will display this tile in, because an overlay drawn at a
@@ -2492,8 +2601,10 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     return encodeImagePng(image, dim, dim);
   }
 
-  // Short-circuit: if there's nothing to draw, return a blank tile.
-  if (highlight_rects.empty() && highlight_polys.empty()
+  // Short-circuit: if there's nothing to draw, return a blank tile.  The
+  // debug-renderer pass counts as something to draw even with no shapes:
+  // it is the only thing on the tile while a tool is paused mid-run.
+  if (!debug_renderers && highlight_rects.empty() && highlight_polys.empty()
       && colored_rects.empty() && colored_polys.empty() && flight_lines.empty()
       && labels.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
@@ -2549,6 +2660,12 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
             image, *route_guide_net_ids, layer->getName(), it->second, frame);
       }
     }
+  }
+  // The layer-independent Renderer::drawObjects pass, drawn last so debug
+  // graphics sit above the highlights.  Once per tile: the layer tiles below
+  // only carry the per-layer drawLayer half, so nothing is composited twice.
+  if (debug_renderers) {
+    drawRendererOverlay(image, frame, debug_live, /*layer=*/nullptr);
   }
 
   return encodeImagePng(image, dim, dim);
@@ -2729,6 +2846,85 @@ void TileGenerator::drawOrientationTag(std::vector<unsigned char>& image,
            kOutlineGray,
            stroke,
            dim);
+}
+
+/* static */
+void TileGenerator::drawInstanceName(std::vector<unsigned char>& image,
+                                     odb::dbInst* inst,
+                                     const TileFrame& frame,
+                                     const int dim,
+                                     const GlyphCache::FontSize& inst_font)
+{
+  // The same pixel box the instance pass drew: floor the low corner, ceil the
+  // high one, so the label centres on exactly that rectangle.
+  const odb::Rect box = inst->getBBox()->getBox();
+  const auto pixel_xl = static_cast<int64_t>(frame.pxX(box.xMin()));
+  const auto pixel_yl = static_cast<int64_t>(frame.pxY(box.yMin()));
+  const auto pixel_xh = static_cast<int64_t>(std::ceil(frame.pxX(box.xMax())));
+  const auto pixel_yh = static_cast<int64_t>(std::ceil(frame.pxY(box.yMax())));
+
+  // The font is a FIXED size, as in the Qt GUI, which renders every instance
+  // name in options_->instanceNameFont() and only decides whether the name
+  // fits (drawTextInBBox).  Scaling it with the box instead made a large
+  // macro's name fill the macro.  The caller has already applied Qt's size
+  // gate; everything reaching here draws.
+  const int box_px_w = (int) (pixel_xh - pixel_xl);
+  const int box_px_h = (int) (pixel_yh - pixel_yl);
+  const int font_h = getTextHeight(inst_font);
+
+  const std::string full_name = inst->getName();
+  const int full_w = getTextWidth(full_name, inst_font);
+
+  // Rotate if taller than wide and text overflows (85%).
+  const bool rotate = (box_px_h > box_px_w) && (full_w > box_px_w * 85 / 100);
+
+  // Available width for text (90% of relevant dim).
+  const int avail = rotate ? (box_px_h * 9 / 10) : (box_px_w * 9 / 10);
+
+  // Elide from the left if text is too wide.  Maintain a running prefix width
+  // so each candidate "..." + name.substr(skip) is evaluated in O(1) using
+  //   textWidth(name.substr(skip))
+  //     = full_w - prefix_w - kern(name[skip-1], name[skip])
+  // giving O(N) total instead of O(N^2).
+  std::string name = full_name;
+  int text_w = full_w;
+  if (text_w > avail && name.size() > 4) {
+    const int dots_w = getTextWidth("...", inst_font);
+    const size_t n = name.size();
+    int prefix_w = 0;
+    for (size_t skip = 1; skip < n - 1; ++skip) {
+      prefix_w += inst_font.glyph(name[skip - 1]).advance;
+      if (skip >= 2) {
+        prefix_w += inst_font.kern(name[skip - 2], name[skip - 1]);
+      }
+      const int suffix_w
+          = full_w - prefix_w - inst_font.kern(name[skip - 1], name[skip]);
+      const int w = dots_w + inst_font.kern('.', name[skip]) + suffix_w;
+      if (w <= avail) {
+        name = "..." + name.substr(skip);
+        text_w = w;
+        break;
+      }
+    }
+  }
+
+  // Center of instance bbox in pixel coords.
+  const int64_t cx = (pixel_xl + pixel_xh) / 2;
+  const int64_t cy = dim - 1 - (pixel_yl + pixel_yh) / 2;
+
+  if (rotate) {
+    const int64_t px = cx - font_h / 2;
+    const int64_t py = cy - text_w / 2;
+    if (px > -font_h && px < dim && py > -text_w && py < dim) {
+      drawTextRotated(image, (int) px, (int) py, name, inst_font, kLabelYellow);
+    }
+  } else {
+    const int64_t px = cx - text_w / 2;
+    const int64_t py = cy - font_h / 2;
+    if (px > -text_w && px < dim && py > -font_h && py < dim) {
+      drawText(image, (int) px, (int) py, name, inst_font, kLabelYellow);
+    }
+  }
 }
 
 // Special "_access_points" layer: dbAccessPoint markers (X).  Mirrors GUI
@@ -3274,7 +3470,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       if (!tech) {
         continue;
       }
-      // Per-layer colors mirror gui::DisplayControls so the GUI and web
+      // Per-layer colors mirror web::DisplayControls so the GUI and web
       // frontend agree on which color belongs to which layer.  Resolved per
       // chiplet because each chiplet has its own dbTech in 3DBlox designs.
       const auto& layer_colors = getLayerColorMap(tech);
@@ -3412,21 +3608,32 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                              super);
             };
 
-      // Diagonal white hash: the blockage look, shared by placement blockages,
-      // instance footprints and routing obstructions so one design cannot show
-      // three spacings of the same pattern.  Coarser and thinner than
-      // FillPattern::kDiagonal, whose lattice is sized for layer shapes.  The
-      // period is anchored in absolute pixel space so the hatch is seamless
-      // across tile boundaries.
-      const int hash_period = static_cast<int>(std::lround(20 * super_per_css));
-      const int hash_width = static_cast<int>(std::lround(2 * super_per_css));
+      // The blockage hatch, shared by placement blockages, instance footprints
+      // and routing obstructions so one design cannot show three spacings of
+      // the same pattern.  Sized from Qt's BDiagPattern (see
+      // kBlockageHashPeriodCss).  The period is anchored in absolute pixel
+      // space so the hatch is seamless across tile boundaries.
+      //
+      // Routing obstructions ride along here; Qt draws those in the layer's
+      // own colour darkened (drawObstructions), which this does not do.
+      //
+      // Lit where (x - y) is on the lattice, y counting UP: that is the "/"
+      // Qt gets from Qt::BDiagPattern (drawBlockages).  Using (x + y) mirrors
+      // the pattern to "\\" -- same texture, but not the one beside it.
+      const int hash_period
+          = std::max(2,
+                     static_cast<int>(
+                         std::lround(kBlockageHashPeriodCss * super_per_css)));
+      const int hash_width = std::max(
+          1,
+          static_cast<int>(std::lround(kBlockageHashWidthCss * super_per_css)));
       const int hash_ox = latticeAnchor(dbu_x_min, scale, hash_period);
       const int hash_oy = latticeAnchor(dbu_y_min, scale, hash_period);
       // One CSS px in buffer pixels; invariant for the tile.
       const int stroke = hairlineCss(frame);
       // Walks only the lit pixels: from each row's starting phase, step to the
       // first lit column and stride by the period.  Visiting every pixel and
-      // testing `(ix + iy) % period` instead costs a real idiv on 100% of the
+      // testing `(ix - iy) % period` instead costs a real idiv on 100% of the
       // area to light 10% of it -- affordable when this only ran over the rare
       // dbBlockage, not now that it runs over every instance footprint.
       auto hatch_box_in_tile = [&](const odb::Rect& box) {
@@ -3441,7 +3648,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         for (int iy = y_lo; iy < y_hi; ++iy) {
           const int draw_y = super - 1 - iy;
           // Phase of x_lo on this row, in [0, hash_period).
-          int phase = (x_lo + hash_ox + iy + hash_oy) % hash_period;
+          int phase = (x_lo + hash_ox - iy - hash_oy) % hash_period;
           if (phase < 0) {
             phase += hash_period;
           }
@@ -3763,10 +3970,21 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
+        // Both fonts are a fixed CSS size, so they are invariant for the whole
+        // tile.  fontAtlasGetFont takes a global lock; asking per instance
+        // would serialise the render threads on it.
+        const auto inst_name_font = fontAtlasGetFont(
+            static_cast<int>(std::lround(kInstNameFontHeight * super_per_css)));
+        const int inst_name_font_h = getTextHeight(inst_name_font);
+
         // Draw instances.  instance_size_limit_dbu culls sub-resolution
         // instances at the RTree level (Qt-parity), so dense bump arrays vanish
         // at zoom-out — unless "Detailed view" is on, which sets the limit to
         // 0.
+        // Filled by the pass below and drawn after the hatching, so a label
+        // is never crossed by a hatch line -- Qt's drawBlock order.
+        std::vector<odb::dbInst*> named_insts;
+
         const Search::InstRange insts
             = inst_pass_draws ? search_->searchInsts(block,
                                                      dbu_tile.xMin(),
@@ -3814,17 +4032,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
           if (instances_only) {
             // Draw the rectangle border (instances-only layer)
-            const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
             if (dbu_x_min <= xl && xl <= dbu_x_max) {
               for (int iy = loop_yl; iy < loop_yh; ++iy) {
                 const int draw_y = (super - 1 - iy);
-                setPixel(image_buffer, draw_xl, draw_y, gray);
+                setPixel(image_buffer, draw_xl, draw_y, kOutlineGray);
               }
             }
             if (dbu_x_min <= xh && xh <= dbu_x_max) {
               for (int iy = loop_yl; iy < loop_yh; ++iy) {
                 const int draw_y = (super - 1 - iy);
-                setPixel(image_buffer, draw_xh, draw_y, gray);
+                setPixel(image_buffer, draw_xh, draw_y, kOutlineGray);
               }
             }
             if (dbu_y_min <= yl && yl <= dbu_y_max) {
@@ -3833,7 +4050,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               if (width > 0) {
                 unsigned char* row
                     = &image_buffer[(draw_y * super + loop_xl) * 4];
-                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
+                fillSpan({row, static_cast<size_t>(width) * 4}, kOutlineGray);
               }
             }
             if (dbu_y_min <= yh && yh <= dbu_y_max) {
@@ -3842,7 +4059,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               if (width > 0) {
                 unsigned char* row
                     = &image_buffer[(draw_y * super + loop_xl) * 4];
-                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
+                fillSpan({row, static_cast<size_t>(width) * 4}, kOutlineGray);
               }
             }
 
@@ -3868,101 +4085,22 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               drawOrientationTag(image_buffer, inst, frame, super, stroke);
             }
 
-            // Draw instance name label when zoomed in enough.
-            // The font is a FIXED size, as in the Qt GUI, which renders every
-            // instance name in options_->instanceNameFont() and only decides
-            // whether the name fits (drawTextInBBox).  Scaling it with the box
-            // instead made a large macro's name fill the macro.  Text is
-            // elided from the left ("...suffix") to fit 90% of the
-            // available dimension, matching the Qt GUI's behavior.
-            if (vis.inst_names) {
-              const int box_px_w = (int) (pixel_xh - pixel_xl);
-              const int box_px_h = (int) (pixel_yh - pixel_yl);
-              const int box_px_min = std::min(box_px_w, box_px_h);
-              const auto inst_font = fontAtlasGetFont(static_cast<int>(
-                  std::lround(kInstNameFontHeight * super_per_css)));
-              const int font_h = getTextHeight(inst_font);
-
-              // The only size gate, as in Qt's drawTextInBBox: skip when the
-              // font would dominate the cell (> 50% of the cross dimension),
-              // matching its kNonCoreScaleLimit = 2.0.  A separate minimum
-              // box test would be dead weight -- with a fixed font this one
-              // already implies box_px_min >= 2 * kInstNameFontHeight.
-              if (2 * font_h <= box_px_min) {
-                constexpr Color name_color{
-                    .r = 255, .g = 255, .b = 0, .a = 220};
-                const std::string full_name = inst->getName();
-                const int full_w = getTextWidth(full_name, inst_font);
-
-                // Rotate if taller than wide and text overflows (85%).
-                const bool rotate
-                    = (box_px_h > box_px_w) && (full_w > box_px_w * 85 / 100);
-
-                // Available width for text (90% of relevant dim).
-                const int avail
-                    = rotate ? (box_px_h * 9 / 10) : (box_px_w * 9 / 10);
-
-                // Elide from the left if text is too wide.  Maintain a
-                // running prefix width so each candidate "..." +
-                // name.substr(skip) is evaluated in O(1) using
-                //   textWidth(name.substr(skip))
-                //     = full_w - prefix_w - kern(name[skip-1], name[skip])
-                // giving O(N) total instead of O(N^2).
-                std::string name = full_name;
-                int text_w = full_w;
-                if (text_w > avail && name.size() > 4) {
-                  const int dots_w = getTextWidth("...", inst_font);
-                  const size_t n = name.size();
-                  int prefix_w = 0;
-                  for (size_t skip = 1; skip < n - 1; ++skip) {
-                    prefix_w += inst_font.glyph(name[skip - 1]).advance;
-                    if (skip >= 2) {
-                      prefix_w
-                          += inst_font.kern(name[skip - 2], name[skip - 1]);
-                    }
-                    const int suffix_w
-                        = full_w - prefix_w
-                          - inst_font.kern(name[skip - 1], name[skip]);
-                    const int w
-                        = dots_w + inst_font.kern('.', name[skip]) + suffix_w;
-                    if (w <= avail) {
-                      name = "..." + name.substr(skip);
-                      text_w = w;
-                      break;
-                    }
-                  }
-                }
-
-                // Center of instance bbox in pixel coords.
-                const int64_t cx = (pixel_xl + pixel_xh) / 2;
-                const int64_t cy = super - 1 - (pixel_yl + pixel_yh) / 2;
-
-                if (rotate) {
-                  const int64_t px = cx - font_h / 2;
-                  const int64_t py = cy - text_w / 2;
-                  if (px > -font_h && px < super && py > -text_w
-                      && py < super) {
-                    drawTextRotated(image_buffer,
-                                    (int) px,
-                                    (int) py,
-                                    name,
-                                    inst_font,
-                                    name_color);
-                  }
-                } else {
-                  const int64_t px = cx - text_w / 2;
-                  const int64_t py = cy - font_h / 2;
-                  if (px > -text_w && px < super && py > -font_h
-                      && py < super) {
-                    drawText(image_buffer,
-                             (int) px,
-                             (int) py,
-                             name,
-                             inst_font,
-                             name_color);
-                  }
-                }
-              }
+            // The name is NOT drawn here.  Qt paints instance names near the
+            // end of drawBlock, after drawBlockages, so a hatch line never
+            // crosses a label; collect it and draw once this tile's hatching
+            // is down (issue #11338).
+            //
+            // The size gate stays here rather than moving with the drawing:
+            // the pixel box is already in hand, and most instances in a tile
+            // fail it, so testing later would re-derive a box per instance to
+            // throw it away.  It is Qt's own gate from drawTextInBBox -- skip
+            // when the font would take more than half the cell's cross
+            // dimension, its kNonCoreScaleLimit = 2.0.
+            if (vis.inst_names
+                && 2 * inst_name_font_h
+                       <= std::min((int) (pixel_xh - pixel_xl),
+                                   (int) (pixel_yh - pixel_yl))) {
+              named_insts.push_back(inst);
             }
           } else if (!tech_layer) {
             // No layer filter (a layer name this chiplet's tech doesn't have):
@@ -4014,8 +4152,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
             // Draw ITerm name labels when zoomed in and pins are visible.
             if (vis.inst_pins && vis.inst_pin_names) {
-              constexpr Color iterm_label_color{
-                  .r = 255, .g = 255, .b = 0, .a = 220};
               const odb::dbTransform xfm = inst->getTransform();
 
               for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -4061,7 +4197,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                         py,
                                         name,
                                         iterm_font,
-                                        iterm_label_color);
+                                        kLabelYellow);
                       }
                     } else {
                       const int px = cx - text_w / 2;
@@ -4073,7 +4209,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                  py,
                                  name,
                                  iterm_font,
-                                 iterm_label_color);
+                                 kLabelYellow);
                       }
                     }
 
@@ -4139,9 +4275,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // One label per pin: the first box big enough and inside the tile,
             // in the same order the master declares them.
             if (vis.inst_pins && vis.inst_pin_names) {
-              constexpr Color iterm_label_color{
-                  .r = 255, .g = 255, .b = 0, .a = 220};
-
               for (const auto& [mterm, boxes] : mg->pin_boxes) {
                 for (const odb::Rect& src : boxes) {
                   odb::Rect box = src;
@@ -4178,24 +4311,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     const int py = cy - text_w / 2;
                     if (px > -iterm_font_h && px < super && py > -text_w
                         && py < super) {
-                      drawTextRotated(image_buffer,
-                                      px,
-                                      py,
-                                      name,
-                                      iterm_font,
-                                      iterm_label_color);
+                      drawTextRotated(
+                          image_buffer, px, py, name, iterm_font, kLabelYellow);
                     }
                   } else {
                     const int px = cx - text_w / 2;
                     const int py = cy - iterm_font_h / 2;
                     if (px > -text_w && px < super && py > -iterm_font_h
                         && py < super) {
-                      drawText(image_buffer,
-                               px,
-                               py,
-                               name,
-                               iterm_font,
-                               iterm_label_color);
+                      drawText(
+                          image_buffer, px, py, name, iterm_font, kLabelYellow);
                     }
                   }
 
@@ -4376,6 +4501,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                         shape_size_limit_dbu)) {
             hatch_box_in_tile(blk->getBBox()->getBox());
           }
+        }
+
+        // Instance names last, as in Qt: every hatch this tile carries is
+        // already down, so none of them can cross a label.
+        for (odb::dbInst* named : named_insts) {
+          drawInstanceName(image_buffer, named, frame, super, inst_name_font);
         }
 
         // Draw routing obstructions (dbObstruction) on per-layer tiles.
@@ -4710,13 +4841,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // search every tech for the requested layer name and use that tech's
     // color map.
     Color world_color{.r = 200, .g = 200, .b = 200, .a = 180};
-    bool world_layer_found = false;
+    // Kept past the colour lookup: the debug-renderer overlay below hands it
+    // to Renderer::drawLayer, which is per tech layer.  Null for the pseudo
+    // layers ("_instances", "_modules", the grid overlays), which have no
+    // tech layer and so take no part in that pass.
+    odb::dbTechLayer* world_layer = nullptr;
     for (odb::dbTech* world_tech : db_->getTechs()) {
       odb::dbTechLayer* world_tech_layer = world_tech->findLayer(layer.c_str());
       if (!world_tech_layer) {
         continue;
       }
-      world_layer_found = true;
+      world_layer = world_tech_layer;
       const auto& world_layer_colors = getLayerColorMap(world_tech);
       const auto it = world_layer_colors.find(world_tech_layer);
       if (it != world_layer_colors.end()) {
@@ -4735,31 +4870,42 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       drawFlightLines(world_image_buffer, flight_lines, out_frame);
     }
     if (route_guide_net_ids && !route_guide_net_ids->empty()
-        && world_layer_found) {
+        && world_layer != nullptr) {
       drawRouteGuides(world_image_buffer,
                       *route_guide_net_ids,
                       layer,
                       world_color,
                       out_frame);
     }
-    if (vis.debug_renderers) {
+    if (vis.debug_renderers && world_layer != nullptr) {
       // The callback (installed by WebServer at startup) decides
       // whether to draw (honoring pause/live semantics) and handles
-      // the gui::Gui::get() access itself.  Keeping Gui:: references
+      // the web::Gui::get() access itself.  Keeping Gui:: references
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
-      drawRendererOverlay(world_image_buffer, out_frame, vis.debug_live);
+      //
+      // Per-layer only: this is the Renderer::drawLayer half.  The
+      // layer-independent drawObjects pass runs once per tile, in
+      // generateOverlayTile (and in renderImageBuffer for save_image),
+      // rather than once per visible layer.
+      drawRendererOverlay(
+          world_image_buffer, out_frame, vis.debug_live, world_layer);
     }
   }
 
   if (vis.debug) {
-    drawDebugOverlay(world_image_buffer, z, x, y);
+    // effective_dpr, not tile_px/256: the client picks its own CSS tile size
+    // (240 by default, and a fitted size when zoom-to-fit needs one), so the
+    // buffer's side is that size times the ratio.  Inferring the scale from the
+    // 256 constant would size the label by the tile choice instead of by the
+    // display.
+    drawDebugOverlay(world_image_buffer, z, x, y, effective_dpr);
   }
 
   return world_image_buffer;
 }
 
-std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
+std::shared_ptr<web::HeatMapDataSource> TileGenerator::getHeatMapSource(
     const std::string& name) const
 {
   const std::lock_guard<std::mutex> lock(heatmap_mutex_);
@@ -4767,7 +4913,7 @@ std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
   if (it != heatmaps_.end()) {
     return it->second;
   }
-  const auto reg = gui::findRegisteredHeatMapSource(name);
+  const auto reg = web::findRegisteredHeatMapSource(name);
   if (!reg) {
     return nullptr;
   }
@@ -4826,7 +4972,7 @@ std::pair<int, int> heatMapBinSpan(const double px_lo,
 }  // namespace
 
 void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
-                                gui::HeatMapDataSource& source,
+                                web::HeatMapDataSource& source,
                                 const TileFrame& frame) const
 {
   const odb::Rect& dbu_tile = frame.cull;
@@ -4908,7 +5054,7 @@ void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
 }
 
 std::vector<unsigned char> TileGenerator::generateHeatMapTile(
-    gui::HeatMapDataSource& source,
+    web::HeatMapDataSource& source,
     const int z,
     const int x,
     int y,
@@ -5304,6 +5450,27 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   };
   parallelRanges(thread_pool.get(), num_threads, total_tiles, render_tiles);
 
+  // The layer-independent debug-renderer pass, once per tile — the layer loop
+  // above only carried the per-layer drawLayer half.  This is what the
+  // interactive view gets from generateOverlayTile.  Outside the parallel
+  // section because the hook serializes anyway, so workers would only contend.
+  if (vis.debug_renderers) {
+    for (int tile_idx = 0; tile_idx < total_tiles; ++tile_idx) {
+      const int tx = tx_min + (tile_idx % total_tiles_x);
+      const int ty = ty_min + (tile_idx / total_tiles_x);
+      const auto debug_buf
+          = renderDebugRendererTile(z, tx, num_tiles - 1 - ty, vis.debug_live);
+      if (!debug_buf.empty()) {
+        compositeTile(debug_buf,
+                      kTileSizeInPixel,
+                      output.data(),
+                      tile_span_w,
+                      (tx - tx_min) * kTileSizeInPixel,
+                      (ty_max - ty) * kTileSizeInPixel);
+      }
+    }
+  }
+
   // Crop to the exact requested area.
   // The tile span covers a larger region; compute the pixel offset of the
   // area's origin within the tile span.
@@ -5432,9 +5599,11 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
   }
 
   // Frame on getBounds() exactly: the viewer stretches this image over that
-  // rect (serializeBoundsResponse -> app.fitBounds in main.js), so a die-area
-  // frame or a cosmetic margin -- what saveImage uses -- lands the overlay off
-  // the tiles.  getBounds() also covers 3DBlox, where the top owns no block.
+  // rect (serializeBoundsResponse -> the pathOverlay in main.js), so a
+  // die-area frame or a cosmetic margin -- what saveImage uses -- lands the
+  // overlay off the tiles.  It is also the rect the tile mosaic below is
+  // built on, since renderTileBuffer georeferences on it.  getBounds() covers
+  // 3DBlox too, where the top owns no block.
   const odb::Rect bounds = getBounds();
   if (bounds.dx() == 0 || bounds.dy() == 0) {
     return {};
@@ -5561,18 +5730,16 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
 void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                                      const int z,
                                      const int x,
-                                     const int y) const
+                                     const int y,
+                                     const double px_per_css) const
 {
   const Color yellow{.r = 255, .g = 255, .b = 0, .a = 255};
-  // The output buffer is tile_px = 256*dpr on a side, NOT kTileSizeInPixel.
-  // Recover the real dimension: hardcoding 256 boxed the whole overlay into
-  // the top-left 256x256 corner of a HiDPI tile, so the "tile" outline drew
-  // at 1/dpr of the tile it was supposed to trace.
+  // The output buffer is tile_px on a side, NOT kTileSizeInPixel.  Recover the
+  // real dimension: hardcoding 256 boxed the whole overlay into the top-left
+  // 256x256 corner of a HiDPI tile, so the "tile" outline drew at 1/dpr of the
+  // tile it was supposed to trace.
   const int dim = bufferDim(image);
   const int last = dim - 1;
-  // Pixel-authored sizes (border inset, font height) are in CSS px; scale them
-  // to physical px so the overlay looks identical across dpr.
-  const double px_per_css = static_cast<double>(dim) / kTileSizeInPixel;
 
   // Draw 1-pixel yellow border
   for (int i = 0; i < dim; ++i) {
@@ -5597,19 +5764,8 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
 
 namespace {
 
-// Process-wide debug-overlay callback installed by WebServer at serve()
-// time.  Nullable; when not set, drawRendererOverlay is a no-op.  This
-// indirection keeps gui::Gui::get() out of tile_generator.cpp so that
-// libweb.a has no undefined references to the full gui/SWIG library —
-// test binaries can link libweb without pulling in ord::OpenRoad::openRoad.
-TileGenerator::DebugOverlayCallback& getDebugOverlayCallback()
-{
-  static TileGenerator::DebugOverlayCallback callback;
-  return callback;
-}
-
-// Convert a gui::Painter::Color to our internal Color (same RGBA layout).
-Color toTileColor(const gui::Painter::Color& c)
+// Convert a web::Painter::Color to our internal Color (same RGBA layout).
+Color toTileColor(const web::Painter::Color& c)
 {
   return Color{
       .r = static_cast<unsigned char>(c.r),
@@ -5622,20 +5778,26 @@ Color toTileColor(const gui::Painter::Color& c)
 }  // namespace
 
 /* static */
-void TileGenerator::setDebugOverlayCallback(DebugOverlayCallback callback)
+void TileGenerator::setRendererHooks(RendererHooks hooks)
 {
-  getDebugOverlayCallback() = std::move(callback);
+  // Blocks until any in-flight hook call returns, which is what lets
+  // WebServer::stop() clear the hooks before destroying the WebViewerHook
+  // they capture.
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
+  rendererHooks() = std::move(hooks);
 }
 
 void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
                                         const TileFrame& frame,
-                                        const bool debug_live) const
+                                        const bool debug_live,
+                                        odb::dbTechLayer* layer) const
 {
-  auto& callback = getDebugOverlayCallback();
-  if (!callback) {
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
+  const auto& draw = rendererHooks().draw;
+  if (!draw) {
     return;
   }
-  callback(image, frame, debug_live);
+  draw(image, frame, debug_live, layer);
 }
 
 // Convert a PenState width to pixel width for rasterization.
@@ -5664,7 +5826,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
       if (const auto* r = std::get_if<DrawRectOp>(&op)) {
         const odb::Rect px = toPixels(frame, r->rect);
         // Fill first (if the brush paints), outline on top.
-        if (r->brush.style != gui::Painter::Brush::kNone
+        if (r->brush.style != web::Painter::Brush::kNone
             && r->brush.color.a > 0) {
           const Color fill = toTileColor(r->brush.color);
           for (int iy = px.yMin(); iy < px.yMax(); ++iy) {
@@ -5739,7 +5901,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         drawLine(image, cx - half, cy - half, cx + half, cy + half, pen, w);
         drawLine(image, cx - half, cy + half, cx + half, cy - half, pen, w);
       } else if (const auto* p = std::get_if<DrawPolygonOp>(&op)) {
-        if (p->brush.style != gui::Painter::Brush::kNone
+        if (p->brush.style != web::Painter::Brush::kNone
             && p->brush.color.a > 0) {
           odb::Polygon poly;
           poly.setPoints(p->points);
@@ -5777,33 +5939,33 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         int ay = toPxY(s->y, frame, dim);
         // Adjust anchor: text renders with top-left at (ax, ay).
         switch (s->anchor) {
-          case gui::Painter::kBottomLeft:
+          case web::Painter::kBottomLeft:
             ay -= th;
             break;
-          case gui::Painter::kBottomRight:
+          case web::Painter::kBottomRight:
             ax -= tw;
             ay -= th;
             break;
-          case gui::Painter::kTopLeft:
+          case web::Painter::kTopLeft:
             break;
-          case gui::Painter::kTopRight:
+          case web::Painter::kTopRight:
             ax -= tw;
             break;
-          case gui::Painter::kCenter:
+          case web::Painter::kCenter:
             ax -= tw / 2;
             ay -= th / 2;
             break;
-          case gui::Painter::kBottomCenter:
+          case web::Painter::kBottomCenter:
             ax -= tw / 2;
             ay -= th;
             break;
-          case gui::Painter::kTopCenter:
+          case web::Painter::kTopCenter:
             ax -= tw / 2;
             break;
-          case gui::Painter::kLeftCenter:
+          case web::Painter::kLeftCenter:
             ay -= th / 2;
             break;
-          case gui::Painter::kRightCenter:
+          case web::Painter::kRightCenter:
             ax -= tw;
             ay -= th / 2;
             break;
@@ -6310,10 +6472,10 @@ struct AnchorEntry
 
 // The one table behind anchorNames(), isValidAnchor() and the placement in
 // drawTextLabels, so a name can never be accepted and then not drawn.  The
-// spellings must match gui::Painter::anchors(); the order is only that of the
+// spellings must match web::Painter::anchors(); the order is only that of the
 // literal in painter.cpp and means nothing (anchors() is a std::map, so it
 // iterates alphabetically).  The edges reproduce the switch over
-// gui::Painter::Anchor in drawPainterOps.
+// web::Painter::Anchor in drawPainterOps.
 constexpr AnchorEntry kAnchors[] = {
     {"bottom left", AnchorEntry::kMin, AnchorEntry::kMax},
     {"bottom right", AnchorEntry::kMax, AnchorEntry::kMax},
@@ -6450,6 +6612,32 @@ std::vector<unsigned char> TileGenerator::renderLabelTile(
       full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
 
   drawTextLabels(image, labels, frame);
+  return image;
+}
+
+std::vector<unsigned char> TileGenerator::renderDebugRendererTile(
+    const int z,
+    const int x,
+    int y,
+    const bool debug_live) const
+{
+  // Composited into save_image, which works at the unscaled tile size.
+  constexpr double effective_dpr = 1.0;
+  constexpr int dim = kTileSizeInPixel;
+  std::vector<unsigned char> image(static_cast<size_t>(dim) * dim * 4,
+                                   0);  // transparent
+
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    return {};
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const TileFrame frame = tileFrame(
+      full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
+
+  drawRendererOverlay(image, frame, debug_live, /*layer=*/nullptr);
   return image;
 }
 
@@ -7019,7 +7207,7 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   // The 16 highlight-group colors, straight from the Qt GUI's palette so
   // the client swatches can never drift from what the overlay renders.
   boost::json::array highlight_colors;
-  for (const auto& c : gui::Painter::kHighlightColors) {
+  for (const auto& c : web::Painter::kHighlightColors) {
     highlight_colors.emplace_back(boost::json::array{c.r, c.g, c.b, c.a});
   }
   out["highlight_colors"] = std::move(highlight_colors);
@@ -7100,14 +7288,21 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   return out;
 }
 
+boost::json::array boundsArray(const odb::Rect& r)
+{
+  return boost::json::array{boost::json::array{r.yMin(), r.xMin()},
+                            boost::json::array{r.yMax(), r.xMax()}};
+}
+
 boost::json::object serializeBoundsResponse(const TileGenerator& gen,
                                             bool shapes_ready)
 {
-  const odb::Rect bounds = gen.getBounds();
   boost::json::object out;
-  out["bounds"]
-      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
-                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  out["bounds"] = boundsArray(gen.getBounds());
+  // The zoom-to-fit rect, which is the georeference rect WITHOUT the pin-label
+  // margin.  Sent alongside rather than instead: the client needs both, one to
+  // place tiles and one to frame the design.
+  out["fit_bounds"] = boundsArray(gen.getFitBounds());
   out["shapes_ready"] = shapes_ready;
   out["pin_max_size"] = gen.getPinMaxSize();
   return out;

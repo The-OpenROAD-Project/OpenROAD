@@ -67,6 +67,7 @@ using std::string;
   X(dpl)                                 \
   X(exa)                                 \
   X(web)                                 \
+  X(wmk)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \
@@ -102,6 +103,7 @@ static bool no_settings = false;
 static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
+static const char* web_bind_arg = nullptr;
 
 static const char* init_filename = ".openroad";
 
@@ -264,6 +266,7 @@ int main(int argc, char* argv[])
   minimize = findCmdLineFlag(argc, argv, "-minimize");
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
+  web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -401,6 +404,17 @@ static int tclAppInit(int& argc,
           exit(EXIT_FAILURE);
         }
       }
+      // Check the address here, not in serve(): serve() reports a bad one with
+      // utl::error, which throws, and nothing on this path catches it.
+      if (web_bind_arg
+          && web::classifyBindAddress(web_bind_arg)
+                 == web::BindAddressKind::kInvalid) {
+        fprintf(stderr,
+                "Error: invalid -web_bind value '%s'; %s\n",
+                web_bind_arg,
+                web::kBindAddressHint);
+        exit(EXIT_FAILURE);
+      }
       ord::OpenRoad::openRoad()->getWebServer()->initLogger();
     }
 
@@ -419,12 +433,12 @@ static int tclAppInit(int& argc,
     }
 
     // The web server installs its HeadlessViewer late, in serve(), so
-    // gui::Gui::enabled() is still false here in the web path unless a
+    // web::Gui::enabled() is still false here in the web path unless a
     // script already called `web_server`.  The `&& !web_enabled` is kept
     // defensively: even with a viewer installed, the web server executes
     // scripts directly on the main thread (like the non-GUI path), and
     // addRestoreStateCommand() only works with the Qt event loop.
-    const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
+    const bool gui_enabled = web::Gui::enabled() && !web_enabled;
 
     auto* web_server = ord::OpenRoad::openRoad()->getWebServer();
 
@@ -439,7 +453,7 @@ static int tclAppInit(int& argc,
           exit(1);
         }
       } else {
-        gui::Gui::get()->addRestoreStateCommand(cmd);
+        web::Gui::get()->addRestoreStateCommand(cmd);
       }
     }
 
@@ -454,7 +468,7 @@ static int tclAppInit(int& argc,
         } else {
           // need to delay loading of file until after GUI is completed
           // initialized
-          gui::Gui::get()->addRestoreStateCommand(
+          web::Gui::get()->addRestoreStateCommand(
               fmt::format(FMT_RUNTIME(restore_state_cmd), init.string()));
         }
       }
@@ -476,10 +490,10 @@ static int tclAppInit(int& argc,
           } else {
             // need to delay loading of file until after GUI is completed
             // initialized
-            gui::Gui::get()->addRestoreStateCommand(
+            web::Gui::get()->addRestoreStateCommand(
                 fmt::format("source {{{}}}", cmd_file));
             if (exit_after_cmd_file) {
-              gui::Gui::get()->addRestoreStateCommand("exit");
+              web::Gui::get()->addRestoreStateCommand("exit");
             }
           }
         }
@@ -492,7 +506,8 @@ static int tclAppInit(int& argc,
     // settled db instead of racing read_db (the issue #10576 coredump).
     // A script that called `web_server` itself has already started it.
     if (web_enabled && !web_server->isRunning()) {
-      web_server->serve(web_port);
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      web_server->serve(web_port, web_bind_arg ? web_bind_arg : "");
     }
 
     // If the web server is running at this point — either because of
@@ -516,7 +531,7 @@ static int tclAppInit(int& argc,
   // Enter the linenoise REPL unless the Qt GUI is active (it has its
   // own script widget).  The web viewer's headless mode still needs the
   // terminal prompt.
-  if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
+  if (!web::Gui::hasUI() && !exit_after_cmd_file) {
     return tclOrdReplInit(interp);
   }
   return TCL_OK;
@@ -570,6 +585,10 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -web                  start in web viewer mode\n");
   printf("  -web_port port        web server port (default auto-assigned)\n");
+  printf(
+      "  -web_bind address     web server bind address (default 127.0.0.1;\n"
+      "                        a wider bind exposes a Tcl shell to the "
+      "network)\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3

@@ -35,7 +35,7 @@ namespace sta {
 class dbSta;
 }
 
-namespace gui {
+namespace web {
 class HeatMapDataSource;
 }
 
@@ -63,7 +63,7 @@ struct FlightLine
   Color color;
 };
 
-// The nine canonical anchor names, in gui::Painter::anchors() order.  That
+// The nine canonical anchor names, in web::Painter::anchors() order.  That
 // table (src/gui/src/painter.cpp) is the source of truth for the spelling and
 // is duplicated rather than shared because libweb has no link dependency on
 // the Qt GUI — the same trade-off spectrumColor() makes in color.h.  Keep the
@@ -90,7 +90,7 @@ struct TextLabel
 };
 
 // A user-created text annotation stored on the design (mirrors the Qt GUI's
-// gui::Label).  Global (not per-session) so it renders into every client's
+// web::Label).  Global (not per-session) so it renders into every client's
 // tiles and into save_image, matching the Qt GUI.
 struct StoredLabel
 {
@@ -163,7 +163,7 @@ struct SelectionResult
   std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
   // Local-to-root transform of the chiplet the hit came from, so a consumer
-  // that re-derives a bbox from `object` (a gui::Descriptor reports it in the
+  // that re-derives a bbox from `object` (a web::Descriptor reports it in the
   // object's own block coordinates) can lift it into the same world space
   // `bbox` is already in.  Identity for single-die designs.
   odb::dbTransform world_xfm;
@@ -335,7 +335,7 @@ struct TileVisibility
   // Debug
   bool debug = false;
 
-  // When true the tile renderer iterates gui::Gui::renderers() and
+  // When true the tile renderer iterates web::Gui::renderers() and
   // rasterizes drawObjects() output.  Drives the gpl / cts / mpl debug
   // graphics overlay.  Off by default so tiles stay cheap.
   bool debug_renderers = false;
@@ -447,13 +447,21 @@ class TileGenerator
   int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
 
+  // The tile grid's georeference: getFitBounds() grown by the pin-label
+  // margin, so the labels hanging outward from the die edge fall inside tiles
+  // that exist.  Tile indices are clamped to it.
   odb::Rect getBounds() const;
+
+  // What the client zooms to fit: the design proper, with no room reserved for
+  // pin labels.  Mirrors LayoutViewer::getBounds() in the Qt GUI.
+  odb::Rect getFitBounds() const;
+
   int getPinMaxSize() const;
 
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
 
-  // Per-layer colors matching gui::DisplayControls layer palette.  Computed
+  // Per-layer colors matching web::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
   const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
                                                                = nullptr) const;
@@ -463,7 +471,7 @@ class TileGenerator
   // by layer up front is what lets the per-instance pass draw a layer's shapes
   // directly instead of walking all of a master's geometry and calling
   // dbBox::getTechLayer() (a chain of dbTable lookups) on every box, once per
-  // layer per tile.  Mirrors gui::LayoutViewer::boxesByLayer.
+  // layer per tile.  Mirrors web::LayoutViewer::boxesByLayer.
   struct MasterLayerGeom
   {
     // Obstructions (LEF OBS), drawn before pins.  Polygons and boxes are kept
@@ -615,6 +623,10 @@ class TileGenerator
   // route guides, flight lines) on a fully transparent background.  Used
   // by the overlay tile layer so base tiles can stay cached when only
   // highlights change.
+  //
+  // Also home to the layer-independent Renderer::drawObjects pass, which
+  // belongs on a tile that is rendered once rather than once per layer;
+  // see DebugOverlayCallback.
   std::vector<unsigned char> generateOverlayTile(
       int z,
       int x,
@@ -629,8 +641,10 @@ class TileGenerator
       double dpr = 1.0,
       int tile_px = 0,
       const std::vector<ColoredPolygon>& colored_polys = {},
-      const std::vector<TextLabel>& labels = {}) const;
-  std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
+      const std::vector<TextLabel>& labels = {},
+      bool debug_renderers = false,
+      bool debug_live = false) const;
+  std::vector<unsigned char> generateHeatMapTile(web::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
                                                  int y,
@@ -686,23 +700,43 @@ class TileGenerator
       const std::vector<ColoredRect>& rects,
       const std::vector<FlightLine>& lines) const;
 
-  // ─── Debug-graphics overlay ──────────────────────────────────────────
+  // ─── Renderer bridge ─────────────────────────────────────────────────
   //
-  // When `vis.debug_renderers` is on, renderTileBuffer invokes the
-  // installed DebugOverlayCallback (if any).  The callback is
-  // responsible for iterating any registered gui::Renderer instances
-  // and drawing their output onto the image buffer.  Kept as a
-  // callback rather than a direct gui::Gui::get() call so that
-  // libweb.a has no undefined references to the gui/SWIG library —
-  // test executables that link libweb don't need to pull in ord.
-  using DebugOverlayCallback
-      = std::function<void(std::vector<unsigned char>& image,
-                           const TileFrame& frame,
-                           bool debug_live)>;
-  // Install (or clear with `{}`) the debug-overlay callback.  Global
-  // process state; installed by WebServer on serve() and cleared on
-  // shutdown.
-  static void setDebugOverlayCallback(DebugOverlayCallback callback);
+  // The registered web::Renderer instances are reached through one installed
+  // struct rather than a direct web::Gui::get() call, so that libweb.a has no
+  // undefined references to the gui/SWIG library — test binaries can link
+  // libweb without pulling in ord.  One struct with one setter, because the
+  // two halves are installed and torn down by the same owner: when they were
+  // two callbacks, stop() cleared one and left the other holding a stale hook.
+  struct RendererHooks
+  {
+    // Draw.  `layer` mirrors the Qt GUI's two call sites: renderTileBuffer
+    // passes the tile's tech layer, for which the hook runs
+    // Renderer::drawLayer (RenderThread::drawLayer), and generateOverlayTile
+    // passes nullptr for the single layer-independent Renderer::drawObjects
+    // pass.  Splitting them is what keeps drawObjects from being composited
+    // once per visible layer.  Only called when vis.debug_renderers is on.
+    std::function<void(std::vector<unsigned char>& image,
+                       const TileFrame& frame,
+                       bool debug_live,
+                       odb::dbTechLayer* layer)>
+        draw = nullptr;
+
+    // Renderer::select: a renderer can answer a click with objects of its own
+    // (the placer's gcells, the DRC markers, psm's nodes).  Same `layer`
+    // convention: selectAt calls it once per visible, selectable tech layer
+    // and then once with nullptr, the order Qt uses (LayoutViewer::selectAt)
+    // — psm::DebugGui resets its selection state on the nullptr pass, so it
+    // has to come last.
+    std::function<void(odb::dbTechLayer* layer,
+                       const odb::Rect& region,
+                       std::vector<SelectionResult>& out)>
+        select = nullptr;
+  };
+
+  // Install (or clear with `{}`) the renderer bridge.  Global process state;
+  // installed by WebServer on serve() and cleared on stop().
+  static void setRendererHooks(RendererHooks hooks);
 
   // Rasterize a WebPainter's recorded DrawOps into the tile's pixel
   // buffer.  Public so that the debug-overlay callback (living in
@@ -762,10 +796,14 @@ class TileGenerator
                 const Color& c,
                 int dim = -1) const;
 
+  // `px_per_css` is the display's device-pixel ratio: the overlay's inset and
+  // font height are authored in CSS px and scaled by it.  It is NOT derivable
+  // from the buffer, whose side is the client's own tile size times the ratio.
   void drawDebugOverlay(std::vector<unsigned char>& image,
                         int z,
                         int x,
-                        int y) const;
+                        int y,
+                        double px_per_css) const;
 
   // Anti-aliased text rendering.  All methods take a pre-resolved FontSize
   // handle so callers lock the glyph cache once per rendering context rather
@@ -823,12 +861,28 @@ class TileGenerator
       double dpr = 1.0,
       int tile_px = 0) const;
 
-  // Private counterpart of setDebugOverlayCallback: invokes the
-  // installed callback (if any) for this tile.  See the public API
-  // above for rationale.
+  // Objects the registered renderers claim for a click, via the installed
+  // RendererSelectCallback.  Empty when no callback is installed.
+  std::vector<SelectionResult> selectFromRenderers(
+      const odb::Rect& region,
+      const TileVisibility& vis,
+      const std::set<std::string>& visible_layers) const;
+
+  // The same, for the layer-independent Renderer::drawObjects pass, so
+  // save_image composites it once per tile instead of once per layer.  The
+  // interactive path gets it from generateOverlayTile.
+  std::vector<unsigned char> renderDebugRendererTile(int z,
+                                                     int x,
+                                                     int y,
+                                                     bool debug_live) const;
+
+  // Private counterpart of setRendererHooks: invokes the installed draw hook
+  // (if any) for this tile.  See RendererHooks above for the `layer`
+  // convention.
   void drawRendererOverlay(std::vector<unsigned char>& image,
                            const TileFrame& frame,
-                           bool debug_live) const;
+                           bool debug_live,
+                           odb::dbTechLayer* layer) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,
@@ -1000,9 +1054,9 @@ class TileGenerator
                      const TileFrame& frame,
                      const TileVisibility& vis) const;
   void drawHeatMap(std::vector<unsigned char>& image,
-                   gui::HeatMapDataSource& source,
+                   web::HeatMapDataSource& source,
                    const TileFrame& frame) const;
-  std::shared_ptr<gui::HeatMapDataSource> getHeatMapSource(
+  std::shared_ptr<web::HeatMapDataSource> getHeatMapSource(
       const std::string& name) const;
 
   // Registry of the self-painting pseudo layers: layer name -> visibility
@@ -1042,8 +1096,17 @@ class TileGenerator
                                  const TileFrame& frame,
                                  int dim,
                                  int stroke);
+  // The instance's name, centred in its bbox and elided to fit.  Called after
+  // the blockage hatch rather than with the rest of the instance, the way Qt
+  // defers drawInstanceNames past drawBlockages, so no hatch line crosses a
+  // label.
+  static void drawInstanceName(std::vector<unsigned char>& image,
+                               odb::dbInst* inst,
+                               const TileFrame& frame,
+                               int dim,
+                               const GlyphCache::FontSize& inst_font);
   mutable std::mutex heatmap_mutex_;
-  mutable std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>>
+  mutable std::map<std::string, std::shared_ptr<web::HeatMapDataSource>>
       heatmaps_;
   mutable std::mutex overlay_cache_mutex_;
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
@@ -1085,6 +1148,11 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              std::vector<FlightLine>& lines);
 
 // ── JSON serialization helpers for TileGenerator responses ──
+
+// A DBU rect in the wire order the client's coordinate transforms expect:
+// [[yMin, xMin], [yMax, xMax]].  Note this is NOT bboxArray()'s flat
+// [xMin, yMin, xMax, yMax] -- the two orders are not interchangeable.
+boost::json::array boundsArray(const odb::Rect& r);
 
 boost::json::object serializeTechResponse(const TileGenerator& gen);
 boost::json::object serializeBoundsResponse(const TileGenerator& gen,

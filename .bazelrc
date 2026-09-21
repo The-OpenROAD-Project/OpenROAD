@@ -5,10 +5,6 @@ common --enable_bzlmod
 common --@abc//:use_readline=false
 build --workspace_status_command=tools/workspace_status.sh
 
-# Release builds embed real git version info; dev builds use cache-safe placeholders.
-# Usage: bazel build --config=release //...
-build:release --stamp
-
 # suppress distracting warning about newer module
 # versions found in dependency graph.
 common --check_direct_dependencies=off
@@ -130,7 +126,11 @@ build:macos --host_macos_minimum_os=13.3
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
-build:asan --copt=-fsanitize=address
+# As with --config=tsan below, use hermetic-llvm's switch rather than a bare
+# -fsanitize=address copt: the toolchain builds compiler-rt's asan runtime from
+# source and stages it in the resource directory, which a plain driver flag
+# cannot find under the zero sysroot.
+build:asan --@llvm//config:asan=true
 build:asan --copt=-DADDRESS_SANITIZER
 build:asan --copt=-O1
 build:asan --copt=-g
@@ -138,12 +138,18 @@ build:asan --copt=-fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:asan --copt=-gz=zlib
 build:asan --linkopt=-gz=zlib
-build:asan --linkopt=-fsanitize=address
 # TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
 # dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
 # Override the per-target malloc attribute to use the system allocator, which
 # ASan intercepts cleanly.
 build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
+# ASan bundles LeakSanitizer, which reports every allocation still reachable at
+# exit. OpenROAD keeps a great deal of state for the life of the process, so
+# that buries the memory errors asan is here for: with leak checking on, 2648 of
+# 3997 tests fail on reachable state and 17 on an actual memory error. Leave it
+# off so a run means something, and hunt leaks explicitly with
+# --test_env=ASAN_OPTIONS=detect_leaks=1.
+build:asan --test_env=ASAN_OPTIONS=detect_leaks=0
 
 # Settings for --config=tsan thread sanitizer build
 build:tsan --strip=never
@@ -190,6 +196,20 @@ build:ubsan --test_env=UBSAN_OPTIONS=print_stacktrace=1
 build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
 # UBSan does not replace the allocator, so unlike asan/tsan this config keeps
 # TCMalloc.
+
+# Opt-in GPU build: compiles the Kokkos-based gpl GPU backends with clang's
+# native CUDA support against system-installed Kokkos/KokkosFFT/CUDA
+# (non-hermetic; see bazel/gpu/system_gpu.bzl and docs/user/Bazel.md,
+# "GPU build"). Install prefixes are read from the shell environment:
+#   KOKKOS_ROOT         (default /usr/local/kokkos-libcxx)
+#   KOKKOS_FFT_ROOT     (default /usr/local/kokkos-fft-libcxx)
+#   OPENROAD_CUDA_PATH  (default /usr/local/cuda-12.8)
+#   OPENROAD_CUDA_ARCH  (normally unset: taken from the Kokkos install)
+# Kokkos and KokkosFFT must be built with the hermetic LLVM toolchain
+# (clang, libc++, its glibc-2.28 headers); a nvcc/libstdc++ build from
+# the CMake flow does not link. A missing or unusable install only fails
+# --config=gpu builds, at analysis time, with the reason.
+build:gpu --//:gpu=cuda
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
@@ -270,5 +290,11 @@ build --build_tag_filters=-orfs
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
 build:lint --output_groups=rules_lint_report
 build:lint --remote_download_outputs=all
+
+# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Usage: bazel build --config=release //...
+build:release --stamp
+# Tell the 'release' config to include 'opt'
+build:release --config=opt
 
 try-import %workspace%/user.bazelrc
