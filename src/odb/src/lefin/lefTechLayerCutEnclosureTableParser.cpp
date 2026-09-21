@@ -24,6 +24,7 @@ void lefTechLayerCutEnclosureTableRuleParser::checkCutClass(
 {
   auto cutClass = layer->findTechLayerCutClassRule(val.c_str());
   if (cutClass == nullptr) {
+    ruleValid_ = false;
     lefin_->warning(
         602,
         "cut class {} not found for LEF58_ENCLOSURETABLE rule for layer {}",
@@ -41,29 +42,30 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
   // still needs a real std::string to parse against.
   const std::string value(s);
 
+  ruleValid_ = true;
+
   qi::rule<std::string::const_iterator, space_type> cut_class_rule
-      = -(lit("CUTCLASS") >> _string)[boost::bind(
+      = (lit("CUTCLASS") >> _string)[boost::bind(
           &lefTechLayerCutEnclosureTableRuleParser::checkCutClass,
           this,
           _1,
           layer)];
 
   qi::rule<std::string::const_iterator, space_type> above_below_rule
-      = -(lit("ABOVE") | lit("BELOW"));
+      = (lit("ABOVE") | lit("BELOW"));
 
   // Trim-metal-aware overhang row (references a TRIMMETAL layer such as CM1).
   // Trim layers are not modeled in OpenROAD yet, so the clause is recognized
   // and discarded like the rest of the rule.
   qi::rule<std::string::const_iterator, space_type> layer_overlap_rule
-      = -(lit("LAYER") >> _string >> -(lit("OVERLAP") >> int_));
+      = (lit("LAYER") >> _string >> -(lit("OVERLAP") >> int_));
 
   // A single WIDTH (or DEFAULT) value may be followed by more than one
-  // overhang quadruple, each an alternative choice of overhang values (the
-  // last one is typically flagged MINSUM to indicate the two opposite-side
-  // overhangs are tradeable against each other).
+  // overhang quadruple, each an alternative choice of overhang values.
+  // MINSUM is intentionally not supported.
   qi::rule<std::string::const_iterator, space_type> overhang_group_rule
-      = (above_below_rule >> double_ >> double_ >> double_ >> double_
-         >> -lit("MINSUM") >> layer_overlap_rule);
+      = (-above_below_rule >> double_ >> double_ >> double_ >> double_
+         >> -layer_overlap_rule);
 
   qi::rule<std::string::const_iterator, space_type> default_row_rule
       = (lit("DEFAULT") >> +overhang_group_rule);
@@ -72,13 +74,13 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
       = (lit("WIDTH") >> double_ >> +overhang_group_rule);
 
   qi::rule<std::string::const_iterator, space_type> enclosure_table_rule
-      = (lit("ENCLOSURETABLE") >> cut_class_rule >> *default_row_rule
+      = (lit("ENCLOSURETABLE") >> -cut_class_rule >> *default_row_rule
          >> +width_row_rule >> lit(";"));
 
   auto first = value.begin();
   auto last = value.end();
   bool valid = qi::phrase_parse(first, last, enclosure_table_rule, space)
-               && first == last;
+               && first == last && ruleValid_;
   if (!valid) {
     lefin_->warning(603,
                     "parse mismatch in layer property LEF58_ENCLOSURETABLE "
