@@ -77,6 +77,8 @@ COMPULSORY_TESTS = [
     "regions2",
     "regions3",
     "report_failures",
+    "report_gcell_density",
+    "report_placement_density",
     "row_boundary_filter",
     "simple01",
     "simple02",
@@ -275,6 +277,12 @@ filegroup(
             "pad01": [
                 "simple01.def",
             ],
+            "report_gcell_density": [
+                "simple01.def",
+            ],
+            "report_placement_density": [
+                "simple01.def",
+            ],
             "pad02": [
                 "simple01.def",
             ],
@@ -326,6 +334,18 @@ cc_test(
         "//src/odb/src/lefin",
         "//src/tst",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "placement_density_test",
+    srcs = ["placement_density_test.cpp"],
+    deps = [
+        "//src/dpl",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

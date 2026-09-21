@@ -49,6 +49,7 @@ cc_library(
         "src/OptMirror.cpp",
         "src/Optdp.cpp",
         "src/Place.cpp",
+        "src/PlacementDensity.cpp",
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
         "src/dbToOpendp.cpp",

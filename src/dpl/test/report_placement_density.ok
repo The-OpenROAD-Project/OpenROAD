@@ -1,0 +1,38 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: single_cell
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO DPL-0006] Core area: 34.05 um^2
+[INFO DPL-0007] Movable instances area: 1.86 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 5.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1 cells
+Placement Analysis
+---------------------------------
+total displacement          4.7 u
+average displacement        4.7 u
+max displacement            4.7 u
+original HPWL               2.3 u
+legalized HPWL              9.1 u
+delta HPWL                  299 %
+
+Region (1.900, 1.400) (7.980, 7.000) placement density 0.055
+Region (1.900, 1.400) (3.000, 2.800) placement density 1.000
+Region (5.000, 5.000) (7.000, 7.000) placement density 0.000
+Region (5.000, 5.000) (7.000, 7.000) placement density 0.000
+Region (8.500, 8.500) (9.500, 9.500) holds no placement site.
+[ERROR DPL-1405] Region (2.000, 2.000) (2.000, 4.000) is empty.
+DPL-1405
+[ERROR DPL-0108] report_placement_density requires 4 arguments: x1 y1 x2 y2.
+DPL-0108
+[ERROR STA-0571] y2 'abc' is not a float.
+STA-0571
