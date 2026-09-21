@@ -5,6 +5,7 @@
 #include <strings.h>
 
 #include <array>
+#include <cassert>
 #include <charconv>
 #include <climits>
 #include <clocale>
@@ -118,6 +119,7 @@ static std::string tclCommand(std::initializer_list<const char*> words)
   Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
   Tcl_IncrRefCount(list);
   for (const char* word : words) {
+    assert(word != nullptr);
     Tcl_ListObjAppendElement(nullptr, list, Tcl_NewStringObj(word, -1));
   }
   std::string cmd = Tcl_GetString(list);
