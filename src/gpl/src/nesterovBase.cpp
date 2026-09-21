@@ -4576,6 +4576,16 @@ bool NesterovBase::isSettled() const
   return coordiDistance_ <= kSettleFraction * peak_coordi_distance_;
 }
 
+float NesterovBase::getSettleRatio() const
+{
+  // No peak yet means nothing to be down from: report the displacement as
+  // still sitting at its peak, which is what isSettled() reads it as.
+  if (peak_coordi_distance_ <= 0) {
+    return 1.0f;
+  }
+  return coordiDistance_ / peak_coordi_distance_;
+}
+
 bool NesterovBase::checkDivergence()
 {
   if (sum_overflow_unscaled_ < 0.2f

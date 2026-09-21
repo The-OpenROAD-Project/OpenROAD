@@ -265,6 +265,7 @@ void NesterovPlace::reset()
   prevHpwl_ = 0;
   num_region_diverged_ = 0;
   is_routability_need_ = true;
+  routability_settle_wait_start_iter_ = -1;
 
   divergeMsg_ = "";
   divergeCode_ = 0;
@@ -745,9 +746,43 @@ void NesterovPlace::runRoutability(int iter,
   //
   // This can only ever delay the trigger, so a design already settled at its
   // overflow gate is unaffected.
-  if (npVars_.routability_driven_mode && is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
-      && isPlacementSettled()) {
+  const bool is_overflow_gate_open
+      = npVars_.routability_driven_mode && is_routability_need_
+        && average_overflow_unscaled_ <= npVars_.routability_end_overflow;
+  const bool is_trigger_open = is_overflow_gate_open && isPlacementSettled();
+
+  // Report the hold the settle gate imposes on top of the overflow gate, so
+  // a run's log shows why routability ran at an overflow below the one it
+  // was configured to run at, and how far below.
+  if (is_overflow_gate_open && !is_trigger_open
+      && routability_settle_wait_start_iter_ == -1) {
+    routability_settle_wait_start_iter_ = iter;
+    log_->info(GPL,
+               98,
+               "Routability trigger held at iter = {}: overflow {:.4f} is at "
+               "or below {:.4f}, but cells are still moving at {:.0f}% of "
+               "peak displacement (settles at {:.0f}%).",
+               iter + 1,
+               average_overflow_unscaled_,
+               npVars_.routability_end_overflow,
+               getWorstSettleRatio() * 100.0f,
+               NesterovBase::getSettleFraction() * 100.0f);
+  }
+
+  if (is_trigger_open) {
+    if (routability_settle_wait_start_iter_ != -1) {
+      log_->info(GPL,
+                 103,
+                 "Routability trigger released at iter = {} after {} "
+                 "iterations held: overflow {:.4f}, cells moving at {:.0f}% "
+                 "of peak displacement.",
+                 iter + 1,
+                 iter - routability_settle_wait_start_iter_,
+                 average_overflow_unscaled_,
+                 getWorstSettleRatio() * 100.0f);
+      routability_settle_wait_start_iter_ = -1;
+    }
+
     nbVec_[0]->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
@@ -875,6 +910,17 @@ bool NesterovPlace::isPlacementSettled() const
     }
   }
   return true;
+}
+
+// The region holding the trigger up is the one furthest from settling, so
+// that is the one worth reporting.
+float NesterovPlace::getWorstSettleRatio() const
+{
+  float worst = 0;
+  for (const auto& nb : nbVec_) {
+    worst = std::max(worst, nb->getSettleRatio());
+  }
+  return worst;
 }
 
 bool NesterovPlace::isConverged(int gpl_iter_count,

@@ -1248,6 +1248,14 @@ class NesterovBase
   // overflow can sit at very different displacements depending on how fast
   // the penalty schedule happens to be ramping.
   bool isSettled() const;
+
+  // How far the per-iteration displacement still is from the peak it is
+  // measured against, as a fraction of that peak: isSettled() is exactly
+  // this ratio having fallen to getSettleFraction(). Reported so a log shows
+  // how close a deferred routability trigger is to releasing.
+  float getSettleRatio() const;
+  static constexpr float getSettleFraction() { return kSettleFraction; }
+
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,

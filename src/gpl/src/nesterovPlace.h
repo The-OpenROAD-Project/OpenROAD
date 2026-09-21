@@ -118,6 +118,9 @@ class NesterovPlace
   // True when the per-iteration cell displacement has come off its peak in
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
+  // Per-iteration displacement as a fraction of its peak, taken over the
+  // region furthest from settling. Reporting only.
+  float getWorstSettleRatio() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   std::string getReportsDir() const;
@@ -169,6 +172,12 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
+
+  // Iteration at which the routability trigger first found the overflow gate
+  // open with the placement still moving, or -1 when no such hold is in
+  // progress. Reporting only: it measures how long the settle gate delays a
+  // pass past the overflow it was configured to run at.
+  int routability_settle_wait_start_iter_ = -1;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
