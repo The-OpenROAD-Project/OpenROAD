@@ -277,8 +277,18 @@ transceivers, OpenPower-based Microwatt etc.
 
 ## Build OpenROAD
 
+Bazel is the supported build system:
+
+``` shell
+bazelisk run --//:platform=gui //:install
+```
+
 To build OpenROAD tools locally on your machine, follow steps
 from [here](docs/user/Build.md).
+
+> **The CMake build is deprecated.** It is no longer developed and will be
+> removed in a future release; the CMake configure step prints a warning to
+> this effect. Please switch to [Bazel](docs/user/Bazel.md).
 
 ### Third-party dependencies: submodules vs. Bazel BCR
 

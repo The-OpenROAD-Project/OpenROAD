@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "odb/db.h"
@@ -114,8 +115,14 @@ struct Terminal
 
   dbITerm* const iterm{nullptr};
   dbBTerm* const bterm{nullptr};
+
   WirePoint* pt{nullptr};        // list of points
   WirePoint* first_pt{nullptr};  // first point in dfs
+
+  // Only for bterms: the part of the bpin that sticks out past an overlapping
+  // iterm. This is what will actually be used when we search for candidate
+  // sections instead of the whole bpin geometry.
+  std::optional<Rect> sliced_bpin_box;
 };
 
 // This is how we keep the information that two sections from different paths
@@ -221,8 +228,7 @@ class tmg_conn
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();
-  void detachTilePins();
-  void getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect);
+  void sliceBPinsOverlappingITerms();
 
   int getStartNode();
   void dfsClear();
@@ -256,12 +262,6 @@ class tmg_conn
   std::vector<CandidateSections> candidate_sections_;
   std::vector<int> candidate_section_count_;
   WirePoint* first_for_clear_{nullptr};
-  int slicedTilePinCnt_{0};
-  int stbtx1_[200];
-  int stbty1_[200];
-  int stbtx2_[200];
-  int stbty2_[200];
-  dbBTerm* slicedTileBTerm_[200];
 
   // Graph walk and writing of the new wire encoding.
   std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.
