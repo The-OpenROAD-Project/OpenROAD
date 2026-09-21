@@ -264,6 +264,8 @@ class tmg_conn
   WirePoint* first_for_clear_{nullptr};
 
   // Graph walk and writing of the new wire encoding.
+  // Note that the restart terminals are also used in the section above,
+  // during the connectivity check between the hard and soft passes.
   std::vector<Terminal*> restart_terminals_;
   int last_id_{-1};
   dbTechNonDefaultRule* net_rule_{nullptr};
