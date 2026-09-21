@@ -5,10 +5,7 @@ template <>
 struct less<odb::{{klass.name}}*>
 {
   bool operator()(const odb::{{klass.name}}* lhs,
-                  const odb::{{klass.name}}* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
+                  const odb::{{klass.name}}* rhs) const = delete;
 };
 
 {% endif %}

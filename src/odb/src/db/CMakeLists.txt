@@ -86,20 +86,25 @@ add_library(db
     dbGroupGroundNetItr.cpp
     dbGDSLib.cpp
     dbSwapMasterSanityChecker.cpp
-    unfoldedModel.cpp
+    dbUnfoldedBuilder.cpp
+    util.cpp
+    poly_decomp.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbAlignmentMarkerRule.cpp
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
     dbChip.cpp
     dbChipBump.cpp
     dbChipBumpInst.cpp
+    dbChipCapNode.cpp
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipNet.cpp
     dbChipPath.cpp
     dbChipRegion.cpp
     dbChipRegionInst.cpp
+    dbChipRSeg.cpp
     dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
@@ -157,10 +162,17 @@ add_library(db
     dbTechLayerVoltageSpacing.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
+    dbUnfoldedChipBumpInst.cpp
+    dbUnfoldedChipConn.cpp
+    dbUnfoldedChipInst.cpp
+    dbUnfoldedChipNet.cpp
+    dbUnfoldedChipRegionInst.cpp
     dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
+    dbChipNetCapNodeItr.cpp
     dbChipNetItr.cpp
+    dbChipNetRSegItr.cpp
     dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
@@ -180,6 +192,8 @@ add_library(db
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     dbScanListScanInstItr.cpp
+    dbUnfoldedChipBumpInstItr.cpp
+    dbUnfoldedChipRegionInstItr.cpp
     # Generator Code End cpp
 )
 
@@ -187,8 +201,11 @@ target_include_directories(db
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
         ${TCL_INCLUDE_PATH}
+)
+
+target_link_libraries(db
     PRIVATE
-        ${Boost_INCLUDE_DIRS}
+        Boost::headers
 )
 
 set_target_properties(db
@@ -199,7 +216,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        zutil
         utl_lib
         ${TCL_LIBRARY}
 

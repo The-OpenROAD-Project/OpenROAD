@@ -18,6 +18,7 @@
 #include "debug_gui.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"
@@ -34,6 +35,7 @@ class EstimateParasitics;
 
 namespace psm {
 class IRNetwork;
+class IRShort;
 
 class IRSolver
 {
@@ -64,8 +66,8 @@ class IRSolver
     std::set<ITermNode*, Node::Compare> unconnected_iterms;
   };
 
-  using UserVoltages = std::map<odb::dbNet*, std::map<sta::Scene*, Voltage>>;
-  using UserPowers = std::map<odb::dbInst*, std::map<sta::Scene*, Power>>;
+  using UserVoltages = odb::PtrMap<odb::dbNet, std::map<sta::Scene*, Voltage>>;
+  using UserPowers = odb::PtrMap<odb::dbInst, std::map<sta::Scene*, Power>>;
 
   IRSolver(odb::dbNet* net,
            bool floorplanning,
@@ -75,10 +77,12 @@ class IRSolver
            const UserVoltages& user_voltages,
            const UserPowers& user_powers,
            const PDNSim::GeneratedSourceSettings& generated_source_settings);
+  // Defined in the source file, since the shorts are only forward declared
+  ~IRSolver();
 
   odb::dbNet* getNet() const { return net_; };
 
-  bool check(bool check_bterms);
+  bool check(bool check_bterms, bool check_placed);
 
   void solve(sta::Scene* corner,
              GeneratedSourceType source_type,
@@ -109,6 +113,12 @@ class IRSolver
 
   std::vector<sta::Scene*> getCorners() const;
   bool hasSolution(sta::Scene* corner) const;
+  // Report that no solve has produced data for this corner, and stop, so a
+  // report derived from one fails with a usable message instead of an
+  // out-of-range map lookup. Each writer tests the map it actually reads
+  // rather than hasSolution(): a grid solved with no powered instances has
+  // voltages and an empty current map, and voltages are still reportable.
+  void reportNoSolution(sta::Scene* corner) const;
   Voltage getNetVoltage(sta::Scene* corner) const;
   std::optional<Voltage> getVoltage(sta::Scene* corner, Node* node) const;
 
@@ -129,15 +139,43 @@ class IRSolver
  private:
   template <typename T>
   using ValueNodeMap = std::map<const Node*, T>;
+  using LayerPolygons
+      = odb::PtrMap<odb::dbTechLayer, std::vector<odb::Polygon>>;
 
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
 
   bool checkOpen();
   bool checkBTerms() const;
-  bool checkShort() const;
+  bool checkShort(bool check_placed);
+  // Walks every object that could short the net. Returns false when the
+  // walk stopped early because the entry limit was reached, so the shorts
+  // it collected are only part of what the design holds.
+  bool findShorts(bool check_placed);
+  // Adds one short to the list. Returns false when the list is already at
+  // the entry limit and the short was not added.
+  bool addShort(std::unique_ptr<IRShort> short_entry);
+  // Checks one object against the net. Each returns false when the entry
+  // limit was reached, so the caller stops walking.
+  bool checkShortBPinBox(odb::dbBPin* bpin, odb::dbBox* box);
+  bool checkShortNetBox(odb::dbNet* net, odb::dbBox* box);
+  bool checkShortNetShape(odb::dbNet* net, const odb::dbShape& shape);
+  // The obstructions of a master, clipped to the cell and with the pins of
+  // the master removed from them.
+  LayerPolygons getMasterObstructions(odb::dbMaster* master) const;
+  LayerPolygons getMasterTerms(odb::dbMTerm* mterm) const;
+  std::vector<odb::Polygon> determineShortShapes(odb::dbTechLayer* layer,
+                                                 const odb::Polygon& polygon,
+                                                 bool require_overlap
+                                                 = false) const;
+  std::vector<odb::Polygon> determineShortShapes(odb::dbTechLayer* layer,
+                                                 const odb::Rect& rect) const;
+  // The shape tree of a layer, or null when the net has no shape on it.
+  // The trees are built once by checkShort, building one is linear in the
+  // shapes of the layer so it cannot be done per object checked against it.
+  const IRNetwork::ShapeTree* getShortCheckTree(odb::dbTechLayer* layer) const;
 
-  std::map<odb::dbInst*, Power> getInstancePower(sta::Scene* corner) const;
+  odb::PtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner) const;
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
   Connection::ConnectionMap<Current> generateCurrentMap(
@@ -162,9 +200,7 @@ class IRSolver
 
   void reportUnconnectedNodes() const;
   void reportMissingBTerm() const;
-  bool wasNodeVisited(const std::unique_ptr<ITermNode>& node) const;
-  bool wasNodeVisited(const std::unique_ptr<Node>& node) const;
-  bool wasNodeVisited(const Node* node) const;
+  void reportShortedNodes() const;
 
   std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)
@@ -216,14 +252,17 @@ class IRSolver
 
   const PDNSim::GeneratedSourceSettings& generated_source_settings_;
 
-  // Holds nodes that were visited during the open net check
-  std::set<const Node*> visited_;
   std::optional<bool> connected_;
 
   std::map<sta::Scene*, ValueNodeMap<Voltage>> voltages_;
   std::map<sta::Scene*, ValueNodeMap<Current>> currents_;
 
+  std::vector<std::unique_ptr<IRShort>> shorts_;
+  odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> short_check_trees_;
+
   static constexpr Current kSpiceFileMinCurrent = 1e-18;
+  static constexpr size_t kMaxShortEntries = 10000;
+  static constexpr const char* kMarkerCategory = "PSM";
 };
 
 }  // namespace psm

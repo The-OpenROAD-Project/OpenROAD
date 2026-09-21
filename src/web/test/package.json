@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
+}

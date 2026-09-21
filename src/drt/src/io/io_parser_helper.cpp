@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -15,9 +16,9 @@
 #include "db/obj/frFig.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
-#include "global.h"
 #include "io/io.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

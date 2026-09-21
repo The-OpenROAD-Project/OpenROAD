@@ -32,7 +32,7 @@ class TestWriteVerilog : public tst::IntegratedFixture
 {
  public:
   TestWriteVerilog()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/dbSta/test/")
   {
   }

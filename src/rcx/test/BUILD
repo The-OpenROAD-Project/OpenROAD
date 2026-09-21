@@ -13,32 +13,23 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "45_gcd",
+    "dup_pattern_names",
     "ext_pattern",
     "gcd",
     "generate_pattern",
     "names",
     "net_name_consistency",
     "coordinates",
+    "no_merging",
+    "short_resover",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: rcx_unit_test excluded - CMake build directory wrapper that runs rcxUnitTest
-    # executable from build/src/rcx/src/. The underlying C++ test should be added directly.
-    # "rcx_unit_test",
+    "test_dielectric_epsilon",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "generate_rules",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "net_name_consistency",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -104,6 +95,16 @@ filegroup(
         ) + {
             "ext_pattern": ["generate_pattern.defok"],
             "gcd": ["ext_pattern.rules"],
+            "no_merging": [
+                "ext_pattern.rules",
+                "gcd.def",
+            ],
+            "short_resover": ["gcd.def"],
+            "test_dielectric_epsilon": [
+                "//src/rcx:rule_scripts/UniversalFormat2FasterCap_923.py",
+                "//src/rcx:calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+                "rcx_v2/FasterCapModel/scripts/UniversalFormat2FasterCap_923.py",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -112,20 +113,29 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
 
+test_suite(
+    name = "rcx_unit_test",
+    tests = [":rcx_unittest"],
+)
+
 cc_test(
     name = "rcx_unittest",
-    srcs = ["ext2dBoxTest.cpp"],
+    srcs = [
+        "TestExtractor.cpp",
+        "ext2dBoxTest.cpp",
+    ],
     deps = [
+        "//src/odb/src/db",
         "//src/rcx",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -135,7 +145,10 @@ py_test(
     name = "rcx_man_tcl_check",
     srcs = ["rcx_man_tcl_check.py"],
     data = ["//src/rcx:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

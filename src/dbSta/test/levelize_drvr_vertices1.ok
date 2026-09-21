@@ -1,0 +1,122 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+driver vertex count 375
+clk level=0
+req_msg[0] level=0
+req_msg[10] level=0
+req_msg[11] level=0
+req_msg[12] level=0
+req_msg[13] level=0
+req_msg[14] level=0
+req_msg[15] level=0
+req_msg[16] level=0
+req_msg[17] level=0
+req_msg[18] level=0
+req_msg[19] level=0
+req_msg[1] level=0
+req_msg[20] level=0
+req_msg[21] level=0
+req_msg[22] level=0
+req_msg[23] level=0
+req_msg[24] level=0
+req_msg[25] level=0
+req_msg[26] level=0
+req_msg[27] level=0
+req_msg[28] level=0
+req_msg[29] level=0
+req_msg[2] level=0
+req_msg[30] level=0
+req_msg[31] level=0
+req_msg[3] level=0
+req_msg[4] level=0
+req_msg[5] level=0
+req_msg[6] level=0
+req_msg[7] level=0
+req_msg[8] level=0
+req_msg[9] level=0
+req_val level=0
+reset level=0
+resp_rdy level=0
+_216_/H level=0
+_278_/Y level=20
+_282_/Y level=20
+_286_/Y level=20
+_291_/Y level=20
+_296_/Y level=20
+_301_/Y level=20
+_304_/Y level=20
+_308_/Y level=20
+_312_/Y level=20
+_315_/Y level=20
+_320_/Y level=20
+_323_/Y level=20
+_327_/Y level=20
+_331_/Y level=20
+_335_/Y level=20
+_339_/Y level=20
+_342_/Y level=20
+_347_/Y level=20
+ctrl.state.out\[0\]$_DFF_P_/QN level=20
+ctrl.state.out\[1\]$_DFF_P_/QN level=20
+ctrl.state.out\[2\]$_DFF_P_/QN level=20
+dpath.a_reg.out\[0\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[10\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[11\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[12\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[13\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[14\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[15\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[1\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[2\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[3\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[4\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[5\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[6\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[7\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[8\]$_DFFE_PP_/QN level=20
+dpath.a_reg.out\[9\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[0\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[10\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[11\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[12\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[13\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[14\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[15\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[1\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[2\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[3\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[4\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[5\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[6\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[7\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[8\]$_DFFE_PP_/QN level=20
+dpath.b_reg.out\[9\]$_DFFE_PP_/QN level=20
+_217_/Y level=40
+_220_/Y level=40
+_222_/Y level=40
+_224_/Y level=40
+_227_/Y level=40
+_228_/Y level=40
+_229_/Y level=40
+_230_/Y level=40
+_231_/Y level=40
+_232_/Y level=40
+deleting instance _220_
+post-delete:
+driver vertex count 374
+clk level=0
+req_msg[0] level=0
+req_msg[10] level=0
+req_msg[11] level=0
+req_msg[12] level=0

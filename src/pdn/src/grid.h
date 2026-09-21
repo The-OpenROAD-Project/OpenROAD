@@ -10,9 +10,11 @@
 #include <string>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "polygon.h"
 #include "shape.h"
 #include "via.h"
 
@@ -31,14 +33,44 @@ class PadDirectConnectionStraps;
 
 class PdnGen;
 
+// Distances off the four edges of a cell, as -halo and -core_offsets are given.
+// The values name the edges of the cell as it was drawn, so placing the cell
+// moves a value to whichever edge that one becomes: the opposite edge for a
+// flip, an adjacent edge for a quarter turn.  transform() does that remapping.
+struct EdgeSpec
+{
+  int left = 0;
+  int bottom = 0;
+  int right = 0;
+  int top = 0;
+
+  // the wrapped PdnGen API takes these as a plain array
+  static EdgeSpec fromArray(const std::array<int, 4>& values)
+  {
+    return {values[0], values[1], values[2], values[3]};
+  }
+
+  bool isZero() const
+  {
+    return left == 0 && bottom == 0 && right == 0 && top == 0;
+  }
+
+  // Remap from the cell's as-drawn frame into the frame it is placed in.
+  EdgeSpec transform(odb::dbOrientType orient) const;
+  // The inverse, for reporting a resolved spec back to the user in the terms
+  // they wrote it in.
+  EdgeSpec untransform(odb::dbOrientType orient) const;
+};
+
 class Grid
 {
  public:
   enum Type
   {
-    Core,
-    Instance,
-    Existing
+    kCore,
+    kInstance,
+    kExisting,
+    kDummy
   };
 
   Grid(VoltageDomain* domain,
@@ -55,6 +87,8 @@ class Grid
   VoltageDomain* getDomain() const { return domain_; }
 
   virtual void report() const;
+  // extra header lines for report(), printed right after the grid type
+  virtual void reportHeader() const {}
   virtual Type type() const = 0;
   static std::string typeToString(Type type);
 
@@ -67,7 +101,8 @@ class Grid
 
   void removeStrap(Straps* strap);
 
-  std::set<odb::dbTechLayer*> connectableLayers(odb::dbTechLayer* layer) const;
+  odb::PtrSet<odb::dbTechLayer> connectableLayers(
+      odb::dbTechLayer* layer) const;
 
   // specify the layers to convert to pins
   void setPinLayers(const std::vector<odb::dbTechLayer*>& layers)
@@ -75,7 +110,7 @@ class Grid
     pin_layers_.clear();
     pin_layers_.insert(layers.begin(), layers.end());
   }
-  const std::set<odb::dbTechLayer*>& getPinLayers() const
+  const odb::PtrSet<odb::dbTechLayer>& getPinLayers() const
   {
     return pin_layers_;
   }
@@ -100,6 +135,31 @@ class Grid
   bool startsWithPower() const { return starts_with_power_; }
   bool startsWithGround() const { return !startsWithPower(); }
 
+  // Orientation of the frame the grid's user-specified offsets are written in.
+  // Only instance grids can be anything but R0.
+  virtual odb::dbOrientType getOrientation() const
+  {
+    return odb::dbOrientType::R0;
+  }
+
+  // Whether an orientation mirrors the placed x and y axes relative to the
+  // orientation a grid's straps are written against -- R0 for the four
+  // orientations that keep the axes, R90 for the four that swap them.
+  struct AxisMirror
+  {
+    bool x;
+    bool y;
+  };
+  static AxisMirror getAxisMirror(odb::dbOrientType orient);
+
+  // True when this grid's frame is mirrored along x (y), so that an offset
+  // measured from the low edge belongs at the high edge instead.  Unlike
+  // EdgeSpec::transform these never account for the quarter turn itself: a
+  // strap's direction comes from its layer, which does not turn with the
+  // instance.
+  bool mirrorsX() const;
+  bool mirrorsY() const;
+
   void setAllowRepairChannels(bool allow) { allow_repair_channels_ = allow; }
   bool allowsRepairChannels() const { return allow_repair_channels_; }
 
@@ -121,6 +181,19 @@ class Grid
   // returns the  largest boundary to use for extending straps
   virtual odb::Rect getGridBoundary() const;
 
+  // The same areas as outlines.  Each mirrors exactly one of the rectangles
+  // above, including where a subclass redefines what that rectangle means: on
+  // a rectangular floorplan a caller written against these behaves
+  // identically, and on a polygon one they follow the real outline.
+  virtual Region getDomainRegion() const;
+  virtual Region getGridRegion() const;
+  virtual Region getDomainBoundaryRegion() const;
+  virtual Region getGridBoundaryRegion() const;
+
+  // How far a band can be run outwards to reach the ring beside it.  Falls
+  // back to the band's own edge when no ring is there.
+  int getRingReach(const odb::Rect& band, const odb::Point& normal) const;
+
   const std::vector<std::unique_ptr<Rings>>& getRings() const { return rings_; }
   const std::vector<std::unique_ptr<Straps>>& getStraps() const
   {
@@ -139,16 +212,17 @@ class Grid
   void resetShapes();
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
-      const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-      bool do_pins,
+      const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+      const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
       const Shape::ObstructionTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
-  static void makeInitialObstructions(odb::dbBlock* block,
-                                      ShapeVectorMap& obs,
-                                      const std::set<odb::dbInst*>& skip_insts,
-                                      const std::set<odb::dbNet*>& skip_nets,
-                                      utl::Logger* logger);
+  static void makeInitialObstructions(
+      odb::dbBlock* block,
+      ShapeVectorMap& obs,
+      const odb::PtrSet<odb::dbInst>& skip_insts,
+      const odb::PtrSet<odb::dbNet>& skip_nets,
+      utl::Logger* logger);
   static void makeInitialShapes(odb::dbBlock* block,
                                 ShapeVectorMap& shapes,
                                 utl::Logger* logger);
@@ -161,7 +235,13 @@ class Grid
 
   void ripup();
 
-  virtual std::set<odb::dbInst*> getInstances() const;
+  virtual odb::PtrSet<odb::dbInst> getInstances() const;
+  // Instances whose obstructions this grid republishes itself and which
+  // must therefore not be collected as block level obstructions.
+  virtual odb::PtrSet<odb::dbInst> getObstructionExemptInstances() const
+  {
+    return {};
+  }
 
   bool hasShapes() const;
   bool hasVias() const;
@@ -186,7 +266,7 @@ class Grid
   std::vector<std::unique_ptr<Straps>> straps_;
   std::vector<std::unique_ptr<Connect>> connect_;
 
-  std::set<odb::dbTechLayer*> pin_layers_;
+  odb::PtrSet<odb::dbTechLayer> pin_layers_;
   std::vector<odb::dbTechLayer*> obstruction_layers_;
 
   Via::ViaTree vias_;
@@ -205,9 +285,15 @@ class CoreGrid : public Grid
            bool start_with_power,
            const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
-  Type type() const override { return Grid::Core; }
+  Type type() const override { return Grid::kCore; }
 
   odb::Rect getDomainBoundary() const override;
+  Region getDomainRegion() const override;
+  Region getDomainBoundaryRegion() const override;
+
+  // the widest followpin rail on this grid, which overhangs the core by half
+  // its width at the top and bottom rows
+  int getFollowPinWidth() const;
 
   // finds all pad instances and adds connection straps to grid
   void setupDirectConnect(
@@ -231,14 +317,26 @@ class InstanceGrid : public Grid
   std::string getLongName() const override;
 
   void report() const override;
-  Type type() const override { return Grid::Instance; }
+  void reportHeader() const override;
+  Type type() const override { return Grid::kInstance; }
 
   odb::dbInst* getInstance() const { return inst_; }
-  std::set<odb::dbInst*> getInstances() const override { return {inst_}; }
+  odb::PtrSet<odb::dbInst> getInstances() const override { return {inst_}; }
+  odb::PtrSet<odb::dbInst> getObstructionExemptInstances() const override
+  {
+    return {inst_};
+  }
+
+  odb::dbOrientType getOrientation() const override
+  {
+    return inst_->getOrient();
+  }
 
   std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 
-  using Halo = std::array<int, 4>;
+  using Halo = EdgeSpec;
+  // halos are given in the master's as-drawn frame and are remapped onto the
+  // placed instance; halos_ is always in the placed frame.
   void addHalo(const Halo& halos);
   void setGridToBoundary(bool value);
 
@@ -246,6 +344,10 @@ class InstanceGrid : public Grid
   odb::Rect getGridArea() const override;
   odb::Rect getDomainBoundary() const override;
   odb::Rect getGridBoundary() const override;
+  Region getDomainRegion() const override;
+  Region getGridRegion() const override;
+  Region getDomainBoundaryRegion() const override;
+  Region getGridBoundaryRegion() const override;
 
   void getGridLevelObstructions(ShapeVectorMap& obstructions) const override;
 
@@ -255,6 +357,9 @@ class InstanceGrid : public Grid
   virtual bool isValid() const;
   void checkSetup() const override;
 
+  // Obstructions of a pad cell, split so that the metal coincident with a
+  // pin is attributed to that pin's net instead of blocking every net.
+  static ShapeVectorMap getPadObstructions(odb::dbInst* inst);
   static ShapeVectorMap getInstanceObstructions(odb::dbInst* inst,
                                                 const Halo& halo
                                                 = {0, 0, 0, 0});
@@ -282,6 +387,24 @@ class InstanceGrid : public Grid
                              bool rect_is_min,
                              bool apply_horizontal,
                              bool apply_vertical);
+  bool hasHalo() const;
+  void checkHalo() const;
+  Halo suggestHalo(const std::vector<odb::Rect>& rows) const;
+};
+
+class DummyInstanceGrid : public Grid
+{
+ public:
+  DummyInstanceGrid(VoltageDomain* domain, const std::string& name);
+
+  std::string getLongName() const override;
+
+  Type type() const override { return Grid::kDummy; }
+
+  odb::PtrSet<odb::dbInst> getInstances() const override { return {}; }
+
+  bool isReplaceable() const override { return true; }
+  void checkSetup() const override {};
 };
 
 class BumpGrid : public InstanceGrid
@@ -304,7 +427,7 @@ class ExistingGrid : public Grid
                const std::string& name,
                const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
-  Type type() const override { return Grid::Existing; }
+  Type type() const override { return Grid::kExisting; }
 
   Shape::ShapeTreeMap getShapes() const override { return shapes_; };
 

@@ -22,6 +22,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 
@@ -29,8 +30,11 @@ namespace sta {
 class dbSta;
 }
 
-namespace gui {
+namespace web {
 class DbInstDescriptor;
+}
+
+namespace gui {
 class DisplayControls;
 
 class BrowserWidget : public QDockWidget,
@@ -40,13 +44,13 @@ class BrowserWidget : public QDockWidget,
   Q_OBJECT
 
  public:
-  BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+  BrowserWidget(const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
                     modulesettings,
                 DisplayControls* controls,
                 QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta);
-  void setDBInstDescriptor(DbInstDescriptor* desciptor);
+  void setDBInstDescriptor(web::DbInstDescriptor* desciptor);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -66,10 +70,10 @@ class BrowserWidget : public QDockWidget,
   void paintEvent(QPaintEvent* event) override;
 
  signals:
-  void select(const SelectionSet& selected);
-  void removeSelect(const Selected& selected);
-  void highlight(const SelectionSet& selected);
-  void removeHighlight(const Selected& selected);
+  void select(const web::SelectionSet& selected);
+  void removeSelect(const web::Selected& selected);
+  void highlight(const web::SelectionSet& selected);
+  void removeHighlight(const web::Selected& selected);
 
   void updateModuleVisibility(odb::dbModule* module, bool visible);
   void updateModuleColor(odb::dbModule* module,
@@ -103,18 +107,19 @@ class BrowserWidget : public QDockWidget,
 
   void makeMenu();
 
-  Selected getSelectedFromIndex(const QModelIndex& index);
+  web::Selected getSelectedFromIndex(const QModelIndex& index);
 
   void toggleParent(QStandardItem* item);
 
   odb::dbBlock* block_;
   sta::dbSta* sta_;
-  DbInstDescriptor* inst_descriptor_;
+  web::DbInstDescriptor* inst_descriptor_;
   DisplayControls* display_controls_;
   QPushButton* display_controls_warning_;
   QCheckBox* include_physical_cells_;
 
-  const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
+  const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
+      modulesettings_;
 
   QTreeView* view_;
   QStandardItemModel* model_;
@@ -124,17 +129,17 @@ class BrowserWidget : public QDockWidget,
   bool ignore_selection_;
 
   QMenu* menu_;
-  Selected menu_item_;
+  web::Selected menu_item_;
   static const int kSortRole;
 
-  std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
-  std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
-  SelectionSet getMenuItemChildren();
+  odb::PtrSet<odb::dbModule> getChildren(odb::dbModule* parent);
+  odb::PtrSet<odb::dbModule> getAllChildren(odb::dbModule* parent);
+  web::SelectionSet getMenuItemChildren();
 
   void updateChildren(odb::dbModule* module, const QColor& color);
   void resetChildren(odb::dbModule* module);
 
-  std::map<odb::dbModule*, QStandardItem*> modulesmap_;
+  odb::PtrMap<odb::dbModule, QStandardItem*> modulesmap_;
 
   struct ModuleStats;
 

@@ -1,0 +1,118 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+PROPERTYDEFINITIONS
+  LAYER LEF58_TYPE STRING ;
+  LAYER LEF58_BACKSIDE STRING ;
+  MACRO LEF58_BACKSIDE_BRIDGE STRING ;
+END PROPERTYDEFINITIONS
+
+SITE coreSite
+  CLASS CORE ;
+  SIZE 0.190 BY 1.400 ;
+  SYMMETRY Y ;
+END coreSite
+
+LAYER B1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  WIDTH 0.070 ;
+  PITCH 1.400 ;
+  SPACING 0.070 ;
+  PROPERTY LEF58_BACKSIDE "BACKSIDE ;" ;
+END B1
+
+LAYER M1
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  WIDTH 0.070 ;
+  PITCH 0.190 ;
+  SPACING 0.070 ;
+END M1
+
+LAYER V1
+  TYPE CUT ;
+  WIDTH 0.070 ;
+  SPACING 0.080 ;
+END V1
+
+LAYER M2
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  WIDTH 0.070 ;
+  PITCH 0.140 ;
+  SPACING 0.070 ;
+END M2
+
+#
+# Bridge tap: vdd / vss pins exist on BOTH M1 and B1, conveying that
+# the cell physically stitches the front-side and backside power rails.
+#
+MACRO bridge_tap
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.380 BY 1.400 ;
+  SYMMETRY X Y ;
+  SITE coreSite ;
+  PROPERTY LEF58_BACKSIDE_BRIDGE "BACKSIDEBRIDGE ;" ;
+  PIN vdd
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+        RECT 0.060 0.050 0.130 1.350 ;
+    END
+    PORT
+      LAYER B1 ;
+        RECT 0.000 1.330 0.380 1.400 ;
+    END
+  END vdd
+  PIN vss
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER M1 ;
+        RECT 0.250 0.050 0.320 1.350 ;
+    END
+    PORT
+      LAYER B1 ;
+        RECT 0.000 0.000 0.380 0.070 ;
+    END
+  END vss
+END bridge_tap
+
+#
+# Backside-only filler: vdd / vss exist only on B1 (the backside rail).
+# This is the common pattern on a BSPDN PDK -- the cell takes power
+# from below and exposes no front-side power pin.
+#
+MACRO backside_filler
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.190 BY 1.400 ;
+  SYMMETRY X Y ;
+  SITE coreSite ;
+  PIN vdd
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER B1 ;
+        RECT 0.000 1.330 0.190 1.400 ;
+    END
+  END vdd
+  PIN vss
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER B1 ;
+        RECT 0.000 0.000 0.190 0.070 ;
+    END
+  END vss
+END backside_filler
+
+END LIBRARY

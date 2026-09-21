@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <unistd.h>
+
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
@@ -8,12 +10,16 @@
 #include <string>
 #include <vector>
 
+#include "boost/json/parse.hpp"
+#include "color.h"
 #include "gtest/gtest.h"
-#include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/heatMap.h"
 
 namespace web {
 namespace {
@@ -78,8 +84,9 @@ class SaveImageTest : public tst::Nangate45Fixture
   // Save to a temp file and register for cleanup.
   std::string tempPng(const std::string& label)
   {
-    std::string path = std::filesystem::temp_directory_path()
-                       / ("web_test_" + label + ".png");
+    std::string path
+        = std::filesystem::temp_directory_path()
+          / ("web_test_" + label + "_" + std::to_string(::getpid()) + ".png");
     output_files_.push_back(path);
     return path;
   }
@@ -103,6 +110,39 @@ class SaveImageTest : public tst::Nangate45Fixture
       }
     }
     return false;
+  }
+
+  // True if any visible pixel isn't part of the always-on die/core outline,
+  // which getBounds() now guarantees is in every saved image.  Matches
+  // TileGeneratorTest::hasNonOutlinePixel: the outline is kOutlineGray and
+  // alpha is NOT checked, because tiles are rasterized supersampled and
+  // decimated, so its edge pixels come back at partial coverage while the RGB
+  // stays put.  Testing by colour rather than by carving out a border keeps
+  // the die edge itself in scope — that is where pin markers are drawn.
+  static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
+  {
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i + 3] == 0) {
+        continue;
+      }
+      if (rgba[i] != kOutlineGray.r || rgba[i + 1] != kOutlineGray.g
+          || rgba[i + 2] != kOutlineGray.b) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static size_t countNonTransparentPixels(
+      const std::vector<unsigned char>& rgba)
+  {
+    size_t count = 0;
+    for (size_t i = 3; i < rgba.size(); i += 4) {
+      if (rgba[i] > 0) {
+        ++count;
+      }
+    }
+    return count;
   }
 
   std::unique_ptr<TileGenerator> tile_gen_;
@@ -172,15 +212,16 @@ TEST_F(SaveImageTest, VisibilityStdcellsOff)
   const std::string path = tempPng("vis_off");
   TileVisibility vis;
   vis.stdcells = false;
-  // With stdcells hidden and no routing, the _instances layer should be empty.
+  // With stdcells hidden and no routing, the _instances layer holds nothing
+  // but the die outline, which Qt draws regardless of instance visibility.
   tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
 
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
 }
 
-TEST_F(SaveImageTest, VisibilityPinMarkersOff)
+TEST_F(SaveImageTest, VisibilityPinsOff_Markers)
 {
   // Place a BTerm to generate pin markers.
   makeBTermAtEdge("clk", "metal1", 0, 50000, 200, 200);
@@ -194,18 +235,51 @@ TEST_F(SaveImageTest, VisibilityPinMarkersOff)
   const std::string path_off = tempPng("pins_off");
   TileVisibility vis_off;
   vis_off.stdcells = false;
-  vis_off.pin_markers = false;
+  vis_off.pins = false;
   tile_gen_->saveImage(path_off, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
 
   unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
   auto pixels_on = decodePngFile(path_on, w1, h1);
   auto pixels_off = decodePngFile(path_off, w2, h2);
 
-  // With pin_markers on, there should be visible content from the marker.
-  // With it off, less or no content.
+  // With pins on, there should be visible content from the marker.
+  // With it off, no content.
   EXPECT_TRUE(hasNonTransparentPixel(pixels_on));
-  // The two images should differ.
   EXPECT_NE(pixels_on, pixels_off);
+}
+
+TEST_F(SaveImageTest, VisibilityPinsOff)
+{
+  // BTerm shapes (tech layers + markers) should be hidden when vis.pins=false.
+  makeBTermAtEdge("clk", "metal1", 0, 50000, 5000, 5000);
+  makeTileGen();
+
+  const std::string path_on = tempPng("bterm_on");
+  TileVisibility vis_on;
+  vis_on.stdcells = false;
+  vis_on.pins = true;
+  tile_gen_->saveImage(path_on, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  const std::string path_off = tempPng("bterm_off");
+  TileVisibility vis_off;
+  vis_off.stdcells = false;
+  vis_off.pins = false;
+  tile_gen_->saveImage(path_off, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto pixels_on = decodePngFile(path_on, w1, h1);
+  auto pixels_off = decodePngFile(path_off, w2, h2);
+
+  // The die and core outlines are drawn unconditionally on the _instances
+  // pass (Qt drawChip parity), so the "pins off" image is never fully
+  // transparent.  What the toggle must guarantee is that hiding pins only
+  // ever takes pixels away — every BTerm shape and marker disappears and
+  // nothing new is drawn in their place.
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
+      << "BTerm shapes should appear with vis.pins=true";
+  EXPECT_LT(countNonTransparentPixels(pixels_off),
+            countNonTransparentPixels(pixels_on))
+      << "BTerm shapes should be hidden with vis.pins=false";
 }
 
 // ─── Edge cases ──────────────────────────────────────────────────────────────
@@ -227,8 +301,11 @@ TEST_F(SaveImageTest, EmptyDesign)
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
   EXPECT_EQ(w, 256u);
-  // Empty design should produce a transparent image.
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  // A design with no shapes still has a floorplan: the die outline is drawn
+  // and nothing else.
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "the die outline should still be drawn";
 }
 
 TEST_F(SaveImageTest, LargeWidthClamped)
@@ -272,6 +349,279 @@ TEST_F(SaveImageTest, MultipleLayersComposited)
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// ─── Composition order ───────────────────────────────────────────────────────
+
+// saveImage must composite in the same z order Leaflet stacks the layers in on
+// screen (display-controls.js addPseudoLayer), otherwise the saved PNG is not
+// the view the user was looking at.  Before the fix every pseudo layer was
+// appended after the tech layers, which put the manufacturing grid over the
+// routing and the pin markers over the tech layers (PR #10806 review).
+//
+// Asserted on the layer list rather than on pixels: every layer here is
+// semi-transparent, so a dot drawn over the routing still blends with it and no
+// pixel test can tell the two orders apart reliably.
+TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
+{
+  const std::vector<std::string> tech_layers = {"metal1", "metal2"};
+  TileVisibility vis;
+  vis.pins = true;
+  vis.mfg_grid = true;
+  vis.access_points = true;
+  vis.regions = true;
+  vis.gcell_grid = true;
+  vis.rudy = true;
+
+  // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
+  // _access_points 1000, _regions 1001, _gcell_grid 1002, _rudy 1003.
+  const std::vector<std::string> expected = {"_instances",
+                                             "_pins",
+                                             "_mfg_grid",
+                                             "metal1",
+                                             "metal2",
+                                             "_access_points",
+                                             "_regions",
+                                             "_gcell_grid",
+                                             "_rudy"};
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
+}
+
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
+{
+  const std::vector<std::string> tech_layers = {"metal1"};
+  TileVisibility vis;
+  vis.pins = false;
+  // `regions` is the one overlay that defaults ON (Qt parity), so turn the
+  // whole set off explicitly rather than relying on the defaults.
+  vis.regions = false;
+  vis.mfg_grid = false;
+  vis.access_points = false;
+  vis.gcell_grid = false;
+  vis.rudy = false;
+
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+            (std::vector<std::string>{"_instances", "metal1"}))
+      << "hidden overlays must not be composited at all";
+}
+
+TEST_F(SaveImageTest, ParseFromJsonRudyOption)
+{
+  TileVisibility vis;
+  EXPECT_FALSE(vis.rudy);
+  auto json_obj = boost::json::parse("{\"rudy\":true}").as_object();
+  vis.parseFromJson(json_obj);
+  EXPECT_TRUE(vis.rudy);
+}
+
+class TestRUDYHeatMap : public web::HeatMapDataSource
+{
+ public:
+  explicit TestRUDYHeatMap(utl::Logger* logger)
+      : web::HeatMapDataSource(logger,
+                               "Estimated Congestion (RUDY)",
+                               "RUDY",
+                               "RUDY")
+  {
+  }
+
+  odb::Rect getBounds() const override
+  {
+    return getBlock() ? getBlock()->getDieArea()
+                      : odb::Rect(0, 0, 100000, 100000);
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(odb::Rect(20000, 20000, 80000, 80000), 10.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+};
+
+TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
+{
+  auto logger = getLogger();
+  web::registerHeatMapSource(
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger]() {
+        return std::make_shared<TestRUDYHeatMap>(logger);
+      });
+
+  const std::string path_no_rudy = tempPng("no_rudy");
+  TileVisibility vis_off;
+  vis_off.rudy = false;
+  tile_gen_->saveImage(path_no_rudy, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  const std::string path_rudy = tempPng("with_rudy");
+  TileVisibility vis_on;
+  vis_on.rudy = true;
+  tile_gen_->saveImage(path_rudy, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  ASSERT_TRUE(std::filesystem::exists(path_no_rudy));
+  ASSERT_TRUE(std::filesystem::exists(path_rudy));
+
+  unsigned w1 = 0, h1 = 0;
+  auto pixels_no_rudy = decodePngFile(path_no_rudy, w1, h1);
+  unsigned w2 = 0, h2 = 0;
+  auto pixels_rudy = decodePngFile(path_rudy, w2, h2);
+
+  EXPECT_EQ(w1, 512u);
+  EXPECT_EQ(w2, 512u);
+  EXPECT_GT(countNonTransparentPixels(pixels_rudy),
+            countNonTransparentPixels(pixels_no_rudy))
+      << "Enabling rudy heatmap should render additional heatmap pixels";
+}
+
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
+{
+  const std::vector<std::string> tech_layers = {"metal1", "metal2", "metal3"};
+  TileVisibility vis;
+  vis.has_visible_layers = true;
+  vis.visible_layers = {"metal2"};
+  vis.pins = false;
+  vis.regions = false;
+  vis.mfg_grid = false;
+  vis.access_points = false;
+  vis.gcell_grid = false;
+  vis.rudy = false;
+
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+            (std::vector<std::string>{"_instances", "metal2"}))
+      << "tech layers hidden via visible_layers must not be composited";
+}
+
+TEST_F(SaveImageTest, HiddenTechLayerIsNotDrawn)
+{
+  placeInst("BUF_X16", "buf2", 50000, 50000);
+  makeTileGen();
+  const odb::Rect region = tile_gen_->getBounds();
+
+  TileVisibility all;
+  const auto with_all = tile_gen_->renderImageBuffer(region, 512, 0, all);
+  TileVisibility none;
+  none.has_visible_layers = true;  // visible_layers empty: hide every one
+  const auto with_none = tile_gen_->renderImageBuffer(region, 512, 0, none);
+
+  ASSERT_FALSE(with_all.empty());
+  ASSERT_EQ(with_all.size(), with_none.size());
+  EXPECT_LT(countNonTransparentPixels(with_none),
+            countNonTransparentPixels(with_all))
+      << "hiding all tech layers must remove their pixels";
+}
+
+// Tiles are rendered concurrently into disjoint output rectangles, so the
+// result must not depend on the thread count.  This is the test that catches
+// a shared-state race in the render path.
+TEST_F(SaveImageTest, ThreadCountDoesNotChangeOutput)
+{
+  for (int i = 0; i < 40; ++i) {
+    placeInst("BUF_X16", ("b" + std::to_string(i)).c_str(), 2000 * i, 3000 * i);
+  }
+  makeTileGen();
+  const odb::Rect region = tile_gen_->getBounds();
+  TileVisibility vis;
+
+  tile_gen_->setThreadCount(1);
+  const auto one = tile_gen_->renderImageBuffer(region, 1024, 0, vis);
+  tile_gen_->setThreadCount(8);
+  const auto eight = tile_gen_->renderImageBuffer(region, 1024, 0, vis);
+
+  ASSERT_FALSE(one.empty());
+  EXPECT_EQ(one, eight);
+}
+
+// Qt gates drawLabels on the Misc/"Labels" control, and its save_image goes
+// through the same painter, so a saved image reproduces a view with labels
+// hidden.  save_image -display_option {labels false} has to do the same here.
+TEST_F(SaveImageTest, LabelsFollowTheVisibilityFlag)
+{
+  // Render the generator's own bounds: labels outside them fall off every
+  // tile and would make this pass for the wrong reason.
+  const odb::Rect region = tile_gen_->getBounds();
+  ASSERT_GT(region.maxDXDY(), 0);
+  const Color white{.r = 255, .g = 255, .b = 255, .a = 255};
+
+  TileVisibility vis;
+  const std::vector<unsigned char> before
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+  ASSERT_FALSE(before.empty());
+
+  const odb::Point centre((region.xMin() + region.xMax()) / 2,
+                          (region.yMin() + region.yMax()) / 2);
+  ASSERT_FALSE(
+      tile_gen_->addLabel(centre, "PROBE", white, 24, "center", "L").empty());
+
+  const std::vector<unsigned char> shown
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+  vis.labels = false;
+  const std::vector<unsigned char> hidden
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+
+  // Drawn when on...
+  EXPECT_NE(shown, before) << "label did not change the image";
+  // ...and with it off the image is the one from before the label existed.
+  EXPECT_EQ(hidden, before) << "label still drawn with labels off";
+}
+
+//------------------------------------------------------------------------------
+// Debug graphics in save_image.  The layer loop carries only the per-layer
+// Renderer::drawLayer half, so the layer-independent drawObjects pass needs a
+// composite step of its own -- once per tile, where it used to be stamped once
+// per visible layer.
+//------------------------------------------------------------------------------
+
+TEST_F(SaveImageTest, DebugRendererObjectsPassCompositedOncePerTile)
+{
+  int object_calls = 0;
+  std::vector<std::string> layer_calls;
+  TileGenerator::setRendererHooks({.draw = [&](std::vector<unsigned char>&,
+                                               const TileFrame&,
+                                               bool,
+                                               odb::dbTechLayer* layer) {
+    if (layer != nullptr) {
+      layer_calls.emplace_back(layer->getName());
+    } else {
+      ++object_calls;
+    }
+  }});
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  // 256 px wide => a single tile, so the count is exactly the per-tile count.
+  tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, vis);
+  TileGenerator::setRendererHooks({});
+
+  EXPECT_EQ(object_calls, 1)
+      << "drawObjects must be composited once, not once per rendered layer";
+  EXPECT_GT(layer_calls.size(), 1u)
+      << "the per-layer drawLayer pass still runs for every layer";
+}
+
+TEST_F(SaveImageTest, DebugRendererPassIsSkippedWhenToggledOff)
+{
+  int calls = 0;
+  TileGenerator::setRendererHooks(
+      {.draw = [&calls](std::vector<unsigned char>&,
+                        const TileFrame&,
+                        bool,
+                        odb::dbTechLayer*) { ++calls; }});
+
+  TileVisibility vis;  // debug_renderers defaults off
+  tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, vis);
+  TileGenerator::setRendererHooks({});
+
+  EXPECT_EQ(calls, 0);
 }
 
 }  // namespace

@@ -15,3 +15,10 @@ py_test(
     srcs = ["test_extract_utils.py"],
     deps = [":extract_utils"],
 )
+
+exports_files([
+    "md_roff_compat.py",
+    "manpage.py",
+    "link_readmes.sh",
+    "extract_utils.py",
+])

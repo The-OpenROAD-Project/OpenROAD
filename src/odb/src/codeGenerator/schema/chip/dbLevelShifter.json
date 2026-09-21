@@ -31,82 +31,67 @@
     },
     {
       "name": "source_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "sink_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "use_functional_equivalence_",
       "type": "bool",
-      "default": "false",
-      "flags": []
+      "default": "false"
     },
     {
       "name": "applies_to_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "applies_to_boundary_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "rule_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "threshold_",
       "type": "float",
-      "default": "0",
-      "flags": []
+      "default": "0"
     },
     {
       "name": "no_shift_",
       "type": "bool",
-      "default": "false",
-      "flags": []
+      "default": "false"
     },
     {
       "name": "force_shift_",
       "type": "bool",
-      "default": "false",
-      "flags": []
+      "default": "false"
     },
     {
       "name": "location_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "input_supply_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "output_supply_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "internal_supply_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "name_prefix_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "name_suffix_",
-      "type": "std::string",
-      "flags": []
+      "type": "std::string"
     },
     {
       "name": "instances_",

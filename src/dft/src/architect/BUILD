@@ -2,6 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "message_srcs")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -30,8 +31,11 @@ cc_library(
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/dft/src/utils",
-        "//src/odb",
         "//src/utl",
         "@boost.geometry",
     ],
+)
+
+message_srcs(
+    visibility = ["//src/dft:__pkg__"],
 )

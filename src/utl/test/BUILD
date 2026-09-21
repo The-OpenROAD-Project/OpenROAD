@@ -18,20 +18,20 @@ COMPULSORY_TESTS = [
     "tee",
     "tee_fails",
     "test_error",
-    "test_error_exception",
     "test_info",
     "test_metrics",
     "test_suppress_message",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
-PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
+EXCEPTION_TESTS = [
+    "test_error_exception",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + EXCEPTION_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -75,11 +75,23 @@ filegroup(
         name = test_name,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
+        expected_exit_code = 1 if test_name in EXCEPTION_TESTS else 0,
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":TestAlgorithms",
+        ":TestCFileUtils",
+        ":TestCpuTopology",
+        ":TestMetrics",
+        ":TestSuppressStdout",
+    ],
+)
 
 cc_test(
     name = "utl_cfile_unittest",
@@ -139,11 +151,24 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestServiceRegistry",
+    srcs = ["cpp/TestServiceRegistry.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "utl_man_tcl_check",
     srcs = ["utl_man_tcl_check.py"],
     data = ["//src/utl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -154,4 +179,14 @@ doc_check_test(
         "//src/utl:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "TestCpuTopology",
+    srcs = ["cpp/TestCpuTopology.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

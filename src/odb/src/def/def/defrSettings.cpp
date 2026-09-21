@@ -32,6 +32,7 @@
 
 #include "def_parser.hpp"
 #include "defiKRDefs.hpp"
+#include "defrReader.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

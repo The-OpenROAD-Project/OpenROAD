@@ -5,17 +5,21 @@
 
 #include <cstddef>
 #include <map>
+#include <string>
 #include <tuple>
 #include <vector>
 
-#include "RDLRoute.h"
+#include "RDLNet.h"
 #include "RDLRouter.h"
-#include "gui/gui.h"
+#include "RDLSegment.h"
+#include "odb/PtrSetMap.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
+#include "web/core.h"
 
 namespace pad {
 
-RDLGui::RDLGui()
+RDLGui::RDLGui(utl::Logger* logger) : logger_(logger)
 {
   addDisplayControl(kDrawVertex, true);
   addDisplayControl(kDrawEdge, true);
@@ -33,7 +37,7 @@ RDLGui::~RDLGui()
   }
 }
 
-void RDLGui::drawObjects(gui::Painter& painter)
+void RDLGui::drawObjects(web::Painter& painter)
 {
   if (router_ == nullptr) {
     return;
@@ -44,13 +48,15 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   const auto& vertex_map = router_->getVertexMap();
 
-  std::map<odb::dbITerm*, RDLRoute*> routes;
+  odb::PtrMap<odb::dbITerm, RDLSegment*> routes;
   for (const auto& route : router_->getRoutes()) {
-    routes[route->getTerminal()] = route.get();
+    for (const auto& segment : route->getSegments()) {
+      routes[segment->getTerminal()] = segment.get();
+    }
   }
 
   const bool draw_obs = draw_detail && checkDisplayControl(kDrawObs);
-  gui::Painter::Color obs_color = gui::Painter::kCyan;
+  web::Painter::Color obs_color = web::Painter::kCyan;
   obs_color.a = 127;
   if (draw_obs) {
     painter.setPenAndBrush(obs_color, true);
@@ -80,7 +86,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   }
 
   if (draw_vertex) {
-    painter.setPenAndBrush(gui::Painter::kRed, true);
+    painter.setPenAndBrush(web::Painter::kRed, true);
 
     for (const auto& v : vertex) {
       const odb::Point& pt = vertex_map.at(v);
@@ -88,7 +94,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  gui::Painter::Color edge_color = gui::Painter::kGreen;
+  web::Painter::Color edge_color = web::Painter::kGreen;
   edge_color.a = 127;
   if (draw_edge) {
     painter.setPenAndBrush(edge_color, true);
@@ -107,7 +113,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
   const bool draw_flywires = checkDisplayControl(kDrawFlyWires);
   if (draw_flywires) {
     painter.setPenAndBrush(
-        gui::Painter::kYellow, true, gui::Painter::Brush::kSolid, 3);
+        web::Painter::kYellow, true, web::Painter::Brush::kSolid, 3);
 
     const auto& targets = router_->getRoutingTargets();
 
@@ -125,7 +131,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
 
     painter.setPenAndBrush(
-        gui::Painter::kRed, true, gui::Painter::Brush::kSolid, 3);
+        web::Painter::kRed, true, web::Painter::Brush::kSolid, 3);
     for (const auto& route : router_->getFailedRoutes()) {
       for (auto* dst : route->getTerminals()) {
         painter.drawLine(route->getTerminal()->getBBox().center(),
@@ -136,7 +142,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   if (checkDisplayControl(kDrawRoutes)) {
     painter.setPenAndBrush(
-        gui::Painter::kGreen, true, gui::Painter::Brush::kSolid, 3);
+        web::Painter::kGreen, true, web::Painter::Brush::kSolid, 3);
 
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
@@ -158,9 +164,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
         for (const auto& target : targets) {
           if (box.intersects(target.shape)) {
             painter.setPenAndBrush(
-                gui::Painter::kBlue, true, gui::Painter::Brush::kDiagonal);
+                web::Painter::kBlue, true, web::Painter::Brush::kDiagonal);
             painter.drawRect(target.shape);
-            painter.setPenAndBrush(gui::Painter::kBlue, true);
+            painter.setPenAndBrush(web::Painter::kBlue, true);
             painter.drawCircle(target.center.x(),
                                target.center.y(),
                                0.05 * target.shape.minDXDY());
@@ -172,7 +178,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   if (checkDisplayControl(kDrawRoutes)) {
     painter.setPenAndBrush(
-        gui::Painter::kGreen, true, gui::Painter::Brush::kSolid, 3);
+        web::Painter::kGreen, true, web::Painter::Brush::kSolid, 3);
 
     for (const auto& [iterm, route] : routes) {
       if (!route->isRouted()) {
@@ -199,7 +205,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
         const odb::Point& dst = route_pts[i];
 
         painter.setPenAndBrush(
-            gui::Painter::kGreen, true, gui::Painter::Brush::kNone, 2);
+            web::Painter::kGreen, true, web::Painter::Brush::kNone, 2);
         if (i == 1) {
           painter.drawRect(router_->getPointObstruction(src));
         }
@@ -211,18 +217,18 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
-  painter.setPenAndBrush(snap_color_, true, gui::Painter::Brush::kSolid, 2);
+  painter.setPenAndBrush(snap_color_, true, web::Painter::Brush::kSolid, 2);
   for (const auto& [pt0, pt1] : snap_) {
     painter.drawLine(pt0, pt1);
   }
 
-  gui::DiscreteLegend legend;
-  legend.addLegendKey(gui::Painter::kRed, "Vertex");
+  web::DiscreteLegend legend;
+  legend.addLegendKey(web::Painter::kRed, "Vertex");
   legend.addLegendKey(edge_color, "Edge");
   legend.addLegendKey(obs_color, "Obstruction");
-  legend.addLegendKey(gui::Painter::kBlue, "Target");
-  legend.addLegendKey(gui::Painter::kYellow, "Flywire");
-  legend.addLegendKey(gui::Painter::kGreen, "Route");
+  legend.addLegendKey(web::Painter::kBlue, "Target");
+  legend.addLegendKey(web::Painter::kYellow, "Flywire");
+  legend.addLegendKey(web::Painter::kGreen, "Route");
   legend.draw(painter);
 }
 
@@ -244,14 +250,14 @@ void RDLGui::zoomToSnap(bool preview)
   }
 
   if (preview) {
-    snap_color_ = gui::Painter::kGray;
+    snap_color_ = web::Painter::kGray;
   } else {
-    snap_color_ = gui::Painter::kWhite;
+    snap_color_ = web::Painter::kWhite;
   }
 
   odb::Rect zoomto;
   zoom.bloat(zoom.maxDXDY(), zoomto);
-  gui::Gui::get()->zoomTo(zoomto);
+  web::Gui::get()->zoomTo(zoomto);
 }
 
 void RDLGui::clearSnap()
@@ -267,14 +273,16 @@ void RDLGui::setRouter(RDLRouter* router)
   }
 }
 
-void RDLGui::pause(bool timeout) const
+void RDLGui::pause(const std::string& reason, bool timeout) const
 {
-  gui::Gui::get()->redraw();
+  logger_->report("Pausing RDL router: {}", reason);
+
+  web::Gui::get()->redraw();
 
   if (timeout) {
-    gui::Gui::get()->pause(kGuiTimeout);
+    web::Gui::get()->pause(kGuiTimeout);
   } else {
-    gui::Gui::get()->pause();
+    web::Gui::get()->pause();
   }
 }
 

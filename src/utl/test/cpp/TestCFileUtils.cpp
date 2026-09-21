@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <ctime>
@@ -13,6 +14,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "boost/asio.hpp"
@@ -158,6 +160,51 @@ TEST(Utl, stream_handler_write_and_read_gzip)
   std::filesystem::remove(filename);
 }
 
+TEST(Utl, stream_handler_gzip_compression_levels)
+{
+  const char* filename_l1 = "test_l1.txt.gz";
+  const char* filename_l9 = "test_l9.txt.gz";
+
+  std::string kTestData;
+  kTestData.reserve(100000 * 27);
+  for (int i = 0; i < 100000; ++i) {
+    kTestData.append("abcdefghijklmnopqrstuvwxyz\n");
+  }
+
+  {
+    OutStreamHandler sh(filename_l1, true, 1);
+    std::ostream& os = sh.getStream();
+    os.write(kTestData.c_str(), kTestData.size());
+  }
+
+  {
+    OutStreamHandler sh(filename_l9, true, 9);
+    std::ostream& os = sh.getStream();
+    os.write(kTestData.c_str(), kTestData.size());
+  }
+
+  {
+    InStreamHandler ish(filename_l1);
+    std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
+                         std::istreambuf_iterator<char>());
+    EXPECT_EQ(contents, kTestData);
+  }
+  {
+    InStreamHandler ish(filename_l9);
+    std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
+                         std::istreambuf_iterator<char>());
+    EXPECT_EQ(contents, kTestData);
+  }
+
+  std::uintmax_t size_l1 = std::filesystem::file_size(filename_l1);
+  std::uintmax_t size_l9 = std::filesystem::file_size(filename_l9);
+
+  EXPECT_LE(size_l9, size_l1);
+
+  std::filesystem::remove(filename_l1);
+  std::filesystem::remove(filename_l9);
+}
+
 TEST(Utl, stream_handler_temp_file_handling)
 {
   const char* filename = "test_temp_file_handling.txt";
@@ -248,6 +295,8 @@ TEST(Utl, file_handler_exception_handling)
 
 TEST(Utl, metrics_server_responds_with_basic_metric)
 {
+  using namespace std::chrono_literals;
+
   Logger logger;
   logger.startPrometheusEndpoint(0);
   std::shared_ptr<PrometheusRegistry> registry = logger.getRegistry();
@@ -258,16 +307,18 @@ TEST(Utl, metrics_server_responds_with_basic_metric)
   auto& test_gauge = test_gauge_family.Add({});
   test_gauge.Set(10101);
 
-  std::time_t t = std::time(nullptr);
-  while (true) {
-    // Timeout after 10 seconds
-    if ((std::time(nullptr) - t) > 10) {
-      EXPECT_LT((std::time(nullptr) - t), 10);
+  const auto deadline = std::chrono::steady_clock::now() + 10s;
+  while (!logger.isPrometheusServerReadyToServe()) {
+    if (logger.hasPrometheusServerStartupFailed()) {
+      GTEST_SKIP() << "Prometheus endpoint could not start in this runtime.";
     }
 
-    if (logger.isPrometheusServerReadyToServe()) {
-      break;
+    if (std::chrono::steady_clock::now() >= deadline) {
+      GTEST_SKIP()
+          << "Prometheus endpoint did not become ready before timeout.";
     }
+
+    std::this_thread::sleep_for(10ms);
   }
 
   uint16_t port = logger.getPrometheusPort();

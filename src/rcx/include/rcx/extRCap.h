@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -755,6 +756,7 @@ class extRCModel
                  const char* suffix,
                  const char* permissions);
   void mkNet_prefix(extMeasure* m, const char* wiresNameSuffix);
+  bool isNewPattern(extMeasure* m, std::set<std::string>& pattern_names);
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint32_t wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);
@@ -1725,6 +1727,8 @@ class extMain
 {
   // --------------------- dkf 092024 ------------------------
  public:
+  void run();
+
   extSolverGen* _currentSolverGen;
 
   // v2 -----------------------------------------------------
@@ -1758,6 +1762,7 @@ class extMain
                      uint32_t* cornerTable);
 
   void setExtractionOptions_v2(ExtractOptions options);
+  void setExtractionOptions(const ExtractOptions& options);
   uint32_t makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint32_t resetMapNodes_v2(odb::dbWire* wire);
 
@@ -1826,7 +1831,16 @@ class extMain
                                const char* prefix,
                                const char* postfix,
                                bool v = false);
-  bool modelExists(const char* extRules);
+  bool modelExists();
+
+  void setExtractionRulesFile(const std::string& extraction_rules_file)
+  {
+    extraction_rules_file_ = extraction_rules_file;
+  }
+  const std::string& getExtractionRulesFile() const
+  {
+    return extraction_rules_file_;
+  }
 
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
@@ -1850,12 +1864,12 @@ class extMain
   uint32_t* _ccContextLength = nullptr;
   //  uint32_t* _ccContextLength= nullptr;
 
-  bool _skip_via_wires;
+  bool _skip_via_wires = false;
   float _version;                           // dkf: 06242024
   int _metal_flag_22;                       // dkf: 06242024
   uint32_t _wire_extracted_progress_count;  // dkf: 06242024
 
-  bool _v2;  // new flow dkf: 10302023
+  bool _v2 = false;  // new flow dkf: 10302023
 
   void skip_via_wires(bool v) { _skip_via_wires = v; };
   void printUpdateCoup(uint32_t netId1,
@@ -2053,14 +2067,6 @@ class extMain
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
 
-  int setMinTypMax(bool min,
-                   bool typ,
-                   bool max,
-                   int setMin,
-                   int setTyp,
-                   int setMax,
-                   uint32_t extDbCnt);
-
   extRCModel* getRCmodel(uint32_t n);
 
   void calcRes0(double* deltaRes,
@@ -2093,8 +2099,7 @@ class extMain
   uint32_t getMultiples(uint32_t cnt, uint32_t base);
   uint32_t getExtLayerCnt(odb::dbTech* tech);
 
-  void setBlockFromChip();
-  void setBlock(odb::dbBlock* block);
+  void setBlockFromChip(odb::dbChip* chip);
   odb::dbBlock* getBlock() { return _block; }
   odb::dbTech* getTech() { return _tech; }
   extRCModel* getRCModel() { return _modelTable->get(0); }
@@ -2124,14 +2129,7 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  void makeBlockRCsegs(const char* netNames,
-                       uint32_t cc_up,
-                       uint32_t ccFlag,
-                       double resBound,
-                       bool mergeViaRes,
-                       double ccThres,
-                       int contextDepth,
-                       const char* extRules);
+  void setCornerCount();
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
@@ -2273,7 +2271,7 @@ class extMain
   void cleanCornerTables();
   int getDbCornerIndex(const char* name);
   int getDbCornerModel(const char* name);
-  bool setCorners(const char* rulesFileName);
+  void registerRulesModel(extRCModel* rules_model);
   int getProcessCornerDbIndex(int pcidx);
   void getScaledCornerDbIndex(int pcidx, int& scidx, int& scdbIdx);
   void getScaledRC(int sidx, double& res, double& cap);
@@ -2282,7 +2280,6 @@ class extMain
   void genScaledExt();
   void makeCornerNameMap();
   void getExtractedCorners();
-  void makeCornerMapFromExtControl();
   bool checkLayerResistance();
 
   uint32_t getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
@@ -2670,14 +2667,27 @@ class extMain
 
   utl::Logger* getLogger() { return logger_; }
 
+  const Array1D<extCorner*>* getProcessCornerTable() const
+  {
+    return _processCornerTable;
+  }
+
+  void setDeleteModelAtExtraction(bool delete_model_at_extraction)
+  {
+    delete_model_at_extraction_ = delete_model_at_extraction;
+  }
+
  private:
   utl::Logger* logger_;
+
+  std::string extraction_rules_file_;
 
   bool _batchScaleExt = true;
   Array1D<extCorner*>* _processCornerTable = nullptr;
   Array1D<extCorner*>* _scaledCornerTable = nullptr;
 
   Array1D<extRCModel*>* _modelTable;
+  bool delete_model_at_extraction_{true};
   Array1D<uint32_t> _modelMap;  // TO_TEST
   Array1D<extMetRCTable*> _metRCTable;
   double _resistanceTable[20][20];
@@ -2689,9 +2699,6 @@ class extMain
   double* _tmpResTable = new double[10];
   double* _tmpSumResTable = new double[10];
   int _sumUpdated;
-  int _minModelIndex;  // TO_TEST
-  int _typModelIndex;  //
-  int _maxModelIndex;  //
 
   odb::dbDatabase* _db = nullptr;
   odb::dbTech* _tech = nullptr;
@@ -2704,13 +2711,13 @@ class extMain
   char* _origSpefFilePrefix = nullptr;
   char* _newSpefFilePrefix = nullptr;
   uint32_t _bufSpefCnt;
-  bool _incrNoBackSlash;
+  bool _incrNoBackSlash = false;
   uint32_t _cornerCnt = 0;
   uint32_t _extDbCnt;
 
   int _remote;
-  bool _extracted;
-  bool _allNet;
+  bool _extracted = false;
+  bool _allNet = false;
 
   bool _getBandWire = false;
   bool _printBandInfo = false;
@@ -2723,6 +2730,7 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
+  const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;
   int _netNoWireCnt = 0;
@@ -2735,9 +2743,9 @@ class extMain
   bool _gndcModify = false;
 
   float _netGndcCalibFactor;
-  bool _netGndcCalibration;
+  bool _netGndcCalibration = false;
 
-  bool _useDbSdb;
+  bool _useDbSdb = false;
 
   Array1D<int>* _nodeTable = nullptr;   // junction id -> cap node id
   Array1D<int>* _btermTable = nullptr;  // bterm id -> cap node id
@@ -2793,7 +2801,7 @@ class extMain
   odb::dbExtControl* _prevControl = nullptr;
 
   bool _foreign = false;
-  bool _rsegCoord;
+  bool _rsegCoord = false;
   bool _diagFlow = false;
 
   std::vector<uint32_t> _rsegJid;
@@ -2817,10 +2825,10 @@ class extMain
   double _maxResTable[64][64];
 
  public:
-  bool _lef_res;
+  bool _lef_res = false;
   std::string _tmpLenStats;
   int _last_node_xy[2];
-  bool _wireInfra;
+  bool _wireInfra = false;
   odb::Rect _extMaxRect;
 
   // ----------------------------------------- 060623
@@ -2836,5 +2844,12 @@ class extMain
                              dbCreateNetUtil* db_net_util);  // 061123
   // ---------------------------------------------------------
 };
+
+std::unique_ptr<extRCModel> parseRules(
+    odb::dbTech* tech,
+    const std::string& rules_file,
+    const Array1D<extCorner*>* extractor_corner_table,
+    bool is_v2,
+    utl::Logger* logger);
 
 }  // namespace rcx

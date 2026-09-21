@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include "../../src/snapper.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "tst/fixture.h"

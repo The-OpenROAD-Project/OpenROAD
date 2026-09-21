@@ -23,6 +23,7 @@
 #include <variant>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"
@@ -1303,7 +1304,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
   auto sorted_nets = sortedSet(nets);
 
   // Build map of mterm names and associated nets
-  std::unordered_map<std::string, std::set<dbNet*>> snet_term_map;
+  std::unordered_map<std::string, odb::PtrSet<dbNet>> snet_term_map;
   for (auto* inst : block->getInsts()) {
     for (auto* iterm : inst->getITerms()) {
       snet_term_map[iterm->getMTerm()->getName()].insert(iterm->getNet());
@@ -1367,7 +1368,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
 
 void DefOut::Impl::writeSNet(
     dbNet* net,
-    const std::unordered_map<std::string, std::set<dbNet*>>& snet_term_map)
+    const std::unordered_map<std::string, odb::PtrSet<dbNet>>& snet_term_map)
 {
   std::string nname = net->getName();
   *_out << "    - " << nname;
@@ -1473,6 +1474,8 @@ void DefOut::Impl::writeWire(dbWire* wire)
   int path_cnt = 0;
   int prev_x = std::numeric_limits<int>::max();
   int prev_y = std::numeric_limits<int>::max();
+  int prev_junction_id = -1;
+  bool virtual_point = false;
 
   for (decode.begin(wire);;) {
     dbWireDecoder::OpCode opcode = decode.next();
@@ -1484,6 +1487,12 @@ void DefOut::Impl::writeWire(dbWire* wire)
       case dbWireDecoder::SHORT:
       case dbWireDecoder::VWIRE:
       case dbWireDecoder::JUNCTION: {
+        if (opcode == dbWireDecoder::VWIRE
+            && decode.getJunctionValue() == prev_junction_id) {
+          virtual_point = true;
+          break;
+        }
+
         layer = decode.getLayer();
         const std::string lname = layer->getName();
 
@@ -1504,6 +1513,8 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         prev_wire_type = wire_type;
         point_cnt = 0;
+        prev_junction_id = -1;
+        virtual_point = false;
         ++path_cnt;
         break;
       }
@@ -1516,6 +1527,15 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         if ((++point_cnt & 7) == 0) {
           *_out << "\n    ";
+        }
+
+        if (virtual_point) {
+          *_out << " VIRTUAL ( " << x << " " << y << " )";
+          virtual_point = false;
+          prev_x = x;
+          prev_y = y;
+          prev_junction_id = decode.getJunctionId();
+          break;
         }
 
         std::string mask_statement;
@@ -1533,6 +1553,7 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         prev_x = x;
         prev_y = y;
+        prev_junction_id = decode.getJunctionId();
         break;
       }
 
@@ -1547,6 +1568,15 @@ void DefOut::Impl::writeWire(dbWire* wire)
           *_out << "\n    ";
         }
 
+        if (virtual_point) {
+          *_out << " VIRTUAL ( " << x << " " << y << " )";
+          virtual_point = false;
+          prev_x = x;
+          prev_y = y;
+          prev_junction_id = decode.getJunctionId();
+          break;
+        }
+
         if (point_cnt == 1) {
           *_out << " ( " << x << " " << y << " " << ext << " )";
         } else if ((x == prev_x) && (y == prev_y)) {
@@ -1559,6 +1589,7 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         prev_x = x;
         prev_y = y;
+        prev_junction_id = decode.getJunctionId();
         break;
       }
 

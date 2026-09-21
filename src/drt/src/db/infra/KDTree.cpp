@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "KDTree.hpp"
+#include "db/infra/KDTree.hpp"
 
 #include <algorithm>
 #include <cmath>

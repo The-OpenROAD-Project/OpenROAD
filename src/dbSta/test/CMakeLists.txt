@@ -1,6 +1,9 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    3dic_cross
+    3dic_get_cells
+    3dic_read_db
     block_sta1
     check_axioms
     clock_pin
@@ -9,16 +12,23 @@ or_integration_tests(
     escape_slash_hier
     find_clks1
     find_clks2
+    get_nets1_hier
     get_ports1
     get_ports1_hier
     hier2
     hier3
+    hier_escape_port
     hierclock
     hierwrite
     hier_deep
+    hier_highest_connected_net
+    hier_weird_port
+    levelize_drvr_vertices1
     make_port
+    modnet_port_alias
     network_edit1
     power1
+    read_def_bus_port
     read_liberty1
     read_vcd
     read_verilog1
@@ -39,17 +49,22 @@ or_integration_tests(
     report_cell_usage_modinsts
     report_cell_usage_modinsts_metrics
     report_cell_usage_physical_only
+    report_cell_usage_wide_columns
     report_json1
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1
+    sdc_modinst_slash
     sdc_names1
     sdc_names2
+    spef_def_names
     sta1
     sta2
     sta3
     sta4
     sta5
+    sta_to_db1
+    sta_to_db1_hier
     write_sdc1
     write_verilog1
     write_verilog2
@@ -61,6 +76,8 @@ or_integration_tests(
     write_verilog8
     write_verilog9
     write_verilog9_hier
+  PASSFAIL_TESTS
+    check_ip_liberty_pins
 )
 
 if(ENABLE_TESTS)

@@ -177,7 +177,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
     if (data.isValid()) {
       dbTechLayer* layer = data.value<dbTechLayer*>();
       if (layer != nullptr) {
-        auto selected = Gui::get()->makeSelected(layer);
+        auto selected = web::Gui::get()->makeSelected(layer);
         if (selected) {
           auto props = selected.getProperties();
 
@@ -567,8 +567,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   custom_controls_start_ = root->rowCount();
 
   // register renderers
-  if (gui::Gui::get() != nullptr) {
-    for (auto renderer : gui::Gui::get()->renderers()) {
+  if (web::Gui::get() != nullptr) {
+    for (auto renderer : web::Gui::get()->renderers()) {
       registerRenderer(renderer);
     }
   }
@@ -827,7 +827,7 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   // custom renderers
   settings->beginGroup("custom");
-  for (auto renderer : Gui::get()->renderers()) {
+  for (auto renderer : web::Gui::get()->renderers()) {
     saveRendererState(renderer);
   }
   for (const auto& [group, renderer_settings] : custom_controls_settings_) {
@@ -866,7 +866,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void DisplayControls::saveRendererState(Renderer* renderer)
+void DisplayControls::saveRendererState(web::Renderer* renderer)
 {
   const std::string& group_name = renderer->getSettingsGroupName();
   if (group_name.empty()) {
@@ -1043,9 +1043,9 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     }
 
     if (auto* tech_layer = user_data.value<dbTechLayer*>()) {
-      emit selected(Gui::get()->makeSelected(tech_layer));
+      emit selected(web::Gui::get()->makeSelected(tech_layer));
     } else if (auto* site = user_data.value<odb::dbSite*>()) {
-      emit selected(Gui::get()->makeSelected(site));
+      emit selected(web::Gui::get()->makeSelected(site));
     } else {
       continue;
     }
@@ -1251,8 +1251,13 @@ void DisplayControls::findControlsInItems(const std::string& path,
   collectControls(model_->invisibleRootItem(), column, controls);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  // NonPathWildcardConversion makes '*' match across '/' (like the old
+  // QRegExp::Wildcard); the default path mode would translate '*' to "[^/]*",
+  // so a bare '*' would fail to match any control path containing a separator.
   QString regexPattern = QRegularExpression::wildcardToRegularExpression(
-      QString::fromStdString(path));  // Defaults to exact match.
+      QString::fromStdString(path),
+      QRegularExpression::NonPathWildcardConversion);  // Defaults to exact
+                                                       // match.
 
   // Create the QRegularExpression object with the case-insensitive option.
   const QRegularExpression path_compare(
@@ -1389,7 +1394,7 @@ void DisplayControls::setSTA(sta::dbSta* sta)
   checkLiberty();
 }
 
-void DisplayControls::setDBInstDescriptor(DbInstDescriptor* desciptor)
+void DisplayControls::setDBInstDescriptor(web::DbInstDescriptor* desciptor)
 {
   inst_descriptor_ = desciptor;
 }
@@ -1931,7 +1936,7 @@ QFont DisplayControls::ioPinMarkersFont() const
   return pin_markers_font_;
 }
 
-void DisplayControls::registerRenderer(Renderer* renderer)
+void DisplayControls::registerRenderer(web::Renderer* renderer)
 {
   if (custom_controls_.contains(renderer)) {
     // already registered
@@ -2029,7 +2034,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
   }
 }
 
-void DisplayControls::unregisterRenderer(Renderer* renderer)
+void DisplayControls::unregisterRenderer(web::Renderer* renderer)
 {
   saveRendererState(renderer);
 
@@ -2124,37 +2129,43 @@ void DisplayControls::techInit(odb::dbTech* tech)
   std::mt19937 gen_color(1);
 
   auto generate_next_color = [&gen_color]() -> QColor {
-    return QColor(
-        50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+    const int blue = 50 + gen_color() % 200;
+    const int green = 50 + gen_color() % 200;
+    const int red = 50 + gen_color() % 200;
+    return QColor(red, green, blue);
   };
 
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     QColor color;
-    if (type == dbTechLayerType::ROUTING) {
-      if (metal < default_metal_colors.size()) {
-        color = default_metal_colors[metal++];
-      } else {
-        // pick a random color as we exceeded the built-in palette size
-        color = generate_next_color();
-      }
-    } else if (type == dbTechLayerType::CUT) {
-      if (via < default_cut_colors.size()) {
-        if (metal != 0) {
-          color = default_cut_colors[via++];
+    if (layer->isBackside()) {
+      color = generate_next_color();
+    } else {
+      if (type == dbTechLayerType::ROUTING) {
+        if (metal < default_metal_colors.size()) {
+          color = default_metal_colors[metal++];
         } else {
-          // via came first, so pick random color
+          // pick a random color as we exceeded the built-in palette size
+          color = generate_next_color();
+        }
+      } else if (type == dbTechLayerType::CUT) {
+        if (via < default_cut_colors.size()) {
+          if (metal != 0) {
+            color = default_cut_colors[via++];
+          } else {
+            // via came first, so pick random color
+            color = generate_next_color();
+          }
+        } else {
+          // pick a random color as we exceeded the built-in palette size
           color = generate_next_color();
         }
       } else {
-        // pick a random color as we exceeded the built-in palette size
+        // Do not draw from the existing palette so the metal layers can claim
+        // those colors.
         color = generate_next_color();
       }
-    } else {
-      // Do not draw from the existing palette so the metal layers can claim
-      // those colors.
-      color = generate_next_color();
     }
     color.setAlpha(180);
     layer_color_[layer] = std::move(color);
@@ -2174,7 +2185,7 @@ void DisplayControls::setCurrentChip(odb::dbChip* chip)
     return;
   }
 
-  std::set<odb::dbTech*> visible_techs;
+  odb::PtrSet<odb::dbTech> visible_techs;
 
   std::function<void(odb::dbChip*)> collect_techs = [&](odb::dbChip* chip) {
     auto tech = chip->getTech();

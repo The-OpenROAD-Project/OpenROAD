@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -108,7 +109,7 @@ class ICeWall;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace dst {
@@ -128,6 +129,14 @@ class EstimateParasitics;
 
 namespace web {
 class WebServer;
+}
+
+namespace syn {
+class Synthesis;
+}
+
+namespace wmk {
+class Watermark;
 }
 
 namespace ord {
@@ -151,7 +160,7 @@ class OpenRoad
 
   Tcl_Interp* tclInterp() { return tcl_interp_; }
   utl::Logger* getLogger() { return logger_; }
-  utl::CallBackHandler* getCallBackHandler() { return callback_handler_; }
+  utl::ServiceRegistry* getServiceRegistry() { return service_registry_; }
   odb::dbDatabase* getDb() { return db_; }
   sta::dbSta* getSta() { return sta_; }
   sta::dbNetwork* getDbNetwork();
@@ -184,6 +193,8 @@ class OpenRoad
     return estimate_parasitics_;
   }
   web::WebServer* getWebServer() { return web_server_; }
+  syn::Synthesis* getSynthesis() { return synthesis_; }
+  wmk::Watermark* getWatermark() { return watermark_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -235,7 +246,8 @@ class OpenRoad
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);
-  void writeDb(const char* filename);
+  void writeDb(const char* filename,
+               std::optional<int> compression_level = std::nullopt);
 
   void setThreadCount(int threads, bool print_info = true);
   void setThreadCount(const char* threads, bool print_info = true);
@@ -288,7 +300,9 @@ class OpenRoad
   dft::Dft* dft_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
-  utl::CallBackHandler* callback_handler_ = nullptr;
+  syn::Synthesis* synthesis_ = nullptr;
+  wmk::Watermark* watermark_ = nullptr;
+  utl::ServiceRegistry* service_registry_ = nullptr;
 
   int threads_ = 1;
 

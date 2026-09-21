@@ -23,6 +23,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
+#include "spdlog/common.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tcl.h"
@@ -151,7 +152,7 @@ ScriptWidget::~ScriptWidget()
              this,
              &ScriptWidget::outputChanged);
   if (logger_ != nullptr) {
-    // make sure to remove the Gui sink from logger
+    // make sure to remove the web::Gui sink from logger
     logger_->removeSink(sink_);
   }
 }

@@ -129,11 +129,53 @@ class dbSet
   void reverse() { itr_->reverse(parent_); }
 
   ///
-  /// Returns true if set is empty
+  /// Returns true if this set is empty
   ///
   bool empty() const { return begin() == end(); }
 
+  ///
+  /// Returns true if this set has more than `count` elements.
+  /// Walks at most `count` + 1 elements; prefer this over comparing
+  /// against size(), which walks the whole set. hasMoreThan(0) is
+  /// equivalent to !empty().
+  ///
+  bool hasMoreThan(uint32_t count) const
+  {
+    iterator it = begin();
+    const iterator end_it = end();
+    return advanceBy(it, end_it, count) && it != end_it;
+  }
+
+  ///
+  /// Returns true if this set has exactly `count` elements.
+  /// Walks at most `count` + 1 elements; prefer this over comparing
+  /// against size(), which walks the whole set. For `count` == 0
+  /// prefer empty().
+  ///
+  bool hasExactly(uint32_t count) const
+  {
+    iterator it = begin();
+    const iterator end_it = end();
+    return advanceBy(it, end_it, count) && it == end_it;
+  }
+
  private:
+  ///
+  /// Advances `it` by up to `count` elements, stopping at `end_it`.
+  /// Returns true if all `count` elements were traversed.
+  ///
+  static bool advanceBy(iterator& it, const iterator& end_it, uint32_t count)
+  {
+    while (count > 0) {
+      if (it == end_it) {
+        return false;
+      }
+      ++it;
+      --count;
+    }
+    return true;
+  }
+
   dbIterator* itr_{nullptr};
   dbObject* parent_{nullptr};
 };

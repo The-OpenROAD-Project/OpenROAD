@@ -3,21 +3,21 @@
 
 #include "LinesRenderer.h"
 
-#include "gui/gui.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "web/core.h"
 
 namespace stt {
 
-LinesRenderer* LinesRenderer::lines_renderer = nullptr;
+LinesRenderer* LinesRenderer::lines_renderer_ = nullptr;
 
 void LinesRenderer::highlight(const LineSegments& lines,
-                              const gui::Painter::Color& color)
+                              const web::Painter::Color& color)
 {
   lines_ = lines;
   color_ = color;
 }
 
-void LinesRenderer::drawObjects(gui::Painter& painter)
+void LinesRenderer::drawObjects(web::Painter& painter)
 {
   if (!lines_.empty()) {
     painter.setPen(color_, true);
@@ -27,12 +27,12 @@ void LinesRenderer::drawObjects(gui::Painter& painter)
   }
 }
 
-void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
+void highlightSteinerTree(const Tree& tree, web::Gui* gui)
 {
-  if (gui::Gui::enabled()) {
-    if (LinesRenderer::lines_renderer == nullptr) {
-      LinesRenderer::lines_renderer = new LinesRenderer();
-      gui->registerRenderer(LinesRenderer::lines_renderer);
+  if (web::Gui::enabled()) {
+    if (LinesRenderer::lines_renderer_ == nullptr) {
+      LinesRenderer::lines_renderer_ = new LinesRenderer();
+      gui->registerRenderer(LinesRenderer::lines_renderer_);
     }
     LinesRenderer::LineSegments lines;
     for (int i = 0; i < tree.branchCount(); i++) {
@@ -44,7 +44,7 @@ void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
       const int y2 = neighbor.y;
       lines.emplace_back(odb::Point(x1, y1), odb::Point(x2, y2));
     }
-    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::kRed);
+    LinesRenderer::lines_renderer_->highlight(lines, web::Painter::kRed);
   }
 }
 

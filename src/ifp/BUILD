@@ -24,9 +24,8 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/upf",
         "//src/utl",
@@ -36,7 +35,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/ifp/InitFloorplan.hh",
         "src/MakeInitFloorplan.cc",
         ":swig",
         ":tcl",
@@ -49,11 +47,10 @@ cc_library(
         "src",
     ],
     deps = [
+        ":ifp",
         "//:ord",
         "//src/dbSta",
-        "//src/gui",
-        "//src/odb",
-        "//src/sta:opensta_lib",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -114,5 +111,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/ifp/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/ifp/test:__pkg__",
+    ],
 )

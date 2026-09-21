@@ -1,5 +1,13 @@
 # Installing OpenROAD
 
+```{warning}
+**The CMake build is deprecated.** Bazel is the supported build system for
+OpenROAD. CMake support is no longer developed and will be removed in a
+future release. Building from source should use
+[Bazel](#build-and-install-with-bazel); see [Bazel](Bazel.md) for testing,
+profiling and build configurations.
+```
+
 ## Clone Repository
 
 The first step, independent of the build method, is to download the repository:
@@ -12,28 +20,30 @@ cd OpenROAD
 OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
 
 ```{note}
-There are three methods for building OpenROAD (in order of recommendation): prebuilt binaries, docker images, and finally, local build.  
+There are several methods for obtaining OpenROAD (in order of recommendation):
+prebuilt binaries, docker images, building from source with Bazel, and finally
+the deprecated CMake build.
 ```
 
 ## Build and install with Bazel
 
 Build OpenROAD with GUI support and install into ../install/OpenROAD/bin
 
-    bazelisk run --//:platform=gui //packaging:install
+    bazelisk run --//:platform=gui //:install
 
 To install to a custom location, e.g. /tmp/myinstall
 
-    bazelisk run --//:platform=gui //packaging:install -- /tmp/myinstall
+    bazelisk run --//:platform=gui //:install -- /tmp/myinstall
 
 To produce an openroad.tar file with install files
 
-    bazelisk build --//:platform=gui //packaging:tarfile
+    bazelisk build --//:platform=gui //:tarfile
 
 The tarfile is located at bazel-bin/packaging/openroad.tar.
 
 To embed the real git version string, add `--config=release`:
 
-    bazelisk run --config=release --//:platform=gui //packaging:install
+    bazelisk run --config=release --//:platform=gui //:install
 
 The install process will install the binary "openroad" and the runfile directory
 "openroad.runfiles" which contains runtime data needed by the binary.
@@ -72,7 +82,14 @@ Now you are ready to install the prebuilt binaries.
 Please refer to the instructions for installing prebuilt binaries 
 [above](#build-with-prebuilt-binaries).
 
-## Build Locally
+## Build Locally with CMake (deprecated)
+
+```{warning}
+The CMake build is deprecated and will be removed in a future release. The
+CMake configure step prints the same warning. New users and new setups should
+use [Bazel](#build-and-install-with-bazel) instead; the instructions in this
+section are kept for existing CMake-based setups only.
+```
 
 The default build type is `RELEASE` to compile optimized code.
 The resulting executable is in `build/bin/openroad`.
@@ -95,9 +112,31 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 ```
 
+### Only for macOS Setup
+
+On macOS, it is recommended to use a Python virtual environment to isolate dependencies and avoid system conflicts.
+
+1. Create a virtual environment in the OpenROAD directory:
+``` shell
+python3 -m venv .venv
+```
+
+2. Activate the virtual environment:
+``` shell
+source .venv/bin/activate
+```
+
+3. With virtual environment activated, run without `sudo`:
+``` shell
+./etc/DependencyInstaller.sh -base
+./etc/DependencyInstaller.sh -common -local
+```
+
 ### Install Dependencies
 
-You may follow our helper script to install dependencies as follows:
+We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) repository to install all dependencies. `setup.sh` encapsulates the calls to `DependencyInstaller.sh` and ensures the entire flow environment is configured correctly.
+
+Alternatively, if you are building OpenROAD standalone, you may use our helper script:
 ``` shell
 sudo ./etc/DependencyInstaller.sh -base
 ./etc/DependencyInstaller.sh -common -local
@@ -111,10 +150,13 @@ To avoid this bahavior use -local flag or -prefix <PATH> argument.
 
 ### Build OpenROAD
 
+`./etc/Build.sh` builds with Bazel by default; the `-cmake-build` flag selects
+the deprecated CMake build used in the rest of this section.
+
 To build with the default options in release mode:
 
 ``` shell
-./etc/Build.sh
+./etc/Build.sh -cmake-build
 ```
 
 #### Custom Library Path
@@ -122,14 +164,14 @@ To build with the default options in release mode:
 To build with debug option enabled and if the Tcl library is not on the default path.
 
 ``` shell
-./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+./etc/Build.sh -cmake-build -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 #### Enable `manpages`
 
 To build the `manpages`:
 ``` shell
-./etc/Build.sh -build-man
+./etc/Build.sh -cmake-build -build-man
 ```
 
 #### LTO Options
@@ -164,7 +206,7 @@ The default install directory is `/usr/local`.
 To install in a different directory with CMake use:
 
 ``` shell
-./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
+./etc/Build.sh -cmake-build -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
 Alternatively, you can use the `DESTDIR` variable with make.

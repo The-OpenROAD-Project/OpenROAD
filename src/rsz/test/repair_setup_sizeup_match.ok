@@ -41,7 +41,7 @@ Path Type: max
            -0.230   slack (VIOLATED)
 
 
-[INFO RSZ-0100] Repair move sequence: SizeUpMoveMatch 
+[INFO RSZ-0100] Repair move sequence: SizeUpMatchMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  

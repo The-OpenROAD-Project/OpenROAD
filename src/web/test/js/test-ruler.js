@@ -3,6 +3,7 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { formatDbu, formatDistance, parseDbu } from '../../src/ui-utils.js';
 
 // ─── Minimal Leaflet mock ────────────────────────────────────────────────────
 // RulerManager uses L.layerGroup, L.polyline, L.circleMarker, L.marker,
@@ -52,7 +53,7 @@ function makeApp() {
         getBoundingClientRect() { return { left: 0, top: 0 }; },
     };
     const requests = [];
-    return {
+    const app = {
         map: {
             createPane() { return { style: {} }; },
             getContainer() { return container; },
@@ -63,6 +64,7 @@ function makeApp() {
         designScale: 1e-6,
         designMaxDXDY: 1000000,
         techData: { dbu_per_micron: 1000 },
+        showDbu: false,
         visibleLayers: new Set(['metal1']),
         websocketManager: {
             request(msg) {
@@ -71,10 +73,29 @@ function makeApp() {
             },
         },
         inspectorEl: null,
+        // Delegated to the real formatters, not reimplemented, so a change
+        // to the display-unit rules cannot pass here and fail in the app.
+        getDbuPerMicron() {
+            return this.techData?.dbu_per_micron || 1000;
+        },
+        unitOpts() {
+            return { showDbu: this.showDbu,
+                     dbuPerMicron: this.getDbuPerMicron() };
+        },
+        formatDbu(value, addUnits = false) {
+            return formatDbu(value, this.unitOpts(), addUnits);
+        },
+        parseDbu(str) {
+            return parseDbu(str, this.unitOpts());
+        },
+        formatDistance(dbuLength) {
+            return formatDistance(dbuLength, this.unitOpts());
+        },
         _container: container,
         _classList: classList,
         _requests: requests,
     };
+    return app;
 }
 
 function makeManager(appOverrides = {}) {
@@ -93,6 +114,20 @@ function makeManager(appOverrides = {}) {
 }
 
 // ─── State machine ───────────────────────────────────────────────────────────
+
+describe('RulerManager default style (2.12)', () => {
+    it('new rulers are euclidian by default', () => {
+        const { mgr } = makeManager();
+        const r = mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 200 });
+        assert.equal(r.euclidian, true);
+    });
+
+    it('honors app.rulerStyle = manhattan for new rulers', () => {
+        const { mgr } = makeManager({ rulerStyle: 'manhattan' });
+        const r = mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 200 });
+        assert.equal(r.euclidian, false);
+    });
+});
 
 describe('RulerManager state machine', () => {
     it('starts in IDLE', () => {
@@ -395,14 +430,52 @@ describe('Ruler inspector data', () => {
             propMap[p.name] = p.value;
         }
         assert.equal(propMap['Name'], 'ruler0');
-        assert.equal(propMap['Point 0 - x'], '1.000 um');
-        assert.equal(propMap['Point 0 - y'], '2.000 um');
-        assert.equal(propMap['Point 1 - x'], '4.000 um');
-        assert.equal(propMap['Point 1 - y'], '6.000 um');
-        assert.equal(propMap['Delta x'], '3.000 um');
-        assert.equal(propMap['Delta y'], '4.000 um');
-        assert.equal(propMap['Length'], '5.000 um');
-        assert.equal(propMap['Euclidian'], 'true');
+        assert.equal(propMap['Point 0 - x'], '1.000 \u00b5m');
+        assert.equal(propMap['Point 0 - y'], '2.000 \u00b5m');
+        assert.equal(propMap['Point 1 - x'], '4.000 \u00b5m');
+        assert.equal(propMap['Point 1 - y'], '6.000 \u00b5m');
+        assert.equal(propMap['Delta x'], '3.000 \u00b5m');
+        assert.equal(propMap['Delta y'], '4.000 \u00b5m');
+        assert.equal(propMap['Length'], '5.000 \u00b5m');
+        assert.equal(propMap['Euclidian'], 'True');
+    });
+
+    it('_selectRuler produces DBU values when showDbu is true', () => {
+        const { mgr, app, inspectorData } = makeManager();
+        app.showDbu = true;
+        mgr._createRuler({ x: 1000, y: 2000 }, { x: 4000, y: 6000 });
+        mgr._selectRuler(0);
+
+        const data = inspectorData[0];
+        const propMap = {};
+        for (const p of data.properties) {
+            propMap[p.name] = p.value;
+        }
+        assert.equal(propMap['Point 0 - x'], '1000');
+        assert.equal(propMap['Point 0 - y'], '2000');
+        assert.equal(propMap['Delta x'], '3000');
+        assert.equal(propMap['Length'], '5000');
+    });
+
+    it('re-selecting ruler after toggling showDbu updates values', () => {
+        const { mgr, app, inspectorData } = makeManager();
+        mgr._createRuler({ x: 1000, y: 2000 }, { x: 4000, y: 6000 });
+        mgr._selectRuler(0);
+
+        // Initially micron mode
+        const umProps = inspectorData.at(-1).properties;
+        const umMap = {};
+        for (const p of umProps) umMap[p.name] = p.value;
+        assert.equal(umMap['Point 0 - x'], '1.000 \u00b5m');
+
+        // Toggle to DBU and re-select
+        app.showDbu = true;
+        mgr._selectRuler(0);
+
+        const dbuProps = inspectorData.at(-1).properties;
+        const dbuMap = {};
+        for (const p of dbuProps) dbuMap[p.name] = p.value;
+        assert.equal(dbuMap['Point 0 - x'], '1000');
     });
 
     it('selection changes selectedRulerId', () => {

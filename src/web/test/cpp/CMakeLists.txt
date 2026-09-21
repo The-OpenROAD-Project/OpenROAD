@@ -6,37 +6,44 @@ set(TEST_LIBS
   utl_lib
   lodepng
   tst
+  gui_core
   GTest::gtest
   GTest::gtest_main
 )
 
-add_executable(TestTileGenerator TestTileGenerator.cpp)
+# gui_core in TEST_LIBS above carries everything these tests reach: the
+# descriptors, the heatmap core, the rendering API and Gui's dispatch spine.
+# Linking the Qt gui library instead would drag in the whole application.
 
-target_link_libraries(TestTileGenerator ${TEST_LIBS})
-
-target_include_directories(TestTileGenerator
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
-)
-
-gtest_discover_tests(TestTileGenerator
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-
-add_executable(TestRequestHandler TestRequestHandler.cpp)
-
-target_link_libraries(TestRequestHandler ${TEST_LIBS} gui_descriptors)
-
-target_include_directories(TestRequestHandler
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
-)
-
-gtest_discover_tests(TestRequestHandler
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-
-add_dependencies(build_and_test
+set(WEB_TESTS
   TestTileGenerator
   TestRequestHandler
+  TestSaveReport
+  TestDebugGraphics
+  TestGlyphCache
+  TestClockTreeReport
+  TestSaveImage
+  TestSnap
+  TestTimingCone
+  TestCharts
+  TestLabels
+  TestSaveDisplayControls
+  TestGif
 )
+
+foreach(test IN LISTS WEB_TESTS)
+  add_executable(${test} ${test}.cpp)
+
+  target_link_libraries(${test} ${TEST_LIBS})
+
+  target_include_directories(${test}
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+  )
+
+  gtest_discover_tests(${test}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+  )
+endforeach()
+
+add_dependencies(build_and_test ${WEB_TESTS})

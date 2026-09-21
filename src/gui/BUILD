@@ -4,8 +4,10 @@
 # This file only currently supports the gui disabled.  More work
 # is needed to handle Qt and build a working gui.
 
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -15,44 +17,26 @@ package(
     features = ["layering_check"],
 )
 
+# The gui as a binary with no Qt has it: the Qt-free core, plus the entry
+# points answering that there is no gui to open.  A Qt build links :gui_qt
+# instead, which carries Qt's own versions of those, so nothing reachable
+# from :openroad-qt depends on this target.
 cc_library(
     name = "gui",
     srcs = [
-        "src/bufferTreeDescriptor.h",
-        "src/dbDescriptors.cpp",
-        "src/dbDescriptors.h",
-        "src/descriptor_registry.cpp",
-        "src/heatMapCore.cpp",
-        "src/heatMapPinDensity.cpp",
-        "src/heatMapPinDensity.h",
-        "src/heatMapPlacementDensity.cpp",
-        "src/heatMapPlacementDensity.h",
-        "src/init_descriptors.cpp",
-        "src/staDescriptors.cpp",
-        "src/staDescriptors.h",
-        "src/stub.cpp",
-        ":tcl",
+        "src/makeGui.cpp",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
-        "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
-        "include/gui/heatMap.h",
     ],
     includes = [
         "include",
         "src",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.algorithm",
-        "@boost.multi_array",
-        "@spdlog",
+        "//src/odb/src/db",
+        "//src/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -72,9 +56,10 @@ QT_GUI_PLATFORMS = {
             include = [
                 "src/*.cpp",
             ],
+            # makeGui.cpp answers the entry points for a build with no Qt;
+            # this target has gui.cpp's versions of them.
             exclude = [
-                "src/stub.cpp",
-                "src/stub_heatMap.cpp",
+                "src/makeGui.cpp",
             ],
         ) + [
             ":gui_swig",
@@ -82,9 +67,7 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
-            "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
-            "include/gui/heatMap.h",
         ],
         defines = select({
             "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
@@ -103,10 +86,11 @@ QT_GUI_PLATFORMS = {
             "//:ord",
             "//src/dbSta",
             "//src/dbSta:dbNetwork",
-            "//src/odb",
+            "//src/odb/src/db",
+            "//src/odb/src/defout",
             "//src/sta:opensta_lib",
             "//src/utl",
-            "//third-party/gif-h:gif_h",
+            "//src/web:core",
             "@abseil-cpp//absl/synchronization",
             "@boost.algorithm",
             "@boost.geometry",
@@ -128,6 +112,13 @@ cc_library(
         ":ui/ui_gotoDlg.h",
         ":ui/ui_highlightGroupDlg.h",
         ":ui/ui_selectedWidget.h",
+    ],
+    includes = [
+        "ui",
+    ],
+    deps = [
+        "@qt-bazel//qt_source:core",
+        "@qt-bazel//qt_source:widgets",
     ],
 )
 
@@ -176,5 +167,37 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/gui/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gui/test:__pkg__",
+    ],
+)
+
+# Desktop entry for GUI builds. Generated from the same template that the
+# CMake build configures (see src/gui/CMakeLists.txt). The install prefix is
+# not known at build time, so the icon path is left as a @OPENROAD_PREFIX@
+# placeholder that //bazel:install.sh substitutes at install time.
+expand_template(
+    name = "desktop_entry",
+    out = "openroad.desktop",
+    substitutions = {
+        "${OPENROAD_SHARE_GUI_DIR}": "@OPENROAD_PREFIX@/share/openroad/gui",
+    },
+    template = "resources/openroad.desktop.cmake",
+)
+
+# The desktop entry and its icon, laid out at the paths install.sh expects
+# inside the extracted tar. Pulled into //packaging:tarfile only when
+# --//:platform=gui is set.
+pkg_files(
+    name = "desktop_files",
+    srcs = [
+        "resources/icon.png",
+        ":openroad.desktop",
+    ],
+    renames = {
+        ":openroad.desktop": "share/applications/openroad.desktop",
+        "resources/icon.png": "share/openroad/gui/icon.png",
+    },
+    visibility = ["//packaging:__pkg__"],
 )

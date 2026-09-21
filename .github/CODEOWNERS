@@ -1,0 +1,46 @@
+# OpenROAD code owners
+#
+# Order matters: later rules override earlier ones for the same path.
+# The '*' fallback applies to anything not matched by a more specific rule.
+#
+# Fallback owner for everything (docs, CI, bazel, top-level files, src/ root files)
+#  and a few misc modules commented below
+*               @The-OpenROAD-Project/openroad-maintainers
+
+# Per-module owners
+/src/ant/       @The-OpenROAD-Project/openroad-ant
+/src/cgt/       @The-OpenROAD-Project/openroad-cgt
+#/src/cmake/
+/src/cts/       @The-OpenROAD-Project/openroad-cts
+/src/cut/       @The-OpenROAD-Project/openroad-cut
+/src/dbSta/     @The-OpenROAD-Project/openroad-dbsta
+/src/dft/       @The-OpenROAD-Project/openroad-dft
+/src/dpl/       @The-OpenROAD-Project/openroad-dpl
+/src/drt/       @The-OpenROAD-Project/openroad-drt
+/src/dst/       @The-OpenROAD-Project/openroad-dst
+/src/est/       @The-OpenROAD-Project/openroad-est
+#/src/exa/
+#/src/fin/
+/src/gpl/       @The-OpenROAD-Project/openroad-gpl
+/src/grt/       @The-OpenROAD-Project/openroad-grt
+/src/gui/       @The-OpenROAD-Project/openroad-gui
+/src/ifp/       @The-OpenROAD-Project/openroad-ifp
+/src/mpl/       @The-OpenROAD-Project/openroad-mpl
+/src/odb/       @The-OpenROAD-Project/openroad-odb
+/src/pad/       @The-OpenROAD-Project/openroad-pad
+/src/par/       @The-OpenROAD-Project/openroad-par
+/src/pdn/       @The-OpenROAD-Project/openroad-pdn
+/src/ppl/       @The-OpenROAD-Project/openroad-ppl
+/src/psm/       @The-OpenROAD-Project/openroad-psm
+#/src/ram/
+/src/rcx/       @The-OpenROAD-Project/openroad-rcx
+/src/rmp/       @The-OpenROAD-Project/openroad-rmp
+/src/rsz/       @The-OpenROAD-Project/openroad-rsz
+/src/sta/       @The-OpenROAD-Project/openroad-sta
+/src/stt/       @The-OpenROAD-Project/openroad-stt
+/src/syn/       @The-OpenROAD-Project/openroad-syn
+/src/tap/       @The-OpenROAD-Project/openroad-tap
+/src/tst/       @The-OpenROAD-Project/openroad-tst
+/src/upf/       @The-OpenROAD-Project/openroad-upf
+/src/utl/       @The-OpenROAD-Project/openroad-utl
+/src/web/       @The-OpenROAD-Project/openroad-web

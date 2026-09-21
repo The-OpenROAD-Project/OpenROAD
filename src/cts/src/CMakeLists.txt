@@ -36,7 +36,6 @@ target_include_directories(cts_lib
   PRIVATE
     .
   ${LEMON_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
  )
 
 target_include_directories(cts
@@ -44,7 +43,6 @@ target_include_directories(cts
     ../include
   PRIVATE
     .
-  ${Boost_INCLUDE_DIRS}
  )
 
 target_link_libraries(cts_lib
@@ -56,6 +54,7 @@ target_link_libraries(cts_lib
     OpenSTA
     stt_lib
     utl_lib
+    Boost::headers
 )
 
 target_link_libraries(cts
@@ -65,7 +64,8 @@ target_link_libraries(cts
     dbSta_lib
     rsz_lib
     OpenSTA
-    gui
+    gui_core
+    Boost::headers
  )
 
 messages(

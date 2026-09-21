@@ -34,13 +34,49 @@ def detailed_route(
     min_access_points=-1,
     save_guide_updates=False
 ):
-    router = design.getTritonRoute()
-    if os.environ.get("TEST_SRCDIR"):
-        params = openroad.ParamStruct()
-    else:
-        import drt
+    if os.environ.get("TEST_SRCDIR", ""):
+        cmd = ["detailed_route"]
 
-        params = drt.ParamStruct()
+        def add_arg(flag, value):
+            if value not in ("", None):
+                cmd.extend([flag, "{" + str(value).replace("}", "\\}") + "}"])
+
+        add_arg("-output_maze", output_maze)
+        add_arg("-output_drc", output_drc)
+        add_arg("-output_cmap", output_cmap)
+        add_arg("-output_guide_coverage", output_guide_coverage)
+        add_arg("-db_process_node", db_process_node)
+        if disable_via_gen:
+            cmd.append("-disable_via_gen")
+        if droute_end_iter != -1:
+            cmd.extend(["-droute_end_iter", str(droute_end_iter)])
+        add_arg("-via_in_pin_bottom_layer", via_in_pin_bottom_layer)
+        add_arg("-via_in_pin_top_layer", via_in_pin_top_layer)
+        if or_seed != -1:
+            cmd.extend(["-or_seed", str(or_seed)])
+        if or_k != 0:
+            cmd.extend(["-or_k", str(or_k)])
+        add_arg("-bottom_routing_layer", bottom_routing_layer)
+        add_arg("-top_routing_layer", top_routing_layer)
+        cmd.extend(["-verbose", str(verbose)])
+        if clean_patches:
+            cmd.append("-clean_patches")
+        if no_pin_access:
+            cmd.append("-no_pin_access")
+        if single_step_dr:
+            cmd.append("-single_step_dr")
+        if min_access_points != -1:
+            cmd.extend(["-min_access_points", str(min_access_points)])
+        if save_guide_updates:
+            cmd.append("-save_guide_updates")
+
+        design.evalTclString(" ".join(cmd))
+        return
+
+    router = design.getTritonRoute()
+    import drt
+
+    params = drt.ParamStruct()
     params.outputMazeFile = output_maze
     params.outputDrcFile = output_drc
     params.outputCmapFile = output_cmap
@@ -58,9 +94,7 @@ def detailed_route(
     params.singleStepDR = single_step_dr
     params.minAccessPoints = min_access_points
     params.saveGuideUpdates = save_guide_updates
-    # The standalone Bazel Python binding does not initialize the global
-    # thread-count helper used by the embedded openroad -python path.
-    params.num_threads = 1 if os.environ.get("TEST_SRCDIR") else openroad.thread_count()
+    params.num_threads = openroad.thread_count()
 
     router.setParams(params)
     router.main()

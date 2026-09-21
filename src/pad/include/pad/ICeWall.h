@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -54,6 +55,7 @@ class ICeWall
                   odb::dbNet* net,
                   odb::dbITerm* terminal = nullptr,
                   bool dont_route = false);
+  void makeBTermPinsFromBumps(odb::dbBlock* block) const;
 
   void makeFakeSite(const std::string& name, int width, int height);
   odb::dbRow* findRow(const std::string& name) const;
@@ -98,6 +100,7 @@ class ICeWall
                 int width = 0,
                 int spacing = 0,
                 bool allow45 = false,
+                bool fixed = false,
                 float turn_penalty = 2.0,
                 int max_iterations = 10);
   void routeRDLDebugGUI(bool enable);
@@ -111,6 +114,12 @@ class ICeWall
       odb::dbInst* inst1);
 
  private:
+  struct InstPin
+  {
+    odb::dbTechLayer* layer{nullptr};
+    odb::Rect shape;
+  };
+
   odb::dbBlock* getBlock() const;
 
   std::vector<odb::dbRow*> getRows() const;
@@ -120,8 +129,12 @@ class ICeWall
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
                  const odb::Rect& shape) const;
+  void makeBTermPin(odb::dbBTerm* bterm,
+                    odb::dbTechLayer* layer,
+                    const odb::Rect& shape) const;
+  std::optional<InstPin> findTopPin(odb::dbInst* inst) const;
 
-  std::set<odb::dbNet*> connectByAbutment(
+  odb::PtrSet<odb::dbNet> connectByAbutment(
       const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
       const;
 
@@ -136,7 +149,7 @@ class ICeWall
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
-  std::map<odb::dbITerm*, odb::dbITerm*> routing_map_;
+  odb::PtrMap<odb::dbITerm, odb::dbITerm*> routing_map_;
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;

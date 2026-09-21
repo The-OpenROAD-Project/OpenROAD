@@ -34,9 +34,9 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.lexical_cast",
         "@boost.polygon",
         "@boost.property_tree",
@@ -98,5 +98,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/fin/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/fin/test:__pkg__",
+    ],
 )

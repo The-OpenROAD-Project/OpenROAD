@@ -17,6 +17,10 @@
 #include <thread>
 #include <vector>
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ helper functions used by the interface functions.
@@ -412,10 +416,14 @@ read_db_cmd(const char *filename, bool hierarchy)
 }
 
 void
-write_db_cmd(const char *filename)
+write_db_cmd(const char *filename, int compression_level = -1)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeDb(filename);
+  std::optional<int> comp_level;
+  if (compression_level != -1) {
+    comp_level = compression_level;
+  }
+  ord->writeDb(filename, comp_level);
 }
 
 void
@@ -644,6 +652,17 @@ void report_hpwl()
   w.reportHpwl(getLogger());
 }
 
+void report_design_area_metrics_cmd()
+{
+  dbDatabase* db = OpenRoad::openRoad()->getDb();
+  odb::dbChip* chip = db->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  dbBlock* block = chip->getBlock();
+  odb::blockMetrics(block, getLogger());
 }
+
+} // namespace ord
 
 %} // inline

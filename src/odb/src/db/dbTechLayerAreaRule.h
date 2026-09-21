@@ -37,7 +37,7 @@ class _dbTechLayerAreaRule : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbTechLayerAreaRuleFlags flags_;
-  int area_;
+  int64_t area_;
   int except_min_width_;
   int except_edge_length_;
   std::pair<int, int> except_edge_lengths_;

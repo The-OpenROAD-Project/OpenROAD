@@ -14,10 +14,10 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
-#include "global.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -470,9 +470,7 @@ void frRegionQuery::Impl::addGuide(frGuide* guide,
                                    ObjectsByLayer<frGuide>& allShapes)
 {
   odb::Rect frb = guide->getBBox();
-  for (int i = guide->getBeginLayerNum(); i <= guide->getEndLayerNum(); i++) {
-    allShapes.at(i).emplace_back(frb, guide);
-  }
+  allShapes.at(guide->getLayerNum()).emplace_back(frb, guide);
 }
 
 void frRegionQuery::Impl::addOrigGuide(frNet* net,

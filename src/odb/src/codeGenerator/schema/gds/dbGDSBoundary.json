@@ -4,14 +4,12 @@
       {
         "name":"layer_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"datatype_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"xy_",
@@ -21,7 +19,7 @@
       {
         "name":"propattr_",
         "type":"std::vector<std::pair<std::int16_t, std::string>>",
-        "flags":["no-template", "no-get", "no-set"]
+        "flags":["no-template", "no-get", "no-set", "no-meminfo"]
       }
     ],
     "h_includes": [

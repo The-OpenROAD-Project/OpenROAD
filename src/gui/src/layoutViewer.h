@@ -32,6 +32,7 @@
 
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
@@ -114,25 +115,26 @@ class LayoutViewer : public QWidget
   // makeSelected is so that we don't have to pass in the whole
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
-  LayoutViewer(Options* options,
-               ScriptWidget* output_widget,
-               const SelectionSet& selected,
-               const HighlightSet& highlighted,
-               const Rulers& rulers,
-               const Labels& labels,
-               const std::map<odb::dbModule*, ModuleSettings>& module_settings,
-               const std::set<odb::dbNet*>& focus_nets,
-               const std::set<odb::dbNet*>& route_guides,
-               const std::set<odb::dbNet*>& net_tracks,
-               Gui* gui,
-               const std::function<bool()>& using_dbu,
-               const std::function<bool()>& show_ruler_as_euclidian,
-               const std::function<bool()>& show_db_view,
-               QWidget* parent = nullptr);
+  LayoutViewer(
+      QtOptions* options,
+      ScriptWidget* output_widget,
+      const web::SelectionSet& selected,
+      const web::HighlightSet& highlighted,
+      const Rulers& rulers,
+      const Labels& labels,
+      const odb::PtrMap<odb::dbModule, ModuleSettings>& module_settings,
+      const odb::PtrSet<odb::dbNet>& focus_nets,
+      const odb::PtrSet<odb::dbNet>& route_guides,
+      const odb::PtrSet<odb::dbNet>& net_tracks,
+      web::Gui* gui,
+      const std::function<bool()>& using_dbu,
+      const std::function<bool()>& show_ruler_as_euclidian,
+      const std::function<bool()>& show_db_view,
+      QWidget* parent = nullptr);
 
   odb::dbBlock* getBlock() const { return chip_->getBlock(); }
   odb::dbChip* getChip() const { return chip_; }
-  std::map<odb::dbChipInst*, odb::dbChip*> getChips() const;
+  odb::PtrMap<odb::dbChipInst, odb::dbChip*> getChips() const;
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -177,11 +179,11 @@ class LayoutViewer : public QWidget
   void location(int x, int y);
 
   // indicates a new object has been selected
-  void selected(const Selected& selected, bool show_connectivity = false);
+  void selected(const web::Selected& selected, bool show_connectivity = false);
 
   // add additional object to selected set
-  void addSelected(const Selected& selected);
-  void addSelected(const SelectionSet& selected);
+  void addSelected(const web::Selected& selected);
+  void addSelected(const web::SelectionSet& selected);
 
   // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
@@ -251,9 +253,9 @@ class LayoutViewer : public QWidget
 
   int selectArea(const odb::Rect& area, bool append);
 
-  void selection(const Selected& selection);
-  void selectionFocus(const Selected& focus);
-  void selectionAnimation(const Selected& selection,
+  void selection(const web::Selected& selection);
+  void selectionFocus(const web::Selected& focus);
+  void selectionAnimation(const web::Selected& selection,
                           int repeats = kAnimationRepeats,
                           int update_interval = kAnimationInterval);
   void selectionAnimation(int repeats = kAnimationRepeats,
@@ -279,24 +281,24 @@ class LayoutViewer : public QWidget
   struct Boxes
   {
     std::vector<QPolygon> obs;
-    std::map<odb::dbMTerm*, std::vector<QPolygon>> mterms;
+    odb::PtrMap<odb::dbMTerm, std::vector<QPolygon>> mterms;
   };
 
-  using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
-  using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
+  using LayerBoxes = odb::PtrMap<odb::dbTechLayer, Boxes>;
+  using CellBoxes = odb::PtrMap<odb::dbMaster, LayerBoxes>;
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   void setPixelsPerDBU(qreal pixels_per_dbu);
-  void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
-  SelectionSet selectAt(odb::Rect region_dbu);
+  void selectAt(odb::Rect region_dbu, std::vector<web::Selected>& selection);
+  web::SelectionSet selectAt(odb::Rect region_dbu);
   void selectViaShapesAt(odb::dbBlock* block,
                          odb::dbTechLayer* cut_layer,
                          odb::dbTechLayer* select_layer,
                          const odb::Rect& region,
                          int shape_limit,
-                         std::vector<Selected>& selections);
-  Selected selectAtPoint(const odb::Point& pt_dbu);
+                         std::vector<web::Selected>& selections);
+  web::Selected selectAtPoint(const odb::Point& pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
 
@@ -358,10 +360,10 @@ class LayoutViewer : public QWidget
   void populateModuleColors();
 
   odb::dbChip* chip_;
-  Options* options_;
+  QtOptions* options_;
   ScriptWidget* output_widget_;
-  const SelectionSet& selected_;
-  const HighlightSet& highlighted_;
+  const web::SelectionSet& selected_;
+  const web::HighlightSet& highlighted_;
   const Rulers& rulers_;
   const Labels& labels_;
   LayoutScroll* scroller_;
@@ -386,13 +388,13 @@ class LayoutViewer : public QWidget
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   bool is_view_dragging_;
-  Gui* gui_;
+  web::Gui* gui_;
 
   std::function<bool()> using_dbu_;
   std::function<bool()> show_ruler_as_euclidian_;
   std::function<bool()> show_db_view_;
 
-  const std::map<odb::dbModule*, ModuleSettings>& modules_;
+  const odb::PtrMap<odb::dbModule, ModuleSettings>& modules_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;
@@ -401,12 +403,12 @@ class LayoutViewer : public QWidget
   Edge snap_edge_;
 
   // keeps track of inspector selection and focus items
-  Selected inspector_selection_;
-  Selected focus_;
+  web::Selected inspector_selection_;
+  web::Selected focus_;
   // Timer used to handle blinking objects in the layout
   struct AnimatedSelected
   {
-    const Selected selection;
+    const web::Selected selection;
     int state_count;
     const int max_state_count;
     const int state_modulo;
@@ -434,11 +436,11 @@ class LayoutViewer : public QWidget
   // Cache of the maximum cut size per layer (units: dbu).
   // Used to determine when cuts are too small to be seen and should not be
   // drawn.
-  std::map<odb::dbTechLayer*, int> cut_maximum_size_;
+  odb::PtrMap<odb::dbTechLayer, int> cut_maximum_size_;
 
-  const std::set<odb::dbNet*>& focus_nets_;
-  const std::set<odb::dbNet*>& route_guides_;
-  const std::set<odb::dbNet*>& net_tracks_;
+  const odb::PtrSet<odb::dbNet>& focus_nets_;
+  const odb::PtrSet<odb::dbNet>& route_guides_;
+  const odb::PtrSet<odb::dbNet>& net_tracks_;
 
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;

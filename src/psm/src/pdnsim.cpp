@@ -22,6 +22,8 @@
 #include "shape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
 using odb::dbBlock;
 using odb::dbSigType;
@@ -39,7 +41,7 @@ PDNSim::PDNSim(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   opendp_ = opendp;
   logger_ = logger;
-  heatmap_source_ = gui::registerHeatMapSource(
+  heatmap_source_ = web::registerHeatMapSource(
       "IR Drop", "IRDrop", "IRDrop", [this, sta, logger]() {
         return std::make_shared<IRDropDataSource>(this, sta, logger);
       });
@@ -55,12 +57,12 @@ void PDNSim::setDebugGui(bool enable)
     solver->enableGui(debug_gui_enabled_);
   }
 
-  gui::Gui::get()->registerDescriptor<Node*>(new NodeDescriptor(solvers_));
-  gui::Gui::get()->registerDescriptor<ITermNode*>(
+  web::Gui::get()->registerDescriptor<Node*>(new NodeDescriptor(solvers_));
+  web::Gui::get()->registerDescriptor<ITermNode*>(
       new ITermNodeDescriptor(solvers_));
-  gui::Gui::get()->registerDescriptor<BPinNode*>(
+  web::Gui::get()->registerDescriptor<BPinNode*>(
       new BPinNodeDescriptor(solvers_));
-  gui::Gui::get()->registerDescriptor<Connection*>(
+  web::Gui::get()->registerDescriptor<Connection*>(
       new ConnectionDescriptor(solvers_));
 }
 
@@ -118,7 +120,7 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
                                bool require_bterm)
 {
   auto* solver = getIRSolver(net, floorplanning);
-  const bool check = solver->check(require_bterm);
+  const bool check = solver->check(require_bterm, !floorplanning);
   solver->writeErrorFile(error_file);
 
   if (debug_gui_enabled_) {
@@ -268,6 +270,11 @@ void PDNSim::inDbSWireRemoveSBox(odb::dbSBox*)
 }
 
 void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbFillCreate(odb::dbFill*)
 {
   clearSolvers();
 }

@@ -26,7 +26,8 @@ add_library(dpl_lib
   src/DecapPlacement.cpp
   src/OptMirror.cpp
   src/PlacementDRC.cpp
-
+  src/NegotiationLegalizer.cpp
+  src/NegotiationLegalizerPass.cpp
   src/Optdp.cpp
   src/infrastructure/architecture.cxx
   src/util/color.cxx
@@ -82,7 +83,7 @@ target_link_libraries(dpl
   PRIVATE
     ${TCL_LIBRARY}
     dpl_lib
-    gui
+    gui_core
 )
 
 messages(
@@ -112,7 +113,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       ${Boost_LIBRARIES}
       dpl_lib
-      gui
+      gui_core
       odb
   )
 

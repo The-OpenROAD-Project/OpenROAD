@@ -46,8 +46,7 @@ export class CheckboxTreeModel {
 
         for (const item of flatNodes) {
             const node = this._nodeMap.get(item.id);
-            if (item.parentId != null && item.parentId >= 0
-                && this._nodeMap.has(item.parentId)) {
+            if (item.parentId != null && this._nodeMap.has(item.parentId)) {
                 const parent = this._nodeMap.get(item.parentId);
                 node.parent = parent;
                 parent.children.push(node);
@@ -71,6 +70,11 @@ export class CheckboxTreeModel {
         return this._nodeMap.get(id);
     }
 
+    isVisible(id) {
+        const node = this.get(id);
+        return node ? node.checked : false;
+    }
+
     // Handle a user check/uncheck.  Propagates down then up.
     check(id, checked) {
         const node = this._nodeMap.get(id);
@@ -88,6 +92,26 @@ export class CheckboxTreeModel {
         this.onChange();
     }
 
+    // Same down+up propagation as check(), but does NOT fire onChange.
+    // The caller takes responsibility for any side-effects that
+    // onChange would normally drive (DOM sync, cookie write, redraw).
+    // Used to apply a cascade originated in a sibling tree without
+    // triggering this tree's own mirror-back logic.
+    cascadeQuiet(id, checked) {
+        const node = this._nodeMap.get(id);
+        if (!node) return;
+        node.checked = checked;
+        node.indeterminate = false;
+        for (const c of node.children) {
+            this._setSubtree(c, checked);
+        }
+        for (let n = node.parent; n; n = n.parent) {
+            if (n.hasCheckbox) {
+                this._computeParent(n);
+            }
+        }
+    }
+
     // Bulk check/uncheck.  Single onChange call at the end.
     // idToChecked: object { id: boolean, ... }
     checkSet(idToChecked) {
@@ -99,6 +123,36 @@ export class CheckboxTreeModel {
         }
         this._recomputeAllParents();
         this.onChange();
+    }
+
+    // Mirror tri-state from an external source — used to keep a sibling
+    // tree (e.g. the Chiplets panel) in sync with this one without
+    // forcing partial selections into a binary state.  idToState maps
+    // id -> { checked, indeterminate }.  Unlike check()/checkSet(), no
+    // propagation is performed: the caller is expected to supply states
+    // already aggregated from the authoritative source.  Nodes absent
+    // from the map keep their previous state; any descendants of a
+    // mirrored parent are NOT cascaded.
+    mirrorStates(idToState) {
+        this._applyMirror(idToState);
+        this.onChange();
+    }
+
+    // Same as mirrorStates but does not fire onChange.  Use when the
+    // mirror is only updating the UI tri-state of a sibling tree and
+    // the heavier side-effects of onChange (e.g. visibleChiplets
+    // recompute + redrawAllLayers) would be redundant.
+    mirrorStatesQuiet(idToState) {
+        this._applyMirror(idToState);
+    }
+
+    _applyMirror(idToState) {
+        for (const [id, state] of Object.entries(idToState)) {
+            const node = this._nodeMap.get(id);
+            if (!node) continue;
+            node.checked = !!state.checked;
+            node.indeterminate = !!state.indeterminate;
+        }
     }
 
     // DFS iteration over every node.

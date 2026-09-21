@@ -111,20 +111,20 @@ void dbScanPin::setPin(dbITerm* iterm)
   scan_pin->pin_.emplace<dbId<_dbITerm>>(((_dbITerm*) iterm)->getId());
 }
 
-dbId<dbScanPin> dbScanPin::create(dbDft* dft, dbBTerm* bterm)
+dbScanPin* dbScanPin::create(dbDft* dft, dbBTerm* bterm)
 {
   _dbDft* obj = (_dbDft*) dft;
   _dbScanPin* scan_pin = (_dbScanPin*) obj->scan_pins_->create();
   ((dbScanPin*) scan_pin)->setPin(bterm);
-  return scan_pin->getId();
+  return (dbScanPin*) scan_pin;
 }
 
-dbId<dbScanPin> dbScanPin::create(dbDft* dft, dbITerm* iterm)
+dbScanPin* dbScanPin::create(dbDft* dft, dbITerm* iterm)
 {
   _dbDft* obj = (_dbDft*) dft;
   _dbScanPin* scan_pin = (_dbScanPin*) obj->scan_pins_->create();
   ((dbScanPin*) scan_pin)->setPin(iterm);
-  return scan_pin->getId();
+  return (dbScanPin*) scan_pin;
 }
 
 // User Code End dbScanPinPublicMethods

@@ -542,7 +542,19 @@ class compareAthWire
  public:
   bool operator()(Wire* wire1, Wire* wire2)
   {
-    return (wire1->getXY() < wire2->getXY());
+    if (wire1->getXY() != wire2->getXY()) {
+      return wire1->getXY() < wire2->getXY();
+    }
+    if (wire1->getBase() != wire2->getBase()) {
+      return wire1->getBase() < wire2->getBase();
+    }
+    if (wire1->getLen() != wire2->getLen()) {
+      return wire1->getLen() < wire2->getLen();
+    }
+    if (wire1->getWidth() != wire2->getWidth()) {
+      return wire1->getWidth() < wire2->getWidth();
+    }
+    return wire1->getRsegId() < wire2->getRsegId();
   }
 };
 

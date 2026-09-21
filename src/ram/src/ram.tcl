@@ -1,31 +1,41 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2024-2025, The OpenROAD Authors
 
-sta::define_cmd_args "generate_ram_netlist" {-mask_size bits
+sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              -word_size bits
                                              -num_words words
+                                             [-column_mux_ratio ratio]
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-inv_cell name]
-                                             [-read_ports count]
+                                             [-rw_ports count]
+                                             [-r_ports count]
+                                             [-w_ports count]
+                                             [-use_latch value]
                                              [-tapcell name]
                                              [-max_tap_dist value]}
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
-    keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell
-      -read_ports -tapcell -max_tap_dist } flags {}
+    keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
+      -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
+      -write_behavioral_verilog } flags {}
 
-  if { [info exists keys(-mask_size)] } {
-    set mask_size $keys(-mask_size)
-  } else {
-    utl::error RAM 1 "The -mask_size argument must be specified."
+  set column_mux_ratio 1
+  if { [info exists keys(-column_mux_ratio)] } {
+    set column_mux_ratio $keys(-column_mux_ratio)
   }
 
   if { [info exists keys(-word_size)] } {
     set word_size $keys(-word_size)
   } else {
     utl::error RAM 2 "The -word_size argument must be specified."
+  }
+
+  if { [info exists keys(-mask_size)] } {
+    set mask_size $keys(-mask_size)
+  } else {
+    set mask_size $word_size
   }
 
   if { $word_size % $mask_size != 0 } {
@@ -53,9 +63,41 @@ proc generate_ram_netlist { args } {
     set inv_cell $keys(-inv_cell)
   }
 
-  set read_ports 1
-  if { [info exists keys(-read_ports)] } {
-    set read_ports $keys(-read_ports)
+  set rw_ports 0
+  if { [info exists keys(-rw_ports)] } {
+    set rw_ports $keys(-rw_ports)
+  }
+
+  set r_ports 0
+  if { [info exists keys(-r_ports)] } {
+    set r_ports $keys(-r_ports)
+  }
+
+  set w_ports 0
+  if { [info exists keys(-w_ports)] } {
+    set w_ports $keys(-w_ports)
+  }
+
+  # Defaults to single read/write port if no port flags were specified
+  if {
+    ![info exists keys(-rw_ports)] &&
+    ![info exists keys(-r_ports)] &&
+    ![info exists keys(-w_ports)]
+  } {
+    set rw_ports 1
+  }
+
+  if { $rw_ports + $w_ports != 1 } {
+    utl::error RAM 30 "Must have exactly one read/write port or one write port."
+  }
+
+  if { $rw_ports + $r_ports < 1 } {
+    utl::error RAM 36 "Must specify at least one read output port"
+  }
+
+  set use_latch 0
+  if { [info exists keys(-use_latch)] } {
+    set use_latch $keys(-use_latch)
   }
 
   set tapcell ""
@@ -73,34 +115,45 @@ proc generate_ram_netlist { args } {
         The generated layout may not pass Design Rule Checks."
   }
 
-  ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $storage_cell \
-    $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
+  if { [info exists keys(-write_behavioral_verilog)] } {
+    ram::set_behavioral_verilog_filename $keys(-write_behavioral_verilog)
+  }
+
+  ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
+    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist
 }
 
-sta::define_cmd_args "generate_ram" {-mask_size bits
+sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      -word_size bits
                                      -num_words words
-                                     [-read_ports count]
+                                     [-rw_ports count]
+                                     [-r_ports count]
+                                     [-w_ports count]
+                                     [-column_mux_ratio ratio]
                                      [-storage_cell name]
                                      [-tristate_cell name]
                                      [-inv_cell name]
-                                     -power_pin name
-                                     -ground_pin name
+                                     [-power_net_name name]
+                                     [-ground_net_name name]
                                      -routing_layer config
                                      -ver_layer config
                                      -hor_layer config
                                      -filler_cells fillers
                                      [-tapcell name]
                                      [-max_tap_dist value]
+                                     [-use_latch value]
                                      [-write_behavioral_verilog filename]
                                      }
 
 # user arguments for generate ram arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
-    keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell -read_ports
-      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
-        -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
+    keys { -mask_size -word_size -num_words -column_mux_ratio
+           -storage_cell -tristate_cell -inv_cell -rw_ports
+           -r_ports -w_ports -use_latch -power_net_name
+           -ground_net_name -routing_layer -ver_layer
+           -hor_layer -filler_cells -tapcell -max_tap_dist
+           -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -110,12 +163,23 @@ proc generate_ram { args } {
   }
 
   set ram_netlist_args [list \
-    -mask_size $keys(-mask_size) \
     -word_size $keys(-word_size) \
     -num_words $keys(-num_words)]
 
-  if { [info exists keys(-read_ports)] } {
-    lappend ram_netlist_args -read_ports $keys(-read_ports)
+  if { [info exists keys(-rw_ports)] } {
+    lappend ram_netlist_args -rw_ports $keys(-rw_ports)
+  }
+
+  if { [info exists keys(-r_ports)] } {
+    lappend ram_netlist_args -r_ports $keys(-r_ports)
+  }
+
+  if { [info exists keys(-w_ports)] } {
+    lappend ram_netlist_args -w_ports $keys(-w_ports)
+  }
+
+  if { [info exists keys(-mask_size)] } {
+    lappend ram_netlist_args -mask_size $keys(-mask_size)
   }
 
   if { [info exists keys(-storage_cell)] } {
@@ -138,25 +202,41 @@ proc generate_ram { args } {
     lappend ram_netlist_args -max_tap_dist $keys(-max_tap_dist)
   }
 
+  if { [info exists keys(-column_mux_ratio)] } {
+    lappend ram_netlist_args -column_mux_ratio $keys(-column_mux_ratio)
+  }
+
   if { [info exists keys(-write_behavioral_verilog)] } {
     set behavioral_verilog_file $keys(-write_behavioral_verilog)
     ram::set_behavioral_verilog_filename $behavioral_verilog_file
+  }
+
+  if { [info exists keys(-use_latch)] } {
+    lappend ram_netlist_args -use_latch $keys(-use_latch)
   }
 
   generate_ram_netlist {*}$ram_netlist_args
 
   ord::design_created
 
-  if { [info exists keys(-power_pin)] } {
-    set power_pin $keys(-power_pin)
-  } else {
-    utl::error RAM 5 "The -power_pin argument must be specified."
+  set power_net_name "VDD"
+  if { [info exists keys(-power_net_name)] } {
+    set power_net_name $keys(-power_net_name)
   }
 
-  if { [info exists keys(-ground_pin)] } {
-    set ground_pin $keys(-ground_pin)
-  } else {
-    utl::error RAM 6 "The -ground_pin argument must be specified."
+  set power_net_name [string trim $power_net_name]
+  if { $power_net_name eq "" } {
+    utl::error RAM 40 "The -power_net_name argument cannot be empty."
+  }
+
+  set ground_net_name "VSS"
+  if { [info exists keys(-ground_net_name)] } {
+    set ground_net_name $keys(-ground_net_name)
+  }
+
+  set ground_net_name [string trim $ground_net_name]
+  if { $ground_net_name eq "" } {
+    utl::error RAM 41 "The -ground_net_name argument cannot be empty."
   }
 
   if { [info exists keys(-routing_layer)] } {
@@ -206,7 +286,8 @@ proc generate_ram { args } {
     utl::error RAM 18 "The -filler_cells argument must be specified."
   }
 
-  ram::ram_pdngen $power_pin $ground_pin $route_name $route_width \
+  ram::ram_pdngen $power_net_name $ground_net_name \
+    $route_name $route_width \
     $ver_name $ver_width $ver_pitch $hor_name $hor_width $hor_pitch
 
   make_tracks -x_offset 0 -y_offset 0

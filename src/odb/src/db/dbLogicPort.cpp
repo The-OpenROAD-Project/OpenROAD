@@ -71,9 +71,10 @@ void _dbLogicPort::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["direction"].add(direction);
+
   // User Code Begin collectMemInfo
   info.children["name"].add(name_);
-  info.children["direction"].add(direction);
   // User Code End collectMemInfo
 }
 
@@ -96,7 +97,7 @@ const char* dbLogicPort::getName() const
   return obj->name_;
 }
 
-std::string dbLogicPort::getDirection() const
+const std::string& dbLogicPort::getDirection() const
 {
   _dbLogicPort* obj = (_dbLogicPort*) this;
   return obj->direction;

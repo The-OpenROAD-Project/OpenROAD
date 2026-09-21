@@ -133,7 +133,8 @@ void Opendp::checkPlacement(const bool verbose,
           + region_placement_failures.size() + edge_spacing_failures.size()
           + blocked_layers_failures.size()
       > 0) {
-    logger_->error(DPL, 33, "detailed placement checks failed.");
+    logger_->error(
+        DPL, 33, "detailed placement checks failed during check placement.");
   }
 }
 
@@ -349,7 +350,8 @@ bool Opendp::checkInRows(const Node& cell) const
       }
     }
   }
-  return true;
+  return !cell.getMaster()->isMultiRow()
+         || checkRowPowerCompatible(&cell, grid_rect.ylo);
 }
 
 // Return the cell this cell overlaps.
@@ -406,8 +408,9 @@ Node* Opendp::checkOneSiteGaps(Node& cell) const
         }
         // check the abutting pixel
         const Pixel* abut_pixel = grid_->gridPixel(x + abut_x, y);
+        const bool site_exists = (abut_pixel && abut_pixel->is_valid);
         const bool abuttment_exists = (abut_pixel && abut_pixel->cell);
-        if (!abuttment_exists) {
+        if (site_exists && !abuttment_exists) {
           // check the 1 site gap pixel
           const Pixel* gap_pixel = grid_->gridPixel(x + GridX{2 * abut_x.v}, y);
           if (gap_pixel) {

@@ -2,6 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -26,14 +27,13 @@ cc_library(
         "include/cut/logic_extractor.h",
     ],
     defines = [
-        "_GLIBCXX_ASSERTIONS",
         "ABC_NAMESPACE=abc",
     ],
     includes = ["include"],
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -46,4 +46,8 @@ cc_library(
         "@boost.phoenix",
         "@boost.spirit",
     ],
+)
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

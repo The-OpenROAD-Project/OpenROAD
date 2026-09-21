@@ -46,9 +46,9 @@ export class TclCompleter {
         if (e.key === 'Tab') {
             e.preventDefault();
             if (popupVisible) {
-                this._acceptCompletion();
+                this._tabAccept();
             } else {
-                this._requestCompletions(
+                this._tabComplete(
                     this._input.value,
                     this._input.selectionStart
                 );
@@ -156,20 +156,27 @@ export class TclCompleter {
         return line.substring(pos + 1, cursorPos);
     }
 
-    _requestCompletions(line, cursorPos) {
+    // Fetch candidates either from the client-side command cache (when at
+    // command position) or from the server, then hand them to `cb`.
+    _fetchCompletions(line, cursorPos, cb) {
         const prefix = this._extractPrefix(line, cursorPos);
         const isVariable = prefix.length > 0 && prefix[0] === '$';
         const isArgument = prefix.length > 0 && prefix[0] === '-';
         const isCommand = !isVariable && !isArgument;
+        const wordStart = cursorPos - prefix.length;
 
-        // Use cached command list for client-side filtering
-        if (isCommand && this._commandCache) {
-            const lowerPrefix = prefix.toLowerCase();
+        // The cache only covers command-position completion.  At argument
+        // positions the server returns files; anything past the first word
+        // in the current bracketed segment must round-trip.
+        const head = line.substring(0, wordStart);
+        const atCommandPosition = /^[\s\[]*$/.test(head);
+
+        if (isCommand && atCommandPosition && this._commandCache) {
+            const lp = prefix.toLowerCase();
             const filtered = this._commandCache.filter(
-                c => c.toLowerCase().startsWith(lowerPrefix)
+                c => c.toLowerCase().startsWith(lp)
             );
-            const wordStart = cursorPos - prefix.length;
-            this._showPopup(filtered, wordStart, cursorPos);
+            cb(filtered, wordStart, cursorPos);
             return;
         }
 
@@ -178,12 +185,10 @@ export class TclCompleter {
             line: line,
             cursor_pos: cursorPos,
         }).then(data => {
-            // Cache command completions (commands don't change at runtime)
             if (data.mode === 'commands' && !this._commandCache && prefix === '') {
                 this._commandCache = data.completions;
             }
             if (data.mode === 'commands' && !this._commandCache) {
-                // Request full list for caching on first non-empty prefix
                 this._ws.request({
                     type: 'tcl_complete',
                     line: '',
@@ -194,14 +199,88 @@ export class TclCompleter {
                     }
                 }).catch(() => {});
             }
-            this._showPopup(
-                data.completions,
-                data.replace_start,
-                data.replace_end
-            );
-        }).catch(() => {
-            this._hidePopup();
+            cb(data.completions, data.replace_start, data.replace_end);
+        }).catch(() => cb([], 0, 0));
+    }
+
+    // Auto-show path (debounced keystroke): just populate the popup.
+    _requestCompletions(line, cursorPos) {
+        this._fetchCompletions(line, cursorPos, (completions, rs, re) => {
+            this._showPopup(completions, rs, re);
         });
+    }
+
+    // TAB with the popup already open: act on _items.  Readline-style:
+    // unique candidate → insert, multiple with extra common prefix →
+    // advance, otherwise leave the popup as the visible candidate list.
+    _tabAccept() {
+        if (this._items.length === 0) {
+            this._hidePopup();
+            return;
+        }
+        if (this._items.length === 1) {
+            this._selectedIndex = 0;
+            this._acceptCompletion();
+            return;
+        }
+        this._advanceToCommonPrefix();
+        // No-op if no further advance: the popup is the user's list.
+    }
+
+    // TAB with no popup yet: fetch, then do the same TAB logic.
+    _tabComplete(line, cursorPos) {
+        this._fetchCompletions(line, cursorPos, (completions, rs, re) => {
+            if (!completions || completions.length === 0) {
+                this._hidePopup();
+                return;
+            }
+            if (completions.length === 1) {
+                this._items = completions;
+                this._replaceStart = rs;
+                this._replaceEnd = re;
+                this._selectedIndex = 0;
+                this._acceptCompletion();
+                return;
+            }
+            // Stash items + range so _advanceToCommonPrefix has what it
+            // needs, then show the popup (whether or not the buffer
+            // advanced — both behaviors leave the user with a visible
+            // candidate list).
+            this._items = completions;
+            this._replaceStart = rs;
+            this._replaceEnd = re;
+            this._advanceToCommonPrefix();
+            this._showPopup(completions, this._replaceStart, this._replaceEnd);
+        });
+    }
+
+    // Compute the longest common prefix of _items; if it extends the
+    // current word at the cursor, splice it into the input and update
+    // _replaceEnd.  Returns true if the buffer actually advanced.
+    _advanceToCommonPrefix() {
+        if (this._items.length < 2) return false;
+        let common = this._items[0];
+        for (let i = 1; i < this._items.length && common.length > 0; i++) {
+            const other = this._items[i];
+            let j = 0;
+            while (j < common.length
+                   && j < other.length
+                   && common[j] === other[j]) {
+                j++;
+            }
+            common = common.substring(0, j);
+        }
+        const cur = this._input.value.substring(
+            this._replaceStart, this._replaceEnd);
+        if (common.length <= cur.length) return false;
+
+        const before = this._input.value.substring(0, this._replaceStart);
+        const after = this._input.value.substring(this._replaceEnd);
+        this._input.value = before + common + after;
+        const newCursor = this._replaceStart + common.length;
+        this._input.setSelectionRange(newCursor, newCursor);
+        this._replaceEnd = newCursor;
+        return true;
     }
 
     _showPopup(completions, replaceStart, replaceEnd) {
@@ -278,9 +357,17 @@ export class TclCompleter {
         const completion = this._items[this._selectedIndex];
         const before = this._input.value.substring(0, this._replaceStart);
         const after = this._input.value.substring(this._replaceEnd);
-        this._input.value = before + completion + after;
+        // Append a trailing space (readline convention) unless the
+        // candidate already ends in '/' (a directory — the user will
+        // keep descending) or '::' (a Tcl namespace path — same), or
+        // the buffer already has whitespace after.
+        const needsSpace = !completion.endsWith('/')
+            && !completion.endsWith('::')
+            && (after.length === 0 || after[0] !== ' ');
+        const trail = needsSpace ? ' ' : '';
+        this._input.value = before + completion + trail + after;
 
-        const newCursor = this._replaceStart + completion.length;
+        const newCursor = this._replaceStart + completion.length + trail.length;
         this._input.setSelectionRange(newCursor, newCursor);
         this._input.focus();
         this._hidePopup();

@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021-2025, The OpenROAD Authors
 
+from __future__ import annotations
+
 import re
-from typing import List, Dict, Optional
 
 
-def _find_index(lines: List[str], target: str, start_index: int = 0) -> int:
+def _find_index(lines: list[str], target: str, start_index: int = 0) -> int:
     """Find the index of target in lines[start_index:] ignoring white space"""
     for i in range(start_index, len(lines)):
         if lines[i].strip().replace(" ", "") == target:
@@ -14,9 +15,9 @@ def _find_index(lines: List[str], target: str, start_index: int = 0) -> int:
 
 
 def _get_sections(
-    lines: List[str],
+    lines: list[str],
     tag: str,
-    sections: Optional[Dict[str, List[str]]] = None,
+    sections: dict[str, list[str]] | None = None,
     remove: bool = False,
 ) -> None:
     """Find all sections delimeted by begin/end tags in lines.
@@ -55,10 +56,11 @@ class Parser:
     """Parses a file looking for the sections delimited by the code_tags."""
 
     def __init__(self, file_name: str):
+        """Read `file_name` into lines and default to // section comments."""
         with open(file_name, "r", encoding="ascii") as file:
             self.lines = file.readlines()
-        self.generator_code: Dict[str, List[str]] = {}
-        self.user_code: Dict[str, List[str]] = {}
+        self.generator_code: dict[str, list[str]] = {}
+        self.user_code: dict[str, list[str]] = {}
         self.set_comment_str("//")
 
     def set_comment_str(self, comment: str) -> None:

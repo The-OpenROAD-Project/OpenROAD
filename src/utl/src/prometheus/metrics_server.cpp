@@ -67,7 +67,7 @@ PrometheusMetricsServer::~PrometheusMetricsServer()
           io_context;  // Use a separate io_context for the connection.
       boost::asio::ip::tcp::socket socket(io_context);
       boost::asio::ip::tcp::endpoint endpoint(
-          boost::asio::ip::make_address("127.0.0.1"), port_);
+          boost::asio::ip::make_address("127.0.0.1"), port_.load());
       socket.connect(endpoint);          // This will unblock the accept().
     } catch (const std::exception& e) {  // NOLINT(bugprone-empty-catch)
                                          /*Do nothing, we're dying*/
@@ -82,8 +82,8 @@ void PrometheusMetricsServer::RunServer()
   namespace http = boost::beast::http;
 
   boost::asio::io_context io_context;
-  boost::asio::ip::tcp::acceptor acceptor(io_context,
-                                          {boost::asio::ip::tcp::v4(), port_});
+  boost::asio::ip::tcp::acceptor acceptor(
+      io_context, {boost::asio::ip::tcp::v4(), port_.load()});
   boost::system::error_code ec;  // Create error_code outside the loop.
 
   // Set the port in case of user passing 0, which lets the OS choose
@@ -95,7 +95,7 @@ void PrometheusMetricsServer::RunServer()
                        104,
                        "Starting Prometheus collection endpoint: "
                        "http://localhost:{}/metrics",
-                       port_);
+                       port_.load());
 
   while (!shutdown_) {
     tcp::socket socket(io_context);
@@ -150,6 +150,12 @@ void PrometheusMetricsServer::WorkerFunction()
     } catch (const std::exception& e) {
       logger_.load()->warn(
           utl::UTL, 103, "Prometheus Server Exception: {}", e.what());
+      // Startup failures like EPERM when opening a socket are unrecoverable in
+      // the current process. Stop retrying so callers can observe the failure.
+      if (!is_ready_) {
+        startup_failed_ = true;
+        shutdown_ = true;
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Verify that pairs of ORFS output files are identical.
 # Args come in pairs: file_a file_b file_a file_b ...
 set -euo pipefail

@@ -14,9 +14,11 @@
 #include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "polygon.h"
 #include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
@@ -47,15 +49,15 @@ VoltageDomain* GridComponent::getDomain() const
 std::string GridComponent::typeToString(Type type)
 {
   switch (type) {
-    case Ring:
+    case kRing:
       return "Ring";
-    case Strap:
+    case kStrap:
       return "Strap";
-    case Followpin:
+    case kFollowpin:
       return "Followpin";
-    case PadConnect:
+    case kPadConnect:
       return "Pad connect";
-    case RepairChannel:
+    case kRepairChannel:
       return "Repair channel";
   }
 
@@ -77,6 +79,18 @@ bool GridComponent::make(Shape::ShapeTreeMap& shapes,
   getShapes(shapes);
 
   return shape_count != getShapeCount();
+}
+
+const Region* GridComponent::getDieRegion() const
+{
+  if (!die_region_.has_value()) {
+    const odb::Polygon die = getBlock()->getDieAreaPolygon();
+    // A rectangular die has no interior wall to find, so there is nothing to
+    // build and nothing to ask: the bounding-box comparison beside every call
+    // is the whole test there.
+    die_region_ = die.isRect() ? Region() : Region(die);
+  }
+  return die_region_->isEmpty() ? nullptr : &die_region_.value();
 }
 
 ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
@@ -159,33 +173,41 @@ ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
   shape_ptr->generateObstruction();
   shapes.insert(shape_ptr);
 
-  // add bpins that touch edges
-  odb::Rect die_area = getBlock()->getDieArea();
+  // Add bpins where the shape reaches an edge of the die.  The wall of a notch
+  // counts as an edge: a shape extended to one and left without a pin is a
+  // dangling shape, so the trim pass takes the extension straight back off
+  // again.  The bounding-box comparison is kept as it was and the wall case
+  // added beside it, which is why a rectangular die is untouched.
+  const odb::Rect die_area = getBlock()->getDieArea();
+  const Region die_region = Region(getBlock()->getDieAreaPolygon());
   const odb::Rect& final_shape_rect = shape_ptr->getRect();
   const int min_width = shape_ptr->getLayer()->getMinWidth();
-  if (final_shape_rect.xMin() == die_area.xMin()) {
-    const int x = std::min(static_cast<int>(die_area.xMin() + min_width),
+  const auto at_edge = [&](const odb::Point& normal, int face, int box) {
+    return face == box || die_region.isOnInteriorWall(final_shape_rect, normal);
+  };
+  if (at_edge(odb::Point(-1, 0), final_shape_rect.xMin(), die_area.xMin())) {
+    const int x = std::min(final_shape_rect.xMin() + min_width,
                            final_shape_rect.xMax());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_xhi(x);
     shape_ptr->addBTermConnection(pin_rect);
   }
-  if (final_shape_rect.xMax() == die_area.xMax()) {
-    const int x = std::max(static_cast<int>(die_area.xMax() - min_width),
+  if (at_edge(odb::Point(1, 0), final_shape_rect.xMax(), die_area.xMax())) {
+    const int x = std::max(final_shape_rect.xMax() - min_width,
                            final_shape_rect.xMin());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_xlo(x);
     shape_ptr->addBTermConnection(pin_rect);
   }
-  if (final_shape_rect.yMin() == die_area.yMin()) {
-    const int y = std::min(static_cast<int>(die_area.yMin() + min_width),
+  if (at_edge(odb::Point(0, -1), final_shape_rect.yMin(), die_area.yMin())) {
+    const int y = std::min(final_shape_rect.yMin() + min_width,
                            final_shape_rect.yMax());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_yhi(y);
     shape_ptr->addBTermConnection(pin_rect);
   }
-  if (final_shape_rect.yMax() == die_area.yMax()) {
-    const int y = std::max(static_cast<int>(die_area.yMax() - min_width),
+  if (at_edge(odb::Point(0, 1), final_shape_rect.yMax(), die_area.yMax())) {
+    const int y = std::max(final_shape_rect.yMax() - min_width,
                            final_shape_rect.yMin());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_ylo(y);
@@ -342,9 +364,9 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
 }
 
 std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
-    const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-    bool add_pins,
-    const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const
+    const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+    const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
+    const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const
 {
   std::vector<ShapePtr> all_shapes;
   for (const auto& [layer, shapes] : shapes_) {
@@ -366,14 +388,21 @@ std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
   });
 
   for (const auto& shape : all_shapes) {
-    auto net = net_map.find(shape->getNet());
-    if (net == net_map.end()) {
+    const auto wire_itr = net_map.find(shape->getNet());
+    if (wire_itr == net_map.end()) {
       continue;
     }
-    const bool is_pin_layer = convert_layer_to_pin.find(shape->getLayer())
-                              != convert_layer_to_pin.end();
-    shape_map[shape.get()]
-        = shape->writeToDb(net->second, add_pins, is_pin_layer);
+    odb::dbSWire* wire = wire_itr->second;
+
+    const auto bterm_itr = bterm_map.find(shape->getNet());
+    odb::dbBTerm* bterm
+        = bterm_itr == bterm_map.end() ? nullptr : bterm_itr->second;
+
+    const bool is_pin_layer = allowDbPins()
+                              && convert_layer_to_pin.find(shape->getLayer())
+                                     != convert_layer_to_pin.end();
+
+    shape_map[shape.get()] = shape->writeToDb(wire, bterm, is_pin_layer);
   }
 
   return shape_map;
@@ -544,6 +573,17 @@ std::vector<odb::dbNet*> GridComponent::getNets() const
 int GridComponent::getNetCount() const
 {
   return getNets().size();
+}
+
+std::set<odb::Rect> GridComponent::getShapeRects() const
+{
+  std::set<odb::Rect> rects;
+  for (const auto& [layer, layer_shapes] : shapes_) {
+    for (const auto& shape : layer_shapes) {
+      rects.insert(shape->getRect());
+    }
+  }
+  return rects;
 }
 
 }  // namespace pdn

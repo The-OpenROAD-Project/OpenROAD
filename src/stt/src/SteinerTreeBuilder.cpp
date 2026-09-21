@@ -22,12 +22,11 @@ namespace stt {
 
 static void reportSteinerBranches(const stt::Tree& tree, utl::Logger* logger);
 
-SteinerTreeBuilder::SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger)
+SteinerTreeBuilder::SteinerTreeBuilder(utl::Logger* logger)
     : alpha_(0.3),
       min_fanout_alpha_({0, -1}),
       min_hpwl_alpha_({0, -1}),
       logger_(logger),
-      db_(db),
       flute_(new flt::Flute())
 {
 }
@@ -79,7 +78,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
     }
     // Fall back to flute if PD fails.
   }
-  return flute_->flute(x, y, flute_accuracy);
+  return flute_->flute(x, y, kFluteAccuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,

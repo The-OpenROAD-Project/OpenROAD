@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "boost/geometry/geometry.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shape.h"
@@ -22,10 +23,10 @@ class ViaRepair
 {
   using ViaValue = std::pair<odb::Rect, odb::dbSBox*>;
   using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-  using LayerViaTree = std::map<odb::dbTechLayer*, ViaTree>;
+  using LayerViaTree = odb::PtrMap<odb::dbTechLayer, ViaTree>;
 
  public:
-  ViaRepair(utl::Logger* logger, const std::set<odb::dbNet*>& nets);
+  ViaRepair(utl::Logger* logger, const odb::PtrSet<odb::dbNet>& nets);
 
   void repair();
 
@@ -33,18 +34,18 @@ class ViaRepair
 
  private:
   utl::Logger* logger_;
-  std::set<odb::dbNet*> nets_;
+  odb::PtrSet<odb::dbNet> nets_;
 
   bool use_obs_ = true;
   bool use_nets_ = true;
   bool use_inst_ = true;
 
-  std::map<odb::dbTechLayer*, int> via_count_;
-  std::map<odb::dbTechLayer*, int> removal_count_;
+  odb::PtrMap<odb::dbTechLayer, int> via_count_;
+  odb::PtrMap<odb::dbTechLayer, int> removal_count_;
 
   LayerViaTree collectVias();
 
-  using ObsRect = std::map<odb::dbTechLayer*, std::set<odb::Rect>>;
+  using ObsRect = odb::PtrMap<odb::dbTechLayer, std::set<odb::Rect>>;
 
   ObsRect collectBlockObstructions(odb::dbBlock* block);
   ObsRect collectInstanceObstructions(odb::dbBlock* block);

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -14,9 +15,12 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "TritonPart.h"
+#include "Utilities.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
@@ -53,6 +57,17 @@ using sta::writeVerilog;
 using utl::PAR;
 
 namespace par {
+
+namespace {
+
+struct PartitionPortRecord
+{
+  Net* net;
+  std::string port_name;
+  PortDirection* direction;
+};
+
+}  // namespace
 
 bool CompareInstancePtr::operator()(const sta::Instance* lhs,
                                     const sta::Instance* rhs) const
@@ -495,6 +510,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
   Cell* cell = network->makeCell(library, name, false, "");
 
   // add global ports
+  std::vector<PartitionPortRecord> global_ports;
   auto pin_iter = db_network_->pinIterator(db_network_->topInstance());
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
@@ -515,24 +531,32 @@ Instance* PartitionMgr::buildPartitionedInstance(
     }
 
     if (add_port) {
-      std::string portname = db_network_->name(pin);
-
-      Port* port = network->makePort(cell, portname);
-      // copy exactly the parent port direction
-      network->setDirection(port, db_network_->direction(pin));
+      const std::string portname = db_network_->name(pin);
       PortDirection* sub_module_dir
           = determinePortDirection(net, insts, db_network_);
-      if (sub_module_dir != nullptr) {
-        network->setDirection(port, sub_module_dir);
-      }
-
-      port_map->insert({net, port});
+      global_ports.push_back({net,
+                              portname,
+                              sub_module_dir != nullptr
+                                  ? sub_module_dir
+                                  : db_network_->direction(pin)});
     }
   }
   delete pin_iter;
+  std::ranges::sort(global_ports, [&](const auto& lhs, const auto& rhs) {
+    const std::string lhs_net_name = db_network_->name(lhs.net);
+    const std::string rhs_net_name = db_network_->name(rhs.net);
+    return std::tie(lhs.port_name, lhs_net_name)
+           < std::tie(rhs.port_name, rhs_net_name);
+  });
+  for (const auto& global_port : global_ports) {
+    Port* port = network->makePort(cell, global_port.port_name);
+    network->setDirection(port, global_port.direction);
+    port_map->insert({global_port.net, port});
+  }
 
   // make internal ports for partitions and if port is not needed.
   std::set<Net*> local_nets;
+  std::vector<PartitionPortRecord> internal_ports;
   for (Instance* inst : *insts) {
     InstancePinIterator* pin_iter = db_network_->pinIterator(inst);
     while (pin_iter->hasNext()) {
@@ -552,17 +576,24 @@ Instance* PartitionMgr::buildPartitionedInstance(
           }
           std::string port_name = port_prefix;
           port_name += db_network_->name(net);
-
-          Port* port = network->makePort(cell, port_name.c_str());
-          network->setDirection(port, port_dir);
-
-          port_map->insert({net, port});
+          internal_ports.push_back({net, port_name, port_dir});
           break;
         }
         delete net_pin_iter;
       }
     }
     delete pin_iter;
+  }
+  std::ranges::sort(internal_ports, [&](const auto& lhs, const auto& rhs) {
+    const std::string lhs_net_name = db_network_->name(lhs.net);
+    const std::string rhs_net_name = db_network_->name(rhs.net);
+    return std::tie(lhs.port_name, lhs_net_name)
+           < std::tie(rhs.port_name, rhs_net_name);
+  });
+  for (const auto& internal_port : internal_ports) {
+    Port* port = network->makePort(cell, internal_port.port_name);
+    network->setDirection(port, internal_port.direction);
+    port_map->insert({internal_port.net, port});
   }
 
   // loop over buses and to ensure all bit ports are created, only needed for
@@ -572,7 +603,17 @@ Instance* PartitionMgr::buildPartitionedInstance(
   char right_bracket;
   determineLibraryBrackets(db_network_, &left_bracket, &right_bracket);
   std::map<std::string, std::vector<Port*>> port_buses;
-  for (auto& [net, port] : *port_map) {
+  std::vector<std::pair<Net*, Port*>> ordered_ports(port_map->begin(),
+                                                    port_map->end());
+  std::ranges::sort(ordered_ports, [&](const auto& lhs, const auto& rhs) {
+    const std::string lhs_port_name = network->name(lhs.second);
+    const std::string rhs_port_name = network->name(rhs.second);
+    if (lhs_port_name != rhs_port_name) {
+      return lhs_port_name < rhs_port_name;
+    }
+    return db_network_->name(lhs.first) < db_network_->name(rhs.first);
+  });
+  for (auto& [net, port] : ordered_ports) {
     std::string portname = network->name(port);
 
     // check if bus and get name
@@ -645,7 +686,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
   Instance* inst = network->makeInstance(cell, instname.c_str(), parent);
 
   // create nets for ports in cell
-  for (auto& [db_net, port] : *port_map) {
+  for (auto& [db_net, port] : ordered_ports) {
     Net* net = network->makeNet(network->name(port), inst);
     Pin* pin = network->makePin(inst, port, nullptr);
     network->makeTerm(pin, net);
@@ -693,15 +734,18 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   Cell* cell = network->makeCell(library, name, false, "");
 
   // add global ports
+  std::vector<std::pair<std::string, PortDirection*>> ports;
   auto pin_iter = db_network_->pinIterator(db_network_->topInstance());
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
-
-    std::string portname = db_network_->name(pin);
-    Port* port = network->makePort(cell, portname);
-    network->setDirection(port, db_network_->direction(pin));
+    ports.emplace_back(db_network_->name(pin), db_network_->direction(pin));
   }
   delete pin_iter;
+  std::ranges::sort(ports);
+  for (const auto& [portname, direction] : ports) {
+    Port* port = network->makePort(cell, portname);
+    network->setDirection(port, direction);
+  }
 
   network->groupBusPorts(cell, [](std::string_view) { return true; });
 
@@ -790,8 +834,18 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
 
   // connect submodule partitions in new top module
   for (auto& [partition, instance] : sta_instance_map) {
-    for (auto& [portnet, port] : sta_port_map[partition]) {
-      std::string net_name = network->name(port);
+    std::vector<std::pair<Net*, Port*>> ordered_ports(
+        sta_port_map[partition].begin(), sta_port_map[partition].end());
+    std::ranges::sort(ordered_ports, [&](const auto& lhs, const auto& rhs) {
+      const std::string lhs_port_name = network->name(lhs.second);
+      const std::string rhs_port_name = network->name(rhs.second);
+      if (lhs_port_name != rhs_port_name) {
+        return lhs_port_name < rhs_port_name;
+      }
+      return db_network_->name(lhs.first) < db_network_->name(rhs.first);
+    });
+    for (auto& [portnet, port] : ordered_ports) {
+      const std::string net_name = network->name(port);
 
       Net* net = network->findNet(top_inst, net_name);
       if (net == nullptr) {
@@ -837,6 +891,7 @@ void PartitionMgr::readPartitioningFile(const std::string& filename,
   } else {
     auto insts = block->getInsts();
     instance_order.assign(insts.begin(), insts.end());
+    std::ranges::sort(instance_order, compareDbObjectsByNameAndId<odb::dbInst>);
   }
 
   std::vector<int> inst_partitions;

@@ -9,6 +9,7 @@
 
 import argparse
 import glob
+import io
 import os
 import re
 import sys
@@ -34,6 +35,11 @@ def parse_args():
         "--local",
         action="store_true",
         help="Look only at the local files and don't recurse",
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Explicit file paths to scan (alternative to -d directory walking)",
     )
     args = parser.parse_args()
 
@@ -107,13 +113,45 @@ def scan_dir(path, files, msgs):
             scan_file(path, file_name, msgs)
 
 
+# Messages are read as UTF-8, so write them back out as UTF-8 rather than in
+# whatever encoding the ambient locale selects. TextIOWrapper.reconfigure()
+# needs Python 3.7 and Rocky 8 ships 3.6, so rewrap the underlying binary
+# buffer there instead. sys.__stdout__ keeps the replaced wrapper alive, so it
+# is not collected out from under the buffer the two share. A stream with
+# neither -- an io.StringIO a caller substituted, say -- encodes nothing and so
+# needs nothing done to it.
+def write_output_as_utf8():
+    for name in ("stdout", "stderr"):
+        stream = getattr(sys, name)
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+        elif hasattr(stream, "buffer"):
+            wrapper = io.TextIOWrapper(
+                stream.buffer,
+                encoding="utf-8",
+                line_buffering=stream.line_buffering,
+            )
+            setattr(sys, name, wrapper)
+
+
 def main():
+    write_output_as_utf8()
+
     args = parse_args()
 
     # "tool id" -> "file:line message"
     msgs = defaultdict(set)
 
-    if args.local:  # no recursion
+    if args.files:
+        # Scan explicitly listed files (used by Bazel where sandbox
+        # visibility is determined by the declared srcs).
+        for f in args.files:
+            path = os.path.dirname(f) or "."
+            name = os.path.basename(f)
+            if re.search(r"\.(c|cc|cpp|cxx|h|hh|yy|ll|i|tcl)$", name):
+                scan_file(path, name, msgs)
+    elif args.local:  # no recursion
         files = [
             os.path.basename(file) for file in glob.glob(os.path.join(args.dir, "*"))
         ]

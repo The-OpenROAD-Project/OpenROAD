@@ -143,7 +143,7 @@ define_pdn_grid
 | `[-default]` | For a macro, specifies this is a default grid that can be overwritten. |
 | `[-existing]` | Flag to enable defining for existing routing solution. |
 | `[-grid_over_pg_pins]`, `[-grid_over_boundary]` | Place the power grid over the power ground pins of the macro. (Default True), or Place the power grid over the entire macro. |
-| `[-halo]` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define hard halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
+| `[-halo]` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define hard halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). The sides are those of the macro as it is drawn, so for a placed instance each value follows its side: `MY` swaps left and right, `MX` swaps bottom and top, `R180` swaps both, and a quarter turn moves each value to the side that one becomes (`R90` puts the drawn left value on the placed bottom). |
 | `[-instances]` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
 | `[-macro]` | Defines the type of grid being added as a macro. |
 | `[-name]` | Defines a name to use when referring to this grid definition. |
@@ -229,7 +229,7 @@ add_pdn_stripe
 | `[-grid]` | Specifies the grid to which this stripe definition will be added. (Default: Last grid defined by `define_pdn_grid`). |
 | `[-nets]` | Limit straps to just this list of nets. |
 | `[-number_of_straps]` | Number of power/ground pairs to add. |
-| `[-offset]` | Value for the offset of the stripe from the lower left corner of the design core area. |
+| `[-offset]` | Value for the offset of the stripe from the lower left corner of the design core area. On an instance grid the offset is measured from the corresponding corner of the macro as it is drawn, so for an instance flipped on the stripe's axis it is measured from the opposite edge and the stripes, including the net order within a group, mirror with it. |
 | `[-pitch]` | Value for the distance between each power/ground pair. |
 | `[-snap_to_grid]` | Snap the stripes to the defined routing grid. |
 | `[-spacing]` | Optional specification of the spacing between power/ground pairs within a single pitch (Default: pitch / 2). |
@@ -326,7 +326,7 @@ add_pdn_ring
 | `[-add_connect]` | Automatically add a connection between the two layers. |
 | `[-connect_to_pad_layers]` | Restrict the pad pins layers to this list. |
 | `[-connect_to_pads]` | The core side of the pad pins will be connected to the ring. |
-| `[-core_offsets]` | Value for the offset of the ring from the grid region. |
+| `[-core_offsets]` | Value for the offset of the ring from the grid region. On an instance grid the four values are the sides of the macro as it is drawn and follow the instance's orientation, the same way `define_pdn_grid -halo` does. |
 | `[-extend_to_boundary]` | Extend the rings to the grid boundary. |
 | `[-grid]` | Specifies the name of the grid to which this ring defintion will be added. (Default: Last grid created by `define_pdn_grid`). |
 | `[-nets]` | Limit straps to just this list of nets. |
@@ -362,6 +362,7 @@ add_pdn_connect
     [-grid grid_name]
     [-max_columns columns]
     [-max_rows rows]
+    [-min_width_layers min_width_layers]
     [-ongrid ongrid_layers]
     [-split_cuts split_cuts_mapping]
     [-split_cuts_staggered]
@@ -378,6 +379,7 @@ add_pdn_connect
 | `[-grid]` | Specifies the name of the grid definition to which this connection will be added (Default: Last grid created by `define_pdn_grid`). |
 | `[-max_columns]` | Maximum number of columns when adding arrays of vias. |
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. |
+| `[-min_width_layers]` | List of pass-through (intermediate) layers in a via stack to keep at their minimum width. The via array is restricted to a single row/column in the layer's width direction so it does not grow a wide metal patch that blocks adjacent routing tracks; the metal can still extend along the routing direction to meet min-area and to bridge to an on-grid neighbor. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `[-split_cuts]` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 | `[-split_cuts_staggered]` | Specified if the split cuts should be staggered, ie. the ground vias will appear with an offset of pitch / 2. |
@@ -402,7 +404,7 @@ repair_pdn_vias
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](../src/PdnGen.cc) or the [swig file](PdnGen.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/PdnGen.cc) or the [swig file](./src/PdnGen.i).
 
 | Command Name | Description |
 | ----- | ----- |
@@ -469,10 +471,6 @@ Currently the following assumptions are made:
 1. The design is rectangular
 1. The input floorplan includes the stdcell rows, placement of all macro blocks and IO pins.
 1. The stdcells rows will be cut around macro placements
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+pdn) about this tool.
 
 ## License
 

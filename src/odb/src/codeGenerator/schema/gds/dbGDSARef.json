@@ -16,12 +16,11 @@
       {
         "name":"propattr_",
         "type":"std::vector<std::pair<std::int16_t, std::string>>",
-        "flags":["no-template", "no-get", "no-set"]
+        "flags":["no-template", "no-get", "no-set", "no-meminfo"]
       },
       {
         "name":"transform_",
-        "type":"dbGDSSTrans",
-        "flags":[]
+        "type":"dbGDSSTrans"
       },
       {
         "name":"num_rows_",

@@ -428,6 +428,14 @@ class frBlock : public frBlockObject
   {
     gCellPatterns_ = gpIn;
   }
+  void addTrackPattern(std::unique_ptr<frTrackPattern> in)
+  {
+    const frLayerNum lNum = in->getLayerNum();
+    if ((frLayerNum) trackPatterns_.size() <= lNum) {
+      trackPatterns_.resize(lNum + 1);
+    }
+    trackPatterns_.at(lNum).push_back(std::move(in));
+  }
   void addMarker(std::unique_ptr<frMarker> in)
   {
     auto rptr = in.get();

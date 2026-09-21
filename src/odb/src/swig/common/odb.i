@@ -39,6 +39,7 @@ using namespace odb;
 %typemap(in) (uint32_t) = (int);
 %typemap(out) (uint32_t) = (int);
 %typemap(out) (uint64) = (long);
+%typemap(in) (int64_t) = (long);
 %typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y, int& ext};
 
@@ -48,6 +49,7 @@ using namespace odb;
 %ignore odb::dbTechLayerAntennaRule::getDiffPSR() const;
 %ignore odb::dbTechLayerAntennaRule::getDiffCSR() const;
 %ignore odb::dbTechLayerAntennaRule::getAreaDiffReduce() const;
+%ignore odb::dbTechLayerAntennaRule::getGatePlusDiffPWL() const;
 
 // Swig can't handle non-assignable types
 %ignore odb::Point::get(Orientation2D orient) const;

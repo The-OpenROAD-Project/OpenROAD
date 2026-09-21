@@ -45,11 +45,9 @@ cc_library(
     deps = [
         ":munkres",
         "//:ord",
-        "//src/dbSta",
-        "//src/gui",
-        "//src/odb",
-        "//src/sta:opensta_lib",
+        "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.container_hash",
         "@boost.random",
         "@boost.stacktrace",
@@ -126,5 +124,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/ppl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/ppl/test:__pkg__",
+    ],
 )

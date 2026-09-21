@@ -19,6 +19,8 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
+class _dbScanPin;
+class _dbInst;
 
 class _dbScanInst : public _dbObject
 {
@@ -31,9 +33,9 @@ class _dbScanInst : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   uint32_t bits_;
-  std::pair<dbId<dbScanPin>, dbId<dbScanPin>> access_pins_;
-  dbId<dbScanPin> scan_enable_;
-  dbId<dbInst> inst_;
+  std::pair<dbId<_dbScanPin>, dbId<_dbScanPin>> access_pins_;
+  dbId<_dbScanPin> scan_enable_;
+  dbId<_dbInst> inst_;
   std::string scan_clock_;
   uint32_t clock_edge_;
   dbId<_dbScanInst> next_list_scan_inst_;

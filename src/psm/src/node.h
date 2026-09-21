@@ -43,7 +43,7 @@ class Node
   {
     bool operator()(const Node* lhs, const Node* rhs) const
     {
-      return lhs->compare(rhs);
+      return lhs->compare(rhs) < 0;
     }
   };
 
@@ -52,21 +52,21 @@ class Node
   Node(const odb::Point& pt, odb::dbTechLayer* layer);
   virtual ~Node() = default;
 
-  bool compare(const Node* other) const;
-  bool compare(const std::unique_ptr<Node>& other) const;
+  // Returns -1 if this < other, 0 if equal, +1 if this > other
+  int compare(const Node* other) const;
+  int compare(const std::unique_ptr<Node>& other) const;
 
   const odb::Point& getPoint() const { return pt_; };
   odb::dbTechLayer* getLayer() const { return layer_; };
+
+  bool isVisited() const { return visited_; }
+  void setVisited(bool visited) { visited_ = visited; }
 
   void print(utl::Logger* logger, const std::string& prefix = "") const;
   virtual std::string describe(const std::string& prefix) const;
 
   std::string getName() const;
   std::string getTypeName() const;
-
-  using CompareInformation = std::tuple<int, int, int, NodeType, int>;
-  CompareInformation compareTuple() const;
-  static CompareInformation dummyCompareTuple();
 
  protected:
   virtual NodeType getType() const { return NodeType::kNode; }
@@ -78,6 +78,7 @@ class Node
 
   odb::Point pt_;
   odb::dbTechLayer* layer_;
+  bool visited_ = false;
 };
 
 class SourceNode : public Node

@@ -1,0 +1,44 @@
+{
+  "name": "dbAlignmentMarkerRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "lib_a_",
+      "type": "dbId<_dbLib>",
+      "flags": ["private"],
+      "parent": "dbLib"
+    },
+    {
+      "name": "master_a_",
+      "type": "dbId<_dbMaster>",
+      "flags": ["private"],
+      "parent": "dbMaster"
+    },
+    {
+      "name": "lib_b_",
+      "type": "dbId<_dbLib>",
+      "flags": ["private"],
+      "parent": "dbLib"
+    },
+    {
+      "name": "master_b_",
+      "type": "dbId<_dbMaster>",
+      "flags": ["private"],
+      "parent": "dbMaster"
+    },
+    {
+      "name": "rel_orients_",
+      "type": "std::vector<uint8_t>",
+      "flags": ["private"]
+    },
+    {
+      "name": "tolerance_",
+      "type": "int",
+      "default": "0",
+      "public_comment": "// Max center-to-center misalignment (DBU) between paired markers; 0 means exact alignment is required."
+    }
+  ],
+  "h_includes": ["odb/dbId.h"],
+  "cpp_includes": ["dbLib.h", "dbMaster.h"],
+  "cpp_sys_includes": ["cstdint"]
+}

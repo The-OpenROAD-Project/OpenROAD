@@ -10,44 +10,47 @@
 #include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
-#include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 #include "straps.h"
+#include "utl/Logger.h"
 #include "via.h"
+#include "web/core.h"
 
 namespace pdn {
 
-const gui::Painter::Color PDNRenderer::ring_color_
-    = gui::Painter::Color(gui::Painter::kRed, 100);
-const gui::Painter::Color PDNRenderer::strap_color_
-    = gui::Painter::Color(gui::Painter::kCyan, 100);
-const gui::Painter::Color PDNRenderer::followpin_color_
-    = gui::Painter::Color(gui::Painter::kGreen, 100);
-const gui::Painter::Color PDNRenderer::via_color_
-    = gui::Painter::Color(gui::Painter::kBlue, 100);
-const gui::Painter::Color PDNRenderer::obstruction_color_
-    = gui::Painter::Color(gui::Painter::kGray, 100);
-const gui::Painter::Color PDNRenderer::repair_color_
-    = gui::Painter::Color(gui::Painter::kLightGray, 100);
-const gui::Painter::Color PDNRenderer::repair_outline_color_
-    = gui::Painter::Color(gui::Painter::kYellow, 100);
+const web::Painter::Color PDNRenderer::kRingColor
+    = web::Painter::Color(web::Painter::kRed, 100);
+const web::Painter::Color PDNRenderer::kStrapColor
+    = web::Painter::Color(web::Painter::kCyan, 100);
+const web::Painter::Color PDNRenderer::kFollowpinColor
+    = web::Painter::Color(web::Painter::kGreen, 100);
+const web::Painter::Color PDNRenderer::kViaColor
+    = web::Painter::Color(web::Painter::kBlue, 100);
+const web::Painter::Color PDNRenderer::kObstructionColor
+    = web::Painter::Color(web::Painter::kGray, 100);
+const web::Painter::Color PDNRenderer::kRepairColor
+    = web::Painter::Color(web::Painter::kLightGray, 100);
+const web::Painter::Color PDNRenderer::kRepairOutlineColor
+    = web::Painter::Color(web::Painter::kYellow, 100);
 
-PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
+PDNRenderer::PDNRenderer(PdnGen* pdn, utl::Logger* logger)
+    : pdn_(pdn), logger_(logger)
 {
-  addDisplayControl(grid_obs_text_, false);
-  addDisplayControl(initial_obs_text_, false);
-  addDisplayControl(obs_text_, false);
-  addDisplayControl(vias_text_, true);
-  addDisplayControl(followpins_text_, true);
-  addDisplayControl(rings_text_, true);
-  addDisplayControl(straps_text_, true);
-  addDisplayControl(repair_text_, true);
+  addDisplayControl(kGridObsText, false);
+  addDisplayControl(kInitialObsText, false);
+  addDisplayControl(kObsText, false);
+  addDisplayControl(kViasText, true);
+  addDisplayControl(kFollowpinsText, true);
+  addDisplayControl(kRingsText, true);
+  addDisplayControl(kStrapsText, true);
+  addDisplayControl(kRepairText, true);
 
   update();
 
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void PDNRenderer::update()
@@ -106,7 +109,7 @@ void PDNRenderer::update()
   redraw();
 }
 
-void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void PDNRenderer::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   const double net_name_margin = 0.8;
   const double net_name_increment = 5;
@@ -115,9 +118,9 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   const odb::Rect paint_rect = painter.getBounds();
 
-  if (checkDisplayControl(initial_obs_text_)) {
-    painter.setPen(gui::Painter::kHighlight, true);
-    painter.setBrush(gui::Painter::kTransparent);
+  if (checkDisplayControl(kInitialObsText)) {
+    painter.setPen(web::Painter::kHighlight, true);
+    painter.setBrush(web::Painter::kTransparent);
     auto& shapes = initial_obstructions_[layer];
     for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
@@ -127,9 +130,9 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(grid_obs_text_)) {
-    painter.setPen(gui::Painter::kHighlight, true);
-    painter.setBrush(gui::Painter::kTransparent);
+  if (checkDisplayControl(kGridObsText)) {
+    painter.setPen(web::Painter::kHighlight, true);
+    painter.setBrush(web::Painter::kTransparent);
     auto& shapes = grid_obstructions_[layer];
     for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
@@ -139,10 +142,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  const bool show_rings = checkDisplayControl(rings_text_);
-  const bool show_followpins = checkDisplayControl(followpins_text_);
-  const bool show_straps = checkDisplayControl(straps_text_);
-  const bool show_obs = checkDisplayControl(obs_text_);
+  const bool show_rings = checkDisplayControl(kRingsText);
+  const bool show_followpins = checkDisplayControl(kFollowpinsText);
+  const bool show_straps = checkDisplayControl(kStrapsText);
+  const bool show_obs = checkDisplayControl(kObsText);
   auto& shapes = shapes_[layer];
   if (show_rings || show_followpins || show_straps) {
     for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
@@ -159,22 +162,22 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
           if (!show_rings) {
             continue;
           }
-          painter.setPenAndBrush(ring_color_, true);
+          painter.setPenAndBrush(kRingColor, true);
           break;
         case odb::dbWireShapeType::STRIPE:
           if (!show_straps) {
             continue;
           }
-          painter.setPenAndBrush(strap_color_, true);
+          painter.setPenAndBrush(kStrapColor, true);
           break;
         case odb::dbWireShapeType::FOLLOWPIN:
           if (!show_followpins) {
             continue;
           }
-          painter.setPenAndBrush(followpin_color_, true);
+          painter.setPenAndBrush(kFollowpinColor, true);
           break;
         default:
-          painter.setPenAndBrush(gui::Painter::kHighlight, true);
+          painter.setPenAndBrush(web::Painter::kHighlight, true);
       }
       const odb::Rect shape_rect = shape->getRect();
       if (shape_rect.minDXDY() < min_shape) {
@@ -184,18 +187,18 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       painter.drawRect(shape_rect);
 
       if (show_obs) {
-        painter.setPen(gui::Painter::kHighlight, true);
-        painter.setBrush(gui::Painter::kTransparent);
+        painter.setPen(web::Painter::kHighlight, true);
+        painter.setBrush(web::Painter::kTransparent);
         painter.drawRect(shape->getObstruction());
       }
 
       const std::string net_name = shape->getDisplayText();
       const odb::Rect name_box = painter.stringBoundaries(
-          0, 0, gui::Painter::Anchor::kBottomLeft, net_name);
+          0, 0, web::Painter::Anchor::kBottomLeft, net_name);
 
       if (shape_rect.dx() * net_name_margin > name_box.dx()
           && shape_rect.dy() * net_name_margin > name_box.dy()) {
-        painter.setPen(gui::Painter::kWhite, true);
+        painter.setPen(web::Painter::kWhite, true);
 
         if (shape_rect.dx() > shape_rect.dy()) {
           // horizontal
@@ -205,7 +208,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                x < shape_rect.xMax() - name_offset;
                x += net_name_increment * name_box.dx()) {
             if (paint_rect.intersects(odb::Point(x, y))) {
-              painter.drawString(x, y, gui::Painter::Anchor::kCenter, net_name);
+              painter.drawString(x, y, web::Painter::Anchor::kCenter, net_name);
             }
           }
         } else {
@@ -216,7 +219,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                y < shape_rect.yMax() - name_offset;
                y += net_name_increment * name_box.dy()) {
             if (paint_rect.intersects(odb::Point(x, y))) {
-              painter.drawString(x, y, gui::Painter::Anchor::kCenter, net_name);
+              painter.drawString(x, y, web::Painter::Anchor::kCenter, net_name);
             }
           }
         }
@@ -224,7 +227,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(vias_text_)) {
+  if (checkDisplayControl(kViasText)) {
     for (auto it = vias_.qbegin(bgi::intersects(paint_rect));
          it != vias_.qend();
          it++) {
@@ -239,61 +242,61 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         continue;
       }
 
-      painter.setPenAndBrush(via_color_, true);
+      painter.setPenAndBrush(kViaColor, true);
       painter.drawRect(area);
 
       const std::string via_name = via->getDisplayText();
       const odb::Rect name_box = painter.stringBoundaries(
-          0, 0, gui::Painter::Anchor::kBottomLeft, via_name);
+          0, 0, web::Painter::Anchor::kBottomLeft, via_name);
       if (area.dx() * net_name_margin > name_box.dx()
           && area.dy() * net_name_margin > name_box.dy()) {
-        painter.setPen(gui::Painter::kWhite, true);
+        painter.setPen(web::Painter::kWhite, true);
         const int x = 0.5 * (area.xMin() + area.xMax());
         const int y = 0.5 * (area.yMin() + area.yMax());
-        painter.drawString(x, y, gui::Painter::Anchor::kCenter, via_name);
+        painter.drawString(x, y, web::Painter::Anchor::kCenter, via_name);
       }
     }
   }
 
-  if (checkDisplayControl(repair_text_)) {
+  if (checkDisplayControl(kRepairText)) {
     for (const auto& repair : repair_) {
       if (layer == repair.source || layer == repair.target) {
-        painter.setPenAndBrush(repair_color_, true);
+        painter.setPenAndBrush(kRepairColor, true);
         painter.drawRect(repair.rect);
-        painter.setPenAndBrush(
-            repair_outline_color_, true, gui::Painter::kNone);
+        painter.setPenAndBrush(kRepairOutlineColor, true, web::Painter::kNone);
         painter.drawRect(repair.available_rect);
 
         const odb::Rect name_box = painter.stringBoundaries(
-            0, 0, gui::Painter::Anchor::kBottomLeft, repair.text);
+            0, 0, web::Painter::Anchor::kBottomLeft, repair.text);
         if (repair.rect.dx() * net_name_margin > name_box.dx()
             && repair.rect.dy() * net_name_margin > name_box.dy()) {
-          painter.setPen(gui::Painter::kWhite, true);
+          painter.setPen(web::Painter::kWhite, true);
           const int x = 0.5 * (repair.rect.xMin() + repair.rect.xMax());
           const int y = 0.5 * (repair.rect.yMin() + repair.rect.yMax());
-          painter.drawString(x, y, gui::Painter::Anchor::kCenter, repair.text);
+          painter.drawString(x, y, web::Painter::Anchor::kCenter, repair.text);
         }
       }
     }
   }
 }
 
-void PDNRenderer::drawObjects(gui::Painter& painter)
+void PDNRenderer::drawObjects(web::Painter& painter)
 {
-  gui::DiscreteLegend legend;
-  legend.addLegendKey(ring_color_, "Ring");
-  legend.addLegendKey(strap_color_, "Strap");
-  legend.addLegendKey(followpin_color_, "Followpin");
-  legend.addLegendKey(via_color_, "Via");
-  legend.addLegendKey(obstruction_color_, "Obstruction");
-  legend.addLegendKey(repair_color_, "Repair Area");
-  legend.addLegendKey(repair_outline_color_, "Repair Area Outline");
+  web::DiscreteLegend legend;
+  legend.addLegendKey(kRingColor, "Ring");
+  legend.addLegendKey(kStrapColor, "Strap");
+  legend.addLegendKey(kFollowpinColor, "Followpin");
+  legend.addLegendKey(kViaColor, "Via");
+  legend.addLegendKey(kObstructionColor, "Obstruction");
+  legend.addLegendKey(kRepairColor, "Repair Area");
+  legend.addLegendKey(kRepairOutlineColor, "Repair Area Outline");
   legend.draw(painter);
 }
 
-void PDNRenderer::pause()
+void PDNRenderer::pause(const std::string& reason)
 {
-  gui::Gui::get()->pause();
+  logger_->report("Pausing power grid debug view: {}", reason);
+  web::Gui::get()->pause();
 }
 
 }  // namespace pdn

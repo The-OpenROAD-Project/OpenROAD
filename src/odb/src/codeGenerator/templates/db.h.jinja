@@ -32,6 +32,9 @@ class {{klass.name}} : public {{klass.base_class}}
   
     {% endif %}
     {% if 'no-get' not in field.flags %}
+      {% if field.public_comment %}
+        {{field.public_comment}}
+      {% endif %}
       {{ macros.getter_signature(field) }};
     {% endif %}
   
@@ -54,6 +57,12 @@ class {{klass.name}} : public {{klass.base_class}}
       {% endfor %}
     {% endif %}
   {% endfor %}
+  {% if klass.gen_create %}
+  static {{klass.name}}* create({{klass.factory_parent}}* parent);
+  {% endif %}
+  {% if klass.gen_destroy %}
+  static void destroy({{klass.name}}* obj);
+  {% endif %}
   //User Code Begin {{klass.name}}
   //User Code End {{klass.name}}
 };

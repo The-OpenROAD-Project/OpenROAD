@@ -25,6 +25,8 @@ cc_library(
         "src/grid.h",
         "src/grid_component.cpp",
         "src/grid_component.h",
+        "src/polygon.cpp",
+        "src/polygon.h",
         "src/power_cells.cpp",
         "src/power_cells.h",
         "src/renderer.cpp",
@@ -55,12 +57,13 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.geometry",
         "@boost.polygon",
         "@boost.stacktrace",
@@ -121,5 +124,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/pdn/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/pdn/test:__pkg__",
+    ],
 )

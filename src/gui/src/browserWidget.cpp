@@ -29,6 +29,7 @@
 #include "displayControls.h"
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -100,7 +101,7 @@ struct BrowserWidget::ModuleStats
 ///////
 
 BrowserWidget::BrowserWidget(
-    const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+    const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
         modulesettings,
     DisplayControls* controls,
     QWidget* parent)
@@ -299,12 +300,12 @@ void BrowserWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void BrowserWidget::setDBInstDescriptor(DbInstDescriptor* desciptor)
+void BrowserWidget::setDBInstDescriptor(web::DbInstDescriptor* desciptor)
 {
   inst_descriptor_ = desciptor;
 }
 
-Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
+web::Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
 {
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
@@ -314,7 +315,7 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
       data = ref->data();
     }
 
-    auto* gui = Gui::get();
+    auto* gui = web::Gui::get();
     auto* inst = data.value<odb::dbInst*>();
     if (inst != nullptr) {
       return gui->makeSelected(inst);
@@ -325,7 +326,7 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
     }
   }
 
-  return Selected();
+  return web::Selected();
 }
 
 void BrowserWidget::selectionChanged(const QItemSelection& selected,
@@ -345,7 +346,7 @@ void BrowserWidget::clicked(const QModelIndex& index)
     return;
   }
 
-  Selected sel = getSelectedFromIndex(index);
+  web::Selected sel = getSelectedFromIndex(index);
 
   if (sel) {
     emit select({std::move(sel)});
@@ -691,7 +692,7 @@ void BrowserWidget::itemContextMenu(const QPoint& point)
   menu_->popup(view_->viewport()->mapToGlobal(point));
 }
 
-SelectionSet BrowserWidget::getMenuItemChildren()
+web::SelectionSet BrowserWidget::getMenuItemChildren()
 {
   if (!menu_item_) {
     return {};
@@ -702,8 +703,8 @@ SelectionSet BrowserWidget::getMenuItemChildren()
     return {};
   }
 
-  auto* gui = Gui::get();
-  SelectionSet children;
+  auto* gui = web::Gui::get();
+  web::SelectionSet children;
   for (auto* child : getChildren(module)) {
     children.insert(gui->makeSelected(child));
   }
@@ -847,18 +848,18 @@ void BrowserWidget::updateModuleColorIcon(odb::dbModule* module,
   }
 }
 
-std::set<odb::dbModule*> BrowserWidget::getChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getChildren(odb::dbModule* parent)
 {
-  std::set<odb::dbModule*> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : parent->getChildren()) {
     children.insert(child->getMaster());
   }
   return children;
 }
 
-std::set<odb::dbModule*> BrowserWidget::getAllChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getAllChildren(odb::dbModule* parent)
 {
-  std::set<odb::dbModule*> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : getChildren(parent)) {
     children.insert(child);
     const auto next_children = getAllChildren(child);

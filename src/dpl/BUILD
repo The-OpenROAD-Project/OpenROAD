@@ -12,12 +12,39 @@ package(
     features = ["layering_check"],
 )
 
+# Headers owned by :dpl but also consumed by :ui. Kept package-private so
+# nothing outside //src/dpl can depend on them.
+cc_library(
+    name = "dpl_private_hdrs",
+    hdrs = [
+        "src/graphics/DplObserver.h",
+        "src/infrastructure/Coordinates.h",
+        "src/infrastructure/Grid.h",
+        "src/infrastructure/Objects.h",
+        "src/infrastructure/architecture.h",
+        "src/infrastructure/network.h",
+    ],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = [
+        # TODO: we use headers provided by :dpl, but that reveals cyclic dep
+        #":dpl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.icl",
+        "@boost.utility",
+    ],
+)
+
 cc_library(
     name = "dpl",
     srcs = [
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
         "src/FillerPlacement.cpp",
+        "src/NegotiationLegalizer.cpp",
+        "src/NegotiationLegalizer.h",
+        "src/NegotiationLegalizerPass.cpp",
         "src/Opendp.cpp",
         "src/OptMirror.cpp",
         "src/Optdp.cpp",
@@ -25,20 +52,14 @@ cc_library(
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
         "src/dbToOpendp.cpp",
-        "src/graphics/DplObserver.h",
-        "src/infrastructure/Coordinates.h",
         "src/infrastructure/DecapObjects.h",
         "src/infrastructure/Grid.cpp",
-        "src/infrastructure/Grid.h",
         "src/infrastructure/Objects.cpp",
-        "src/infrastructure/Objects.h",
         "src/infrastructure/Padding.cpp",
         "src/infrastructure/Padding.h",
         "src/infrastructure/architecture.cxx",
-        "src/infrastructure/architecture.h",
         "src/infrastructure/detailed_segment.h",
         "src/infrastructure/network.cxx",
-        "src/infrastructure/network.h",
         "src/legalize_shift.cxx",
         "src/legalize_shift.h",
         "src/objective/detailed_abu.cxx",
@@ -84,18 +105,15 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/odb",
+        ":dpl_private_hdrs",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
-        "@boost.icl",
         "@boost.polygon",
-        "@boost.property_tree",
         "@boost.random",
         "@boost.tokenizer",
-        "@boost.utility",
         "@coin-or-lemon//:lemon",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -103,14 +121,8 @@ cc_library(
     name = "ui",
     srcs = [
         "src/MakeOpendp.cpp",
-        "src/graphics/DplObserver.h",
         "src/graphics/Graphics.cpp",
         "src/graphics/Graphics.h",
-        "src/infrastructure/Coordinates.h",
-        "src/infrastructure/Grid.h",
-        "src/infrastructure/Objects.h",
-        "src/infrastructure/architecture.h",
-        "src/infrastructure/network.h",
         ":swig",
         ":tcl",
     ],
@@ -123,11 +135,11 @@ cc_library(
     ],
     deps = [
         ":dpl",
+        ":dpl_private_hdrs",
         "//:ord",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@boost.geometry",
+        "//src/web:core",
         "@boost.icl",
         "@boost.polygon",
         "@boost.stacktrace",
@@ -190,5 +202,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/dpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/dpl/test:__pkg__",
+    ],
 )

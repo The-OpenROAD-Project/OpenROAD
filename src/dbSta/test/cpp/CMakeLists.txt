@@ -38,7 +38,7 @@ target_link_libraries(TestDbSta
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -67,7 +67,7 @@ target_link_libraries(TestReadVerilog
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -96,7 +96,7 @@ target_link_libraries(TestWriteVerilog
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -110,4 +110,33 @@ gtest_discover_tests(TestWriteVerilog
 )
 
 add_dependencies(build_and_test TestWriteVerilog
+)
+
+add_executable(TestLambertW TestLambertW.cc)
+target_link_libraries(TestLambertW
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst_integrated_fixture
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestLambertW
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/dbSta/src
+)
+
+gtest_discover_tests(TestLambertW
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestLambertW
 )
