@@ -900,7 +900,7 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
 NesterovBase* NesterovPlace::getTopLevelNB() const
 {
   if (nbVec_.empty()) {
-    log_->error(GPL, 93, "Top-level NesterovBase is not initialized.");
+    log_->error(GPL, 103, "Top-level NesterovBase is not initialized.");
   }
   return nbVec_[0].get();
 }

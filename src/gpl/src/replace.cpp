@@ -448,7 +448,7 @@ void Replace::reportHpwlMetric()
 NesterovBase* Replace::getTopLevelNB() const
 {
   if (nbVec_.empty()) {
-    log_->error(GPL, 97, "Top-level NesterovBase is not initialized.");
+    log_->error(GPL, 104, "Top-level NesterovBase is not initialized.");
   }
   return nbVec_[0].get();
 }
@@ -498,7 +498,7 @@ void Replace::setDebug(const int pause_iterations,
 float Replace::estimateTargetDensity(const PlaceOptions& options,
                                      const int threads)
 {
-  log_->info(GPL, 88, "Initialize gpl and estimate target density.");
+  log_->info(GPL, 98, "Initialize gpl and estimate target density.");
   log_->redirectStringBegin();
 
   PlaceOptions options_no_io = options;
