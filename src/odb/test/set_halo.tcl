@@ -91,6 +91,18 @@ if { [catch { set_halo -halo 1.0 } msg] } {
   check "Missing -instance/-apply_to_all_macros should have been rejected" 0 1
 }
 
+# Test 8b: Error handling - both -instance and -apply_to_all_macros given
+if {
+  [catch {
+    set_halo -halo 1.0 -instance MACRO1 -apply_to_all_macros
+  } msg]
+} {
+  puts "Expected error caught: $msg"
+  check "-instance and -apply_to_all_macros together rejected" 1 [1]
+} else {
+  check "-instance and -apply_to_all_macros together should have been rejected" 0 1
+}
+
 # Test 9: Error handling - non-existent instance
 if { [catch { set_halo -halo 1.0 -instance "non_existent" } msg] } {
   puts "Expected error caught: $msg"

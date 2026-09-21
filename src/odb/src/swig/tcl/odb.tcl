@@ -1100,6 +1100,10 @@ proc set_halo { args } {
 
   sta::check_argc_eq0 "set_halo" $args
 
+  if { [info exists keys(-instance)] && [info exists flags(-apply_to_all_macros)] } {
+    utl::error ODB 565 "-instance and -apply_to_all_macros cannot be used together."
+  }
+
   if { [info exists keys(-halo)] } {
     set halo $keys(-halo)
   } else {
