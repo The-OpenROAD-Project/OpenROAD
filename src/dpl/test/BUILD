@@ -77,7 +77,6 @@ COMPULSORY_TESTS = [
     "regions2",
     "regions3",
     "report_failures",
-    "report_gcell_density",
     "report_placement_density",
     "row_boundary_filter",
     "simple01",
@@ -275,9 +274,6 @@ filegroup(
                 "Nangate45/fakeram45_64x7.lef",
             ],
             "pad01": [
-                "simple01.def",
-            ],
-            "report_gcell_density": [
                 "simple01.def",
             ],
             "report_placement_density": [

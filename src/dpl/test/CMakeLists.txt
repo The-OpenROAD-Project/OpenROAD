@@ -72,7 +72,6 @@ or_integration_tests(
     regions2
     regions3
     report_failures
-    report_gcell_density
     report_placement_density
     row_boundary_filter
     simple01

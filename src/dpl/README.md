@@ -166,62 +166,25 @@ optimize_mirroring
 ### Report Placement Density
 
 The `report_placement_density` command reports the placement density of the
-rectangle given by two opposite corners, as a number between 0 (empty) and 1
-(no room left). Density is the instance area inside the rectangle over the
-legal placement site area inside it, so a rectangle with no site in it,
-because it lies outside the rows or under a hard blockage, is reported as
-holding no placement site rather than as a density.
+core, or with `-region` of the rectangle given by two opposite corners, as a
+number between 0 (empty) and 1 (no room left). Density is the instance area
+inside the region over the legal placement site area inside it, so a region
+with no site in it, because it lies outside the rows or under a hard
+blockage, is reported as holding no placement site rather than as a density.
 
-Unlike `report_gcell_density` this needs no GCell grid, so it can be run at
-any point after placement.
+Nothing is cached, so each call measures the placement as it currently
+stands.
 
 ```tcl
 report_placement_density
-    x1
-    y1
-    x2
-    y2
+    [-region {x1 y1 x2 y2}]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `x1` | X coordinate of one corner, in microns. |
-| `y1` | Y coordinate of one corner, in microns. |
-| `x2` | X coordinate of the opposite corner, in microns. |
-| `y2` | Y coordinate of the opposite corner, in microns. |
-
-### Report GCell Density
-
-The `report_gcell_density` command reports the placement density of the
-routing GCell holding the given point, as a number between 0 (empty) and 1
-(no room left). A region with no legal placement site in it, because it is
-under a hard blockage or between the rows, reports 1 since nothing fits
-there.
-
-With `-radius`, the density is measured over the whole neighbourhood of
-GCells within that many GCells of the one holding the point: radius 1 is a
-3x3 window, radius 2 a 5x5 one, and so on. The window is clipped to the core
-area, so instances sitting in the die margin are not counted against a
-region that has no placement sites to hold them.
-
-The design must have a GCell grid, so run `global_route` first.
-
-```tcl
-report_gcell_density
-    x
-    y
-    [-radius radius]
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `x` | X coordinate of the point, in microns. |
-| `y` | Y coordinate of the point, in microns. |
-| `-radius` | Number of GCells around that one to include. The default, `0`, measures the single GCell. |
+| `-region` | The two opposite corners of the region to measure, in microns. The default is the core area. |
 
 ### Improve Placement
 

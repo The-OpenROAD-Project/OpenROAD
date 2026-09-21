@@ -90,13 +90,6 @@ struct GlobalSwapParams
   int normalization_interval = 1000;
 };
 
-// One routing GCell and how full it is.
-struct GCellDensity
-{
-  odb::Rect gcell;       // the GCell's extent, in block coordinates
-  double density = 1.0;  // its placement density, in [0, 1]
-};
-
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -137,21 +130,12 @@ class Opendp
 
   double getPlacementDensity(const odb::Rect& region) const;
 
-  // Every routing GCell overlapping region, with its own density.  Needs a
-  // GCell grid, so run global routing first.
-  std::vector<GCellDensity> getGCellDensities(const odb::Rect& region) const;
+  // Whether the region holds any legal placement site at all, to tell a
+  // region that is full from one with nowhere to put a cell, which both
+  // read 1.0 above.
+  bool hasPlacementSite(const odb::Rect& region) const;
 
-  // The extent of the GCell holding pt grown by radius GCells in every
-  // direction, so radius 0 is that GCell alone and radius 1 its 3x3
-  // neighbourhood, clipped to the core area.  Comes back empty when the
-  // window holds no core area at all.
-  odb::Rect getGCellRegion(const odb::Point& pt, int radius) const;
-
-  // Report the density of that region.  Backs report_gcell_density.
-  void reportGCellDensity(const odb::Point& pt, int radius) const;
-
-  // Report the density of an arbitrary region.  Backs
-  // report_placement_density.
+  // Report the density of a region.  Backs report_placement_density.
   void reportPlacementDensity(const odb::Rect& region) const;
   ////////////////////////////////////////////////////////////////
 
@@ -290,10 +274,6 @@ class Opendp
   // Visits the current block-coordinate bbox of each placed instance.
   void visitPlacedInstances(
       const std::function<void(const odb::Rect& bbox)>& visitor) const;
-  // The routing GCell boundaries: GCell (i, j) spans
-  // [x_edges[i], x_edges[i + 1]) x [y_edges[j], y_edges[j + 1]).
-  void getGCellEdges(std::vector<int>& x_edges,
-                     std::vector<int>& y_edges) const;
 
   void initPlacementDRC();
 

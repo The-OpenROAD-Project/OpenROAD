@@ -185,13 +185,6 @@ void configure_global_swap_params_cmd(int passes,
                                     budget_multipliers);
 }
 
-void report_gcell_density_cmd(int x, int y, int radius)
-{
-  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->initPlacementGrid();
-  opendp->reportGCellDensity(odb::Point(x, y), radius);
-}
-
 void report_placement_density_cmd(int x1, int y1, int x2, int y2)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();

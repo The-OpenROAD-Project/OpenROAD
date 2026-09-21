@@ -188,50 +188,40 @@ proc optimize_mirroring { args } {
   dpl::optimize_mirroring_cmd
 }
 
-sta::define_cmd_args "report_gcell_density" { x y [-radius radius] }
+sta::define_cmd_args "report_placement_density" { [-region {x1 y1 x2 y2}] }
 
-proc report_gcell_density { args } {
-  sta::parse_key_args "report_gcell_density" args keys {-radius} flags {}
+proc report_placement_density { args } {
+  sta::parse_key_args "report_placement_density" args keys {-region} flags {}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DPL 106 "No design block found."
   }
 
-  sta::check_argc_eq2 "report_gcell_density" $args
-  lassign $args x y
-  sta::check_float "x" $x
-  sta::check_float "y" $y
+  sta::check_argc_eq0 "report_placement_density" $args
 
-  set radius 0
-  if { [info exists keys(-radius)] } {
-    set radius $keys(-radius)
-    sta::check_positive_integer "-radius" $radius
+  if { [info exists keys(-region)] } {
+    set region $keys(-region)
+    if { [llength $region] != 4 } {
+      utl::error DPL 107 "-region requires 4 values: x1 y1 x2 y2."
+    }
+    lassign $region x1 y1 x2 y2
+    foreach { name value } [list x1 $x1 y1 $y1 x2 $x2 y2 $y2] {
+      sta::check_float $name $value
+    }
+    set x1 [ord::microns_to_dbu $x1]
+    set y1 [ord::microns_to_dbu $y1]
+    set x2 [ord::microns_to_dbu $x2]
+    set y2 [ord::microns_to_dbu $y2]
+  } else {
+    # The core, since that is the only place a cell can go anyway.
+    set core [[ord::get_db_block] getCoreArea]
+    set x1 [$core xMin]
+    set y1 [$core yMin]
+    set x2 [$core xMax]
+    set y2 [$core yMax]
   }
 
-  dpl::report_gcell_density_cmd [ord::microns_to_dbu $x] \
-    [ord::microns_to_dbu $y] $radius
-}
-
-sta::define_cmd_args "report_placement_density" { x1 y1 x2 y2 }
-
-proc report_placement_density { args } {
-  sta::parse_key_args "report_placement_density" args keys {} flags {}
-
-  if { [ord::get_db_block] == "NULL" } {
-    utl::error DPL 107 "No design block found."
-  }
-
-  if { [llength $args] != 4 } {
-    utl::error DPL 108 "report_placement_density requires 4 arguments: x1 y1 x2 y2."
-  }
-  lassign $args x1 y1 x2 y2
-  foreach { name value } [list x1 $x1 y1 $y1 x2 $x2 y2 $y2] {
-    sta::check_float $name $value
-  }
-
-  dpl::report_placement_density_cmd \
-    [ord::microns_to_dbu $x1] [ord::microns_to_dbu $y1] \
-    [ord::microns_to_dbu $x2] [ord::microns_to_dbu $y2]
+  dpl::report_placement_density_cmd $x1 $y1 $x2 $y2
 }
 
 sta::define_cmd_args "improve_placement" {\

@@ -26,13 +26,16 @@ legalized HPWL              9.1 u
 delta HPWL                  299 %
 
 Region (1.900, 1.400) (7.980, 7.000) placement density 0.055
+Region (1.900, 1.400) (7.980, 7.000) placement density 0.055
 Region (1.900, 1.400) (3.000, 2.800) placement density 1.000
 Region (5.000, 5.000) (7.000, 7.000) placement density 0.000
 Region (5.000, 5.000) (7.000, 7.000) placement density 0.000
 Region (8.500, 8.500) (9.500, 9.500) holds no placement site.
-[ERROR DPL-1405] Region (2.000, 2.000) (2.000, 4.000) is empty.
-DPL-1405
-[ERROR DPL-0108] report_placement_density requires 4 arguments: x1 y1 x2 y2.
-DPL-0108
+[ERROR DPL-1401] Region (2.000, 2.000) (2.000, 4.000) is empty.
+DPL-1401
+[ERROR DPL-0107] -region requires 4 values: x1 y1 x2 y2.
+DPL-0107
 [ERROR STA-0571] y2 'abc' is not a float.
 STA-0571
+[ERROR STA-0564] report_placement_density positional arguments not supported.
+STA-0564
