@@ -23,7 +23,6 @@
 #include "boost/json/serialize.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -31,6 +30,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
+#include "web/heatMap.h"
 
 namespace web {
 namespace {
@@ -95,13 +95,13 @@ enum class Axis
 // the block bbox passed by the caller (which the tests align to a tile seam);
 // the tile grid uses TileGenerator::getBounds(), which adds a symmetric
 // pin-label margin, so the seam stays at the bbox center where the bin sits.
-class BoundaryHeatMap : public gui::HeatMapDataSource
+class BoundaryHeatMap : public web::HeatMapDataSource
 {
  public:
   BoundaryHeatMap(utl::Logger* logger,
                   const odb::Rect& bounds,
                   const odb::Rect& cell)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Boundary HM",
                                "BoundaryHM",
                                "BoundaryHM"),
@@ -1156,13 +1156,13 @@ TEST_F(TileGeneratorTest, FillPatternControlsShapeCoverage)
   EXPECT_LT(diagonal, solid) << "a hatch should paint fewer pixels than solid";
 }
 
-// Layer colors must mirror gui::DisplayControls::techInit so the GUI and the
+// Layer colors must mirror web::DisplayControls::techInit so the GUI and the
 // web frontend show the same color for the same layer.  Nangate45 only has 10
 // routing + 9 cut layers, all within the 14-entry built-in palettes, so we
 // extend the tech to 20 routing + 19 cut layers to also exercise the overflow
 // path: layers past the palette get deterministic mt19937(1)-seeded random
 // colors.  The expected RGB values below were computed by replaying the exact
-// blue/green/red draw order (matching gui::DisplayControls::techInit) over the
+// blue/green/red draw order (matching web::DisplayControls::techInit) over the
 // full getLayers() iteration, including the MASTERSLICE/OVERLAP layers that
 // also consume random draws.
 TEST_F(TileGeneratorTest, GetLayerColorMapMatchesGuiPalette)
@@ -5589,7 +5589,7 @@ TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 }
 
 //------------------------------------------------------------------------------
-// Debug-graphics overlay: the two halves of the gui::Renderer API.  Qt calls
+// Debug-graphics overlay: the two halves of the web::Renderer API.  Qt calls
 // drawLayer once per tech layer and drawObjects once after the layers; the web
 // used to call only drawObjects, and once per layer tile at that.
 //------------------------------------------------------------------------------

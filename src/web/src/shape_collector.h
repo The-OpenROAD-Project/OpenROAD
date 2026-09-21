@@ -8,13 +8,13 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
+#include "web/core.h"
 
 namespace web {
 
-// A gui::Painter that collects the rectangles, polygons and lines a
+// A web::Painter that collects the rectangles, polygons and lines a
 // descriptor->highlight() draws, for the overlay renderer to paint.
 //
 // Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
@@ -24,7 +24,7 @@ namespace web {
 // `budget` bounds what one object may accumulate: a descriptor can emit one
 // shape per leaf.  Past it only the union of the dropped shapes is kept, which
 // is what the caller falls back to anyway.
-class ShapeCollector : public gui::Painter
+class ShapeCollector : public web::Painter
 {
  public:
   explicit ShapeCollector(size_t budget = std::numeric_limits<size_t>::max())

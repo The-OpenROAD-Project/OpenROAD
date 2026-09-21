@@ -21,15 +21,15 @@
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "request_handler.h"
 #include "shape_collector.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 #include "web/web.h"
 #include "web_viewer_hook.h"
 
@@ -86,10 +86,10 @@ struct FakeInspectable
   std::string name;
   std::string type;
   odb::Rect bbox;
-  gui::Descriptor::Properties properties;
+  web::Descriptor::Properties properties;
 };
 
-class FakeDescriptor : public gui::Descriptor
+class FakeDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -111,7 +111,7 @@ class FakeDescriptor : public gui::Descriptor
   }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
@@ -120,9 +120,9 @@ class FakeDescriptor : public gui::Descriptor
     return std::any_cast<FakeInspectable*>(object)->properties;
   }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -131,7 +131,7 @@ class FakeDescriptor : public gui::Descriptor
            < std::any_cast<FakeInspectable*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
   }
@@ -142,7 +142,7 @@ class FakeDescriptor : public gui::Descriptor
 class LineFakeDescriptor : public FakeDescriptor
 {
  public:
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
     painter.drawLine(b.ll(), b.ur());
@@ -152,7 +152,7 @@ class LineFakeDescriptor : public FakeDescriptor
 // Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
 // real dbInst/dbNet objects inside the unit tests — the production set
 // lives in the full gui library, which the web test does not link.
-class TestInstDescriptor : public gui::Descriptor
+class TestInstDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -167,26 +167,26 @@ class TestInstDescriptor : public gui::Descriptor
   }
   bool isInst(const std::any&) const override { return true; }
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
   Properties getProperties(const std::any&) const override { return {}; }
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(std::any_cast<odb::dbInst*>(object), this);
+    return web::Selected(std::any_cast<odb::dbInst*>(object), this);
   }
   bool lessThan(const std::any& l, const std::any& r) const override
   {
     return std::any_cast<odb::dbInst*>(l)->getId()
            < std::any_cast<odb::dbInst*>(r)->getId();
   }
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
-class TestNetDescriptor : public gui::Descriptor
+class TestNetDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -197,26 +197,26 @@ class TestNetDescriptor : public gui::Descriptor
   bool getBBox(const std::any&, odb::Rect&) const override { return false; }
   bool isNet(const std::any&) const override { return true; }
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
   Properties getProperties(const std::any&) const override { return {}; }
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(std::any_cast<odb::dbNet*>(object), this);
+    return web::Selected(std::any_cast<odb::dbNet*>(object), this);
   }
   bool lessThan(const std::any& l, const std::any& r) const override
   {
     return std::any_cast<odb::dbNet*>(l)->getId()
            < std::any_cast<odb::dbNet*>(r)->getId();
   }
-  void highlight(const std::any&, gui::Painter&) const override {}
+  void highlight(const std::any&, web::Painter&) const override {}
 };
 
-// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// Minimal dbNet descriptor so tests can build a web::Selected whose
 // isNet() is true; highlight() stands in for the wire-shape drawing of
 // the real NetDescriptor (a big rect the flywire mode must suppress).
-class FakeNetDescriptor : public gui::Descriptor
+class FakeNetDescriptor : public web::Descriptor
 {
  public:
   static constexpr int kWireRectSize = 90000;
@@ -239,15 +239,15 @@ class FakeNetDescriptor : public gui::Descriptor
   bool isNet(const std::any&) const override { return true; }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
   Properties getProperties(const std::any&) const override { return {}; }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -255,17 +255,17 @@ class FakeNetDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
   }
 
-  void highlight(const std::any&, gui::Painter& painter) const override
+  void highlight(const std::any&, web::Painter& painter) const override
   {
     painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
   }
 };
 
 // Minimal dbInst descriptor reporting the instance bbox in its OWN block's
-// coordinates, which is what every real gui::Descriptor does.  Registering it
+// coordinates, which is what every real web::Descriptor does.  Registering it
 // lets a select request reach writeInspectPayload without a dbSta (the real
 // DbInstDescriptor dereferences one in getProperties).
-class LocalBBoxInstDescriptor : public gui::Descriptor
+class LocalBBoxInstDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -286,15 +286,15 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
   bool isInst(const std::any&) const override { return true; }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
   Properties getProperties(const std::any&) const override { return {}; }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -302,17 +302,17 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbInst*>(l) < std::any_cast<odb::dbInst*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
-// Stand-in for gui::DbGroupDescriptor, which lives in a library this test
+// Stand-in for web::DbGroupDescriptor, which lives in a library this test
 // binary does not link.  Mirrors what the handlers rely on: the type name
 // "Group", no bbox of its own, a highlight built from the member instances,
 // and visitAllObjects over the block's groups.
-class FakeGroupDescriptor : public gui::Descriptor
+class FakeGroupDescriptor : public web::Descriptor
 {
  public:
   explicit FakeGroupDescriptor(odb::dbBlock* block) : block_(block) {}
@@ -324,7 +324,7 @@ class FakeGroupDescriptor : public gui::Descriptor
 
   std::string getTypeName() const override { return "Group"; }
 
-  // Off by default, matching gui::DbGroupDescriptor: a dbGroup only reports a
+  // Off by default, matching web::DbGroupDescriptor: a dbGroup only reports a
   // box when it has a region, which MPL's clusters do not.  The find_objects
   // union-bbox tests turn it on, since a descriptor that reports nothing is
   // exactly the case where no bbox comes back.
@@ -341,7 +341,7 @@ class FakeGroupDescriptor : public gui::Descriptor
   }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>& func) const override
+      const std::function<void(const web::Selected&)>& func) const override
   {
     if (block_ == nullptr) {
       return;
@@ -356,9 +356,9 @@ class FakeGroupDescriptor : public gui::Descriptor
     return {};
   }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -366,7 +366,7 @@ class FakeGroupDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbGroup*>(l) < std::any_cast<odb::dbGroup*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     auto* group = std::any_cast<odb::dbGroup*>(object);
     for (odb::dbInst* inst : group->getInsts()) {
@@ -391,11 +391,11 @@ class FakeGroupDescriptor : public gui::Descriptor
   odb::dbBlock* block_;
 };
 
-class LazyMetadataHeatMap : public gui::HeatMapDataSource
+class LazyMetadataHeatMap : public web::HeatMapDataSource
 {
  public:
   explicit LazyMetadataHeatMap(utl::Logger* logger, int* populate_calls)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Lazy Metadata Heat Map",
                                "LazyMeta",
                                "LazyMeta"),
@@ -498,7 +498,7 @@ class TileHandlerTest : public tst::Nangate45Fixture
 
   // Prime the highlight state the way an inspect would, so an overlay request
   // can exercise a "Flywires only" flip against it.
-  void primeInspected(const gui::Selected& sel)
+  void primeInspected(const web::Selected& sel)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected = sel;
@@ -564,7 +564,7 @@ TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
   auto root = parseObj(payloadStr(resp));
   ASSERT_TRUE(root.if_contains("highlight_colors"));
   const auto& colors = root.at("highlight_colors").as_array();
-  ASSERT_EQ(colors.size(), static_cast<size_t>(gui::kNumHighlightSet));
+  ASSERT_EQ(colors.size(), static_cast<size_t>(web::kNumHighlightSet));
   // Group 0 is kGreen with the Qt highlight alpha (100).
   const auto& first = colors[0].as_array();
   EXPECT_EQ(first[0].as_int64(), 0);
@@ -1145,7 +1145,7 @@ TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
 class FlywireDrawingNetDescriptor : public FakeNetDescriptor
 {
  public:
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     FakeNetDescriptor::highlight(object, painter);
     painter.drawLine(odb::Point(0, 0), odb::Point(1000, 1000));
@@ -1363,7 +1363,7 @@ TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
   {
    public:
     std::string getName(const std::any&) const override { return "nws"; }
-    void highlight(const std::any&, gui::Painter& painter) const override
+    void highlight(const std::any&, web::Painter& painter) const override
     {
       painter.drawRect(odb::Rect(0, 0, 1000, 1000));
     }
@@ -1824,7 +1824,7 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
 
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -1841,7 +1841,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -1877,7 +1877,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1900,7 +1900,7 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 // to special-case it the way Qt's dialog wires the setter directly.
 TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest meta_req;
@@ -1936,7 +1936,7 @@ TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1959,7 +1959,7 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   static int populate_calls = 0;
   populate_calls = 0;
 
-  gui::registerHeatMapSource(
+  web::registerHeatMapSource(
       "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
         return std::make_shared<LazyMetadataHeatMap>(getLogger(),
                                                      &populate_calls);
@@ -2304,22 +2304,22 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
     // The registry owns registered descriptors (unique_ptr) — heap-only.
-    auto* registry = gui::DescriptorRegistry::instance();
+    auto* registry = web::DescriptorRegistry::instance();
     registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
     registry->registerDescriptor<odb::dbNet*>(new TestNetDescriptor);
   }
 
   void TearDown() override
   {
-    auto* registry = gui::DescriptorRegistry::instance();
+    auto* registry = web::DescriptorRegistry::instance();
     registry->unregisterDescriptor<odb::dbInst*>();
     registry->unregisterDescriptor<odb::dbNet*>();
     tst::Nangate45Fixture::TearDown();
   }
 
-  gui::Selected makeFakeSelected(FakeInspectable* object)
+  web::Selected makeFakeSelected(FakeInspectable* object)
   {
-    return gui::Selected(object, &fake_descriptor_);
+    return web::Selected(object, &fake_descriptor_);
   }
 
   odb::dbInst* placeInst(const char* master_name,
@@ -2360,25 +2360,14 @@ class GroupSelectTest : public tst::Nangate45Fixture
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
 
     group_desc_ = new FakeGroupDescriptor(block_);
-    gui::DescriptorRegistry::instance()->registerDescriptor(
+    web::DescriptorRegistry::instance()->registerDescriptor(
         typeid(odb::dbGroup*), group_desc_);
   }
 
   void TearDown() override
   {
-    gui::DescriptorRegistry::instance()->unregisterDescriptor(
+    web::DescriptorRegistry::instance()->unregisterDescriptor(
         typeid(odb::dbGroup*));
-  }
-
-  boost::json::object findObjects(const std::string& json)
-  {
-    WebSocketRequest req;
-    req.id = 1;
-    req.type = WebSocketRequest::kFindObjects;
-    req.json = parseObj(json);
-    auto resp = handler_->handleFindObjects(req, state_);
-    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-    return parseObj(payloadStr(resp));
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -2548,23 +2537,6 @@ TEST_F(GroupSelectTest, SelectGroupWithUnknownIdReturnsError)
   EXPECT_NE(payloadStr(resp).find("Group not found"), std::string::npos);
 }
 
-// One glob pattern replaces the per-instance Tcl script the issue started
-// from: matching on the Group type highlights whole clusters at once.
-TEST_F(GroupSelectTest, FindObjectsMatchesGroupsByGlob)
-{
-  auto obj = findObjects(
-      R"({"object_type":"Group","pattern":"(root)_*","highlight_group":0})");
-  EXPECT_EQ(obj.at("found").as_int64(), 1);
-  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
-  EXPECT_EQ(state_.highlight_groups[0].size(), 1u);
-  // The matched cluster holds one instance, so one colored rect.
-  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
-  // gui::Painter::kHighlightColors[0] is green at alpha 100.
-  EXPECT_EQ(state_.highlight_group_rects[0].color.g, 255);
-  EXPECT_EQ(state_.highlight_group_rects[0].color.a, 100);
-  EXPECT_TRUE(state_.highlight_group_rects[0].filled);
-}
-
 // A descriptor can emit one shape per leaf, so the budget has to bound what ONE
 // object accumulates, not only the total.  Driven on the collector: reaching
 // the real cap through a handler would need 20 000 instances.
@@ -2613,153 +2585,29 @@ TEST(ShapeCollectorBudget, ResetClearsShapesAndOverflow)
   EXPECT_EQ(collector.unionBBox(), odb::Rect(0, 0, 5, 5));
 }
 
-TEST_F(GroupSelectTest, FindObjectsMatchesEverythingWithAnEmptyPattern)
-{
-  auto obj = findObjects(R"({"object_type":"Group","pattern":""})");
-  EXPECT_EQ(obj.at("found").as_int64(), 2);
-  // No highlight_group given: select only, no colored highlight.
-  EXPECT_TRUE(state_.highlight_group_rects.empty());
-}
-
-TEST_F(GroupSelectTest, FindObjectsHonorsCaseSensitivity)
-{
-  auto insensitive = findObjects(R"({"object_type":"Group","pattern":"ROOT"})");
-  EXPECT_EQ(insensitive.at("found").as_int64(), 1);
-
-  auto sensitive = findObjects(
-      R"({"object_type":"Group","pattern":"ROOT","case_sensitive":true})");
-  EXPECT_EQ(sensitive.at("found").as_int64(), 0);
-}
-
-TEST_F(GroupSelectTest, FindObjectsAnchorsGlobPatterns)
-{
-  // "root" must not match "(root)_glue_logic": Gui::select matches the whole
-  // name, and so must this.
-  auto obj = findObjects(R"({"object_type":"Group","pattern":"root"})");
-  EXPECT_EQ(obj.at("found").as_int64(), 1);
-}
-
-// The Find dialog zooms the view to what it found, so the response carries the
-// union of the matches.  Recursive through the descriptor, which is what makes
-// a match on the root cluster frame the nested cluster's instances too.
-TEST_F(GroupSelectTest, FindObjectsReturnsTheUnionBBoxOfTheMatches)
-{
-  group_desc_->report_bbox = true;
-
-  auto obj = findObjects(R"({"object_type":"Group","pattern":"*"})");
-  ASSERT_EQ(obj.at("found").as_int64(), 2);
-  ASSERT_TRUE(obj.contains("match_bbox"));
-
-  odb::Rect expected;
-  expected.mergeInit();
-  for (odb::dbInst* inst : block_->getInsts()) {
-    expected.merge(inst->getBBox()->getBox());
-  }
-  const auto& bbox = obj.at("match_bbox").as_array();
-  ASSERT_EQ(bbox.size(), 4u);
-  EXPECT_EQ(bbox[0].as_int64(), expected.xMin());
-  EXPECT_EQ(bbox[1].as_int64(), expected.yMin());
-  EXPECT_EQ(bbox[2].as_int64(), expected.xMax());
-  EXPECT_EQ(bbox[3].as_int64(), expected.yMax());
-}
-
-// The union travels under its own key: `bbox` belongs to the embedded inspect
-// payload and is the FIRST match's own box, which the client outlines and
-// zooms to from the Inspector.  Overwriting it framed one object with the
-// extent of all of them.
-TEST_F(GroupSelectTest, FindObjectsKeepsTheInspectedObjectsOwnBBox)
-{
-  group_desc_->report_bbox = true;
-
-  // A pattern matching only the nested cluster, whose box is a strict subset
-  // of the union — so the two keys cannot coincide.
-  auto obj = findObjects(R"({"object_type":"Group","pattern":"*glue*"})");
-  ASSERT_EQ(obj.at("found").as_int64(), 1);
-  ASSERT_TRUE(obj.contains("bbox"));
-
-  odb::Rect child_box;
-  child_box.mergeInit();
-  for (odb::dbInst* inst : child_->getInsts()) {
-    child_box.merge(inst->getBBox()->getBox());
-  }
-  const auto& bbox = obj.at("bbox").as_array();
-  EXPECT_EQ(bbox[0].as_int64(), child_box.xMin());
-  EXPECT_EQ(bbox[1].as_int64(), child_box.yMin());
-  EXPECT_EQ(bbox[2].as_int64(), child_box.xMax());
-  EXPECT_EQ(bbox[3].as_int64(), child_box.yMax());
-}
-
-// Absent, not a degenerate box: the client keys the auto-zoom off the field
-// being there, and zooming to [0,0,0,0] would throw the view off the design.
-TEST_F(GroupSelectTest, FindObjectsOmitsTheMatchBBoxWhenNothingMatched)
-{
-  group_desc_->report_bbox = true;
-
-  auto obj = findObjects(R"({"object_type":"Group","pattern":"nosuch*"})");
-  ASSERT_EQ(obj.at("found").as_int64(), 0);
-  EXPECT_FALSE(obj.contains("match_bbox"));
-}
-
-// A descriptor that reports no box of its own (gui::DbGroupDescriptor, unless
-// the group has a region) leaves nothing to union, and the field stays out
-// rather than coming back inverted or zeroed.
-TEST_F(GroupSelectTest, FindObjectsOmitsTheMatchBBoxWhenNoMatchReportsOne)
-{
-  auto obj = findObjects(R"({"object_type":"Group","pattern":"*"})");
-  ASSERT_EQ(obj.at("found").as_int64(), 2);
-  EXPECT_FALSE(obj.contains("match_bbox"));
-}
-
-TEST_F(GroupSelectTest, FindObjectsSupportsRegexp)
-{
-  auto obj = findObjects(
-      R"({"object_type":"Group","pattern":".*glue.*","is_regexp":true})");
-  EXPECT_EQ(obj.at("found").as_int64(), 1);
-}
-
-TEST_F(GroupSelectTest, FindObjectsWithUnknownTypeReturnsError)
-{
-  WebSocketRequest req;
-  req.id = 9;
-  req.type = WebSocketRequest::kFindObjects;
-  req.json = parseObj(R"({"object_type":"Nonsense","pattern":"*"})");
-
-  auto resp = handler_->handleFindObjects(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kError);
-  EXPECT_NE(payloadStr(resp).find("Unknown object type"), std::string::npos);
-}
-
-// Both ends of the range: -1 means "select only", so anything below it is a
-// malformed request, not a second spelling of the same thing.
-TEST_F(GroupSelectTest, FindObjectsRejectsAnOutOfRangeHighlightGroup)
-{
-  WebSocketRequest req;
-  req.id = 10;
-  req.type = WebSocketRequest::kFindObjects;
-
-  for (const int group : {99, -5}) {
-    req.json = parseObj(R"({"object_type":"Group","pattern":"*",)"
-                        R"("highlight_group":)"
-                        + std::to_string(group) + "}");
-
-    auto resp = handler_->handleFindObjects(req, state_);
-    EXPECT_EQ(resp.type, WebSocketResponse::kError) << "group " << group;
-    EXPECT_NE(payloadStr(resp).find("Invalid highlight group"),
-              std::string::npos)
-        << "group " << group;
-  }
-}
-
 // Clearing highlights leaves the selection alone: the two are separate state,
 // and the Find dialog's "Clear highlights" button is not a deselect.
 TEST_F(GroupSelectTest, ClearHighlightsKeepsTheSelection)
 {
-  findObjects(R"({"object_type":"Group","pattern":"*","highlight_group":1})");
+  WebSocketRequest select;
+  select.id = 10;
+  select.type = WebSocketRequest::kSelectGroup;
+  select.json
+      = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+  ASSERT_EQ(handler_->handleSelectGroup(select, state_).type,
+            WebSocketResponse::kJson);
+
+  WebSocketRequest highlight;
+  highlight.id = 11;
+  highlight.type = WebSocketRequest::kHighlight;
+  highlight.json = parseObj(R"({"group":1})");
+  ASSERT_EQ(handler_->handleHighlight(highlight, state_).type,
+            WebSocketResponse::kJson);
   ASSERT_FALSE(state_.highlight_group_rects.empty());
   ASSERT_FALSE(state_.selection_set.empty());
 
   WebSocketRequest req;
-  req.id = 11;
+  req.id = 12;
   req.type = WebSocketRequest::kClearHighlights;
   req.json = parseObj("{}");
   auto resp = handler_->handleClearHighlights(req, state_);
@@ -2914,7 +2762,7 @@ TEST_F(SelectHandlerTest, InspectCollectsHighlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selectables_mutex);
-    state_.selectables = {gui::Selected(&fake_current_, &line_descriptor)};
+    state_.selectables = {web::Selected(&fake_current_, &line_descriptor)};
   }
 
   WebSocketRequest req;
@@ -3041,8 +2889,8 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
 
 TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 {
-  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
-  const gui::Selected block_selected = makeFakeSelected(&fake_previous_);
+  const web::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const web::Selected block_selected = makeFakeSelected(&fake_previous_);
   ASSERT_TRUE(initial_selected);
   ASSERT_TRUE(block_selected);
 
@@ -3093,7 +2941,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 
 TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 {
-  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const web::Selected initial_selected = makeFakeSelected(&fake_current_);
   ASSERT_TRUE(initial_selected);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -3121,7 +2969,7 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
 {
   fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
-  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+  const web::Selected block_selected = makeFakeSelected(&fake_current_);
 
   {
     std::lock_guard<std::mutex> lock(state_.selectables_mutex);
@@ -3189,7 +3037,7 @@ TEST_F(SelectHandlerTest, InspectConvertsToMicronsWithoutABlock)
 // "<unknown>".
 TEST_F(SelectHandlerTest, InspectSerializesPropertyTable)
 {
-  gui::PropertyTable table(/*rows=*/2, /*columns=*/2);
+  web::PropertyTable table(/*rows=*/2, /*columns=*/2);
   table.setColumnHeader(0, "0 \xC2\xB5m");
   table.setColumnHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
   table.setRowHeader(0, "0 \xC2\xB5m");
@@ -3417,8 +3265,8 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
 // Because SelectionSet is std::set, iteration order is by operator<
 // (FakeDescriptor::lessThan compares pointer addresses).
 void populateSelectionSet(SessionState& st,
-                          const gui::Selected& a,
-                          const gui::Selected& b,
+                          const web::Selected& a,
+                          const web::Selected& b,
                           int itr_pos)
 {
   std::lock_guard<std::mutex> lock(st.selection_mutex);
@@ -3842,6 +3690,150 @@ TEST_F(SelectHandlerTest, SelectNextRestoresSelectionSetHighlights)
   EXPECT_TRUE(found_previous);
 }
 
+//------------------------------------------------------------------------------
+// Find (name/glob search) tests.  The gui descriptors are not registered in
+// this unit context, so makeSelected() yields empty Selecteds and inserting
+// more than one into the SelectionSet would dereference a null descriptor in
+// the comparator.  We therefore assert the match `count` for patterns matching
+// at most one object — enough to exercise the glob (*, ?), exact-match and
+// case-folding logic plus the error path.  Multi-match selection and the
+// sel_has_inst/sel_has_net flags are covered by the WebSocket end-to-end tests.
+//------------------------------------------------------------------------------
+
+class FindHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  void placeInst(const char* master_name, const char* inst_name, int x, int y)
+  {
+    odb::dbMaster* master = lib_->findMaster(master_name);
+    ASSERT_NE(master, nullptr) << master_name;
+    odb::dbInst* inst = odb::dbInst::create(block_, master, inst_name);
+    inst->setLocation(x, y);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+  void runFind(const std::string& obj_type,
+               const std::string& pattern,
+               bool match_case = false)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kFind;
+    boost::json::object json;
+    json["obj_type"] = obj_type;
+    json["pattern"] = pattern;
+    json["match_case"] = match_case;
+    req.json = std::move(json);
+    last_resp_ = handler_->handleFind(req, state_);
+  }
+
+  // Pattern-matching assertions only.  Drops the previous find's selection
+  // first: a find ADDS to the selection (Qt parity), and two of this
+  // fixture's null-descriptor Selecteds cannot be ordered against each other
+  // -- Selected::operator< dereferences the descriptor once the payload types
+  // match.  Accumulation is covered by FindAddsToTheExistingSelection, which
+  // pre-seeds a differently-typed payload so the comparison stays safe.
+  int64_t findCount(const std::string& obj_type,
+                    const std::string& pattern,
+                    bool match_case = false)
+  {
+    {
+      std::lock_guard<std::mutex> lock(state_.selection_mutex);
+      state_.selection_set.clear();
+      state_.selection_itr = state_.selection_set.end();
+    }
+    runFind(obj_type, pattern, match_case);
+    return parseObj(payloadStr(last_resp_)).at("count").as_int64();
+  }
+
+  web::Selected makeFakeSelected(FakeInspectable* object)
+  {
+    return web::Selected(object, &fake_descriptor_);
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+  SessionState state_;
+  WebSocketResponse last_resp_;
+  FakeDescriptor fake_descriptor_;
+  FakeInspectable fake_preselected_{.name = "preselected",
+                                    .type = "FakePreselected",
+                                    .bbox = {0, 0, 10, 10},
+                                    .properties = {}};
+};
+
+TEST_F(FindHandlerTest, InstGlobExactAndNoMatch)
+{
+  placeInst("BUF_X16", "u_buf0", 0, 0);
+  placeInst("BUF_X16", "reg_a", 1000, 0);
+
+  EXPECT_EQ(findCount("inst", "u_*"), 1);     // glob '*'
+  EXPECT_EQ(findCount("inst", "u_bu?0"), 1);  // glob '?'
+  EXPECT_EQ(findCount("inst", "u_buf0"), 1);  // exact
+  EXPECT_EQ(findCount("inst", "zzz*"), 0);    // no match
+}
+
+TEST_F(FindHandlerTest, RespectsMatchCase)
+{
+  placeInst("BUF_X16", "MixedCase", 0, 0);
+
+  EXPECT_EQ(findCount("inst", "mixedcase", /*match_case=*/false), 1);
+  EXPECT_EQ(findCount("inst", "mixedcase", /*match_case=*/true), 0);
+}
+
+TEST_F(FindHandlerTest, NetByName)
+{
+  odb::dbNet::create(block_, "clk");
+
+  EXPECT_EQ(findCount("net", "cl*"), 1);
+  EXPECT_EQ(findCount("net", "nope"), 0);
+}
+
+TEST_F(FindHandlerTest, UnknownTypeReturnsError)
+{
+  runFind("bogus", "*");
+  EXPECT_EQ(last_resp_.type, WebSocketResponse::kError);
+}
+
+// Qt parity: Gui::select() passes its matches to MainWindow::addSelected, so
+// a search must not discard a selection the user already had.
+//
+// The pre-existing entry is FakeDescriptor-backed on purpose.  Its payload
+// type (FakeInspectable*) differs from the one an unregistered dbInst
+// descriptor yields, and Selected::operator< compares differing payload types
+// by type_info alone -- so the set stays ordered without dereferencing the
+// null descriptor that makes multi-match asserts impossible here (see the
+// comment above this fixture).
+TEST_F(FindHandlerTest, FindAddsToTheExistingSelection)
+{
+  placeInst("BUF_X16", "u_buf0", 0, 0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_preselected_));
+  }
+
+  runFind("inst", "u_buf0");
+
+  const auto root = parseObj(payloadStr(last_resp_));
+  EXPECT_EQ(root.at("count").as_int64(), 1);
+  // 2, not 1: the found instance joined the pre-existing selection.
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(
+      state_.selection_set.contains(makeFakeSelected(&fake_preselected_)))
+      << "the pre-existing selection must survive a find";
+}
+
 // set_property tests (descriptor editors)
 //------------------------------------------------------------------------------
 
@@ -3886,22 +3878,22 @@ class EditableFakeDescriptor : public FakeDescriptor
   Actions getActions(const std::any& object) const override
   {
     Actions actions;
-    actions.push_back({std::string(gui::Descriptor::kDeselectAction),
-                       [this]() -> gui::Selected {
+    actions.push_back({std::string(web::Descriptor::kDeselectAction),
+                       [this]() -> web::Selected {
                          ++deselect_calls;
                          return {};
                        }});
-    actions.push_back({"Jump", [this]() -> gui::Selected {
-                         return gui::Selected(jump_target, this);
+    actions.push_back({"Jump", [this]() -> web::Selected {
+                         return web::Selected(jump_target, this);
                        }});
-    actions.push_back({"Refresh", [this, object]() -> gui::Selected {
-                         return gui::Selected(object, this);
+    actions.push_back({"Refresh", [this, object]() -> web::Selected {
+                         return web::Selected(object, this);
                        }});
-    actions.push_back({"Explode", []() -> gui::Selected {
+    actions.push_back({"Explode", []() -> web::Selected {
                          throw std::runtime_error("action exploded");
                        }});
-    actions.push_back({"Insert Buffer", []() -> gui::Selected { return {}; }});
-    actions.push_back({"Delete", [this]() -> gui::Selected {
+    actions.push_back({"Insert Buffer", []() -> web::Selected { return {}; }});
+    actions.push_back({"Delete", [this]() -> web::Selected {
                          if (stale_flag != nullptr) {
                            *stale_flag = true;
                          }
@@ -3932,7 +3924,7 @@ class EditableFakeDescriptor : public FakeDescriptor
     editors.emplace(
         "Location", makeEditor([this](const std::any& value) {
           return commit(value, [&] {
-            location_dbu = gui::Descriptor::Property::convert_string(
+            location_dbu = web::Descriptor::Property::convert_string(
                 std::any_cast<std::string>(value), &location_ok);
           });
         }));
@@ -3970,7 +3962,7 @@ class SetPropertyTest : public SelectHandlerTest
     editable_descriptor_.stale_flag = &state_.selection_stale;
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected
-        = gui::Selected(&fake_current_, &editable_descriptor_);
+        = web::Selected(&fake_current_, &editable_descriptor_);
   }
 
   boost::json::object setProperty(const std::string& request_json)
@@ -4142,7 +4134,7 @@ TEST_F(SetPropertyTest, UnknownPropertyOrNothingInspected)
 
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   root = setProperty(R"({"name":"Name","value":"x"})");
   EXPECT_EQ(root.at("ok").as_int64(), 0);
@@ -4175,7 +4167,7 @@ TEST_F(SetPropertyTest, ConvertStringInstalledDuringEdit)
 
   // Restored default after the handler: returns 0, never touches ok.
   bool ok = false;
-  EXPECT_EQ(gui::Descriptor::Property::convert_string("5", &ok), 0);
+  EXPECT_EQ(web::Descriptor::Property::convert_string("5", &ok), 0);
   EXPECT_FALSE(ok);
 }
 
@@ -4229,7 +4221,7 @@ TEST_F(TriggerActionTest, ActionChangingSelectionUpdatesStateAndHistory)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     EXPECT_TRUE(state_.current_inspected
-                == gui::Selected(&fake_previous_, &editable_descriptor_));
+                == web::Selected(&fake_previous_, &editable_descriptor_));
     ASSERT_EQ(state_.navigation_history.size(), 1u);
   }
   ASSERT_EQ(broadcasts_.size(), 1u);
@@ -4244,7 +4236,7 @@ TEST_F(TriggerActionTest, ActionKeepingSelectionRefreshesPayload)
   EXPECT_EQ(editable_descriptor_.deselect_calls, 0);
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.current_inspected
-              == gui::Selected(&fake_current_, &editable_descriptor_));
+              == web::Selected(&fake_current_, &editable_descriptor_));
 }
 
 TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
@@ -4397,7 +4389,7 @@ TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected(&fake_current_, &line_descriptor);
+    state_.current_inspected = web::Selected(&fake_current_, &line_descriptor);
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
   EXPECT_EQ(root.at("ok").as_int64(), 1);
@@ -4451,7 +4443,7 @@ TEST_F(HighlightGroupTest, HighlightWithNothingInspectedFails)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":0})");
   EXPECT_EQ(root.at("ok").as_int64(), 0);
@@ -4547,13 +4539,13 @@ TEST_F(SelectionBrowserTest, ListEmptyState)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   auto root = listSelection();
   EXPECT_EQ(root.at("ok").as_int64(), 1);
   EXPECT_EQ(root.at("selection").as_array().size(), 0u);
   ASSERT_EQ(root.at("groups").as_array().size(),
-            static_cast<size_t>(gui::kNumHighlightSet));
+            static_cast<size_t>(web::kNumHighlightSet));
   EXPECT_FALSE(root.at("truncated").as_bool());
 }
 
@@ -5085,6 +5077,69 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
   }
 }
 
+// check_power_grid builds PSM/<net>/<check>, so the same subcategory name
+// appears under every net. Toggling one must address it by its full path.
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityByPath)
+{
+  auto* psm = odb::dbMarkerCategory::create(chip_, "PSM");
+  auto* vdd = odb::dbMarkerCategory::create(psm, "VDD");
+  auto* vdd_check = odb::dbMarkerCategory::create(vdd, "Unconnected shape");
+  auto* vss = odb::dbMarkerCategory::create(psm, "VSS");
+  auto* vss_check = odb::dbMarkerCategory::create(vss, "Unconnected shape");
+  for (int i = 0; i < 2; ++i) {
+    odb::dbMarker::create(vdd_check)->addShape(odb::Rect(0, i, 500, i + 500));
+    odb::dbMarker::create(vss_check)->addShape(odb::Rect(0, i, 500, i + 500));
+  }
+
+  // Selecting the top-level category starts every marker invisible.
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.json = parseObj(R"({"category":"PSM"})");
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 202;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(
+      R"({"path":["PSM","VDD","Unconnected shape"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"category\":\"Unconnected shape\""), std::string::npos);
+
+  // Only the VDD markers flipped; the same-named VSS subcategory is untouched.
+  for (odb::dbMarker* m : vdd_check->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
+  }
+  for (odb::dbMarker* m : vss_check->getAllMarkers()) {
+    EXPECT_FALSE(m->isVisible());
+  }
+
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_EQ(state_.drc_rects.size(), 2u);
+}
+
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityUnknownPathErrors)
+{
+  createTestCategory("DRC", 1);
+
+  WebSocketRequest req;
+  req.id = 203;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(R"({"path":["DRC","NoSuchSubcat"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Category not found: DRC/NoSuchSubcat"),
+            std::string::npos);
+}
+
 //------------------------------------------------------------------------------
 // Schematic handler tests — verify leaf cells are classified into standard
 // logic-gate schematic symbols (Yosys primitives understood by netlistsvg)
@@ -5402,7 +5457,7 @@ TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
 
 // Regression: the inspect payload's `bbox` must be in ROOT/world coordinates.
 //
-// A gui::Descriptor reports a bbox in the object's own block coordinates, while
+// A web::Descriptor reports a bbox in the object's own block coordinates, while
 // selectAt already transforms SelectionResult::bbox into world space.  The
 // client draws its selection outline from the payload's `bbox`, so if that one
 // stays block-local, every object inside a translated dbChipInst is outlined at
@@ -5415,12 +5470,12 @@ TEST_F(SelectHandlerTest, InspectBboxIsInWorldCoordinatesForAChiplet)
   // registry holds descriptors by unique_ptr, so this must be heap-allocated.
   struct ScopedInstDescriptor
   {
-    ScopedInstDescriptor() : registry(gui::DescriptorRegistry::instance())
+    ScopedInstDescriptor() : registry(web::DescriptorRegistry::instance())
     {
       registry->registerDescriptor<odb::dbInst*>(new LocalBBoxInstDescriptor);
     }
     ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
-    gui::DescriptorRegistry* registry;
+    web::DescriptorRegistry* registry;
   } scoped_inst_descriptor;
 
   // Re-root the design under a HIER chip holding one instance of the fixture's

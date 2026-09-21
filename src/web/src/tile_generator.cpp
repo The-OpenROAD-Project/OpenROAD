@@ -35,8 +35,6 @@
 #include "font_atlas.h"
 #include "glyph_cache.h"
 #include "group_report.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -52,6 +50,8 @@
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web_painter.h"
 
 namespace web {
@@ -59,7 +59,7 @@ namespace web {
 namespace {
 // Process-wide renderer bridge installed by WebServer at serve() time.  Both
 // halves may be empty, in which case the calls below are no-ops.  This
-// indirection keeps gui::Gui::get() out of tile_generator.cpp so that libweb.a
+// indirection keeps web::Gui::get() out of tile_generator.cpp so that libweb.a
 // has no undefined references to the full gui/SWIG library — test binaries can
 // link libweb without pulling in ord::OpenRoad::openRoad.
 TileGenerator::RendererHooks& rendererHooks()
@@ -596,7 +596,7 @@ inline int toPxY(int dbu_y, const TileFrame& frame, int dim)
 // literal 1 px is wrong twice over — it reads a third as thick as everything
 // else on a 3x display, and on the supersampled render path it fades to ~1/S
 // intensity once lanczos2Downsample decimates the buffer back.  See
-// penWidthCss for the 3 CSS px pen the gui::Painter ops default to.
+// penWidthCss for the 3 CSS px pen the web::Painter ops default to.
 inline int hairlineCss(const TileFrame& frame)
 {
   return std::max(1, static_cast<int>(std::lround(frame.px_per_css)));
@@ -720,7 +720,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   }
 
   // Per-layer fill pattern for the requested layer (int mirrors FillPattern /
-  // gui::Painter::Brush).  Defaults to solid; clamp unknown values so a bad
+  // web::Painter::Brush).  Defaults to solid; clamp unknown values so a bad
   // payload can't index outside the enum.
   const int64_t pattern
       = jsonOr<int64_t>(json, "pattern", static_cast<int>(FillPattern::kSolid));
@@ -1508,20 +1508,20 @@ void TileGenerator::setPixel(std::vector<unsigned char>& image,
 
 namespace {
 
-// FillPattern (color.h) is a web-local mirror of gui::Painter::Brush so the
+// FillPattern (color.h) is a web-local mirror of web::Painter::Brush so the
 // tile server, the JS frontend and the Qt GUI all agree on the integer
 // ordering the "pattern" request field carries.  Keep them locked together.
 static_assert(static_cast<int>(FillPattern::kNone)
-                      == static_cast<int>(gui::Painter::Brush::kNone)
+                      == static_cast<int>(web::Painter::Brush::kNone)
                   && static_cast<int>(FillPattern::kSolid)
-                         == static_cast<int>(gui::Painter::Brush::kSolid)
+                         == static_cast<int>(web::Painter::Brush::kSolid)
                   && static_cast<int>(FillPattern::kDiagonal)
-                         == static_cast<int>(gui::Painter::Brush::kDiagonal)
+                         == static_cast<int>(web::Painter::Brush::kDiagonal)
                   && static_cast<int>(FillPattern::kCross)
-                         == static_cast<int>(gui::Painter::Brush::kCross)
+                         == static_cast<int>(web::Painter::Brush::kCross)
                   && static_cast<int>(FillPattern::kDots)
-                         == static_cast<int>(gui::Painter::Brush::kDots),
-              "web::FillPattern must mirror gui::Painter::Brush values");
+                         == static_cast<int>(web::Painter::Brush::kDots),
+              "web::FillPattern must mirror web::Painter::Brush values");
 
 // How the web layer tree groups a tech layer, mirroring the Qt GUI
 // (displayControls.cpp).  Single source of truth shared by getLayers() (which
@@ -1787,7 +1787,7 @@ std::vector<std::string> TileGenerator::getLayers() const
   return layers;
 }
 
-// Build per-layer colors that match gui::DisplayControls::techInit.  The two
+// Build per-layer colors that match web::DisplayControls::techInit.  The two
 // must stay in sync so the GUI and web frontend show the same colors for the
 // same design.  Walks every dbTechLayer in tech order (not just routing/cut)
 // because the random fallback shares one PRNG and the iteration order is what
@@ -3544,7 +3544,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       if (!tech) {
         continue;
       }
-      // Per-layer colors mirror gui::DisplayControls so the GUI and web
+      // Per-layer colors mirror web::DisplayControls so the GUI and web
       // frontend agree on which color belongs to which layer.  Resolved per
       // chiplet because each chiplet has its own dbTech in 3DBlox designs.
       const auto& layer_colors = getLayerColorMap(tech);
@@ -4976,7 +4976,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     if (vis.debug_renderers && world_layer != nullptr) {
       // The callback (installed by WebServer at startup) decides
       // whether to draw (honoring pause/live semantics) and handles
-      // the gui::Gui::get() access itself.  Keeping Gui:: references
+      // the web::Gui::get() access itself.  Keeping Gui:: references
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
       //
@@ -5001,7 +5001,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   return world_image_buffer;
 }
 
-std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
+std::shared_ptr<web::HeatMapDataSource> TileGenerator::getHeatMapSource(
     const std::string& name) const
 {
   const std::lock_guard<std::mutex> lock(heatmap_mutex_);
@@ -5009,7 +5009,7 @@ std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
   if (it != heatmaps_.end()) {
     return it->second;
   }
-  const auto reg = gui::findRegisteredHeatMapSource(name);
+  const auto reg = web::findRegisteredHeatMapSource(name);
   if (!reg) {
     return nullptr;
   }
@@ -5068,7 +5068,7 @@ std::pair<int, int> heatMapBinSpan(const double px_lo,
 }  // namespace
 
 void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
-                                gui::HeatMapDataSource& source,
+                                web::HeatMapDataSource& source,
                                 const TileFrame& frame) const
 {
   const odb::Rect& dbu_tile = frame.cull;
@@ -5150,7 +5150,7 @@ void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
 }
 
 std::vector<unsigned char> TileGenerator::generateHeatMapTile(
-    gui::HeatMapDataSource& source,
+    web::HeatMapDataSource& source,
     const int z,
     const int x,
     int y,
@@ -5509,7 +5509,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       // Nothing to color by: warn and drop the layer saveImageLayerOrder put
       // in for the flag, rather than compositing an empty pass over the image.
       logger_->warn(utl::WEB,
-                    82,
+                    111,
                     "{} is on but the design has nothing to color it by.",
                     spec.keys[0]);
       std::erase(layers_to_render, spec.layer);
@@ -5895,8 +5895,8 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
 
 namespace {
 
-// Convert a gui::Painter::Color to our internal Color (same RGBA layout).
-Color toTileColor(const gui::Painter::Color& c)
+// Convert a web::Painter::Color to our internal Color (same RGBA layout).
+Color toTileColor(const web::Painter::Color& c)
 {
   return Color{
       .r = static_cast<unsigned char>(c.r),
@@ -5957,7 +5957,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
       if (const auto* r = std::get_if<DrawRectOp>(&op)) {
         const odb::Rect px = toPixels(frame, r->rect);
         // Fill first (if the brush paints), outline on top.
-        if (r->brush.style != gui::Painter::Brush::kNone
+        if (r->brush.style != web::Painter::Brush::kNone
             && r->brush.color.a > 0) {
           const Color fill = toTileColor(r->brush.color);
           for (int iy = px.yMin(); iy < px.yMax(); ++iy) {
@@ -6032,7 +6032,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         drawLine(image, cx - half, cy - half, cx + half, cy + half, pen, w);
         drawLine(image, cx - half, cy + half, cx + half, cy - half, pen, w);
       } else if (const auto* p = std::get_if<DrawPolygonOp>(&op)) {
-        if (p->brush.style != gui::Painter::Brush::kNone
+        if (p->brush.style != web::Painter::Brush::kNone
             && p->brush.color.a > 0) {
           odb::Polygon poly;
           poly.setPoints(p->points);
@@ -6070,33 +6070,33 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         int ay = toPxY(s->y, frame, dim);
         // Adjust anchor: text renders with top-left at (ax, ay).
         switch (s->anchor) {
-          case gui::Painter::kBottomLeft:
+          case web::Painter::kBottomLeft:
             ay -= th;
             break;
-          case gui::Painter::kBottomRight:
+          case web::Painter::kBottomRight:
             ax -= tw;
             ay -= th;
             break;
-          case gui::Painter::kTopLeft:
+          case web::Painter::kTopLeft:
             break;
-          case gui::Painter::kTopRight:
+          case web::Painter::kTopRight:
             ax -= tw;
             break;
-          case gui::Painter::kCenter:
+          case web::Painter::kCenter:
             ax -= tw / 2;
             ay -= th / 2;
             break;
-          case gui::Painter::kBottomCenter:
+          case web::Painter::kBottomCenter:
             ax -= tw / 2;
             ay -= th;
             break;
-          case gui::Painter::kTopCenter:
+          case web::Painter::kTopCenter:
             ax -= tw / 2;
             break;
-          case gui::Painter::kLeftCenter:
+          case web::Painter::kLeftCenter:
             ay -= th / 2;
             break;
-          case gui::Painter::kRightCenter:
+          case web::Painter::kRightCenter:
             ax -= tw;
             ay -= th / 2;
             break;
@@ -6603,10 +6603,10 @@ struct AnchorEntry
 
 // The one table behind anchorNames(), isValidAnchor() and the placement in
 // drawTextLabels, so a name can never be accepted and then not drawn.  The
-// spellings must match gui::Painter::anchors(); the order is only that of the
+// spellings must match web::Painter::anchors(); the order is only that of the
 // literal in painter.cpp and means nothing (anchors() is a std::map, so it
 // iterates alphabetically).  The edges reproduce the switch over
-// gui::Painter::Anchor in drawPainterOps.
+// web::Painter::Anchor in drawPainterOps.
 constexpr AnchorEntry kAnchors[] = {
     {"bottom left", AnchorEntry::kMin, AnchorEntry::kMax},
     {"bottom right", AnchorEntry::kMax, AnchorEntry::kMax},
@@ -7338,7 +7338,7 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   // The 16 highlight-group colors, straight from the Qt GUI's palette so
   // the client swatches can never drift from what the overlay renders.
   boost::json::array highlight_colors;
-  for (const auto& c : gui::Painter::kHighlightColors) {
+  for (const auto& c : web::Painter::kHighlightColors) {
     highlight_colors.emplace_back(boost::json::array{c.r, c.g, c.b, c.a});
   }
   out["highlight_colors"] = std::move(highlight_colors);

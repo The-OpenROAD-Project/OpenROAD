@@ -33,7 +33,7 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
 import { populateDisplayControls } from './display-controls.js';
-import { canFind, createMenuBar, showFindDialog } from './menu-bar.js';
+import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
 import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
 import { RulerManager } from './ruler.js';
@@ -46,7 +46,7 @@ import { serializeDisplayState, applyDisplayStateEntries } from './display-state
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { ContextMenu } from './context-menu.js';
-import { showGotoDialog } from './search-nav.js';
+import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { captureLayout } from './capture.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
@@ -2029,7 +2029,7 @@ document.addEventListener('keydown', (e) => {
         // none, and would be left with neither.  preventDefault also keeps
         // the "f" out of the dialog's first field, which it focuses
         // synchronously.
-        if (canFind(app)) {
+        if (app.designScale) {
             e.preventDefault();
             showFindDialog(app);
         }

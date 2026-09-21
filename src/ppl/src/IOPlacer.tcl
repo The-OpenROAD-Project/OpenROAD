@@ -77,13 +77,13 @@ proc set_simulated_annealing { args } {
   set max_iterations 0
   if { [info exists keys(-max_iterations)] } {
     set max_iterations $keys(-max_iterations)
-    sta::check_positive_int "-max_iterations" $max_iterations
+    sta::check_positive_integer "-max_iterations" $max_iterations
   }
 
   set perturb_per_iter 0
   if { [info exists keys(-perturb_per_iter)] } {
     set perturb_per_iter $keys(-perturb_per_iter)
-    sta::check_positive_int "-perturb_per_iter" $perturb_per_iter
+    sta::check_positive_integer "-perturb_per_iter" $perturb_per_iter
   }
 
   set alpha 0
@@ -107,7 +107,7 @@ proc simulated_annealing_debug { args } {
 
   if { [info exists keys(-iters_between_paintings)] } {
     set iters $keys(-iters_between_paintings)
-    sta::check_positive_int "-iters_between_paintings" $iters
+    sta::check_positive_integer "-iters_between_paintings" $iters
     ppl::simulated_annealing_debug $iters [info exists flags(-no_pause_mode)]
   } else {
     utl::error PPL 108 "The -iters_between_paintings argument is required when using debug."

@@ -58,18 +58,18 @@ Q_DECLARE_METATYPE(sta::Scene*);
 
 namespace gui {
 
-const Painter::Color TimingPathRenderer::kInstHighlightColor
-    = Painter::Color(gui::Painter::kHighlight, 100);
-const Painter::Color TimingPathRenderer::kPathInstColor
-    = Painter::Color(gui::Painter::kMagenta, 100);
-const Painter::Color TimingPathRenderer::kTermColor
-    = Painter::Color(gui::Painter::kBlue, 100);
-const Painter::Color TimingPathRenderer::kSignalColor
-    = Painter::Color(gui::Painter::kRed, 100);
-const Painter::Color TimingPathRenderer::kClockColor
-    = Painter::Color(gui::Painter::kCyan, 100);
-const Painter::Color TimingPathRenderer::kCaptureClockColor
-    = Painter::Color(gui::Painter::kGreen, 100);
+const web::Painter::Color TimingPathRenderer::kInstHighlightColor
+    = web::Painter::Color(web::Painter::kHighlight, 100);
+const web::Painter::Color TimingPathRenderer::kPathInstColor
+    = web::Painter::Color(web::Painter::kMagenta, 100);
+const web::Painter::Color TimingPathRenderer::kTermColor
+    = web::Painter::Color(web::Painter::kBlue, 100);
+const web::Painter::Color TimingPathRenderer::kSignalColor
+    = web::Painter::Color(web::Painter::kRed, 100);
+const web::Painter::Color TimingPathRenderer::kClockColor
+    = web::Painter::Color(web::Painter::kCyan, 100);
+const web::Painter::Color TimingPathRenderer::kCaptureClockColor
+    = web::Painter::Color(web::Painter::kGreen, 100);
 
 static QString convertDelay(float time,
                             sta::Unit* convert,
@@ -586,11 +586,11 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
 }
 
 void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
-                                       gui::Painter& painter,
-                                       const gui::Descriptor* net_descriptor,
-                                       const gui::Descriptor* inst_descriptor,
-                                       const gui::Descriptor* bterm_descriptor,
-                                       const Painter::Color& clock_color,
+                                       web::Painter& painter,
+                                       const web::Descriptor* net_descriptor,
+                                       const web::Descriptor* inst_descriptor,
+                                       const web::Descriptor* bterm_descriptor,
+                                       const web::Painter::Color& clock_color,
                                        bool draw_clock,
                                        bool draw_signal)
 {
@@ -616,12 +616,13 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
     if (node->isSource()) {
       for (auto* sink_node : node->getPairedNodes()) {
         if (sink_node != nullptr) {
-          gui::Painter::Color wire_color
+          web::Painter::Color wire_color
               = node->isClock() ? clock_color
                                 : TimingPathRenderer::kSignalColor;
           painter.setPenAndBrush(wire_color, true);
           net_descriptor->highlight(
-              DbNetDescriptor::NetWithSink{node->getNet(), sink_node->getPin()},
+              web::DbNetDescriptor::NetWithSink{node->getNet(),
+                                                sink_node->getPin()},
               painter);
         }
       }
@@ -629,16 +630,16 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
   }
 }
 
-void TimingPathRenderer::drawObjects(gui::Painter& painter)
+void TimingPathRenderer::drawObjects(web::Painter& painter)
 {
   absl::MutexLock guard(&rendering_);
   if (path_ == nullptr) {
     return;
   }
 
-  auto* net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
+  auto* net_descriptor = web::Gui::get()->getDescriptor<odb::dbNet*>();
+  auto* inst_descriptor = web::Gui::get()->getDescriptor<odb::dbInst*>();
+  auto* bterm_descriptor = web::Gui::get()->getDescriptor<odb::dbBTerm*>();
 
   const bool capture_path = checkDisplayControl(kCaptureClockLabel);
   drawNodesList(&path_->getCaptureNodes(),
@@ -661,7 +662,7 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   highlightStage(painter, net_descriptor, inst_descriptor);
 
   if (checkDisplayControl(kLegendLabel)) {
-    DiscreteLegend legend;
+    web::DiscreteLegend legend;
     legend.addLegendKey(kCaptureClockColor, "Capture");
     legend.addLegendKey(kClockColor, "Launch");
     legend.addLegendKey(kSignalColor, "Signal");
@@ -671,9 +672,9 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   }
 }
 
-void TimingPathRenderer::highlightStage(gui::Painter& painter,
-                                        const gui::Descriptor* net_descriptor,
-                                        const gui::Descriptor* inst_descriptor)
+void TimingPathRenderer::highlightStage(web::Painter& painter,
+                                        const web::Descriptor* net_descriptor,
+                                        const web::Descriptor* inst_descriptor)
 {
   if (highlight_stage_.empty()) {
     return;
@@ -689,7 +690,7 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
   for (const auto& highlight : highlight_stage_) {
     if (highlight->net != nullptr) {
       net_descriptor->highlight(
-          DbNetDescriptor::NetWithSink{highlight->net, highlight->sink},
+          web::DbNetDescriptor::NetWithSink{highlight->net, highlight->sink},
           painter);
     }
   }
@@ -704,7 +705,7 @@ TimingConeRenderer::TimingConeRenderer()
       fanout_(false),
       min_timing_(0.0),
       max_timing_(0.0),
-      color_generator_(SpectrumGenerator(1.0))
+      color_generator_(web::SpectrumGenerator(1.0))
 {
 }
 
@@ -753,10 +754,10 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   }
 
   if (pin == nullptr || (!fanin_ && !fanout_)) {
-    Gui::get()->unregisterRenderer(this);
+    web::Gui::get()->unregisterRenderer(this);
     return;
   }
-  Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -820,7 +821,7 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   return false;
 }
 
-void TimingConeRenderer::drawObjects(gui::Painter& painter)
+void TimingConeRenderer::drawObjects(web::Painter& painter)
 {
   if (map_.empty()) {
     return;
@@ -867,7 +868,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       }
     }
   }
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  auto* inst_descriptor = web::Gui::get()->getDescriptor<odb::dbInst*>();
   for (const auto& [inst, slack_pin] : instances) {
     const auto color
         = color_generator_.getColor(timing_to_ratio(slack_pin), 150);
@@ -876,8 +877,8 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   const int line_width = 2;  // 2 pixels
-  auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
-  auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
+  auto* iterm_descriptor = web::Gui::get()->getDescriptor<odb::dbITerm*>();
+  auto* bterm_descriptor = web::Gui::get()->getDescriptor<odb::dbBTerm*>();
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       const auto color
@@ -910,9 +911,9 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   // annotate with depth
-  const auto text_anchor = gui::Painter::Anchor::kCenter;
+  const auto text_anchor = web::Painter::Anchor::kCenter;
   const double text_margin = 2.0;
-  painter.setPen(gui::Painter::kWhite, true);
+  painter.setPen(web::Painter::kWhite, true);
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       const odb::Rect pin_rect = pin->getPinLargestBox();
@@ -1163,7 +1164,7 @@ void PinSetWidget::showMenu(const QPoint& point)
   connect(clear_all, &QAction::triggered, this, &PinSetWidget::clearPins);
   QAction* inspect_action = pin_menu.addAction("Inspect");
   connect(inspect_action, &QAction::triggered, [this, pin]() {
-    auto* gui = Gui::get();
+    auto* gui = web::Gui::get();
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;
@@ -1191,6 +1192,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
                                         QString("All Clocks"),
                                         this)),
       unconstrained_(new QCheckBox(this)),
+      clk_gating_checks_(new QCheckBox(this)),
       one_path_per_endpoint_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
       from_(new PinSetWidget(false, this)),
@@ -1213,6 +1215,9 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   setUnconstrained(false);
   layout_->addRow("Unconstrained:", unconstrained_);
+  // Enabled by default to match worst_slack, which includes these checks.
+  setClkGatingChecks(true);
+  layout_->addRow("Clock gating checks:", clk_gating_checks_);
   layout_->addRow("One path per endpoint:", one_path_per_endpoint_);
 
   setLayout(layout_);
@@ -1223,6 +1228,10 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   connect(unconstrained_, &QCheckBox::stateChanged, [this]() {
     sta_->setIncludeUnconstrainedPaths(unconstrained_->checkState()
                                        == Qt::Checked);
+  });
+  connect(clk_gating_checks_, &QCheckBox::stateChanged, [this]() {
+    sta_->setIncludeClkGatingChecks(clk_gating_checks_->checkState()
+                                    == Qt::Checked);
   });
   connect(one_path_per_endpoint_, &QCheckBox::stateChanged, [this]() {
     sta_->setOnePathPerEndpoint(one_path_per_endpoint_->checkState()
@@ -1282,6 +1291,12 @@ void TimingControlsDialog::setUnconstrained(bool unconstrained)
 {
   sta_->setIncludeUnconstrainedPaths(unconstrained);
   unconstrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
+}
+
+void TimingControlsDialog::setClkGatingChecks(bool value)
+{
+  sta_->setIncludeClkGatingChecks(value);
+  clk_gating_checks_->setCheckState(value ? Qt::Checked : Qt::Unchecked);
 }
 
 void TimingControlsDialog::setPathCount(int path_count)
@@ -1349,7 +1364,7 @@ void TimingControlsDialog::setPinSelections()
   to_->updatePins();
 }
 
-const sta::Pin* TimingControlsDialog::convertTerm(Gui::Term term) const
+const sta::Pin* TimingControlsDialog::convertTerm(web::Gui::Term term) const
 {
   sta::dbNetwork* network = sta_->getNetwork();
 

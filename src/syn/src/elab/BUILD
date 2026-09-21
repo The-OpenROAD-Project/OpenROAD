@@ -7,13 +7,14 @@ load("//test:regression.bzl", "message_srcs")
 package(features = ["layering_check"])
 
 # Headers that the slang-elab shared frontend code needs to find:
-# ir.h, backend_builder.h, log_stubs.h
+# ir.h, backend_builder.h, diagnostics.h, log_stubs.h
 # This is a header-only target so the frontend can compile against
 # our ir:: types and backend interface.
 cc_library(
     name = "elab_hdrs",
     hdrs = [
         "backend_builder.h",
+        "diagnostics.h",
         "ir.h",
         "log_stubs.h",
     ],
@@ -36,6 +37,7 @@ cc_library(
         "abort_helpers.cc",
         "backend_builder.cc",
         "blackboxes.cc",
+        "diagnostics.cc",
         "driver.cc",
         "error.cc",
         "ir.cc",
