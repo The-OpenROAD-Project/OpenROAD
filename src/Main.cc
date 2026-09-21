@@ -481,7 +481,25 @@ static int tclAppInit(int& argc,
         char* cmd_file = argv[1];
         if (cmd_file) {
           if (!gui_enabled) {
-            int result = sourceTclFile(cmd_file, false, false, interp);
+            // Tcl_EvalFile is the C api behind the tcl source command, and
+            // the gui path below reads the file with source.  An error
+            // carries the tcl stack trace that produced it, which the
+            // OpenSTA include_file reader used before threw away.
+            int result = Tcl_EvalFile(interp, cmd_file);
+            if (result == TCL_ERROR) {
+              // -errorinfo in the return options is the trace of this
+              // error; the errorInfo variable may be stale when the file
+              // could not be read at all.
+              Tcl_Obj* options = Tcl_GetReturnOptions(interp, result);
+              Tcl_Obj* key = Tcl_NewStringObj("-errorinfo", -1);
+              Tcl_IncrRefCount(key);
+              Tcl_Obj* error_info = nullptr;
+              Tcl_DictObjGet(nullptr, options, key, &error_info);
+              Tcl_DecrRefCount(key);
+              printf("%s\n",
+                     error_info ? Tcl_GetString(error_info)
+                                : Tcl_GetStringResult(interp));
+            }
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
               Tcl_Exit(exit_code);

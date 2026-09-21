@@ -13,6 +13,7 @@ or_integration_tests(
     upf_test
     write_db
   PASSFAIL_TESTS
+    cmd_file_error
     commands_without_load
     upf_aes
 )
