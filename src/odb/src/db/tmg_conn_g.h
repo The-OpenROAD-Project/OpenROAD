@@ -45,7 +45,13 @@ class ConnectionGraph
   {
     Edge* first_edge;  // Head of the chain of edges that leave this point.
     int path_index;
-    int visited;  // 1= from another descent, 2+k= _stackV[k]->fr
+
+    // Visit state.
+    // 0:     This point was not yet reached.
+    // 1:     This point was reached, but is no longer on the current descent.
+    // 2 + k: This point is on the current descent, and descent_edges_[k] is
+    //        the edge that leaves it.
+    int visited;
   };
 
   void init(int ptN, int shortN);
@@ -59,19 +65,20 @@ class ConnectionGraph
   void relocateShorts(tmg_conn* conn);
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
-  Point& pt(const int index) { return ptV_[index]; }
-  const Point& pt(const int index) const { return ptV_[index]; }
+  Point& pt(const int index) { return points_[index]; }
+  const Point& pt(const int index) const { return points_[index]; }
 
   // TODO: make private
-  std::vector<Point> ptV_;
-  std::vector<Edge*> stackV_;
+  std::vector<Point> points_;
+  std::vector<Edge*> descent_edges_;
 
  private:
   void getEdgeRefCoord(const tmg_conn* conn, Edge* pe, int& rx, int& ry);
   bool isBadShort(Edge* pe, const tmg_conn* conn);
 
-  Edge* e_;
-  std::deque<Edge> eV_;
+  std::deque<Edge> edges_;
+
+  Edge* next_edge_;
 };
 
 }  // namespace odb
