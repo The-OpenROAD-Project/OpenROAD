@@ -3021,7 +3021,60 @@ RepairChannelStraps::findRepairChannels(
     }
   }
 
-  return channels;
+  // A run of unconnected straps that are not all the same length is not a
+  // rectangle, so it is described both as a whole and as pieces of itself cut
+  // along the run.  Repairing a piece first takes the rest of the run out of
+  // the pass as overlapping it, and what is left is repaired in later passes
+  // as separate straps, each stopping where its own piece did, which leaves
+  // holes in what should be one strap.  Offer the whole run ahead of its
+  // pieces, and keep the pieces behind it: a whole run that cannot be built
+  // adds nothing to areas_repaired, so they still get their turn.  Every
+  // channel here shares one target, which is what makes comparing them
+  // meaningful.
+  //
+  // A channel that is contained but reaches further across the strap is a
+  // different shape rather than a piece of one run -- the two halves of a jog,
+  // say -- and repairing those separately is right.  The two are told apart by
+  // the strap width, because a difference narrower than that cannot hold a
+  // strap of its own and so describes the same row: across the tests the
+  // difference is either none at all or several times the width, never in
+  // between.
+  const auto is_piece_of = [is_horizontal = target->isHorizontal(),
+                            strap_width = target->getWidth()](
+                               const RepairChannelArea& whole,
+                               const RepairChannelArea& piece) {
+    if (whole.area == piece.area || !whole.area.contains(piece.area)) {
+      return false;
+    }
+    // non-negative, the containment above has been checked
+    const int extra_low = is_horizontal ? piece.area.yMin() - whole.area.yMin()
+                                        : piece.area.xMin() - whole.area.xMin();
+    const int extra_high = is_horizontal
+                               ? whole.area.yMax() - piece.area.yMax()
+                               : whole.area.xMax() - piece.area.xMax();
+    return extra_low < strap_width && extra_high < strap_width;
+  };
+  std::vector<bool> is_whole_run(channels.size(), true);
+  for (std::size_t i = 0; i < channels.size(); i++) {
+    is_whole_run[i] = std::none_of(
+        channels.begin(),
+        channels.end(),
+        [&is_piece_of, &piece = channels[i]](const RepairChannelArea& whole) {
+          return is_piece_of(whole, piece);
+        });
+  }
+
+  std::vector<RepairChannelArea> ordered_channels;
+  ordered_channels.reserve(channels.size());
+  for (const bool want_whole_runs : {true, false}) {
+    for (std::size_t i = 0; i < channels.size(); i++) {
+      if (is_whole_run[i] == want_whole_runs) {
+        ordered_channels.push_back(std::move(channels[i]));
+      }
+    }
+  }
+
+  return ordered_channels;
 }
 
 std::vector<RepairChannelStraps::RepairChannelArea>
