@@ -107,7 +107,7 @@ proc save_animated_gif { args } {
     if { $resolution != 0 } {
       utl::error GUI 99 "Cannot set -width if -resolution has already been specified."
     }
-    sta::check_positive_int "-width" $keys(-width)
+    sta::check_positive_integer "-width" $keys(-width)
     set width $keys(-width)
     if { $width == 0 } {
       utl::error GUI 105 "Specified -width cannot be zero."

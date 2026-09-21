@@ -434,12 +434,12 @@ static int tclAppInit(int& argc,
     }
 
     // The web server now installs its HeadlessViewer late, in serve() (just
-    // before waitForStop), so gui::Gui::enabled() is still false here in the
+    // before waitForStop), so web::Gui::enabled() is still false here in the
     // web path.  The `&& !web_enabled` is kept defensively: even with a
     // viewer installed, the web server executes scripts directly on the main
     // thread (like the non-GUI path), and addRestoreStateCommand() only
     // works with the Qt event loop.
-    const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
+    const bool gui_enabled = web::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
       std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
@@ -452,7 +452,7 @@ static int tclAppInit(int& argc,
           exit(1);
         }
       } else {
-        gui::Gui::get()->addRestoreStateCommand(cmd);
+        web::Gui::get()->addRestoreStateCommand(cmd);
       }
     }
 
@@ -467,7 +467,7 @@ static int tclAppInit(int& argc,
         } else {
           // need to delay loading of file until after GUI is completed
           // initialized
-          gui::Gui::get()->addRestoreStateCommand(
+          web::Gui::get()->addRestoreStateCommand(
               fmt::format(FMT_RUNTIME(restore_state_cmd), init.string()));
         }
       }
@@ -489,10 +489,10 @@ static int tclAppInit(int& argc,
           } else {
             // need to delay loading of file until after GUI is completed
             // initialized
-            gui::Gui::get()->addRestoreStateCommand(
+            web::Gui::get()->addRestoreStateCommand(
                 fmt::format("source {{{}}}", cmd_file));
             if (exit_after_cmd_file) {
-              gui::Gui::get()->addRestoreStateCommand("exit");
+              web::Gui::get()->addRestoreStateCommand("exit");
             }
           }
         }
@@ -521,7 +521,7 @@ static int tclAppInit(int& argc,
   // Enter the linenoise REPL unless the Qt GUI is active (it has its
   // own script widget).  The web viewer's headless mode still needs the
   // terminal prompt.
-  if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
+  if (!web::Gui::hasUI() && !exit_after_cmd_file) {
     return tclOrdReplInit(interp);
   }
   return TCL_OK;

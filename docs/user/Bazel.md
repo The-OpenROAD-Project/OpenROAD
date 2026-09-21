@@ -1,5 +1,11 @@
 # Testing local changes with Bazel
 
+```{note}
+Bazel is the supported build system for OpenROAD. The CMake build is
+deprecated and will be removed in a future release; see
+[Installing OpenROAD](Build.md).
+```
+
 First [install Baselisk](https://bazel.build/install/bazelisk), then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
     bazelisk test --jobs=4 src/...

@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "odb/db.h"
@@ -13,6 +14,12 @@
 #include "odb/geom.h"
 
 namespace odb {
+
+struct CandidateSection;
+
+inline constexpr int kMaxCandidateSections = 32;
+
+using CandidateSections = std::array<CandidateSection, kMaxCandidateSections>;
 
 class tmg_rc_sh
 {
@@ -108,8 +115,14 @@ struct Terminal
 
   dbITerm* const iterm{nullptr};
   dbBTerm* const bterm{nullptr};
+
   WirePoint* pt{nullptr};        // list of points
   WirePoint* first_pt{nullptr};  // first point in dfs
+
+  // Only for bterms: the part of the bpin that sticks out past an overlapping
+  // iterm. This is what will actually be used when we search for candidate
+  // sections instead of the whole bpin geometry.
+  std::optional<Rect> sliced_bpin_box;
 };
 
 // This is how we keep the information that two sections from different paths
@@ -151,11 +164,15 @@ class ShapeSearch
 };
 
 class ConnectionGraph;
-struct tmg_connect_shape
+
+// A wire section whose geometry is touching a terminal's shape, so it
+// is considered a candidate to possess the wire point that represents
+// the connection of the wire with that terminal.
+struct CandidateSection
 {
-  int k;
-  Rect rect;
-  int rtlev;
+  int index;
+  int routing_level;  // From the database.
+  Rect terminal_box;
 };
 
 class tmg_conn
@@ -206,13 +223,12 @@ class tmg_conn
   void addITerm(dbITerm* iterm);
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
-  void connectTerm(int j, bool soft);
-  void connectTermSoft(int j, int rt, Rect& rect, int k);
+  void connectTerm(int terminal_index, bool soft);
+  void connectTermSoft(int terminal_index, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();
-  void detachTilePins();
-  void getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect);
+  void sliceBPinsOverlappingITerms();
 
   int getStartNode();
   void dfsClear();
@@ -241,18 +257,11 @@ class tmg_conn
   std::vector<Terminal> terminals_;
   std::vector<Short> shorts_;
 
-  // Searching for which metal points correspond to terminals.
-  std::vector<std::array<tmg_connect_shape, 32>> csVV_;
-  std::array<tmg_connect_shape, 32>* csV_{nullptr};
-  std::vector<int> csNV_;
-  int csN_{0};
+  // Used for determining the wire points that represent the connection
+  // with terminals.
+  std::vector<CandidateSections> candidate_sections_;
+  std::vector<int> candidate_section_count_;
   WirePoint* first_for_clear_{nullptr};
-  int slicedTilePinCnt_{0};
-  int stbtx1_[200];
-  int stbty1_[200];
-  int stbtx2_[200];
-  int stbty2_[200];
-  dbBTerm* slicedTileBTerm_[200];
 
   // Graph walk and writing of the new wire encoding.
   std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.

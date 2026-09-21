@@ -9,18 +9,18 @@
 #include <string>
 #include <vector>
 
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
 #include "sta/Sta.hh"
+#include "web/heatMap.h"
 
 namespace psm {
 
 IRDropDataSource::IRDropDataSource(PDNSim* psm,
                                    sta::Sta* sta,
                                    utl::Logger* logger)
-    : gui::RealValueHeatMapDataSource(logger,
+    : web::RealValueHeatMapDataSource(logger,
                                       "V",
                                       "IR Drop",
                                       "IRDrop",
@@ -97,7 +97,7 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
 
 void IRDropDataSource::setChip(odb::dbChip* chip)
 {
-  gui::HeatMapDataSource::setChip(chip);
+  web::HeatMapDataSource::setChip(chip);
   if (chip != nullptr) {
     odb::dbBlock* block = chip->getBlock();
     tech_ = block != nullptr ? block->getTech() : nullptr;

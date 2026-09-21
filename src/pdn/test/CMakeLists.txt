@@ -9,6 +9,10 @@ or_integration_tests(
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
     asap7_offcenter_via
+    asap7_repair_channel_blocked_extend
+    asap7_repair_channel_one_net_extend
+    asap7_repair_channel_macro_gap
+    asap7_repair_channel_extend
     asap7_taper
     asap7_vias
     asap7_vias_arrayspacing
@@ -66,6 +70,7 @@ or_integration_tests(
     core_grid_with_fixed_pins
     core_grid_with_m2_straps
     core_grid_with_rings
+    core_grid_with_rings_asymmetric_widths
     core_grid_with_rings_connect
     core_grid_with_rings_different_offset
     core_grid_with_rings_different_width1
@@ -141,6 +146,26 @@ or_integration_tests(
     pads_placed_not_fixed
     pads_straps_through_pads
     pads_via_repair_through_pads
+    polygon_core_grid
+    polygon_core_grid_extend_to_boundary
+    polygon_core_grid_rings_asymmetric
+    polygon_core_grid_rings_outside_die
+    polygon_core_grid_rings_outside_die_corner
+    polygon_core_grid_single_layer_ring
+    polygon_core_grid_t_rings
+    polygon_core_grid_u_extend_to_boundary
+    polygon_core_grid_u_rings
+    polygon_core_grid_with_rings
+    polygon_cut_corners_pads
+    polygon_die_and_macro
+    polygon_macro_grid
+    polygon_macro_grid_halo
+    polygon_macro_grid_r90
+    polygon_macro_grid_r180
+    polygon_macro_grid_with_rings
+    polygon_macro_tall_straps
+    polygon_power_switch
+    polygon_two_macros
     power_switch
     power_switch_cut_rows
     power_switch_daisy
