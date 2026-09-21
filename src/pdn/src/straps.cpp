@@ -3066,11 +3066,14 @@ RepairChannelStraps::findRepairChannels(
 
   std::vector<RepairChannelArea> ordered_channels;
   ordered_channels.reserve(channels.size());
-  for (const bool want_whole_runs : {true, false}) {
-    for (std::size_t i = 0; i < channels.size(); i++) {
-      if (is_whole_run[i] == want_whole_runs) {
-        ordered_channels.push_back(std::move(channels[i]));
-      }
+  for (std::size_t i = 0; i < channels.size(); i++) {
+    if (is_whole_run[i]) {
+      ordered_channels.push_back(std::move(channels[i]));
+    }
+  }
+  for (std::size_t i = 0; i < channels.size(); i++) {
+    if (!is_whole_run[i]) {
+      ordered_channels.push_back(std::move(channels[i]));
     }
   }
 
