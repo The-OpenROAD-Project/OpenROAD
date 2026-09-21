@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <stack>
@@ -142,7 +143,7 @@ int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load,
     }
   }
 
-  return wireRes * totalCap * dpUnit_;
+  return std::llround(wireRes * totalCap * dpUnit_);
 }
 
 int64_t LatencyBalancer::computeWireLumpedDelay(
@@ -157,13 +158,18 @@ int64_t LatencyBalancer::computeWireLumpedDelay(
 
   for (odb::dbITerm* load : loads) {
     odb::dbMTerm* loadMTerm = load->getMTerm();
+    if (!loadMTerm) {
+      continue;
+    }
     sta::Port* loadPin = network_->dbToSta(loadMTerm);
     sta::LibertyPort* loadPort = network_->libertyPort(loadPin);
-    totalCap
-        += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    if (loadPort) {
+      totalCap
+          += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    }
   }
 
-  return wireRes * totalCap * dpUnit_;
+  return std::llround(wireRes * totalCap * dpUnit_);
 }
 
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
@@ -600,12 +606,12 @@ int LatencyBalancer::backtrackCount(const std::vector<int>& dp_elements,
 }
 
 std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
-    double delayNeeded,
+    int64_t delayNeeded,
     int srcX,
     int srcY,
     const std::vector<odb::dbITerm*>& sinks)
 {
-  const int64_t target = std::llround(delayNeeded * dpUnit_);
+  const int64_t target = delayNeeded;
   debugPrint(logger_, CTS, "insertion delay", 2, "  target delay: {}", target);
   if (target <= 0 || buffersDelay_.empty()) {
     return {};
@@ -715,14 +721,16 @@ void LatencyBalancer::balanceLatencies(int nodeId)
 
   // Compute number of buffer needed for leaf node
   if (node->childrenIds.empty()) {
-    node->dlyNeeded = worseDelay_ - node->arrival;
+    if (node->arrival.has_value()) {
+      node->dlyNeeded = std::llround((worseDelay_ - *node->arrival) * dpUnit_);
+    }
     return;
   }
 
   // If it is not a leaf node compute the amount of buffers needed for its
   // children
   std::vector<odb::dbITerm*> sinksInput;
-  double previouDlyNeeded = 0;
+  std::optional<int64_t> previousDlyNeeded;
   int srcX, srcY;
   if (node->inputTerm == nullptr) {
     odb::dbNet* rootNet = root_->getTopInputNet();
@@ -734,14 +742,14 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     node->inputTerm->getAvgXY(&srcX, &srcY);
   }
 
-  std::map<double, std::vector<odb::dbITerm*>> delayNeeded2Childern;
+  std::map<int64_t, std::vector<odb::dbITerm*>> delayNeeded2Childern;
   for (int child : node->childrenIds) {
     balanceLatencies(child);
-    if (graph_[child].dlyNeeded == -1) {
+    if (!graph_[child].dlyNeeded.has_value()) {
       continue;
     }
 
-    delayNeeded2Childern[graph_[child].dlyNeeded].push_back(
+    delayNeeded2Childern[*graph_[child].dlyNeeded].push_back(
         graph_[child].inputTerm);
   }
 
@@ -764,20 +772,20 @@ void LatencyBalancer::balanceLatencies(int nodeId)
       debugPrint(
           logger_, CTS, "insertion delay", 2, " need {} delay", dlyNeeded);
     }
-    if (!previouDlyNeeded) {
-      previouDlyNeeded = dlyNeeded;
+    if (!previousDlyNeeded.has_value()) {
+      previousDlyNeeded = dlyNeeded;
       sinksInput.clear();
       sinksInput = std::move(children);
       continue;
     }
 
-    double dlyDiff = previouDlyNeeded - dlyNeeded;
+    int64_t dlyDiff = *previousDlyNeeded - dlyNeeded;
     debugPrint(logger_,
                CTS,
                "insertion delay",
                3,
                " previous delay = {}",
-               previouDlyNeeded);
+               *previousDlyNeeded);
     debugPrint(logger_,
                CTS,
                "insertion delay",
@@ -808,10 +816,10 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     sinksInput = std::move(children);
     sinksInput.push_back(delauBuffInput);
 
-    previouDlyNeeded = dlyNeeded;
+    previousDlyNeeded = dlyNeeded;
   }
 
-  node->dlyNeeded = previouDlyNeeded;
+  node->dlyNeeded = previousDlyNeeded;
 }
 
 odb::dbITerm* LatencyBalancer::insertDelayBuffers(
@@ -965,7 +973,7 @@ void LatencyBalancer::showGraph()
     odb::dbITerm* inputTerm = node.inputTerm;
     logger_->report(" Node {}", node.name);
     logger_->report("   id       = {}", node.id);
-    logger_->report("   delay    = {}", node.arrival);
+    logger_->report("   delay    = {}", node.arrival.value_or(0.0));
     logger_->report("   n buffer = {}", node.nBuffInsert);
     logger_->report("   in Term  = {}",
                     inputTerm == nullptr ? "no dbITerm" : inputTerm->getName());

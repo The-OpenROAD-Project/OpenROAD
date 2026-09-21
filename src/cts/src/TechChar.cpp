@@ -760,13 +760,22 @@ sta::ArcDelay TechChar::computeBufferDelay(
   sta::Cell* driverMasterCell = db_network_->dbToSta(driverMaster);
   sta::LibertyCell* libertyDriverCell
       = db_network_->libertyCell(driverMasterCell);
+  if (!libertyDriverCell) {
+    return 0.0;
+  }
   sta::LibertyPort *input, *output;
   libertyDriverCell->bufferPorts(input, output);
 
   for (odb::dbITerm* load : loads) {
     odb::dbMTerm* loadMasterTerm = load->getMTerm();
+    if (!loadMasterTerm) {
+      continue;
+    }
     sta::Port* loadPin = db_network_->dbToSta(loadMasterTerm);
     sta::LibertyPort* loadLibertyPort = db_network_->libertyPort(loadPin);
+    if (!loadLibertyPort) {
+      continue;
+    }
     load_cap += loadLibertyPort->capacitance(sta::RiseFall::rise(),
                                              sta::MinMax::max());
   }
