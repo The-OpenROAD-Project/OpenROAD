@@ -65,8 +65,6 @@ ShapeSearch::ShapeSearch()
   clear();
 }
 
-ShapeSearch::~ShapeSearch() = default;
-
 void ShapeSearch::clear()
 {
   shapes_.clear();

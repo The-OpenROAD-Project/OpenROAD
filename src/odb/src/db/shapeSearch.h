@@ -55,7 +55,6 @@ class ShapeSearch
   };
 
   ShapeSearch();
-  ~ShapeSearch();
 
   void clear();
   void addShape(int level, const Rect& bounds, int is_via, int id);
