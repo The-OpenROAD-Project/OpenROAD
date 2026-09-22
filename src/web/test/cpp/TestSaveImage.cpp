@@ -385,6 +385,46 @@ TEST_F(SaveImageTest, EmptyDesign)
       << "the die outline should still be drawn";
 }
 
+// A hairline is authored as one CSS pixel, and drawLine's brush has to cover
+// that many pixels: its radius came out (width-1)/2, so an EVEN width -- which
+// is what hairlineCss() returns on the supersampled path -- lost a pixel and
+// the stroke went down at half its width.  Alpha is the tell: the die outline
+// is written opaque, and a half-width line decimates to a fraction of that.
+TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
+{
+  // An empty block draws its die outline and nothing else, so every lit pixel
+  // here belongs to the stroke under test.
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "outline_only");
+  block_->setDefUnits(lib_->getTech()->getLefUnits());
+  block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+  makeTileGen();
+
+  const std::string path = tempPng("hairline");
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(path, w, h);
+  // Sampled along the middle row, which crosses the left and right edges and
+  // no corner: two strokes meeting at a corner blend into each other and reach
+  // full alpha whatever width they were drawn at.
+  unsigned char peak_alpha = 0;
+  const size_t mid_row = static_cast<size_t>(h / 2) * w * 4;
+  for (size_t i = mid_row; i + 3 < mid_row + static_cast<size_t>(w) * 4;
+       i += 4) {
+    if (pixels[i] == kOutlineGray.r && pixels[i + 1] == kOutlineGray.g
+        && pixels[i + 2] == kOutlineGray.b) {
+      peak_alpha = std::max(peak_alpha, pixels[i + 3]);
+    }
+  }
+  // Drawn at its full width the stroke keeps about half its alpha through the
+  // Lanczos decimation (a one-pixel feature sits at Nyquist); at half width it
+  // keeps about a sixth.  The threshold sits between the two.
+  EXPECT_GT(static_cast<int>(peak_alpha), 90)
+      << "the die outline is thinner than the hairline width asked for";
+}
+
 TEST_F(SaveImageTest, LargeWidthClamped)
 {
   const std::string path = tempPng("clamped");

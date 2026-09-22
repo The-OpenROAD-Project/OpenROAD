@@ -6358,7 +6358,14 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   if (dim < 0) {
     dim = bufferDim(image);
   }
-  const int r = (width - 1) / 2;
+  // Brush extent either side of the traced pixel, as a half-open span so an
+  // EVEN width covers `width` pixels rather than width-1: (width-1)/2 alone
+  // rounds 2 down to a 1 px brush, which halved every hairlineCss() stroke --
+  // and on the supersampled path a half-width hairline decimates to a sixth of
+  // its colour instead of a solid output pixel.
+  const int r_lo = (width - 1) / 2;
+  const int r_hi = width / 2;
+  const int r = r_hi;
   int x0 = 0;
   int y0 = 0;
   int x1 = 0;
@@ -6420,11 +6427,11 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   int err = dx - dy;
 
   while (true) {
-    if (r <= 0) {
+    if (r_lo == 0 && r_hi == 0) {
       blendPixel(image, x0, y0, c, dim);
     } else {
-      for (int dy2 = -r; dy2 <= r; dy2++) {
-        for (int dx2 = -r; dx2 <= r; dx2++) {
+      for (int dy2 = -r_lo; dy2 <= r_hi; dy2++) {
+        for (int dx2 = -r_lo; dx2 <= r_hi; dx2++) {
           blendPixel(image, x0 + dx2, y0 + dy2, c, dim);
         }
       }
