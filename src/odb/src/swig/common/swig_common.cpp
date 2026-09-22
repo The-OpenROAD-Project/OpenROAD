@@ -24,6 +24,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "utl/Logger.h"
+#include "utl/ScopedTemporaryFile.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
@@ -105,13 +106,14 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
     db = odb::dbDatabase::create();
   }
 
-  std::ifstream file;
-  file.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                  | std::ios::eofbit);
-  file.open(db_path, std::ios::binary);
-
   try {
-    db->read(file);
+    // InStreamHandler rather than a plain ifstream, so this accepts the same
+    // gzipped databases the Tcl read_db command does.
+    utl::InStreamHandler handler(db_path, true);
+    std::istream& stream = handler.getStream();
+    stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                      | std::ios::eofbit);
+    db->read(stream);
   } catch (const std::ios_base::failure& f) {
     auto msg = fmt::format("odb file {} is invalid: {}", db_path, f.what());
     throw std::ios_base::failure(msg);
