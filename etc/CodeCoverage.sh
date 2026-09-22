@@ -9,6 +9,7 @@ _help() {
 usage: $0 [dynamic|test]
        $0 static <TOKEN>
        $0 static-bazel <TOKEN>
+       $0 upload <TOKEN> [VERSION]
 
 EOF
     exit "${1:-1}"
@@ -70,7 +71,7 @@ _coverity_bazel() {
         -- //:openroad
 }
 
-_coverity() {
+_coverity_capture() {
     "$1"
     log_file=cov-int/build-log.txt
     # get compilation coverage percentage
@@ -85,41 +86,90 @@ _coverity() {
     fi
 
     tar czvf openroad.tgz cov-int
-    commitSha="$(git rev-parse HEAD)"
+    git rev-parse HEAD > openroad.version
+}
+
+_coverity_init_error() {
+    local response
+    response=$(tr '\n' ' ' < "$1")
+    response="${response% }"
+    if [[ -z ${response} ]]; then
+        response="empty response"
+    fi
+    echo "Coverity build initialization failed: ${response}" >&2
+}
+
+_coverity_upload() {
+    local version="${1:-}"
+    if [[ ! -f openroad.tgz ]]; then
+        echo "Coverity upload failed: openroad.tgz does not exist." >&2
+        return 1
+    fi
+    if [[ -z ${version} && -f openroad.version ]]; then
+        version=$(< openroad.version)
+    fi
+    if [[ -z ${version} ]]; then
+        echo "Coverity upload failed: no source version is available. Pass VERSION for a legacy archive." >&2
+        return 1
+    fi
 
     if [ -n "${SKIP_COVERITY_UPLOAD+x}" ]; then
         echo "SKIP_COVERITY_UPLOAD is set. Skipping Coverity upload."
-        exit 0
+        return 0
     fi
 
     # Step 1: Initialize a build. Fetch a cloud upload url.
-    curl -X POST \
-        -d version="version=${commitSha}" \
-        -d description="build=${commitSha}" \
+    local response_file
+    response_file=$(mktemp)
+    if ! curl --fail-with-body --silent --show-error -X POST \
+        -d "version=${version}" \
+        -d "description=build=${version}" \
         -d email=openroad@ucsd.edu \
-        -d token=${token} \
+        -d "token=${token}" \
         -d file_name=openroad.tgz \
         https://scan.coverity.com/projects/21946/builds/init \
-        | tee response
-
-    cat response
+        > "${response_file}"; then
+        _coverity_init_error "${response_file}"
+        rm -f "${response_file}"
+        return 1
+    fi
 
     # Step 2: Store response data to use in later stages.
-    # Requires the JSON parsing tool jq.
-    # If opting for other bash tools, be careful about url encodings.
-    upload_url=$(jq -r '.url' response)
-    build_id=$(jq -r '.build_id' response)
+    local response_fields
+    if ! response_fields=$(jq -er '
+        select(
+            (.url | type) == "string"
+            and (.url | length) > 0
+            and ((.build_id | type) == "string" or (.build_id | type) == "number")
+        )
+        | [.url, (.build_id | tostring)]
+        | @tsv
+    ' "${response_file}" 2>/dev/null); then
+        _coverity_init_error "${response_file}"
+        rm -f "${response_file}"
+        return 1
+    fi
+    local upload_url
+    local build_id
+    IFS=$'\t' read -r upload_url build_id <<< "${response_fields}"
+    rm -f "${response_file}"
 
     # Step 3: Upload the tarball to the Cloud.
-    curl -X PUT \
+    if ! curl --fail-with-body --silent --show-error -X PUT \
         --header 'Content-Type: application/json' \
         --upload-file openroad.tgz \
-        "${upload_url}"
+        "${upload_url}"; then
+        echo "Coverity archive upload failed." >&2
+        return 1
+    fi
 
     # Step 4: Trigger the build on Scan.
-    curl -X PUT \
+    if ! curl --fail-with-body --silent --show-error -X PUT \
         -d "token=${token}" \
-        https://scan.coverity.com/projects/21946/builds/${build_id}/enqueue
+        "https://scan.coverity.com/projects/21946/builds/${build_id}/enqueue"; then
+        echo "Coverity enqueue failed." >&2
+        return 1
+    fi
 
 }
 
@@ -146,10 +196,19 @@ case "${target}" in
         fi
         token="${2}"
         if [[ ${target} == "static-bazel" ]]; then
-            _coverity _coverity_bazel
+            _coverity_capture _coverity_bazel
         else
-            _coverity _coverity_cmake
+            _coverity_capture _coverity_cmake
         fi
+        _coverity_upload
+        ;;
+    upload )
+        if [[ $# -lt 2 || $# -gt 3 ]]; then
+            echo "'${0} upload' requires a token and accepts one optional version." >&2
+            _help
+        fi
+        token="${2}"
+        _coverity_upload "${3:-}"
         ;;
     *)
         echo "invalid argument: ${1}" >&2
