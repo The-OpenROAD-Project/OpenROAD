@@ -8,10 +8,10 @@
 
 namespace odb {
 
-static void tcs_level_init(tcs_level* bin,
-                           tcs_level* parent,
-                           tcs_level* left = nullptr,
-                           tcs_level* right = nullptr)
+static void tcs_level_init(ShapeSearch::Bin* bin,
+                           ShapeSearch::Bin* parent,
+                           ShapeSearch::Bin* left = nullptr,
+                           ShapeSearch::Bin* right = nullptr)
 {
   bin->shape_list = nullptr;
   bin->last_shape = nullptr;
@@ -21,7 +21,7 @@ static void tcs_level_init(tcs_level* bin,
   bin->num_shapes = 0;
 }
 
-static void tcs_level_wrap(tcs_level* bin)
+static void tcs_level_wrap(ShapeSearch::Bin* bin)
 {
   if (bin->last_shape) {
     bin->last_shape->next = nullptr;
@@ -30,7 +30,7 @@ static void tcs_level_wrap(tcs_level* bin)
 
 //////////////////////////////////////////////////
 
-void tcs_level::reset()
+void ShapeSearch::Bin::reset()
 {
   shape_list = nullptr;
   last_shape = nullptr;
@@ -41,7 +41,7 @@ void tcs_level::reset()
   num_shapes = 0;
 }
 
-void tcs_level::add_shape(tcs_shape* shape, bool update_bounds)
+void ShapeSearch::Bin::add_shape(ShapeSearch::Shape* shape, bool update_bounds)
 {
   if (shape_list == nullptr) {
     shape_list = shape;
@@ -70,9 +70,9 @@ ShapeSearch::~ShapeSearch() = default;
 void ShapeSearch::clear()
 {
   shapes_.clear();
-  levels_.clear();
-  for (tcs_level*& level : root_for_level_) {
-    level = &levels_.emplace_back();
+  bins_.clear();
+  for (ShapeSearch::Bin*& level : root_for_level_) {
+    level = &bins_.emplace_back();
     level->reset();
   }
   sorted_ = false;
@@ -83,13 +83,13 @@ void ShapeSearch::addShape(const int level,
                            const int is_via,
                            const int id)
 {
-  tcs_shape* shape = &shapes_.emplace_back();
+  ShapeSearch::Shape* shape = &shapes_.emplace_back();
   shape->level = level;
   shape->bounds = bounds;
   shape->is_via = is_via;
   shape->id = id;
   shape->next = nullptr;
-  tcs_level* slev = root_for_level_.at(level);
+  ShapeSearch::Bin* slev = root_for_level_.at(level);
   if (slev->shape_list == nullptr) {
     slev->shape_list = shape;
     slev->bounds = shape->bounds;
@@ -196,18 +196,18 @@ bool ShapeSearch::searchNext(int* id)
   return false;
 }
 
-void ShapeSearch::sort_level(tcs_level* bin)
+void ShapeSearch::sort_level(ShapeSearch::Bin* bin)
 {
   if (bin->num_shapes < kSortThreshold) {
     return;
   }
-  tcs_level* left = &levels_.emplace_back();
+  ShapeSearch::Bin* left = &bins_.emplace_back();
   tcs_level_init(left, bin);  // NOLINT(readability-suspicious-call-argument)
 
-  tcs_level* right = &levels_.emplace_back();
+  ShapeSearch::Bin* right = &bins_.emplace_back();
   tcs_level_init(right, bin);  // NOLINT(readability-suspicious-call-argument)
 
-  tcs_shape* shape = bin->shape_list;
+  ShapeSearch::Shape* shape = bin->shape_list;
   tcs_level_init(bin, bin->parent, left, right);
 
   if (bin->bounds.dx() >= bin->bounds.dy()) {
@@ -243,7 +243,7 @@ void ShapeSearch::sort_level(tcs_level* bin)
 void ShapeSearch::sort()
 {
   sorted_ = true;
-  for (tcs_level* level : root_for_level_) {
+  for (ShapeSearch::Bin* level : root_for_level_) {
     sort_level(level);
   }
 }
