@@ -10,6 +10,8 @@
 
 namespace odb {
 
+inline constexpr int kMaxRoutingLevels = 32;
+
 // This stores shapes by level through addShape.  Once all the shapes
 // have been added then searchStart/Next can be used for querying.
 // Internally a simple tree of space bisections is generated for
@@ -69,7 +71,7 @@ class ShapeSearch
   // into these structures are safe.
   std::deque<Shape> shapes_;
   std::deque<Bin> bins_;
-  std::array<Bin*, 32> root_for_level_;
+  std::array<Bin*, kMaxRoutingLevels> root_for_level_;
 
   // Used during searching
   Rect search_box_;

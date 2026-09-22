@@ -69,10 +69,11 @@ void ShapeSearch::clear()
 {
   shapes_.clear();
   bins_.clear();
-  for (ShapeSearch::Bin*& level : root_for_level_) {
-    level = &bins_.emplace_back();
-    level->reset();
+
+  for (ShapeSearch::Bin*& root_bin : root_for_level_) {
+    root_bin = &bins_.emplace_back();
   }
+
   sorted_ = false;
 }
 
