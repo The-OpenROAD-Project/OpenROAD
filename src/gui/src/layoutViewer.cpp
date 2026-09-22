@@ -2231,8 +2231,14 @@ QImage LayoutViewer::createImage(const Rect& region,
   if (save_area.dx() == 0 || save_area.dy() == 0) {
     // A window the platform plugin never maps (QT_QPA_PLATFORM=offscreen) has
     // no visible region to read, so fall back to the design rather than render
-    // a null image.
-    save_area = getPaddedRect(getBounds());
+    // a null image.  The margin follows the SMALLER dimension, as
+    // Gui::saveImage's own fallback does -- getPaddedRect() takes the larger
+    // one, which would frame this path differently from every other way of
+    // asking for the whole design.
+    save_area = getBounds();
+    const int bloat
+        = defaultZoomMargin * std::min(save_area.dx(), save_area.dy());
+    save_area.bloat(bloat, save_area);
   }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;

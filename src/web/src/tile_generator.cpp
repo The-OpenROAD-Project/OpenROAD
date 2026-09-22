@@ -5559,11 +5559,13 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
 
   // The source span each output pixel covers.  z rounds up, so tile_scale is
-  // in [scale, 2*scale) and that span is one or two samples per axis; the
-  // resample below takes the most-covered sample of the block rather than a
-  // single nearest one.  Picking one sample dropped any feature the step
-  // stepped over -- a one-pixel die outline vanished from whole edges, and
-  // thin wires came and went with the width asked for.
+  // in [scale, 2*scale) and that span is one or two samples per axis, and the
+  // spans are contiguous -- map_end[fx] == map[fx + 1] -- so every sample
+  // belongs to exactly one output pixel and nothing is drawn twice.  The
+  // resample below folds the whole span together rather than reading a single
+  // nearest sample of it, which dropped any feature the step stepped over: a
+  // one-pixel die outline vanished from whole edges, and thin wires came and
+  // went with the width asked for.
   std::vector<int> map_x(final_w);
   std::vector<int> map_x_end(final_w);
   for (int fx = 0; fx < final_w; ++fx) {
@@ -5612,19 +5614,41 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
         copyRGBA(dp, bg);
         const int sx_lo = std::max(map_x[fx], 0);
         const int sx_hi = std::min(map_x_end[fx], tile_span_w);
-        const unsigned char* best = nullptr;
+        // Colour is the samples' coverage-weighted mean, so a block holding
+        // two different shapes lands between them instead of on whichever the
+        // scan reached first.  Alpha is the MAXIMUM rather than that mean: a
+        // hairline covering one sample of the block has to come out as opaque
+        // as it was drawn, which is the whole point of not picking a single
+        // sample here.  Both reduce to the sample itself when the block holds
+        // one, i.e. wherever the two scales agree.
+        unsigned max_alpha = 0;
+        unsigned weight = 0;
+        unsigned acc_r = 0;
+        unsigned acc_g = 0;
+        unsigned acc_b = 0;
         for (int sy = sy_lo; sy < sy_hi; ++sy) {
           const unsigned char* src_row
               = &output[static_cast<size_t>(sy) * tile_span_w * 4];
           for (int sx = sx_lo; sx < sx_hi; ++sx) {
             const unsigned char* sp = &src_row[sx * 4];
-            if (best == nullptr || sp[3] > best[3]) {
-              best = sp;
+            const unsigned alpha = sp[3];
+            if (alpha == 0) {
+              continue;
             }
+            max_alpha = std::max(max_alpha, alpha);
+            weight += alpha;
+            acc_r += sp[0] * alpha;
+            acc_g += sp[1] * alpha;
+            acc_b += sp[2] * alpha;
           }
         }
-        if (best != nullptr) {
-          compositePixel(dp, best);
+        if (weight != 0) {
+          const unsigned char merged[4]
+              = {static_cast<unsigned char>(acc_r / weight),
+                 static_cast<unsigned char>(acc_g / weight),
+                 static_cast<unsigned char>(acc_b / weight),
+                 static_cast<unsigned char>(max_alpha)};
+          compositePixel(dp, merged);
         }
       }
     }

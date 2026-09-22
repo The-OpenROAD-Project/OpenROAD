@@ -711,40 +711,53 @@ void Gui::saveImage(const std::string& filename,
     }
     // The rect "the whole design" means, matching what the layout viewer fits
     // to (LayoutViewer::getBounds) and what the web renderer frames a
-    // zero-area request on (TileGenerator::getFitBounds): the block bbox AND
-    // the die area, plus every chiplet.  A bbox alone covers the placed
-    // SHAPES, not the floorplan, so a design sitting in a corner of a much
-    // larger die would be framed on its content alone.
+    // zero-area request on (TileGenerator::getFitBounds): every chiplet in the
+    // hierarchy, its block bbox AND its die area.  A bbox alone covers the
+    // placed SHAPES, not the floorplan, so a design sitting in a corner of a
+    // much larger die would be framed on its content alone.
     //
-    // Built with mergeInit() rather than seeded from the chip: an ordinary
-    // design has no chip outline and reports an empty one anchored at the
-    // origin, which as a seed would drag the region out to (0,0).
+    // The walk is LayoutViewer::getChips()': a stack over dbChipInst ->
+    // masterChip, with each instance's own transform applied (that viewer does
+    // not compose ancestor transforms either, so a deeper hierarchy is framed
+    // the same way in both).
+    //
+    // Two deliberate departures from that viewer, both about empty rects: this
+    // starts from mergeInit() rather than the root chip, and it ignores a chip
+    // bbox with no area.  An ordinary design has no chip outline and reports
+    // an empty one anchored at the origin, which merged in would drag the
+    // region out to (0, 0).
     odb::Rect design;
     design.mergeInit();
-    auto* block = chip->getBlock();
-    if (block != nullptr) {
-      design.merge(block->getBBox()->getBox());
-      const odb::Rect die = block->getDieArea();
-      if (die.area() > 0) {
-        design.merge(die);
-      }
-    }
-    const odb::Rect chip_bbox = chip->getBBox();
-    if (chip_bbox.area() > 0) {
-      design.merge(chip_bbox);
-    }
-    // Chiplet instances, as LayoutViewer::getBounds merges them: their own
-    // bbox plus the master's die area through the instance transform.
-    for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
-      design.merge(chip_inst->getBBox());
-      odb::dbChip* master = chip_inst->getMasterChip();
-      if (master == nullptr || master->getBlock() == nullptr) {
+    std::vector<std::pair<odb::dbChipInst*, odb::dbChip*>> stack;
+    stack.emplace_back(nullptr, chip);
+    while (!stack.empty()) {
+      auto [chip_inst, cur_chip] = stack.back();
+      stack.pop_back();
+      if (cur_chip == nullptr) {
         continue;
       }
-      odb::Rect die = master->getBlock()->getDieArea();
-      if (die.area() > 0) {
-        chip_inst->getTransform().apply(die);
-        design.merge(die);
+
+      const odb::Rect chip_bbox
+          = chip_inst != nullptr ? chip_inst->getBBox() : cur_chip->getBBox();
+      if (chip_bbox.area() > 0) {
+        design.merge(chip_bbox);
+      }
+
+      if (odb::dbBlock* cur_block = cur_chip->getBlock()) {
+        odb::Rect bbox = cur_block->getBBox()->getBox();
+        odb::Rect die = cur_block->getDieArea();
+        if (chip_inst != nullptr) {
+          chip_inst->getTransform().apply(bbox);
+          chip_inst->getTransform().apply(die);
+        }
+        design.merge(bbox);
+        if (die.area() > 0) {
+          design.merge(die);
+        }
+      }
+
+      for (odb::dbChipInst* child : cur_chip->getChipInsts()) {
+        stack.emplace_back(child, child->getMasterChip());
       }
     }
     // Nothing reported an extent: fall back to the chip, as before.
