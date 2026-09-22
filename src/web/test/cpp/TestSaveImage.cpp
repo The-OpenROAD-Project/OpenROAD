@@ -165,6 +165,44 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
 }
 
+// Tiles are rasterized on transparency, so the pixels no layer covers come out
+// transparent by default.  A caller saving what a viewer shows passes that
+// viewer's background instead -- what WebServer::saveImage does, so that
+// `save_image -web` matches the Qt GUI's opaque background rather than writing
+// a transparent PNG.
+TEST_F(SaveImageTest, BackgroundFillsUncoveredPixels)
+{
+  const std::string default_path = tempPng("bg_default");
+  tile_gen_->saveImage(default_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  // Deliberately not black: black would also be what a transparent pixel
+  // decodes to, and this has to show the fill color is the one honoured.
+  constexpr Color kMagenta{.r = 255, .g = 0, .b = 255, .a = 255};
+  const std::string filled_path = tempPng("bg_filled");
+  tile_gen_->saveImage(
+      filled_path, odb::Rect(0, 0, 0, 0), 256, 0, {}, kMagenta);
+
+  unsigned default_w = 0, default_h = 0;
+  const auto default_pixels = decodePngFile(default_path, default_w, default_h);
+  EXPECT_LT(countNonTransparentPixels(default_pixels),
+            default_pixels.size() / 4)
+      << "the default should leave the uncovered pixels transparent";
+
+  unsigned filled_w = 0, filled_h = 0;
+  const auto filled_pixels = decodePngFile(filled_path, filled_w, filled_h);
+  ASSERT_EQ(filled_w, default_w);
+  ASSERT_EQ(filled_h, default_h);
+  EXPECT_EQ(countNonTransparentPixels(filled_pixels), filled_pixels.size() / 4)
+      << "a background makes every pixel opaque";
+  // The margin corner is outside the die, so no layer draws there and the
+  // background is all that is left.
+  ASSERT_GE(filled_pixels.size(), 4u);
+  EXPECT_EQ(filled_pixels[0], kMagenta.r);
+  EXPECT_EQ(filled_pixels[1], kMagenta.g);
+  EXPECT_EQ(filled_pixels[2], kMagenta.b);
+  EXPECT_EQ(filled_pixels[3], kMagenta.a);
+}
+
 TEST_F(SaveImageTest, WidthOption)
 {
   const std::string path = tempPng("width");

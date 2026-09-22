@@ -5575,12 +5575,13 @@ void TileGenerator::saveImage(const std::string& filename,
                               const odb::Rect& region,
                               const int width_px,
                               const double dbu_per_pixel,
-                              const TileVisibility& vis) const
+                              const TileVisibility& vis,
+                              const Color& bg) const
 {
   int final_w = 0;
   int final_h = 0;
   const std::vector<unsigned char> png_data = renderImagePng(
-      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &final_w, &final_h);
+      region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
   if (png_data.empty()) {
     return;
   }

@@ -681,11 +681,15 @@ class TileGenerator
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  // `bg` fills the pixels the layers do not cover; it defaults to transparent,
+  // so a caller that saves what a viewer shows passes that viewer's background
+  // (WebServer::saveImage does, for Qt save_image parity).
   void saveImage(const std::string& filename,
                  const odb::Rect& region,
                  int width_px,
                  double dbu_per_pixel,
-                 const TileVisibility& vis) const;
+                 const TileVisibility& vis,
+                 const Color& bg = {}) const;
 
   // The layers saveImage composites, bottom to top.  Public so a test can pin
   // the order down: it has to match the zIndex the client gives each layer in
