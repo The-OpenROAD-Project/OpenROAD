@@ -414,6 +414,73 @@ TEST_F(SaveImageTest, PinMarkersRendered)
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
 }
 
+// The marker's size follows the region being drawn, as Qt's does
+// (RenderThread::setupIOPins takes min(die, bounds)).  A tile's own span is
+// that region only for a client showing a handful of tiles; saveImage
+// composites every tile of the level, so sizing off one tile shrank the
+// markers by 2^z -- a 2 px nub where Qt draws a 20 px arrow.
+//
+// Measured against the SAME image with the markers off, so only the arrows are
+// in the difference: the BTerm shapes and the die outline cancel out.
+TEST_F(SaveImageTest, PinMarkersSizedForTheImageNotTheTile)
+{
+  makeBTermAtEdge("in_pin", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeBTermAtEdge(
+      "out_pin", "metal1", 99800, 60000, 200, 200, odb::dbIoType::OUTPUT);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  const std::string with_markers = tempPng("markers_on");
+  tile_gen_->saveImage(with_markers, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  vis.pin_markers = false;
+  const std::string without_markers = tempPng("markers_off");
+  tile_gen_->saveImage(without_markers, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  unsigned on_w = 0, on_h = 0, off_w = 0, off_h = 0;
+  const auto on = decodePngFile(with_markers, on_w, on_h);
+  const auto off = decodePngFile(without_markers, off_w, off_h);
+  ASSERT_EQ(on_w, off_w);
+  ASSERT_EQ(on_h, off_h);
+
+  const size_t marker_px
+      = countNonTransparentPixels(on) - countNonTransparentPixels(off);
+
+  // Two markers, each an arrow of pin_max_size = 0.02 * 100000 DBU rendered at
+  // 512px / (die + 5%), i.e. ~9 px long and half that across: ~20 px of
+  // triangle apiece.  Sized off a tile instead it is ~6 px apiece, so the
+  // threshold below separates the two cases with room for rasterization.
+  EXPECT_GT(marker_px, 25u)
+      << "IO pin markers are too small for the image they are drawn in";
+}
+
+TEST_F(SaveImageTest, PinMarkersCanBeHidden)
+{
+  makeBTermAtEdge("in_pin", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  const std::string shown = tempPng("markers_shown");
+  tile_gen_->saveImage(shown, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  // pin_markers gates the direction arrow alone -- the BTerm's own shape stays,
+  // because that is what vis.pins covers.
+  vis.pin_markers = false;
+  const std::string hidden = tempPng("markers_hidden");
+  tile_gen_->saveImage(hidden, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  const auto shown_px = decodePngFile(shown, w1, h1);
+  const auto hidden_px = decodePngFile(hidden, w2, h2);
+  EXPECT_LT(countNonTransparentPixels(hidden_px),
+            countNonTransparentPixels(shown_px))
+      << "pin_markers=false should remove the direction arrows";
+  EXPECT_TRUE(hasNonTransparentPixel(hidden_px))
+      << "the BTerm shape and die outline should survive";
+}
+
 TEST_F(SaveImageTest, MultipleLayersComposited)
 {
   // Place instances to generate content on multiple layers.

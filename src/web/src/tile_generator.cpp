@@ -3720,10 +3720,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       if (pins_layer && vis.pins) {
         const odb::Rect die_area = block->getDieArea();
         // Match GUI: scale markers to min(die, viewport) so they shrink
-        // when zoomed in (GUI renderThread.cpp:1598-1602).
+        // when zoomed in (GUI renderThread.cpp:1598-1602).  The viewport is
+        // one tile unless the caller named the view it is compositing --
+        // see TileVisibility::view_extent_dbu.
         const int die_max_dim = std::max(die_area.dx(), die_area.dy());
-        const int tile_extent = static_cast<int>(tile_dbu_size);
-        const int effective_dim = std::min(die_max_dim, tile_extent);
+        const int view_extent = vis.view_extent_dbu > 0
+                                    ? vis.view_extent_dbu
+                                    : static_cast<int>(tile_dbu_size);
+        const int effective_dim = std::min(die_max_dim, view_extent);
         const int pin_max_size
             = std::max(static_cast<int>(kPinMarkerSizeRatio * effective_dim),
                        kMinPinMarkerSize);
@@ -3860,9 +3864,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
               const odb::Polygon marker_poly(marker_pts);
 
-              // Only draw if marker intersects this tile.
+              // Only draw if marker intersects this tile.  vis.pin_markers
+              // gates the direction arrow alone: the BTerm's own shape below
+              // belongs to vis.pins and the label to vis.pin_names, as in the
+              // Qt display controls.
               const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
-              if (marker_bbox.overlaps(dbu_tile)) {
+              if (vis.pin_markers && marker_bbox.overlaps(dbu_tile)) {
                 fillPolygon(image_buffer,
                             marker_poly,
                             frame,
@@ -5398,6 +5405,14 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   const int tile_span_h = total_tiles_y * kTileSizeInPixel;
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
+  // Every tile of level z lands in this one image, so the view the sizes
+  // below should follow is the image, not a tile of it.  Without this the IO
+  // pin markers come out 2^z too small (see view_extent_dbu).
+  TileVisibility image_vis = vis;
+  if (image_vis.view_extent_dbu <= 0) {
+    image_vis.view_extent_dbu = area.maxDXDY();
+  }
+
   const std::vector<std::string> layers_to_render
       = saveImageLayerOrder(vis, getLayers());
 
@@ -5428,7 +5443,8 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       const int leaflet_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
-        const auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+        const auto tile_buf
+            = renderTileBuffer(layer, z, tx, leaflet_y, image_vis);
         compositeTile(tile_buf,
                       kTileSizeInPixel,
                       output.data(),

@@ -330,6 +330,18 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
+  // from the region it is drawing rather than from the design: the IO pin
+  // markers (RenderThread::setupIOPins takes min(die, bounds)).
+  //
+  // 0 means "one tile", which is the interactive answer: a client shows a
+  // handful of tiles, so a tile's span stands in for its viewport and the
+  // markers shrink as it zooms in.  save_image composites EVERY tile of the
+  // level into one image, where that stand-in is 2^z too small -- markers came
+  // out a 2 px nub against Qt's 20 px arrow -- so it passes the image's own
+  // extent instead.
+  int view_extent_dbu = 0;
+
   // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
   // which gates RenderThread::drawLabels — and so gates them in Qt's
   // save_image too, since that renders through the same path.
