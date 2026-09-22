@@ -57,6 +57,7 @@
 #include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
+#include "odb/dbSchemaUpgrade.h"
 #include "odb/defin.h"
 #include "odb/defout.h"
 #include "odb/lefin.h"
@@ -569,10 +570,16 @@ void OpenRoad::write3Dbx(const std::string& filename)
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   try {
-    utl::InStreamHandler handler(filename, true);
-    readDb(handler.getStream());
+    // Opens the file, running an external converter first when it predates
+    // the oldest schema this build parses. finish() reaps that converter and
+    // is what turns its failure into an error rather than a short read.
+    odb::DbFileStream file(filename, logger_);
+    readDb(file.stream());
+    file.finish();
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  } catch (const std::runtime_error& e) {
+    logger_->error(ORD, 79, "{}", e.what());
   }
   // treat this as a hierarchical network.
   if (hierarchy || db_->hasHierarchy()) {

@@ -78,12 +78,6 @@
 namespace odb {
 template class dbTable<_dbDatabase>;
 // User Code Begin Static
-//
-// Magic number is: ATHENADB
-//
-constexpr int kMagic1 = 0x41544845;  // ATHE
-constexpr int kMagic2 = 0x4E414442;  // NADB
-
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
 static absl::Mutex* db_tbl_mutex = new absl::Mutex;
@@ -303,8 +297,16 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
 
   stream >> obj.schema_minor_;
 
-  if (obj.schema_minor_ < kSchemaInitial) {
-    throw std::runtime_error("incompatible database schema revision");
+  if (obj.schema_minor_ < kSchemaOldestReadable) {
+    // Reaching here means the file bypassed odb::DbFileStream, which would
+    // have run a converter. Revisions below the floor are the converters'
+    // job: the isSchema() branches for them are no longer reachable from a
+    // supported read and are free to be deleted.
+    throw std::runtime_error(
+        fmt::format("database schema revision {} is older than {}, the oldest "
+                    "this build reads; open it through a converter",
+                    obj.schema_minor_,
+                    kSchemaOldestReadable));
   }
 
   if (obj.schema_minor_ > kSchemaMinor) {

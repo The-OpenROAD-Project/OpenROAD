@@ -47,10 +47,34 @@ namespace odb {
 //
 // Schema Revisions
 //
+// Magic number is: ATHENADB
+inline constexpr uint32_t kMagic1 = 0x41544845;  // ATHE
+inline constexpr uint32_t kMagic2 = 0x4E414442;  // NADB
+
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
+
+// The oldest revision the format has ever had. Nothing parses this directly
+// any more -- see kSchemaOldestReadable below -- but it is the lower bound a
+// converter chain has to reach back to.
 inline constexpr uint32_t kSchemaInitial = 57;
 
 inline constexpr uint32_t kSchemaMinor = 140;  // Current revision number
+
+// The oldest revision this build parses itself.
+//
+// Everything between kSchemaInitial and this is read by an external
+// converter instead (see odb/dbSchemaUpgrade.h and //src/odb/converter):
+// a binary built from the OpenROAD source archive that already knew how to
+// read it. That code is immutable and needs no upkeep, whereas every
+// isSchema() branch left in the tree does, so this floor is what decides how
+// much compatibility code odb has to carry. Raising it makes every
+// isSchema(rev) test with rev <= the new floor unconditionally true, and
+// those branches can then be deleted.
+//
+// The window is roughly a year of schema revisions. Moving it means adding a
+// snapshot to //MODULE.bazel first, so files in the range being dropped
+// still open.
+inline constexpr uint32_t kSchemaOldestReadable = 119;
 
 // Revision where LEF58_MUSTJOINALLPORTS was added
 inline constexpr uint32_t kSchemaMustJoinAllPorts = 140;

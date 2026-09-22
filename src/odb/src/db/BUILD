@@ -34,6 +34,7 @@ cc_library(
         "//src/odb:include/odb/dbMatrix.h",
         "//src/odb:include/odb/dbNetSet.h",
         "//src/odb:include/odb/dbObject.h",
+        "//src/odb:include/odb/dbSchemaUpgrade.h",
         "//src/odb:include/odb/dbSet.h",
         "//src/odb:include/odb/dbShape.h",
         "//src/odb:include/odb/dbStream.h",
