@@ -6474,7 +6474,6 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   // its colour instead of a solid output pixel.
   const int r_lo = (width - 1) / 2;
   const int r_hi = width / 2;
-  const int r = r_hi;
   int x0 = 0;
   int y0 = 0;
   int x1 = 0;
@@ -6493,8 +6492,8 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   // in-bounds result is collinear with the input no matter how far outside
   // the tile the endpoints started.
   {
-    const double lo = -r - 1.0;
-    const double hi = dim + r;
+    const double lo = -r_hi - 1.0;
+    const double hi = dim + r_hi;
     const double dxf = fx1 - fx0;
     const double dyf = fy1 - fy0;
     double t0 = 0.0;

@@ -2256,6 +2256,10 @@ QImage LayoutViewer::createImage(const Rect& region,
     // Same story one step on: the fit resolution comes from the viewport size,
     // which stays zero until the window is mapped.  Caller asked for neither a
     // width nor a resolution, so pick the one the web renderer defaults to.
+    // save_area cannot be empty here, so neither this nor the width_px
+    // division above can divide by zero: hasDesign() -- which this function
+    // returns on -- is false unless getBounds() has a non-zero dx and dy, and
+    // the fallback above takes save_area from getBounds().
     pixels_per_dbu_ = kDefaultImageWidth / static_cast<double>(save_area.dx());
   }
 
