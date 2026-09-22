@@ -107,11 +107,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj.group_next_;
   stream >> obj.group_;
   // User Code Begin >>
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
-  if (db_->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.moditerms_;
-  }
+  stream >> obj.moditerms_;
+
   // User Code End >>
   return stream;
 }

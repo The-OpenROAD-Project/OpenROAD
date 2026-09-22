@@ -49,10 +49,8 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
 {
   stream >> mpin.mterm_;
   stream >> mpin.geoms_;
-  _dbDatabase* db = mpin.getImpl()->getDatabase();
-  if (db->isSchema(kSchemaPolygon)) {
-    stream >> mpin.poly_geoms_;
-  }
+  stream >> mpin.poly_geoms_;
+
   stream >> mpin.next_mpin_;
   stream >> mpin.aps_;
   return stream;

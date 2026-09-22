@@ -7,56 +7,48 @@
             "name":"name_",
             "type":"char *",
             "flags":["no-set"],
-            "default":"nullptr",
-	    "schema":"kSchemaUpdateHierarchy"
+            "default":"nullptr"
         },
         {
 	    "name":"parent_",
             "type":"dbId<_dbModInst>",
             "flags":["no-set"],
-	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
 	{
 	    "name":"child_modbterm_",
 	    "type":"dbId<_dbModBTerm>",
 	    "parent":"dbBlock",
-	    "flags":["private"],
-	    "schema":"kSchemaUpdateHierarchy"
+	    "flags":["private"]
         },
         {
 	    "name":"mod_net_",
             "type":"dbId<_dbModNet>",
 	    "flags":["private"],
-	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
 	    "name":"next_net_moditerm_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-            "parent":"dbBlock",
-	    "schema":"kSchemaUpdateHierarchy"
+            "parent":"dbBlock"
         },
 	{
 	    "name":"prev_net_moditerm_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
 	{
 	    "name":"next_entry_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
 	},
 	{
 	    "name":"prev_entry_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-	    "schema":"kSchemaHierPortRemoval",
             "parent":"dbBlock"
 	}
 

@@ -176,9 +176,8 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
   stream >> lib.site_hash_;
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
-  if (lib.getDatabase()->isSchema(kSchemaBlockTech)) {
-    stream >> lib.tech_;
-  }
+  stream >> lib.tech_;
+
   stream >> *lib.master_tbl_;
   stream >> *lib.site_tbl_;
   stream >> *lib.prop_tbl_;

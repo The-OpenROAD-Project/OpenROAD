@@ -21,7 +21,6 @@
     {
       "name": "name_",
       "type": "char *",
-      "schema": "kSchemaChipExtended",
       "default": "nullptr",
       "flags": ["no-set"]
     },
@@ -29,93 +28,78 @@
       "name": "type_",
       "type": "uint32_t",
       "default": 0,
-      "schema": "kSchemaChipExtended",
       "flags": ["private"]
     },
     {
       "name": "offset_",
       "type": "Point",
-      "default": "{}",
-      "schema": "kSchemaChipExtended"
+      "default": "{}"
     },
     {
       "name": "width_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "height_",
       "type": "int", 
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "thickness_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "shrink_",
       "type": "float",
       "default": "0.0",
-      "comment": "// range (0, 1]",
-      "schema": "kSchemaChipExtended"
+      "comment": "// range (0, 1]"
     },
     {
       "name": "seal_ring_east_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "seal_ring_west_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "seal_ring_north_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "seal_ring_south_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "scribe_line_east_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "scribe_line_west_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "scribe_line_north_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "scribe_line_south_",
       "type": "int",
-      "default": "0",
-      "schema": "kSchemaChipExtended"
+      "default": "0"
     },
     {
       "name": "tsv_",
       "type": "bool",
-      "default": "false",
-      "schema": "kSchemaChipExtended"
+      "default": "false"
     },
     {
       "name": "top_",
@@ -156,20 +140,17 @@
     {
       "name": "chipinsts_",
       "type": "dbId<_dbChipInst>",
-      "flags": ["private"],
-      "schema":"kSchemaChipInst"
+      "flags": ["private"]
     },
     {
       "name": "conns_",
       "type": "dbId<_dbChipConn>",
-      "flags": ["private"],
-      "schema": "kSchemaChipRegion"
+      "flags": ["private"]
     },
     {
       "name": "nets_",
       "type": "dbId<_dbChipNet>",
-      "flags": ["private"],
-      "schema": "kSchemaChipBump"
+      "flags": ["private"]
     },
     {
       "name": "chipinsts_map_",
@@ -184,8 +165,7 @@
     {
       "name": "tech_",
       "type": "dbId<_dbTech>",
-      "flags": ["private"],
-      "schema": "kSchemaChipTech"
+      "flags": ["private"]
     },
     {
       "name": "marker_categories_map_",

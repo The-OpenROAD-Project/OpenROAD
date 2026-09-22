@@ -98,7 +98,6 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbTrackGrid& grid)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbTrackGrid& grid)
 {
-  _dbDatabase* db = grid.getImpl()->getDatabase();
   stream >> grid.layer_;
   stream >> grid.x_origin_;
   stream >> grid.x_count_;
@@ -106,13 +105,9 @@ inline dbIStream& operator>>(dbIStream& stream, _dbTrackGrid& grid)
   stream >> grid.y_origin_;
   stream >> grid.y_count_;
   stream >> grid.y_step_;
-  if (db->isSchema(kSchemaTrackMask)) {
-    stream >> grid.first_mask_;
-    stream >> grid.samemask_;
-  } else {
-    grid.first_mask_.push_back(0);
-    grid.samemask_.push_back(false);
-  }
+  stream >> grid.first_mask_;
+  stream >> grid.samemask_;
+
   stream >> grid.next_grid_;
   return stream;
 }

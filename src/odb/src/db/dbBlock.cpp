@@ -911,25 +911,15 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.corners_per_block_;
   stream >> block.corner_name_list_;
   stream >> block.name_;
-  if (db->isSchema(kSchemaDieAreaIsPolygon)) {
-    stream >> block.die_area_;
-  } else {
-    Rect rect;
-    stream >> rect;
-    block.die_area_ = rect;
-  }
+  stream >> block.die_area_;
+
   if (db->isSchema(kSchemaCoreAreaIsPolygon)) {
     stream >> block.core_area_;
   }
-  if (db->isSchema(kSchemaDbBlockBlockedRegionsForPins)) {
-    stream >> block.blocked_regions_for_pins_;
-  }
+  stream >> block.blocked_regions_for_pins_;
+
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
-  dbId<_dbTech> old_db_tech;
-  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
-    stream >> old_db_tech;
-  }
   stream >> block.chip_;
   stream >> block.bbox_;
   stream >> block.parent_;
@@ -942,107 +932,70 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.inst_hash_;
   stream >> block.module_hash_;
   stream >> block.modinst_hash_;
-  if (db->isSchema(kSchemaUpdateHierarchy)) {
-    if (!db->isSchema(kSchemaDbRemoveHash)) {
-      dbHashTable<_dbModBTerm> unused_modbterm_hash;
-      dbHashTable<_dbModITerm> unused_moditerm_hash;
-      dbHashTable<_dbModNet> unused_modnet_hash;
-      dbHashTable<_dbBusPort> unused_busport_hash;
-      stream >> unused_modbterm_hash;
-      stream >> unused_moditerm_hash;
-      stream >> unused_modnet_hash;
-      stream >> unused_busport_hash;
-    }
-  }
   stream >> block.powerdomain_hash_;
   stream >> block.logicport_hash_;
   stream >> block.powerswitch_hash_;
   stream >> block.isolation_hash_;
-  if (db->isSchema(kSchemaLevelShifter)) {
-    stream >> block.levelshifter_hash_;
-  }
+  stream >> block.levelshifter_hash_;
+
   stream >> block.group_hash_;
   stream >> block.inst_hdr_hash_;
   stream >> block.bterm_hash_;
   stream >> block.max_cap_node_id_;
   stream >> block.max_rseg_id_;
   stream >> block.max_cc_seg_id_;
-  if (!db->isSchema(kSchemaBlockExtModelIndex)) {
-    int ignore_minExtModelIndex;
-    int ignore_maxExtModelIndex;
-    stream >> ignore_minExtModelIndex;
-    stream >> ignore_maxExtModelIndex;
-  }
   stream >> block.children_;
-  if (db->isSchema(kSchemaBlockComponentMaskShift)) {
-    stream >> block.component_mask_shift_;
-  }
+  stream >> block.component_mask_shift_;
+
   stream >> block.currentCcAdjOrder_;
   stream >> *block.bterm_tbl_;
   stream >> *block.iterm_tbl_;
   stream >> *block.net_tbl_;
   stream >> *block.inst_hdr_tbl_;
-  if (db->isSchema(kSchemaDbRemoveHash)) {
-    stream >> *block.module_tbl_;
-    stream >> *block.inst_tbl_;
-  } else {
-    stream >> *block.inst_tbl_;
-    stream >> *block.module_tbl_;
-  }
-  if (db->isSchema(kSchemaDbRemoveHash)) {
-    // Construct dbinst_hash_
-    rebuildModuleHash<dbInst>(
-        block, block.inst_tbl_, &_dbInst::module_, &_dbModule::dbinst_hash_);
-  }
-  if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
-    stream >> *block.scan_inst_tbl_;
-  }
+  stream >> *block.module_tbl_;
+  stream >> *block.inst_tbl_;
+
+  // Construct dbinst_hash_
+  rebuildModuleHash<dbInst>(
+      block, block.inst_tbl_, &_dbInst::module_, &_dbModule::dbinst_hash_);
+
+  stream >> *block.scan_inst_tbl_;
+
   stream >> *block.modinst_tbl_;
-  if (db->isSchema(kSchemaDbRemoveHash)) {
-    // Construct modinst_hash_
-    rebuildModuleHash<dbModInst>(block,
-                                 block.modinst_tbl_,
-                                 &_dbModInst::parent_,
-                                 &_dbModule::modinst_hash_);
-  }
-  if (db->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> *block.modbterm_tbl_;
-    if (db->isSchema(kSchemaDbRemoveHash)) {
-      // Construct modbterm_hash_
-      rebuildModuleHash<dbModBTerm>(block,
-                                    block.modbterm_tbl_,
-                                    &_dbModBTerm::parent_,
-                                    &_dbModule::modbterm_hash_);
-    }
-    if (db->isSchema(kSchemaDbRemoveHash)) {
-      stream >> *block.busport_tbl_;
-    }
-    stream >> *block.moditerm_tbl_;
-    stream >> *block.modnet_tbl_;
-    if (db->isSchema(kSchemaDbRemoveHash)) {
-      // Construct modnet_hash_
-      rebuildModuleHash<dbModNet>(block,
-                                  block.modnet_tbl_,
-                                  &_dbModNet::parent_,
-                                  &_dbModule::modnet_hash_);
-    }
-  }
+  // Construct modinst_hash_
+  rebuildModuleHash<dbModInst>(block,
+                               block.modinst_tbl_,
+                               &_dbModInst::parent_,
+                               &_dbModule::modinst_hash_);
+
+  stream >> *block.modbterm_tbl_;
+  // Construct modbterm_hash_
+  rebuildModuleHash<dbModBTerm>(block,
+                                block.modbterm_tbl_,
+                                &_dbModBTerm::parent_,
+                                &_dbModule::modbterm_hash_);
+
+  stream >> *block.busport_tbl_;
+
+  stream >> *block.moditerm_tbl_;
+  stream >> *block.modnet_tbl_;
+  // Construct modnet_hash_
+  rebuildModuleHash<dbModNet>(
+      block, block.modnet_tbl_, &_dbModNet::parent_, &_dbModule::modnet_hash_);
+
   stream >> *block.powerdomain_tbl_;
   stream >> *block.logicport_tbl_;
   stream >> *block.powerswitch_tbl_;
   stream >> *block.isolation_tbl_;
-  if (db->isSchema(kSchemaLevelShifter)) {
-    stream >> *block.levelshifter_tbl_;
-  }
+  stream >> *block.levelshifter_tbl_;
+
   stream >> *block.group_tbl_;
   stream >> *block.ap_tbl_;
-  if (db->isSchema(kSchemaAddGlobalConnect)) {
-    stream >> *block.global_connect_tbl_;
-  }
+  stream >> *block.global_connect_tbl_;
+
   stream >> *block.guide_tbl_;
-  if (db->isSchema(kSchemaNetTracks)) {
-    stream >> *block.net_tracks_tbl_;
-  }
+  stream >> *block.net_tracks_tbl_;
+
   stream >> *block.box_tbl_;
   stream >> *block.via_tbl_;
   stream >> *block.gcell_grid_tbl_;
@@ -1068,36 +1021,28 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.r_seg_tbl_;     // DKF
   stream >> *block.cc_seg_tbl_;
   stream >> *block.ext_control_;
-  if (db->isSchema(kSchemaAddScan)) {
-    stream >> block.dft_;
-    stream >> *block.dft_tbl_;
-  }
-  if (db->isSchema(kSchemaDbMarkerGroup)
-      && db->isLessThanSchema(kSchemaChipMarkerCategories)) {
+  stream >> block.dft_;
+  stream >> *block.dft_tbl_;
+
+  if (db->isLessThanSchema(kSchemaChipMarkerCategories)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     stream >> *chip->marker_categories_tbl_;
     dbHashTable<_dbMarkerCategory> tmp_hash;
     stream >> tmp_hash;
   }
-  if (db->isSchema(kSchemaDbBlockLayersRanges)) {
-    stream >> block.min_routing_layer_;
-    stream >> block.max_routing_layer_;
-    stream >> block.min_layer_for_clock_;
-    stream >> block.max_layer_for_clock_;
-  }
-  if (db->isSchema(kSchemaBlockPinGroups)) {
-    stream >> block.bterm_groups_;
-  }
-  if (db->isSchema(kSchemaBtermTopLayerGrid)) {
-    stream >> block.bterm_top_layer_grid_;
-  }
-  if (db->isSchema(kSchemaMapInstsToScanInsts)) {
-    stream >> block.inst_scan_inst_map_;
-  }
-  if (db->isSchema(kSchemaUniqueIndices)) {
-    stream >> block.unique_net_index_;
-    stream >> block.unique_inst_index_;
-  }
+  stream >> block.min_routing_layer_;
+  stream >> block.max_routing_layer_;
+  stream >> block.min_layer_for_clock_;
+  stream >> block.max_layer_for_clock_;
+
+  stream >> block.bterm_groups_;
+
+  stream >> block.bterm_top_layer_grid_;
+
+  stream >> block.inst_scan_inst_map_;
+
+  stream >> block.unique_net_index_;
+  stream >> block.unique_inst_index_;
 
   //---------------------------------------------------------- stream in
   // properties
@@ -1114,11 +1059,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   // TOM
   //-------------------------------------------------------------------------------
-
-  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
-    _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
-    chip->tech_ = old_db_tech;
-  }
 
   if (!db->isSchema(kSchemaCoreAreaIsPolygon)) {
     // Wait for rows to be available

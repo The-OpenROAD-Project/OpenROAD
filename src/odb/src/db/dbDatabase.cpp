@@ -322,36 +322,18 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
 
   stream >> obj.chip_;
 
-  dbId<_dbTech> old_db_tech;
-  if (!obj.isSchema(kSchemaBlockTech)) {
-    stream >> old_db_tech;
-  }
   stream >> *obj.tech_tbl_;
   stream >> *obj.lib_tbl_;
   stream >> *obj.chip_tbl_;
-  if (obj.isSchema(kSchemaGdsLibInBlock)) {
-    stream >> *obj.gds_lib_tbl_;
-  }
+  stream >> *obj.gds_lib_tbl_;
   stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;
-  if (obj.isSchema(kSchemaChipHashTable)) {
-    stream >> obj.chip_hash_;
-  }
-  if (obj.isSchema(kSchemaChipInst)) {
-    stream >> *obj.chip_inst_tbl_;
-  }
-  if (obj.isSchema(kSchemaChipRegion)) {
-    stream >> *obj.chip_region_inst_tbl_;
-  }
-  if (obj.isSchema(kSchemaChipRegion)) {
-    stream >> *obj.chip_conn_tbl_;
-  }
-  if (obj.isSchema(kSchemaChipBump)) {
-    stream >> *obj.chip_bump_inst_tbl_;
-  }
-  if (obj.isSchema(kSchemaChipBump)) {
-    stream >> *obj.chip_net_tbl_;
-  }
+  stream >> obj.chip_hash_;
+  stream >> *obj.chip_inst_tbl_;
+  stream >> *obj.chip_region_inst_tbl_;
+  stream >> *obj.chip_conn_tbl_;
+  stream >> *obj.chip_bump_inst_tbl_;
+  stream >> *obj.chip_net_tbl_;
   if (obj.isSchema(kSchemaChipAlignmentMarkerRule)) {
     stream >> *obj.alignment_marker_rule_tbl_;
   }
@@ -373,20 +355,6 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   } else {
     obj.hierarchy_ = false;
   }
-  // Set the _tech on the block & libs now they are loaded
-  if (!obj.isSchema(kSchemaBlockTech)) {
-    if (obj.chip_) {
-      _dbChip* chip = obj.chip_tbl_->getPtr(obj.chip_);
-      chip->tech_ = old_db_tech;
-    }
-
-    auto db_public = (dbDatabase*) &obj;
-    for (auto lib : db_public->getLibs()) {
-      _dbLib* lib_impl = (_dbLib*) lib;
-      lib_impl->tech_ = old_db_tech;
-    }
-  }
-
   dbDatabase* db = (dbDatabase*) &obj;
   // Fix area scaling
   if (!obj.isSchema(kSchemaStoreAreaAsInt64)) {

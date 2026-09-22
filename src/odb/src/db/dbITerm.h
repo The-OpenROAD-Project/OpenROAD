@@ -117,8 +117,6 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
 {
-  dbBlock* block = (dbBlock*) (iterm.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint32_t* bit_field = (uint32_t*) &iterm.flags_;
   stream >> *bit_field;
   stream >> iterm.ext_id_;
@@ -126,11 +124,10 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   stream >> iterm.inst_;
   stream >> iterm.next_net_iterm_;
   stream >> iterm.prev_net_iterm_;
-  if (db->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> iterm.mnet_;
-    stream >> iterm.next_modnet_iterm_;
-    stream >> iterm.prev_modnet_iterm_;
-  }
+  stream >> iterm.mnet_;
+  stream >> iterm.next_modnet_iterm_;
+  stream >> iterm.prev_modnet_iterm_;
+
   stream >> iterm.aps_;
   return stream;
 }

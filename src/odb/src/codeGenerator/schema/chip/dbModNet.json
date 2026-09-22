@@ -6,51 +6,43 @@
           "name":"name_",
           "type":"char *",
           "flags":["no-set","no-get"],
-          "default":"nullptr",
-	  "schema":"kSchemaUpdateHierarchy"
+          "default":"nullptr"
            },
           {
 	  "name":"parent_",
           "type":"dbId<_dbModule>",
           "flags":["no-set"],
-	  "schema":"kSchemaUpdateHierarchy",
           "parent":"dbBlock"
           },
           {
           "name":"next_entry_",
           "type":"dbId<_dbModNet>",
-          "flags":["no-set","no-get"],
-	  "schema":"kSchemaUpdateHierarchy"
+          "flags":["no-set","no-get"]
           },
           {
           "name":"prev_entry_",
           "type":"dbId<_dbModNet>",
-          "flags":["no-set","no-get"],
-	  "schema":"kSchemaHierPortRemoval"
+          "flags":["no-set","no-get"]
           },
 	  {
           "name": "moditerms_",
           "type": "dbId<_dbModITerm>",
-          "flags":["no-set","no-get"],
-	  "schema":"kSchemaUpdateHierarchy"
+          "flags":["no-set","no-get"]
 	  },
 	  {
 	      "name": "modbterms_",
 	      "type": "dbId<_dbModBTerm>",
-	      "flags":["no-set","no-get"],
-	      "schema":"kSchemaUpdateHierarchy"
+	      "flags":["no-set","no-get"]
 	  },
 	  {
 	      "name": "iterms_",
 	      "type": "dbId<_dbITerm>",
-	      "flags":["no-set","no-get"],
-	      "schema":"kSchemaUpdateHierarchy"
+	      "flags":["no-set","no-get"]
 	  },
 	  {
 	      "name": "bterms_",
 	      "type": "dbId<_dbBTerm>",
-	      "flags":["no-set","no-get"],
-	      "schema":"kSchemaUpdateHierarchy"
+	      "flags":["no-set","no-get"]
 	  }
 
 	  ],

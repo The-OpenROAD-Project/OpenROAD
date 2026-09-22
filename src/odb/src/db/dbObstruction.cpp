@@ -66,17 +66,6 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   stream >> obs.min_spacing_;
   stream >> obs.effective_width_;
 
-  _dbDatabase* db = obs.getImpl()->getDatabase();
-  if (!db->isSchema(kSchemaExceptPgNetsObstruction)) {
-    // assume false for older databases
-    obs.flags_.except_pg_nets = false;
-  }
-
-  if (!db->isSchema(kSchemaDieAreaIsPolygon)) {
-    // assume false for older databases
-    obs.flags_.is_system_reserved = false;
-  }
-
   return stream;
 }
 

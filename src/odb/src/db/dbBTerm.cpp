@@ -203,8 +203,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 
 dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
-  dbBlock* block = (dbBlock*) (bterm.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint32_t* bit_field = (uint32_t*) &bterm.flags_;
   stream >> *bit_field;
   stream >> bterm.ext_id_;
@@ -213,25 +211,21 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm.net_;
   stream >> bterm.next_bterm_;
   stream >> bterm.prev_bterm_;
-  if (db->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> bterm.mnet_;
-    stream >> bterm.next_modnet_bterm_;
-    stream >> bterm.prev_modnet_bterm_;
-  }
+  stream >> bterm.mnet_;
+  stream >> bterm.next_modnet_bterm_;
+  stream >> bterm.prev_modnet_bterm_;
+
   stream >> bterm.parent_block_;
   stream >> bterm.parent_iterm_;
   stream >> bterm.bpins_;
   stream >> bterm.ground_pin_;
   stream >> bterm.supply_pin_;
-  if (bterm.getDatabase()->isSchema(kSchemaBtermConstraintRegion)) {
-    stream >> bterm.constraint_region_;
-  }
-  if (bterm.getDatabase()->isSchema(kSchemaBtermMirroredPin)) {
-    stream >> bterm.mirrored_bterm_;
-  }
-  if (bterm.getDatabase()->isSchema(kSchemaBtermIsMirrored)) {
-    stream >> bterm.is_mirrored_;
-  }
+  stream >> bterm.constraint_region_;
+
+  stream >> bterm.mirrored_bterm_;
+
+  stream >> bterm.is_mirrored_;
+
   if (bterm.getDatabase()->isSchema(kSchemaBtermChipBump)) {
     stream >> bterm.chip_region_;
     stream >> bterm.chip_bump_;

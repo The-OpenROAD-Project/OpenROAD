@@ -90,30 +90,14 @@ _dbModNet::_dbModNet(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 {
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.name_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.parent_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.next_entry_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaHierPortRemoval)) {
-    stream >> obj.prev_entry_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.moditerms_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.modbterms_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.iterms_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.bterms_;
-  }
+  stream >> obj.name_;
+  stream >> obj.parent_;
+  stream >> obj.next_entry_;
+  stream >> obj.prev_entry_;
+  stream >> obj.moditerms_;
+  stream >> obj.modbterms_;
+  stream >> obj.iterms_;
+  stream >> obj.bterms_;
   return stream;
 }
 

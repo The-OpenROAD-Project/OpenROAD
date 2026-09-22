@@ -29,20 +29,6 @@
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGCellGrid>;
-// User Code Begin Static
-struct OldGCellData
-{
-  uint8_t usage = 0;
-  uint8_t capacity = 0;
-};
-
-static dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
-{
-  stream >> obj.usage;
-  stream >> obj.capacity;
-  return stream;
-}
-// User Code End Static
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
@@ -113,36 +99,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj.x_grid_;
   stream >> obj.y_grid_;
   // User Code Begin >>
-  _dbDatabase* db = obj.getDatabase();
-  if (db->isSchema(kSchemaFloatGCellData)) {
-    stream >> obj.congestion_map_;
-  } else if (db->isSchema(kSchemaGcellGridMatrix)) {
-    std::map<dbId<_dbTechLayer>, dbMatrix<OldGCellData>> old_format;
-    stream >> old_format;
-    for (const auto& [lid, cells] : old_format) {
-      auto& matrix = obj.get(lid);
-      const uint32_t num_rows = cells.numRows();
-      const uint32_t num_cols = cells.numCols();
-      for (int row = 0; row < num_rows; ++row) {
-        for (int col = 0; col < num_cols; ++col) {
-          auto& old = cells(row, col);
-          const float usage = old.usage;
-          const float capacity = old.capacity;
-          matrix(row, col) = {.usage = usage, .capacity = capacity};
-        }
-      }
-    }
-  } else {
-    std::map<dbId<_dbTechLayer>,
-             std::map<std::pair<uint32_t, uint32_t>, dbGCellGrid::GCellData>>
-        old_format;
-    stream >> old_format;
-    for (const auto& [lid, cells] : old_format) {
-      for (const auto& [coord, data] : cells) {
-        obj.get(lid)(coord.first, coord.second) = data;
-      }
-    }
-  }
+  stream >> obj.congestion_map_;
+
   // User Code End >>
   return stream;
 }
@@ -200,27 +158,9 @@ void _dbGCellGrid::collectMemInfo(MemInfo& info)
 
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
-  if (stream.getDatabase()->isSchema(kSchemaSmalerGcelldata)) {
-    stream >> obj.usage;
-    stream >> obj.capacity;
-  } else {
-    uint32_t horizontal_usage;
-    uint32_t vertical_usage;
-    uint32_t up_usage;
-    uint32_t horizontal_capacity;
-    uint32_t vertical_capacity;
-    uint32_t up_capacity;
+  stream >> obj.usage;
+  stream >> obj.capacity;
 
-    stream >> horizontal_usage;
-    stream >> vertical_usage;
-    stream >> up_usage;
-    stream >> horizontal_capacity;
-    stream >> vertical_capacity;
-    stream >> up_capacity;
-
-    obj.usage = vertical_usage + horizontal_usage + up_usage;
-    obj.capacity = horizontal_capacity + vertical_capacity + up_capacity;
-  }
   return stream;
 }
 

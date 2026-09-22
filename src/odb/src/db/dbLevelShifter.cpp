@@ -134,11 +134,10 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
   stream >> obj.name_suffix_;
   stream >> obj.instances_;
   // User Code Begin >>
-  if (stream.getDatabase()->isSchema(kSchemaLevelShifterCell)) {
-    stream >> obj.cell_name_;
-    stream >> obj.cell_input_;
-    stream >> obj.cell_output_;
-  }
+  stream >> obj.cell_name_;
+  stream >> obj.cell_input_;
+  stream >> obj.cell_output_;
+
   // User Code End >>
   return stream;
 }
