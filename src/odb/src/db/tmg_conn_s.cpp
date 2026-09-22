@@ -3,44 +3,32 @@
 
 #include <array>
 #include <deque>
-#include <memory>
 
-#include "odb/db.h"
-#include "tmg_conn.h"
+#include "shapeSearch.h"
 
 namespace odb {
 
-struct tcs_shape
+static void tcs_level_init(tcs_level* bin,
+                           tcs_level* parent,
+                           tcs_level* left = nullptr,
+                           tcs_level* right = nullptr)
 {
-  int xMin() const { return bounds.xMin(); }
-  int yMin() const { return bounds.yMin(); }
-  int xMax() const { return bounds.xMax(); }
-  int yMax() const { return bounds.yMax(); }
+  bin->shape_list = nullptr;
+  bin->last_shape = nullptr;
+  bin->left = left;
+  bin->right = right;
+  bin->parent = parent;
+  bin->num_shapes = 0;
+}
 
-  tcs_shape* next = nullptr;
-  Rect bounds;
-  int level = 0;
-  int is_via = 0;
-  int id = 0;
-};
-
-struct tcs_level
+static void tcs_level_wrap(tcs_level* bin)
 {
-  int xMin() const { return bounds.xMin(); }
-  int yMin() const { return bounds.yMin(); }
-  int xMax() const { return bounds.xMax(); }
-  int yMax() const { return bounds.yMax(); }
-  void reset();
-  void add_shape(tcs_shape* shape, bool update_bounds = true);
+  if (bin->last_shape) {
+    bin->last_shape->next = nullptr;
+  }
+}
 
-  tcs_shape* shape_list = nullptr;
-  tcs_shape* last_shape = nullptr;
-  tcs_level* left = nullptr;
-  tcs_level* right = nullptr;
-  tcs_level* parent = nullptr;
-  Rect bounds;
-  int num_shapes = 0;
-};
+//////////////////////////////////////////////////
 
 void tcs_level::reset()
 {
@@ -70,45 +58,16 @@ void tcs_level::add_shape(tcs_shape* shape, bool update_bounds)
   num_shapes++;
 }
 
-class ShapeSearch::Impl
-{
- public:
-  Impl();
+//////////////////////////////////////////////////
 
-  void clear();
-  void addShape(int level, const Rect& bounds, int is_via, int id);
-  void searchStart(int level, const Rect& bounds, int is_via);
-  bool searchNext(int* id);
-
- private:
-  void sort();
-  void sort_level(tcs_level* bin);
-
-  // Use deque so that emplace_back doesn't move prior elements so pointer
-  // into these structures are safe.
-  std::deque<tcs_shape> shapes_;
-  std::deque<tcs_level> levels_;
-  std::array<tcs_level*, 32> root_for_level_;
-
-  // Used during searching
-  Rect search_box_;
-  int search_via_{0};
-  tcs_level* search_bin_{nullptr};
-  tcs_shape* search_shape_{nullptr};
-
-  // Sorting happens after all the shapes have been added and the
-  // first searchStart happens
-  bool sorted_{false};
-
-  static constexpr int kSortThreshold = 1024;
-};
-
-ShapeSearch::Impl::Impl()
+ShapeSearch::ShapeSearch()
 {
   clear();
 }
 
-void ShapeSearch::Impl::clear()
+ShapeSearch::~ShapeSearch() = default;
+
+void ShapeSearch::clear()
 {
   shapes_.clear();
   levels_.clear();
@@ -119,10 +78,10 @@ void ShapeSearch::Impl::clear()
   sorted_ = false;
 }
 
-void ShapeSearch::Impl::addShape(const int level,
-                                 const Rect& bounds,
-                                 const int is_via,
-                                 const int id)
+void ShapeSearch::addShape(const int level,
+                           const Rect& bounds,
+                           const int is_via,
+                           const int id)
 {
   tcs_shape* shape = &shapes_.emplace_back();
   shape->level = level;
@@ -142,9 +101,9 @@ void ShapeSearch::Impl::addShape(const int level,
   slev->num_shapes++;
 }
 
-void ShapeSearch::Impl::searchStart(const int level,
-                                    const Rect& bounds,
-                                    const int is_via)
+void ShapeSearch::searchStart(const int level,
+                              const Rect& bounds,
+                              const int is_via)
 {
   if (!sorted_) {
     sort();
@@ -155,7 +114,7 @@ void ShapeSearch::Impl::searchStart(const int level,
   search_via_ = is_via;
 }
 
-bool ShapeSearch::Impl::searchNext(int* id)
+bool ShapeSearch::searchNext(int* id)
 {
   *id = -1;
   if (!search_bin_) {
@@ -237,27 +196,7 @@ bool ShapeSearch::Impl::searchNext(int* id)
   return false;
 }
 
-static void tcs_level_init(tcs_level* bin,
-                           tcs_level* parent,
-                           tcs_level* left = nullptr,
-                           tcs_level* right = nullptr)
-{
-  bin->shape_list = nullptr;
-  bin->last_shape = nullptr;
-  bin->left = left;
-  bin->right = right;
-  bin->parent = parent;
-  bin->num_shapes = 0;
-}
-
-static void tcs_level_wrap(tcs_level* bin)
-{
-  if (bin->last_shape) {
-    bin->last_shape->next = nullptr;
-  }
-}
-
-void ShapeSearch::Impl::sort_level(tcs_level* bin)
+void ShapeSearch::sort_level(tcs_level* bin)
 {
   if (bin->num_shapes < kSortThreshold) {
     return;
@@ -301,41 +240,12 @@ void ShapeSearch::Impl::sort_level(tcs_level* bin)
   sort_level(right);
 }
 
-void ShapeSearch::Impl::sort()
+void ShapeSearch::sort()
 {
   sorted_ = true;
   for (tcs_level* level : root_for_level_) {
     sort_level(level);
   }
-}
-
-/////////////////////////////////////////////
-
-ShapeSearch::ShapeSearch()
-{
-  impl_ = std::make_unique<Impl>();
-}
-
-ShapeSearch::~ShapeSearch() = default;
-
-void ShapeSearch::clear()
-{
-  impl_->clear();
-}
-
-void ShapeSearch::addShape(int level, const Rect& bounds, int is_via, int id)
-{
-  impl_->addShape(level, bounds, is_via, id);
-}
-
-void ShapeSearch::searchStart(int level, const Rect& bounds, int is_via)
-{
-  impl_->searchStart(level, bounds, is_via);
-}
-
-bool ShapeSearch::searchNext(int* id)
-{
-  return impl_->searchNext(id);
 }
 
 }  // namespace odb
