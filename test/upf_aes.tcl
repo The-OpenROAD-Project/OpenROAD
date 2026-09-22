@@ -2,27 +2,6 @@ source "helpers.tcl"
 source "flow_helpers.tcl"
 source "sky130hd/sky130hd.vars"
 
-proc write_regions_section { input_def output_regions } {
-  set in_stream [open $input_def r]
-  set out_stream [open $output_regions w]
-  set copy_lines 0
-
-  while { [gets $in_stream line] >= 0 } {
-    if { [string match "REGIONS *" $line] } {
-      set copy_lines 1
-    }
-    if { $copy_lines } {
-      puts $out_stream $line
-      if { [string trim $line] == "END REGIONS" } {
-        break
-      }
-    }
-  }
-
-  close $in_stream
-  close $out_stream
-}
-
 read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
@@ -57,12 +36,39 @@ detailed_placement -max_displacement 650
 improve_placement
 check_placement
 
-set def_file [make_result_file upf_aes.def]
-write_def $def_file
-if { [info exists ::env(BAZEL_TEST)] } {
-  set regions_file [make_result_file upf_aes.regions]
-  write_regions_section $def_file $regions_file
-  diff_file $regions_file upf_aes.regionsok
-} else {
-  diff_file $def_file upf_aes.defok
+# Region semantics -- fence type, group membership, domain hierarchy -- are
+# checked directly and far more thoroughly in
+# src/upf/test/cpp/TestPowerDomainRegions.cc. What is left here is the part
+# only a real design can show: that set_domain_area's micron arguments reach
+# the database as the right DBU rectangle, and that placement honours the
+# resulting fences, which check_placement above asserts (it errors on
+# region_placement violations).
+#
+# Deliberately no .ok/.defok diff: those goldens recorded placer output rather
+# than test intent and were a steady source of merge conflicts. They are still
+# in the tree, unread by anything, only so that this test's conversion does not
+# conflict with the in-flight PRs that regenerate them; deleting them is a
+# follow-up (#11281).
+set block [ord::get_db_block]
+foreach { domain llx lly urx ury } {
+  PD_AES_1 30 30 650 490
+  PD_AES_2 30 510 650 970
+} {
+  set region [$block findRegion $domain]
+  if { $region == "NULL" } {
+    error "no region for power domain $domain"
+  }
+  set boundaries [$region getBoundaries]
+  if { [llength $boundaries] != 1 } {
+    error "$domain has [llength $boundaries] boundaries, expected 1"
+  }
+  set box [lindex $boundaries 0]
+  set expected [list [ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
+    [ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
+  set actual [list [$box xMin] [$box yMin] [$box xMax] [$box yMax]]
+  if { $actual != $expected } {
+    error "$domain boundary is $actual, expected $expected"
+  }
 }
+
+puts "pass"

@@ -4,14 +4,14 @@
 #include "SteinerRenderer.h"
 
 #include "est/SteinerTree.h"
-#include "gui/gui.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace est {
 
 SteinerRenderer::SteinerRenderer()
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void SteinerRenderer::highlight(SteinerTree* tree)
@@ -19,10 +19,10 @@ void SteinerRenderer::highlight(SteinerTree* tree)
   tree_ = tree;
 }
 
-void SteinerRenderer::drawObjects(gui::Painter& painter)
+void SteinerRenderer::drawObjects(web::Painter& painter)
 {
   if (tree_) {
-    painter.setPen(gui::Painter::kRed, true);
+    painter.setPen(web::Painter::kRed, true);
     for (int i = 0; i < tree_->branchCount(); ++i) {
       odb::Point pt1, pt2;
       int steiner_pt1, steiner_pt2;

@@ -16,6 +16,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pdn/PdnGen.hh"
+#include "polygon.h"
 #include "shape.h"
 
 namespace pdn {
@@ -78,6 +79,17 @@ class Straps : public GridComponent
   bool checkLayerOffsetSpecification(bool error = false) const;
   std::string getNetString() const;
 
+  // True when offset_ is written in the grid's as-drawn frame and therefore
+  // has to be mirrored for a flipped instance.  Components that resolve their
+  // own absolute position return false.
+  virtual bool honorsGridFlip() const { return true; }
+
+  // The parts of a strap that fall inside the area it belongs to, run along
+  // the layer's own direction.  Only the length is clipped: where a strap sits
+  // and how wide it is are the sweep's business.
+  std::vector<odb::Rect> clipToExtent(const odb::Rect& strap,
+                                      const Region& extent) const;
+
  private:
   odb::dbTechLayer* layer_;
   int width_;
@@ -92,15 +104,20 @@ class Straps : public GridComponent
   int strap_end_ = 0;
   bool allow_out_of_core_ = false;
 
-  void makeStraps(int x_start,
-                  int y_start,
-                  int x_end,
-                  int y_end,
+  // Sweep the strap positions along one axis.  extent_start/extent_end are the
+  // fixed span of every strap on the other axis; offset_ is measured from
+  // pos_origin and the sweep advances towards pos_limit, so pos_limit sitting
+  // below pos_origin is what makes the sweep run backwards for a mirrored grid.
+  void makeStraps(int extent_start,
+                  int extent_end,
+                  int pos_origin,
+                  int pos_limit,
                   int abs_start,
                   int abs_end,
                   bool is_delta_x,
                   const TechLayer& layer,
-                  const Shape::ObstructionTree& avoid);
+                  const Shape::ObstructionTree& avoid,
+                  const Region& extent);
 };
 
 class FollowPins : public Straps
@@ -162,6 +179,7 @@ class PadDirectConnectionStraps : public Straps
   // report how the connections made to the pads are distributed over the nets
   static void reportConnectionBalance(
       const std::vector<GridComponent*>& components);
+  bool checkForRepairChannels() const override { return false; }
 
  private:
   enum class ConnectionType
@@ -315,7 +333,21 @@ class RepairChannelStraps : public Straps
     odb::PtrSet<odb::dbNet> nets;
   };
   // find all straps in grid that are not connected for anything
-  static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
+  //
+  // obstructions are only needed to tell a shape this grid cannot reach from
+  // one it has simply not reached yet; left out, nothing is known to be owned
+  // by another grid and every unconnected shape is reported, which is what the
+  // debug renderer wants to draw.
+  static std::vector<RepairChannelArea> findRepairChannels(
+      Grid* grid,
+      const Shape::ObstructionTreeMap& obstructions = {});
+  bool allowDbPins() const override { return false; }
+
+ protected:
+  // determineOffset resolves an absolute position from the channel geometry and
+  // converts it to a low-edge offset, so it is already in the placed frame and
+  // must not be mirrored again
+  bool honorsGridFlip() const override { return false; }
 
  private:
   odb::PtrSet<odb::dbNet> nets_;
@@ -336,9 +368,30 @@ class RepairChannelStraps : public Straps
   static std::vector<RepairChannelArea> findRepairChannels(
       Grid* grid,
       const Shape::ShapeTree& shapes,
-      odb::dbTechLayer* layer);
+      odb::dbTechLayer* layer,
+      const Shape::ObstructionTreeMap& obstructions);
+  // whether the area a via out of shape would need is claimed by a different
+  // grid all the way along it, so that this grid cannot connect the shape
+  // upward wherever it tries
+  static bool isRouteUpOwnedByAnotherGrid(
+      Grid* grid,
+      const Shape* shape,
+      odb::dbTechLayer* target,
+      const Shape::ObstructionTreeMap& obstructions);
   static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
+
+  // the layer a repair strap on layer is powered from, and whether that layer
+  // is above it
+  static odb::dbTechLayer* getFeedLayer(Grid* grid,
+                                        odb::dbTechLayer* layer,
+                                        odb::dbTechLayer* connect_to,
+                                        bool& is_above);
+  // grow the channel along the strap direction until every net reaches a shape
+  // of its own net that can power it
+  static void extendChannelToFeed(Grid* grid,
+                                  RepairChannelArea& channel,
+                                  const odb::Rect& grid_core);
 
   int getNextWidth() const;
   int getMaxLength() const;
