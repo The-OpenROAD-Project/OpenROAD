@@ -21,6 +21,14 @@ namespace {
 constexpr int kFirstChar = 32;  // space
 constexpr int kLastChar = 126;  // ~
 constexpr int kNumGlyphs = kLastChar - kFirstChar + 1;
+static_assert(kNumGlyphs == GlyphCache::kGlyphCount);
+
+// Index of `ch` in the cached range, or -1 when it falls outside it.
+int glyphIndex(char ch)
+{
+  const int idx = static_cast<unsigned char>(ch) - kFirstChar;
+  return (idx >= 0 && idx < kNumGlyphs) ? idx : -1;
+}
 }  // namespace
 
 GlyphCache::GlyphCache(const unsigned char* ttf_data, unsigned int /*ttf_size*/)
@@ -83,7 +91,17 @@ const GlyphCache::SizeSlot& GlyphCache::getSlot(int font_height) const
     }
   }
 
-  // Second pass: pack bitmaps tightly into slot.alpha.
+  // Second pass: resolve every kerning pair once (see SizeSlot::kern).
+  for (int a = 0; a < kNumGlyphs; ++a) {
+    for (int b = 0; b < kNumGlyphs; ++b) {
+      const int raw = stbtt_GetCodepointKernAdvance(
+          font_info_.get(), kFirstChar + a, kFirstChar + b);
+      slot.kern[static_cast<size_t>(a) * kNumGlyphs + b]
+          = static_cast<int16_t>(std::lround(raw * slot.scale));
+    }
+  }
+
+  // Third pass: pack bitmaps tightly into slot.alpha.
   slot.alpha.resize(total_bytes, 0);
   size_t offset = 0;
 
@@ -115,16 +133,14 @@ const GlyphCache::SizeSlot& GlyphCache::getSlot(int font_height) const
 
 // --- FontSize (lock-free handle) -------------------------------------------
 
-GlyphCache::FontSize::FontSize(const SizeSlot& slot,
-                               const stbtt_fontinfo* font_info)
-    : slot_(slot), font_info_(font_info)
+GlyphCache::FontSize::FontSize(const SizeSlot& slot) : slot_(slot)
 {
 }
 
 GlyphCache::GlyphInfo GlyphCache::FontSize::glyph(char ch) const
 {
-  const int idx = static_cast<unsigned char>(ch) - kFirstChar;
-  if (idx < 0 || idx >= kNumGlyphs) {
+  const int idx = glyphIndex(ch);
+  if (idx < 0) {
     return {.alpha = nullptr,
             .bmp_width = 0,
             .bmp_height = 0,
@@ -145,8 +161,12 @@ GlyphCache::GlyphInfo GlyphCache::FontSize::glyph(char ch) const
 
 int GlyphCache::FontSize::kern(char ch1, char ch2) const
 {
-  const int raw = stbtt_GetCodepointKernAdvance(font_info_, ch1, ch2);
-  return static_cast<int>(std::round(raw * slot_.scale));
+  const int a = glyphIndex(ch1);
+  const int b = glyphIndex(ch2);
+  if (a < 0 || b < 0) {
+    return 0;
+  }
+  return slot_.kern[static_cast<size_t>(a) * kNumGlyphs + b];
 }
 
 int GlyphCache::FontSize::textWidth(std::string_view text) const
@@ -156,8 +176,8 @@ int GlyphCache::FontSize::textWidth(std::string_view text) const
   }
   int width = 0;
   for (size_t i = 0; i < text.size(); ++i) {
-    const int idx = static_cast<unsigned char>(text[i]) - kFirstChar;
-    if (idx >= 0 && idx < kNumGlyphs) {
+    const int idx = glyphIndex(text[i]);
+    if (idx >= 0) {
       width += slot_.glyphs[idx].advance;
     }
     if (i + 1 < text.size()) {
@@ -176,7 +196,7 @@ int GlyphCache::FontSize::cellHeight() const
 
 GlyphCache::FontSize GlyphCache::getFont(int font_height) const
 {
-  return FontSize(getSlot(font_height), font_info_.get());
+  return FontSize(getSlot(font_height));
 }
 
 int GlyphCache::textWidth(std::string_view text, int font_height) const

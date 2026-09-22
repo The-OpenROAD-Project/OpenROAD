@@ -20,12 +20,12 @@
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
 #include "color.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace web {
 
@@ -163,6 +163,9 @@ struct WebSocketRequest
     kGlobalConnectApply,
     kBufferInfo,
     kInsertBuffer,
+    kPolyDecomp,
+    kRendererControls,
+    kSetRendererControl,
     kUnknown
   };
 
@@ -185,7 +188,12 @@ struct WebSocketResponse
   {
     kJson = 0,
     kPng = 1,
-    kError = 2
+    kError = 2,
+    // A tile the renderer drew nothing into.  Carries no payload: sending the
+    // transparent PNG instead would make the client decode it and hold a
+    // full-size bitmap for an image with nothing in it, and most of the tiles
+    // in a viewport are this one.
+    kEmpty = 3
   };
 
   uint32_t id = 0;
@@ -231,6 +239,13 @@ struct SessionState
   // driver->sink lines instead of their routed wire/guides (GUI
   // isFlywireHighlightOnly() parity).
   bool flywires_only = false;
+  // Last Options > "Show polygon decomposition" value this session derived
+  // its highlight shapes under.  The setting itself is server-global (it
+  // lives in web::Gui, where the ITerm/MTerm descriptors read it); this copy
+  // exists only so the overlay handler can spot that the shapes it holds
+  // predate a change and re-derive them, exactly as it does for
+  // flywires_only.
+  bool poly_decomp = false;
   // Which selection the highlight_* vectors were derived from, or kNone while
   // they hold nothing.  A flywires_only flip has to re-derive them from the
   // SAME source: the multi-selection normally, but a single object when the
@@ -251,21 +266,21 @@ struct SessionState
   HighlightSource highlight_source = HighlightSource::kNone;
 
   std::mutex selectables_mutex;
-  std::vector<gui::Selected> selectables;
+  std::vector<web::Selected> selectables;
 
-  gui::Selected current_inspected;
-  std::vector<gui::Selected> navigation_history;
+  web::Selected current_inspected;
+  std::vector<web::Selected> navigation_history;
 
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
-  gui::SelectionSet selection_set;
-  gui::SelectionSet::const_iterator selection_itr = selection_set.end();
+  web::SelectionSet selection_set;
+  web::SelectionSet::const_iterator selection_itr = selection_set.end();
 
   // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
-  // groups colored by gui::Painter::kHighlightColors).  An object lives in
+  // groups colored by web::Painter::kHighlightColors).  An object lives in
   // at most one group.  highlight_group_rects is the derived overlay
   // snapshot, rebuilt on every mutation (not per tile).  Both guarded by
   // selection_mutex.
-  std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
+  std::array<web::SelectionSet, web::kNumHighlightSet> highlight_groups;
   std::vector<ColoredRect> highlight_group_rects;
   // Octilinear group members (special-wire shapes) keep their outline rather
   // than collapsing to a bounding rect.  Guarded by selection_mutex, rebuilt
@@ -300,7 +315,7 @@ struct SessionState
   std::vector<TextLabel> cone_labels;
 
   std::mutex heatmap_mutex;
-  std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
+  std::map<std::string, std::shared_ptr<web::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
 
   // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
@@ -318,6 +333,17 @@ struct SessionState
 // friends), and matching "/?mergetiles=0" against the asset table simply fails,
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
+
+// True if a WebSocket handshake carrying this Origin/Host may be accepted.
+// Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
+// Origin header and JavaScript cannot forge it, so a cross-site page opening
+// ws://localhost:<port> is rejected here before it can drive tcl_eval.
+//
+// An absent Origin is allowed: browsers always send it on a WS handshake, so
+// its absence marks a non-browser client (local tooling, tests), which a
+// loopback bind (F-02) is what keeps local.  A present Origin is accepted only
+// when its authority equals the Host header (strict same-origin).
+bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
@@ -346,7 +372,7 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
 // Drops the entire selection state (selectables, inspected object,
 // history, selection set, highlight/hover shapes) when a destroy callback
 // flagged it stale.  Must be called before dereferencing any stored
-// gui::Selected.  Returns true when the state was cleared.
+// web::Selected.  Returns true when the state was cleared.
 bool consumeStaleSelection(SessionState& state);
 
 // Build a kError response carrying `message`.  The three-line

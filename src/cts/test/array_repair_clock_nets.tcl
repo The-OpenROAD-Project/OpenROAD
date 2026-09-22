@@ -145,9 +145,6 @@ set_propagated_clock [all_clocks]
 estimate_parasitics -placement
 repair_clock_nets
 
-set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
-detailed_placement
-
 estimate_parasitics -placement
 report_clock_skew
 

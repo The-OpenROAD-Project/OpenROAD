@@ -9,13 +9,13 @@
 #include "AbstractGrouteRenderer.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace grt {
 
-class GrouteRenderer : public gui::Renderer, public AbstractGrouteRenderer
+class GrouteRenderer : public web::Renderer, public AbstractGrouteRenderer
 {
  public:
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
@@ -24,12 +24,12 @@ class GrouteRenderer : public gui::Renderer, public AbstractGrouteRenderer
 
   void clearRoute() override;
 
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
 
  private:
   void drawViaRect(const GSegment& seg,
                    odb::dbTechLayer* layer,
-                   gui::Painter& painter);
+                   web::Painter& painter);
   GlobalRouter* groute_;
   odb::dbTech* tech_;
   odb::PtrSet<odb::dbNet> nets_;

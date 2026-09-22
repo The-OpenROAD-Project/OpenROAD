@@ -33,7 +33,8 @@ void Rings::checkLayerSpecifications() const
     const TechLayer techlayer(layer.layer);
     techlayer.checkIfManufacturingGrid(layer.width, getLogger(), "Width");
     techlayer.checkIfManufacturingGrid(layer.spacing, getLogger(), "Spacing");
-    for (const auto& off : offset_) {
+    for (const int off :
+         {offset_.left, offset_.bottom, offset_.right, offset_.top}) {
       techlayer.checkIfManufacturingGrid(off, getLogger(), "Core offset");
     }
   }
@@ -47,45 +48,103 @@ void Rings::checkDieArea() const
   int ver_width;
   getTotalWidth(hor_width, ver_width);
 
-  odb::Rect ring_outline = getInnerRingOutline();
-  ring_outline.set_xlo(ring_outline.xMin() - hor_width);
-  ring_outline.set_xhi(ring_outline.xMax() + hor_width);
-  ring_outline.set_ylo(ring_outline.yMin() - ver_width);
-  ring_outline.set_yhi(ring_outline.yMax() + ver_width);
+  // The ring occupies everything between the inner outline and that outline
+  // grown by the metal it carries.  On a polygon core the outline follows the
+  // core, so this has to be tested as an area and not as a bounding box: a
+  // ring that leaves a polygon die at the notch is still inside the bounding
+  // box of that die, which is what the test used to compare against and why it
+  // never fired there.
+  //
+  // The vertical layer's stacked metal is what grows X and the horizontal
+  // layer's is what grows Y, which is how makeShapes builds the ring: a side
+  // is swept outward by the width of its own layer, so the bottom and top --
+  // the horizontal layer's sides -- add their thickness to Y.
+  const Region ring_outline = getInnerRingOutline().bloat(
+      {ver_width, hor_width, ver_width, hor_width});
+  // Read straight from the block: Grid::getGridRegion() is the die for a core
+  // grid but the macro for an instance grid, and a ring on either has to fit
+  // inside the die.
+  const Region die_area = Region(getBlock()->getDieAreaPolygon());
 
-  const odb::Rect die_area = getBlock()->getDieArea();
+  if (die_area.isEmpty() || die_area.contains(ring_outline)) {
+    return;
+  }
 
-  if (!die_area.contains(ring_outline)) {
-    if (allow_outside_die_) {
-      getLogger()->warn(
-          utl::PDN, 239, "Ring shape falls outside the die bounds.");
+  if (allow_outside_die_) {
+    getLogger()->warn(
+        utl::PDN, 239, "Ring shape falls outside the die bounds.");
+    return;
+  }
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const auto [xbounds, ybounds] = getDieAreaDeficit(die_area, ring_outline);
+  getLogger()->error(
+      utl::PDN,
+      351,
+      "PDN rings do not fit inside the die area by {} um in X and {} um in "
+      "Y. Either reduce the ring area or increase the core to die spacing "
+      "to accommodate. Use -allow_out_of_die if this is intentional.",
+      xbounds / dbus,
+      ybounds / dbus);
+}
+
+std::pair<int, int> Rings::getDieAreaDeficit(const Region& die_area,
+                                             const Region& ring_outline) const
+{
+  int hor_width;
+  int ver_width;
+  getTotalWidth(hor_width, ver_width);
+
+  // How much the ring overruns the die, reported the way the user can act on
+  // it: side by side, the room there is between the core and the die against
+  // the room the ring needs there.  Measuring the residual area instead would
+  // report the size of the overhang, which on a polygon die says more about
+  // how long the offending side is than about how far past the edge it went.
+  int xbounds = 0;
+  int ybounds = 0;
+  for (const auto& edge : getGrid()->getDomainRegion().getEdges()) {
+    const bool horizontal = edge.isHorizontal();
+
+    int needed = 0;
+    if (horizontal) {
+      needed = (edge.normal.y() > 0 ? offset_.top : offset_.bottom) + hor_width;
     } else {
-      const double dbus = getBlock()->getDbUnitsPerMicron();
+      needed = (edge.normal.x() > 0 ? offset_.right : offset_.left) + ver_width;
+    }
 
-      int xbounds = std::max(die_area.xMin() - ring_outline.xMin(),
-                             ring_outline.xMax() - die_area.xMax());
-      xbounds = std::max(xbounds, 0);
-      int ybounds = std::max(die_area.yMin() - ring_outline.yMin(),
-                             ring_outline.yMax() - die_area.yMax());
-      ybounds = std::max(ybounds, 0);
-      getLogger()->error(
-          utl::PDN,
-          351,
-          "PDN rings do not fit inside the die area by {} um in X and {} um in "
-          "Y. Either reduce the ring area or increase the core to die spacing "
-          "to accommodate. Use -allow_out_of_die if this is intentional.",
-          xbounds / dbus,
-          ybounds / dbus);
+    const int deficit = needed - die_area.getMarginBeyond(edge);
+    if (deficit <= 0) {
+      continue;
+    }
+    if (horizontal) {
+      ybounds = std::max(ybounds, deficit);
+    } else {
+      xbounds = std::max(xbounds, deficit);
     }
   }
+
+  if (xbounds == 0 && ybounds == 0) {
+    // The walk measures each side of the domain against the room beyond it,
+    // which is the number a user can act on, but it only ever looks at sides.
+    // A ring that leaves the die where two of its sides meet -- the corner
+    // square, which reaches past the end of both edges -- is seen by neither,
+    // and "0 um in X and 0 um in Y" tells nobody anything.  Fall back to how
+    // far the part that is actually outside reaches.
+    const odb::Rect outside
+        = ring_outline.subtract(die_area).getEnclosingRect();
+    xbounds = outside.dx();
+    ybounds = outside.dy();
+  }
+
+  return {xbounds, ybounds};
 }
 
-void Rings::setOffset(const std::array<int, 4>& offset)
+void Rings::setOffset(const EdgeSpec& offset)
 {
-  offset_ = offset;
+  offset_ = offset.transform(getGrid()->getOrientation());
 }
 
-void Rings::setPadOffset(const std::array<int, 4>& offset)
+void Rings::setPadOffset(const EdgeSpec& offset)
 {
   odb::Rect die_area = getBlock()->getDieArea();
   odb::Rect core = getBlock()->getCoreArea();
@@ -156,14 +215,13 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
              "Pads inner: {}",
              Shape::getRectText(pads_inner, getBlock()->getDbUnitsPerMicron()));
 
-  std::array<int, 4> core_offset{
-      core.xMin() - pads_inner.xMin() - offset[0] - ver_width,
-      core.yMin() - pads_inner.yMin() - offset[1] - hor_width,
-      pads_inner.xMax() - core.xMax() - offset[2] - ver_width,
-      pads_inner.yMax() - core.yMax() - offset[3] - hor_width};
-
-  // apply pad offset as core offset
-  setOffset(core_offset);
+  // this is already resolved against the placed pad ring, so it bypasses the
+  // as-drawn remapping setOffset does (pads only ever sit on a core grid,
+  // which is never flipped, but the intent should not depend on that)
+  offset_ = {core.xMin() - pads_inner.xMin() - offset.left - ver_width,
+             core.yMin() - pads_inner.yMin() - offset.bottom - hor_width,
+             pads_inner.xMax() - core.xMax() - offset.right - ver_width,
+             pads_inner.yMax() - core.yMax() - offset.top - hor_width};
 }
 
 void Rings::getTotalWidth(int& hor, int& ver) const
@@ -181,16 +239,15 @@ void Rings::setExtendToBoundary(bool value)
   extend_to_boundary_ = value;
 }
 
-odb::Rect Rings::getInnerRingOutline() const
+Region Rings::getInnerRingOutline() const
 {
-  auto* grid = getGrid();
-  odb::Rect core = grid->getDomainArea();
-  core.set_xlo(core.xMin() - offset_[0]);
-  core.set_ylo(core.yMin() - offset_[1]);
-  core.set_xhi(core.xMax() + offset_[2]);
-  core.set_yhi(core.yMax() + offset_[3]);
+  return getGrid()->getDomainRegion().bloat(
+      {offset_.left, offset_.bottom, offset_.right, offset_.top});
+}
 
-  return core;
+odb::Rect Rings::getInnerRingRect() const
+{
+  return getInnerRingOutline().getEnclosingRect();
 }
 
 void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
@@ -208,12 +265,12 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 
   const auto nets = getNets();
 
-  odb::Rect boundary;
+  Region boundary;
   if (extend_to_boundary_) {
-    boundary = grid->getGridBoundary();
+    boundary = grid->getGridBoundaryRegion();
   }
 
-  const odb::Rect core = getInnerRingOutline();
+  const Region core = getInnerRingOutline();
 
   bool single_layer_ring = false;
   if (layer0_.layer == layer1_.layer) {
@@ -232,94 +289,97 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 
     const int other_width = layer_other->width;
     const int other_pitch = layer_other->spacing + other_width;
-    if ((single_layer_ring && !processed_horizontal)
-        || (!single_layer_ring
-            && layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)) {
-      processed_horizontal = true;
 
-      // bottom
-      int x_start = core.xMin() - other_width;
-      int x_end = core.xMax() + other_width;
-      if (extend_to_boundary_) {
-        x_start = boundary.xMin();
-        x_end = boundary.xMax();
-      }
-      int y_start = core.yMin() - width;
-      int y_end = core.yMin();
-      for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
-        if (!extend_to_boundary_) {
-          x_start -= other_pitch;
-          x_end += other_pitch;
-        }
-        y_start -= pitch;
-        y_end -= pitch;
-      }
-      // top
-      if (!extend_to_boundary_) {
-        x_start = core.xMin() - other_width;
-        x_end = core.xMax() + other_width;
-      }
-      y_start = core.yMax();
-      y_end = y_start + width;
-      for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
-        if (!extend_to_boundary_) {
-          x_start -= other_pitch;
-          x_end += other_pitch;
-        }
-        y_start += pitch;
-        y_end += pitch;
-      }
-    } else {
-      // left
-      int x_start = core.xMin() - width;
-      int x_end = core.xMin();
-      int y_start = core.yMin() - other_width;
-      int y_end = core.yMax() + other_width;
-      if (extend_to_boundary_) {
-        y_start = boundary.yMin();
-        y_end = boundary.yMax();
-      }
-      for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
-        x_start -= pitch;
-        x_end -= pitch;
-        if (!extend_to_boundary_) {
-          y_start -= other_pitch;
-          y_end += other_pitch;
-        }
-      }
-      // right
-      x_start = core.xMax();
-      x_end = x_start + width;
-      if (!extend_to_boundary_) {
-        y_start = core.yMin() - other_width;
-        y_end = core.yMax() + other_width;
-      }
-      for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
-        x_start += pitch;
-        x_end += pitch;
-        if (!extend_to_boundary_) {
-          y_start -= other_pitch;
-          y_end += other_pitch;
+    const bool horizontal
+        = (single_layer_ring && !processed_horizontal)
+          || (!single_layer_ring
+              && layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+    if (horizontal) {
+      processed_horizontal = true;
+    }
+
+    // The ring of net i is the domain outline pushed out by i pitches: one
+    // layer_def pitch along this layer's own direction of travel and one
+    // layer_other pitch across it, which is what makes successive rings nest.
+    std::vector<std::vector<Region::Edge>> ring_edges;
+    ring_edges.reserve(nets.size());
+    for (size_t index = 0; index < nets.size(); index++) {
+      const int step = static_cast<int>(index) * pitch;
+      const int other_step = static_cast<int>(index) * other_pitch;
+      const Region::Margin margin
+          = horizontal ? Region::Margin{other_step, step, other_step, step}
+                       : Region::Margin{step, other_step, step, other_step};
+      ring_edges.push_back(core.bloat(margin).getEdges());
+    }
+
+    // Sides are walked in the order the rectangular builder emitted them --
+    // bottom then top for the horizontal layer, left then right for the
+    // vertical one -- so that the shapes reach the database in the same order
+    // on a rectangular floorplan as they always have.
+    const std::array<odb::Point, 2> sides
+        = horizontal
+              ? std::array<odb::Point, 2>{odb::Point(0, -1), odb::Point(0, 1)}
+              : std::array<odb::Point, 2>{odb::Point(-1, 0), odb::Point(1, 0)};
+
+    for (const odb::Point& side : sides) {
+      for (size_t index = 0; index < nets.size(); index++) {
+        odb::dbNet* net = nets[index];
+
+        for (const Region::Edge& edge : ring_edges[index]) {
+          if (edge.normal != side) {
+            continue;
+          }
+
+          const int xlo = std::min(edge.start.x(), edge.end.x());
+          const int xhi = std::max(edge.start.x(), edge.end.x());
+          const int ylo = std::min(edge.start.y(), edge.end.y());
+          const int yhi = std::max(edge.start.y(), edge.end.y());
+
+          // The edge is directed with the interior on its left, so which end
+          // is the low one flips between opposite sides.
+          const bool start_is_low = horizontal ? edge.start.x() < edge.end.x()
+                                               : edge.start.y() < edge.end.y();
+          const bool convex_low
+              = start_is_low ? edge.convex_at_start : edge.convex_at_end;
+          const bool convex_high
+              = start_is_low ? edge.convex_at_end : edge.convex_at_start;
+
+          // Sweep the edge outward by the width of this layer.
+          odb::Rect rect;
+          if (horizontal) {
+            const int base = side.y() > 0 ? yhi : ylo - width;
+            rect = odb::Rect(xlo, base, xhi, base + width);
+          } else {
+            const int base = side.x() > 0 ? xhi : xlo - width;
+            rect = odb::Rect(base, ylo, base + width, yhi);
+          }
+
+          // Then run it out along its own direction far enough to meet the
+          // sides that join it.  At a convex corner the neighbour turns away,
+          // so the two only overlap if this one reaches across the other
+          // layer's width; at a concave corner the neighbour turns towards it
+          // and the two already share that square, so extending would only
+          // push metal back over the domain.
+          const odb::Point low_normal
+              = horizontal ? odb::Point(-1, 0) : odb::Point(0, -1);
+          const odb::Point high_normal
+              = horizontal ? odb::Point(1, 0) : odb::Point(0, 1);
+          int extend_low = convex_low ? other_width : 0;
+          int extend_high = convex_high ? other_width : 0;
+          if (extend_to_boundary_) {
+            extend_low = boundary.getMarginBeyond(rect, low_normal);
+            extend_high = boundary.getMarginBeyond(rect, high_normal);
+          }
+          if (horizontal) {
+            rect.set_xlo(rect.xMin() - extend_low);
+            rect.set_xhi(rect.xMax() + extend_high);
+          } else {
+            rect.set_ylo(rect.yMin() - extend_low);
+            rect.set_yhi(rect.yMax() + extend_high);
+          }
+
+          addShape(std::make_unique<Shape>(
+              layer, net, rect, odb::dbWireShapeType::RING));
         }
       }
     }
@@ -351,10 +411,10 @@ void Rings::report() const
   const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
 
   logger->report("  Core offset:");
-  logger->report("    Left: {:.4f}", offset_[0] / dbu_per_micron);
-  logger->report("    Bottom: {:.4f}", offset_[1] / dbu_per_micron);
-  logger->report("    Right: {:.4f}", offset_[2] / dbu_per_micron);
-  logger->report("    Top: {:.4f}", offset_[3] / dbu_per_micron);
+  logger->report("    Left: {:.4f}", offset_.left / dbu_per_micron);
+  logger->report("    Bottom: {:.4f}", offset_.bottom / dbu_per_micron);
+  logger->report("    Right: {:.4f}", offset_.right / dbu_per_micron);
+  logger->report("    Top: {:.4f}", offset_.top / dbu_per_micron);
 
   for (const auto& layer : {layer0_, layer1_}) {
     logger->report("  Layer: {}", layer.layer->getName());

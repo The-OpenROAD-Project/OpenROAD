@@ -11,6 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import subprocess
 
 # -- Project information -----------------------------------------------------
 
@@ -155,10 +156,10 @@ html_theme_options = {
 
 
 def swap_prefix(file, old, new):
-    with open(file, "r") as f:
+    with open(file, "r", encoding="utf-8") as f:
         lines = f.read()
     lines = lines.replace(old, new)
-    with open(file, "wt") as f:
+    with open(file, "wt", encoding="utf-8") as f:
         f.write(lines)
 
 
@@ -179,11 +180,12 @@ def setup(app):
         swap_prefix(filename, "(docs/", "(../")
         swap_prefix(filename, "```mermaid", "```{mermaid}\n:align: center\n")
 
-    # for populating OR Messages page.
+    # for populating OR Messages page. The output of both commands is
+    # discarded rather than decoded, so neither depends on the ambient locale.
     command = "python getMessages.py"
-    _ = os.popen(command).read()
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
 
     if not os.path.exists("../_readthedocs/html/doxygen_output"):
         os.makedirs("../_readthedocs/html/doxygen_output", exist_ok=True)
     command = "cd .. ; doxygen"
-    _ = os.popen(command).read()
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)

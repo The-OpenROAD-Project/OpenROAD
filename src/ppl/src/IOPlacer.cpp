@@ -776,7 +776,7 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
           const odb::Rect pin_rect{io_pin.getLowerBound(),
                                    io_pin.getUpperBound()};
           const odb::Point pos = pin_rect.center();
-          out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+          out << "place_pin -pin_name {" << io_pin.getName() << "} -layer "
               << tech_layer->getName() << " -location {"
               << getBlock()->dbuToMicrons(pos.x()) << " "
               << getBlock()->dbuToMicrons(pos.y())
@@ -802,7 +802,7 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
       }
 
       if (tech_layer != nullptr) {
-        out << "place_pin -pin_name " << bterm->getName() << " -layer "
+        out << "place_pin -pin_name {" << bterm->getName() << "} -layer "
             << tech_layer->getName() << " -location {"
             << getBlock()->dbuToMicrons(x_pos) << " "
             << getBlock()->dbuToMicrons(y_pos) << "}";

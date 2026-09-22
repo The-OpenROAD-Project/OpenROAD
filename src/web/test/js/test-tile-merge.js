@@ -20,6 +20,43 @@ const PANES = 97;
 const TILES_PER_PANE = 24;
 const TILE_BYTES = 256 * 256 * BYTES_PER_PIXEL;
 
+// Let every promise continuation that is ready to run, run.
+//
+// setImmediate fires in the check phase, after the microtask queue has drained
+// to empty, so one await here settles a chain of `await`s of any depth -- which
+// is what one arriving request unblocks: the request, then the decode, then the
+// paint.
+//
+// The renderMergedTile tests below are about the ORDER requests arrive in and
+// about all of them being in flight at once, never about how long any of it
+// takes.  Staging that with setTimeout delays made them depend on wall-clock
+// time even so, and under a loaded machine -- `bazel test //src/web/...` runs
+// 46 test binaries at once -- timers do not keep their spacing: three 40 ms
+// requests measured 105 ms against a 100 ms bound, and two arrivals 5 ms apart
+// can land in either order.  Gating each request on a promise the test opens by
+// hand states the same orderings exactly, and no load can perturb them.
+function flush() {
+    return new Promise(resolve => setImmediate(resolve));
+}
+
+// One openable gate per named layer, plus `arrive`, which opens one and then
+// lets everything it unblocked run before returning.
+function makeGates(layers) {
+    const gates = new Map();
+    for (const layer of layers) {
+        let open;
+        const promise = new Promise(resolve => { open = resolve; });
+        gates.set(layer, { promise, open });
+    }
+    return {
+        wait: (layer) => gates.has(layer) ? gates.get(layer).promise : null,
+        arrive: async (layer) => {
+            gates.get(layer).open();
+            await flush();
+        },
+    };
+}
+
 describe('tile-merge is pure', () => {
     it('exports plain functions with no DOM or Leaflet dependency', () => {
         // Everything here is arithmetic and compositing rules, so it stays
@@ -505,19 +542,20 @@ describe('renderMergedTile', () => {
     // Harness: every browser dependency is injected, so the orchestration is
     // testable without a DOM or a real ImageBitmap.
     function harness({ items, failRequests = [], failDecodes = [],
-                       stale = () => false, delays = {} } = {}) {
+                       stale = () => false, gated = [] } = {}) {
         const released = [];
         const drawnCalls = [];
         const requested = [];
+        const gates = makeGates(gated);
         return {
-            released, drawnCalls, requested,
+            released, drawnCalls, requested, arrive: gates.arrive,
             opts: {
                 items,
                 request: async (item) => {
                     requested.push(item.layer);
-                    const ms = delays[item.layer] || 0;
-                    if (ms) {
-                        await new Promise(r => setTimeout(r, ms));
+                    const gate = gates.wait(item.layer);
+                    if (gate) {
+                        await gate;
                     }
                     if (failRequests.includes(item.layer)) {
                         throw new Error('cancelled: ' + item.layer);
@@ -548,25 +586,29 @@ describe('renderMergedTile', () => {
         { layer: '_instances', opacity: 1 },
     ];
 
-    it('composites in item order regardless of arrival order', () => {
+    it('composites in item order regardless of arrival order', async () => {
         // A group is a contiguous z-run, so the canvas is recomposited from
         // scratch in list order on every arrival — the stacking must not depend
         // on which response happens to land first. metal2 arrives first here.
         const h = harness({
             items: ITEMS,
-            delays: { metal1: 20, metal2: 0, _instances: 10 },
+            gated: ['metal1', 'metal2', '_instances'],
         });
-        return renderMergedTile(h.opts).then((stats) => {
-            assert.equal(stats.drawn, 3);
-            const last = h.drawnCalls[h.drawnCalls.length - 1];
-            assert.deepEqual(last.map(d => d.id),
-                             ['metal1', 'metal2', '_instances']);
-            // Every paint walks the full list, so a slot not yet in is drawn as
-            // nothing rather than the later layers sliding down into its place.
-            for (const call of h.drawnCalls) {
-                assert.deepEqual(call.map(d => d.opacity), [0.7, 0.7, 1]);
-            }
-        });
+        const done = renderMergedTile(h.opts);
+        await h.arrive('metal2');
+        await h.arrive('_instances');
+        await h.arrive('metal1');
+
+        const stats = await done;
+        assert.equal(stats.drawn, 3);
+        const last = h.drawnCalls[h.drawnCalls.length - 1];
+        assert.deepEqual(last.map(d => d.id),
+                         ['metal1', 'metal2', '_instances']);
+        // Every paint walks the full list, so a slot not yet in is drawn as
+        // nothing rather than the later layers sliding down into its place.
+        for (const call of h.drawnCalls) {
+            assert.deepEqual(call.map(d => d.opacity), [0.7, 0.7, 1]);
+        }
     });
 
     it('carries each item its own opacity', async () => {
@@ -578,15 +620,24 @@ describe('renderMergedTile', () => {
 
     it('issues the requests concurrently, not one after another', async () => {
         // Serialising K requests would multiply tile latency by K.
+        //
+        // Asserted as "all K are in flight before any of them answers", which
+        // is the property itself: with every request held open, a serialised
+        // implementation could not have issued the second.  Timing the whole
+        // render instead only inferred it, and inferred it from a wall clock
+        // that a busy machine moves (see flush()).
         const h = harness({
             items: ITEMS,
-            delays: { metal1: 40, metal2: 40, _instances: 40 },
+            gated: ['metal1', 'metal2', '_instances'],
         });
-        const t0 = Date.now();
-        await renderMergedTile(h.opts);
-        assert.ok(Date.now() - t0 < 100,
-                  'requests look serialised');
-        assert.equal(h.requested.length, 3);
+        const done = renderMergedTile(h.opts);
+        await flush();
+        assert.deepEqual(h.requested, ['metal1', 'metal2', '_instances']);
+
+        for (const layer of ['metal1', 'metal2', '_instances']) {
+            await h.arrive(layer);
+        }
+        await done;
     });
 
     it('releases every decoded image', async () => {
@@ -915,12 +966,13 @@ describe('setItemVisible: only a real change may dirty a pane', () => {
 });
 
 describe('renderMergedTile: incremental painting', () => {
-    function incHarness(items, { hang = [], delays = {} } = {}) {
+    function incHarness(items, { hang = [], gated = [] } = {}) {
         const drawnCalls = [];
         const released = [];
+        const gates = makeGates(gated);
         let firstDraws = 0;
         return {
-            drawnCalls, released,
+            drawnCalls, released, arrive: gates.arrive,
             firstDraws: () => firstDraws,
             opts: {
                 items,
@@ -928,9 +980,9 @@ describe('renderMergedTile: incremental painting', () => {
                     if (hang.includes(item.layer)) {
                         return new Promise(() => {});  // never settles
                     }
-                    const ms = delays[item.layer] || 0;
-                    if (ms) {
-                        await new Promise(r => setTimeout(r, ms));
+                    const gate = gates.wait(item.layer);
+                    if (gate) {
+                        await gate;
                     }
                     return { payloadFor: item.layer };
                 },
@@ -953,8 +1005,13 @@ describe('renderMergedTile: incremental painting', () => {
     ];
 
     it('paints as each layer arrives rather than once at the end', async () => {
-        const h = incHarness(ITEMS3, { delays: { a: 0, b: 10, c: 20 } });
-        const stats = await renderMergedTile(h.opts);
+        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
+        const done = renderMergedTile(h.opts);
+        await h.arrive('a');
+        await h.arrive('b');
+        await h.arrive('c');
+
+        const stats = await done;
         assert.equal(stats.paints, 3, 'one paint per arrival');
         // Each paint is a full composite of what has arrived so far, in order.
         assert.deepEqual(h.drawnCalls, [
@@ -967,8 +1024,13 @@ describe('renderMergedTile: incremental painting', () => {
     it('draws a not-yet-arrived layer as nothing, in its own slot', async () => {
         // Transparent is the identity for src-over, so the partial composite is
         // exact: the later layers must not slide down into the empty slot.
-        const h = incHarness(ITEMS3, { delays: { a: 20, b: 0, c: 10 } });
-        await renderMergedTile(h.opts);
+        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
+        const done = renderMergedTile(h.opts);
+        await h.arrive('b');
+        await h.arrive('c');
+        await h.arrive('a');
+
+        await done;
         assert.deepEqual(h.drawnCalls[0], [null, 'b', null]);
         assert.deepEqual(h.drawnCalls[1], [null, 'b', 'c']);
         assert.deepEqual(h.drawnCalls[2], ['a', 'b', 'c']);
@@ -978,8 +1040,13 @@ describe('renderMergedTile: incremental painting', () => {
         // Leaflet hides a tile until done() marks it loaded, so onFirstDraw is
         // what makes incremental painting visible at all — and it must fire
         // exactly once, not on every repaint.
-        const h = incHarness(ITEMS3, { delays: { a: 0, b: 5, c: 10 } });
-        await renderMergedTile(h.opts);
+        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
+        const done = renderMergedTile(h.opts);
+        await h.arrive('a');
+        await h.arrive('b');
+        await h.arrive('c');
+
+        await done;
         assert.equal(h.firstDraws(), 1);
     });
 
@@ -988,7 +1055,7 @@ describe('renderMergedTile: incremental painting', () => {
         // left the tile blank indefinitely; now it costs one layer.
         const h = incHarness(ITEMS3, { hang: ['b'] });
         renderMergedTile(h.opts);           // deliberately not awaited
-        await new Promise(r => setTimeout(r, 20));
+        await flush();  // a and c are ungated, so this is all they need
         assert.ok(h.drawnCalls.length >= 1, 'must paint without the straggler');
         const last = h.drawnCalls[h.drawnCalls.length - 1];
         assert.deepEqual(last, ['a', null, 'c']);
@@ -1011,7 +1078,7 @@ describe('renderMergedTile: incremental painting', () => {
         // A late arrival belongs UNDERNEATH layers already drawn, so the canvas
         // is recomposited from scratch and every source must still be around.
         // Releasing per paint would free a bitmap still needed by the next one.
-        const h = incHarness(ITEMS3, { delays: { a: 0, b: 5, c: 10 } });
+        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
         const opts = h.opts;
         const realDraw = opts.draw;
         opts.draw = (sources) => {
@@ -1019,7 +1086,12 @@ describe('renderMergedTile: incremental painting', () => {
                          'nothing may be released while paints remain');
             return realDraw(sources);
         };
-        await renderMergedTile(opts);
+        const done = renderMergedTile(opts);
+        await h.arrive('a');
+        await h.arrive('b');
+        await h.arrive('c');
+
+        await done;
         assert.deepEqual(h.released.sort(), ['a', 'b', 'c']);
     });
 });

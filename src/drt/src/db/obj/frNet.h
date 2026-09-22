@@ -176,6 +176,11 @@ class frNet : public frBlockObject
   {
     return global_enabled && auto_taper_enabled_;
   }
+  // Routing watermark (Kahng et al., ISPD'98): when true, the detailed
+  // router inflates non-preferred-direction ("wrong-way") grid costs on
+  // this net to approximate a "limit way = 1" rule.
+  void setIsWatermark(bool w) { is_watermark_ = w; }
+  bool isWatermark() const { return is_watermark_; }
 
  protected:
   frString name_;
@@ -206,5 +211,7 @@ class frNet : public frBlockObject
   bool to_be_deleted_{false};
   // Per-net auto-taper setting; see setAutoTaperEnabled().
   bool auto_taper_enabled_{true};
+  // Routing watermark flag, see setIsWatermark().
+  bool is_watermark_{false};
 };
 }  // namespace drt

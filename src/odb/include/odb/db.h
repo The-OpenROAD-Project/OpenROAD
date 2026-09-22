@@ -5777,6 +5777,17 @@ class dbMTerm : public dbObject
   bool isSetMark();
 
   ///
+  /// Returns true if the router must connect to at least one shape of each port
+  /// of this terminal.
+  ///
+  bool isMustJoinAllPorts();
+
+  ///
+  /// Set the must-join-all-ports flag.
+  ///
+  void setMustJoinAllPorts(bool v);
+
+  ///
   /// Get the master this master-terminal belongs too.
   ///
   dbMaster* getMaster();
@@ -7540,6 +7551,8 @@ class dbChipNet : public dbObject
 
   dbSet<dbChipCapNode> getChipCapNodes() const;
 
+  float getTotalCapacitance() const;
+
   dbSet<dbChipRSeg> getChipRSegs() const;
 
   uint32_t getNumBumpInsts() const;
@@ -8836,6 +8849,18 @@ class dbModNet : public dbObject
   /// Returns true if this dbModNet is connected to other dbModNet.
   ///
   bool isConnected(const dbModNet* other) const;
+
+  ///
+  /// Returns true if this dbModNet is connected to an INPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToInputPort() const;
+
+  ///
+  /// Returns true if this dbModNet is connected to an OUTPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToOutputPort() const;
 
   ///
   /// Returns the next dbModNets in the fanin of this dbModNet.

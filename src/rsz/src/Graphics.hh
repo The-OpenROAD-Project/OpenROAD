@@ -6,14 +6,14 @@
 #include <vector>
 
 #include "ResizerObserver.hh"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "web/core.h"
 
 namespace rsz {
 
-class Graphics : public gui::Renderer, public ResizerObserver
+class Graphics : public web::Renderer, public ResizerObserver
 {
  public:
   Graphics();
@@ -30,10 +30,10 @@ class Graphics : public gui::Renderer, public ResizerObserver
   void repairNetDone() override;
 
   // Renderer
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
  private:
-  void drawBNet(const BufferedNetPtr& bnet, gui::Painter& painter);
+  void drawBNet(const BufferedNetPtr& bnet, web::Painter& painter);
 
   BufferedNetPtr bnet_;
   std::vector<odb::dbInst*> buffers_;
