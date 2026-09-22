@@ -24,6 +24,7 @@
 #include "boost/algorithm/string/predicate.hpp"
 #include "heatMapRenderer.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 #include "web/core.h"
 #include "web/descriptor_registry.h"
@@ -708,22 +709,47 @@ void Gui::saveImage(const std::string& filename,
     if (chip == nullptr) {
       logger_->error(utl::WEB, 97, "No design loaded.");
     }
-    save_region = chip->getBBox();
+    // The rect "the whole design" means, matching what the layout viewer fits
+    // to (LayoutViewer::getBounds) and what the web renderer frames a
+    // zero-area request on (TileGenerator::getFitBounds): the block bbox AND
+    // the die area, plus every chiplet.  A bbox alone covers the placed
+    // SHAPES, not the floorplan, so a design sitting in a corner of a much
+    // larger die would be framed on its content alone.
+    //
+    // Built with mergeInit() rather than seeded from the chip: an ordinary
+    // design has no chip outline and reports an empty one anchored at the
+    // origin, which as a seed would drag the region out to (0,0).
+    odb::Rect design;
+    design.mergeInit();
     auto* block = chip->getBlock();
-
     if (block != nullptr) {
-      // The bbox covers the placed SHAPES, not the floorplan, so union the die
-      // area in: a design sitting in a corner of a much larger die would
-      // otherwise be framed on its content alone.  That union is what the
-      // layout viewer fits to (LayoutViewer::getBounds) and what the web
-      // renderer frames a zero-area request on (TileGenerator::getFitBounds),
-      // so all three agree on what "the whole design" means.
-      save_region = block->getBBox()->getBox();
+      design.merge(block->getBBox()->getBox());
       const odb::Rect die = block->getDieArea();
       if (die.area() > 0) {
-        save_region.merge(die);
+        design.merge(die);
       }
     }
+    const odb::Rect chip_bbox = chip->getBBox();
+    if (chip_bbox.area() > 0) {
+      design.merge(chip_bbox);
+    }
+    // Chiplet instances, as LayoutViewer::getBounds merges them: their own
+    // bbox plus the master's die area through the instance transform.
+    for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+      design.merge(chip_inst->getBBox());
+      odb::dbChip* master = chip_inst->getMasterChip();
+      if (master == nullptr || master->getBlock() == nullptr) {
+        continue;
+      }
+      odb::Rect die = master->getBlock()->getDieArea();
+      if (die.area() > 0) {
+        chip_inst->getTransform().apply(die);
+        design.merge(die);
+      }
+    }
+    // Nothing reported an extent: fall back to the chip, as before.
+    save_region
+        = (design.dx() > 0 && design.dy() > 0) ? design : chip->getBBox();
 
     const double bloat_by = 0.05;  // 5%
     const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;

@@ -3578,7 +3578,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         for (odb::dbRegion* region : block->getRegions()) {
           for (odb::dbBox* box : region->getBoundaries()) {
             const odb::Rect r = box->getBox();
-            if (r.area() <= 0) {
+            // Same cull drawRegionsLayer applies to the fill: a floorplan can
+            // carry hundreds of region boxes and only the ones on this tile
+            // are worth building a polygon for.
+            if (r.area() <= 0 || !r.overlaps(dbu_tile)) {
               continue;
             }
             collect_crisp_outline(odb::Polygon({{r.xMin(), r.yMin()},
@@ -4850,17 +4853,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
     }  // end per-chiplet for-loop
 
-    // Band-limit: Lanczos-2 decimate the supersampled fills into the output
-    // tile.  This is the anti-moiré step — prefiltering the dense periodic
-    // geometry so no beat survives at the output (physical) pixel grid.
-    // Empty tiles (common while panning) skip the decimation entirely:
-    // world_image_buffer already holds a transparent tile_px buffer, and a
+    // This is the anti-moiré step — prefiltering the dense periodic geometry so
+    // no beat survives at the output (physical) pixel grid.  Empty tiles
+    // (common while panning) skip the decimation entirely: world_image_buffer
+    // holds a transparent tile_px buffer (or just the frames), and a
     // transparent super buffer cannot alias.  anyNonZero early-exits on the
     // first drawn byte, so non-empty tiles pay almost nothing for the check.
-    if (anyNonZero(super_buffer)) {
-      world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
-    }
-
     // Overlays draw at the OUTPUT resolution (crisp lines/text, not band-
     // limited), so they map DBU to pixels with the output-space scale.
     // `scale` is super-space (super px per DBU); the output buffer is tile_px
@@ -4874,10 +4872,27 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     out_frame.scale = scale_out;
     out_frame.px_per_css = effective_dpr;
 
-    // The die, core and region frames, at the resolution they are meant to
-    // land on (see where they were collected).
+    // The die, core and region frames go down FIRST, at the resolution they
+    // are meant to land on (see where they were collected), and the layer's
+    // own geometry composites over them below.  That is Qt's order --
+    // drawChip runs before the instances and the routing
+    // (renderThread.cpp:1189-1200) -- so a macro or a strap on the die edge
+    // covers the hairline instead of being crossed by it.
     for (const odb::Polygon& poly : crisp_outlines) {
       outlinePolygonInTile(world_image_buffer, poly, kOutlineGray, out_frame);
+    }
+
+    // Band-limit: Lanczos-2 decimate the supersampled fills onto that.
+    if (anyNonZero(super_buffer)) {
+      const std::vector<unsigned char> decimated
+          = lanczos2Downsample(super_buffer, super, tile_px);
+      if (crisp_outlines.empty()) {
+        world_image_buffer = decimated;
+      } else {
+        for (size_t i = 0; i + 3 < decimated.size(); i += 4) {
+          compositePixel(&world_image_buffer[i], &decimated[i]);
+        }
+      }
     }
 
     // Overlays render once in world space, on top of all chiplets.
