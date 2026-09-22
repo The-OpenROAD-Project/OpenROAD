@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "odb/db.h"
@@ -20,54 +21,52 @@ inline constexpr int kMaxCandidateSections = 32;
 
 using CandidateSections = std::array<CandidateSection, kMaxCandidateSections>;
 
-class tmg_rc_sh
-{
- public:
-  tmg_rc_sh(Rect rect,
-            dbTechLayer* layer,
-            dbTechVia* tech_via,
-            dbVia* block_via,
-            dbTechNonDefaultRule* rule = nullptr)
-      : rect_(rect),
-        layer_(layer),
-        tech_via_(tech_via),
-        block_via_(block_via),
-        rule_(rule)
-  {
-  }
-
-  const Rect& rect() const { return rect_; }
-  int xMin() const { return rect_.xMin(); }
-  int xMax() const { return rect_.xMax(); }
-  int yMin() const { return rect_.yMin(); }
-  int yMax() const { return rect_.yMax(); }
-  uint32_t getDX() const { return (rect_.xMax() - rect_.xMin()); }
-  uint32_t getDY() const { return (rect_.yMax() - rect_.yMin()); }
-
-  bool isVia() const { return (tech_via_ || block_via_); }
-  dbTechVia* getTechVia() const { return tech_via_; }
-  dbVia* getVia() const { return block_via_; }
-  dbTechLayer* getTechLayer() const { return layer_; }
-  dbTechNonDefaultRule* getRule() const { return rule_; }
-
-  void setXmin(int x) { rect_.set_xlo(x); }
-  void setXmax(int x) { rect_.set_xhi(x); }
-  void setYmin(int y) { rect_.set_ylo(y); }
-  void setYmax(int y) { rect_.set_yhi(y); }
-
- private:
-  Rect rect_;
-  dbTechLayer* layer_{nullptr};
-  dbTechVia* tech_via_{nullptr};
-  dbVia* block_via_{nullptr};
-  dbTechNonDefaultRule* rule_{nullptr};
-};
-
 struct WireSection
 {
+  class Shape
+  {
+   public:
+    Shape(Rect rect,
+          dbTechLayer* layer,
+          dbTechVia* tech_via,
+          dbVia* block_via,
+          dbTechNonDefaultRule* rule = nullptr)
+        : rect_(rect),
+          layer_(layer),
+          tech_via_(tech_via),
+          block_via_(block_via),
+          rule_(rule)
+    {
+    }
+
+    const Rect& rect() const { return rect_; }
+    int xMin() const { return rect_.xMin(); }
+    int xMax() const { return rect_.xMax(); }
+    int yMin() const { return rect_.yMin(); }
+    int yMax() const { return rect_.yMax(); }
+
+    bool isVia() const { return (tech_via_ || block_via_); }
+    dbTechVia* getTechVia() const { return tech_via_; }
+    dbVia* getVia() const { return block_via_; }
+    dbTechLayer* getTechLayer() const { return layer_; }
+    dbTechNonDefaultRule* getRule() const { return rule_; }
+
+    void setXmin(int x) { rect_.set_xlo(x); }
+    void setXmax(int x) { rect_.set_xhi(x); }
+    void setYmin(int y) { rect_.set_ylo(y); }
+    void setYmax(int y) { rect_.set_yhi(y); }
+
+   private:
+    Rect rect_;
+    dbTechLayer* layer_{nullptr};
+    dbTechVia* tech_via_{nullptr};
+    dbVia* block_via_{nullptr};
+    dbTechNonDefaultRule* rule_{nullptr};
+  };
+
   WireSection(const int from_idx,
               const int to_idx,
-              const tmg_rc_sh& shape,
+              const Shape& shape,
               const bool is_vertical,
               const int width,
               const int default_ext)
@@ -82,7 +81,7 @@ struct WireSection
 
   const int from_idx;  // index to wire_points_
   int to_idx;
-  tmg_rc_sh shape;
+  Shape shape;
   const bool is_vertical;
   const int width;
   const int default_ext;
@@ -114,8 +113,14 @@ struct Terminal
 
   dbITerm* const iterm{nullptr};
   dbBTerm* const bterm{nullptr};
+
   WirePoint* pt{nullptr};        // list of points
   WirePoint* first_pt{nullptr};  // first point in dfs
+
+  // Only for bterms: the part of the bpin that sticks out past an overlapping
+  // iterm. This is what will actually be used when we search for candidate
+  // sections instead of the whole bpin geometry.
+  std::optional<Rect> sliced_bpin_box;
 };
 
 // This is how we keep the information that two sections from different paths
@@ -206,7 +211,7 @@ class tmg_conn
                       int to_idx,
                       dbTechNonDefaultRule* rule = nullptr);
   void addWireSection(int k,
-                      const tmg_rc_sh& s,
+                      const WireSection::Shape& s,
                       int from_idx,
                       int to_idx,
                       int xmin,
@@ -221,8 +226,7 @@ class tmg_conn
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();
-  void detachTilePins();
-  void getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect);
+  void sliceBPinsOverlappingITerms();
 
   int getStartNode();
   void dfsClear();
@@ -256,22 +260,18 @@ class tmg_conn
   std::vector<CandidateSections> candidate_sections_;
   std::vector<int> candidate_section_count_;
   WirePoint* first_for_clear_{nullptr};
-  int slicedTilePinCnt_{0};
-  int stbtx1_[200];
-  int stbty1_[200];
-  int stbtx2_[200];
-  int stbty2_[200];
-  dbBTerm* slicedTileBTerm_[200];
 
   // Graph walk and writing of the new wire encoding.
-  std::vector<Terminal*> tstackV_;  // Also used when checking connectivity.
+  // Note that the restart terminals are also used in the section above,
+  // during the connectivity check between the hard and soft passes.
+  std::vector<Terminal*> restart_terminals_;
   int last_id_{-1};
   dbTechNonDefaultRule* net_rule_{nullptr};
   dbTechNonDefaultRule* path_rule_{nullptr};
   bool need_short_wire_id_{false};
-  int firstSegmentAfterVia_{0};
+  bool first_segment_after_via_{false};
   dbWireEncoder encoder_;
-  dbWire* newWire_{nullptr};
+  dbWire* new_wire_{nullptr};
 
   // Post-process connectivity check.
   bool connected_{false};

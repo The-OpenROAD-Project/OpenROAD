@@ -101,7 +101,7 @@ static Color hsl_to_rgb(const HSL& hsl, const unsigned char a)
   return rgb;
 }
 
-// Turbo colormap (256 × RGB), copied verbatim from gui::SpectrumGenerator so
+// Turbo colormap (256 × RGB), copied verbatim from web::SpectrumGenerator so
 // the timing-cone overlay colors match the Qt GUI without linking libgui.
 static const unsigned char kSpectrum[kSpectrumColorCount][3]
     = {{48, 18, 59},   {50, 21, 67},   {51, 24, 74},    {52, 27, 81},
