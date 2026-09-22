@@ -7,7 +7,7 @@
 [INFO ODB-0132]     Created 2 special nets and 930 connections.
 [INFO ODB-0133]     Created 382 nets and 1163 connections.
 [INFO PSM-0040] All shapes on net vdd are connected.
-[INFO PSM-0073] Using bump pattern on BM2 with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with a reduction factor of 3x.
+[INFO PSM-0072] Using strap pattern on BM2 with BM3 pitch 7.2000um and offset 3.6000um.
 ########## IR report #################
 Net              : vdd
 Corner           : default
@@ -15,7 +15,7 @@ Total power      : 1.10e-04 W
 Supply voltage   : 7.00e-01 V
 Worstcase voltage: 7.00e-01 V
 Average voltage  : 7.00e-01 V
-Average IR drop  : 4.12e-05 V
-Worstcase IR drop: 1.62e-04 V
-Percentage drop  : 0.02 %
+Average IR drop  : 7.81e-05 V
+Worstcase IR drop: 1.94e-04 V
+Percentage drop  : 0.03 %
 ######################################
