@@ -4,9 +4,11 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
@@ -265,6 +267,31 @@ class Search : public odb::dbBlockCallBackObj
                                const TileVisibility& vis,
                                const std::set<std::string>& visible_layers);
 
+  // ─── Name-group mapping (flat designs) ──────────────────────────────
+  //
+  // A flat design has no dbModule tree, so the web viewer's module overlay
+  // resolves each instance to a group synthesized from its name instead (see
+  // HierarchyReport).  The mapping is produced there and parked here, because
+  // Search is already what watches the db for the edits that invalidate it.
+  //
+  // Indexed by dbInst::getId(); the tile renderer reads it once per instance
+  // per tile, where a hash lookup would not pay.  Held by shared_ptr so a
+  // render in flight keeps reading one while another thread installs its
+  // replacement.
+
+  // `built_at_revision` is the revision() the mapping was built against,
+  // read BEFORE the walk that produced it -- stamping it here instead would
+  // call a mapping fresh that an edit invalidated while it was being built.
+  void setInstGroups(odb::dbBlock* block,
+                     std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+                     uint64_t built_at_revision);
+
+  // Null when nothing was installed for this block, or when the design has
+  // changed since.  Dropping it is deliberate: a stale mapping colors
+  // instances by a group they are no longer in, which reads as authoritative
+  // and is wrong.  The client installs a fresh one on its next update.
+  std::shared_ptr<const std::vector<uint32_t>> instGroups(odb::dbBlock* block);
+
   void clearShapes();
   void clearFills();
   void clearInsts();
@@ -378,6 +405,12 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool blockages_init{false};
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
+
+    // See setInstGroups().  Guarded by inst_groups_mutex; the revision is the
+    // one the mapping was built against, compared against revision() on read.
+    mutable std::shared_mutex inst_groups_mutex;
+    std::shared_ptr<const std::vector<uint32_t>> inst_groups;
+    uint64_t inst_groups_revision = 0;
   };
   // child_block_data_ is pre-populated in setTopChip().  After that,
   // getData() may still insert entries for blocks reached only via db

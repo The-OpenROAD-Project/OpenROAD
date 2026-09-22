@@ -26,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -3992,6 +3993,29 @@ const char* dbBlock::getBaseName(const char* full_name) const
     backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
   }
   return base_name;
+}
+
+void dbBlock::getPathSegments(const char* full_name,
+                              std::vector<std::string_view>& segments) const
+{
+  segments.clear();
+  if (full_name == nullptr) {
+    return;
+  }
+
+  const char hierarchy_delimiter = getHierarchyDelimiter();
+  const char* segment_begin = full_name;
+  size_t backslash_run = 0;
+  for (const char* cursor = full_name; *cursor != '\0'; cursor++) {
+    // Escaped delimiters belong to the local Verilog identifier.  Same rule
+    // as getBaseName(), which keeps the last segment here equal to it.
+    if (*cursor == hierarchy_delimiter && backslash_run % 2 == 0) {
+      segments.emplace_back(segment_begin, cursor - segment_begin);
+      segment_begin = cursor + 1;
+    }
+    backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
+  }
+  segments.emplace_back(segment_begin, strlen(segment_begin));
 }
 
 dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)
