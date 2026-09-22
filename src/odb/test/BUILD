@@ -314,6 +314,7 @@ filegroup(
         "data/lef58_celledgespacing_numeric.lef",
         "data/lef58_macro_edgetype_numeric.lef",
         "data/lef58_minwidth_wrongdirection.lef",
+        "data/lef58_mustjoinallports.lef",
         "data/lef58class_gscl45nm.lef",
         "data/lef_dup_macro.lef",
         "data/mask.lef",

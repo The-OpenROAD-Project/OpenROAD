@@ -15,13 +15,13 @@
 
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/isotropy.h"
+#include "web/core.h"
 
 namespace odb {
 class dbBlock;
@@ -299,7 +299,7 @@ class PlacerPadPlacer : public PadPlacer
   odb::PtrMap<odb::dbInst, int> ideal_positions_;
 
   // debug
-  gui::Chart* chart_{nullptr};
+  web::Chart* chart_{nullptr};
 
   // constants
   static constexpr int kMaxIterations = 5000;

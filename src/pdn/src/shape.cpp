@@ -22,6 +22,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
+#include "polygon.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"
@@ -98,6 +99,11 @@ Shape::ObstructionHalo Shape::getObstructionHalo() const
 odb::Rect Shape::getRectWithLargestObstructionHalo(
     const ObstructionHalo& halo) const
 {
+  if (die_absence_) {
+    // no spacing is owed to an absence of die
+    return rect_;
+  }
+
   const ObstructionHalo obs = getObstructionHalo();
   odb::Rect obs_rect = rect_;
   obs_rect.set_xlo(obs_rect.xMin() - std::max(obs.left, halo.left));
@@ -422,15 +428,23 @@ std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
       objs.push_back(addBPinToDb(bterm, rect_));
     }
     const odb::Rect block_area = getGridComponent()->getBlock()->getDieArea();
+    const Region die_region
+        = Region(getGridComponent()->getBlock()->getDieAreaPolygon());
     for (const auto& bterm_rect : bterm_connections_) {
       odb::Rect bterm_shape = bterm_rect;
-      // Adjust width of shape when bterm is on the edge of the die area
+      // Adjust width of shape when bterm is on the edge of the die area.
+      // Against the outline, so that a pin on the wall of a notch is widened
+      // along the same axis as one on the bounding box would be.
       if (bterm_rect.xMin() == block_area.xMin()
-          || bterm_rect.xMax() == block_area.xMax()) {
+          || bterm_rect.xMax() == block_area.xMax()
+          || die_region.isOnInteriorWall(bterm_rect, odb::Point(-1, 0))
+          || die_region.isOnInteriorWall(bterm_rect, odb::Point(1, 0))) {
         bterm_shape.set_ylo(rect_.yMin());
         bterm_shape.set_yhi(rect_.yMax());
       } else if (bterm_rect.yMin() == block_area.yMin()
-                 || bterm_rect.yMax() == block_area.yMax()) {
+                 || bterm_rect.yMax() == block_area.yMax()
+                 || die_region.isOnInteriorWall(bterm_rect, odb::Point(0, -1))
+                 || die_region.isOnInteriorWall(bterm_rect, odb::Point(0, 1))) {
         bterm_shape.set_xlo(rect_.xMin());
         bterm_shape.set_xhi(rect_.xMax());
       }
