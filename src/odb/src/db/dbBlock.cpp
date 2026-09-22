@@ -4006,7 +4006,8 @@ void dbBlock::getPathSegments(const char* full_name,
   const char hierarchy_delimiter = getHierarchyDelimiter();
   const char* segment_begin = full_name;
   size_t backslash_run = 0;
-  for (const char* cursor = full_name; *cursor != '\0'; cursor++) {
+  const char* cursor = full_name;
+  for (; *cursor != '\0'; cursor++) {
     // Escaped delimiters belong to the local Verilog identifier.  Same rule
     // as getBaseName(), which keeps the last segment here equal to it.
     if (*cursor == hierarchy_delimiter && backslash_run % 2 == 0) {
@@ -4015,7 +4016,9 @@ void dbBlock::getPathSegments(const char* full_name,
     }
     backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
   }
-  segments.emplace_back(segment_begin, strlen(segment_begin));
+  // cursor is at the terminator, so the last segment's length is already
+  // known -- no second pass over it.
+  segments.emplace_back(segment_begin, cursor - segment_begin);
 }
 
 dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)

@@ -286,7 +286,12 @@ struct NameGroupNode
   std::string segment;  // this level's path segment
   int parent = -1;      // index into the group vector
   std::vector<int> children;
-  std::unordered_map<std::string, int> child_index;
+  // Keyed by a view, so probing costs no std::string.  The view must point
+  // into the INSTANCE NAME -- dbInst owns that buffer for as long as the
+  // instance lives, which outlasts this trie.  Never point it at `segment`:
+  // `groups` reallocates as the trie grows, and a short string moves with
+  // its node.
+  std::unordered_map<std::string_view, int> child_index;
   std::vector<odb::dbInst*> insts;  // instances local to this group
 };
 
@@ -320,6 +325,8 @@ static ModuleStats addNameGroup(std::vector<NameGroupNode>& groups,
   ModuleStats local;
   for (odb::dbInst* inst : groups[g].insts) {
     const uint32_t inst_id = inst->getId();
+    // addNameGroups sizes this up front, so this is a bounds guard rather
+    // than the growth path; it keeps the write in range regardless.
     if (inst_id >= inst_group.size()) {
       inst_group.resize(inst_id + 1, 0);
     }
@@ -378,8 +385,10 @@ bool HierarchyReport::addNameGroups(odb::dbModule* top,
   std::vector<std::string_view> segments;
   const auto max_depth = static_cast<size_t>(std::max(name_group_depth_, 0));
   bool capped = false;
+  uint32_t max_inst_id = 0;
 
   for (odb::dbInst* inst : top->getInsts()) {
+    max_inst_id = std::max(max_inst_id, inst->getId());
     block_->getPathSegments(inst->getConstName(), segments);
     // The last segment is the leaf instance name, never a group: "riscv/dp/_1_"
     // groups under riscv/dp, it does not create a group called _1_.
@@ -393,8 +402,7 @@ bool HierarchyReport::addNameGroups(odb::dbModule* top,
       if (segments[i].empty()) {
         continue;
       }
-      std::string segment(segments[i]);
-      auto it = groups[cur].child_index.find(segment);
+      auto it = groups[cur].child_index.find(segments[i]);
       if (it != groups[cur].child_index.end()) {
         cur = it->second;
         continue;
@@ -407,10 +415,10 @@ bool HierarchyReport::addNameGroups(odb::dbModule* top,
       }
       const int child = static_cast<int>(groups.size());
       groups.emplace_back();
-      groups[child].segment = std::move(segment);
+      groups[child].segment = std::string(segments[i]);
       groups[child].parent = cur;
       groups[cur].children.push_back(child);
-      groups[cur].child_index.emplace(groups[child].segment, child);
+      groups[cur].child_index.emplace(segments[i], child);
       cur = child;
     }
     groups[cur].insts.push_back(inst);
@@ -431,6 +439,11 @@ bool HierarchyReport::addNameGroups(odb::dbModule* top,
           return groups[a].segment < groups[b].segment;
         });
   }
+
+  // Sized once here rather than grown per instance during the walk: dbInst
+  // ids are dense, so this is one allocation instead of a run of reallocating
+  // copies.
+  result.inst_group.assign(max_inst_id + 1, 0);
 
   int next_id = 0;
   uint32_t next_group_id = 0;
