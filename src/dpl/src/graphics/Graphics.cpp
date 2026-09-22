@@ -13,7 +13,6 @@
 #include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
-#include "gui/gui.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
@@ -22,6 +21,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace dpl {
 
@@ -42,9 +42,9 @@ Graphics::Graphics(Opendp* dp,
       paint_pixels_(paint_pixels),
       paint_negotiation_pixels_(paint_negotiation_pixels)
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 
-  gui::Gui* gui = gui::Gui::get();
+  web::Gui* gui = web::Gui::get();
   if (violations_chart_ == nullptr) {
     violations_chart_
         = gui->addChart("DPL Negotiation",
@@ -73,7 +73,7 @@ void Graphics::drawSelected(odb::dbInst* instance, bool force)
     return;
   }
 
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
 
   auto selected = gui->makeSelected(instance);
   gui->setSelected(selected);
@@ -155,12 +155,12 @@ void Graphics::clearAllDiamondSearches()
 
 void Graphics::redrawAndPause()
 {
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   gui->redraw();
   gui->pause();
 }
 
-void Graphics::drawObjects(gui::Painter& painter)
+void Graphics::drawObjects(web::Painter& painter)
 {
   // Held for the whole draw: placement runs concurrently on the main thread.
   const std::lock_guard<std::mutex> lock(state_mutex_);
@@ -171,7 +171,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   // Create a set of selected instances for fast lookup
   odb::PtrSet<odb::dbInst> selected_insts;
-  auto selection = gui::Gui::get()->selection();
+  auto selection = web::Gui::get()->selection();
   for (const auto& selected : selection) {
     if (selected.isInst()) {
       selected_insts.insert(std::any_cast<odb::dbInst*>(selected.getObject()));
@@ -185,7 +185,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     if (!dp_->isUseNegotiationLegalizer()) {
       if (!cell->isPlaced()) {
-        auto color = gui::Painter::kDarkMagenta;
+        auto color = web::Painter::kDarkMagenta;
         painter.setPen(color);
         painter.setBrush(color);
         odb::Rect bbox;
@@ -196,7 +196,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
 
     if (cell->getDbInst()->isFixed()) {
-      auto color = gui::Painter::kGray;
+      auto color = web::Painter::kGray;
       color.a = 100;
       painter.setPen(color);
       painter.setBrush(color);
@@ -214,10 +214,10 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     int dx = final_location.x() - initial_location.x();
     int dy = final_location.y() - initial_location.y();
-    gui::Painter::Color line_color;
+    web::Painter::Color line_color;
 
     if (selected_insts.contains(cell->getDbInst())) {
-      line_color = gui::Painter::kYellow;
+      line_color = web::Painter::kYellow;
 
       // Draw outline of instance at target location
       odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
@@ -227,9 +227,9 @@ void Graphics::drawObjects(gui::Painter& painter)
                             final_location.y(),
                             final_location.x() + width,
                             final_location.y() + height);
-      auto outline_color = gui::Painter::kCyan;
+      auto outline_color = web::Painter::kCyan;
       painter.setPen(outline_color, /* cosmetic */ true);
-      painter.setBrush(gui::Painter::kTransparent);
+      painter.setBrush(web::Painter::kTransparent);
       painter.drawRect(target_bbox);
 
       // Indicate orientation change at the target location with a corner notch
@@ -244,13 +244,13 @@ void Graphics::drawObjects(gui::Painter& painter)
                || current_iter_movers_.contains(cell->getDbInst())) {
       // Moved in the current iteration (or no iteration info yet).
       if (std::abs(dx) > std::abs(dy)) {
-        line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+        line_color = (dx > 0) ? web::Painter::kGreen : web::Painter::kRed;
       } else {
-        line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+        line_color = (dy > 0) ? web::Painter::kMagenta : web::Painter::kBlue;
       }
     } else {
       // Moved in a previous iteration.
-      line_color = gui::Painter::kGray;
+      line_color = web::Painter::kGray;
     }
 
     painter.setPen(line_color, /* cosmetic */ true);
@@ -288,7 +288,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       draw_insts.insert(inst);
     }
 
-    painter.setBrush(gui::Painter::kTransparent);
+    painter.setBrush(web::Painter::kTransparent);
     for (const odb::dbInst* inst : draw_insts) {
       auto it = searched_diamond_.find(inst);
       if (it == searched_diamond_.end() || it->second.rows.empty()) {
@@ -318,14 +318,14 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
 
       painter.setPen(
-          gui::Painter::kPink, /* cosmetic */ true, kSearchOutlineWidth);
+          web::Painter::kPink, /* cosmetic */ true, kSearchOutlineWidth);
       for (const std::vector<odb::Point>& boundary : search.boundaries) {
         painter.drawPolygon(boundary);
       }
 
       // Last candidate tried: the position the cell takes when the search
       // succeeds.  Deep pink to stand out from the pale region boundary.
-      painter.setPen(gui::Painter::Color{0xff, 0x14, 0x93, 0xff},
+      painter.setPen(web::Painter::Color{0xff, 0x14, 0x93, 0xff},
                      /* cosmetic */ true,
                      kSearchOutlineWidth);
       painter.drawRect(search.last);
@@ -338,7 +338,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       const odb::Rect core = grid->getCore();
       const DbuX site_width = grid->getSiteWidth();
 
-      auto color = gui::Painter::kOrange;
+      auto color = web::Painter::kOrange;
       color.a = 100;
       painter.setPen(color);
       painter.setBrush(color);
@@ -370,34 +370,34 @@ void Graphics::drawObjects(gui::Painter& painter)
       const int y_hi = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy + 1];
       for (int gx = 0; gx < negotiation_grid_w_; ++gx) {
         const auto state = negotiation_pixels_[gy * negotiation_grid_w_ + gx];
-        gui::Painter::Color c;
+        web::Painter::Color c;
         switch (state) {
           case NegotiationPixelState::kNoRow:
-            c = gui::Painter::kBrown;
+            c = web::Painter::kBrown;
             c.a = 60;
             break;
           case NegotiationPixelState::kFree:
-            c = gui::Painter::kGreen;
+            c = web::Painter::kGreen;
             c.a = 100;
             break;
           case NegotiationPixelState::kOccupied:
-            c = gui::Painter::kWhite;
+            c = web::Painter::kWhite;
             c.a = 100;
             break;
           case NegotiationPixelState::kOveruse:
-            c = gui::Painter::kRed;
+            c = web::Painter::kRed;
             c.a = 150;
             break;
           case NegotiationPixelState::kBlocked:
-            c = gui::Painter::kYellow;
+            c = web::Painter::kYellow;
             c.a = 80;
             break;
           case NegotiationPixelState::kInvalid:
-            c = gui::Painter::kBlack;
+            c = web::Painter::kBlack;
             c.a = 200;
             break;
           case NegotiationPixelState::kDrcViolation:
-            c = gui::Painter::Color{255, 140, 0, 200};  // orange
+            c = web::Painter::Color{255, 140, 0, 200};  // orange
             break;
         }
         painter.setPen(c);
@@ -412,7 +412,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   if (!negotiation_search_windows_.empty()) {
-    painter.setBrush(gui::Painter::kTransparent);
+    painter.setBrush(web::Painter::kTransparent);
     for (const auto& sel : selection) {
       if (!sel.isInst()) {
         continue;
@@ -473,13 +473,13 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
 
       // Init-position search window
-      auto init_color = gui::Painter::kCyan;
+      auto init_color = web::Painter::kCyan;
       painter.setPen(init_color, /* cosmetic */ true, kSearchOutlineWidth);
       painter.drawRect(init_win);
 
       // Current-position window (only when the cell is displaced).
       if (!curr_win.isInverted() && curr_win.area() > 0) {
-        auto curr_color = gui::Painter::kWhite;
+        auto curr_color = web::Painter::kWhite;
         curr_color.a = 200;
         painter.setPen(curr_color, /* cosmetic */ true, kSearchOutlineWidth);
         painter.drawRect(curr_win);
@@ -550,7 +550,7 @@ void Graphics::addNegotiationViolationsPoint(int iter,
 void Graphics::addNegotiationPhase2Marker(int iter)
 {
   if (violations_chart_) {
-    violations_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+    violations_chart_->addVerticalMarker(iter, web::Painter::kYellow);
   }
 }
 
@@ -569,6 +569,6 @@ void Graphics::clearCurrentIterMovers()
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 }  // namespace dpl

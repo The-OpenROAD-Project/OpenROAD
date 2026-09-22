@@ -269,7 +269,8 @@ const visibility = {
     // Instance sub-shapes
     inst_names: true,
     inst_pins: true,
-    inst_pin_names: true,
+    // Instance pin names — off by default, matching the Qt GUI
+    inst_pin_names: false,
     // Shapes
     routing: true,
     routing_segments: true,

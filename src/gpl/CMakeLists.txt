@@ -168,7 +168,7 @@ target_link_libraries(gpl
     gpl_lib
     utl_lib
     Eigen3::Eigen
-    gui
+    gui_core
     odb
     OpenSTA
     rsz
@@ -197,7 +197,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       utl_lib
       Eigen3::Eigen
-      gui
+      gui_core
       odb
       OpenSTA
       rsz
