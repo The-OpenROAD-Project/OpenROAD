@@ -388,12 +388,65 @@ TEST_F(SaveImageTest, EmptyDesign)
 // A hairline is authored as one CSS pixel, and drawLine's brush has to cover
 // that many pixels: its radius came out (width-1)/2, so an EVEN width -- which
 // is what hairlineCss() returns on the supersampled path -- lost a pixel and
-// the stroke went down at half its width.  Alpha is the tell: the die outline
-// is written opaque, and a half-width line decimates to a fraction of that.
+// the stroke went down at half its width.
+//
+// Measured on the GCell grid, which still strokes into the supersampled buffer
+// (the die outline moved to the output-resolution pass, where the hairline is
+// an odd 1 px and the bug cannot show).  Alpha is the tell: the grid line is
+// written opaque, and half a super-pixel decimates to a third of the colour
+// where a full one keeps about two thirds.
 TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
 {
-  // An empty block draws its die outline and nothing else, so every lit pixel
-  // here belongs to the stroke under test.
+  odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
+  ASSERT_NE(grid, nullptr);
+  grid->addGridPatternX(0, 11, 10000);
+  grid->addGridPatternY(0, 11, 10000);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.gcell_grid = true;
+  // 256 px is one whole tile, so the only resample in play is the tile's own
+  // decimation -- what the stroke width has to survive.
+  const std::string path = tempPng("hairline");
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(path, w, h);
+  // Sampled on rows that hold only the vertical lines: a row ALONG a
+  // horizontal line is solid white, and every crossing blends two strokes into
+  // one pixel and reaches full alpha whatever width they were drawn at.
+  unsigned char peak_alpha = 0;
+  for (unsigned y = 0; y < h; ++y) {
+    const size_t row = static_cast<size_t>(y) * w * 4;
+    std::vector<unsigned char> white_alphas;
+    for (unsigned x = 0; x < w; ++x) {
+      const size_t i = row + static_cast<size_t>(x) * 4;
+      if (pixels[i] == 255 && pixels[i + 1] == 255 && pixels[i + 2] == 255
+          && pixels[i + 3] > 0) {
+        white_alphas.push_back(pixels[i + 3]);
+      }
+    }
+    // A horizontal line paints the whole row; the vertical lines paint a
+    // handful of pixels.  11 grid lines, so allow a little smearing.
+    if (white_alphas.empty() || white_alphas.size() > 30) {
+      continue;
+    }
+    for (const unsigned char a : white_alphas) {
+      peak_alpha = std::max(peak_alpha, a);
+    }
+  }
+  EXPECT_GT(static_cast<int>(peak_alpha), 130)
+      << "the grid lines are thinner than the hairline width asked for";
+}
+
+// The die outline is a one-pixel stroke, and it has to survive BOTH resamples
+// a saved image goes through: the tile's Lanczos decimation (which is why it is
+// drawn after that, at output resolution) and the mosaic-to-image step, which
+// picked a single nearest sample and so dropped whole edges at some widths.
+// Checked across widths because which edge fell in a skipped column depended on
+// the step between the two scales.
+TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
+{
   odb::dbChip::destroy(chip_);
   chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
   block_ = odb::dbBlock::create(chip_, "outline_only");
@@ -401,28 +454,26 @@ TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
   block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
   makeTileGen();
 
-  const std::string path = tempPng("hairline");
-  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+  for (const int width : {300, 512, 700, 1024}) {
+    const std::string path = tempPng("die_outline_" + std::to_string(width));
+    tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), width, 0, {});
 
-  unsigned w = 0, h = 0;
-  const auto pixels = decodePngFile(path, w, h);
-  // Sampled along the middle row, which crosses the left and right edges and
-  // no corner: two strokes meeting at a corner blend into each other and reach
-  // full alpha whatever width they were drawn at.
-  unsigned char peak_alpha = 0;
-  const size_t mid_row = static_cast<size_t>(h / 2) * w * 4;
-  for (size_t i = mid_row; i + 3 < mid_row + static_cast<size_t>(w) * 4;
-       i += 4) {
-    if (pixels[i] == kOutlineGray.r && pixels[i + 1] == kOutlineGray.g
-        && pixels[i + 2] == kOutlineGray.b) {
-      peak_alpha = std::max(peak_alpha, pixels[i + 3]);
+    unsigned w = 0, h = 0;
+    const auto pixels = decodePngFile(path, w, h);
+    ASSERT_EQ(w, static_cast<unsigned>(width));
+
+    // The middle row crosses the left and right edges of the die and nothing
+    // else, so it must carry exactly two runs of outline.
+    int lit = 0;
+    const size_t mid_row = static_cast<size_t>(h / 2) * w * 4;
+    for (unsigned x = 0; x < w; ++x) {
+      if (pixels[mid_row + x * 4 + 3] > 0) {
+        ++lit;
+      }
     }
+    EXPECT_GE(lit, 2) << "at width " << width
+                      << " the die outline lost an edge";
   }
-  // Drawn at its full width the stroke keeps about half its alpha through the
-  // Lanczos decimation (a one-pixel feature sits at Nyquist); at half width it
-  // keeps about a sixth.  The threshold sits between the two.
-  EXPECT_GT(static_cast<int>(peak_alpha), 90)
-      << "the die outline is thinner than the hairline width asked for";
 }
 
 TEST_F(SaveImageTest, LargeWidthClamped)

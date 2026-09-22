@@ -3044,8 +3044,8 @@ void TileGenerator::drawRegionsLayer(std::vector<unsigned char>& image,
       }
       drawFilledRect(
           image, toPixels(frame, r.intersect(dbu_tile)), kRegionFill);
-      // Outline: same clamped edge drawing as the die/core outline.
-      outlineRectInTile(image, r, kOutlineGray, frame);
+      // The outline is drawn by renderTileBuffer after the decimation, with
+      // the die and core frames, so the hairline keeps its full colour.
     }
   }
 }
@@ -3455,6 +3455,21 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // "_instances" pass — drawing on every pass put a gray frame on every
     // tech-layer tile and broke every "expect transparent" test.
     const bool draw_die_outline = chiplet_nodes.size() > 1;
+    // Hairline strokes held back for the output-resolution pass below, in
+    // world DBU.  See the call sites for why they do not go in the
+    // supersampled buffer with everything else.
+    std::vector<odb::Polygon> crisp_outlines;
+    auto collect_crisp_outline
+        = [&crisp_outlines](const odb::Polygon& poly, const ChipletNode& node) {
+            if (poly.getPoints().empty()) {
+              return;
+            }
+            std::vector<odb::Point> pts = poly.getPoints();
+            for (odb::Point& pt : pts) {
+              node.world_xfm.apply(pt);
+            }
+            crisp_outlines.emplace_back(std::move(pts));
+          };
     // "_instances" pass: instance borders only (no routing) + the always-on
     // die/core outlines.
     const bool instances_only = (layer == "_instances");
@@ -3542,17 +3557,36 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // every layer pass in multi-die designs (chiplet demarcation), and
       // on the _instances pass for all designs (Qt draws it always;
       // scoping to _instances keeps tech-layer tiles transparent).
+      //
+      // Collected in WORLD DBU and drawn after the decimation instead of
+      // here: these are one-pixel strokes, and a one-pixel feature sits at
+      // the output Nyquist, so the band-limiting resampler takes about half
+      // of it -- the die frame came out at 82 of the 160 Qt paints.  Qt's
+      // cosmetic pen writes at output resolution, and so does the pass these
+      // go to.  Transforming the polygon is also exact for a rotated chiplet,
+      // where the fills below fall back to drawing as if R0.
       if (draw_die_outline || instances_only) {
-        const odb::Polygon die = block->getDieAreaPolygon();
-        if (!die.getPoints().empty()) {
-          outlinePolygonInTile(image_buffer, die, kOutlineGray, frame);
-        }
+        collect_crisp_outline(block->getDieAreaPolygon(), node);
       }
       // Core area outline (Qt drawChip draws it right after the die).
       if (instances_only) {
-        const odb::Polygon core = block->getCoreAreaPolygon();
-        if (!core.getPoints().empty()) {
-          outlinePolygonInTile(image_buffer, core, kOutlineGray, frame);
+        collect_crisp_outline(block->getCoreAreaPolygon(), node);
+      }
+      // Region boundaries: drawRegionsLayer fills them in the band-limited
+      // pass and leaves their outline to the crisp one, for the same reason.
+      if (layer == "_regions" && vis.regions) {
+        for (odb::dbRegion* region : block->getRegions()) {
+          for (odb::dbBox* box : region->getBoundaries()) {
+            const odb::Rect r = box->getBox();
+            if (r.area() <= 0) {
+              continue;
+            }
+            collect_crisp_outline(odb::Polygon({{r.xMin(), r.yMin()},
+                                                {r.xMax(), r.yMin()},
+                                                {r.xMax(), r.yMax()},
+                                                {r.xMin(), r.yMax()}}),
+                                  node);
+          }
         }
       }
 
@@ -4840,6 +4874,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     out_frame.scale = scale_out;
     out_frame.px_per_css = effective_dpr;
 
+    // The die, core and region frames, at the resolution they are meant to
+    // land on (see where they were collected).
+    for (const odb::Polygon& poly : crisp_outlines) {
+      outlinePolygonInTile(world_image_buffer, poly, kOutlineGray, out_frame);
+    }
+
     // Overlays render once in world space, on top of all chiplets.
     // Their geometry (timing paths, DRC rects, flight lines) is already
     // expressed in world DBU and isn't tied to any single chiplet's
@@ -5503,14 +5543,27 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   const int crop_y
       = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
 
-  // Precompute 1D coordinate maps for nearest-neighbor resampling.
+  // The source span each output pixel covers.  z rounds up, so tile_scale is
+  // in [scale, 2*scale) and that span is one or two samples per axis; the
+  // resample below takes the most-covered sample of the block rather than a
+  // single nearest one.  Picking one sample dropped any feature the step
+  // stepped over -- a one-pixel die outline vanished from whole edges, and
+  // thin wires came and went with the width asked for.
   std::vector<int> map_x(final_w);
+  std::vector<int> map_x_end(final_w);
   for (int fx = 0; fx < final_w; ++fx) {
     map_x[fx] = crop_x + static_cast<int>(fx * tile_scale / scale);
+    map_x_end[fx]
+        = std::max(map_x[fx] + 1,
+                   crop_x + static_cast<int>((fx + 1) * tile_scale / scale));
   }
   std::vector<int> map_y(final_h);
+  std::vector<int> map_y_end(final_h);
   for (int fy = 0; fy < final_h; ++fy) {
     map_y[fy] = crop_y + static_cast<int>(fy * tile_scale / scale);
+    map_y_end[fy]
+        = std::max(map_y[fy] + 1,
+                   crop_y + static_cast<int>((fy + 1) * tile_scale / scale));
   }
 
   // Resample to exact requested dimensions (nearest-neighbor from tile_scale
@@ -5523,23 +5576,40 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     for (int fy = start_y; fy < end_y; ++fy) {
       unsigned char* dst_row
           = &final_buf[static_cast<size_t>(fy) * final_w * 4];
-      const int sy = map_y[fy];
-      if (sy < 0 || sy >= tile_span_h) {
+      const int sy_lo = std::max(map_y[fy], 0);
+      const int sy_hi = std::min(map_y_end[fy], tile_span_h);
+      if (sy_lo >= sy_hi) {
         fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
         continue;
       }
-      const unsigned char* src_row
-          = &output[static_cast<size_t>(sy) * tile_span_w * 4];
-      if (!anyNonZero({src_row, static_cast<size_t>(tile_span_w * 4)})) {
+      bool any_row = false;
+      for (int sy = sy_lo; sy < sy_hi && !any_row; ++sy) {
+        any_row
+            = anyNonZero({&output[static_cast<size_t>(sy) * tile_span_w * 4],
+                          static_cast<size_t>(tile_span_w * 4)});
+      }
+      if (!any_row) {
         fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
         continue;
       }
       for (int fx = 0; fx < final_w; ++fx) {
-        const int sx = map_x[fx];
         unsigned char* dp = &dst_row[fx * 4];
         copyRGBA(dp, bg);
-        if (sx >= 0 && sx < tile_span_w) {
-          compositePixel(dp, &src_row[sx * 4]);
+        const int sx_lo = std::max(map_x[fx], 0);
+        const int sx_hi = std::min(map_x_end[fx], tile_span_w);
+        const unsigned char* best = nullptr;
+        for (int sy = sy_lo; sy < sy_hi; ++sy) {
+          const unsigned char* src_row
+              = &output[static_cast<size_t>(sy) * tile_span_w * 4];
+          for (int sx = sx_lo; sx < sx_hi; ++sx) {
+            const unsigned char* sp = &src_row[sx * 4];
+            if (best == nullptr || sp[3] > best[3]) {
+              best = sp;
+            }
+          }
+        }
+        if (best != nullptr) {
+          compositePixel(dp, best);
         }
       }
     }
