@@ -302,9 +302,12 @@ struct TileVisibility
   FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
-  bool inst_names = true;      // Instance name labels on _instances layer
-  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
-  bool inst_pin_names = true;  // ITerm name labels
+  bool inst_names = true;  // Instance name labels on _instances layer
+  bool inst_pins = true;   // ITerm (cell pin) shapes on tech layers
+  // ITerm name labels.  Off by default, like the Qt GUI's
+  // Misc/Instances/"Pin Names" (displayControls.cpp makes it the one unchecked
+  // leaf under Instances), so a default image carries the same labels there.
+  bool inst_pin_names = false;
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;

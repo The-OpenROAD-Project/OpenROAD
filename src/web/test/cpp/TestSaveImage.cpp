@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
@@ -227,6 +228,44 @@ TEST_F(SaveImageTest, ResolutionOption)
   // Allow some tolerance for rounding and bloat margin.
   EXPECT_GT(w, 500u);
   EXPECT_LT(w, 2000u);
+}
+
+// A zero-area request means the rect the viewer frames on -- the die area
+// unioned with the block bbox -- plus 5% of its smaller dimension.  That is
+// the rule Gui::saveImage gives the Qt path, so the two renderers frame a
+// default save_image identically; framing on the die alone (or bloating by the
+// LARGER dimension) put them a percent apart.
+TEST_F(SaveImageTest, ZeroAreaFramesDieUnionBBoxWithMargin)
+{
+  // Place an instance past the right die edge so the bbox is not contained in
+  // the die and the union is the only rect that covers both.
+  placeInst("BUF_X16", "overhang", 99000, 50000);
+  makeTileGen();
+
+  odb::Rect expected = block_->getBBox()->getBox();
+  expected.merge(block_->getDieArea());
+  ASSERT_GT(expected.xMax(), block_->getDieArea().xMax())
+      << "the overhanging instance should widen the union";
+  expected.bloat(
+      static_cast<int>(std::min(expected.dx(), expected.dy()) * 0.05),
+      expected);
+
+  const std::string zero_area_path = tempPng("frame_zero_area");
+  tile_gen_->saveImage(zero_area_path, odb::Rect(0, 0, 0, 0), 512, 0, {});
+
+  const std::string explicit_path = tempPng("frame_explicit");
+  tile_gen_->saveImage(explicit_path, expected, 512, 0, {});
+
+  unsigned zero_w = 0, zero_h = 0;
+  const auto zero_pixels = decodePngFile(zero_area_path, zero_w, zero_h);
+  unsigned explicit_w = 0, explicit_h = 0;
+  const auto explicit_pixels
+      = decodePngFile(explicit_path, explicit_w, explicit_h);
+
+  EXPECT_EQ(zero_w, explicit_w);
+  EXPECT_EQ(zero_h, explicit_h);
+  EXPECT_EQ(zero_pixels, explicit_pixels)
+      << "a zero-area save should render exactly that rect";
 }
 
 TEST_F(SaveImageTest, ExplicitAreaOption)

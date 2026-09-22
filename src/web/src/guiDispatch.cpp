@@ -712,7 +712,17 @@ void Gui::saveImage(const std::string& filename,
     auto* block = chip->getBlock();
 
     if (block != nullptr) {
+      // The bbox covers the placed SHAPES, not the floorplan, so union the die
+      // area in: a design sitting in a corner of a much larger die would
+      // otherwise be framed on its content alone.  That union is what the
+      // layout viewer fits to (LayoutViewer::getBounds) and what the web
+      // renderer frames a zero-area request on (TileGenerator::getFitBounds),
+      // so all three agree on what "the whole design" means.
       save_region = block->getBBox()->getBox();
+      const odb::Rect die = block->getDieArea();
+      if (die.area() > 0) {
+        save_region.merge(die);
+      }
     }
 
     const double bloat_by = 0.05;  // 5%

@@ -663,7 +663,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"rudy",               &TileVisibility::rudy,               false},
     {"inst_names",         &TileVisibility::inst_names,         true},
     {"inst_pins",          &TileVisibility::inst_pins,          true},
-    {"inst_pin_names",     &TileVisibility::inst_pin_names,     true},
+    {"inst_pin_names",     &TileVisibility::inst_pin_names,     false},
     {"blockages",              &TileVisibility::blockages,              true},
     {"placement_blockages",    &TileVisibility::placement_blockages,    true},
     {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
@@ -5315,14 +5315,18 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   // Determine rendering region (DBU).
   odb::Rect area = region;
   if (area.dx() == 0 || area.dy() == 0) {
-    area = block->getDieArea();
+    // The rect the viewer frames on -- die area unioned with the block bbox --
+    // plus the 5% margin Gui::saveImage gives the Qt path, so a zero-area
+    // request means the same rectangle in either renderer.  The margin follows
+    // the SMALLER dimension, as Qt's does: taking the larger one instead put
+    // the two images a percent apart on a non-square design.
+    area = getFitBounds();
     if (area.dx() == 0 || area.dy() == 0) {
       area = block->getBBox()->getBox();
     }
-    // Bloat by 5% like GUI headless default.
-    const int margin_x = area.dx() * 5 / 100;
-    const int margin_y = area.dy() * 5 / 100;
-    area.bloat(std::max(margin_x, margin_y), area);
+    constexpr double kMargin = 0.05;
+    area.bloat(static_cast<int>(std::min(area.dx(), area.dy()) * kMargin),
+               area);
   }
 
   // Determine scale (pixels per DBU).
