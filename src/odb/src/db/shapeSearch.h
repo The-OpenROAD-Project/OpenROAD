@@ -44,7 +44,6 @@ class ShapeSearch
     int yMin() const { return bounds.yMin(); }
     int xMax() const { return bounds.xMax(); }
     int yMax() const { return bounds.yMax(); }
-    void reset();
     void add_shape(Shape* shape, bool update_bounds = true);
 
     Shape* shape_list = nullptr;

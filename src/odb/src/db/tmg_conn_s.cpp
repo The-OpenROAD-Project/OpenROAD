@@ -30,17 +30,6 @@ static void tcs_level_wrap(ShapeSearch::Bin* bin)
 
 //////////////////////////////////////////////////
 
-void ShapeSearch::Bin::reset()
-{
-  shape_list = nullptr;
-  last_shape = nullptr;
-  left = nullptr;
-  right = nullptr;
-  parent = nullptr;
-  bounds.reset(0, 0, 0, 0);
-  num_shapes = 0;
-}
-
 void ShapeSearch::Bin::add_shape(ShapeSearch::Shape* shape, bool update_bounds)
 {
   if (shape_list == nullptr) {
