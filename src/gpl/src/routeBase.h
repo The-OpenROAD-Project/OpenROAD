@@ -171,7 +171,10 @@ class RouteBase
   // TODO: understand why this function is breaking RUDY.
   // Allow for grt heatmap during gpl execution.
   void loadGrt();
-  float getGrtRC() const;
+  // Not const: fills the same overflow/tile counters updateRudyAverage() sets,
+  // so the routability pass header reads the same on either congestion
+  // backend.
+  float getGrtRC();
 
   void calculateRudyTiles();
   void updateRudyAverage(bool verbose = true);

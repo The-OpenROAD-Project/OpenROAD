@@ -136,7 +136,12 @@ void TileGrid::initTiles(bool use_rudy)
   debugPrint(
       log_, GPL, "rudy", 1, "{:9} {:6} {:4}", "TileCnt:", tileCntX_, tileCntY_);
   if (!use_rudy) {
-    log_->info(GPL, 39, "Number of routing layers: {}", numRoutingLayers_);
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
+               "Number of routing layers: {}",
+               numRoutingLayers_);
   }
 
   // 2D tile grid structure init
@@ -270,16 +275,20 @@ void RouteBase::revertToMinCongestion()
 {
   log_->info(GPL,
              55,
-             "Reverting inflation values and target density from the "
-             "iteration with "
-             "minimum observed routing congestion.");
-  log_->info(GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
+             "Reverting inflation and target density to the pass with the "
+             "minimum observed routing congestion ({:.4f}), target density "
+             "{:.4f}.",
+             minRc_,
+             minRcTargetDensity_.empty() ? 0.0f : minRcTargetDensity_[0]);
 
   // revert
   nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
-    log_->info(GPL,
-               57,
+    // Per-region densities: only the top-level one is in the line above.
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "Target density at minimum routing congestion: {:.4f}{}",
                minRcTargetDensity_[j],
                nbVec_[j]->getGroup()
@@ -613,8 +622,11 @@ bool RouteBase::scaleInflationToBudget()
       tile->setInflatedRatio(1.0 + scale * (tile->inflatedRatio() - 1.0));
     }
   }
-  log_->info(GPL,
-             99,
+  // The spent/remaining side of this is reported by the pass's inflation line.
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
              "Routability inflation trimmed to {:.2f}% of what this iteration "
              "asked for; {:.2f}% of the {:.2f}% budget still unspent.",
              100.0 * scale,
@@ -872,6 +884,21 @@ std::pair<bool, bool> RouteBase::routability(
     curRc = getGrtRC();
   }
 
+  log_->info(GPL,
+             40,
+             "Routability pass {}: weighted congestion {:.4f} (target {:.4f}), "
+             "{} of {} actionable tiles overflowed ({:.1f}%).",
+             revert_count_,
+             curRc,
+             rbVars_.targetRC,
+             overflowed_tiles_count_,
+             actionable_tiles_count_,
+             actionable_tiles_count_ > 0
+                 ? (static_cast<double>(overflowed_tiles_count_)
+                    / actionable_tiles_count_)
+                       * 100
+                 : 0.0);
+
   if (curRc < rbVars_.targetRC) {
     log_->info(GPL,
                50,
@@ -889,11 +916,11 @@ std::pair<bool, bool> RouteBase::routability(
   // for the price of a full Nesterov re-run from the snapshot.
   if ((minRc_ - curRc) > minRc_ * kMinRcImprovement) {
     is_min_rc_ = true;
+    // The header above already carries the current congestion.
     log_->info(GPL,
                48,
-               "Routing congestion ({:.4f}) lower than previous minimum "
-               "({:.4g}). Updating minimum.",
-               curRc,
+               "Congestion improved on previous minimum ({:.4g}); updating "
+               "minimum.",
                minRc_);
     minRc_ = curRc;
     min_RC_violated_cnt_ = 0;
@@ -911,9 +938,8 @@ std::pair<bool, bool> RouteBase::routability(
     min_RC_violated_cnt_++;
     log_->info(GPL,
                49,
-               "Routing congestion ({:.4f}) higher than minimum ({:.4f}). "
-               "Consecutive non-improvement count: {}.",
-               curRc,
+               "No improvement on minimum ({:.4f}); consecutive "
+               "non-improvement count: {}.",
                minRc_,
                min_RC_violated_cnt_);
   }
@@ -997,15 +1023,6 @@ std::pair<bool, bool> RouteBase::routability(
         = (static_cast<float>(inflatedAreaDelta_[nb_index])
            / nbVec_[nb_index]->getNesterovInstsArea())
           * 100.0f;
-    log_->info(GPL,
-               86,
-               "Inflated area:              {:10.3f} um^2 ({:+.2f}%)",
-               inflated_area_delta_microns,
-               inflated_area_delta_percentage);
-    log_->info(GPL,
-               52,
-               "Placement target density:   {:10.4f}",
-               nbVec_[nb_index]->getTargetDensity());
 
     prev_white_space_area[nb_index] = nbVec_[nb_index]->getWhiteSpaceArea();
     prev_movable_area[nb_index] = nbVec_[nb_index]->getMovableArea();
@@ -1016,6 +1033,25 @@ std::pair<bool, bool> RouteBase::routability(
         = inflatedAreaDelta_[nb_index] + prev_total_gcells_area[nb_index];
 
     nbVec_[nb_index]->cutFillerCells(inflatedAreaDelta_[nb_index]);
+
+    // One line for the whole inflation step: what it cost, what is left of the
+    // budget, and the density the cells now have to be placed at. Reported
+    // after the fillers are cut, since that is what settles the density.
+    log_->info(
+        GPL,
+        86,
+        "Inflation {:+.3f} um^2 ({:+.2f}% of movable), {:.2f}% of the "
+        "{:.2f}% budget spent; target density {:.4f}{}.",
+        inflated_area_delta_microns,
+        inflated_area_delta_percentage,
+        original_movable_area_ > 0
+            ? 100.0 * getTotalInflation() / original_movable_area_
+            : 0.0,
+        100.0 * rbVars_.maxInflationTotal,
+        nbVec_[nb_index]->getTargetDensity(),
+        nbVec_[nb_index]->getGroup()
+            ? " in group " + string(nbVec_[nb_index]->getGroup()->getName())
+            : "");
 
     // max density detection
     if (nbVec_[nb_index]->getTargetDensity() > rbVars_.maxDensity) {
@@ -1074,41 +1110,54 @@ std::pair<bool, bool> RouteBase::routability(
       return ((new_value - old_value) / old_value) * 100.0;
     };
 
-    log_->info(
+    // The area breakdown behind the inflation line above.
+    debugPrint(
+        log_,
         GPL,
-        58,
+        "routability",
+        1,
         "White space area:           {:10.3f} um^2 ({:+.2f}%)",
         block->dbuAreaToMicrons(nbVec_[i]->getWhiteSpaceArea()),
         percentDiff(prev_white_space_area[i], nbVec_[i]->getWhiteSpaceArea()));
 
-    log_->info(GPL,
-               59,
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "Movable instances area:     {:10.3f} um^2 ({:+.2f}%)",
                block->dbuAreaToMicrons(nbVec_[i]->getMovableArea()),
                percentDiff(prev_movable_area[i], nbVec_[i]->getMovableArea()));
 
-    log_->info(GPL,
-               60,
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "Total filler area:          {:10.3f} um^2 ({:+.2f}%)",
                block->dbuAreaToMicrons(nbVec_[i]->getTotalFillerArea()),
                percentDiff(prev_total_filler_area[i],
                            nbVec_[i]->getTotalFillerArea()));
 
-    log_->info(GPL,
-               61,
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "Total non-inflated area:    {:10.3f} um^2 ({:+.2f}%)",
                block->dbuAreaToMicrons(new_total_gcells_area),
                percentDiff(prev_total_gcells_area[i], new_total_gcells_area));
 
-    log_->info(
+    debugPrint(
+        log_,
         GPL,
-        62,
+        "routability",
+        1,
         "Total inflated area:        {:10.3f} um^2 ({:+.2f}%)",
         block->dbuAreaToMicrons(new_expected_gcells_area),
         percentDiff(prev_expected_gcells_area[i], new_expected_gcells_area));
 
-    log_->info(GPL,
-               63,
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "New Target Density:         {:10.4f}",
                nbVec_[i]->getTargetDensity());
 
@@ -1167,18 +1216,26 @@ void RouteBase::updateRudyAverage(bool verbose)
   actionable_tiles_count_ = edge_cong_array.size();
 
   if (verbose) {
-    log_->info(
+    debugPrint(
+        log_,
         GPL,
-        88,
+        "routability",
+        1,
         "Tiles the placer can act on: {} of {} ({:.2f}%)",
         actionable_tiles_count_,
         tg_->tiles().size(),
         (static_cast<double>(actionable_tiles_count_) / tg_->tiles().size())
             * 100);
-    log_->info(
-        GPL, 41, "Total routing overflow: {:.4f}", total_route_overflow_);
-    log_->info(GPL,
-               42,
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
+               "Total routing overflow: {:.4f}",
+               total_route_overflow_);
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "Number of overflowed tiles: {} ({:.2f}%)",
                overflowed_tiles_count_,
                actionable_tiles_count_ > 0
@@ -1226,23 +1283,43 @@ void RouteBase::updateRudyAverage(bool verbose)
         / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
   if (verbose) {
-    log_->info(
-        GPL, 43, "Average top 0.5% routing congestion: {:.4f}", avg005RC);
-    log_->info(
-        GPL, 44, "Average top 1.0% routing congestion: {:.4f}", avg010RC);
-    log_->info(
-        GPL, 45, "Average top 2.0% routing congestion: {:.4f}", avg020RC);
-    log_->info(
-        GPL, 46, "Average top 5.0% routing congestion: {:.4f}", avg050RC);
-    log_->info(GPL,
-               47,
+    // The weighted result is reported by the pass header; these are the
+    // percentiles it is made of.
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
+               "Average top 0.5% routing congestion: {:.4f}",
+               avg005RC);
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
+               "Average top 1.0% routing congestion: {:.4f}",
+               avg010RC);
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
+               "Average top 2.0% routing congestion: {:.4f}",
+               avg020RC);
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
+               "Average top 5.0% routing congestion: {:.4f}",
+               avg050RC);
+    debugPrint(log_,
+               GPL,
+               "routability",
+               1,
                "Routability iteration weighted routing congestion: {:.4f}",
                final_average_rc_);
   }
 }
 
 // extract RC values
-float RouteBase::getGrtRC() const
+float RouteBase::getGrtRC()
 {
   double totalRouteOverflowH2 = 0;
   double totalRouteOverflowV2 = 0;
@@ -1251,11 +1328,19 @@ float RouteBase::getGrtRC() const
   std::vector<double> horEdgeCongArray;
   std::vector<double> verEdgeCongArray;
 
+  // Tile counts, as opposed to the per-layer edge counts above: a tile is
+  // overflowed if any of its layers is. These feed the pass header, which
+  // reads the same on either congestion backend.
+  overflowed_tiles_count_ = 0;
+  actionable_tiles_count_ = 0;
+
   odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
   for (auto& tile : tg_->tiles()) {
     if (!tile->isActionable()) {
       continue;
     }
+    ++actionable_tiles_count_;
+    bool tile_overflowed = false;
     int min_routing_layer, max_routing_layer;
     grouter_->getMinMaxLayer(min_routing_layer, max_routing_layer);
     for (int i = 1; i <= tg_->numRoutingLayers(); i++) {
@@ -1281,14 +1366,31 @@ float RouteBase::getGrtRC() const
 
         if (ratio > 1.0) {
           overflowTileCnt2++;
+          tile_overflowed = true;
         }
       }
     }
+    if (tile_overflowed) {
+      ++overflowed_tiles_count_;
+    }
   }
 
-  log_->info(GPL, 64, "TotalRouteOverflowH2: {:.4f}", totalRouteOverflowH2);
-  log_->info(GPL, 65, "TotalRouteOverflowV2: {:.4f}", totalRouteOverflowV2);
-  log_->info(GPL, 66, "OverflowTileCnt2: {}", overflowTileCnt2);
+  total_route_overflow_ = totalRouteOverflowH2 + totalRouteOverflowV2;
+
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
+             "TotalRouteOverflowH2: {:.4f}",
+             totalRouteOverflowH2);
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
+             "TotalRouteOverflowV2: {:.4f}",
+             totalRouteOverflowV2);
+  debugPrint(
+      log_, GPL, "routability", 1, "OverflowTileCnt2: {}", overflowTileCnt2);
 
   int horArraySize = horEdgeCongArray.size();
   int verArraySize = verEdgeCongArray.size();
@@ -1343,15 +1445,20 @@ float RouteBase::getGrtRC() const
   verAvg020RC /= ceil(0.020 * verArraySize);
   verAvg050RC /= ceil(0.050 * verArraySize);
 
-  log_->info(GPL, 67, "0.5%RC: {:.4f}", std::fmax(horAvg005RC, verAvg005RC));
-  log_->info(GPL, 68, "1.0%RC: {:.4f}", std::fmax(horAvg010RC, verAvg010RC));
-  log_->info(GPL, 69, "2.0%RC: {:.4f}", std::fmax(horAvg020RC, verAvg020RC));
-  log_->info(GPL, 70, "5.0%RC: {:.4f}", std::fmax(horAvg050RC, verAvg050RC));
+  auto debug = [this](const char* msg, auto value) {
+    debugPrint(log_, GPL, "routability", 1, msg, value);
+  };
 
-  log_->info(GPL, 71, "0.5rcK: {:.2f}", rbVars_.rcK1);
-  log_->info(GPL, 72, "1.0rcK: {:.2f}", rbVars_.rcK2);
-  log_->info(GPL, 73, "2.0rcK: {:.2f}", rbVars_.rcK3);
-  log_->info(GPL, 74, "5.0rcK: {:.2f}", rbVars_.rcK4);
+  // The weighted result these combine into is reported by the pass header.
+  debug("0.5%RC: {:.4f}", std::fmax(horAvg005RC, verAvg005RC));
+  debug("1.0%RC: {:.4f}", std::fmax(horAvg010RC, verAvg010RC));
+  debug("2.0%RC: {:.4f}", std::fmax(horAvg020RC, verAvg020RC));
+  debug("5.0%RC: {:.4f}", std::fmax(horAvg050RC, verAvg050RC));
+
+  debug("0.5rcK: {:.2f}", rbVars_.rcK1);
+  debug("1.0rcK: {:.2f}", rbVars_.rcK2);
+  debug("2.0rcK: {:.2f}", rbVars_.rcK3);
+  debug("5.0rcK: {:.2f}", rbVars_.rcK4);
 
   float finalRC = (rbVars_.rcK1 * std::fmax(horAvg005RC, verAvg005RC)
                    + rbVars_.rcK2 * std::fmax(horAvg010RC, verAvg010RC)
@@ -1359,15 +1466,15 @@ float RouteBase::getGrtRC() const
                    + rbVars_.rcK4 * std::fmax(horAvg050RC, verAvg050RC))
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL, 75, "Final routing congestion: {}", finalRC);
+  debug("Final routing congestion: {}", finalRC);
   return finalRC;
 }
 
+// The pass is announced by routability() once it has a congestion reading to
+// announce it with, not here.
 void RouteBase::increaseCounter()
 {
   revert_count_++;
-
-  log_->info(GPL, 40, "Routability iteration: {}", revert_count_);
 }
 
 void RouteBase::printGCellInflation() const
