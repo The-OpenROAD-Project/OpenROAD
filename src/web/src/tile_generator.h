@@ -1145,7 +1145,7 @@ class TileGenerator
   void dropOverlayCachesIfStale(uint64_t rev) const;
 
   // Pseudo-layer painters used by renderTileBuffer (one per overlay).
-  // Callers gate on the visibility flag; painters handle the rest.  All
+  // Callers gate on the entry's `enabled`; painters handle the rest.  All
   // share one signature so pseudoLayerDefs() can dispatch by table.
   void drawAccessPointsLayer(std::vector<unsigned char>& image,
                              odb::dbBlock* block,
@@ -1174,7 +1174,7 @@ class TileGenerator
       const std::string& name) const;
 
   // Registry of the self-painting pseudo layers: layer name -> visibility
-  // flag -> painter -> paint order.  Single source of truth for the
+  // test -> painter -> paint order.  Single source of truth for the
   // renderTileBuffer dispatch, the pseudo-layer guard and saveImage's
   // layers_to_render — adding an overlay means adding one entry (plus the
   // client layer).
@@ -1184,7 +1184,9 @@ class TileGenerator
   struct PseudoLayerDef
   {
     const char* name;
-    bool TileVisibility::*flag;
+    // Whether the overlay is shown; a predicate rather than a single flag so
+    // an overlay can depend on more than one display control.
+    bool (*enabled)(const TileVisibility&);
     void (TileGenerator::*painter)(std::vector<unsigned char>&,
                                    odb::dbBlock*,
                                    const TileFrame&,

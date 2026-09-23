@@ -4045,7 +4045,7 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
     ordered.emplace_back(current_z, name);
   }
   for (const PseudoLayerDef& def : pseudoLayerDefs()) {
-    if (vis.*def.flag) {
+    if (def.enabled(vis)) {
       ordered.emplace_back(def.z_index, def.name);
     }
   }
@@ -4068,23 +4068,23 @@ TileGenerator::pseudoLayerDefs()
   // the routing layers and access points, regions and the gcell grid on top.
   static const std::array<PseudoLayerDef, 5> defs = {{
       {.name = "_access_points",
-       .flag = &TileVisibility::access_points,
+       .enabled = [](const TileVisibility& v) { return v.access_points; },
        .painter = &TileGenerator::drawAccessPointsLayer,
        .z_index = 1000},
       {.name = "_regions",
-       .flag = &TileVisibility::regions,
+       .enabled = [](const TileVisibility& v) { return v.regions; },
        .painter = &TileGenerator::drawRegionsLayer,
        .z_index = 1001},
       {.name = "_mfg_grid",
-       .flag = &TileVisibility::mfg_grid,
+       .enabled = [](const TileVisibility& v) { return v.mfg_grid; },
        .painter = &TileGenerator::drawMfgGridLayer,
        .z_index = 2},
       {.name = "_gcell_grid",
-       .flag = &TileVisibility::gcell_grid,
+       .enabled = [](const TileVisibility& v) { return v.gcell_grid; },
        .painter = &TileGenerator::drawGcellGridLayer,
        .z_index = 1002},
       {.name = "_rudy",
-       .flag = &TileVisibility::rudy,
+       .enabled = [](const TileVisibility& v) { return v.rudy; },
        .painter = &TileGenerator::drawRudyLayer,
        .z_index = 1003},
   }};
@@ -4904,12 +4904,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
 
       // Self-painting pseudo layers (see pseudoLayerDefs): dispatch by
-      // name and gate on the layer's visibility flag.
+      // name and gate on the entry's visibility test.
       bool pseudo_overlay = false;
       for (const PseudoLayerDef& def : pseudoLayerDefs()) {
         if (layer == def.name) {
           pseudo_overlay = true;
-          if (vis.*def.flag) {
+          if (def.enabled(vis)) {
             (this->*def.painter)(image_buffer, block, frame, vis);
           }
           break;
