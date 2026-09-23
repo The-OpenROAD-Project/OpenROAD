@@ -45,7 +45,6 @@ target_link_libraries(psm
     dpl_lib
     est_lib
     Eigen3::Eigen
-    gui
     gui_core
     Boost::boost
 )

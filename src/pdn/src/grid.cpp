@@ -523,6 +523,112 @@ odb::Rect Grid::getGridBoundary() const
   return getGridArea();
 }
 
+Region Grid::getDomainRegion() const
+{
+  // Whatever the subclass calls its domain.  Only CoreGrid, which really does
+  // sit on the core, follows the core outline; every other grid keeps to the
+  // rectangle it already used.
+  return Region(getDomainArea());
+}
+
+Region Grid::getGridRegion() const
+{
+  if (getBlock() == nullptr) {
+    return Region();
+  }
+
+  return Region(getBlock()->getDieAreaPolygon());
+}
+
+Region Grid::getDomainBoundaryRegion() const
+{
+  return getDomainRegion();
+}
+
+Region Grid::getGridBoundaryRegion() const
+{
+  return getGridRegion();
+}
+
+int Grid::getRingReach(const odb::Rect& band, const odb::Point& normal) const
+{
+  // The furthest edge of any ring lying beside this band, on the side the
+  // normal points to.  getRingArea() answers the same question for the grid as
+  // a whole, which on a polygon core is the wrong answer for any leg narrower
+  // than the widest: it would send a shape in the tall leg of an L out to
+  // where the ring around the wide leg is, crossing the core-to-die margin to
+  // get there.
+  const bool horizontal_reach = normal.x() != 0;
+  const bool towards_high = horizontal_reach ? normal.x() > 0 : normal.y() > 0;
+
+  const int origin = horizontal_reach
+                         ? (towards_high ? band.xMax() : band.xMin())
+                         : (towards_high ? band.yMax() : band.yMin());
+  int reach = origin;
+
+  for (const auto& ring : rings_) {
+    int hor_size;
+    int ver_size;
+    ring->getTotalWidth(hor_size, ver_size);
+    const EdgeSpec& offset = ring->getOffset();
+
+    // How far out of the domain this ring reaches on this side.  Nothing
+    // extended to the ring needs to go further, and nothing may: past it lies
+    // whatever else the design put there, and on a polygon domain that
+    // includes the ring belonging to a different edge of the same core.  The
+    // side facing across a notch is beside the band just as its own side is,
+    // so distance is the only thing that tells them apart.
+    const int limit
+        = horizontal_reach
+              ? (towards_high ? offset.right : offset.left) + ver_size
+              : (towards_high ? offset.top : offset.bottom) + hor_size;
+
+    for (const auto& [layer, shapes] : ring->getShapes()) {
+      for (const auto& shape : shapes) {
+        const odb::Rect& ring_shape = shape->getRect();
+
+        // Which shapes bound which axis is decided the same way
+        // getRingArea() decides it: a side only bounds the axis it is thin
+        // along, and a square corner piece bounds both.
+        const bool square = ring_shape.dx() == ring_shape.dy();
+        const bool bounds
+            = square
+              || (horizontal_reach ? ring_shape.dx() < ring_shape.dy()
+                                   : ring_shape.dx() > ring_shape.dy());
+        if (!bounds) {
+          continue;
+        }
+
+        // only a side actually alongside the band can be reached
+        if (horizontal_reach) {
+          if (ring_shape.yMax() <= band.yMin()
+              || ring_shape.yMin() >= band.yMax()) {
+            continue;
+          }
+        } else {
+          if (ring_shape.xMax() <= band.xMin()
+              || ring_shape.xMin() >= band.xMax()) {
+            continue;
+          }
+        }
+
+        const int far
+            = horizontal_reach
+                  ? (towards_high ? ring_shape.xMax() : ring_shape.xMin())
+                  : (towards_high ? ring_shape.yMax() : ring_shape.yMin());
+        const int distance = towards_high ? far - origin : origin - far;
+        if (distance <= 0 || distance > limit) {
+          continue;
+        }
+
+        reach = towards_high ? std::max(reach, far) : std::min(reach, far);
+      }
+    }
+  }
+
+  return reach;
+}
+
 odb::Rect Grid::getRingArea() const
 {
   if (getBlock() == nullptr) {
@@ -1200,7 +1306,6 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
              1,
              "Collecting grid obstructions from: {}",
              getLongName());
-  const odb::Rect core = getDomainArea();
 
   odb::PtrSet<odb::dbTechLayer> layers;
 
@@ -1214,16 +1319,23 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
     }
   }
 
-  for (auto* layer : layers) {
-    auto obs = std::make_shared<GridObsShape>(layer, core, this);
-    debugPrint(getLogger(),
-               utl::PDN,
-               "Obs",
-               2,
-               "Adding obstruction on layer {} covering {}",
-               layer->getName(),
-               Shape::getRectText(core, getBlock()->getDbUnitsPerMicron()));
-    obstructions[layer].push_back(obs);
+  // The area this grid claims on the layers it uses, so that other grids keep
+  // off it -- and so that a via of theirs whose stack passes through one of
+  // those layers is rejected.  This has to be the outline: as the bounding box
+  // it also rejects the vias another grid is entitled to build in the notch of
+  // a polygon domain, where this grid is not.
+  for (const odb::Rect& area : getDomainRegion().getRects()) {
+    for (auto* layer : layers) {
+      auto obs = std::make_shared<GridObsShape>(layer, area, this);
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Obs",
+                 2,
+                 "Adding obstruction on layer {} covering {}",
+                 layer->getName(),
+                 Shape::getRectText(area, getBlock()->getDbUnitsPerMicron()));
+      obstructions[layer].push_back(obs);
+    }
   }
 
   for (const auto& ring : rings_) {
@@ -1231,22 +1343,31 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
     ring->getTotalWidth(hor_size, ver_size);
     const EdgeSpec& offset = ring->getOffset();
 
-    const odb::Rect ring_rect(core.xMin() - ver_size - offset.left,
-                              core.yMin() - hor_size - offset.bottom,
-                              core.xMax() + ver_size + offset.right,
-                              core.yMax() + hor_size + offset.top);
-    for (auto* layer : ring->getLayers()) {
-      auto obs = std::make_shared<GridObsShape>(layer, ring_rect, this);
-      obs->generateObstruction();
-      debugPrint(
-          getLogger(),
-          utl::PDN,
-          "Obs",
-          2,
-          "Adding obstruction on layer {} covering {}",
-          layer->getName(),
-          Shape::getRectText(ring_rect, getBlock()->getDbUnitsPerMicron()));
-      obstructions[layer].push_back(obs);
+    // A ring reaches out of the domain by its offset plus its width on each
+    // side, so the area it claims is the outline grown by those amounts.  As
+    // the bounding box grown by them it would also claim the notch of a
+    // polygon domain -- where this grid has no ring, and where another grid is
+    // entitled to its vias.
+    const Region ring_region = getDomainRegion().bloat({
+        .left = ver_size + offset.left,
+        .bottom = hor_size + offset.bottom,
+        .right = ver_size + offset.right,
+        .top = hor_size + offset.top,
+    });
+    for (const odb::Rect& ring_rect : ring_region.getRects()) {
+      for (auto* layer : ring->getLayers()) {
+        auto obs = std::make_shared<GridObsShape>(layer, ring_rect, this);
+        obs->generateObstruction();
+        debugPrint(
+            getLogger(),
+            utl::PDN,
+            "Obs",
+            2,
+            "Adding obstruction on layer {} covering {}",
+            layer->getName(),
+            Shape::getRectText(ring_rect, getBlock()->getDbUnitsPerMicron()));
+        obstructions[layer].push_back(obs);
+      }
     }
   }
 }
@@ -1270,14 +1391,25 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
       obs_rect.bloat(ob->getMinSpacing(), obs_rect);
     }
 
+    // A system-reserved obstruction is odb's marker for the part of the
+    // bounding box a polygon die does not cover, so it is an absence of die
+    // rather than metal to keep clear of.
+    const bool die_absence = ob->isSystemReserved();
+
     if (box->getTechLayer() == nullptr) {
       for (auto* layer : block->getDb()->getTech()->getLayers()) {
         auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::kBlockObs);
+        if (die_absence) {
+          shape->setIsDieAbsence();
+        }
         obs[layer].push_back(std::move(shape));
       }
     } else {
       auto shape = std::make_shared<Shape>(
           box->getTechLayer(), obs_rect, Shape::kBlockObs);
+      if (die_absence) {
+        shape->setIsDieAbsence();
+      }
       obs[box->getTechLayer()].push_back(std::move(shape));
     }
   }
@@ -1444,19 +1576,34 @@ CoreGrid::CoreGrid(VoltageDomain* domain,
 {
 }
 
-odb::Rect CoreGrid::getDomainBoundary() const
+int CoreGrid::getFollowPinWidth() const
 {
-  // account for the width of the follow pins for straps
-  const odb::Rect core = Grid::getDomainBoundary();
-
   int follow_pin_width = 0;
   for (const auto& strap : getStraps()) {
     if (strap->type() == GridComponent::kFollowpin) {
       follow_pin_width = std::max(follow_pin_width, strap->getWidth());
     }
   }
+  return follow_pin_width;
+}
 
-  return core.bloat(follow_pin_width / 2, odb::Orientation2D::Vertical);
+Region CoreGrid::getDomainRegion() const
+{
+  return getDomain()->getDomainRegion();
+}
+
+odb::Rect CoreGrid::getDomainBoundary() const
+{
+  // account for the width of the follow pins for straps
+  const odb::Rect core = Grid::getDomainBoundary();
+
+  return core.bloat(getFollowPinWidth() / 2, odb::Orientation2D::Vertical);
+}
+
+Region CoreGrid::getDomainBoundaryRegion() const
+{
+  const int allowance = getFollowPinWidth() / 2;
+  return Grid::getDomainBoundaryRegion().bloat({0, allowance, 0, allowance});
 }
 
 void CoreGrid::setupDirectConnect(
@@ -1517,40 +1664,56 @@ void CoreGrid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 
 void CoreGrid::cleanupShapes()
 {
-  // remove shapes that are wholly contained inside a macro
-  Shape::ShapeTreeMap macros;
+  // Remove shapes that are wholly contained inside a macro.
+  //
+  // Containment is measured against the outline of the macro rather than its
+  // bounding box.  A shape in the notch of an L-shaped macro is in ordinary
+  // core area, over rows and connected to them, and deleting it would take the
+  // followpins of the notch with it.  The bounding box is kept as a cheap
+  // first test, which is the whole test for a rectangular macro.
+  struct Macro
+  {
+    odb::Rect bbox;
+    Region outline;
+    odb::PtrSet<odb::dbTechLayer> layers;
+  };
+
+  std::vector<Macro> macros;
   for (auto* inst : getBlock()->getInsts()) {
     if (!inst->isFixed()) {
       continue;
     }
 
-    const odb::Rect outline = inst->getBBox()->getBox();
+    Macro macro;
+    macro.outline = getInstanceOutline(inst);
+    macro.bbox = macro.outline.getEnclosingRect();
 
     for (auto* obs : inst->getMaster()->getObstructions()) {
-      auto shape = std::make_shared<Shape>(
-          obs->getTechLayer(), outline, Shape::ShapeType::kMacroObs);
-      shape->setObstruction(outline);
-      macros[obs->getTechLayer()].insert(shape);
+      macro.layers.insert(obs->getTechLayer());
     }
     for (auto* term : inst->getMaster()->getMTerms()) {
       for (auto* pin : term->getMPins()) {
         for (auto* geom : pin->getGeometry()) {
-          auto shape = std::make_shared<Shape>(
-              geom->getTechLayer(), outline, Shape::ShapeType::kMacroObs);
-          shape->setObstruction(outline);
-          macros[geom->getTechLayer()].insert(shape);
+          macro.layers.insert(geom->getTechLayer());
         }
       }
     }
+
+    macros.push_back(std::move(macro));
   }
 
   std::set<Shape*> remove;
   for (const auto& [layer, shapes] : getShapes()) {
-    const auto& layer_avoid = macros[layer];
     for (const auto& shape : shapes) {
-      if (layer_avoid.qbegin(bgi::contains(shape->getRect()))
-          != layer_avoid.qend()) {
-        remove.insert(shape.get());
+      for (const Macro& macro : macros) {
+        if (!macro.layers.contains(layer)
+            || !macro.bbox.contains(shape->getRect())) {
+          continue;
+        }
+        if (macro.outline.contains(Region(shape->getRect()))) {
+          remove.insert(shape.get());
+          break;
+        }
       }
     }
   }
@@ -1634,6 +1797,37 @@ odb::Rect InstanceGrid::getDomainBoundary() const
 odb::Rect InstanceGrid::getGridArea() const
 {
   return applyHalo(getDomainArea(), false, true, true);
+}
+
+Region InstanceGrid::getDomainRegion() const
+{
+  // The real outline of the macro rather than its placement bounding box.  For
+  // a rectangular macro -- which is any macro that does not declare an
+  // OVERLAP-layer obstruction -- these are the same thing.
+  return getInstanceOutline(inst_);
+}
+
+Region InstanceGrid::getGridRegion() const
+{
+  return getDomainRegion().bloat(
+      {halos_.left, halos_.bottom, halos_.right, halos_.top});
+}
+
+Region InstanceGrid::getDomainBoundaryRegion() const
+{
+  // Take away the part of the bounding box that is not the macro, and nothing
+  // else.  Intersecting with the outline instead would also cut off the
+  // overhang the boundary legitimately has: the supply rails of a standard
+  // cell run half a width past the cell on each side, and a grid defined over
+  // those pins is meant to reach them.
+  const Region notch = Region(getDomainArea()).subtract(getDomainRegion());
+
+  return Region(getDomainBoundary()).subtract(notch);
+}
+
+Region InstanceGrid::getGridBoundaryRegion() const
+{
+  return getDomainBoundaryRegion();
 }
 
 odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
@@ -1838,12 +2032,17 @@ void InstanceGrid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
   ShapeVectorMap local_obs;
   Grid::getGridLevelObstructions(local_obs);
 
-  const odb::Rect inst_box = getGridArea();
+  // The outline of the macro plus its halo, not the bounding box: the notch of
+  // an L-shaped macro is ordinary core area and the core grid is entitled to
+  // it, vias included.
+  const std::vector<odb::Rect> inst_boxes = getGridRegion().getRects();
 
   // copy layer obs
   for (const auto& [layer, shapes] : local_obs) {
-    auto obs = std::make_shared<GridObsShape>(layer, inst_box, this);
-    local_obs[layer].push_back(obs);
+    for (const odb::Rect& inst_box : inst_boxes) {
+      local_obs[layer].push_back(
+          std::make_shared<GridObsShape>(layer, inst_box, this));
+    }
   }
 
   // copy instance obstructions
@@ -2056,8 +2255,16 @@ void InstanceGrid::checkHalo() const
     return;
   }
 
-  const odb::Rect inst_box = inst_->getBBox()->getBox();
-  const odb::Rect halo_box = applyHalo(inst_box, true, true, true);
+  // The outline and the outline plus the halo, not their bounding boxes: on a
+  // non-rectangular macro the bounding box covers the notch, so measuring
+  // against it flags the rows alongside the notch -- which the macro is
+  // nowhere near -- and demands a halo of zero to clear rows it never touches.
+  const Region outline = getDomainRegion();
+  const Region halo_region = getGridRegion();
+
+  const auto touches = [](const Region& region, const odb::Rect& box) {
+    return !Region(box).intersect(region).isEmpty();
+  };
 
   // Collect rows the halo intrudes into.  Rows the instance footprint itself
   // overlaps are skipped: no halo adjustment can clear those (the instance is
@@ -2066,7 +2273,7 @@ void InstanceGrid::checkHalo() const
   std::string first_row;
   for (auto* row : getBlock()->getRows()) {
     const odb::Rect row_box = row->getBBox();
-    if (!halo_box.overlaps(row_box) || inst_box.overlaps(row_box)) {
+    if (!touches(halo_region, row_box) || touches(outline, row_box)) {
       continue;
     }
     if (overlapping_rows.empty()) {
