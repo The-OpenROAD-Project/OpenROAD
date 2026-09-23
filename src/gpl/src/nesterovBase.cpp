@@ -5821,12 +5821,8 @@ static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
                          const std::vector<size_t>& skip_indices)
 {
-  // Leave the skipped entries out of the sum rather than adding them and
-  // subtracting them again: in float that cancellation is a large number
-  // minus itself when only the skipped entries move, which rounds to zero
-  // (the other entries' movement is lost) or to a small negative number,
-  // whose square root is NaN. The skip list is short (the IO pins), so walk
-  // a sorted copy of it alongside the loop.
+  // The skip list is short (the IO pins), so walk a sorted copy of it
+  // alongside the loop.
   std::vector<size_t> skip = skip_indices;
   std::ranges::sort(skip);
   auto next_skip = skip.begin();
