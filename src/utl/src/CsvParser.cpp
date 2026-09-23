@@ -26,8 +26,7 @@ std::vector<std::vector<std::string>> readCsv(const std::string& file_path,
 
   // Handles quoted fields and backslash-escaped delimiters per the
   // escaped-list grammar (e.g. `foo,"a,b",bar` → 3 cells).
-  const boost::escaped_list_separator<char> sep(
-      '\\', delimiter, '"');
+  const boost::escaped_list_separator<char> sep('\\', delimiter, '"');
 
   std::vector<std::vector<std::string>> rows;
   std::string line;
