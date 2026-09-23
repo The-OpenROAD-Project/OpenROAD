@@ -16,4 +16,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file top_level_term3.guideok $guide_file
+diff_files top_level_term3.guideok $guide_file

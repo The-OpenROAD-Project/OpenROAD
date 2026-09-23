@@ -24,4 +24,4 @@ global_route -use_cugr -verbose
 
 write_guides $guide_file
 
-diff_file pin_access2_cugr.guideok $guide_file
+diff_files pin_access2_cugr.guideok $guide_file

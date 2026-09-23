@@ -5,7 +5,7 @@ read_lef ihp-sg13g2/sg13g2_tech.lef
 read_lef ihp-sg13g2/sg13g2_stdcell.lef
 
 read_verilog gcd_ihp.v
-link gcd
+link_design gcd
 
 report_opt_config
 
