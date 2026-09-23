@@ -167,21 +167,19 @@ void Grid::markBlocked(odb::dbBlock* block)
       }
     }
   };
-  // Levels considered: M1 to M3
-  constexpr int kMaxLevel = 3;
   auto getLevel = [](odb::dbTechLayer* tech_layer) {
     if (tech_layer == nullptr
         || tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
       return 0;
     }
     const int level = tech_layer->getRoutingLevel();
-    return level <= kMaxLevel ? level : 0;
+    return level <= kMaxPinLevel ? level : 0;
   };
 
   // Stripe metal per level, and via/patch metal per level.  The via/patch
   // metal lying outside the stripes can short to pins on the same layer.
-  std::vector<gtl::polygon_90_set_data<int>> wire_metal(kMaxLevel + 1);
-  std::vector<gtl::polygon_90_set_data<int>> via_metal(kMaxLevel + 1);
+  std::vector<gtl::polygon_90_set_data<int>> wire_metal(kMaxPinLevel + 1);
+  std::vector<gtl::polygon_90_set_data<int>> via_metal(kMaxPinLevel + 1);
   auto addRect = [](gtl::polygon_90_set_data<int>& set, const odb::Rect& r) {
     set += gtl::rectangle_data<int>{r.xMin(), r.yMin(), r.xMax(), r.yMax()};
   };
@@ -225,7 +223,7 @@ void Grid::markBlocked(odb::dbBlock* block)
   }
 
   std::vector<gtl::rectangle_data<int>> rects;
-  for (int level = 1; level <= kMaxLevel; level++) {
+  for (int level = 1; level <= kMaxPinLevel; level++) {
     via_metal[level] -= wire_metal[level];
     rects.clear();
     via_metal[level].get_rectangles(rects);

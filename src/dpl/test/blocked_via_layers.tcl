@@ -16,7 +16,8 @@ add_pdn_connect -layers {M1 M2}
 add_pdn_connect -layers {M2 M5}
 pdngen
 
-# m3_cell pin shorts to the VDD M2-M5 via stack; m1_cell is unaffected
+# m3_cell and unconnected m3_open have M3 pins shorting to VDD M2-M5 via
+# stacks; m1_cell is unaffected
 catch { check_placement -verbose } error
 puts $error
 

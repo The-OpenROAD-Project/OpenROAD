@@ -15,6 +15,9 @@
 
 namespace dpl {
 
+// Highest routing level tracked for pin layers and blocked layers
+inline constexpr int kMaxPinLevel = 3;
+
 class MasterEdge
 {
  public:
