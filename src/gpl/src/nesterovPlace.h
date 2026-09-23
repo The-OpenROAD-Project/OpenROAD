@@ -121,6 +121,8 @@ class NesterovPlace
   float getWorstSettleRatio() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
                         const std::string& routability_driven_dir) const;
@@ -170,11 +172,6 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
-
-  // Iteration at which the routability trigger first found the overflow gate
-  // open with the placement still moving, or -1 when no such hold is in
-  // progress. Reporting only: it measures how long the settle gate delays a
-  // pass past the overflow it was configured to run at.
   int routability_settle_wait_start_iter_ = -1;
 
   std::string divergeMsg_;

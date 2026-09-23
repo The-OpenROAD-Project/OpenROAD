@@ -445,6 +445,14 @@ void Replace::reportHpwlMetric()
   log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
 }
 
+NesterovBase* Replace::getTopLevelNB() const
+{
+  if (nbVec_.empty()) {
+    log_->error(GPL, 104, "Top-level NesterovBase is not initialized.");
+  }
+  return nbVec_[0].get();
+}
+
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
                                        const int threads)
 {
@@ -456,7 +464,7 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
 
   float density = 1.0f;
   if (initNesterovPlace(options_no_io, threads, false)) {
-    density = nbVec_[0]->getUniformTargetDensity();
+    density = getTopLevelNB()->getUniformTargetDensity();
   }
 
   log_->redirectStringEnd();  // discard output
@@ -485,6 +493,26 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_rudy_stride_ = rudy_stride;
   gui_debug_generate_images_ = generate_images;
   gui_debug_images_path_ = images_path;
+}
+
+float Replace::estimateTargetDensity(const PlaceOptions& options,
+                                     const int threads)
+{
+  log_->info(GPL, 98, "Initialize gpl and estimate target density.");
+  log_->redirectStringBegin();
+
+  PlaceOptions options_no_io = options;
+  options_no_io.skipIo();  // in case bterms are not placed
+
+  float density = 1.0f;
+  bool initialized = initNesterovPlace(options_no_io, threads, false);
+  log_->redirectStringEnd();  // discard output
+
+  if (initialized) {
+    density = getTopLevelNB()->estimateTargetDensity(options_no_io.overflow);
+  }
+
+  return density;
 }
 
 void PlaceOptions::validate(utl::Logger* logger)
