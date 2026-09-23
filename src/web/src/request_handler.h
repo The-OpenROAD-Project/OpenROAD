@@ -20,19 +20,17 @@
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
 #include "color.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "utl/Logger.h"
-
-namespace gui {
-class HeatMapSourceRegistration;
-}
+#include "web/core.h"
 
 namespace web {
 
+class HeatMapDataSource;
+class HeatMapSourceRegistration;
 class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
@@ -245,7 +243,7 @@ struct SessionState
   bool flywires_only = false;
   // Last Options > "Show polygon decomposition" value this session derived
   // its highlight shapes under.  The setting itself is server-global (it
-  // lives in gui::Gui, where the ITerm/MTerm descriptors read it); this copy
+  // lives in web::Gui, where the ITerm/MTerm descriptors read it); this copy
   // exists only so the overlay handler can spot that the shapes it holds
   // predate a change and re-derive them, exactly as it does for
   // flywires_only.
@@ -270,21 +268,21 @@ struct SessionState
   HighlightSource highlight_source = HighlightSource::kNone;
 
   std::mutex selectables_mutex;
-  std::vector<gui::Selected> selectables;
+  std::vector<web::Selected> selectables;
 
-  gui::Selected current_inspected;
-  std::vector<gui::Selected> navigation_history;
+  web::Selected current_inspected;
+  std::vector<web::Selected> navigation_history;
 
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
-  gui::SelectionSet selection_set;
-  gui::SelectionSet::const_iterator selection_itr = selection_set.end();
+  web::SelectionSet selection_set;
+  web::SelectionSet::const_iterator selection_itr = selection_set.end();
 
   // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
-  // groups colored by gui::Painter::kHighlightColors).  An object lives in
+  // groups colored by web::Painter::kHighlightColors).  An object lives in
   // at most one group.  highlight_group_rects is the derived overlay
   // snapshot, rebuilt on every mutation (not per tile).  Both guarded by
   // selection_mutex.
-  std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
+  std::array<web::SelectionSet, web::kNumHighlightSet> highlight_groups;
   std::vector<ColoredRect> highlight_group_rects;
   // Octilinear group members (special-wire shapes) keep their outline rather
   // than collapsing to a bounding rect.  Guarded by selection_mutex, rebuilt
@@ -319,7 +317,7 @@ struct SessionState
   std::vector<TextLabel> cone_labels;
 
   std::mutex heatmap_mutex;
-  std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
+  std::map<std::string, std::shared_ptr<web::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
 
   // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
@@ -376,7 +374,7 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
 // Drops the entire selection state (selectables, inspected object,
 // history, selection set, highlight/hover shapes) when a destroy callback
 // flagged it stale.  Must be called before dereferencing any stored
-// gui::Selected.  Returns true when the state was cleared.
+// web::Selected.  Returns true when the state was cleared.
 bool consumeStaleSelection(SessionState& state);
 
 // Build a kError response carrying `message`.  The three-line
@@ -632,8 +630,8 @@ class TileHandler
   // Build one session's instance of a registered source.  Defaults the chip
   // to the root only when the factory left it unset, so a source bound to a
   // specific chiplet keeps its binding.
-  std::shared_ptr<gui::HeatMapDataSource> createHeatMapInstance(
-      const gui::HeatMapSourceRegistration& registration) const;
+  std::shared_ptr<web::HeatMapDataSource> createHeatMapInstance(
+      const web::HeatMapSourceRegistration& registration) const;
 
   static WebSocketResponse serializeBounds(uint32_t id,
                                            const TileGenerator& gen);

@@ -23,11 +23,11 @@ namespace gui {
 
 LayoutTabs::LayoutTabs(QtOptions* options,
                        ScriptWidget* output_widget,
-                       const SelectionSet& selected,
-                       const HighlightSet& highlighted,
+                       const web::SelectionSet& selected,
+                       const web::HighlightSet& highlighted,
                        const std::vector<std::unique_ptr<Ruler>>& rulers,
                        const std::vector<std::unique_ptr<Label>>& labels,
-                       Gui* gui,
+                       web::Gui* gui,
                        std::function<bool()> using_dbu,
                        std::function<bool()> using_poly_decomp_view,
                        std::function<bool()> show_ruler_as_euclidian,
@@ -114,13 +114,13 @@ void LayoutTabs::chipLoaded(odb::dbChip* chip)
   connect(viewer, &LayoutViewer::location, this, &LayoutTabs::location);
   connect(viewer, &LayoutViewer::selected, this, &LayoutTabs::selected);
   connect(viewer,
-          qOverload<const Selected&>(&LayoutViewer::addSelected),
+          qOverload<const web::Selected&>(&LayoutViewer::addSelected),
           this,
-          qOverload<const Selected&>(&LayoutTabs::addSelected));
+          qOverload<const web::Selected&>(&LayoutTabs::addSelected));
   connect(viewer,
-          qOverload<const SelectionSet&>(&LayoutViewer::addSelected),
+          qOverload<const web::SelectionSet&>(&LayoutViewer::addSelected),
           this,
-          qOverload<const SelectionSet&>(&LayoutTabs::addSelected));
+          qOverload<const web::SelectionSet&>(&LayoutTabs::addSelected));
   connect(viewer, &LayoutViewer::addRuler, this, &LayoutTabs::addRuler);
   connect(viewer,
           &LayoutViewer::focusNetsChanged,
@@ -217,14 +217,14 @@ void LayoutTabs::cancelRulerBuild()
   }
 }
 
-void LayoutTabs::selection(const Selected& selection)
+void LayoutTabs::selection(const web::Selected& selection)
 {
   if (current_viewer_) {
     current_viewer_->selection(selection);
   }
 }
 
-void LayoutTabs::selectionFocus(const Selected& focus)
+void LayoutTabs::selectionFocus(const web::Selected& focus)
 {
   if (current_viewer_) {
     current_viewer_->selectionFocus(focus);
@@ -254,7 +254,7 @@ void LayoutTabs::populateModuleColors(odb::dbBlock* block)
     return;
   }
 
-  ColorGenerator generator;
+  web::ColorGenerator generator;
 
   for (auto* module : block->getModules()) {
     auto color = toQColor(generator.getColor());

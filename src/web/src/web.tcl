@@ -79,7 +79,7 @@ proc save_image { args } {
     if { $resolution != 0 } {
       utl::error WEB 27 "Cannot set -width if -resolution has already been specified."
     }
-    sta::check_positive_int "-width" $keys(-width)
+    sta::check_positive_integer "-width" $keys(-width)
     set width $keys(-width)
     if { $width == 0 } {
       utl::error WEB 29 "Specified -width cannot be zero."
@@ -160,13 +160,13 @@ proc web_save_report { args } {
 
   set max_setup 100
   if { [info exists keys(-setup_paths)] } {
-    sta::check_positive_int "-setup_paths" $keys(-setup_paths)
+    sta::check_positive_integer "-setup_paths" $keys(-setup_paths)
     set max_setup $keys(-setup_paths)
   }
 
   set max_hold 100
   if { [info exists keys(-hold_paths)] } {
-    sta::check_positive_int "-hold_paths" $keys(-hold_paths)
+    sta::check_positive_integer "-hold_paths" $keys(-hold_paths)
     set max_hold $keys(-hold_paths)
   }
 
@@ -369,13 +369,13 @@ proc save_animated_gif { args } {
     if { $resolution != 0 } {
       utl::error WEB 65 "Cannot set -width if -resolution has already been specified."
     }
-    sta::check_positive_int "-width" $keys(-width)
+    sta::check_positive_integer "-width" $keys(-width)
     set width $keys(-width)
   }
 
   set delay 0
   if { [info exists keys(-delay)] } {
-    sta::check_positive_int "-delay" $keys(-delay)
+    sta::check_positive_integer "-delay" $keys(-delay)
     set delay $keys(-delay)
   }
 

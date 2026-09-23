@@ -35,7 +35,7 @@ namespace sta {
 class dbSta;
 }
 
-namespace gui {
+namespace web {
 class HeatMapDataSource;
 }
 
@@ -63,7 +63,7 @@ struct FlightLine
   Color color;
 };
 
-// The nine canonical anchor names, in gui::Painter::anchors() order.  That
+// The nine canonical anchor names, in web::Painter::anchors() order.  That
 // table (src/gui/src/painter.cpp) is the source of truth for the spelling and
 // is duplicated rather than shared because libweb has no link dependency on
 // the Qt GUI — the same trade-off spectrumColor() makes in color.h.  Keep the
@@ -90,7 +90,7 @@ struct TextLabel
 };
 
 // A user-created text annotation stored on the design (mirrors the Qt GUI's
-// gui::Label).  Global (not per-session) so it renders into every client's
+// web::Label).  Global (not per-session) so it renders into every client's
 // tiles and into save_image, matching the Qt GUI.
 struct StoredLabel
 {
@@ -163,7 +163,7 @@ struct SelectionResult
   std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
   // Local-to-root transform of the chiplet the hit came from, so a consumer
-  // that re-derives a bbox from `object` (a gui::Descriptor reports it in the
+  // that re-derives a bbox from `object` (a web::Descriptor reports it in the
   // object's own block coordinates) can lift it into the same world space
   // `bbox` is already in.  Identity for single-die designs.
   odb::dbTransform world_xfm;
@@ -302,9 +302,12 @@ struct TileVisibility
   FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
-  bool inst_names = true;      // Instance name labels on _instances layer
-  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
-  bool inst_pin_names = true;  // ITerm name labels
+  bool inst_names = true;  // Instance name labels on _instances layer
+  bool inst_pins = true;   // ITerm (cell pin) shapes on tech layers
+  // ITerm name labels.  Off by default, like the Qt GUI's
+  // Misc/Instances/"Pin Names" (displayControls.cpp makes it the one unchecked
+  // leaf under Instances), so a default image carries the same labels there.
+  bool inst_pin_names = false;
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;
@@ -327,6 +330,18 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
+  // from the region it is drawing rather than from the design: the IO pin
+  // markers (RenderThread::setupIOPins takes min(die, bounds)).
+  //
+  // 0 means "one tile", which is the interactive answer: a client shows a
+  // handful of tiles, so a tile's span stands in for its viewport and the
+  // markers shrink as it zooms in.  save_image composites EVERY tile of the
+  // level into one image, where that stand-in is 2^z too small -- markers came
+  // out a 2 px nub against Qt's 20 px arrow -- so it passes the image's own
+  // extent instead.
+  int view_extent_dbu = 0;
+
   // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
   // which gates RenderThread::drawLabels — and so gates them in Qt's
   // save_image too, since that renders through the same path.
@@ -335,7 +350,7 @@ struct TileVisibility
   // Debug
   bool debug = false;
 
-  // When true the tile renderer iterates gui::Gui::renderers() and
+  // When true the tile renderer iterates web::Gui::renderers() and
   // rasterizes drawObjects() output.  Drives the gpl / cts / mpl debug
   // graphics overlay.  Off by default so tiles stay cheap.
   bool debug_renderers = false;
@@ -461,7 +476,7 @@ class TileGenerator
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
 
-  // Per-layer colors matching gui::DisplayControls layer palette.  Computed
+  // Per-layer colors matching web::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
   const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
                                                                = nullptr) const;
@@ -471,7 +486,7 @@ class TileGenerator
   // by layer up front is what lets the per-instance pass draw a layer's shapes
   // directly instead of walking all of a master's geometry and calling
   // dbBox::getTechLayer() (a chain of dbTable lookups) on every box, once per
-  // layer per tile.  Mirrors gui::LayoutViewer::boxesByLayer.
+  // layer per tile.  Mirrors web::LayoutViewer::boxesByLayer.
   struct MasterLayerGeom
   {
     // Obstructions (LEF OBS), drawn before pins.  Polygons and boxes are kept
@@ -644,7 +659,7 @@ class TileGenerator
       const std::vector<TextLabel>& labels = {},
       bool debug_renderers = false,
       bool debug_live = false) const;
-  std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
+  std::vector<unsigned char> generateHeatMapTile(web::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
                                                  int y,
@@ -681,11 +696,15 @@ class TileGenerator
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  // `bg` fills the pixels the layers do not cover; it defaults to transparent,
+  // so a caller that saves what a viewer shows passes that viewer's background
+  // (WebServer::saveImage does, for Qt save_image parity).
   void saveImage(const std::string& filename,
                  const odb::Rect& region,
                  int width_px,
                  double dbu_per_pixel,
-                 const TileVisibility& vis) const;
+                 const TileVisibility& vis,
+                 const Color& bg = {}) const;
 
   // The layers saveImage composites, bottom to top.  Public so a test can pin
   // the order down: it has to match the zIndex the client gives each layer in
@@ -702,8 +721,8 @@ class TileGenerator
 
   // ─── Renderer bridge ─────────────────────────────────────────────────
   //
-  // The registered gui::Renderer instances are reached through one installed
-  // struct rather than a direct gui::Gui::get() call, so that libweb.a has no
+  // The registered web::Renderer instances are reached through one installed
+  // struct rather than a direct web::Gui::get() call, so that libweb.a has no
   // undefined references to the gui/SWIG library — test binaries can link
   // libweb without pulling in ord.  One struct with one setter, because the
   // two halves are installed and torn down by the same owner: when they were
@@ -1054,9 +1073,9 @@ class TileGenerator
                      const TileFrame& frame,
                      const TileVisibility& vis) const;
   void drawHeatMap(std::vector<unsigned char>& image,
-                   gui::HeatMapDataSource& source,
+                   web::HeatMapDataSource& source,
                    const TileFrame& frame) const;
-  std::shared_ptr<gui::HeatMapDataSource> getHeatMapSource(
+  std::shared_ptr<web::HeatMapDataSource> getHeatMapSource(
       const std::string& name) const;
 
   // Registry of the self-painting pseudo layers: layer name -> visibility
@@ -1106,7 +1125,7 @@ class TileGenerator
                                int dim,
                                const GlyphCache::FontSize& inst_font);
   mutable std::mutex heatmap_mutex_;
-  mutable std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>>
+  mutable std::map<std::string, std::shared_ptr<web::HeatMapDataSource>>
       heatmaps_;
   mutable std::mutex overlay_cache_mutex_;
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;

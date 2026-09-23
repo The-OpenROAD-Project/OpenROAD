@@ -43,8 +43,6 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -56,6 +54,8 @@
 #include "timing_report.h"
 #include "utl/CsvParser.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web_assets.h"
 #include "web_chart.h"
 #include "web_gif.h"
@@ -432,7 +432,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   }
 
   // Destroying any selectable object (via trigger_action or a Tcl
-  // command) leaves the session's stored gui::Selected wrappers holding
+  // command) leaves the session's stored web::Selected wrappers holding
   // dangling odb pointers.  Raise the staleness flag — handlers drop the
   // whole selection state via consumeStaleSelection() before the next
   // dereference — and tell the client once so it clears its inspector.
@@ -481,8 +481,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
 // only reached for controls already known to be in the heat map group.
 bool isRegisteredHeatMapName(const std::string& name)
 {
-  for (const gui::HeatMapSourceHandle& source :
-       gui::getRegisteredHeatMapSources()) {
+  for (const web::HeatMapSourceHandle& source :
+       web::getRegisteredHeatMapSources()) {
     if (source->getName() == name) {
       return true;
     }
@@ -495,7 +495,7 @@ void seedRendererControls(WebViewerHook* hook)
   if (hook == nullptr) {
     return;
   }
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     // The controls a renderer declares are fixed once it has registered, so
     // one pass per renderer is enough — the render path calls this on every
     // tile and must not pay for the walk each time.
@@ -515,7 +515,7 @@ void seedRendererControls(WebViewerHook* hook)
 // share a group name.  `path` is what checkDisplayControl composes and what
 // set_renderer_control takes, so the client never has to rebuild it.
 //
-// The heat maps are left out.  gui::Gui::registerHeatMap gives every source a
+// The heat maps are left out.  web::Gui::registerHeatMap gives every source a
 // HeatMapRenderer whose single control gates its drawObjects, but the web
 // draws heat maps through its own tile layer, driven by the dedicated
 // "Heat Maps" group in the display-controls panel; serving these too put a
@@ -537,7 +537,7 @@ std::string rendererControlsJson(WebViewerHook* hook)
   static constexpr const char* kHeatMapGroup = "Heat Maps";
 
   boost::json::array controls;
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string group = renderer->getDisplayControlGroupName();
     const bool heat_map_group = group == kHeatMapGroup;
     for (const auto& [name, control] : renderer->getDisplayControls()) {
@@ -580,7 +580,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
   std::string group;
   std::set<std::string> exclusivity;
   bool found = false;
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string renderer_group = renderer->getDisplayControlGroupName();
     for (const auto& [name, control] : renderer->getDisplayControls()) {
       if (renderer->displayControlPath(name) == path) {
@@ -599,7 +599,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
   }
   const bool exclude_all = exclusivity.contains("");
 
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string renderer_group = renderer->getDisplayControlGroupName();
     if (renderer_group != group) {
       continue;
@@ -860,7 +860,7 @@ WebSocketSession::WebSocketSession(
         WebSocketResponse resp;
         resp.id = req.id;
         resp.type = WebSocketResponse::kJson;
-        auto* gui = gui::Gui::get();
+        auto* gui = web::Gui::get();
         const auto* value = req.json.if_contains("value");
         if (value != nullptr && value->is_bool()) {
           const bool requested = value->get_bool();
@@ -1613,7 +1613,7 @@ TileGenerator& WebServer::ensureGenerator()
 }
 
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
-// pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
+// pull in web_serve.cpp's web::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
 void WebServer::stopAndJoinIoThreads()
 {
@@ -2029,6 +2029,57 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   }
   return vis;
 }
+
+// The background a saved image or GIF frame carries behind the layers.  Tiles
+// are rasterized on transparency so they can be composited in any order, but
+// save_image reproduces a *view*, and the Qt GUI fills the uncovered pixels
+// with DisplayControls' background (black by default) -- so leaving them
+// transparent is what made `save_image -web` and `save_image` of the same
+// design disagree.
+//
+// Both web themes set --bg-map to #000 as well, so black is the answer unless
+// a client overrode it: that override reaches us as or_bg_color in the display
+// state the viewer syncs (theme.js setBackgroundColor), in the "#rrggbb" form
+// isValidHexColor enforces.
+Color viewerBackground(const WebViewerHook* hook)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  if (hook == nullptr) {
+    return kBlack;
+  }
+  const std::string state = hook->getDisplayState();
+  if (state.empty()) {
+    return kBlack;
+  }
+  std::error_code ec;
+  const boost::json::value parsed = boost::json::parse(state, ec);
+  if (ec) {
+    return kBlack;
+  }
+  const boost::json::object* obj = parsed.if_object();
+  if (obj == nullptr) {
+    return kBlack;
+  }
+  const boost::json::value* entries = obj->if_contains("entries");
+  if (entries == nullptr || !entries->is_object()) {
+    return kBlack;
+  }
+  const boost::json::value* color
+      = entries->get_object().if_contains("or_bg_color");
+  if (color == nullptr || !color->is_string()) {
+    return kBlack;
+  }
+  const std::string_view hex(color->get_string());
+  unsigned rgb = 0;
+  if (hex.size() != 7 || hex[0] != '#'
+      || !parseIntExact(hex.substr(1), rgb, 16)) {
+    return kBlack;
+  }
+  return Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+               .b = static_cast<unsigned char>(rgb & 0xFF),
+               .a = 255};
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -2045,7 +2096,12 @@ void WebServer::saveImage(const std::string& filename,
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
-  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+  generator_->saveImage(filename,
+                        region,
+                        width_px,
+                        dbu_per_pixel,
+                        vis,
+                        viewerBackground(viewer_hook_.get()));
 }
 
 namespace {
@@ -2165,7 +2221,7 @@ void WebServer::clearLabels()
 }
 
 // A session builds its heat-map instances once, in its constructor, from
-// gui::getRegisteredHeatMapSources().  Registering a source afterwards is
+// web::getRegisteredHeatMapSources().  Registering a source afterwards is
 // therefore invisible to the clients already connected, so tell them to
 // re-request the set.  The push carries no payload: the instance still has
 // to be created per session, which handleHeatMaps does on the round-trip.
@@ -2186,11 +2242,11 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
   // Row 0 = (chiplet_name, heatmap_name); rows 1+ = x0,y0,x1,y1,value.
   const auto csv_rows = utl::readCsv(file_path, logger_);
   if (csv_rows.empty()) {
-    logger_->error(utl::WEB, 82, "No data in CSV file: {}", file_path);
+    logger_->error(utl::WEB, 111, "No data in CSV file: {}", file_path);
   }
   if (csv_rows[0].size() != 2) {
     logger_->error(utl::WEB,
-                   83,
+                   112,
                    "Invalid CSV file: {} - expected 2 columns in first row; "
                    "(chiplet_name, heatmap_name), got {}",
                    file_path,
@@ -2199,14 +2255,14 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
   const std::string chiplet_name = csv_rows[0][0];
   const std::string heat_map_name = csv_rows[0][1];
 
-  std::vector<gui::ExternalHeatMapDataSource::Entry> data;
+  std::vector<web::ExternalHeatMapDataSource::Entry> data;
   data.reserve(csv_rows.size() - 1);
   for (size_t i = 1; i < csv_rows.size(); ++i) {
     const auto& row = csv_rows[i];
     if (row.size() != 5) {
       logger_->error(
           utl::WEB,
-          84,
+          113,
           "Invalid CSV file: {} - expected 5 columns in row {}, got {}",
           file_path,
           i,
@@ -2220,7 +2276,7 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
                       std::stod(row[4])});
     } catch (const std::exception& e) {
       logger_->error(utl::WEB,
-                     85,
+                     114,
                      "Invalid CSV file: {} - exception in row {}: {}",
                      file_path,
                      i,
@@ -2248,7 +2304,7 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
   }
   if (node == nullptr) {
     logger_->error(utl::WEB,
-                   86,
+                   115,
                    "Chiplet {} not found in the loaded design. Known: [{}]",
                    chiplet_name,
                    known);
@@ -2258,16 +2314,17 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
       = "Chiplet_" + std::to_string(++chiplet_heat_map_count_);
   // Sessions each build their own instance from this factory, so the parsed
   // rows outlive this call and are shared rather than copied per session.
-  auto entries = std::make_shared<const std::vector<
-      gui::ExternalHeatMapDataSource::Entry>>(std::move(data));
+  auto entries = std::make_shared<
+      const std::vector<web::ExternalHeatMapDataSource::Entry>>(
+      std::move(data));
   odb::dbChip* const chip = node->chip;
   const odb::dbTransform transform = node->world_xfm;
-  gui::registerHeatMapSource(
+  web::registerHeatMapSource(
       heat_map_name,
       short_name,
       "WebChipletHeatMap" + short_name,
       [logger = logger_, heat_map_name, short_name, entries, chip, transform] {
-        auto source = std::make_shared<gui::ExternalHeatMapDataSource>(
+        auto source = std::make_shared<web::ExternalHeatMapDataSource>(
             logger, heat_map_name, short_name, *entries);
         source->setChip(chip);
         source->setTransform(transform);
@@ -2456,8 +2513,14 @@ void WebServer::gifAddFrame(std::optional<int> key,
   const TileVisibility vis = parseVis(vis_json, logger_);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
-      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &w, &h);
+  std::vector<unsigned char> rgba
+      = generator_->renderImageBuffer(region,
+                                      width_px,
+                                      dbu_per_pixel,
+                                      vis,
+                                      viewerBackground(viewer_hook_.get()),
+                                      &w,
+                                      &h);
   if (rgba.empty()) {
     return;  // renderImageBuffer already logged the error.
   }

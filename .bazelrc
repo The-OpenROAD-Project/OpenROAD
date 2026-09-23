@@ -5,10 +5,6 @@ common --enable_bzlmod
 common --@abc//:use_readline=false
 build --workspace_status_command=tools/workspace_status.sh
 
-# Release builds embed real git version info; dev builds use cache-safe placeholders.
-# Usage: bazel build --config=release //...
-build:release --stamp
-
 # suppress distracting warning about newer module
 # versions found in dependency graph.
 common --check_direct_dependencies=off
@@ -130,7 +126,11 @@ build:macos --host_macos_minimum_os=13.3
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
-build:asan --copt=-fsanitize=address
+# As with --config=tsan below, use hermetic-llvm's switch rather than a bare
+# -fsanitize=address copt: the toolchain builds compiler-rt's asan runtime from
+# source and stages it in the resource directory, which a plain driver flag
+# cannot find under the zero sysroot.
+build:asan --@llvm//config:asan=true
 build:asan --copt=-DADDRESS_SANITIZER
 build:asan --copt=-O1
 build:asan --copt=-g
@@ -138,12 +138,18 @@ build:asan --copt=-fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:asan --copt=-gz=zlib
 build:asan --linkopt=-gz=zlib
-build:asan --linkopt=-fsanitize=address
 # TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
 # dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
 # Override the per-target malloc attribute to use the system allocator, which
 # ASan intercepts cleanly.
 build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
+# ASan bundles LeakSanitizer, which reports every allocation still reachable at
+# exit. OpenROAD keeps a great deal of state for the life of the process, so
+# that buries the memory errors asan is here for: with leak checking on, 2648 of
+# 3997 tests fail on reachable state and 17 on an actual memory error. Leave it
+# off so a run means something, and hunt leaks explicitly with
+# --test_env=ASAN_OPTIONS=detect_leaks=1.
+build:asan --test_env=ASAN_OPTIONS=detect_leaks=0
 
 # Settings for --config=tsan thread sanitizer build
 build:tsan --strip=never
@@ -284,5 +290,39 @@ build --build_tag_filters=-orfs
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
 build:lint --output_groups=rules_lint_report
 build:lint --remote_download_outputs=all
+
+# Telling real work from cache hits.
+#
+# The console counter ("[7,203 / 18,048] Compiling detailed_abu.cxx; 20s
+# disk-cache, remote-cache, processwrapper-sandbox") advances for cache hits
+# and real compiles alike. The strategy list is the sequence of stages the
+# action has passed through, so the last entry is what is happening right now:
+# a trailing local strategy (processwrapper-sandbox, linux-sandbox, local)
+# means both caches missed and the compiler is running. A cache hit reaches no
+# local strategy and disappears within a fraction of a second. The
+# end-of-build "INFO: N processes: ..." line breaks the whole build down by
+# runner (action cache hit / disk cache hit / remote cache hit / the local
+# strategies), and needs no flags.
+#
+# --config=explain adds, per action that was not served from the action cache,
+# the reason Bazel considered it out of date.
+# Usage: bazelisk build --config=explain //src/dpl:dpl
+build:explain --explain=bazel-cachelog-explain.txt
+build:explain --verbose_explanations
+
+# --config=cachelog additionally records every spawn Bazel looked up or ran
+# along with the runner that served it, for etc/bazel-cache-summary.py. Each
+# record carries the spawn's full input list, a few MB per executed action, so
+# this is meant for incremental builds rather than for building everything.
+# Usage: bazelisk build --config=cachelog //src/dpl:dpl
+#        etc/bazel-cache-summary.py
+build:cachelog --config=explain
+build:cachelog --execution_log_json_file=bazel-cachelog.json
+
+# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Usage: bazel build --config=release //...
+build:release --stamp
+# Tell the 'release' config to include 'opt'
+build:release --config=opt
 
 try-import %workspace%/user.bazelrc

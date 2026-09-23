@@ -99,7 +99,7 @@ ListenerHandle createAndRunListener(
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
-// is called, mirroring gui::show / gui::hide.
+// is called, mirroring web::show / web::hide.
 
 class WebServer
 {
@@ -196,7 +196,7 @@ class WebServer
 
   // Custom UI registered from Tcl (create_menu_item / create_toolbar_button).
   // These are thin facades over WebViewerHook (which owns the registry and
-  // broadcasts to clients), mirroring how gui::Gui delegates to MainWindow.
+  // broadcasts to clients), mirroring how web::Gui delegates to MainWindow.
   // initLogger() is called first so the hook exists even when the command
   // runs from a startup script before web_server.  Returns the item key.
   std::string addToolbarButton(const std::string& name,
