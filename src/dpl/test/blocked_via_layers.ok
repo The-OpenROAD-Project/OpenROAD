@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0227] LEF file: blocked_via_layers.lef, created 1 library cells
+[INFO ODB-0128] Design: blocked_via_layers
+[INFO ODB-0131]     Created 3 components and 10 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 2 connections.
+[INFO PDN-0001] Inserting grid: top
+[WARNING PDN-0195] Removing 150 via(s) between M1 and M2 at (2.7000 um, 0.0010 um) for VSS
+[WARNING PDN-0195] Removing 7 via(s) between M2 and M5 at (1.0000 um, 0.0010 um) for VSS
+[WARNING PDN-0195] Removing 7 via(s) between M2 and M5 at (3.7000 um, 0.0010 um) for VSS
+[WARNING DPL-0010] Blocked layers check failed (2).
+ m3_cell
+ m3_open
+[ERROR DPL-0033] detailed placement checks failed during check placement.
+DPL-0033
+[INFO DPL-0006] Core area: 14.58 um^2
+[INFO DPL-0007] Movable instances area: 0.16 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 1.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 3 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
+Placement Analysis
+---------------------------------
+total displacement          0.3 u
+average displacement        0.1 u
+max displacement            0.2 u
+original HPWL               0.3 u
+legalized HPWL              0.5 u
+delta HPWL                   51 %
+
+m3_cell 918 0
+m3_open 1242 540
+m1_cell 1134 270

@@ -14,5 +14,6 @@ or_integration_tests(
     write_db
   PASSFAIL_TESTS
     commands_without_load
+    db_option_quoting
     upf_aes
 )

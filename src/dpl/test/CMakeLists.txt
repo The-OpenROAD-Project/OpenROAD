@@ -6,6 +6,7 @@ or_integration_tests(
   TESTS
     aes
     blockage01
+    blocked_via_layers
     cell_on_block1
     cell_on_block2
     centered_floorplan
