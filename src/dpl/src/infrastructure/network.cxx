@@ -97,6 +97,7 @@ Pin* Network::addPin(odb::dbITerm* term)
         if (layer->getRoutingLevel() > 3) {
           continue;
         }
+        node->addPinLayer(layer->getRoutingLevel());
         node->addUsedLayer(layer->getRoutingLevel());
         node->addUsedLayer(layer->getRoutingLevel()
                            + 1);  // for via access from above
