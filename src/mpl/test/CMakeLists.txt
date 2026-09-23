@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     macro_only
     no_unfixed_macros
+    no_unfixed_macros_and_fixed_cells
     guides1
     guides2
     fixed_ios1
@@ -38,8 +39,6 @@ or_integration_tests(
     halos3
     halos4
     halos5
-  PASSFAIL_TESTS
-    fixed_std_cell_no_unfixed_macros
 )
 
 
