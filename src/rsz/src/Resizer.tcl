@@ -252,8 +252,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_last_gasp]\
                                         [-skip_vt_swap]\
                                         [-skip_crit_vt_swap]\
-                                        [-skip_crpr_setup]\
-                                        [-skip_crpr_hold]\
+                                        [-skip_crpr]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
                                         [-max_iterations iterations]\
@@ -274,7 +273,7 @@ proc repair_timing { args } {
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
-             -skip_vt_swap -skip_crit_vt_swap -skip_crpr_setup -skip_crpr_hold \
+             -skip_vt_swap -skip_crit_vt_swap -skip_crpr \
              -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
@@ -330,8 +329,7 @@ proc repair_timing { args } {
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
-  set skip_crpr_setup [info exists flags(-skip_crpr_setup)]
-  set skip_crpr_hold [info exists flags(-skip_crpr_hold)]
+  set skip_crpr [info exists flags(-skip_crpr)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   set max_buffer_percent 20
   if { [info exists keys(-max_buffer_percent)] } {
@@ -390,15 +388,14 @@ proc repair_timing { args } {
   } else {
     # Restore the command-entry CRPR setting after setup and hold repair.
     set entry_crpr_enabled [sta::crpr_enabled]
-    set setup_crpr_enabled [expr { $entry_crpr_enabled && !$skip_crpr_setup }]
-    set hold_crpr_enabled [expr { $entry_crpr_enabled && !$skip_crpr_hold }]
+    set repair_crpr_enabled [expr { $entry_crpr_enabled && !$skip_crpr }]
     try {
       if { $setup } {
-        if { $skip_crpr_setup } {
+        if { $skip_crpr } {
           utl::info RSZ 225 "CRPR disabled during setup repair."
         }
-        if { [sta::crpr_enabled] != $setup_crpr_enabled } {
-          sta::set_crpr_enabled $setup_crpr_enabled
+        if { [sta::crpr_enabled] != $repair_crpr_enabled } {
+          sta::set_crpr_enabled $repair_crpr_enabled
         }
         set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
           $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
@@ -407,11 +404,11 @@ proc repair_timing { args } {
           $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
       }
       if { $hold } {
-        if { $skip_crpr_hold } {
+        if { $skip_crpr } {
           utl::info RSZ 226 "CRPR disabled during hold repair."
         }
-        if { [sta::crpr_enabled] != $hold_crpr_enabled } {
-          sta::set_crpr_enabled $hold_crpr_enabled
+        if { [sta::crpr_enabled] != $repair_crpr_enabled } {
+          sta::set_crpr_enabled $repair_crpr_enabled
         }
         set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
           $allow_setup_violations $max_buffer_percent $max_passes \

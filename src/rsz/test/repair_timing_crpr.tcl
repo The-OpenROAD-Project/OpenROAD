@@ -18,10 +18,10 @@ set_wire_rc -layer metal1
 estimate_parasitics -placement
 
 report_worst_slack -max
-repair_timing -setup -skip_crpr_setup -max_iterations 1
+repair_timing -setup -skip_crpr -max_iterations 1
 report_worst_slack -max
 report_tns -max -digits 3
 
-repair_timing -hold -skip_crpr_hold -max_iterations 1
+repair_timing -hold -skip_crpr -max_iterations 1
 report_worst_slack -min
 report_tns -min -digits 3
