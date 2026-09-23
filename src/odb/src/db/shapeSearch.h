@@ -61,8 +61,8 @@ class ShapeSearch
   bool searchNext(int* id);
 
  private:
-  void sort();
-  void sort_level(Bin* bin);
+  void splitBins();
+  void splitBin(Bin* bin);
 
   // Use deque so that emplace_back doesn't move prior elements so pointer
   // into these structures are safe.
@@ -76,9 +76,9 @@ class ShapeSearch
   Bin* search_bin_{nullptr};
   Shape* search_shape_{nullptr};
 
-  // Sorting happens after all the shapes have been added and the
+  // Splitting happens after all the shapes have been added and the
   // first searchStart happens
-  bool sorted_{false};
+  bool bins_are_split_{false};
 
   static constexpr int kSortThreshold = 1024;
 };

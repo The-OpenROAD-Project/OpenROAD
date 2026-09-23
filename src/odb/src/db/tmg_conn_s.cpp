@@ -62,7 +62,7 @@ void ShapeSearch::clear()
     root_bin = &bins_.emplace_back();
   }
 
-  sorted_ = false;
+  bins_are_split_ = false;
 }
 
 void ShapeSearch::addShape(const int level,
@@ -87,8 +87,8 @@ void ShapeSearch::searchStart(const int level,
                               const Rect& bounds,
                               const Type type)
 {
-  if (!sorted_) {
-    sort();
+  if (!bins_are_split_) {
+    splitBins();
   }
   search_bin_ = root_for_level_.at(level);
   search_shape_ = search_bin_->first_shape;
@@ -178,7 +178,7 @@ bool ShapeSearch::searchNext(int* id)
   return false;
 }
 
-void ShapeSearch::sort_level(ShapeSearch::Bin* bin)
+void ShapeSearch::splitBin(ShapeSearch::Bin* bin)
 {
   if (bin->num_shapes < kSortThreshold) {
     return;
@@ -218,15 +218,16 @@ void ShapeSearch::sort_level(ShapeSearch::Bin* bin)
   bin->wrap();
   left->wrap();
   right->wrap();
-  sort_level(left);
-  sort_level(right);
+
+  splitBin(left);
+  splitBin(right);
 }
 
-void ShapeSearch::sort()
+void ShapeSearch::splitBins()
 {
-  sorted_ = true;
-  for (ShapeSearch::Bin* level : root_for_level_) {
-    sort_level(level);
+  bins_are_split_ = true;
+  for (ShapeSearch::Bin* root_bin : root_for_level_) {
+    splitBin(root_bin);
   }
 }
 
