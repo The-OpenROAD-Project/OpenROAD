@@ -8,32 +8,31 @@
 
 namespace odb {
 
-static void tcs_level_init(ShapeSearch::Bin* bin,
-                           ShapeSearch::Bin* parent,
-                           ShapeSearch::Bin* left = nullptr,
-                           ShapeSearch::Bin* right = nullptr)
+void ShapeSearch::Bin::init(ShapeSearch::Bin* parent,
+                            ShapeSearch::Bin* left,
+                            ShapeSearch::Bin* right)
 {
-  bin->shape_list = nullptr;
-  bin->last_shape = nullptr;
-  bin->left = left;
-  bin->right = right;
-  bin->parent = parent;
-  bin->num_shapes = 0;
+  first_shape = nullptr;
+  last_shape = nullptr;
+
+  this->left = left;
+  this->right = right;
+  this->parent = parent;
+
+  num_shapes = 0;
 }
 
-static void tcs_level_wrap(ShapeSearch::Bin* bin)
+void ShapeSearch::Bin::wrap()
 {
-  if (bin->last_shape) {
-    bin->last_shape->next = nullptr;
+  if (last_shape) {
+    last_shape->next = nullptr;
   }
 }
 
-//////////////////////////////////////////////////
-
-void ShapeSearch::Bin::add_shape(ShapeSearch::Shape* shape, bool update_bounds)
+void ShapeSearch::Bin::addShape(ShapeSearch::Shape* shape, bool update_bounds)
 {
-  if (shape_list == nullptr) {
-    shape_list = shape;
+  if (first_shape == nullptr) {
+    first_shape = shape;
     if (update_bounds) {
       bounds = *shape;
     }
@@ -73,8 +72,8 @@ void ShapeSearch::addShape(const int level,
 {
   ShapeSearch::Shape* shape = &shapes_.emplace_back(bounds, type, id);
   ShapeSearch::Bin* slev = root_for_level_.at(level);
-  if (slev->shape_list == nullptr) {
-    slev->shape_list = shape;
+  if (slev->first_shape == nullptr) {
+    slev->first_shape = shape;
     slev->bounds = *shape;
   } else {
     slev->last_shape->next = shape;
@@ -92,7 +91,7 @@ void ShapeSearch::searchStart(const int level,
     sort();
   }
   search_bin_ = root_for_level_.at(level);
-  search_shape_ = search_bin_->shape_list;
+  search_shape_ = search_bin_->first_shape;
   search_box_ = bounds;
   search_type_ = type;
 }
@@ -164,7 +163,7 @@ bool ShapeSearch::searchNext(int* id)
     }
     if (search_bin_->left) {
       search_bin_ = search_bin_->left;
-      search_shape_ = search_bin_->shape_list;
+      search_shape_ = search_bin_->first_shape;
     } else {
       while (search_bin_->parent && search_bin_ == search_bin_->parent->right) {
         search_bin_ = search_bin_->parent;
@@ -172,7 +171,7 @@ bool ShapeSearch::searchNext(int* id)
       search_bin_ = search_bin_->parent;
       if (search_bin_) {
         search_bin_ = search_bin_->right;
-        search_shape_ = search_bin_->shape_list;
+        search_shape_ = search_bin_->first_shape;
       }
     }
   }
@@ -185,40 +184,40 @@ void ShapeSearch::sort_level(ShapeSearch::Bin* bin)
     return;
   }
   ShapeSearch::Bin* left = &bins_.emplace_back();
-  tcs_level_init(left, bin);  // NOLINT(readability-suspicious-call-argument)
+  left->init(bin);
 
   ShapeSearch::Bin* right = &bins_.emplace_back();
-  tcs_level_init(right, bin);  // NOLINT(readability-suspicious-call-argument)
+  right->init(bin);
 
-  ShapeSearch::Shape* shape = bin->shape_list;
-  tcs_level_init(bin, bin->parent, left, right);
+  ShapeSearch::Shape* shape = bin->first_shape;
+  bin->init(bin->parent, left, right);
 
   if (bin->bounds.dx() >= bin->bounds.dy()) {
     const int xmid = bin->bounds.xCenter();
     for (; shape; shape = shape->next) {
       if (shape->xMax() < xmid) {
-        left->add_shape(shape);
+        left->addShape(shape);
       } else if (shape->xMin() > xmid) {
-        right->add_shape(shape);
+        right->addShape(shape);
       } else {
-        bin->add_shape(shape, /* update_bounds */ false);
+        bin->addShape(shape, /* update_bounds */ false);
       }
     }
   } else {
     const int ymid = bin->bounds.yCenter();
     for (; shape; shape = shape->next) {
       if (shape->yMax() < ymid) {
-        left->add_shape(shape);
+        left->addShape(shape);
       } else if (shape->yMin() > ymid) {
-        right->add_shape(shape);
+        right->addShape(shape);
       } else {
-        bin->add_shape(shape, /* update_bounds */ false);
+        bin->addShape(shape, /* update_bounds */ false);
       }
     }
   }
-  tcs_level_wrap(bin);
-  tcs_level_wrap(left);
-  tcs_level_wrap(right);
+  bin->wrap();
+  left->wrap();
+  right->wrap();
   sort_level(left);
   sort_level(right);
 }

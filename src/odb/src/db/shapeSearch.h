@@ -40,13 +40,11 @@ class ShapeSearch
 
   struct Bin
   {
-    int xMin() const { return bounds.xMin(); }
-    int yMin() const { return bounds.yMin(); }
-    int xMax() const { return bounds.xMax(); }
-    int yMax() const { return bounds.yMax(); }
-    void add_shape(Shape* shape, bool update_bounds = true);
+    void init(Bin* parent, Bin* left = nullptr, Bin* right = nullptr);
+    void addShape(Shape* shape, bool update_bounds = true);
+    void wrap();
 
-    Shape* shape_list = nullptr;
+    Shape* first_shape = nullptr;
     Shape* last_shape = nullptr;
     Bin* left = nullptr;
     Bin* right = nullptr;
