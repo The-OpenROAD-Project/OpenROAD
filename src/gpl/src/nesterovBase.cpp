@@ -5821,14 +5821,22 @@ static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
                          const std::vector<size_t>& skip_indices)
 {
+  // Leave the skipped entries out of the sum rather than adding them and
+  // subtracting them again: in float that cancellation is a large number
+  // minus itself when only the skipped entries move, which rounds to zero
+  // (the other entries' movement is lost) or to a small negative number,
+  // whose square root is NaN.
+  std::vector<char> skip(a.size(), 0);
+  for (const size_t i : skip_indices) {
+    skip[i] = 1;
+  }
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
+    if (skip[i]) {
+      continue;
+    }
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
-  }
-  for (const size_t i : skip_indices) {
-    sumDistance -= (a[i].x - b[i].x) * (a[i].x - b[i].x);
-    sumDistance -= (a[i].y - b[i].y) * (a[i].y - b[i].y);
   }
 
   const size_t n = a.size() - skip_indices.size();
