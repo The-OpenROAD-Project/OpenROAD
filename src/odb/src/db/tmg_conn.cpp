@@ -289,8 +289,9 @@ void tmg_conn::splitBySj(const int j,
                          const int sjyMax)
 {
   WireSection::Shape* sj = &(wire_sections_[j].shape);
-  const int isVia = sj->isVia() ? 1 : 0;
-  shape_search_->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
+  const ShapeSearch::Type type
+      = sj->isVia() ? ShapeSearch::Type::kVia : ShapeSearch::Type::kWire;
+  shape_search_->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, type);
   int klast = -1;
   int k;
   while (shape_search_->searchNext(&k)) {
@@ -384,8 +385,10 @@ void tmg_conn::splitBySj(const int j,
                    nymin,
                    nxmax,
                    nymax);
-    shape_search_->addShape(
-        rt, {nxmin, nymin, nxmax, nymax}, 0, wire_sections_.size() - 1);
+    shape_search_->addShape(rt,
+                            {nxmin, nymin, nxmax, nymax},
+                            ShapeSearch::Type::kWire,
+                            wire_sections_.size() - 1);
   }
 }
 
@@ -630,7 +633,7 @@ void tmg_conn::identifyShorts()
                                    via_y + b->yMin(),
                                    via_x + b->xMax(),
                                    via_y + b->yMax()},
-                                  1,
+                                  ShapeSearch::Type::kVia,
                                   j);
         } else if (b->getTechLayer() == layt) {
           shape_search_->addShape(rt_t,
@@ -638,14 +641,14 @@ void tmg_conn::identifyShorts()
                                    via_y + b->yMin(),
                                    via_x + b->xMax(),
                                    via_y + b->yMax()},
-                                  1,
+                                  ShapeSearch::Type::kVia,
                                   j);
         }
       }
 
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      shape_search_->addShape(rt, s->rect(), 0, j);
+      shape_search_->addShape(rt, s->rect(), ShapeSearch::Type::kWire, j);
     }
   }
 
@@ -685,14 +688,14 @@ void tmg_conn::identifyShorts()
                                       via_y + b->yMin(),
                                       via_x + b->xMax(),
                                       via_y + b->yMax()},
-                                     1);
+                                     ShapeSearch::Type::kVia);
         } else if (b->getTechLayer() == layt) {
           shape_search_->searchStart(rt_t,
                                      {via_x + b->xMin(),
                                       via_y + b->yMin(),
                                       via_x + b->xMax(),
                                       via_y + b->yMax()},
-                                     1);
+                                     ShapeSearch::Type::kVia);
         } else {
           continue;  // cut layer
         }
@@ -710,7 +713,7 @@ void tmg_conn::identifyShorts()
       }
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      shape_search_->searchStart(rt, s->rect(), 0);
+      shape_search_->searchStart(rt, s->rect(), ShapeSearch::Type::kWire);
       int klast = -1;
       int k;
       while (shape_search_->searchNext(&k)) {
@@ -751,7 +754,7 @@ void tmg_conn::identifyTerminalWirePoints()
               }
               Rect rect = box->getBox();
               transform.apply(rect);
-              shape_search_->searchStart(rt_t, rect, 2);
+              shape_search_->searchStart(rt_t, rect, ShapeSearch::Type::kPin);
               int klast = -1;
               int k;
               while (shape_search_->searchNext(&k)) {
@@ -783,7 +786,7 @@ void tmg_conn::identifyTerminalWirePoints()
               if (rt_b == 0) {
                 continue;
               }
-              shape_search_->searchStart(rt_b, rect, 2);
+              shape_search_->searchStart(rt_b, rect, ShapeSearch::Type::kPin);
               klast = -1;
               while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
@@ -814,7 +817,7 @@ void tmg_conn::identifyTerminalWirePoints()
               const int rt = box->getTechLayer()->getRoutingLevel();
               Rect rect = box->getBox();
               transform.apply(rect);
-              shape_search_->searchStart(rt, rect, 2);
+              shape_search_->searchStart(rt, rect, ShapeSearch::Type::kPin);
               int klast = -1;
               int k;
               while (shape_search_->searchNext(&k)) {
@@ -856,7 +859,7 @@ void tmg_conn::identifyTerminalWirePoints()
         } else {
           const int rt = pin.getTechLayer()->getRoutingLevel();
           const Rect rect = x->sliced_bpin_box.value_or(pin.getBox());
-          shape_search_->searchStart(rt, rect, 2);
+          shape_search_->searchStart(rt, rect, ShapeSearch::Type::kPin);
           int klast = -1;
           int k;
           while (shape_search_->searchNext(&k)) {

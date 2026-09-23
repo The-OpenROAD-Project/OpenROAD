@@ -35,12 +35,12 @@ void ShapeSearch::Bin::add_shape(ShapeSearch::Shape* shape, bool update_bounds)
   if (shape_list == nullptr) {
     shape_list = shape;
     if (update_bounds) {
-      bounds = shape->bounds;
+      bounds = *shape;
     }
   } else {
     last_shape->next = shape;
     if (update_bounds) {
-      bounds.merge(shape->bounds);
+      bounds.merge(*shape);
     }
   }
   last_shape = shape;
@@ -68,22 +68,17 @@ void ShapeSearch::clear()
 
 void ShapeSearch::addShape(const int level,
                            const Rect& bounds,
-                           const int is_via,
+                           const Type type,
                            const int id)
 {
-  ShapeSearch::Shape* shape = &shapes_.emplace_back();
-  shape->level = level;
-  shape->bounds = bounds;
-  shape->is_via = is_via;
-  shape->id = id;
-  shape->next = nullptr;
+  ShapeSearch::Shape* shape = &shapes_.emplace_back(bounds, type, id);
   ShapeSearch::Bin* slev = root_for_level_.at(level);
   if (slev->shape_list == nullptr) {
     slev->shape_list = shape;
-    slev->bounds = shape->bounds;
+    slev->bounds = *shape;
   } else {
     slev->last_shape->next = shape;
-    slev->bounds.merge(shape->bounds);
+    slev->bounds.merge(*shape);
   }
   slev->last_shape = shape;
   slev->num_shapes++;
@@ -91,7 +86,7 @@ void ShapeSearch::addShape(const int level,
 
 void ShapeSearch::searchStart(const int level,
                               const Rect& bounds,
-                              const int is_via)
+                              const Type type)
 {
   if (!sorted_) {
     sort();
@@ -99,7 +94,7 @@ void ShapeSearch::searchStart(const int level,
   search_bin_ = root_for_level_.at(level);
   search_shape_ = search_bin_->shape_list;
   search_box_ = bounds;
-  search_via_ = is_via;
+  search_type_ = type;
 }
 
 bool ShapeSearch::searchNext(int* id)
@@ -109,10 +104,10 @@ bool ShapeSearch::searchNext(int* id)
     return false;
   }
   // this is for speed for ordinary small nets
-  if (search_via_ == 1 && !search_bin_->parent && !search_bin_->left
+  if (search_type_ == Type::kVia && !search_bin_->parent && !search_bin_->left
       && !search_bin_->right) {
     while (search_shape_) {
-      if (search_shape_->bounds.overlaps(search_box_)) {
+      if (search_shape_->overlaps(search_box_)) {
         *id = search_shape_->id;
         search_shape_ = search_shape_->next;
         return true;
@@ -125,13 +120,13 @@ bool ShapeSearch::searchNext(int* id)
   while (search_bin_) {
     if (search_bin_->bounds.intersects(search_box_)) {
       while (search_shape_) {
-        if (search_via_ == 1 || search_shape_->is_via == 1) {
-          if (!search_shape_->bounds.overlaps(search_box_)) {
+        if (search_type_ == Type::kVia || search_shape_->type == Type::kVia) {
+          if (!search_shape_->overlaps(search_box_)) {
             search_shape_ = search_shape_->next;
             continue;
           }
         } else {
-          if (!search_shape_->bounds.intersects(search_box_)) {
+          if (!search_shape_->intersects(search_box_)) {
             search_shape_ = search_shape_->next;
             continue;
           }
@@ -140,7 +135,7 @@ bool ShapeSearch::searchNext(int* id)
           //   -----|
           //        |-------
           //   ------
-          if (search_via_ == 0
+          if (search_type_ == Type::kWire
               && (search_shape_->xMin() == search_box_.xMax()
                   || search_box_.xMin() == search_shape_->xMax())) {
             if ((search_shape_->yMax() < search_box_.yMax()
@@ -150,7 +145,7 @@ bool ShapeSearch::searchNext(int* id)
               search_shape_ = search_shape_->next;
               continue;
             }
-          } else if (search_via_ == 0
+          } else if (search_type_ == Type::kWire
                      && (search_shape_->yMin() == search_box_.yMax()
                          || search_box_.yMin() == search_shape_->yMax())) {
             if ((search_shape_->xMax() < search_box_.xMax()

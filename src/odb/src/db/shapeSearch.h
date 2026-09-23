@@ -16,26 +16,26 @@ inline constexpr int kMaxRoutingLevels = 32;
 // have been added then searchStart/Next can be used for querying.
 // Internally a simple tree of space bisections is generated for
 // efficiency.
-//
-// The code uses an odd convention:
-// is_via = 0 ==> wire
-//        = 1 ==> via
-//        = 2 ==> pin
 class ShapeSearch
 {
  public:
-  struct Shape
+  enum class Type
   {
-    int xMin() const { return bounds.xMin(); }
-    int yMin() const { return bounds.yMin(); }
-    int xMax() const { return bounds.xMax(); }
-    int yMax() const { return bounds.yMax(); }
+    kWire,
+    kVia,
+    kPin
+  };
 
-    Shape* next = nullptr;
-    Rect bounds;
-    int level = 0;
-    int is_via = 0;
-    int id = 0;
+  struct Shape : public Rect
+  {
+    Shape(const Rect& bounds, Type type, int id)
+        : Rect(bounds), type(type), id(id)
+    {
+    }
+
+    const Type type;
+    const int id;
+    Shape* next{nullptr};
   };
 
   struct Bin
@@ -58,8 +58,8 @@ class ShapeSearch
   ShapeSearch();
 
   void clear();
-  void addShape(int level, const Rect& bounds, int is_via, int id);
-  void searchStart(int level, const Rect& bounds, int is_via);
+  void addShape(int level, const Rect& bounds, Type type, int id);
+  void searchStart(int level, const Rect& bounds, Type type);
   bool searchNext(int* id);
 
  private:
@@ -74,7 +74,7 @@ class ShapeSearch
 
   // Used during searching
   Rect search_box_;
-  int search_via_{0};
+  Type search_type_{Type::kWire};
   Bin* search_bin_{nullptr};
   Shape* search_shape_{nullptr};
 
