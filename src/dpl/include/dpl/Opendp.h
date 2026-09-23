@@ -42,6 +42,7 @@ struct Pixel;
 class DplObserver;
 class Grid;
 class GridInfo;
+class InstanceIndex;
 class Padding;
 class PixelPt;
 class PlacementDRC;
@@ -271,9 +272,16 @@ class Opendp
   void visitPlacementSites(
       const odb::Rect& region,
       const std::function<void(const odb::Rect& site)>& visitor) const;
-  // Visits the current block-coordinate bbox of each placed instance.
+  // Visits the current block-coordinate bbox of each placed instance that
+  // can reach region.  Every instance is visited at most once, and some that
+  // turn out not to overlap region may be visited too.
   void visitPlacedInstances(
+      const odb::Rect& region,
       const std::function<void(const odb::Rect& bbox)>& visitor) const;
+  // Drops the instance index, so the next density query rebuilds it.  Called
+  // whenever the grid is rebuilt, which bounds how long a stale block can be
+  // held on to.
+  void resetInstanceIndex();
 
   void initPlacementDRC();
 
@@ -436,6 +444,12 @@ class Opendp
   // 2D pixel grid
   std::unique_ptr<Grid> grid_;
   RtreeBox regions_rtree_;
+
+  // Bucketed instance locations, so a placement density query over a small
+  // region does not have to walk every instance in the block.  Built on
+  // first use and kept current by odb callbacks, so queries still see the
+  // placement as it currently stands.
+  mutable std::unique_ptr<InstanceIndex> inst_index_;
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant and row height

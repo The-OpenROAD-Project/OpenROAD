@@ -10,9 +10,12 @@
 // exactly 20 of the 2-site core cells; the two columns and rows of squares
 // past the core hold no placement site at all.
 
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "gtest/gtest.h"
@@ -229,6 +232,151 @@ TEST_F(PlacementDensityTest, DensityIsRecomputedAfterInstancesMove)
   // No re-init, no explicit invalidation: the next query sees the move.
   EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 0)), 0.0);
   EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(4, 9)), 1.0);
+}
+
+////////////////////////////////////////////////////////////////
+// The instance index bounds each query to the region it asks about, so
+// every way the netlist can change under it has to keep the answers right.
+// These are the cases a full scan of the block got for free.
+
+TEST_F(PlacementDensityTest, InstancesCreatedAfterTheFirstQueryAreCounted)
+{
+  Opendp& dp = makeOpendp();
+
+  // Query first, so the index is already built when the cells arrive -- the
+  // order rsz works in, inserting buffers between queries.
+  ASSERT_DOUBLE_EQ(dp.getPlacementDensity(square(1, 1)), 0.0);
+
+  fillSquare(1, 1, kCellsPerSquare / 2);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(1, 1)), 0.5);
+
+  fillSquare(1, 1, kCellsPerSquare / 2);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(1, 1)), 1.0);
+}
+
+TEST_F(PlacementDensityTest, InstancesDestroyedAfterTheFirstQueryAreDropped)
+{
+  fillSquare(1, 1, kCellsPerSquare);
+  Opendp& dp = makeOpendp();
+  ASSERT_DOUBLE_EQ(dp.getPlacementDensity(square(1, 1)), 1.0);
+
+  std::vector<odb::dbInst*> insts;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    insts.push_back(inst);
+  }
+  ASSERT_EQ(insts.size(), static_cast<size_t>(kCellsPerSquare));
+  for (size_t i = 0; i < insts.size() / 2; ++i) {
+    odb::dbInst::destroy(insts[i]);
+  }
+
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(1, 1)), 0.5);
+}
+
+TEST_F(PlacementDensityTest, InstancesMovedFarAwayAreFoundAtTheNewPlace)
+{
+  fillSquare(0, 0, kCellsPerSquare);
+  Opendp& dp = makeOpendp();
+  ASSERT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 0)), 1.0);
+
+  // One cell at a time, to the far corner of the core: far enough that the
+  // index has to have re-bucketed it, not just tolerated a small step.
+  int moved = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (moved++ >= kCellsPerSquare / 2) {
+      break;
+    }
+    const odb::Point origin = inst->getLocation();
+    inst->setLocation(origin.x() + (4 * kSquare), origin.y() + (9 * kSquare));
+  }
+
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 0)), 0.5);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(4, 9)), 0.5);
+}
+
+TEST_F(PlacementDensityTest, SwappingToABiggerMasterIsCounted)
+{
+  odb::dbMaster* wide = makeMaster(
+      "wide_cell", odb::dbMasterType::CORE, 4 * kSiteWidth, kRowHeight);
+  odb::dbInst* inst = placeInst(core_master_, 0, 0);
+  Opendp& dp = makeOpendp();
+
+  const odb::Rect one_row(0, 0, kSquare, kRowHeight);
+  ASSERT_DOUBLE_EQ(dp.getPlacementDensity(one_row), 0.1);
+
+  inst->swapMaster(wide);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(one_row), 0.2);
+}
+
+TEST_F(PlacementDensityTest, MacrosTooBigToBucketAreStillCounted)
+{
+  // A macro spanning most of the core cannot sit in one bucket, so the index
+  // has to keep it where every query sees it.
+  odb::dbMaster* macro = makeMaster(
+      "big_macro", odb::dbMasterType::BLOCK, kCoreWidth, 4 * kRowHeight);
+  placeInst(macro, 0, 0, odb::dbPlacementStatus::FIRM);
+  Opendp& dp = makeOpendp();
+
+  // Covers rows 0-3 everywhere, so every square along the bottom is full and
+  // the ones above it are empty.
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 0)), 1.0);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(4, 0)), 1.0);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 1)), 1.0);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 2)), 0.0);
+}
+
+TEST_F(PlacementDensityTest, IndexedAndFullScanDensitiesAgree)
+{
+  // Scatter cells unevenly over the core so the buckets fill unevenly, and
+  // drop one in the margin outside it to make sure it is not dragged in.
+  for (int sx = 0; sx < 5; ++sx) {
+    for (int sy = 0; sy < 10; ++sy) {
+      fillSquare(sx, sy, ((sx * 7) + (sy * 3)) % (kCellsPerSquare + 1));
+    }
+  }
+  placeInst(core_master_, kCoreWidth + 100, kCoreHeight + 100);
+  Opendp& dp = makeOpendp();
+
+  // The slow way: every instance in the block, clipped to the region.
+  const auto fullScanOccupied = [&](const odb::Rect& region) {
+    int64_t occupied = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      if (!inst->getPlacementStatus().isPlaced()
+          || !inst->getMaster()->isCoreAutoPlaceable()) {
+        continue;
+      }
+      const odb::Rect bbox = inst->getBBox()->getBox();
+      if (bbox.overlaps(region)) {
+        occupied += bbox.intersect(region).area();
+      }
+    }
+    return occupied;
+  };
+
+  // Every site inside the core is legal here -- no blockages, rows spanning
+  // the whole width -- so a region inside it has exactly its own area to
+  // place in, and the density is the occupied area over that.
+  const auto expectedDensity = [&](const odb::Rect& region) {
+    return std::min(1.0,
+                    static_cast<double>(fullScanOccupied(region))
+                        / static_cast<double>(region.area()));
+  };
+
+  for (int sx = 0; sx < 5; ++sx) {
+    for (int sy = 0; sy < 10; ++sy) {
+      const odb::Rect region = square(sx, sy);
+      EXPECT_DOUBLE_EQ(dp.getPlacementDensity(region), expectedDensity(region))
+          << "square " << sx << "," << sy;
+    }
+  }
+
+  // And over regions following neither square nor row nor cell boundaries.
+  for (const odb::Rect& region : {odb::Rect(1234, 5678, 9012, 15678),
+                                  odb::Rect(0, 0, 150, 600),
+                                  odb::Rect(3999, 3999, 4001, 4001),
+                                  odb::Rect(0, 0, kCoreWidth, kCoreHeight)}) {
+    EXPECT_DOUBLE_EQ(dp.getPlacementDensity(region), expectedDensity(region))
+        << region;
+  }
 }
 
 // Rebuilding the grid has to be repeatable: a later pass must not see

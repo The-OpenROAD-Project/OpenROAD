@@ -20,6 +20,7 @@ cc_library(
         "src/graphics/DplObserver.h",
         "src/infrastructure/Coordinates.h",
         "src/infrastructure/Grid.h",
+        "src/infrastructure/InstanceIndex.h",
         "src/infrastructure/Objects.h",
         "src/infrastructure/architecture.h",
         "src/infrastructure/network.h",

@@ -7,12 +7,17 @@
 // placement as it currently stands.
 
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
+#include "infrastructure/InstanceIndex.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -43,6 +48,124 @@ double areaDensity(const int64_t occupied, const int64_t placeable)
 }
 
 }  // namespace
+
+InstanceIndex::InstanceIndex(odb::dbBlock* block)
+{
+  extent_ = block->getDieArea();
+
+  // Aim for a handful of instances per bucket: few enough that a small query
+  // touches almost nothing, many enough that the per-bucket vector overhead
+  // stays well under the instance data itself.
+  constexpr int kInstsPerBucket = 8;
+  const int inst_count = std::max<int>(1, block->getInsts().size());
+  const double target_buckets
+      = std::max(1.0, static_cast<double>(inst_count) / kInstsPerBucket);
+  const double die_area = static_cast<double>(std::max(1, extent_.dx()))
+                          * static_cast<double>(std::max(1, extent_.dy()));
+  bucket_size_
+      = std::max(1, static_cast<int>(std::sqrt(die_area / target_buckets)));
+  count_x_ = std::max(1, ((extent_.dx() + bucket_size_) - 1) / bucket_size_);
+  count_y_ = std::max(1, ((extent_.dy() + bucket_size_) - 1) / bucket_size_);
+  buckets_.resize(static_cast<size_t>(count_x_) * count_y_);
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    insert(inst);
+  }
+
+  addOwner(block);
+}
+
+int InstanceIndex::bucketIndex(const odb::Rect& bbox) const
+{
+  if (bbox.dx() > bucket_size_ || bbox.dy() > bucket_size_) {
+    return kOversized;
+  }
+  // Instances can sit outside the die -- pads, or a cell not yet moved into
+  // the core -- so clamp rather than reject.  A query clamps the same way,
+  // which keeps them reachable from the edge buckets they land in.
+  const int bx = std::clamp(
+      (bbox.xMin() - extent_.xMin()) / bucket_size_, 0, count_x_ - 1);
+  const int by = std::clamp(
+      (bbox.yMin() - extent_.yMin()) / bucket_size_, 0, count_y_ - 1);
+  return (by * count_x_) + bx;
+}
+
+int& InstanceIndex::slotOf(odb::dbInst* inst)
+{
+  const size_t id = inst->getId();
+  if (id >= bucket_of_id_.size()) {
+    bucket_of_id_.resize(id + 1, kAbsent);
+  }
+  return bucket_of_id_[id];
+}
+
+void InstanceIndex::insert(odb::dbInst* inst)
+{
+  int& slot = slotOf(inst);
+  if (slot != kAbsent) {
+    // Already in, so the callbacks did not pair up.  Take the erase now
+    // rather than leave the instance in two buckets.
+    erase(inst);
+  }
+  slot = bucketIndex(inst->getBBox()->getBox());
+  if (slot == kOversized) {
+    oversized_.push_back(inst);
+  } else {
+    buckets_[slot].push_back(inst);
+  }
+}
+
+void InstanceIndex::erase(odb::dbInst* inst)
+{
+  int& slot = slotOf(inst);
+  if (slot == kAbsent) {
+    return;
+  }
+  std::vector<odb::dbInst*>& bucket
+      = slot == kOversized ? oversized_ : buckets_[slot];
+  const auto it = std::ranges::find(bucket, inst);
+  if (it != bucket.end()) {
+    // Order carries no meaning, so close the hole with the last entry.
+    *it = bucket.back();
+    bucket.pop_back();
+  }
+  slot = kAbsent;
+}
+
+void InstanceIndex::visit(
+    const odb::Rect& region,
+    const std::function<void(odb::dbInst* inst)>& visitor) const
+{
+  for (odb::dbInst* inst : oversized_) {
+    visitor(inst);
+  }
+
+  const auto bucketX = [&](const int x) {
+    return std::clamp((x - extent_.xMin()) / bucket_size_, 0, count_x_ - 1);
+  };
+  const auto bucketY = [&](const int y) {
+    return std::clamp((y - extent_.yMin()) / bucket_size_, 0, count_y_ - 1);
+  };
+
+  // A bucketed instance extends at most one bucket up and to the right of
+  // the one holding its lower left corner, so widening the low side by one
+  // bucket catches everything that can reach into the region.
+  const int x_begin = std::max(0, bucketX(region.xMin()) - 1);
+  const int x_end = bucketX(region.xMax());
+  const int y_begin = std::max(0, bucketY(region.yMin()) - 1);
+  const int y_end = bucketY(region.yMax());
+
+  for (int by = y_begin; by <= y_end; by++) {
+    const int row = by * count_x_;
+    for (int bx = x_begin; bx <= x_end; bx++) {
+      for (odb::dbInst* inst : buckets_[row + bx]) {
+        visitor(inst);
+      }
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////
 
 odb::dbBlock* Opendp::densityBlock() const
 {
@@ -86,20 +209,31 @@ void Opendp::visitPlacementSites(
   }
 }
 
+void Opendp::resetInstanceIndex()
+{
+  inst_index_.reset();
+}
+
 void Opendp::visitPlacedInstances(
+    const odb::Rect& region,
     const std::function<void(const odb::Rect& bbox)>& visitor) const
 {
-  // Read the locations from the db rather than from the dpl network, so a
-  // query made between optimization steps sees where the cells are now.
-  for (odb::dbInst* inst : block_->getInsts()) {
+  if (inst_index_ == nullptr) {
+    inst_index_ = std::make_unique<InstanceIndex>(block_);
+  }
+
+  inst_index_->visit(region, [&visitor](odb::dbInst* inst) {
     // Pads and cover cells sit outside the rows and take no placement area;
     // fillers and macros take theirs like any other instance.
     if (!inst->getPlacementStatus().isPlaced()
         || !inst->getMaster()->isCoreAutoPlaceable()) {
-      continue;
+      return;
     }
+    // Read the location from the db rather than from the dpl network or from
+    // anything the index cached, so a query made between optimization steps
+    // sees where the cell is now.
     visitor(inst->getBBox()->getBox());
-  }
+  });
 }
 
 int64_t Opendp::placeableArea(const odb::Rect& region) const
@@ -121,8 +255,9 @@ double Opendp::getPlacementDensity(const odb::Rect& region) const
   }
 
   int64_t occupied = 0;
-  visitPlacedInstances(
-      [&](const odb::Rect& bbox) { occupied += overlapArea(bbox, region); });
+  visitPlacedInstances(region, [&](const odb::Rect& bbox) {
+    occupied += overlapArea(bbox, region);
+  });
 
   return areaDensity(occupied, placeable);
 }
