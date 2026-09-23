@@ -254,6 +254,8 @@ class DetailedMgr
   bool alignPos(const Node* ndi, DbuX& xi, DbuX xl, DbuX xr);
   int getMoveLimit() { return moveLimit_; }
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
+  void addAttempts(int n) { total_attempts_ += n; }
+  int getTotalAttempts() const { return total_attempts_; }
 
   // Journal operations
   Journal& getJournal() { return journal_; }
@@ -389,6 +391,7 @@ class DetailedMgr
 
   // For generating a move list... (size = moveLimit_)
   int moveLimit_;
+  int total_attempts_ = 0;
 };
 
 }  // namespace dpl
