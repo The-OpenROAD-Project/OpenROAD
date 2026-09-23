@@ -270,9 +270,16 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "repair_design_fixed_driver",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+# PASSFAIL tests that assert their own results and have no .ok to diff,
+# as CMake runs every PASSFAIL test.
+SELF_CHECKING_TESTS = [
+    "repair_design_fixed_driver",
+]
 
 # Hierarchical Verilog netlists reused as corpus input by
 # //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
@@ -332,6 +339,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_log = test_name not in SELF_CHECKING_TESTS,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )

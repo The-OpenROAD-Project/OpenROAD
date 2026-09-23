@@ -234,6 +234,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
+  // A FIRM, LOCKED or COVER instance: its master must not change size.
+  bool isFixed(const sta::Instance* inst) const;
   void setDontTouch(const sta::Net* net, bool dont_touch);
   bool dontTouch(const sta::Net* net) const;
 
