@@ -136,7 +136,7 @@ proc rtl_macro_placer { args } {
     set length [llength $min_channel_size]
 
     if { $length != 1 && $length != 2 } {
-      utl::error MPL 78 "-min_channel_size must have 1 or 2 values."
+      utl::error MPL 80 "-min_channel_size must have 1 or 2 values."
     }
 
     if { $length == 1 } {
