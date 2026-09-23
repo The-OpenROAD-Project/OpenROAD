@@ -1436,7 +1436,7 @@ class NesterovBase
   // the placement to count as settled. A ratio rather than a length, so it
   // carries no bin size, no DBU constant, and no dependence on the penalty
   // schedule's rate.
-  static constexpr float kSettleFraction = 0.6f;
+  static constexpr float kSettleFraction = 0.7f;
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
