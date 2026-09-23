@@ -87,6 +87,7 @@ void Grid::allocateGrid()
       pixel.is_valid = false;
       pixel.is_hopeless = false;
       pixel.blocked_layers = 0;
+      pixel.blocked_pin_layers = 0;
     }
   }
 
@@ -145,36 +146,45 @@ void Grid::markHopeless(odb::dbBlock* block,
 
 void Grid::markBlocked(odb::dbBlock* block)
 {
-  const odb::Rect core = getCore();
-  auto addBlockedLayers
-      = [&](odb::Rect wire_rect, odb::dbTechLayer* tech_layer) {
-          if (tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
-            return;
-          }
-          auto routing_level = tech_layer->getRoutingLevel();
-          if (routing_level <= 1 || routing_level > 3) {  // considering M2, M3
-            return;
-          }
-          if (wire_rect.getDir() == odb::horizontal) {
-            return;
-          }
-          wire_rect.moveDelta(-core.xMin(), -core.yMin());
-          GridRect grid_rect = gridCovering(wire_rect);
-          GridRect core{.xlo = GridX{0},
-                        .ylo = GridY{0},
-                        .xhi = GridX{row_site_count_},
-                        .yhi = GridY{row_count_}};
-          grid_rect = grid_rect.intersect(core);
-          for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
-            for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
-              auto pixel1 = gridPixel(x, y);
-              if (pixel1) {
-                pixel1->blocked_layers |= 1 << routing_level;
-              }
-            }
-          }
-        };
+  namespace gtl = boost::polygon;
+  using gtl::operators::operator+=;
+  using gtl::operators::operator-=;
 
+  const odb::Rect core = getCore();
+  const GridRect core_grid{.xlo = GridX{0},
+                           .ylo = GridY{0},
+                           .xhi = GridX{row_site_count_},
+                           .yhi = GridY{row_count_}};
+  auto markPixels = [&](odb::Rect rect, auto mark) {
+    rect.moveDelta(-core.xMin(), -core.yMin());
+    const GridRect grid_rect = gridCovering(rect).intersect(core_grid);
+    for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+      for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+        Pixel* pixel = gridPixel(x, y);
+        if (pixel) {
+          mark(*pixel);
+        }
+      }
+    }
+  };
+  auto getLevel = [](odb::dbTechLayer* tech_layer) {
+    if (tech_layer == nullptr
+        || tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+      return 0;
+    }
+    const int level = tech_layer->getRoutingLevel();
+    return level <= kMaxPinLevel ? level : 0;
+  };
+
+  // Stripe metal per level, and via/patch metal per level.  The via/patch
+  // metal lying outside the stripes can short to pins on the same layer.
+  std::vector<gtl::polygon_90_set_data<int>> wire_metal(kMaxPinLevel + 1);
+  std::vector<gtl::polygon_90_set_data<int>> via_metal(kMaxPinLevel + 1);
+  auto addRect = [](gtl::polygon_90_set_data<int>& set, const odb::Rect& r) {
+    set += gtl::rectangle_data<int>{r.xMin(), r.yMin(), r.xMax(), r.yMax()};
+  };
+
+  std::vector<odb::dbShape> via_shapes;
   for (auto net : block->getNets()) {
     if (!net->isSpecial()) {
       continue;
@@ -182,19 +192,48 @@ void Grid::markBlocked(odb::dbBlock* block)
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* sbox : swire->getWires()) {
         if (sbox->isVia()) {
-          // TODO: handle via
+          via_shapes.clear();
+          sbox->getViaBoxes(via_shapes);
+          for (const odb::dbShape& shape : via_shapes) {
+            const int level = getLevel(shape.getTechLayer());
+            if (level > 0) {
+              addRect(via_metal[level], shape.getBox());
+            }
+          }
+          continue;
+        }
+        const odb::Rect wire_rect = sbox->getBox();
+        const int level = getLevel(sbox->getTechLayer());
+        if (level == 0) {
           continue;
         }
         if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
-          // TODO: handle patches
+          addRect(via_metal[level], wire_rect);
           continue;
         }
-        odb::Rect wire_rect = sbox->getBox();
-        odb::dbTechLayer* tech_layer = sbox->getTechLayer();
-        addBlockedLayers(wire_rect, tech_layer);
+        addRect(wire_metal[level], wire_rect);
+        // Vertical M2/M3 stripes block pins and their via access
+        if (level >= 2 && wire_rect.getDir() != odb::horizontal) {
+          markPixels(wire_rect, [level](Pixel& pixel) {
+            pixel.blocked_layers |= 1 << level;
+          });
+        }
       }
     }
   }
+
+  std::vector<gtl::rectangle_data<int>> rects;
+  for (int level = 1; level <= kMaxPinLevel; level++) {
+    via_metal[level] -= wire_metal[level];
+    rects.clear();
+    via_metal[level].get_rectangles(rects);
+    for (const auto& rect : rects) {
+      markPixels(
+          odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)),
+          [level](Pixel& pixel) { pixel.blocked_pin_layers |= 1 << level; });
+    }
+  }
+
   for (odb::dbBlockage* blockage : block->getBlockages()) {
     if (blockage->isSoft()) {
       continue;

@@ -175,7 +175,11 @@ bool PlacementDRC::checkBlockedLayers(const Node* cell,
   for (GridY y1 = y_begin; y1 < y_end; y1++) {
     for (GridX x1 = x_begin; x1 < x_end; x1++) {
       const Pixel* pixel = grid_->gridPixel(x1, y1);
-      if (pixel != nullptr && pixel->blocked_layers & cell->getUsedLayers()) {
+      if (pixel == nullptr) {
+        continue;
+      }
+      if ((pixel->blocked_layers & cell->getUsedLayers())
+          || (pixel->blocked_pin_layers & cell->getPinLayers())) {
         return false;
       }
     }

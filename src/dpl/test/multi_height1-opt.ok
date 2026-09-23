@@ -54,10 +54,15 @@ Detailed placement improvement.
 [INFO DPL-0314] Found 0 site alignment problems.
 [INFO DPL-0311] Found 0 overlaps between adjacent cells.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
-Detailed Improvement Results
-------------------------------------------
-Original HPWL               47.3 u (      11.3,       36.1)
-Final HPWL                  29.3 u (       9.5,       19.9)
-Delta HPWL                 -38.0 % (     -16.1,      -44.9)
+Place Optimization Analysis
+---------------------------------
+total attempts              100
+relocated cells               4
+total displacement         17.4 u
+average displacement        4.4 u
+max displacement            8.9 u
+original HPWL              47.3 u
+improved HPWL              29.3 u
+delta HPWL                  -38 %
 
 No differences found.
