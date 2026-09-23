@@ -284,7 +284,6 @@ void RouteBase::revertToMinCongestion()
   // revert
   nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
-    // Per-region densities: only the top-level one is in the line above.
     debugPrint(log_,
                GPL,
                "routability",
@@ -622,7 +621,6 @@ bool RouteBase::scaleInflationToBudget()
       tile->setInflatedRatio(1.0 + scale * (tile->inflatedRatio() - 1.0));
     }
   }
-  // The spent/remaining side of this is reported by the pass's inflation line.
   debugPrint(log_,
              GPL,
              "routability",
@@ -916,7 +914,6 @@ std::pair<bool, bool> RouteBase::routability(
   // for the price of a full Nesterov re-run from the snapshot.
   if ((minRc_ - curRc) > minRc_ * kMinRcImprovement) {
     is_min_rc_ = true;
-    // The header above already carries the current congestion.
     log_->info(GPL,
                48,
                "Congestion improved on previous minimum ({:.4g}); updating "
@@ -1034,9 +1031,6 @@ std::pair<bool, bool> RouteBase::routability(
 
     nbVec_[nb_index]->cutFillerCells(inflatedAreaDelta_[nb_index]);
 
-    // One line for the whole inflation step: what it cost, what is left of the
-    // budget, and the density the cells now have to be placed at. Reported
-    // after the fillers are cut, since that is what settles the density.
     log_->info(
         GPL,
         86,
@@ -1110,7 +1104,6 @@ std::pair<bool, bool> RouteBase::routability(
       return ((new_value - old_value) / old_value) * 100.0;
     };
 
-    // The area breakdown behind the inflation line above.
     debugPrint(
         log_,
         GPL,
@@ -1283,8 +1276,6 @@ void RouteBase::updateRudyAverage(bool verbose)
         / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
   if (verbose) {
-    // The weighted result is reported by the pass header; these are the
-    // percentiles it is made of.
     debugPrint(log_,
                GPL,
                "routability",
@@ -1449,7 +1440,6 @@ float RouteBase::getGrtRC()
     debugPrint(log_, GPL, "routability", 1, msg, value);
   };
 
-  // The weighted result these combine into is reported by the pass header.
   debug("0.5%RC: {:.4f}", std::fmax(horAvg005RC, verAvg005RC));
   debug("1.0%RC: {:.4f}", std::fmax(horAvg010RC, verAvg010RC));
   debug("2.0%RC: {:.4f}", std::fmax(horAvg020RC, verAvg020RC));
@@ -1470,8 +1460,6 @@ float RouteBase::getGrtRC()
   return finalRC;
 }
 
-// The pass is announced by routability() once it has a congestion reading to
-// announce it with, not here.
 void RouteBase::increaseCounter()
 {
   revert_count_++;

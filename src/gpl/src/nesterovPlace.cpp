@@ -751,9 +751,6 @@ void NesterovPlace::runRoutability(int iter,
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow;
   const bool is_trigger_open = is_overflow_gate_open && isPlacementSettled();
 
-  // Report the hold the settle gate imposes on top of the overflow gate, so
-  // a run's log shows why routability ran at an overflow below the one it
-  // was configured to run at, and how far below.
   if (is_overflow_gate_open && !is_trigger_open
       && routability_settle_wait_start_iter_ == -1) {
     routability_settle_wait_start_iter_ = iter;
@@ -912,8 +909,6 @@ bool NesterovPlace::isPlacementSettled() const
   return true;
 }
 
-// The region holding the trigger up is the one furthest from settling, so
-// that is the one worth reporting.
 float NesterovPlace::getWorstSettleRatio() const
 {
   float worst = 0;

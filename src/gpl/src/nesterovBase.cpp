@@ -4578,8 +4578,6 @@ bool NesterovBase::isSettled() const
 
 float NesterovBase::getSettleRatio() const
 {
-  // No peak yet means nothing to be down from: report the displacement as
-  // still sitting at its peak, which is what isSettled() reads it as.
   if (peak_coordi_distance_ <= 0) {
     return 1.0f;
   }
@@ -5102,9 +5100,6 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                block->dbuAreaToMicrons(totalFillerArea_));
   }
 
-  // Filler churn is bookkeeping, not a state change worth a default-log line:
-  // what it amounts to is the target density below, which the routability
-  // pass reports.
   debugPrint(log_,
              GPL,
              "routability",

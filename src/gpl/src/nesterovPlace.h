@@ -118,8 +118,6 @@ class NesterovPlace
   // True when the per-iteration cell displacement has come off its peak in
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
-  // Per-iteration displacement as a fraction of its peak, taken over the
-  // region furthest from settling. Reporting only.
   float getWorstSettleRatio() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
