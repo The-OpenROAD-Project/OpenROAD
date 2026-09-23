@@ -79,6 +79,12 @@ void ClusteringEngine::run()
   }
 }
 
+bool ClusteringEngine::checkFeasibility()
+{
+  init();
+  return tree_->has_unfixed_macros;
+}
+
 void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 {
   tree_ = tree;

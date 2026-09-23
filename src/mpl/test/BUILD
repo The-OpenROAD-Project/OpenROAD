@@ -53,6 +53,8 @@ COMPULSORY_TESTS = [
 
 # Self-checking tests: the last line of the log says "pass"; no .ok file.
 PASSFAIL_TESTS = [
+    "check_macro_placement1",
+    "check_macro_placement2",
     "fixed_std_cell_no_unfixed_macros",
 ]
 
@@ -84,6 +86,14 @@ filegroup(
                 "centralization1": [
                     "testcases/centralization1.def",
                     "testcases/orientation_improve1.lef",
+                ],
+                "check_macro_placement1": [
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "check_macro_placement2": [
+                    "testcases/macro_only.lef",
+                    "testcases/unfixed_cells_dont_fit_in_core.def",
                 ],
                 "clocked_macro": [
                     "testcases/clocked_macro.def",

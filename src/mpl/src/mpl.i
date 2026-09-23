@@ -17,6 +17,21 @@ utl::Logger* getLogger();
 
 using utl::MPL;
 using ord::getMacroPlacer;
+
+namespace mpl {
+// The -fence_* arguments, in microns, as the rectangle the placer takes.
+static odb::Rect fenceFromMicrons(const float fence_lx,
+                                  const float fence_ly,
+                                  const float fence_ux,
+                                  const float fence_uy)
+{
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  return odb::Rect(block->micronsToDbu(fence_lx),
+                   block->micronsToDbu(fence_ly),
+                   block->micronsToDbu(fence_ux),
+                   block->micronsToDbu(fence_uy));
+}
+}
 %}
 
 %include "../../Exception.i"
@@ -54,11 +69,8 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
 
   auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
-  odb::Rect global_fence = odb::Rect(block->micronsToDbu(fence_lx),
-                                    block->micronsToDbu(fence_ly),
-                                    block->micronsToDbu(fence_ux),
-                                    block->micronsToDbu(fence_uy));
+  const odb::Rect global_fence
+      = fenceFromMicrons(fence_lx, fence_ly, fence_ux, fence_uy);
   return macro_placer->place(num_threads,
                              max_num_macro,
                              min_num_macro,
@@ -82,6 +94,16 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              report_directory,
                              keep_clustering_data,
                              use_full_halo);
+}
+
+bool check_macro_placement_cmd(const float fence_lx,
+                               const float fence_ly,
+                               const float fence_ux,
+                               const float fence_uy,
+                               const bool use_full_halo)
+{
+  return getMacroPlacer()->checkMacroPlacement(
+      fenceFromMicrons(fence_lx, fence_ly, fence_ux, fence_uy), use_full_halo);
 }
 
 void set_debug_cmd(odb::dbBlock* block,

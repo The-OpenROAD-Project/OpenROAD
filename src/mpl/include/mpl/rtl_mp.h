@@ -68,6 +68,8 @@ class MacroPlacer
 
   void blockMacroChannels();
 
+  bool checkMacroPlacement(const odb::Rect& global_fence, bool use_full_halo);
+
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
                   const float& y_origin,

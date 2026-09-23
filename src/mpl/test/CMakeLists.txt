@@ -39,6 +39,8 @@ or_integration_tests(
     halos4
     halos5
   PASSFAIL_TESTS
+    check_macro_placement1
+    check_macro_placement2
     fixed_std_cell_no_unfixed_macros
 )
 

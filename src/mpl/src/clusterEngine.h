@@ -109,6 +109,10 @@ class ClusteringEngine
                 bool use_full_halo,
                 const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
 
+  // The checks run() makes before it clusters, and nothing after them.
+  // Returns whether there are macros to place.
+  bool checkFeasibility();
+
   // Methods to update the tree as the hierarchical
   // macro placement runs.
   void rebuildConnections();
