@@ -120,6 +120,8 @@ class NesterovPlace
   bool isPlacementSettled() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
                         const std::string& routability_driven_dir) const;
