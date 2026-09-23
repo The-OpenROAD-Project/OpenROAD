@@ -276,9 +276,6 @@ filegroup(
             "pad01": [
                 "simple01.def",
             ],
-            "report_placement_density": [
-                "simple01.def",
-            ],
             "pad02": [
                 "simple01.def",
             ],
@@ -305,6 +302,9 @@ filegroup(
             ],
             "regions3": [
                 "Nangate45/fake_macros.lef",
+            ],
+            "report_placement_density": [
+                "simple01.def",
             ],
         }.get(test_name, []),
     )
