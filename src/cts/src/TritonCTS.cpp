@@ -1478,6 +1478,7 @@ bool TritonCTS::separateMacroRegSinks(
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks)
 {
   odb::dbInst* skippedTimingBuf = nullptr;
+  std::vector<odb::dbInst*> dont_touch_sinks;
 
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
@@ -1502,6 +1503,10 @@ bool TritonCTS::separateMacroRegSinks(
     }
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
+      if (inst->isDoNotTouch()) {
+        dont_touch_sinks.push_back(inst);
+      }
+
       // Cells with insertion delay, macros, clock gaters and inverters that
       // drive macros are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
@@ -1533,6 +1538,21 @@ bool TritonCTS::separateMacroRegSinks(
       }
     }
   }
+  // Every sink's clock pin moves to a net of the tree, and odb refuses to
+  // disconnect a pin of a dont_touch instance (ODB-0370). Say so before the
+  // net is changed rather than fail in odb with the tree half built.
+  if (!dont_touch_sinks.empty()) {
+    logger_->error(CTS,
+                   137,
+                   "Clock net {} has {} dont_touch sink(s), whose clock pins "
+                   "clock tree synthesis would have to reconnect; the first "
+                   "is {}. Remove dont_touch from them, or skip the net with "
+                   "-skip_nets.",
+                   clockNet.getName(),
+                   dont_touch_sinks.size(),
+                   dont_touch_sinks.front()->getName());
+  }
+
   if (skippedTimingBuf && (registerSinks.size() + macroSinks.size()) < 2) {
     logger_->warn(CTS,
                   110,
