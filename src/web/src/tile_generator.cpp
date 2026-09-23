@@ -3669,11 +3669,16 @@ void TileGenerator::drawInstanceName(const TextSink& emit,
   // The font is a FIXED size, as in the Qt GUI, which renders every instance
   // name in options_->instanceNameFont() and only decides whether the name
   // fits (drawTextInBBox).  Scaling it with the box instead made a large
-  // macro's name fill the macro.  The caller has already applied Qt's size
-  // gate; everything reaching here draws.
+  // macro's name fill the macro.
   const int box_px_w = (int) (pixel_xh - pixel_xl);
   const int box_px_h = (int) (pixel_yh - pixel_yl);
   const int font_h = getTextHeight(inst_font);
+
+  // Qt's gate from drawTextInBBox: skip when the font would take more than
+  // half the cell's cross dimension, its kNonCoreScaleLimit = 2.0.
+  if (2 * font_h > std::min(box_px_w, box_px_h)) {
+    return;
+  }
 
   const std::string full_name = inst->getName();
   const int full_w = getTextWidth(full_name, inst_font);
@@ -3731,12 +3736,145 @@ void TileGenerator::drawInstanceName(const TextSink& emit,
   }
 }
 
+/* static */
+void TileGenerator::drawItermLabels(const TextSink& emit,
+                                    odb::dbInst* inst,
+                                    const TileFrame& frame,
+                                    const int dim,
+                                    const GlyphCache::FontSize& font,
+                                    const TileVisibility& vis)
+{
+  // The first qualifying box is chosen without looking at the tile, so every
+  // tile agrees on which box carries the label.
+  const odb::dbTransform xfm = inst->getTransform();
+  const double min_box_px = kMinItermLabelBoxPx * frame.px_per_css;
+  for (odb::dbMTerm* mterm : inst->getMaster()->getMTerms()) {
+    bool drawn = false;
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* geom : mpin->getGeometry(false)) {
+        odb::dbTechLayer* layer = geom->getTechLayer();
+        if (layer == nullptr
+            || (vis.has_visible_layers
+                && !vis.visible_layers.contains(layer->getName()))) {
+          continue;
+        }
+        odb::Rect box = geom->getBox();
+        xfm.apply(box);
+        if (static_cast<int>(box.dx() * frame.scale) < min_box_px
+            && static_cast<int>(box.dy() * frame.scale) < min_box_px) {
+          continue;
+        }
+        drawItermLabel(emit, box, mterm->getName(), frame, dim, font);
+        drawn = true;
+        break;
+      }
+      if (drawn) {
+        break;
+      }
+    }
+  }
+}
+
+/* static */
+void TileGenerator::drawItermLabel(const TextSink& emit,
+                                   const odb::Rect& box,
+                                   const std::string& name,
+                                   const TileFrame& frame,
+                                   const int dim,
+                                   const GlyphCache::FontSize& font)
+{
+  const int font_h = getTextHeight(font);
+  const int text_w = getTextWidth(name, font);
+  const int box_px_w = static_cast<int>(box.dx() * frame.scale);
+  const int box_px_h = static_cast<int>(box.dy() * frame.scale);
+
+  // Center of the pin box in buffer pixels.
+  const odb::Point center = box.center();
+  const int cx = static_cast<int>(frame.pxX(center.x()));
+  const int cy = dim - 1 - static_cast<int>(frame.pxY(center.y()));
+
+  if (box_px_h > box_px_w && text_w > box_px_w) {
+    const int px = cx - font_h / 2;
+    const int py = cy - text_w / 2;
+    if (px > -font_h && px < dim && py > -text_w && py < dim) {
+      emit(px, py, name, font, kLabelYellow, /*rotated=*/true);
+    }
+  } else {
+    const int px = cx - text_w / 2;
+    const int py = cy - font_h / 2;
+    if (px > -text_w && px < dim && py > -font_h && py < dim) {
+      emit(px, py, name, font, kLabelYellow, /*rotated=*/false);
+    }
+  }
+}
+
+// Special "_inst_labels" layer: instance names and pin names.  A layer of their
+// own, stacked above every tech layer, because Qt paints them after the whole
+// drawLayer loop (renderThread.cpp:1264-1277); on the tiles below, the master
+// obstructions and pin shapes of the upper layers covered them.
+void TileGenerator::drawInstLabelsLayer(std::vector<unsigned char>& image,
+                                        odb::dbBlock* block,
+                                        const TileFrame& frame,
+                                        const TileVisibility& vis,
+                                        const TextSink& emit) const
+{
+  const bool pin_names = vis.inst_pins && vis.inst_pin_names;
+  const int dim = bufferDim(image);
+
+  // Both fonts are a fixed CSS size, so one lookup serves the whole tile;
+  // fontAtlasGetFont takes a global lock.
+  const auto name_font = fontAtlasGetFont(
+      static_cast<int>(std::lround(kInstNameFontHeight * frame.px_per_css)));
+  const auto pin_font = fontAtlasGetFont(
+      static_cast<int>(std::lround(kItermLabelFontHeight * frame.px_per_css)));
+
+  // The instance pass's sub-resolution cull (DBU per CSS px is px_per_css /
+  // scale).  A name alone also needs two font heights of box, which the R-tree
+  // can check on the height.
+  int min_height = vis.detailed
+                       ? 0
+                       : static_cast<int>(std::lround(
+                             kMinViewablePx * frame.px_per_css / frame.scale));
+  if (!pin_names) {
+    min_height = std::max(
+        min_height,
+        static_cast<int>(2 * getTextHeight(name_font) / frame.scale));
+  }
+
+  const odb::Rect& tile = frame.cull;
+  std::vector<odb::dbInst*> insts;
+  for (odb::dbInst* inst : search_->searchInsts(block,
+                                                tile.xMin(),
+                                                tile.yMin(),
+                                                tile.xMax(),
+                                                tile.yMax(),
+                                                min_height)) {
+    if (tile.overlaps(inst->getBBox()->getBox())
+        && vis.isInstVisible(inst, sta_)) {
+      insts.push_back(inst);
+    }
+  }
+
+  // Names first, then pin names: drawInstanceNames before drawITermLabels.
+  if (vis.inst_names) {
+    for (odb::dbInst* inst : insts) {
+      drawInstanceName(emit, inst, frame, dim, name_font);
+    }
+  }
+  if (pin_names) {
+    for (odb::dbInst* inst : insts) {
+      drawItermLabels(emit, inst, frame, dim, pin_font, vis);
+    }
+  }
+}
+
 // Special "_access_points" layer: dbAccessPoint markers (X).  Mirrors GUI
 // RenderThread::drawAccessPoints (renderThread.cpp:1484-1550).
 void TileGenerator::drawAccessPointsLayer(std::vector<unsigned char>& image,
                                           odb::dbBlock* block,
                                           const TileFrame& frame,
-                                          const TileVisibility& vis) const
+                                          const TileVisibility& vis,
+                                          const TextSink& /*emit*/) const
 {
   const odb::Rect& dbu_tile = frame.cull;
   constexpr Color kApHasAccess{.r = 0, .g = 255, .b = 0, .a = 255};
@@ -3834,7 +3972,8 @@ void TileGenerator::drawAccessPointsLayer(std::vector<unsigned char>& image,
 void TileGenerator::drawRegionsLayer(std::vector<unsigned char>& image,
                                      odb::dbBlock* block,
                                      const TileFrame& frame,
-                                     const TileVisibility& /*vis*/) const
+                                     const TileVisibility& /*vis*/,
+                                     const TextSink& /*emit*/) const
 {
   const odb::Rect& dbu_tile = frame.cull;
   // GUI defaults: fill = region_color_ (0x70,0x70,0x70,0x70), outline
@@ -3859,7 +3998,8 @@ void TileGenerator::drawRegionsLayer(std::vector<unsigned char>& image,
 void TileGenerator::drawMfgGridLayer(std::vector<unsigned char>& image,
                                      odb::dbBlock* block,
                                      const TileFrame& frame,
-                                     const TileVisibility& vis) const
+                                     const TileVisibility& vis,
+                                     const TextSink& /*emit*/) const
 {
   const odb::Rect& dbu_tile = frame.cull;
   odb::dbTech* tech = block->getTech();
@@ -3938,7 +4078,8 @@ void TileGenerator::drawMfgGridLayer(std::vector<unsigned char>& image,
 void TileGenerator::drawGcellGridLayer(std::vector<unsigned char>& image,
                                        odb::dbBlock* block,
                                        const TileFrame& frame,
-                                       const TileVisibility& /*vis*/) const
+                                       const TileVisibility& /*vis*/,
+                                       const TextSink& /*emit*/) const
 {
   const odb::Rect& dbu_tile = frame.cull;
   odb::dbGCellGrid* grid = block->getGCellGrid();
@@ -4002,7 +4143,8 @@ void TileGenerator::drawGcellGridLayer(std::vector<unsigned char>& image,
 void TileGenerator::drawRudyLayer(std::vector<unsigned char>& image,
                                   odb::dbBlock* /*block*/,
                                   const TileFrame& frame,
-                                  const TileVisibility& /*vis*/) const
+                                  const TileVisibility& /*vis*/,
+                                  const TextSink& /*emit*/) const
 {
   auto rudy = getHeatMapSource("RUDY");
   if (rudy) {
@@ -4059,14 +4201,15 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   return names;
 }
 
-const std::array<TileGenerator::PseudoLayerDef, 5>&
+const std::array<TileGenerator::PseudoLayerDef, 6>&
 TileGenerator::pseudoLayerDefs()
 {
   // z_index mirrors addPseudoLayer() in display-controls.js (see
   // saveImageLayerOrder); those values in turn follow the GUI's paint order
   // (renderThread.cpp:1201-1298), where the manufacturing grid goes down before
-  // the routing layers and access points, regions and the gcell grid on top.
-  static const std::array<PseudoLayerDef, 5> defs = {{
+  // the routing layers, the instance names right after them, and access
+  // points, regions and the gcell grid on top.
+  static const std::array<PseudoLayerDef, 6> defs = {{
       {.name = "_access_points",
        .enabled = [](const TileVisibility& v) { return v.access_points; },
        .painter = &TileGenerator::drawAccessPointsLayer,
@@ -4087,6 +4230,13 @@ TileGenerator::pseudoLayerDefs()
        .enabled = [](const TileVisibility& v) { return v.rudy; },
        .painter = &TileGenerator::drawRudyLayer,
        .z_index = 1003},
+      {.name = "_inst_labels",
+       .enabled =
+           [](const TileVisibility& v) {
+             return v.inst_names || (v.inst_pins && v.inst_pin_names);
+           },
+       .painter = &TileGenerator::drawInstLabelsLayer,
+       .z_index = 999},
   }};
   return defs;
 }
@@ -4910,7 +5060,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         if (layer == def.name) {
           pseudo_overlay = true;
           if (def.enabled(vis)) {
-            (this->*def.painter)(image_buffer, block, frame, vis);
+            (this->*def.painter)(image_buffer, block, frame, vis, emit_text);
           }
           break;
         }
@@ -4933,25 +5083,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // their own drawing; skip all other drawing (instances, routing, etc.)
       const bool pseudo_layer = modules_layer || pins_layer || pseudo_overlay;
       if (!pseudo_layer) {
-        const auto iterm_font = fontAtlasGetFont(
-            static_cast<int>(std::lround(kItermLabelFontHeight * px_per_css)));
-        const int iterm_font_h = getTextHeight(iterm_font);
-
-        // Both fonts are a fixed CSS size, so they are invariant for the whole
-        // tile.  fontAtlasGetFont takes a global lock; asking per instance
-        // would serialise the render threads on it.
-        const auto inst_name_font = fontAtlasGetFont(
-            static_cast<int>(std::lround(kInstNameFontHeight * px_per_css)));
-        const int inst_name_font_h = getTextHeight(inst_name_font);
-
         // Draw instances.  instance_size_limit_dbu culls sub-resolution
         // instances at the RTree level (Qt-parity), so dense bump arrays vanish
         // at zoom-out — unless "Detailed view" is on, which sets the limit to
-        // 0.
-        // Filled by the pass below and drawn after the hatching, so a label
-        // is never crossed by a hatch line -- Qt's drawBlock order.
-        std::vector<odb::dbInst*> named_insts;
-
+        // 0.  Their names and pin names are drawn on _inst_labels.
         const Search::InstRange insts
             = inst_pass_draws ? search_->searchInsts(block,
                                                      dbu_tile.xMin(),
@@ -5069,24 +5204,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             if (master->getHeight() >= size_limit_dbu) {
               drawOrientationTag(image_buffer, inst, frame, draw_px, stroke);
             }
-
-            // The name is NOT drawn here.  Qt paints instance names near the
-            // end of drawBlock, after drawBlockages, so a hatch line never
-            // crosses a label; collect it and draw once this tile's hatching
-            // is down (issue #11338).
-            //
-            // The size gate stays here rather than moving with the drawing:
-            // the pixel box is already in hand, and most instances in a tile
-            // fail it, so testing later would re-derive a box per instance to
-            // throw it away.  It is Qt's own gate from drawTextInBBox -- skip
-            // when the font would take more than half the cell's cross
-            // dimension, its kNonCoreScaleLimit = 2.0.
-            if (vis.inst_names
-                && 2 * inst_name_font_h
-                       <= std::min((int) (pixel_xh - pixel_xl),
-                                   (int) (pixel_yh - pixel_yl))) {
-              named_insts.push_back(inst);
-            }
           } else if (!tech_layer) {
             // No layer filter (a layer name this chiplet's tech doesn't have):
             // draw every master shape in the fallback color, as before.  The
@@ -5118,79 +5235,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     odb::Rect box = geom->getBox();
                     inst->getTransform().apply(box);
                     draw_box_in_tile(box, color, layer_pattern);
-                  }
-                }
-              }
-            }
-
-            // Draw ITerm name labels when zoomed in and pins are visible.
-            if (vis.inst_pins && vis.inst_pin_names) {
-              const odb::dbTransform xfm = inst->getTransform();
-
-              for (odb::dbMTerm* mterm : master->getMTerms()) {
-                bool drawn = false;
-                for (odb::dbMPin* mpin : mterm->getMPins()) {
-                  for (odb::dbBox* geom : mpin->getGeometry(false)) {
-                    odb::Rect box = geom->getBox();
-                    xfm.apply(box);
-                    if (!box.overlaps(dbu_tile)) {
-                      continue;
-                    }
-
-                    // Skip if pin box is too small in pixels.
-                    const int box_px_w = static_cast<int>(box.dx() * scale);
-                    const int box_px_h = static_cast<int>(box.dy() * scale);
-                    if (box_px_w < kMinItermLabelBoxPx * px_per_css
-                        && box_px_h < kMinItermLabelBoxPx * px_per_css) {
-                      continue;
-                    }
-
-                    const std::string name(mterm->getName());
-                    const int text_w = getTextWidth(name, iterm_font);
-
-                    // Center of pin box in pixel coords.
-                    const odb::Point center = box.center();
-                    const int cx = static_cast<int>(
-                        (center.x() - dbu_tile.xMin()) * scale);
-                    const int cy = draw_px - 1
-                                   - static_cast<int>(
-                                       (center.y() - dbu_tile.yMin()) * scale);
-
-                    // Rotate 90° if box is taller than wide and text overflows.
-                    const bool rotate
-                        = (box_px_h > box_px_w) && (text_w > box_px_w);
-
-                    if (rotate) {
-                      const int px = cx - iterm_font_h / 2;
-                      const int py = cy - text_w / 2;
-                      if (px > -iterm_font_h && px < draw_px && py > -text_w
-                          && py < draw_px) {
-                        emit_text(px,
-                                  py,
-                                  name,
-                                  iterm_font,
-                                  kLabelYellow,
-                                  /*rotated=*/true);
-                      }
-                    } else {
-                      const int px = cx - text_w / 2;
-                      const int py = cy - iterm_font_h / 2;
-                      if (px > -text_w && px < draw_px && py > -iterm_font_h
-                          && py < draw_px) {
-                        emit_text(px,
-                                  py,
-                                  name,
-                                  iterm_font,
-                                  kLabelYellow,
-                                  /*rotated=*/false);
-                      }
-                    }
-
-                    drawn = true;
-                    break;  // only label first geometry per pin
-                  }
-                  if (drawn) {
-                    break;
                   }
                 }
               }
@@ -5228,72 +5272,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   odb::Rect box = src;
                   xfm.apply(box);
                   draw_box_in_tile(box, color, layer_pattern);
-                }
-              }
-            }
-
-            // Draw ITerm name labels when zoomed in and pins are visible.
-            // One label per pin: the first box big enough and inside the tile,
-            // in the same order the master declares them.
-            if (vis.inst_pins && vis.inst_pin_names) {
-              for (const auto& [mterm, boxes] : mg->pin_boxes) {
-                for (const odb::Rect& src : boxes) {
-                  odb::Rect box = src;
-                  xfm.apply(box);
-                  if (!box.overlaps(dbu_tile)) {
-                    continue;
-                  }
-
-                  // Skip if pin box is too small in pixels.
-                  const int box_px_w = static_cast<int>(box.dx() * scale);
-                  const int box_px_h = static_cast<int>(box.dy() * scale);
-                  if (box_px_w < kMinItermLabelBoxPx * px_per_css
-                      && box_px_h < kMinItermLabelBoxPx * px_per_css) {
-                    continue;
-                  }
-
-                  const std::string name(mterm->getName());
-                  const int text_w = getTextWidth(name, iterm_font);
-
-                  // Center of pin box in pixel coords.
-                  const odb::Point center = box.center();
-                  const int cx = static_cast<int>((center.x() - dbu_tile.xMin())
-                                                  * scale);
-                  const int cy = draw_px - 1
-                                 - static_cast<int>(
-                                     (center.y() - dbu_tile.yMin()) * scale);
-
-                  // Rotate 90° if box is taller than wide and text overflows.
-                  const bool rotate
-                      = (box_px_h > box_px_w) && (text_w > box_px_w);
-
-                  if (rotate) {
-                    const int px = cx - iterm_font_h / 2;
-                    const int py = cy - text_w / 2;
-                    if (px > -iterm_font_h && px < draw_px && py > -text_w
-                        && py < draw_px) {
-                      emit_text(px,
-                                py,
-                                name,
-                                iterm_font,
-                                kLabelYellow,
-                                /*rotated=*/true);
-                    }
-                  } else {
-                    const int px = cx - text_w / 2;
-                    const int py = cy - iterm_font_h / 2;
-                    if (px > -text_w && px < draw_px && py > -iterm_font_h
-                        && py < draw_px) {
-                      emit_text(px,
-                                py,
-                                name,
-                                iterm_font,
-                                kLabelYellow,
-                                /*rotated=*/false);
-                    }
-                  }
-
-                  break;  // only label first geometry per pin
                 }
               }
             }
@@ -5463,18 +5441,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                         dbu_tile.yMax(),
                                         shape_size_limit_dbu)) {
             hatch_box_in_tile(blk->getBBox()->getBox());
-          }
-        }
-
-        // Instance names last, as in Qt: every hatch this tile carries is
-        // already down, so none of them can cross a label.  The sink is
-        // wrapped once, not once per instance: emit_text's captures overflow
-        // std::function's small-object buffer, so a per-instance temporary
-        // would heap-allocate inside the tile loop.
-        if (!named_insts.empty()) {
-          const TextSink name_sink = emit_text;
-          for (odb::dbInst* named : named_insts) {
-            drawInstanceName(name_sink, named, frame, draw_px, inst_name_font);
           }
         }
 

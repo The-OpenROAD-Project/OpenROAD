@@ -36,6 +36,14 @@ export function nonSolidPatterns(patterns) {
     return out;
 }
 
+// Whether the _inst_labels layer has anything to show: instance names, or pin
+// names (which only show with the pins themselves).  Mirrors the server's
+// pseudoLayerDefs entry.
+export function instLabelsVisible(visibility) {
+    return !!visibility.inst_names
+        || (!!visibility.inst_pins && !!visibility.inst_pin_names);
+}
+
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
 // `chipletData` entry comes from the backend serializeTechResponse and
 // has shape { path, name, parent, master, depth }.  `savedHidden` is the
@@ -198,6 +206,10 @@ export function populateDisplayControls(app, visibility, selectability,
     addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
     // GCell-grid lines overlay (topmost, GUI paint order)
     addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
+    // Instance and pin names: above every routing layer and below the access
+    // points, where Qt paints them (after the whole drawLayer loop).
+    addPseudoLayer('_inst_labels', 'instLabelsLayer', 999,
+                   instLabelsVisible(visibility));
 
     // Region boundaries overlay (above access points, GUI paint order).
     // Only created when the design has dbRegions — the layer is default-ON
@@ -661,6 +673,10 @@ export function populateDisplayControls(app, visibility, selectability,
         // Refresh pins layer so it filters by the updated visible_layers.
         if (app.pinsLayer && app.map.hasLayer(app.pinsLayer)) {
             app.pinsLayer.refreshTiles();
+        }
+        // Pin names are only drawn for pins on visible layers too.
+        if (app.instLabelsLayer && app.map.hasLayer(app.instLabelsLayer)) {
+            app.instLabelsLayer.refreshTiles();
         }
 
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));

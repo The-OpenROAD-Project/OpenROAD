@@ -407,12 +407,71 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return count;
   }
 
-  // Render the _instances tile twice, with and without the blockage hatch,
-  // and report how many of the label's solid pixels the hatch washed out.
+  // Straight-alpha "over": `src` composited onto `dst`, one RGBA pixel.
+  static void compositeOver(unsigned char* dst, const unsigned char* src)
+  {
+    const int sa = src[3];
+    if (sa == 0) {
+      return;
+    }
+    const int da = dst[3] * (255 - sa) / 255;
+    const int oa = sa + da;
+    for (int c = 0; c < 3; ++c) {
+      dst[c] = static_cast<unsigned char>((src[c] * sa + dst[c] * da) / oa);
+    }
+    dst[3] = static_cast<unsigned char>(oa);
+  }
+
+  // The z=0 tile of every layer saveImageLayerOrder() stacks for `vis`,
+  // composited bottom-up the way the browser stacks the panes.
+  std::vector<unsigned char> renderStack(const TileVisibility& vis,
+                                         unsigned& w,
+                                         unsigned& h)
+  {
+    std::vector<unsigned char> out;
+    for (const std::string& layer :
+         TileGenerator::saveImageLayerOrder(vis, tile_gen_->getLayers())) {
+      const auto px
+          = decodePng(tile_gen_->generateTile(layer, 0, 0, 0, vis), w, h);
+      if (out.empty()) {
+        out.assign(px.size(), 0);
+      }
+      EXPECT_EQ(px.size(), out.size()) << layer;
+      for (size_t i = 0; i + 3 < px.size() && i + 3 < out.size(); i += 4) {
+        compositeOver(&out[i], &px[i]);
+      }
+    }
+    return out;
+  }
+
+  // A master of `type` with an obstruction over its whole footprint on each of
+  // `obs_layers`.  The fixture's LEF only carries standard cells.
+  odb::dbMaster* makeBlockMaster(const char* name,
+                                 const int w,
+                                 const int h,
+                                 const std::vector<const char*>& obs_layers,
+                                 const odb::dbMasterType type
+                                 = odb::dbMasterType::BLOCK)
+  {
+    odb::dbMaster* master = odb::dbMaster::create(lib_, name);
+    master->setType(type);
+    master->setWidth(w);
+    master->setHeight(h);
+    for (const char* layer_name : obs_layers) {
+      odb::dbTechLayer* layer = lib_->getTech()->findLayer(layer_name);
+      EXPECT_NE(layer, nullptr) << layer_name;
+      odb::dbBox::create(master, layer, 0, 0, w, h);
+    }
+    master->setFrozen();
+    return master;
+  }
+
+  // Render the layer stack twice, with and without the shapes `cover` turns
+  // on, and report how many of the label's solid pixels they washed out.
   //
-  // The hatch shows up in the blue channel: the label over a hatch line stays
-  // strongly yellow (min(R,G) - B ~ 210), while a hatch line over the label
-  // flattens it (~0 once the hatch is opaque grey).  Alpha is only tested for
+  // The cover shows up in the blue channel: the label over a hatch line or an
+  // obstruction stays strongly yellow (min(R,G) - B ~ 210), while a hatch line
+  // or an obstruction over the label flattens it.  Alpha is only tested for
   // "mostly covered" because a glyph's anti-aliased pixels come back below the
   // 220 the label colour carries.
   struct LabelWash
@@ -425,19 +484,28 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     unsigned h = 0;
   };
 
-  LabelWash measureLabelWash()
+  // No pin or obstruction shapes on the tech layers, so only the cover under
+  // test can reach the label.
+  static TileVisibility labelOnlyVis()
+  {
+    TileVisibility vis;
+    vis.blockages = false;
+    vis.inst_pins = false;
+    return vis;
+  }
+
+  LabelWash measureLabelWash(bool TileVisibility::*cover
+                             = &TileVisibility::placement_blockages,
+                             TileVisibility vis = labelOnlyVis())
   {
     LabelWash out;
-    TileVisibility vis;
     vis.inst_names = true;
 
     unsigned pw = 0, ph = 0;
-    vis.placement_blockages = false;
-    const auto plain = decodePng(
-        tile_gen_->generateTile("_instances", 0, 0, 0, vis), pw, ph);
-    vis.placement_blockages = true;
-    out.hatched = decodePng(
-        tile_gen_->generateTile("_instances", 0, 0, 0, vis), out.w, out.h);
+    vis.*cover = false;
+    const auto plain = renderStack(vis, pw, ph);
+    vis.*cover = true;
+    out.hatched = renderStack(vis, out.w, out.h);
     EXPECT_EQ(pw, out.w);
     EXPECT_EQ(ph, out.h);
 
@@ -463,11 +531,11 @@ class TileGeneratorTest : public tst::Nangate45Fixture
   {
     ASSERT_GT(wash.label_px, 150)
         << "precondition: the label must be large enough to meet several "
-           "hatch lines; only "
+           "covering shapes; only "
         << wash.label_px << " solid pixels";
     EXPECT_EQ(wash.washed_out, 0)
         << wash.washed_out << " of " << wash.label_px
-        << " label pixels were painted over by the blockage hatch (weakest "
+        << " label pixels were painted over by the covering shapes (weakest "
            "yellowness "
         << wash.min_yellowness << ")";
   }
@@ -1077,6 +1145,47 @@ TEST_F(TileGeneratorTest, StandaloneBlockageDoesNotCrossInstanceNames)
   EXPECT_GT(margin_hatch, 0)
       << "the standalone-blockage pass drew nothing; the test above proves "
          "nothing";
+}
+
+// Issue #11425: a macro's name vanished under its own obstructions, which sit
+// on the tech-layer tiles stacked above _instances.  Qt paints instance names
+// after the whole drawLayer loop, so obstructions over the entire macro on
+// three metals must leave the name readable in the composited view.
+TEST_F(TileGeneratorTest, InstanceNameStaysAboveMasterObstructions)
+{
+  makeBlockMaster("OBS_MACRO", 40000, 40000, {"metal1", "metal2", "metal3"});
+  placeInst("OBS_MACRO", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis = labelOnlyVis();
+  vis.placement_blockages = false;
+  expectLabelSurvived(measureLabelWash(&TileVisibility::blockages, vis));
+}
+
+// The names moved to a layer of their own: the _instances tile no longer
+// depends on them, and _inst_labels carries them.
+TEST_F(TileGeneratorTest, InstanceNamesLeaveTheInstancesTile)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility on;
+  on.inst_names = true;
+  TileVisibility off;
+  off.inst_names = false;
+
+  EXPECT_EQ(tile_gen_->generateTile("_instances", 0, 0, 0, on),
+            tile_gen_->generateTile("_instances", 0, 0, 0, off))
+      << "instance names must not be drawn on the _instances tile";
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, on)))
+      << "_inst_labels should carry the instance name";
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, off)));
 }
 
 TEST_F(TileGeneratorTest, GetLayers)
@@ -3266,44 +3375,58 @@ TEST_F(TileGeneratorTest, InstPinNamesRendered)
   makeTileGen();
   tile_gen_->eagerInit();
 
+  // Pin names go on _inst_labels, above every tech layer; the instance name
+  // shares that layer, so it is switched off to leave the pin names alone.
   TileVisibility vis_on;
-  vis_on.routing = false;
-  vis_on.special_nets = false;
-  vis_on.pins = false;
-
-  vis_on.blockages = false;
+  vis_on.inst_names = false;
   vis_on.inst_pins = true;
   vis_on.inst_pin_names = true;
-  auto png_on = tile_gen_->generateTile("metal1", 0, 0, 0, vis_on);
-
-  TileVisibility vis_off;
-  vis_off.routing = false;
-  vis_off.special_nets = false;
-  vis_off.pins = false;
-
-  vis_off.blockages = false;
-  vis_off.inst_pins = true;
+  TileVisibility vis_off = vis_on;
   vis_off.inst_pin_names = false;
-  auto png_off = tile_gen_->generateTile("metal1", 0, 0, 0, vis_off);
 
-  // Labels should make the two outputs differ.
-  EXPECT_NE(png_on, png_off)
-      << "inst_pin_names should add ITerm labels to tile output";
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, vis_on)))
+      << "inst_pin_names should draw ITerm labels on _inst_labels";
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, vis_off)));
+
+  // Not on the tech layer the pins sit on any more, where the layers above
+  // would cover them.
+  EXPECT_EQ(tile_gen_->generateTile("metal1", 0, 0, 0, vis_on),
+            tile_gen_->generateTile("metal1", 0, 0, 0, vis_off))
+      << "ITerm labels must not be drawn on the tech-layer tiles";
 
   // With inst_pins=false, labels should not appear even if inst_pin_names=true.
-  TileVisibility vis_no_pins;
-  vis_no_pins.routing = false;
-  vis_no_pins.special_nets = false;
-  vis_no_pins.pins = false;
-
-  vis_no_pins.blockages = false;
+  TileVisibility vis_no_pins = vis_on;
   vis_no_pins.inst_pins = false;
-  vis_no_pins.inst_pin_names = true;
-  auto png_no_pins = tile_gen_->generateTile("metal1", 0, 0, 0, vis_no_pins);
-  unsigned w = 0, h = 0;
-  auto pixels_no_pins = decodePng(png_no_pins, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels_no_pins))
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, vis_no_pins)))
       << "ITerm labels should not render when inst_pins is false";
+}
+
+// Qt's drawITermLabels only labels a pin on a layer that is shown, so hiding
+// the layer a pin sits on must take its name away too.
+TEST_F(TileGeneratorTest, InstPinNamesFollowLayerVisibility)
+{
+  block_->setDieArea(odb::Rect(0, 0, 2000, 2000));
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.inst_names = false;
+  vis.inst_pin_names = true;
+  vis.has_visible_layers = true;
+
+  vis.visible_layers = {"metal1"};
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, vis)));
+
+  // BUF_X16's pins are all on metal1.
+  vis.visible_layers = {"metal2"};
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, vis)))
+      << "a pin on a hidden layer must not be labelled";
 }
 
 //------------------------------------------------------------------------------

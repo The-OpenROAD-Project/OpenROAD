@@ -624,12 +624,14 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   vis.rudy = true;
 
   // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
-  // _access_points 1000, _regions 1001, _gcell_grid 1002, _rudy 1003.
+  // _inst_labels 999, _access_points 1000, _regions 1001, _gcell_grid 1002,
+  // _rudy 1003.
   const std::vector<std::string> expected = {"_instances",
                                              "_pins",
                                              "_mfg_grid",
                                              "metal1",
                                              "metal2",
+                                             "_inst_labels",
                                              "_access_points",
                                              "_regions",
                                              "_gcell_grid",
@@ -637,18 +639,47 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
 }
 
+// The instance and pin names share one layer, stacked above every tech layer
+// (issue #11425), so it has to be composited whenever either kind of label is
+// on -- pin names only count while the pins themselves are shown.
+TEST_F(SaveImageTest, InstLabelsLayerFollowsNamesAndPinNames)
+{
+  const std::vector<std::string> tech_layers = {"metal1"};
+  const auto has_labels =
+      [&](const bool names, const bool pins, const bool pin_names) {
+        TileVisibility vis;
+        vis.inst_names = names;
+        vis.inst_pins = pins;
+        vis.inst_pin_names = pin_names;
+        const auto order = TileGenerator::saveImageLayerOrder(vis, tech_layers);
+        const auto it = std::ranges::find(order, "_inst_labels");
+        if (it == order.end()) {
+          return false;
+        }
+        EXPECT_GT(it - std::ranges::find(order, "metal1"), 0)
+            << "labels must go over the tech layers";
+        return true;
+      };
+
+  EXPECT_TRUE(has_labels(true, false, false));
+  EXPECT_TRUE(has_labels(false, true, true));
+  EXPECT_FALSE(has_labels(false, false, true));
+  EXPECT_FALSE(has_labels(false, true, false));
+}
+
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
 {
   const std::vector<std::string> tech_layers = {"metal1"};
   TileVisibility vis;
   vis.pins = false;
-  // `regions` is the one overlay that defaults ON (Qt parity), so turn the
+  // `regions` and the instance names default ON (Qt parity), so turn the
   // whole set off explicitly rather than relying on the defaults.
   vis.regions = false;
   vis.mfg_grid = false;
   vis.access_points = false;
   vis.gcell_grid = false;
   vis.rudy = false;
+  vis.inst_names = false;
 
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
             (std::vector<std::string>{"_instances", "metal1"}))
@@ -744,6 +775,7 @@ TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
   vis.access_points = false;
   vis.gcell_grid = false;
   vis.rudy = false;
+  vis.inst_names = false;
 
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
             (std::vector<std::string>{"_instances", "metal2"}))

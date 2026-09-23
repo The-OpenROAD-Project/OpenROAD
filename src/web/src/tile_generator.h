@@ -332,7 +332,7 @@ struct TileVisibility
   FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
-  bool inst_names = true;  // Instance name labels on _instances layer
+  bool inst_names = true;  // Instance name labels on _inst_labels layer
   bool inst_pins = true;   // ITerm (cell pin) shapes on tech layers
   // ITerm name labels.  Off by default, like the Qt GUI's
   // Misc/Instances/"Pin Names" (displayControls.cpp makes it the one unchecked
@@ -1144,29 +1144,53 @@ class TileGenerator
   void dropOverlayCaches() const;
   void dropOverlayCachesIfStale(uint64_t rev) const;
 
+  // Where a label goes, decided by the caller.  A chiplet rendered in its own
+  // frame cannot draw text into that frame — the reverse mapping that places
+  // the frame would mirror the glyphs — so the caller routes the label
+  // elsewhere and only the position travels.  Arguments mirror drawText():
+  // top-left pixel, the text, its font, its color, and whether it reads
+  // top-to-bottom.
+  using TextSink = std::function<void(int px,
+                                      int py,
+                                      std::string_view text,
+                                      const GlyphCache::FontSize& font,
+                                      const Color& color,
+                                      bool rotated)>;
+
   // Pseudo-layer painters used by renderTileBuffer (one per overlay).
   // Callers gate on the entry's `enabled`; painters handle the rest.  All
-  // share one signature so pseudoLayerDefs() can dispatch by table.
+  // share one signature so pseudoLayerDefs() can dispatch by table; text goes
+  // through `emit`.
   void drawAccessPointsLayer(std::vector<unsigned char>& image,
                              odb::dbBlock* block,
                              const TileFrame& frame,
-                             const TileVisibility& vis) const;
+                             const TileVisibility& vis,
+                             const TextSink& emit) const;
   void drawRegionsLayer(std::vector<unsigned char>& image,
                         odb::dbBlock* block,
                         const TileFrame& frame,
-                        const TileVisibility& vis) const;
+                        const TileVisibility& vis,
+                        const TextSink& emit) const;
   void drawMfgGridLayer(std::vector<unsigned char>& image,
                         odb::dbBlock* block,
                         const TileFrame& frame,
-                        const TileVisibility& vis) const;
+                        const TileVisibility& vis,
+                        const TextSink& emit) const;
   void drawGcellGridLayer(std::vector<unsigned char>& image,
                           odb::dbBlock* block,
                           const TileFrame& frame,
-                          const TileVisibility& vis) const;
+                          const TileVisibility& vis,
+                          const TextSink& emit) const;
   void drawRudyLayer(std::vector<unsigned char>& image,
                      odb::dbBlock* block,
                      const TileFrame& frame,
-                     const TileVisibility& vis) const;
+                     const TileVisibility& vis,
+                     const TextSink& emit) const;
+  void drawInstLabelsLayer(std::vector<unsigned char>& image,
+                           odb::dbBlock* block,
+                           const TileFrame& frame,
+                           const TileVisibility& vis,
+                           const TextSink& emit) const;
   void drawHeatMap(std::vector<unsigned char>& image,
                    web::HeatMapDataSource& source,
                    const TileFrame& frame) const;
@@ -1190,10 +1214,11 @@ class TileGenerator
     void (TileGenerator::*painter)(std::vector<unsigned char>&,
                                    odb::dbBlock*,
                                    const TileFrame&,
-                                   const TileVisibility&) const;
+                                   const TileVisibility&,
+                                   const TextSink&) const;
     int z_index;
   };
-  static const std::array<PseudoLayerDef, 5>& pseudoLayerDefs();
+  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
   // Draw a rect's edges clamped to the tile (die/core/region outlines).
   void outlineRectInTile(std::vector<unsigned char>& image,
                          const odb::Rect& r,
@@ -1212,27 +1237,30 @@ class TileGenerator
                                  const TileFrame& frame,
                                  int dim,
                                  int stroke);
-  // Where a label goes, decided by the caller.  A chiplet rendered in its own
-  // frame cannot draw text into that frame — the reverse mapping that places
-  // the frame would mirror the glyphs — so the caller routes the label
-  // elsewhere and only the position travels.  Arguments mirror drawText():
-  // top-left pixel, the text, its font, its color, and whether it reads
-  // top-to-bottom.
-  using TextSink = std::function<void(int px,
-                                      int py,
-                                      std::string_view text,
-                                      const GlyphCache::FontSize& font,
-                                      const Color& color,
-                                      bool rotated)>;
-  // The instance's name, centred in its bbox and elided to fit.  Called after
-  // the blockage hatch rather than with the rest of the instance, the way Qt
-  // defers drawInstanceNames past drawBlockages, so no hatch line crosses a
-  // label.
+  // The instance's name, centred in its bbox and elided to fit, when the bbox
+  // is big enough to carry it.  Drawn on the _inst_labels layer, above every
+  // tech layer, as Qt paints drawInstanceNames after all of drawLayer.
   static void drawInstanceName(const TextSink& emit,
                                odb::dbInst* inst,
                                const TileFrame& frame,
                                int dim,
                                const GlyphCache::FontSize& inst_font);
+  // The pin names of `inst`: one per pin, on its first box that sits on a
+  // shown layer and is big enough -- Qt's drawITermLabels rule.
+  static void drawItermLabels(const TextSink& emit,
+                              odb::dbInst* inst,
+                              const TileFrame& frame,
+                              int dim,
+                              const GlyphCache::FontSize& font,
+                              const TileVisibility& vis);
+  // One pin name centred in `box`, turned 90° when a tall box cannot hold it
+  // level.
+  static void drawItermLabel(const TextSink& emit,
+                             const odb::Rect& box,
+                             const std::string& name,
+                             const TileFrame& frame,
+                             int dim,
+                             const GlyphCache::FontSize& font);
   mutable std::mutex heatmap_mutex_;
   mutable std::map<std::string, std::shared_ptr<web::HeatMapDataSource>>
       heatmaps_;

@@ -1812,6 +1812,7 @@ void WebServer::saveReport(const std::string& filename,
   }
   all_layers.emplace_back("_modules");
   all_layers.emplace_back("_pins");
+  all_layers.emplace_back("_inst_labels");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
   std::vector<std::pair<std::string, std::string>> tile_entries;

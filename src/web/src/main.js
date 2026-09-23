@@ -31,7 +31,8 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { populateDisplayControls } from './display-controls.js';
+import { instLabelsVisible, populateDisplayControls }
+    from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
 import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
@@ -158,6 +159,7 @@ const app = {
     regionsLayer: null,
     mfgGridLayer: null,
     gcellGridLayer: null,
+    instLabelsLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -598,6 +600,8 @@ function redrawAllLayers() {
         [app.regionsLayer, visibility.regions],
         [app.mfgGridLayer, visibility.mfg_grid],
         [app.gcellGridLayer, visibility.gcell_grid],
+        // Misc > Instances > Names / Pin Names
+        [app.instLabelsLayer, instLabelsVisible(visibility)],
     ];
     for (const [layer, visible] of toggleableLayers) {
         if (!layer) continue;

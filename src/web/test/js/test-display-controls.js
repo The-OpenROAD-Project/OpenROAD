@@ -5,8 +5,9 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { dom } from './setup-dom.js';
 
-const { layerRangeSet, nonSolidPatterns, populateDisplayControls }
-    = await import('../../src/display-controls.js');
+const {
+    instLabelsVisible, layerRangeSet, nonSolidPatterns, populateDisplayControls,
+} = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
@@ -78,6 +79,31 @@ describe('nonSolidPatterns', () => {
     it('tolerates null/undefined input', () => {
         assert.deepEqual(nonSolidPatterns(null), {});
         assert.deepEqual(nonSolidPatterns(undefined), {});
+    });
+});
+
+// The _inst_labels layer is mounted whenever it has something to draw, and
+// must agree with the server's pseudoLayerDefs entry on when that is.
+describe('instLabelsVisible', () => {
+    it('shows for instance names alone', () => {
+        assert.ok(instLabelsVisible(
+            { inst_names: true, inst_pins: false, inst_pin_names: false }));
+    });
+
+    it('shows for pin names when the pins are shown', () => {
+        assert.ok(instLabelsVisible(
+            { inst_names: false, inst_pins: true, inst_pin_names: true }));
+    });
+
+    it('stays off for pin names whose pins are hidden', () => {
+        assert.ok(!instLabelsVisible(
+            { inst_names: false, inst_pins: false, inst_pin_names: true }));
+    });
+
+    it('stays off with neither names nor pin names', () => {
+        assert.ok(!instLabelsVisible(
+            { inst_names: false, inst_pins: true, inst_pin_names: false }));
+        assert.ok(!instLabelsVisible({}));
     });
 });
 
