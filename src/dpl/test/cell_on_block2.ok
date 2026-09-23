@@ -48,8 +48,10 @@ diamond recovery: recovered 1/2 stuck cells.
 Negotiation phase 2: isolation point active, 1000 iterations.
       400 |          0 |         0 |         0
 Negotiation phase 2 converged at iteration 0.
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves               16176
 total displacement     293102.3 u
 average displacement       24.9 u
 max displacement         1398.0 u
