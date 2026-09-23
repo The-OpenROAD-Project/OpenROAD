@@ -14,6 +14,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "polygon.h"
 #include "shape.h"
 #include "via.h"
 
@@ -180,6 +181,19 @@ class Grid
   // returns the  largest boundary to use for extending straps
   virtual odb::Rect getGridBoundary() const;
 
+  // The same areas as outlines.  Each mirrors exactly one of the rectangles
+  // above, including where a subclass redefines what that rectangle means: on
+  // a rectangular floorplan a caller written against these behaves
+  // identically, and on a polygon one they follow the real outline.
+  virtual Region getDomainRegion() const;
+  virtual Region getGridRegion() const;
+  virtual Region getDomainBoundaryRegion() const;
+  virtual Region getGridBoundaryRegion() const;
+
+  // How far a band can be run outwards to reach the ring beside it.  Falls
+  // back to the band's own edge when no ring is there.
+  int getRingReach(const odb::Rect& band, const odb::Point& normal) const;
+
   const std::vector<std::unique_ptr<Rings>>& getRings() const { return rings_; }
   const std::vector<std::unique_ptr<Straps>>& getStraps() const
   {
@@ -274,6 +288,12 @@ class CoreGrid : public Grid
   Type type() const override { return Grid::kCore; }
 
   odb::Rect getDomainBoundary() const override;
+  Region getDomainRegion() const override;
+  Region getDomainBoundaryRegion() const override;
+
+  // the widest followpin rail on this grid, which overhangs the core by half
+  // its width at the top and bottom rows
+  int getFollowPinWidth() const;
 
   // finds all pad instances and adds connection straps to grid
   void setupDirectConnect(
@@ -324,6 +344,10 @@ class InstanceGrid : public Grid
   odb::Rect getGridArea() const override;
   odb::Rect getDomainBoundary() const override;
   odb::Rect getGridBoundary() const override;
+  Region getDomainRegion() const override;
+  Region getGridRegion() const override;
+  Region getDomainBoundaryRegion() const override;
+  Region getGridBoundaryRegion() const override;
 
   void getGridLevelObstructions(ShapeVectorMap& obstructions) const override;
 
