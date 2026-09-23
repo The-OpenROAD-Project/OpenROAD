@@ -1154,9 +1154,13 @@ proc insert_buffer { args } {
         $new_buf_base_name $new_net_base_name]
     } else {
       set loads_on_diff_nets [info exists flags(-load_pins_on_diff_nets)]
-      return [rsz::insert_buffer_before_loads_cmd $net $loads $buffer_cell $x $y $has_loc \
+      set buffer [rsz::insert_buffer_before_loads_cmd $net $loads $buffer_cell $x $y $has_loc \
         $new_buf_base_name $new_net_base_name \
         $loads_on_diff_nets]
+      if { $buffer == "NULL" } {
+        utl::error RSZ 3018 "insert_buffer did not insert a buffer before the load pins."
+      }
+      return $buffer
     }
   }
 

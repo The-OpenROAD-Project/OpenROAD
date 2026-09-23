@@ -252,6 +252,7 @@ or_integration_tests(
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1
+    repair_design_dont_touch_load
     cpp_tests
 )
 

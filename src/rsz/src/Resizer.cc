@@ -5947,11 +5947,14 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
                                                           uniquify,
                                                           loads_on_diff_nets);
 
+  // odb refuses, with its own warning, a buffer that would have to move a
+  // dont_touch load. Every caller in the resizer treats nullptr as "no
+  // buffer here" and carries on; insert_buffer turns it into an error.
   if (!buffer_inst) {
-    logger_->error(RSZ,
-                   3006,
-                   "Failed to insert buffer before loads for net {}",
-                   net->getName());
+    logger_->warn(RSZ,
+                  3006,
+                  "Failed to insert buffer before loads for net {}",
+                  net->getName());
     return nullptr;
   }
 

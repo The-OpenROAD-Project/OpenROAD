@@ -792,12 +792,15 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
     sta::Instance* inst = resizer_->insertBufferBeforeLoads(
         net, &group_set, *buf_cell, nullptr, "gain");
-    if (inst) {
-      repaired_net = true;
-      inserted_buffer_count_++;
-      sta::Pin* buffer_op_pin = nullptr;
-      resizer_->getBufferPins(inst, new_input_pin, buffer_op_pin);
+    if (!inst) {
+      // odb refused the buffer (a dont_touch net or load); leave the
+      // remaining sinks on the net rather than enqueue a missing pin.
+      break;
     }
+    repaired_net = true;
+    inserted_buffer_count_++;
+    sta::Pin* buffer_op_pin = nullptr;
+    resizer_->getBufferPins(inst, new_input_pin, buffer_op_pin);
 
     // 4. New buffer input pin is enqueued as a new sink
     sta::Delay buffer_delay = resizer_->bufferDelay(
