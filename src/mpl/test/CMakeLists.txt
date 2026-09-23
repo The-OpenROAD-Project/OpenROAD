@@ -38,6 +38,7 @@ or_integration_tests(
     halos3
     halos4
     halos5
+    write_macro_placement
 )
 
 
