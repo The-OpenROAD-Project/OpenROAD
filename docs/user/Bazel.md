@@ -75,6 +75,61 @@ shipped to end users; keep the default for the local edit-rebuild loop.
 The CMake build has LTO on by default in Release mode -- see the
 [CMake LTO option](Build.md#lto-options).
 
+## Is it compiling, or hitting the cache?
+
+The console counter advances for cache hits and real compiles alike:
+
+    [7,203 / 18,048] Compiling src/dpl/src/objective/detailed_abu.cxx; 20s disk-cache, remote-cache, processwrapper-sandbox ... (16 actions, 12 running)
+
+The strategy list after the elapsed time is the sequence of stages the action
+has passed through, so the **last entry is what is happening right now**. Above,
+the disk cache missed, the remote cache missed, and the compiler has been
+running for 20s under the process-wrapper sandbox. An action served from a
+cache never reaches a local strategy (`processwrapper-sandbox`, `linux-sandbox`,
+`local`) and disappears within a fraction of a second.
+
+The end-of-build line gives the breakdown for the whole build, with no flags
+needed:
+
+    INFO: 2 processes: 1229 action cache hit, 1 disk cache hit, 1 internal.        # nothing compiled
+    INFO: 2 processes: 1229 action cache hit, 1 internal, 1 processwrapper-sandbox. # one real compile
+
+Three different mechanisms are summarized there:
+
+| Runner | Meaning |
+|--------|---------|
+| `action cache hit` | Bazel's local action cache; the spawn never ran and never appears in the progress display |
+| `disk cache hit`, `remote cache hit` | the action ran, but its outputs were fetched from `--disk_cache`/`--remote_cache` instead of being built |
+| `processwrapper-sandbox`, `linux-sandbox`, `local`, `worker` | actually compiled here |
+
+For which actions those were, and why they were not up to date:
+
+```shell
+bazelisk build --config=cachelog //src/dpl:dpl
+etc/bazel-cache-summary.py
+```
+
+```
+bazel-cachelog.json: 3 spawns
+
+  ran for real: 3 spawns, 16.6s of wall time
+    processwrapper-sandbox              3       16.6s
+
+Slowest of the 3 spawns that ran for real:
+       5.8s  CppCompile     src/dpl/src/objective/detailed_abu.cxx
+       ...
+
+bazel-cachelog-explain.txt: why actions were not up to date
+         3  action changed since cached execution
+            e.g. Compiling src/dpl/src/objective/detailed_hpwl.cxx
+```
+
+`--config=cachelog` writes an execution log recording the runner that served
+every spawn. Each record carries the spawn's full input list -- a few MB per
+executed action -- so use it on incremental builds rather than on a build of
+everything. `--config=explain` is the cheap half on its own: it writes only the
+per-action reason, a few bytes per action.
+
 ## Using OpenROAD as a dependency from another project
 
 OpenROAD can be consumed as a Bazel module (`bazel_dep`) from another
