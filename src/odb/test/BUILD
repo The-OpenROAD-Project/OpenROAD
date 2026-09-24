@@ -227,6 +227,8 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    "odb_codec_invalid",
+    "odb_codec_roundtrip",
     "read_3dbv_fail",
     "read_3dbx_fail",
     "read_def_virtual_invalid",
@@ -402,6 +404,12 @@ filegroup(
             ],
             "dump_netlists_withfill": [
                 "dump_netlists_withfill_cdl.ok",
+            ],
+            "odb_codec_invalid": [
+                "odb_codec_stub.sh",
+            ],
+            "odb_codec_roundtrip": [
+                "odb_codec_stub.sh",
             ],
             "read_abstract_lef": [
                 "gcd_abstract_lef.lefok",

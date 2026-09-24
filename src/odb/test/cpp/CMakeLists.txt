@@ -33,6 +33,7 @@ add_executable(TestSwapMasterLeaf TestSwapMasterLeaf.cpp)
 add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 add_executable(TestObjectType TestObjectType.cpp)
 add_executable(TestDbStream TestDbStream.cpp)
+add_executable(TestDbStreamLayout TestDbStreamLayout.cpp)
 
 target_link_libraries(OdbGTests
         db
@@ -176,6 +177,11 @@ target_link_libraries(TestDbStream
         tst_base
         ${GTEST_LIBS}
 )
+target_link_libraries(TestDbStreamLayout
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
 target_link_libraries(TestObjectType
         db
         tst_base
@@ -216,6 +222,7 @@ add_dependencies(build_and_test
         OdbGTests
         TestObjectType
         TestDbStream
+        TestDbStreamLayout
 )
 add_subdirectory(helper)
 add_subdirectory(scan)

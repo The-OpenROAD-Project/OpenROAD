@@ -74,6 +74,8 @@ or_integration_tests(
     cpp_tests
     read_3dbv_fail
     read_3dbx_fail
+    odb_codec_invalid
+    odb_codec_roundtrip
     read_def_virtual_invalid
     test_block
     test_bterm

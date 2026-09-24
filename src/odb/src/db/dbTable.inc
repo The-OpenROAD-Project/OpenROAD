@@ -12,6 +12,7 @@
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbStreamLayout.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
@@ -479,8 +480,11 @@ void dbTable<T, page_size>::writePage(dbOStream& stream,
 {
   const T* t = (T*) page->objects_;
   const T* e = &t[pageSize()];
+  dbStreamLayout* layout = stream.getLayout();
 
   for (; t < e; t++) {
+    const uint64_t start = stream.tell();
+    const uint64_t inner = layout ? layout->slotCount() : 0;
     if (t->offset_in_bytes_ & kAllocBit) {
       const char allocated = 1;
       stream << allocated;
@@ -491,6 +495,10 @@ void dbTable<T, page_size>::writePage(dbOStream& stream,
       _dbFreeObject* o = (_dbFreeObject*) t;
       stream << o->next_;
       stream << o->prev_;
+    }
+    if (layout && layout->slotCount() == inner) {
+      layout->addSlot(
+          dbObject::getTypeName(type_), start, stream.tell() - start);
     }
   }
 }

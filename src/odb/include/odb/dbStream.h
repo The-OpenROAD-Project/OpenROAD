@@ -29,6 +29,7 @@
 namespace odb {
 
 class _dbDatabase;
+class dbStreamLayout;
 
 inline constexpr size_t kTemplateRecursionLimit = 16;
 
@@ -73,9 +74,19 @@ class dbOStream
   {
     if (buffer_pos_ > 0) {
       f_.write(buffer_.data(), static_cast<std::streamsize>(buffer_pos_));
+      written_ += buffer_pos_;
       buffer_pos_ = 0;
     }
   }
+
+  // Bytes handed to this stream so far, counting what is still buffered.
+  // Unlike pos() it neither flushes nor asks the underlying stream.
+  uint64_t tell() const { return written_ + buffer_pos_; }
+
+  // Where the stream reports the byte range of each table slot it writes,
+  // or nullptr, the default, to report nothing. See dbStreamLayout.h.
+  void setLayout(dbStreamLayout* layout) { layout_ = layout; }
+  dbStreamLayout* getLayout() const { return layout_; }
 
   template <typename... Ts>
     requires(... && std::is_trivially_copyable_v<Ts>)
@@ -113,6 +124,7 @@ class dbOStream
     // If payload exceeds entire buffer size, bypass buffering
     if (len > kBufferSize) {
       f_.write(data, static_cast<std::streamsize>(len));
+      written_ += len;
     } else {
       std::memcpy(buffer_.data() + buffer_pos_, data, len);
       buffer_pos_ += len;
@@ -248,6 +260,8 @@ class dbOStream
   static constexpr size_t kBufferSize = 65536;
   std::array<char, kBufferSize> buffer_;
   size_t buffer_pos_ = 0;
+  uint64_t written_ = 0;
+  dbStreamLayout* layout_ = nullptr;
 };
 
 // RAII class for scoping ostream operations
