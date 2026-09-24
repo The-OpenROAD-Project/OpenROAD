@@ -37,6 +37,14 @@ inline constexpr Color kSelectionYellow{.r = 255, .g = 255, .b = 0, .a = 255};
 // over dense geometry still lets the shapes read through, as Qt's does.
 inline constexpr Color kLabelYellow{.r = 255, .g = 255, .b = 0, .a = 220};
 
+// Block and pad names: Qt strokes the text path black and fills it opaque
+// (drawTextInBBox), so only the outer half of the outline shows.
+inline constexpr Color kOutlinedLabelYellow{.r = 255,
+                                            .g = 255,
+                                            .b = 0,
+                                            .a = 255};
+inline constexpr Color kLabelOutline{.r = 0, .g = 0, .b = 0, .a = 255};
+
 // Die, core, region and instance outlines, plus the instance orientation tag.
 // Qt paints all of them with QPen(Qt::gray, 0) — drawChip, drawRegions and
 // drawInstanceOutlines in renderThread.cpp — and Qt::gray is #A0A0A4, not the

@@ -930,6 +930,27 @@ class TileGenerator
                               std::string_view text,
                               const GlyphCache::FontSize& font,
                               const Color& color);
+  // drawText, or drawTextRotated when `rotated`, over a ring of `outline`
+  // `radius` px wide around the glyphs: Qt's strokePath + fillPath.
+  static void drawTextOutlined(std::vector<unsigned char>& image,
+                               int x,
+                               int y,
+                               std::string_view text,
+                               const GlyphCache::FontSize& font,
+                               const Color& color,
+                               const Color& outline,
+                               int radius,
+                               bool rotated);
+  // drawText, or drawTextRotated when `rotated`, over drawTextOutlined's ring
+  // of kLabelOutline when `ring` > 0.
+  static void drawLabelText(std::vector<unsigned char>& image,
+                            int x,
+                            int y,
+                            std::string_view text,
+                            const GlyphCache::FontSize& font,
+                            const Color& color,
+                            bool rotated,
+                            int ring);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -1147,15 +1168,16 @@ class TileGenerator
   // Where a label goes, decided by the caller.  A chiplet rendered in its own
   // frame cannot draw text into that frame — the reverse mapping that places
   // the frame would mirror the glyphs — so the caller routes the label
-  // elsewhere and only the position travels.  Arguments mirror drawText():
-  // top-left pixel, the text, its font, its color, and whether it reads
-  // top-to-bottom.
+  // elsewhere and only the position travels.  Arguments mirror
+  // drawLabelText(): top-left pixel, the text, its font, its color, whether it
+  // reads top-to-bottom, and the width of a black outline (0 for none).
   using TextSink = std::function<void(int px,
                                       int py,
                                       std::string_view text,
                                       const GlyphCache::FontSize& font,
                                       const Color& color,
-                                      bool rotated)>;
+                                      bool rotated,
+                                      int ring)>;
 
   // Pseudo-layer painters used by renderTileBuffer (one per overlay).
   // Callers gate on the entry's `enabled`; painters handle the rest.  All

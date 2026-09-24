@@ -973,6 +973,7 @@ constexpr int kPinLabelFontHeight = 14;  // pre-baked atlas size for pin labels
 constexpr int kItermLabelFontHeight = 10;  // atlas size for ITerm pin labels
 constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kInstNameFontHeight = 12;    // atlas size for instance names
+constexpr double kLabelOutlineCss = 1.0;   // visible half of Qt's 2 px pen
 // Minimum on-screen feature size (output CSS px) below which geometry is CULLED
 // at the search level instead of drawn.  Like the Qt GUI, the default view
 // does not return what is too small to read; "Detailed view" lowers the limit
@@ -3716,6 +3717,16 @@ void TileGenerator::drawInstanceName(const TextSink& emit,
     }
   }
 
+  // Block and pad names get Qt's black outline (drawTextInBBox's `center`
+  // case); the rest keep the plain label.
+  odb::dbMaster* master = inst->getMaster();
+  const bool outlined = master->isBlock() || master->isPad();
+  const int ring = outlined
+                       ? std::max(1,
+                                  static_cast<int>(std::lround(
+                                      kLabelOutlineCss * frame.px_per_css)))
+                       : 0;
+
   // Center of instance bbox in pixel coords.
   const int64_t cx = (pixel_xl + pixel_xh) / 2;
   const int64_t cy = dim - 1 - (pixel_yl + pixel_yh) / 2;
@@ -3723,15 +3734,28 @@ void TileGenerator::drawInstanceName(const TextSink& emit,
   if (rotate) {
     const int64_t px = cx - font_h / 2;
     const int64_t py = cy - text_w / 2;
-    if (px > -font_h && px < dim && py > -text_w && py < dim) {
-      emit((int) px, (int) py, name, inst_font, kLabelYellow, /*rotated=*/true);
+    if (px > -font_h - ring && px < dim + ring && py > -text_w - ring
+        && py < dim + ring) {
+      emit((int) px,
+           (int) py,
+           name,
+           inst_font,
+           outlined ? kOutlinedLabelYellow : kLabelYellow,
+           /*rotated=*/true,
+           ring);
     }
   } else {
     const int64_t px = cx - text_w / 2;
     const int64_t py = cy - font_h / 2;
-    if (px > -text_w && px < dim && py > -font_h && py < dim) {
-      emit(
-          (int) px, (int) py, name, inst_font, kLabelYellow, /*rotated=*/false);
+    if (px > -text_w - ring && px < dim + ring && py > -font_h - ring
+        && py < dim + ring) {
+      emit((int) px,
+           (int) py,
+           name,
+           inst_font,
+           outlined ? kOutlinedLabelYellow : kLabelYellow,
+           /*rotated=*/false,
+           ring);
     }
   }
 }
@@ -3797,13 +3821,13 @@ void TileGenerator::drawItermLabel(const TextSink& emit,
     const int px = cx - font_h / 2;
     const int py = cy - text_w / 2;
     if (px > -font_h && px < dim && py > -text_w && py < dim) {
-      emit(px, py, name, font, kLabelYellow, /*rotated=*/true);
+      emit(px, py, name, font, kLabelYellow, /*rotated=*/true, 0);
     }
   } else {
     const int px = cx - text_w / 2;
     const int py = cy - font_h / 2;
     if (px > -text_w && px < dim && py > -font_h && py < dim) {
-      emit(px, py, name, font, kLabelYellow, /*rotated=*/false);
+      emit(px, py, name, font, kLabelYellow, /*rotated=*/false, 0);
     }
   }
 }
@@ -4269,6 +4293,7 @@ struct DeferredLabel
   GlyphCache::FontSize font;
   Color color;
   bool rotated = false;
+  int ring = 0;
 };
 
 }  // namespace
@@ -4533,13 +4558,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                            std::string_view text,
                            const GlyphCache::FontSize& font,
                            const Color& color,
-                           const bool rotated) {
+                           const bool rotated,
+                           const int ring) {
         if (!use_local) {
-          if (rotated) {
-            drawTextRotated(image_buffer, px, py, text, font, color);
-          } else {
-            drawText(image_buffer, px, py, text, font, color);
-          }
+          drawLabelText(image_buffer, px, py, text, font, color, rotated, ring);
           return;
         }
         deferred_labels.push_back(DeferredLabel{
@@ -4550,6 +4572,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             .font = font,
             .color = color,
             .rotated = rotated,
+            .ring = ring,
         });
       };
 
@@ -5045,7 +5068,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                          .g = marker_color.g,
                                          .b = marker_color.b,
                                          .a = 255};
-                  emit_text(px, py, name, pin_label_font, text_color, rotated);
+                  emit_text(
+                      px, py, name, pin_label_font, text_color, rotated, 0);
                 }
               }
             }
@@ -5778,17 +5802,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               = draw_px - 1
                 - static_cast<int>(std::lround(world_frame.pxY(centre.y())))
                 - out_h / 2;
-          if (px_w <= -out_w || px_w >= draw_px || py_w <= -out_h
-              || py_w >= draw_px) {
+          if (px_w <= -out_w - label.ring || px_w >= draw_px + label.ring
+              || py_w <= -out_h - label.ring || py_w >= draw_px + label.ring) {
             continue;
           }
-          if (rotated) {
-            drawTextRotated(
-                draw_buffer, px_w, py_w, label.text, label.font, label.color);
-          } else {
-            drawText(
-                draw_buffer, px_w, py_w, label.text, label.font, label.color);
-          }
+          drawLabelText(draw_buffer,
+                        px_w,
+                        py_w,
+                        label.text,
+                        label.font,
+                        label.color,
+                        rotated,
+                        label.ring);
         }
       }
     }  // end per-chiplet for-loop
@@ -6936,6 +6961,130 @@ void TileGenerator::drawTextRotated(std::vector<unsigned char>& image,
     if (i + 1 < text.size()) {
       cursor_y += font.kern(text[i], text[i + 1]);
     }
+  }
+}
+
+/* static */
+void TileGenerator::drawTextOutlined(std::vector<unsigned char>& image,
+                                     const int x,
+                                     const int y,
+                                     const std::string_view text,
+                                     const GlyphCache::FontSize& font,
+                                     const Color& color,
+                                     const Color& outline,
+                                     const int radius,
+                                     const bool rotated)
+{
+  // Walks the glyphs the way drawText does: x along the line, y down from
+  // its top.
+  const auto for_each_glyph = [&](const auto& visit) {
+    int cursor = 0;
+    for (size_t i = 0; i < text.size(); ++i) {
+      const GlyphCache::GlyphInfo gi = font.glyph(text[i]);
+      if (gi.alpha != nullptr) {
+        visit(gi, cursor);
+      }
+      cursor += gi.advance;
+      if (i + 1 < text.size()) {
+        cursor += font.kern(text[i], text[i + 1]);
+      }
+    }
+  };
+
+  // Coverage of the whole string, padded by the radius so the ring fits.
+  int lo_x = 0;
+  int hi_x = font.textWidth(text);
+  int lo_y = 0;
+  int hi_y = font.cellHeight();
+  for_each_glyph([&](const GlyphCache::GlyphInfo& gi, const int cursor) {
+    lo_x = std::min(lo_x, cursor + gi.x_offset);
+    hi_x = std::max(hi_x, cursor + gi.x_offset + gi.bmp_width);
+    lo_y = std::min(lo_y, gi.y_offset);
+    hi_y = std::max(hi_y, gi.y_offset + gi.bmp_height);
+  });
+  const int ox = radius - lo_x;
+  const int oy = radius - lo_y;
+  const int w = hi_x - lo_x + 2 * radius;
+  const int h = hi_y - lo_y + 2 * radius;
+  std::vector<unsigned char> cov(static_cast<size_t>(w) * h, 0);
+  for_each_glyph([&](const GlyphCache::GlyphInfo& gi, const int cursor) {
+    for (int row = 0; row < gi.bmp_height; ++row) {
+      for (int col = 0; col < gi.bmp_width; ++col) {
+        unsigned char& c = cov[static_cast<size_t>(oy + gi.y_offset + row) * w
+                               + ox + cursor + gi.x_offset + col];
+        c = std::max(c, gi.alpha[row * gi.bmp_width + col]);
+      }
+    }
+  });
+
+  // The ring is the coverage dilated by `radius`: a separable max filter.
+  std::vector<unsigned char> tmp(cov.size(), 0);
+  std::vector<unsigned char> ring(cov.size(), 0);
+  for (int my = 0; my < h; ++my) {
+    for (int mx = 0; mx < w; ++mx) {
+      unsigned char m = 0;
+      for (int k = std::max(0, mx - radius); k <= std::min(w - 1, mx + radius);
+           ++k) {
+        m = std::max(m, cov[static_cast<size_t>(my) * w + k]);
+      }
+      tmp[static_cast<size_t>(my) * w + mx] = m;
+    }
+  }
+  for (int my = 0; my < h; ++my) {
+    for (int mx = 0; mx < w; ++mx) {
+      unsigned char m = 0;
+      for (int k = std::max(0, my - radius); k <= std::min(h - 1, my + radius);
+           ++k) {
+        m = std::max(m, tmp[static_cast<size_t>(k) * w + mx]);
+      }
+      ring[static_cast<size_t>(my) * w + mx] = m;
+    }
+  }
+
+  // Ring first and the glyphs over it, pixel by pixel; the ring covers every
+  // glyph pixel, so one pass over it reaches both.
+  const auto scaled = [](Color c, const unsigned char a) {
+    c.a = static_cast<unsigned char>((static_cast<int>(c.a) * a) / 255);
+    return c;
+  };
+  const int dim = bufferDim(image);
+  const int ch_h = font.cellHeight();
+  for (int my = 0; my < h; ++my) {
+    for (int mx = 0; mx < w; ++mx) {
+      const size_t i = static_cast<size_t>(my) * w + mx;
+      if (ring[i] == 0) {
+        continue;
+      }
+      const int tx = mx - ox;
+      const int ty = my - oy;
+      // drawTextRotated's 90° clockwise map.
+      const int px = rotated ? x + (ch_h - 1 - ty) : x + tx;
+      const int py = rotated ? y + tx : y + ty;
+      blendPixel(image, px, py, scaled(outline, ring[i]), dim);
+      if (cov[i] != 0) {
+        blendPixel(image, px, py, scaled(color, cov[i]), dim);
+      }
+    }
+  }
+}
+
+/* static */
+void TileGenerator::drawLabelText(std::vector<unsigned char>& image,
+                                  const int x,
+                                  const int y,
+                                  const std::string_view text,
+                                  const GlyphCache::FontSize& font,
+                                  const Color& color,
+                                  const bool rotated,
+                                  const int ring)
+{
+  if (ring > 0) {
+    drawTextOutlined(
+        image, x, y, text, font, color, kLabelOutline, ring, rotated);
+  } else if (rotated) {
+    drawTextRotated(image, x, y, text, font, color);
+  } else {
+    drawText(image, x, y, text, font, color);
   }
 }
 

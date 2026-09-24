@@ -407,6 +407,20 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return count;
   }
 
+  // Dark, mostly opaque pixels: the black outline Qt strokes around block and
+  // pad names.  The label's own yellow never comes near it.
+  static int countOutlinePixels(const std::vector<unsigned char>& rgba)
+  {
+    int count = 0;
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i] < 64 && rgba[i + 1] < 64 && rgba[i + 2] < 64
+          && rgba[i + 3] > 128) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
   // Straight-alpha "over": `src` composited onto `dst`, one RGBA pixel.
   static void compositeOver(unsigned char* dst, const unsigned char* src)
   {
@@ -527,9 +541,10 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return out;
   }
 
-  static void expectLabelSurvived(const LabelWash& wash)
+  static void expectLabelSurvived(const LabelWash& wash,
+                                  const int min_label_px = 150)
   {
-    ASSERT_GT(wash.label_px, 150)
+    ASSERT_GT(wash.label_px, min_label_px)
         << "precondition: the label must be large enough to meet several "
            "covering shapes; only "
         << wash.label_px << " solid pixels";
@@ -1161,7 +1176,9 @@ TEST_F(TileGeneratorTest, InstanceNameStaysAboveMasterObstructions)
 
   TileVisibility vis = labelOnlyVis();
   vis.placement_blockages = false;
-  expectLabelSurvived(measureLabelWash(&TileVisibility::blockages, vis));
+  // The obstructions cover the whole macro, so every label pixel meets them;
+  // a block's outlined name just has fewer pure-yellow pixels than a plain one.
+  expectLabelSurvived(measureLabelWash(&TileVisibility::blockages, vis), 100);
 }
 
 // The names moved to a layer of their own: the _instances tile no longer
@@ -1186,6 +1203,47 @@ TEST_F(TileGeneratorTest, InstanceNamesLeaveTheInstancesTile)
       << "_inst_labels should carry the instance name";
   EXPECT_TRUE(TileGenerator::isBlankTilePng(
       tile_gen_->generateTile("_inst_labels", 0, 0, 0, off)));
+}
+
+// Qt outlines block and pad names (drawTextInBBox strokes the text path black
+// before filling it), which keeps them readable over the macro's own shapes.
+TEST_F(TileGeneratorTest, BlockAndPadNamesGetQtOutline)
+{
+  for (const odb::dbMasterType::Value type :
+       {odb::dbMasterType::BLOCK, odb::dbMasterType::PAD}) {
+    const char* type_name = odb::dbMasterType(type).getString();
+    SCOPED_TRACE(type_name);
+    makeBlockMaster(type_name, 40000, 40000, {}, type);
+    odb::dbInst* inst
+        = placeInst(type_name, "a_long_instance_name_to_label", 0, 0);
+    fitDieToContent();
+    makeTileGen();
+    tile_gen_->eagerInit();
+
+    unsigned w = 0, h = 0;
+    const auto px = decodePng(
+        tile_gen_->generateTile("_inst_labels", 0, 0, 0, TileVisibility{}),
+        w,
+        h);
+    EXPECT_GT(countOutlinePixels(px), 0) << "no black outline around the name";
+    odb::dbInst::destroy(inst);
+  }
+}
+
+// ... and leaves standard-cell names plain.
+TEST_F(TileGeneratorTest, StdCellNamesStayPlain)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+  const auto px = decodePng(
+      tile_gen_->generateTile("_inst_labels", 0, 0, 0, TileVisibility{}), w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(px)) << "the name should be drawn";
+  EXPECT_EQ(countOutlinePixels(px), 0)
+      << "standard-cell names are not outlined";
 }
 
 TEST_F(TileGeneratorTest, GetLayers)
