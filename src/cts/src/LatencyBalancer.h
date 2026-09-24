@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,8 +41,8 @@ struct GraphNode
   int id;
   std::string name;
   std::vector<int> childrenIds;
-  double arrival = 0.0;
-  double dlyNeeded = -1.0;
+  std::optional<double> arrival;
+  std::optional<int64_t> dlyNeeded;
   int nBuffInsert = -1;
   odb::dbITerm* inputTerm = nullptr;
 };
@@ -116,7 +117,7 @@ class LatencyBalancer
                    const std::vector<std::string>& dlyBuffers,
                    double loadPinsHwpl);
   std::vector<std::string> computeNumberOfDelayBuffers(
-      double delayNeeded,
+      int64_t delayNeeded,
       int srcX,
       int srcY,
       const std::vector<odb::dbITerm*>& sinks);
@@ -144,7 +145,6 @@ class LatencyBalancer
   sta::Graph* timingGraph_ = nullptr;
   TechChar* techChar_ = nullptr;
   double wireSegmentUnit_;
-  float bufferDelay_;
   double capPerDBU_;
   double resPerDBU_;
   double dpUnit_ = std::pow(10, 12);  // pico seconds
