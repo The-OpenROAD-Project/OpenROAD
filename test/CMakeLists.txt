@@ -11,8 +11,10 @@ or_integration_tests(
     timing_api_4
     two_designs
     upf_test
-    upf_aes
     write_db
   PASSFAIL_TESTS
+    cmd_file_error
     commands_without_load
+    db_option_quoting
+    upf_aes
 )
