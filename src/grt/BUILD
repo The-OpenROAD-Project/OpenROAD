@@ -71,6 +71,7 @@ cc_library(
     hdrs = [
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/Graph2D.h",
+        "src/fastroute/include/Overflow.h",
     ],
     copts = [
         "-fopenmp",

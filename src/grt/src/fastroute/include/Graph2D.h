@@ -84,6 +84,11 @@ class Graph2D
   void prepareForIncrementalRun();
   // Full-scan reference check, intended for tests and GRT usedgridcheck debug.
   bool usedGridsMatchUsage() const;
+  bool isUsedGrid(int x, int y, EdgeDirection direction) const;
+  // Observers belong to this graph's owner; copying routing state retains them.
+  void setUsedGridCallbacks(
+      std::function<void(int, int, EdgeDirection, bool)> changed,
+      std::function<void()> reset);
   void addEstUsageToUsage();
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);
@@ -151,6 +156,8 @@ class Graph2D
 
   void foreachEdge(const std::function<void(Edge&)>& func);
   void markUsedGridDirty(int x, int y, EdgeDirection direction);
+  void insertUsedGrid(int x, int y, EdgeDirection direction);
+  void eraseUsedGrid(int x, int y, EdgeDirection direction);
 
   multi_array<Edge, 2> v_edges_;    // The way it is indexed is (X, Y)
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
@@ -170,6 +177,8 @@ class Graph2D
   // Deduplicate with Edge::used_grid_dirty and reconcile only at the next run.
   std::vector<std::pair<int, int>> h_dirty_used_grids_;
   std::vector<std::pair<int, int>> v_dirty_used_grids_;
+  std::function<void(int, int, EdgeDirection, bool)> used_grid_changed_;
+  std::function<void()> used_grids_reset_;
 };
 
 }  // namespace grt
