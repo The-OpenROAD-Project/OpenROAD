@@ -114,17 +114,22 @@ sta::PinSet* primaryPins(Resizer* resizer, const bool inputs)
   sta::dbSta* sta = resizer->sta();
   sta::Network* network = resizer->network();
   auto* pins = new sta::PinSet(network);
-  std::unique_ptr<sta::InstancePinIterator> pin_iter(
-      network->pinIterator(network->topInstance()));
-  while (pin_iter->hasNext()) {
-    const sta::Pin* pin = pin_iter->next();
-    const sta::PortDirection* direction = network->direction(pin);
-    if (inputs) {
-      if (direction->isAnyInput() && !sta->isClockSrc(pin, sta->cmdSdc())) {
-        pins->insert(pin);
+  sta::Instance* top = network->topInstance();
+  if (top != nullptr) {
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network->pinIterator(top));
+    if (pin_iter != nullptr) {
+      while (pin_iter->hasNext()) {
+        const sta::Pin* pin = pin_iter->next();
+        const sta::PortDirection* direction = network->direction(pin);
+        if (inputs) {
+          if (direction->isAnyInput() && !sta->isClockSrc(pin, sta->cmdSdc())) {
+            pins->insert(pin);
+          }
+        } else if (direction->isAnyOutput()) {
+          pins->insert(pin);
+        }
       }
-    } else if (direction->isAnyOutput()) {
-      pins->insert(pin);
     }
   }
   return pins;
