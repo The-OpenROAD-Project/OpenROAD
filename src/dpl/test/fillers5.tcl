@@ -9,4 +9,4 @@ check_placement
 
 set def_file [make_result_file fillers5.def]
 write_def $def_file
-diff_file fillers5.defok $def_file
+diff_files fillers5.defok $def_file

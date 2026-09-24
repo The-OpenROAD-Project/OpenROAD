@@ -44,4 +44,4 @@ global_route -verbose -allow_congestion
 set guide_file [make_result_file soft_ndr_escalation.guide]
 write_guides $guide_file
 
-diff_file soft_ndr_escalation.guideok $guide_file
+diff_files soft_ndr_escalation.guideok $guide_file

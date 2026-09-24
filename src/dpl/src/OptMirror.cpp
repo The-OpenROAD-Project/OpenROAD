@@ -69,6 +69,7 @@ OptimizeMirroring::OptimizeMirroring(utl::Logger* logger,
 void OptimizeMirroring::run()
 {
   edge_spacing_reject_count_ = 0;
+  blocked_layers_reject_count_ = 0;
   findNetBoxes();
 
   NetBoxes sorted_boxes;
@@ -116,6 +117,13 @@ void OptimizeMirroring::run()
                   "Skipped {} instances that would violate cell edge spacing "
                   "rules when mirrored",
                   edge_spacing_reject_count_);
+  }
+  if (blocked_layers_reject_count_ > 0) {
+    logger_->info(DPL,
+                  40,
+                  "Skipped {} instances that would short pins to power via "
+                  "metal when mirrored",
+                  blocked_layers_reject_count_);
   }
 }
 
@@ -197,6 +205,16 @@ int OptimizeMirroring::mirrorCandidates(
                  inst->getConstName());
       continue;
     }
+    if (!isBlockedLayersLegal(cell, orient_my)) {
+      blocked_layers_reject_count_++;
+      debugPrint(logger_,
+                 DPL,
+                 "opt_mirror",
+                 1,
+                 "reject {} blocked layers",
+                 inst->getConstName());
+      continue;
+    }
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);
@@ -225,6 +243,14 @@ bool OptimizeMirroring::isEdgeSpacingLegal(
     const odb::dbOrientType& orient) const
 {
   return drc_engine_->checkEdgeSpacing(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
+}
+
+bool OptimizeMirroring::isBlockedLayersLegal(
+    const Node* cell,
+    const odb::dbOrientType& orient) const
+{
+  return drc_engine_->checkBlockedLayers(
       cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
 }
 

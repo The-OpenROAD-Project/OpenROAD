@@ -18,4 +18,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file endcap_hole_strip.defok $def_file
+diff_files endcap_hole_strip.defok $def_file
