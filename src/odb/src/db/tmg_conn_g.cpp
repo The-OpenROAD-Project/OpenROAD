@@ -96,7 +96,8 @@ void ConnectionGraph::clearVisited()
     edge.visited = false;
   }
   for (ConnectionGraph::Point& pt : points_) {
-    pt.visited = 0;
+    pt.visited = false;
+    pt.descent_edge_index = -1;
   }
 }
 
@@ -304,11 +305,14 @@ ConnectionGraph::Edge* ConnectionGraph::getNextEdge(const bool ok_to_descend)
       return e2;
     }
   }
-  // sibling
-  // avoid resetting loop node
-  if (pt(e->to).visited > pt(e->from).visited) {
-    pt(e->to).visited = 1;
+
+  // A higher index means that the point is deeper in the descent.
+  // Note that if any of the points is not on the descent i.e.,
+  // index = -1, the check still holds.
+  if (pt(e->to).descent_edge_index > pt(e->from).descent_edge_index) {
+    pt(e->to).descent_edge_index = -1;
   }
+
   e = e->next;
   while (e && (e->visited || e->skip)) {
     e = e->next;
@@ -321,7 +325,7 @@ ConnectionGraph::Edge* ConnectionGraph::getNextEdge(const bool ok_to_descend)
   descent_edges_.pop_back();
   while (!descent_edges_.empty()) {
     e = descent_edges_.back();
-    pt(e->to).visited = 1;
+    pt(e->to).descent_edge_index = -1;
     e = e->next;
     while (e && (e->visited || e->skip)) {
       e = e->next;
@@ -399,7 +403,8 @@ void tmg_conn::removeShortLoops()
   }
 
   for (int j = 0; j < wire_points_.size(); j++) {
-    pgV[j].visited = 0;
+    pgV[j].visited = false;
+    pgV[j].descent_edge_index = -1;
   }
 
   // remove all short loops
@@ -410,7 +415,8 @@ void tmg_conn::removeShortLoops()
     if (!e) {
       continue;
     }
-    pgV[jstart].visited = 2;
+    pgV[jstart].visited = true;
+    pgV[jstart].descent_edge_index = 0;
     while (e) {
       e->visited = true;
       e->reverse->visited = true;
@@ -421,7 +427,8 @@ void tmg_conn::removeShortLoops()
         e->wire_short->skip = true;
         e = connection_graph_->getNextEdge(false);
       } else {
-        pg->visited = 2 + connection_graph_->descent_edges_.size();
+        pg->visited = true;
+        pg->descent_edge_index = connection_graph_->descent_edges_.size();
         e = connection_graph_->getNextEdge(true);
       }
     }
@@ -434,7 +441,8 @@ void tmg_conn::removeShortLoops()
     if (!e) {
       continue;
     }
-    pgV[jstart].visited = 2;
+    pgV[jstart].visited = true;
+    pgV[jstart].descent_edge_index = 0;
     while (e) {
       e->visited = true;
       e->reverse->visited = true;
@@ -442,7 +450,8 @@ void tmg_conn::removeShortLoops()
       if (pg->visited) {
         e = connection_graph_->getNextEdge(false);
       } else {
-        pg->visited = 2 + connection_graph_->descent_edges_.size();
+        pg->visited = true;
+        pg->descent_edge_index = connection_graph_->descent_edges_.size();
         e = connection_graph_->getNextEdge(true);
       }
     }
@@ -506,15 +515,16 @@ void tmg_conn::removeWireLoops()
       if (!e) {
         continue;
       }
-      pgV[jstart].visited = 2;
+      pgV[jstart].visited = true;
+      pgV[jstart].descent_edge_index = 0;
       while (e) {
         e->visited = true;
         e->reverse->visited = true;
         ConnectionGraph::Point* pg = &pgV[e->to];
-        if (pg->visited == 1) {
+        if (pg->visited && pg->descent_edge_index < 0) {
           done = false;
         } else if (pg->visited) {
-          int k = pg->visited - 2;
+          int k = pg->descent_edge_index;
           int max_dist = 0;
           int max_k = 0;
           ConnectionGraph::Edge* emax = nullptr;
@@ -545,7 +555,9 @@ void tmg_conn::removeWireLoops()
               for (k2 = max_k + 1;
                    k2 < connection_graph_->descent_edges_.size() - 1;
                    k2++) {
-                pgV[connection_graph_->descent_edges_[k2]->to].visited = 1;
+                pgV[connection_graph_->descent_edges_[k2]->to]
+                    .descent_edge_index
+                    = -1;
               }
               connection_graph_->descent_edges_.resize(max_k + 1);
             }
@@ -554,7 +566,8 @@ void tmg_conn::removeWireLoops()
         if (pg->visited) {
           e = connection_graph_->getNextEdge(false);
         } else {
-          pg->visited = 2 + connection_graph_->descent_edges_.size();
+          pg->visited = true;
+          pg->descent_edge_index = connection_graph_->descent_edges_.size();
           e = connection_graph_->getNextEdge(true);
         }
       }
@@ -571,7 +584,8 @@ void tmg_conn::removeWireLoops()
     if (!e) {
       continue;
     }
-    pgV[jstart].visited = 2;
+    pgV[jstart].visited = true;
+    pgV[jstart].descent_edge_index = 0;
     while (e) {
       e->visited = true;
       e->reverse->visited = true;
@@ -579,7 +593,8 @@ void tmg_conn::removeWireLoops()
       if (pg->visited) {
         e = connection_graph_->getNextEdge(false);
       } else {
-        pg->visited = 2 + connection_graph_->descent_edges_.size();
+        pg->visited = true;
+        pg->descent_edge_index = connection_graph_->descent_edges_.size();
         e = connection_graph_->getNextEdge(true);
       }
     }
@@ -619,13 +634,13 @@ bool ConnectionGraph::dfsNext(int* from,
   *is_short = (e->wire_short != nullptr);
   e->visited = true;
   e->reverse->visited = true;
-  pgV[e->from].visited = 1;
+  pgV[e->from].visited = true;
   if (pgV[e->to].visited) {
     *is_loop = true;
     next_edge_ = getNextEdge(false);
   } else {
     *is_loop = false;
-    pgV[e->to].visited = 1;
+    pgV[e->to].visited = true;
     next_edge_ = getNextEdge(true);
   }
   return true;
@@ -640,7 +655,7 @@ bool tmg_conn::dfsNext(int* from,
   return connection_graph_->dfsNext(from, to, k, is_short, is_loop);
 }
 
-int tmg_conn::isVisited(int j) const
+bool tmg_conn::isVisited(int j) const
 {
   return connection_graph_->pt(j).visited;
 }

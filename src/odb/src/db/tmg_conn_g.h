@@ -45,15 +45,12 @@ class ConnectionGraph
   {
     int path_index{-1};
 
+    bool visited{false};
+    // Index of the edge in the current descent that leaves this point.
+    int descent_edge_index{-1};
+
     // Head of the chain of edges that leave this point.
     Edge* first_edge{nullptr};
-
-    // Visit state.
-    // 0:     This point was not yet reached.
-    // 1:     This point was reached, but is no longer on the current descent.
-    // 2 + k: This point is on the current descent, and descent_edges_[k] is
-    //        the edge that leaves it.
-    int visited{0};
   };
 
   void init(int ptN, int shortN);
