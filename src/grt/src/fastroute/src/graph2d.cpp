@@ -135,19 +135,17 @@ void Graph2D::clear()
 // Clears the sets of used horizontal and vertical grid cells.
 void Graph2D::clearUsed()
 {
+  // Discard cached totals once instead of removing every edge on every layer.
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
   // A full route still starts with empty sets. Remember removed entries so a
   // subsequent incremental run can recover committed usage without a scan.
   for (const auto& [x, y] : h_used_ggrid_) {
     markUsedGridDirty(x, y, EdgeDirection::Horizontal);
-    if (used_grid_changed_) {
-      used_grid_changed_(x, y, EdgeDirection::Horizontal, false);
-    }
   }
   for (const auto& [x, y] : v_used_ggrid_) {
     markUsedGridDirty(x, y, EdgeDirection::Vertical);
-    if (used_grid_changed_) {
-      used_grid_changed_(x, y, EdgeDirection::Vertical, false);
-    }
   }
   v_used_ggrid_.clear();
   h_used_ggrid_.clear();

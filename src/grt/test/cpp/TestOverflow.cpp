@@ -22,6 +22,10 @@ class OverflowTestPeer
 {
  public:
   static Graph2D& graph(FastRouteCore& router) { return router.graph2d_; }
+  static bool cacheValid(const FastRouteCore& router)
+  {
+    return router.overflow_3d_valid_;
+  }
   static void clearNetRoute(FastRouteCore& router) { router.clearNetRoute(0); }
   static int overflow3D(FastRouteCore& router)
   {
@@ -136,6 +140,45 @@ TEST_F(OverflowTest, CountsOnlyUsedPlanarEdgesAcrossAllLayers)
   EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
   graph.rebuildUsedGrids();
   EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 2);
+  expectReference();
+}
+
+TEST_F(OverflowTest, ClearUsedDefersRebuildThroughMutationsAndReconciliation)
+{
+  router_->addTreeEdge(0, 1, 1, 1, 1, net_);
+  router_->addTreeEdge(2, 0, 2, 1, 2, net_);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  // Drain pending changes so recovery depends on clearUsed marking old entries.
+  graph.prepareForIncrementalRun();
+  expectReference();
+  ASSERT_TRUE(OverflowTestPeer::cacheValid(*router_));
+
+  graph.clearUsed();
+  EXPECT_FALSE(OverflowTestPeer::cacheValid(*router_));
+  graph.clearUsed();
+
+  // Change both directions and layers before any query rebuilds the cache.
+  OverflowTestPeer::add3D(*router_, 0, 1, 0, EdgeDirection::Horizontal, 4);
+  OverflowTestPeer::add3D(*router_, 0, 1, 1, EdgeDirection::Horizontal, 3);
+  OverflowTestPeer::add3D(*router_, 2, 0, 1, EdgeDirection::Vertical, 2);
+  router_->setEdgeCapacity(0, 1, 1, 1, 1, 2);
+  router_->setEdgeCapacity(2, 0, 2, 1, 2, 1);
+  // New membership must also be included when the cache is rebuilt.
+  OverflowTestPeer::add3D(*router_, 3, 3, 0, EdgeDirection::Horizontal, 4);
+  graph.addUsageH(3, 3, 1);
+  graph.prepareForIncrementalRun();
+  EXPECT_TRUE(graph.usedGridsMatchUsage());
+  EXPECT_FALSE(OverflowTestPeer::cacheValid(*router_));
+
+  const auto totals = OverflowTestPeer::totals(*router_);
+  EXPECT_TRUE(OverflowTestPeer::cacheValid(*router_));
+  EXPECT_EQ(totals[0].usage, 12);
+  EXPECT_EQ(totals[0].capacity, 2);
+  EXPECT_EQ(totals[0].overflow, 10);
+  EXPECT_EQ(totals[0].max_overflow, 4);
+  EXPECT_EQ(totals[1].usage, 3);
+  EXPECT_EQ(totals[1].capacity, 1);
+  EXPECT_EQ(totals[1].overflow, 2);
   expectReference();
 }
 
