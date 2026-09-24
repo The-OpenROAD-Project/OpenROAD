@@ -141,7 +141,10 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t real_cap;  // the real capacity without user adjustment
   int16_t last_usage;
   uint16_t ndr_overflow;  // number of NDR nets in congestion
-  double est_usage;       // the estimated usage of the edge
+  bool used_grid_dirty;   // queued for used-grid reconciliation at the next run
+  bool est_usage_dirty : 1;
+  bool history_dirty : 1;
+  double est_usage;  // the estimated usage of the edge
 
   uint16_t usage_red() const { return usage + red; }
   double est_usage_red() const { return est_usage + red; }

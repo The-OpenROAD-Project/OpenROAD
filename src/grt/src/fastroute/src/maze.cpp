@@ -2190,6 +2190,65 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 
 int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 {
+  check2DEdgesUsage();
+  const auto totals = graph2d_.overflowStatistics(false);
+  const int overflow = totals[0].overflow + totals[1].overflow;
+  const int usage = totals[0].usage + totals[1].usage;
+  const int maximum = std::max(totals[0].max_overflow, totals[1].max_overflow);
+  const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
+  if (check || logger_->debugCheck(GRT, "congestion2D", 1)) {
+    int reference_max;
+    int reference_usage;
+    const int reference = scanOverflow2Dmaze(&reference_max, &reference_usage);
+    if (check
+        && (reference != overflow || reference_max != maximum
+            || reference_usage != usage)) {
+      logger_->error(GRT,
+                     904,
+                     "Incremental 2D overflow outputs differ from the "
+                     "full-scan reference.");
+    }
+  }
+  total_overflow_ = overflow;
+  *maxOverflow = maximum;
+  *tUsage = usage;
+  ahth_ = usage > 800000 ? 30 : 20;
+  return total_overflow_;
+}
+
+int FastRouteCore::getOverflow2D(int* maxOverflow)
+{
+  check2DEdgesUsage();
+  // Negative estimates and fractions other than half-integers can depend on
+  // the running total after conversion. Keep the original ordered scan then.
+  if (graph2d_.needsEstimatedUsageScan()) {
+    return scanOverflow2D(maxOverflow);
+  }
+  const auto totals = graph2d_.overflowStatistics(true);
+  const int overflow = totals[0].overflow + totals[1].overflow;
+  const int usage = totals[0].usage + totals[1].usage;
+  const int maximum = std::max(totals[0].max_overflow, totals[1].max_overflow);
+  const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
+  if (check || logger_->debugCheck(GRT, "congestion2D", 1)) {
+    int reference_max;
+    const int reference = scanOverflow2D(&reference_max);
+    if (check
+        && (reference != overflow || reference_max != maximum
+            || ahth_ != (usage > 800000 ? 30 : 20))) {
+      logger_->error(GRT,
+                     905,
+                     "Incremental 2D overflow outputs differ from the "
+                     "full-scan reference.");
+    }
+  }
+  total_overflow_ = overflow;
+  *maxOverflow = maximum;
+  ahth_ = usage > 800000 ? 30 : 20;
+  return total_overflow_;
+}
+
+int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
+{
   int H_overflow = 0;
   int V_overflow = 0;
   int max_H_overflow = 0;
@@ -2261,7 +2320,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   return total_overflow_;
 }
 
-int FastRouteCore::getOverflow2D(int* maxOverflow)
+int FastRouteCore::scanOverflow2D(int* maxOverflow)
 {
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
@@ -2342,6 +2401,29 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
 
 int FastRouteCore::getOverflow3D()
 {
+  if (!overflow_3d_valid_) {
+    rebuildOverflow3D();
+  }
+  const std::array totals{h_overflow_3d_.statistics(),
+                          v_overflow_3d_.statistics()};
+  // Retain the original scan for diagnostics and an independent release-build
+  // check of every aggregate, including the exact used-grid population.
+  const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
+  if (check || logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+    const auto reference = scanOverflow3D();
+    if (check && reference != totals) {
+      logger_->error(
+          GRT,
+          902,
+          "Incremental 3D overflow differs from the full-scan reference.");
+    }
+  }
+  total_overflow_ = totals[0].overflow + totals[1].overflow;
+  return totals[0].usage + totals[1].usage;
+}
+
+std::array<OverflowStatistics, 2> FastRouteCore::scanOverflow3D() const
+{
   // get overflow
   int overflow = 0;
   int H_overflow = 0;
@@ -2349,11 +2431,12 @@ int FastRouteCore::getOverflow3D()
   int max_H_overflow = 0;
   int max_V_overflow = 0;
 
-  int total_usage = 0;
+  std::array<OverflowStatistics, 2> result;
 
   for (int k = 0; k < num_layers_; k++) {
     for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
-      total_usage += h_edges_3D_[k][y][x].usage;
+      result[0].usage += h_edges_3D_[k][y][x].usage;
+      result[0].capacity += h_edges_3D_[k][y][x].cap;
       overflow = h_edges_3D_[k][y][x].usage - h_edges_3D_[k][y][x].cap;
 
       if (overflow > 0) {
@@ -2369,12 +2452,14 @@ int FastRouteCore::getOverflow3D()
               x_real,
               y_real);
         }
+        result[0].congested_edges++;
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
       }
     }
     for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
-      total_usage += v_edges_3D_[k][y][x].usage;
+      result[1].usage += v_edges_3D_[k][y][x].usage;
+      result[1].capacity += v_edges_3D_[k][y][x].cap;
       overflow = v_edges_3D_[k][y][x].usage - v_edges_3D_[k][y][x].cap;
       if (overflow > 0) {
         if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
@@ -2389,24 +2474,29 @@ int FastRouteCore::getOverflow3D()
               x_real,
               y_real);
         }
+        result[1].congested_edges++;
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
       }
     }
   }
 
-  total_overflow_ = H_overflow + V_overflow;
+  const int total_overflow = H_overflow + V_overflow;
 
-  if (logger_->debugCheck(GRT, "checkRoute3D", 1) && total_overflow_) {
+  if (logger_->debugCheck(GRT, "checkRoute3D", 1) && total_overflow) {
     logger_->report("=== Total 3D Congestion Summary ===");
     logger_->report("Total H congestion: {}", H_overflow);
     logger_->report("Total V congestion: {}", V_overflow);
     logger_->report("Max H congestion: {}", max_H_overflow);
     logger_->report("Max V congestion: {}", max_V_overflow);
-    logger_->report("Total congestion: {}", total_overflow_);
+    logger_->report("Total congestion: {}", total_overflow);
   }
 
-  return total_usage;
+  result[0].overflow = H_overflow;
+  result[0].max_overflow = max_H_overflow;
+  result[1].overflow = V_overflow;
+  result[1].max_overflow = max_V_overflow;
+  return result;
 }
 
 void FastRouteCore::SaveLastRouteLen()
