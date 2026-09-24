@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "odb/dbTypes.h"
+#include "polygon.h"
 
 namespace odb {
 class dbBlock;
@@ -69,6 +70,9 @@ class VoltageDomain
 
   // returns the area of the region or core
   odb::Rect getDomainArea() const;
+  // returns the outline of the region or core.  On a rectangular floorplan
+  // this is getDomainArea(); on a polygon one it follows the real outline.
+  Region getDomainRegion() const;
 
   void addGrid(std::unique_ptr<Grid> grid);
   void resetGrids();

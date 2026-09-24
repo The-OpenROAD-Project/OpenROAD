@@ -10,9 +10,9 @@
 
 #include "Clock.h"
 #include "Util.h"
-#include "gui/gui.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace cts {
 
@@ -22,7 +22,7 @@ void CtsGraphics::initializeWithClock(HTreeBuilder* h_tree_builder,
   clock_ = &clock;
   h_tree_builder_ = h_tree_builder;
   sink_clustering_ = nullptr;
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
   if (guiActive()) {
     clockPlot(true);
   }
@@ -35,24 +35,24 @@ void CtsGraphics::initializeWithPoints(SinkClustering* SinkClustering,
   h_tree_builder_ = nullptr;
   sink_clustering_ = SinkClustering;
   points_ = points;
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
   if (guiActive()) {
     clockPlot(true);
   }
 }
 
-void CtsGraphics::drawCluster(gui::Painter& painter)
+void CtsGraphics::drawCluster(web::Painter& painter)
 {
-  std::vector<gui::Painter::Color> colors{gui::Painter::kRed,
-                                          gui::Painter::kYellow,
-                                          gui::Painter::kGreen,
-                                          gui::Painter::kDarkRed,
-                                          gui::Painter::kMagenta,
-                                          gui::Painter::kDarkYellow,
-                                          gui::Painter::kBlue,
-                                          gui::Painter::kDarkGray,
-                                          gui::Painter::kDarkGreen,
-                                          gui::Painter::kCyan};
+  std::vector<web::Painter::Color> colors{web::Painter::kRed,
+                                          web::Painter::kYellow,
+                                          web::Painter::kGreen,
+                                          web::Painter::kDarkRed,
+                                          web::Painter::kMagenta,
+                                          web::Painter::kDarkYellow,
+                                          web::Painter::kBlue,
+                                          web::Painter::kDarkGray,
+                                          web::Painter::kDarkGreen,
+                                          web::Painter::kCyan};
 
   unsigned clusterCounter = 0;
   bool first = true;
@@ -77,7 +77,7 @@ void CtsGraphics::drawCluster(gui::Painter& painter)
       } else {
         if (first_in_cluster) {
           first_in_cluster = false;
-          painter.setPen(gui::Painter::kWhite, /* cosmetic */ true);
+          painter.setPen(web::Painter::kWhite, /* cosmetic */ true);
         } else {
           painter.setPen(colors[color], /* cosmetic */ true);
         }
@@ -93,9 +93,9 @@ void CtsGraphics::drawCluster(gui::Painter& painter)
   }
 }
 
-void CtsGraphics::drawHTree(gui::Painter& painter)
+void CtsGraphics::drawHTree(web::Painter& painter)
 {
-  auto color = gui::Painter::kRed;
+  auto color = web::Painter::kRed;
   color.a = 180;
   painter.setPen(color, /* cosmetic */ true);
 
@@ -126,9 +126,9 @@ void CtsGraphics::drawHTree(gui::Painter& painter)
           Point<double> parentPoint
               = h_tree_builder_->getTopologyVector()[levelIdx - 1]
                     .getBranchingPoint(parentIdx);
-          auto color = gui::Painter::kYellow;
+          auto color = web::Painter::kYellow;
           if (levelIdx % 2 == 0) {
-            color = gui::Painter::kRed;
+            color = web::Painter::kRed;
           }
           color.a = 180;
           painter.setPen(color, /* cosmetic */ true);
@@ -143,7 +143,7 @@ void CtsGraphics::drawHTree(gui::Painter& painter)
   }
 }
 
-void CtsGraphics::drawObjects(gui::Painter& painter)
+void CtsGraphics::drawObjects(web::Painter& painter)
 {
   if (clock_) {
     drawHTree(painter);
@@ -156,21 +156,21 @@ void CtsGraphics::drawObjects(gui::Painter& painter)
 
 void CtsGraphics::clockPlot(bool pause)
 {
-  gui::Gui::get()->redraw();
+  web::Gui::get()->redraw();
   if (pause) {
-    gui::Gui::get()->pause();
+    web::Gui::get()->pause();
   }
 }
 
 void CtsGraphics::status(const std::string& message)
 {
-  gui::Gui::get()->status(message);
+  web::Gui::get()->status(message);
 }
 
 /* static */
 bool CtsGraphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 }  // namespace cts

@@ -3,6 +3,32 @@
 
 cmake_minimum_required (VERSION 3.16)
 
+# Bazel is the supported build system; the CMake build is deprecated. The
+# banner is printed at the start and at the end of the configure step so it
+# is seen whether or not configuration succeeds.
+macro(openroad_cmake_deprecation_banner)
+  message(NOTICE "")
+  message(NOTICE "**********************************************************************")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   WARNING: the CMake build of OpenROAD is DEPRECATED.              *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   Bazel is the supported build system.  CMake support is no        *")
+  message(NOTICE "*   longer developed and will be removed in a future release.        *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   Please switch to Bazel:                                          *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*       bazelisk build --//:platform=gui //:openroad                 *")
+  message(NOTICE "*       bazelisk run   --//:platform=gui //:install                  *")
+  message(NOTICE "*       bazelisk test  src/...                                       *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   See docs/user/Build.md and docs/user/Bazel.md for details.       *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "**********************************************************************")
+  message(NOTICE "")
+endmacro()
+
+openroad_cmake_deprecation_banner()
+
 # Use standard target names
 cmake_policy(SET CMP0078 NEW)
 
@@ -291,3 +317,5 @@ message(STATUS " Tests Enabled  : ${ENABLE_TESTS}")
 message(STATUS "=========================================================")
 message(STATUS " Configuration complete.")
 message(STATUS "")
+
+openroad_cmake_deprecation_banner()

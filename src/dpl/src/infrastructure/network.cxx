@@ -94,7 +94,7 @@ Pin* Network::addPin(odb::dbITerm* term)
         if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
           continue;
         }
-        if (layer->getRoutingLevel() > 3) {
+        if (layer->getRoutingLevel() > kMaxPinLevel) {
           continue;
         }
         node->addUsedLayer(layer->getRoutingLevel());
@@ -335,6 +335,23 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   auto master_pwrs = getMasterPwrs(db_master);
   master->setTopPowerType(master_pwrs.first);
   master->setBottomPowerType(master_pwrs.second);
+  // Pin shapes can short to power metal whether or not they are connected
+  for (odb::dbMTerm* mterm : db_master->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* layer = box->getTechLayer();
+        if (layer == nullptr
+            || layer->getType() != odb::dbTechLayerType::Value::ROUTING
+            || layer->getRoutingLevel() > kMaxPinLevel) {
+          continue;
+        }
+        master->addPinShape(layer->getRoutingLevel(), box->getBox());
+      }
+    }
+  }
   debugPrint(logger_,
              utl::DPL,
              "rail_align",
@@ -441,6 +458,11 @@ void Network::addNode(odb::dbInst* inst)
   ndi.setBottom(ndi.getOrigBottom());
   ndi.setBottomPower(master->getBottomPowerType());
   ndi.setTopPower(master->getTopPowerType());
+  for (int level = 1; level <= kMaxPinLevel; level++) {
+    if (!master->getPinShapes(level).empty()) {
+      ndi.addPinLayer(level);
+    }
+  }
   nodes_.emplace_back(std::make_unique<Node>(ndi));
   inst_to_node_idx_[inst] = id;
   ++cells_cnt_;
