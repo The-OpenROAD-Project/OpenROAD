@@ -2004,6 +2004,12 @@ void FastRouteCore::check2DEdgesUsage()
   int max_h_edge_usage = max_usage_multiplier * h_capacity_;
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
 
+  if (!logger_->debugCheck(GRT, "overflowcheck", 1)
+      && graph2d_.maxUsage(EdgeDirection::Horizontal) <= max_h_edge_usage
+      && graph2d_.maxUsage(EdgeDirection::Vertical) <= max_v_edge_usage) {
+    return;
+  }
+
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     if (graph2d_.getUsageH(x, y) > max_h_edge_usage) {

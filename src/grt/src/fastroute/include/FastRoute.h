@@ -372,6 +372,8 @@ class FastRouteCore
   void convertToMazeroute();
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
+  int scanOverflow2D(int* maxOverflow);
+  int scanOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
   std::array<OverflowStatistics, 2> scanOverflow3D() const;
   void invalidateOverflow3D();
