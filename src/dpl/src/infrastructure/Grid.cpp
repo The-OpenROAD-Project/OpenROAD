@@ -227,11 +227,25 @@ void Grid::markBlocked(odb::dbBlock* block)
     via_metal[level] -= wire_metal[level];
     rects.clear();
     via_metal[level].get_rectangles(rects);
+    // A pin closer than min spacing to the metal is a violation the router
+    // can't fix, so grow the blockage to just short of min spacing.
+    odb::dbTechLayer* layer = block->getTech()->findRoutingLayer(level);
+    const int bloat = layer ? std::max(layer->getSpacing() - 1, 0) : 0;
+    std::vector<odb::Rect> blockages;
+    blockages.reserve(rects.size());
     for (const auto& rect : rects) {
-      markPixels(
-          odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)),
-          [level](Pixel& pixel) { pixel.blocked_pin_layers |= 1 << level; });
+      odb::Rect blockage;
+      odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect))
+          .bloat(bloat, blockage);
+      // The pixels are a coarse filter; overlapsPinBlockage is exact
+      markPixels(blockage, [level](Pixel& pixel) {
+        pixel.blocked_pin_layers |= 1 << level;
+      });
+      blockage.moveDelta(-core.xMin(), -core.yMin());
+      blockages.push_back(blockage);
     }
+    // Bulk loading packs the tree
+    pin_blockages_[level] = RectTree(blockages);
   }
 
   for (odb::dbBlockage* blockage : block->getBlockages()) {
@@ -256,6 +270,12 @@ void Grid::markBlocked(odb::dbBlock* block)
       }
     }
   }
+}
+
+bool Grid::overlapsPinBlockage(const int level, const odb::Rect& rect) const
+{
+  const RectTree& tree = pin_blockages_[level];
+  return tree.qbegin(boost::geometry::index::intersects(rect)) != tree.qend();
 }
 
 void Grid::initGrid(odb::dbDatabase* db,
