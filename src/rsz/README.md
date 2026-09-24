@@ -262,7 +262,7 @@ repair_timing
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
-| `-skip_crpr` | Disable common reconvergent pessimism reduction (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
+| `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
