@@ -126,6 +126,13 @@ class Opendp
   // blockage), clamped to [0, 1].  A region without any legal site holds
   // nothing, so it reads as 1.0 rather than as empty.
   //
+  // The instances counted are the ones the GUI's placement density heat map
+  // counts on its default settings: placed instances, taps and endcaps
+  // included, fillers and IO excluded.  Unlike that heat map, the divisor
+  // here is the placement site area rather than the region's own area, so
+  // the two do not report the same number for a region that is partly off
+  // the rows.
+  //
   // Nothing is cached: each call measures the placement as it stands, which
   // costs one pass over the instances.
 

@@ -174,6 +174,14 @@ inside the region over the legal placement site area inside it, so a region
 with no site in it, because it lies outside the rows or under a hard
 blockage, is reported as holding no placement site rather than as a density.
 
+The instances counted are the ones the GUI's placement density heat map
+counts on its default settings: placed instances, with taps and endcaps
+included and fillers and IO excluded. A filler can be removed to make room,
+so the area it sits on still counts as room for a new cell. Note that the
+heat map divides by the area of its own tile rather than by the placement
+site area, so the two do not report the same number for a region that is
+partly off the rows.
+
 Nothing is cached, so each call measures the placement as it currently
 stands.
 

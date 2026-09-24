@@ -215,6 +215,58 @@ TEST_F(PlacementDensityTest, FixedMacroOccupiesItsArea)
   EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(4, 0)), 0.0);
 }
 
+// The instance set matches the GUI's placement density heat map on its
+// default settings: taps and endcaps count, fillers and IO do not.
+TEST_F(PlacementDensityTest, FillersDoNotCount)
+{
+  odb::dbMaster* filler = makeMaster(
+      "filler", odb::dbMasterType::CORE_SPACER, kCellWidth, kRowHeight);
+  Opendp& dp = makeOpendp();
+
+  // Half the square in real cells, the other half in fillers.
+  fillSquare(0, 0, kCellsPerSquare / 2);
+  for (int i = 0; i < kCellsPerSquareRow; ++i) {
+    placeInst(filler, i * kCellWidth, kRowHeight);
+  }
+
+  // A filler can be removed to make room, so it leaves the square half
+  // empty rather than full.
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(square(0, 0)), 0.5);
+}
+
+TEST_F(PlacementDensityTest, TapsAndEndcapsCount)
+{
+  odb::dbMaster* tap = makeMaster(
+      "tap", odb::dbMasterType::CORE_WELLTAP, kCellWidth, kRowHeight);
+  odb::dbMaster* endcap
+      = makeMaster("endcap", odb::dbMasterType::ENDCAP, kCellWidth, kRowHeight);
+  Opendp& dp = makeOpendp();
+
+  placeInst(tap, 0, 0);
+  placeInst(endcap, kCellWidth, 0);
+
+  // Two cells of the ten that fit in one row of the square.
+  const odb::Rect row(0, 0, kSquare, kRowHeight);
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(row), 0.2);
+}
+
+TEST_F(PlacementDensityTest, PadsAndCoversDoNotCount)
+{
+  odb::dbMaster* pad
+      = makeMaster("pad", odb::dbMasterType::PAD, kCellWidth, kRowHeight);
+  odb::dbMaster* cover
+      = makeMaster("cover", odb::dbMasterType::COVER, kCellWidth, kRowHeight);
+  Opendp& dp = makeOpendp();
+
+  // Sitting on core sites, which is not where they normally are, to prove
+  // the filter is on the master type rather than on the location.
+  placeInst(pad, 0, 0, odb::dbPlacementStatus::FIRM);
+  placeInst(cover, kCellWidth, 0, odb::dbPlacementStatus::FIRM);
+
+  EXPECT_DOUBLE_EQ(dp.getPlacementDensity(odb::Rect(0, 0, kSquare, kRowHeight)),
+                   0.0);
+}
+
 TEST_F(PlacementDensityTest, DensityIsRecomputedAfterInstancesMove)
 {
   fillSquare(0, 0, kCellsPerSquare);

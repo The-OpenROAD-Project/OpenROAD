@@ -223,10 +223,21 @@ void Opendp::visitPlacedInstances(
   }
 
   inst_index_->visit(region, [&visitor](odb::dbInst* inst) {
-    // Pads and cover cells sit outside the rows and take no placement area;
-    // fillers and macros take theirs like any other instance.
-    if (!inst->getPlacementStatus().isPlaced()
-        || !inst->getMaster()->isCoreAutoPlaceable()) {
+    if (!inst->getPlacementStatus().isPlaced()) {
+      return;
+    }
+    // The same instances the GUI's placement density heat map counts on its
+    // default settings: taps and endcaps in, fillers and IO out.  Macros
+    // take their area like any other instance.
+    odb::dbMaster* master = inst->getMaster();
+    // A filler is removable, so the room it sits on is still room for a new
+    // cell.
+    if (master->isFiller()) {
+      return;
+    }
+    // Pads and covers sit outside the rows, so they would be charged
+    // against a region that has no placement site to hold them.
+    if (master->isPad() || master->isCover()) {
       return;
     }
     // Read the location from the db rather than from the dpl network or from
