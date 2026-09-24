@@ -1627,14 +1627,20 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             {
               const int min_y = std::min(grids[i].y, grids[i + 1].y);
               graph2d_.updateUsageV(grids[i].x, min_y, net, net->getEdgeCost());
-              v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
-                  += net->getLayerEdgeCost(grids[i].layer);
+              updateEdge3DUsage(grids[i].x,
+                                min_y,
+                                grids[i].layer,
+                                EdgeDirection::Vertical,
+                                net->getLayerEdgeCost(grids[i].layer));
             } else  // a horizontal edge
             {
               const int min_x = std::min(grids[i].x, grids[i + 1].x);
               graph2d_.updateUsageH(min_x, grids[i].y, net, net->getEdgeCost());
-              h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
-                  += net->getLayerEdgeCost(grids[i].layer);
+              updateEdge3DUsage(min_x,
+                                grids[i].y,
+                                grids[i].layer,
+                                EdgeDirection::Horizontal,
+                                net->getLayerEdgeCost(grids[i].layer));
             }
           }
         }
