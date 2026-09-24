@@ -370,7 +370,8 @@ static int evalTclFile(Tcl_Interp* interp, const char* filename)
     Tcl_Obj* error_info = nullptr;
     Tcl_DictObjGet(nullptr, options, key, &error_info);
     Tcl_DecrRefCount(key);
-    printf(
+    fprintf(
+        stderr,
         "%s\n",
         error_info ? Tcl_GetString(error_info) : Tcl_GetStringResult(interp));
     Tcl_DecrRefCount(options);
