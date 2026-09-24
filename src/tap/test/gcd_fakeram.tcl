@@ -7,4 +7,4 @@ tapcell -distance "20" -tapcell_master "TAPCELL_X1" -endcap_master "TAPCELL_X1"
 
 set def_file [make_result_file gcd_fakeram.def]
 write_def $def_file
-diff_file $def_file gcd_fakeram.defok
+diff_files $def_file gcd_fakeram.defok

@@ -8,4 +8,4 @@ create_clock [get_ports clk] -name core_clock -period 0.5
 clock_gating
 set verilog_file [make_result_file aes_nangate45_gated.v]
 write_verilog $verilog_file
-diff_file aes_nangate45_gated.vok $verilog_file
+diff_files aes_nangate45_gated.vok $verilog_file

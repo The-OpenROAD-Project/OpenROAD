@@ -222,6 +222,19 @@ regression_test(
 )
 
 cc_test(
+    name = "TestGraph2D",
+    size = "small",
+    srcs = ["cpp/TestGraph2D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestCongestionNets",
     size = "small",
     srcs = ["cpp/TestCongestionNets.cpp"],

@@ -29,6 +29,11 @@ void Graph2D::init(const int x_grid,
   num_layers_ = num_layers;
   logger_ = logger;
 
+  h_used_ggrid_.clear();
+  v_used_ggrid_.clear();
+  h_dirty_used_grids_.clear();
+  v_dirty_used_grids_.clear();
+
   h_edges_.resize(boost::extents[x_grid - 1][y_grid]);
   v_edges_.resize(boost::extents[x_grid][y_grid - 1]);
 
@@ -41,6 +46,7 @@ void Graph2D::init(const int x_grid,
       h_edges_[x][y].red = 0;
       h_edges_[x][y].last_usage = 0;
       h_edges_[x][y].ndr_overflow = 0;
+      h_edges_[x][y].used_grid_dirty = false;
     }
   }
   for (int x = 0; x < x_grid; x++) {
@@ -52,6 +58,7 @@ void Graph2D::init(const int x_grid,
       v_edges_[x][y].red = 0;
       v_edges_[x][y].last_usage = 0;
       v_edges_[x][y].ndr_overflow = 0;
+      v_edges_[x][y].used_grid_dirty = false;
     }
   }
 }
@@ -90,6 +97,8 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
   v_cap_3D_ = other.v_cap_3D_;
   h_used_ggrid_ = other.h_used_ggrid_;
   v_used_ggrid_ = other.v_used_ggrid_;
+  h_dirty_used_grids_ = other.h_dirty_used_grids_;
+  v_dirty_used_grids_ = other.v_dirty_used_grids_;
 
   if (include_ndr_state) {
     h_ndr_nets_ = other.h_ndr_nets_;
@@ -113,6 +122,10 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
 // Clears all horizontal and vertical edges from the graph.
 void Graph2D::clear()
 {
+  h_used_ggrid_.clear();
+  v_used_ggrid_.clear();
+  h_dirty_used_grids_.clear();
+  v_dirty_used_grids_.clear();
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
 }
@@ -120,6 +133,14 @@ void Graph2D::clear()
 // Clears the sets of used horizontal and vertical grid cells.
 void Graph2D::clearUsed()
 {
+  // A full route still starts with empty sets. Remember removed entries so a
+  // subsequent incremental run can recover committed usage without a scan.
+  for (const auto& [x, y] : h_used_ggrid_) {
+    markUsedGridDirty(x, y, EdgeDirection::Horizontal);
+  }
+  for (const auto& [x, y] : v_used_ggrid_) {
+    markUsedGridDirty(x, y, EdgeDirection::Vertical);
+  }
   v_used_ggrid_.clear();
   h_used_ggrid_.clear();
 }
@@ -140,6 +161,65 @@ void Graph2D::rebuildUsedGrids()
       }
     }
   }
+}
+
+void Graph2D::markUsedGridDirty(const int x,
+                                const int y,
+                                const EdgeDirection direction)
+{
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  auto& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
+  if (!edge.used_grid_dirty) {
+    auto& dirty = horizontal ? h_dirty_used_grids_ : v_dirty_used_grids_;
+    dirty.emplace_back(x, y);
+    edge.used_grid_dirty = true;
+  }
+}
+
+void Graph2D::prepareForIncrementalRun()
+{
+  // Match clearUsed/rebuildUsedGrids at the run boundary, including changes
+  // made between runs by net removal, merge, or rollback.
+  const auto reconcile = [](auto& dirty, auto& edges, auto& used) {
+    for (const auto& [x, y] : dirty) {
+      auto& edge = edges[x][y];
+      if (edge.usage > 0) {
+        used.insert({x, y});
+      } else {
+        used.erase({x, y});
+      }
+      edge.used_grid_dirty = false;
+    }
+    dirty.clear();
+  };
+  reconcile(h_dirty_used_grids_, h_edges_, h_used_ggrid_);
+  reconcile(v_dirty_used_grids_, v_edges_, v_used_ggrid_);
+
+  if (logger_->debugCheck(utl::GRT, "usedgridcheck", 1)
+      && !usedGridsMatchUsage()) {
+    logger_->error(
+        utl::GRT,
+        901,
+        "Incremental used grids differ from the full-scan reference.");
+  }
+}
+
+bool Graph2D::usedGridsMatchUsage() const
+{
+  // Deliberately independent of the dirty lists, using the original rebuild's
+  // population and ordering. This also detects missing positive-usage edges.
+  const auto matches = [](const auto& edges, const auto& used) {
+    std::set<std::pair<int, int>> reference;
+    for (int x = 0; x < edges.shape()[0]; x++) {
+      for (int y = 0; y < edges.shape()[1]; y++) {
+        if (edges[x][y].usage > 0) {
+          reference.insert({x, y});
+        }
+      }
+    }
+    return used == reference;
+  };
+  return matches(h_edges_, h_used_ggrid_) && matches(v_edges_, v_used_ggrid_);
 }
 
 // Clears the NDR lists
@@ -276,6 +356,7 @@ void Graph2D::updateEstUsageH(const int x,
 {
   h_edges_[x][y].est_usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
+  markUsedGridDirty(x, y, EdgeDirection::Horizontal);
 
   if (usage > 0) {
     h_used_ggrid_.insert({x, y});
@@ -285,7 +366,19 @@ void Graph2D::updateEstUsageH(const int x,
 // Adds the estimated usage to the actual usage for all edges.
 void Graph2D::addEstUsageToUsage()
 {
-  foreachEdge([](Edge& edge) { edge.usage += edge.est_usage; });
+  const auto add = [this](auto& edges, const EdgeDirection direction) {
+    for (int x = 0; x < edges.shape()[0]; x++) {
+      for (int y = 0; y < edges.shape()[1]; y++) {
+        auto& edge = edges[x][y];
+        if (edge.est_usage != 0) {
+          markUsedGridDirty(x, y, direction);
+        }
+        edge.usage += edge.est_usage;
+      }
+    }
+  };
+  add(h_edges_, EdgeDirection::Horizontal);
+  add(v_edges_, EdgeDirection::Vertical);
 }
 
 // Updates estimated usage for a vertical edge segment, considering NDRs.
@@ -307,6 +400,7 @@ void Graph2D::updateEstUsageV(const int x,
 {
   v_edges_[x][y].est_usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
+  markUsedGridDirty(x, y, EdgeDirection::Vertical);
 
   if (usage > 0) {
     v_used_ggrid_.insert({x, y});
@@ -339,6 +433,7 @@ void Graph2D::addUsageH(const Interval& xi, const int y, const int used)
 void Graph2D::addUsageH(const int x, const int y, const int used)
 {
   h_edges_[x][y].usage += used;
+  markUsedGridDirty(x, y, EdgeDirection::Horizontal);
   if (used > 0) {
     h_used_ggrid_.insert({x, y});
   }
@@ -356,6 +451,7 @@ void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
 void Graph2D::addUsageV(const int x, const int y, const int used)
 {
   v_edges_[x][y].usage += used;
+  markUsedGridDirty(x, y, EdgeDirection::Vertical);
   if (used > 0) {
     v_used_ggrid_.insert({x, y});
   }
@@ -399,6 +495,7 @@ void Graph2D::updateUsageH(const int x,
 {
   h_edges_[x][y].usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
+  markUsedGridDirty(x, y, EdgeDirection::Horizontal);
 
   if (usage > 0) {
     h_used_ggrid_.insert({x, y});
@@ -424,6 +521,7 @@ void Graph2D::updateUsageV(const int x,
 {
   v_edges_[x][y].usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
+  markUsedGridDirty(x, y, EdgeDirection::Vertical);
 
   if (usage > 0) {
     v_used_ggrid_.insert({x, y});

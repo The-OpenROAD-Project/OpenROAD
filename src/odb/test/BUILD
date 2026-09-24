@@ -200,6 +200,7 @@ COMPULSORY_TESTS = [
     "read_lef",
     "read_lef_dup_macro",
     "read_lef_minwidth_wrongdirection",
+    "read_lef_polygon_spacing",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",

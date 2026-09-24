@@ -292,11 +292,6 @@ class dbNetwork : public ConcreteNetwork
   InstanceChildIterator* childIterator(const Instance* instance) const override;
   InstancePinIterator* pinIterator(const Instance* instance) const override;
   InstanceNetIterator* netIterator(const Instance* instance) const override;
-  std::string getAttribute(const Instance* inst,
-                           std::string_view key) const override;
-  void setAttribute(Instance* instance,
-                    std::string_view key,
-                    std::string_view value) override;
   odb::dbModNet* findModNetForPin(const Pin*);
   odb::dbModInst* getModInst(Instance* inst) const;
 
@@ -356,11 +351,6 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Cell functions
   std::string name(const Cell* cell) const override;
-  std::string getAttribute(const Cell* cell,
-                           std::string_view key) const override;
-  void setAttribute(Cell* cell,
-                    std::string_view key,
-                    std::string_view value) override;
 
   bool isConcreteCell(const Cell*) const;
   void registerHierModule(const Cell* cell);

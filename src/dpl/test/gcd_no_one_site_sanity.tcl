@@ -14,4 +14,4 @@ check_placement -verbose
 
 set def_file [make_result_file gcd_no_one_site_sanity.def]
 write_def $def_file
-diff_file gcd_no_one_site_sanity.defok $def_file
+diff_files gcd_no_one_site_sanity.defok $def_file
