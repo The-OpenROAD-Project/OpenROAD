@@ -97,6 +97,7 @@ cc_library(
         "@boost.iostreams",
         "@boost.iterator",
         "@boost.random",
+        "@boost.tokenizer",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
