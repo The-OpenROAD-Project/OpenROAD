@@ -126,9 +126,9 @@ class OptimizationPolicy
   void printFinalProgress(const RepairTargetCollector& target_collector,
                           double initial_design_area) const;
   virtual const std::vector<const sta::Pin*>& finalReportPins() const;
-  // `worst_slack` is the worst slack of what was actually repaired, which is
-  // narrower than the design's WNS under `repair_timing -path_group`.
-  bool reportRepairSummary(sta::Slack worst_slack) const;
+  // Reads setup_context_.final_wns, so finalizeAndReport must capture it
+  // first.
+  bool reportRepairSummary() const;
   // Load every policy-tunable envar into policy_config_ once at start time.
   // Each subclass reads only the fields it actually consumes from
   // policy_config_; loading unused fields is harmless.

@@ -116,9 +116,10 @@ bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
                      /*collect_startpoints=*/true);
+  setup_context_.final_wns = final_targets.getWns();
   printFinalProgress(final_targets, initial_design_area);
   committer_.printTrackerFinalReports(finalReportPins());
-  return reportRepairSummary(final_targets.getWns());
+  return reportRepairSummary();
 }
 
 void OptimizationPolicy::printProgressHeader() const
@@ -144,7 +145,7 @@ void OptimizationPolicy::printFinalProgress(
 {
   printProgressHeader();
 
-  const sta::Slack wns = target_collector.getWns();
+  const sta::Slack wns = setup_context_.final_wns;
   const sta::Slack st_tns = target_collector.getTns(true);
   const sta::Slack en_tns = target_collector.getTns(false);
   const sta::Pin* worst_pin = target_collector.getWorstPin(false);
@@ -187,7 +188,7 @@ const std::vector<const sta::Pin*>& OptimizationPolicy::finalReportPins() const
   return target_collector_->getViolatingPins();
 }
 
-bool OptimizationPolicy::reportRepairSummary(const sta::Slack worst_slack) const
+bool OptimizationPolicy::reportRepairSummary() const
 {
   bool repaired = false;
 
@@ -255,7 +256,7 @@ bool OptimizationPolicy::reportRepairSummary(const sta::Slack worst_slack) const
         utl::RSZ, 53, "Rerouted {} nets resistance-aware.", reroute_moves);
   }
 
-  if (sta::fuzzyLess(worst_slack, config_.setup_slack_margin)) {
+  if (sta::fuzzyLess(setup_context_.final_wns, config_.setup_slack_margin)) {
     repaired = true;
     logger_->warn(utl::RSZ, 62, "Unable to repair all setup violations.");
   }
