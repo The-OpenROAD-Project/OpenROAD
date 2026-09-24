@@ -1176,6 +1176,15 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
 
+// Highlight the path stage at `pin_name`: its net, or on an unrouted net the
+// flight line between the pin and its neighbor on that net in `path`.
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines);
+
 // ── JSON serialization helpers for TileGenerator responses ──
 
 // A DBU rect in the wire order the client's coordinate transforms expect:

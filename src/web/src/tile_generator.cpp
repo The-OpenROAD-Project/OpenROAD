@@ -7238,6 +7238,69 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
   process_nodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
 }
 
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines)
+{
+  auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
+  odb::dbNet* net = getNetFromPin(iterm, bterm);
+  if (net == nullptr) {
+    return;
+  }
+
+  // The stage is the pin's hop to its neighbor on the same net: the sink it
+  // drives, or the driver it is driven by.  An unrouted net draws that hop as
+  // a flight line, which needs both ends.
+  odb::dbITerm* drv_iterm = iterm;
+  odb::dbBTerm* drv_bterm = bterm;
+  odb::dbITerm* snk_iterm = nullptr;
+  odb::dbBTerm* snk_bterm = nullptr;
+  auto find_pair = [&](const std::vector<TimingNode>& nodes) {
+    for (size_t i = 0; i < nodes.size(); i++) {
+      if (nodes[i].pin_name != pin_name) {
+        continue;
+      }
+      if (i + 1 < nodes.size()) {
+        auto [n_iterm, n_bterm, n_node]
+            = resolvePin(chiplets, nodes[i + 1].pin_name);
+        if (getNetFromPin(n_iterm, n_bterm) == net) {
+          snk_iterm = n_iterm;
+          snk_bterm = n_bterm;
+          return true;
+        }
+      }
+      if (i > 0) {
+        auto [p_iterm, p_bterm, p_node]
+            = resolvePin(chiplets, nodes[i - 1].pin_name);
+        if (getNetFromPin(p_iterm, p_bterm) == net) {
+          drv_iterm = p_iterm;
+          drv_bterm = p_bterm;
+          snk_iterm = iterm;
+          snk_bterm = bterm;
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  if (!find_pair(path.data_nodes)) {
+    find_pair(path.capture_nodes);
+  }
+
+  collectNetShapes(net,
+                   drv_iterm,
+                   drv_bterm,
+                   snk_iterm,
+                   snk_bterm,
+                   color,
+                   rects,
+                   lines,
+                   node->world_xfm);
+}
+
 namespace {
 
 // Build the layer_hierarchy JSON by walking the ChipletNode tree produced

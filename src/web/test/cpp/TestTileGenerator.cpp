@@ -1941,6 +1941,47 @@ TEST_F(TileGeneratorTest, CollectTimingPathShapesDrawsACommonClockHopOnce)
   EXPECT_EQ(lines.size(), 1u) << "common clock hop drawn once per node list";
 }
 
+// Selecting a pin in the path detail highlights its stage.  On an unrouted net
+// that is a flight line, which needs the neighbor pin on the net as its other
+// end; either end of the hop selects the same line.
+TEST_F(TileGeneratorTest, CollectTimingStageShapesDrawsUnroutedHop)
+{
+  odb::dbInst* buf1 = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* buf2 = placeInst("BUF_X16", "buf2", 10000, 10000);
+  ASSERT_NE(buf1, nullptr);
+  ASSERT_NE(buf2, nullptr);
+  odb::dbNet* net = odb::dbNet::create(block_, "n1");
+  buf1->findITerm("Z")->connect(net);
+  buf2->findITerm("A")->connect(net);
+  ASSERT_EQ(net->getWire(), nullptr) << "net must be unrouted for this test";
+  makeTileGen();
+
+  TimingPathSummary path;
+  path.data_nodes = {TimingNode{.pin_name = "buf1/A"},
+                     TimingNode{.pin_name = "buf1/Z"},
+                     TimingNode{.pin_name = "buf2/A"},
+                     TimingNode{.pin_name = "buf2/Z"}};
+
+  int x = 0;
+  int y = 0;
+  ASSERT_TRUE(buf1->findITerm("Z")->getAvgXY(&x, &y));
+  const odb::Point drv(x, y);
+  ASSERT_TRUE(buf2->findITerm("A")->getAvgXY(&x, &y));
+  const odb::Point snk(x, y);
+
+  const Color yellow{.r = 255, .g = 255, .b = 0, .a = 180};
+  for (const char* pin : {"buf1/Z", "buf2/A"}) {
+    std::vector<ColoredRect> rects;
+    std::vector<FlightLine> lines;
+    collectTimingStageShapes(
+        tile_gen_->chiplets(), path, pin, yellow, rects, lines);
+    ASSERT_EQ(lines.size(), 1u) << "no stage flight line for " << pin;
+    EXPECT_EQ(lines[0].p1, drv) << pin;
+    EXPECT_EQ(lines[0].p2, snk) << pin;
+    EXPECT_TRUE(rects.empty()) << pin;
+  }
+}
+
 TEST_F(TileGeneratorTest, SerializeTechResponseIncludesLayerColors)
 {
   makeTileGen();
