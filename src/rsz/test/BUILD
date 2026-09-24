@@ -270,9 +270,6 @@ PASSFAIL_TESTS = [
     "repair_setup_mt1",
 ]
 
-PASSFAIL_NO_GOLDEN_TESTS = [
-]
-
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -333,7 +330,6 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
-        check_log = False if test_name in PASSFAIL_NO_GOLDEN_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )
