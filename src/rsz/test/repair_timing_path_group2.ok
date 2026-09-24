@@ -37,15 +37,12 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 5 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 5 out of 5 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |       -0.1 |      5 | sibling_ff0/D
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |       -0.1 |      5 | sibling_ff0/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |       -0.1 |      5 | sibling_ff0/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |      5 | sibling_ff0/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |      5 | sibling_ff0/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.054 |       -0.1 |      5 | sibling_ff0/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- in2reg
@@ -53,15 +50,12 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.1 |      1 | enable_latch/D
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.1 |      1 | enable_latch/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.1 |      1 | enable_latch/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |      1 | enable_latch/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |      1 | enable_latch/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |      1 | enable_latch/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- reg2out
@@ -74,30 +68,24 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.037 |       -0.1 |       -0.0 |      1 | inferred_gate/A2
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.037 |       -0.1 |       -0.0 |      1 | inferred_gate/A2
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.037 |       -0.1 |       -0.0 |      1 | inferred_gate/A2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.037 |       -0.0 |      1 | inferred_gate/A2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.037 |       -0.0 |      1 | inferred_gate/A2
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.037 |       -0.0 |      1 | inferred_gate/A2
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- unrestricted
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 7 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 7 out of 7 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.3 |      7 | enable_latch/D
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.3 |      7 | enable_latch/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.3 |      7 | enable_latch/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.3 |      7 | enable_latch/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.3 |      7 | enable_latch/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.3 |      7 | enable_latch/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 path groups: clk vclk in2reg reg2reg asynchronous {path delay} {gated clock} unconstrained

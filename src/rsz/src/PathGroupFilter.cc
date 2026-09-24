@@ -425,11 +425,7 @@ std::optional<sta::Slack> PathGroupFilter::groupSlack(
   if (ends.empty()) {
     return std::nullopt;
   }
-  sta::Slack slack = ends[0]->slack(sta_);
-  for (sta::PathEnd* end : ends) {
-    delete end;
-  }
-  return slack;
+  return ends[0]->slack(sta_);
 }
 
 bool PathGroupFilter::startpointInGroup(sta::Vertex* startpoint) const

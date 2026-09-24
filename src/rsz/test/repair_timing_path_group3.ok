@@ -9,15 +9,12 @@
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 10 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 10 out of 10 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.0 |       -0.1 |     10 | _869_/D
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.0 |       -0.1 |     10 | _869_/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.0 |       -0.1 |     10 | _869_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- in2reg
@@ -25,30 +22,24 @@
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 35 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 35 out of 35 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |       -1.8 |     35 | _862_/D
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |       -1.8 |     35 | _862_/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |       -1.8 |     35 | _862_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- unrestricted
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 35 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 35 out of 35 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.9 |       -1.8 |     35 | _862_/D
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.9 |       -1.8 |     35 | _862_/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.9 |       -1.8 |     35 | _862_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- reg2reg before
@@ -59,12 +50,12 @@ _893_/Q (DFF_X1)                     _869_/D (DFF_X1)                       -0.0
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 10 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 10 out of 10 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.0 |       -0.1 |     10 | _869_/D
-     162* |      33 |      95 |        0 |      0 |    14 |   +13.1% |    0.008 |        0.0 |        0.0 |     10 | _869_/D
-    final |      33 |      95 |        0 |      0 |    14 |   +13.1% |    0.000 |        0.0 |        0.0 |      0 | 
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+     162* |      33 |      95 |        0 |      0 |    14 |   +13.1% |    0.008 |        0.0 |     10 | _869_/D
+    final |      33 |      95 |        0 |      0 |    14 |   +13.1% |    0.000 |        0.0 |      0 | 
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 33 buffers.
 [INFO RSZ-0051] Resized 95 instances: 95 up, 0 up match, 0 down, 0 VT

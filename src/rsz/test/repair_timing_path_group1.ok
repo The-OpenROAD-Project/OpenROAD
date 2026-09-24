@@ -9,14 +9,14 @@ path groups: core_clock asynchronous {path delay} {gated clock} unconstrained
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 40 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.213 |       -5.0 |       -3.0 |     40 | resp_msg[15]
-       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.211 |       -4.9 |       -3.0 |     40 | resp_msg[15]
-      40* |      15 |      13 |        1 |      0 |     1 |    +0.3% |   -0.188 |       -4.5 |       -1.7 |     40 | resp_msg[15]
-      40+ |      15 |      13 |        1 |      0 |     1 |    +0.3% |   -0.188 |       -4.5 |       -1.7 |     28 | resp_msg[15]
-    final |      15 |      21 |        1 |      0 |     3 |    +0.9% |   -0.184 |       -4.4 |       -1.6 |     27 | resp_msg[15]
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.213 |       -3.0 |     40 | resp_msg[15]
+       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.211 |       -3.0 |     40 | resp_msg[15]
+      40* |      15 |      13 |        1 |      0 |     1 |    +0.3% |   -0.188 |       -1.7 |     40 | resp_msg[15]
+      40+ |      15 |      13 |        1 |      0 |     1 |    +0.3% |   -0.188 |       -1.7 |     28 | resp_msg[15]
+    final |      15 |      21 |        1 |      0 |     3 |    +0.9% |   -0.184 |       -1.6 |     27 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 15 buffers.
 [INFO RSZ-0040] Inserted 1 buffers.
@@ -27,13 +27,13 @@ path groups: core_clock asynchronous {path delay} {gated clock} unconstrained
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 13 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 13 out of 13 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.184 |       -4.4 |       -1.5 |     13 | resp_msg[15]
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.3% |   -0.183 |       -4.4 |       -1.5 |     13 | resp_msg[15]
-      13* |       0 |       7 |        3 |      0 |     3 |    +1.2% |   -0.186 |       -4.4 |       -1.5 |     13 | resp_msg[15]
-    final |       0 |      11 |        3 |      0 |     3 |    +1.5% |   -0.181 |       -4.3 |       -1.5 |     13 | resp_msg[15]
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.184 |       -1.5 |     13 | resp_msg[15]
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.3% |   -0.183 |       -1.5 |     13 | resp_msg[15]
+      13* |       0 |       7 |        3 |      0 |     3 |    +1.2% |   -0.186 |       -1.5 |     13 | resp_msg[15]
+    final |       0 |      11 |        3 |      0 |     3 |    +1.5% |   -0.181 |       -1.5 |     13 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 3 buffers.
 [INFO RSZ-0051] Resized 11 instances: 11 up, 0 up match, 0 down, 0 VT
@@ -82,13 +82,13 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.041 |       -4.3 |       -0.8 |     26 | _877_/D
-       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.028 |       -4.3 |       -0.5 |     26 | _877_/D
-      26* |       2 |       8 |        4 |      0 |     3 |    +1.4% |   -0.021 |       -4.3 |       -0.2 |     26 | _877_/D
-    final |       2 |       8 |        4 |      0 |     3 |    +1.4% |   -0.021 |       -4.3 |       -0.2 |     11 | _877_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.041 |       -0.8 |     26 | _877_/D
+       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.028 |       -0.5 |     26 | _877_/D
+      26* |       2 |       8 |        4 |      0 |     3 |    +1.4% |   -0.021 |       -0.2 |     26 | _877_/D
+    final |       2 |       8 |        4 |      0 |     3 |    +1.4% |   -0.021 |       -0.2 |     11 | _877_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 2 buffers.
 [INFO RSZ-0040] Inserted 4 buffers.
@@ -106,13 +106,13 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -4.4 |       -0.4 |     26 | _877_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.028 |       -4.3 |       -0.3 |     26 | _877_/D
-      26* |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -4.3 |       -0.0 |     26 | _879_/D
-    final |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -4.3 |       -0.0 |      2 | _879_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -0.4 |     26 | _877_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.028 |       -0.3 |     26 | _877_/D
+      26* |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -0.0 |     26 | _879_/D
+    final |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -0.0 |      2 | _879_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
 [INFO RSZ-0040] Inserted 1 buffers.
