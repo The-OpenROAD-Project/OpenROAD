@@ -245,6 +245,29 @@ This command configures the debugger to pause every 100 iterations, with layout 
 
 Debug mode requires the GUI. With ORFS, one way to arrange for showing the GUI when running the global placement step is by using `make global_place_issue` and then editing the created run-me.sh file to include the `-gui` flag when calling openroad.
 
+### Estimate Target Density
+
+This command estimates the target density needed to reach a given overflow for the current placement, without running global placement or otherwise modifying the design.
+
+The returned density is always between the design's uniform target density (the same value reported by `get_global_placement_uniform_density`) and `1.0`. A tighter (lower) `-overflow` value can only ask for a density closer to `1.0`, never lower than the uniform density.
+
+```tcl
+estimate_target_density
+    [-bin_grid_count grid_count]\
+    [-overflow overflow]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
+| `-overflow` | Set target overflow used to estimate the density. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
+| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).

@@ -12,13 +12,24 @@ const COLS = [
 ];
 
 // Must match HierarchyNodeKind enum on the server.
-const NODE_KIND = { MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3 };
+const NODE_KIND = {
+    MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3, NAME_GROUP: 4,
+};
+
+// Rows that carry a color key the tile overlay looks up.  A flat design has
+// no dbModules, so its tree is synthesized from instance-name paths and every
+// colorable row is a NAME_GROUP instead; the two never appear together.
+function isColorable(kind) {
+    return kind === NODE_KIND.MODULE || kind === NODE_KIND.NAME_GROUP;
+}
 
 export class HierarchyBrowser {
     constructor(container, app, redrawAllLayers) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
         this._nodes = [];      // flat server response
+        this._nameGrouped = false;     // tree synthesized from instance names
+        this._nameGroupsCapped = false;
         this._rows = [];       // DFS-ordered rows with depth
         this._childrenMap = new Map();  // id → [child ids]
         this._collapsed = new Set();   // collapsed node ids
@@ -87,19 +98,39 @@ export class HierarchyBrowser {
                 type: 'module_hierarchy',
             });
             this._nodes = data.nodes || [];
+            this._nameGrouped = !!data.name_grouped;
+            this._nameGroupsCapped = !!data.name_groups_capped;
             this._buildTree();
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
-            const nMods = this._nodes.filter(
-                n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
-            this._statusLabel.textContent = nMods + ' modules';
+            this._statusLabel.textContent = this._statusText();
             await this._sendModuleColors();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
         this._updateBtn.disabled = false;
         this._updateBtn.textContent = 'Update';
+    }
+
+    // The tree is automatic, so the label is what tells the user which one
+    // they are looking at.  A synthesized tree is a reading of the instance
+    // names, not the netlist, and must never be presented as the netlist.
+    _statusText() {
+        const count = this._nodes.filter(
+            n => isColorable(n.node_kind || 0)).length;
+        if (!this._nameGrouped) {
+            return count + ' modules';
+        }
+        // The top row is a group too, but it is the design, not a recovered
+        // level -- report what was actually recovered.
+        const groups = Math.max(0, count - 1);
+        let text = groups + ' groups from instance names'
+                   + ' \u2014 this design has no module hierarchy';
+        if (this._nameGroupsCapped) {
+            text += ' (truncated: too many groups)';
+        }
+        return text;
     }
 
     _buildTree() {
@@ -131,7 +162,7 @@ export class HierarchyBrowser {
             const kind = n.node_kind || 0;
             if (kind === NODE_KIND.LEAF_GROUP || kind === NODE_KIND.TYPE_GROUP) {
                 this._collapsed.add(n.id);
-            } else if (kind === NODE_KIND.MODULE && n.parent_id >= 0) {
+            } else if (isColorable(kind) && n.parent_id >= 0) {
                 this._collapsed.add(n.id);
             }
         }
@@ -156,8 +187,7 @@ export class HierarchyBrowser {
         this._checkModel.buildFromNodes(this._nodes.map(n => ({
             id: n.id,
             parentId: n.parent_id,
-            hasCheckbox: (n.node_kind || 0) === NODE_KIND.MODULE
-                         && n.odb_id != null,
+            hasCheckbox: isColorable(n.node_kind || 0) && n.odb_id != null,
             checked: true,
             data: n,
         })));
@@ -168,7 +198,7 @@ export class HierarchyBrowser {
         this._moduleState.clear();
         for (const row of this._rows) {
             const node = this._nodeMap.get(row.id);
-            if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
+            if (!node || !isColorable(node.node_kind || 0)) continue;
             if (node.odb_id == null) continue;
             const c = node.color || [128, 128, 128];
             this._moduleState.set(node.odb_id, {
@@ -185,7 +215,7 @@ export class HierarchyBrowser {
     _computeEffectiveColors() {
         for (const row of this._rows) {
             const node = this._nodeMap.get(row.id);
-            if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
+            if (!node || !isColorable(node.node_kind || 0)) continue;
             const st = this._moduleState.get(node.odb_id);
             if (!st) continue;
 
@@ -195,7 +225,7 @@ export class HierarchyBrowser {
             while (parentId >= 0) {
                 const parent = this._nodeMap.get(parentId);
                 if (!parent) break;
-                if ((parent.node_kind || 0) === NODE_KIND.MODULE) {
+                if (isColorable(parent.node_kind || 0)) {
                     const pst = this._moduleState.get(parent.odb_id);
                     if (pst && this._collapsed.has(parent.id)) {
                         inheritedColor = pst.effectiveColor;
@@ -277,6 +307,11 @@ export class HierarchyBrowser {
                 tr.style.color = 'var(--fg-disabled)';
             } else if (kind === NODE_KIND.INSTANCE) {
                 tr.style.color = 'var(--fg-secondary)';
+            } else if (kind === NODE_KIND.NAME_GROUP) {
+                // Recovered from a name, not read from the netlist.
+                tr.classList.add('hierarchy-name-group');
+                tr.title = 'Recovered from instance names \u2014 '
+                           + 'this design has no module hierarchy';
             }
 
             // Column 0: Instance (with tree indent, color swatch, and arrow)
@@ -285,7 +320,7 @@ export class HierarchyBrowser {
             tdInst.style.whiteSpace = 'nowrap';
 
             // Module color swatch + visibility checkbox
-            if (kind === NODE_KIND.MODULE && node.odb_id != null) {
+            if (isColorable(kind) && node.odb_id != null) {
                 const st = this._moduleState.get(node.odb_id);
                 const modelNode = this._checkModel
                     ? this._checkModel.get(node.id) : null;

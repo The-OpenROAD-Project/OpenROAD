@@ -18,6 +18,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -1405,6 +1406,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
   int run_id = 0;
 
   std::unique_ptr<SACoreSoftMacro> best_sa;
+  std::set<int> skipped_utilization_indices;
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
     // We need to track the utilization indices, because, when creating the
@@ -1417,6 +1419,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
       const int utilization_index = run_id++;
       const float utilization = utilization_list[utilization_index];
       if (!validUtilization(utilization, outline, macros)) {
+        if (parent == tree_->root.get()) {
+          skipped_utilization_indices.insert(utilization_index);
+        }
+
         continue;
       }
 
@@ -1504,8 +1510,11 @@ void HierRTLMP::placeChildren(Cluster* parent)
       logger_->error(
           MPL,
           40,
-          "Annealing engine failed to find a valid solution. Core utilization "
-          "is probably too high. Please, reduce it and try again.");
+          "Failed to find a valid solution for any of the standard cell "
+          "densities below.\n\n{}\n\nCore utilization is probably too high. "
+          "Please, reduce it and try again.",
+          buildClusterPlacementErrorTable(utilization_list,
+                                          skipped_utilization_indices));
     } else {
       logger_->error(MPL,
                      8,
@@ -1561,6 +1570,46 @@ std::vector<float> HierRTLMP::computeUtilizationList(
   }
 
   return utilization_list;
+}
+
+std::string HierRTLMP::buildClusterPlacementErrorTable(
+    const std::vector<float>& utilization_list,
+    const std::set<int>& skipped_utilization_indices) const
+{
+  constexpr std::string_view area_failure_message
+      = "Macros and cells area is larger than the outline area.";
+  constexpr std::string_view convergence_failure_message
+      = "Annealer could not converge.";
+
+  std::vector<std::string> rows;
+  rows.emplace_back("   Run   | Std Cell Density |  Result");
+
+  for (int i = 0; i < utilization_list.size(); i++) {
+    const std::string_view failure_message
+        = skipped_utilization_indices.contains(i) ? area_failure_message
+                                                  : convergence_failure_message;
+
+    rows.push_back(fmt::format("{: >8d} | {: >16.4f} |  {}",
+                               i + 1,
+                               utilization_list[i],
+                               failure_message));
+  }
+
+  size_t width = 0;
+  for (const std::string& row : rows) {
+    width = std::max(width, row.size());
+  }
+
+  const std::string separator(width, '-');
+
+  std::string table = rows.front() + "\n" + separator + "\n";
+  for (int i = 1; i < rows.size(); i++) {
+    table += rows[i] + "\n";
+  }
+
+  table += separator;
+
+  return table;
 }
 
 RectList HierRTLMP::findOffsetIntersections(const RectList& candidate_blockages,

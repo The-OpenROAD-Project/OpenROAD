@@ -153,7 +153,6 @@ cc_library(
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
-        "//src/sta:StaConfig",
     ],
     hdrs = [
         "include/db_sta/MakeDbSta.hh",
@@ -171,6 +170,7 @@ cc_library(
         ":dbSta",
         "//:ord",
         "//src/odb/src/db",
+        "//src/sta:config",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
