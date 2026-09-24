@@ -15,6 +15,7 @@
 
 namespace odb {
 
+class ShapeSearch;
 struct CandidateSection;
 
 inline constexpr int kMaxCandidateSections = 32;
@@ -134,31 +135,6 @@ struct Short
   const int i0;
   const int i1;
   bool skip{false};
-};
-
-// This stores shapes by level through addShape.  Once all the shapes
-// have been added then searchStart/Next can be used for querying.
-// Internally a simple tree of space bisections is generated for
-// efficiency.
-//
-// The code uses an odd convention:
-// is_via = 0 ==> wire
-//        = 1 ==> via
-//        = 2 ==> pin
-class ShapeSearch
-{
- public:
-  ShapeSearch();
-  ~ShapeSearch();
-
-  void clear();
-  void addShape(int level, const Rect& bounds, int is_via, int id);
-  void searchStart(int level, const Rect& bounds, int is_via);
-  bool searchNext(int* id);
-
- private:
-  class Impl;
-  std::unique_ptr<Impl> impl_;
 };
 
 class ConnectionGraph;
