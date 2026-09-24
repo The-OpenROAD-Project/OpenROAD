@@ -13,4 +13,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file single_row.guideok $guide_file
+diff_files single_row.guideok $guide_file
