@@ -2190,6 +2190,65 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 
 int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 {
+  check2DEdgesUsage();
+  const auto totals = graph2d_.overflowStatistics(false);
+  const int overflow = totals[0].overflow + totals[1].overflow;
+  const int usage = totals[0].usage + totals[1].usage;
+  const int maximum = std::max(totals[0].max_overflow, totals[1].max_overflow);
+  const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
+  if (check || logger_->debugCheck(GRT, "congestion2D", 1)) {
+    int reference_max;
+    int reference_usage;
+    const int reference = scanOverflow2Dmaze(&reference_max, &reference_usage);
+    if (check
+        && (reference != overflow || reference_max != maximum
+            || reference_usage != usage)) {
+      logger_->error(GRT,
+                     904,
+                     "Incremental 2D overflow outputs differ from the "
+                     "full-scan reference.");
+    }
+  }
+  total_overflow_ = overflow;
+  *maxOverflow = maximum;
+  *tUsage = usage;
+  ahth_ = usage > 800000 ? 30 : 20;
+  return total_overflow_;
+}
+
+int FastRouteCore::getOverflow2D(int* maxOverflow)
+{
+  check2DEdgesUsage();
+  // Negative estimates and fractions other than half-integers can depend on
+  // the running total after conversion. Keep the original ordered scan then.
+  if (graph2d_.needsEstimatedUsageScan()) {
+    return scanOverflow2D(maxOverflow);
+  }
+  const auto totals = graph2d_.overflowStatistics(true);
+  const int overflow = totals[0].overflow + totals[1].overflow;
+  const int usage = totals[0].usage + totals[1].usage;
+  const int maximum = std::max(totals[0].max_overflow, totals[1].max_overflow);
+  const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
+  if (check || logger_->debugCheck(GRT, "congestion2D", 1)) {
+    int reference_max;
+    const int reference = scanOverflow2D(&reference_max);
+    if (check
+        && (reference != overflow || reference_max != maximum
+            || ahth_ != (usage > 800000 ? 30 : 20))) {
+      logger_->error(GRT,
+                     905,
+                     "Incremental 2D overflow outputs differ from the "
+                     "full-scan reference.");
+    }
+  }
+  total_overflow_ = overflow;
+  *maxOverflow = maximum;
+  ahth_ = usage > 800000 ? 30 : 20;
+  return total_overflow_;
+}
+
+int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
+{
   int H_overflow = 0;
   int V_overflow = 0;
   int max_H_overflow = 0;
@@ -2261,7 +2320,7 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   return total_overflow_;
 }
 
-int FastRouteCore::getOverflow2D(int* maxOverflow)
+int FastRouteCore::scanOverflow2D(int* maxOverflow)
 {
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
