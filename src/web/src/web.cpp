@@ -2312,8 +2312,9 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
 
   const std::string short_name
       = "Chiplet_" + std::to_string(++chiplet_heat_map_count_);
-  // Sessions each build their own instance from this factory, so the parsed
-  // rows outlive this call and are shared rather than copied per session.
+  // The factory runs once per viewer session, so the parsed rows have to
+  // outlive this call and cannot be moved out of the capture.  Hand every
+  // instance the same immutable list instead of copying it per session.
   auto entries = std::make_shared<
       const std::vector<web::ExternalHeatMapDataSource::Entry>>(
       std::move(data));
@@ -2325,7 +2326,7 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
       "WebChipletHeatMap" + short_name,
       [logger = logger_, heat_map_name, short_name, entries, chip, transform] {
         auto source = std::make_shared<web::ExternalHeatMapDataSource>(
-            logger, heat_map_name, short_name, *entries);
+            logger, heat_map_name, short_name, entries);
         source->setChip(chip);
         source->setTransform(transform);
         return source;

@@ -385,11 +385,12 @@ class ExternalHeatMapDataSource : public HeatMapDataSource
   {
     double x0, y0, x1, y1, value;
   };
+  using EntryList = std::shared_ptr<const std::vector<Entry>>;
 
   ExternalHeatMapDataSource(utl::Logger* logger,
                             const std::string& name,
                             const std::string& short_name,
-                            std::vector<Entry> data);
+                            EntryList data);
 
   void setTransform(const odb::dbTransform& transform)
   {
@@ -407,7 +408,7 @@ class ExternalHeatMapDataSource : public HeatMapDataSource
   odb::Rect getBounds() const override;
 
  private:
-  std::vector<Entry> data_entries_;
+  EntryList data_entries_;
   odb::dbTransform transform_;
 };
 

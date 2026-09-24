@@ -1231,7 +1231,7 @@ ExternalHeatMapDataSource::ExternalHeatMapDataSource(
     utl::Logger* logger,
     const std::string& name,
     const std::string& short_name,
-    std::vector<Entry> data)
+    EntryList data)
     : HeatMapDataSource(logger, name, short_name, "ExternalHeatMap"),
       data_entries_(std::move(data))
 {
@@ -1239,11 +1239,12 @@ ExternalHeatMapDataSource::ExternalHeatMapDataSource(
 
 bool ExternalHeatMapDataSource::populateMap()
 {
-  if (getChip() == nullptr || data_entries_.empty()) {
+  if (getChip() == nullptr || data_entries_ == nullptr
+      || data_entries_->empty()) {
     return false;
   }
   const double dbu_per_micron = getDbuPerMicron();
-  for (const auto& entry : data_entries_) {
+  for (const auto& entry : *data_entries_) {
     const int x0 = static_cast<int>(std::round(entry.x0 * dbu_per_micron));
     const int y0 = static_cast<int>(std::round(entry.y0 * dbu_per_micron));
     const int x1 = static_cast<int>(std::round(entry.x1 * dbu_per_micron));
