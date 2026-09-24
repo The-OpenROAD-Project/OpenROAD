@@ -5820,12 +5820,9 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
         // The frontend's addNumber control runs every value through
         // parseFloat, so int settings can arrive as JSON doubles.  Accept
         // either and round.
-        settings[option]
-            = value_v.is_int64()
-                  ? static_cast<int>(value_v.get_int64())
-                  : static_cast<int>(std::round(value_v.as_double()));
+        settings[option] = static_cast<int>(std::round(jsonToDouble(value_v)));
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[option] = value_v.as_double();
+        settings[option] = jsonToDouble(value_v);
       } else {
         settings[option] = std::string(value_v.as_string());
       }

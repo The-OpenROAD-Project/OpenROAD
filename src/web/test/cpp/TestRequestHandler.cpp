@@ -1825,6 +1825,28 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
   }
 }
 
+// The converse: JS serializes whole numbers without a decimal point, so a
+// double-typed setting like DisplayMin arrives as a JSON integer when the user
+// types 90.  The handler must accept it rather than failing as_double().
+TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 10;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"DisplayMin","value":90})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_DOUBLE_EQ(state_.heatmaps.at("Pin")->getDisplayRangeMin(), 90.0);
+  }
+}
+
 TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 {
   static int populate_calls = 0;
