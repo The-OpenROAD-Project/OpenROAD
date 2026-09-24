@@ -14,6 +14,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "odb/isotropy.h"
+#include "shapeSearch.h"
 #include "tmg_conn_g.h"
 #include "utl/Logger.h"
 

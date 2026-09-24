@@ -106,6 +106,7 @@ COMPULSORY_TESTS = [
     "pdn_boundary_mirrored_pins",
     "pdn_boundary_pg_pins",
     "pdn_boundary_place_pin",
+    "pdn_boundary_place_pin_rules",
     "pdn_boundary_stripes",
     "pdn_boundary_stripes_length",
     "pdn_boundary_stripes_no_pins",
