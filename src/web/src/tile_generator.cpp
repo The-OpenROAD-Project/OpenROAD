@@ -7283,6 +7283,8 @@ void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
           return true;
         }
       }
+      // A pin appears at most once in a node list.
+      return false;
     }
     return false;
   };
