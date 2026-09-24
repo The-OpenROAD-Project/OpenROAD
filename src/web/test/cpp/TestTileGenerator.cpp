@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <map>
 #include <memory>
 #include <numbers>
 #include <set>
@@ -1421,6 +1422,100 @@ TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
   EXPECT_NE(after_first, after_second)
       << "geometry cache went stale across an edit that the debounced "
          "design-changed callback does not report";
+}
+
+// ─── Name-group overlay (flat designs) ──────────────────────────────────────
+//
+// A flat design has no dbModule tree, so the module overlay colors by groups
+// synthesized from instance names instead.  The mapping lives on Search, which
+// drops it once an edit makes it stale -- these cover the renderer reading it
+// and the drop actually taking effect.
+
+// Count pixels matching an RGB triple exactly.
+static size_t countPixelsOfColor(const std::vector<unsigned char>& rgba,
+                                 const Color& color)
+{
+  size_t count = 0;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (rgba[i] == color.r && rgba[i + 1] == color.g && rgba[i + 2] == color.b
+        && rgba[i + 3] > 0) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
+{
+  odb::dbInst* left = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  odb::dbInst* right = placeInst("BUF_X16", "grp_b/_2_", 50000, 50000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // The ids are opaque keys as far as the renderer is concerned; what matters
+  // is that it resolves an instance through the mapping rather than through
+  // dbInst::getModule(), which on a flat design returns the top for both.
+  constexpr uint32_t kGroupA = 7;
+  constexpr uint32_t kGroupB = 8;
+  auto groups = std::make_shared<std::vector<uint32_t>>(
+      std::max(left->getId(), right->getId()) + 1, 0);
+  (*groups)[left->getId()] = kGroupA;
+  (*groups)[right->getId()] = kGroupB;
+  tile_gen_->setInstGroups(block_, groups, tile_gen_->searchRevision());
+
+  const Color red{.r = 255, .g = 0, .b = 0, .a = 255};
+  const Color blue{.r = 0, .g = 0, .b = 255, .a = 255};
+  const std::map<uint32_t, Color> colors{{kGroupA, red}, {kGroupB, blue}};
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePng(
+      tile_gen_->generateTile(
+          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+      w,
+      h);
+
+  EXPECT_GT(countPixelsOfColor(pixels, red), 0u)
+      << "the instance mapped to group " << kGroupA << " was not colored";
+  EXPECT_GT(countPixelsOfColor(pixels, blue), 0u)
+      << "the instance mapped to group " << kGroupB << " was not colored";
+}
+
+TEST_F(TileGeneratorTest, NameGroupMappingIsDroppedAfterAnEdit)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  constexpr uint32_t kGroupA = 7;
+  auto groups = std::make_shared<std::vector<uint32_t>>(inst->getId() + 1, 0);
+  (*groups)[inst->getId()] = kGroupA;
+  tile_gen_->setInstGroups(block_, groups, tile_gen_->searchRevision());
+
+  const Color red{.r = 255, .g = 0, .b = 0, .a = 255};
+  const std::map<uint32_t, Color> colors{{kGroupA, red}};
+
+  auto renderModules = [&] {
+    unsigned w = 0, h = 0;
+    return countPixelsOfColor(
+        decodePng(
+            tile_gen_->generateTile(
+                "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+            w,
+            h),
+        red);
+  };
+
+  ASSERT_GT(renderModules(), 0u) << "mapping was not picked up to begin with";
+
+  // Moving an instance bumps Search::revision(), which is what the mapping is
+  // stamped against.  The group ids it holds may no longer describe the
+  // design, and coloring instances by a group they are not in reads as
+  // authoritative while being wrong -- so the overlay goes uncolored until the
+  // client installs a fresh mapping.
+  inst->setLocation(20000, 20000);
+
+  EXPECT_EQ(renderModules(), 0u)
+      << "a stale instance -> name-group mapping survived a design edit";
 }
 
 // Build a HIER root chip holding `num_insts` instances of the fixture's chip,

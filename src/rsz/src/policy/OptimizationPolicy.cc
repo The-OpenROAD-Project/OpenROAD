@@ -115,7 +115,7 @@ bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
 {
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
-                     /*collect_startpoints=*/true);
+                     setup_context_.progress_header_show_startpoint_metrics);
   setup_context_.final_wns = final_targets.getWns();
   printFinalProgress(final_targets, initial_design_area);
   committer_.printTrackerFinalReports(finalReportPins());
@@ -124,16 +124,30 @@ bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
 
 void OptimizationPolicy::printProgressHeader() const
 {
-  if (setup_context_.progress_header_printed) {
+  const bool show_startpoint_metrics = showStartpointMetrics();
+  if (setup_context_.progress_header_printed
+      && setup_context_.progress_header_show_startpoint_metrics
+             == show_startpoint_metrics) {
     return;
   }
   setup_context_.progress_header_printed = true;
-  logger_->report(
-      "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-      "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst");
-  logger_->report(
-      "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-      "          |          |            |            | Endpts | St/EnPt");
+  setup_context_.progress_header_show_startpoint_metrics
+      = show_startpoint_metrics;
+  if (show_startpoint_metrics) {
+    logger_->report(
+        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
+        "   Area   |    WNS   |   StTNS    |    TNS     |  Viol  |  Worst");
+    logger_->report(
+        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
+        "          |          |            |            | Endpts | St/EnPt");
+  } else {
+    logger_->report(
+        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
+        "   Area   |    WNS   |    TNS     |  Viol  |  Worst");
+    logger_->report(
+        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
+        "          |          |            | Endpts | Endpoint");
+  }
   logger_->report(
       "---------------------------------------------------------------"
       "---------------------------------------------------------------");
@@ -143,10 +157,11 @@ void OptimizationPolicy::printFinalProgress(
     const RepairTargetCollector& target_collector,
     const double initial_design_area) const
 {
-  printProgressHeader();
+  if (!setup_context_.progress_header_printed) {
+    printProgressHeader();
+  }
 
   const sta::Slack wns = setup_context_.final_wns;
-  const sta::Slack st_tns = target_collector.getTns(true);
   const sta::Slack en_tns = target_collector.getTns(false);
   const sta::Pin* worst_pin = target_collector.getWorstPin(false);
 
@@ -157,9 +172,9 @@ void OptimizationPolicy::printFinalProgress(
     area_growth_percent = area_growth / initial_design_area * 100.0;
   }
 
-  logger_->report(
+  const std::string progress_prefix = fmt::format(
       "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
-      "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >10s} | {: >6d} | {}",
+      "| {: >+7.1f}% | {: >8s}",
       "final",
       committer_.totalMoves(MoveType::kUnbuffer),
       committer_.totalMoves(MoveType::kSizeUp)
@@ -171,11 +186,21 @@ void OptimizationPolicy::printFinalProgress(
       committer_.totalMoves(MoveType::kClone),
       committer_.totalMoves(MoveType::kSwapPins),
       area_growth_percent,
-      sta::delayAsString(wns, 3, sta_),
-      sta::delayAsString(st_tns, 1, sta_),
-      sta::delayAsString(en_tns, 1, sta_),
-      std::max(0, target_collector.getNumViolatingEndpoints()),
-      worst_pin != nullptr ? network_->pathName(worst_pin) : "");
+      sta::delayAsString(wns, 3, sta_));
+
+  const std::string startpoint_tns_field
+      = setup_context_.progress_header_show_startpoint_metrics
+            ? fmt::format(
+                  " | {: >10s}",
+                  sta::delayAsString(target_collector.getTns(true), 1, sta_))
+            : "";
+
+  logger_->report("{}{} | {: >10s} | {: >6d} | {}",
+                  progress_prefix,
+                  startpoint_tns_field,
+                  sta::delayAsString(en_tns, 1, sta_),
+                  std::max(0, target_collector.getNumViolatingEndpoints()),
+                  worst_pin != nullptr ? network_->pathName(worst_pin) : "");
 
   debugPrint(logger_, utl::RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   logger_->report(
