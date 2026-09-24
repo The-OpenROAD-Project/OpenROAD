@@ -143,19 +143,11 @@
 [INFO CTS-0033] Balancing latency for clock clk
 [INFO CTS-0036]  inserted 0 delay buffers
 [INFO RSZ-0058] Using max wire length 693um.
-<<<<<<< HEAD
-[INFO RSZ-0047] Found 59 long wires.
-[INFO RSZ-0048] Inserted 80 buffers in 59 nets.
-Clock clk
-   1.16 source latency inst_12_11/clk ^
-  -1.22 target latency inst_13_11/clk ^
-=======
 [INFO RSZ-0047] Found 58 long wires.
 [INFO RSZ-0048] Inserted 78 buffers in 58 nets.
 Clock clk
    1.18 source latency inst_12_11/clk ^
   -1.24 target latency inst_13_11/clk ^
->>>>>>> cts_create_delay_buf_list_drv_res
    0.00 CRPR
 --------------
   -0.06 setup skew
