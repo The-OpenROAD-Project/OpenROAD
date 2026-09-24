@@ -66,17 +66,19 @@ class ConnectionGraph
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
   Point& pt(const int index) { return points_[index]; }
   const Point& pt(const int index) const { return points_[index]; }
-
-  // TODO: make private
-  std::vector<Point> points_;
-  std::vector<Edge*> descent_edges_;
+  int descentDepth() const { return descent_edges_.size(); }
+  void setDescentDepth(const int depth) { descent_edges_.resize(depth); }
+  Edge* descentEdge(const int edge_index) { return descent_edges_[edge_index]; }
 
  private:
   void getEdgeRefCoord(const tmg_conn* conn, Edge* pe, int& rx, int& ry);
   bool isBadShort(Edge* pe, const tmg_conn* conn);
 
   std::deque<Edge> edges_;
+  std::vector<Point> points_;
 
+  // State of the walk:
+  std::vector<Edge*> descent_edges_;
   Edge* next_edge_{nullptr};
 };
 
