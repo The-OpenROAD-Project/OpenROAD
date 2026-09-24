@@ -81,6 +81,9 @@ class Graph2D
   void addCapH(int x, int y, int cap);
   void addCapV(int x, int y, int cap);
   void rebuildUsedGrids();
+  void prepareForIncrementalRun();
+  // Full-scan reference check, intended for tests and GRT usedgridcheck debug.
+  bool usedGridsMatchUsage() const;
   void addEstUsageToUsage();
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);
@@ -122,6 +125,8 @@ class Graph2D
   std::vector<int> getCongestedNDRnetsByFraction(double fraction);
 
  private:
+  friend class Graph2DTestPeer;
+
   int x_grid_ = 0;
   int y_grid_ = 0;
   int num_layers_ = 0;
@@ -145,6 +150,7 @@ class Graph2D
   void initNDRnets();
 
   void foreachEdge(const std::function<void(Edge&)>& func);
+  void markUsedGridDirty(int x, int y, EdgeDirection direction);
 
   multi_array<Edge, 2> v_edges_;    // The way it is indexed is (X, Y)
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
@@ -160,6 +166,10 @@ class Graph2D
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
+  // Keep zero-usage entries during a run: congestion history also visits them.
+  // Deduplicate with Edge::used_grid_dirty and reconcile only at the next run.
+  std::vector<std::pair<int, int>> h_dirty_used_grids_;
+  std::vector<std::pair<int, int>> v_dirty_used_grids_;
 };
 
 }  // namespace grt
