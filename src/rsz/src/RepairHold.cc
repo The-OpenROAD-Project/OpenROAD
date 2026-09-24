@@ -91,6 +91,10 @@ bool RepairHold::repairHold(
     // endpoint only when the group's own hold slack is what needs repairing;
     // merely hosting some in-group path would let nearly every register
     // through and defeat the restriction.
+    const sta::Slack slack = sta_->slack(end, min_);
+    if (!sta::fuzzyLess(slack, hold_margin)) {
+      continue;
+    }
     const std::optional<sta::Slack> group_slack
         = path_group_filter.groupSlack(end, min_);
     if (group_slack.has_value() && sta::fuzzyLess(*group_slack, hold_margin)) {
