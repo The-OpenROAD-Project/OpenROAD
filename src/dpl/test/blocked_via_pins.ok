@@ -5,14 +5,11 @@
 [INFO ODB-0131]     Created 3 components and 10 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 2 connections.
 [INFO PDN-0001] Inserting grid: top
-[WARNING PDN-0195] Removing 150 via(s) between M1 and M2 at (2.7000 um, 0.0010 um) for VSS
-[WARNING PDN-0195] Removing 7 via(s) between M2 and M5 at (1.0000 um, 0.0010 um) for VSS
-[WARNING PDN-0195] Removing 7 via(s) between M2 and M5 at (3.7000 um, 0.0010 um) for VSS
 [INFO DPL-0020] Mirrored 1 instances
 [INFO DPL-0021] HPWL before               2.2 u
 [INFO DPL-0022] HPWL after                2.1 u
 [INFO DPL-0023] HPWL delta               -4.0 %
 [INFO DPL-0040] Skipped 1 instances that would short pins to power via metal when mirrored
-mid_cell 1080 540 R0
-left_cell 972 0 R0
-m1_cell 3024 0 MY
+mid_cell 3240 1080 R0
+left_cell 3132 540 R0
+m1_cell 5184 540 MY
