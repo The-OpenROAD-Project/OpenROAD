@@ -402,11 +402,6 @@ void tmg_conn::removeShortLoops()
     e2->visited = false;
   }
 
-  for (int j = 0; j < wire_points_.size(); j++) {
-    connection_graph_->pt(j).visited = false;
-    connection_graph_->pt(j).descent_edge_index = -1;
-  }
-
   // remove all short loops
   connection_graph_->clearVisited();
 
