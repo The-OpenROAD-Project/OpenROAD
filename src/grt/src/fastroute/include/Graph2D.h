@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <set>
@@ -159,7 +160,7 @@ class Graph2D
   void printEdgeCapPerLayer();
   void initNDRnets();
 
-  void foreachEdge(const std::function<void(Edge&)>& func);
+  void markEstUsageDirty(int x, int y, EdgeDirection direction);
   void markUsedGridDirty(int x, int y, EdgeDirection direction);
   void insertUsedGrid(int x, int y, EdgeDirection direction);
   void eraseUsedGrid(int x, int y, EdgeDirection direction);
@@ -224,6 +225,13 @@ class Graph2D
   // Deduplicate with Edge::used_grid_dirty and reconcile only at the next run.
   std::vector<std::pair<int, int>> h_dirty_used_grids_;
   std::vector<std::pair<int, int>> v_dirty_used_grids_;
+  // Independent of used-grid membership: removed edges can still need a reset.
+  // Deduplicate until InitEstUsage, including estimates canceled back to zero.
+  std::vector<std::pair<int, int>> h_dirty_est_edges_;
+  std::vector<std::pair<int, int>> v_dirty_est_edges_;
+  // Linear edge indices remain queued until both history fields are reset.
+  std::vector<size_t> h_dirty_history_edges_;
+  std::vector<size_t> v_dirty_history_edges_;
   std::function<void(int, int, EdgeDirection, bool)> used_grid_changed_;
   std::function<void()> used_grids_reset_;
 };
