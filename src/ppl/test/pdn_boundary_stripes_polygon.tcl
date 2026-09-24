@@ -16,6 +16,9 @@ set metal2 [[ord::get_db_tech] findLayer metal2]
 set net [$block findNet "VDD"]
 set swire [odb::dbSWire_create $net "ROUTED"]
 odb::dbSBox_create $swire $metal2 70000 0 74000 20000 "STRIPE"
+# stripe touching an internal edge of the polygon, which the die area
+# bounding box cannot represent
+odb::dbSBox_create $swire $metal2 20000 80000 24000 100000 "STRIPE"
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
   -min_distance 0.12

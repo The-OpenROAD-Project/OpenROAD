@@ -3286,6 +3286,19 @@ TileGenerator::pseudoLayerDefs()
   return defs;
 }
 
+uint64_t TileGenerator::searchRevision() const
+{
+  return search_->revision();
+}
+
+void TileGenerator::setInstGroups(
+    odb::dbBlock* block,
+    std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+    const uint64_t built_at_revision)
+{
+  search_->setInstGroups(block, std::move(inst_groups), built_at_revision);
+}
+
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -3708,6 +3721,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const bool modules_layer
           = (layer == "_modules" && module_colors && !module_colors->empty());
       if (modules_layer) {
+        // A flat design has no dbModule tree to color by, so the hierarchy
+        // report synthesizes groups from instance names and parks the
+        // instance -> group mapping on Search, which drops it when an edit
+        // makes it stale.  Null here means the ordinary dbModule path.
+        // Fetched once per tile: the lookup inside the loop has to stay a
+        // bounds check and an index.
+        const std::shared_ptr<const std::vector<uint32_t>> inst_groups
+            = search_->instGroups(block);
+
         // The module-colored overview shows every instance regardless of size
         // (mirrors Qt's instanceSizeLimit() == 0 in module view), so pass 0 —
         // no sub-resolution cull — instead of size_limit_dbu, which would empty
@@ -3725,11 +3747,22 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           if (inst->getMaster()->isFiller()) {
             continue;
           }
-          odb::dbModule* mod = inst->getModule();
-          if (!mod) {
-            continue;
+          uint32_t color_key = 0;
+          if (inst_groups) {
+            const uint32_t inst_id = inst->getId();
+            // An instance created since the mapping was built is off its end;
+            // group 0 is the top level, which is where an ungrouped instance
+            // belongs anyway.
+            color_key
+                = inst_id < inst_groups->size() ? (*inst_groups)[inst_id] : 0;
+          } else {
+            odb::dbModule* mod = inst->getModule();
+            if (!mod) {
+              continue;
+            }
+            color_key = mod->getId();
           }
-          auto it = module_colors->find(mod->getId());
+          auto it = module_colors->find(color_key);
           if (it == module_colors->end()) {
             continue;
           }

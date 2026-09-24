@@ -5694,9 +5694,22 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
   resp.type = WebSocketResponse::kJson;
   try {
     odb::dbBlock* block = gen_->getBlock();
+    // Read before the walk, not after: an edit landing while it runs has to
+    // invalidate the mapping, and stamping afterwards would call it fresh.
+    const uint64_t revision = gen_->searchRevision();
     HierarchyReport report(block, gen_->getSta());
     auto result = report.getReport();
     writePayload(resp, serializeHierarchyResult(result));
+
+    // A flat design colors its overlay by synthesized groups rather than by
+    // dbModule, so the renderer needs the instance -> group mapping this walk
+    // produced.  Only installed in that mode; the module path needs nothing.
+    if (result.name_grouped) {
+      gen_->setInstGroups(block,
+                          std::make_shared<const std::vector<uint32_t>>(
+                              std::move(result.inst_group)),
+                          revision);
+    }
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
