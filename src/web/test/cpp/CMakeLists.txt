@@ -22,6 +22,7 @@ set(WEB_TESTS
   TestDebugGraphics
   TestGlyphCache
   TestClockTreeReport
+  TestHierarchyReport
   TestSaveImage
   TestSnap
   TestTimingCone

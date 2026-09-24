@@ -34,13 +34,13 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                   3
-total displacement          0.3 u
+total displacement          0.2 u
 average displacement        0.1 u
-max displacement            0.2 u
+max displacement            0.1 u
 original HPWL               0.3 u
-legalized HPWL              0.5 u
-delta HPWL                   51 %
+legalized HPWL              0.4 u
+delta HPWL                   34 %
 
-m3_cell 918 0
-m3_open 1242 540
+m3_cell 972 0
+m3_open 972 540
 m1_cell 1134 270
