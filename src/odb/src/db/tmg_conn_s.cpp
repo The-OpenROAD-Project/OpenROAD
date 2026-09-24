@@ -71,16 +71,8 @@ void ShapeSearch::addShape(const int level,
                            const int id)
 {
   ShapeSearch::Shape* shape = &shapes_.emplace_back(bounds, type, id);
-  ShapeSearch::Bin* slev = root_for_level_.at(level);
-  if (slev->first_shape == nullptr) {
-    slev->first_shape = shape;
-    slev->bounds = *shape;
-  } else {
-    slev->last_shape->next = shape;
-    slev->bounds.merge(*shape);
-  }
-  slev->last_shape = shape;
-  slev->num_shapes++;
+  ShapeSearch::Bin* level_root_bin = root_for_level_.at(level);
+  level_root_bin->addShape(shape);
 }
 
 void ShapeSearch::searchStart(const int level,
