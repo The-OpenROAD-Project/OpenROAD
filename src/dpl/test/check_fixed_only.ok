@@ -13,5 +13,5 @@ DPL-0033
 fixed_only: pass
 [WARNING DPL-0006] Site aligned check failed (1).
  tap1
-[ERROR DPL-0040] placement checks failed for fixed instances during check placement.
-DPL-0040
+[ERROR DPL-0041] placement checks failed for fixed instances during check placement.
+DPL-0041

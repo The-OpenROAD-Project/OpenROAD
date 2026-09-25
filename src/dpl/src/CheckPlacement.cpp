@@ -68,7 +68,7 @@ void Opendp::checkPlacement(const bool verbose,
   }
   if (fixed_only) {
     logger_->error(DPL,
-                   40,
+                   41,
                    "placement checks failed for fixed instances during check "
                    "placement.");
   } else {

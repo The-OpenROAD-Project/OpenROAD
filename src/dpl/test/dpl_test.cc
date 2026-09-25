@@ -164,7 +164,7 @@ TEST_F(CheckPlacementTest, FixedOnlyReportsMisalignedTapcell)
                               {kCoreX + 100, kCoreY},
                               odb::dbPlacementStatus::FIRM);
 
-  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0040");
+  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0041");
 
   odb::dbMarkerCategory* failures = findFailures("Site_alignment_failures");
   ASSERT_NE(failures, nullptr);
@@ -182,7 +182,7 @@ TEST_F(CheckPlacementTest, FixedOnlyReportsTapcellInRowHole)
       {kCoreX + (kHoleStart + 2) * kSiteWidth, kCoreY + kHoleRow * kRowHeight},
       odb::dbPlacementStatus::FIRM);
 
-  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0040");
+  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0041");
   EXPECT_EQ(failureCount("In_rows_failures"), 1);
 }
 
@@ -191,7 +191,7 @@ TEST_F(CheckPlacementTest, FixedOnlyReportsMacroOverlappingTapcell)
   makeCell("TAPCELL_X1", "tap", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
   makeCell("BLOCK1", "macro", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
 
-  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0040");
+  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0041");
   EXPECT_EQ(failureCount("Overlap_failures"), 1);
 }
 
@@ -202,7 +202,7 @@ TEST_F(CheckPlacementTest, FixedOnlyChecksPlacedButUnfixedMacro)
   // floorplan and must be checked.
   makeCell("BLOCK1", "macro", {kCoreX, kCoreY}, odb::dbPlacementStatus::PLACED);
 
-  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0040");
+  EXPECT_EQ(runCheck(/*fixed_only=*/true), "DPL-0041");
   EXPECT_EQ(failureCount("Overlap_failures"), 1);
 }
 
