@@ -551,22 +551,20 @@ void Graph2D::sortCongestedNDRnets()
   std::ranges::sort(congested_ndrs_, NDRCongestionComparator());
 }
 
-int Graph2D::getOneCongestedNDRnet()
-{
-  if (!congested_ndrs_.empty()) {
-    return congested_ndrs_[0].net_id;
-  }
-  return -1;
-}
-
-// Get 10% of the NDR nets more involved in congestion
-std::vector<int> Graph2D::getMultipleCongestedNDRnet()
+// Get the given fraction (0.0-1.0) of the NDR nets most involved in
+// congestion. congested_ndrs_ is kept sorted most-congested-first by
+// sortCongestedNDRnets(), so this returns the worst offenders. A fraction of
+// 1.0 returns every congested NDR net.
+std::vector<int> Graph2D::getCongestedNDRnetsByFraction(const double fraction)
 {
   std::vector<int> net_ids;
-  if (!congested_ndrs_.empty()) {
-    for (int i = 0; i < ceil((double) congested_ndrs_.size() / 10); i++) {
-      net_ids.push_back(congested_ndrs_[i].net_id);
-    }
+  const double clamped_fraction = std::clamp(fraction, 0.0, 1.0);
+  const size_t count
+      = std::min<size_t>(std::ceil(congested_ndrs_.size() * clamped_fraction),
+                         congested_ndrs_.size());
+  net_ids.reserve(count);
+  for (size_t i = 0; i < count; i++) {
+    net_ids.push_back(congested_ndrs_[i].net_id);
   }
   return net_ids;
 }

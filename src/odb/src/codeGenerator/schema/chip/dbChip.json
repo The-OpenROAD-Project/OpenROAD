@@ -144,6 +144,16 @@
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
+      "name": "chip_net_cap_node_itr_",
+      "type": "dbChipNetCapNodeItr*",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
+      "name": "chip_net_r_seg_itr_",
+      "type": "dbChipNetRSegItr*",
+      "flags": ["private", "no-cmp", "no-serial"]
+    },
+    {
       "name": "chipinsts_",
       "type": "dbId<_dbChipInst>",
       "flags": ["private"],
@@ -183,7 +193,7 @@
       "flags": ["private", "no-serial"]
     }
   ],
-  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr","dbChipCallBackObj"],
+  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr","dbChipCallBackObj","dbChipNetCapNodeItr","dbChipNetRSegItr"],
   "h_includes": [
     "odb/geom.h"
   ],
@@ -200,6 +210,8 @@
     "dbChipInstItr.h",
     "dbChipNet.h",
     "dbChipNetItr.h",
+    "dbChipNetCapNodeItr.h",
+    "dbChipNetRSegItr.h",
     "dbCommon.h",
     "odb/dbChipCallBackObj.h",
     "odb/dbObject.h",

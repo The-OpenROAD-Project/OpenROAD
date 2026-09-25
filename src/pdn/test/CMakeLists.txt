@@ -9,6 +9,10 @@ or_integration_tests(
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
     asap7_offcenter_via
+    asap7_repair_channel_blocked_extend
+    asap7_repair_channel_one_net_extend
+    asap7_repair_channel_macro_gap
+    asap7_repair_channel_extend
     asap7_taper
     asap7_vias
     asap7_vias_arrayspacing
@@ -19,6 +23,7 @@ or_integration_tests(
     asap7_vias_dont_use
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
+    asap7_M1_M2_followpin_enclosure
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
     asap7_macro_notcovered
@@ -38,9 +43,15 @@ or_integration_tests(
     core_grid_extend_to_boundary
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
+    core_grid_min_width_layers
+    core_grid_mirrored_rows
+    core_grid_multiheight_rows
+    core_grid_multiheight_rows_pitch
+    core_grid_multiheight_site_order
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
+    core_grid_ring_on_pin_layer
     core_grid_single_pin
     core_grid_snap
     core_grid_split_cuts
@@ -50,6 +61,7 @@ or_integration_tests(
     core_grid_strap_outside_core
     core_grid_via_snap
     core_grid_with_multiple_bterms
+    core_grid_with_no_grid
     core_grid_with_M6_min_area
     core_grid_with_M6_min_area_rule
     core_grid_with_M7_pins
@@ -58,6 +70,7 @@ or_integration_tests(
     core_grid_with_fixed_pins
     core_grid_with_m2_straps
     core_grid_with_rings
+    core_grid_with_rings_asymmetric_widths
     core_grid_with_rings_connect
     core_grid_with_rings_different_offset
     core_grid_with_rings_different_width1
@@ -73,6 +86,9 @@ or_integration_tests(
     core_grid_with_single_layer_rings
     design_width
     existing
+    gf180_hybrid_followpins
+    gf180_hybrid_followpins_pitch
+    gf180_hybrid_followpins_rowpattern
     global_connect_with_dont_touch
     global_connect_with_dont_touch_warning
     macros
@@ -89,7 +105,17 @@ or_integration_tests(
     macros_cells_overlapping_ports
     macros_cells_via_failure
     macros_different_nets
+    macros_flipped_180
+    macros_flipped_halo_blocking
+    macros_flipped_halo_rings
+    macros_flipped_narrow_channel
+    macros_flipped_number_of_straps
+    macros_flipped_right_angle
+    macros_flipped_right_angle_180
+    macros_flipped_right_angle_halo
+    macros_flipped_straps
     macros_grid_check
+    macros_grid_not_used
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel
@@ -110,11 +136,36 @@ or_integration_tests(
     pads_black_parrot_flipchip_connect_overpads
     pads_black_parrot_grid_define
     pads_black_parrot_limit_connect
+    pads_black_parrot_macro_grid
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
+    pads_ihp_sg13g2_balance
+    pads_placed_not_fixed
+    pads_straps_through_pads
+    pads_via_repair_through_pads
+    polygon_core_grid
+    polygon_core_grid_extend_to_boundary
+    polygon_core_grid_rings_asymmetric
+    polygon_core_grid_rings_outside_die
+    polygon_core_grid_rings_outside_die_corner
+    polygon_core_grid_single_layer_ring
+    polygon_core_grid_t_rings
+    polygon_core_grid_u_extend_to_boundary
+    polygon_core_grid_u_rings
+    polygon_core_grid_with_rings
+    polygon_cut_corners_pads
+    polygon_die_and_macro
+    polygon_macro_grid
+    polygon_macro_grid_halo
+    polygon_macro_grid_r90
+    polygon_macro_grid_r180
+    polygon_macro_grid_with_rings
+    polygon_macro_tall_straps
+    polygon_power_switch
+    polygon_two_macros
     power_switch
     power_switch_cut_rows
     power_switch_daisy
@@ -129,12 +180,15 @@ or_integration_tests(
     region_temp_sensor
     region_temp_sensor_different_region_name
     repair_channel_inf_loop
+    repair_channel_out_of_options
     repair_vias
     report
     reset
     ripup
     sky130_spm_floating_bpin
+    sky130_spm_halo_too_big
     sroute_test
+    stacked_via_merged_enclosure
     widthtable
 )
 

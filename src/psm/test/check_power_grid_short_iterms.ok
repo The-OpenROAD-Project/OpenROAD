@@ -1,0 +1,20 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: short_pads.lef, created 2 library cells
+[INFO ODB-0128] Design: short_iterms
+[INFO ODB-0131]     Created 9 components and 33 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 17 connections.
+[INFO ODB-0133]     Created 8 nets and 16 connections.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u1/A (net n4) at (0.060um, 1.925um) - (0.165um, 2.100um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u1/ZN (net n1) at (0.230um, 1.550um) - (0.325um, 2.650um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u1/VSS (net VSS) at (0.060um, 1.500um) - (0.110um, 1.825um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u2/A (net n1) at (0.440um, 1.925um) - (0.545um, 2.100um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u2/ZN (net n2) at (0.610um, 1.550um) - (0.705um, 2.650um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u2/VSS (net VSS) at (0.440um, 1.500um) - (0.490um, 1.825um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u5/A (net n8) at (0.060um, 3.500um) - (0.165um, 3.675um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u5/ZN (net n5) at (0.230um, 2.950um) - (0.325um, 4.050um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u5/VSS (net VSS) at (0.060um, 3.775um) - (0.110um, 4.100um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u6/A (net n5) at (0.440um, 3.500um) - (0.545um, 3.675um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u6/ZN (net n6) at (0.610um, 2.950um) - (0.705um, 4.050um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal u6/VSS (net VSS) at (0.440um, 3.775um) - (0.490um, 4.100um), layer: metal1.
+[ERROR PSM-0069] Check connectivity failed on VDD.
+PSM-0069

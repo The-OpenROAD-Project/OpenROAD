@@ -6,29 +6,33 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "shape.h"
 #include "via.h"
+#include "web/core.h"
 
 namespace odb {
 class Rect;
 }  // namespace odb
+
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace pdn {
 
 class PdnGen;
 
 // renderer for debugging, not intended for general use.
-class PDNRenderer : public gui::Renderer
+class PDNRenderer : public web::Renderer
 {
  public:
-  explicit PDNRenderer(PdnGen* pdn);
+  PDNRenderer(PdnGen* pdn, utl::Logger* logger);
 
   void update();
 
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
-  void drawObjects(gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   const char* getDisplayControlGroupName() override { return "Power Grid"; }
 
@@ -38,10 +42,13 @@ class PDNRenderer : public gui::Renderer
     initial_obstructions_ = initial_obstructions;
   }
 
-  void pause();
+  // Halt the flow so the current state can be inspected in the GUI.  The
+  // reason is reported so the pause is actionable.
+  void pause(const std::string& reason);
 
  private:
   PdnGen* pdn_;
+  utl::Logger* logger_;
   Shape::ShapeTreeMap shapes_;
   Shape::ObstructionTreeMap grid_obstructions_;
   Shape::ObstructionTreeMap initial_obstructions_;
@@ -56,13 +63,13 @@ class PDNRenderer : public gui::Renderer
   };
   std::vector<RepairChannel> repair_;
 
-  static const gui::Painter::Color kRingColor;
-  static const gui::Painter::Color kStrapColor;
-  static const gui::Painter::Color kFollowpinColor;
-  static const gui::Painter::Color kViaColor;
-  static const gui::Painter::Color kObstructionColor;
-  static const gui::Painter::Color kRepairColor;
-  static const gui::Painter::Color kRepairOutlineColor;
+  static const web::Painter::Color kRingColor;
+  static const web::Painter::Color kStrapColor;
+  static const web::Painter::Color kFollowpinColor;
+  static const web::Painter::Color kViaColor;
+  static const web::Painter::Color kObstructionColor;
+  static const web::Painter::Color kRepairColor;
+  static const web::Painter::Color kRepairOutlineColor;
 
   static constexpr const char* kGridObsText = "Grid obstructions";
   static constexpr const char* kInitialObsText = "Initial obstructions";

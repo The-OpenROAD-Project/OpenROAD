@@ -1,0 +1,34 @@
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via5 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_6LM_1TM_9K_7t_tech.lef, created 15 layers, 74 vias
+[INFO ODB-0227] LEF file: gf180/gf180mcu_fd_sc_mcu7t5v0.lef, created 229 library cells
+[INFO ODB-0227] LEF file: gf180_hybrid/hybrid_sites.lef
+[INFO ODB-0227] LEF file: gf180_hybrid/adjusted_sc9.lef, created 18 library cells
+[INFO ODB-0128] Design: gf180_hybrid
+[INFO ODB-0131]     Created 32 components and 64 component-terminals.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: block
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: Metal1
+    Width: 0.6000
+    Spacing: 0.0000
+    Pitch: 7.8400
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: Metal4
+    Width: 1.6000
+    Spacing: 8.4000
+    Pitch: 20.0000
+    Offset: 10.0000
+    Snap to grid: false
+Connect:
+  Connect layers Metal1 -> Metal4

@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -27,6 +28,7 @@ class Pin;
 class Pvt;
 class RiseFall;
 class Scene;
+class StaState;
 class TimingArc;
 class TimingArcSet;
 class Vertex;
@@ -131,6 +133,25 @@ struct SelectedArc
 
 const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             const sta::TimingArcSet* candidate);
+
+// Return the latch D-side path attached to an expanded latch-through path.
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded);
+
+// Walk the chained latch D-side fanin segments of an expanded path.  Each
+// visitor PathExpanded reference is valid only during that visitor call.
+// A visitor returns true to stop walking and false to continue.
+bool visitLatchFaninSegments(
+    const sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor);
+
+// Visit the main expanded path and every chained latch D-side fanin segment.
+// A visitor returns true to stop walking and false to continue.
+bool visitPathSegments(
+    const sta::Path* path,
+    sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor);
 
 // One timing arc that can contribute to the driver's output slew merge for the
 // selected output transition.  STA merges output slew across all such arcs
@@ -255,7 +276,11 @@ struct Target
   const sta::Path* driver_path{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
+  // scene and min_max are captured at construction (while endpoint_path is
+  // valid) so later moves in a repair sequence can read them after earlier
+  // commits have invalidated endpoint_path.  Access via activeScene()/minMax().
   const sta::Scene* scene{nullptr};
+  const sta::MinMax* min_max{nullptr};
 
   // === Prepared data for MT generation/estimation ==========================
   std::optional<ArcDelayState> arc_delay;

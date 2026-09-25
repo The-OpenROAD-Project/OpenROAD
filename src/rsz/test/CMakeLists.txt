@@ -28,6 +28,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gain_buffering2
+    gain_buffering3
     gcd_resize
     insert_buffer
     insert_buffer_hier
@@ -59,6 +60,7 @@ or_integration_tests(
     repair_design3_verbose
     repair_design4
     repair_design5
+    repair_design6
     repair_design_outside_core
     repair_fanout1
     repair_fanout2
@@ -68,6 +70,7 @@ or_integration_tests(
     repair_fanout6
     repair_fanout7
     repair_fanout8
+    repair_fanout9
     repair_hold1
     repair_hold1_hier
     repair_hold2
@@ -109,6 +112,8 @@ or_integration_tests(
     repair_setup_wns_guard
     repair_setup_wns_last_gasp_noop
     repair_setup_size_down_fanout
+    repair_setup_size_down_fanout_before_sizeup
+    repair_setup_size_down_fanout_hi
     repair_setup_size_down_fanout_legacy_basic
     repair_setup_sizeup_match
     repair_setup_sizeup_legacy_basic
@@ -221,6 +226,7 @@ or_integration_tests(
     repair_setup6_multi
     repair_setup7_multi
     report_equiv_cells
+    unset_dont_use_equiv_cells
     replace_arith_modules1
     replace_arith_modules2
     replace_arith_modules3
@@ -237,6 +243,14 @@ or_integration_tests(
     repair_setup_vt_swap2
     measured_vt_swap
     repair_fanout7_skip_pin_swap
+    global_sizing
+    global_sizing_threads
+    global_sizing_presize
+    inferred_clock_gator_time_borrow
+    inferred_clock_gator_time_borrow_covered
+    inferred_clock_gator_time_borrow_repair_pin
+    inferred_clock_gator_time_borrow_tns
+    latch_borrow_chain
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1

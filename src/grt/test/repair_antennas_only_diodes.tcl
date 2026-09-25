@@ -10,7 +10,6 @@ set_global_routing_layer_adjustment met2-met4 0.8
 set_routing_layers -signal met1-met5
 global_route
 
-
 check_antennas
 repair_antennas -diode_only
 check_antennas

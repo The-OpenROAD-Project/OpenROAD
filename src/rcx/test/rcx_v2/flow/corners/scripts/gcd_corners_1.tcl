@@ -12,7 +12,8 @@ read_def $test_dir/gcd.def
 source $test_dir/sky130hs/sky130hs.rc
 
 define_process_corner -ext_model_index 1 max
-extract_parasitics -ext_model_file $model_v2 -max_res 0 \
+set_extraction_rules_file $model_v2
+extract_parasitics -max_res 0 \
   -coupling_threshold 0.001 -version 2.0 -skip_over_cell
 
 write_spef $test_case.spef

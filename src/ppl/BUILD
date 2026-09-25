@@ -45,9 +45,9 @@ cc_library(
     deps = [
         ":munkres",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.container_hash",
         "@boost.random",
         "@boost.stacktrace",

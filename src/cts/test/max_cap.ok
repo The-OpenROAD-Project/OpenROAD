@@ -28,7 +28,7 @@
     Sinks per sub-region: 10
     Sub-region size: 36.0360 X 24.0240
 [INFO CTS-0034]     Segment length (rounded): 12.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (2054.377 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 20.
 [INFO CTS-0018]     Created 3 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.

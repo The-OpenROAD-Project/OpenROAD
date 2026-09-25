@@ -13,25 +13,40 @@ package(
 )
 
 cc_library(
+    name = "rsz_private_hdrs",
+    hdrs = [
+        "src/BufferedNet.hh",
+        "src/ResizerObserver.hh",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "rsz",
     srcs = [
         "src/BufferedNet.cc",
-        "src/BufferedNet.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
         "src/DelayEstimator.cc",
-        "src/DelayEstimator.hh",
         "src/DelayEstimatorReporter.cc",
         "src/DelayEstimatorReporter.hh",
+        "src/LRSubproblem.cc",
+        "src/LRSubproblem.hh",
         "src/MoveCommitter.cc",
-        "src/MoveCommitter.hh",
         "src/MoveTracker.cc",
-        "src/MoveTracker.hh",
         "src/OdbCallBack.cc",
         "src/Optimizer.cc",
         "src/Optimizer.hh",
         "src/OptimizerTypes.cc",
-        "src/OptimizerTypes.hh",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
         "src/Rebuffer.cc",
@@ -42,11 +57,8 @@ cc_library(
         "src/RepairDesign.hh",
         "src/RepairHold.cc",
         "src/RepairHold.hh",
-        "src/RepairSetupContext.hh",
         "src/RepairTargetCollector.cc",
-        "src/RepairTargetCollector.hh",
         "src/Resizer.cc",
-        "src/ResizerObserver.hh",
         "src/SwapArithModules.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
@@ -65,9 +77,7 @@ cc_library(
         "src/move/MeasuredVtSwapGenerator.cc",
         "src/move/MeasuredVtSwapGenerator.hh",
         "src/move/MoveCandidate.cc",
-        "src/move/MoveCandidate.hh",
         "src/move/MoveGenerator.cc",
-        "src/move/MoveGenerator.hh",
         "src/move/RerouteCandidate.cc",
         "src/move/RerouteCandidate.hh",
         "src/move/RerouteGenerator.cc",
@@ -105,9 +115,10 @@ cc_library(
         "src/move/VtSwapGenerator.cc",
         "src/move/VtSwapGenerator.hh",
         "src/move/VtSwapMtCandidate.cc",
-        "src/move/VtSwapMtCandidate.hh",
         "src/move/VtSwapMtGenerator.cc",
         "src/move/VtSwapMtGenerator.hh",
+        "src/policy/GlobalSizingPolicy.cc",
+        "src/policy/GlobalSizingPolicy.hh",
         "src/policy/MeasuredVtSwapPolicy.cc",
         "src/policy/MeasuredVtSwapPolicy.hh",
         "src/policy/OptimizationPolicy.cc",
@@ -121,11 +132,9 @@ cc_library(
         "src/policy/SetupLegacyBase.cc",
         "src/policy/SetupLegacyBase.hh",
         "src/policy/SetupLegacyMtPolicy.cc",
-        "src/policy/SetupLegacyMtPolicy.hh",
         "src/policy/SetupLegacyPolicy.cc",
         "src/policy/SetupLegacyPolicy.hh",
         "src/policy/SetupMt1Policy.cc",
-        "src/policy/SetupMt1Policy.hh",
         "src/policy/SetupReroutePolicy.cc",
         "src/policy/SetupReroutePolicy.hh",
         "src/policy/SetupTnsPolicy.cc",
@@ -134,8 +143,26 @@ cc_library(
         "src/policy/SetupWnsPolicy.hh",
     ],
     hdrs = [
+        "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
+        # The following are used in rsz tests, so we should have them
+        # as separate libraries and have tests depend on these (possibly with
+        # appropriate visibility only for the test and rsz lib).
+        # For now, since everything is somewhat entangled, make visible here
+        # in hdrs, which then is a good starting point to do the next
+        # transformations.
+        "src/DelayEstimator.hh",
+        "src/MoveCommitter.hh",
+        "src/MoveTracker.hh",
+        "src/OptimizerTypes.hh",
+        "src/RepairSetupContext.hh",
+        "src/RepairTargetCollector.hh",
+        "src/move/MoveCandidate.hh",
+        "src/move/MoveGenerator.hh",
+        "src/move/VtSwapMtCandidate.hh",
+        "src/policy/SetupLegacyMtPolicy.hh",
+        "src/policy/SetupMt1Policy.hh",
     ],
     includes = [
         "include",
@@ -145,6 +172,7 @@ cc_library(
     ],
     linkopts = ["-pthread"],
     deps = [
+        ":rsz_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -152,6 +180,7 @@ cc_library(
         "//src/est",
         "//src/grt",
         "//src/grt:groute",
+        "//src/grt:route_pt",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
@@ -165,11 +194,9 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/BufferedNet.hh",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",
-        "src/ResizerObserver.hh",
         ":swig",
         ":tcl",
     ],
@@ -182,12 +209,13 @@ cc_library(
     ],
     deps = [
         ":rsz",
+        ":rsz_private_hdrs",
         "//:ord",
         "//src/dbSta:dbNetwork",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@spdlog",
         "@tcl_lang//:tcl",
@@ -222,6 +250,7 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
+        "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/Resizer.hh",
         "src/Resizer-py.i",
         "//:error_swig-py",

@@ -40,6 +40,12 @@ class DplObserver
                          GridX xh,
                          GridY yh)
       = 0;
+
+  // Drop the candidates recorded for |cell| (call at the start of each
+  // diamond search, so only the latest search for that cell is kept).
+  virtual void clearDiamondSearch(const Node* cell) {}
+  // Drop the candidates recorded for every cell.
+  virtual void clearAllDiamondSearches() {}
   virtual void redrawAndPause() = 0;
   virtual const odb::dbInst* getDebugInstance() const { return nullptr; }
 
@@ -66,6 +72,24 @@ class DplObserver
   }
   // Clear all stored search windows (call at the start of each iteration).
   virtual void clearNegotiationSearchWindows() {}
+
+  // Add a data point for the negotiation violations chart.
+  virtual void addNegotiationViolationsPoint(int iter,
+                                             int violations,
+                                             int illegal_count,
+                                             int illegal_site_count)
+  {
+  }
+
+  // Add a vertical marker at the start of negotiation phase 2.
+  virtual void addNegotiationPhase2Marker(int iter) {}
+
+  // Inform the observer which cells moved in the current negotiation iteration.
+  // Those cells are drawn with directional colors; others are greyed out. With
+  // none reported the observer reverts to the default (all movers use
+  // directional colors).
+  virtual void addCurrentIterMover(odb::dbInst* inst) {}
+  virtual void clearCurrentIterMovers() {}
 };
 
 }  // namespace dpl

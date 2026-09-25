@@ -1,0 +1,33 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 624 components and 2752 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1248 connections.
+[INFO ODB-0133]     Created 581 nets and 1504 connections.
+[ERROR PSM-0092] No solution available for VDD on corner default. Run analyze_power_grid first.
+PSM-0092
+spice file written before analysis: 0
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Total power      : 1.38e-04 W
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.10e+00 V
+Average voltage  : 1.10e+00 V
+Average IR drop  : 3.13e-04 V
+Worstcase IR drop: 5.04e-04 V
+Percentage drop  : 0.05 %
+######################################
+########## EM analysis ###############
+Net                : VDD
+Corner             : default
+Maximum current    : 8.10e-05 A
+Average current    : 1.20e-06 A
+Number of resistors: 2503
+######################################
+[INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
+spice file written after analysis: 1
+voltage file written: 1
+em file written: 1

@@ -31,7 +31,7 @@ class SelectionModel : public QAbstractTableModel
 {
   Q_OBJECT
  public:
-  SelectionModel(const SelectionSet& objs);
+  SelectionModel(const web::SelectionSet& objs);
 
   int rowCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
@@ -41,20 +41,20 @@ class SelectionModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role) const Q_DECL_OVERRIDE;
 
-  const Selected* getItemAt(int idx) const { return table_data_[idx]; }
+  const web::Selected* getItemAt(int idx) const { return table_data_[idx]; }
 
   void populateModel();
 
  private:
-  const SelectionSet& objs_;
-  std::vector<const Selected*> table_data_;
+  const web::SelectionSet& objs_;
+  std::vector<const web::Selected*> table_data_;
 };
 
 class HighlightModel : public QAbstractTableModel
 {
   Q_OBJECT
  public:
-  HighlightModel(const HighlightSet& objs);
+  HighlightModel(const web::HighlightSet& objs);
 
   int rowCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
@@ -64,7 +64,10 @@ class HighlightModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role) const Q_DECL_OVERRIDE;
 
-  const Selected* getItemAt(int idx) const { return table_data_[idx].second; }
+  const web::Selected* getItemAt(int idx) const
+  {
+    return table_data_[idx].second;
+  }
   void populateModel();
 
   int highlightGroup(const QModelIndex& index) const;
@@ -73,8 +76,8 @@ class HighlightModel : public QAbstractTableModel
                int role) override;
 
  private:
-  const HighlightSet& objs_;
-  std::vector<std::pair<int, const Selected*>> table_data_;
+  const web::HighlightSet& objs_;
+  std::vector<std::pair<int, const web::Selected*>> table_data_;
 };
 
 class SelectHighlightWindow : public QDockWidget
@@ -82,19 +85,19 @@ class SelectHighlightWindow : public QDockWidget
   Q_OBJECT
 
  public:
-  explicit SelectHighlightWindow(const SelectionSet& sel_set,
-                                 const HighlightSet& hlt_set,
+  explicit SelectHighlightWindow(const web::SelectionSet& sel_set,
+                                 const web::HighlightSet& hlt_set,
                                  QWidget* parent = nullptr);
 
  signals:
   void clearAllSelections();
   void clearAllHighlights();
 
-  void selected(const Selected& selection);
-  void clearSelectedItems(const QList<const Selected*>& items);
-  void clearHighlightedItems(const QList<const Selected*>& items);
-  void zoomInToItems(const QList<const Selected*>& items);
-  void highlightSelectedItemsSig(const QList<const Selected*>& items);
+  void selected(const web::Selected& selection);
+  void clearSelectedItems(const QList<const web::Selected*>& items);
+  void clearHighlightedItems(const QList<const web::Selected*>& items);
+  void zoomInToItems(const QList<const web::Selected*>& items);
+  void highlightSelectedItemsSig(const QList<const web::Selected*>& items);
 
  public slots:
   void updateSelectionModel();

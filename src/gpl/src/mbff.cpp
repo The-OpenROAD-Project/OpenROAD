@@ -69,41 +69,17 @@ using odb::dbMTerm;
 using odb::dbNet;
 using utl::GPL;
 
-struct Point
-{
-  float x;
-  float y;
-};
-
-struct Tray
-{
-  Point pt;
-  std::vector<Point> slots;
-  std::vector<int> cand;
-};
-
-struct Flop
-{
-  Point pt;
-  int idx;
-  float prob;
-
-  bool operator<(const Flop& a) const
-  {
-    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
-  }
-};
-
 std::string MBFF::Mask::to_string() const
 {
-  return fmt::format("{}{}{}{}{}{}{}",
+  return fmt::format("{}{}{}{}{}{}{}{}",
                      (int) clock_polarity,
                      (int) has_clear,
                      (int) has_preset,
                      (int) pos_output,
                      (int) inv_output,
                      func_idx,
-                     (int) is_scan_cell);
+                     (int) is_scan_cell,
+                     (int) is_register);
 }
 
 bool MBFF::Mask::operator<(const Mask& rhs) const
@@ -114,14 +90,16 @@ bool MBFF::Mask::operator<(const Mask& rhs) const
                   pos_output,
                   inv_output,
                   func_idx,
-                  is_scan_cell)
+                  is_scan_cell,
+                  is_register)
          < std::tie(rhs.clock_polarity,
                     rhs.has_clear,
                     rhs.has_preset,
                     rhs.pos_output,
                     rhs.inv_output,
                     rhs.func_idx,
-                    rhs.is_scan_cell);
+                    rhs.is_scan_cell,
+                    rhs.is_register);
 }
 
 namespace {
@@ -207,7 +185,7 @@ MBFF::PortName MBFF::PortType(const sta::LibertyPort* lib_port, dbInst* inst)
   }
 
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   for (const sta::Sequential& seq : lib_cell->sequentials()) {
     // function
     if (sta::LibertyPort::equiv(lib_port, seq.output())) {
@@ -280,9 +258,10 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
   }
 
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   const auto& seqs = lib_cell->sequentials();
   if (!seqs.empty()) {
+    ret.is_register = seqs.front().isRegister();
     ret.func_idx = GetMatchingFunc(seqs.front().data(), inst, isTray);
   }
 
@@ -294,7 +273,7 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
 MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
 {
   const sta::Cell* cell = network_->dbToSta(tray->getMaster());
-  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   sta::LibertyCellPortIterator port_itr(lib_cell);
 
   std::vector<const sta::LibertyPort*> d_pins;
@@ -1283,26 +1262,56 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     float tot_sum = 0;
 
     for (int i = 0; i < num_flops; i++) {
-      if (!chosen.count(i)) {
+      if (!chosen.contains(i)) {
         for (int j : chosen) {
           d[i] = std::min(d[i], GetDist(flops[i].pt, flops[j].pt));
         }
-        tot_sum += (float(d[i]) * float(d[i]));
+        tot_sum += d[i] * d[i];
       }
     }
 
-    const int rnd = rand_nums[rand_ind++] % (int(tot_sum * 100));
-    const float prob = rnd / 100.0;
+    // Preserve exact modulo arithmetic for normal tot_sum values so existing
+    // K-Means cluster center choices remain unchanged, while avoiding
+    // modulo-by-zero when tot_sum * 100 < 1.0f (e.g., when flops overlap at
+    // identical (x, y) coordinates prior to legalization, or when fewer than
+    // knn unique coordinates exist) and UBSan float-cast-overflow when
+    // tot_sum * 100 >= INT_MAX.
+    float prob = 0.0f;
+    const float scaled_sum = tot_sum * 100.0f;
+    const int rand_val = rand_nums[rand_ind++ % rand_nums.size()];
+    if (scaled_sum >= 1.0f
+        && scaled_sum < static_cast<float>(std::numeric_limits<int>::max())) {
+      const int rnd = rand_val % static_cast<int>(scaled_sum);
+      prob = static_cast<float>(rnd / 100.0);
+    } else if (tot_sum > 0.0f) {
+      constexpr int kMaxDivisor = 1000000;
+      const int rnd
+          = static_cast<int>(static_cast<unsigned int>(rand_val) % kMaxDivisor);
+      prob = (static_cast<float>(rnd) / static_cast<float>(kMaxDivisor))
+             * tot_sum;
+    }
 
     float cum_sum = 0;
+    int last_unchosen = -1;
+    bool inserted = false;
     for (int i = 0; i < num_flops; i++) {
-      if (!chosen.count(i)) {
-        cum_sum += (float(d[i]) * float(d[i]));
+      if (!chosen.contains(i)) {
+        last_unchosen = i;
+        cum_sum += d[i] * d[i];
         if (cum_sum >= prob) {
           chosen.insert(i);
           centers.push_back(flops[i]);
+          inserted = true;
           break;
         }
+      }
+    }
+    if (!inserted) {
+      if (last_unchosen >= 0) {
+        chosen.insert(last_unchosen);
+        centers.push_back(flops[last_unchosen]);
+      } else {
+        break;
       }
     }
   }
@@ -1989,7 +1998,14 @@ void MBFF::SetRatios(const Mask& array_mask)
         const float tray_total
             = tray_power_[array_mask][i]
               + tray_internal_energy_[array_mask][i] * activity;
-        norm_power_[i] = (tray_total / slot_cnt) / single_bit_power_;
+        // Credit clock-tree power saved by banking. An N-bit tray presents one
+        // clock sink instead of N, so the per-sink clock-tree power p_ct is
+        // added to both the tray (one sink) and the single-bit baseline (one
+        // sink). With p_ct = 0 this reduces to the legacy ratio; with p_ct > 0
+        // larger trays become relatively cheaper, promoting higher banking.
+        const float p_ct = clock_power_weight_ * single_bit_power_;
+        norm_power_[i]
+            = ((tray_total + p_ct) / slot_cnt) / (single_bit_power_ + p_ct);
         debugPrint(log_,
                    GPL,
                    "mbff",
@@ -2079,8 +2095,19 @@ void MBFF::SetTrayNames()
   }
 }
 
-void MBFF::Run(const int mx_sz, const float alpha, const float beta)
+void MBFF::Run(const int mx_sz,
+               const float alpha,
+               const float beta,
+               const float clock_power_weight)
 {
+  // Validate here (the common entry for Tcl, Python and direct C++ callers) so
+  // no caller can feed a negative weight, which would make the SetRatios
+  // denominator (single_bit_power_ * (1 + clock_power_weight_)) zero or
+  // negative and corrupt the ILP cost model.
+  if (clock_power_weight < 0) {
+    log_->error(GPL, 115, "-clock_power_weight must be non-negative.");
+  }
+  clock_power_weight_ = clock_power_weight;
   std::srand(1);
   omp_set_num_threads(num_threads_);
 
@@ -2176,6 +2203,47 @@ Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)
   return Point{tray_center_x, tray_center_y};
 }
 
+bool MBFF::IsValidTray(dbInst* tray)
+{
+  const sta::Cell* cell = network_->dbToSta(tray->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
+  if (lib_cell == nullptr || !lib_cell->isSequential()) {
+    return false;
+  }
+
+  // We don't want the test_cell which lacks global properties
+  const sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate() || resizer_->dontUse(base_cell)) {
+    return false;
+  }
+
+  int q = 0;
+  int qn = 0;
+  int scan = 0;
+  int supply = 0;
+  int preset = 0;
+  int clear = 0;
+  int clock = 0;
+
+  for (dbITerm* iterm : tray->getITerms()) {
+    q += (network_->isQPin(iterm) && !network_->isInvertingQPin(iterm));
+    qn += (network_->isQPin(iterm) && network_->isInvertingQPin(iterm));
+    scan += (network_->isScanIn(iterm) || network_->isScanEnable(iterm));
+    supply += (network_->isSupplyPin(iterm));
+    preset += (network_->isPresetPin(iterm));
+    clear += (network_->isClearPin(iterm));
+    clock += (network_->isClockPin(iterm));
+  }
+
+  // #D = max(q, qn)
+  return std::max(q, qn) >= 2 && network_->getNumD(tray) == std::max(q, qn)
+         && clock + q + qn + scan + supply + preset + clear + std::max(q, qn)
+                == tray->getITerms().size();
+}
+
 void MBFF::ReadLibs()
 {
   test_idx_ = 0;
@@ -2184,7 +2252,7 @@ void MBFF::ReadLibs()
       const std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
       dbInst* tmp_tray = dbInst::create(block_, master, tray_name.c_str());
 
-      if (!network_->isValidTray(tmp_tray)) {
+      if (!IsValidTray(tmp_tray)) {
         dbInst::destroy(tmp_tray);
         --test_idx_;
         continue;
@@ -2445,6 +2513,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       single_bit_width_(0.0),
       single_bit_power_(0.0),
       clock_period_(0.0),
+      clock_power_weight_(0.0),
       single_bit_master_(nullptr),
       test_idx_(-1)
 {

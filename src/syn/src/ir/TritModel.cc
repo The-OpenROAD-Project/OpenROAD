@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "sat/kissat/kissat.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -26,17 +27,6 @@
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
 #include "utl/Logger.h"
-
-namespace abc {
-extern kissat* kissat_init();
-extern void kissat_release(kissat* solver);
-extern void kissat_add(kissat* solver, int lit);
-extern int kissat_solve(kissat* solver);
-extern int kissat_value(kissat* solver, int lit);
-extern void kissat_set_terminate(kissat* solver,
-                                 void* state,
-                                 int (*terminate)(void* state));
-}  // namespace abc
 
 namespace syn {
 
@@ -702,7 +692,7 @@ void TritModel::encodeInstance(const Instance* inst)
   } else if (inst->is<Target>()) {
     auto* op = inst->as<Target>();
     sta::LibertyCell* cell = op->cell();
-    if (!cell->hasSequentials()) {
+    if (!cell->isSequential()) {
       // Build port→index map for inputs, collect output ports.
       std::vector<sta::LibertyPort*> in_ports;
       std::vector<sta::LibertyPort*> out_ports;

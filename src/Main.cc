@@ -44,9 +44,8 @@
 #include "utl/decode.h"
 #include "web/web.h"
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
 #include "bazel/tcl_library_init.h"
-#include "boost/dll/runtime_symbol_info.hpp"
 #endif
 
 #include "tcl_readline_setup.h"
@@ -68,6 +67,7 @@ using std::string;
   X(dpl)                                 \
   X(exa)                                 \
   X(web)                                 \
+  X(wmk)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \
@@ -103,6 +103,7 @@ static bool no_settings = false;
 static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
+static const char* web_bind_arg = nullptr;
 
 static const char* init_filename = ".openroad";
 
@@ -185,32 +186,6 @@ static void initPython()
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
-#ifdef BAZEL_CURRENT_REPOSITORY
-// Point RUNFILES_DIR at the runfiles tree next to the installed binary so it
-// can find its Tcl resources. boost::dll::program_location() asks the OS for
-// the absolute path of the running executable (/proc/self/exe on Linux, etc.),
-// which is robust regardless of how it was launched -- a relative path, a bare
-// name resolved via PATH, or through a symlink -- unlike reconstructing it from
-// argv[0].
-static void setupBazelRunfilesEnvironment()
-{
-  if (getenv("RUNFILES_DIR") != nullptr) {
-    return;
-  }
-
-  boost::dll::fs::error_code ec;
-  boost::dll::fs::path exe_path = boost::dll::program_location(ec);
-  if (ec) {
-    return;
-  }
-
-  exe_path += ".runfiles";
-  if (boost::dll::fs::exists(exe_path)) {
-    setenv("RUNFILES_DIR", exe_path.string().c_str(), /* override */ 0);
-  }
-}
-#endif
-
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
 // Such applications won't allocate or use these objects.
@@ -243,6 +218,9 @@ static void handler(int sig)
 
 int main(int argc, char* argv[])
 {
+  // Idle OpenMP workers sleep instead of spinning between parallel regions.
+  // A user-set OMP_WAIT_POLICY takes precedence.
+  setenv("OMP_WAIT_POLICY", "passive", 0);
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
   std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
@@ -259,10 +237,6 @@ int main(int argc, char* argv[])
   signal(SIGFPE, handler);
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
-
-#ifdef BAZEL_CURRENT_REPOSITORY
-  setupBazelRunfilesEnvironment();
-#endif
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
@@ -292,6 +266,7 @@ int main(int argc, char* argv[])
   minimize = findCmdLineFlag(argc, argv, "-minimize");
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
+  web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -304,7 +279,6 @@ int main(int argc, char* argv[])
     the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
     the_tech_and_design->design
         = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
-    ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
     const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
@@ -385,7 +359,7 @@ static int tclAppInit(int& argc,
     // Initialize tcl interpreter and readline.
     exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
     if (in_bazel::SetupTclEnvironment(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
@@ -431,6 +405,17 @@ static int tclAppInit(int& argc,
           exit(EXIT_FAILURE);
         }
       }
+      // Check the address here, not in serve(): serve() reports a bad one with
+      // utl::error, which throws, and nothing on this path catches it.
+      if (web_bind_arg
+          && web::classifyBindAddress(web_bind_arg)
+                 == web::BindAddressKind::kInvalid) {
+        fprintf(stderr,
+                "Error: invalid -web_bind value '%s'; %s\n",
+                web_bind_arg,
+                web::kBindAddressHint);
+        exit(EXIT_FAILURE);
+      }
       ord::OpenRoad::openRoad()->getWebServer()->initLogger();
     }
 
@@ -449,12 +434,12 @@ static int tclAppInit(int& argc,
     }
 
     // The web server now installs its HeadlessViewer late, in serve() (just
-    // before waitForStop), so gui::Gui::enabled() is still false here in the
+    // before waitForStop), so web::Gui::enabled() is still false here in the
     // web path.  The `&& !web_enabled` is kept defensively: even with a
     // viewer installed, the web server executes scripts directly on the main
     // thread (like the non-GUI path), and addRestoreStateCommand() only
     // works with the Qt event loop.
-    const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
+    const bool gui_enabled = web::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
       std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
@@ -467,7 +452,7 @@ static int tclAppInit(int& argc,
           exit(1);
         }
       } else {
-        gui::Gui::get()->addRestoreStateCommand(cmd);
+        web::Gui::get()->addRestoreStateCommand(cmd);
       }
     }
 
@@ -482,7 +467,7 @@ static int tclAppInit(int& argc,
         } else {
           // need to delay loading of file until after GUI is completed
           // initialized
-          gui::Gui::get()->addRestoreStateCommand(
+          web::Gui::get()->addRestoreStateCommand(
               fmt::format(FMT_RUNTIME(restore_state_cmd), init.string()));
         }
       }
@@ -504,10 +489,10 @@ static int tclAppInit(int& argc,
           } else {
             // need to delay loading of file until after GUI is completed
             // initialized
-            gui::Gui::get()->addRestoreStateCommand(
+            web::Gui::get()->addRestoreStateCommand(
                 fmt::format("source {{{}}}", cmd_file));
             if (exit_after_cmd_file) {
-              gui::Gui::get()->addRestoreStateCommand("exit");
+              web::Gui::get()->addRestoreStateCommand("exit");
             }
           }
         }
@@ -522,7 +507,8 @@ static int tclAppInit(int& argc,
     // for the GUI).  After this returns, fall through to readline.
     if (web_enabled) {
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      server->serve(web_port);
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      server->serve(web_port, web_bind_arg ? web_bind_arg : "");
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are
@@ -535,7 +521,7 @@ static int tclAppInit(int& argc,
   // Enter the linenoise REPL unless the Qt GUI is active (it has its
   // own script widget).  The web viewer's headless mode still needs the
   // terminal prompt.
-  if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
+  if (!web::Gui::hasUI() && !exit_after_cmd_file) {
     return tclOrdReplInit(interp);
   }
   return TCL_OK;
@@ -554,7 +540,6 @@ int ord::tclAppInit(Tcl_Interp* interp)
   the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
   the_tech_and_design->design
       = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
-  ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
 
   // This is to enable Design.i where a design arg can be
   // retrieved from the interpreter.  This is necessary for
@@ -590,6 +575,10 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -web                  start in web viewer mode\n");
   printf("  -web_port port        web server port (default auto-assigned)\n");
+  printf(
+      "  -web_bind address     web server bind address (default 127.0.0.1;\n"
+      "                        a wider bind exposes a Tcl shell to the "
+      "network)\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3
@@ -616,7 +605,7 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
       strcasecmp(BUILD_TYPE, "opt") == 0
 #else
       strcasecmp(BUILD_TYPE, "release") == 0

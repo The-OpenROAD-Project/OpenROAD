@@ -32,12 +32,14 @@ void
 generate_ram_netlist_cmd(int mask_size,
                          int word_size,
                          int num_words,
+                         int rw_ports,
+                         int r_ports,
+                         int w_ports,
                          int column_mux_ratio,
+                         bool use_latch,
                          const char* storage_cell_name,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
-                         const int read_ports,
-                         bool use_latch, 
                          const char* tapcell_name,
                          const int max_tap_dist)
 {
@@ -89,9 +91,9 @@ generate_ram_netlist_cmd(int mask_size,
     }
   }
 
-  ram_gen->generate(mask_size, word_size, num_words, column_mux_ratio, read_ports, use_latch,
-                    storage_cell, tristate_cell, inv_cell, tapcell,
-                    max_tap_dist);
+  ram_gen->generate(mask_size, word_size, num_words, rw_ports, r_ports, w_ports,
+                    column_mux_ratio, use_latch, storage_cell, tristate_cell, inv_cell, 
+                    tapcell, max_tap_dist);
 }
 
 void ram_pdngen(const char* power_net_name, const char* ground_net_name,

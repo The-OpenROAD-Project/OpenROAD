@@ -27,6 +27,7 @@
 #include "sta/StringUtil.hh"
 #include "upf/upf.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "utl/validation.h"
 
 namespace ifp {
@@ -107,6 +108,7 @@ void InitFloorplan::initFloorplan(
     const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDieUtilization(utilization,
@@ -124,6 +126,7 @@ void InitFloorplan::initFloorplan(
                       row_parity,
                       flipped_sites,
                       gap);
+  logger_->info(IFP, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 // The base_site determines the single-height rows.  For hybrid rows it is
@@ -137,10 +140,12 @@ void InitFloorplan::initFloorplan(
     const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
+  logger_->info(IFP, 501, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void InitFloorplan::makeDieUtilization(double utilization,
@@ -521,6 +526,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 
   odb::cutRows(block_,
                /* min_row_width */ 0,
+               0,
                blockage_bboxes,
                /* halo_x */ 0,
                /* halo_y */ 0,
@@ -560,6 +566,10 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           continue;
         }
         rows.push_back(row);
+      }
+
+      if (rows.empty()) {
+        continue;
       }
 
       int total_row_count = rows.size();
@@ -1218,6 +1228,7 @@ void InitFloorplan::makePolygonRowsScanline(
 
   odb::cutRows(block_,
                /* min_row_width */ 0,
+               0,
                blockage_bboxes,
                /* halo_x */ 0,
                /* halo_y */ 0,

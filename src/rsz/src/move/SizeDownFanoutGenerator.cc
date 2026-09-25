@@ -26,7 +26,6 @@
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 
@@ -35,8 +34,6 @@ namespace rsz {
 namespace {
 
 using utl::RSZ;
-
-constexpr int kSizeDownFanoutMaxFanout = 10;
 
 struct SizeDownFanoutContext
 {
@@ -78,21 +75,15 @@ bool resolveDriverContext(SizeDownFanoutContext& ctx)
   if (ctx.drvr_pin == nullptr || ctx.drvr_vertex == nullptr) {
     return false;
   }
-  if (ctx.target.fanout >= kSizeDownFanoutMaxFanout) {
-    debugPrint(ctx.resizer.logger(),
-               RSZ,
-               "size_down_fanout_move",
-               2,
-               "REJECT SizeDownFanoutMove {}: Fanout {} >= {} max fanout",
-               ctx.resizer.network()->pathName(ctx.drvr_pin),
-               ctx.target.fanout,
-               kSizeDownFanoutMaxFanout);
-    return false;
-  }
 
   ctx.drvr_port = ctx.resizer.network()->libertyPort(ctx.drvr_pin);
-  ctx.scene = ctx.target.endpoint_path->scene(ctx.resizer.sta());
-  ctx.min_max = ctx.target.endpoint_path->minMax(ctx.resizer.sta());
+  // Use the Target accessors (as every other generator does) rather than
+  // dereferencing endpoint_path directly: activeScene() prefers the stable
+  // Target::scene field and minMax() falls back to the resizer's analysis mode,
+  // avoiding a SIGSEGV when endpoint_path is stale after earlier moves in the
+  // sequence have perturbed the timing graph.
+  ctx.scene = ctx.target.activeScene(ctx.resizer);
+  ctx.min_max = ctx.target.minMax(ctx.resizer);
   return ctx.drvr_port != nullptr && ctx.scene != nullptr
          && ctx.min_max != nullptr;
 }
@@ -177,9 +168,16 @@ bool resolveLoadContext(const SizeDownFanoutContext& ctx,
 
   load_ctx.load_slack = load_slack;
   load_ctx.lib_ap = ctx.scene->libertyIndex(ctx.min_max);
-  load_ctx.input_cap = static_cast<const sta::LibertyPort*>(load_ctx.load_port)
-                           ->scenePort(load_ctx.lib_ap)
-                           ->capacitance();
+  // scenePort() is nullable (a port need not resolve at every liberty/corner
+  // index, e.g. multi-Vt libraries); guard it before dereferencing for the
+  // capacitance to avoid a SIGSEGV.
+  const sta::LibertyPort* load_scene_port
+      = static_cast<const sta::LibertyPort*>(load_ctx.load_port)
+            ->scenePort(load_ctx.lib_ap);
+  if (load_scene_port == nullptr) {
+    return false;
+  }
+  load_ctx.input_cap = load_scene_port->capacitance();
   return true;
 }
 
@@ -324,14 +322,20 @@ sta::LibertyCellSeq rankSwappableCells(
     sort(&swappable_cells,
          [&load_ctx, load_port_name](const sta::LibertyCell* cell1,
                                      const sta::LibertyCell* cell2) {
+           // findLibertyPort() and scenePort() are both nullable (a swappable
+           // cell may lack the load port, or the port may not resolve at this
+           // liberty index); rank any such cell last so it's never chosen.
+           const sta::LibertyPort* raw1 = static_cast<const sta::LibertyPort*>(
+               cell1->findLibertyPort(load_port_name));
+           const sta::LibertyPort* raw2 = static_cast<const sta::LibertyPort*>(
+               cell2->findLibertyPort(load_port_name));
            const sta::LibertyPort* port1
-               = static_cast<const sta::LibertyPort*>(
-                     cell1->findLibertyPort(load_port_name))
-                     ->scenePort(load_ctx.lib_ap);
+               = raw1 != nullptr ? raw1->scenePort(load_ctx.lib_ap) : nullptr;
            const sta::LibertyPort* port2
-               = static_cast<const sta::LibertyPort*>(
-                     cell2->findLibertyPort(load_port_name))
-                     ->scenePort(load_ctx.lib_ap);
+               = raw2 != nullptr ? raw2->scenePort(load_ctx.lib_ap) : nullptr;
+           if (port1 == nullptr || port2 == nullptr) {
+             return port1 != nullptr;
+           }
            const float cap1 = port1->capacitance();
            const float cap2 = port2->capacitance();
            const sta::ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
@@ -423,7 +427,7 @@ SizeDownFanoutOutputProfile buildOutputProfile(
 sta::Slack computeDelayBudget(const SizeDownFanoutContext& ctx,
                               const SizeDownFanoutLoadContext& load_ctx)
 {
-  if (load_ctx.load_cell->hasSequentials()) {
+  if (load_ctx.load_cell->isSequential()) {
     const sta::Slack worst_output_slack
         = getWorstOutputSlack(ctx, load_ctx.load_inst);
     debugPrint(
@@ -456,19 +460,19 @@ sta::Slack computeDelayBudget(const SizeDownFanoutContext& ctx,
 float candidateInputCap(const SizeDownFanoutLoadContext& load_ctx,
                         sta::LibertyCell* cell)
 {
-  return static_cast<const sta::LibertyPort*>(
-             cell->findLibertyPort(load_ctx.load_port->name()))
-      ->scenePort(load_ctx.lib_ap)
-      ->capacitance();
-}
-
-bool isWorseCapOrArea(const SizeDownFanoutLoadContext& load_ctx,
-                      sta::LibertyCell* best_cell,
-                      sta::LibertyCell* swappable)
-{
-  return candidateInputCap(load_ctx, swappable)
-             > candidateInputCap(load_ctx, best_cell)
-         || swappable->area() > best_cell->area();
+  // Both lookups are nullable; a cell that lacks the load port (or whose port
+  // doesn't resolve at this liberty index) is treated as maximally costly so it
+  // is never preferred as a replacement, rather than crashing.
+  const sta::LibertyPort* port = static_cast<const sta::LibertyPort*>(
+      cell->findLibertyPort(load_ctx.load_port->name()));
+  if (port == nullptr) {
+    return sta::INF;
+  }
+  const sta::LibertyPort* scene_port = port->scenePort(load_ctx.lib_ap);
+  if (scene_port == nullptr) {
+    return sta::INF;
+  }
+  return scene_port->capacitance();
 }
 
 bool violatesOutputLimits(const SizeDownFanoutContext& ctx,
@@ -478,6 +482,11 @@ bool violatesOutputLimits(const SizeDownFanoutContext& ctx,
   for (size_t i = 0; i < profile.output_pins.size(); ++i) {
     sta::LibertyPort* output_port
         = swappable->findLibertyPort(profile.output_port_names[i]);
+    // A swappable cell lacking this output port can't be validated; reject it
+    // (findLibertyPort is nullable and is dereferenced in the cap/slew checks).
+    if (output_port == nullptr) {
+      return true;
+    }
     if (checkMaxCapViolation(
             ctx, profile.output_pins[i], output_port, profile.output_caps[i])
         || checkMaxSlewViolation(ctx,
@@ -514,7 +523,7 @@ float computeWorstDelayChange(const SizeDownFanoutContext& ctx,
     const float new_load_delay = ctx.resizer.gateDelay(
         output_port, profile.output_caps[output_index], ctx.scene, ctx.min_max);
     const float delay_change
-        = load_ctx.load_cell->hasSequentials()
+        = load_ctx.load_cell->isSequential()
               ? new_load_delay - profile.output_delays[output_index]
               : new_load_delay + drvr_delta_delay
                     - profile.output_delays[output_index];
@@ -585,54 +594,37 @@ sta::LibertyCell* selectReplacementCell(
     const sta::LibertyCellSeq& swappable_cells,
     const SizeDownFanoutOutputProfile& profile)
 {
-  sta::LibertyCell* best_cell = load_ctx.load_cell;
+  // Step down a single drive strength: the largest cell still smaller than the
+  // current one, mirroring how size_up takes the next-stronger cell rather than
+  // the family maximum.  Taking one step (instead of jumping to the minimum-cap
+  // cell) keeps the per-load change small so it is more likely to fit the delay
+  // budget and commit.  The candidate is accepted only if it stays within the
+  // max-cap/slew output limits and the per-load delay budget; the full timing
+  // assessment is left to STA and the repair loop.
+  sta::LibertyCell* step_down = nullptr;
+  float step_cap = -1.0f;
   for (sta::LibertyCell* swappable : swappable_cells) {
     if (swappable == load_ctx.load_cell) {
       continue;
     }
-
-    debugPrint(ctx.resizer.logger(),
-               RSZ,
-               "size_down_fanout_move",
-               4,
-               " considering swap {} {} -> {}",
-               ctx.resizer.network()->pathName(load_ctx.load_pin),
-               load_ctx.load_cell->name(),
-               swappable->name());
-
-    if (isWorseCapOrArea(load_ctx, best_cell, swappable)) {
-      debugPrint(ctx.resizer.logger(),
-                 RSZ,
-                 "size_down_fanout_move",
-                 4,
-                 "  skip based on cap/area {} gate={} cap={}>{} area={}>{}",
-                 ctx.resizer.network()->pathName(load_ctx.load_pin),
-                 swappable->name(),
-                 candidateInputCap(load_ctx, swappable),
-                 candidateInputCap(load_ctx, best_cell),
-                 swappable->area(),
-                 best_cell->area());
-      continue;
+    const float cap = candidateInputCap(load_ctx, swappable);
+    // Use >= so that among cells of equal input capacitance the last one wins:
+    // rankSwappableCells orders equal-cap cells with the smaller intrinsic
+    // delay last, so this keeps the better candidate for that capacitance step.
+    // Allow equal area (<=) so a Vt swap, which keeps the same footprint while
+    // lowering the input capacitance, is still accepted as a candidate.
+    if (cap < load_ctx.input_cap && cap >= step_cap
+        && swappable->area() <= load_ctx.load_cell->area()) {
+      step_cap = cap;
+      step_down = swappable;
     }
-
-    if (violatesOutputLimits(ctx, profile, swappable)
-        || !fitsDelayBudget(ctx, load_ctx, profile, swappable)) {
-      continue;
-    }
-
-    best_cell = swappable;
-    debugPrint(ctx.resizer.logger(),
-               RSZ,
-               "size_down_fanout_move",
-               3,
-               " new best size down {} -> {} ({} -> {})",
-               ctx.resizer.network()->pathName(load_ctx.load_pin),
-               ctx.resizer.network()->pathName(profile.output_pins[0]),
-               load_ctx.load_cell->name(),
-               swappable->name());
   }
-
-  return best_cell != load_ctx.load_cell ? best_cell : nullptr;
+  if (step_down != nullptr
+      && (violatesOutputLimits(ctx, profile, step_down)
+          || !fitsDelayBudget(ctx, load_ctx, profile, step_down))) {
+    return nullptr;
+  }
+  return step_down;
 }
 
 std::unique_ptr<MoveCandidate> buildCandidate(const SizeDownFanoutContext& ctx,
@@ -684,8 +676,10 @@ std::vector<std::unique_ptr<MoveCandidate>> buildCandidates(
              "sizing down for crit fanout {}",
              ctx.resizer.network()->pathName(ctx.drvr_pin));
 
+  auto fanout_slacks = sortedFanoutSlacks(ctx);
+
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  for (const auto& [load_vertex, load_slack] : sortedFanoutSlacks(ctx)) {
+  for (const auto& [load_vertex, load_slack] : fanout_slacks) {
     auto candidate = buildCandidate(ctx, load_vertex, load_slack);
     if (!candidate) {
       continue;

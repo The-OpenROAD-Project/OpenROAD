@@ -8,8 +8,8 @@
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "gui/gui.h"
 #include "ta/FlexTA.h"
+#include "web/core.h"
 
 namespace drt {
 
@@ -17,7 +17,7 @@ FlexTAGraphics::FlexTAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db)
     : settings_(settings),
-      gui_(gui::Gui::get()),
+      gui_(web::Gui::get()),
       top_block_(design->getTopBlock()),
       net_(nullptr)
 {
@@ -38,7 +38,7 @@ FlexTAGraphics::FlexTAGraphics(frDebugSettings* settings,
 
 void FlexTAGraphics::drawIrouteGuide(frNet* net,
                                      odb::dbTechLayer* layer,
-                                     gui::Painter& painter)
+                                     web::Painter& painter)
 {
   frLayerNum layerNum;
 
@@ -60,7 +60,7 @@ void FlexTAGraphics::drawIrouteGuide(frNet* net,
   }
 }
 
-void FlexTAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void FlexTAGraphics::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   if (net_) {
     drawIrouteGuide(net_, layer, painter);
@@ -96,7 +96,7 @@ void FlexTAGraphics::endIter(int iter)
 /* static */
 bool FlexTAGraphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 }  // namespace drt

@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -23,8 +24,14 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/grt",
         "//src/grt:groute",
+        "//src/grt:route_pt",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/web:core",
     ],
 )
 
@@ -35,6 +42,7 @@ cc_library(
     name = "parasitics_service",
     hdrs = ["include/est/ParasiticsService.h"],
     includes = ["include"],
+    deps = ["//src/grt:groute"],
 )
 
 cc_library(
@@ -91,10 +99,10 @@ cc_library(
         ":private_hdrs",
         "//:ord",
         "//src/dbSta:dbNetwork",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -123,4 +131,10 @@ tcl_wrap_cc(
         "../sta",
         "src",
     ],
+)
+
+exports_files(["README.md"])
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

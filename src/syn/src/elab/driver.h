@@ -32,6 +32,7 @@ std::unique_ptr<Graph> elaborate(utl::Logger* logger,
                                  const std::vector<std::string>& args,
                                  sta::dbSta* sta = nullptr);
 std::unique_ptr<Graph> elaborateText(const std::string& source,
-                                     const std::vector<std::string>& args = {});
+                                     const std::vector<std::string>& args = {},
+                                     sta::dbSta* sta = nullptr);
 
 }  // namespace syn

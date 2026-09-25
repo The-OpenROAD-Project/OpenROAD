@@ -69,7 +69,7 @@ class definReader : public definBase
   void useBlockName(const char* name);
   void error(std::string_view msg);
 
-  void readChip(std::vector<dbLib*>& search_libs,
+  bool readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
                 dbChip* chip,
                 bool issue_callback);

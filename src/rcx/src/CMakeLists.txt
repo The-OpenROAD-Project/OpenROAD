@@ -51,6 +51,9 @@ add_library(rcx_lib
   extmeasure_diag_opt.cpp
   parse.cpp
   find_some_net.cpp
+  multiChipExtractor.cpp
+  multiChipSpefWriter.cpp
+  interChipModel.cpp
 )
 
 target_include_directories(rcx_lib
@@ -98,6 +101,7 @@ if(ENABLE_TESTS)
   enable_testing()
 
   add_executable(rcxUnitTest
+    ${PROJECT_SOURCE_DIR}/test/TestExtractor.cpp
     ${PROJECT_SOURCE_DIR}/test/ext2dBoxTest.cpp
   )
 
