@@ -939,24 +939,23 @@ dbBox* dbBox::create(dbMPin* pin_,
 
 dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
 {
-  _dbMPin* pin = (_dbMPin*) pin_;
   _dbTechVia* via = (_dbTechVia*) via_;
 
   if (via->bbox_ == 0) {
     return nullptr;
   }
 
-  _dbMaster* master = (_dbMaster*) pin->getOwner();
-  _dbTech* tech = (_dbTech*) via->getOwner();
-  _dbBox* vbbox = tech->box_tbl_->getPtr(via->bbox_);
-  int xmin = vbbox->shape_.rect.xMin() + x;
-  int ymin = vbbox->shape_.rect.yMin() + y;
-  int xmax = vbbox->shape_.rect.xMax() + x;
-  int ymax = vbbox->shape_.rect.yMax() + y;
+  dbBox* sub_box = nullptr;
 
-  auto sub_layer = via_->getTopLayer();
-  auto sub_box = dbBox::create(pin_, sub_layer, xmin, ymin, xmax, ymax);
-  ((_dbBox*) sub_box)->flags_.is_sub_via = 1;
+  for(auto via_box : via_->getBoxes()) {
+    int xmin = via_box->xMin() + x;
+    int ymin = via_box->yMin() + y;
+    int xmax = via_box->xMax() + x;
+    int ymax = via_box->yMax() + y;
+
+    sub_box = dbBox::create(pin_, via_box->getTechLayer(), xmin, ymin, xmax, ymax);
+    ((_dbBox*) sub_box)->flags_.is_sub_via = 1;
+  }
 
   return sub_box;
 }
