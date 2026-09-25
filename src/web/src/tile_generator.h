@@ -146,8 +146,7 @@ struct TileFrame
   odb::Rect cull;
   // Pixels of THIS frame per CSS pixel.  Sizes authored in CSS px — pen widths,
   // font heights — are multiplied by it so they come out the same size on every
-  // display instead of shrinking as the ratio rises.  The display's dpr for an
-  // output-resolution frame; dpr * the supersample factor for a super one.
+  // display instead of shrinking as the ratio rises: the display's dpr.
   double px_per_css = 1.0;
 
   // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
@@ -599,6 +598,16 @@ class TileGenerator
   // a 3DBlox top chip owns no block of its own, so getBlock() alone is not a
   // usable "is there a design" test.
   std::vector<odb::dbBlock*> blocks() const;
+
+  // ─── Name-group mapping (flat designs) ──────────────────────────────
+  // Forwarders to Search, which owns the mapping and the invalidation; the
+  // hierarchy report produces it and the tile renderer reads it.  Callers
+  // read searchRevision() BEFORE building the mapping and hand that value
+  // back, so an edit landing mid-build invalidates rather than stamps clean.
+  uint64_t searchRevision() const;
+  void setInstGroups(odb::dbBlock* block,
+                     std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+                     uint64_t built_at_revision);
 
   // Monotonic counter, bumped every time chiplets() rebuilds its cache.
   // Caches derived from the chiplet list poll this to notice a hierarchy
@@ -1165,6 +1174,15 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// Highlight the path stage at `pin_name`: its net, or on an unrouted net the
+// flight line between the pin and its neighbor on that net in `path`.
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines);
 
 // ── JSON serialization helpers for TileGenerator responses ──
 

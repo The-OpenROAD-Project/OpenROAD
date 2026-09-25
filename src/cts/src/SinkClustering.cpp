@@ -95,6 +95,7 @@ void SinkClustering::normalizePoints(float maxDiameter)
 void SinkClustering::computeAllThetas()
 {
   if (firstRun_) {
+    thetaIndexVector_.reserve(points_.size());
     for (unsigned idx = 0; idx < points_.size(); ++idx) {
       const Point<double>& p = points_[idx];
       const double theta = computeTheta(p.getX(), p.getY());
@@ -186,6 +187,18 @@ void SinkClustering::run(const unsigned groupSize,
     }
   }
   normalizePoints(maxDiameter);
+  if (firstRun_) {
+    // Precompute the per-point sink insertion delay once, AFTER normalizePoints
+    // has rewritten points_ into the normalized coordinate space. This matches
+    // exactly what HTree_->getSinkInsertionDelay(points_[idx]) returns in the
+    // matching inner loops (the lookup is keyed by point coordinates, so it
+    // must use the same post-normalization coordinates). Caching them lets the
+    // inner loops avoid a hash-map lookup per distance evaluation.
+    pointsInsDelay_.resize(points_.size());
+    for (unsigned idx = 0; idx < points_.size(); ++idx) {
+      pointsInsDelay_[idx] = HTree_->getSinkInsertionDelay(points_[idx]);
+    }
+  }
   computeAllThetas();
   sortPoints();
   bool bestSolutionFound = findBestMatching(groupSize);
@@ -231,7 +244,8 @@ void SinkClustering::repairClusteringSolution(
         double distanceCost = 0;
         double capCost = pointsCap_[idx];
         for (const auto& comparisonPoint : solutionPoints[k]) {
-          const double cost = HTree_->computeDist(p, comparisonPoint);
+          const double cost = distCost(
+              idx, p, solutionPointsIdx[k][pointIdx], comparisonPoint);
           const double cap_cost
               = pointsCap_[idx]
                 + (cost * capPerUnit_
@@ -350,11 +364,12 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
       unsigned pointIdx = 0;
       // Check the distance from the current point to others in the cluster,
       // if there are any.
+      const auto& curClusterIdx = solutionPointsIdx[j][clusters[j]];
       for (const auto& comparisonPoint : solutionPoints[j][clusters[j]]) {
-        const double cost = HTree_->computeDist(p, comparisonPoint);
+        const double cost
+            = distCost(idx, p, curClusterIdx[pointIdx], comparisonPoint);
         if (useMaxCapLimit_) {
-          capCost += cost * capPerUnit_
-                     + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
+          capCost += cost * capPerUnit_ + pointsCap_[curClusterIdx[pointIdx]];
         }
         pointIdx++;
         distanceCost = std::max(cost, distanceCost);

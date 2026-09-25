@@ -231,7 +231,6 @@ cc_library(
         "src/font_data.h",
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
-        "src/hierarchy_report.h",
         "src/module_color_palette.h",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
@@ -266,6 +265,7 @@ cc_library(
         "src/web_viewer_hook.h",
         "src/request_handler.h",
         "src/clock_tree_report.h",
+        "src/hierarchy_report.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -275,6 +275,7 @@ cc_library(
         "include",
         "src",
     ],
+    local_defines = ["HAVE_LIBDEFLATE"],
     deps = [
         ":color",
         ":core",
@@ -292,6 +293,7 @@ cc_library(
         "@boost.geometry",
         "@boost.json",
         "@boost.system",
+        "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],

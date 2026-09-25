@@ -208,6 +208,13 @@ regression_test(
 )
 
 regression_test(
+    name = "congestion_acceptance_is_recorded",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "congestion_markers_cugr",
     check_log = False,
     check_passfail = True,
@@ -219,6 +226,19 @@ regression_test(
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
+)
+
+cc_test(
+    name = "TestGraph2D",
+    size = "small",
+    srcs = ["cpp/TestGraph2D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
 
 cc_test(

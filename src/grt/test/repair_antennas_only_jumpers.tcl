@@ -18,8 +18,8 @@ check_placement
 
 set guide_file [make_result_file repair_antennas_only_jumpers.guide]
 write_guides $guide_file
-diff_file repair_antennas_only_jumpers.guideok $guide_file
+diff_files repair_antennas_only_jumpers.guideok $guide_file
 
 set def_file [make_result_file repair_antennas_only_jumpers.def]
 write_def $def_file
-diff_file repair_antennas_only_jumpers.defok $def_file
+diff_files repair_antennas_only_jumpers.defok $def_file

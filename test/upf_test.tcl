@@ -31,4 +31,4 @@ check_placement
 
 set def_file [make_result_file upf_test.def]
 write_def $def_file
-diff_file $def_file upf_test.defok
+diff_files $def_file upf_test.defok
