@@ -374,7 +374,7 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  bool congested_routes = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool congested_routes = is_congested_ && !congestion_accepted_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -550,6 +550,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
 {
   updateDbCongestion();
   saveCongestion();
+  congestion_accepted_ = allow_congestion_ || use_cugr_;
 
   if (verbose_) {
     if (use_cugr_) {
@@ -3456,7 +3457,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 
   // CUGR can produce congested guides that DRT can handle, resulting in
   // DRC-free final routing.
-  bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool guide_is_congested
+      = is_congested_ && !congestion_accepted_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;
