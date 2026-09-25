@@ -238,8 +238,8 @@ std::vector<unsigned char> encodeIndexedPng(const IndexedImage& indexed,
 // dimensions.  Most tiles in a viewport are exactly that: every layer with no
 // geometry where the user is looking returns one.  Entries are never erased and
 // std::map keeps its nodes put, so the returned pointer stays valid after the
-// lock is released -- the same contract getLanczos2Taps() relies on.  Null when
-// the size is not worth caching or lodepng fails.
+// lock is released.  Null when the size is not worth caching or lodepng
+// fails.
 std::mutex& blankPngMutex()
 {
   static std::mutex mutex;
@@ -426,6 +426,410 @@ void fillSpan(std::span<unsigned char> dst, const Color& color)
   }
 }
 
+// Coverage rasterization.
+//
+// Solid rects and small instances are drawn at the output resolution with each
+// pixel weighted by the exact area the shape covers, instead of snapping edges
+// outward to whole pixels.  Snapping makes a sub-pixel shape 1 or 2 px wide
+// depending on where it falls, so a dense array (bumps, vias) near the pixel
+// pitch drifts in and out of phase and shows a moiré beat.  Under coverage
+// every shape deposits ink in proportion to its area wherever it lands.
+
+// Alpha levels partial coverage is quantized to before encoding, so a tile's
+// palette stays at (#colours x (levels - 1) + transparent) and the tile keeps
+// the indexed PNG path.
+constexpr int kCoverageAlphaLevels = 16;
+
+// Instances narrower than this (buffer px) are drawn as a coverage-filled
+// footprint; their outline would otherwise fill them anyway.
+constexpr double kCoverageInstancePx = 3.0;
+
+// Size (buffer px) a sub-pixel shape is grown to, about its centre, before its
+// coverage is measured, so sub-pixel geometry stays visible.  Growing before
+// measuring keeps the ink per shape independent of its position.
+constexpr double kCoverageMinPx = 1.0;
+
+// Dots (shapes smaller than kDotBlurPx in both axes: bumps, via cuts) have
+// their footprint blurred; see blurredAxisCoverage.
+constexpr double kDotBlurPx = 1.5;
+
+// Ink gain for dots.  A shape smaller than kDotGainPx in both axes has its
+// per-pixel coverage multiplied by kDotInkGain, capped at full.  Drawing close
+// to true area makes resolved bumps look dim next to the snapped rendering
+// users are used to; unlike growing the shape further, the gain keeps the
+// footprint's size, so dense arrays brighten without merging, and the ink
+// still does not depend on where the dot lands.
+constexpr double kDotGainPx = 2.0;
+constexpr double kDotInkGain = 3.0;
+
+// Pixels drawn beyond each tile edge and cropped before encoding.  A coverage
+// footprint reaches up to 1.5 px past its shape (the minimum-size growth plus
+// the dot blur), so a shape just outside the tile must still be drawn for the
+// tile's edge pixels to receive its ink; without the apron every tile seam
+// shows as a darker line.
+constexpr int kTileApronPx = 2;
+
+// Record of the coverage writes into the tile being drawn, so that
+// quantizeCoverageAlpha touches exactly the pixels coverage produced and snaps
+// each against the alpha of the colour that produced it.  Matching a pixel's
+// RGB against the colours drawn would not do: a track line reuses its layer's
+// RGB at another alpha, and two colours can share an RGB.  A pixel is
+// quantized only while it still holds the value its last coverage write left,
+// so anything drawn over it later (tracks, text, hatch) keeps its own alpha.
+// `generation` marks the entries written for the current tile, which avoids
+// clearing the per-pixel arrays for every tile.  thread_local because tiles
+// render in parallel.
+struct CoverageLog
+{
+  const unsigned char* base = nullptr;  // buffer being logged; null when off
+  size_t pixels = 0;
+  uint32_t generation = 0;
+  std::vector<uint32_t> written;    // generation that last wrote each pixel
+  std::vector<uint32_t> value;      // RGBA the last coverage write left
+  std::vector<unsigned char> full;  // alpha of its colour; 0 = mixed origin
+  std::vector<uint32_t> touched;    // pixels written in this generation
+};
+thread_local CoverageLog coverage_log;
+
+inline uint32_t packRGBA(const unsigned char* p)
+{
+  uint32_t v = 0;
+  std::memcpy(&v, p, sizeof(v));
+  return v;
+}
+
+// Start logging coverage writes into `buf`, the tile's drawing buffer.
+void beginCoverageLog(const std::vector<unsigned char>& buf)
+{
+  CoverageLog& log = coverage_log;
+  log.base = buf.data();
+  log.pixels = buf.size() / 4;
+  if (log.written.size() < log.pixels) {
+    log.written.assign(log.pixels, 0);
+    log.value.resize(log.pixels);
+    log.full.resize(log.pixels);
+    log.generation = 0;
+  }
+  ++log.generation;
+  log.touched.clear();
+}
+
+void endCoverageLog()
+{
+  coverage_log.base = nullptr;
+}
+
+// Deposit `color` at fractional coverage `cov` (0..1] into one RGBA pixel.
+// Same-colour deposits add alpha (saturating at the colour's own alpha), so a
+// layer's RGB is never perturbed and its ink stays proportional to area.
+inline void depositCoverage(unsigned char* dst,
+                            const Color& color,
+                            const double cov)
+{
+  const int add = static_cast<int>(std::lround(color.a * cov));
+  if (add <= 0) {
+    return;
+  }
+  const uint32_t before = packRGBA(dst);
+  if (dst[3] == 0
+      || (dst[0] == color.r && dst[1] == color.g && dst[2] == color.b)) {
+    // The cap never lowers the pixel: a same-RGB colour with less alpha
+    // must not undo what a stronger one deposited.
+    const int cap = std::max<int>(color.a, dst[3]);
+    dst[0] = color.r;
+    dst[1] = color.g;
+    dst[2] = color.b;
+    dst[3] = static_cast<unsigned char>(std::min(cap, dst[3] + add));
+  } else {
+    // A different colour: the pixel keeps the RGB of whichever colour covers
+    // more of it and the alphas add.  Compositing the two would mint a new
+    // RGB for every (coverage, coverage) pair and push the tile off the
+    // palette.
+    if (add >= dst[3]) {
+      dst[0] = color.r;
+      dst[1] = color.g;
+      dst[2] = color.b;
+    }
+    dst[3] = static_cast<unsigned char>(std::min<int>(255, dst[3] + add));
+  }
+
+  CoverageLog& log = coverage_log;
+  if (log.base == nullptr) {
+    return;
+  }
+  // Compared as integers: dst may point into a different buffer (a rotated
+  // chiplet's), where relational pointer comparison is not defined.
+  const auto addr = reinterpret_cast<uintptr_t>(dst);
+  const auto base = reinterpret_cast<uintptr_t>(log.base);
+  if (addr < base || addr >= base + log.pixels * 4) {
+    return;
+  }
+  const size_t idx = (addr - base) / 4;
+  const bool ours = dst[0] == color.r && dst[1] == color.g && dst[2] == color.b;
+  if (log.written[idx] != log.generation) {
+    // First coverage write this tile.  A pixel another path had already drawn
+    // is of mixed origin (full = 0): quantizing it would alter that drawing.
+    log.written[idx] = log.generation;
+    log.touched.push_back(static_cast<uint32_t>(idx));
+    log.full[idx] = before == 0 ? color.a : 0;
+  } else if (before != log.value[idx]) {
+    // Another path drew over the pixel since the last coverage write.
+    log.full[idx] = 0;
+  } else if (log.full[idx] != 0 && ours) {
+    log.full[idx] = std::max(log.full[idx], color.a);
+  }
+  log.value[idx] = packRGBA(dst);
+}
+
+// Per-pixel coverage of [lo, hi) along one axis, convolved with [1,2,1]/4.
+// `out[k]` is the value for pixel `first + k`.
+//
+// The kernel's response is exactly zero at the pixel Nyquist frequency, so an
+// array of dots whose pitch is near 2 px -- the regime that aliases into a
+// moiré beat -- flattens to its mean ink.  Spreading each dot over 3 px also
+// makes coincident dots on stacked layers (a bump's pad on each metal)
+// composite the same way at every phase; a dot that landed inside one pixel
+// would otherwise show only the top layer's colour, and one that straddled
+// pixels a mix.  Blurring each dot's footprint equals blurring the tile's
+// alpha (both are linear) but touches only the pixels a dot reaches.
+void blurredAxisCoverage(const double lo,
+                         const double hi,
+                         std::vector<double>& out,
+                         int& first)
+{
+  const int i0 = static_cast<int>(std::floor(lo));
+  const int i1 = static_cast<int>(std::ceil(hi));
+  const int n = std::max(0, i1 - i0);
+  out.assign(n + 2, 0.0);
+  for (int k = 0; k < n; ++k) {
+    const double c
+        = std::min<double>(hi, i0 + k + 1) - std::max<double>(lo, i0 + k);
+    out[k] += 0.25 * c;
+    out[k + 1] += 0.5 * c;
+    out[k + 2] += 0.25 * c;
+  }
+  first = i0 - 1;
+}
+
+// Fill the rect [x0,x1) x [y0,y1), given in fractional buffer pixels with Y
+// counting up from the bottom, weighting each pixel by the area covered.
+// Callers pass the shape's unclipped bounds: the dot and gain tests and the
+// minimum-size growth must see its real size, not the sliver left where it
+// crosses the tile edge.  Interior pixels are written like drawFilledRect's
+// solid path; only the edge rows/columns carry fractional coverage.
+void fillCoverageRect(std::vector<unsigned char>& buf,
+                      double x0,
+                      double y0,
+                      double x1,
+                      double y1,
+                      const Color& color,
+                      const int dim)
+{
+  const bool dot = x1 - x0 < kDotBlurPx && y1 - y0 < kDotBlurPx;
+  const double gain
+      = (x1 - x0 < kDotGainPx && y1 - y0 < kDotGainPx) ? kDotInkGain : 1.0;
+  auto boosted = [gain](const double c) { return std::min(1.0, c * gain); };
+  // Grow a sub-pixel shape about its centre before measuring its coverage, so
+  // it deposits the same ink wherever it falls on the pixel grid.
+  if (x1 - x0 < kCoverageMinPx) {
+    const double c = 0.5 * (x0 + x1);
+    x0 = c - 0.5 * kCoverageMinPx;
+    x1 = c + 0.5 * kCoverageMinPx;
+  }
+  if (y1 - y0 < kCoverageMinPx) {
+    const double c = 0.5 * (y0 + y1);
+    y0 = c - 0.5 * kCoverageMinPx;
+    y1 = c + 0.5 * kCoverageMinPx;
+  }
+  if (dot) {
+    // The blurred footprint is the outer product of the two axes' coverage (a
+    // box's area coverage is separable).  Clamping to the buffer plus 2 px
+    // keeps the values exact for every in-buffer pixel, since the kernel
+    // reaches 1 px out.
+    thread_local std::vector<double> cx;
+    thread_local std::vector<double> cy;
+    int fx = 0;
+    int fy = 0;
+    blurredAxisCoverage(
+        std::max(-2.0, x0), std::min<double>(dim + 2, x1), cx, fx);
+    blurredAxisCoverage(
+        std::max(-2.0, y0), std::min<double>(dim + 2, y1), cy, fy);
+    const int ky0 = std::max(0, -fy);
+    const int ky1 = std::min<int>(cy.size(), dim - fy);
+    const int kx0 = std::max(0, -fx);
+    const int kx1 = std::min<int>(cx.size(), dim - fx);
+    for (int ky = ky0; ky < ky1; ++ky) {
+      if (cy[ky] <= 0.0) {
+        continue;
+      }
+      unsigned char* row
+          = &buf[static_cast<size_t>(dim - 1 - (fy + ky)) * dim * 4];
+      for (int kx = kx0; kx < kx1; ++kx) {
+        const double c = cx[kx] * cy[ky];
+        if (c > 0.0) {
+          depositCoverage(
+              &row[static_cast<size_t>(fx + kx) * 4], color, boosted(c));
+        }
+      }
+    }
+    return;
+  }
+  x0 = std::max(0.0, x0);
+  y0 = std::max(0.0, y0);
+  x1 = std::min<double>(dim, x1);
+  y1 = std::min<double>(dim, y1);
+  if (x0 >= x1 || y0 >= y1) {
+    return;
+  }
+  const int ix0 = static_cast<int>(std::floor(x0));
+  const int ix1 = std::min(dim, static_cast<int>(std::ceil(x1)));
+  const int iy0 = static_cast<int>(std::floor(y0));
+  const int iy1 = std::min(dim, static_cast<int>(std::ceil(y1)));
+  auto col_cov = [&](const int ix) {
+    return std::min<double>(x1, ix + 1) - std::max<double>(x0, ix);
+  };
+  constexpr double kFull = 0.999;
+  for (int iy = iy0; iy < iy1; ++iy) {
+    const double cy = std::min<double>(y1, iy + 1) - std::max<double>(y0, iy);
+    unsigned char* row = &buf[static_cast<size_t>(dim - 1 - iy) * dim * 4];
+    if (cy < kFull) {
+      // Top/bottom edge row: every pixel is partial.
+      for (int ix = ix0; ix < ix1; ++ix) {
+        depositCoverage(&row[ix * 4], color, boosted(col_cov(ix) * cy));
+      }
+      continue;
+    }
+    // Only the first and last column can be partial; the run between them is
+    // written with the same bytes drawFilledRect would write.
+    int lo = ix0;
+    int hi = ix1;
+    if (lo < hi && col_cov(lo) < kFull) {
+      depositCoverage(&row[lo * 4], color, boosted(col_cov(lo)));
+      ++lo;
+    }
+    if (lo < hi && col_cov(hi - 1) < kFull) {
+      depositCoverage(&row[(hi - 1) * 4], color, boosted(col_cov(hi - 1)));
+      --hi;
+    }
+    if (hi > lo) {
+      fillSpan({&row[lo * 4], static_cast<size_t>(hi - lo) * 4}, color);
+    }
+  }
+}
+
+// Fill `poly` weighting each pixel by the area it covers: four sub-scanlines
+// per pixel row, each span with exact fractional ends.  Polygons smaller than
+// kDotGainPx in both axes (octagonal bumps, say) are drawn as their bounding
+// box through fillCoverageRect so they get the same dot treatment -- growth,
+// blur and ink gain -- as rectangular ones.  Fully covered pixels are written
+// with `color` as fillPolygon's unblended path does.
+void fillCoveragePolygon(std::vector<unsigned char>& buf,
+                         const odb::Polygon& poly,
+                         const TileFrame& frame,
+                         const Color& color,
+                         const int dim)
+{
+  const auto& points = poly.getPoints();
+  const int n = static_cast<int>(points.size());
+  if (n < 3) {
+    return;
+  }
+  thread_local std::vector<double> px;
+  thread_local std::vector<double> py;
+  px.resize(n);
+  py.resize(n);
+  for (int i = 0; i < n; ++i) {
+    px[i] = frame.pxX(points[i].x());
+    py[i] = frame.pxY(points[i].y());
+  }
+  const auto [min_x, max_x] = std::ranges::minmax(px);
+  const auto [min_y, max_y] = std::ranges::minmax(py);
+  if (max_x - min_x < kDotGainPx && max_y - min_y < kDotGainPx) {
+    fillCoverageRect(buf, min_x, min_y, max_x, max_y, color, dim);
+    return;
+  }
+  const int iy_min = std::max(0, static_cast<int>(std::floor(min_y)));
+  const int iy_max = std::min(dim, static_cast<int>(std::ceil(max_y)));
+  const int ix_lo = std::max(0, static_cast<int>(std::floor(min_x)));
+  const int ix_hi = std::min(dim, static_cast<int>(std::ceil(max_x)));
+  if (iy_min >= iy_max || ix_lo >= ix_hi) {
+    return;
+  }
+  constexpr int kSubRows = 4;
+  constexpr double kSubWeight = 1.0 / kSubRows;
+  thread_local std::vector<double> acc;
+  thread_local std::vector<double> xs;
+  acc.assign(ix_hi - ix_lo, 0.0);
+  for (int iy = iy_min; iy < iy_max; ++iy) {
+    std::fill(acc.begin(), acc.end(), 0.0);
+    for (int k = 0; k < kSubRows; ++k) {
+      const double scan = iy + (k + 0.5) * kSubWeight;
+      xs.clear();
+      for (int i = 0, j = n - 1; i < n; j = i++) {
+        if ((py[i] <= scan) == (py[j] <= scan)) {
+          continue;
+        }
+        xs.push_back(px[i]
+                     + (scan - py[i]) / (py[j] - py[i]) * (px[j] - px[i]));
+      }
+      std::ranges::sort(xs);
+      for (size_t m = 0; m + 1 < xs.size(); m += 2) {
+        const double xa = std::max<double>(xs[m], ix_lo);
+        const double xb = std::min<double>(xs[m + 1], ix_hi);
+        if (xa >= xb) {
+          continue;
+        }
+        const int ia = static_cast<int>(std::floor(xa));
+        const int ib = std::min(ix_hi, static_cast<int>(std::ceil(xb)));
+        for (int ix = ia; ix < ib; ++ix) {
+          const double c
+              = std::min<double>(xb, ix + 1) - std::max<double>(xa, ix);
+          acc[ix - ix_lo] += c * kSubWeight;
+        }
+      }
+    }
+    unsigned char* row = &buf[static_cast<size_t>(dim - 1 - iy) * dim * 4];
+    for (int ix = ix_lo; ix < ix_hi; ++ix) {
+      const double c = acc[ix - ix_lo];
+      if (c >= 0.999) {
+        copyRGBA(&row[static_cast<size_t>(ix) * 4], color);
+      } else if (c > 0.0) {
+        depositCoverage(&row[static_cast<size_t>(ix) * 4], color, c);
+      }
+    }
+  }
+}
+
+// Snap every pixel the coverage fills produced (see CoverageLog) to one of
+// `levels` steps of its colour's full alpha, see kCoverageAlphaLevels.  A
+// pixel at exactly that alpha is fully covered and kept; one above it holds
+// two colours' coverage and is snapped against 255.
+void quantizeCoverageAlpha(std::vector<unsigned char>& buf, const int levels)
+{
+  const CoverageLog& log = coverage_log;
+  if (levels < 2 || log.base != buf.data()) {
+    return;
+  }
+  const double steps = levels - 1;
+  for (const uint32_t idx : log.touched) {
+    unsigned char* p = &buf[static_cast<size_t>(idx) * 4];
+    int full = log.full[idx];
+    const unsigned char a = p[3];
+    if (full == 0 || a == 0 || a == full || packRGBA(p) != log.value[idx]) {
+      continue;
+    }
+    if (a > full) {
+      full = 255;
+    }
+    const double step = full / steps;
+    const auto q = static_cast<int>(std::lround(std::lround(a / step) * step));
+    p[3] = static_cast<unsigned char>(std::clamp(q, 0, 255));
+    if (p[3] == 0) {
+      p[0] = p[1] = p[2] = 0;
+    }
+  }
+}
+
 // Alpha-composites a dim x dim RGBA tile onto `dst` (row stride
 // `dst_stride_px` pixels) with its top-left corner at (ox, oy).  Transparent
 // rows and pixels are skipped, which is most of a sparse layer tile.  The
@@ -493,24 +897,6 @@ void parallelRanges(utl::ThreadPool* pool,
   }
 }
 
-// Supersample factor for band-limited tile rasterization (anti-moiré).  The
-// tile is rendered at kCoverageSupersample x the output resolution and then
-// Lanczos-2 decimated.  S=2 is sufficient to suppress the bump-array beat
-// (DSP-validated); larger S only adds cost.
-constexpr int kCoverageSupersample = 2;
-
-// Extra binomial prefilter convolved into the Lanczos-2 taps, in source
-// (super-pixel) space.  Lanczos-2 alone is a SOFT filter that leaks ~10-20 %
-// just below the output Nyquist, so a dense periodic array (bumps, vias, dense
-// routing) whose pitch lands near the output Nyquist — the worst moiré-beat
-// regime — survives the decimation as a low-frequency beat.  [1,2,1]/4 has an
-// EXACT zero at the source Nyquist and unit DC gain: it deepens the stopband so
-// that near-Nyquist tone is nulled instead of leaked, while leaving the local
-// MEAN (and any resolved detail well below Nyquist) untouched.  Because it is
-// DC-preserving it can only band-limit, never merge geometry into an opaque
-// block — it cannot reintroduce the rejected "merged sheet" artifact.
-constexpr std::array<double, 3> kLanczosPrefilterBinomial = {0.25, 0.5, 0.25};
-
 constexpr float kPinMarkerSizeRatio = 0.02;
 constexpr int kMinPinMarkerSize = 8;
 constexpr int kMinPinNameSizePixels = 20;
@@ -519,11 +905,10 @@ constexpr int kItermLabelFontHeight = 10;  // atlas size for ITerm pin labels
 constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kInstNameFontHeight = 12;    // atlas size for instance names
 // Minimum on-screen feature size (output CSS px) below which geometry is CULLED
-// at the search level instead of drawn.  A regular sub-pixel array (dense
-// bumps/vias) cannot be drawn both discretely (→ moiré) and band-limited (→ a
-// merged "sheet"); like the Qt GUI, we sidestep the dilemma by not returning
-// what is too small to read.  At/above this size each feature is rasterized
-// normally and the supersample + Lanczos downsample only anti-aliases it.
+// at the search level instead of drawn.  Like the Qt GUI, the default view
+// does not return what is too small to read; "Detailed view" lowers the limit
+// and relies on the coverage rasterizer (see kCoverageAlphaLevels) to keep the
+// sub-pixel geometry it re-admits free of moiré.
 //
 // The Qt GUI uses TWO limits (layoutViewer.cpp): shapeSizeLimit() =
 // nominalViewableResolution = 5 px for shapes, but instanceSizeLimit() =
@@ -564,8 +949,8 @@ inline double toPxXd(int dbu_x, const TileFrame& frame)
 }
 
 // Y is flipped: DBU grows up, pixel rows grow down.  `dim` is the side of the
-// buffer being painted: tile_px for a plain tile, tile_px*kCoverageSupersample
-// on the supersampled render path (pass bufferDim(image) there).
+// buffer being painted: tile_px for a plain tile, tile_px + 2 * kTileApronPx
+// for renderTileBuffer's drawing buffer (pass bufferDim(image) there).
 inline double toPxYd(int dbu_y, const TileFrame& frame, int dim)
 {
   return dim - 1 - frame.pxY(dbu_y);
@@ -591,9 +976,7 @@ inline int toPxY(int dbu_y, const TileFrame& frame, int dim)
 
 // Width in buffer pixels of a line meant to read as ONE CSS pixel: the overlay
 // hairlines (die/core/region outlines, grid dots and lines).  Authoring a
-// literal 1 px is wrong twice over — it reads a third as thick as everything
-// else on a 3x display, and on the supersampled render path it fades to ~1/S
-// intensity once lanczos2Downsample decimates the buffer back.  See
+// literal 1 px reads a third as thick as everything else on a 3x display.  See
 // penWidthCss for the 3 CSS px pen the web::Painter ops default to.
 inline int hairlineCss(const TileFrame& frame)
 {
@@ -1476,9 +1859,9 @@ static TileFrame tileFrame(const odb::Rect& bounds,
 }
 
 // Tiles are square; recover the side length from a packed RGBA buffer so the
-// drawing primitives work at any resolution — 256 (dpr=1) or the supersampled
-// 256*dpr*S buffer used for band-limited rendering.  Callers in a hot loop pass
-// the precomputed dimension via the `dim` parameter to skip this.
+// drawing primitives work at any resolution — 256 (dpr=1), 256*dpr, or a
+// tile's drawing buffer with its apron.  Callers in a hot loop pass the
+// precomputed dimension via the `dim` parameter to skip this.
 static int bufferDim(const std::vector<unsigned char>& image)
 {
   return static_cast<int>(std::lround(std::sqrt(image.size() / 4.0)));
@@ -2671,13 +3054,6 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   return encodeImagePng(image, dim, dim);
 }
 
-// Forward declaration; defined below near compositePixel.  Separable Lanczos-2
-// decimation of a straight-alpha RGBA buffer (anti-moiré band-limit).
-static std::vector<unsigned char> lanczos2Downsample(
-    const std::vector<unsigned char>& src,
-    int src_dim,
-    int dst_dim);
-
 namespace {
 
 // This master's shapes on the layer whose cache slice is `by_master`, or null
@@ -2735,8 +3111,7 @@ void TileGenerator::outlineRectInTile(std::vector<unsigned char>& image,
   const int64_t pixel_yh = static_cast<int64_t>(std::ceil(frame.pxY(yh)));
 
   // frame.scale is in buffer pixels per DBU, so the clamps must follow the
-  // buffer the caller handed us: tile_px for a plain tile,
-  // tile_px*kCoverageSupersample for the supersampled render path.
+  // buffer the caller handed us.
   const int dim = bufferDim(image);
   const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, dim);
   const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, dim);
@@ -2748,8 +3123,8 @@ void TileGenerator::outlineRectInTile(std::vector<unsigned char>& image,
   const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, dim - 1);
   const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, dim - 1);
 
-  // Thickness grows with the buffer so the edge survives decimation; each
-  // band is drawn inward from the edge to keep the rect's extent exact.
+  // One CSS px thick; each band is drawn inward from the edge to keep the
+  // rect's extent exact.
   const int t = hairlineCss(frame);
   if (dbu_tile.xMin() <= xl && xl <= dbu_tile.xMax()) {
     for (int iy = loop_yl; iy < loop_yh; ++iy) {
@@ -2792,6 +3167,7 @@ void TileGenerator::outlinePolygonInTile(std::vector<unsigned char>& image,
   }
 
   const odb::Rect& tile = frame.cull;
+  const odb::Rect bounds = polygon.getEnclosingRect();
   const int dim = bufferDim(image);
   const int width = hairlineCss(frame);
   for (std::size_t i = 0; i < points.size(); ++i) {
@@ -2806,14 +3182,27 @@ void TileGenerator::outlinePolygonInTile(std::vector<unsigned char>& image,
       continue;
     }
 
-    drawLine(image,
-             toPxXd(p0.x(), frame),
-             toPxYd(p0.y(), frame, dim),
-             toPxXd(p1.x(), frame),
-             toPxYd(p1.y(), frame, dim),
-             c,
-             width,
-             dim);
+    double fx0 = toPxXd(p0.x(), frame);
+    double fy0 = toPxYd(p0.y(), frame, dim);
+    double fx1 = toPxXd(p1.x(), frame);
+    double fy1 = toPxYd(p1.y(), frame, dim);
+    // An axis-aligned edge is drawn on the pixel just inside the polygon:
+    // floor(X) for a left/bottom edge, ceil(X) - 1 for a right/top one.
+    // drawLine alone rounds to the nearest pixel, which puts a right or top
+    // edge lying on the tile's far side one past the buffer -- and when the
+    // polygon fills the tile pyramid (the die at the fit zoom) there is no
+    // next tile to draw it, so the die lost its right and top edges.
+    if (p0.x() == p1.x()) {
+      const double ex = frame.pxX(p0.x());
+      fx0 = fx1 = p0.x() == bounds.xMax() ? std::ceil(ex) - 1 : std::floor(ex);
+    }
+    if (p0.y() == p1.y()) {
+      const double ey = frame.pxY(p0.y());
+      const double row
+          = p0.y() == bounds.yMax() ? std::ceil(ey) - 1 : std::floor(ey);
+      fy0 = fy1 = dim - 1 - row;
+    }
+    drawLine(image, fx0, fy0, fx1, fy1, c, width, dim);
   }
 }
 
@@ -3044,8 +3433,8 @@ void TileGenerator::drawRegionsLayer(std::vector<unsigned char>& image,
       }
       drawFilledRect(
           image, toPixels(frame, r.intersect(dbu_tile)), kRegionFill);
-      // The outline is drawn by renderTileBuffer after the decimation, with
-      // the die and core frames, so the hairline keeps its full colour.
+      // The outline is drawn by renderTileBuffer into the output buffer, with
+      // the die and core frames.
     }
   }
 }
@@ -3083,11 +3472,8 @@ void TileGenerator::drawMfgGridLayer(std::vector<unsigned char>& image,
   // lands closer to the real grid (measured on bp_quad: coverage 24% -> 37%,
   // dot period 5 px -> 4).  It stops at 4 px rather than the 1 px the toggle
   // uses for shapes, for two reasons:
-  //  - a grid tiles the plane, unlike sparse shapes, and the tile is Lanczos-
-  //    decimated on the way out, which spreads every dot over ~3 output px.
-  //    Below ~4 px the dots merge into a solid white sheet that hides the
-  //    design (measured at a 1 px and a 2 px target: every pixel of the tile
-  //    lit), which is worse than showing nothing.
+  //  - a grid tiles the plane, unlike sparse shapes, so a denser lattice of
+  //    dots covers the whole tile and hides the design underneath.
   //  - the target can never reach 0, because this loop is O(points in tile) —
   //    the raw grid on a 9.3 mm die at zoom-out is ~10^11 points per tile.
   constexpr double kDetailedGridPx = 4.0;
@@ -3122,7 +3508,7 @@ void TileGenerator::drawMfgGridLayer(std::vector<unsigned char>& image,
     const int px = toPxX(gx, frame);
     for (int gy = first_y; gy <= last_y; gy += step) {
       const int py = toPxY(gy, frame, dim);
-      // One dot per grid point; `dot` px wide so it survives decimation.
+      // One dot per grid point, one CSS px wide.
       for (int dy = 0; dy < dot; ++dy) {
         for (int dx = 0; dx < dot; ++dx) {
           setPixel(image, px + dx, py + dy, kGridDot, dim);
@@ -3332,26 +3718,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       = requested_tile_px > 0
             ? requested_tile_px
             : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
-  // Band-limit factor: the tile is rasterized at tile_px*kCoverageSupersample
-  // and Lanczos-2 decimated back to tile_px, prefiltering the dense periodic
-  // geometry (bump arrays) that otherwise aliases into a moiré beat.
-  const int super = tile_px * kCoverageSupersample;
-  const int super_buffer_size = super * super * 4;
-  // Super-pixels per CSS pixel (= dpr * supersample).  Pixel-specified sizes
-  // (fonts, stroke widths, label-visibility thresholds) are authored in CSS px
-  // and multiplied by this to render at the supersampled resolution, so they
-  // look identical across dpr after decimation.  Taken from dpr rather than
+  // Side of the drawing buffer: the tile plus kTileApronPx on every side, which
+  // is cropped off before the tile is returned.
+  const int draw_px = tile_px + 2 * kTileApronPx;
+  const int draw_buffer_size = draw_px * draw_px * 4;
+  // Buffer pixels per CSS pixel.  Pixel-specified sizes (fonts, stroke
+  // widths, label-visibility thresholds) are authored in CSS px and multiplied
+  // by this, so they look identical across dpr.  Taken from dpr rather than
   // from tile_px/256: with a device-exact tile size those differ slightly, and
   // a CSS pixel is defined by the display, not by the tile's pixel count.
-  const double super_per_css = kCoverageSupersample * effective_dpr;
+  const double px_per_css = effective_dpr;
   // The tile's CSS side length, which is 256 only while tile_px is 256*dpr.
   // Drives the sub-resolution cull below, whose threshold is authored in CSS
   // px.
   const double css_tile_px = tile_px / effective_dpr;
   // The OUTPUT (tile_px) buffer returned to the caller.  Every blank/early
-  // return yields a transparent tile at the output resolution; the per-chiplet
-  // loop draws into the supersampled `super_buffer` (allocated below), which is
-  // decimated into this buffer after the loop.
+  // return yields a transparent tile; the per-chiplet loop draws into
+  // `draw_buffer` (allocated below), whose centre is cropped into this buffer
+  // after the loop.
   std::vector<unsigned char> world_image_buffer(
       static_cast<size_t>(tile_px) * tile_px * 4, 0);
 
@@ -3386,11 +3770,22 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       return world_image_buffer;
     }
     const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
-    const double scale = static_cast<double>(super) / tile_dbu_size;
-    // Drawing happens in the supersampled buffer, so this frame is in
-    // super-pixels; the output-resolution overlays below build their own.
-    const TileFrame world_frame
-        = tileFrame(full_bounds, x, y, tile_dbu_size, scale, super_per_css);
+    const double scale = static_cast<double>(tile_px) / tile_dbu_size;
+    // The tile itself; the overlays drawn into the output buffer use it.
+    const TileFrame tile_frame
+        = tileFrame(full_bounds, x, y, tile_dbu_size, scale, px_per_css);
+    // The drawing frame: the tile grown by the apron.
+    TileFrame world_frame = tile_frame;
+    if (kTileApronPx > 0) {
+      const double apron_dbu = kTileApronPx / scale;
+      const int apron_cull = static_cast<int>(std::ceil(apron_dbu));
+      world_frame.origin_x -= apron_dbu;
+      world_frame.origin_y -= apron_dbu;
+      world_frame.cull = odb::Rect(tile_frame.cull.xMin() - apron_cull,
+                                   tile_frame.cull.yMin() - apron_cull,
+                                   tile_frame.cull.xMax() + apron_cull,
+                                   tile_frame.cull.yMax() + apron_cull);
+    }
     const double dbu_x_min_world = world_frame.origin_x;
     const double dbu_y_min_world = world_frame.origin_y;
     const odb::Rect& dbu_tile_world = world_frame.cull;
@@ -3418,15 +3813,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // The geometry the tile request resolves to: which slice of the design it
     // covers and at what resolution.  `y` here is already flipped out of the
     // client's Leaflet convention, so it will not match the requested y.  The
-    // micron window depends only on the design bounds and z; tile_px/super and
-    // the cull limits are the dpr-derived part.
+    // micron window depends only on the design bounds and z; tile_px/draw_px
+    // and the cull limits are the dpr-derived part.
     const double dbu_per_micron = db_->getDbuPerMicron();
     debugPrint(logger_,
                utl::WEB,
                "tile",
                2,
                "  tile frame: layer={} z={} x={} y_flipped={} "
-               "um=({},{})-({},{}) tile_px={} super={} inst_limit_um={} "
+               "um=({},{})-({},{}) tile_px={} draw_px={} inst_limit_um={} "
                "shape_limit_um={}",
                layer,
                z,
@@ -3437,23 +3832,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                dbuToMicronString(dbu_tile_world.xMax(), dbu_per_micron),
                dbuToMicronString(dbu_tile_world.yMax(), dbu_per_micron),
                tile_px,
-               super,
+               draw_px,
                dbuToMicronString(instance_size_limit_dbu, dbu_per_micron),
                dbuToMicronString(shape_size_limit_dbu, dbu_per_micron));
 
     // One snapshot for the whole tile: taken under a lock here, then read
     // lock-free by the per-chiplet loop below (see GeomCache).
     const std::shared_ptr<const GeomCache> geom_cache = geomCache();
-    // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
-    // draws into this; it is Lanczos-2 decimated into world_image_buffer after
-    // the loop, before the (crisp, output-resolution) overlays are drawn.
+    // Drawing buffer (RGBA, draw_px x draw_px: the tile plus its apron).  The
+    // per-chiplet loop draws into this; its centre is cropped into
+    // world_image_buffer after the loop, before the overlays are drawn.
     // thread_local so the large buffer is reused across the tiles a thread
     // renders without reallocating.
-    static thread_local std::vector<unsigned char> super_buffer;
-    if (super_buffer.size() != static_cast<size_t>(super_buffer_size)) {
-      super_buffer.resize(super_buffer_size);
+    static thread_local std::vector<unsigned char> draw_buffer;
+    if (draw_buffer.size() != static_cast<size_t>(draw_buffer_size)) {
+      draw_buffer.resize(draw_buffer_size);
     }
-    std::memset(super_buffer.data(), 0, super_buffer_size);
+    std::memset(draw_buffer.data(), 0, draw_buffer_size);
+    beginCoverageLog(draw_buffer);
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
@@ -3468,9 +3864,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // "_instances" pass — drawing on every pass put a gray frame on every
     // tech-layer tile and broke every "expect transparent" test.
     const bool draw_die_outline = chiplet_nodes.size() > 1;
-    // Hairline strokes held back for the output-resolution pass below, in
-    // world DBU.  See the call sites for why they do not go in the
-    // supersampled buffer with everything else.
+    // Hairline strokes held back for the output-buffer pass below, in world
+    // DBU; see the call sites.
     std::vector<odb::Polygon> crisp_outlines;
     auto collect_crisp_outline
         = [&crisp_outlines](const odb::Polygon& poly, const ChipletNode& node) {
@@ -3518,14 +3913,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const bool use_local
           = (node.world_xfm.getOrient() != odb::dbOrientType::R0);
       if (use_local) {
-        local_image_buffer.resize(super_buffer_size, 0);
+        local_image_buffer.resize(draw_buffer_size, 0);
       }
       // Alias the buffer the chiplet loop writes into.  In the R0
       // fast-path it's the world buffer (so writes land directly).  In
       // the slow-path it's a per-chiplet local buffer that the
       // reverse-mapping block at the end of this iteration composites
       // back onto world_image_buffer.
-      auto& image_buffer = use_local ? local_image_buffer : super_buffer;
+      auto& image_buffer = use_local ? local_image_buffer : draw_buffer;
 
       // This tile expressed in the chiplet's own frame.  A translation moves
       // the exact origin by exactly the offset; the query window moves with it.
@@ -3553,8 +3948,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const odb::Rect& dbu_tile = frame.cull;
       const double dbu_x_min = frame.origin_x;
       const double dbu_y_min = frame.origin_y;
-      const double dbu_x_max = frame.origin_x + tile_dbu_size;
-      const double dbu_y_max = frame.origin_y + tile_dbu_size;
+      // The far corner of the drawing buffer, apron included: frame.origin_*
+      // is already moved out by the apron, so adding only the tile's width
+      // would stop kTileApronPx short of the tile's own far edge.
+      const double dbu_x_max = frame.origin_x + draw_px / scale;
+      const double dbu_y_max = frame.origin_y + draw_px / scale;
 
       // Per-layer fill pattern applied to this layer's own filled shapes:
       // routing segments, special-net shapes/vias and instance pins.  Instance
@@ -3571,13 +3969,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // on the _instances pass for all designs (Qt draws it always;
       // scoping to _instances keeps tech-layer tiles transparent).
       //
-      // Collected in WORLD DBU and drawn after the decimation instead of
-      // here: these are one-pixel strokes, and a one-pixel feature sits at
-      // the output Nyquist, so the band-limiting resampler takes about half
-      // of it -- the die frame came out at 82 of the 160 Qt paints.  Qt's
-      // cosmetic pen writes at output resolution, and so does the pass these
-      // go to.  Transforming the polygon is also exact for a rotated chiplet,
-      // where the fills below fall back to drawing as if R0.
+      // Collected in WORLD DBU and drawn into the output buffer, under the
+      // layer content, after the loop: every chiplet's fills then cover the
+      // frame the way Qt's drawChip order does.  Transforming the polygon is
+      // also exact for a rotated chiplet, where the fills below fall back to
+      // drawing as if R0.
       if (draw_die_outline || instances_only) {
         collect_crisp_outline(block->getDieAreaPolygon(), node);
       }
@@ -3647,16 +4043,40 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               if (!box.overlaps(dbu_tile)) {
                 return;
               }
-              // image_buffer is the supersampled raster, so its side is
-              // `super`; passing it skips a sqrt+lround per shape.
+              if (pattern == FillPattern::kSolid) {
+                // Unclipped: fillCoverageRect needs the shape's real size and
+                // clamps to the buffer itself.
+                fillCoverageRect(image_buffer,
+                                 frame.pxX(box.xMin()),
+                                 frame.pxY(box.yMin()),
+                                 frame.pxX(box.xMax()),
+                                 frame.pxY(box.yMax()),
+                                 c,
+                                 draw_px);
+                return;
+              }
+              // Passing the buffer side skips a sqrt+lround per shape.
               drawFilledRect(image_buffer,
                              toPixels(frame, box.intersect(dbu_tile)),
                              c,
                              pattern,
                              pat_ox,
                              pat_oy,
-                             super);
+                             draw_px);
             };
+
+      // Solid polygons go through coverage like draw_box_in_tile's rects;
+      // patterned ones keep fillPolygon's pattern handling.
+      auto fill_poly_in_tile = [&](const odb::Polygon& poly,
+                                   const Color& c,
+                                   const FillPattern pattern) {
+        if (pattern == FillPattern::kSolid) {
+          fillCoveragePolygon(image_buffer, poly, frame, c, draw_px);
+        } else {
+          fillPolygon(
+              image_buffer, poly, frame, c, /*blend=*/false, pattern, draw_px);
+        }
+      };
 
       // The blockage hatch, shared by placement blockages, instance footprints
       // and routing obstructions so one design cannot show three spacings of
@@ -3670,13 +4090,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // Lit where (x - y) is on the lattice, y counting UP: that is the "/"
       // Qt gets from Qt::BDiagPattern (drawBlockages).  Using (x + y) mirrors
       // the pattern to "\\" -- same texture, but not the one beside it.
-      const int hash_period
-          = std::max(2,
-                     static_cast<int>(
-                         std::lround(kBlockageHashPeriodCss * super_per_css)));
+      const int hash_period = std::max(
+          2,
+          static_cast<int>(std::lround(kBlockageHashPeriodCss * px_per_css)));
       const int hash_width = std::max(
-          1,
-          static_cast<int>(std::lround(kBlockageHashWidthCss * super_per_css)));
+          1, static_cast<int>(std::lround(kBlockageHashWidthCss * px_per_css)));
       const int hash_ox = latticeAnchor(dbu_x_min, scale, hash_period);
       const int hash_oy = latticeAnchor(dbu_y_min, scale, hash_period);
       // One CSS px in buffer pixels; invariant for the tile.
@@ -3692,11 +4110,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         }
         const odb::Rect draw = toPixels(frame, box.intersect(dbu_tile));
         const int x_lo = std::max(0, draw.xMin());
-        const int x_hi = std::min(super, draw.xMax());
+        const int x_hi = std::min(draw_px, draw.xMax());
         const int y_lo = std::max(0, draw.yMin());
-        const int y_hi = std::min(super, draw.yMax());
+        const int y_hi = std::min(draw_px, draw.yMax());
         for (int iy = y_lo; iy < y_hi; ++iy) {
-          const int draw_y = super - 1 - iy;
+          const int draw_y = draw_px - 1 - iy;
           // Phase of x_lo on this row, in [0, hash_period).
           int phase = (x_lo + hash_ox - iy - hash_oy) % hash_period;
           if (phase < 0) {
@@ -3711,7 +4129,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           for (; start < x_hi; start += hash_period) {
             const int band_end = std::min(x_hi, start + hash_width);
             for (int bx = std::max(start, x_lo); bx < band_end; ++bx) {
-              blendPixel(image_buffer, bx, draw_y, kBlockageHash, super);
+              blendPixel(image_buffer, bx, draw_y, kBlockageHash, draw_px);
             }
           }
         }
@@ -3772,14 +4190,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int pyl
               = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
           const int pxh = std::min(
-              super - 1,
+              draw_px - 1,
               (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
           const int pyh = std::min(
-              super - 1,
+              draw_px - 1,
               (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
           for (int iy = pyl; iy < pyh; ++iy) {
             for (int ix = pxl; ix < pxh; ++ix) {
-              blendPixel(image_buffer, ix, super - 1 - iy, c);
+              blendPixel(image_buffer, ix, draw_px - 1 - iy, c);
             }
           }
         }
@@ -3810,11 +4228,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             = std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
                        kMinPinMarkerSize);
         const bool draw_pin_names = (static_cast<int>(die_pin_size * scale)
-                                     >= kMinPinNameSizePixels * super_per_css);
-        // Fonts are rasterized at the supersampled resolution so labels come
-        // out the intended CSS size after the tile is decimated to tile_px.
+                                     >= kMinPinNameSizePixels * px_per_css);
+        // Fonts are sized in buffer pixels so labels come out the intended
+        // CSS size on every display.
         const auto pin_label_font = fontAtlasGetFont(
-            static_cast<int>(std::lround(kPinLabelFontHeight * super_per_css)));
+            static_cast<int>(std::lround(kPinLabelFontHeight * px_per_css)));
 
         // Marker templates (same as GUI renderThread.cpp).
         // Defined for "top edge" orientation; rotated per actual edge.
@@ -3940,13 +4358,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               // Qt display controls.
               const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
               if (vis.pin_markers && marker_bbox.overlaps(dbu_tile)) {
-                fillPolygon(image_buffer,
-                            marker_poly,
-                            frame,
-                            marker_color,
-                            /*blend=*/false,
-                            FillPattern::kSolid,
-                            super);
+                fill_poly_in_tile(
+                    marker_poly, marker_color, FillPattern::kSolid);
               }
 
               // Draw the box rect itself (same as GUI painter.drawRect).
@@ -3970,7 +4383,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     (anchor_pt.x() - dbu_tile.xMin()) * scale);
                 const int anchor_py_raw = static_cast<int>(
                     (anchor_pt.y() - dbu_tile.yMin()) * scale);
-                const int anchor_py = super - 1 - anchor_py_raw;
+                const int anchor_py = draw_px - 1 - anchor_py_raw;
 
                 // Position text outward (away from die center), matching the
                 // GUI.
@@ -3993,8 +4406,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   py = anchor_py + marker_px + text_margin_px;
                 }
 
-                if (px > -block_w && px < super && py > -block_h
-                    && py < super) {
+                if (px > -block_w && px < draw_px && py > -block_h
+                    && py < draw_px) {
                   const Color text_color{.r = marker_color.r,
                                          .g = marker_color.g,
                                          .b = marker_color.b,
@@ -4043,15 +4456,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // their own drawing; skip all other drawing (instances, routing, etc.)
       const bool pseudo_layer = modules_layer || pins_layer || pseudo_overlay;
       if (!pseudo_layer) {
-        const auto iterm_font = fontAtlasGetFont(static_cast<int>(
-            std::lround(kItermLabelFontHeight * super_per_css)));
+        const auto iterm_font = fontAtlasGetFont(
+            static_cast<int>(std::lround(kItermLabelFontHeight * px_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
         // Both fonts are a fixed CSS size, so they are invariant for the whole
         // tile.  fontAtlasGetFont takes a global lock; asking per instance
         // would serialise the render threads on it.
         const auto inst_name_font = fontAtlasGetFont(
-            static_cast<int>(std::lround(kInstNameFontHeight * super_per_css)));
+            static_cast<int>(std::lround(kInstNameFontHeight * px_per_css)));
         const int inst_name_font_h = getTextHeight(inst_name_font);
 
         // Draw instances.  instance_size_limit_dbu culls sub-resolution
@@ -4092,50 +4505,68 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int64_t pixel_yh
               = (int64_t) std::ceil((yh - dbu_y_min) * scale);
 
-          const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, super);
-          const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, super);
-          const int loop_xh = std::clamp<int64_t>(pixel_xh, 0, super);
-          const int loop_yh = std::clamp<int64_t>(pixel_yh, 0, super);
+          const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, draw_px);
+          const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, draw_px);
+          const int loop_xh = std::clamp<int64_t>(pixel_xh, 0, draw_px);
+          const int loop_yh = std::clamp<int64_t>(pixel_yh, 0, draw_px);
 
-          const int draw_xl = std::clamp<int64_t>(pixel_xl, 0, super - 1);
-          const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, super - 1);
-          const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, super - 1);
-          const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, super - 1);
+          const int draw_xl = std::clamp<int64_t>(pixel_xl, 0, draw_px - 1);
+          const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, draw_px - 1);
+          const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, draw_px - 1);
+          const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, draw_px - 1);
 
-          // Sub-resolution instances (incl. dense bump arrays) were already
-          // culled by searchInsts(size_limit_dbu) above — matching the Qt GUI —
-          // so everything reaching here is large enough to draw discretely; no
-          // coverage-tint LOD (which read as a merged "sheet").
+          // In the default view sub-resolution instances (incl. dense bump
+          // arrays) were already culled by searchInsts(size_limit_dbu) above,
+          // matching the Qt GUI.  "Detailed view" passes 0 and relies on the
+          // coverage footprint below.
 
-          if (instances_only) {
+          // An instance too small for its outline to read as an outline is
+          // drawn as its footprint under coverage, so a dense sub-pixel array
+          // carries ink in proportion to its area instead of a
+          // phase-dependent 1-2 px per instance.
+          const double inst_w_px = (xh - xl) * scale;
+          const double inst_h_px = (yh - yl) * scale;
+          const bool coverage_inst
+              = instances_only
+                && std::min(inst_w_px, inst_h_px) < kCoverageInstancePx;
+          if (coverage_inst) {
+            // Unclipped, for the same reason as draw_box_in_tile.
+            fillCoverageRect(image_buffer,
+                             (xl - dbu_x_min) * scale,
+                             (yl - dbu_y_min) * scale,
+                             (xh - dbu_x_min) * scale,
+                             (yh - dbu_y_min) * scale,
+                             kOutlineGray,
+                             draw_px);
+          } else if (instances_only) {
             // Draw the rectangle border (instances-only layer)
             if (dbu_x_min <= xl && xl <= dbu_x_max) {
               for (int iy = loop_yl; iy < loop_yh; ++iy) {
-                const int draw_y = (super - 1 - iy);
+                const int draw_y = (draw_px - 1 - iy);
                 setPixel(image_buffer, draw_xl, draw_y, kOutlineGray);
               }
             }
             if (dbu_x_min <= xh && xh <= dbu_x_max) {
               for (int iy = loop_yl; iy < loop_yh; ++iy) {
-                const int draw_y = (super - 1 - iy);
+                const int draw_y = (draw_px - 1 - iy);
                 setPixel(image_buffer, draw_xh, draw_y, kOutlineGray);
               }
             }
             if (dbu_y_min <= yl && yl <= dbu_y_max) {
-              const int draw_y = (super - 1 - draw_yl);
+              const int draw_y = (draw_px - 1 - draw_yl);
               const int width = loop_xh - loop_xl;
               if (width > 0) {
                 unsigned char* row
-                    = &image_buffer[(draw_y * super + loop_xl) * 4];
+                    = &image_buffer[(draw_y * draw_px + loop_xl) * 4];
                 fillSpan({row, static_cast<size_t>(width) * 4}, kOutlineGray);
               }
             }
             if (dbu_y_min <= yh && yh <= dbu_y_max) {
-              const int draw_y = (super - 1 - draw_yh);
+              const int draw_y = (draw_px - 1 - draw_yh);
               const int width = loop_xh - loop_xl;
               if (width > 0) {
                 unsigned char* row
-                    = &image_buffer[(draw_y * super + loop_xl) * 4];
+                    = &image_buffer[(draw_y * draw_px + loop_xl) * 4];
                 fillSpan({row, static_cast<size_t>(width) * 4}, kOutlineGray);
               }
             }
@@ -4159,7 +4590,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // Qt gates the tag on the MASTER's height in DBU against
             // nominalViewableResolution(), which size_limit_dbu already is.
             if (master->getHeight() >= size_limit_dbu) {
-              drawOrientationTag(image_buffer, inst, frame, super, stroke);
+              drawOrientationTag(image_buffer, inst, frame, draw_px, stroke);
             }
 
             // The name is NOT drawn here.  Qt paints instance names near the
@@ -4189,13 +4620,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                    master->getPolygonObstructions()) {
                 odb::Polygon poly = poly_obs->getPolygon();
                 inst->getTransform().apply(poly);
-                fillPolygon(image_buffer,
-                            poly,
-                            frame,
-                            obs_color,
-                            /*blend=*/false,
-                            FillPattern::kSolid,
-                            super);
+                fill_poly_in_tile(poly, obs_color, FillPattern::kSolid);
               }
               for (odb::dbBox* obs : master->getObstructions(false)) {
                 odb::Rect box = obs->getBox();
@@ -4210,13 +4635,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   for (odb::dbPolygon* poly_geom : mpin->getPolygonGeometry()) {
                     odb::Polygon poly = poly_geom->getPolygon();
                     inst->getTransform().apply(poly);
-                    fillPolygon(image_buffer,
-                                poly,
-                                frame,
-                                color,
-                                /*blend=*/false,
-                                layer_pattern,
-                                super);
+                    fill_poly_in_tile(poly, color, layer_pattern);
                   }
                   for (odb::dbBox* geom : mpin->getGeometry(false)) {
                     odb::Rect box = geom->getBox();
@@ -4244,8 +4663,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     // Skip if pin box is too small in pixels.
                     const int box_px_w = static_cast<int>(box.dx() * scale);
                     const int box_px_h = static_cast<int>(box.dy() * scale);
-                    if (box_px_w < kMinItermLabelBoxPx * super_per_css
-                        && box_px_h < kMinItermLabelBoxPx * super_per_css) {
+                    if (box_px_w < kMinItermLabelBoxPx * px_per_css
+                        && box_px_h < kMinItermLabelBoxPx * px_per_css) {
                       continue;
                     }
 
@@ -4256,7 +4675,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     const odb::Point center = box.center();
                     const int cx = static_cast<int>(
                         (center.x() - dbu_tile.xMin()) * scale);
-                    const int cy = super - 1
+                    const int cy = draw_px - 1
                                    - static_cast<int>(
                                        (center.y() - dbu_tile.yMin()) * scale);
 
@@ -4267,8 +4686,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     if (rotate) {
                       const int px = cx - iterm_font_h / 2;
                       const int py = cy - text_w / 2;
-                      if (px > -iterm_font_h && px < super && py > -text_w
-                          && py < super) {
+                      if (px > -iterm_font_h && px < draw_px && py > -text_w
+                          && py < draw_px) {
                         drawTextRotated(image_buffer,
                                         px,
                                         py,
@@ -4279,8 +4698,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     } else {
                       const int px = cx - text_w / 2;
                       const int py = cy - iterm_font_h / 2;
-                      if (px > -text_w && px < super && py > -iterm_font_h
-                          && py < super) {
+                      if (px > -text_w && px < draw_px && py > -iterm_font_h
+                          && py < draw_px) {
                         drawText(image_buffer,
                                  px,
                                  py,
@@ -4312,13 +4731,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               for (const odb::Polygon& src : mg->obs_polys) {
                 odb::Polygon poly = src;
                 xfm.apply(poly);
-                fillPolygon(image_buffer,
-                            poly,
-                            frame,
-                            obs_color,
-                            /*blend=*/false,
-                            FillPattern::kSolid,
-                            super);
+                fill_poly_in_tile(poly, obs_color, FillPattern::kSolid);
               }
               for (const odb::Rect& src : mg->obs_boxes) {
                 odb::Rect box = src;
@@ -4331,13 +4744,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               for (const odb::Polygon& src : mg->pin_polys) {
                 odb::Polygon poly = src;
                 xfm.apply(poly);
-                fillPolygon(image_buffer,
-                            poly,
-                            frame,
-                            color,
-                            /*blend=*/false,
-                            layer_pattern,
-                            super);
+                fill_poly_in_tile(poly, color, layer_pattern);
               }
               for (const auto& [mterm, boxes] : mg->pin_boxes) {
                 for (const odb::Rect& src : boxes) {
@@ -4363,8 +4770,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   // Skip if pin box is too small in pixels.
                   const int box_px_w = static_cast<int>(box.dx() * scale);
                   const int box_px_h = static_cast<int>(box.dy() * scale);
-                  if (box_px_w < kMinItermLabelBoxPx * super_per_css
-                      && box_px_h < kMinItermLabelBoxPx * super_per_css) {
+                  if (box_px_w < kMinItermLabelBoxPx * px_per_css
+                      && box_px_h < kMinItermLabelBoxPx * px_per_css) {
                     continue;
                   }
 
@@ -4375,7 +4782,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   const odb::Point center = box.center();
                   const int cx = static_cast<int>((center.x() - dbu_tile.xMin())
                                                   * scale);
-                  const int cy = super - 1
+                  const int cy = draw_px - 1
                                  - static_cast<int>(
                                      (center.y() - dbu_tile.yMin()) * scale);
 
@@ -4386,16 +4793,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   if (rotate) {
                     const int px = cx - iterm_font_h / 2;
                     const int py = cy - text_w / 2;
-                    if (px > -iterm_font_h && px < super && py > -text_w
-                        && py < super) {
+                    if (px > -iterm_font_h && px < draw_px && py > -text_w
+                        && py < draw_px) {
                       drawTextRotated(
                           image_buffer, px, py, name, iterm_font, kLabelYellow);
                     }
                   } else {
                     const int px = cx - text_w / 2;
                     const int py = cy - iterm_font_h / 2;
-                    if (px > -text_w && px < super && py > -iterm_font_h
-                        && py < super) {
+                    if (px > -text_w && px < draw_px && py > -iterm_font_h
+                        && py < draw_px) {
                       drawText(
                           image_buffer, px, py, name, iterm_font, kLabelYellow);
                     }
@@ -4467,13 +4874,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Polygon& poly = std::get<1>(shape);
-            fillPolygon(image_buffer,
-                        poly,
-                        frame,
-                        color,
-                        /*blend=*/false,
-                        layer_pattern,
-                        super);
+            fill_poly_in_tile(poly, color, layer_pattern);
           }
         }
 
@@ -4583,7 +4984,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // Instance names last, as in Qt: every hatch this tile carries is
         // already down, so none of them can cross a label.
         for (odb::dbInst* named : named_insts) {
-          drawInstanceName(image_buffer, named, frame, super, inst_name_font);
+          drawInstanceName(image_buffer, named, frame, draw_px, inst_name_font);
         }
 
         // Draw routing obstructions (dbObstruction) on per-layer tiles.
@@ -4632,8 +5033,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           // per pixel of the row's full width on EVERY tile it crosses -- tens
           // of millions at deep zoom, nearly all of them rejected -- and feeds
           // unclamped doubles to odb::Rect's int constructor on the way.  It
-          // also strokes hairlineCss rather than a single buffer pixel, which
-          // is what stops the row fading out under the supersampled decimation.
+          // also strokes hairlineCss rather than a single buffer pixel, so a
+          // row keeps its CSS width on HiDPI displays.
           for (const auto& [row_rect, row] :
                search_->searchRows(block,
                                    dbu_tile.xMin(),
@@ -4671,7 +5072,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
 
               const int site_w_px = static_cast<int>(site_w * scale);
-              if (site_w_px >= 5 * super_per_css) {
+              if (site_w_px >= 5 * px_per_css) {
                 const odb::Point origin = row->getOrigin();
                 const int spacing = row->getSpacing();
                 const int count = row->getSiteCount();
@@ -4755,8 +5156,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // the lines stop and the seams stay aligned.
             const int pxl = toPxX(draw_bounds.xMin(), frame);
             const int pxh = toPxX(draw_bounds.xMax(), frame);
-            const int pyl = toPxY(draw_bounds.yMin(), frame, super);
-            const int pyh = toPxY(draw_bounds.yMax(), frame, super);
+            const int pyl = toPxY(draw_bounds.yMin(), frame, draw_px);
+            const int pyh = toPxY(draw_bounds.yMax(), frame, draw_px);
 
             Color track_color = color;
             track_color.a = 150;
@@ -4829,7 +5230,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                          y_grid.size());
               draw_clipped(
                   y_grid, draw_bounds.yMin(), draw_bounds.yMax(), [&](int ty) {
-                    const int py = toPxY(ty, frame, super);
+                    const int py = toPxY(ty, frame, draw_px);
                     drawLine(image_buffer,
                              pxl,
                              py,
@@ -4854,22 +5255,22 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // use blendPixel() to alpha-composite onto image_buffer.
         odb::dbTransform inv_xfm = node.world_xfm;
         inv_xfm.invert();
-        for (int py_w = 0; py_w < super; ++py_w) {
-          for (int px_w = 0; px_w < super; ++px_w) {
+        for (int py_w = 0; py_w < draw_px; ++py_w) {
+          for (int px_w = 0; px_w < draw_px; ++px_w) {
             // World pixel center → world DBU.
             odb::Point pt(std::lround(dbu_x_min_world + (px_w + 0.5) / scale),
                           std::lround(dbu_y_min_world
-                                      + (super - 1 - py_w + 0.5) / scale));
+                                      + (draw_px - 1 - py_w + 0.5) / scale));
             // World DBU → local DBU.
             inv_xfm.apply(pt);
             // Local DBU → local pixel.
             const int px_l = std::floor((pt.x() - dbu_x_min) * scale);
             const int py_l
-                = super - 1 - std::floor((pt.y() - dbu_y_min) * scale);
-            if (px_l < 0 || px_l >= super || py_l < 0 || py_l >= super) {
+                = draw_px - 1 - std::floor((pt.y() - dbu_y_min) * scale);
+            if (px_l < 0 || px_l >= draw_px || py_l < 0 || py_l >= draw_px) {
               continue;
             }
-            const int src_idx = (py_l * super + px_l) * 4;
+            const int src_idx = (py_l * draw_px + px_l) * 4;
             const unsigned char a_src = local_image_buffer[src_idx + 3];
             if (a_src == 0) {
               continue;
@@ -4880,30 +5281,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 .b = local_image_buffer[src_idx + 2],
                 .a = a_src,
             };
-            blendPixel(super_buffer, px_w, py_w, src_color);
+            blendPixel(draw_buffer, px_w, py_w, src_color);
           }
         }
       }
     }  // end per-chiplet for-loop
 
-    // This is the anti-moiré step — prefiltering the dense periodic geometry so
-    // no beat survives at the output (physical) pixel grid.  Empty tiles
-    // (common while panning) skip the decimation entirely: world_image_buffer
-    // holds a transparent tile_px buffer (or just the frames), and a
-    // transparent super buffer cannot alias.  anyNonZero early-exits on the
-    // first drawn byte, so non-empty tiles pay almost nothing for the check.
-    // Overlays draw at the OUTPUT resolution (crisp lines/text, not band-
-    // limited), so they map DBU to pixels with the output-space scale.
-    // `scale` is super-space (super px per DBU); the output buffer is tile_px
-    // = super / kCoverageSupersample on a side.  Dividing by super_per_css
-    // (= dpr * kCoverageSupersample) instead would land in CSS space and
-    // shrink every overlay to 1/dpr of the tile on HiDPI.
-    const double scale_out = scale / kCoverageSupersample;
-    // Same tile, same exact origin, output-resolution scale — and one physical
-    // pixel per CSS pixel per dpr, rather than the supersampled frame's.
-    TileFrame out_frame = world_frame;
-    out_frame.scale = scale_out;
-    out_frame.px_per_css = effective_dpr;
+    // Overlays draw straight into the output buffer: the tile's own frame,
+    // without the apron.
+    const TileFrame& out_frame = tile_frame;
 
     // The die, core and region frames go down FIRST, at the resolution they
     // are meant to land on (see where they were collected), and the layer's
@@ -4915,18 +5301,30 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       outlinePolygonInTile(world_image_buffer, poly, kOutlineGray, out_frame);
     }
 
-    // Band-limit: Lanczos-2 decimate the supersampled fills onto that.
-    if (anyNonZero(super_buffer)) {
-      const std::vector<unsigned char> decimated
-          = lanczos2Downsample(super_buffer, super, tile_px);
+    // Quantize the coverage alpha and crop the apron off onto that.  Empty
+    // tiles (common while panning) skip both: anyNonZero early-exits on the
+    // first drawn byte, so non-empty tiles pay almost nothing for the check.
+    if (anyNonZero(draw_buffer)) {
+      quantizeCoverageAlpha(draw_buffer, kCoverageAlphaLevels);
+      std::vector<unsigned char> cropped(static_cast<size_t>(tile_px) * tile_px
+                                         * 4);
+      for (int row = 0; row < tile_px; ++row) {
+        std::memcpy(
+            &cropped[static_cast<size_t>(row) * tile_px * 4],
+            &draw_buffer[(static_cast<size_t>(row + kTileApronPx) * draw_px
+                          + kTileApronPx)
+                         * 4],
+            static_cast<size_t>(tile_px) * 4);
+      }
       if (crisp_outlines.empty()) {
-        world_image_buffer = decimated;
+        world_image_buffer = std::move(cropped);
       } else {
-        for (size_t i = 0; i + 3 < decimated.size(); i += 4) {
-          compositePixel(&world_image_buffer[i], &decimated[i]);
+        for (size_t i = 0; i + 3 < cropped.size(); i += 4) {
+          compositePixel(&world_image_buffer[i], &cropped[i]);
         }
       }
     }
+    endCoverageLog();
 
     // Overlays render once in world space, on top of all chiplets.
     // Their geometry (timing paths, DRC rects, flight lines) is already
@@ -5197,199 +5595,6 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
                     lodepng_error_text(encode_error));
   }
   return png_data;
-}
-
-// ---------------------------------------------------------------------------
-// Band-limited decimation (anti-moiré).
-//
-// Dense periodic geometry (bump/UBM arrays) rasterized with ~1px coverage
-// aliases: a near-Nyquist fundamental beats into a low-frequency moiré that no
-// post-blur can remove.  The fix is to prefilter DURING sampling: rasterize the
-// whole tile at a supersample factor S and decimate back to the output grid
-// with a separable Lanczos-2 kernel whose cutoff sits at the *output* Nyquist.
-// Validated by DSP: at output pitch {0.5,1,2}px the beat drops ~10x while a
-// resolved grid (pitch >=4px) keeps its contrast.
-// ---------------------------------------------------------------------------
-
-static constexpr double kLanczosPi = std::numbers::pi;
-
-// Lanczos-2 windowed-sinc: L(t) = sinc(t) * sinc(t/2) for |t| < 2, else 0.
-static double lanczos2Kernel(const double t)
-{
-  if (t == 0.0) {
-    return 1.0;
-  }
-  if (t <= -2.0 || t >= 2.0) {
-    return 0.0;
-  }
-  const double pt = kLanczosPi * t;
-  return (std::sin(pt) / pt) * (std::sin(pt / 2.0) / (pt / 2.0));
-}
-
-// For integer decimation S = src_dim/dst_dim, precompute per-output-pixel taps
-// (clamped source index + normalized weight).  The kernel argument is scaled by
-// 1/S so the cutoff is the destination Nyquist (this is what suppresses the
-// beat).  The Lanczos weights are additionally convolved with a binomial
-// prefilter (kLanczosPrefilterBinomial) in source space, which puts an exact
-// zero at the source Nyquist and deepens the soft Lanczos stopband so a dense
-// periodic array near the output Nyquist is nulled rather than leaked.  Edge
-// pixels clamp the source index and renormalize by the weight sum, so uniform
-// regions and the tile border stay flat (DC-preserving → no seam, no sheet).
-static std::vector<std::vector<std::pair<int, float>>> buildLanczos2Taps(
-    const int src_dim,
-    const int dst_dim)
-{
-  const double s = static_cast<double>(src_dim) / dst_dim;
-  const double radius = 2.0 * s;  // support, in source samples
-  std::vector<std::vector<std::pair<int, float>>> taps(dst_dim);
-  for (int o = 0; o < dst_dim; ++o) {
-    const double c = (o + 0.5) * s - 0.5;  // source-sample center
-    const int i0 = static_cast<int>(std::ceil(c - radius));
-    const int i1 = static_cast<int>(std::floor(c + radius));
-    // Accumulate the Lanczos weight of each source sample, spread by the
-    // binomial prefilter onto its neighbours; clamp-to-edge and merge by
-    // clamped index (a std::map keeps the indices sorted and deduplicated).
-    std::map<int, double> acc;
-    for (int i = i0; i <= i1; ++i) {
-      const double w = lanczos2Kernel((i - c) / s);
-      if (w == 0.0) {
-        continue;
-      }
-      for (int k = -1; k <= 1; ++k) {
-        const int idx = std::clamp(i + k, 0, src_dim - 1);
-        acc[idx] += w * kLanczosPrefilterBinomial[k + 1];
-      }
-    }
-    double wsum = 0.0;
-    for (const auto& [idx, w] : acc) {
-      wsum += w;
-    }
-    std::vector<std::pair<int, float>>& row = taps[o];
-    row.reserve(acc.size());
-    for (const auto& [idx, w] : acc) {
-      row.emplace_back(idx, static_cast<float>(wsum != 0.0 ? w / wsum : w));
-    }
-  }
-  return taps;
-}
-
-// Memoized Lanczos-2 taps.  (src_dim, dst_dim) depend only on dpr — a few
-// distinct values per session — so the taps (and their sin/cos) are built once
-// and reused across every tile.  Entries are never erased, so the returned
-// reference stays valid after the lock is released.
-static const std::vector<std::vector<std::pair<int, float>>>& getLanczos2Taps(
-    const int src_dim,
-    const int dst_dim)
-{
-  static std::mutex mu;
-  static std::map<std::pair<int, int>,
-                  std::vector<std::vector<std::pair<int, float>>>>
-      cache;
-  const std::lock_guard<std::mutex> lock(mu);
-  const std::pair<int, int> key{src_dim, dst_dim};
-  auto it = cache.find(key);
-  if (it == cache.end()) {
-    it = cache.emplace(key, buildLanczos2Taps(src_dim, dst_dim)).first;
-  }
-  return it->second;
-}
-
-// Separable Lanczos-2 downsample of a straight-alpha RGBA buffer from src_dim^2
-// to dst_dim^2.  Alpha is premultiplied before convolution and un-premultiplied
-// after (a straight-alpha convolution dark-fringes coverage edges).  src and
-// dst are square (tiles are square).
-static std::vector<unsigned char> lanczos2Downsample(
-    const std::vector<unsigned char>& src,
-    const int src_dim,
-    const int dst_dim)
-{
-  std::vector<unsigned char> dst(static_cast<size_t>(dst_dim) * dst_dim * 4, 0);
-  if (dst_dim <= 0) {
-    return dst;
-  }
-
-  const std::vector<std::vector<std::pair<int, float>>>& taps
-      = getLanczos2Taps(src_dim, dst_dim);
-
-  // Horizontal pass: premultiply + convolve along X into a float intermediate
-  // indexed [src_row][dst_col][channel].  Reused across calls on this thread;
-  // every element is overwritten below, so no re-zeroing is needed.
-  static thread_local std::vector<float> inter;
-  inter.resize(static_cast<size_t>(src_dim) * dst_dim * 4);
-  const size_t src_row_bytes = static_cast<size_t>(src_dim) * 4;
-
-  for (int sy = 0; sy < src_dim; ++sy) {
-    const unsigned char* srow = &src[static_cast<size_t>(sy) * src_row_bytes];
-    float* inter_row = &inter[static_cast<size_t>(sy) * dst_dim * 4];
-
-    // Fast path: if the entire source row is transparent (common in sparse
-    // layers), write zeros to the intermediate row and continue.
-    const bool row_empty = !anyNonZero({srow, src_row_bytes});
-    if (row_empty) {
-      std::memset(
-          inter_row, 0, static_cast<size_t>(dst_dim) * 4 * sizeof(float));
-      continue;
-    }
-
-    for (int ox = 0; ox < dst_dim; ++ox) {
-      float r = 0, g = 0, b = 0, a = 0;
-      for (const auto& [sx, w] : taps[ox]) {
-        const unsigned char* p = &srow[static_cast<size_t>(sx) * 4];
-        const unsigned char pa = p[3];
-        if (pa == 0) {
-          continue;
-        }
-        const float scale_w = (w * static_cast<float>(pa)) * (1.0f / 255.0f);
-        r += p[0] * scale_w;
-        g += p[1] * scale_w;
-        b += p[2] * scale_w;
-        a += w * static_cast<float>(pa);
-      }
-      float* out = &inter_row[ox * 4];
-      out[0] = r;
-      out[1] = g;
-      out[2] = b;
-      out[3] = a;
-    }
-  }
-
-  // Vertical pass: convolve along Y, un-premultiply, clamp (Lanczos
-  // overshoots).
-  for (int oy = 0; oy < dst_dim; ++oy) {
-    for (int ox = 0; ox < dst_dim; ++ox) {
-      float r = 0, g = 0, b = 0, a = 0;
-      for (const auto& [sy, w] : taps[oy]) {
-        const float* p = &inter[(static_cast<size_t>(sy) * dst_dim + ox) * 4];
-        const float pa = p[3];
-        if (pa == 0.0f) {
-          continue;
-        }
-        r += w * p[0];
-        g += w * p[1];
-        b += w * p[2];
-        a += w * pa;
-      }
-      unsigned char* d = &dst[(static_cast<size_t>(oy) * dst_dim + ox) * 4];
-      const float ai = std::clamp(a, 0.0f, 255.0f);
-      // Alpha below 0.5 rounds to 0 below; emit a fully-zero pixel rather
-      // than (255/ai)-amplified colour under a zero alpha, which would defeat
-      // the transparent-buffer early exits downstream.
-      if (ai < 0.5f) {
-        d[0] = d[1] = d[2] = d[3] = 0;
-        continue;
-      }
-      const float inv_ai = 255.0f / ai;
-      const auto unpremult = [&](const float ch) {
-        return static_cast<unsigned char>(
-            std::lround(std::clamp(ch * inv_ai, 0.0f, 255.0f)));
-      };
-      d[0] = unpremult(r);
-      d[1] = unpremult(g);
-      d[2] = unpremult(b);
-      d[3] = static_cast<unsigned char>(std::lround(ai));
-    }
-  }
-  return dst;
 }
 
 std::vector<unsigned char> TileGenerator::renderImageBuffer(
@@ -6502,9 +6707,7 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   }
   // Brush extent either side of the traced pixel, as a half-open span so an
   // EVEN width covers `width` pixels rather than width-1: (width-1)/2 alone
-  // rounds 2 down to a 1 px brush, which halved every hairlineCss() stroke --
-  // and on the supersampled path a half-width hairline decimates to a sixth of
-  // its colour instead of a solid output pixel.
+  // rounds 2 down to a 1 px brush, which halved every hairlineCss() stroke.
   const int r_lo = (width - 1) / 2;
   const int r_hi = width / 2;
   int x0 = 0;
@@ -6516,9 +6719,8 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   // radius) BEFORE running Bresenham: callers may pass endpoints far
   // outside the tile (flywires, region edges at deep zoom) and an
   // unclipped line iterates one step per pixel of its full length.
-  // The bound follows the buffer, like setPixel/drawFilledRect: overlay
-  // painters run on the supersampled buffer, where a hardcoded 256 would
-  // clip away everything past the first quadrant.
+  // The bound follows the buffer, like setPixel/drawFilledRect: buffers are
+  // not always 256 px, and a hardcoded 256 would clip a larger one.
   //
   // Clipping (not saturating) is also what keeps the slope exact: the clip
   // moves both endpoints along the segment's own parameter t, so the

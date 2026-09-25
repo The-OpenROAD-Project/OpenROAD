@@ -291,7 +291,7 @@ static double quantizeDpr(const double raw)
 // it will use, so it names the pixel count.
 //
 // Clamped so a malformed request cannot ask for a gigantic buffer — the render
-// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// allocates about tile_px squared.  0 (absent or unusable) means "not
 // specified"; the generator falls back to 256*dpr.
 static int quantizeTilePx(const double raw)
 {
