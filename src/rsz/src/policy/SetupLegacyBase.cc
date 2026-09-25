@@ -841,36 +841,29 @@ int SetupLegacyBase::totalMoves(const MoveType type) const
 
 void SetupLegacyBase::printProgress(const int iteration,
                                     const bool force,
-                                    const char phase_marker,
-                                    const bool use_startpoint_metrics) const
+                                    const char phase_marker) const
 {
+  const bool show_startpoint_metrics = showStartpointMetrics();
   const bool start = iteration == 0;
+  const bool metrics_changed
+      = setup_context_.progress_header_printed
+        && setup_context_.progress_header_show_startpoint_metrics
+               != show_startpoint_metrics;
 
-  if (start) {
-    setup_context_.progress_header_printed = true;
-    logger_->report(
-        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  ");
-    logger_->report(
-        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |          |            |            | Endpts | St/EnPt ");
-    logger_->report(
-        "---------------------------------------------------------------"
-        "---------------------------------------------------------------");
+  if (start || metrics_changed) {
+    printProgressHeader();
   }
 
   if (iteration % print_interval_ != 0 && !force) {
     return;
   }
 
-  // StTNS is printed in every progress row, so collect startpoints only when a
-  // row is actually emitted.
-  target_collector_->collectViolatingStartpoints();
+  if (show_startpoint_metrics) {
+    target_collector_->collectViolatingStartpoints();
+  }
 
   const sta::Slack wns = target_collector_->getWns();
-  const sta::Slack st_tns = target_collector_->getTns(true);
   const sta::Slack en_tns = target_collector_->getTns(false);
-  const bool show_startpoint_metrics = use_startpoint_metrics;
   const sta::Pin* worst_pin
       = target_collector_->getWorstPin(show_startpoint_metrics);
 
@@ -895,9 +888,9 @@ void SetupLegacyBase::printProgress(const int iteration,
         = area_growth / setup_context_.initial_design_area * 100.0;
   }
 
-  logger_->report(
+  const std::string progress_prefix = fmt::format(
       "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
-      "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >10s} | {: >6d} | {}",
+      "| {: >+7.1f}% | {: >8s}",
       itr_field,
       totalMoves(MoveType::kUnbuffer),
       totalMoves(MoveType::kSizeUp) + totalMoves(MoveType::kSizeDownFanout)
@@ -906,11 +899,21 @@ void SetupLegacyBase::printProgress(const int iteration,
       totalMoves(MoveType::kClone),
       totalMoves(MoveType::kSwapPins),
       area_growth_percent,
-      delayAsString(wns, 3, sta_),
-      delayAsString(st_tns, 1, sta_),
-      delayAsString(en_tns, 1, sta_),
-      std::max(0, target_collector_->getNumViolatingEndpoints()),
-      worst_pin != nullptr ? network_->pathName(worst_pin) : "");
+      delayAsString(wns, 3, sta_));
+
+  const std::string startpoint_tns_field
+      = show_startpoint_metrics
+            ? fmt::format(
+                  " | {: >10s}",
+                  delayAsString(target_collector_->getTns(true), 1, sta_))
+            : "";
+
+  logger_->report("{}{} | {: >10s} | {: >6d} | {}",
+                  progress_prefix,
+                  startpoint_tns_field,
+                  delayAsString(en_tns, 1, sta_),
+                  std::max(0, target_collector_->getNumViolatingEndpoints()),
+                  worst_pin != nullptr ? network_->pathName(worst_pin) : "");
 
   debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
 }

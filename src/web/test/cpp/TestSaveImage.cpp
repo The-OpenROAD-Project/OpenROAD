@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
@@ -115,10 +116,10 @@ class SaveImageTest : public tst::Nangate45Fixture
   // True if any visible pixel isn't part of the always-on die/core outline,
   // which getBounds() now guarantees is in every saved image.  Matches
   // TileGeneratorTest::hasNonOutlinePixel: the outline is kOutlineGray and
-  // alpha is NOT checked, because tiles are rasterized supersampled and
-  // decimated, so its edge pixels come back at partial coverage while the RGB
-  // stays put.  Testing by colour rather than by carving out a border keeps
-  // the die edge itself in scope — that is where pin markers are drawn.
+  // alpha is NOT checked, because its edge pixels can come back at partial
+  // coverage while the RGB stays put.  Testing by colour rather than by carving
+  // out a border keeps the die edge itself in scope — that is where pin markers
+  // are drawn.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
@@ -165,6 +166,44 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
 }
 
+// Tiles are rasterized on transparency, so the pixels no layer covers come out
+// transparent by default.  A caller saving what a viewer shows passes that
+// viewer's background instead -- what WebServer::saveImage does, so that
+// `save_image -web` matches the Qt GUI's opaque background rather than writing
+// a transparent PNG.
+TEST_F(SaveImageTest, BackgroundFillsUncoveredPixels)
+{
+  const std::string default_path = tempPng("bg_default");
+  tile_gen_->saveImage(default_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  // Deliberately not black: black would also be what a transparent pixel
+  // decodes to, and this has to show the fill color is the one honoured.
+  constexpr Color kMagenta{.r = 255, .g = 0, .b = 255, .a = 255};
+  const std::string filled_path = tempPng("bg_filled");
+  tile_gen_->saveImage(
+      filled_path, odb::Rect(0, 0, 0, 0), 256, 0, {}, kMagenta);
+
+  unsigned default_w = 0, default_h = 0;
+  const auto default_pixels = decodePngFile(default_path, default_w, default_h);
+  EXPECT_LT(countNonTransparentPixels(default_pixels),
+            default_pixels.size() / 4)
+      << "the default should leave the uncovered pixels transparent";
+
+  unsigned filled_w = 0, filled_h = 0;
+  const auto filled_pixels = decodePngFile(filled_path, filled_w, filled_h);
+  ASSERT_EQ(filled_w, default_w);
+  ASSERT_EQ(filled_h, default_h);
+  EXPECT_EQ(countNonTransparentPixels(filled_pixels), filled_pixels.size() / 4)
+      << "a background makes every pixel opaque";
+  // The margin corner is outside the die, so no layer draws there and the
+  // background is all that is left.
+  ASSERT_GE(filled_pixels.size(), 4u);
+  EXPECT_EQ(filled_pixels[0], kMagenta.r);
+  EXPECT_EQ(filled_pixels[1], kMagenta.g);
+  EXPECT_EQ(filled_pixels[2], kMagenta.b);
+  EXPECT_EQ(filled_pixels[3], kMagenta.a);
+}
+
 TEST_F(SaveImageTest, WidthOption)
 {
   const std::string path = tempPng("width");
@@ -189,6 +228,44 @@ TEST_F(SaveImageTest, ResolutionOption)
   // Allow some tolerance for rounding and bloat margin.
   EXPECT_GT(w, 500u);
   EXPECT_LT(w, 2000u);
+}
+
+// A zero-area request means the rect the viewer frames on -- the die area
+// unioned with the block bbox -- plus 5% of its smaller dimension.  That is
+// the rule Gui::saveImage gives the Qt path, so the two renderers frame a
+// default save_image identically; framing on the die alone (or bloating by the
+// LARGER dimension) put them a percent apart.
+TEST_F(SaveImageTest, ZeroAreaFramesDieUnionBBoxWithMargin)
+{
+  // Place an instance past the right die edge so the bbox is not contained in
+  // the die and the union is the only rect that covers both.
+  placeInst("BUF_X16", "overhang", 99000, 50000);
+  makeTileGen();
+
+  odb::Rect expected = block_->getBBox()->getBox();
+  expected.merge(block_->getDieArea());
+  ASSERT_GT(expected.xMax(), block_->getDieArea().xMax())
+      << "the overhanging instance should widen the union";
+  expected.bloat(
+      static_cast<int>(std::min(expected.dx(), expected.dy()) * 0.05),
+      expected);
+
+  const std::string zero_area_path = tempPng("frame_zero_area");
+  tile_gen_->saveImage(zero_area_path, odb::Rect(0, 0, 0, 0), 512, 0, {});
+
+  const std::string explicit_path = tempPng("frame_explicit");
+  tile_gen_->saveImage(explicit_path, expected, 512, 0, {});
+
+  unsigned zero_w = 0, zero_h = 0;
+  const auto zero_pixels = decodePngFile(zero_area_path, zero_w, zero_h);
+  unsigned explicit_w = 0, explicit_h = 0;
+  const auto explicit_pixels
+      = decodePngFile(explicit_path, explicit_w, explicit_h);
+
+  EXPECT_EQ(zero_w, explicit_w);
+  EXPECT_EQ(zero_h, explicit_h);
+  EXPECT_EQ(zero_pixels, explicit_pixels)
+      << "a zero-area save should render exactly that rect";
 }
 
 TEST_F(SaveImageTest, ExplicitAreaOption)
@@ -308,6 +385,102 @@ TEST_F(SaveImageTest, EmptyDesign)
       << "the die outline should still be drawn";
 }
 
+// A hairline is authored as one CSS pixel, and drawLine's brush has to cover
+// that many pixels: its radius came out (width-1)/2, so an EVEN width -- which
+// is what hairlineCss() returns at dpr 2 -- lost a pixel and the stroke went
+// down at half its width.  Measured on the GCell grid at dpr 2, where each
+// vertical grid line must be two device pixels wide.
+TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
+{
+  odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
+  ASSERT_NE(grid, nullptr);
+  grid->addGridPatternX(0, 11, 10000);
+  grid->addGridPatternY(0, 11, 10000);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.gcell_grid = true;
+  const std::vector<unsigned char> png = tile_gen_->generateTile("_gcell_grid",
+                                                                 0,
+                                                                 0,
+                                                                 0,
+                                                                 vis,
+                                                                 {},
+                                                                 {},
+                                                                 {},
+                                                                 {},
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 /*dpr=*/2.0);
+  std::vector<unsigned char> pixels;
+  unsigned w = 0, h = 0;
+  ASSERT_EQ(lodepng::decode(pixels, w, h, png), 0u);
+  ASSERT_EQ(w, 512u);
+  // Sampled on rows that hold only the vertical lines: a row ALONG a
+  // horizontal line is lit all the way across.
+  int runs = 0;
+  for (unsigned y = 0; y < h; ++y) {
+    const size_t row = static_cast<size_t>(y) * w * 4;
+    int lit = 0;
+    for (unsigned x = 0; x < w; ++x) {
+      lit += pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
+    }
+    if (lit == 0 || lit > 60) {
+      continue;
+    }
+    int run = 0;
+    for (unsigned x = 0; x <= w; ++x) {
+      const bool on = x < w && pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
+      if (on) {
+        ++run;
+      } else if (run > 0) {
+        EXPECT_GE(run, 2) << "grid line at x=" << x - run << " y=" << y
+                          << " is thinner than the hairline width asked for";
+        ++runs;
+        run = 0;
+      }
+    }
+  }
+  EXPECT_GT(runs, 0) << "no vertical grid line was sampled";
+}
+
+// The die outline is a one-pixel stroke, and it has to survive the
+// mosaic-to-image resample a saved image goes through, which picked a single
+// nearest sample and so dropped whole edges at some widths.
+// Checked across widths because which edge fell in a skipped column depended on
+// the step between the two scales.
+TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
+{
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "outline_only");
+  block_->setDefUnits(lib_->getTech()->getLefUnits());
+  block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+  makeTileGen();
+
+  for (const int width : {300, 512, 700, 1024}) {
+    const std::string path = tempPng("die_outline_" + std::to_string(width));
+    tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), width, 0, {});
+
+    unsigned w = 0, h = 0;
+    const auto pixels = decodePngFile(path, w, h);
+    ASSERT_EQ(w, static_cast<unsigned>(width));
+
+    // The middle row crosses the left and right edges of the die and nothing
+    // else, so it must carry exactly two runs of outline.
+    int lit = 0;
+    const size_t mid_row = static_cast<size_t>(h / 2) * w * 4;
+    for (unsigned x = 0; x < w; ++x) {
+      if (pixels[mid_row + x * 4 + 3] > 0) {
+        ++lit;
+      }
+    }
+    EXPECT_GE(lit, 2) << "at width " << width
+                      << " the die outline lost an edge";
+  }
+}
+
 TEST_F(SaveImageTest, LargeWidthClamped)
 {
   const std::string path = tempPng("clamped");
@@ -335,6 +508,73 @@ TEST_F(SaveImageTest, PinMarkersRendered)
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// The marker's size follows the region being drawn, as Qt's does
+// (RenderThread::setupIOPins takes min(die, bounds)).  A tile's own span is
+// that region only for a client showing a handful of tiles; saveImage
+// composites every tile of the level, so sizing off one tile shrank the
+// markers by 2^z -- a 2 px nub where Qt draws a 20 px arrow.
+//
+// Measured against the SAME image with the markers off, so only the arrows are
+// in the difference: the BTerm shapes and the die outline cancel out.
+TEST_F(SaveImageTest, PinMarkersSizedForTheImageNotTheTile)
+{
+  makeBTermAtEdge("in_pin", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeBTermAtEdge(
+      "out_pin", "metal1", 99800, 60000, 200, 200, odb::dbIoType::OUTPUT);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  const std::string with_markers = tempPng("markers_on");
+  tile_gen_->saveImage(with_markers, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  vis.pin_markers = false;
+  const std::string without_markers = tempPng("markers_off");
+  tile_gen_->saveImage(without_markers, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  unsigned on_w = 0, on_h = 0, off_w = 0, off_h = 0;
+  const auto on = decodePngFile(with_markers, on_w, on_h);
+  const auto off = decodePngFile(without_markers, off_w, off_h);
+  ASSERT_EQ(on_w, off_w);
+  ASSERT_EQ(on_h, off_h);
+
+  const size_t marker_px
+      = countNonTransparentPixels(on) - countNonTransparentPixels(off);
+
+  // Two markers, each an arrow of pin_max_size = 0.02 * 100000 DBU rendered at
+  // 512px / (die + 5%), i.e. ~9 px long and half that across: ~20 px of
+  // triangle apiece.  Sized off a tile instead it is ~6 px apiece, so the
+  // threshold below separates the two cases with room for rasterization.
+  EXPECT_GT(marker_px, 25u)
+      << "IO pin markers are too small for the image they are drawn in";
+}
+
+TEST_F(SaveImageTest, PinMarkersCanBeHidden)
+{
+  makeBTermAtEdge("in_pin", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  const std::string shown = tempPng("markers_shown");
+  tile_gen_->saveImage(shown, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  // pin_markers gates the direction arrow alone -- the BTerm's own shape stays,
+  // because that is what vis.pins covers.
+  vis.pin_markers = false;
+  const std::string hidden = tempPng("markers_hidden");
+  tile_gen_->saveImage(hidden, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  const auto shown_px = decodePngFile(shown, w1, h1);
+  const auto hidden_px = decodePngFile(hidden, w2, h2);
+  EXPECT_LT(countNonTransparentPixels(hidden_px),
+            countNonTransparentPixels(shown_px))
+      << "pin_markers=false should remove the direction arrows";
+  EXPECT_TRUE(hasNonTransparentPixel(hidden_px))
+      << "the BTerm shape and die outline should survive";
 }
 
 TEST_F(SaveImageTest, MultipleLayersComposited)

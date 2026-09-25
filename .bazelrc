@@ -291,6 +291,34 @@ build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
 build:lint --output_groups=rules_lint_report
 build:lint --remote_download_outputs=all
 
+# Telling real work from cache hits.
+#
+# The console counter ("[7,203 / 18,048] Compiling detailed_abu.cxx; 20s
+# disk-cache, remote-cache, processwrapper-sandbox") advances for cache hits
+# and real compiles alike. The strategy list is the sequence of stages the
+# action has passed through, so the last entry is what is happening right now:
+# a trailing local strategy (processwrapper-sandbox, linux-sandbox, local)
+# means both caches missed and the compiler is running. A cache hit reaches no
+# local strategy and disappears within a fraction of a second. The
+# end-of-build "INFO: N processes: ..." line breaks the whole build down by
+# runner (action cache hit / disk cache hit / remote cache hit / the local
+# strategies), and needs no flags.
+#
+# --config=explain adds, per action that was not served from the action cache,
+# the reason Bazel considered it out of date.
+# Usage: bazelisk build --config=explain //src/dpl:dpl
+build:explain --explain=bazel-cachelog-explain.txt
+build:explain --verbose_explanations
+
+# --config=cachelog additionally records every spawn Bazel looked up or ran
+# along with the runner that served it, for etc/bazel-cache-summary.py. Each
+# record carries the spawn's full input list, a few MB per executed action, so
+# this is meant for incremental builds rather than for building everything.
+# Usage: bazelisk build --config=cachelog //src/dpl:dpl
+#        etc/bazel-cache-summary.py
+build:cachelog --config=explain
+build:cachelog --execution_log_json_file=bazel-cachelog.json
+
 # Release builds embed real git version info; dev builds use cache-safe placeholders.
 # Usage: bazel build --config=release //...
 build:release --stamp

@@ -10,4 +10,4 @@ set def_file [make_result_file min_dist_in_tracks2.def]
 
 write_def $def_file
 
-diff_file min_dist_in_tracks2.defok $def_file
+diff_files min_dist_in_tracks2.defok $def_file

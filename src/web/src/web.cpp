@@ -1763,11 +1763,22 @@ void WebServer::saveReport(const std::string& filename,
                   "Multi-die design: the module hierarchy section will be "
                   "empty, it is not aggregated across chiplets yet.");
   }
+  // Read before the walk; see TileGenerator::setInstGroups.
+  const uint64_t search_revision = generator_->searchRevision();
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
+
+  // The tiles below are rendered in-process, so the module overlay baked into
+  // them reads the same mapping the live viewer would.
+  if (hier_result.name_grouped) {
+    generator_->setInstGroups(block,
+                              std::make_shared<const std::vector<uint32_t>>(
+                                  std::move(hier_result.inst_group)),
+                              search_revision);
+  }
 
   auto module_colors = computeDefaultModuleColors(hier_result);
   const std::map<uint32_t, Color>* mod_colors_ptr
@@ -2028,6 +2039,57 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   }
   return vis;
 }
+
+// The background a saved image or GIF frame carries behind the layers.  Tiles
+// are rasterized on transparency so they can be composited in any order, but
+// save_image reproduces a *view*, and the Qt GUI fills the uncovered pixels
+// with DisplayControls' background (black by default) -- so leaving them
+// transparent is what made `save_image -web` and `save_image` of the same
+// design disagree.
+//
+// Both web themes set --bg-map to #000 as well, so black is the answer unless
+// a client overrode it: that override reaches us as or_bg_color in the display
+// state the viewer syncs (theme.js setBackgroundColor), in the "#rrggbb" form
+// isValidHexColor enforces.
+Color viewerBackground(const WebViewerHook* hook)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  if (hook == nullptr) {
+    return kBlack;
+  }
+  const std::string state = hook->getDisplayState();
+  if (state.empty()) {
+    return kBlack;
+  }
+  std::error_code ec;
+  const boost::json::value parsed = boost::json::parse(state, ec);
+  if (ec) {
+    return kBlack;
+  }
+  const boost::json::object* obj = parsed.if_object();
+  if (obj == nullptr) {
+    return kBlack;
+  }
+  const boost::json::value* entries = obj->if_contains("entries");
+  if (entries == nullptr || !entries->is_object()) {
+    return kBlack;
+  }
+  const boost::json::value* color
+      = entries->get_object().if_contains("or_bg_color");
+  if (color == nullptr || !color->is_string()) {
+    return kBlack;
+  }
+  const std::string_view hex(color->get_string());
+  unsigned rgb = 0;
+  if (hex.size() != 7 || hex[0] != '#'
+      || !parseIntExact(hex.substr(1), rgb, 16)) {
+    return kBlack;
+  }
+  return Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+               .b = static_cast<unsigned char>(rgb & 0xFF),
+               .a = 255};
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -2044,7 +2106,12 @@ void WebServer::saveImage(const std::string& filename,
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
-  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+  generator_->saveImage(filename,
+                        region,
+                        width_px,
+                        dbu_per_pixel,
+                        vis,
+                        viewerBackground(viewer_hook_.get()));
 }
 
 namespace {
@@ -2341,8 +2408,14 @@ void WebServer::gifAddFrame(std::optional<int> key,
   const TileVisibility vis = parseVis(vis_json, logger_);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
-      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &w, &h);
+  std::vector<unsigned char> rgba
+      = generator_->renderImageBuffer(region,
+                                      width_px,
+                                      dbu_per_pixel,
+                                      vis,
+                                      viewerBackground(viewer_hook_.get()),
+                                      &w,
+                                      &h);
   if (rgba.empty()) {
     return;  // renderImageBuffer already logged the error.
   }

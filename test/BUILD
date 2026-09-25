@@ -147,7 +147,10 @@ filegroup(
 
 # From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
+    "cmd_file_error",
     "commands_without_load",
+    "db_option_quoting",
+    "init_file_error",
     "upf_aes",
 ]
 

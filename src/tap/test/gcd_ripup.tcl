@@ -9,4 +9,4 @@ tapcell_ripup
 
 set def_file [make_result_file gcd_ripup.def]
 write_def $def_file
-diff_file $def_file gcd_ripup.defok
+diff_files $def_file gcd_ripup.defok

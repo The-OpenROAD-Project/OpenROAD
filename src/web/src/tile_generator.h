@@ -146,8 +146,7 @@ struct TileFrame
   odb::Rect cull;
   // Pixels of THIS frame per CSS pixel.  Sizes authored in CSS px — pen widths,
   // font heights — are multiplied by it so they come out the same size on every
-  // display instead of shrinking as the ratio rises.  The display's dpr for an
-  // output-resolution frame; dpr * the supersample factor for a super one.
+  // display instead of shrinking as the ratio rises: the display's dpr.
   double px_per_css = 1.0;
 
   // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
@@ -302,9 +301,12 @@ struct TileVisibility
   FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
-  bool inst_names = true;      // Instance name labels on _instances layer
-  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
-  bool inst_pin_names = true;  // ITerm name labels
+  bool inst_names = true;  // Instance name labels on _instances layer
+  bool inst_pins = true;   // ITerm (cell pin) shapes on tech layers
+  // ITerm name labels.  Off by default, like the Qt GUI's
+  // Misc/Instances/"Pin Names" (displayControls.cpp makes it the one unchecked
+  // leaf under Instances), so a default image carries the same labels there.
+  bool inst_pin_names = false;
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;
@@ -326,6 +328,18 @@ struct TileVisibility
   // at zoom-out: instances are not culled at all and shapes fall back to a 1 px
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
+
+  // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
+  // from the region it is drawing rather than from the design: the IO pin
+  // markers (RenderThread::setupIOPins takes min(die, bounds)).
+  //
+  // 0 means "one tile", which is the interactive answer: a client shows a
+  // handful of tiles, so a tile's span stands in for its viewport and the
+  // markers shrink as it zooms in.  save_image composites EVERY tile of the
+  // level into one image, where that stand-in is 2^z too small -- markers came
+  // out a 2 px nub against Qt's 20 px arrow -- so it passes the image's own
+  // extent instead.
+  int view_extent_dbu = 0;
 
   // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
   // which gates RenderThread::drawLabels — and so gates them in Qt's
@@ -585,6 +599,16 @@ class TileGenerator
   // usable "is there a design" test.
   std::vector<odb::dbBlock*> blocks() const;
 
+  // ─── Name-group mapping (flat designs) ──────────────────────────────
+  // Forwarders to Search, which owns the mapping and the invalidation; the
+  // hierarchy report produces it and the tile renderer reads it.  Callers
+  // read searchRevision() BEFORE building the mapping and hand that value
+  // back, so an edit landing mid-build invalidates rather than stamps clean.
+  uint64_t searchRevision() const;
+  void setInstGroups(odb::dbBlock* block,
+                     std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+                     uint64_t built_at_revision);
+
   // Monotonic counter, bumped every time chiplets() rebuilds its cache.
   // Caches derived from the chiplet list poll this to notice a hierarchy
   // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
@@ -681,11 +705,15 @@ class TileGenerator
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  // `bg` fills the pixels the layers do not cover; it defaults to transparent,
+  // so a caller that saves what a viewer shows passes that viewer's background
+  // (WebServer::saveImage does, for Qt save_image parity).
   void saveImage(const std::string& filename,
                  const odb::Rect& region,
                  int width_px,
                  double dbu_per_pixel,
-                 const TileVisibility& vis) const;
+                 const TileVisibility& vis,
+                 const Color& bg = {}) const;
 
   // The layers saveImage composites, bottom to top.  Public so a test can pin
   // the order down: it has to match the zIndex the client gives each layer in
@@ -1146,6 +1174,15 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// Highlight the path stage at `pin_name`: its net, or on an unrouted net the
+// flight line between the pin and its neighbor on that net in `path`.
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines);
 
 // ── JSON serialization helpers for TileGenerator responses ──
 

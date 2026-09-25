@@ -86,7 +86,13 @@ void Gui::gifAddFrame(std::optional<int> key,
       logger_->error(utl::WEB, 102, "No design loaded.");
     }
 
+    // The same rect Gui::saveImage falls back to, so a GIF frame and a
+    // save_image of one state cover the same area.
     save_region = block->getBBox()->getBox();
+    const odb::Rect die = block->getDieArea();
+    if (die.area() > 0) {
+      save_region.merge(die);
+    }
     const double bloat_by = 0.05;  // 5%
     const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
 
