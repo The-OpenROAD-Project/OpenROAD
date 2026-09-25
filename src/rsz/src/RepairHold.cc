@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "PathGroupFilter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -78,9 +80,26 @@ bool RepairHold::repairHold(
 
   sta_->findRequireds();
   sta::VertexSet& ends = sta_->search()->endpoints();
+  const PathGroupFilter path_group_filter(resizer_);
   sta::VertexSeq ends1;
   for (sta::Vertex* end : ends) {
-    ends1.push_back(end);
+    if (!path_group_filter.enabled()) {
+      ends1.push_back(end);
+      continue;
+    }
+    // Hold paths are min delay paths, so ask the group against min_. Keep the
+    // endpoint only when the group's own hold slack is what needs repairing;
+    // merely hosting some in-group path would let nearly every register
+    // through and defeat the restriction.
+    const sta::Slack slack = sta_->slack(end, min_);
+    if (!sta::fuzzyLess(slack, hold_margin)) {
+      continue;
+    }
+    const std::optional<sta::Slack> group_slack
+        = path_group_filter.groupSlack(end, min_);
+    if (group_slack.has_value() && sta::fuzzyLess(*group_slack, hold_margin)) {
+      ends1.push_back(end);
+    }
   }
   sta::sort(ends1, sta::VertexIdLess(graph_));
 

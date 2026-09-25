@@ -47,6 +47,8 @@ cc_library(
         "src/Optimizer.cc",
         "src/Optimizer.hh",
         "src/OptimizerTypes.cc",
+        "src/PathGroupFilter.cc",
+        "src/PathGroupFilter.hh",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
         "src/Rebuffer.cc",

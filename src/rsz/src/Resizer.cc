@@ -34,6 +34,7 @@
 #include "DelayEstimatorReporter.hh"
 #include "Optimizer.hh"
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
@@ -3208,6 +3209,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*verbose=*/false,
         /*sequence=*/parseMoveSequence(""),
         /*phases=*/"",
+        /*path_group=*/"",
         /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
         /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
                                      // density
@@ -5311,6 +5313,11 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
 
 ////////////////////////////////////////////////////////////////
 
+std::string Resizer::resolvePathGroup(const char* path_group)
+{
+  return rsz::resolvePathGroupName(this, path_group);
+}
+
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
@@ -5320,6 +5327,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
                           const char* phases,
+                          const char* path_group,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down_fanout,
@@ -5349,6 +5357,10 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+
+  // Scoped so a -path_group restriction never leaks past this command.
+  utl::SetAndRestore<std::string> path_group_override(
+      path_group_, path_group != nullptr ? path_group : "");
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
@@ -5411,11 +5423,15 @@ bool Resizer::repairHold(
     int max_passes,
     int max_iterations,
     bool match_cell_footprint,
-    bool verbose)
+    bool verbose,
+    const char* path_group)
 {
   utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
+  // Scoped so a -path_group restriction never leaks past this command.
+  utl::SetAndRestore<std::string> path_group_override(
+      path_group_, path_group != nullptr ? path_group : "");
   // Some technologies such as nangate45 don't have delay cells. Hence,
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty

@@ -1,0 +1,67 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0226] Created path group 'reg2reg'.
+-- reg2reg
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 10 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 10 out of 10 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+-- in2reg
+[INFO RSZ-0226] Created path group 'in2reg'.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 35 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 35 out of 35 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+-- unrestricted
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 35 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 35 out of 35 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.068 |       -1.8 |     35 | _862_/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+-- reg2reg before
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+_893_/Q (DFF_X1)                     _869_/D (DFF_X1)                       -0.0118
+
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 10 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 10 out of 10 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.012 |       -0.1 |     10 | _869_/D
+     162* |      33 |      95 |        0 |      0 |    14 |   +13.1% |    0.008 |        0.0 |     10 | _869_/D
+    final |      33 |      95 |        0 |      0 |    14 |   +13.1% |    0.000 |        0.0 |      0 | 
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 33 buffers.
+[INFO RSZ-0051] Resized 95 instances: 95 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 14 instances.
+-- reg2reg after
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+_893_/Q (DFF_X1)                     _880_/D (DFF_X1)                        0.0051
+

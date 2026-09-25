@@ -290,6 +290,11 @@ class RepairTargetCollector
   // exists to avoid; enable with -debug_level RSZ violator_collector 2.
   void checkStartpointCache() const;
 
+  // True while repair is restricted to a `repair_timing -path_group` group.
+  // The design wide STA slack numbers then describe more than what is being
+  // repaired, so the group's own endpoints have to supply WNS/TNS instead.
+  bool restrictedToPathGroup() const { return !resizer_->pathGroup().empty(); }
+
   // === Pin data maintenance =================================================
   void updatePinData(const sta::Pin* pin, pinData& pd);
 

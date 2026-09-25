@@ -1,0 +1,122 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+path groups: core_clock asynchronous {path delay} {gated clock} unconstrained
+[WARNING RSZ-0225] Unknown -path_group 'bogus'. Valid path groups are reg2reg, in2reg, reg2out, in2out, gated_clock. Timing optimization is not restricted to a path group.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 40 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.213 |       -3.0 |     40 | resp_msg[15]
+       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.211 |       -3.0 |     40 | resp_msg[15]
+      40* |      15 |      13 |        1 |      0 |     1 |    +0.3% |   -0.188 |       -1.7 |     40 | resp_msg[15]
+      40+ |      15 |      13 |        1 |      0 |     1 |    +0.3% |   -0.188 |       -1.7 |     28 | resp_msg[15]
+    final |      15 |      21 |        1 |      0 |     3 |    +0.9% |   -0.184 |       -1.6 |     27 | resp_msg[15]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 15 buffers.
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 21 instances: 21 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0226] Created path group 'reg2out'.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 13 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 13 out of 13 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.184 |       -1.5 |     13 | resp_msg[15]
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.3% |   -0.183 |       -1.5 |     13 | resp_msg[15]
+      13* |       0 |       7 |        3 |      0 |     3 |    +1.2% |   -0.186 |       -1.5 |     13 | resp_msg[15]
+    final |       0 |      11 |        3 |      0 |     3 |    +1.5% |   -0.181 |       -1.5 |     13 | resp_msg[15]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 3 buffers.
+[INFO RSZ-0051] Resized 11 instances: 11 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+path groups: core_clock reg2out asynchronous {path delay} {gated clock} unconstrained
+Startpoint: _866_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: resp_msg[15] (output port clocked by core_clock)
+Path Group: reg2out
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock core_clock (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ _866_/CK (DFF_X1)
+   0.104    0.104 ^ _866_/Q (DFF_X1)
+   0.051    0.155 ^ _494_/ZN (XNOR2_X2)
+   0.023    0.178 v _565_/ZN (AOI21_X4)
+   0.053    0.231 ^ _579_/ZN (NOR3_X4)
+   0.019    0.250 v _615_/ZN (OAI21_X2)
+   0.025    0.275 ^ _616_/ZN (NAND2_X2)
+   0.032    0.307 ^ _651_/ZN (AND2_X4)
+   0.010    0.317 v _655_/ZN (NOR3_X4)
+   0.060    0.378 v _669_/ZN (OR3_X4)
+   0.026    0.404 ^ _673_/ZN (AOI21_X4)
+   0.009    0.413 v _680_/ZN (NOR2_X2)
+   0.038    0.450 v _681_/ZN (XNOR2_X1)
+   0.031    0.481 v _861_/Z (BUF_X1)
+   0.000    0.481 v resp_msg[15] (out)
+            0.481   data arrival time
+
+   0.600    0.600   clock core_clock (rise edge)
+   0.000    0.600   clock network delay (ideal)
+   0.000    0.600   clock reconvergence pessimism
+  -0.300    0.300   output external delay
+            0.300   data required time
+-----------------------------------------------------------
+            0.300   data required time
+           -0.481   data arrival time
+-----------------------------------------------------------
+           -0.181   slack (VIOLATED)
+
+
+[INFO RSZ-0226] Created path group 'reg2reg'.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 26 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.041 |       -0.8 |     26 | _877_/D
+       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.028 |       -0.5 |     26 | _877_/D
+      26* |       2 |       8 |        4 |      0 |     3 |    +1.4% |   -0.021 |       -0.2 |     26 | _877_/D
+    final |       2 |       8 |        4 |      0 |     3 |    +1.4% |   -0.021 |       -0.2 |     11 | _877_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 2 buffers.
+[INFO RSZ-0040] Inserted 4 buffers.
+[INFO RSZ-0051] Resized 8 instances: 8 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0046] Found 35 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |   0.123 |   0.000 | _862_/D
+    final |       0 |      92 |            0 |   +10.6% |   0.146 |   0.000 | _864_/D
+--------------------------------------------------------------------------------------
+[WARNING RSZ-0064] Unable to repair all hold checks within margin.
+[INFO RSZ-0032] Inserted 92 hold buffers.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 26 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -0.4 |     26 | _877_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.028 |       -0.3 |     26 | _877_/D
+      26* |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -0.0 |     26 | _879_/D
+    final |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -0.0 |      2 | _879_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 4 buffers.
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 1 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+path groups: core_clock reg2out reg2reg asynchronous {path delay} {gated clock} unconstrained

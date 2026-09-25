@@ -116,6 +116,7 @@ bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
                      setup_context_.progress_header_show_startpoint_metrics);
+  setup_context_.final_wns = final_targets.getWns();
   printFinalProgress(final_targets, initial_design_area);
   committer_.printTrackerFinalReports(finalReportPins());
   return reportRepairSummary();
@@ -160,7 +161,7 @@ void OptimizationPolicy::printFinalProgress(
     printProgressHeader();
   }
 
-  const sta::Slack wns = target_collector.getWns();
+  const sta::Slack wns = setup_context_.final_wns;
   const sta::Slack en_tns = target_collector.getTns(false);
   const sta::Pin* worst_pin = target_collector.getWorstPin(false);
 
@@ -280,8 +281,7 @@ bool OptimizationPolicy::reportRepairSummary() const
         utl::RSZ, 53, "Rerouted {} nets resistance-aware.", reroute_moves);
   }
 
-  const sta::Slack worst_slack = sta_->worstSlack(max_);
-  if (sta::fuzzyLess(worst_slack, config_.setup_slack_margin)) {
+  if (sta::fuzzyLess(setup_context_.final_wns, config_.setup_slack_margin)) {
     repaired = true;
     logger_->warn(utl::RSZ, 62, "Unable to repair all setup violations.");
   }

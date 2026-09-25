@@ -244,6 +244,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-allow_setup_violations]\
                                         [-sequence move_list]\
                                         [-phases phases]\
+                                        [-path_group path_group]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_size_down]\
@@ -268,7 +269,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases -policy -policies \
+            -phases -policy -policies -path_group \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
@@ -316,6 +317,12 @@ proc repair_timing { args } {
   if { $phase_alias_count > 1 } {
     utl::error RSZ 222 \
       "specify at most one of -phases / -policy / -policies"
+  }
+
+  # Unknown names warn and resolve to "", which repairs every path group.
+  set path_group ""
+  if { [info exists keys(-path_group)] } {
+    set path_group [rsz::resolve_path_group $keys(-path_group)]
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
@@ -386,14 +393,14 @@ proc repair_timing { args } {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
-        $sequence $phases \
+        $sequence $phases $path_group \
         $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
         $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }
     if { $hold } {
       set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
         $allow_setup_violations $max_buffer_percent $max_passes \
-        $max_iterations $match_cell_footprint $verbose]
+        $max_iterations $match_cell_footprint $verbose $path_group]
     }
   }
 
