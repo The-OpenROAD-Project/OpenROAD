@@ -189,6 +189,7 @@ single_version_override(
     version = "1.4.21.bcr.4",
 )
 
+bazel_dep(name = "libdeflate", version = "1.26")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
 
