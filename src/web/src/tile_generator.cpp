@@ -471,14 +471,25 @@ constexpr int kTileApronPx = 2;
 
 // The colours the coverage fills drew with in the tile being rendered, so
 // quantizeCoverageAlpha can snap each pixel against its own colour's full
-// alpha: a layer colour with alpha 180 must stay 180 where fully covered.
-// thread_local because tiles render in parallel; cleared per tile.
+// alpha: a layer colour with alpha 180 must stay 180 where fully covered.  A
+// layer tile draws with one to a few colours, so a short list with a check of
+// the most recent entry first beats a set: consecutive shapes almost always
+// share a colour.  thread_local because tiles render in parallel; cleared per
+// tile.
 thread_local std::vector<Color> tile_fill_colors;
+
+bool sameColor(const Color& a, const Color& b)
+{
+  return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+}
 
 void noteFillColor(const Color& color)
 {
+  if (!tile_fill_colors.empty() && sameColor(tile_fill_colors.back(), color)) {
+    return;
+  }
   for (const Color& c : tile_fill_colors) {
-    if (c.r == color.r && c.g == color.g && c.b == color.b && c.a == color.a) {
+    if (sameColor(c, color)) {
       return;
     }
   }
@@ -737,32 +748,42 @@ void fillCoveragePolygon(std::vector<unsigned char>& buf,
 }
 
 // Snap every partially covered pixel's alpha to one of `levels` steps of its
-// own colour's full alpha (see kCoverageAlphaLevels); a pixel at exactly that
-// alpha is untouched.  A pixel whose RGB no coverage fill used (text, lines)
-// is snapped against 255.
+// own colour's full alpha (see kCoverageAlphaLevels).  Only pixels whose RGB a
+// coverage fill drew with are touched: a pixel at exactly its colour's alpha
+// is fully covered and kept, and anything drawn another way (module fills,
+// text, lines) keeps the alpha it was drawn with.
 void quantizeCoverageAlpha(std::vector<unsigned char>& buf, const int levels)
 {
-  if (levels < 2) {
+  if (levels < 2 || tile_fill_colors.empty()) {
     return;
   }
   const double steps = levels - 1;
+  // Neighbouring pixels nearly always share a colour, so remember the last
+  // lookup instead of scanning the colour list for every pixel.
+  int last_rgb = -1;
+  int last_full = 0;
   for (size_t i = 3; i < buf.size(); i += 4) {
     const unsigned char a = buf[i];
     if (a == 0 || a == 255) {
       continue;
     }
-    int full = 255;
-    for (const Color& c : tile_fill_colors) {
-      if (c.r == buf[i - 3] && c.g == buf[i - 2] && c.b == buf[i - 1]) {
-        full = c.a;
-        break;
+    const int rgb = (buf[i - 3] << 16) | (buf[i - 2] << 8) | buf[i - 1];
+    if (rgb != last_rgb) {
+      last_rgb = rgb;
+      last_full = 0;
+      for (const Color& c : tile_fill_colors) {
+        if (c.r == buf[i - 3] && c.g == buf[i - 2] && c.b == buf[i - 1]) {
+          last_full = c.a;
+          break;
+        }
       }
     }
-    if (a == full) {
+    int full = last_full;
+    if (full == 0 || a == full) {
       continue;
     }
     // Above its colour's own alpha only where two colours' coverage added up;
-    // snap those against 255 like the pixels of unrecorded colours.
+    // snap those against 255.
     if (a > full) {
       full = 255;
     }
