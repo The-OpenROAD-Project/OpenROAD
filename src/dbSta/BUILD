@@ -17,6 +17,7 @@ cc_library(
     name = "lambertw_delay_calc",
     srcs = ["src/DmpCeffLambertWDelayCalc.cc"],
     hdrs = ["src/DmpCeffLambertWDelayCalc.hh"],
+    # OpenSTA keeps dcalc/DmpCeff.hh private to its own target.
     features = ["-layering_check"],
     deps = [
         "//src/sta:opensta_lib",
@@ -223,6 +224,7 @@ cc_binary(
     data = [
         "//src/dbSta/test:synthetic_linear.lib",
     ],
+    # OpenSTA keeps dcalc/DmpCeff.hh private to its own target.
     features = ["-layering_check"],
     deps = [
         "//src/sta:opensta_lib",

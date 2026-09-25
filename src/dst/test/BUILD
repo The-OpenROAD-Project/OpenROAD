@@ -23,7 +23,6 @@ cc_test(
         "cpp/TestBalancer.cc",
         "cpp/stubs.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
@@ -77,7 +76,6 @@ cc_test(
         "cpp/TestWorker.cc",
         "cpp/stubs.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],

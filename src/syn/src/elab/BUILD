@@ -50,7 +50,8 @@ cc_library(
         "SLANG_MUX_LOWERING",
         "SLANG_NO_YOSYS",
     ],
-    features = ["-layering_check"],  # Uses private headers
+    # slang keeps its parser/syntax headers private to its own target.
+    features = ["-layering_check"],
     includes = ["."],
     visibility = ["//visibility:public"],
     deps = [
