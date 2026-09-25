@@ -237,8 +237,10 @@ unsigned deflateWithLibdeflate(unsigned char** out,
       libdeflate_free_compressor(c);
     }
   };
-  thread_local const std::unique_ptr<libdeflate_compressor, Free> compressor(
-      libdeflate_alloc_compressor(kDeflateLevel));
+  thread_local std::unique_ptr<libdeflate_compressor, Free> compressor;
+  if (!compressor) {
+    compressor.reset(libdeflate_alloc_compressor(kDeflateLevel));
+  }
   // 83 and 111 are lodepng's "memory allocation failed" and "custom zlib
   // failed" codes, so a failure reads the same as one of its own.
   if (!compressor) {
