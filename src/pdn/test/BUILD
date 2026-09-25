@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -443,4 +444,24 @@ doc_check_test(
         "//src/pdn:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "TestCleanupShapes",
+    srcs = ["cpp/TestCleanupShapes.cpp"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "nangate_polygon/polygon_macro.lef",
+        "sky130_pll/pll_openmiddle.lef",
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/pdn",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
