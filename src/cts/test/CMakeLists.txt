@@ -54,6 +54,9 @@ or_integration_tests(
     virtual_clock_latency
   PASSFAIL_TESTS
     dangling_clock_inverter
+    dont_touch_sink
+    dont_touch_skipped_net
+    dont_touch_timing_buffer
 )
 
 add_executable(cts_unittest cts_unittest.cc)
