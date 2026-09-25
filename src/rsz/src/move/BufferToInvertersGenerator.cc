@@ -87,7 +87,6 @@ BufferToInvertersGenerator::generate(const Target& target)
   // cannot fail partway through the netlist mutation. Filter dont_use and
   // non-link cells.
   const float target_res = resizer_.cellDriveResistance(drvr_cell);
-  const std::string& drvr_footprint = drvr_cell->footprint();
   sta::LibertyCell* best_inv = nullptr;
   float min_diff = std::numeric_limits<float>::max();
 
@@ -101,11 +100,6 @@ BufferToInvertersGenerator::generate(const Target& target)
     }
     for (sta::LibertyCell* cell : *inverters) {
       if (resizer_.dontUse(cell) || !resizer_.isLinkCell(cell)) {
-        continue;
-      }
-      if (run_config_.match_cell_footprint && !drvr_footprint.empty()
-          && !cell->footprint().empty()
-          && drvr_footprint != cell->footprint()) {
         continue;
       }
       sta::LibertyPort* in_port = nullptr;
