@@ -737,8 +737,8 @@ void fillCoveragePolygon(std::vector<unsigned char>& buf,
 }
 
 // Snap every partially covered pixel's alpha to one of `levels` steps of its
-// own colour's full alpha (see kCoverageAlphaLevels); pixels at or above that
-// alpha are untouched.  A pixel whose RGB no coverage fill used (text, lines)
+// own colour's full alpha (see kCoverageAlphaLevels); a pixel at exactly that
+// alpha is untouched.  A pixel whose RGB no coverage fill used (text, lines)
 // is snapped against 255.
 void quantizeCoverageAlpha(std::vector<unsigned char>& buf, const int levels)
 {
@@ -758,8 +758,13 @@ void quantizeCoverageAlpha(std::vector<unsigned char>& buf, const int levels)
         break;
       }
     }
-    if (a >= full) {
+    if (a == full) {
       continue;
+    }
+    // Above its colour's own alpha only where two colours' coverage added up;
+    // snap those against 255 like the pixels of unrecorded colours.
+    if (a > full) {
+      full = 255;
     }
     const double step = full / steps;
     const auto q = static_cast<int>(std::lround(std::lround(a / step) * step));
