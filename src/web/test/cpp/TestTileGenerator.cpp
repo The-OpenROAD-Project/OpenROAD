@@ -5900,5 +5900,319 @@ TEST_F(TileGeneratorTest, RendererHooksSurviveConcurrentInstallAndCall)
   SUCCEED();
 }
 
+// ─── Layer extents ──────────────────────────────────────────────────────────
+//
+// The client skips every layer tile outside its layer's extent, so an extent
+// that misses a shape blanks that shape for good -- until the next refresh.
+// These pin down that it never does, including for shapes added after the
+// extents were first read.
+
+// One extent against one tile, as layer-extents.js tileOverlaps() does it.
+static bool extentCoversTile(const boost::json::value& extent,
+                             const int z,
+                             const int x,
+                             const int y)
+{
+  if (extent.is_null()) {
+    return false;
+  }
+  const boost::json::array& e = extent.as_array();
+  const double n = std::pow(2.0, z);
+  const double margin = 1.0 / 16 / n;
+  const double x0 = x / n - margin;
+  const double y0 = y / n - margin;
+  const double x1 = (x + 1) / n + margin;
+  const double y1 = (y + 1) / n + margin;
+  return e[0].to_number<double>() <= x1 && e[2].to_number<double>() >= x0
+         && e[1].to_number<double>() <= y1 && e[3].to_number<double>() >= y0;
+}
+
+// The client's decision (layer-extents.js mayHaveContent) on the
+// serializeLayerExtentsResponse wire form: the layer's ungated extent, or the
+// extent of any source whose visibility flag is on.
+static bool clientKeepsTile(const boost::json::object& resp,
+                            const std::string& layer,
+                            const TileVisibility& vis,
+                            const int z,
+                            const int x,
+                            const int y)
+{
+  if (extentCoversTile(resp.at("layers").at(layer), z, x, y)) {
+    return true;
+  }
+  const std::pair<const char*, bool> flags[] = {
+      {"inst_pins", vis.inst_pins},
+      {"blockages", vis.blockages},
+      {"routing_obstructions", vis.routing_obstructions},
+      {"fills", vis.fills},
+  };
+  const boost::json::object& gated = resp.at("gated").as_object();
+  for (const auto& [flag, on] : flags) {
+    const boost::json::object& layers = gated.at(flag).as_object();
+    if (on && layers.contains(layer)
+        && extentCoversTile(layers.at(layer), z, x, y)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+class LayerExtentsTest : public TileGeneratorTest
+{
+ protected:
+  odb::dbTechLayer* layer(const char* name)
+  {
+    odb::dbTechLayer* l = getDb()->getTech()->findLayer(name);
+    EXPECT_NE(l, nullptr) << name;
+    return l;
+  }
+
+  odb::dbSWire* powerWire()
+  {
+    odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+    pwr->setSigType(odb::dbSigType::POWER);
+    return odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  }
+
+  // Every tile of `layers` at zoom `z` that draws anything under `vis` must be
+  // one the client keeps, and at least one tile per layer must draw (or the
+  // check says nothing).
+  void expectExtentsKeepEveryDrawnTile(const std::vector<std::string>& layers,
+                                       const int z,
+                                       const TileVisibility& vis = {})
+  {
+    const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+    ASSERT_TRUE(resp.at("supported").as_bool());
+    const int n = 1 << z;
+    for (const std::string& name : layers) {
+      ASSERT_TRUE(resp.at("layers").as_object().contains(name)) << name;
+      int drawn = 0;
+      for (int x = 0; x < n; ++x) {
+        for (int y = 0; y < n; ++y) {
+          const std::vector<unsigned char> png
+              = tile_gen_->generateTile(name, z, x, y, vis);
+          if (TileGenerator::isBlankTilePng(png)) {
+            continue;
+          }
+          ++drawn;
+          EXPECT_TRUE(clientKeepsTile(resp, name, vis, z, x, y))
+              << name << " tile " << z << "/" << x << "/" << y
+              << " draws, but its extents would have the client skip it";
+        }
+      }
+      EXPECT_GT(drawn, 0) << name << " drew nothing; the check is vacuous";
+    }
+  }
+};
+
+TEST_F(LayerExtentsTest, EmptyLayerHasNoExtent)
+{
+  odb::dbSBox::create(powerWire(),
+                      layer("metal3"),
+                      10000,
+                      20000,
+                      60000,
+                      22000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  ASSERT_TRUE(extents->supported);
+  ASSERT_TRUE(extents->layers.contains("metal10"));
+  const TileGenerator::LayerExtents::Extent& m10
+      = extents->layers.at("metal10");
+  EXPECT_FALSE(m10.shapes || m10.inst_pins || m10.blockages
+               || m10.routing_obstructions || m10.fills);
+  ASSERT_TRUE(extents->layers.at("metal3").shapes.has_value());
+  EXPECT_EQ(*extents->layers.at("metal3").shapes,
+            odb::Rect(10000, 20000, 60000, 22000));
+  // Pseudo layers are not tech layers and are never listed.
+  EXPECT_FALSE(extents->layers.contains("_instances"));
+}
+
+TEST_F(LayerExtentsTest, InstanceShapesExtendTheirLayers)
+{
+  // Master pins and obstructions are drawn per instance, so every layer a
+  // master has them on reaches wherever the instances are.
+  odb::dbInst* inst = placeInst("BUF_X16", "buf", 30000, 40000);
+  makeTileGen();
+
+  // Only the master's geometry is on metal1, so the ungated extent stays
+  // empty and the instance shows up under the flag that draws it.
+  const auto extents = tile_gen_->layerExtents();
+  const TileGenerator::LayerExtents::Extent& m1 = extents->layers.at("metal1");
+  EXPECT_FALSE(m1.shapes.has_value());
+  ASSERT_TRUE(m1.inst_pins.has_value());
+  EXPECT_TRUE(m1.inst_pins->contains(inst->getBBox()->getBox()));
+}
+
+TEST_F(LayerExtentsTest, SpecialViaEnclosuresExtendTheAdjacentMetals)
+{
+  // A special via is indexed on its cut layer, but its enclosures are drawn on
+  // metal1 and metal2 -- which have no other shapes here.
+  odb::dbTechVia* via = getDb()->getTech()->findVia("via1_0");
+  ASSERT_NE(via, nullptr);
+  odb::dbSWire* swire = powerWire();
+  odb::dbSBox::create(
+      swire, layer("metal3"), 0, 0, 1000, 1000, odb::dbWireShapeType::STRIPE);
+  ASSERT_NE(
+      odb::dbSBox::create(swire, via, 500, 500, odb::dbWireShapeType::IOWIRE),
+      nullptr);
+  fitDieToContent();
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  for (const char* name : {"via1", "metal1", "metal2"}) {
+    const std::optional<odb::Rect>& shapes = extents->layers.at(name).shapes;
+    ASSERT_TRUE(shapes.has_value()) << name;
+    EXPECT_TRUE(shapes->intersects(odb::Point(500, 500))) << name;
+  }
+  expectExtentsKeepEveryDrawnTile({"via1", "metal1", "metal2"}, 2);
+}
+
+TEST_F(LayerExtentsTest, ExtentsKeepEveryDrawnTile)
+{
+  placeInst("BUF_X16", "buf_a", 10000, 10000);
+  placeInst("BUF_X16", "buf_b", 70000, 60000);
+  odb::dbSWire* swire = powerWire();
+  odb::dbSBox::create(swire,
+                      layer("metal4"),
+                      20000,
+                      5000,
+                      21000,
+                      90000,
+                      odb::dbWireShapeType::STRIPE);
+  odb::dbSBox::create(swire,
+                      layer("metal5"),
+                      5000,
+                      80000,
+                      95000,
+                      81000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  expectExtentsKeepEveryDrawnTile({"metal1", "metal4", "metal5"}, 3);
+}
+
+TEST_F(LayerExtentsTest, ShapesAddedLaterAreCovered)
+{
+  placeInst("BUF_X16", "buf", 10000, 10000);
+  makeTileGen();
+  // Registers Search for db callbacks and builds the indices, as serving does.
+  tile_gen_->eagerInit();
+
+  const auto before = tile_gen_->layerExtents();
+  EXPECT_FALSE(before->layers.at("metal7").shapes.has_value());
+  EXPECT_FALSE(before->layers.at("metal8").shapes.has_value());
+  EXPECT_FALSE(before->layers.at("metal9").shapes.has_value());
+
+  // First edit: the indices were valid, so this one fires the refresh push.
+  odb::dbSWire* swire = powerWire();
+  odb::dbSBox::create(swire,
+                      layer("metal7"),
+                      60000,
+                      60000,
+                      90000,
+                      62000,
+                      odb::dbWireShapeType::STRIPE);
+  const auto after_first = tile_gen_->layerExtents();
+  ASSERT_TRUE(after_first->layers.at("metal7").shapes.has_value());
+  EXPECT_EQ(*after_first->layers.at("metal7").shapes,
+            odb::Rect(60000, 60000, 90000, 62000));
+
+  // Two more edits with no read between them: the second finds the index
+  // already invalid and fires no refresh of its own, but the next fetch must
+  // still see both.
+  odb::dbSBox::create(swire,
+                      layer("metal8"),
+                      5000,
+                      70000,
+                      8000,
+                      95000,
+                      odb::dbWireShapeType::STRIPE);
+  odb::dbSBox::create(swire,
+                      layer("metal9"),
+                      40000,
+                      5000,
+                      45000,
+                      8000,
+                      odb::dbWireShapeType::STRIPE);
+  const auto after_batch = tile_gen_->layerExtents();
+  EXPECT_TRUE(after_batch->layers.at("metal8").shapes.has_value());
+  EXPECT_TRUE(after_batch->layers.at("metal9").shapes.has_value());
+
+  expectExtentsKeepEveryDrawnTile({"metal7", "metal8", "metal9"}, 3);
+}
+
+TEST_F(LayerExtentsTest, GatedSourcesCountOnlyWhileTheirFlagIsOn)
+{
+  // A routing obstruction is metal6's only shape: its tiles draw while
+  // routing_obstructions is on and are empty, and skippable, while it is off.
+  odb::dbObstruction::create(
+      block_, layer("metal6"), 30000, 30000, 50000, 50000);
+  // Keeps the bounds off the obstruction, so it is not the whole grid.
+  odb::dbSBox::create(powerWire(),
+                      layer("metal3"),
+                      0,
+                      0,
+                      100000,
+                      1000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  const TileGenerator::LayerExtents::Extent& m6 = extents->layers.at("metal6");
+  EXPECT_FALSE(m6.shapes.has_value());
+  ASSERT_TRUE(m6.routing_obstructions.has_value());
+  EXPECT_EQ(*m6.routing_obstructions, odb::Rect(30000, 30000, 50000, 50000));
+
+  TileVisibility on;
+  expectExtentsKeepEveryDrawnTile({"metal6"}, 3, on);
+
+  TileVisibility off;
+  off.routing_obstructions = false;
+  const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
+      EXPECT_FALSE(clientKeepsTile(resp, "metal6", off, 3, x, y));
+      EXPECT_TRUE(TileGenerator::isBlankTilePng(
+          tile_gen_->generateTile("metal6", 3, x, y, off)));
+    }
+  }
+}
+
+TEST_F(LayerExtentsTest, ResponseIsOnTheTileGrid)
+{
+  odb::dbSBox::create(powerWire(),
+                      layer("metal3"),
+                      10000,
+                      20000,
+                      60000,
+                      22000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double side = bounds.maxDXDY();
+  const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+  ASSERT_TRUE(resp.at("supported").as_bool());
+  const boost::json::object& layers = resp.at("layers").as_object();
+  EXPECT_TRUE(layers.at("metal10").is_null());
+  for (const char* flag :
+       {"inst_pins", "blockages", "routing_obstructions", "fills"}) {
+    ASSERT_TRUE(resp.at("gated").as_object().contains(flag)) << flag;
+    EXPECT_FALSE(resp.at("gated").at(flag).as_object().contains("metal10"))
+        << flag;
+  }
+  const boost::json::array& e = layers.at("metal3").as_array();
+  ASSERT_EQ(e.size(), 4u);
+  // x runs right from the grid's left edge; y runs DOWN from its top edge.
+  EXPECT_DOUBLE_EQ(e[0].as_double(), (10000 - bounds.xMin()) / side);
+  EXPECT_DOUBLE_EQ(e[1].as_double(), 1.0 - (22000 - bounds.yMin()) / side);
+  EXPECT_DOUBLE_EQ(e[2].as_double(), (60000 - bounds.xMin()) / side);
+  EXPECT_DOUBLE_EQ(e[3].as_double(), 1.0 - (20000 - bounds.yMin()) / side);
+}
+
 }  // namespace
 }  // namespace web

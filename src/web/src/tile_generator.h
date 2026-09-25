@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -521,6 +522,47 @@ class TileGenerator
   };
   std::shared_ptr<const GeomCache> geomCache() const;
 
+  // Where each tech layer's tiles can have anything on them, so the client can
+  // skip requesting tiles that would come back empty.  Most layers of a
+  // technology hold nothing in any given view (implants and front-end layers
+  // absent from cell abstracts, upper metals unused by the block), and each
+  // such request costs the client as much as a drawn one.
+  //
+  // Each extent is a conservative bounding box of design sources the
+  // layer-tile pass draws on that layer; a layer with no entry in `layers` is
+  // not a tech layer here (a pseudo layer) and must always be requested.  Only
+  // design geometry is covered: tracks and the debug overlays also draw on
+  // layer tiles, so the client stops skipping while those are on.
+  //
+  // Rebuilt whenever Search::revision(), chipletsGeneration() or the bounds
+  // move, so an edit that adds shapes to an empty layer shows up in the next
+  // extents a client fetches.
+  struct LayerExtents
+  {
+    // False for multi-chiplet designs, which draw each die outline on every
+    // layer and place chiplets by transforms this does not model; the client
+    // then skips nothing.
+    bool supported = false;
+    // The getBounds() rect the extents were computed against, i.e. the tile
+    // grid they are expressed on.
+    odb::Rect bounds;
+    // One layer's extents, split by the visibility flag that gates each
+    // source, so a source that is switched off does not keep the layer's tiles
+    // requested: most implant and front-end layers carry only master
+    // obstructions.  `shapes` is the rest -- routing and special-net shapes and
+    // BTerm pins.  World DBU; nullopt means nothing anywhere.
+    struct Extent
+    {
+      std::optional<odb::Rect> shapes;
+      std::optional<odb::Rect> inst_pins;             // master pin shapes
+      std::optional<odb::Rect> blockages;             // master obstructions
+      std::optional<odb::Rect> routing_obstructions;  // dbObstruction
+      std::optional<odb::Rect> fills;                 // dbFill
+    };
+    std::map<std::string, Extent> layers;
+  };
+  std::shared_ptr<const LayerExtents> layerExtents() const;
+
   std::vector<SelectionResult> selectAt(
       int dbu_x,
       int dbu_y,
@@ -992,6 +1034,13 @@ class TileGenerator
   mutable uint64_t geom_cache_chiplet_generation_ = 0;
   std::shared_ptr<const GeomCache> buildGeomCache() const;
 
+  // See layerExtents(); keyed like geom_cache_, plus the bounds.
+  mutable std::mutex layer_extents_mutex_;
+  mutable std::shared_ptr<const LayerExtents> layer_extents_;
+  mutable uint64_t layer_extents_revision_ = 0;
+  mutable uint64_t layer_extents_chiplet_generation_ = 0;
+  std::shared_ptr<const LayerExtents> buildLayerExtents() const;
+
   // Cached chiplet traversal.  See chiplets().  Invalidated in
   // eagerInit() and also auto-invalidated when the chiplet hierarchy
   // signature (root pointer + total dbChipInst count) changes — this
@@ -1194,5 +1243,7 @@ boost::json::array boundsArray(const odb::Rect& r);
 boost::json::object serializeTechResponse(const TileGenerator& gen);
 boost::json::object serializeBoundsResponse(const TileGenerator& gen,
                                             bool shapes_ready);
+// The layer_extents response: TileGenerator::layerExtents() on the tile grid.
+boost::json::object serializeLayerExtentsResponse(const TileGenerator& gen);
 
 }  // namespace web

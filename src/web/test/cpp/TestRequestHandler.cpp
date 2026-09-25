@@ -408,6 +408,22 @@ TEST_F(TileHandlerTest, BoundsReturnsJson)
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
 }
 
+TEST_F(TileHandlerTest, LayerExtentsReturnsJson)
+{
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kLayerExtents;
+
+  auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object json
+      = boost::json::parse(payloadStr(resp)).as_object();
+  EXPECT_EQ(boost::json::serialize(json),
+            boost::json::serialize(serializeLayerExtentsResponse(*gen_)));
+}
+
 TEST_F(TileHandlerTest, TechReturnsJson)
 {
   WebSocketRequest req;

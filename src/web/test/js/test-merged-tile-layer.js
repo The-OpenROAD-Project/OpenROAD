@@ -42,6 +42,7 @@ const { createMergedTileLayer, buildMergedPanes, decodeTilePayload }
     = await import('../../src/merged-tile-layer.js');
 const { partitionIntoGroups, MERGED_PANE_OPACITY }
     = await import('../../src/tile-merge.js');
+const { LayerExtents } = await import('../../src/layer-extents.js');
 
 // Fake websocket manager: records requests, resolves with a marker payload,
 // and records cancels so cancellation can be asserted.
@@ -176,7 +177,7 @@ const CTX = {
 };
 
 function makeLayer(mgr, items, opts = {}) {
-    const Layer = createMergedTileLayer(CTX, {
+    const Layer = createMergedTileLayer(opts.ctx || CTX, {
         // Deterministic decode: no real ImageBitmap in jsdom.
         decode: async (payload) => (payload
             ? { id: payload.payloadFor, closed: false,
@@ -307,6 +308,110 @@ describe('createMergedTileLayer: one canvas per tile, K layers inside it', () =>
                 layer.createTile({ x: 0, y: 0, z: 0 }, () => resolve());
             });
             assert.deepEqual(mgr.sent.map(m => m.layer), ['metal1']);
+        } finally {
+            stub.restore();
+        }
+    });
+});
+
+describe('layer extents: tiles that would come back empty', () => {
+    // metal2 has nothing anywhere; metal1 covers the whole grid.
+    function extentsCtx() {
+        const layerExtents = new LayerExtents();
+        layerExtents.apply(layerExtents.invalidate(), {
+            supported: true,
+            layers: { metal1: [0, 0, 1, 1], metal2: null },
+        });
+        return { ...CTX, app: { layerExtents } };
+    }
+
+    it('does not request a layer with nothing in the tile', async () => {
+        const mgr = fakeManager();
+        const stub = stubCanvas2d();
+        try {
+            const layer = makeLayer(mgr, ITEMS, { ctx: extentsCtx() });
+            layer._map = {};
+            await new Promise((resolve) => {
+                layer.createTile({ x: 0, y: 0, z: 0 }, () => resolve());
+            });
+            // _instances is a pseudo layer the server never lists.
+            assert.deepEqual(mgr.sent.map(m => m.layer),
+                             ['metal1', '_instances']);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('completes a tile whose layers are all skipped, with no backing store',
+       async () => {
+        const mgr = fakeManager();
+        const stub = stubCanvas2d();
+        try {
+            const layer = makeLayer(
+                mgr, [{ layer: 'metal2', opacity: 1, visible: true }],
+                { ctx: extentsCtx() });
+            layer._map = {};
+            let el = null;
+            await new Promise((resolve) => {
+                el = layer.createTile({ x: 0, y: 0, z: 0 }, () => resolve());
+            });
+            assert.deepEqual(mgr.sent, []);
+            // Nothing to draw, so nothing allocated -- but the tile keeps its
+            // place in the grid.
+            assert.equal(el.width, 0);
+            assert.equal(el.height, 0);
+            assert.equal(el.style.width, '256px');
+            assert.equal(el.style.height, '256px');
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('sizes the backing store again once a layer can draw', async () => {
+        const mgr = fakeManager();
+        const stub = stubCanvas2d();
+        try {
+            const ctx = extentsCtx();
+            const layer = makeLayer(
+                mgr, [{ layer: 'metal2', opacity: 1, visible: true }], { ctx });
+            layer._map = {};
+            const el = layer.createTile({ x: 0, y: 0, z: 0 }, () => {});
+            layer._tiles = { '0:0:0': { el, coords: { x: 0, y: 0, z: 0 } } };
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(el.width, 0);
+
+            ctx.app.layerExtents.invalidate();
+            layer.refreshTiles();
+            await new Promise(r => setTimeout(r, 0));
+            assert.deepEqual(mgr.sent.map(m => m.layer), ['metal2']);
+            assert.equal(el.width, 256);
+            assert.equal(el.height, 256);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('requests the layer again once the extents are invalidated', async () => {
+        // What a "refresh" push does before redrawing: an edit may just have
+        // put shapes on metal2, so the redraw must not trust the old extents.
+        const mgr = fakeManager();
+        const stub = stubCanvas2d();
+        try {
+            const ctx = extentsCtx();
+            const layer = makeLayer(mgr, ITEMS, { ctx });
+            layer._map = {};
+            const el = layer.createTile({ x: 0, y: 0, z: 0 }, () => {});
+            layer._tiles = { '0:0:0': { el, coords: { x: 0, y: 0, z: 0 } } };
+            await new Promise(r => setTimeout(r, 0));
+            assert.deepEqual(mgr.sent.map(m => m.layer),
+                             ['metal1', '_instances']);
+
+            mgr.sent.length = 0;
+            ctx.app.layerExtents.invalidate();
+            layer.refreshTiles();
+            await new Promise(r => setTimeout(r, 0));
+            assert.deepEqual(mgr.sent.map(m => m.layer),
+                             ['metal1', 'metal2', '_instances']);
         } finally {
             stub.restore();
         }
