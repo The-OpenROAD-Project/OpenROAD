@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <functional>
@@ -51,6 +52,10 @@
 #include "web/core.h"
 #include "web/heatMap.h"
 #include "web_painter.h"
+
+#ifdef HAVE_LIBDEFLATE
+#include "libdeflate.h"
+#endif
 
 namespace web {
 
@@ -209,6 +214,65 @@ bool buildIndexedImage(const std::vector<unsigned char>& rgba,
   return true;
 }
 
+// PNG compression.  Encoding is a large share of the tile server's time, and
+// nearly all of it is deflate: lodepng's built-in compressor is portable but
+// slow.  When libdeflate is available it compresses instead, through lodepng's
+// custom_zlib hook, so the output is still an ordinary PNG.  At level 6 it is
+// several times faster than lodepng's compressor and its output is no larger.
+#ifdef HAVE_LIBDEFLATE
+constexpr int kDeflateLevel = 6;
+
+unsigned deflateWithLibdeflate(unsigned char** out,
+                               size_t* outsize,
+                               const unsigned char* in,
+                               const size_t insize,
+                               const LodePNGCompressSettings* /*settings*/)
+{
+  // A compressor must not be shared between threads, and tiles are encoded in
+  // parallel, so each thread keeps its own.
+  struct Free
+  {
+    void operator()(libdeflate_compressor* c) const
+    {
+      libdeflate_free_compressor(c);
+    }
+  };
+  thread_local std::unique_ptr<libdeflate_compressor, Free> compressor;
+  if (!compressor) {
+    compressor.reset(libdeflate_alloc_compressor(kDeflateLevel));
+  }
+  // 83 and 111 are lodepng's "memory allocation failed" and "custom zlib
+  // failed" codes, so a failure reads the same as one of its own.
+  if (!compressor) {
+    return 83;
+  }
+  const size_t bound = libdeflate_zlib_compress_bound(compressor.get(), insize);
+  // lodepng releases the buffer with its default allocator, free().
+  *out = static_cast<unsigned char*>(std::malloc(bound));
+  if (*out == nullptr) {
+    return 83;
+  }
+  *outsize
+      = libdeflate_zlib_compress(compressor.get(), in, insize, *out, bound);
+  if (*outsize == 0) {
+    std::free(*out);
+    *out = nullptr;
+    return 111;
+  }
+  return 0;
+}
+#endif
+
+// Point `state` at the fastest available compressor.
+void useFastDeflate(lodepng::State& state)
+{
+#ifdef HAVE_LIBDEFLATE
+  state.encoder.zlibsettings.custom_zlib = deflateWithLibdeflate;
+#else
+  (void) state;
+#endif
+}
+
 // PNG bytes for `indexed`, or empty if lodepng rejects it.
 std::vector<unsigned char> encodeIndexedPng(const IndexedImage& indexed,
                                             const unsigned w,
@@ -226,6 +290,7 @@ std::vector<unsigned char> encodeIndexedPng(const IndexedImage& indexed,
     lodepng_palette_add(&state.info_png.color, c.r, c.g, c.b, c.a);
     lodepng_palette_add(&state.info_raw, c.r, c.g, c.b, c.a);
   }
+  useFastDeflate(state);
 
   std::vector<unsigned char> png;
   if (lodepng::encode(png, indexed.index, w, h, state) != 0) {
@@ -266,7 +331,9 @@ const std::vector<unsigned char>* blankPng(const unsigned w, const unsigned h)
   if (it == cache.end()) {
     const std::vector<unsigned char> blank(static_cast<size_t>(w) * h * 4, 0);
     std::vector<unsigned char> png;
-    if (lodepng::encode(png, blank, w, h) != 0) {
+    lodepng::State state;
+    useFastDeflate(state);
+    if (lodepng::encode(png, blank, w, h, state) != 0) {
       return nullptr;
     }
     it = cache.emplace(key, std::move(png)).first;
@@ -344,7 +411,9 @@ std::vector<unsigned char> encodeImagePng(
   // buffer, an indexed encode lodepng would not take -- RGBA is the encoding
   // that always applies, so its failure is the one worth reporting.
   std::vector<unsigned char> png;
-  const unsigned rgba_error = lodepng::encode(png, rgba, w, h);
+  lodepng::State state;
+  useFastDeflate(state);
+  const unsigned rgba_error = lodepng::encode(png, rgba, w, h, state);
   if (rgba_error != 0) {
     png.clear();
     if (error != nullptr) {
