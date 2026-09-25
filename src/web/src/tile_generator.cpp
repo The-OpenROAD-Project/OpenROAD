@@ -469,31 +469,54 @@ constexpr double kDotInkGain = 3.0;
 // shows as a darker line.
 constexpr int kTileApronPx = 2;
 
-// The colours the coverage fills drew with in the tile being rendered, so
-// quantizeCoverageAlpha can snap each pixel against its own colour's full
-// alpha: a layer colour with alpha 180 must stay 180 where fully covered.  A
-// layer tile draws with one to a few colours, so a short list with a check of
-// the most recent entry first beats a set: consecutive shapes almost always
-// share a colour.  thread_local because tiles render in parallel; cleared per
-// tile.
-thread_local std::vector<Color> tile_fill_colors;
-
-bool sameColor(const Color& a, const Color& b)
+// Record of the coverage writes into the tile being drawn, so that
+// quantizeCoverageAlpha touches exactly the pixels coverage produced and snaps
+// each against the alpha of the colour that produced it.  Matching a pixel's
+// RGB against the colours drawn would not do: a track line reuses its layer's
+// RGB at another alpha, and two colours can share an RGB.  A pixel is
+// quantized only while it still holds the value its last coverage write left,
+// so anything drawn over it later (tracks, text, hatch) keeps its own alpha.
+// `generation` marks the entries written for the current tile, which avoids
+// clearing the per-pixel arrays for every tile.  thread_local because tiles
+// render in parallel.
+struct CoverageLog
 {
-  return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+  const unsigned char* base = nullptr;  // buffer being logged; null when off
+  size_t pixels = 0;
+  uint32_t generation = 0;
+  std::vector<uint32_t> written;    // generation that last wrote each pixel
+  std::vector<uint32_t> value;      // RGBA the last coverage write left
+  std::vector<unsigned char> full;  // alpha of its colour; 0 = mixed origin
+  std::vector<uint32_t> touched;    // pixels written in this generation
+};
+thread_local CoverageLog coverage_log;
+
+inline uint32_t packRGBA(const unsigned char* p)
+{
+  uint32_t v = 0;
+  std::memcpy(&v, p, sizeof(v));
+  return v;
 }
 
-void noteFillColor(const Color& color)
+// Start logging coverage writes into `buf`, the tile's drawing buffer.
+void beginCoverageLog(const std::vector<unsigned char>& buf)
 {
-  if (!tile_fill_colors.empty() && sameColor(tile_fill_colors.back(), color)) {
-    return;
+  CoverageLog& log = coverage_log;
+  log.base = buf.data();
+  log.pixels = buf.size() / 4;
+  if (log.written.size() < log.pixels) {
+    log.written.assign(log.pixels, 0);
+    log.value.resize(log.pixels);
+    log.full.resize(log.pixels);
+    log.generation = 0;
   }
-  for (const Color& c : tile_fill_colors) {
-    if (sameColor(c, color)) {
-      return;
-    }
-  }
-  tile_fill_colors.push_back(color);
+  ++log.generation;
+  log.touched.clear();
+}
+
+void endCoverageLog()
+{
+  coverage_log.base = nullptr;
 }
 
 // Deposit `color` at fractional coverage `cov` (0..1] into one RGBA pixel.
@@ -507,23 +530,55 @@ inline void depositCoverage(unsigned char* dst,
   if (add <= 0) {
     return;
   }
+  const uint32_t before = packRGBA(dst);
   if (dst[3] == 0
       || (dst[0] == color.r && dst[1] == color.g && dst[2] == color.b)) {
+    // The cap never lowers the pixel: a same-RGB colour with less alpha
+    // must not undo what a stronger one deposited.
+    const int cap = std::max<int>(color.a, dst[3]);
     dst[0] = color.r;
     dst[1] = color.g;
     dst[2] = color.b;
-    dst[3] = static_cast<unsigned char>(std::min<int>(color.a, dst[3] + add));
+    dst[3] = static_cast<unsigned char>(std::min(cap, dst[3] + add));
+  } else {
+    // A different colour: the pixel keeps the RGB of whichever colour covers
+    // more of it and the alphas add.  Compositing the two would mint a new
+    // RGB for every (coverage, coverage) pair and push the tile off the
+    // palette.
+    if (add >= dst[3]) {
+      dst[0] = color.r;
+      dst[1] = color.g;
+      dst[2] = color.b;
+    }
+    dst[3] = static_cast<unsigned char>(std::min<int>(255, dst[3] + add));
+  }
+
+  CoverageLog& log = coverage_log;
+  if (log.base == nullptr) {
     return;
   }
-  // A different colour: the pixel keeps the RGB of whichever colour covers
-  // more of it and the alphas add.  Compositing the two would mint a new RGB
-  // for every (coverage, coverage) pair and push the tile off the palette.
-  if (add >= dst[3]) {
-    dst[0] = color.r;
-    dst[1] = color.g;
-    dst[2] = color.b;
+  // Compared as integers: dst may point into a different buffer (a rotated
+  // chiplet's), where relational pointer comparison is not defined.
+  const auto addr = reinterpret_cast<uintptr_t>(dst);
+  const auto base = reinterpret_cast<uintptr_t>(log.base);
+  if (addr < base || addr >= base + log.pixels * 4) {
+    return;
   }
-  dst[3] = static_cast<unsigned char>(std::min<int>(255, dst[3] + add));
+  const size_t idx = (addr - base) / 4;
+  const bool ours = dst[0] == color.r && dst[1] == color.g && dst[2] == color.b;
+  if (log.written[idx] != log.generation) {
+    // First coverage write this tile.  A pixel another path had already drawn
+    // is of mixed origin (full = 0): quantizing it would alter that drawing.
+    log.written[idx] = log.generation;
+    log.touched.push_back(static_cast<uint32_t>(idx));
+    log.full[idx] = before == 0 ? color.a : 0;
+  } else if (before != log.value[idx]) {
+    // Another path drew over the pixel since the last coverage write.
+    log.full[idx] = 0;
+  } else if (log.full[idx] != 0 && ours) {
+    log.full[idx] = std::max(log.full[idx], color.a);
+  }
+  log.value[idx] = packRGBA(dst);
 }
 
 // Per-pixel coverage of [lo, hi) along one axis, convolved with [1,2,1]/4.
@@ -570,7 +625,6 @@ void fillCoverageRect(std::vector<unsigned char>& buf,
                       const Color& color,
                       const int dim)
 {
-  noteFillColor(color);
   const bool dot = x1 - x0 < kDotBlurPx && y1 - y0 < kDotBlurPx;
   const double gain
       = (x1 - x0 < kDotGainPx && y1 - y0 < kDotGainPx) ? kDotInkGain : 1.0;
@@ -680,7 +734,6 @@ void fillCoveragePolygon(std::vector<unsigned char>& buf,
   if (n < 3) {
     return;
   }
-  noteFillColor(color);
   thread_local std::vector<double> px;
   thread_local std::vector<double> py;
   px.resize(n);
@@ -747,51 +800,32 @@ void fillCoveragePolygon(std::vector<unsigned char>& buf,
   }
 }
 
-// Snap every partially covered pixel's alpha to one of `levels` steps of its
-// own colour's full alpha (see kCoverageAlphaLevels).  Only pixels whose RGB a
-// coverage fill drew with are touched: a pixel at exactly its colour's alpha
-// is fully covered and kept, and anything drawn another way (module fills,
-// text, lines) keeps the alpha it was drawn with.
+// Snap every pixel the coverage fills produced (see CoverageLog) to one of
+// `levels` steps of its colour's full alpha, see kCoverageAlphaLevels.  A
+// pixel at exactly that alpha is fully covered and kept; one above it holds
+// two colours' coverage and is snapped against 255.
 void quantizeCoverageAlpha(std::vector<unsigned char>& buf, const int levels)
 {
-  if (levels < 2 || tile_fill_colors.empty()) {
+  const CoverageLog& log = coverage_log;
+  if (levels < 2 || log.base != buf.data()) {
     return;
   }
   const double steps = levels - 1;
-  // Neighbouring pixels nearly always share a colour, so remember the last
-  // lookup instead of scanning the colour list for every pixel.
-  int last_rgb = -1;
-  int last_full = 0;
-  for (size_t i = 3; i < buf.size(); i += 4) {
-    const unsigned char a = buf[i];
-    if (a == 0 || a == 255) {
+  for (const uint32_t idx : log.touched) {
+    unsigned char* p = &buf[static_cast<size_t>(idx) * 4];
+    int full = log.full[idx];
+    const unsigned char a = p[3];
+    if (full == 0 || a == 0 || a == full || packRGBA(p) != log.value[idx]) {
       continue;
     }
-    const int rgb = (buf[i - 3] << 16) | (buf[i - 2] << 8) | buf[i - 1];
-    if (rgb != last_rgb) {
-      last_rgb = rgb;
-      last_full = 0;
-      for (const Color& c : tile_fill_colors) {
-        if (c.r == buf[i - 3] && c.g == buf[i - 2] && c.b == buf[i - 1]) {
-          last_full = c.a;
-          break;
-        }
-      }
-    }
-    int full = last_full;
-    if (full == 0 || a == full) {
-      continue;
-    }
-    // Above its colour's own alpha only where two colours' coverage added up;
-    // snap those against 255.
     if (a > full) {
       full = 255;
     }
     const double step = full / steps;
     const auto q = static_cast<int>(std::lround(std::lround(a / step) * step));
-    buf[i] = static_cast<unsigned char>(std::clamp(q, 0, 255));
-    if (buf[i] == 0) {
-      buf[i - 3] = buf[i - 2] = buf[i - 1] = 0;
+    p[3] = static_cast<unsigned char>(std::clamp(q, 0, 255));
+    if (p[3] == 0) {
+      p[0] = p[1] = p[2] = 0;
     }
   }
 }
@@ -3815,7 +3849,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       draw_buffer.resize(draw_buffer_size);
     }
     std::memset(draw_buffer.data(), 0, draw_buffer_size);
-    tile_fill_colors.clear();
+    beginCoverageLog(draw_buffer);
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
@@ -3914,8 +3948,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const odb::Rect& dbu_tile = frame.cull;
       const double dbu_x_min = frame.origin_x;
       const double dbu_y_min = frame.origin_y;
-      const double dbu_x_max = frame.origin_x + tile_dbu_size;
-      const double dbu_y_max = frame.origin_y + tile_dbu_size;
+      // The far corner of the drawing buffer, apron included: frame.origin_*
+      // is already moved out by the apron, so adding only the tile's width
+      // would stop kTileApronPx short of the tile's own far edge.
+      const double dbu_x_max = frame.origin_x + draw_px / scale;
+      const double dbu_y_max = frame.origin_y + draw_px / scale;
 
       // Per-layer fill pattern applied to this layer's own filled shapes:
       // routing segments, special-net shapes/vias and instance pins.  Instance
@@ -5287,6 +5324,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         }
       }
     }
+    endCoverageLog();
 
     // Overlays render once in world space, on top of all chiplets.
     // Their geometry (timing paths, DRC rects, flight lines) is already

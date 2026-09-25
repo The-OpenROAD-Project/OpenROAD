@@ -3513,6 +3513,47 @@ TileVisibility trackOnlyVisibility()
   return vis;
 }
 
+// Tracks are lines in their layer's RGB at alpha 150, drawn into the same
+// tile as that layer's coverage-filled shapes.  Coverage quantization must
+// leave them alone: only pixels the coverage fills produced are snapped, so a
+// track keeps its alpha even though its RGB is the pins'.
+TEST_F(TileGeneratorTest, TracksKeepTheirAlphaNextToCoverageShapes)
+{
+  block_->setDieArea(odb::Rect(0, 0, kTrackDieSide, kTrackDieSide));
+  placeInst("BUF_X16", "buf", 0, 0);
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
+  grid->addGridPatternX(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const auto& colors = tile_gen_->getLayerColorMap(getDb()->getTech());
+  const auto entry = colors.find(metal1);
+  ASSERT_NE(entry, colors.end());
+  const Color layer = entry->second;
+
+  TileVisibility vis = trackOnlyVisibility();
+  vis.stdcells = true;
+  vis.inst_pins = true;
+  unsigned w = 0, h = 0;
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("metal1", 0, 0, 0, vis), w, h);
+  size_t pin = 0;
+  size_t track = 0;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i] != layer.r || pixels[i + 1] != layer.g
+        || pixels[i + 2] != layer.b) {
+      continue;
+    }
+    pin += pixels[i + 3] == layer.a;
+    track += pixels[i + 3] == 150;
+  }
+  ASSERT_GT(pin, 0u) << "precondition: the pins must be drawn by coverage";
+  EXPECT_GT(track, 0u) << "coverage quantization changed the tracks' alpha";
+}
+
 TEST_F(TileGeneratorTest, TracksAreClippedToTheDieArea)
 {
   block_->setDieArea(odb::Rect(0, 0, kTrackDieSide, kTrackDieSide));
@@ -4851,6 +4892,42 @@ TEST_F(MoireArrayTest, DotFootprintsCrossTileEdgesWithoutASeam)
 // chip has no block, so no label margin widens the bounds and at z=0 the die
 // fills the tile exactly: there is no neighbouring tile beyond its right and
 // top edges, so the one tile must draw all four.
+// Instances are drawn into a buffer that extends kTileApronPx past every tile
+// edge, and the checks that decide whether an outline edge falls in the tile
+// must span all of it.  An instance whose right edge lies 1.2 px inside the
+// tile's right boundary must have that edge drawn; the neighbouring tile only
+// draws it into its own apron, which is cropped.
+TEST_F(TileGeneratorTest, InstanceEdgeInTheLastPixelsOfATileIsDrawn)
+{
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = bounds.maxDXDY() / 2.0;  // z=1
+  const double dbu_per_px = tile_dbu / 256.0;
+  odb::dbMaster* m = lib_->findMaster("BUF_X16");
+  ASSERT_NE(m, nullptr);
+  const int xh = static_cast<int>(bounds.xMin() + tile_dbu - 1.2 * dbu_per_px);
+  const int y = static_cast<int>(bounds.yMin() + tile_dbu / 2);
+  placeInst("BUF_X16", "edge", xh - static_cast<int>(m->getWidth()), y);
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBounds(), bounds)
+      << "placing the instance moved the tile grid";
+
+  TileVisibility vis;
+  vis.placement_blockages = false;
+  unsigned w = 0, h = 0;
+  // z=1 x=0 is the left column; y=1 is the lower row (Leaflet counts down).
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 1, 0, 1, vis), w, h);
+  ASSERT_EQ(w, 256u);
+  int lit = 0;
+  for (unsigned row = 0; row < h; ++row) {
+    lit += pixels[(static_cast<size_t>(row) * w + 255) * 4 + 3] > 0;
+  }
+  const int height_px = static_cast<int>(m->getHeight() / dbu_per_px);
+  EXPECT_GE(lit, height_px - 2)
+      << "the instance's right edge was dropped near the tile boundary";
+}
+
 TEST_F(TileGeneratorTest, DieOutlineDrawsAllFourEdgesWhenItFillsTheTile)
 {
   makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
