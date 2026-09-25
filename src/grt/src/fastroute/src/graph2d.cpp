@@ -29,6 +29,9 @@ void Graph2D::init(const int x_grid,
   num_layers_ = num_layers;
   logger_ = logger;
 
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
   h_used_ggrid_.clear();
   v_used_ggrid_.clear();
   h_dirty_used_grids_.clear();
@@ -97,6 +100,9 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
   v_cap_3D_ = other.v_cap_3D_;
   h_used_ggrid_ = other.h_used_ggrid_;
   v_used_ggrid_ = other.v_used_ggrid_;
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
   h_dirty_used_grids_ = other.h_dirty_used_grids_;
   v_dirty_used_grids_ = other.v_dirty_used_grids_;
 
@@ -122,6 +128,9 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
 // Clears all horizontal and vertical edges from the graph.
 void Graph2D::clear()
 {
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
   h_used_ggrid_.clear();
   v_used_ggrid_.clear();
   h_dirty_used_grids_.clear();
@@ -133,6 +142,10 @@ void Graph2D::clear()
 // Clears the sets of used horizontal and vertical grid cells.
 void Graph2D::clearUsed()
 {
+  // Discard cached totals once instead of removing every edge on every layer.
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
   // A full route still starts with empty sets. Remember removed entries so a
   // subsequent incremental run can recover committed usage without a scan.
   for (const auto& [x, y] : h_used_ggrid_) {
@@ -150,16 +163,49 @@ void Graph2D::rebuildUsedGrids()
   for (int x = 0; x < x_grid_ - 1; x++) {
     for (int y = 0; y < y_grid_; y++) {
       if (h_edges_[x][y].usage > 0) {
-        h_used_ggrid_.insert({x, y});
+        insertUsedGrid(x, y, EdgeDirection::Horizontal);
       }
     }
   }
   for (int x = 0; x < x_grid_; x++) {
     for (int y = 0; y < y_grid_ - 1; y++) {
       if (v_edges_[x][y].usage > 0) {
-        v_used_ggrid_.insert({x, y});
+        insertUsedGrid(x, y, EdgeDirection::Vertical);
       }
     }
+  }
+}
+
+void Graph2D::setUsedGridCallbacks(
+    std::function<void(int, int, EdgeDirection, bool)> changed,
+    std::function<void()> reset)
+{
+  used_grid_changed_ = std::move(changed);
+  used_grids_reset_ = std::move(reset);
+}
+
+bool Graph2D::isUsedGrid(int x, int y, EdgeDirection direction) const
+{
+  const auto& used
+      = direction == EdgeDirection::Horizontal ? h_used_ggrid_ : v_used_ggrid_;
+  return used.contains({x, y});
+}
+
+void Graph2D::insertUsedGrid(int x, int y, EdgeDirection direction)
+{
+  auto& used
+      = direction == EdgeDirection::Horizontal ? h_used_ggrid_ : v_used_ggrid_;
+  if (used.insert({x, y}).second && used_grid_changed_) {
+    used_grid_changed_(x, y, direction, true);
+  }
+}
+
+void Graph2D::eraseUsedGrid(int x, int y, EdgeDirection direction)
+{
+  auto& used
+      = direction == EdgeDirection::Horizontal ? h_used_ggrid_ : v_used_ggrid_;
+  if (used.erase({x, y}) != 0 && used_grid_changed_) {
+    used_grid_changed_(x, y, direction, false);
   }
 }
 
@@ -180,20 +226,21 @@ void Graph2D::prepareForIncrementalRun()
 {
   // Match clearUsed/rebuildUsedGrids at the run boundary, including changes
   // made between runs by net removal, merge, or rollback.
-  const auto reconcile = [](auto& dirty, auto& edges, auto& used) {
-    for (const auto& [x, y] : dirty) {
-      auto& edge = edges[x][y];
-      if (edge.usage > 0) {
-        used.insert({x, y});
-      } else {
-        used.erase({x, y});
-      }
-      edge.used_grid_dirty = false;
-    }
-    dirty.clear();
-  };
-  reconcile(h_dirty_used_grids_, h_edges_, h_used_ggrid_);
-  reconcile(v_dirty_used_grids_, v_edges_, v_used_ggrid_);
+  const auto reconcile
+      = [this](auto& dirty, auto& edges, EdgeDirection direction) {
+          for (const auto& [x, y] : dirty) {
+            auto& edge = edges[x][y];
+            if (edge.usage > 0) {
+              insertUsedGrid(x, y, direction);
+            } else {
+              eraseUsedGrid(x, y, direction);
+            }
+            edge.used_grid_dirty = false;
+          }
+          dirty.clear();
+        };
+  reconcile(h_dirty_used_grids_, h_edges_, EdgeDirection::Horizontal);
+  reconcile(v_dirty_used_grids_, v_edges_, EdgeDirection::Vertical);
 
   if (logger_->debugCheck(utl::GRT, "usedgridcheck", 1)
       && !usedGridsMatchUsage()) {
@@ -359,7 +406,7 @@ void Graph2D::updateEstUsageH(const int x,
   markUsedGridDirty(x, y, EdgeDirection::Horizontal);
 
   if (usage > 0) {
-    h_used_ggrid_.insert({x, y});
+    insertUsedGrid(x, y, EdgeDirection::Horizontal);
   }
 }
 
@@ -403,7 +450,7 @@ void Graph2D::updateEstUsageV(const int x,
   markUsedGridDirty(x, y, EdgeDirection::Vertical);
 
   if (usage > 0) {
-    v_used_ggrid_.insert({x, y});
+    insertUsedGrid(x, y, EdgeDirection::Vertical);
   }
 }
 
@@ -435,7 +482,7 @@ void Graph2D::addUsageH(const int x, const int y, const int used)
   h_edges_[x][y].usage += used;
   markUsedGridDirty(x, y, EdgeDirection::Horizontal);
   if (used > 0) {
-    h_used_ggrid_.insert({x, y});
+    insertUsedGrid(x, y, EdgeDirection::Horizontal);
   }
 }
 
@@ -453,7 +500,7 @@ void Graph2D::addUsageV(const int x, const int y, const int used)
   v_edges_[x][y].usage += used;
   markUsedGridDirty(x, y, EdgeDirection::Vertical);
   if (used > 0) {
-    v_used_ggrid_.insert({x, y});
+    insertUsedGrid(x, y, EdgeDirection::Vertical);
   }
 }
 
@@ -498,7 +545,7 @@ void Graph2D::updateUsageH(const int x,
   markUsedGridDirty(x, y, EdgeDirection::Horizontal);
 
   if (usage > 0) {
-    h_used_ggrid_.insert({x, y});
+    insertUsedGrid(x, y, EdgeDirection::Horizontal);
   }
 }
 
@@ -524,7 +571,7 @@ void Graph2D::updateUsageV(const int x,
   markUsedGridDirty(x, y, EdgeDirection::Vertical);
 
   if (usage > 0) {
-    v_used_ggrid_.insert({x, y});
+    insertUsedGrid(x, y, EdgeDirection::Vertical);
   }
 }
 
