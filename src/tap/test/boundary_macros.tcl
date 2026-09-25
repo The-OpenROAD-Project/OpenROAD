@@ -24,4 +24,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file boundary_macros.defok $def_file
+diff_files boundary_macros.defok $def_file

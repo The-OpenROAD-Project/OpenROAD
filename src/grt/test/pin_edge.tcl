@@ -8,4 +8,4 @@ global_route
 
 write_guides $guide_file
 
-diff_file pin_edge.guideok $guide_file
+diff_files pin_edge.guideok $guide_file

@@ -10,4 +10,4 @@ tapcell -distance 14 -tapcell_master "sky130_fd_sc_hs__tap_1" \
 
 write_def $def_file
 
-diff_file avoid_overlap.defok $def_file
+diff_files avoid_overlap.defok $def_file

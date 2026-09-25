@@ -10,4 +10,4 @@ set lef_file [make_result_file gcd_abstract_lef_with_power.lef]
 
 write_abstract_lef $lef_file
 
-diff_file $lef_file "gcd_abstract_lef_with_power.lefok"
+diff_files $lef_file "gcd_abstract_lef_with_power.lefok"

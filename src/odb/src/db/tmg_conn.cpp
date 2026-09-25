@@ -164,16 +164,6 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
 void tmg_conn::addShort(const int i0, const int i1)
 {
   shorts_.emplace_back(i0, i1);
-  if (wire_points_[i0].fre) {
-    wire_points_[i0].fre = false;
-  } else {
-    wire_points_[i0].jct = true;
-  }
-  if (wire_points_[i1].fre) {
-    wire_points_[i1].fre = false;
-  } else {
-    wire_points_[i1].jct = true;
-  }
 }
 
 void tmg_conn::loadNet(dbNet* net)
@@ -587,19 +577,12 @@ void tmg_conn::identifyShorts()
   shape_search_->clear();
 
   for (auto& pt : wire_points_) {
-    pt.fre = true;
-    pt.jct = false;
     pt.pinpt = false;
     pt.c2pinpt = false;
     pt.next_for_clear = nullptr;
     pt.sring = nullptr;
   }
   first_for_clear_ = nullptr;
-  for (size_t j = 0; j < wire_sections_.size() - 1; j++) {
-    if (wire_sections_[j].to_idx == wire_sections_[j + 1].from_idx) {
-      wire_points_[wire_sections_[j].to_idx].fre = false;
-    }
-  }
 
   // put wires in search
   for (size_t j = 0; j < wire_sections_.size(); j++) {
@@ -1001,8 +984,6 @@ void tmg_conn::connectShapes(const int j, const int k)
     std::swap(i0, i1);
   }
   addShort(i0, i1);
-  wire_points_[i0].fre = false;
-  wire_points_[i1].fre = false;
 }
 
 static void addPointToTerm(WirePoint* pt, Terminal* x)
@@ -1332,7 +1313,6 @@ void tmg_conn::connectTermSoft(const int terminal_index,
   pt->tindex = terminal_index;
   Terminal* x = &terminals_[terminal_index];
   addPointToTerm(pt, x);
-  pt->fre = false;
   if (has_alt) {
     pt->t_alt = pother;
   }
