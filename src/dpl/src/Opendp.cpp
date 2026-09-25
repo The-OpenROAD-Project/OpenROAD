@@ -286,8 +286,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                     negotiation.numViolations());
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
-      const auto illegal_nodes = negotiation.getIllegalNodes();
-      saveFailures({.placement = illegal_nodes});
+      saveFailures({.placement = negotiation.getIllegalNodes()});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);
       }
