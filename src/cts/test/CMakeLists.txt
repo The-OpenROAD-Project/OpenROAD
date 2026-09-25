@@ -48,9 +48,15 @@ or_integration_tests(
     simple_test_clustered_max_cap
     simple_test_hier
     sink_clustering_collision
+    sink_clustering_single_sink
     skip_nets
     twice
     virtual_clock_latency
+  PASSFAIL_TESTS
+    dangling_clock_inverter
+    dont_touch_sink
+    dont_touch_skipped_net
+    dont_touch_timing_buffer
 )
 
 add_executable(cts_unittest cts_unittest.cc)
@@ -74,3 +80,32 @@ gtest_discover_tests(cts_unittest
 )
 
 add_dependencies(build_and_test cts_unittest)
+
+add_executable(TestDelayBufList cpp/TestDelayBufList.cc)
+target_include_directories(TestDelayBufList
+  PUBLIC
+    ${OPENROAD_HOME}/src/cts/src
+)
+
+target_link_libraries(TestDelayBufList
+    GTest::gtest
+    GTest::gtest_main
+    cts_lib
+    utl_lib
+    dbSta_lib
+    est_lib
+    rsz_lib
+    grt_lib
+    dpl_lib
+    stt_lib
+    OpenSTA
+    odb
+    tst_integrated_fixture
+    ${TCL_LIBRARY}
+)
+
+gtest_discover_tests(TestDelayBufList
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestDelayBufList)

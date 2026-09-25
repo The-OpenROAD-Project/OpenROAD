@@ -782,14 +782,24 @@ Toggle one marker's `visited` or `visible` flag.
 
 ### `drc_update_category_visibility`
 
-Bulk-set every marker in a category to a single `visible` value.
+Bulk-set every marker in a category — and in its subcategories — to a
+single `visible` value.
 
-| Field      | Type     | Required | Description           |
-| ---------- | -------- | :------: | --------------------- |
-| `category` | `string` |    ✓     | Top-level name.       |
-| `visible`  | `bool`   |    ✓     | New visibility.       |
+| Field      | Type       | Required | Description                                                                                     |
+| ---------- | ---------- | :------: | ----------------------------------------------------------------------------------------------- |
+| `path`     | `string[]` |          | Category names from the top-level category down to the target, e.g. `["PSM","VDD","Unconnected shape"]`. |
+| `category` | `string`   |          | Top-level name. Used only when `path` is absent or empty.                                       |
+| `visible`  | `bool`     |    ✓     | New visibility.                                                                                 |
 
-**Response (JSON):** `{"ok": 1, "category": "...", "visible": <bool>, "count": <updated>}`.
+One of `path` or `category` must name a category. Subcategory names are
+unique only among siblings — `check_power_grid` builds both
+`PSM/VDD/Unconnected shape` and `PSM/VSS/Unconnected shape` — so a
+subcategory can be addressed only by its full `path`.
+
+**Response (JSON):** `{"ok": 1, "category": "<leaf name>", "path": [...], "visible": <bool>, "count": <updated>}`.
+
+When no category matches, the response is an error with
+`Category not found: <path joined by "/">`.
 
 ### `drc_highlight`
 
@@ -887,7 +897,8 @@ always sends the full set.
 | `net_signal`, `net_power`, `net_ground`, `net_clock`, `net_reset`, `net_tieoff`, `net_scan`, `net_analog` | `true` | By `dbSigType`. |
 | `routing`, `routing_segments`, `routing_vias`, `special_nets`, `srouting_segments`, `srouting_vias` | `true` | Wires & vias. |
 | `pins`, `pin_markers`, `pin_names` | `true` | BTerm shapes & labels. |
-| `inst_names`, `inst_pins`, `inst_pin_names` | `true` | ITerm shapes & labels. |
+| `inst_names`, `inst_pins` | `true` | Instance labels & ITerm shapes. |
+| `inst_pin_names`       | `false` | ITerm labels, off as in the Qt GUI. |
 | `blockages`, `placement_blockages`, `routing_obstructions` | `true` | dbBlockage / dbObstruction. |
 | `rows`                 | `false` | Enables the row-outline overlay; gates `site_<name>` lookup. |
 | `tracks_pref`, `tracks_non_pref` | `false` | Routing-track overlay. |

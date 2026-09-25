@@ -2,6 +2,8 @@ or_integration_tests(
   "odb"
   TESTS
     abstract_origin
+    abstract_polygon
+    abstract_polygon_no_overlap
     all_pins_placed1
     all_pins_placed2
     bterm_hier_create
@@ -45,6 +47,7 @@ or_integration_tests(
     read_lef
     read_lef_dup_macro
     read_lef_minwidth_wrongdirection
+    read_lef_polygon_spacing
     read_zipped
     replace_hier_mod1
     replace_hier_mod2
@@ -57,7 +60,6 @@ or_integration_tests(
     row_settings
     sky130hd_multi_patterned
     smash_vias
-    swap_master
     transform
     wire_encoder
     write_cdl
@@ -81,6 +83,7 @@ or_integration_tests(
     test_iterm
     test_module
     test_net
+    test_tcl_handles
     test_wire_codec
 )
 

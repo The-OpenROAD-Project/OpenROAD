@@ -98,6 +98,7 @@ or_integration_tests(
     repair_antennas_from_odb
     repair_antennas_from_odb_cugr
     repair_antennas_jumper_capacity_cugr
+    repair_antennas_odb_roundtrip
     repair_antennas_only_diodes
     repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
@@ -141,6 +142,7 @@ or_integration_tests(
     write_segments2
   PASSFAIL_TESTS
     congestion_markers_cugr
+    congestion_acceptance_is_recorded
     congestion_report_file_cugr
     snapshot_batched_bus_route
     snapshot_batched_incremental_state

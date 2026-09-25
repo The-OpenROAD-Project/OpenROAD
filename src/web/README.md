@@ -22,6 +22,7 @@ console run on the server.
 ```tcl
 web_server
     [-port port]
+    [-bind address]
     [-stop]
 ```
 
@@ -30,8 +31,34 @@ web_server
 | Switch Name | Description |
 | ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
+| `-bind` | IP address to listen on. Default: `127.0.0.1` (loopback only). Accepts an IP literal, not a hostname. |
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
 | `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
+
+```{warning}
+The browser console evaluates Tcl on the server, so anyone who can reach the
+port can run commands as the user who started `openroad`. The default loopback
+bind keeps that local. Only pass `-bind` (for example `-bind 0.0.0.0`) on a
+network you trust; the server has no authentication.
+```
+
+Because the default is loopback, a viewer started inside a container or on a
+remote host is not reachable from outside it — the connection is refused with no
+message from the server. Bind explicitly in that case, and publish the port:
+
+```tcl
+web_server -port 8080 -bind 0.0.0.0
+```
+
+```shell
+docker run -p 8080:8080 ...        # then browse to http://localhost:8080
+```
+
+The same applies to the command-line entry point, which takes `-web_bind`:
+
+```shell
+openroad -web -web_port 8080 -web_bind 0.0.0.0
+```
 
 ### Save Image
 
@@ -54,7 +81,7 @@ save_image
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
 | `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
-| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: die area (with 5% margin in `-web` mode). |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
 | `-display_option` | Repeatable visibility overrides as `{control value}` pairs. See [Display option keys](#display-option-keys) below. |
@@ -148,7 +175,7 @@ save_animated_gif
 | `-start` | Open a new GIF stream and return its key. Requires `path`; the frame options are ignored. |
 | `-add` | Capture the design's current state as one frame. Takes no `path`. |
 | `-end` | Finalize and close the GIF. Takes no `path`. |
-| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. The default is the die area with a 5% margin. |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. The default is the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Frame width in pixels. The type is `int`, and must be positive. Cannot be used with `-resolution`. The default is `1024`. |
 | `-resolution` | Resolution in microns per pixel. The type is `float`, and must be positive; it is raised to 1 DBU per pixel if finer. Cannot be used with `-width`. |
 | `-delay` | Time each frame is shown, in hundredths of a second. The type is `int`, and must be positive. The default is `250`, i.e. 2.5 seconds. |
@@ -162,9 +189,9 @@ zoom the GUI is at.
 
 On the web path, the first frame fixes the GIF's dimensions; a later frame that
 comes out a different size — because the design's bounding box grew, say — is
-rescaled to match rather than starting a second GIF. Area outside the design is
-left transparent, which most viewers show as black. Ending a stream that never
-received a frame writes no file and warns. The maximum frame dimension is 16384
+rescaled to match rather than starting a second GIF. Area outside the design
+carries the viewer's background, as the Qt path's does. Ending a stream that
+never received a frame writes no file and warns. The maximum frame dimension is 16384
 pixels, as for `save_image`; larger requests are clamped.
 
 #### Examples

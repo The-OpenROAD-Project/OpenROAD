@@ -163,6 +163,7 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  congestion_accepted_ = false;
 }
 
 GlobalRouter::~GlobalRouter()
@@ -374,7 +375,7 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  bool congested_routes = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool congested_routes = is_congested_ && !congestion_accepted_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -550,6 +551,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
 {
   updateDbCongestion();
   saveCongestion();
+  congestion_accepted_ = allow_congestion_ || use_cugr_;
 
   if (verbose_) {
     if (use_cugr_) {
@@ -1200,6 +1202,7 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
+  dedupViaSegments(routes_[db_net]);
   addImplicitVias(routes_[db_net]);
 
   // Validate that the restored routing covers every pin; on failure fall back
@@ -3060,6 +3063,7 @@ void GlobalRouter::loadGuidesFromDB()
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
+    dedupViaSegments(route);
     addImplicitVias(route);
     mergeSegments(pins, route);
   }
@@ -3181,6 +3185,26 @@ void GlobalRouter::updateVias()
       }
     }
   }
+}
+
+void GlobalRouter::dedupViaSegments(GRoute& route)
+{
+  if (route.empty()) {
+    return;
+  }
+
+  // saveGuides() emits a guide on each layer for vias covering pins.
+  std::set<std::tuple<int, int, int, int>> seen_vias;  // x, y, lo, hi
+  std::erase_if(route, [&seen_vias](const GSegment& seg) {
+    if (!seg.isVia() || seg.init_layer == seg.final_layer) {
+      return false;
+    }
+    const int lo = std::min(seg.init_layer, seg.final_layer);
+    const int hi = std::max(seg.init_layer, seg.final_layer);
+    const std::tuple<int, int, int, int> key{seg.init_x, seg.init_y, lo, hi};
+    // Keep the first occurrence to preserve segment order.
+    return !seen_vias.insert(key).second;
+  });
 }
 
 void GlobalRouter::addImplicitVias(GRoute& route)
@@ -3434,7 +3458,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 
   // CUGR can produce congested guides that DRT can handle, resulting in
   // DRC-free final routing.
-  bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool guide_is_congested
+      = is_congested_ && !congestion_accepted_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;
@@ -6898,7 +6923,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
-          opendp_->detailedPlacement(0, 0, "");
+          opendp_->detailedPlacementQuiet();
           updateDirtyNets(dirty_nets);
           for (auto& it : dirty_nets) {
             congestion_nets.insert(it->getDbNet());

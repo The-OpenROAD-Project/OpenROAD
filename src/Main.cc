@@ -5,6 +5,7 @@
 #include <strings.h>
 
 #include <array>
+#include <cassert>
 #include <charconv>
 #include <climits>
 #include <clocale>
@@ -13,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <initializer_list>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -52,7 +54,6 @@
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
-using sta::sourceTclFile;
 using sta::stringEq;
 using std::string;
 
@@ -67,6 +68,7 @@ using std::string;
   X(dpl)                                 \
   X(exa)                                 \
   X(web)                                 \
+  X(wmk)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \
@@ -102,11 +104,27 @@ static bool no_settings = false;
 static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
+static const char* web_bind_arg = nullptr;
 
 static const char* init_filename = ".openroad";
 
 static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
+
+// Build a tcl command from its words with list quoting, so that a
+// filename containing a brace, a space or a backslash survives.
+static std::string tclCommand(std::initializer_list<const char*> words)
+{
+  Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
+  Tcl_IncrRefCount(list);
+  for (const char* word : words) {
+    assert(word != nullptr);
+    Tcl_ListObjAppendElement(nullptr, list, Tcl_NewStringObj(word, -1));
+  }
+  std::string cmd = Tcl_GetString(list);
+  Tcl_DecrRefCount(list);
+  return cmd;
+}
 
 #ifdef ENABLE_PYTHON3
 #define X(name)                                \
@@ -264,6 +282,7 @@ int main(int argc, char* argv[])
   minimize = findCmdLineFlag(argc, argv, "-minimize");
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
+  web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -334,6 +353,32 @@ static int tclOrdReplInit(Tcl_Interp* interp)
   return Tcl_Eval(interp, "::tclreadline::Loop");
 }
 
+// Read a tcl file with Tcl_EvalFile, the C api behind the tcl source
+// command.  An error is reported with the tcl stack trace that produced
+// it, which the OpenSTA include_file reader used before threw away.
+static int evalTclFile(Tcl_Interp* interp, const char* filename)
+{
+  int result = Tcl_EvalFile(interp, filename);
+  if (result == TCL_ERROR) {
+    // -errorinfo in the return options is the trace of this error; the
+    // errorInfo variable may be stale when the file could not be read at
+    // all.
+    Tcl_Obj* options = Tcl_GetReturnOptions(interp, result);
+    Tcl_IncrRefCount(options);
+    Tcl_Obj* key = Tcl_NewStringObj("-errorinfo", -1);
+    Tcl_IncrRefCount(key);
+    Tcl_Obj* error_info = nullptr;
+    Tcl_DictObjGet(nullptr, options, key, &error_info);
+    Tcl_DecrRefCount(key);
+    fprintf(
+        stderr,
+        "%s\n",
+        error_info ? Tcl_GetString(error_info) : Tcl_GetStringResult(interp));
+    Tcl_DecrRefCount(options);
+  }
+  return result;
+}
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -402,6 +447,17 @@ static int tclAppInit(int& argc,
           exit(EXIT_FAILURE);
         }
       }
+      // Check the address here, not in serve(): serve() reports a bad one with
+      // utl::error, which throws, and nothing on this path catches it.
+      if (web_bind_arg
+          && web::classifyBindAddress(web_bind_arg)
+                 == web::BindAddressKind::kInvalid) {
+        fprintf(stderr,
+                "Error: invalid -web_bind value '%s'; %s\n",
+                web_bind_arg,
+                web::kBindAddressHint);
+        exit(EXIT_FAILURE);
+      }
       ord::OpenRoad::openRoad()->getWebServer()->initLogger();
     }
 
@@ -420,15 +476,15 @@ static int tclAppInit(int& argc,
     }
 
     // The web server now installs its HeadlessViewer late, in serve() (just
-    // before waitForStop), so gui::Gui::enabled() is still false here in the
+    // before waitForStop), so web::Gui::enabled() is still false here in the
     // web path.  The `&& !web_enabled` is kept defensively: even with a
     // viewer installed, the web server executes scripts directly on the main
     // thread (like the non-GUI path), and addRestoreStateCommand() only
     // works with the Qt event loop.
-    const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
+    const bool gui_enabled = web::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
-      std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
+      std::string cmd = tclCommand({"read_db", read_odb_filename});
       if (!gui_enabled) {
         if (Tcl_Eval(interp, cmd.c_str()) != TCL_OK) {
           fprintf(stderr,
@@ -438,23 +494,22 @@ static int tclAppInit(int& argc,
           exit(1);
         }
       } else {
-        gui::Gui::get()->addRestoreStateCommand(cmd);
+        web::Gui::get()->addRestoreStateCommand(cmd);
       }
     }
 
     const char* home = getenv("HOME");
     if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
-      const char* restore_state_cmd = "include -echo -verbose {{{}}}";
       std::filesystem::path init(home);
       init /= init_filename;
       if (std::filesystem::is_regular_file(init)) {
         if (!gui_enabled) {
-          sourceTclFile(init.c_str(), true, true, interp);
+          evalTclFile(interp, init.c_str());
         } else {
           // need to delay loading of file until after GUI is completed
           // initialized
-          gui::Gui::get()->addRestoreStateCommand(
-              fmt::format(FMT_RUNTIME(restore_state_cmd), init.string()));
+          web::Gui::get()->addRestoreStateCommand(
+              tclCommand({"source", init.c_str()}));
         }
       }
     }
@@ -467,7 +522,7 @@ static int tclAppInit(int& argc,
         char* cmd_file = argv[1];
         if (cmd_file) {
           if (!gui_enabled) {
-            int result = sourceTclFile(cmd_file, false, false, interp);
+            int result = evalTclFile(interp, cmd_file);
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
               Tcl_Exit(exit_code);
@@ -475,10 +530,10 @@ static int tclAppInit(int& argc,
           } else {
             // need to delay loading of file until after GUI is completed
             // initialized
-            gui::Gui::get()->addRestoreStateCommand(
-                fmt::format("source {{{}}}", cmd_file));
+            web::Gui::get()->addRestoreStateCommand(
+                tclCommand({"source", cmd_file}));
             if (exit_after_cmd_file) {
-              gui::Gui::get()->addRestoreStateCommand("exit");
+              web::Gui::get()->addRestoreStateCommand("exit");
             }
           }
         }
@@ -493,7 +548,8 @@ static int tclAppInit(int& argc,
     // for the GUI).  After this returns, fall through to readline.
     if (web_enabled) {
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      server->serve(web_port);
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      server->serve(web_port, web_bind_arg ? web_bind_arg : "");
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are
@@ -506,7 +562,7 @@ static int tclAppInit(int& argc,
   // Enter the linenoise REPL unless the Qt GUI is active (it has its
   // own script widget).  The web viewer's headless mode still needs the
   // terminal prompt.
-  if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
+  if (!web::Gui::hasUI() && !exit_after_cmd_file) {
     return tclOrdReplInit(interp);
   }
   return TCL_OK;
@@ -560,6 +616,10 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -web                  start in web viewer mode\n");
   printf("  -web_port port        web server port (default auto-assigned)\n");
+  printf(
+      "  -web_bind address     web server bind address (default 127.0.0.1;\n"
+      "                        a wider bind exposes a Tcl shell to the "
+      "network)\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3

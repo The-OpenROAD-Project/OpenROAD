@@ -266,6 +266,30 @@ class RepairTargetCollector
   std::vector<const sta::Pin*> getCriticalPinsNeverConsidered();
 
  private:
+  // === Startpoint cache ====================================================
+  // A startpoint is a top-level input or a register output, clock pins
+  // excluded. The set is fixed for the life of a collector, so it is
+  // walked once per init() and later only re-read for slacks: setup
+  // repair inserts, resizes, VT-swaps and removes cells, clones gates and
+  // swaps pins, and none of that creates or removes a register or a
+  // top-level port. Cloning is the case worth naming: CloneGenerator
+  // rejects any driver that is not isSingleOutputCombinational(), so a
+  // clone never has a register driver and never adds a startpoint.
+  //
+  // Pins are cached rather than vertices because replacing a register's
+  // cell can recreate its vertices; the vertex is looked up again per row.
+  struct CachedStartpoint
+  {
+    const sta::Pin* pin;
+    bool drvr_vertex;  // which of a bidirect pin's two vertices this was
+  };
+  // Walk the whole timing graph for the startpoint set, in graph order.
+  void walkStartpoints(std::vector<CachedStartpoint>& startpoints) const;
+  // Tripwire for the invariant above: re-walk the graph and compare
+  // against the cache. Debug-gated because the walk is the cost the cache
+  // exists to avoid; enable with -debug_level RSZ violator_collector 2.
+  void checkStartpointCache() const;
+
   // === Pin data maintenance =================================================
   void updatePinData(const sta::Pin* pin, pinData& pd);
 
@@ -316,6 +340,10 @@ class RepairTargetCollector
   utl::Logger* logger_;
   sta::Sta* sta_;
   sta::Graph* graph_;
+
+  // Startpoint set for this collector; see walkStartpoints().
+  std::vector<CachedStartpoint> startpoints_;
+  bool startpoints_collected_ = false;
   sta::Network* network_;
   const sta::MinMax* max_;
   sta::Search* search_;

@@ -16,5 +16,5 @@ set def_file2 [make_result_file add_constraint17.def2]
 
 write_def $def_file2
 
-diff_file add_constraint17_1.defok $def_file1
-diff_file add_constraint17_2.defok $def_file2
+diff_files add_constraint17_1.defok $def_file1
+diff_files add_constraint17_2.defok $def_file2

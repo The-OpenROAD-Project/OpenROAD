@@ -8,7 +8,7 @@ read_lef asap7/asap7sc7p5t_28_L_1x_220121a.lef
 read_lef asap7/asap7sc7p5t_28_SL_1x_220121a.lef
 
 read_verilog gcd_asap7.v
-link gcd
+link_design gcd
 
 report_buffers -filtered
 rsz::report_fast_buffer_sizes

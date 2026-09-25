@@ -25,6 +25,9 @@ COMPULSORY_TESTS = [
     "check_power_grid_ok_disconnected",
     "check_power_grid_require_bterms_fail",
     "check_power_grid_require_bterms_pass",
+    "check_power_grid_short",
+    "check_power_grid_short_iterms",
+    "check_power_grid_short_obstructions",
     "corners",
     "corners_assign_power",
     "gcd_all_vss_source_res",
@@ -32,6 +35,7 @@ COMPULSORY_TESTS = [
     "gcd_em_test_vdd",
     "gcd_gt2n_backside",
     "gcd_gt2n_backside_wo_pins",
+    "gcd_gt2n_backside_wo_pins_straps",
     "gcd_no_vsrc",
     "gcd_no_vsrc_reuse",
     "gcd_sky130_vdd",
@@ -138,6 +142,8 @@ filegroup(
         "ihp-sg13g2_data/sg13g2_stdcell.lef",
         "ihp-sg13g2_data/sg13g2_stdcell_typ_1p20V_25C.lib",
         "ihp-sg13g2_data/sg13g2_tech.lef",
+        "short_obs.lef",
+        "short_pads.lef",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
@@ -192,7 +198,10 @@ py_test(
     name = "psm_man_tcl_check",
     srcs = ["psm_man_tcl_check.py"],
     data = ["//src/psm:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

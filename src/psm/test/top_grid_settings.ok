@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 18908 nets and 62165 connections.
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0040] All shapes on net VDD are connected.
-[INFO PSM-0073] Using bump pattern with x-pitch 45.0000um, y-pitch 45.0000um, and size 25.0000um with an reduction factor of 2x.
+[INFO PSM-0073] Using bump pattern on metal7 with x-pitch 45.0000um, y-pitch 45.0000um, and size 25.0000um with a reduction factor of 2x.
 ########## IR report #################
 Net              : VDD
 Corner           : default
@@ -19,7 +19,7 @@ Worstcase IR drop: 7.56e-03 V
 Percentage drop  : 0.69 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
-[INFO PSM-0073] Using bump pattern with x-pitch 65.0000um, y-pitch 65.0000um, and size 25.0000um with an reduction factor of 4x.
+[INFO PSM-0073] Using bump pattern on metal7 with x-pitch 65.0000um, y-pitch 65.0000um, and size 25.0000um with a reduction factor of 4x.
 ########## IR report #################
 Net              : VDD
 Corner           : default
@@ -32,7 +32,7 @@ Worstcase IR drop: 1.79e-02 V
 Percentage drop  : 1.63 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
-[INFO PSM-0072] Using strap pattern on metal8 with pitch 4.0000um and offset 2.0000um.
+[INFO PSM-0072] Using strap pattern on metal7 with metal8 pitch 4.0000um and offset 2.0000um.
 ########## IR report #################
 Net              : VDD
 Corner           : default
@@ -45,7 +45,7 @@ Worstcase IR drop: 7.19e-03 V
 Percentage drop  : 0.65 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
-[INFO PSM-0072] Using strap pattern on metal8 with pitch 12.0000um and offset 6.0000um.
+[INFO PSM-0072] Using strap pattern on metal7 with metal8 pitch 12.0000um and offset 6.0000um.
 ########## IR report #################
 Net              : VDD
 Corner           : default

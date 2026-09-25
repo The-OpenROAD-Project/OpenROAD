@@ -106,6 +106,7 @@ COMPULSORY_TESTS = [
     "pdn_boundary_mirrored_pins",
     "pdn_boundary_pg_pins",
     "pdn_boundary_place_pin",
+    "pdn_boundary_place_pin_rules",
     "pdn_boundary_stripes",
     "pdn_boundary_stripes_length",
     "pdn_boundary_stripes_no_pins",
@@ -207,7 +208,10 @@ py_test(
     name = "ppl_man_tcl_check",
     srcs = ["ppl_man_tcl_check.py"],
     data = ["//src/ppl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

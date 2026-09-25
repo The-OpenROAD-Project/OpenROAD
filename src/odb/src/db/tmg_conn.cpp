@@ -14,6 +14,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "odb/isotropy.h"
+#include "shapeSearch.h"
 #include "tmg_conn_g.h"
 #include "utl/Logger.h"
 
@@ -61,13 +62,11 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
   wire_sections_.reserve(1024);
-  termV_.reserve(1024);
-  tstackV_.reserve(1024);
-  csVV_.reserve(1024);
-  csNV_.reserve(1024);
-  shortV_.reserve(1024);
-  need_short_wire_id_ = false;
-  first_for_clear_ = nullptr;
+  terminals_.reserve(1024);
+  restart_terminals_.reserve(1024);
+  candidate_sections_.reserve(1024);
+  candidate_section_count_.reserve(1024);
+  shorts_.reserve(1024);
 }
 
 tmg_conn::~tmg_conn() = default;
@@ -120,7 +119,7 @@ void tmg_conn::addWireSection(const dbShape& s,
 }
 
 void tmg_conn::addWireSection(const int k,
-                              const tmg_rc_sh& s,
+                              const WireSection::Shape& s,
                               const int from_idx,
                               const int to_idx,
                               const int xmin,
@@ -144,37 +143,27 @@ void tmg_conn::addWireSection(const int k,
 
 void tmg_conn::addITerm(dbITerm* iterm)
 {
-  csVV_.emplace_back();
-  csNV_.emplace_back();
+  candidate_sections_.emplace_back();
+  candidate_section_count_.emplace_back();
 
-  tmg_rcterm& x = termV_.emplace_back(iterm);
+  Terminal& x = terminals_.emplace_back(iterm);
   x.pt = nullptr;
   x.first_pt = nullptr;
 }
 
 void tmg_conn::addBTerm(dbBTerm* bterm)
 {
-  csVV_.emplace_back();
-  csNV_.emplace_back();
+  candidate_sections_.emplace_back();
+  candidate_section_count_.emplace_back();
 
-  tmg_rcterm& x = termV_.emplace_back(bterm);
+  Terminal& x = terminals_.emplace_back(bterm);
   x.pt = nullptr;
   x.first_pt = nullptr;
 }
 
 void tmg_conn::addShort(const int i0, const int i1)
 {
-  shortV_.emplace_back(i0, i1);
-  if (wire_points_[i0].fre) {
-    wire_points_[i0].fre = false;
-  } else {
-    wire_points_[i0].jct = true;
-  }
-  if (wire_points_[i1].fre) {
-    wire_points_[i1].fre = false;
-  } else {
-    wire_points_[i1].jct = true;
-  }
+  shorts_.emplace_back(i0, i1);
 }
 
 void tmg_conn::loadNet(dbNet* net)
@@ -182,10 +171,10 @@ void tmg_conn::loadNet(dbNet* net)
   net_ = net;
   wire_sections_.clear();
   wire_points_.clear();
-  termV_.clear();
-  csVV_.clear();
-  csNV_.clear();
-  shortV_.clear();
+  terminals_.clear();
+  candidate_sections_.clear();
+  candidate_section_count_.clear();
+  shorts_.clear();
   first_for_clear_ = nullptr;
 
   for (dbITerm* iterm : net->getITerms()) {
@@ -199,13 +188,13 @@ void tmg_conn::loadNet(dbNet* net)
 
 void tmg_conn::loadSWire(dbNet* net)
 {
-  hasSWire_ = false;
+  has_special_wires_ = false;
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.empty()) {
     return;
   }
 
-  hasSWire_ = true;
+  has_special_wires_ = true;
   for (dbSWire* sw : swires) {
     for (dbSBox* sbox : sw->getWires()) {
       const Rect rect = sbox->getBox();
@@ -289,12 +278,12 @@ void tmg_conn::splitBySj(const int j,
                          const int sjxMax,
                          const int sjyMax)
 {
-  tmg_rc_sh* sj = &(wire_sections_[j].shape);
+  WireSection::Shape* sj = &(wire_sections_[j].shape);
   const int isVia = sj->isVia() ? 1 : 0;
-  search_->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
+  shape_search_->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   int klast = -1;
   int k;
-  while (search_->searchNext(&k)) {
+  while (shape_search_->searchNext(&k)) {
     if (k == klast || k == j) {
       continue;
     }
@@ -307,7 +296,7 @@ void tmg_conn::splitBySj(const int j,
         && wire_sections_[j].is_vertical == wire_sections_[k].is_vertical) {
       continue;
     }
-    const tmg_rc_sh* sk = &(wire_sections_[k].shape);
+    const WireSection::Shape* sk = &(wire_sections_[k].shape);
     if (sk->isVia()) {
       continue;
     }
@@ -385,7 +374,7 @@ void tmg_conn::splitBySj(const int j,
                    nymin,
                    nxmax,
                    nymax);
-    search_->addShape(
+    shape_search_->addShape(
         rt, {nxmin, nymin, nxmax, nymax}, 0, wire_sections_.size() - 1);
   }
 }
@@ -394,7 +383,7 @@ void tmg_conn::splitBySj(const int j,
 void tmg_conn::splitTtop()
 {
   for (size_t j = 0; j < wire_sections_.size(); j++) {
-    tmg_rc_sh* sj = &(wire_sections_[j].shape);
+    WireSection::Shape* sj = &(wire_sections_[j].shape);
     if (sj->isVia()) {
       dbTechLayer* layb = nullptr;
       dbTechLayer* layt = nullptr;
@@ -437,7 +426,7 @@ void tmg_conn::splitTtop()
 
 void tmg_conn::setSring()
 {
-  for (const tmg_rcshort& rcshort : shortV_) {
+  for (const Short& rcshort : shorts_) {
     if (rcshort.skip) {
       continue;
     }
@@ -473,10 +462,30 @@ void tmg_conn::setSring()
   }
 }
 
-void tmg_conn::detachTilePins()
+// A bterm shape may overlap with an iterm shape. In such cases we
+// resolve that overlap by slicing the bterm shape into a smaller
+// rect. The true result of that slice may be a polygon, however,
+// we ignore one portion of the resulting slice for simplicity:
+//
+// Overlap:                  True slice:            What we keep:
+// iterm
+// +-----------+
+// |           |
+// |     +-----+-----+             +-----+                +-----+
+// |     |     |     |             |     |                |     |
+// |     |     |     |             |     |                |     |
+// +-----+-----+     |       +-----+     |                |     |
+//       |           |       |           |                |     |
+//       +-----------+       +-----------+                +-----+
+//       bterm
+//
+// The final trimmed shape depends only on the order of the four branches:
+// right, left, up, down. The first one that matches wins. Nothing looks at
+// where the wire enters the bterm, so, if it enters through the dropped part
+// of the shape, the candidate search for this bterm looks in the wrong place.
+void tmg_conn::sliceBPinsOverlappingITerms()
 {
-  slicedTilePinCnt_ = 0;
-  for (const tmg_rcterm& term : termV_) {
+  for (Terminal& term : terminals_) {
     if (term.iterm) {
       continue;
     }
@@ -488,8 +497,8 @@ void tmg_conn::detachTilePins()
     const Rect rectb = pin.getBox();
     const int rtlb = pin.getTechLayer()->getRoutingLevel();
     bool sliceDone = false;
-    for (int k = 0; !sliceDone && k < termV_.size(); k++) {
-      tmg_rcterm* tx = &termV_[k];
+    for (int k = 0; !sliceDone && k < terminals_.size(); k++) {
+      Terminal* tx = &terminals_[k];
       if (tx->bterm) {
         continue;
       }
@@ -518,8 +527,10 @@ void tmg_conn::detachTilePins()
             }
           }
           if (recti.contains(rectb)) {
-            logger_->error(
-                ODB, 420, "tmg_conn::detachTilePins: tilepin inside iterm.");
+            logger_->error(ODB,
+                           420,
+                           "Cannot resolve full overlap between instance "
+                           "terminal and block terminal.");
           }
 
           if (!recti.overlaps(rectb)) {
@@ -538,11 +549,16 @@ void tmg_conn::detachTilePins()
           } else if (y1 < recti.yMin() && y2 < recti.yMax()) {
             y2 = recti.yMin();
           }
-          stbtx1_[slicedTilePinCnt_] = x1 + 1;
-          stbty1_[slicedTilePinCnt_] = y1 + 1;
-          stbtx2_[slicedTilePinCnt_] = x2 - 1;
-          stbty2_[slicedTilePinCnt_] = y2 - 1;
-          slicedTileBTerm_[slicedTilePinCnt_++] = bterm;
+
+          // We shrink by one unit so that the slice never touches the iterm.
+          // Trick from the original implementation: we use Rect::reset instead
+          // of the Rect ctor, because the latter sorts the corners and for a
+          // slice only one unit wide, it would cause the slice to touch the
+          // iterm again.
+          Rect sliced_bpin_box;
+          sliced_bpin_box.reset(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
+
+          term.sliced_bpin_box = sliced_bpin_box;
           sliceDone = true;
         }
       }
@@ -550,45 +566,27 @@ void tmg_conn::detachTilePins()
   }
 }
 
-void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
-{
-  for (int ii = 0; ii < slicedTilePinCnt_; ii++) {
-    if (slicedTileBTerm_[ii] == bterm) {
-      rect.reset(stbtx1_[ii], stbty1_[ii], stbtx2_[ii], stbty2_[ii]);
-      return;
-    }
-  }
-  rect = pin.getBox();
-}
-
-void tmg_conn::findConnections()
+void tmg_conn::identifyShorts()
 {
   if (wire_points_.empty()) {
     return;
   }
-  if (!search_) {
-    search_ = std::make_unique<tmg_conn_search>();
+  if (!shape_search_) {
+    shape_search_ = std::make_unique<ShapeSearch>();
   }
-  search_->clear();
+  shape_search_->clear();
 
   for (auto& pt : wire_points_) {
-    pt.fre = true;
-    pt.jct = false;
     pt.pinpt = false;
     pt.c2pinpt = false;
     pt.next_for_clear = nullptr;
     pt.sring = nullptr;
   }
   first_for_clear_ = nullptr;
-  for (size_t j = 0; j < wire_sections_.size() - 1; j++) {
-    if (wire_sections_[j].to_idx == wire_sections_[j + 1].from_idx) {
-      wire_points_[wire_sections_[j].to_idx].fre = false;
-    }
-  }
 
   // put wires in search
   for (size_t j = 0; j < wire_sections_.size(); j++) {
-    tmg_rc_sh* s = &(wire_sections_[j].shape);
+    WireSection::Shape* s = &(wire_sections_[j].shape);
     if (s->isVia()) {
       const int via_x = wire_points_[wire_sections_[j].from_idx].x;
       const int via_y = wire_points_[wire_sections_[j].from_idx].y;
@@ -610,27 +608,27 @@ void tmg_conn::findConnections()
       const int rt_t = layt->getRoutingLevel();
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
-          search_->addShape(rt_b,
-                            {via_x + b->xMin(),
-                             via_y + b->yMin(),
-                             via_x + b->xMax(),
-                             via_y + b->yMax()},
-                            1,
-                            j);
+          shape_search_->addShape(rt_b,
+                                  {via_x + b->xMin(),
+                                   via_y + b->yMin(),
+                                   via_x + b->xMax(),
+                                   via_y + b->yMax()},
+                                  1,
+                                  j);
         } else if (b->getTechLayer() == layt) {
-          search_->addShape(rt_t,
-                            {via_x + b->xMin(),
-                             via_y + b->yMin(),
-                             via_x + b->xMax(),
-                             via_y + b->yMax()},
-                            1,
-                            j);
+          shape_search_->addShape(rt_t,
+                                  {via_x + b->xMin(),
+                                   via_y + b->yMin(),
+                                   via_x + b->xMax(),
+                                   via_y + b->yMax()},
+                                  1,
+                                  j);
         }
       }
 
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      search_->addShape(rt, s->rect(), 0, j);
+      shape_search_->addShape(rt, s->rect(), 0, j);
     }
   }
 
@@ -640,7 +638,7 @@ void tmg_conn::findConnections()
 
   // find self-intersections of wires
   for (int j = 0; j < (int) wire_sections_.size() - 1; j++) {
-    const tmg_rc_sh* s = &(wire_sections_[j].shape);
+    const WireSection::Shape* s = &(wire_sections_[j].shape);
     const int conn_next
         = (wire_sections_[j].to_idx == wire_sections_[j + 1].from_idx);
     if (s->isVia()) {
@@ -665,25 +663,25 @@ void tmg_conn::findConnections()
       const int rt_t = layt->getRoutingLevel();
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
-          search_->searchStart(rt_b,
-                               {via_x + b->xMin(),
-                                via_y + b->yMin(),
-                                via_x + b->xMax(),
-                                via_y + b->yMax()},
-                               1);
+          shape_search_->searchStart(rt_b,
+                                     {via_x + b->xMin(),
+                                      via_y + b->yMin(),
+                                      via_x + b->xMax(),
+                                      via_y + b->yMax()},
+                                     1);
         } else if (b->getTechLayer() == layt) {
-          search_->searchStart(rt_t,
-                               {via_x + b->xMin(),
-                                via_y + b->yMin(),
-                                via_x + b->xMax(),
-                                via_y + b->yMax()},
-                               1);
+          shape_search_->searchStart(rt_t,
+                                     {via_x + b->xMin(),
+                                      via_y + b->yMin(),
+                                      via_x + b->xMax(),
+                                      via_y + b->yMax()},
+                                     1);
         } else {
           continue;  // cut layer
         }
         int klast = -1;
         int k;
-        while (search_->searchNext(&k)) {
+        while (shape_search_->searchNext(&k)) {
           if (k != klast && k > j) {
             if (k == j + 1 && conn_next) {
               continue;
@@ -695,10 +693,10 @@ void tmg_conn::findConnections()
       }
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      search_->searchStart(rt, s->rect(), 0);
+      shape_search_->searchStart(rt, s->rect(), 0);
       int klast = -1;
       int k;
-      while (search_->searchNext(&k)) {
+      while (shape_search_->searchNext(&k)) {
         if (k != klast && k > j) {
           if (k == j + 1 && conn_next) {
             continue;
@@ -709,17 +707,18 @@ void tmg_conn::findConnections()
       }
     }
   }
+}
 
-  removeWireLoops();
-
-  // detach tilPins from iterms
-  detachTilePins();
+void tmg_conn::identifyTerminalWirePoints()
+{
+  sliceBPinsOverlappingITerms();
 
   // connect pins
-  for (int j = 0; j < termV_.size(); j++) {
-    csV_ = &csVV_[j];
-    csN_ = 0;
-    tmg_rcterm* x = &termV_[j];
+  for (int terminal_index = 0; terminal_index < terminals_.size();
+       terminal_index++) {
+    CandidateSections& candidate_sections = candidate_sections_[terminal_index];
+    int candidate_section_count = 0;
+    Terminal* x = &terminals_[terminal_index];
     if (x->iterm) {
       dbMTerm* mterm = x->iterm->getMTerm();
       const dbTransform transform = x->iterm->getInst()->getTransform();
@@ -735,83 +734,96 @@ void tmg_conn::findConnections()
               }
               Rect rect = box->getBox();
               transform.apply(rect);
-              search_->searchStart(rt_t, rect, 2);
+              shape_search_->searchStart(rt_t, rect, 2);
               int klast = -1;
               int k;
-              while (search_->searchNext(&k)) {
+              while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
                   klast = k;
                   int ii;
-                  for (ii = 0; ii < csN_; ii++) {
-                    if (k == (*csV_)[ii].k) {
+                  for (ii = 0; ii < candidate_section_count; ii++) {
+                    const CandidateSection& candidate_section
+                        = candidate_sections[ii];
+                    if (k == candidate_section.index) {
                       break;
                     }
                   }
-                  if (ii < csN_) {
+                  if (ii < candidate_section_count) {
                     continue;
                   }
-                  if (csN_ == 32) {
+                  if (candidate_section_count == kMaxCandidateSections) {
                     break;
                   }
-                  (*csV_)[csN_].k = k;
-                  (*csV_)[csN_].rect = rect;
-                  (*csV_)[csN_].rtlev = rt_t;
-                  csN_++;
+                  CandidateSection& candidate_section
+                      = candidate_sections[candidate_section_count];
+                  candidate_section.index = k;
+                  candidate_section.terminal_box = rect;
+                  candidate_section.routing_level = rt_t;
+                  candidate_section_count++;
                 }
               }
               const int rt_b = tv->getBottomLayer()->getRoutingLevel();
               if (rt_b == 0) {
                 continue;
               }
-              search_->searchStart(rt_b, rect, 2);
+              shape_search_->searchStart(rt_b, rect, 2);
               klast = -1;
-              while (search_->searchNext(&k)) {
+              while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
                   klast = k;
                   int ii;
-                  for (ii = 0; ii < csN_; ii++) {
-                    if (k == (*csV_)[ii].k) {
+                  for (ii = 0; ii < candidate_section_count; ii++) {
+                    const CandidateSection& candidate_section
+                        = candidate_sections[ii];
+                    if (k == candidate_section.index) {
                       break;
                     }
                   }
-                  if (ii < csN_) {
+                  if (ii < candidate_section_count) {
                     continue;
                   }
-                  if (csN_ == 32) {
+                  if (candidate_section_count == kMaxCandidateSections) {
                     break;
                   }
-                  (*csV_)[csN_].k = k;
-                  (*csV_)[csN_].rect = rect;
-                  (*csV_)[csN_].rtlev = rt_b;
-                  csN_++;
+                  CandidateSection& candidate_section
+                      = candidate_sections[candidate_section_count];
+                  candidate_section.index = k;
+                  candidate_section.terminal_box = rect;
+                  candidate_section.routing_level = rt_b;
+                  candidate_section_count++;
                 }
               }
             } else if (ipass == 0 && !box->isVia()) {
               const int rt = box->getTechLayer()->getRoutingLevel();
               Rect rect = box->getBox();
               transform.apply(rect);
-              search_->searchStart(rt, rect, 2);
+              shape_search_->searchStart(rt, rect, 2);
               int klast = -1;
               int k;
-              while (search_->searchNext(&k)) {
+              while (shape_search_->searchNext(&k)) {
                 if (k != klast) {
                   klast = k;
                   int ii;
-                  for (ii = 0; ii < csN_; ii++) {
-                    if (k == (*csV_)[ii].k) {
+                  for (ii = 0; ii < candidate_section_count; ii++) {
+                    const CandidateSection& candidate_section
+                        = candidate_sections[ii];
+                    if (k == candidate_section.index) {
                       break;
                     }
                   }
-                  if (ii < csN_ && csN_ >= 8) {
+                  if (ii < candidate_section_count
+                      && candidate_section_count >= 8) {
                     continue;
                   }
-                  if (csN_ == 32) {
+                  if (candidate_section_count == kMaxCandidateSections) {
                     break;
                   }
-                  (*csV_)[csN_].k = k;
-                  (*csV_)[csN_].rect = rect;
-                  (*csV_)[csN_].rtlev = rt;
-                  csN_++;
+                  CandidateSection& candidate_section
+                      = candidate_sections[candidate_section_count];
+                  candidate_section.index = k;
+                  candidate_section.terminal_box = rect;
+                  candidate_section.routing_level = rt;
+                  candidate_section_count++;
                 }
               }
             }
@@ -826,36 +838,39 @@ void tmg_conn::findConnections()
           // TODO
         } else {
           const int rt = pin.getTechLayer()->getRoutingLevel();
-          Rect rect;
-          getBTermSearchBox(x->bterm, pin, rect);
-          search_->searchStart(rt, rect, 2);
+          const Rect rect = x->sliced_bpin_box.value_or(pin.getBox());
+          shape_search_->searchStart(rt, rect, 2);
           int klast = -1;
           int k;
-          while (search_->searchNext(&k)) {
+          while (shape_search_->searchNext(&k)) {
             if (k != klast) {
               klast = k;
               int ii;
-              for (ii = 0; ii < csN_; ii++) {
-                if (k == (*csV_)[ii].k) {
+              for (ii = 0; ii < candidate_section_count; ii++) {
+                const CandidateSection& candidate_section
+                    = candidate_sections[ii];
+                if (k == candidate_section.index) {
                   break;
                 }
               }
-              if (ii < csN_) {
+              if (ii < candidate_section_count) {
                 continue;
               }
-              if (csN_ == 32) {
+              if (candidate_section_count == kMaxCandidateSections) {
                 break;
               }
-              (*csV_)[csN_].k = k;
-              (*csV_)[csN_].rect = rect;
-              (*csV_)[csN_].rtlev = rt;
-              csN_++;
+              CandidateSection& candidate_section
+                  = candidate_sections[candidate_section_count];
+              candidate_section.index = k;
+              candidate_section.terminal_box = rect;
+              candidate_section.routing_level = rt;
+              candidate_section_count++;
             }
           }
         }
       }
     }
-    csNV_[j] = csN_;
+    candidate_section_count_[terminal_index] = candidate_section_count;
   }
 
   for (auto& pc : wire_points_) {
@@ -866,20 +881,22 @@ void tmg_conn::findConnections()
   }
   setSring();
 
-  for (int j = 0; j < termV_.size(); j++) {
-    connectTerm(j, false);
+  for (int terminal_index = 0; terminal_index < terminals_.size();
+       terminal_index++) {
+    connectTerm(terminal_index, false);
   }
   const bool ok = checkConnected();
   if (!ok) {
-    for (int j = 0; j < termV_.size(); j++) {
-      connectTerm(j, true);
+    for (int terminal_index = 0; terminal_index < terminals_.size();
+         terminal_index++) {
+      connectTerm(terminal_index, true);
     }
   }
 
   // make terms of shorted points consistent
   for (int it = 0; it < 5; it++) {
     int cnt = 0;
-    for (const tmg_rcshort& rcshort : shortV_) {
+    for (const Short& rcshort : shorts_) {
       if (rcshort.skip) {
         continue;
       }
@@ -902,8 +919,8 @@ void tmg_conn::findConnections()
 
 void tmg_conn::connectShapes(const int j, const int k)
 {
-  const tmg_rc_sh* sa = &(wire_sections_[j].shape);
-  const tmg_rc_sh* sb = &(wire_sections_[k].shape);
+  const WireSection::Shape* sa = &(wire_sections_[j].shape);
+  const WireSection::Shape* sb = &(wire_sections_[k].shape);
   const int afr = wire_sections_[j].from_idx;
   const int ato = wire_sections_[j].to_idx;
   const int bfr = wire_sections_[k].from_idx;
@@ -967,11 +984,9 @@ void tmg_conn::connectShapes(const int j, const int k)
     std::swap(i0, i1);
   }
   addShort(i0, i1);
-  wire_points_[i0].fre = false;
-  wire_points_[i1].fre = false;
 }
 
-static void addPointToTerm(WirePoint* pt, tmg_rcterm* x)
+static void addPointToTerm(WirePoint* pt, Terminal* x)
 {
   WirePoint* tpt = x->pt;
   WirePoint* ptpt = nullptr;
@@ -987,7 +1002,7 @@ static void addPointToTerm(WirePoint* pt, tmg_rcterm* x)
   pt->next_for_term = tpt;
 }
 
-static void removePointFromTerm(WirePoint* pt, tmg_rcterm* x)
+static void removePointFromTerm(WirePoint* pt, Terminal* x)
 {
   if (x->pt == pt) {
     x->pt = pt->next_for_term;
@@ -1009,11 +1024,12 @@ static void removePointFromTerm(WirePoint* pt, tmg_rcterm* x)
   pt->next_for_term = nullptr;
 }
 
-void tmg_conn::connectTerm(const int j, const bool soft)
+void tmg_conn::connectTerm(const int terminal_index, const bool soft)
 {
-  csV_ = &csVV_[j];
-  csN_ = csNV_[j];
-  if (!csN_) {
+  const CandidateSections& candidate_sections
+      = candidate_sections_[terminal_index];
+  const int candidate_section_count = candidate_section_count_[terminal_index];
+  if (!candidate_section_count) {
     return;
   }
   for (WirePoint* pc = first_for_clear_; pc; pc = pc->next_for_clear) {
@@ -1022,13 +1038,14 @@ void tmg_conn::connectTerm(const int j, const bool soft)
   }
   first_for_clear_ = nullptr;
 
-  for (int ii = 0; ii < csN_; ii++) {
-    const int k = (*csV_)[ii].k;
+  for (int ii = 0; ii < candidate_section_count; ii++) {
+    const CandidateSection& candidate_section = candidate_sections[ii];
+    const int k = candidate_section.index;
     WirePoint* pfr = &wire_points_[wire_sections_[k].from_idx];
     WirePoint* pto = &wire_points_[wire_sections_[k].to_idx];
     const Point afr(pfr->x, pfr->y);
-    if ((*csV_)[ii].rtlev == pfr->layer->getRoutingLevel()
-        && (*csV_)[ii].rect.intersects(afr)) {
+    if (candidate_section.routing_level == pfr->layer->getRoutingLevel()
+        && candidate_section.terminal_box.intersects(afr)) {
       if (!(pfr->pinpt || pfr->c2pinpt)) {
         pfr->next_for_clear = first_for_clear_;
         first_for_clear_ = pfr;
@@ -1042,8 +1059,8 @@ void tmg_conn::connectTerm(const int j, const bool soft)
       pto->c2pinpt = true;
     }
     const Point ato(pto->x, pto->y);
-    if ((*csV_)[ii].rtlev == pto->layer->getRoutingLevel()
-        && (*csV_)[ii].rect.intersects(ato)) {
+    if (candidate_section.routing_level == pto->layer->getRoutingLevel()
+        && candidate_section.terminal_box.intersects(ato)) {
       if (!(pfr->pinpt || pfr->c2pinpt)) {
         pfr->next_for_clear = first_for_clear_;
         first_for_clear_ = pfr;
@@ -1078,8 +1095,9 @@ void tmg_conn::connectTerm(const int j, const bool soft)
     }
   }
 
-  for (int ii = 0; ii < csN_; ii++) {
-    const int k = (*csV_)[ii].k;
+  for (int ii = 0; ii < candidate_section_count; ii++) {
+    const CandidateSection& candidate_section = candidate_sections[ii];
+    const int k = candidate_section.index;
     WirePoint* pfr = &wire_points_[wire_sections_[k].from_idx];
     WirePoint* pto = &wire_points_[wire_sections_[k].to_idx];
     if (pfr->c2pinpt) {
@@ -1098,35 +1116,39 @@ void tmg_conn::connectTerm(const int j, const bool soft)
     }
   }
 
-  tmg_rcterm* x = &termV_[j];
-  for (int ii = 0; ii < csN_; ii++) {
-    const int k = (*csV_)[ii].k;
+  Terminal* x = &terminals_[terminal_index];
+  for (int ii = 0; ii < candidate_section_count; ii++) {
+    const CandidateSection& candidate_section = candidate_sections[ii];
+    const int k = candidate_section.index;
     const int bfr = wire_sections_[k].from_idx;
     const int bto = wire_sections_[k].to_idx;
     const bool cfr = wire_points_[bfr].pinpt;
     const bool cto = wire_points_[bto].pinpt;
     if (soft && !cfr && !cto) {
       if (!(wire_points_[bfr].c2pinpt || wire_points_[bto].c2pinpt)) {
-        connectTermSoft(j, (*csV_)[ii].rtlev, (*csV_)[ii].rect, (*csV_)[ii].k);
+        connectTermSoft(terminal_index,
+                        candidate_section.routing_level,
+                        candidate_section.terminal_box,
+                        candidate_section.index);
       }
       continue;
     }
     if (cfr && !cto) {
       WirePoint* pt = &wire_points_[bfr];
       const WirePoint* pother = &wire_points_[bto];
-      if (pt->tindex == j) {
+      if (pt->tindex == terminal_index) {
         continue;
       }
       if (pt->tindex >= 0 && pt->t_alt && pt->t_alt->tindex < 0) {
         const int oldt = pt->tindex;
-        removePointFromTerm(pt, &termV_[oldt]);
+        removePointFromTerm(pt, &terminals_[oldt]);
         pt->t_alt->tindex = oldt;
-        addPointToTerm(pt->t_alt, &termV_[oldt]);
+        addPointToTerm(pt->t_alt, &terminals_[oldt]);
         pt->tindex = -1;
       }
       if (pt->tindex >= 0 && pt->tindex == pother->tindex) {
         // override old connection if it is on the other
-        removePointFromTerm(pt, &termV_[pt->tindex]);
+        removePointFromTerm(pt, &terminals_[pt->tindex]);
         pt->tindex = -1;
       }
       if (pt->tindex >= 0) {
@@ -1138,25 +1160,25 @@ void tmg_conn::connectTerm(const int j, const bool soft)
                        pt->x,
                        pt->y);
       }
-      pt->tindex = j;
+      pt->tindex = terminal_index;
       addPointToTerm(pt, x);
 
     } else if (cto && !cfr) {
       WirePoint* pt = &wire_points_[bto];
       const WirePoint* pother = &wire_points_[bfr];
-      if (pt->tindex == j) {
+      if (pt->tindex == terminal_index) {
         continue;
       }
       if (pt->tindex >= 0 && pt->t_alt && pt->t_alt->tindex < 0) {
         const int oldt = pt->tindex;
-        removePointFromTerm(pt, &termV_[oldt]);
+        removePointFromTerm(pt, &terminals_[oldt]);
         pt->t_alt->tindex = oldt;
-        addPointToTerm(pt->t_alt, &termV_[oldt]);
+        addPointToTerm(pt->t_alt, &terminals_[oldt]);
         pt->tindex = -1;
       }
       if (pt->tindex >= 0 && pt->tindex == pother->tindex) {
         // override old connection if it is on the other
-        removePointFromTerm(pt, &termV_[pt->tindex]);
+        removePointFromTerm(pt, &terminals_[pt->tindex]);
         pt->tindex = -1;
       }
       if (pt->tindex >= 0) {
@@ -1168,16 +1190,17 @@ void tmg_conn::connectTerm(const int j, const bool soft)
                        pt->x,
                        pt->y);
       }
-      pt->tindex = j;
+      pt->tindex = terminal_index;
       addPointToTerm(pt, x);
 
     } else if (cfr && cto) {
-      if (wire_points_[bfr].tindex == j || wire_points_[bto].tindex == j) {
+      if (wire_points_[bfr].tindex == terminal_index
+          || wire_points_[bto].tindex == terminal_index) {
         continue;
       }
       if (wire_points_[bfr].tindex >= 0 && wire_points_[bto].tindex < 0) {
         WirePoint* pt = &wire_points_[bto];
-        pt->tindex = j;
+        pt->tindex = terminal_index;
         addPointToTerm(pt, x);
         continue;
       }
@@ -1185,14 +1208,14 @@ void tmg_conn::connectTerm(const int j, const bool soft)
       WirePoint* pother = &wire_points_[bto];
       if (pt->tindex >= 0 && pt->t_alt && pt->t_alt->tindex < 0) {
         const int oldt = pt->tindex;
-        removePointFromTerm(pt, &termV_[oldt]);
+        removePointFromTerm(pt, &terminals_[oldt]);
         pt->t_alt->tindex = oldt;
-        addPointToTerm(pt->t_alt, &termV_[oldt]);
+        addPointToTerm(pt->t_alt, &terminals_[oldt]);
         pt->tindex = -1;
       }
       if (pt->tindex >= 0 && pt->tindex == pother->tindex) {
         // override old connection if it is on the other
-        removePointFromTerm(pt, &termV_[pt->tindex]);
+        removePointFromTerm(pt, &terminals_[pt->tindex]);
         pt->tindex = -1;
       }
       if (pt->tindex >= 0) {
@@ -1204,7 +1227,7 @@ void tmg_conn::connectTerm(const int j, const bool soft)
                        pt->x,
                        pt->y);
       }
-      pt->tindex = j;
+      pt->tindex = terminal_index;
       addPointToTerm(pt, x);
       pt->t_alt = pother;
     }
@@ -1216,12 +1239,12 @@ void tmg_conn::connectTerm(const int j, const bool soft)
   first_for_clear_ = nullptr;
 }
 
-void tmg_conn::connectTermSoft(const int j,
+void tmg_conn::connectTermSoft(const int terminal_index,
                                const int rt,
-                               Rect& rect,
+                               const Rect& rect,
                                const int k)
 {
-  const tmg_rc_sh* sb = &(wire_sections_[k].shape);
+  const WireSection::Shape* sb = &(wire_sections_[k].shape);
   const int bfr = wire_sections_[k].from_idx;
   const int bto = wire_sections_[k].to_idx;
   const int xlo = std::max(rect.xMin(), sb->xMin());
@@ -1247,7 +1270,7 @@ void tmg_conn::connectTermSoft(const int j,
   }
   WirePoint* pt = &wire_points_[choose_bfr ? bfr : bto];
   WirePoint* pother = &wire_points_[choose_bfr ? bto : bfr];
-  if (pt->tindex == j) {
+  if (pt->tindex == terminal_index) {
     return;
   }
 
@@ -1261,7 +1284,7 @@ void tmg_conn::connectTermSoft(const int j,
       && wire_points_[bfr].y == wire_points_[bto].y) {
     // if wire shape k is an isolated square,
     // then connect to other point if available
-    if (pother->tindex == j) {
+    if (pother->tindex == terminal_index) {
       return;  // already connected
     }
     if (pother->tindex < 0) {
@@ -1272,7 +1295,7 @@ void tmg_conn::connectTermSoft(const int j,
 
   // override old connection if it is on the other
   if (pt->tindex >= 0 && pother->tindex == pt->tindex) {
-    removePointFromTerm(pt, &termV_[pt->tindex]);
+    removePointFromTerm(pt, &terminals_[pt->tindex]);
     pt->tindex = -1;
   }
 
@@ -1287,10 +1310,9 @@ void tmg_conn::connectTermSoft(const int j,
   if (pt->tindex >= 0) {
     return;  // skip soft if conflicts with hard
   }
-  pt->tindex = j;
-  tmg_rcterm* x = &termV_[j];
+  pt->tindex = terminal_index;
+  Terminal* x = &terminals_[terminal_index];
   addPointToTerm(pt, x);
-  pt->fre = false;
   if (has_alt) {
     pt->t_alt = pother;
   }
@@ -1303,7 +1325,7 @@ int tmg_conn::getStartNode()
   dbITerm* it_drv;
   dbBTerm* bt_drv;
   tmg_getDriveTerm(net_, &it_drv, &bt_drv);
-  for (const tmg_rcterm& x : termV_) {
+  for (const Terminal& x : terminals_) {
     if (x.iterm == it_drv && x.bterm == bt_drv) {
       if (!x.pt) {
         break;
@@ -1324,7 +1346,7 @@ int tmg_conn::getStartNode()
     if (chip_bump) {
       dbInst* bump = chip_bump->getInst();
 
-      for (const tmg_rcterm& rc_term : termV_) {
+      for (const Terminal& rc_term : terminals_) {
         dbITerm* iterm = rc_term.iterm;
 
         if (iterm && (iterm->getInst() == bump) && rc_term.pt) {
@@ -1344,44 +1366,50 @@ void tmg_conn::analyzeNet(dbNet* net)
     checkConnOrdered();
   } else {
     loadNet(net);
+
     if (net->getWire()) {
       loadWire(net->getWire());
     }
+
     if (wire_points_.empty()) {
-      // ignoring this net
       net->setDisconnected(false);
       net->setWireOrdered(false);
       return;
     }
-    findConnections();
-    bool noConvert = false;
-    if (hasSWire_) {
+
+    identifyShorts();
+    removeWireLoops();
+    identifyTerminalWirePoints();
+
+    if (has_special_wires_) {
       net->destroySWires();
     }
+
     relocateShorts();
-    treeReorder(noConvert);
+    treeReorder(false);
   }
+
   net->setDisconnected(!connected_);
   net->setWireOrdered(true);
 }
 
 bool tmg_conn::checkConnected()
 {
-  for (const tmg_rcterm& x : termV_) {
+  for (const Terminal& x : terminals_) {
     if (x.pt == nullptr) {
       return false;
     }
   }
-  if (termV_.empty()) {
+  if (terminals_.empty()) {
     return true;
   }
-  tstackV_.clear();
+  restart_terminals_.clear();
   int jstart = getStartNode();
-  tmg_rcterm* xstart = nullptr;
+  Terminal* xstart = nullptr;
   if (wire_points_[jstart].tindex >= 0) {
-    tmg_rcterm* x = &termV_[wire_points_[jstart].tindex];
+    Terminal* x = &terminals_[wire_points_[jstart].tindex];
     xstart = x;
-    tstackV_.push_back(x);
+    restart_terminals_.push_back(x);
   }
   dfsClear();
   if (!dfsStart(jstart)) {
@@ -1394,27 +1422,27 @@ bool tmg_conn::checkConnected()
     bool is_short, is_loop;
     while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
       if (wire_points_[jto].tindex >= 0) {
-        tmg_rcterm* x = &termV_[wire_points_[jto].tindex];
+        Terminal* x = &terminals_[wire_points_[jto].tindex];
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
           removePointFromTerm(&wire_points_[jto],
-                              &termV_[wire_points_[jto].tindex]);
+                              &terminals_[wire_points_[jto].tindex]);
           wire_points_[jto].tindex = -1;
           wire_points_[jto].t_alt = nullptr;
         } else if (x->pt && x->pt->next_for_term) {
           // add potential short-from points to stack
-          tstackV_.push_back(x);
+          restart_terminals_.push_back(x);
         }
       }
       // the part of addToWire needed in no_convert case
       if (wire_points_[jfr].tindex >= 0) {
-        tmg_rcterm* x = &termV_[wire_points_[jfr].tindex];
+        Terminal* x = &terminals_[wire_points_[jfr].tindex];
         if (x->first_pt == nullptr) {
           x->first_pt = &wire_points_[jfr];
         }
       }
       if (wire_points_[jto].tindex >= 0) {
-        tmg_rcterm* x = &termV_[wire_points_[jto].tindex];
+        Terminal* x = &terminals_[wire_points_[jto].tindex];
         if (x->first_pt == nullptr) {
           x->first_pt = &wire_points_[jto];
         }
@@ -1423,8 +1451,8 @@ bool tmg_conn::checkConnected()
     // finished physically-connected subtree,
     // find an unvisited short-from point
     WirePoint* pt = nullptr;
-    while (tstack0 < tstackV_.size() && !pt) {
-      tmg_rcterm* x = tstackV_[tstack0++];
+    while (tstack0 < restart_terminals_.size() && !pt) {
+      Terminal* x = restart_terminals_[tstack0++];
       for (pt = x->pt; pt; pt = pt->next_for_term) {
         if (!isVisited(pt - wire_points_.data())) {
           break;
@@ -1443,7 +1471,7 @@ bool tmg_conn::checkConnected()
     }
   }
   bool con = true;
-  for (tmg_rcterm& x : termV_) {
+  for (Terminal& x : terminals_) {
     if (!x.first_pt) {
       con = false;
     }
@@ -1452,6 +1480,11 @@ bool tmg_conn::checkConnected()
   return con;  // all terms connected, may be floating pieces of wire
 }
 
+// Note that when the wire walk exhausts the piece of metal it is on, it
+// may restart from a "restart terminal". These terminals may be:
+// 1) The driver.
+// 2) A terminal that owns more than one wire point
+// 3) A terminal that the walk never reached, if the net is disconnected.
 void tmg_conn::treeReorder(const bool no_convert)
 {
   connected_ = true;
@@ -1459,26 +1492,26 @@ void tmg_conn::treeReorder(const bool no_convert)
   if (wire_points_.empty()) {
     return;
   }
-  newWire_ = nullptr;
+  new_wire_ = nullptr;
   last_id_ = -1;
   if (!no_convert) {
-    newWire_ = net_->getWire();
-    if (!newWire_) {
-      newWire_ = dbWire::create(net_);
+    new_wire_ = net_->getWire();
+    if (!new_wire_) {
+      new_wire_ = dbWire::create(net_);
     }
-    encoder_.begin(newWire_);
+    encoder_.begin(new_wire_);
     for (WirePoint& pt : wire_points_) {
       pt.dbwire_id = -1;
     }
   }
-  for (tmg_rcterm& x : termV_) {
+  for (Terminal& x : terminals_) {
     x.first_pt = nullptr;
     if (x.pt == nullptr) {
       connected_ = false;
     }
   }
 
-  if (termV_.empty()) {
+  if (terminals_.empty()) {
     return;
   }
 
@@ -1486,13 +1519,13 @@ void tmg_conn::treeReorder(const bool no_convert)
   path_rule_ = net_rule_;
 
   int tstack0 = 0;
-  tstackV_.clear();
+  restart_terminals_.clear();
   int jstart = getStartNode();
-  tmg_rcterm* xstart = nullptr;
+  Terminal* xstart = nullptr;
   if (wire_points_[jstart].tindex >= 0) {
-    tmg_rcterm* x = &termV_[wire_points_[jstart].tindex];
+    Terminal* x = &terminals_[wire_points_[jstart].tindex];
     xstart = x;
-    tstackV_.push_back(x);
+    restart_terminals_.push_back(x);
   }
   dfsClear();
   if (!dfsStart(jstart)) {
@@ -1507,22 +1540,22 @@ void tmg_conn::treeReorder(const bool no_convert)
   int last_term_index = 0;
   while (true) {
     // do a physically-connected subtree
-    tmg_rcterm* x = nullptr;
+    Terminal* x = nullptr;
     int jfr, jto, k;
     bool is_short, is_loop;
     while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
       x = nullptr;
       if (wire_points_[jto].tindex >= 0) {
-        x = &termV_[wire_points_[jto].tindex];
+        x = &terminals_[wire_points_[jto].tindex];
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
           removePointFromTerm(&wire_points_[jto],
-                              &termV_[wire_points_[jto].tindex]);
+                              &terminals_[wire_points_[jto].tindex]);
           wire_points_[jto].tindex = -1;
           wire_points_[jto].t_alt = nullptr;
         } else if (x->pt && x->pt->next_for_term) {
           // add potential short-from points to stack
-          tstackV_.push_back(x);
+          restart_terminals_.push_back(x);
         }
       }
       if (!no_convert) {
@@ -1530,13 +1563,13 @@ void tmg_conn::treeReorder(const bool no_convert)
       } else {
         // the part of addToWire needed in no_convert case
         if (wire_points_[jfr].tindex >= 0) {
-          x = &termV_[wire_points_[jfr].tindex];
+          x = &terminals_[wire_points_[jfr].tindex];
           if (x->first_pt == nullptr) {
             x->first_pt = &wire_points_[jfr];
           }
         }
         if (wire_points_[jto].tindex >= 0) {
-          x = &termV_[wire_points_[jto].tindex];
+          x = &terminals_[wire_points_[jto].tindex];
           if (x->first_pt == nullptr) {
             x->first_pt = &wire_points_[jto];
           }
@@ -1546,8 +1579,8 @@ void tmg_conn::treeReorder(const bool no_convert)
     // finished physically-connected subtree,
     // find an unvisited short-from point
     WirePoint* pt = nullptr;
-    while (tstack0 < tstackV_.size() && !pt) {
-      x = tstackV_[tstack0++];
+    while (tstack0 < restart_terminals_.size() && !pt) {
+      x = restart_terminals_[tstack0++];
       for (pt = x->pt; pt; pt = pt->next_for_term) {
         if (!isVisited(pt - wire_points_.data())) {
           break;
@@ -1560,18 +1593,18 @@ void tmg_conn::treeReorder(const bool no_convert)
     }
     if (!pt) {
       int j;
-      for (j = last_term_index; j < termV_.size(); j++) {
-        x = &termV_[j];
+      for (j = last_term_index; j < terminals_.size(); j++) {
+        x = &terminals_[j];
         if (x->pt && !isVisited(x->pt - wire_points_.data())) {
           break;
         }
       }
       last_term_index = j;
-      if (j < termV_.size()) {
+      if (j < terminals_.size()) {
         // disconnected, start new path from another term
         connected_ = false;
         last_id_ = -1;
-        tstackV_.push_back(x);
+        restart_terminals_.push_back(x);
         pt = x->pt;
       } else {
         jstart = getDisconnectedStart();
@@ -1671,7 +1704,7 @@ void tmg_conn::addToWire(const int fr,
                          const bool is_short,
                          const bool is_loop)
 {
-  if (!newWire_) {
+  if (!new_wire_) {
     return;
   }
 
@@ -1707,7 +1740,7 @@ void tmg_conn::addToWire(const int fr,
   }
   if (fr_id < 0) {
     path_rule_ = wire_section->shape.getRule();
-    firstSegmentAfterVia_ = 0;
+    first_segment_after_via_ = false;
     if (last_id_ >= 0) {
       // term feedthru
       if (path_rule_) {
@@ -1731,7 +1764,7 @@ void tmg_conn::addToWire(const int fr,
     }
     wire_points_[fr].dbwire_id = fr_id;
     if (wire_points_[fr].tindex >= 0) {
-      tmg_rcterm* x = &termV_[wire_points_[fr].tindex];
+      Terminal* x = &terminals_[wire_points_[fr].tindex];
       if (x->first_pt == nullptr) {
         x->first_pt = &wire_points_[fr];
       }
@@ -1750,7 +1783,7 @@ void tmg_conn::addToWire(const int fr,
         encoder_.newPath(fr_id);
       }
     } else {
-      firstSegmentAfterVia_ = 0;
+      first_segment_after_via_ = false;
       const int ext = getExtension(fr, wire_section);
       if (ext != wire_section->default_ext) {
         if (path_rule_) {
@@ -1767,7 +1800,7 @@ void tmg_conn::addToWire(const int fr,
       }
     }
     if (wire_points_[fr].tindex >= 0) {
-      tmg_rcterm* x = &termV_[wire_points_[fr].tindex];
+      Terminal* x = &terminals_[wire_points_[fr].tindex];
       if (x->first_pt == nullptr) {
         x->first_pt = &wire_points_[fr];
       }
@@ -1788,7 +1821,7 @@ void tmg_conn::addToWire(const int fr,
         encoder_.newPath(fr_id);
       }
     } else {
-      firstSegmentAfterVia_ = 0;
+      first_segment_after_via_ = false;
       const int ext = getExtension(fr, wire_section);
       if (ext != wire_section->default_ext) {
         if (path_rule_) {
@@ -1805,7 +1838,7 @@ void tmg_conn::addToWire(const int fr,
       }
     }
     if (wire_points_[fr].tindex >= 0) {
-      tmg_rcterm* x = &termV_[wire_points_[fr].tindex];
+      Terminal* x = &terminals_[wire_points_[fr].tindex];
       if (x->first_pt == nullptr) {
         x->first_pt = &wire_points_[fr];
       }
@@ -1826,8 +1859,8 @@ void tmg_conn::addToWire(const int fr,
 
   int to_id = -1;
   if (!wire_section->shape.isVia()) {
-    if (firstSegmentAfterVia_) {
-      firstSegmentAfterVia_ = 0;
+    if (first_segment_after_via_) {
+      first_segment_after_via_ = false;
       addPointIfExt(fr, wire_section);
     }
     to_id = addPoint(fr, to, wire_section);
@@ -1851,7 +1884,7 @@ void tmg_conn::addToWire(const int fr,
   }
 
   if (wire_points_[to].tindex >= 0) {
-    tmg_rcterm* x = &termV_[wire_points_[to].tindex];
+    Terminal* x = &terminals_[wire_points_[to].tindex];
     if (x->first_pt == nullptr) {
       x->first_pt = &wire_points_[to];
     }
@@ -1865,7 +1898,7 @@ void tmg_conn::addToWire(const int fr,
   wire_points_[to].dbwire_id = to_id;
   last_id_ = to_id;
 
-  firstSegmentAfterVia_ = wire_section->shape.isVia();
+  first_segment_after_via_ = wire_section->shape.isVia();
 }
 
 }  // namespace odb

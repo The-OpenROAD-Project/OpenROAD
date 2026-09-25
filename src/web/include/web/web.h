@@ -10,9 +10,11 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/steady_timer.hpp"
 #include "odb/db.h"
@@ -44,6 +46,36 @@ class TimingReport;
 class WebViewerHook;
 struct WebGif;  // defined in web.cpp; holds a GifEncoder + frame dimensions
 
+// How a `web_server -bind` / `-web_bind` address must be treated.  The viewer
+// runs Tcl commands, so binding anywhere but loopback hands a shell to whoever
+// can reach the port (issue #11167).
+enum class BindAddressKind
+{
+  kInvalid,
+  kLoopback,
+  kExposed
+};
+
+// Classify a bind address.  IP literals only: there is no name resolution, so
+// "localhost" is kInvalid — the contract the commands document.  Callers that
+// reach serve() from C++ (Main.cc) must check this first: serve() reports a
+// bad address with utl::error, which throws.
+BindAddressKind classifyBindAddress(std::string_view address);
+
+// Host to put in the URL the browser is pointed at, for a server listening on
+// `address`.  "localhost" only where it actually resolves to the listener —
+// naming it for the whole 127.0.0.0/8 range sends the browser to a port
+// nobody is bound to.  IPv6 literals come back bracketed, ready for a URL.
+std::string browserHostForBind(const boost::asio::ip::address& address);
+
+// What serve() binds to when the caller passes no address.  Owned here so the
+// Tcl and command-line front ends cannot drift apart on the security default.
+inline constexpr const char* kDefaultBindAddress = "127.0.0.1";
+
+// Shared by every "that address is not usable" message, so they cannot drift.
+inline constexpr const char* kBindAddressHint
+    = "expected an IP literal such as 127.0.0.1 or ::1";
+
 // Returned by createAndRunListener: a shutdown callback and the actual
 // port the listener bound to (useful when the caller passes port 0).
 struct ListenerHandle
@@ -67,7 +99,7 @@ ListenerHandle createAndRunListener(
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
-// is called, mirroring gui::show / gui::hide.
+// is called, mirroring web::show / web::hide.
 
 class WebServer
 {
@@ -90,10 +122,11 @@ class WebServer
   // generator.
   void setThreadCount(int num_threads);
 
-  // Start the web server on the given port.  Launches background
-  // I/O threads and returns immediately.  A second call is a no-op if
-  // the server is already running.
-  void serve(int port);
+  // Start the web server on the given port, listening on `bind_address` — an
+  // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
+  // Launches background I/O threads and returns immediately.  A second call is
+  // a no-op if the server is already running.
+  void serve(int port, const std::string& bind_address);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }
@@ -154,7 +187,7 @@ class WebServer
 
   // Custom UI registered from Tcl (create_menu_item / create_toolbar_button).
   // These are thin facades over WebViewerHook (which owns the registry and
-  // broadcasts to clients), mirroring how gui::Gui delegates to MainWindow.
+  // broadcasts to clients), mirroring how web::Gui delegates to MainWindow.
   // initLogger() is called first so the hook exists even when the command
   // runs from a startup script before web_server.  Returns the item key.
   std::string addToolbarButton(const std::string& name,
