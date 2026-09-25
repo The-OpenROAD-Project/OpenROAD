@@ -4479,26 +4479,12 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
-
-          odb::dbNet* net = nullptr;
-          if (iterm) {
-            net = iterm->getNet();
-          } else if (bterm) {
-            net = bterm->getNet();
-          }
-
-          if (net) {
-            collectNetShapes(net,
-                             iterm,
-                             bterm,
-                             nullptr,
-                             nullptr,
-                             kStageColor,
-                             new_rects,
-                             new_lines,
-                             node->world_xfm);
-          }
+          collectTimingStageShapes(chiplets,
+                                   paths[path_index],
+                                   pin_name,
+                                   kStageColor,
+                                   new_rects,
+                                   new_lines);
         }
       }
     }
