@@ -1,7 +1,8 @@
 # global_route -allow_congestion decides once, when the route finishes,
 # that a congested route is accepted. The route stays accepted whatever
 # later commands do to the allow_congestion setting: repair_antennas run
-# without -allow_congestion, or the setting cleared outright.
+# without -allow_congestion, or the setting cleared outright. A new
+# global_route makes its own decision.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -52,6 +53,14 @@ check "clearing allow_congestion afterwards keeps the route" {
 
 check "estimate_parasitics -global_routing finds the route" {
   catch { estimate_parasitics -global_routing }
+} 0
+
+check "a later global_route without -allow_congestion fails" {
+  catch { global_route }
+} 1
+
+check "the failed global_route does not inherit the earlier acceptance" {
+  grt::have_routes
 } 0
 
 exit_summary

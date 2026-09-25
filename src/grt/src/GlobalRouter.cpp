@@ -163,6 +163,7 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  congestion_accepted_ = false;
 }
 
 GlobalRouter::~GlobalRouter()
