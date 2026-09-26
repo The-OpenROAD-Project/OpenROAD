@@ -9,6 +9,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
+#include "dbProperty.h"
 #include "dbScanChain.h"
 #include "dbScanList.h"
 #include "dbScanPin.h"
@@ -96,6 +97,12 @@ dbSet<dbScanList> dbScanPartition::getScanLists() const
   return dbSet<dbScanList>(obj, obj->scan_lists_);
 }
 
+void dbScanPartition::destroy(dbScanPartition* obj)
+{
+  _dbScanChain* _parent = (_dbScanChain*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->scan_partitions_->destroy((_dbScanPartition*) obj);
+}
 // User Code Begin dbScanPartitionPublicMethods
 
 const std::string& dbScanPartition::getName() const

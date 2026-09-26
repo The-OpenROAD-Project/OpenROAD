@@ -97,6 +97,8 @@ class Dft
   // Resets the internal state
   void reset();
 
+  void writeToOdb();
+
   // Common function to perform scan replace and scan architect. Shared between
   // report_dft_plan and execute_dft_plan
   std::vector<std::unique_ptr<ScanChain>> scanArchitect();
@@ -109,6 +111,7 @@ class Dft
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
   std::unique_ptr<DftConfig> dft_config_;
+  std::vector<std::unique_ptr<ScanChain>> scan_chains_;
 };
 
 }  // namespace dft
