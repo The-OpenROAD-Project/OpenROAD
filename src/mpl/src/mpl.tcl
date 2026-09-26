@@ -64,10 +64,6 @@ proc rtl_macro_placer { args } {
   set max_num_level 2
   set coarsening_ratio 10.0
   set large_net_threshold 50
-  set fence_lx 0.0
-  set fence_ly 0.0
-  set fence_ux 0.0
-  set fence_uy 0.0
 
   set area_weight 0.1
   set outline_weight 100.0
@@ -129,18 +125,7 @@ proc rtl_macro_placer { args } {
     mpl::set_base_halo $halo_width $halo_height $halo_width $halo_height
   }
 
-  if { [info exists keys(-fence_lx)] } {
-    set fence_lx $keys(-fence_lx)
-  }
-  if { [info exists keys(-fence_ly)] } {
-    set fence_ly $keys(-fence_ly)
-  }
-  if { [info exists keys(-fence_ux)] } {
-    set fence_ux $keys(-fence_ux)
-  }
-  if { [info exists keys(-fence_uy)] } {
-    set fence_uy $keys(-fence_uy)
-  }
+  lassign [mpl::parse_fence keys] fence_lx fence_ly fence_ux fence_uy
   if { [info exists keys(-area_weight)] } {
     set area_weight $keys(-area_weight)
   }
@@ -214,6 +199,28 @@ proc rtl_macro_placer { args } {
   }
 
   return true
+}
+
+sta::define_cmd_args "check_macro_placement" { [-fence_lx fence_lx] \
+                                              [-fence_ly fence_ly] \
+                                              [-fence_ux fence_ux] \
+                                              [-fence_uy fence_uy] \
+                                              [-use_full_halo] }
+
+proc check_macro_placement { args } {
+  sta::parse_key_args "check_macro_placement" args \
+    keys {-fence_lx -fence_ly -fence_ux -fence_uy} \
+    flags {-use_full_halo}
+
+  sta::check_argc_eq0 "check_macro_placement" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error MPL 80 "No block found for the macro placement check."
+  }
+
+  lassign [mpl::parse_fence keys] fence_lx fence_ly fence_ux fence_uy
+  return [mpl::check_macro_placement_cmd $fence_lx $fence_ly $fence_ux $fence_uy \
+    [info exists flags(-use_full_halo)]]
 }
 
 sta::define_cmd_args "place_macro" {-macro_name macro_name \
@@ -356,6 +363,21 @@ proc block_macro_channels { args } {
 }
 
 namespace eval mpl {
+# The -fence_* keys of rtl_macro_placer and check_macro_placement, in
+# microns: {lx ly ux uy}, 0 where not given (no fence: the core).
+proc parse_fence { keys_var } {
+  upvar 1 $keys_var keys
+  set fence {}
+  foreach key {-fence_lx -fence_ly -fence_ux -fence_uy} {
+    if { [info exists keys($key)] } {
+      lappend fence $keys($key)
+    } else {
+      lappend fence 0.0
+    }
+  }
+  return $fence
+}
+
 proc parse_halo { halo } {
   set length [llength $halo]
 

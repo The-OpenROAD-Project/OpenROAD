@@ -106,13 +106,39 @@ void HierRTLMP::setSoftBlockageWeight(float weight)
   cluster_placement_weights_.soft_blockage = weight;
 }
 
+// No fence means the core.
+static odb::Rect effectiveGlobalFence(odb::dbBlock* block,
+                                      const odb::Rect& global_fence)
+{
+  return global_fence.area() > 0 ? global_fence : block->getCoreArea();
+}
+
 void HierRTLMP::setGlobalFence(odb::Rect global_fence)
 {
-  if (global_fence.area() > 0) {
-    tree_->global_fence = global_fence;
-  } else {
-    tree_->global_fence = block_->getCoreArea();
+  tree_->global_fence = effectiveGlobalFence(block_, global_fence);
+}
+
+// The checks rtl_macro_placer makes before it clusters
+// (ClusteringEngine::init), with the same halos and fence, and nothing
+// after them: no clustering, no annealing, nothing written. The tree is
+// the check's own, so it leaves no state behind for rtl_macro_placer.
+// Returns whether there are macros to place.
+bool HierRTLMP::checkMacroPlacement(const odb::Rect& global_fence,
+                                    const bool use_full_halo)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  PhysicalHierarchy tree;
+  tree.global_fence = effectiveGlobalFence(block, global_fence);
+
+  ClusteringEngine clustering_engine(block, logger_, tritonpart_, nullptr);
+  clustering_engine.setTree(&tree);
+  clustering_engine.setHalos(base_halo_, use_full_halo, macro_to_halo_);
+  if (!clustering_engine.checkFeasibility()) {
+    return false;
   }
+
+  logger_->info(MPL, 79, "Macro placement check passed.");
+  return true;
 }
 
 void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)

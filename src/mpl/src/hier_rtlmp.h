@@ -79,6 +79,7 @@ class HierRTLMP
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
+  bool checkMacroPlacement(const odb::Rect& global_fence, bool use_full_halo);
   void setBaseHalo(int left, int bottom, int right, int top);
   void setGuidanceRegions(
       const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
