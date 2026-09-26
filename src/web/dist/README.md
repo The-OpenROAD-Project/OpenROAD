@@ -45,8 +45,8 @@ bazel run //src/web/dist:dist
 
 Then commit what it changed. `bazel test //src/web/dist:dist_tests` tells you
 locally whether they are in sync. CI enforces it in the
-`Are-Web-Bundles-Generated` workflow, which regenerates and fails on any
-difference — no other job would notice, because the CMake build trusts whatever
-is committed here.
+`Are-Web-Bundles-Generated` workflow, which rebuilds the bundles and fails on
+any difference without waiting for a full build; Jenkins' `bazel test` runs the
+same check, but only after building everything.
 
 [issue]: https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065
