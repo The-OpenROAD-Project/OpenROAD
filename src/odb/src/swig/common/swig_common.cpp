@@ -17,6 +17,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbSchemaUpgrade.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
 #include "odb/defout.h"
@@ -105,13 +106,16 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
     db = odb::dbDatabase::create();
   }
 
-  std::ifstream file;
-  file.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                  | std::ios::eofbit);
-  file.open(db_path, std::ios::binary);
-
   try {
-    db->read(file);
+    // Runs a converter first when the file predates the oldest schema this
+    // build parses; see odb/dbSchemaUpgrade.h. Going straight to an ifstream
+    // here would throw out of dbDatabase::read instead.
+    odb::DbFileStream file(db_path, utl::Logger::defaultLogger());
+    std::istream& stream = file.stream();
+    stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                      | std::ios::eofbit);
+    db->read(stream);
+    file.finish();
   } catch (const std::ios_base::failure& f) {
     auto msg = fmt::format("odb file {} is invalid: {}", db_path, f.what());
     throw std::ios_base::failure(msg);

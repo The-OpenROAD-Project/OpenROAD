@@ -25,7 +25,6 @@
       {
         "name": "via_layer_",
         "type": "dbId<_dbTechLayer>",
-        "schema":"kSchemaDbGuideViaLayer",
         "flags": [
           "private"
         ]
@@ -39,7 +38,6 @@
       {
         "name":"is_congested_",
         "type":"bool",
-        "schema":"kSchemaDbGuideCongested",
         "default":"false",
         "flags": [
           "private"
@@ -48,7 +46,6 @@
       {
         "name":"is_jumper_",
         "type":"bool",
-        "schema":"kSchemaHasJumpers",
         "default":"false",
         "flags": [
           "private"
@@ -57,7 +54,6 @@
       {
         "name":"is_connect_to_term_",
         "type":"bool",
-        "schema":"kSchemaGuideConnectedToTerm",
         "default":"false",
         "flags": [
           "private"

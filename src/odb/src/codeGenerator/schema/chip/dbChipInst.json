@@ -36,8 +36,7 @@
     {
       "name":"chip_region_insts_",
       "type":"dbId<_dbChipRegionInst>",
-      "flags":["private"],
-      "schema":"kSchemaChipRegion"
+      "flags":["private"]
     },
     {
       "name":"region_insts_map_",

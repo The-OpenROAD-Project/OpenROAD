@@ -564,23 +564,6 @@ template <class T, uint32_t page_size>
 dbIStream& operator>>(dbIStream& stream, dbTable<T, page_size>& table)
 {
   table.clear();
-  _dbDatabase* db = stream.getDatabase();
-  if (!db->isSchema(kSchemaTableMaskShift)) {
-    uint32_t page_mask;
-    uint32_t page_shift;
-    stream >> page_mask;
-    stream >> page_shift;
-    if (page_mask != table.kPageMask || page_shift != table.kPageShift) {
-      utl::Logger* logger = db->getLogger();
-      logger->error(utl::ODB,
-                    477,
-                    "dbTable mask/shift mismatch {}/{} vs {}/{}",
-                    page_mask,
-                    page_shift,
-                    table.kPageMask,
-                    table.kPageShift);
-    }
-  }
   stream >> table.top_idx_;
   stream >> table.bottom_idx_;
   stream >> table.page_cnt_;

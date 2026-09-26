@@ -67,27 +67,13 @@ _dbBusPort::_dbBusPort(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
 {
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.flags_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.from_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.to_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.port_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.members_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.last_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.parent_;
-  }
+  stream >> obj.flags_;
+  stream >> obj.from_;
+  stream >> obj.to_;
+  stream >> obj.port_;
+  stream >> obj.members_;
+  stream >> obj.last_;
+  stream >> obj.parent_;
   return stream;
 }
 

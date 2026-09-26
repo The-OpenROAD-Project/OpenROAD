@@ -95,48 +95,17 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj.name_;
   stream >> obj.next_entry_;
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(kSchemaUpdateDbPowerSwitch)) {
-    stream >> obj.in_supply_port_;
-    stream >> obj.out_supply_port_;
-    stream >> obj.control_port_;
-    stream >> obj.acknowledge_port_;
-    stream >> obj.on_state_;
-  } else {
-    dbVector<std::string> in_supply_port;
-    stream >> in_supply_port;
-    for (const auto& port : in_supply_port) {
-      obj.in_supply_port_.emplace_back(dbPowerSwitch::UPFIOSupplyPort{
-          .port_name = port, .supply_net_name = ""});
-    }
-    dbVector<std::string> out_supply_port;
-    stream >> out_supply_port;
-    if (!out_supply_port.empty()) {
-      obj.out_supply_port_.port_name = out_supply_port[0];
-      obj.out_supply_port_.supply_net_name = "";
-    }
-    dbVector<std::string> control_port;
-    stream >> control_port;
-    for (const auto& port : control_port) {
-      obj.control_port_.emplace_back(
-          dbPowerSwitch::UPFControlPort{.port_name = port, .net_name = ""});
-    }
-    dbVector<std::string> on_state;
-    stream >> on_state;
-    for (const auto& state : on_state) {
-      obj.on_state_.emplace_back(
-          dbPowerSwitch::UPFOnState{.state_name = state,
-                                    .input_supply_port = "",
-                                    .boolean_expression = ""});
-    }
-    dbId<_dbNet> net;
-    stream >> net;  // unused
-  }
+  stream >> obj.in_supply_port_;
+  stream >> obj.out_supply_port_;
+  stream >> obj.control_port_;
+  stream >> obj.acknowledge_port_;
+  stream >> obj.on_state_;
+
   stream >> obj.power_domain_;
-  if (obj.getDatabase()->isSchema(kSchemaUpfPowerSwitchMapping)) {
-    stream >> obj.lib_cell_;
-    stream >> obj.lib_;
-    stream >> obj.port_map_;
-  }
+  stream >> obj.lib_cell_;
+  stream >> obj.lib_;
+  stream >> obj.port_map_;
+
   // User Code End >>
   return stream;
 }

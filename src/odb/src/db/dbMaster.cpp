@@ -265,7 +265,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
-  _dbDatabase* db = master.getImpl()->getDatabase();
   uint32_t* bit_field = (uint32_t*) &master.flags_;
   stream >> *bit_field;
   stream >> master.x_;
@@ -279,32 +278,20 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master.leq_;
   stream >> master.eeq_;
   stream >> master.obstructions_;
-  if (db->isSchema(kSchemaPolygon)) {
-    stream >> master.poly_obstructions_;
-  }
-  if (db->isSchema(kSchemaDbmasterLibForSite)) {
-    stream >> master.lib_for_site_;
-  } else {
-    // The site was copied into the same dbLib previously
-    master.lib_for_site_ = master.getOwner()->getId();
-  }
+  stream >> master.poly_obstructions_;
+
+  stream >> master.lib_for_site_;
+
   stream >> master.site_;
   stream >> master.mterm_hash_;
   stream >> *master.mterm_tbl_;
   stream >> *master.mpin_tbl_;
-  if (!db->isSchema(kSchemaRmTarget)) {
-    // obsolete table is always unpopulated so type/values unimportant
-    dbTable<_dbMaster, 4> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
-    stream >> dummy;
-  }
   stream >> *master.box_tbl_;
-  if (db->isSchema(kSchemaPolygon)) {
-    stream >> *master.poly_box_tbl_;
-  }
+  stream >> *master.poly_box_tbl_;
+
   stream >> *master.antenna_pin_model_tbl_;
-  if (db->isSchema(kSchemaMasterEdgeType)) {
-    stream >> *master.edge_types_tbl_;
-  }
+  stream >> *master.edge_types_tbl_;
+
   return stream;
 }
 

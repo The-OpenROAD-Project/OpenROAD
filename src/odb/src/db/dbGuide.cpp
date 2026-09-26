@@ -72,19 +72,11 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.net_;
   stream >> obj.box_;
   stream >> obj.layer_;
-  if (obj.getDatabase()->isSchema(kSchemaDbGuideViaLayer)) {
-    stream >> obj.via_layer_;
-  }
+  stream >> obj.via_layer_;
   stream >> obj.guide_next_;
-  if (obj.getDatabase()->isSchema(kSchemaDbGuideCongested)) {
-    stream >> obj.is_congested_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaHasJumpers)) {
-    stream >> obj.is_jumper_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaGuideConnectedToTerm)) {
-    stream >> obj.is_connect_to_term_;
-  }
+  stream >> obj.is_congested_;
+  stream >> obj.is_jumper_;
+  stream >> obj.is_connect_to_term_;
   return stream;
 }
 
@@ -255,20 +247,15 @@ bool dbGuide::isJumper() const
 {
   bool is_jumper = false;
   _dbGuide* guide = (_dbGuide*) this;
-  _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(kSchemaHasJumpers)) {
-    is_jumper = guide->is_jumper_;
-  }
+  is_jumper = guide->is_jumper_;
+
   return is_jumper;
 }
 
 void dbGuide::setIsJumper(bool jumper)
 {
   _dbGuide* guide = (_dbGuide*) this;
-  _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(kSchemaHasJumpers)) {
-    guide->is_jumper_ = jumper;
-  }
+  guide->is_jumper_ = jumper;
 }
 
 bool dbGuide::isConnectedToTerm() const

@@ -74,12 +74,8 @@ dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
   stream >> obj.inst_;
   stream >> obj.scan_clock_;
   stream >> obj.clock_edge_;
-  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
-    stream >> obj.next_list_scan_inst_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
-    stream >> obj.prev_list_scan_inst_;
-  }
+  stream >> obj.next_list_scan_inst_;
+  stream >> obj.prev_list_scan_inst_;
   return stream;
 }
 

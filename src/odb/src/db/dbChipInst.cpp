@@ -76,9 +76,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj)
   stream >> obj.master_chip_;
   stream >> obj.parent_chip_;
   stream >> obj.chipinst_next_;
-  if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
-    stream >> obj.chip_region_insts_;
-  }
+  stream >> obj.chip_region_insts_;
   return stream;
 }
 

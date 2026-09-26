@@ -84,13 +84,10 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj.parent_;
   stream >> obj.area_;
   // User Code Begin >>
-  if (stream.getDatabase()->isSchema(kSchemaLevelShifter)) {
-    stream >> obj.levelshifters_;
-  }
+  stream >> obj.levelshifters_;
 
-  if (stream.getDatabase()->isSchema(kSchemaPowerDomainVoltage)) {
-    stream >> obj.voltage_;
-  }
+  stream >> obj.voltage_;
+
   // User Code End >>
   return stream;
 }

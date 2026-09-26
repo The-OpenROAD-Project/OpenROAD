@@ -183,10 +183,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net.cc_adjust_order_;
   stream >> net.groups_;
   stream >> net.guides_;
-  _dbDatabase* db = net.getImpl()->getDatabase();
-  if (db->isSchema(kSchemaNetTracks)) {
-    stream >> net.tracks_;
-  }
+  stream >> net.tracks_;
 
   return stream;
 }
@@ -2428,20 +2425,15 @@ bool dbNet::hasJumpers()
 {
   bool has_jumpers = false;
   _dbNet* net = (_dbNet*) this;
-  _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(kSchemaHasJumpers)) {
-    has_jumpers = net->flags_.has_jumpers == 1;
-  }
+  has_jumpers = net->flags_.has_jumpers == 1;
+
   return has_jumpers;
 }
 
 void dbNet::setJumpers(bool has_jumpers)
 {
   _dbNet* net = (_dbNet*) this;
-  _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(kSchemaHasJumpers)) {
-    net->flags_.has_jumpers = has_jumpers ? 1 : 0;
-  }
+  net->flags_.has_jumpers = has_jumpers ? 1 : 0;
 }
 
 bool dbNet::isAutoTaperEnabled()

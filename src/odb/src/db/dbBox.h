@@ -21,29 +21,6 @@ class _dbVia;
 class dbIStream;
 class dbOStream;
 
-struct _dbBoxFlagsBackwardCompatability
-{
-  dbBoxOwner::Value owner_type : 4;
-  uint32_t visited : 1;
-  uint32_t mark : 1;
-  uint32_t octilinear : 1;
-  uint32_t is_tech_via : 1;
-  uint32_t is_block_via : 1;
-  uint32_t layer_id : 8;
-  uint32_t via_id : 15;
-};
-
-struct _dbBoxFlagsWithoutMask
-{
-  dbBoxOwner::Value owner_type : 4;
-  uint32_t visited : 1;
-  uint32_t octilinear : 1;
-  uint32_t is_tech_via : 1;
-  uint32_t is_block_via : 1;
-  uint32_t layer_id : 9;
-  uint32_t via_id : 15;
-};
-
 struct _dbBoxFlags
 {
   dbBoxOwner::Value owner_type : 4;
@@ -56,10 +33,6 @@ struct _dbBoxFlags
   uint32_t layer_mask : 2;
 };
 
-static_assert(sizeof(_dbBoxFlagsBackwardCompatability) == 4,
-              "_dbBoxFlagsBackwardCompatability too large");
-static_assert(sizeof(_dbBoxFlagsWithoutMask) == 4,
-              "_dbBoxFlagsWithoutMask too large");
 static_assert(sizeof(_dbBoxFlags) == 4, "_dbBoxFlags too large");
 
 class _dbBox : public _dbObject

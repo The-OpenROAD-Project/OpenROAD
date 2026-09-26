@@ -46,14 +46,12 @@
     {
       "name": "next_list_scan_inst_",
       "type": "dbId<_dbScanInst>",
-      "flags": ["private"],
-      "schema":"kSchemaBlockOwnsScanInsts"
+      "flags": ["private"]
     },
     {
       "name": "prev_list_scan_inst_",
       "type": "dbId<_dbScanInst>",
-      "flags": ["private"],
-      "schema":"kSchemaBlockOwnsScanInsts"
+      "flags": ["private"]
     }
   ],
   "enums": [

@@ -82,36 +82,16 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.name_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.flags_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.parent_moditerm_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.parent_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.modnet_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.next_net_modbterm_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.prev_net_modbterm_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
-    stream >> obj.busPort_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
-    stream >> obj.next_entry_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaHierPortRemoval)) {
-    stream >> obj.prev_entry_;
-  }
+  stream >> obj.name_;
+  stream >> obj.flags_;
+  stream >> obj.parent_moditerm_;
+  stream >> obj.parent_;
+  stream >> obj.modnet_;
+  stream >> obj.next_net_modbterm_;
+  stream >> obj.prev_net_modbterm_;
+  stream >> obj.busPort_;
+  stream >> obj.next_entry_;
+  stream >> obj.prev_entry_;
   return stream;
 }
 

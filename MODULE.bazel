@@ -518,6 +518,40 @@ alias(
     path = "bazel/slang-compat",
 )
 
+# --- ODB schema snapshots ---
+#
+# OpenROAD reads .odb files written by older OpenROAD revisions. Carrying
+# that in odb itself means every schema bump leaves a compatibility branch
+# behind that can never be removed. Instead, each snapshot below is a frozen
+# OpenROAD source archive that already knew how to read an older schema
+# range, built into a small converter binary by //src/odb/converter.
+#
+# A snapshot is immutable, so there is no conversion logic to maintain -- it
+# is the code that already shipped. What can rot is its buildability against
+# a newer toolchain, and that is what `patches` is for: a build fix, or a
+# correction to a conversion bug found later, lands as a patch here rather
+# than as a permanent branch in odb.
+#
+# `build_file` replaces the snapshot's own build entirely. At these revisions
+# //src/odb:odb also compiles the DEF/LEF parsers and links Tcl, and
+# //src/utl pulls in OpenSTA; none of that is reachable from
+# dbDatabase::read/write. `patch_cmds` deletes the archive's BUILD files so
+# the overlay's globs do not run into them as package boundaries.
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# OpenROAD at 2025-09-22, schema 119, reading back to schema 57.
+http_archive(
+    name = "odb_snapshot_119",
+    build_file = "//src/odb/converter:snapshot.BUILD",
+    integrity = "sha256-pX9/wtt8Ilznq/tYfeZ57wJBJ80tTYvt1cWC9j4e5Xs=",
+    # -mindepth 2 because `build_file` is installed as the root BUILD.bazel
+    # before patch_cmds run; only the archive's nested BUILD files are in the
+    # way of the overlay's globs.
+    patch_cmds = ["find . -mindepth 2 \\( -name BUILD -o -name BUILD.bazel \\) -delete"],
+    strip_prefix = "OpenROAD-88bfc9fde1fa52db88dacb114d1c4ae2f6423008",
+    urls = ["https://github.com/The-OpenROAD-Project/OpenROAD/archive/88bfc9fde1fa52db88dacb114d1c4ae2f6423008.tar.gz"],
+)
+
 # --- GPU build (opt-in, non-hermetic) ---
 #
 # System-installed Kokkos / KokkosFFT / CUDA toolkit for the opt-in GPU

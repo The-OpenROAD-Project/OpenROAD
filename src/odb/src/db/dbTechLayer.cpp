@@ -566,9 +566,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(kSchemaTechLayerMinWidthWrongway)) {
     stream >> obj.wrong_way_min_width_;
   }
-  if (obj.getDatabase()->isSchema(kSchemaOrthSpcTbl)) {
-    stream >> obj.orth_spacing_tbl_;
-  }
+  stream >> obj.orth_spacing_tbl_;
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -582,33 +580,20 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
-  if (obj.getDatabase()->isSchema(kSchemaMaxSpacing)) {
-    stream >> *obj.max_spacing_rules_tbl_;
-  }
+  stream >> *obj.max_spacing_rules_tbl_;
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(kSchemaLef58ForbiddenSpacing)) {
-    stream >> *obj.forbidden_spacing_rules_tbl_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaKeepoutZone)) {
-    stream >> *obj.keepout_zone_rules_tbl_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaWrongdirSpacing)) {
-    stream >> *obj.wrongdir_spacing_rules_tbl_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaLef58TwoWiresForbiddenSpacing)) {
-    stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
-  }
+  stream >> *obj.forbidden_spacing_rules_tbl_;
+  stream >> *obj.keepout_zone_rules_tbl_;
+  stream >> *obj.wrongdir_spacing_rules_tbl_;
+  stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
   if (obj.getDatabase()->isSchema(kSchemaVoltageSpacingTables)) {
     stream >> *obj.voltage_spacing_rules_tbl_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(kSchemaLayerAdjustment)) {
-    stream >> obj.layer_adjustment_;
-  } else {
-    obj.layer_adjustment_ = 0.0;
-  }
+  stream >> obj.layer_adjustment_;
+
   stream >> obj.pitch_x_;
   stream >> obj.pitch_y_;
   stream >> obj.offset_x_;
@@ -653,20 +638,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.two_widths_sp_spacing_;
   stream >> obj.oxide1_;
   stream >> obj.oxide2_;
-  if (obj.getDatabase()->isSchema(kSchemaWrongwayWidth)) {
-    stream >> obj.wrong_way_width_;
-  } else {
-    obj.wrong_way_width_ = obj.width_;
-    for (auto rule : ((dbTechLayer*) &obj)->getTechLayerWidthTableRules()) {
-      if (rule->isWrongDirection()) {
-        obj.wrong_way_width_ = *rule->getWidthTable().begin();
-        break;
-      }
-    }
-  }
-  if (obj.getDatabase()->isSchema(kSchemaLef58Pitch)) {
-    stream >> obj.first_last_pitch_;
-  }
+  stream >> obj.wrong_way_width_;
+
+  stream >> obj.first_last_pitch_;
+
   // User Code End >>
   return stream;
 }

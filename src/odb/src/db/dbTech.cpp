@@ -336,11 +336,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
   _dbDatabase* db = tech.getImpl()->getDatabase();
-  if (db->isSchema(kSchemaBlockTech)) {
-    stream >> tech.name_;
-  } else {
-    tech.name_ = "";
-  }
+  stream >> tech.name_;
+
   stream >> tech.via_cnt_;
   stream >> tech.layer_cnt_;
   stream >> tech.rlayer_cnt_;
@@ -376,9 +373,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> *tech.via_generate_rule_tbl_;
   stream >> *tech.prop_tbl_;
   stream >> *tech.metal_width_via_map_tbl_;
-  if (tech.getDatabase()->isSchema(kSchemaCellEdgeSpcTbl)) {
-    stream >> *tech.cell_edge_spacing_tbl_;
-  }
+  stream >> *tech.cell_edge_spacing_tbl_;
+
   stream >> *tech.name_cache_;
   stream >> tech.via_hash_;
   if (db->isSchema(kSchemaTechExtractionRulesFile)

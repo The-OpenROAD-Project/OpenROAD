@@ -42,21 +42,23 @@ DEST_DIR=${1:-${BUILD_WORKSPACE_DIRECTORY}/../install/OpenROAD}
 
 mkdir -p "$DEST_DIR/bin"
 
-# Remove previous OpenROAD install artifacts.
-rm -f "$DEST_DIR/bin/openroad"
-rm -f "$DEST_DIR/bin/openroad.repo_mapping"
-rm -f "$DEST_DIR/bin/openroad.runfiles_manifest"
-rm -rf "$DEST_DIR/bin/openroad.runfiles"
+# Remove the previous install before unpacking over it. The runfiles tree
+# goes too: it now holds the .odb schema converters, and a stale converter
+# left behind by an older install would keep being found.
+#
+# Bazel writes its outputs read-only, so an existing tree has to be made
+# writable before it can be removed.
+chmod -R u+w "$DEST_DIR/bin/openroad.runfiles" 2>/dev/null || true
+rm -rf "$DEST_DIR/bin/openroad" \
+       "$DEST_DIR/bin/openroad.repo_mapping" \
+       "$DEST_DIR/bin/openroad.runfiles_manifest" \
+       "$DEST_DIR/bin/openroad.runfiles"
 
+# Unpack as-is. The runfiles tree used to be deleted here as litter, which
+# was true only while openroad had no data dependencies; it now carries the
+# converters openroad runs to open older .odb files, and openroad looks for
+# them at openroad.runfiles/_main/src/odb/converter.
 tar -xf "$TARFILE" -C "$DEST_DIR/bin"
-
-# Remove useless files from pkg_tar from bazel
-if [ -e "$DEST_DIR/bin/openroad.repo_mapping" ]; then
-    chmod u+w "$DEST_DIR/bin/openroad.repo_mapping"
-    rm -rf "$DEST_DIR/bin/openroad.repo_mapping"
-    chmod u+w "$DEST_DIR/bin/openroad.runfiles"
-    rm -rf "$DEST_DIR/bin/openroad.runfiles"
-fi
 
 ABS_DEST="$(realpath "$DEST_DIR")"
 echo "OpenROAD binary installed to $ABS_DEST"

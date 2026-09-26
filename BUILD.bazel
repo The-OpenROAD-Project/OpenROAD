@@ -209,12 +209,20 @@ OPENROAD_MAIN_DEPS = [
     "@tcl_lang//:tcl",
 ]
 
+# Converters for .odb files older than odb parses itself. They ship with the
+# binary rather than being built on demand, because openroad runs them as
+# child processes and has to be able to find them wherever it was installed.
+ODB_CONVERTERS = [
+    "//src/odb/converter:convert-57-119",
+]
+
 cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
+    data = ODB_CONVERTERS,
     defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
     malloc = select({
@@ -247,6 +255,7 @@ cc_binary(
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
+    data = ODB_CONVERTERS,
     defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
     malloc = select({

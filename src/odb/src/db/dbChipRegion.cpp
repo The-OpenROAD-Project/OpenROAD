@@ -78,9 +78,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.box_;
   stream >> obj.z_min_;
   stream >> obj.z_max_;
-  if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
-    stream >> *obj.chip_bump_tbl_;
-  }
+  stream >> *obj.chip_bump_tbl_;
   return stream;
 }
 

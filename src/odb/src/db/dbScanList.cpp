@@ -47,12 +47,8 @@ _dbScanList::_dbScanList(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
-  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
-    stream >> obj.unused_;
-  }
-  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
-    stream >> obj.first_scan_inst_;
-  }
+  stream >> obj.unused_;
+  stream >> obj.first_scan_inst_;
   return stream;
 }
 
