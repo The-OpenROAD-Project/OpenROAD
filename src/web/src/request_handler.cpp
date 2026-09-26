@@ -1412,6 +1412,16 @@ WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
   return resp;
 }
 
+WebSocketResponse TileHandler::serializeLayerExtents(const uint32_t id,
+                                                     const TileGenerator& gen)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kJson;
+  writePayload(resp, serializeLayerExtentsResponse(gen));
+  return resp;
+}
+
 WebSocketResponse TileHandler::serializeTech(const uint32_t id,
                                              const TileGenerator& gen)
 {
@@ -4917,6 +4927,11 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  d.add("layer_extents",
+        WebSocketRequest::kLayerExtents,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
   d.add("tech",
         WebSocketRequest::kTech,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -5012,6 +5027,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       return serializeBounds(req.id, *gen_);
     case WebSocketRequest::kTech:
       return serializeTech(req.id, *gen_);
+    case WebSocketRequest::kLayerExtents:
+      return serializeLayerExtents(req.id, *gen_);
     case WebSocketRequest::kTile:
       break;
     default: {

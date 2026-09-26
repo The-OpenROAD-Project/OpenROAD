@@ -2542,6 +2542,105 @@ std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::geomCache() const
   return geom_cache_;
 }
 
+std::shared_ptr<const TileGenerator::LayerExtents>
+TileGenerator::buildLayerExtents() const
+{
+  auto extents = std::make_shared<LayerExtents>();
+  extents->bounds = getBounds();
+  const std::vector<ChipletNode>& nodes = chiplets();
+  if (nodes.size() != 1 || !nodes[0].block || !nodes[0].chip) {
+    return extents;
+  }
+  const ChipletNode& node = nodes[0];
+  odb::dbBlock* block = node.block;
+  odb::dbTech* tech = node.chip->getTech();
+  if (!tech) {
+    return extents;
+  }
+  extents->supported = true;
+
+  const std::shared_ptr<const GeomCache> geom = geomCache();
+  // The per-instance pass draws master pins and obstructions on any layer a
+  // master has them on.  Every instance's bbox is a superset of where those
+  // can land, and costs nothing to read from the rtree.
+  const std::optional<odb::Rect> inst_bounds = search_->instBounds(block);
+
+  auto merge
+      = [](std::optional<odb::Rect>& acc, const std::optional<odb::Rect>& r) {
+          if (!r) {
+            return;
+          }
+          if (acc) {
+            acc->merge(*r);
+          } else {
+            acc = r;
+          }
+        };
+
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    LayerExtents::Extent extent;
+    extent.shapes = search_->shapeBounds(block, layer);
+    // Special-net via enclosures, which the render pass finds by searching
+    // the cut layers directly above and below a routing layer.
+    if (layer->getType() == odb::dbTechLayerType::ROUTING
+        && geom->via_boxes.contains(layer)) {
+      for (odb::dbTechLayer* cut :
+           {layer->getLowerLayer(), layer->getUpperLayer()}) {
+        if (cut && cut->getType() == odb::dbTechLayerType::CUT) {
+          merge(extent.shapes, search_->snetViaBounds(block, cut));
+        }
+      }
+    }
+    if (const auto it = geom->master_geom.find(layer);
+        it != geom->master_geom.end()) {
+      bool has_pins = false;
+      bool has_obs = false;
+      for (const auto& [master, mg] : it->second) {
+        has_pins |= !mg.pin_boxes.empty() || !mg.pin_polys.empty();
+        has_obs |= !mg.obs_boxes.empty() || !mg.obs_polys.empty();
+      }
+      if (has_pins) {
+        extent.inst_pins = inst_bounds;
+      }
+      if (has_obs) {
+        extent.blockages = inst_bounds;
+      }
+    }
+    extent.routing_obstructions = search_->obstructionBounds(block, layer);
+    extent.fills = search_->fillBounds(block, layer);
+    for (std::optional<odb::Rect>* r : {&extent.shapes,
+                                        &extent.inst_pins,
+                                        &extent.blockages,
+                                        &extent.routing_obstructions,
+                                        &extent.fills}) {
+      if (*r) {
+        node.world_xfm.apply(**r);
+      }
+    }
+    extents->layers[layer->getName()] = extent;
+  }
+  return extents;
+}
+
+std::shared_ptr<const TileGenerator::LayerExtents> TileGenerator::layerExtents()
+    const
+{
+  // Keys read before building, as in geomCache(): an edit landing mid-build
+  // leaves them behind the live values and the next call rebuilds.
+  const uint64_t rev = search_->revision();
+  const uint64_t chiplet_generation = chipletsGeneration();
+  const odb::Rect bounds = getBounds();
+  std::lock_guard lock(layer_extents_mutex_);
+  if (!layer_extents_ || layer_extents_revision_ != rev
+      || layer_extents_chiplet_generation_ != chiplet_generation
+      || layer_extents_->bounds != bounds) {
+    layer_extents_ = buildLayerExtents();
+    layer_extents_revision_ = rev;
+    layer_extents_chiplet_generation_ = chiplet_generation;
+  }
+  return layer_extents_;
+}
+
 std::vector<std::string> TileGenerator::getSites() const
 {
   std::set<std::string> seen;
@@ -7810,6 +7909,57 @@ boost::json::object serializeBoundsResponse(const TileGenerator& gen,
   out["fit_bounds"] = boundsArray(gen.getFitBounds());
   out["shapes_ready"] = shapes_ready;
   out["pin_max_size"] = gen.getPinMaxSize();
+  return out;
+}
+
+boost::json::object serializeLayerExtentsResponse(const TileGenerator& gen)
+{
+  const std::shared_ptr<const TileGenerator::LayerExtents> extents
+      = gen.layerExtents();
+  const odb::Rect& bounds = extents->bounds;
+  const double side = bounds.maxDXDY();
+  boost::json::object out;
+  out["supported"] = extents->supported && side > 0;
+  if (!out["supported"].as_bool()) {
+    return out;
+  }
+  // Expressed on the tile grid rather than in DBU: [x0, y0, x1, y1] as
+  // fractions of the zoom-0 tile, y running down as in the client's tile
+  // coordinates.  Tile (z, x, y) then covers [x, x+1] x [y, y+1] / 2^z, so the
+  // client tests it without knowing the design bounds.
+  auto on_grid = [&](const odb::Rect& r) {
+    return boost::json::array{(r.xMin() - bounds.xMin()) / side,
+                              1.0 - (r.yMax() - bounds.yMin()) / side,
+                              (r.xMax() - bounds.xMin()) / side,
+                              1.0 - (r.yMin() - bounds.yMin()) / side};
+  };
+  // `layers` holds each layer's ungated extent (null: none); `gated` holds,
+  // per visibility flag, the extents of the layers that source reaches.
+  using Extent = TileGenerator::LayerExtents::Extent;
+  const std::pair<const char*, std::optional<odb::Rect> Extent::*> kGated[]
+      = {{"inst_pins", &Extent::inst_pins},
+         {"blockages", &Extent::blockages},
+         {"routing_obstructions", &Extent::routing_obstructions},
+         {"fills", &Extent::fills}};
+  boost::json::object layers;
+  boost::json::object gated;
+  for (const auto& [flag, member] : kGated) {
+    gated[flag] = boost::json::object{};
+  }
+  for (const auto& [name, extent] : extents->layers) {
+    if (extent.shapes) {
+      layers[name] = on_grid(*extent.shapes);
+    } else {
+      layers[name] = nullptr;
+    }
+    for (const auto& [flag, member] : kGated) {
+      if (const std::optional<odb::Rect>& r = extent.*member) {
+        gated[flag].as_object()[name] = on_grid(*r);
+      }
+    }
+  }
+  out["gated"] = std::move(gated);
+  out["layers"] = std::move(layers);
   return out;
 }
 

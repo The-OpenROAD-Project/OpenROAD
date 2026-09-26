@@ -39,6 +39,7 @@ genrule(
         "src/tile-merge.js",
         "src/tile-request.js",
         "src/device-pixels.js",
+        "src/layer-extents.js",
         "src/websocket-tile-layer.js",
         "src/merged-tile-layer.js",
         "src/display-controls.js",
@@ -79,6 +80,7 @@ genrule(
           " $(location src/tile-merge.js)" +
           " $(location src/tile-request.js)" +
           " $(location src/device-pixels.js)" +
+          " $(location src/layer-extents.js)" +
           " $(location src/websocket-tile-layer.js)" +
           " $(location src/merged-tile-layer.js)" +
           " $(location src/display-controls.js)" +
@@ -113,6 +115,7 @@ _WEB_ASSET_FILES = [
     "src/tile-merge.js",
     "src/tile-request.js",
     "src/device-pixels.js",
+    "src/layer-extents.js",
     "src/merged-tile-layer.js",
     "src/display-state.js",
     "src/3d-viewer-widget.js",
