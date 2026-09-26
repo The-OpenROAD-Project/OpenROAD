@@ -211,6 +211,7 @@ COMPULSORY_TESTS = [
     "replace_hier_mod_report_checks",
     "rounding",
     "row_settings",
+    "row_site_overlap",
     "sky130hd_multi_patterned",
     "smash_vias",
     "transform",
