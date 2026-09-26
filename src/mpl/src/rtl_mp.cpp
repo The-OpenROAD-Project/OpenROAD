@@ -179,7 +179,7 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   const odb::Rect& source_macro_bbox = macro->getBBox()->getBox();
 
   for (odb::dbInst* inst : block->getInsts()) {
-    if (!inst->isBlock() || !inst->isPlaced()) {
+    if (inst == macro || !inst->isBlock() || !inst->isPlaced()) {
       continue;
     }
 
