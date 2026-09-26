@@ -103,19 +103,22 @@ void ClusteringEngine::init()
   setFloorplanShape();
   createHardMacros();
 
-  if (!movableCellsFitInMacroPlacementArea()) {
-    logger_->error(
-        MPL, 65, "The movable cells do not fit in the macro placement area.");
-  }
-
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
-
+  // With no macro to place there is nothing to cluster or check: the
+  // checks below guard the placement, and a design whose macros are all
+  // fixed may legitimately hold fixed standard cells in the core.
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
     return;
   }
+
+  if (!movableCellsFitInMacroPlacementArea()) {
+    logger_->error(
+        MPL, 65, "The movable cells do not fit in the macro placement area.");
+  }
+
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
   const float inst_area_with_halos
