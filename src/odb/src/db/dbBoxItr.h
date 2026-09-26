@@ -20,11 +20,13 @@ class dbBoxItr : public dbIterator
  public:
   dbBoxItr(dbTable<_dbBox, page_size>* box_tbl,
            dbTable<_dbPolygon, page_size>* pbox_tbl,
-           bool include_polygons)
+           bool include_polygons,
+           bool include_sub_vias = false)
   {
     box_tbl_ = box_tbl;
     pbox_tbl_ = pbox_tbl;
     include_polygons_ = include_polygons;
+    include_sub_vias_ = include_sub_vias;
   }
 
   bool reversible() const override;
@@ -41,6 +43,7 @@ class dbBoxItr : public dbIterator
   dbTable<_dbBox, page_size>* box_tbl_;
   dbTable<_dbPolygon, page_size>* pbox_tbl_;
   bool include_polygons_;
+  bool include_sub_vias_;
 };
 
 }  // namespace odb

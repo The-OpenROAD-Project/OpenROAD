@@ -499,6 +499,12 @@ bool dbBox::isVia() const
   return box->flags_.via_id != 0;
 }
 
+bool dbBox::isSubVia() const
+{
+  const _dbBox* box = (const _dbBox*) this;
+  return box->flags_.is_sub_via != 0;
+}
+
 dbTechVia* dbBox::getTechVia() const
 {
   const _dbBox* box = (const _dbBox*) this;
@@ -933,32 +939,25 @@ dbBox* dbBox::create(dbMPin* pin_,
 
 dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
 {
-  _dbMPin* pin = (_dbMPin*) pin_;
   _dbTechVia* via = (_dbTechVia*) via_;
 
   if (via->bbox_ == 0) {
     return nullptr;
   }
 
-  _dbMaster* master = (_dbMaster*) pin->getOwner();
-  _dbTech* tech = (_dbTech*) via->getOwner();
-  _dbBox* vbbox = tech->box_tbl_->getPtr(via->bbox_);
-  int xmin = vbbox->shape_.rect.xMin() + x;
-  int ymin = vbbox->shape_.rect.yMin() + y;
-  int xmax = vbbox->shape_.rect.xMax() + x;
-  int ymax = vbbox->shape_.rect.yMax() + y;
-  _dbBox* box = master->box_tbl_->create();
-  box->flags_.octilinear = false;
-  box->flags_.owner_type = dbBoxOwner::MPIN;
-  box->owner_ = pin->getOID();
-  box->shape_.rect.init(xmin, ymin, xmax, ymax);
-  box->flags_.is_tech_via = 1;
-  box->flags_.via_id = via->getOID();
+  dbBox* sub_box = nullptr;
 
-  // link box to pin
-  box->next_box_ = pin->geoms_;
-  pin->geoms_ = box->getOID();
-  return (dbBox*) box;
+  for(auto via_box : via_->getBoxes()) {
+    int xmin = via_box->xMin() + x;
+    int ymin = via_box->yMin() + y;
+    int xmax = via_box->xMax() + x;
+    int ymax = via_box->yMax() + y;
+
+    sub_box = dbBox::create(pin_, via_box->getTechLayer(), xmin, ymin, xmax, ymax);
+    ((_dbBox*) sub_box)->flags_.is_sub_via = 1;
+  }
+
+  return sub_box;
 }
 
 dbBox* dbBox::create(dbTechVia* via_,

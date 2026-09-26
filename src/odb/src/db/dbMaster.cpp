@@ -204,11 +204,12 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   edge_types_tbl_ = new dbTable<_dbMasterEdgeType, 8>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMasterEdgeTypeObj);
 
-  box_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, true);
+  box_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, true, false);
+  box_sub_via_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, true, true);
 
   pbox_itr_ = new dbPolygonItr(poly_box_tbl_);
 
-  pbox_box_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, false);
+  pbox_box_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, false, false);
 
   mpin_itr_ = new dbMPinItr(mpin_tbl_);
 
@@ -226,6 +227,7 @@ _dbMaster::~_dbMaster()
   delete antenna_pin_model_tbl_;
   delete edge_types_tbl_;
   delete box_itr_;
+  delete box_sub_via_itr_;
   delete pbox_itr_;
   delete pbox_box_itr_;
   delete mpin_itr_;
