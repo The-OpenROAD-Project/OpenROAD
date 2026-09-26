@@ -139,7 +139,7 @@ class LatencyBalancer
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
   TechChar* techChar_ = nullptr;
-  double wireSegmentUnit_;
+  double wireSegmentUnit_ = 0.0;
   double capPerDBU_;
   double resPerDBU_;
   double dpUnit_ = std::pow(10, 12);  // pico seconds
