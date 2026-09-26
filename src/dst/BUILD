@@ -15,15 +15,11 @@ cc_library(
     name = "dst",
     srcs = [
         "src/BalancerConnection.cc",
-        "src/BalancerConnection.h",
         "src/Distributed.cc",
         "src/JobMessage.cc",
         "src/LoadBalancer.cc",
-        "src/LoadBalancer.h",
         "src/Worker.cc",
-        "src/Worker.h",
         "src/WorkerConnection.cc",
-        "src/WorkerConnection.h",
     ],
     hdrs = [
         "include/dst/BalancerJobDescription.h",
@@ -31,6 +27,10 @@ cc_library(
         "include/dst/Distributed.h",
         "include/dst/JobCallBack.h",
         "include/dst/JobMessage.h",
+        "src/BalancerConnection.h",
+        "src/LoadBalancer.h",
+        "src/Worker.h",
+        "src/WorkerConnection.h",
     ],
     includes = [
         "include",
