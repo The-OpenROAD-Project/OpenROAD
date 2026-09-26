@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <array>
+#include <cmath>
 #include <memory>
 #include <random>
 #include <stdexcept>
@@ -21,6 +22,33 @@ namespace grt {
 class OverflowTestPeer
 {
  public:
+  struct Result2D
+  {
+    int overflow;
+    int maximum;
+    int usage;
+    int threshold;
+    bool operator==(const Result2D&) const = default;
+  };
+  static void setUsageLimits(FastRouteCore& router, int capacity)
+  {
+    router.h_capacity_ = capacity;
+    router.v_capacity_ = capacity;
+  }
+  static Result2D query2D(FastRouteCore& router, bool estimated, bool reference)
+  {
+    int maximum;
+    int usage = 0;
+    int overflow;
+    if (estimated) {
+      overflow = reference ? router.scanOverflow2D(&maximum)
+                           : router.getOverflow2D(&maximum);
+    } else {
+      overflow = reference ? router.scanOverflow2Dmaze(&maximum, &usage)
+                           : router.getOverflow2Dmaze(&maximum, &usage);
+    }
+    return {overflow, maximum, usage, router.ahth_};
+  }
   static Graph2D& graph(FastRouteCore& router) { return router.graph2d_; }
   static bool cacheValid(const FastRouteCore& router)
   {
@@ -74,7 +102,8 @@ class OverflowTest : public tst::DbFixture
     router_->setGridsAndLayers(kSize, kSize, 2);
     router_->initEdges();
     net_ = odb::dbNet::create(block_, "net");
-    router_->addNet(net_, false, false, 0, 1, 0, 1, 0, nullptr);
+    fr_net_ = router_->addNet(net_, false, false, 0, 1, 0, 1, 0, nullptr);
+    OverflowTestPeer::setUsageLimits(*router_, 1000);
     // Prime the cache before exercising mutations, as in subsequent ECO runs.
     EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
   }
@@ -89,6 +118,7 @@ class OverflowTest : public tst::DbFixture
 
   odb::dbBlock* block_ = nullptr;
   odb::dbNet* net_ = nullptr;
+  FrNet* fr_net_ = nullptr;
   utl::ServiceRegistry registry_{&logger_};
   stt::SteinerTreeBuilder stt_{&logger_};
   std::unique_ptr<FastRouteCore> router_;
@@ -240,6 +270,124 @@ TEST_F(OverflowTest, DebugCheckDetectsCounterDriftInRelease)
 {
   OverflowTestPeer::corrupt(*router_);
   EXPECT_THROW(OverflowTestPeer::overflow3D(*router_), std::runtime_error);
+}
+
+TEST_F(OverflowTest, TwoDimensionalCountersMatchLegacyScans)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  std::mt19937 random(2345);
+  for (int i = 0; i < 1000; i++) {
+    const int x = random() % (kSize - 1);
+    const int y = random() % (kSize - 1);
+    graph.addUsageH(x, y, 2);
+    graph.addUsageV(x, y, 3);
+    graph.updateEstUsageH(x, y, fr_net_, 0.5);
+    graph.updateEstUsageV(x, y, fr_net_, 1.5);
+    graph.addCapH(x, y, 1);
+    graph.addCapV(x, y, 1);
+    for (bool estimated : {false, true}) {
+      EXPECT_EQ(OverflowTestPeer::query2D(*router_, estimated, false),
+                OverflowTestPeer::query2D(*router_, estimated, true));
+    }
+    if (i % 3 == 0) {
+      graph.addEstUsageToUsage();
+      graph.InitEstUsage();
+    }
+    if (i % 5 == 0) {
+      graph.addUsageH(x, y, -graph.getUsageH(x, y));
+      graph.addUsageV(x, y, -graph.getUsageV(x, y));
+      graph.prepareForIncrementalRun();
+    }
+    for (bool estimated : {false, true}) {
+      EXPECT_EQ(OverflowTestPeer::query2D(*router_, estimated, false),
+                OverflowTestPeer::query2D(*router_, estimated, true));
+    }
+  }
+}
+
+TEST_F(OverflowTest, EstimatedUsageTruncationAndNegativeFallback)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  graph.updateEstUsageH(0, 0, fr_net_, 0.5);
+  graph.updateEstUsageH(1, 0, fr_net_, 0.5);
+  EXPECT_EQ(graph.overflowStatistics(true)[0].usage, 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).overflow, 0);
+  graph.InitEstUsage();
+  graph.updateEstUsageH(0, 0, fr_net_, 800001.5);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 30);
+  graph.updateEstUsageV(0, 0, fr_net_, 0.5);
+  graph.updateEstUsageV(0, 0, fr_net_, -1);
+  ASSERT_TRUE(graph.needsEstimatedUsageScan());
+  // 800001 + (-0.5) truncates to 800000 in the original ordered scan.
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 20);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+  graph.InitEstUsage();
+  ASSERT_FALSE(graph.needsEstimatedUsageScan());
+  graph.updateEstUsageH(0, 0, fr_net_, -0.5);
+  graph.updateEstUsageV(0, 0, fr_net_, 800001.5);
+  // Reversing the signs changes the ordered result: trunc(0 - 0.5) is zero.
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 30);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+}
+
+TEST_F(OverflowTest, PreservesUsageLimitErrorsWithoutDebugScans)
+{
+  logger_.setDebugLevel(utl::GRT, "overflowcheck", 0);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  OverflowTestPeer::setUsageLimits(*router_, 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 0);
+  graph.addUsageH(1, 1, 1);
+  try {
+    OverflowTestPeer::query2D(*router_, false, false);
+    FAIL() << "Expected the original horizontal usage error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_STREQ(error.what(), "GRT-0228");
+  }
+  graph.addUsageH(1, 1, -1);
+  graph.addUsageV(1, 1, 1);
+  try {
+    OverflowTestPeer::query2D(*router_, true, false);
+    FAIL() << "Expected the original vertical usage error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_STREQ(error.what(), "GRT-0229");
+  }
+  graph.addUsageV(1, 1, -1);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).usage, 0);
+}
+
+TEST_F(OverflowTest, PreservesRoundingOfPositiveNonHalfEstimates)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  graph.updateEstUsageH(0, 0, fr_net_, 800000);
+  graph.updateEstUsageH(1, 0, fr_net_, std::nextafter(1.0, 0.0));
+  ASSERT_TRUE(graph.needsEstimatedUsageScan());
+  // The legacy double addition rounds up to 800001 before conversion to int.
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 30);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+}
+
+TEST_F(OverflowTest, AccountsForNDRPenaltiesAndCancellation)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  router_->initEdgesCapacityPerLayer();
+  fr_net_->setEdgeCost(2);
+  graph.overflowStatistics(true);
+  graph.updateEstUsageH(0, 0, fr_net_, 0.5);
+  graph.updateEstUsageH(0, 0, fr_net_, 0.5);
+  EXPECT_EQ(graph.overflowStatistics(true)[0].usage, 200);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+  graph.updateEstUsageH(0, 0, fr_net_, -0.5);
+  graph.InitEstUsage();
+  graph.updateUsageH(0, 0, fr_net_, 1);
+  EXPECT_EQ(graph.overflowStatistics(false)[0].usage, 200);
+  graph.updateUsageH(0, 0, fr_net_, -1);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).usage, 0);
+  graph.prepareForIncrementalRun();
+  EXPECT_EQ(graph.overflowStatistics(false)[0].capacity, 0);
 }
 
 }  // namespace
