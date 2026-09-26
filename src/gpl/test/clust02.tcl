@@ -4,16 +4,16 @@ set test_name clust02
 
 read_lef ./asap7/asap7_tech_1x_201209.lef
 read_lef ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef
-read_lib ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib
+read_liberty ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib
 
 read_lef ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X.lef
-read_lib ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X_LVT_TT_nldm_FAKE.lib
+read_liberty ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X_LVT_TT_nldm_FAKE.lib
 
 read_lef ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef
-read_lib ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X_LVT_TT_nldm_FAKE.lib
+read_liberty ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X_LVT_TT_nldm_FAKE.lib
 
 read_lef ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef
-read_lib ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X_LVT_TT_nldm_FAKE.lib
+read_liberty ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X_LVT_TT_nldm_FAKE.lib
 
 set db [ord::get_db]
 set chip [odb::dbChip_create $db [$db getTech]]
@@ -63,4 +63,4 @@ cluster_flops -tray_weight 60.0 \
 
 set def_file [make_result_file $test_name.def]
 write_def $def_file
-diff_file $def_file $test_name.defok
+diff_files $def_file $test_name.defok

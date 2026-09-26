@@ -9,4 +9,4 @@ tapcell -distance "20" -tapcell_master "TAPCELL_X1" -endcap_master "TAPCELL_X1"
 
 write_def $def_file
 
-diff_file gcd_nangate45.defok $def_file
+diff_files gcd_nangate45.defok $def_file

@@ -894,7 +894,7 @@ TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
 
 TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
 {
-  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // A render allocates about tile_px^2 * 4 bytes, so a malformed or
   // hostile count must not be taken at face value.  0 and negatives mean "not
   // specified" and fall back to 256*dpr.
   const std::vector<std::pair<std::string, uint32_t>> cases = {
@@ -1954,6 +1954,28 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
   }
 }
 
+// The converse: JS serializes whole numbers without a decimal point, so a
+// double-typed setting like DisplayMin arrives as a JSON integer when the user
+// types 90.  The handler must accept it rather than failing as_double().
+TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 10;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"DisplayMin","value":90})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_DOUBLE_EQ(state_.heatmaps.at("Pin")->getDisplayRangeMin(), 90.0);
+  }
+}
+
 TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 {
   static int populate_calls = 0;
@@ -2001,23 +2023,23 @@ class GroupHandlerTest : public tst::Nangate45Fixture
     handler_ = std::make_unique<TileHandler>(gen_);
   }
 
-  // Overlay slots by layer name, so these tests read like the wire messages
-  // instead of hardcoding the table's row order.
-  static size_t slotOf(const char* layer)
+  // Overlay slots by layer name, so these tests read like the wire messages.
+  SessionState::OwnerColors& slotOf(const char* layer)
   {
-    return findColorOverlay(layer)->index;
+    return std::string_view(layer) == "_modules" ? state_.module_colors
+                                                 : state_.group_colors;
   }
 
   const std::map<uint32_t, Color>& ownerColors(const char* layer)
   {
     static const std::map<uint32_t, Color> kNone;
-    const auto& colors = state_.owner_colors[slotOf(layer)].colors;
+    const auto& colors = slotOf(layer).colors;
     return colors ? *colors : kNone;
   }
 
   void setOwnerColors(const char* layer, std::map<uint32_t, Color> colors)
   {
-    state_.owner_colors[slotOf(layer)].colors
+    slotOf(layer).colors
         = std::make_shared<const std::map<uint32_t, Color>>(std::move(colors));
   }
 

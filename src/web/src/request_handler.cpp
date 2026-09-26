@@ -240,7 +240,7 @@ static double quantizeDpr(const double raw)
 // it will use, so it names the pixel count.
 //
 // Clamped so a malformed request cannot ask for a gigantic buffer — the render
-// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// allocates about tile_px squared.  0 (absent or unusable) means "not
 // specified"; the generator falls back to 256*dpr.
 static int quantizeTilePx(const double raw)
 {
@@ -1484,7 +1484,8 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<odb::Polygon>& highlight_polys,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
-    const InstColorOverlay* inst_colors,
+    const std::map<uint32_t, Color>* module_colors,
+    const std::map<uint32_t, Color>* group_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -1502,7 +1503,8 @@ WebSocketResponse TileHandler::renderTile(
                                   highlight_polys,
                                   colored_rects,
                                   flight_lines,
-                                  inst_colors,
+                                  module_colors,
+                                  group_colors,
                                   focus_net_ids,
                                   route_guide_net_ids,
                                   dpr,
@@ -4635,26 +4637,12 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
-
-          odb::dbNet* net = nullptr;
-          if (iterm) {
-            net = iterm->getNet();
-          } else if (bterm) {
-            net = bterm->getNet();
-          }
-
-          if (net) {
-            collectNetShapes(net,
-                             iterm,
-                             bterm,
-                             nullptr,
-                             nullptr,
-                             kStageColor,
-                             new_rects,
-                             new_lines,
-                             node->world_xfm);
-          }
+          collectTimingStageShapes(chiplets,
+                                   paths[path_index],
+                                   pin_name,
+                                   kStageColor,
+                                   new_rects,
+                                   new_lines);
         }
       }
     }
@@ -5106,28 +5094,21 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleModuleHierarchy(req);
         });
-  // Both color messages route to one handler; the slot comes from the overlay
-  // table rather than a literal here, so the wire name and the renderer's row
-  // cannot drift apart.
-  const size_t modules_index = findColorOverlay("_modules")->index;
-  d.add(
-      "set_module_colors",
-      WebSocketRequest::kSetModuleColors,
-      [this, modules_index](const WebSocketRequest& req, SessionState& state) {
-        return handleSetOwnerColors(req, state, modules_index);
-      });
+  d.add("set_module_colors",
+        WebSocketRequest::kSetModuleColors,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetOwnerColors(req, state, state.module_colors);
+        });
   d.add("group_hierarchy",
         WebSocketRequest::kGroupHierarchy,
         [this](const WebSocketRequest& req, SessionState&) {
           return handleGroupHierarchy(req);
         });
-  const size_t clusters_index = findColorOverlay("_clusters")->index;
-  d.add(
-      "set_group_colors",
-      WebSocketRequest::kSetGroupColors,
-      [this, clusters_index](const WebSocketRequest& req, SessionState& state) {
-        return handleSetOwnerColors(req, state, clusters_index);
-      });
+  d.add("set_group_colors",
+        WebSocketRequest::kSetGroupColors,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetOwnerColors(req, state, state.group_colors);
+        });
   d.add("heatmaps",
         WebSocketRequest::kHeatmaps,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -5251,20 +5232,16 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // Snapshot the color map this layer paints with, if any.  Only a
   // color-overlay layer with its flag on reads one, so every other tile
   // request skips the (mutexed) copy entirely — it runs per tile per layer.
-  const ColorOverlaySpec* overlay = findColorOverlay(layer);
-  const bool color_overlay_active = overlay != nullptr && vis.*(overlay->flag);
-
-  // The row carries its own slot, so the session side is a plain array: there
-  // is no second table whose order has to be kept matching this one, and adding
-  // an overlay cannot silently paint from another one's colors.
+  const bool modules_layer = (layer == "_modules" && vis.module_view);
+  const bool clusters_layer = (layer == "_clusters" && vis.cluster_view);
   TileGenerator::OwnerColorMap overlay_colors;
-  InstColorOverlay inst_colors;
   // True when the colors below are the design's own defaults rather than this
   // session's: the tile then depends on nothing session-specific and caches.
   bool default_colors = false;
-  if (color_overlay_active) {
+  if (modules_layer || clusters_layer) {
+    SessionState::OwnerColors& owner
+        = modules_layer ? state.module_colors : state.group_colors;
     {
-      SessionState::OwnerColors& owner = state.owner_colors[overlay->index];
       std::lock_guard<std::mutex> lock(owner.mutex);
       overlay_colors = owner.colors;
     }
@@ -5273,7 +5250,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     // that IS there but empty is the opposite instruction -- the user unchecked
     // every row -- and must keep painting nothing.
     if (!overlay_colors) {
-      overlay_colors = gen_->defaultOwnerColors(*overlay);
+      overlay_colors = modules_layer ? gen_->defaultModuleColors()
+                                     : gen_->defaultGroupColors();
       default_colors = overlay_colors != nullptr;
     }
   }
@@ -5281,9 +5259,10 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // colors replaces the session's handle and drops its own reference, never the
   // one this render holds.
   const bool has_inst_colors = overlay_colors && !overlay_colors->empty();
-  if (has_inst_colors) {
-    inst_colors.colors[overlay->index] = overlay_colors.get();
-  }
+  const std::map<uint32_t, Color>* mod_ptr
+      = (modules_layer && has_inst_colors) ? overlay_colors.get() : nullptr;
+  const std::map<uint32_t, Color>* group_ptr
+      = (clusters_layer && has_inst_colors) ? overlay_colors.get() : nullptr;
   // Snapshot focus nets
   std::set<uint32_t> focus_nets;
   {
@@ -5329,22 +5308,18 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     // default palette, and painting nothing because the session cleared every
     // row.  Without this they collide on one key and the cleared view serves
     // the painted tile.
-    if (color_overlay_active) {
+    if (modules_layer || clusters_layer) {
       key_obj["owner_colors"] = default_colors ? "default" : "none";
     }
     // The color-overlay flags only change what THEIR layer draws.  Leaving them
     // in every layer's key would make toggling one overlay a full cache miss
     // for the whole screen — every metal layer re-rendered for a flag it
     // ignores — and multiply the cache footprint per tile.
-    for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
-      if (&spec == overlay) {
-        continue;
-      }
-      for (const char* flag_key : spec.keys) {
-        if (flag_key != nullptr) {
-          key_obj.erase(flag_key);
-        }
-      }
+    if (layer != "_modules") {
+      key_obj.erase("module_view");
+    }
+    if (layer != "_clusters") {
+      key_obj.erase("cluster_view");
     }
     std::vector<std::string> sel_keys;
     for (const auto& kv : key_obj) {
@@ -5400,7 +5375,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       no_polys,
                                       no_colored,
                                       no_lines,
-                                      &inst_colors,
+                                      mod_ptr,
+                                      group_ptr,
                                       focus_ptr,
                                       nullptr,
                                       dpr,
@@ -5893,9 +5869,22 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
   resp.type = WebSocketResponse::kJson;
   try {
     odb::dbBlock* block = gen_->getBlock();
+    // Read before the walk, not after: an edit landing while it runs has to
+    // invalidate the mapping, and stamping afterwards would call it fresh.
+    const uint64_t revision = gen_->searchRevision();
     HierarchyReport report(block, gen_->getSta());
     auto result = report.getReport();
     writePayload(resp, serializeHierarchyResult(result));
+
+    // A flat design colors its overlay by synthesized groups rather than by
+    // dbModule, so the renderer needs the instance -> group mapping this walk
+    // produced.  Only installed in that mode; the module path needs nothing.
+    if (result.name_grouped) {
+      gen_->setInstGroups(block,
+                          std::make_shared<const std::vector<uint32_t>>(
+                              std::move(result.inst_group)),
+                          revision);
+    }
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -5940,10 +5929,11 @@ static std::map<uint32_t, Color> parseColorMap(const std::string& data)
 }
 
 // Backs both set_module_colors and set_group_colors: the two differ only in
-// which overlay's slot they fill, which the spec row already names.
-WebSocketResponse TileHandler::handleSetOwnerColors(const WebSocketRequest& req,
-                                                    SessionState& state,
-                                                    const size_t overlay_index)
+// which overlay's colors they replace.
+WebSocketResponse TileHandler::handleSetOwnerColors(
+    const WebSocketRequest& req,
+    SessionState& state,
+    SessionState::OwnerColors& owner)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -5953,7 +5943,6 @@ WebSocketResponse TileHandler::handleSetOwnerColors(const WebSocketRequest& req,
 
   const int count = static_cast<int>(colors->size());
   {
-    SessionState::OwnerColors& owner = state.owner_colors[overlay_index];
     std::lock_guard<std::mutex> lock(owner.mutex);
     owner.colors = std::move(colors);
   }
@@ -6073,12 +6062,9 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
         // The frontend's addNumber control runs every value through
         // parseFloat, so int settings can arrive as JSON doubles.  Accept
         // either and round.
-        settings[option]
-            = value_v.is_int64()
-                  ? static_cast<int>(value_v.get_int64())
-                  : static_cast<int>(std::round(value_v.as_double()));
+        settings[option] = static_cast<int>(std::round(jsonToDouble(value_v)));
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[option] = value_v.as_double();
+        settings[option] = jsonToDouble(value_v);
       } else {
         settings[option] = std::string(value_v.as_string());
       }

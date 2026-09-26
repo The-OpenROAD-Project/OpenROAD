@@ -1777,6 +1777,8 @@ void WebServer::saveReport(const std::string& filename,
                   "Multi-die design: the module hierarchy section will be "
                   "empty, it is not aggregated across chiplets yet.");
   }
+  // Read before the walk; see TileGenerator::setInstGroups.
+  const uint64_t search_revision = generator_->searchRevision();
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
@@ -1790,19 +1792,23 @@ void WebServer::saveReport(const std::string& filename,
   const std::string groups_json
       = boost::json::serialize(serializeGroupResult(group_result));
 
-  // Not via ColorOverlaySpec::default_colors: both reports are already built
-  // above, and the table would compute each tree a second time.
-  std::array<std::map<uint32_t, Color>, kNumColorOverlays> owner_colors;
-  owner_colors[findColorOverlay("_modules")->index]
-      = computeDefaultModuleColors(hier_result);
-  owner_colors[findColorOverlay("_clusters")->index]
-      = computeDefaultGroupColors(group_result);
-  InstColorOverlay inst_colors;
-  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
-    if (!owner_colors[spec.index].empty()) {
-      inst_colors.colors[spec.index] = &owner_colors[spec.index];
-    }
+  // The tiles below are rendered in-process, so the module overlay baked into
+  // them reads the same mapping the live viewer would.
+  if (hier_result.name_grouped) {
+    generator_->setInstGroups(block,
+                              std::make_shared<const std::vector<uint32_t>>(
+                                  std::move(hier_result.inst_group)),
+                              search_revision);
   }
+
+  // Not via TileGenerator::defaultModuleColors(): both reports are already
+  // built above, and going through the generator would walk each tree again.
+  auto module_colors = computeDefaultModuleColors(hier_result);
+  const std::map<uint32_t, Color>* mod_colors_ptr
+      = module_colors.empty() ? nullptr : &module_colors;
+  auto group_colors = computeDefaultGroupColors(group_result);
+  const std::map<uint32_t, Color>* group_colors_ptr
+      = group_colors.empty() ? nullptr : &group_colors;
 
   // ── Render tiles at a fixed zoom level ──
 
@@ -1833,10 +1839,11 @@ void WebServer::saveReport(const std::string& filename,
       = TileGenerator::saveImageLayerOrder(vis, tech_layers);
   // An overlay with no colors renders nothing, so caching its tiles would only
   // grow the HTML.
-  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
-    if (inst_colors.colors[spec.index] == nullptr) {
-      std::erase(all_layers, spec.layer);
-    }
+  if (mod_colors_ptr == nullptr) {
+    std::erase(all_layers, "_modules");
+  }
+  if (group_colors_ptr == nullptr) {
+    std::erase(all_layers, "_clusters");
   }
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
@@ -1844,8 +1851,17 @@ void WebServer::saveReport(const std::string& filename,
   for (const auto& layer : all_layers) {
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
-        auto png = generator_->generateTile(
-            layer, kZ, tx, ty, vis, {}, {}, {}, {}, &inst_colors);
+        auto png = generator_->generateTile(layer,
+                                            kZ,
+                                            tx,
+                                            ty,
+                                            vis,
+                                            {},
+                                            {},
+                                            {},
+                                            {},
+                                            mod_colors_ptr,
+                                            group_colors_ptr);
         if (!is_blank(png)) {
           std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
@@ -2070,11 +2086,18 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   return vis;
 }
 
-// The background the saved image is painted on: whatever the viewer is showing
-// when a client has synced its state, else black -- the default both GUIs use
-// (--bg-map in style.css, background_color_ in displayControls.cpp).  Never
-// transparent: an image file is looked at on its own, not composited.
-Color savedBackgroundColor(WebViewerHook* hook)
+// The background a saved image or GIF frame carries behind the layers.  Tiles
+// are rasterized on transparency so they can be composited in any order, but
+// save_image reproduces a *view*, and the Qt GUI fills the uncovered pixels
+// with DisplayControls' background (black by default) -- so leaving them
+// transparent is what made `save_image -web` and `save_image` of the same
+// design disagree.
+//
+// Both web themes set --bg-map to #000 as well, so black is the answer unless
+// a client overrode it: that override reaches us as or_bg_color in the display
+// state the viewer syncs (theme.js setBackgroundColor), in the "#rrggbb" form
+// isValidHexColor enforces.
+Color viewerBackground(const WebViewerHook* hook)
 {
   constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
   if (hook == nullptr) {
@@ -2114,7 +2137,7 @@ void WebServer::saveImage(const std::string& filename,
                         width_px,
                         dbu_per_pixel,
                         vis,
-                        savedBackgroundColor(viewer_hook_.get()));
+                        viewerBackground(viewer_hook_.get()));
 }
 
 namespace {
@@ -2411,8 +2434,14 @@ void WebServer::gifAddFrame(std::optional<int> key,
   const TileVisibility vis = parseVis(vis_json, logger_);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
-      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &w, &h);
+  std::vector<unsigned char> rgba
+      = generator_->renderImageBuffer(region,
+                                      width_px,
+                                      dbu_per_pixel,
+                                      vis,
+                                      viewerBackground(viewer_hook_.get()),
+                                      &w,
+                                      &h);
   if (rgba.empty()) {
     return;  // renderImageBuffer already logged the error.
   }

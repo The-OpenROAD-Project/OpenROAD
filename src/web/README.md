@@ -81,7 +81,7 @@ save_image
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
 | `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
-| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: die area (with 5% margin in `-web` mode). |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
 | `-display_option` | Repeatable visibility overrides as `{control value}` pairs. See [Display option keys](#display-option-keys) below. |
@@ -209,7 +209,7 @@ save_animated_gif
 | `-start` | Open a new GIF stream and return its key. Requires `path`; the frame options are ignored. |
 | `-add` | Capture the design's current state as one frame. Takes no `path`. |
 | `-end` | Finalize and close the GIF. Takes no `path`. |
-| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. The default is the die area with a 5% margin. |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. The default is the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Frame width in pixels. The type is `int`, and must be positive. Cannot be used with `-resolution`. The default is `1024`. |
 | `-resolution` | Resolution in microns per pixel. The type is `float`, and must be positive; it is raised to 1 DBU per pixel if finer. Cannot be used with `-width`. |
 | `-delay` | Time each frame is shown, in hundredths of a second. The type is `int`, and must be positive. The default is `250`, i.e. 2.5 seconds. |
@@ -224,9 +224,8 @@ zoom the GUI is at.
 On the web path, the first frame fixes the GIF's dimensions; a later frame that
 comes out a different size — because the design's bounding box grew, say — is
 rescaled to match rather than starting a second GIF. Area outside the design
-comes out black: the GIF encoder ignores alpha, so it writes the frame's
-uncomposited pixels. Ending a stream that never
-received a frame writes no file and warns. The maximum frame dimension is 16384
+carries the viewer's background, as the Qt path's does. Ending a stream that
+never received a frame writes no file and warns. The maximum frame dimension is 16384
 pixels, as for `save_image`; larger requests are clamped.
 
 #### Examples

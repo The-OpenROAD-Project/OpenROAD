@@ -1951,11 +1951,12 @@ NetRouteMap FastRouteCore::run()
   const DebugScopedTimer total_timer(
       timings.total, logger_, GRT, "timer", 1, "FastRoute run: {}");
 
-  graph2d_.clearUsed();
-  // Rebuild used grids in graph2d during incremental GRT to account for
-  // segments created during merge nets.
+  // Reconcile used grids during incremental GRT to account for segments
+  // created during merge nets, preserving within-run congestion history.
   if (is_incremental_grt_) {
-    graph2d_.rebuildUsedGrids();
+    graph2d_.prepareForIncrementalRun();
+  } else {
+    graph2d_.clearUsed();
   }
   preProcessTechLayers();
 

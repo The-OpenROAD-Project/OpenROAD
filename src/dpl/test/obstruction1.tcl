@@ -10,4 +10,4 @@ check_placement
 
 set def_file [make_result_file obstruction1.def]
 write_def $def_file
-diff_file obstruction1.defok $def_file
+diff_files obstruction1.defok $def_file

@@ -1004,7 +1004,8 @@ always sends the full set.
 | `net_signal`, `net_power`, `net_ground`, `net_clock`, `net_reset`, `net_tieoff`, `net_scan`, `net_analog` | `true` | By `dbSigType`. |
 | `routing`, `routing_segments`, `routing_vias`, `special_nets`, `srouting_segments`, `srouting_vias` | `true` | Wires & vias. |
 | `pins`, `pin_markers`, `pin_names` | `true` | BTerm shapes & labels. |
-| `inst_names`, `inst_pins`, `inst_pin_names` | `true` | ITerm shapes & labels. |
+| `inst_names`, `inst_pins` | `true` | Instance labels & ITerm shapes. |
+| `inst_pin_names`       | `false` | ITerm labels, off as in the Qt GUI. |
 | `blockages`, `placement_blockages`, `routing_obstructions` | `true` | dbBlockage / dbObstruction. |
 | `rows`                 | `false` | Enables the row-outline overlay; gates `site_<name>` lookup. |
 | `tracks_pref`, `tracks_non_pref` | `false` | Routing-track overlay. |

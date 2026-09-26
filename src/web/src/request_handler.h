@@ -278,16 +278,18 @@ struct SessionState
   web::SelectionSet selection_set;
   web::SelectionSet::const_iterator selection_itr = selection_set.end();
 
-  // One entry per "color by owner" overlay, indexed by ColorOverlaySpec::index:
-  // owner id (dbModule / dbGroup) → RGBA color, as last set by the panel.  By
-  // shared_ptr so a tile render can keep the map past the lock while the panel
-  // replaces it, without deep-copying every owner's color per tile.
+  // Owner id (dbModule / dbGroup) → RGBA color, as last set by the panel, one
+  // per "color by owner" overlay.  By shared_ptr so a tile render can keep the
+  // map past the lock while the panel replaces it, without deep-copying every
+  // owner's color per tile, and so a null handle still means "never synced" —
+  // which the renderer answers with the design's default palette.
   struct OwnerColors
   {
     std::mutex mutex;
     std::shared_ptr<const std::map<uint32_t, Color>> colors;
   };
-  std::array<OwnerColors, kNumColorOverlays> owner_colors;
+  OwnerColors module_colors;
+  OwnerColors group_colors;
 
   // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
   // groups colored by web::Painter::kHighlightColors).  An object lives in
@@ -607,11 +609,11 @@ class TileHandler
                                       SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
   WebSocketResponse handleGroupHierarchy(const WebSocketRequest& req);
-  // Backs set_module_colors and set_group_colors; `overlay_index` is
-  // ColorOverlaySpec::index, i.e. which overlay's slot to fill.
+  // Backs set_module_colors and set_group_colors; `owner` is the overlay's
+  // slot in the session.
   WebSocketResponse handleSetOwnerColors(const WebSocketRequest& req,
                                          SessionState& state,
-                                         size_t overlay_index);
+                                         SessionState::OwnerColors& owner);
   // User text labels (2.12).  Labels live in the shared TileGenerator, so all
   // clients and save_image see them.
   WebSocketResponse handleAddLabel(const WebSocketRequest& req);
@@ -653,7 +655,8 @@ class TileHandler
       const std::vector<odb::Polygon>& highlight_polys,
       const std::vector<ColoredRect>& colored_rects,
       const std::vector<FlightLine>& flight_lines,
-      const InstColorOverlay* inst_colors,
+      const std::map<uint32_t, Color>* module_colors,
+      const std::map<uint32_t, Color>* group_colors,
       const std::set<uint32_t>* focus_net_ids,
       const std::set<uint32_t>* route_guide_net_ids,
       double dpr = 1.0,

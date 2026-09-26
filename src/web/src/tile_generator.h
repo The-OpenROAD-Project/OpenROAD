@@ -146,24 +146,13 @@ struct TileFrame
   odb::Rect cull;
   // Pixels of THIS frame per CSS pixel.  Sizes authored in CSS px — pen widths,
   // font heights — are multiplied by it so they come out the same size on every
-  // display instead of shrinking as the ratio rises.  The display's dpr for an
-  // output-resolution frame; dpr * the supersample factor for a super one.
+  // display instead of shrinking as the ratio rises: the display's dpr.
   double px_per_css = 1.0;
 
   // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
   // callers that write into the buffer apply the row flip themselves.
   double pxX(double dbu) const { return (dbu - origin_x) * scale; }
   double pxY(double dbu) const { return (dbu - origin_y) * scale; }
-};
-
-// How many "color by owner" overlays exist — see colorOverlayLayers().
-inline constexpr size_t kNumColorOverlays = 2;
-
-// Per-instance color overrides for the "color by owner" overlays, indexed by
-// ColorOverlaySpec::index.  A null slot means that overlay paints nothing.
-struct InstColorOverlay
-{
-  std::array<const std::map<uint32_t, Color>*, kNumColorOverlays> colors{};
 };
 
 struct SelectionResult
@@ -312,9 +301,12 @@ struct TileVisibility
   FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
-  bool inst_names = true;      // Instance name labels on _instances layer
-  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
-  bool inst_pin_names = true;  // ITerm name labels
+  bool inst_names = true;  // Instance name labels on _instances layer
+  bool inst_pins = true;   // ITerm (cell pin) shapes on tech layers
+  // ITerm name labels.  Off by default, like the Qt GUI's
+  // Misc/Instances/"Pin Names" (displayControls.cpp makes it the one unchecked
+  // leaf under Instances), so a default image carries the same labels there.
+  bool inst_pin_names = false;
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;
@@ -341,6 +333,17 @@ struct TileVisibility
   // `_modules`/`_clusters` layers mounted and these decide whether they draw.
   bool module_view = false;   // color instances by their dbModule
   bool cluster_view = false;  // color instances by their dbGroup
+  // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
+  // from the region it is drawing rather than from the design: the IO pin
+  // markers (RenderThread::setupIOPins takes min(die, bounds)).
+  //
+  // 0 means "one tile", which is the interactive answer: a client shows a
+  // handful of tiles, so a tile's span stands in for its viewport and the
+  // markers shrink as it zooms in.  save_image composites EVERY tile of the
+  // level into one image, where that stand-in is 2^z too small -- markers came
+  // out a 2 px nub against Qt's 20 px arrow -- so it passes the image's own
+  // extent instead.
+  int view_extent_dbu = 0;
 
   // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
   // which gates RenderThread::drawLabels — and so gates them in Qt's
@@ -446,38 +449,6 @@ struct TileVisibility
   bool isLayerSelectable(const std::string& layer_name) const;
 };
 
-// The synthetic layers that paint each instance in the color of its owner.  One
-// table, so the renderer, handleTile (which must keep such a tile out of the
-// tile cache) and the headless save paths cannot disagree.  Adding an overlay
-// is one row here plus one array slot.
-struct ColorOverlaySpec
-{
-  const char* layer;           // synthetic layer name
-  bool TileVisibility::*flag;  // gating visibility flag
-  // Slot in InstColorOverlay::colors and SessionState::owner_colors, kept in
-  // the row so the session side stays a plain array.
-  size_t index;
-  // Owner id of `inst` for this overlay, or 0 when it has no owner.
-  uint32_t (*owner_id)(odb::dbInst* inst);
-  // Colors for the headless save paths, which have no session: the same
-  // defaults the panel starts with.
-  std::map<uint32_t, Color> (*default_colors)(odb::dbBlock* block,
-                                              sta::dbSta* sta);
-  // Request keys only this layer's rendering depends on; the tile cache key
-  // drops them for every other layer.  Unused slots are null.
-  std::array<const char*, 2> keys;
-  // Where the layer sits in the stack, so saveImageLayerOrder composites it in
-  // the order the viewer draws it.  Same scale as PseudoLayerDef::z_index; the
-  // client's numbers differ (it derives them from the pane count), the relative
-  // order does not.
-  int z_index;
-};
-
-// Table of the color-overlay layers, and the lookup its callers use.
-// Returns nullptr when `layer` is not one of them.
-const std::array<ColorOverlaySpec, kNumColorOverlays>& colorOverlayLayers();
-const ColorOverlaySpec* findColorOverlay(std::string_view layer);
-
 class TileGenerator
 {
  public:
@@ -495,7 +466,8 @@ class TileGenerator
   // sent colors for.  The tile path and `save_image -web` share it, so the two
   // cannot disagree about what "on" looks like.
   using OwnerColorMap = std::shared_ptr<const std::map<uint32_t, Color>>;
-  OwnerColorMap defaultOwnerColors(const ColorOverlaySpec& spec) const;
+  OwnerColorMap defaultModuleColors() const;
+  OwnerColorMap defaultGroupColors() const;
 
   int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
@@ -638,6 +610,16 @@ class TileGenerator
   // usable "is there a design" test.
   std::vector<odb::dbBlock*> blocks() const;
 
+  // ─── Name-group mapping (flat designs) ──────────────────────────────
+  // Forwarders to Search, which owns the mapping and the invalidation; the
+  // hierarchy report produces it and the tile renderer reads it.  Callers
+  // read searchRevision() BEFORE building the mapping and hand that value
+  // back, so an edit landing mid-build invalidates rather than stamps clean.
+  uint64_t searchRevision() const;
+  void setInstGroups(odb::dbBlock* block,
+                     std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+                     uint64_t built_at_revision);
+
   // Monotonic counter, bumped every time chiplets() rebuilds its cache.
   // Caches derived from the chiplet list poll this to notice a hierarchy
   // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
@@ -660,7 +642,8 @@ class TileGenerator
       const std::vector<odb::Polygon>& highlight_polys = {},
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
-      const InstColorOverlay* inst_colors = nullptr,
+      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -734,6 +717,9 @@ class TileGenerator
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  // `bg` fills the pixels the layers do not cover; it defaults to transparent,
+  // so a caller that saves what a viewer shows passes that viewer's background
+  // (WebServer::saveImage does, for Qt save_image parity).
   void saveImage(const std::string& filename,
                  const odb::Rect& region,
                  int width_px,
@@ -831,7 +817,8 @@ class TileGenerator
       const std::vector<odb::Polygon>& highlight_polys = {},
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
-      const InstColorOverlay* inst_colors = nullptr,
+      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -1166,8 +1153,9 @@ class TileGenerator
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
-  // Default color map per overlay, for the top block; see defaultOwnerColors.
-  mutable std::array<OwnerColorMap, kNumColorOverlays> default_owner_colors_;
+  // Default color map per overlay, for the top block; see defaultModuleColors.
+  mutable OwnerColorMap default_module_colors_;
+  mutable OwnerColorMap default_group_colors_;
   // The Search::revision() the caches above were built at; see
   // dropOverlayCachesIfStale.
   mutable uint64_t overlay_cache_revision_ = 0;
@@ -1202,6 +1190,15 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// Highlight the path stage at `pin_name`: its net, or on an unrouted net the
+// flight line between the pin and its neighbor on that net in `path`.
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines);
 
 // ── JSON serialization helpers for TileGenerator responses ──
 

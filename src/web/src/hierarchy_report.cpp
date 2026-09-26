@@ -3,11 +3,14 @@
 
 #include "hierarchy_report.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -18,8 +21,10 @@
 
 namespace web {
 
-HierarchyReport::HierarchyReport(odb::dbBlock* block, sta::dbSta* sta)
-    : block_(block), sta_(sta)
+HierarchyReport::HierarchyReport(odb::dbBlock* block,
+                                 sta::dbSta* sta,
+                                 int name_group_depth)
+    : block_(block), sta_(sta), name_group_depth_(name_group_depth)
 {
 }
 
@@ -113,8 +118,11 @@ struct TypeBucket
   std::vector<odb::dbInst*> macro_insts;
 };
 
-// Emit "Leaf instances" folder with type sub-groups for a module.
-static void emitLeafNodes(odb::dbModule* module,
+// Emit "Leaf instances" folder with type sub-groups for a module or name
+// group.  Templated on the instance range so a dbModule's dbSet and a name
+// group's vector both feed it without copying either into the other's shape.
+template <typename InstRange>
+static void emitLeafNodes(const InstRange& insts,
                           sta::dbSta* sta,
                           int parent_id,
                           int& next_id,
@@ -122,7 +130,7 @@ static void emitLeafNodes(odb::dbModule* module,
 {
   // Group instances by type
   std::map<std::string, TypeBucket> buckets;
-  for (odb::dbInst* inst : module->getInsts()) {
+  for (odb::dbInst* inst : insts) {
     sta::dbSta::InstType inst_type = sta->getInstanceType(inst);
     if (isPhysicalType(inst_type)) {
       continue;
@@ -199,6 +207,14 @@ static void emitLeafNodes(odb::dbModule* module,
   }
 }
 
+// Nodes that carry a color key the tile renderer looks up.  The two kinds
+// never appear in one report -- see HierarchyResult::name_grouped.
+static bool isColorable(HierarchyNodeKind kind)
+{
+  return kind == HierarchyNodeKind::kModule
+         || kind == HierarchyNodeKind::kNameGroup;
+}
+
 // Recursive DFS: adds a node for the module, recurses into children,
 // then writes back hierarchical totals. Returns hierarchical stats.
 static ModuleStats addModule(odb::dbModule* module,
@@ -250,7 +266,7 @@ static ModuleStats addModule(odb::dbModule* module,
   }
 
   // Emit "Leaf instances" folder with type sub-groups
-  emitLeafNodes(module, sta, my_id, next_id, nodes);
+  emitLeafNodes(module->getInsts(), sta, my_id, next_id, nodes);
 
   // Write hierarchical totals (area stored as DBU², converted later)
   nodes[my_id].insts = hier.insts;
@@ -259,6 +275,192 @@ static ModuleStats addModule(odb::dbModule* module,
   nodes[my_id].area = static_cast<double>(hier.area_dbu2);
 
   return hier;
+}
+
+// ─── Name-group synthesis (flat designs) ───────────────────────────────
+
+namespace {
+
+// One level of the trie built from instance-name paths.
+struct NameGroupNode
+{
+  std::string segment;  // this level's path segment
+  int parent = -1;      // index into the group vector
+  std::vector<int> children;
+  // Keyed by a view, so probing costs no std::string.  The view must point
+  // into the INSTANCE NAME -- dbInst owns that buffer for as long as the
+  // instance lives, which outlasts this trie.  Never point it at `segment`:
+  // `groups` reallocates as the trie grows, and a short string moves with
+  // its node.
+  std::unordered_map<std::string_view, int> child_index;
+  std::vector<odb::dbInst*> insts;  // instances local to this group
+};
+
+}  // namespace
+
+// Mirror of addModule() for a synthesized group: same node shape, same
+// local-vs-hierarchical accounting, same leaf folder, so the client cannot
+// tell the two apart except by node_kind.
+static ModuleStats addNameGroup(std::vector<NameGroupNode>& groups,
+                                const int g,
+                                sta::dbSta* sta,
+                                const int parent_id,
+                                const std::string& inst_name,
+                                int& next_id,
+                                uint32_t& next_group_id,
+                                std::vector<uint32_t>& inst_group,
+                                std::vector<HierarchyNode>& nodes)
+{
+  const int my_id = next_id++;
+  const uint32_t my_group = next_group_id++;
+  nodes.emplace_back();
+  nodes[my_id].id = my_id;
+  nodes[my_id].parent_id = parent_id;
+  nodes[my_id].inst_name = inst_name;
+  nodes[my_id].node_kind = HierarchyNodeKind::kNameGroup;
+  nodes[my_id].odb_id = my_group;
+
+  // Every instance resolves to a group so the overlay colors the whole
+  // design, but the counts skip physical cells exactly as the module walk
+  // does -- the two trees have to report the same totals for the same design.
+  ModuleStats local;
+  for (odb::dbInst* inst : groups[g].insts) {
+    const uint32_t inst_id = inst->getId();
+    // addNameGroups sizes this up front, so this is a bounds guard rather
+    // than the growth path; it keeps the write in range regardless.
+    if (inst_id >= inst_group.size()) {
+      inst_group.resize(inst_id + 1, 0);
+    }
+    inst_group[inst_id] = my_group;
+
+    if (isPhysicalType(sta->getInstanceType(inst))) {
+      continue;
+    }
+    local.area_dbu2 += inst->getBBox()->getBox().area();
+    if (inst->isBlock()) {
+      local.macros++;
+    } else {
+      local.insts++;
+    }
+  }
+  local.modules = static_cast<int>(groups[g].children.size());
+
+  nodes[my_id].local_insts = local.insts;
+  nodes[my_id].local_macros = local.macros;
+  nodes[my_id].local_modules = local.modules;
+
+  ModuleStats hier = local;
+  for (const int child : groups[g].children) {
+    ModuleStats child_stats = addNameGroup(groups,
+                                           child,
+                                           sta,
+                                           my_id,
+                                           groups[child].segment,
+                                           next_id,
+                                           next_group_id,
+                                           inst_group,
+                                           nodes);
+    hier.insts += child_stats.insts;
+    hier.macros += child_stats.macros;
+    hier.modules += child_stats.modules;
+    hier.area_dbu2 += child_stats.area_dbu2;
+  }
+
+  emitLeafNodes(groups[g].insts, sta, my_id, next_id, nodes);
+
+  nodes[my_id].insts = hier.insts;
+  nodes[my_id].macros = hier.macros;
+  nodes[my_id].modules = hier.modules;
+  nodes[my_id].area = static_cast<double>(hier.area_dbu2);
+
+  return hier;
+}
+
+bool HierarchyReport::addNameGroups(odb::dbModule* top,
+                                    HierarchyResult& result) const
+{
+  std::vector<NameGroupNode> groups(1);  // groups[0] is the top level itself
+
+  // Reused across instances: the split writes views into the name it was
+  // handed, so nothing is allocated here after the first few instances.
+  std::vector<std::string_view> segments;
+  const auto max_depth = static_cast<size_t>(std::max(name_group_depth_, 0));
+  bool capped = false;
+  uint32_t max_inst_id = 0;
+
+  for (odb::dbInst* inst : top->getInsts()) {
+    max_inst_id = std::max(max_inst_id, inst->getId());
+    block_->getPathSegments(inst->getConstName(), segments);
+    // The last segment is the leaf instance name, never a group: "riscv/dp/_1_"
+    // groups under riscv/dp, it does not create a group called _1_.
+    const size_t path_len = segments.empty() ? 0 : segments.size() - 1;
+    const size_t depth = std::min(path_len, max_depth);
+
+    int cur = 0;
+    for (size_t i = 0; i < depth; i++) {
+      // getPathSegments splits purely textually, so "a//b" hands us an empty
+      // segment.  It names no group anyone could read; skip it.
+      if (segments[i].empty()) {
+        continue;
+      }
+      auto it = groups[cur].child_index.find(segments[i]);
+      if (it != groups[cur].child_index.end()) {
+        cur = it->second;
+        continue;
+      }
+      if (groups.size() > kMaxNameGroups) {
+        // Backstop for the depth cap, which does not bound breadth: stop
+        // growing and leave the instance on the deepest group that exists.
+        capped = true;
+        break;
+      }
+      const int child = static_cast<int>(groups.size());
+      groups.emplace_back();
+      groups[child].segment = std::string(segments[i]);
+      groups[child].parent = cur;
+      groups[cur].children.push_back(child);
+      groups[cur].child_index.emplace(segments[i], child);
+      cur = child;
+    }
+    groups[cur].insts.push_back(inst);
+  }
+
+  if (groups.size() == 1) {
+    // No name carried the delimiter.  Nothing to recover, and the caller's
+    // flat walk is already the right answer -- which is why the fallback
+    // needs no separate "does this design look hierarchical" test.
+    return false;
+  }
+
+  // Sort each level so the tree reads alphabetically and the palette lands
+  // the same way on every run, rather than following db iteration order.
+  for (auto& group : groups) {
+    std::sort(
+        group.children.begin(), group.children.end(), [&groups](int a, int b) {
+          return groups[a].segment < groups[b].segment;
+        });
+  }
+
+  // Sized once here rather than grown per instance during the walk: dbInst
+  // ids are dense, so this is one allocation instead of a run of reallocating
+  // copies.
+  result.inst_group.assign(max_inst_id + 1, 0);
+
+  int next_id = 0;
+  uint32_t next_group_id = 0;
+  addNameGroup(groups,
+               /*g=*/0,
+               sta_,
+               /*parent_id=*/-1,
+               top->getName(),
+               next_id,
+               next_group_id,
+               result.inst_group,
+               result.nodes);
+
+  result.name_grouped = true;
+  result.name_groups_capped = capped;
+  return true;
 }
 
 HierarchyResult HierarchyReport::getReport() const
@@ -274,8 +476,14 @@ HierarchyResult HierarchyReport::getReport() const
     return result;
   }
 
-  int next_id = 0;
-  addModule(top, sta_, -1, top->getName(), next_id, result.nodes);
+  // Only a fully flat design synthesizes.  A partially flattened one would
+  // mix real modules with synthesized groups in one tree, and so mix the
+  // color key spaces the renderer looks up -- out of scope.
+  const bool flat = top->getModInstCount() == 0;
+  if (!flat || !addNameGroups(top, result)) {
+    int next_id = 0;
+    addModule(top, sta_, -1, top->getName(), next_id, result.nodes);
+  }
 
   // Convert area from DBU² to μm²
   const int dbu_per_um = block_->getDbUnitsPerMicron();
@@ -289,7 +497,7 @@ HierarchyResult HierarchyReport::getReport() const
   // they appear in result.nodes, guaranteed by addModule's recursion).
   int color_idx = 0;
   for (auto& node : result.nodes) {
-    if (node.node_kind == HierarchyNodeKind::kModule) {
+    if (isColorable(node.node_kind)) {
       node.color = kModuleColorPalette[color_idx % kModuleColorPaletteSize];
       color_idx++;
     }
@@ -320,7 +528,7 @@ boost::json::object serializeHierarchyResult(const HierarchyResult& result)
     if (n.node_kind != HierarchyNodeKind::kModule) {
       o["node_kind"] = static_cast<int>(n.node_kind);
     }
-    if (n.node_kind == HierarchyNodeKind::kModule) {
+    if (isColorable(n.node_kind)) {
       o["odb_id"] = static_cast<int>(n.odb_id);
       o["color"] = boost::json::array{static_cast<int>(n.color.r),
                                       static_cast<int>(n.color.g),
@@ -330,6 +538,12 @@ boost::json::object serializeHierarchyResult(const HierarchyResult& result)
   }
   boost::json::object out;
   out["nodes"] = std::move(nodes);
+  // Only sent in name-group mode, so a client that predates it sees exactly
+  // the payload it saw before on a design with real modules.
+  if (result.name_grouped) {
+    out["name_grouped"] = true;
+    out["name_groups_capped"] = result.name_groups_capped;
+  }
   return out;
 }
 
@@ -389,30 +603,91 @@ std::map<uint32_t, Color> computeEffectiveOwnerColors(
 std::map<uint32_t, Color> computeDefaultModuleColors(
     const HierarchyResult& result)
 {
-  // Mirror the widget's default state (HierarchyBrowser._buildTree): the leaf
-  // and type folders start collapsed, as does every module below the top.
-  std::vector<int> parent_ids;
-  parent_ids.reserve(result.nodes.size());
+  // Build tree: children map + node lookup.
+  std::map<int, std::vector<int>> children;
+  std::map<int, const HierarchyNode*> node_map;
   for (const auto& n : result.nodes) {
-    parent_ids.push_back(n.parent_id);
+    children[n.id];
+    node_map[n.id] = &n;
+    if (n.parent_id >= 0) {
+      auto it = children.find(n.parent_id);
+      if (it != children.end()) {
+        it->second.push_back(n.id);
+      }
+    }
   }
-  const std::vector<char> has_children
-      = hasChildrenByIndex(result.nodes.size(), parent_ids);
 
-  std::vector<OwnerColorNode> nodes;
-  nodes.reserve(result.nodes.size());
+  // Default collapse state + read palette colors.
+  struct ModState
+  {
+    Color color;
+    Color effective_color;
+  };
+  std::map<unsigned int, ModState> mod_state;
+  std::set<int> collapsed;
+
   for (const auto& n : result.nodes) {
-    const bool kids = has_children[n.id] != 0;
-    const bool is_module = n.node_kind == HierarchyNodeKind::kModule;
-    nodes.push_back({.parent = n.parent_id,
-                     .odb_id = n.odb_id,
-                     .color = n.color,
-                     .collapsed = kids && (!is_module || n.parent_id >= 0),
-                     .has_color = is_module});
+    const bool has_kids = !children[n.id].empty();
+    if (has_kids) {
+      if (n.node_kind == HierarchyNodeKind::kLeafGroup
+          || n.node_kind == HierarchyNodeKind::kTypeGroup) {
+        collapsed.insert(n.id);
+      } else if (isColorable(n.node_kind) && n.parent_id >= 0) {
+        collapsed.insert(n.id);
+      }
+    }
+    if (isColorable(n.node_kind)) {
+      mod_state[n.odb_id] = {.color = n.color, .effective_color = n.color};
+    }
   }
-  // getReport() emits nodes in DFS order with id == index, which is the
-  // parent-before-child order computeEffectiveOwnerColors requires.
-  return computeEffectiveOwnerColors(nodes);
+
+  // Effective colors: collapsed ancestors override descendant colors.
+  for (const auto& n : result.nodes) {
+    if (!isColorable(n.node_kind)) {
+      continue;
+    }
+    auto it = mod_state.find(n.odb_id);
+    if (it == mod_state.end()) {
+      continue;
+    }
+    Color inherited;
+    bool found_ancestor = false;
+    int pid = n.parent_id;
+    while (pid >= 0) {
+      auto nit = node_map.find(pid);
+      if (nit == node_map.end()) {
+        break;
+      }
+      const HierarchyNode* parent = nit->second;
+      if (isColorable(parent->node_kind) && collapsed.contains(parent->id)) {
+        auto pit = mod_state.find(parent->odb_id);
+        if (pit != mod_state.end()) {
+          inherited = pit->second.effective_color;
+          found_ancestor = true;
+        }
+      }
+      pid = parent->parent_id;
+    }
+    if (found_ancestor) {
+      it->second.effective_color = inherited;
+    }
+  }
+
+  // Build color map: every visible module contributes its effective color.
+  // The tile renderer looks up each instance's direct module, so parent
+  // and child colors don't conflict.
+  std::map<uint32_t, Color> colors;
+  for (const auto& n : result.nodes) {
+    if (!isColorable(n.node_kind)) {
+      continue;
+    }
+    auto it = mod_state.find(n.odb_id);
+    if (it == mod_state.end()) {
+      continue;
+    }
+    colors[n.odb_id] = it->second.effective_color;
+  }
+  return colors;
 }
 
 }  // namespace web

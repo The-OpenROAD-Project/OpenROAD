@@ -5,7 +5,7 @@
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import {
-    buildTreeIndex, computeEffectiveColors, fmtArea, fmtInt, isHidden,
+    buildTreeIndex, fmtArea, fmtInt, isHidden,
     serializeColorMap,
 } from './color-tree.js';
 import {
@@ -18,7 +18,16 @@ const COLS = [
 ];
 
 // Must match HierarchyNodeKind enum on the server.
-const NODE_KIND = { MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3 };
+const NODE_KIND = {
+    MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3, NAME_GROUP: 4,
+};
+
+// Rows that carry a color key the tile overlay looks up.  A flat design has
+// no dbModules, so its tree is synthesized from instance-name paths and every
+// colorable row is a NAME_GROUP instead; the two never appear together.
+function isColorable(kind) {
+    return kind === NODE_KIND.MODULE || kind === NODE_KIND.NAME_GROUP;
+}
 
 export class HierarchyBrowser {
     // `gate` is the visibility flag this view's overlay draws under, handed
@@ -30,6 +39,8 @@ export class HierarchyBrowser {
         this._gate = gate;
         this._loaded = false;
         this._nodes = [];      // flat server response
+        this._nameGrouped = false;     // tree synthesized from instance names
+        this._nameGroupsCapped = false;
         this._rows = [];       // DFS-ordered rows with depth
         this._childrenMap = new Map();  // id → [child ids]
         this._nodeMap = new Map();      // id → node
@@ -117,6 +128,8 @@ export class HierarchyBrowser {
             });
             this._nodes = data.nodes || [];
             this._loaded = true;
+            this._nameGrouped = !!data.name_grouped;
+            this._nameGroupsCapped = !!data.name_groups_capped;
             this._buildTree();
             this._readServerColors();
             this._computeEffectiveColors();
@@ -128,6 +141,26 @@ export class HierarchyBrowser {
         }
         this._updateBtn.disabled = false;
         this._updateBtn.textContent = 'Update';
+    }
+
+    // The tree is automatic, so the label is what tells the user which one
+    // they are looking at.  A synthesized tree is a reading of the instance
+    // names, not the netlist, and must never be presented as the netlist.
+    _statusText() {
+        const count = this._nodes.filter(
+            n => isColorable(n.node_kind || 0)).length;
+        if (!this._nameGrouped) {
+            return count + ' modules';
+        }
+        // The top row is a group too, but it is the design, not a recovered
+        // level -- report what was actually recovered.
+        const groups = Math.max(0, count - 1);
+        let text = groups + ' groups from instance names'
+                   + ' \u2014 this design has no module hierarchy';
+        if (this._nameGroupsCapped) {
+            text += ' (truncated: too many groups)';
+        }
+        return text;
     }
 
     _buildTree() {
@@ -149,7 +182,7 @@ export class HierarchyBrowser {
             const kind = n.node_kind || 0;
             if (kind === NODE_KIND.LEAF_GROUP || kind === NODE_KIND.TYPE_GROUP) {
                 this._collapsed.add(n.id);
-            } else if (kind === NODE_KIND.MODULE && n.parent_id >= 0) {
+            } else if (isColorable(kind) && n.parent_id >= 0) {
                 this._collapsed.add(n.id);
             }
         }
@@ -167,8 +200,7 @@ export class HierarchyBrowser {
         this._checkModel.buildFromNodes(this._nodes.map(n => ({
             id: n.id,
             parentId: n.parent_id,
-            hasCheckbox: (n.node_kind || 0) === NODE_KIND.MODULE
-                         && n.odb_id != null,
+            hasCheckbox: isColorable(n.node_kind || 0) && n.odb_id != null,
             checked: true,
             data: n,
         })));
@@ -181,13 +213,11 @@ export class HierarchyBrowser {
     // the Hierarchy view checkbox or the source moves.
     refreshStatus() {
         if (!this._loaded) return;
-        const modules = this._nodes.filter(
-            n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
         this._statusLabel.textContent
             = this._app.visibility
               && this._app.visibility[this._gate] === false
                 ? HIERARCHY_OFF_HINT
-                : modules + ' modules';
+                : this._statusText();
     }
 
     // Read server-assigned colors for each MODULE node.
@@ -195,7 +225,7 @@ export class HierarchyBrowser {
         this._moduleState.clear();
         for (const row of this._rows) {
             const node = this._nodeMap.get(row.id);
-            if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
+            if (!node || !isColorable(node.node_kind || 0)) continue;
             if (node.odb_id == null) continue;
             const c = node.color || [128, 128, 128];
             this._moduleState.set(node.odb_id, {
@@ -211,8 +241,30 @@ export class HierarchyBrowser {
     // color (highest collapsed ancestor wins).  Structural rows (leaf/type
     // folders) carry no color and are simply absent from _moduleState.
     _computeEffectiveColors() {
-        computeEffectiveColors(this._rows, this._nodeMap, this._moduleState,
-                               this._collapsed);
+        for (const row of this._rows) {
+            const node = this._nodeMap.get(row.id);
+            if (!node || !isColorable(node.node_kind || 0)) continue;
+            const st = this._moduleState.get(node.odb_id);
+            if (!st) continue;
+
+            // Find nearest ancestor MODULE that is collapsed
+            let parentId = node.parent_id;
+            let inheritedColor = null;
+            while (parentId >= 0) {
+                const parent = this._nodeMap.get(parentId);
+                if (!parent) break;
+                if (isColorable(parent.node_kind || 0)) {
+                    const pst = this._moduleState.get(parent.odb_id);
+                    if (pst && this._collapsed.has(parent.id)) {
+                        inheritedColor = pst.effectiveColor;
+                        // Don't break — keep walking up, the highest
+                        // collapsed ancestor's effective color wins.
+                    }
+                }
+                parentId = parent.parent_id;
+            }
+            st.effectiveColor = inheritedColor || st.color;
+        }
     }
 
     // Re-send this view's map to the server.  The colors live in the session,
@@ -280,6 +332,11 @@ export class HierarchyBrowser {
                 tr.style.color = 'var(--fg-disabled)';
             } else if (kind === NODE_KIND.INSTANCE) {
                 tr.style.color = 'var(--fg-secondary)';
+            } else if (kind === NODE_KIND.NAME_GROUP) {
+                // Recovered from a name, not read from the netlist.
+                tr.classList.add('hierarchy-name-group');
+                tr.title = 'Recovered from instance names \u2014 '
+                           + 'this design has no module hierarchy';
             }
 
             // Column 0: Instance (with tree indent, color swatch, and arrow)
@@ -288,7 +345,7 @@ export class HierarchyBrowser {
             tdInst.style.whiteSpace = 'nowrap';
 
             // Module color swatch + visibility checkbox
-            if (kind === NODE_KIND.MODULE && node.odb_id != null) {
+            if (isColorable(kind) && node.odb_id != null) {
                 const st = this._moduleState.get(node.odb_id);
                 const modelNode = this._checkModel
                     ? this._checkModel.get(node.id) : null;
