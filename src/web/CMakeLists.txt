@@ -79,6 +79,37 @@ swig_lib(NAME         web
 # to regenerate it.
 set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
+# dist/ is only as fresh as the last `bazel run //src/web/dist:dist`.  Rather
+# than embed a copy older than the sources being built, stop with that hint.
+# Keep this list in step with //src/web:bundle_manifest.
+file(GLOB WEB_BUNDLE_INPUTS CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.js
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.css
+)
+list(APPEND WEB_BUNDLE_INPUTS
+  ${CMAKE_CURRENT_SOURCE_DIR}/esbuild.config.mjs
+  ${CMAKE_CURRENT_SOURCE_DIR}/package.json
+  ${CMAKE_CURRENT_SOURCE_DIR}/pnpm-lock.yaml
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/collect_licenses.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/index.html
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/inline_styles.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/openroad_skin.svg
+)
+set(WEB_DIST_STAMP ${CMAKE_CURRENT_BINARY_DIR}/web_dist_fresh.stamp)
+add_custom_command(
+  OUTPUT ${WEB_DIST_STAMP}
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/web_dist_manifest.py check
+    --root ${CMAKE_CURRENT_SOURCE_DIR}
+    --manifest ${WEB_BUNDLE_DIR}/SOURCES.sha256
+    --stamp ${WEB_DIST_STAMP}
+    ${WEB_BUNDLE_INPUTS}
+  DEPENDS
+    src/web_dist_manifest.py
+    ${WEB_BUNDLE_DIR}/SOURCES.sha256
+    ${WEB_BUNDLE_INPUTS}
+  COMMENT "Checking src/web/dist against its sources"
+)
+
 # Each asset is passed as <served path>=<file path>; embed_web_assets.py gzips
 # them itself, so this needs no gzip on the host and both build systems embed
 # identical bytes.
@@ -101,6 +132,7 @@ add_custom_command(
   DEPENDS
     src/embed_report_assets.py
     src/embedded_blob.py
+    ${WEB_DIST_STAMP}
     ${WEB_BUNDLE_DIR}/vendor.min.css
     ${WEB_BUNDLE_DIR}/gl-dark.min.css
     ${WEB_BUNDLE_DIR}/gl-light.min.css
@@ -118,6 +150,7 @@ add_custom_command(
   DEPENDS
     src/embed_web_assets.py
     src/embedded_blob.py
+    ${WEB_DIST_STAMP}
     ${WEB_BUNDLE_DIR}/index.min.html
     ${WEB_BUNDLE_DIR}/app.min.js
     ${WEB_BUNDLE_DIR}/THIRD_PARTY_LICENSES.txt

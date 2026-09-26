@@ -18,6 +18,7 @@ the OpenROAD process, and the viewer works on a machine with no network.
 | `gl-dark.min.css`, `gl-light.min.css` | the two `<style>` elements `theme.js` switches between |
 | `app.min.css` | the app's own `style.css`, last in the cascade |
 | `THIRD_PARTY_LICENSES.txt` | served as `/THIRD_PARTY_LICENSES.txt`, and copied into every saved report |
+| `SOURCES.sha256` | what the rest was built from; the CMake build stops when a source is newer |
 
 The four stylesheets are inlined into `index.min.html` for the served page, and
 embedded separately for the saved report. Their order is load-bearing — see

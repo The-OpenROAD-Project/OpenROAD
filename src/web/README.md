@@ -545,13 +545,13 @@ bazel run //src/web/dist:dist              # rebuild the checked-in bundles
 ```
 
 **Changing anything under `src/web/src/` needs that last step too**, then commit
-what it changed. The Bazel build embeds the bundler's output directly, so
-`bazel build //:openroad` always picks up an edit. The CMake build cannot run
-the bundler and embeds the copy checked in under [`dist/`](dist/README.md)
-instead, so with CMake an edit only shows up after `bazel run
-//src/web/dist:dist`. `bazel test //src/web/dist:dist_tests` tells you locally
-whether the copy is in sync; the `Are-Web-Bundles-Generated` CI workflow is what
-fails the PR when it is not.
+what it changed. The Bazel build embeds the bundler's output directly, so `bazel
+build //:openroad` always picks up an edit. The CMake build cannot run the
+bundler and embeds the copy checked in under [`dist/`](dist/README.md) instead,
+so with CMake an edit needs `bazel run //src/web/dist:dist` first; the CMake
+build stops with that hint when `dist/` is older than its sources. `bazel test
+//src/web/dist:dist_tests` tells you locally whether the copy is in sync; the
+`Are-Web-Bundles-Generated` CI workflow is what fails the PR when it is not.
 
 `//src/web:BUILD` turns those into:
 

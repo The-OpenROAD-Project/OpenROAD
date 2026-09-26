@@ -50,6 +50,12 @@ py_binary(
     main = "src/collect_licenses.py",
 )
 
+py_binary(
+    name = "web_dist_manifest",
+    srcs = ["src/web_dist_manifest.py"],
+    main = "src/web_dist_manifest.py",
+)
+
 # ── The browser bundles ─────────────────────────────────────────────────────
 #
 # The viewer used to pull leaflet, golden-layout, three, elkjs and netlistsvg
@@ -69,16 +75,38 @@ _BUNDLED_PACKAGES = [
     "three",
 ]
 
+_APP_SRCS = glob([
+    "src/*.js",
+    "src/*.css",
+]) + [
+    "esbuild.config.mjs",
+    "src/openroad_skin.svg",
+]
+
 js_library(
     name = "app_js",
-    srcs = glob([
-        "src/*.js",
-        "src/*.css",
-    ]) + [
-        "esbuild.config.mjs",
-        "src/openroad_skin.svg",
-    ],
+    srcs = _APP_SRCS,
     deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
+)
+
+# What dist/ is built from, hashed, so the CMake build can tell when its
+# checked-in copy is older than the sources it is building.  Deliberately not
+# MODULE.bazel or this file: CI's dist_tests catch those, and listing them here
+# would make every unrelated edit to them regenerate dist/.  Keep the list in
+# step with WEB_BUNDLE_INPUTS in CMakeLists.txt.
+genrule(
+    name = "bundle_manifest",
+    srcs = _APP_SRCS + [
+        "package.json",
+        "pnpm-lock.yaml",
+        "src/collect_licenses.py",
+        "src/index.html",
+        "src/inline_styles.py",
+    ],
+    outs = ["SOURCES.sha256"],
+    cmd = "$(execpath :web_dist_manifest) write --root %s --manifest $@ $(SRCS)" %
+          package_name(),
+    tools = [":web_dist_manifest"],
 )
 
 genrule(

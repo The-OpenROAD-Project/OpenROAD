@@ -20,6 +20,7 @@ package(default_visibility = ["//src/web:__subpackages__"])
 #
 # The test this rule generates is what fails when someone forgets.
 _BUNDLES = [
+    "SOURCES.sha256",
     "THIRD_PARTY_LICENSES.txt",
     "app.min.css",
     "app.min.js",
