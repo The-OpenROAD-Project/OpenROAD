@@ -3,6 +3,63 @@
 
 include("openroad")
 
+# The Qt-free half of what used to be the gui: the data model every other
+# module draws through -- Painter, Renderer, Descriptor/Selected,
+# HeatMapDataSource -- published through gui/core.h.  It lives here because
+# the web viewer is its main consumer and nothing in it needs Qt; the Qt gui
+# links it too, so a binary carries one copy either way.  Mirrors
+# //src/web:core in the Bazel build; keep the two source lists in step.
+#
+# Not complete on its own.  It carries Gui's dispatch spine and everything a
+# module outside gui calls, but the Qt gui's own Tcl command surface stays in
+# gui.cpp, and the startGui/initGui entry points are implemented once per
+# build -- gui.cpp for a Qt one, makeGui.cpp for a CLI one -- so a binary has
+# to link one of those too.
+#
+# This target does not take the gui target's LTO opt-out.  That one is there
+# for a crash in Qt plugin loading, and nothing here is Qt: no
+# QApplication, no static QPA plugin, nothing that takes part in loading one.
+# descriptor_registry.cpp and the heatmap sources have also been built with
+# LTO all along, through the gui_descriptors and gui_heatmap_core targets this
+# replaces, and they are on the web tile renderer's hot path.
+add_library(gui_core
+  src/bufferTreeDescriptor.cpp
+  src/colorGenerator.cpp
+  src/dbDescriptors.cpp
+  src/descriptor_registry.cpp
+  src/heatMapCore.cpp
+  src/heatMapPinDensity.cpp
+  src/heatMapPlacementDensity.cpp
+  src/gifWriter.cpp
+  src/guiDispatch.cpp
+  src/init_descriptors.cpp
+  src/renderer.cpp
+  src/staDescriptors.cpp
+)
+target_link_libraries(gui_core
+  PUBLIC
+    odb
+  PRIVATE
+    absl::synchronization
+    dbSta_lib
+    utl_lib
+    Boost::boost
+    OpenSTA
+)
+target_include_directories(gui_core
+  PUBLIC
+    include
+    # The Qt gui's widgets include the descriptor and colour-palette headers
+    # from here.  Bazel names just those four in :core's hdrs; CMake can only
+    # publish a directory, so this is wider than it needs to be.
+    src
+  PRIVATE
+    ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
+    ${OPENROAD_HOME}
+)
+
+
 swig_lib(NAME         web
          NAMESPACE    web
          I_FILE       src/web.i
@@ -151,6 +208,22 @@ target_link_libraries(web
     stb_truetype
     utl_lib
 )
+
+# libdeflate compresses tile PNGs several times faster than lodepng's built-in
+# deflate.  It is optional: without it lodepng's own compressor is used.
+find_package(libdeflate CONFIG QUIET)
+if (TARGET libdeflate::libdeflate_static)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_static)
+elseif (TARGET libdeflate::libdeflate_shared)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_shared)
+endif()
+if (WEB_LIBDEFLATE)
+  message(STATUS "web: using libdeflate for PNG compression")
+  target_link_libraries(web PRIVATE ${WEB_LIBDEFLATE})
+  target_compile_definitions(web PRIVATE HAVE_LIBDEFLATE)
+else()
+  message(STATUS "web: libdeflate not found; PNG tiles use lodepng's compressor")
+endif()
 
 target_include_directories(web
   PUBLIC

@@ -12,4 +12,4 @@ set report_file [make_result_file report_wire_length5.rpt]
 
 report_wire_length -net {clk net60} -global_route -detailed_route -file $report_file
 
-diff_file report_wire_length5.rptok $report_file
+diff_files report_wire_length5.rptok $report_file

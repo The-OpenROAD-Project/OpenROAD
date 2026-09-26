@@ -28,5 +28,5 @@ set segs_file [make_result_file "remove_buffers3_cugr.segs"]
 write_def $def_file
 write_global_route_segments $segs_file
 
-diff_file remove_buffers3_cugr.defok $def_file
-diff_file remove_buffers3_cugr.segsok $segs_file
+diff_files remove_buffers3_cugr.defok $def_file
+diff_files remove_buffers3_cugr.segsok $segs_file

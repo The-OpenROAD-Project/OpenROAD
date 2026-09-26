@@ -17,7 +17,7 @@ struct Color
 };
 
 // Per-layer brush pattern used when rasterizing layer shapes.  The integer
-// values mirror gui::Painter::Brush so the web frontend, this enum and the
+// values mirror web::Painter::Brush so the web frontend, this enum and the
 // Qt GUI all agree on the ordering.
 enum class FillPattern
 {
@@ -49,7 +49,7 @@ inline constexpr int kSpectrumColorCount = 256;
 
 // Map a normalized value in [0, 1] to a color on the Turbo colormap, with the
 // given alpha.  Values outside [0, 1] are clamped.  This is a self-contained
-// port of gui::SpectrumGenerator's 256-entry table so libweb has no link
+// port of web::SpectrumGenerator's 256-entry table so libweb has no link
 // dependency on the Qt GUI.  Used by the timing-cone overlay to color pins and
 // flight lines by slack (or logic depth).
 Color spectrumColor(double value, unsigned char alpha = 255);

@@ -187,6 +187,7 @@ class lefinReader
                      dbTechLayer* layer,
                      LefParser::lefiGeomPolygon* p,
                      int design_rule_width,
+                     int min_spacing,
                      double offset_x = 0.0,
                      double offset_y = 0.0);
   dbSite* findSite(const char* name);
