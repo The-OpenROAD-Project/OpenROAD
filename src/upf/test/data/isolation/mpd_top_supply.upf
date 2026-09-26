@@ -1,0 +1,27 @@
+upf_version 2.0
+
+create_power_domain PD_TOP \
+  -include_scope
+
+create_power_domain PD_D1 \
+  -elements {d1} \
+  -supply {primary VDD_NET}
+
+# Supply ports and nets
+create_supply_port VDD -direction in
+create_supply_port VSS -direction in
+
+create_supply_net VDD_NET -domain PD_D1
+create_supply_net VSS_NET -domain PD_D1
+# Redeclaration tolerated with -reuse
+create_supply_net VDD_NET -domain PD_D1 -reuse
+
+connect_supply_net VDD_NET -ports VDD
+connect_supply_net VSS_NET -ports VSS
+
+set_isolation iso_d_1 \
+  -domain PD_D1 \
+  -clamp_value 0 \
+  -isolation_supply VDD_NET \
+  -source VDD_NET \
+  -sink VSS_NET
