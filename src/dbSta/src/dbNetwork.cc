@@ -1509,53 +1509,9 @@ std::string dbNetwork::name(const Cell* cell) const
   return "";
 }
 
-std::string dbNetwork::getAttribute(const Cell* cell,
-                                    std::string_view key) const
-{
-  dbMaster* db_master;
-  dbModule* db_module;
-  staToDb(cell, db_master, db_module);
-  odb::dbObject* obj;
-  if (db_master) {
-    obj = db_master;
-  } else {
-    obj = db_module;
-  }
-  if (obj) {
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, std::string(key).c_str());
-    if (property) {
-      return property->getValue();
-    }
-  }
-  return "";
-}
-
-void dbNetwork::setAttribute(Cell* cell,
-                             std::string_view key,
-                             std::string_view value)
-{
-  dbMaster* db_master;
-  dbModule* db_module;
-  staToDb(cell, db_master, db_module);
-  odb::dbObject* obj;
-  if (db_master) {
-    obj = db_master;
-  } else {
-    obj = db_module;
-  }
-  if (obj) {
-    const std::string key_str(key);
-    const std::string value_str(value);
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key_str.c_str());
-    if (property) {
-      property->setValue(value_str.c_str());
-    } else {
-      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
-    }
-  }
-}
+// Verilog cell attributes are stored by VerilogReader in Properties as user
+// properties of object type "cell"; read them with
+// Properties::stringProperty.
 
 ////////////////////////////////////////////////////////////////
 // Module port iterator, allows traversal across dbModulePorts
@@ -2045,53 +2001,9 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
   return new DbInstanceNetIterator(instance, this);
 }
 
-std::string dbNetwork::getAttribute(const Instance* inst,
-                                    std::string_view key) const
-{
-  dbInst* db_inst;
-  odb::dbModInst* mod_inst;
-  staToDb(inst, db_inst, mod_inst);
-  odb::dbObject* obj;
-  if (db_inst) {
-    obj = db_inst;
-  } else {
-    obj = mod_inst;
-  }
-  if (obj) {
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, std::string(key).c_str());
-    if (property) {
-      return property->getValue();
-    }
-  }
-  return "";
-}
-
-void dbNetwork::setAttribute(Instance* instance,
-                             std::string_view key,
-                             std::string_view value)
-{
-  dbInst* db_inst;
-  odb::dbModInst* mod_inst;
-  staToDb(instance, db_inst, mod_inst);
-  odb::dbObject* obj;
-  if (db_inst) {
-    obj = db_inst;
-  } else {
-    obj = mod_inst;
-  }
-  if (obj) {
-    const std::string key_str(key);
-    const std::string value_str(value);
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key_str.c_str());
-    if (property) {
-      property->setValue(value_str.c_str());
-    } else {
-      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
-    }
-  }
-}
+// Verilog instance attributes are stored by VerilogReader in Properties as
+// user properties of object type "instance"; read them with
+// Properties::stringProperty.
 
 ////////////////////////////////////////////////////////////////
 

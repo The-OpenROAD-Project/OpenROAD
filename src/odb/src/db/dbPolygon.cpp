@@ -43,6 +43,9 @@ bool _dbPolygon::operator==(const _dbPolygon& rhs) const
   if (design_rule_width_ != rhs.design_rule_width_) {
     return false;
   }
+  if (min_spacing_ != rhs.min_spacing_) {
+    return false;
+  }
   if (owner_ != rhs.owner_) {
     return false;
   }
@@ -67,6 +70,7 @@ _dbPolygon::_dbPolygon(_dbDatabase* db)
   flags_ = {};
   polygon_ = {};
   design_rule_width_ = 0;
+  min_spacing_ = -1;
   owner_ = 0;
   next_pbox_ = 0;
   boxes_ = 0;
@@ -80,6 +84,9 @@ dbIStream& operator>>(dbIStream& stream, _dbPolygon& obj)
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.polygon_;
   stream >> obj.design_rule_width_;
+  if (obj.getDatabase()->isSchema(kSchemaPolygonMinSpacing)) {
+    stream >> obj.min_spacing_;
+  }
   stream >> obj.owner_;
   stream >> obj.next_pbox_;
   stream >> obj.boxes_;
@@ -94,6 +101,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbPolygon& obj)
   stream << flags_bit_field;
   stream << obj.polygon_;
   stream << obj.design_rule_width_;
+  stream << obj.min_spacing_;
   stream << obj.owner_;
   stream << obj.next_pbox_;
   stream << obj.boxes_;
@@ -126,6 +134,12 @@ int dbPolygon::getDesignRuleWidth() const
 {
   _dbPolygon* obj = (_dbPolygon*) this;
   return obj->design_rule_width_;
+}
+
+int dbPolygon::getMinSpacing() const
+{
+  _dbPolygon* obj = (_dbPolygon*) this;
+  return obj->min_spacing_;
 }
 
 // User Code Begin dbPolygonPublicMethods
@@ -237,6 +251,17 @@ void dbPolygon::setDesignRuleWidth(int design_rule_width)
 
   for (dbBox* box : getGeometry()) {
     box->setDesignRuleWidth(design_rule_width);
+  }
+}
+
+void dbPolygon::setMinSpacing(int min_spacing)
+{
+  _dbPolygon* obj = (_dbPolygon*) this;
+
+  obj->min_spacing_ = min_spacing;
+
+  for (dbBox* box : getGeometry()) {
+    box->setMinSpacing(min_spacing);
   }
 }
 

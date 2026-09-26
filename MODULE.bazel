@@ -157,7 +157,11 @@ single_version_override(
 # carries the upstream fix (BCR #7989).
 single_version_override(
     module_name = "gawk",
-    version = "5.3.2.bcr.7",
+    patch_strip = 1,
+    patches = [
+        "//bazel/gawk-patches:0001-load-environ-no-mutation.patch",
+    ],
+    version = "5.4.0.bcr.1",
 )
 
 bazel_dep(name = "git", version = "2.54.0")
@@ -185,6 +189,7 @@ single_version_override(
     version = "1.4.21.bcr.4",
 )
 
+bazel_dep(name = "libdeflate", version = "1.26")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
 
@@ -447,6 +452,18 @@ pip.parse(
     requirements_lock = "//bazel:requirements_lock_3_13.txt",
 )
 use_repo(pip, "openroad-pip")
+
+# Black gets its own hub: tclint 0.7.0 pins pathspec==0.11.2 and black >= 26
+# requires pathspec >= 1.0.0, so they cannot resolve together.
+pip.parse(
+    extra_pip_args = [
+        "--index-url=https://pypi.org/simple",
+    ],
+    hub_name = "openroad-black-pip",
+    python_version = "3.13",
+    requirements_lock = "//bazel:requirements_black_lock_3_13.txt",
+)
+use_repo(pip, "openroad-black-pip")
 
 # sv-lang pulls in rules_pycross, whose toolchain extension fails on Python
 # 3.8 (transitively registered via or-tools -> pybind11_abseil, dropped

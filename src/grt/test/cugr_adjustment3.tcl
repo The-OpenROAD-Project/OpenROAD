@@ -11,4 +11,4 @@ global_route -verbose -use_cugr
 
 write_guides $guide_file
 
-diff_file cugr_adjustment3.guideok $guide_file
+diff_files cugr_adjustment3.guideok $guide_file

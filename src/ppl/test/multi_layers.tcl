@@ -10,4 +10,4 @@ set def_file [make_result_file multi_layers.def]
 
 write_def $def_file
 
-diff_file multi_layers.defok $def_file
+diff_files multi_layers.defok $def_file

@@ -85,24 +85,26 @@ void NegotiationLegalizer::legalize()
              1,
              "NegotiationLegalizer: starting legalization.");
 
-  logger_->info(utl::DPL,
-                1103,
-                "Negotiation base search window: +/-{} sites horizontally, "
-                "+/-{} rows vertically ",
-                site_search_window_,
-                row_search_window_);
-  logger_->report("\tAutomatic search window extension {}.",
-                  disable_window_extension_ ? "disabled" : "enabled");
-  if (!disable_window_extension_) {
-    logger_->report(
-        "\tSearch window extendable up to the max displacement cap of +/-{} "
-        "sites, +/-{} rows near walls.",
-        opendp_->max_displacement_x_,
-        opendp_->max_displacement_y_);
-  }
+  if (!quiet_) {
+    logger_->info(utl::DPL,
+                  1103,
+                  "Negotiation base search window: +/-{} sites horizontally, "
+                  "+/-{} rows vertically ",
+                  site_search_window_,
+                  row_search_window_);
+    logger_->report("\tAutomatic search window extension {}.",
+                    disable_window_extension_ ? "disabled" : "enabled");
+    if (!disable_window_extension_) {
+      logger_->report(
+          "\tSearch window extendable up to the max displacement cap of +/-{} "
+          "sites, +/-{} rows near walls.",
+          opendp_->max_displacement_x_,
+          opendp_->max_displacement_y_);
+    }
 
-  logger_->info(
-      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
+    logger_->info(
+        utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
+  }
 
   if (debug_observer_ && db_->getChip() && db_->getChip()->getBlock()) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
@@ -441,17 +443,20 @@ bool NegotiationLegalizer::initFromDb()
     cells_.push_back(cell);
   }
 
-  std::map<int, int> neg_height_counts;
-  for (const NegCell& c : cells_) {
-    neg_height_counts[c.height]++;
-  }
-  logger_->info(
-      utl::DPL,
-      392,
-      "Negotiation cell height distribution ({} unique row-count(s)):",
-      neg_height_counts.size());
-  for (const auto& [height, count] : neg_height_counts) {
-    logger_->info(utl::DPL, 393, "  height {} row(s): {} cells", height, count);
+  if (!quiet_) {
+    std::map<int, int> neg_height_counts;
+    for (const NegCell& c : cells_) {
+      neg_height_counts[c.height]++;
+    }
+    logger_->info(
+        utl::DPL,
+        392,
+        "Negotiation cell height distribution ({} unique row-count(s)):",
+        neg_height_counts.size());
+    for (const auto& [height, count] : neg_height_counts) {
+      logger_->info(
+          utl::DPL, 393, "  height {} row(s): {} cells", height, count);
+    }
   }
 
   return true;
@@ -1079,6 +1084,39 @@ int NegotiationLegalizer::numViolations() const
     }
   }
   return count;
+}
+
+int NegotiationLegalizer::convergePhase() const
+{
+  switch (finish_) {
+    case Finish::kNotRun:
+      return 0;
+    case Finish::kPhase1Converged:
+      return 1;
+    case Finish::kPhase2Converged:
+      return 2;
+    case Finish::kPhase2Recovery:
+    case Finish::kPhase2IterLimit:
+      return -1;
+  }
+  return -1;
+}
+
+std::string NegotiationLegalizer::finishDescription() const
+{
+  switch (finish_) {
+    case Finish::kNotRun:
+      return "not run (no illegal cells)";
+    case Finish::kPhase1Converged:
+      return "phase 1 (converged)";
+    case Finish::kPhase2Converged:
+      return "phase 2 (converged)";
+    case Finish::kPhase2Recovery:
+      return "phase 2 (stalled, diamond search recovery)";
+    case Finish::kPhase2IterLimit:
+      return "phase 2 (iteration limit)";
+  }
+  return "unknown";
 }
 
 std::vector<Node*> NegotiationLegalizer::getIllegalNodes() const

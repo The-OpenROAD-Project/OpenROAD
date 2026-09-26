@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <set>
 #include <string>
 #include <utility>
@@ -81,6 +82,14 @@ class Graph2D
   void addCapH(int x, int y, int cap);
   void addCapV(int x, int y, int cap);
   void rebuildUsedGrids();
+  void prepareForIncrementalRun();
+  // Full-scan reference check, intended for tests and GRT usedgridcheck debug.
+  bool usedGridsMatchUsage() const;
+  bool isUsedGrid(int x, int y, EdgeDirection direction) const;
+  // Observers belong to this graph's owner; copying routing state retains them.
+  void setUsedGridCallbacks(
+      std::function<void(int, int, EdgeDirection, bool)> changed,
+      std::function<void()> reset);
   void addEstUsageToUsage();
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);
@@ -122,6 +131,8 @@ class Graph2D
   std::vector<int> getCongestedNDRnetsByFraction(double fraction);
 
  private:
+  friend class Graph2DTestPeer;
+
   int x_grid_ = 0;
   int y_grid_ = 0;
   int num_layers_ = 0;
@@ -134,25 +145,45 @@ class Graph2D
                          int y,
                          double edge_cost,
                          EdgeDirection direction);
-  void updateNDRCapLayer(int x,
-                         int y,
-                         FrNet* net,
-                         EdgeDirection dir,
-                         double edge_cost);
   bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
   void printNDRCap(int x, int y);
   void printEdgeCapPerLayer();
   void initNDRnets();
+  void resetNDRCap();
 
   void foreachEdge(const std::function<void(Edge&)>& func);
+  void markUsedGridDirty(int x, int y, EdgeDirection direction);
+  void insertUsedGrid(int x, int y, EdgeDirection direction);
+  void eraseUsedGrid(int x, int y, EdgeDirection direction);
+
+  // What an NDR net consumes on one edge. The layer and the amount debited
+  // from it must be stored per net: the layer with free capacity at routing
+  // time is generally not the layer with used capacity at rip-up time, and
+  // the per-layer costs differ, so re-deriving them at rip-up time makes
+  // cap_ndr drift (see reserveNDRCapLayer/releaseNDRCapLayer).
+  struct NDRUsage
+  {
+    int16_t layer = -1;             // layer whose cap_ndr was debited
+    int8_t amount = 0;              // amount debited from that layer
+    bool charged_overflow = false;  // net was charged the overflow edge cost
+  };
+
+  NDRUsage reserveNDRCapLayer(int x, int y, FrNet* net, EdgeDirection dir);
+  void releaseNDRCapLayer(int x,
+                          int y,
+                          EdgeDirection dir,
+                          const NDRUsage& ndr_usage);
 
   multi_array<Edge, 2> v_edges_;    // The way it is indexed is (X, Y)
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
   multi_array<Cap3D, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
   multi_array<Cap3D, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  multi_array<std::set<FrNet*>, 2>
+  // NDR nets currently using each edge, mapped to the resources they took
+  // there. A rip-up must return exactly what the net reserved, otherwise the
+  // edge usage and the 3D NDR capacity drift (see getCostNDRAware).
+  multi_array<std::map<FrNet*, NDRUsage>, 2>
       v_ndr_nets_;  // The way it is indexed is (X, Y)
-  multi_array<std::set<FrNet*>, 2>
+  multi_array<std::map<FrNet*, NDRUsage>, 2>
       h_ndr_nets_;  // The way it is indexed is (X, Y)
   std::vector<NDRCongestion> congested_ndrs_;
 
@@ -160,6 +191,12 @@ class Graph2D
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
+  // Keep zero-usage entries during a run: congestion history also visits them.
+  // Deduplicate with Edge::used_grid_dirty and reconcile only at the next run.
+  std::vector<std::pair<int, int>> h_dirty_used_grids_;
+  std::vector<std::pair<int, int>> v_dirty_used_grids_;
+  std::function<void(int, int, EdgeDirection, bool)> used_grid_changed_;
+  std::function<void()> used_grids_reset_;
 };
 
 }  // namespace grt

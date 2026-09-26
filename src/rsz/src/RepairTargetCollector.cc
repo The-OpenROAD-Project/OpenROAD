@@ -2511,12 +2511,12 @@ sta::Slack RepairTargetCollector::getOverallStartpointTns(bool use_cone) const
 {
   sta::Slack total_tns = 0.0;
 
-  for (const auto& [startpoint_pin, slack] : violating_startpoints_) {
+  for (const CachedStartpoint& startpoint : startpoints_) {
     sta::Slack sp_tns;
     if (use_cone) {
-      sp_tns = getStartpointTns(startpoint_pin);
+      sp_tns = getStartpointTns(startpoint.pin);
     } else {
-      sp_tns = getStartpointWns(startpoint_pin);
+      sp_tns = getStartpointWns(startpoint.pin);
     }
     if (sp_tns < 0.0) {
       total_tns = sta::delayAsFloat(total_tns) + sta::delayAsFloat(sp_tns);

@@ -939,16 +939,24 @@ void BinGrid::updateBinsNonPlaceArea()
   // overlapping macros cannot exceed a single-macro contribution.
   const int dbu_per_micron
       = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
+  std::vector<int64_t> nonPlaceAreaRaw(bins_.size(), 0);
   for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
         Bin& bin = bins_[y * binCntX_ + x];
-        bin.addNonPlaceArea(getOverlapArea(&bin, inst, dbu_per_micron)
-                            * bin.getTargetDensity());
+        nonPlaceAreaRaw[y * binCntX_ + x]
+            += getOverlapArea(&bin, inst, dbu_per_micron);
       }
     }
+  }
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    if (nonPlaceAreaRaw[i] == 0) {
+      continue;
+    }
+    bins_[i].addNonPlaceArea(
+        static_cast<int64_t>(nonPlaceAreaRaw[i] * bins_[i].getTargetDensity()));
   }
   for (size_t i = 0; i < bins_.size(); ++i) {
     if (bin_insts[i].empty()) {
@@ -3355,6 +3363,88 @@ float NesterovBase::getUniformTargetDensity() const
   return uniformTargetDensity_;
 }
 
+float NesterovBase::estimateTargetDensity(float overflow)
+{
+  if (getNesterovInstsArea() == 0) {
+    return uniformTargetDensity_;
+  }
+
+  // Populates each bin's placed-instance area
+  bg_.updateBinsGCellDensityArea(nb_gcells_,
+                                 static_cast<int>(nbc_->getNumThreads()));
+
+  // Do a binary search to find the density value that results in the
+  // target overflow.
+  auto bins = bg_.getBinsConst();
+
+  float min_density = uniformTargetDensity_;
+  float max_density = 1.0;
+  float current_density;
+  float current_overflow;
+
+  // 20 iterations should reach an error less than 1/2^20
+  int max_iter = 20;
+  for (int iter = 0; iter < max_iter; iter++) {
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "iter ({:}|{:})",
+               iter,
+               max_iter);
+    current_density = (min_density + max_density) / 2;
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "current_density {:g} ({:g}, {:g})",
+               current_density,
+               min_density,
+               max_density);
+    float sum_overflow_area_unscaled = 0;
+    for (auto& bin : bins) {
+      float non_place_area_unscaled = bin.getNonPlaceAreaUnscaled()
+                                      / bin.getTargetDensity()
+                                      * current_density;
+      float scaled_bin_area = bin.getBinArea() * current_density;
+
+      sum_overflow_area_unscaled
+          += std::max(0.0f,
+                      static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                          + non_place_area_unscaled - scaled_bin_area);
+    }
+
+    current_overflow = sum_overflow_area_unscaled / getNesterovInstsArea();
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "current_overflow {:10.9f}, sum_overflow_areaUnscaled "
+               "{:13.9e}, getNesterovInstsArea(): {:13.9e}",
+               current_overflow,
+               sum_overflow_area_unscaled,
+               static_cast<float>(getNesterovInstsArea()));
+    if (std::abs(current_overflow - overflow) < 1e-6) {
+      return current_density;
+    }
+
+    if (current_overflow < overflow) {
+      max_density = current_density;
+    } else {
+      min_density = current_density;
+    }
+  }
+  log_->warn(
+      GPL,
+      186,
+      "Binary search didn't converge after {} iterations. The best density "
+      "found was {:g}, with an overflow of {:6.5f}.",
+      max_iter,
+      current_density,
+      current_overflow);
+  return current_density;
+}
+
 float NesterovBase::initTargetDensity() const
 {
   return nbVars_.targetDensity;
@@ -5682,8 +5772,8 @@ static int64_t getOverlapArea(const Bin* bin,
     // at the outer sides of the macro.
     return original;
   }
-  return static_cast<float>(rectUx - rectLx)
-         * static_cast<float>(rectUy - rectLy);
+  return static_cast<int64_t>(rectUx - rectLx)
+         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // A function that does 2D integration to the density function of a

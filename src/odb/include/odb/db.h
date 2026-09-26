@@ -1322,6 +1322,24 @@ class dbBlock : public dbObject
   const char* getBaseName(const char* full_name) const;
 
   ///
+  /// Split a hierarchical name into its path segments, using this block's
+  /// hierarchy delimiter and the same escaping rule as getBaseName(): a
+  /// delimiter preceded by an odd number of backslashes is escaped and
+  /// belongs to the local identifier rather than separating two levels.
+  ///
+  /// Segments are appended to `segments` after clearing it, and are views
+  /// into `full_name` -- the caller keeps that buffer alive.  Escapes are
+  /// left in place, so a segment reads exactly as it does in the full name.
+  ///
+  /// Splitting is purely textual: every unescaped delimiter separates two
+  /// segments, so "a//b" yields {"a", "", "b"} and "a/" yields {"a", ""}.
+  /// Callers that treat an empty segment as meaningless drop it themselves.
+  /// The last segment always equals getBaseName(full_name).
+  ///
+  void getPathSegments(const char* full_name,
+                       std::vector<std::string_view>& segments) const;
+
+  ///
   /// return the regions of this design
   ///
   dbSet<dbRegion> getRegions();
@@ -5777,6 +5795,17 @@ class dbMTerm : public dbObject
   bool isSetMark();
 
   ///
+  /// Returns true if the router must connect to at least one shape of each port
+  /// of this terminal.
+  ///
+  bool isMustJoinAllPorts();
+
+  ///
+  /// Set the must-join-all-ports flag.
+  ///
+  void setMustJoinAllPorts(bool v);
+
+  ///
   /// Get the master this master-terminal belongs too.
   ///
   dbMaster* getMaster();
@@ -8980,10 +9009,13 @@ class dbPolygon : public dbObject
 
   int getDesignRuleWidth() const;
 
+  int getMinSpacing() const;
+
   // User Code Begin dbPolygon
   dbTechLayer* getTechLayer();
   dbSet<dbBox> getGeometry();
   void setDesignRuleWidth(int design_rule_width);
+  void setMinSpacing(int min_spacing);
 
   ///
   /// Add an obstruction to a master.

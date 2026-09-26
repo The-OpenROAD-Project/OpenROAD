@@ -43,8 +43,6 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -55,6 +53,8 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web_assets.h"
 #include "web_chart.h"
 #include "web_gif.h"
@@ -431,7 +431,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   }
 
   // Destroying any selectable object (via trigger_action or a Tcl
-  // command) leaves the session's stored gui::Selected wrappers holding
+  // command) leaves the session's stored web::Selected wrappers holding
   // dangling odb pointers.  Raise the staleness flag — handlers drop the
   // whole selection state via consumeStaleSelection() before the next
   // dereference — and tell the client once so it clears its inspector.
@@ -480,8 +480,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
 // only reached for controls already known to be in the heat map group.
 bool isRegisteredHeatMapName(const std::string& name)
 {
-  for (const gui::HeatMapSourceHandle& source :
-       gui::getRegisteredHeatMapSources()) {
+  for (const web::HeatMapSourceHandle& source :
+       web::getRegisteredHeatMapSources()) {
     if (source->getName() == name) {
       return true;
     }
@@ -494,7 +494,7 @@ void seedRendererControls(WebViewerHook* hook)
   if (hook == nullptr) {
     return;
   }
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     // The controls a renderer declares are fixed once it has registered, so
     // one pass per renderer is enough — the render path calls this on every
     // tile and must not pay for the walk each time.
@@ -514,7 +514,7 @@ void seedRendererControls(WebViewerHook* hook)
 // share a group name.  `path` is what checkDisplayControl composes and what
 // set_renderer_control takes, so the client never has to rebuild it.
 //
-// The heat maps are left out.  gui::Gui::registerHeatMap gives every source a
+// The heat maps are left out.  web::Gui::registerHeatMap gives every source a
 // HeatMapRenderer whose single control gates its drawObjects, but the web
 // draws heat maps through its own tile layer, driven by the dedicated
 // "Heat Maps" group in the display-controls panel; serving these too put a
@@ -536,7 +536,7 @@ std::string rendererControlsJson(WebViewerHook* hook)
   static constexpr const char* kHeatMapGroup = "Heat Maps";
 
   boost::json::array controls;
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string group = renderer->getDisplayControlGroupName();
     const bool heat_map_group = group == kHeatMapGroup;
     for (const auto& [name, control] : renderer->getDisplayControls()) {
@@ -579,7 +579,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
   std::string group;
   std::set<std::string> exclusivity;
   bool found = false;
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string renderer_group = renderer->getDisplayControlGroupName();
     for (const auto& [name, control] : renderer->getDisplayControls()) {
       if (renderer->displayControlPath(name) == path) {
@@ -598,7 +598,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
   }
   const bool exclude_all = exclusivity.contains("");
 
-  for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
     const std::string renderer_group = renderer->getDisplayControlGroupName();
     if (renderer_group != group) {
       continue;
@@ -859,7 +859,7 @@ WebSocketSession::WebSocketSession(
         WebSocketResponse resp;
         resp.id = req.id;
         resp.type = WebSocketResponse::kJson;
-        auto* gui = gui::Gui::get();
+        auto* gui = web::Gui::get();
         const auto* value = req.json.if_contains("value");
         if (value != nullptr && value->is_bool()) {
           const bool requested = value->get_bool();
@@ -1612,7 +1612,7 @@ TileGenerator& WebServer::ensureGenerator()
 }
 
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
-// pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
+// pull in web_serve.cpp's web::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
 void WebServer::stopAndJoinIoThreads()
 {
@@ -1763,11 +1763,22 @@ void WebServer::saveReport(const std::string& filename,
                   "Multi-die design: the module hierarchy section will be "
                   "empty, it is not aggregated across chiplets yet.");
   }
+  // Read before the walk; see TileGenerator::setInstGroups.
+  const uint64_t search_revision = generator_->searchRevision();
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
+
+  // The tiles below are rendered in-process, so the module overlay baked into
+  // them reads the same mapping the live viewer would.
+  if (hier_result.name_grouped) {
+    generator_->setInstGroups(block,
+                              std::make_shared<const std::vector<uint32_t>>(
+                                  std::move(hier_result.inst_group)),
+                              search_revision);
+  }
 
   auto module_colors = computeDefaultModuleColors(hier_result);
   const std::map<uint32_t, Color>* mod_colors_ptr
@@ -2028,6 +2039,57 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   }
   return vis;
 }
+
+// The background a saved image or GIF frame carries behind the layers.  Tiles
+// are rasterized on transparency so they can be composited in any order, but
+// save_image reproduces a *view*, and the Qt GUI fills the uncovered pixels
+// with DisplayControls' background (black by default) -- so leaving them
+// transparent is what made `save_image -web` and `save_image` of the same
+// design disagree.
+//
+// Both web themes set --bg-map to #000 as well, so black is the answer unless
+// a client overrode it: that override reaches us as or_bg_color in the display
+// state the viewer syncs (theme.js setBackgroundColor), in the "#rrggbb" form
+// isValidHexColor enforces.
+Color viewerBackground(const WebViewerHook* hook)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  if (hook == nullptr) {
+    return kBlack;
+  }
+  const std::string state = hook->getDisplayState();
+  if (state.empty()) {
+    return kBlack;
+  }
+  std::error_code ec;
+  const boost::json::value parsed = boost::json::parse(state, ec);
+  if (ec) {
+    return kBlack;
+  }
+  const boost::json::object* obj = parsed.if_object();
+  if (obj == nullptr) {
+    return kBlack;
+  }
+  const boost::json::value* entries = obj->if_contains("entries");
+  if (entries == nullptr || !entries->is_object()) {
+    return kBlack;
+  }
+  const boost::json::value* color
+      = entries->get_object().if_contains("or_bg_color");
+  if (color == nullptr || !color->is_string()) {
+    return kBlack;
+  }
+  const std::string_view hex(color->get_string());
+  unsigned rgb = 0;
+  if (hex.size() != 7 || hex[0] != '#'
+      || !parseIntExact(hex.substr(1), rgb, 16)) {
+    return kBlack;
+  }
+  return Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+               .b = static_cast<unsigned char>(rgb & 0xFF),
+               .a = 255};
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -2044,7 +2106,12 @@ void WebServer::saveImage(const std::string& filename,
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
-  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+  generator_->saveImage(filename,
+                        region,
+                        width_px,
+                        dbu_per_pixel,
+                        vis,
+                        viewerBackground(viewer_hook_.get()));
 }
 
 namespace {
@@ -2341,8 +2408,14 @@ void WebServer::gifAddFrame(std::optional<int> key,
   const TileVisibility vis = parseVis(vis_json, logger_);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
-      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &w, &h);
+  std::vector<unsigned char> rgba
+      = generator_->renderImageBuffer(region,
+                                      width_px,
+                                      dbu_per_pixel,
+                                      vis,
+                                      viewerBackground(viewer_hook_.get()),
+                                      &w,
+                                      &h);
   if (rgba.empty()) {
     return;  // renderImageBuffer already logged the error.
   }

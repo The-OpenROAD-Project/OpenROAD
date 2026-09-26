@@ -80,7 +80,8 @@ class ScriptWidget : public QDockWidget
 
   void pause(int timeout);
 
-  // True while pause() is spinning its event loop.  See GuiBackend::isPaused.
+  // True while pause() is spinning its event loop.  See
+  // web::GuiBackend::isPaused.
   bool isPaused() const { return paused_; }
 
   // This can be used by other widgets to "write" commands
@@ -119,7 +120,7 @@ class ScriptWidget : public QDockWidget
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;
   std::unique_ptr<QTimer> report_timer_;
-  // Atomic because GuiBackend::isPaused() advertises itself to consumers
+  // Atomic because web::GuiBackend::isPaused() advertises itself to consumers
   // gating cross-thread reads; the Qt render threads may query it while the
   // GUI thread spins in pause().
   std::atomic<bool> paused_;

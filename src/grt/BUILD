@@ -71,6 +71,7 @@ cc_library(
     hdrs = [
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/Graph2D.h",
+        "src/fastroute/include/Overflow.h",
     ],
     copts = [
         "-fopenmp",
@@ -249,12 +250,11 @@ cc_library(
         ":grt",
         ":grt_private_hdrs",
         "//:ord",
-        "//src/gui",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
