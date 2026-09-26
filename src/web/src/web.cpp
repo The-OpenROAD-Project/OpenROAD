@@ -314,6 +314,10 @@ static http::response<http::string_body> handle_request(
         // The assets are stored gzipped.  Every browser accepts gzip, so this
         // is the path that runs; the fallback is for curl without
         // --compressed and for the tests.
+        if (asset->gzipped) {
+          // Either way the body depends on Accept-Encoding.
+          res.set(http::field::vary, "Accept-Encoding");
+        }
         if (asset->gzipped && acceptsGzip(req[http::field::accept_encoding])) {
           res.set(http::field::content_encoding, "gzip");
           res.body() = std::string(asset->content());
