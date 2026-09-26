@@ -4,12 +4,14 @@
 #include "straps.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -2113,6 +2115,592 @@ bool PadDirectConnectionStraps::isTargetShape(const Shape* shape) const
   }
 
   return false;
+}
+
+///////////
+
+namespace {
+
+// A pin reaches further by getting longer, not by getting wider, so it grows
+// along its own length.  A square pin has no length to grow along and the
+// direction its layer prefers is all that is left to go on; where the layer
+// states none, there is nothing to go on and no answer to give.
+std::optional<bool> growsVertically(const odb::Rect& pin,
+                                    odb::dbTechLayer* layer)
+{
+  if (pin.dy() != pin.dx()) {
+    return pin.dy() > pin.dx();
+  }
+  switch (layer->getDirection().getValue()) {
+    case odb::dbTechLayerDir::VERTICAL:
+      return true;
+    case odb::dbTechLayerDir::HORIZONTAL:
+      return false;
+    case odb::dbTechLayerDir::NONE:
+      break;
+  }
+  return std::nullopt;
+}
+
+std::string directionName(const odb::Point& normal)
+{
+  if (normal.y() > 0) {
+    return "north";
+  }
+  if (normal.y() < 0) {
+    return "south";
+  }
+  if (normal.x() > 0) {
+    return "east";
+  }
+  return "west";
+}
+
+// True for a shape this pass has already grown out of some other pin of the
+// same macro.  One is on the right net and would serve, but it is also being
+// invented as the pass runs, so letting it be a target would make what each
+// pin connects to depend on the order the pins come out of the LEF.  A pin is
+// connected to the grid, not to another pin's way out of the macro.
+bool isMacroEdgeConnection(const Shape* shape)
+{
+  const GridComponent* component = shape->getGridComponent();
+  return component != nullptr
+         && component->type() == GridComponent::kMacroEdgeConnect;
+}
+
+// The nearest shape off the face of pin that normal points out of, limited to
+// the ones a via could actually be dropped on: the same net, crossing the pin
+// rather than running alongside it, and covering the whole of its width.  A
+// shape that already overlaps the pin is not a candidate -- it has had its
+// chance at a via, and growing the pin cannot give it another.
+ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
+                           const odb::Rect& pin,
+                           const odb::Point& normal,
+                           const odb::Rect& die,
+                           odb::dbNet* net,
+                           int& distance)
+{
+  odb::Rect band = pin;
+  if (normal.y() > 0) {
+    band.set_yhi(die.yMax());
+  } else if (normal.y() < 0) {
+    band.set_ylo(die.yMin());
+  } else if (normal.x() > 0) {
+    band.set_xhi(die.xMax());
+  } else {
+    band.set_xlo(die.xMin());
+  }
+
+  const bool is_vertical = normal.y() != 0;
+
+  ShapePtr closest = nullptr;
+  distance = std::numeric_limits<int>::max();
+  for (auto it
+       = shapes.qbegin(bgi::intersects(band)
+                       && bgi::satisfies([net](const ShapePtr& other) {
+                            return other->getNet() == net
+                                   && !isMacroEdgeConnection(other.get());
+                          }));
+       it != shapes.qend();
+       it++) {
+    const ShapePtr& shape = *it;
+    const odb::Rect& rect = shape->getRect();
+
+    const odb::Rect overlap = rect.intersect(band);
+    if (is_vertical) {
+      if (rect.dx() < rect.dy() || overlap.dx() != band.dx()) {
+        continue;
+      }
+    } else {
+      if (rect.dy() < rect.dx() || overlap.dy() != band.dy()) {
+        continue;
+      }
+    }
+
+    int new_distance = 0;
+    if (normal.y() > 0) {
+      new_distance = rect.yMin() - pin.yMax();
+    } else if (normal.y() < 0) {
+      new_distance = pin.yMin() - rect.yMax();
+    } else if (normal.x() > 0) {
+      new_distance = rect.xMin() - pin.xMax();
+    } else {
+      new_distance = pin.xMin() - rect.xMax();
+    }
+
+    if (new_distance <= 0 || new_distance >= distance) {
+      continue;
+    }
+
+    closest = shape;
+    distance = new_distance;
+  }
+
+  return closest;
+}
+
+// A way out of a pin: the end it leaves by and the nearest target off it.
+struct LateralCandidate
+{
+  odb::Point normal;
+  int distance;
+  ShapePtr target;
+};
+
+// The supply pin geometry of an instance in placed coordinates, keeping the
+// iterm each rectangle came from.  This is InstanceGrid::getInstancePins split
+// per pin rather than per layer, because a connection is grown out of one
+// rectangle of one pin.
+struct InstancePinRect
+{
+  odb::dbITerm* iterm;
+  odb::dbTechLayer* layer;
+  odb::Rect rect;
+};
+
+std::vector<InstancePinRect> getPinRects(odb::dbITerm* iterm,
+                                         const odb::dbTransform& transform)
+{
+  std::vector<InstancePinRect> pins;
+
+  const auto add = [&pins, iterm, &transform](odb::dbTechLayer* layer,
+                                              const odb::Rect& rect,
+                                              const odb::dbTransform& local) {
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::ROUTING) {
+      return;
+    }
+    odb::Rect placed = rect;
+    local.apply(placed);
+    transform.apply(placed);
+    pins.push_back({iterm, layer, placed});
+  };
+
+  for (auto* mpin : iterm->getMTerm()->getMPins()) {
+    for (auto* box : mpin->getGeometry()) {
+      if (box->isVia()) {
+        // a pin drawn as a via still puts metal on the routing layers
+        odb::dbTechVia* tech_via = box->getTechVia();
+        if (tech_via == nullptr) {
+          continue;
+        }
+        const odb::dbTransform via_transform(box->getViaXY());
+        for (auto* via_box : tech_via->getBoxes()) {
+          add(via_box->getTechLayer(), via_box->getBox(), via_transform);
+        }
+        continue;
+      }
+      add(box->getTechLayer(), box->getBox(), odb::dbTransform());
+    }
+  }
+
+  return pins;
+}
+
+}  // namespace
+
+MacroEdgeConnectionStraps::MacroEdgeConnectionStraps(
+    InstanceGrid* grid,
+    odb::dbITerm* iterm,
+    odb::dbTechLayer* layer,
+    const odb::Rect& pin,
+    const odb::Point& normal,
+    const ShapePtr& target,
+    std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions)
+    // A zero pitch is what keeps Straps from deriving a spacing from it, which
+    // it would do by asking for a net count this component does not have yet.
+    : Straps(grid, layer, pin.minDXDY(), /* pitch */ 0),
+      iterm_(iterm),
+      pin_(pin),
+      normal_(normal),
+      target_(target),
+      macro_obstructions_(std::move(macro_obstructions))
+{
+  // the wire runs the way the pin grows, whatever the layer prefers
+  setDirection(normal_.y() != 0 ? odb::dbTechLayerDir::VERTICAL
+                                : odb::dbTechLayerDir::HORIZONTAL);
+}
+
+std::string MacroEdgeConnectionStraps::getName() const
+{
+  return iterm_->getName();
+}
+
+std::vector<odb::dbNet*> MacroEdgeConnectionStraps::getNets() const
+{
+  return {iterm_->getNet()};
+}
+
+void MacroEdgeConnectionStraps::makeShapes(
+    const Shape::ShapeTreeMap& /* other_shapes */)
+{
+  // Land on the end of the pin the strap leaves by, and run from there to the
+  // far side of the target so the via has the whole of it to be placed in.
+  //
+  // The landing is one strap width, which is the least metal that is itself a
+  // legal piece of wire, and the whole pin when the pin is shorter than that.
+  // Covering the pin outright -- which is what a pad connection does, where a
+  // pin is a short stub on the edge of the cell -- would connect the same two
+  // things, but on a macro pin that runs the width of the body it would draw
+  // a wire from one side of the macro to the other to do it.
+  const int landing = getWidth();
+  odb::Rect rect = pin_;
+  const odb::Rect& target = target_->getRect();
+  if (normal_.y() > 0) {
+    rect.set_ylo(std::max(pin_.yMin(), pin_.yMax() - landing));
+    rect.set_yhi(target.yMax());
+  } else if (normal_.y() < 0) {
+    rect.set_yhi(std::min(pin_.yMax(), pin_.yMin() + landing));
+    rect.set_ylo(target.yMin());
+  } else if (normal_.x() > 0) {
+    rect.set_xlo(std::max(pin_.xMin(), pin_.xMax() - landing));
+    rect.set_xhi(target.xMax());
+  } else {
+    rect.set_xhi(std::min(pin_.xMax(), pin_.xMin() + landing));
+    rect.set_xlo(target.xMin());
+  }
+
+  auto* layer = getLayer();
+  if (layer->hasMaxWidth()) {
+    const int max_width = layer->getMaxWidth();
+    if (isHorizontal()) {
+      if (rect.dy() > max_width) {
+        rect.set_yhi(rect.yMin() + max_width);
+      }
+    } else {
+      if (rect.dx() > max_width) {
+        rect.set_xhi(rect.xMin() + max_width);
+      }
+    }
+  }
+
+  auto shape = std::make_unique<Shape>(
+      layer, iterm_->getNet(), rect, odb::dbWireShapeType::STRIPE);
+  // the landing, not the pin: this is what trimming may not take back, and
+  // the strap only ever reaches the end of the pin it leaves by
+  shape->addITermConnection(pin_.intersect(rect));
+
+  addShape(std::move(shape));
+}
+
+void MacroEdgeConnectionStraps::cutShapes(
+    const Shape::ObstructionTreeMap& obstructions)
+{
+  GridComponent::cutShapes(obstructions);
+
+  // The macro's own metal is published by this grid, so the pass above
+  // ignores it -- but a pin with the body of its own macro in the way cannot
+  // grow out of it, and that is the case this has to stop.
+  GridComponent::cutShapes(*macro_obstructions_);
+
+  // Whatever is left has to be one piece of metal joining the pin to the
+  // target: a fragment that reaches only one of them connects nothing.
+  std::vector<Shape*> remove;
+  for (const auto& [layer, layer_shapes] : getShapes()) {
+    for (const auto& shape : layer_shapes) {
+      const odb::Rect& rect = shape->getRect();
+      if (!rect.overlaps(pin_) || !rect.overlaps(target_->getRect())) {
+        remove.push_back(shape.get());
+      }
+    }
+  }
+  for (auto* shape : remove) {
+    debugPrint(getLogger(),
+               utl::PDN,
+               "MacroEdge",
+               2,
+               "{} cannot reach {} from {}",
+               getName(),
+               target_->getReportText(),
+               Shape::getRectText(pin_, getBlock()->getDbUnitsPerMicron()));
+    removeShape(shape);
+  }
+}
+
+bool MacroEdgeConnectionStraps::isConnected() const
+{
+  return getShapeCount() != 0;
+}
+
+bool MacroEdgeConnectionStraps::hasVias() const
+{
+  for (const auto& [layer, layer_shapes] : getShapes()) {
+    for (const auto& shape : layer_shapes) {
+      if (!shape->getVias().empty()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void MacroEdgeConnectionStraps::report() const
+{
+  auto* logger = getLogger();
+
+  logger->report("  Type: {}", typeToString(type()));
+  logger->report("    Pin: {}", getName());
+  logger->report("    Net: {}", iterm_->getNet()->getName());
+  logger->report("    Layer: {}", getLayer()->getName());
+  logger->report("    Direction: {}", directionName(normal_));
+  logger->report("    Target: {}", target_->getReportText());
+}
+
+void MacroEdgeConnectionStraps::connectUnreachedPins(
+    InstanceGrid* grid,
+    const Shape::ShapeTreeMap& global_shapes,
+    Shape::ObstructionTreeMap& obstructions)
+{
+  odb::dbInst* inst = grid->getInstance();
+  if (!inst->getMaster()->isBlock()) {
+    // Only a hard macro has an edge to grow out of.  A pad is served by
+    // PadDirectConnectionStraps and a cover cell is reached from above.
+    return;
+  }
+
+  const std::vector<odb::dbNet*> grid_nets
+      = grid->getNets(grid->startsWithPower());
+  if (grid_nets.empty()) {
+    return;
+  }
+
+  std::vector<ViaPtr> vias;
+  grid->getVias(vias);
+
+  // What this grid can reach is its own shapes and those of the grids built
+  // before it.  The two are searched as they are rather than merged into one
+  // tree: the merge would be a copy of every shape on every layer of the
+  // design, per macro grid, and only the layers a pin has a connect rule to
+  // are ever looked at.
+  const Shape::ShapeTreeMap own_shapes = grid->getShapes();
+
+  const auto search_layer_pair
+      = [&own_shapes, &global_shapes](
+            odb::dbTechLayer* layer,
+            const std::function<void(const Shape::ShapeTree&)>& search) {
+          const auto own = own_shapes.find(layer);
+          if (own != own_shapes.end()) {
+            search(own->second);
+          }
+          const auto global = global_shapes.find(layer);
+          if (global != global_shapes.end()) {
+            search(global->second);
+          }
+        };
+
+  // The macro's own metal, built once for every pin of it.
+  // getPadObstructions attributes the metal coincident with a pin to that
+  // pin's net, so a pin being grown does not block itself.
+  auto macro_obstructions = std::make_shared<Shape::ObstructionTreeMap>();
+  for (const auto& [layer, shapes] : InstanceGrid::getPadObstructions(inst)) {
+    (*macro_obstructions)[layer]
+        = Shape::ObstructionTree(shapes.begin(), shapes.end());
+  }
+
+  const odb::Rect die = grid->getBlock()->getDieArea();
+  const odb::dbTransform transform = inst->getTransform();
+  // the real outline of the macro, so that the notch of an L, T or U shaped
+  // one is what it is -- free core area the pin beside it can grow into
+  const Region outline = getInstanceOutline(inst);
+
+  std::vector<MacroEdgeConnectionStraps*> added;
+  for (auto* iterm : inst->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (net == nullptr
+        || std::ranges::find(grid_nets, net) == grid_nets.end()) {
+      continue;
+    }
+
+    for (const auto& pin : getPinRects(iterm, transform)) {
+      // The connect rules are the whole of what this pin may reach: a pin on
+      // a layer with no rule out of it is not this grid's to connect.
+      const odb::PtrSet<odb::dbTechLayer> connectable
+          = grid->connectableLayers(pin.layer);
+      if (connectable.empty()) {
+        continue;
+      }
+
+      bool reached = std::ranges::any_of(vias, [&](const ViaPtr& via) {
+        if (via->getNet() != net) {
+          return false;
+        }
+        if (via->getLowerLayer() != pin.layer
+            && via->getUpperLayer() != pin.layer) {
+          return false;
+        }
+        return via->getArea().overlaps(pin.rect);
+      });
+      // A strap of the grid's own that lands on the pin is a connection too,
+      // made by the metal touching rather than by a via.  A macro grid with
+      // straps on the layer its pins are on routinely makes one, and growing
+      // a second way out of a pin that already has one would only draw a wire
+      // for the strap already there to cut back off.
+      if (!reached) {
+        search_layer_pair(pin.layer, [&](const Shape::ShapeTree& shapes) {
+          if (reached) {
+            return;
+          }
+          reached = shapes.qbegin(
+                        bgi::intersects(pin.rect)
+                        && bgi::satisfies([net, &pin](const ShapePtr& other) {
+                             return other->getNet() == net
+                                    && !isMacroEdgeConnection(other.get())
+                                    && other->getRect().overlaps(pin.rect);
+                           }))
+                    != shapes.qend();
+        });
+      }
+      if (reached) {
+        debugPrint(grid->getLogger(),
+                   utl::PDN,
+                   "MacroEdge",
+                   2,
+                   "{} on {} at {} is already connected",
+                   iterm->getName(),
+                   pin.layer->getName(),
+                   Shape::getRectText(pin.rect,
+                                      grid->getBlock()->getDbUnitsPerMicron()));
+        continue;
+      }
+
+      // The way out.  The pin grows along its own length, and of its two ends
+      // the one with less macro beyond it is the way out -- which on an L, T
+      // or U shaped macro is what sends a pin on the wall of a notch into the
+      // notch rather than back through the body behind it.  The other end is
+      // not a candidate at all: growing that way is growing into the macro,
+      // and a pin that cannot get out this way has no way out.
+      //
+      // Where the pin reaches the outline at both ends -- a stub laid across
+      // a narrow leg -- both are the way out, and below the nearer target
+      // decides between them.
+      const std::optional<bool> vertical = growsVertically(pin.rect, pin.layer);
+      if (!vertical.has_value()) {
+        debugPrint(grid->getLogger(),
+                   utl::PDN,
+                   "MacroEdge",
+                   1,
+                   "{} is square on {}, which states no direction, so there is "
+                   "no length to grow along",
+                   iterm->getName(),
+                   pin.layer->getName());
+        continue;
+      }
+      const std::array<odb::Point, 2> ends
+          = *vertical
+                ? std::array<odb::Point, 2>{odb::Point(0, 1), odb::Point(0, -1)}
+                : std::array<odb::Point, 2>{odb::Point(1, 0),
+                                            odb::Point(-1, 0)};
+      const std::array<int, 2> margins
+          = {outline.getMarginBeyond(pin.rect, ends[0]),
+             outline.getMarginBeyond(pin.rect, ends[1])};
+      const int way_out = std::min(margins[0], margins[1]);
+
+      std::vector<odb::Point> normals;
+      for (size_t i = 0; i < ends.size(); i++) {
+        if (margins[i] == way_out) {
+          normals.push_back(ends[i]);
+        }
+      }
+
+      std::vector<LateralCandidate> candidates;
+      for (const odb::Point& normal : normals) {
+        ShapePtr best_target = nullptr;
+        int best_distance = std::numeric_limits<int>::max();
+        for (auto* search_layer : connectable) {
+          search_layer_pair(search_layer, [&](const Shape::ShapeTree& shapes) {
+            int distance = 0;
+            const ShapePtr target = findLateralTarget(
+                shapes, pin.rect, normal, die, net, distance);
+            if (target == nullptr || distance >= best_distance) {
+              return;
+            }
+            best_target = target;
+            best_distance = distance;
+          });
+        }
+
+        if (best_target == nullptr) {
+          debugPrint(grid->getLogger(),
+                     utl::PDN,
+                     "MacroEdge",
+                     1,
+                     "No shape {} of {} on {} to reach",
+                     directionName(normal),
+                     iterm->getName(),
+                     pin.layer->getName());
+          continue;
+        }
+
+        candidates.push_back({normal, best_distance, best_target});
+      }
+
+      std::ranges::sort(candidates, [](const auto& lhs, const auto& rhs) {
+        return lhs.distance < rhs.distance;
+      });
+
+      for (const LateralCandidate& candidate : candidates) {
+        auto strap
+            = std::make_unique<MacroEdgeConnectionStraps>(grid,
+                                                          iterm,
+                                                          pin.layer,
+                                                          pin.rect,
+                                                          candidate.normal,
+                                                          candidate.target,
+                                                          macro_obstructions);
+        auto* strap_ptr = strap.get();
+        grid->addStrap(std::move(strap));
+
+        // make() adds what it built to the map it is handed; nothing reads it,
+        // because this pass never targets its own output.  The obstructions
+        // are the ones that matter and they are passed through.
+        Shape::ShapeTreeMap built;
+        strap_ptr->make(built, obstructions);
+        if (!strap_ptr->isConnected()) {
+          // Nothing survived.  Where the pin is out at both ends there is a
+          // second candidate to fall back on; otherwise this pin has no way
+          // out and is left alone.
+          grid->removeStrap(strap_ptr);
+          continue;
+        }
+
+        debugPrint(grid->getLogger(),
+                   utl::PDN,
+                   "MacroEdge",
+                   1,
+                   "Connecting {} on {} {} to {}",
+                   iterm->getName(),
+                   pin.layer->getName(),
+                   directionName(candidate.normal),
+                   candidate.target->getReportText());
+        added.push_back(strap_ptr);
+        break;
+      }
+    }
+  }
+
+  if (added.empty()) {
+    return;
+  }
+
+  grid->makeVias(global_shapes, obstructions);
+
+  // A strap whose via was not built connects the pin to nothing, and nothing
+  // downstream will take it back: the landing on the pin counts as a
+  // connection, so the shape does not look floating and trimming keeps it.
+  // Withdraw it here, where it is still ours to withdraw.
+  for (auto* strap : added) {
+    if (strap->hasVias()) {
+      continue;
+    }
+    debugPrint(grid->getLogger(),
+               utl::PDN,
+               "MacroEdge",
+               1,
+               "Withdrawing {}: no via was built to {}",
+               strap->getName(),
+               strap->target_->getReportText());
+    strap->removeObstructions(obstructions);
+    grid->removeStrap(strap);
+  }
 }
 
 ////////

@@ -267,6 +267,9 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
   // make vias
   makeVias(all_shapes, obstructions, local_obstructions);
 
+  // connect anything the vias could not reach
+  connectUnreachedPins(all_shapes, local_obstructions);
+
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
       this,
@@ -2122,6 +2125,14 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
   }
 
   Grid::getIntersections(vias, inst_shapes);
+}
+
+void InstanceGrid::connectUnreachedPins(
+    const Shape::ShapeTreeMap& global_shapes,
+    Shape::ObstructionTreeMap& obstructions)
+{
+  MacroEdgeConnectionStraps::connectUnreachedPins(
+      this, global_shapes, obstructions);
 }
 
 std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const

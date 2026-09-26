@@ -91,6 +91,10 @@ or_integration_tests(
     gf180_hybrid_followpins_rowpattern
     global_connect_with_dont_touch
     global_connect_with_dont_touch_warning
+    macro_edge_connect
+    macro_edge_connect_blocked
+    macro_edge_connect_m5_m6
+    macro_edge_connect_no_via
     macros
     macros_add_twice
     macro_channel_with_secondary_repair
