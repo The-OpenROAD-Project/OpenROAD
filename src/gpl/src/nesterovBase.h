@@ -1234,6 +1234,7 @@ class NesterovBase
                       const std::vector<FloatPoint>& prevSLPSumGrads_,
                       const std::vector<FloatPoint>& curSLPCoordi_,
                       const std::vector<FloatPoint>& curSLPSumGrads_);
+  const std::vector<char>& ioSkipMask(size_t size);
 
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
@@ -1523,6 +1524,8 @@ class NesterovBase
   // ioPinStor_ index -> nb_gcells_ index, kept up to date by
   // rebindHandleIndex so callbacks may reorder nb_gcells_ freely.
   std::vector<size_t> io_stor_index_to_nb_index_;
+  // Scratch buffer for ioSkipMask(), a mask over nb_gcells_ positions.
+  std::vector<char> io_skip_mask_;
   size_t ioNbPos(size_t io_index) const
   {
     return io_stor_index_to_nb_index_[io_index];

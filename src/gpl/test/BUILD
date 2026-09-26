@@ -57,6 +57,8 @@ TESTS = [
 PASSFAIL_TESTS = [
     "incremental02",
     "place_ios01",
+    "place_ios02",
+    "place_ios03",
     "place_ios_top_layer",
 ]
 
