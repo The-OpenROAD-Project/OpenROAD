@@ -32,6 +32,7 @@ or_integration_tests(
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
     place_macro_right_angle_rotation
+    second_invocation
     placement_blockages1
     halos1
     halos2
