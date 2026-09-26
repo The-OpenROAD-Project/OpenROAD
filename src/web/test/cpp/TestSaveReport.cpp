@@ -164,6 +164,27 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   EXPECT_TRUE(contains(html, "gl-container"));
 }
 
+// The report carries the bundled libraries' code, so it carries their licences
+// too, in a comment ahead of the page.
+TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
+{
+  const std::string path = tempHtml("licenses");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const size_t begin = html.find("<!--");
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("-->", begin);
+  ASSERT_NE(end, std::string::npos);
+  EXPECT_LT(end, html.find("<html>"));
+  const std::string comment = html.substr(begin, end - begin);
+  for (const char* package :
+       {"elkjs", "golden-layout", "leaflet", "netlistsvg", "three"}) {
+    EXPECT_TRUE(contains(comment, package)) << package;
+  }
+  EXPECT_TRUE(contains(comment, "Eclipse Public License"));
+}
+
 // golden-layout will not lay out a page that is still being parsed, so the
 // bundle has to run deferred, as the served page's app.min.js does.  An inline
 // classic <script> runs mid-parse and leaves the report blank.

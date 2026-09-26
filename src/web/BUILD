@@ -44,6 +44,12 @@ py_binary(
     main = "src/inline_styles.py",
 )
 
+py_binary(
+    name = "collect_licenses",
+    srcs = ["src/collect_licenses.py"],
+    main = "src/collect_licenses.py",
+)
+
 # ── The browser bundles ─────────────────────────────────────────────────────
 #
 # The viewer used to pull leaflet, golden-layout, three, elkjs and netlistsvg
@@ -54,6 +60,15 @@ py_binary(
 
 npm_link_all_packages(name = "node_modules")
 
+# What the bundles carry, and so whose licences ship with them.
+_BUNDLED_PACKAGES = [
+    "elkjs",
+    "golden-layout",
+    "leaflet",
+    "netlistsvg",
+    "three",
+]
+
 js_library(
     name = "app_js",
     srcs = glob([
@@ -63,13 +78,16 @@ js_library(
         "esbuild.config.mjs",
         "src/openroad_skin.svg",
     ],
-    deps = [
-        ":node_modules/elkjs",
-        ":node_modules/golden-layout",
-        ":node_modules/leaflet",
-        ":node_modules/netlistsvg",
-        ":node_modules/three",
-    ],
+    deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
+)
+
+genrule(
+    name = "third_party_licenses",
+    srcs = [":node_modules/%s/dir" % p for p in _BUNDLED_PACKAGES],
+    outs = ["THIRD_PARTY_LICENSES.txt"],
+    cmd = "$(execpath :collect_licenses) --output $@ " +
+          " ".join(["$(execpath :node_modules/%s/dir)" % p for p in _BUNDLED_PACKAGES]),
+    tools = [":collect_licenses"],
 )
 
 # The JS bundles.  report_bundle leaves out elk and netlistsvg -- 1.9 MB for a
@@ -162,19 +180,21 @@ genrule(
     tools = [":embed_report_assets"],
 )
 
-# The two blobs the server hands out.  embed_web_assets.py gzips them itself,
-# so neither build system needs a gzip on the host.  Everything else the page
-# needs is inside them.
+# The two blobs the server hands out, and the licences of what is in them.
+# embed_web_assets.py gzips them itself, so neither build system needs a gzip
+# on the host.  Everything else the page needs is inside the two blobs.
 genrule(
     name = "web_assets",
     srcs = [
+        "THIRD_PARTY_LICENSES.txt",
         "app.min.js",
         "index.min.html",
     ],
     outs = ["src/web_assets.cpp"],
     cmd = "$(execpath :embed_web_assets) --output $@" +
           " /index.html=$(location index.min.html)" +
-          " /app.min.js=$(location app.min.js)",
+          " /app.min.js=$(location app.min.js)" +
+          " /THIRD_PARTY_LICENSES.txt=$(location THIRD_PARTY_LICENSES.txt)",
     tools = [":embed_web_assets"],
 )
 

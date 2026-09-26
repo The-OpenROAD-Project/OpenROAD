@@ -445,6 +445,13 @@ npm_web.npm_translate_lock(
     data = ["//src/web:package.json"],
     pnpm_lock = "//src/web:pnpm-lock.yaml",
 )
+
+# elkjs ships its EPL-2.0 licence as LICENSE.md, which the default "basic"
+# preset strips with every other *.md; //src/web:third_party_licenses needs it.
+npm_web.npm_exclude_package_contents(
+    package = "elkjs",
+    presets = [],
+)
 use_repo(npm_web, "npm_web")
 
 # Regenerate //src/web:pnpm-lock.yaml after editing //src/web:package.json:

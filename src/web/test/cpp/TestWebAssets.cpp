@@ -164,6 +164,24 @@ TEST(WebAssets, NoReportAssetReferencesARemoteResource)
   }
 }
 
+// The binary now distributes those libraries, so it has to carry their
+// licences as well.
+TEST(WebAssets, ServesTheThirdPartyLicenses)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
+  ASSERT_NE(asset, nullptr);
+  EXPECT_TRUE(asset->gzipped);
+  EXPECT_EQ(std::string_view(asset->content_type), "text/plain; charset=utf-8");
+  const std::string text = assetText(*asset);
+  for (const char* package :
+       {"elkjs", "golden-layout", "leaflet", "netlistsvg", "three"}) {
+    EXPECT_NE(text.find(package), std::string::npos) << package;
+  }
+  EXPECT_NE(text.find("Eclipse Public License"), std::string::npos);
+  EXPECT_NE(text.find("BSD"), std::string::npos);
+  EXPECT_NE(text.find("MIT"), std::string::npos);
+}
+
 // The report's blobs are stored gzipped too; saveReport() inflates them.
 TEST(WebAssets, StoresTheReportAssetsGzipped)
 {

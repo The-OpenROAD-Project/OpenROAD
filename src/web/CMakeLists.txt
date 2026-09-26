@@ -85,6 +85,7 @@ set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 set(WEB_ASSET_ARGS
   /index.html=${WEB_BUNDLE_DIR}/index.min.html
   /app.min.js=${WEB_BUNDLE_DIR}/app.min.js
+  /THIRD_PARTY_LICENSES.txt=${WEB_BUNDLE_DIR}/THIRD_PARTY_LICENSES.txt
 )
 
 set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
@@ -119,6 +120,7 @@ add_custom_command(
     src/embedded_blob.py
     ${WEB_BUNDLE_DIR}/index.min.html
     ${WEB_BUNDLE_DIR}/app.min.js
+    ${WEB_BUNDLE_DIR}/THIRD_PARTY_LICENSES.txt
   COMMENT "Generating web_assets.cpp"
 )
 

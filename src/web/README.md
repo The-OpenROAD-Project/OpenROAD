@@ -530,6 +530,10 @@ works on a machine with no network.
 | `elkjs` | schematic placement and routing |
 | `netlistsvg` | schematic rendering |
 
+Their licences are gathered into `THIRD_PARTY_LICENSES.txt`, which the server
+serves at `/THIRD_PARTY_LICENSES.txt` and every saved report carries in a
+comment.
+
 Versions are pinned in `package.json` and `pnpm-lock.yaml`. To add or upgrade
 one:
 
@@ -558,10 +562,11 @@ fails the PR when it is not.
 | `vendor_css`, `app_css` | `vendor.min.css`, `app.min.css` | inlined, first and last in the cascade |
 | `gl_theme_{dark,light}_bundle` | `gl-*.min.css` | inlined between them, switched by id |
 | `minify_html` + `index_html` | `index.min.html` | served as `/index.html` |
+| `third_party_licenses` | `THIRD_PARTY_LICENSES.txt` | served, and copied into saved reports |
 
-Both served blobs are gzipped at build time and stored compressed; the server
-hands them over as they are when the request accepts gzip, and inflates them
-otherwise (`src/asset_gzip.cpp`).
+Everything embedded is gzipped at build time and stored compressed. The server
+hands its assets over as they are when the request accepts gzip, and inflates
+them otherwise; a saved report inflates its own (`src/asset_gzip.cpp`).
 
 Three things about the bundle are easy to break:
 

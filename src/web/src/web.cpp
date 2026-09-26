@@ -1739,6 +1739,11 @@ void WebServer::saveReport(const std::string& filename,
   const std::string theme_light = assetText(kReportThemeLight);
   const std::string app_css = assetText(kReportAppCSS);
   const std::string report_js = assetText(kReportJS);
+  // The report carries the bundled libraries' code, so their licences too.
+  const EmbeddedAsset* licenses_asset
+      = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
+  const std::string licenses
+      = licenses_asset ? assetText(*licenses_asset) : std::string();
 
   std::ofstream out(filename);
   if (!out) {
@@ -1901,6 +1906,9 @@ void WebServer::saveReport(const std::string& filename,
   // inlined as data: URIs.  Nothing here reaches the network, so the file opens
   // with no server and no connection (issue #11065).
   out << R"(<!DOCTYPE html>
+<!--
+)" << licenses
+      << R"(-->
 <html>
 <head>
 <meta charset="utf-8">
