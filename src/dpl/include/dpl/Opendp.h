@@ -42,6 +42,7 @@ struct Pixel;
 class DplObserver;
 class Grid;
 class GridInfo;
+class InstanceIndex;
 class Padding;
 class PixelPt;
 class PlacementDRC;
@@ -89,6 +90,7 @@ struct GlobalSwapParams
   int sampling_moves = 150;
   int normalization_interval = 1000;
 };
+
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -102,6 +104,48 @@ class Opendp
 
   void legalCellPos(odb::dbInst* db_inst);  // call from rsz
   void initMacrosAndGrid();                 // call from rsz
+
+  // Builds the placement grid -- rows, sites and hard blockages -- without
+  // importing the netlist, which is the expensive half of
+  // initMacrosAndGrid().  Enough for the placement density queries below,
+  // and orders of magnitude cheaper on a large design.
+  //
+  // Both this and initMacrosAndGrid() rebuild the same grid, so a caller
+  // that also needs legalCellPos(), which reads the macros that only
+  // initMacrosAndGrid() paints into it, must use that one instead.
+  void initPlacementGrid();
+
+  ////////////////////////////////////////////////////////////////
+  // Placement density, for callers looking for room to drop a new cell into
+  // (rsz inserting a buffer) so that legalizing it displaces little.  These
+  // take and report block (DBU) coordinates and need the grid, so
+  // initPlacementGrid() (or initMacrosAndGrid()) must have run.
+  //
+  // Density is the instance area inside the region over the legal placement
+  // site area inside it (sites that are in a row and not under a hard
+  // blockage), clamped to [0, 1].  A region without any legal site holds
+  // nothing, so it reads as 1.0 rather than as empty.
+  //
+  // The instances counted are the ones the GUI's placement density heat map
+  // counts on its default settings: placed instances, taps and endcaps
+  // included, fillers and IO excluded.  Unlike that heat map, the divisor
+  // here is the placement site area rather than the region's own area, so
+  // the two do not report the same number for a region that is partly off
+  // the rows.
+  //
+  // Nothing is cached: each call measures the placement as it stands, which
+  // costs one pass over the instances.
+
+  double getPlacementDensity(const odb::Rect& region) const;
+
+  // Whether the region holds any legal placement site at all, to tell a
+  // region that is full from one with nowhere to put a cell, which both
+  // read 1.0 above.
+  bool hasPlacementSite(const odb::Rect& region) const;
+
+  // Report the density of a region.  Backs report_placement_density.
+  void reportPlacementDensity(const odb::Rect& region) const;
+  ////////////////////////////////////////////////////////////////
 
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
@@ -228,6 +272,27 @@ class Opendp
   void updateDbInstLocations();
 
   void initGrid();
+
+  // Placement density support.  Errors out when the grid hasn't been built
+  // yet.
+  odb::dbBlock* densityBlock() const;
+  // Area of the legal placement sites inside region.
+  int64_t placeableArea(const odb::Rect& region) const;
+  // Visits the block-coordinate rect of each legal placement site (in a row
+  // and not under a hard blockage) overlapping region.
+  void visitPlacementSites(
+      const odb::Rect& region,
+      const std::function<void(const odb::Rect& site)>& visitor) const;
+  // Visits the current block-coordinate bbox of each placed instance that
+  // can reach region.  Every instance is visited at most once, and some that
+  // turn out not to overlap region may be visited too.
+  void visitPlacedInstances(
+      const odb::Rect& region,
+      const std::function<void(const odb::Rect& bbox)>& visitor) const;
+  // Drops the instance index, so the next density query rebuilds it.  Called
+  // whenever the grid is rebuilt, which bounds how long a stale block can be
+  // held on to.
+  void resetInstanceIndex();
 
   void initPlacementDRC();
 
@@ -390,6 +455,12 @@ class Opendp
   // 2D pixel grid
   std::unique_ptr<Grid> grid_;
   RtreeBox regions_rtree_;
+
+  // Bucketed instance locations, so a placement density query over a small
+  // region does not have to walk every instance in the block.  Built on
+  // first use and kept current by odb callbacks, so queries still see the
+  // placement as it currently stands.
+  mutable std::unique_ptr<InstanceIndex> inst_index_;
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant and row height

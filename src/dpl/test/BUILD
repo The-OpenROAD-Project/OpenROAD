@@ -79,6 +79,7 @@ COMPULSORY_TESTS = [
     "regions2",
     "regions3",
     "report_failures",
+    "report_placement_density",
     "row_boundary_filter",
     "simple01",
     "simple02",
@@ -312,6 +313,9 @@ filegroup(
             "regions3": [
                 "Nangate45/fake_macros.lef",
             ],
+            "report_placement_density": [
+                "simple01.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -329,13 +333,25 @@ filegroup(
 
 cc_test(
     name = "dpl_unittest",
-    srcs = ["dpl_test.cc"],
+    srcs = ["cpp/dpl_test.cc"],
     deps = [
         "//src/dpl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "placement_density_test",
+    srcs = ["cpp/placement_density_test.cpp"],
+    deps = [
+        "//src/dpl",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

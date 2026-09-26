@@ -74,6 +74,7 @@ or_integration_tests(
     regions2
     regions3
     report_failures
+    report_placement_density
     row_boundary_filter
     simple01
     simple02
@@ -98,18 +99,5 @@ or_integration_tests(
     regions2-opt
 )
 
-add_executable(dpl_test dpl_test.cc)
-
-target_link_libraries(dpl_test
-    GTest::gtest
-    GTest::gtest_main
-    dpl_lib
-    tst
-)
-
-gtest_discover_tests(dpl_test
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-add_dependencies(build_and_test dpl_test)
+add_subdirectory(cpp)
 
