@@ -4,9 +4,8 @@
 // Shared esbuild settings for the viewer's bundles.  See //src/web:BUILD.
 
 export default {
-    // iife, not esm: the saved report inlines the bundle inside a plain
-    // <script> block, where a module's imports would have nothing to resolve
-    // against.
+    // iife, not esm: the saved report inlines the bundle into the page, where
+    // a module's imports would have nothing to resolve against.
     format: 'iife',
     platform: 'browser',
     target: ['es2022'],

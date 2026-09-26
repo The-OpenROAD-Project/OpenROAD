@@ -164,6 +164,25 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   EXPECT_TRUE(contains(html, "gl-container"));
 }
 
+// golden-layout will not lay out a page that is still being parsed, so the
+// bundle has to run deferred, as the served page's app.min.js does.  An inline
+// classic <script> runs mid-parse and leaves the report blank.
+TEST_F(SaveReportTest, RunsTheBundleOnceThePageIsParsed)
+{
+  const std::string path = tempHtml("deferred_js");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const std::string open = "<script type=\"module\">";
+  const size_t begin = html.find(open);
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("</script>", begin);
+  ASSERT_NE(end, std::string::npos);
+  // The bundle itself, not some other script, is what sits in that block.
+  const std::string script = html.substr(begin, end - begin);
+  EXPECT_TRUE(contains(script, "openroad-cone-sync"));
+}
+
 // The point of issue #11065: a saved report opens with no server and no
 // network.  It used to pull leaflet and golden-layout from CDNs and import
 // three and golden-layout from esm.sh; all four are in the bundle now.

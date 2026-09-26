@@ -2001,7 +2001,9 @@ window.__STATIC_CACHE__ = {
   }
 };
 </script>
-<script>
+)" <<  // Deferred like the served page's app.min.js: golden-layout will not
+       // lay out a page that is still being parsed.
+      R"(<script type="module">
 )" << kReportJS
       << R"(
 </script>
