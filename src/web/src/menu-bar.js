@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { dbuRectToBounds } from './coordinates.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
-import { runTclScript } from './ui-utils.js';
+import { isStaticMode, runTclScript } from './ui-utils.js';
+
+// The highlight-group palette comes from the server (`highlight_colors` in the
+// tech response), which reads gui::Painter::kHighlightColors — the same array
+// the overlay paints with, alpha included.
+function highlightColors(app) {
+    const colors = app.techData && app.techData.highlight_colors;
+    return Array.isArray(colors) ? colors : [];
+}
 
 // The menu bar in #menu-bar: static menus merged with the custom items
 // registered from Tcl (`create_menu_item`, delivered in app.customMenu).
@@ -142,7 +151,7 @@ export function createMenuBar(app) {
             { label: 'Selection Browser',
               action: () => app.focusComponent('SelectHighlight') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
-            { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
+            { label: 'Hierarchy', action: () => app.focusComponent('Browser') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },

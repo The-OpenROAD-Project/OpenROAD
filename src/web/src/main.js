@@ -13,13 +13,14 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
-    withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
+    BLANK_TILE, releaseTileBlob, setTileSrc, tileSizeCss, useFittedTileSize,
+    useStaticTileSize, withDeviceExactTileSize, watchDevicePixelRatio,
+    tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
-import { HierarchyBrowser } from './hierarchy-browser.js';
+import { HierarchyPanel, resetHierarchyOverlay } from './hierarchy-panel.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
@@ -152,12 +153,12 @@ const app = {
     hoverHighlightLayer: null,
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
+    clustersLayer: null,
     pinsLayer: null,
     accessPointsLayer: null,
     regionsLayer: null,
     mfgGridLayer: null,
     gcellGridLayer: null,
-    hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
@@ -302,8 +303,15 @@ const visibility = {
     // Tracks (off by default, matching GUI)
     tracks_pref: false,
     tracks_non_pref: false,
+    // Hierarchy coloring.  ui_hierarchy_view is the control the user sees; the
+    // other two are derived from it and the Hierarchy tab's active source,
+    // and are what the layers and the server actually read.  See
+    // syncHierarchyOverlay in hierarchy-panel.js.
+    ui_hierarchy_view: false,
     // Module view
     module_view: false,
+    // Cluster (dbGroup) view
+    cluster_view: false,
     // Misc
     detailed: false,
     rulers: true,
@@ -325,9 +333,19 @@ try {
         for (const [k, v] of Object.entries(parsed)) {
             visibility[k] = !!v;
         }
+        // Every flag comes back except the hierarchy overlay, which starts off
+        // whatever the cookie says -- see resetHierarchyOverlay.
+        resetHierarchyOverlay(visibility);
     }
 } catch (_) {
     // Ignore malformed cookie.
+}
+
+// Console handle: main.js is an ES module, so nothing here is reachable from
+// DevTools otherwise.  `app` carries the visibility and selectability maps
+// (see below), which is most of what there is to poke at.
+if (typeof window !== 'undefined') {
+    window.orApp = app;
 }
 
 // Selectability mirrors the Qt GUI's display-controls "selectable" column.
@@ -374,7 +392,8 @@ const selectability = {
 };
 
 // Expose the live visibility/selectability so the context menu "Save" can
-// serialize the same payload the tile requests use (visibility-aware export).
+// serialize the same payload the tile requests use (visibility-aware export),
+// and so the Clusters panel can tell whether its overlay is switched on.
 app.visibility = visibility;
 app.selectability = selectability;
 
@@ -454,15 +473,40 @@ const HeatMapTileLayer = L.GridLayer.extend({
             this, floorClampZoom(this, zoom));
     },
 
+    // Ask the server for one tile of the active heat map.  A null payload is
+    // an empty response -- no populated bin here, or the tile is off the grid
+    // -- and the 1x1 BLANK_TILE stands in, so nothing is decoded and onload
+    // still fires to complete the tile.
+    _requestTile: function(tile, coords) {
+        const active = this._appState.activeHeatMap;
+        if (!active) {
+            setTileSrc(tile, BLANK_TILE);
+            return;
+        }
+        this._websocketManager.request({
+            type: 'heatmap_tile',
+            name: active,
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
+        }).then(blob => {
+            setTileSrc(tile, blob ? URL.createObjectURL(blob) : BLANK_TILE);
+        }).catch(() => {
+            setTileSrc(tile, BLANK_TILE);
+        });
+    },
+
     createTile: function(coords, done) {
         const tile = document.createElement('img');
         tile.alt = '';
         tile.setAttribute('role', 'presentation');
         tile._tileDone = false;
         tile.onload = () => {
-            if (tile.src && tile.src.startsWith('blob:')) {
-                URL.revokeObjectURL(tile.src);
-            }
+            releaseTileBlob(tile);
             if (!tile._tileDone) {
                 tile._tileDone = true;
                 done(null, tile);
@@ -475,32 +519,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
             }
         };
 
-        const active = this._appState.activeHeatMap;
-        if (!active) {
-            tile.src = BLANK_TILE;
-            return tile;
-        }
-
-        this._websocketManager.request({
-            type: 'heatmap_tile',
-            name: active,
-            z: coords.z,
-            x: coords.x,
-            y: coords.y,
-            // Sized like the layer tiles beneath it; without this the heat map
-            // is a 256 px image stretched over crisp layers on any HiDPI
-            // display.
-            ...tileSizeFields(currentDpr(), this.getTileSize().x),
-        }).then(blob => {
-            // A null payload is an empty response: the heat map has no
-            // populated bin in this tile, or the tile is off the grid.  The
-            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
-            // is decoded and onload still fires to complete the tile.
-            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
-        }).catch(() => {
-            tile.src = BLANK_TILE;
-        });
-
+        this._requestTile(tile, coords);
         return tile;
     },
 
@@ -509,37 +528,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
         for (const key in this._tiles) {
             const tileInfo = this._tiles[key];
             if (!tileInfo || !tileInfo.el) continue;
-            const tile = tileInfo.el;
-            const coords = tileInfo.coords;
-            const active = this._appState.activeHeatMap;
-            if (!active) {
-                // Release the decode before dropping it: turning the heat map
-                // off walks every tile on screen, so skipping this strands one
-                // object URL per tile.
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
-                tile.src = BLANK_TILE;
-                continue;
-            }
-            this._websocketManager.request({
-                type: 'heatmap_tile',
-                name: active,
-                z: coords.z,
-                x: coords.x,
-                y: coords.y,
-                ...tileSizeFields(currentDpr(), this.getTileSize().x),
-            }).then(blob => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
-                // Null means the tile is empty now; assigning BLANK_TILE also
-                // drops whatever image it was holding, which matters when a
-                // refresh follows an edit that emptied a bin.
-                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
-            }).catch(() => {
-                tile.src = BLANK_TILE;
-            });
+            this._requestTile(tileInfo.el, tileInfo.coords);
         }
     },
 });
@@ -589,23 +578,8 @@ function redrawAllLayers() {
     // Keep the server's saved-state snapshot current for save_display_controls.
     scheduleSyncDisplayState();
 
-    // Show/hide the toggleable pseudo-layer tile layers.
-    const toggleableLayers = [
-        [app.modulesLayer, visibility.module_view],   // Module view
-        [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
-    ];
-    for (const [layer, visible] of toggleableLayers) {
-        if (!layer) continue;
-        if (visible && !app.map.hasLayer(layer)) {
-            layer.addTo(app.map);
-        } else if (!visible && app.map.hasLayer(layer)) {
-            app.map.removeLayer(layer);
-        }
-    }
+    // Pseudo layers included: they stay mounted and are gated on the visibility
+    // flag each request carries (`gate` in display-controls.js).
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -1026,7 +1000,7 @@ app.animateSelection = inspector.animateSelection;
 app.stopSelectionAnimation = inspector.stopSelectionAnimation;
 
 function createBrowser(container) {
-    new HierarchyBrowser(container, app, redrawAllLayers);
+    new HierarchyPanel(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
@@ -1208,7 +1182,8 @@ app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelec
 
 // Layout version — bump this to force a layout reset when components change.
 // v4: SelectHighlight (selection browser) added to the default layout.
-const LAYOUT_VERSION = 4;
+// v6: the Clusters panel moved into the Hierarchy tab.
+const LAYOUT_VERSION = 6;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
@@ -1228,6 +1203,10 @@ if (staticCache) {
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
         resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
+        // Owner colors live in the server session, which the reconnect
+        // replaced: without this the overlay falls back to the default palette
+        // and the rows the user unchecked come back.
+        if (app.hierarchyPanel) app.hierarchyPanel.resendColors();
     };
 }
 
@@ -1341,8 +1320,8 @@ app.toggleShowDbu = function() {
     setCookie('or_show_dbu', app.showDbu ? '1' : '0');
     // Re-render rulers so their labels update.
     if (app.rulerManager) app.rulerManager._rerenderAll();
-    // Re-render hierarchy browser if present.
-    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    // Both views format area through fmtArea(app, ...), which reads showDbu.
+    if (app.hierarchyPanel) app.hierarchyPanel.refresh();
     // Update scale bar.
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
@@ -2072,6 +2051,18 @@ document.addEventListener('keydown', (e) => {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
     const key = e.key.toLowerCase();
+    if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Find dialog.  Only swallow the key when there is a dialog to open in
+        // place of the browser's find-in-page bar: a saved static report has
+        // none, and would be left with neither.  preventDefault also keeps
+        // the "f" out of the dialog's first field, which it focuses
+        // synchronously.
+        if (app.designScale) {
+            e.preventDefault();
+            showFindDialog(app);
+        }
+        return;
+    }
     if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
         app.rulerManager.cancelRulerBuild();
     } else if (key === 'escape' && app.labelManager
@@ -2097,16 +2088,12 @@ document.addEventListener('keydown', (e) => {
         } else {
             app.map.zoomOut();
         }
-    } else if (key === 'f' && (e.ctrlKey || e.metaKey)) {
-        // Both dialog shortcuts must preventDefault.  The dialog focuses and
+    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        // A dialog shortcut must preventDefault: the dialog focuses and
         // select()s its first field synchronously, so this keystroke's own
         // default action would then be delivered to that field and replace
-        // the prefilled value with the shortcut's own letter.  Ctrl/Cmd+F
-        // additionally has the browser's find bar to suppress.
+        // the prefilled value with the shortcut's own letter.
         e.preventDefault();
-        if (app.designScale) showFindDialog(app);
-    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();  // see above
         if (app.designScale) showGotoDialog(app);
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();

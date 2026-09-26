@@ -329,6 +329,10 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // "Color by owner" overlays.  Plain visibility flags: the client keeps the
+  // `_modules`/`_clusters` layers mounted and these decide whether they draw.
+  bool module_view = false;   // color instances by their dbModule
+  bool cluster_view = false;  // color instances by their dbGroup
   // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
   // from the region it is drawing rather than from the design: the IO pin
   // markers (RenderThread::setupIOPins takes min(die, bounds)).
@@ -457,6 +461,13 @@ class TileGenerator
   bool hasSta() const { return sta_ != nullptr; }
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
+
+  // The palette the Hierarchy panel starts from, for an overlay no session has
+  // sent colors for.  The tile path and `save_image -web` share it, so the two
+  // cannot disagree about what "on" looks like.
+  using OwnerColorMap = std::shared_ptr<const std::map<uint32_t, Color>>;
+  OwnerColorMap defaultModuleColors() const;
+  OwnerColorMap defaultGroupColors() const;
 
   int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
@@ -632,6 +643,7 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -806,6 +818,7 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -1140,7 +1153,10 @@ class TileGenerator
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
-  // The Search::revision() the three caches above were built at; see
+  // Default color map per overlay, for the top block; see defaultModuleColors.
+  mutable OwnerColorMap default_module_colors_;
+  mutable OwnerColorMap default_group_colors_;
+  // The Search::revision() the caches above were built at; see
   // dropOverlayCachesIfStale.
   mutable uint64_t overlay_cache_revision_ = 0;
 

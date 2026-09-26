@@ -4,9 +4,10 @@
 #include "hierarchy_report.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <map>
-#include <set>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -544,6 +545,57 @@ boost::json::object serializeHierarchyResult(const HierarchyResult& result)
     out["name_groups_capped"] = result.name_groups_capped;
   }
   return out;
+}
+
+// ─── Effective-owner-color rule (shared with group_report) ─────────────
+
+std::vector<char> hasChildrenByIndex(const size_t node_count,
+                                     const std::vector<int>& parent_ids)
+{
+  std::vector<char> has_children(node_count, 0);
+  for (const int parent_id : parent_ids) {
+    if (parent_id >= 0) {
+      has_children[parent_id] = 1;
+    }
+  }
+  return has_children;
+}
+
+std::map<uint32_t, Color> computeEffectiveOwnerColors(
+    const std::vector<OwnerColorNode>& nodes)
+{
+  // One pass, since a parent always precedes its children.  `inheriting`
+  // carries "the HIGHEST collapsed ancestor wins" down the tree: an expanded
+  // node inside a collapsed one must not hand its own color on.
+  //
+  // `paint[i]` is the color node i hands down, empty when it has none to give —
+  // the panels' structural rows ("Leaf instances", the per-type folders) are
+  // colorless, and must not paint the subtree below them.
+  std::vector<std::optional<Color>> paint(nodes.size());
+  std::vector<bool> inheriting(nodes.size(), false);
+  std::map<uint32_t, Color> colors;
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    const OwnerColorNode& node = nodes[i];
+    // `parent` indexes this vector, and both callers build it in DFS order with
+    // id == index, so a parent is always already resolved.  The guard keeps a
+    // producer that reorders the vector from reading entries not yet written;
+    // the assert makes that a test failure instead of silently wrong colors.
+    const bool has_parent
+        = node.parent >= 0 && static_cast<size_t>(node.parent) < i;
+    assert(node.parent < 0 || has_parent);
+    inheriting[i]
+        = has_parent
+          && (nodes[node.parent].collapsed || inheriting[node.parent]);
+    const std::optional<Color> from_ancestor
+        = inheriting[i] ? paint[node.parent] : std::nullopt;
+    paint[i] = from_ancestor    ? from_ancestor
+               : node.has_color ? std::optional<Color>(node.color)
+                                : std::nullopt;
+    if (node.has_color) {
+      colors[node.odb_id] = *paint[i];
+    }
+  }
+  return colors;
 }
 
 // ─── Default module color computation ──────────────────────────────────
