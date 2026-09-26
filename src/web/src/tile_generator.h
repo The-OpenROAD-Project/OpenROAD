@@ -503,6 +503,12 @@ class TileGenerator
   int getPinMaxSize() const;
 
   std::vector<std::string> getLayers() const;
+
+  // getLayers(), reordered the way the client paints: per chiplet, and with a
+  // face-down die's own layers reversed.  What save_image composites with, so
+  // an exported PNG stacks the layers the way the screen does.
+  std::vector<std::string> paintOrderLayers() const;
+
   std::vector<std::string> getSites() const;
 
   // Per-layer colors matching web::DisplayControls layer palette.  Computed

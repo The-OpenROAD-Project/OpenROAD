@@ -2255,6 +2255,104 @@ std::vector<std::string> TileGenerator::getLayers() const
   return layers;
 }
 
+std::vector<std::string> TileGenerator::paintOrderLayers() const
+{
+  // The same walk buildLayerSpec() does in display-controls.js, so a saved
+  // image stacks the layers the way the screen does: child chiplets first,
+  // then this die's own content — category folders and routing layers, both
+  // reversed when the die is face-down.
+  //
+  // Names are the paint unit, and they are shared: two dies on the same tech
+  // collapse onto one entry here exactly as they collapse onto one pane in
+  // the client.  This keeps the export in step with the screen wherever the
+  // screen is right; it does not make the shared-tech case separable.
+  std::vector<std::string> names;
+  std::set<std::string> seen;
+
+  struct NodeLayers
+  {
+    std::vector<std::string> routing;
+    std::vector<std::string> backside;
+    std::vector<std::string> implant;
+    std::vector<std::string> other;
+  };
+  auto layersOf = [](const ChipletNode& node) {
+    NodeLayers out;
+    odb::dbTech* tech = node.chip ? node.chip->getTech() : nullptr;
+    if (!tech) {
+      return out;
+    }
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      switch (classifyLayer(layer)) {
+        case LayerGroup::kRouting:
+          (layer->isBackside() ? out.backside : out.routing)
+              .push_back(layer->getName());
+          break;
+        case LayerGroup::kImplant:
+          out.implant.push_back(layer->getName());
+          break;
+        case LayerGroup::kOther:
+          out.other.push_back(layer->getName());
+          break;
+        case LayerGroup::kSkip:
+          break;
+      }
+    }
+    return out;
+  };
+
+  std::unordered_map<std::string, std::vector<const ChipletNode*>> children;
+  const ChipletNode* root = nullptr;
+  for (const ChipletNode& node : chiplets()) {
+    if (node.parent_path.empty()) {
+      root = &node;
+    } else {
+      children[node.parent_path].push_back(&node);
+    }
+  }
+  if (!root) {
+    return names;
+  }
+
+  auto emit = [&](const std::vector<std::string>& group, const bool reversed) {
+    auto take = [&](const std::string& name) {
+      if (seen.insert(name).second) {
+        names.push_back(name);
+      }
+    };
+    if (reversed) {
+      std::ranges::for_each(group | std::views::reverse, take);
+    } else {
+      std::ranges::for_each(group, take);
+    }
+  };
+
+  auto visit = [&](auto& self, const ChipletNode& node) -> void {
+    if (const auto it = children.find(node.path); it != children.end()) {
+      for (const ChipletNode* child : it->second) {
+        self(self, *child);
+      }
+    }
+    const NodeLayers layers = layersOf(node);
+    const bool flipped = node.isFlipped();
+    if (flipped) {
+      // Categories are emitted Backside/Implant/Other, so a flipped die walks
+      // them the other way round, after its own routing layers.
+      emit(layers.routing, true);
+      emit(layers.other, true);
+      emit(layers.implant, true);
+      emit(layers.backside, true);
+    } else {
+      emit(layers.backside, false);
+      emit(layers.implant, false);
+      emit(layers.other, false);
+      emit(layers.routing, false);
+    }
+  };
+  visit(visit, *root);
+  return names;
+}
+
 // Build per-layer colors that match web::DisplayControls::techInit.  The two
 // must stay in sync so the GUI and web frontend show the same colors for the
 // same design.  Walks every dbTechLayer in tech order (not just routing/cut)
@@ -2940,6 +3038,44 @@ void collectChipletsRec(odb::dbChip* chip,
   }
 }
 
+// Give every grouping node the z of the lowest die it contains.
+//
+// A node with no dbBlock — a ChipType::HIER wrapper — has no geometry to take a
+// z from: such a chip declares no dimensions, so its own cuboid is degenerate.
+// Deciding this per route let the unfolded and walked traversals disagree, and
+// since global_z is the sort key, sibling wrappers could swap order the moment
+// an edit switched routes.  One pass over the finished list, shared by both, is
+// what keeps them equal by construction.  The root keeps z 0 so it stays first.
+void foldGroupZ(std::vector<ChipletNode>& out)
+{
+  std::unordered_map<std::string_view, size_t> at;
+  at.reserve(out.size());
+  for (size_t i = 0; i < out.size(); ++i) {
+    at.emplace(out[i].path, i);
+  }
+
+  std::vector<bool> seeded(out.size(), false);
+  for (const ChipletNode& node : out) {
+    if (node.block == nullptr) {
+      continue;  // only a die with geometry seeds its ancestors
+    }
+    std::string_view parent = node.parent_path;
+    while (!parent.empty()) {
+      const auto it = at.find(parent);
+      if (it == at.end()) {
+        break;
+      }
+      ChipletNode& group = out[it->second];
+      if (group.block == nullptr && group.inst != nullptr
+          && (!seeded[it->second] || node.global_z < group.global_z)) {
+        group.global_z = node.global_z;
+        seeded[it->second] = true;
+      }
+      parent = group.parent_path;
+    }
+  }
+}
+
 }  // namespace
 
 std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
@@ -2976,11 +3112,6 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
         continue;
       }
 
-      // Already in world space, so a mirrored ancestor cannot skew it the way
-      // summing each level's local getLoc().z() would.  Read before the
-      // descent so each ancestor can take its own z from it on the way down.
-      const int leaf_z = uf->getCuboid().lll().z();
-
       // HIER ancestors: absent from the unfolded model (they own no dbBlock,
       // so nothing draws them) but present in the UI trees as grouping nodes.
       // Their transform is the one thing here the unfolded model cannot
@@ -3003,11 +3134,7 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
         node_path += inst->getName();
 
         if (const auto at = node_at.find(node_path); at != node_at.end()) {
-          ChipletNode& group = out[at->second];
-          // A group sits at the lowest z it contains, so it sorts next to its
-          // own leaves.
-          group.global_z = std::min(group.global_z, leaf_z);
-          ancestor_xfm = group.world_xfm;
+          ancestor_xfm = out[at->second].world_xfm;
           continue;
         }
         odb::dbTransform local = inst->getTransform();
@@ -3023,8 +3150,6 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
         node.name = inst->getName();
         node.path = node_path;
         node.parent_path = parent_path;
-        // Lowest leaf seen under this group so far; later leaves lower it.
-        node.global_z = leaf_z;
         node_at[node_path] = out.size();
         out.push_back(std::move(node));
       }
@@ -3041,10 +3166,14 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
       leaf.path = leaf.parent_path;
       leaf.path += '.';
       leaf.path += leaf.name;
-      leaf.global_z = leaf_z;
+      // Already in world space, so a mirrored ancestor cannot skew it the way
+      // summing each level's local getLoc().z() would.
+      leaf.global_z = uf->getCuboid().lll().z();
       out.push_back(std::move(leaf));
     }
   }
+
+  foldGroupZ(out);
 
   std::ranges::stable_sort(out, [](const ChipletNode& a, const ChipletNode& b) {
     if (a.global_z != b.global_z) {
@@ -3796,11 +3925,9 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   // layers.  These three mirror the client's non-pseudo values;
   // PseudoLayerDef::z_index carries the overlays'.
   //
-  // Known divergence: the client reverses the stack of a face-down chiplet
-  // (issue #11329), which this cannot follow — it is handed tech-layer NAMES,
-  // and a name is not per chiplet.  Saved images therefore show every die in
-  // the tech's own layer order.  Fixing it needs the paint unit to become
-  // (chiplet, layer) on both sides, not a reordering here.
+  // `tech_layers` arrives already in the client's paint order — see
+  // paintOrderLayers(), which is where a face-down die's reversal happens.
+  // This function only interleaves the pseudo layers with it.
   constexpr int kInstancesZ = 0;
   constexpr int kPinsZ = 1;
   constexpr int kTechLayerZBase = 3;
@@ -6022,7 +6149,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   }
 
   const std::vector<std::string> layers_to_render
-      = saveImageLayerOrder(vis, getLayers());
+      = saveImageLayerOrder(vis, paintOrderLayers());
 
   // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
   // per tile — the set is identical for every tile in the image.  Skipped

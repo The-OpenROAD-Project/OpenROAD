@@ -2026,6 +2026,69 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
          "unfolded model was read back";
 }
 
+// Compare the two routes node by node.  `path` orders them, so a disagreement
+// is reported against the node it belongs to rather than an index.
+void expectSameChiplets(const std::vector<ChipletNode>& from_model,
+                        const std::vector<ChipletNode>& walked)
+{
+  ASSERT_EQ(from_model.size(), walked.size());
+  for (size_t i = 0; i < walked.size(); ++i) {
+    EXPECT_EQ(from_model[i].path, walked[i].path);
+    EXPECT_EQ(from_model[i].isFlipped(), walked[i].isFlipped())
+        << "flip disagrees at " << walked[i].path;
+    // The sort key: if the two routes disagree here they stack the dies
+    // differently, which is the whole feature.
+    EXPECT_EQ(from_model[i].global_z, walked[i].global_z)
+        << "z disagrees at " << walked[i].path;
+    EXPECT_EQ(from_model[i].world_xfm, walked[i].world_xfm)
+        << "transform disagrees at " << walked[i].path;
+  }
+}
+
+// A HIER wrapper holding two dies, all of them at a non-zero z.  A HIER chip
+// declares no dimensions, so its own cuboid is degenerate — the wrapper's z can
+// only come from what it contains, and the offsets are what make the two ways
+// of deciding that tell apart.
+odb::dbChip* makeNestedChipletRoot(odb::dbDatabase* db,
+                                   odb::dbChip* master,
+                                   const int wrapper_z,
+                                   const int lower_z,
+                                   const int upper_z)
+{
+  odb::dbChip* wrapper = odb::dbChip::create(
+      db, nullptr, "wrapper", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* lower = odb::dbChipInst::create(wrapper, master, "lower");
+  lower->setLoc(odb::Point3D(0, 0, lower_z));
+  odb::dbChipInst* upper = odb::dbChipInst::create(wrapper, master, "upper");
+  upper->setLoc(odb::Point3D(0, 0, upper_z));
+
+  odb::dbChip* root
+      = odb::dbChip::create(db, nullptr, "root", odb::dbChip::ChipType::HIER);
+  db->setTopChip(root);
+  odb::dbChipInst* wrap_inst = odb::dbChipInst::create(root, wrapper, "wrap");
+  wrap_inst->setLoc(odb::Point3D(0, 0, wrapper_z));
+  return root;
+}
+
+// Regression for the PR #11429 review: a HIER wrapper's z was decided one way
+// when read off the unfolded model (lowest leaf it contains) and another way
+// when walked (the wrapper's own degenerate cuboid).  The two agree only when
+// the lowest child sits at local z 0; with real offsets they diverge, and since
+// global_z is the sort key, sibling wrappers can swap order the moment an edit
+// switches the cache to the walked route.
+TEST_F(TileGeneratorTest, NestedHierGroupsGetTheSameZFromBothRoutes)
+{
+  odb::dbChip* root = makeNestedChipletRoot(getDb(),
+                                            chip_,
+                                            /*wrapper_z=*/7000,
+                                            /*lower_z=*/1000,
+                                            /*upper_z=*/5000);
+  getDb()->constructUnfoldedModel();
+
+  expectSameChiplets(collectChiplets(root, /*use_unfolded_model=*/true),
+                     collectChiplets(root, /*use_unfolded_model=*/false));
+}
+
 // Reading the model is opt-out precisely so an edited hierarchy can be walked
 // instead of rebuilt.  Both routes have to agree, or that fallback silently
 // changes what the viewer shows.
@@ -2042,18 +2105,49 @@ TEST_F(TileGeneratorTest, WalkingMatchesTheUnfoldedModelAfterAReorient)
   const std::vector<ChipletNode> walked
       = collectChiplets(root, /*use_unfolded_model=*/false);
 
-  ASSERT_EQ(from_model.size(), walked.size());
-  for (size_t i = 0; i < walked.size(); ++i) {
-    EXPECT_EQ(from_model[i].path, walked[i].path);
-    EXPECT_EQ(from_model[i].isFlipped(), walked[i].isFlipped())
-        << "flip disagrees at " << walked[i].path;
-    // The sort key: if the two routes disagree here they stack the dies
-    // differently, which is the whole feature.
-    EXPECT_EQ(from_model[i].global_z, walked[i].global_z)
-        << "z disagrees at " << walked[i].path;
-    EXPECT_EQ(from_model[i].world_xfm, walked[i].world_xfm)
-        << "transform disagrees at " << walked[i].path;
-  }
+  expectSameChiplets(from_model, walked);
+}
+
+// save_image composites in paintOrderLayers() order, so an exported PNG has to
+// follow the same reversal the screen does — otherwise the two disagree for the
+// exact designs this feature is about (PR #11429 review).
+TEST_F(TileGeneratorTest, SaveImageOrderReversesAFlippedChiplet)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  getDb()->constructUnfoldedModel();
+  makeTileGen();
+
+  const std::vector<std::string> upright = tile_gen_->paintOrderLayers();
+  ASSERT_GT(upright.size(), 1u) << "the fixture tech has to contribute layers";
+
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+  const std::vector<std::string> flipped = tile_gen_->paintOrderLayers();
+
+  // With a single die, turning it over reverses its whole stack: the routing
+  // layers come first and the category folders trail them, which is the exact
+  // reverse of the upright walk.
+  std::vector<std::string> upright_reversed = upright;
+  std::ranges::reverse(upright_reversed);
+  EXPECT_EQ(flipped, upright_reversed)
+      << "a face-down die exports in the same order as it is drawn on screen";
+}
+
+// The limitation that goes with the above, pinned so it is not mistaken for a
+// regression: the paint unit is a layer NAME, so two dies on one tech share an
+// entry and no ordering can separate them — in the export or on screen.
+TEST_F(TileGeneratorTest, SaveImageOrderCollapsesDiesSharingATech)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  auto insts = root->getChipInsts().begin();
+  (*++insts)->setOrient(odb::dbOrientType3D("MZ"));
+  getDb()->constructUnfoldedModel();
+  makeTileGen();
+
+  const std::vector<std::string> order = tile_gen_->paintOrderLayers();
+  const std::set<std::string> unique(order.begin(), order.end());
+  EXPECT_EQ(order.size(), unique.size())
+      << "a layer name must appear once; two dies on one tech share the entry";
 }
 
 // What the frontend reads to reverse a flipped chiplet's draw order.
