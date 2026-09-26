@@ -118,6 +118,7 @@ class NesterovPlace
   // True when the per-iteration cell displacement has come off its peak in
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
+  float getWorstSettleRatio() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   // The top-level (unfenced/full-die) region is always nbVec_[0].
@@ -171,6 +172,7 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
+  int routability_settle_wait_start_iter_ = -1;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
