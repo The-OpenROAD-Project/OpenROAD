@@ -2745,8 +2745,8 @@ int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
-  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst)
+      && !isFixed(inst) && cell && isLogicStdCell(inst)) {
     float cin, load_cap;
     estimate_parasitics_->ensureWireParasitic(drvr_pin);
 
@@ -3632,6 +3632,12 @@ bool Resizer::dontTouch(const sta::Instance* inst) const
     return false;
   }
   return db_inst->isDoNotTouch();
+}
+
+bool Resizer::isFixed(const sta::Instance* inst) const
+{
+  dbInst* db_inst = db_network_->staToDb(inst);
+  return db_inst && db_inst->isFixed();
 }
 
 void Resizer::setDontTouch(const sta::Net* net, bool dont_touch)
