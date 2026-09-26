@@ -4405,7 +4405,7 @@ bool NesterovBase::nesterovUpdateStepLength()
   // infinity it divides out to as a divergence.
   if (gradDistance_ == 0.0f) {
     log_->warn(GPL,
-               186,
+               188,
                "Gradient unchanged between steps at overflow {:.4f}; "
                "nothing left to move, finishing global placement.",
                sum_overflow_unscaled_);
