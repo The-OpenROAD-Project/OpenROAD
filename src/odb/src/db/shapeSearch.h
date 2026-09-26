@@ -16,37 +16,35 @@ inline constexpr int kMaxRoutingLevels = 32;
 // have been added then searchStart/Next can be used for querying.
 // Internally a simple tree of space bisections is generated for
 // efficiency.
-//
-// The code uses an odd convention:
-// is_via = 0 ==> wire
-//        = 1 ==> via
-//        = 2 ==> pin
 class ShapeSearch
 {
  public:
-  struct Shape
+  enum class Type
   {
-    int xMin() const { return bounds.xMin(); }
-    int yMin() const { return bounds.yMin(); }
-    int xMax() const { return bounds.xMax(); }
-    int yMax() const { return bounds.yMax(); }
+    kWire,
+    kVia,
+    kPin
+  };
 
-    Shape* next = nullptr;
-    Rect bounds;
-    int level = 0;
-    int is_via = 0;
-    int id = 0;
+  struct Shape : public Rect
+  {
+    Shape(const Rect& bounds, Type type, int id)
+        : Rect(bounds), type(type), id(id)
+    {
+    }
+
+    const Type type;
+    const int id;
+    Shape* next{nullptr};
   };
 
   struct Bin
   {
-    int xMin() const { return bounds.xMin(); }
-    int yMin() const { return bounds.yMin(); }
-    int xMax() const { return bounds.xMax(); }
-    int yMax() const { return bounds.yMax(); }
-    void add_shape(Shape* shape, bool update_bounds = true);
+    void init(Bin* parent, Bin* left = nullptr, Bin* right = nullptr);
+    void addShape(Shape* shape, bool update_bounds = true);
+    void wrap();
 
-    Shape* shape_list = nullptr;
+    Shape* first_shape = nullptr;
     Shape* last_shape = nullptr;
     Bin* left = nullptr;
     Bin* right = nullptr;
@@ -58,13 +56,13 @@ class ShapeSearch
   ShapeSearch();
 
   void clear();
-  void addShape(int level, const Rect& bounds, int is_via, int id);
-  void searchStart(int level, const Rect& bounds, int is_via);
+  void addShape(int level, const Rect& bounds, Type type, int id);
+  void searchStart(int level, const Rect& bounds, Type type);
   bool searchNext(int* id);
 
  private:
-  void sort();
-  void sort_level(Bin* bin);
+  void splitBins();
+  void splitBin(Bin* bin);
 
   // Use deque so that emplace_back doesn't move prior elements so pointer
   // into these structures are safe.
@@ -74,13 +72,13 @@ class ShapeSearch
 
   // Used during searching
   Rect search_box_;
-  int search_via_{0};
+  Type search_type_{Type::kWire};
   Bin* search_bin_{nullptr};
   Shape* search_shape_{nullptr};
 
-  // Sorting happens after all the shapes have been added and the
+  // Splitting happens after all the shapes have been added and the
   // first searchStart happens
-  bool sorted_{false};
+  bool bins_are_split_{false};
 
   static constexpr int kSortThreshold = 1024;
 };
