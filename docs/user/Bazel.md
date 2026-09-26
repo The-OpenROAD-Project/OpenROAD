@@ -511,7 +511,7 @@ KOKKOS_ARCH=BLACKWELL120                # match your device, see below
 HFLAGS="--sysroot=/dev/null -isystem $LIBCXX_H -isystem $LIBCXXABI_H -isystem $KERNEL_H -isystem $GLIBC_H"
 CUFLAGS="--cuda-path=$CUDA_HOME -Wno-unknown-cuda-version -D_ALLOW_UNSUPPORTED_LIBCPP"
 
-git clone https://github.com/kokkos/kokkos.git && cd kokkos   # 4.7 or newer
+git clone --branch 5.2.2 --depth 1 https://github.com/kokkos/kokkos.git && cd kokkos
 cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-libcxx \
@@ -527,7 +527,6 @@ cmake -S . -B build \
   -DKokkos_ENABLE_SERIAL=ON \
   -DKokkos_ENABLE_CUDA=ON \
   -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
-  -DKokkos_ENABLE_DEPRECATED_CODE_4=ON \
   -DKokkos_ARCH_${KOKKOS_ARCH}=ON \
   -DKokkos_ENABLE_TESTS=OFF -DKokkos_ENABLE_EXAMPLES=OFF -DKokkos_ENABLE_BENCHMARKS=OFF
 cmake --build build -j && sudo cmake --install build
@@ -542,8 +541,6 @@ Each option that is easy to drop matters:
 - `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`: the static archives end up inside
   OpenROAD's Python extension (`_gpl.so`); without PIC the final link fails
   with relocation errors.
-- `-DKokkos_ENABLE_DEPRECATED_CODE_4=ON`: `gpl` uses `View::HostMirror`, which
-  Kokkos 5 only provides behind this flag.
 - `-DCMAKE_CXX_STANDARD=20`: must match `.bazelrc` (`-std=c++20`).
 - `-DKokkos_ARCH_...`: exactly one NVIDIA architecture, and it must be the
   compute capability of the device the tests run on. `--config=gpu` reads it
@@ -566,15 +563,16 @@ built from source by Bazel (the `fftw` module in `MODULE.bazel`), so no system
 FFTW is needed at build time.
 
 ```bash
-git clone https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
+git clone --branch v2.0.0 --depth 1 https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
 cmake -S . -B build \
   -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-fft-libcxx \
   -DCMAKE_CXX_COMPILER="$CLANGXX" \
   -DCMAKE_CXX_STANDARD=20 \
   -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
   -DKokkos_ROOT=/usr/local/kokkos-libcxx \
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
   -DKokkosFFT_ENABLE_FFTW=ON \
-  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARKS=OFF
+  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARK=OFF
 sudo cmake --install build
 ```
 

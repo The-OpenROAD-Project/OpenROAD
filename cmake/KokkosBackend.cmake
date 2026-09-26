@@ -12,21 +12,6 @@
 # CMakeLists (e.g. src/gpl) key off ENABLE_GPU and Kokkos_ENABLE_*; they
 # do not need to call find_package(Kokkos) or enable_language() themselves.
 
-find_package(Kokkos QUIET)
-if(NOT Kokkos_FOUND)
-  message(FATAL_ERROR
-    "OpenROAD: ENABLE_GPU=ON requires the Kokkos package to be "
-    "installed and discoverable by CMake, but Kokkos was not found.\n"
-    "  - If Kokkos is already installed: pass "
-    "-DKokkos_ROOT=/path/to/kokkos (or extend CMAKE_PREFIX_PATH).\n"
-    "  - If not: build and install Kokkos from "
-    "https://github.com/kokkos/kokkos with the desired backend "
-    "(CUDA / HIP / SYCL / OpenMP) and a target architecture that "
-    "matches the host GPU.\n"
-    "  - A future etc/DependencyInstaller.sh -gpu option will "
-    "automate this step.")
-endif()
-
 # KokkosFFT — required by the gpl GPU FFT backend (src/gpl/src/gpu/dct.cpp).
 # A separate package from Kokkos core.
 find_package(KokkosFFT QUIET)
@@ -139,6 +124,12 @@ if(Kokkos_ENABLE_CUDA)
   # only. Project-wide CXX compilation is unaffected.
   add_compile_definitions(
     $<$<COMPILE_LANGUAGE:CUDA>:FMT_USE_NONTYPE_TEMPLATE_ARGS=0>)
+  # Boost.Core disables empty-base optimization for Clang CUDA. Restore
+  # it so embedded Boost containers have the same layout as in C++ TUs.
+  if(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+    add_compile_definitions(
+      $<$<COMPILE_LANGUAGE:CUDA>:BOOST_DETAIL_EMPTY_VALUE_BASE>)
+  endif()
   # On aarch64, Boost's unordered_flat_map detects __ARM_NEON and includes
   # <arm_neon.h> for SIMD-accelerated hashing.  nvcc cannot parse gcc's
   # arm_neon.h (it contains gcc-specific intrinsics), so disable the NEON

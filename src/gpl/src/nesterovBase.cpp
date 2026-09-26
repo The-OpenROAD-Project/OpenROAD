@@ -3,6 +3,7 @@
 
 #include "nesterovBase.h"
 
+#include <Kokkos_Core.hpp>
 #include <algorithm>
 #include <cassert>
 #include <climits>
@@ -29,9 +30,9 @@
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
+#include "kokkosRuntime.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
-#include "omp.h"
 #include "placerBase.h"
 #include "point.h"
 #include "utl/Logger.h"
@@ -753,7 +754,6 @@ static unsigned int roundDownToPowerOfTwo(unsigned int x)
 
 void BinGrid::initBins()
 {
-  assert(omp_get_thread_num() == 0);
   int64_t totalBinArea
       = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
 
@@ -835,29 +835,31 @@ void BinGrid::initBins()
 
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
-#pragma omp parallel for num_threads(num_threads_)
-  for (int idxY = 0; idxY < binCntY_; ++idxY) {
-    for (int idxX = 0; idxX < binCntX_; ++idxX) {
-      const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
-      const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
-      const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
-      const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
-      const int bin_index = (idxY * binCntX_) + idxX;
-      bins_[bin_index]
-          = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
-      auto& bin = bins_[bin_index];
-      if (bin.dx() < 0 || bin.dy() < 0) {
-        log_->warn(GPL,
-                   34,
-                   "Bin (center: {},{}, index: {}) has negative size: {}, {}",
-                   bin.cx(),
-                   bin.cy(),
-                   bin_index,
-                   bin.dx(),
-                   bin.dy());
-      }
-    }
-  }
+  const auto space = hostExecutionSpace(num_threads_);
+  Kokkos::parallel_for(
+      "gpl::initBins", HostRange(space, 0, binCntY_), [&](int idxY) {
+        for (int idxX = 0; idxX < binCntX_; ++idxX) {
+          const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
+          const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
+          const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
+          const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
+          const int bin_index = (idxY * binCntX_) + idxX;
+          bins_[bin_index]
+              = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
+          auto& bin = bins_[bin_index];
+          if (bin.dx() < 0 || bin.dy() < 0) {
+            log_->warn(
+                GPL,
+                34,
+                "Bin (center: {},{}, index: {}) has negative size: {}, {}",
+                bin.cx(),
+                bin.cy(),
+                bin_index,
+                bin.dx(),
+                bin.dy());
+          }
+        }
+      });
 
   log_->info(GPL, 30, "Number of bins:             {:10}", bins_.size());
 
@@ -981,37 +983,46 @@ void BinGrid::updateBinsNonPlaceArea()
 void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
                                         int parallel_threads)
 {
-#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
-  for (const GCellHandle& cell : cells) {
-    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+  const auto space = hostExecutionSpace(parallel_threads);
+  Kokkos::parallel_for(
+      "gpl::scatterDensityArea",
+      Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace,
+                          Kokkos::IndexType<std::size_t>,
+                          Kokkos::Schedule<Kokkos::Dynamic>>(
+          space, 0, cells.size())
+          .set_chunk_size(128),
+      [&](std::size_t index) {
+        const GCellHandle& cell = cells[index];
+        const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+        const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
 
-    if (cell->isInstance()) {
-      const bool macro = cell->isMacroInstance();
-      if (!macro && !cell->isStdInstance()) {
-        continue;
-      }
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          float scaledArea
-              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-          if (macro) {
-            scaledArea *= bin.getTargetDensity();
+        if (cell->isInstance()) {
+          const bool macro = cell->isMacroInstance();
+          if (!macro && !cell->isStdInstance()) {
+            return;
           }
-          bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+              float scaledArea
+                  = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+              if (macro) {
+                scaledArea *= bin.getTargetDensity();
+              }
+              bin.atomicAddInstPlacedAreaUnscaled(
+                  static_cast<int64_t>(scaledArea));
+            }
+          }
+        } else if (cell->isFiller()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+              bin.atomicAddFillerArea(static_cast<int64_t>(
+                  getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
+            }
+          }
         }
-      }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.atomicAddFillerArea(static_cast<int64_t>(
-              getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
-        }
-      }
-    }
-  }
+      });
 }
 
 // Core Part
@@ -1034,45 +1045,52 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     const int nbins = static_cast<int>(bins_.size());
     std::vector<float> inst_area(nbins, 0.0f);
     std::vector<float> filler_area(nbins, 0.0f);
-#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
-    for (const GCellHandle& cell : cells) {
-      const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-      const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-      if (cell->isInstance()) {
-        const bool macro = cell->isMacroInstance();
-        if (!macro && !cell->isStdInstance()) {
-          continue;
-        }
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            const int bi = y * binCntX_ + x;
-            Bin& bin = bins_[bi];
-            float v
-                = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-            if (macro) {
-              v *= bin.getTargetDensity();
+    const auto space = hostExecutionSpace(parallel_threads);
+    Kokkos::parallel_for(
+        "gpl::scatterDeviceMirrorDensity",
+        Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace,
+                            Kokkos::IndexType<std::size_t>,
+                            Kokkos::Schedule<Kokkos::Dynamic>>(
+            space, 0, cells.size())
+            .set_chunk_size(128),
+        [&](std::size_t index) {
+          const GCellHandle& cell = cells[index];
+          const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+          const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+          if (cell->isInstance()) {
+            const bool macro = cell->isMacroInstance();
+            if (!macro && !cell->isStdInstance()) {
+              return;
             }
-#pragma omp atomic
-            inst_area[bi] += v;
+            for (int y = pairY.first; y < pairY.second; y++) {
+              for (int x = pairX.first; x < pairX.second; x++) {
+                const int bi = y * binCntX_ + x;
+                Bin& bin = bins_[bi];
+                float v = getOverlapDensityArea(bin, cell)
+                          * cell->getDensityScale();
+                if (macro) {
+                  v *= bin.getTargetDensity();
+                }
+                Kokkos::atomic_add(&inst_area[bi], v);
+              }
+            }
+          } else if (cell->isFiller()) {
+            for (int y = pairY.first; y < pairY.second; y++) {
+              for (int x = pairX.first; x < pairX.second; x++) {
+                const int bi = y * binCntX_ + x;
+                const float v = getOverlapDensityArea(bins_[bi], cell)
+                                * cell->getDensityScale();
+                Kokkos::atomic_add(&filler_area[bi], v);
+              }
+            }
           }
-        }
-      } else if (cell->isFiller()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            const int bi = y * binCntX_ + x;
-            const float v = getOverlapDensityArea(bins_[bi], cell)
-                            * cell->getDensityScale();
-#pragma omp atomic
-            filler_area[bi] += v;
-          }
-        }
-      }
-    }
-#pragma omp parallel for num_threads(parallel_threads)
-    for (int b = 0; b < nbins; b++) {
-      bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
-      bins_[b].setFillerArea(filler_area[b]);
-    }
+        });
+    Kokkos::parallel_for("gpl::applyDeviceMirrorDensity",
+                         HostRange(space, 0, nbins),
+                         [&](int b) {
+                           bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
+                           bins_[b].setFillerArea(filler_area[b]);
+                         });
   } else {
     scatterDensityAreaInPlace(cells, 1);
   }
@@ -1085,60 +1103,67 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   sumOverflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-#pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
-  for (auto it = bins_.begin(); it < bins_.end(); ++it) {
-    Bin& bin = *it;  // old-style loop for old OpenMP
+  const auto space = hostExecutionSpace(num_threads_);
+  Kokkos::parallel_reduce(
+      "gpl::updateBinDensity",
+      HostRange(space, 0, bins_.size()),
+      [&](std::size_t index,
+          int64_t& overflow_sum,
+          int64_t& unscaled_overflow_sum) {
+        auto it = bins_.begin() + index;
+        Bin& bin = *it;  // Host iteration over the placement data
 
-    // Copy unscaled to scaled
-    bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
+        // Copy unscaled to scaled
+        bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
 
-    int64_t binArea = bin.getBinArea();
-    const float scaledBinArea
-        = static_cast<float>(binArea * bin.getTargetDensity());
-    bin.setDensity((static_cast<float>(bin.instPlacedArea())
-                    + static_cast<float>(bin.getFillerArea())
-                    + static_cast<float>(bin.getNonPlaceArea()))
-                   / scaledBinArea);
+        int64_t binArea = bin.getBinArea();
+        const float scaledBinArea
+            = static_cast<float>(binArea * bin.getTargetDensity());
+        bin.setDensity((static_cast<float>(bin.instPlacedArea())
+                        + static_cast<float>(bin.getFillerArea())
+                        + static_cast<float>(bin.getNonPlaceArea()))
+                       / scaledBinArea);
 
-    const float overflowArea = std::max(
-        0.0f,
-        static_cast<float>(bin.instPlacedArea())
-            + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-    sumOverflowArea_ += overflowArea;  // NOLINT
+        const float overflowArea = std::max(
+            0.0f,
+            static_cast<float>(bin.instPlacedArea())
+                + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
+        overflow_sum += overflowArea;  // NOLINT
 
-    const float overflowAreaUnscaled
-        = std::max(0.0f,
-                   static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                       + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                       - scaledBinArea);
-    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
-    if (overflowAreaUnscaled > 0) {
-      debugPrint(log_,
-                 GPL,
-                 "overflow",
-                 1,
-                 "overflow:{}, bin:{},{}",
-                 block->dbuAreaToMicrons(overflowAreaUnscaled),
-                 block->dbuToMicrons(bin.lx()),
-                 block->dbuToMicrons(bin.ly()));
-      debugPrint(log_,
-                 GPL,
-                 "overflow",
-                 1,
-                 "binArea:{}, scaledBinArea:{}",
-                 block->dbuAreaToMicrons(binArea),
-                 block->dbuAreaToMicrons(scaledBinArea));
-      debugPrint(
-          log_,
-          GPL,
-          "overflow",
-          1,
-          "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
-          block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
-          block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
-    }
-  }
+        const float overflowAreaUnscaled
+            = std::max(0.0f,
+                       static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                           + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                           - scaledBinArea);
+        unscaled_overflow_sum += overflowAreaUnscaled;
+        if (overflowAreaUnscaled > 0) {
+          debugPrint(log_,
+                     GPL,
+                     "overflow",
+                     1,
+                     "overflow:{}, bin:{},{}",
+                     block->dbuAreaToMicrons(overflowAreaUnscaled),
+                     block->dbuToMicrons(bin.lx()),
+                     block->dbuToMicrons(bin.ly()));
+          debugPrint(log_,
+                     GPL,
+                     "overflow",
+                     1,
+                     "binArea:{}, scaledBinArea:{}",
+                     block->dbuAreaToMicrons(binArea),
+                     block->dbuAreaToMicrons(scaledBinArea));
+          debugPrint(log_,
+                     GPL,
+                     "overflow",
+                     1,
+                     "bin.instPlacedAreaUnscaled():{}, "
+                     "bin.nonPlaceAreaUnscaled():{}",
+                     block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
+                     block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+        }
+      },
+      Kokkos::Sum<int64_t>(sumOverflowArea_),
+      Kokkos::Sum<int64_t>(sumOverflowAreaUnscaled_));
 }
 
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
@@ -1234,7 +1259,6 @@ NesterovBaseCommon::NesterovBaseCommon(
   // body, after gCellStor_ / gPinStor_ / gNetStor_ are populated — the GPU
   // backend needs the device state, and the device state initializer reads
   // those storage vectors.
-  assert(omp_get_thread_num() == 0);
   pbc_ = std::move(pbc);
   log_ = log;
   delta_area_ = 0;
@@ -1326,39 +1350,49 @@ NesterovBaseCommon::NesterovBaseCommon(
   }
 
   // gCellStor_'s pins_ fill
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+  const auto space = hostExecutionSpace(num_threads_);
+  Kokkos::parallel_for("gpl::connectCellPins",
+                       HostRange(space, 0, gCellStor_.size()),
+                       [&](std::size_t index) {
+                         auto it = gCellStor_.begin() + index;
+                         auto& gCell
+                             = *it;  // Host iteration over the placement data
 
-    if (gCell.isFiller()) {
-      continue;
-    }
+                         if (gCell.isFiller()) {
+                           return;
+                         }
 
-    for (Instance* inst : gCell.insts()) {
-      for (auto& pin : inst->getPins()) {
-        gCell.addGPin(pbToNb(pin));
-      }
-    }
-  }
+                         for (Instance* inst : gCell.insts()) {
+                           for (auto& pin : inst->getPins()) {
+                             gCell.addGPin(pbToNb(pin));
+                           }
+                         }
+                       });
 
   // gPinStor_' GNet and GCell fill
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
+  Kokkos::parallel_for("gpl::connectPins",
+                       HostRange(space, 0, gPinStor_.size()),
+                       [&](std::size_t index) {
+                         auto it = gPinStor_.begin() + index;
+                         auto& gPin
+                             = *it;  // Host iteration over the placement data
 
-    gPin.setGCell(pbToNb(gPin.getPbPin()->getInstance()));
-    gPin.setGNet(pbToNb(gPin.getPbPin()->getNet()));
-  }
+                         gPin.setGCell(pbToNb(gPin.getPbPin()->getInstance()));
+                         gPin.setGNet(pbToNb(gPin.getPbPin()->getNet()));
+                       });
 
   // gNetStor_'s GPin fill
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
-    auto& gNet = *it;  // old-style loop for old OpenMP
+  Kokkos::parallel_for("gpl::connectNetPins",
+                       HostRange(space, 0, gNetStor_.size()),
+                       [&](std::size_t index) {
+                         auto it = gNetStor_.begin() + index;
+                         auto& gNet
+                             = *it;  // Host iteration over the placement data
 
-    for (auto& pin : gNet.getPbNet()->getPins()) {
-      gNet.addGPin(pbToNb(pin));
-    }
-  }
+                         for (auto& pin : gNet.getPbNet()->getPins()) {
+                           gNet.addGPin(pbToNb(pin));
+                         }
+                       });
 
   // Construct the device-side coordinate pool (instance coords, per-pin
   // offsets, net→pin CSR) only when the GPU path is selected at run time.
@@ -1437,112 +1471,117 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 // * Note that wlCoeffX and wlCoeffY is 1/gamma
 // in ePlace paper.
 //
-// _native is the CPU OMP loop body; the public updateWireLengthForceWA
-// dispatcher lives in wirelengthGradient.cpp and routes through
+// _native runs these loops in Kokkos's host execution space. The public
+// updateWireLengthForceWA dispatcher lives in wirelengthGradient.cpp and uses
 // wl_grad_backend_ (CPU or GPU). CpuWirelengthGradientBackend calls into
 // this method.
 void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
                                                         float wlCoeffY)
 {
-  assert(omp_get_thread_num() == 0);
   // clear all WA variables.
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
-    // old-style loop for old OpenMP
-    gPin->clearWaVars();
-  }
+  const auto space = hostExecutionSpace(num_threads_);
+  Kokkos::parallel_for("gpl::clearPinWirelength",
+                       HostRange(space, 0, gPinStor_.size()),
+                       [&](std::size_t index) {
+                         auto gPin = gPinStor_.begin() + index;
+                         // Host iteration over the placement data
+                         gPin->clearWaVars();
+                       });
 
   // If checks are very expensive, so short circuit them if debug is not enabled
   bool debug_enabled = log_->debugCheck(GPL, "wlUpdateWA", 1);
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
-    // old-style loop for old OpenMP
+  Kokkos::parallel_for(
+      "gpl::updateWirelengthForce",
+      HostRange(space, 0, gNetStor_.size()),
+      [&](std::size_t index) {
+        auto gNet = gNetStor_.begin() + index;
+        // Host iteration over the placement data
 
-    gNet->clearWaVars();
-    gNet->updateBox();
+        gNet->clearWaVars();
+        gNet->updateBox();
 
-    for (auto& gPin : gNet->getGPins()) {
-      // The WA terms are shift invariant:
-      //
-      //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
-      //   -----------------    = -----------------
-      //   Sum(exp(x_i))          Sum(exp(x_i - C))
-      //
-      // So we shift to keep the exponential from overflowing
-      float expMinX = (gNet->lx() - gPin->cx()) * wlCoeffX;
-      float expMaxX = (gPin->cx() - gNet->ux()) * wlCoeffX;
-      float expMinY = (gNet->ly() - gPin->cy()) * wlCoeffY;
-      float expMaxY = (gPin->cy() - gNet->uy()) * wlCoeffY;
+        for (auto& gPin : gNet->getGPins()) {
+          // The WA terms are shift invariant:
+          //
+          //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
+          //   -----------------    = -----------------
+          //   Sum(exp(x_i))          Sum(exp(x_i - C))
+          //
+          // So we shift to keep the exponential from overflowing
+          float expMinX = (gNet->lx() - gPin->cx()) * wlCoeffX;
+          float expMaxX = (gPin->cx() - gNet->ux()) * wlCoeffX;
+          float expMinY = (gNet->ly() - gPin->cy()) * wlCoeffY;
+          float expMaxY = (gPin->cy() - gNet->uy()) * wlCoeffY;
 
-      // min x
-      if (expMinX > nbVars_.minWireLengthForceBar) {
-        gPin->setMinExpSumX(fastExp(expMinX));
-        gNet->addWaExpMinSumX(gPin->minExpSumX());
-        gNet->addWaXExpMinSumX(gPin->cx() * gPin->minExpSumX());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MinX updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->minExpSumX());
+          // min x
+          if (expMinX > nbVars_.minWireLengthForceBar) {
+            gPin->setMinExpSumX(fastExp(expMinX));
+            gNet->addWaExpMinSumX(gPin->minExpSumX());
+            gNet->addWaXExpMinSumX(gPin->cx() * gPin->minExpSumX());
+            if (debug_enabled && gPin->getGCell()
+                && gPin->getGCell()->isInstance()) {
+              debugPrint(log_,
+                         GPL,
+                         "wlUpdateWA",
+                         1,
+                         "MinX updated: {} {:g}",
+                         gPin->getGCell()->getName(),
+                         gPin->minExpSumX());
+            }
+          }
+
+          // max x
+          if (expMaxX > nbVars_.minWireLengthForceBar) {
+            gPin->setMaxExpSumX(fastExp(expMaxX));
+            gNet->addWaExpMaxSumX(gPin->maxExpSumX());
+            gNet->addWaXExpMaxSumX(gPin->cx() * gPin->maxExpSumX());
+            if (debug_enabled && gPin->getGCell()
+                && gPin->getGCell()->isInstance()) {
+              debugPrint(log_,
+                         GPL,
+                         "wlUpdateWA",
+                         1,
+                         "MaxX updated: {} {:g}",
+                         gPin->getGCell()->getName(),
+                         gPin->maxExpSumX());
+            }
+          }
+
+          // min y
+          if (expMinY > nbVars_.minWireLengthForceBar) {
+            gPin->setMinExpSumY(fastExp(expMinY));
+            gNet->addWaExpMinSumY(gPin->minExpSumY());
+            gNet->addWaYExpMinSumY(gPin->cy() * gPin->minExpSumY());
+            if (debug_enabled && gPin->getGCell()
+                && gPin->getGCell()->isInstance()) {
+              debugPrint(log_,
+                         GPL,
+                         "wlUpdateWA",
+                         1,
+                         "MinY updated: {} {:g}",
+                         gPin->getGCell()->getName(),
+                         gPin->minExpSumY());
+            }
+          }
+
+          // max y
+          if (expMaxY > nbVars_.minWireLengthForceBar) {
+            gPin->setMaxExpSumY(fastExp(expMaxY));
+            gNet->addWaExpMaxSumY(gPin->maxExpSumY());
+            gNet->addWaYExpMaxSumY(gPin->cy() * gPin->maxExpSumY());
+            if (debug_enabled && gPin->getGCell()
+                && gPin->getGCell()->isInstance()) {
+              debugPrint(log_,
+                         GPL,
+                         "wlUpdateWA",
+                         1,
+                         "MaxY updated: {} {:g}",
+                         gPin->getGCell()->getName(),
+                         gPin->maxExpSumY());
+            }
+          }
         }
-      }
-
-      // max x
-      if (expMaxX > nbVars_.minWireLengthForceBar) {
-        gPin->setMaxExpSumX(fastExp(expMaxX));
-        gNet->addWaExpMaxSumX(gPin->maxExpSumX());
-        gNet->addWaXExpMaxSumX(gPin->cx() * gPin->maxExpSumX());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MaxX updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->maxExpSumX());
-        }
-      }
-
-      // min y
-      if (expMinY > nbVars_.minWireLengthForceBar) {
-        gPin->setMinExpSumY(fastExp(expMinY));
-        gNet->addWaExpMinSumY(gPin->minExpSumY());
-        gNet->addWaYExpMinSumY(gPin->cy() * gPin->minExpSumY());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MinY updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->minExpSumY());
-        }
-      }
-
-      // max y
-      if (expMaxY > nbVars_.minWireLengthForceBar) {
-        gPin->setMaxExpSumY(fastExp(expMaxY));
-        gNet->addWaExpMaxSumY(gPin->maxExpSumY());
-        gNet->addWaYExpMaxSumY(gPin->cy() * gPin->maxExpSumY());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MaxY updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->maxExpSumY());
-        }
-      }
-    }
-  }
+      });
 }
 
 GCell& NesterovBaseCommon::getGCell(size_t index)
@@ -3184,14 +3223,17 @@ void NesterovBase::updateGCellDensityCenterLocation(
 
 void NesterovBase::setTargetDensity(float density)
 {
-  assert(omp_get_thread_num() == 0);
   targetDensity_ = density;
   bg_.setBinTargetDensity(density);
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto bin = getBins().begin(); bin < getBins().end(); ++bin) {
-    // old-style loop for old OpenMP
-    bin->setBinTargetDensity(density);
-  }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for("gpl::setTargetDensity",
+                       HostRange(space, 0, getBins().size()),
+                       [&](std::size_t index) {
+                         auto bin = getBins().begin() + index;
+                         // Host iteration over the placement data
+                         bin->setBinTargetDensity(density);
+                       });
   // update nonPlaceArea's target denstiy
   bg_.updateBinsNonPlaceArea();
 }
@@ -3458,33 +3500,37 @@ float NesterovBase::getTargetDensity() const
 // update densitySize and densityScale in each gCell
 void NesterovBase::updateDensitySize()
 {
-  assert(omp_get_thread_num() == 0);
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
-    float scaleX = 0, scaleY = 0;
-    float densitySizeX = 0, densitySizeY = 0;
-    if (gCell->dx() < REPLACE_SQRT2 * bg_.getBinSizeX()) {
-      scaleX = static_cast<float>(gCell->dx())
-               / static_cast<float>(REPLACE_SQRT2 * bg_.getBinSizeX());
-      densitySizeX = REPLACE_SQRT2 * static_cast<float>(bg_.getBinSizeX());
-    } else {
-      scaleX = 1.0;
-      densitySizeX = gCell->dx();
-    }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::updateDensitySize",
+      HostRange(space, 0, nb_gcells_.size()),
+      [&](std::size_t index) {
+        auto it = nb_gcells_.begin() + index;
+        auto& gCell = *it;  // Host iteration over the placement data
+        float scaleX = 0, scaleY = 0;
+        float densitySizeX = 0, densitySizeY = 0;
+        if (gCell->dx() < REPLACE_SQRT2 * bg_.getBinSizeX()) {
+          scaleX = static_cast<float>(gCell->dx())
+                   / static_cast<float>(REPLACE_SQRT2 * bg_.getBinSizeX());
+          densitySizeX = REPLACE_SQRT2 * static_cast<float>(bg_.getBinSizeX());
+        } else {
+          scaleX = 1.0;
+          densitySizeX = gCell->dx();
+        }
 
-    if (gCell->dy() < REPLACE_SQRT2 * bg_.getBinSizeY()) {
-      scaleY = static_cast<float>(gCell->dy())
-               / static_cast<float>(REPLACE_SQRT2 * bg_.getBinSizeY());
-      densitySizeY = REPLACE_SQRT2 * static_cast<float>(bg_.getBinSizeY());
-    } else {
-      scaleY = 1.0;
-      densitySizeY = gCell->dy();
-    }
+        if (gCell->dy() < REPLACE_SQRT2 * bg_.getBinSizeY()) {
+          scaleY = static_cast<float>(gCell->dy())
+                   / static_cast<float>(REPLACE_SQRT2 * bg_.getBinSizeY());
+          densitySizeY = REPLACE_SQRT2 * static_cast<float>(bg_.getBinSizeY());
+        } else {
+          scaleY = 1.0;
+          densitySizeY = gCell->dy();
+        }
 
-    gCell->setDensitySize(densitySizeX, densitySizeY);
-    gCell->setDensityScale(scaleX * scaleY);
-  }
+        gCell->setDensitySize(densitySizeX, densitySizeY);
+        gCell->setDensityScale(scaleX * scaleY);
+      });
 
 #ifdef ENABLE_GPU
   // Keep the device-side per-cell density params (NB level and the
@@ -3508,7 +3554,7 @@ void NesterovBase::updateAreas()
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+    auto& gCell = *it;  // Host iteration over the placement data
     if (!gCell) {
       continue;
     }
@@ -3613,26 +3659,33 @@ void NesterovBase::fillFillerDensityGradients(
   // earlier this iteration) and each cell writes a distinct out[] slot, so the
   // loop is trivially parallel. Only fillers are computed; instance entries are
   // supplied by the caller from the device gather.
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < gCells.size(); ++i) {
-    if (gCells[i].isNesterovBaseCommon()) {
-      continue;  // instance — caller already filled it
-    }
-    const GCell* gc = gCells[i];
-    out[i] = getDensityGradient(gc);
-  }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for("gpl::fillFillerDensityGradients",
+                       HostRange(space, 0, gCells.size()),
+                       [&](size_t i) {
+                         if (gCells[i].isNesterovBaseCommon()) {
+                           return;  // Instance already filled by the caller
+                         }
+                         const GCell* gc = gCells[i];
+                         out[i] = getDensityGradient(gc);
+                       });
 }
 
 // Density field calls
 void NesterovBase::updateDensityFieldBin()
 {
-  assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = getBins().begin(); it < getBins().end(); ++it) {
-    auto& bin = *it;  // old-style loop for old OpenMP
-    fft_->updateDensity(bin.x(), bin.y(), bin.getDensity());
-  }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::copyFftDensity",
+      HostRange(space, 0, getBins().size()),
+      [&](std::size_t index) {
+        auto it = getBins().begin() + index;
+        auto& bin = *it;  // Host iteration over the placement data
+        fft_->updateDensity(bin.x(), bin.y(), bin.getDensity());
+      });
 
   // do FFT
   fft_->doFFT();
@@ -3640,25 +3693,28 @@ void NesterovBase::updateDensityFieldBin()
   // update electroPhi and electroField
   // update sumPhi_ for nesterov loop
   sumPhi_ = 0;
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : sumPhi_)
-  for (auto it = getBins().begin(); it < getBins().end(); ++it) {
-    auto& bin = *it;  // old-style loop for old OpenMP
-    auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
-    bin.setElectroField(eFieldPair.first, eFieldPair.second);
+  Kokkos::parallel_reduce(
+      "gpl::updateElectrostaticField",
+      HostRange(space, 0, getBins().size()),
+      [&](std::size_t index, float& phi_sum) {
+        auto it = getBins().begin() + index;
+        auto& bin = *it;  // Host iteration over the placement data
+        auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
+        bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
-    float electroPhi = fft_->getElectroPhi(bin.x(), bin.y());
-    bin.setElectroPhi(electroPhi);
+        float electroPhi = fft_->getElectroPhi(bin.x(), bin.y());
+        bin.setElectroPhi(electroPhi);
 
-    sumPhi_ += electroPhi
+        phi_sum
+            += electroPhi
                * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
                                     + bin.getFillerArea());
-  }
+      },
+      Kokkos::Sum<float>(sumPhi_));
 }
 
 void NesterovBase::initDensity1()
 {
-  assert(omp_get_thread_num() == 0);
   const int gCellSize = nb_gcells_.size();
   curSLPCoordi_.resize(gCellSize, FloatPoint());
   curSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
@@ -3685,17 +3741,22 @@ void NesterovBase::initDensity1()
   snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
   snapshotPrevSLPSumGrads_.resize(gCellSize, FloatPoint());
 
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    GCell* gCell = *it;  // old-style loop for old OpenMP
-    // IO pins have their own locus and contribute no density.
-    if (!gCell->isIOPin()) {
-      updateDensityCoordiLayoutInside(gCell);
-    }
-    int idx = it - nb_gcells_.begin();
-    curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
-        = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
-  }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::initDensityCoordinates",
+      HostRange(space, 0, nb_gcells_.size()),
+      [&](std::size_t index) {
+        auto it = nb_gcells_.begin() + index;
+        GCell* gCell = *it;  // Host iteration over the placement data
+        // IO pins have their own locus and contribute no density.
+        if (!gCell->isIOPin()) {
+          updateDensityCoordiLayoutInside(gCell);
+        }
+        int idx = it - nb_gcells_.begin();
+        curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
+            = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
+      });
 
   // bin
   updateGCellDensityCenterLocation(curSLPCoordi_);
@@ -3786,11 +3847,14 @@ void NesterovBase::pullCoordsFromDevice()
   nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
   // Host GCell density centers follow the last scattered coords, which on
   // the CPU path are the curSLP coords after rotation.
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t idx = 0; idx < nb_gcells_.size(); ++idx) {
-    nb_gcells_[idx]->setDensityCenterLocation(curSLPCoordi_[idx].x,
-                                              curSLPCoordi_[idx].y);
-  }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for("gpl::pullDeviceCoordinates",
+                       HostRange(space, 0, nb_gcells_.size()),
+                       [&](size_t idx) {
+                         nb_gcells_[idx]->setDensityCenterLocation(
+                             curSLPCoordi_[idx].x, curSLPCoordi_[idx].y);
+                       });
   host_coords_fresh_ = true;
 #endif
 }
@@ -3894,7 +3958,6 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
                                    float wlCoeffX,
                                    float wlCoeffY)
 {
-  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return;
   }
@@ -3972,68 +4035,75 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   }
 
   const size_t numGCells = nb_gcells_.size();
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < numGCells; i++) {
-    GCell* gCell = nb_gcells_[i];
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::updateGradients", HostRange(space, 0, numGCells), [&](size_t i) {
+        GCell* gCell = nb_gcells_[i];
 
-    if (gCell->isIOPin()) {
-      const size_t io_i = ioIndexOf(nb_gcells_[i]);
-      if (isMirrorFollower(io_i)) {
-        // No independent DOF; position comes from the master.
-        wireLengthGrads[i] = FloatPoint(0, 0);
-        densityGrads[i] = FloatPoint(0, 0);
-        sumGrads[i] = FloatPoint(0, 0);
-        continue;
-      }
-      // IO pins use wirelength gradients only.
-      densityGrads[i] = FloatPoint(0, 0);
-      sumGrads[i] = wireLengthGrads[i];
+        if (gCell->isIOPin()) {
+          const size_t io_i = ioIndexOf(nb_gcells_[i]);
+          if (isMirrorFollower(io_i)) {
+            // No independent DOF. Position comes from the master.
+            wireLengthGrads[i] = FloatPoint(0, 0);
+            densityGrads[i] = FloatPoint(0, 0);
+            sumGrads[i] = FloatPoint(0, 0);
+            return;
+          }
+          // IO pins use wirelength gradients only.
+          densityGrads[i] = FloatPoint(0, 0);
+          sumGrads[i] = wireLengthGrads[i];
 
-      FloatPoint wlPre = nbc_->getWireLengthPreconditioner(gCell);
-      wlPre.x = std::max(wlPre.x, NesterovPlaceVars::minPreconditioner);
-      wlPre.y = std::max(wlPre.y, NesterovPlaceVars::minPreconditioner);
+          FloatPoint wlPre = nbc_->getWireLengthPreconditioner(gCell);
+          wlPre.x = std::max(wlPre.x, NesterovPlaceVars::minPreconditioner);
+          wlPre.y = std::max(wlPre.y, NesterovPlaceVars::minPreconditioner);
 
-      const size_t f_io = io_master_to_follower_[io_i];
-      if (f_io != kNoMirrorPartner) {
-        const FloatPoint fGrad = io_follower_wl_grad_[f_io];
-        FloatPoint fPre = nbc_->getWireLengthPreconditioner(&ioPinStor_[f_io]);
-        fPre.x = std::max(fPre.x, NesterovPlaceVars::minPreconditioner);
-        fPre.y = std::max(fPre.y, NesterovPlaceVars::minPreconditioner);
+          const size_t f_io = io_master_to_follower_[io_i];
+          if (f_io != kNoMirrorPartner) {
+            const FloatPoint fGrad = io_follower_wl_grad_[f_io];
+            FloatPoint fPre
+                = nbc_->getWireLengthPreconditioner(&ioPinStor_[f_io]);
+            fPre.x = std::max(fPre.x, NesterovPlaceVars::minPreconditioner);
+            fPre.y = std::max(fPre.y, NesterovPlaceVars::minPreconditioner);
 
-        // A mirror pair has one DOF; add the follower contribution to master.
-        const DieEdge me = ioEdgeOnLocus(io_i, gCell->dCx(), gCell->dCy());
-        if (isHorizontalEdge(me)) {
-          sumGrads[i].x = sumGrads[i].x + fGrad.x;
-          wlPre.x += fPre.x;
-        } else {
-          sumGrads[i].y = sumGrads[i].y + fGrad.y;
-          wlPre.y += fPre.y;
+            // A mirror pair has one DOF. Add the follower contribution to
+            // master.
+            const DieEdge me = ioEdgeOnLocus(io_i, gCell->dCx(), gCell->dCy());
+            if (isHorizontalEdge(me)) {
+              sumGrads[i].x = sumGrads[i].x + fGrad.x;
+              wlPre.x += fPre.x;
+            } else {
+              sumGrads[i].y = sumGrads[i].y + fGrad.y;
+              wlPre.y += fPre.y;
+            }
+          }
+
+          sumGrads[i].x /= wlPre.x;
+          sumGrads[i].y /= wlPre.y;
+          return;
         }
-      }
 
-      sumGrads[i].x /= wlPre.x;
-      sumGrads[i].y /= wlPre.y;
-      continue;
-    }
+        sumGrads[i].x
+            = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
+        sumGrads[i].y
+            = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
 
-    sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
-    sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
+        FloatPoint wireLengthPreCondi
+            = nbc_->getWireLengthPreconditioner(gCell);
+        FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
-    FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell);
-    FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
+        FloatPoint sumPrecondi(
+            wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
+            wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-    FloatPoint sumPrecondi(
-        wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
-        wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
+        sumPrecondi.x
+            = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
+        sumPrecondi.y
+            = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
 
-    sumPrecondi.x
-        = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
-    sumPrecondi.y
-        = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
-
-    sumGrads[i].x /= sumPrecondi.x;
-    sumGrads[i].y /= sumPrecondi.y;
-  }
+        sumGrads[i].x /= sumPrecondi.x;
+        sumGrads[i].y /= sumPrecondi.y;
+      });
 
   // Serial reduce for determinism (float addition order).
   for (size_t i = 0; i < numGCells; i++) {
@@ -4158,8 +4228,6 @@ void NesterovBase::updateSingleGradient(
 
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
-  assert(omp_get_thread_num() == 0);
-
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
     nb_device_ctx_->updateInitialPrevSLPCoordi(
@@ -4170,32 +4238,37 @@ void NesterovBase::updateInitialPrevSLPCoordi()
   }
 #endif
 
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < nb_gcells_.size(); i++) {
-    GCell* curGCell = nb_gcells_[i];
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::updateInitialCoordinates",
+      HostRange(space, 0, nb_gcells_.size()),
+      [&](size_t i) {
+        GCell* curGCell = nb_gcells_[i];
 
-    if (curGCell->isLocked()) {
-      prevSLPCoordi_[i] = curSLPCoordi_[i];
-      continue;
-    }
+        if (curGCell->isLocked()) {
+          prevSLPCoordi_[i] = curSLPCoordi_[i];
+          return;
+        }
 
-    float prevCoordiX
-        = curSLPCoordi_[i].x
-          - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x);
+        float prevCoordiX
+            = curSLPCoordi_[i].x
+              - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x);
 
-    float prevCoordiY
-        = curSLPCoordi_[i].y
-          - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y);
+        float prevCoordiY
+            = curSLPCoordi_[i].y
+              - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y);
 
-    FloatPoint newCoordi(getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
-                         getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
-    if (curGCell->isIOPin()) {
-      newCoordi
-          = projectIoPin(ioIndexOf(nb_gcells_[i]), prevCoordiX, prevCoordiY);
-    }
+        FloatPoint newCoordi(
+            getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
+            getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
+        if (curGCell->isIOPin()) {
+          newCoordi = projectIoPin(
+              ioIndexOf(nb_gcells_[i]), prevCoordiX, prevCoordiY);
+        }
 
-    prevSLPCoordi_[i] = newCoordi;
-  }
+        prevSLPCoordi_[i] = newCoordi;
+      });
 
   applyMirrorConstraints(prevSLPCoordi_);
 }
@@ -4239,7 +4312,6 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
 
 void NesterovBase::updateNextIter(const int iter)
 {
-  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return;
   }
@@ -4251,16 +4323,20 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t k = 0; k < nb_gcells_.size(); ++k) {
-    if (nb_gcells_[k]->isInstance() && nb_gcells_[k]->isLocked()) {
-      nextSLPCoordi_[k] = curSLPCoordi_[k];
-      nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
-      nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
-      nextSLPSumGrads_[k] = curSLPSumGrads_[k];
-      nextCoordi_[k] = curCoordi_[k];
-    }
-  }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::preserveLockedCoordinates",
+      HostRange(space, 0, nb_gcells_.size()),
+      [&](size_t k) {
+        if (nb_gcells_[k]->isInstance() && nb_gcells_[k]->isLocked()) {
+          nextSLPCoordi_[k] = curSLPCoordi_[k];
+          nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
+          nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
+          nextSLPSumGrads_[k] = curSLPSumGrads_[k];
+          nextCoordi_[k] = curCoordi_[k];
+        }
+      });
 
   std::swap(curSLPCoordi_, nextSLPCoordi_);
   std::swap(curSLPWireLengthGrads_, nextSLPWireLengthGrads_);
@@ -4435,38 +4511,42 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
   // parallel, bit-identical to the serial version.
   const size_t numGCells = nb_gcells_.size();
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t k = 0; k < numGCells; k++) {
-    GCell* curGCell = nb_gcells_[k];
-    if (curGCell->isLocked()) {
-      nextCoordi_[k] = curCoordi_[k];
-      nextSLPCoordi_[k] = curSLPCoordi_[k];
-      continue;
-    }
+  const auto space
+      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  Kokkos::parallel_for(
+      "gpl::updateCoordinates", HostRange(space, 0, numGCells), [&](size_t k) {
+        GCell* curGCell = nb_gcells_[k];
+        if (curGCell->isLocked()) {
+          nextCoordi_[k] = curCoordi_[k];
+          nextSLPCoordi_[k] = curSLPCoordi_[k];
+          return;
+        }
 
-    FloatPoint nextCoordi(
-        curSLPCoordi_[k].x + stepLength_ * curSLPSumGrads_[k].x,
-        curSLPCoordi_[k].y + stepLength_ * curSLPSumGrads_[k].y);
+        FloatPoint nextCoordi(
+            curSLPCoordi_[k].x + stepLength_ * curSLPSumGrads_[k].x,
+            curSLPCoordi_[k].y + stepLength_ * curSLPSumGrads_[k].y);
 
-    FloatPoint nextSLPCoordi(
-        nextCoordi.x + coeff * (nextCoordi.x - curCoordi_[k].x),
-        nextCoordi.y + coeff * (nextCoordi.y - curCoordi_[k].y));
+        FloatPoint nextSLPCoordi(
+            nextCoordi.x + coeff * (nextCoordi.x - curCoordi_[k].x),
+            nextCoordi.y + coeff * (nextCoordi.y - curCoordi_[k].y));
 
-    nextCoordi_[k]
-        = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextCoordi.x),
-                     getDensityCoordiLayoutInsideY(curGCell, nextCoordi.y));
+        nextCoordi_[k]
+            = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextCoordi.x),
+                         getDensityCoordiLayoutInsideY(curGCell, nextCoordi.y));
 
-    nextSLPCoordi_[k]
-        = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextSLPCoordi.x),
-                     getDensityCoordiLayoutInsideY(curGCell, nextSLPCoordi.y));
+        nextSLPCoordi_[k] = FloatPoint(
+            getDensityCoordiLayoutInsideX(curGCell, nextSLPCoordi.x),
+            getDensityCoordiLayoutInsideY(curGCell, nextSLPCoordi.y));
 
-    // Project IO pins onto their legal boundary locus instead of the core.
-    if (curGCell->isIOPin()) {
-      const size_t io_i = ioIndexOf(nb_gcells_[k]);
-      nextCoordi_[k] = projectIoPin(io_i, nextCoordi.x, nextCoordi.y);
-      nextSLPCoordi_[k] = projectIoPin(io_i, nextSLPCoordi.x, nextSLPCoordi.y);
-    }
-  }
+        // Project IO pins onto their legal boundary locus instead of the
+        // core.
+        if (curGCell->isIOPin()) {
+          const size_t io_i = ioIndexOf(nb_gcells_[k]);
+          nextCoordi_[k] = projectIoPin(io_i, nextCoordi.x, nextCoordi.y);
+          nextSLPCoordi_[k]
+              = projectIoPin(io_i, nextSLPCoordi.x, nextSLPCoordi.y);
+        }
+      });
 
   applyMirrorConstraints(nextCoordi_);
   applyMirrorConstraints(nextSLPCoordi_);
@@ -4527,7 +4607,6 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                                     int routability_gpl_iter_count,
                                     RouteBase* rb)
 {
-  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return true;
   }
@@ -4628,14 +4707,19 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                  uniformTargetDensity_);
     }
 
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-    for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-      auto& gCell = *it;  // old-style loop for old OpenMP
-      if (!gCell->isInstance()) {
-        continue;
-      }
-      gCell->lock();
-    }
+    const auto space
+        = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+    Kokkos::parallel_for("gpl::lockConvergedCells",
+                         HostRange(space, 0, nb_gcells_.size()),
+                         [&](std::size_t index) {
+                           auto it = nb_gcells_.begin() + index;
+                           auto& gCell
+                               = *it;  // Host iteration over the placement data
+                           if (!gCell->isInstance()) {
+                             return;
+                           }
+                           gCell->lock();
+                         });
 
     isConverged_ = true;
     return true;
