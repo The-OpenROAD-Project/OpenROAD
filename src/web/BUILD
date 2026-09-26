@@ -38,8 +38,9 @@ py_binary(
 #
 # The viewer used to pull leaflet, golden-layout, three, elkjs and netlistsvg
 # from CDNs, one of them over plain http (issue #11065).  They now come from
-# npm, are bundled and minified here, and the resulting blobs are checked in
-# under dist/ so the CMake build can embed them too -- see dist/README.md.
+# npm and are bundled and minified here, and the embed rules below take that
+# output directly.  The CMake build cannot run the bundler, so it embeds a
+# checked-in copy under dist/ instead -- see dist/README.md.
 
 npm_link_all_packages(name = "node_modules")
 
@@ -134,20 +135,20 @@ genrule(
 genrule(
     name = "report_assets",
     srcs = [
-        "//src/web/dist:app.min.css",
-        "//src/web/dist:gl-dark.min.css",
-        "//src/web/dist:gl-light.min.css",
-        "//src/web/dist:report.min.js",
-        "//src/web/dist:vendor.min.css",
+        "app.min.css",
+        "gl-dark.min.css",
+        "gl-light.min.css",
+        "report.min.js",
+        "vendor.min.css",
     ],
     outs = ["src/report_assets.cpp"],
     cmd = "$(execpath :embed_report_assets)" +
           " --output $@" +
-          " --vendor-css $(location //src/web/dist:vendor.min.css)" +
-          " --theme-dark $(location //src/web/dist:gl-dark.min.css)" +
-          " --theme-light $(location //src/web/dist:gl-light.min.css)" +
-          " --app-css $(location //src/web/dist:app.min.css)" +
-          " --js $(location //src/web/dist:report.min.js)",
+          " --vendor-css $(location vendor.min.css)" +
+          " --theme-dark $(location gl-dark.min.css)" +
+          " --theme-light $(location gl-light.min.css)" +
+          " --app-css $(location app.min.css)" +
+          " --js $(location report.min.js)",
     tools = [":embed_report_assets"],
 )
 
@@ -157,13 +158,13 @@ genrule(
 genrule(
     name = "web_assets",
     srcs = [
-        "//src/web/dist:app.min.js",
-        "//src/web/dist:index.min.html",
+        "app.min.js",
+        "index.min.html",
     ],
     outs = ["src/web_assets.cpp"],
     cmd = "$(execpath :embed_web_assets) --output $@" +
-          " /index.html=$(location //src/web/dist:index.min.html)" +
-          " /app.min.js=$(location //src/web/dist:app.min.js)",
+          " /index.html=$(location index.min.html)" +
+          " /app.min.js=$(location app.min.js)",
     tools = [":embed_web_assets"],
 )
 

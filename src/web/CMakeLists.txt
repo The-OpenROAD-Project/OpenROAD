@@ -74,9 +74,9 @@ swig_lib(NAME         web
 #
 # The viewer's libraries (leaflet, golden-layout, three, elkjs, netlistsvg) come
 # from npm and are bundled and minified by esbuild, so the browser never fetches
-# code from a CDN (issue #11065).  Only Bazel can drive that pipeline, so its
-# output is checked in under dist/ and both builds read it from there -- the way
-# both builds read src/web.tcl.  See dist/README.md to regenerate it.
+# code from a CDN (issue #11065).  Only Bazel can drive that pipeline, so this
+# build embeds a copy of its output checked in under dist/.  See dist/README.md
+# to regenerate it.
 set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
 # Each asset is passed as <served path>=<file path>; embed_web_assets.py gzips

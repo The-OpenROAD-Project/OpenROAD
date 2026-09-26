@@ -5,12 +5,13 @@ load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 package(default_visibility = ["//src/web:__subpackages__"])
 
-# The checked-in output of the browser bundling in //src/web.
+# A checked-in copy of the browser bundles //src/web builds, for the CMake
+# build only.
 #
 # The viewer's libraries come from npm and are bundled and minified by esbuild,
-# which only Bazel can drive -- but the CMake build embeds the same assets, and
-# `cmake -B build` has to keep working on its own.  So the blobs are checked in
-# and both builds read them from here, the way both builds read src/web.tcl.
+# which only Bazel can drive.  The Bazel build embeds that output directly;
+# `cmake -B build` has to keep working on its own, so it embeds this copy
+# instead, the way it reads src/web.tcl.
 #
 # Everything in this directory is generated.  To refresh it after changing
 # anything under src/web/src or bumping a dependency in src/web/package.json:
@@ -32,5 +33,3 @@ write_source_files(
     name = "dist",
     files = {f: "//src/web:" + f for f in _BUNDLES},
 )
-
-exports_files(_BUNDLES)

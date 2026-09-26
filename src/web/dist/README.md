@@ -27,12 +27,12 @@ here is.
 
 ## Why they are checked in
 
-The bundling runs under Bazel (`//src/web:app_bundle` and friends), but the
-CMake build embeds the same assets and `cmake -B build` has to keep working on
-its own — the macOS CI job and ORFS both build that way. So the output is
-checked in and **both builds read it from here**, the way both builds read
-`src/web/web.tcl`. It is the same arrangement as the generated ODB files and
-their `Are-Odb-Files-Generated` check.
+The bundling runs under Bazel (`//src/web:app_bundle` and friends), and the
+Bazel build embeds its output directly. The CMake build cannot run it, yet
+`cmake -B build` has to keep working on its own — the macOS CI job and ORFS
+both build that way. So a copy of the output is checked in here, and **only the
+CMake build reads it**. It is the same arrangement as the generated ODB files
+and their `Are-Odb-Files-Generated` check.
 
 ## Regenerating
 
