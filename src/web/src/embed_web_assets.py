@@ -11,8 +11,9 @@
 # same bytes and neither needs a gzip on the host.
 
 import argparse
-import gzip
 import os
+
+from embedded_blob import gzip_bytes, write_char_array
 
 MIME_TYPES = {
     ".html": "text/html",
@@ -29,24 +30,6 @@ def c_identifier(served_path):
     return "k_" + "".join(c if c.isalnum() else "_" for c in stem)
 
 
-# One escape per byte value, so the loop below is a table lookup rather than
-# a format call per byte.
-_OCTAL_ESCAPES = [f"\\{b:03o}" for b in range(256)]
-
-# Octal escapes are 4 chars each; 20 bytes keeps the emitted line at 80 columns.
-_BYTES_PER_LINE = 20
-
-
-def write_binary_asset(out, ident, data):
-    """Write the asset as octal escapes.  Everything embedded here is gzipped."""
-    escaped = "".join(map(_OCTAL_ESCAPES.__getitem__, data))
-    width = _BYTES_PER_LINE * 4
-    lines = (escaped[i : i + width] for i in range(0, len(escaped), width))
-    out.write(f'static const char {ident}_data[] =\n    "')
-    out.write('"\n    "'.join(lines))
-    out.write('";\n\n')
-
-
 def parse_asset_arg(arg):
     """Parse "<served path>=<file path>"."""
     served, sep, path = arg.partition("=")
@@ -57,27 +40,13 @@ def parse_asset_arg(arg):
     return served, path
 
 
-# Offset of the OS field in a gzip header, and the value meaning "unknown".
-# Python writes the host OS here, which differs between the interpreter Bazel
-# uses and the one CMake picks up -- enough to make the two builds embed
-# different bytes for identical input.
-_GZIP_OS_OFFSET = 9
-_GZIP_OS_UNKNOWN = 0xFF
-
-
 def compress(data, mime):
-    """gzip the asset, or return it as it is when that would not pay.
-
-    mtime=0 and a pinned OS byte because the embedded bytes are compared across
-    build systems and machines; both fields otherwise vary with who is building.
-    """
+    """gzip the asset, or return it as it is when that would not pay."""
     # Only what the table above recognises; the octet-stream fallback is an
     # image or a font, already compressed.
     if mime not in MIME_TYPES.values():
         return data, False
-    packed = bytearray(gzip.compress(data, compresslevel=9, mtime=0))
-    packed[_GZIP_OS_OFFSET] = _GZIP_OS_UNKNOWN
-    packed = bytes(packed)
+    packed = gzip_bytes(data)
     return (packed, True) if len(packed) < len(data) else (data, False)
 
 
@@ -126,7 +95,7 @@ def main():
 
         for served, ident, _, data, _, _ in assets:
             out.write(f"// {served}\n")
-            write_binary_asset(out, ident, data)
+            write_char_array(out, ident, data)
 
         # Sizes are byte counts, not sizeof - 1: every literal above is octal
         # escapes, and a gzip stream may contain a NUL.

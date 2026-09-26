@@ -99,6 +99,7 @@ add_custom_command(
     --js ${WEB_BUNDLE_DIR}/report.min.js
   DEPENDS
     src/embed_report_assets.py
+    src/embedded_blob.py
     ${WEB_BUNDLE_DIR}/vendor.min.css
     ${WEB_BUNDLE_DIR}/gl-dark.min.css
     ${WEB_BUNDLE_DIR}/gl-light.min.css
@@ -115,6 +116,7 @@ add_custom_command(
     ${WEB_ASSET_ARGS}
   DEPENDS
     src/embed_web_assets.py
+    src/embedded_blob.py
     ${WEB_BUNDLE_DIR}/index.min.html
     ${WEB_BUNDLE_DIR}/app.min.js
   COMMENT "Generating web_assets.cpp"

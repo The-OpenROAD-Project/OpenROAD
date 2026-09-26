@@ -15,17 +15,18 @@
 #include "web_assets.h"
 
 namespace web {
+namespace {
 
 // The report's blobs live outside the served asset table -- they are inlined
-// into a saved timing report, never handed out over HTTP -- so the scan below
-// has to reach them by name.
-extern const std::string_view kReportVendorCSS;
-extern const std::string_view kReportThemeDark;
-extern const std::string_view kReportThemeLight;
-extern const std::string_view kReportAppCSS;
-extern const std::string_view kReportJS;
-
-namespace {
+// into a saved timing report, never handed out over HTTP -- so the tests below
+// have to reach them by name.
+const std::pair<const char*, const EmbeddedAsset*> kReportAssets[] = {
+    {"kReportVendorCSS", &kReportVendorCSS},
+    {"kReportThemeDark", &kReportThemeDark},
+    {"kReportThemeLight", &kReportThemeLight},
+    {"kReportAppCSS", &kReportAppCSS},
+    {"kReportJS", &kReportJS},
+};
 
 // The bundles quote plenty of absolute URLs that are names, not fetches: XML
 // namespaces, JSON Schema dialects, licence and homepage links in the comments
@@ -155,17 +156,24 @@ TEST(WebAssets, NoAssetReferencesARemoteResource)
 // a CDN reintroduced here would be exactly the regression #11065 was filed for.
 TEST(WebAssets, NoReportAssetReferencesARemoteResource)
 {
-  for (const auto& [name, text] : {
-           std::pair{"kReportVendorCSS", kReportVendorCSS},
-           std::pair{"kReportThemeDark", kReportThemeDark},
-           std::pair{"kReportThemeLight", kReportThemeLight},
-           std::pair{"kReportAppCSS", kReportAppCSS},
-           std::pair{"kReportJS", kReportJS},
-       }) {
-    const std::vector<std::string> urls = externalUrls(text);
+  for (const auto& [name, asset] : kReportAssets) {
+    const std::vector<std::string> urls = externalUrls(assetText(*asset));
     EXPECT_TRUE(urls.empty())
         << name << " reaches out to " << (urls.empty() ? "" : urls.front())
         << " (" << urls.size() << " in total)";
+  }
+}
+
+// The report's blobs are stored gzipped too; saveReport() inflates them.
+TEST(WebAssets, StoresTheReportAssetsGzipped)
+{
+  for (const auto& [name, asset] : kReportAssets) {
+    EXPECT_TRUE(asset->gzipped) << name;
+    ASSERT_GE(asset->size, 2u) << name;
+    EXPECT_EQ(static_cast<unsigned char>(asset->data[0]), 0x1f) << name;
+    EXPECT_EQ(static_cast<unsigned char>(asset->data[1]), 0x8b) << name;
+    EXPECT_LT(asset->size, asset->original_size) << name;
+    EXPECT_EQ(assetText(*asset).size(), asset->original_size) << name;
   }
 }
 

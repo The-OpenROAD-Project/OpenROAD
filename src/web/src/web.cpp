@@ -1695,14 +1695,6 @@ WebServer::~WebServer()
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
 }
 
-// Embedded JS/CSS for standalone timing report (generated at build time
-// by embed_report_assets.py → report_assets.cpp).
-extern const std::string_view kReportVendorCSS;
-extern const std::string_view kReportThemeDark;
-extern const std::string_view kReportThemeLight;
-extern const std::string_view kReportAppCSS;
-extern const std::string_view kReportJS;
-
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
   static const char kChars[]
@@ -1735,6 +1727,14 @@ void WebServer::saveReport(const std::string& filename,
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
+
+  // Inflated before the file is opened, so a blob that fails to inflate
+  // leaves no half-written report behind.
+  const std::string vendor_css = assetText(kReportVendorCSS);
+  const std::string theme_dark = assetText(kReportThemeDark);
+  const std::string theme_light = assetText(kReportThemeLight);
+  const std::string app_css = assetText(kReportAppCSS);
+  const std::string report_js = assetText(kReportJS);
 
   std::ofstream out(filename);
   if (!out) {
@@ -1906,19 +1906,19 @@ void WebServer::saveReport(const std::string& filename,
        // themes have to beat goldenlayout-base, and style.css ends with a block
        // that has to beat the themes.  See src/vendor.css.
       R"(<style>
-)" << kReportVendorCSS
+)" << vendor_css
       << R"(
 </style>
 <style id="gl-theme-dark">
-)" << kReportThemeDark
+)" << theme_dark
       << R"(
 </style>
 <style id="gl-theme-light">
-)" << kReportThemeLight
+)" << theme_light
       << R"(
 </style>
 <style>
-)" << kReportAppCSS
+)" << app_css
       << R"(
 </style>
 <script>document.getElementById('gl-theme-light').disabled = true;</script>
@@ -2004,7 +2004,7 @@ window.__STATIC_CACHE__ = {
 )" <<  // Deferred like the served page's app.min.js: golden-layout will not
        // lay out a page that is still being parsed.
       R"(<script type="module">
-)" << kReportJS
+)" << report_js
       << R"(
 </script>
 </body>
