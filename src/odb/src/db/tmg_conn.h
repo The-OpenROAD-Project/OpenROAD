@@ -206,7 +206,7 @@ class tmg_conn
   void dfsClear();
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
-  int isVisited(int j) const;
+  bool isVisited(int j) const;
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
   int getExtension(int ipt, const WireSection* wire_section);
   int addPoint(int ipt, const WireSection* wire_section);
