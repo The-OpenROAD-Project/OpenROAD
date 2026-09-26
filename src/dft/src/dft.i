@@ -124,4 +124,9 @@ void scan_opt()
   getDft()->scanOpt();
 }
 
+void report_chain_metrics()
+{
+  getDft()->reportChainMetrics();
+}
+
 %}  // inline
