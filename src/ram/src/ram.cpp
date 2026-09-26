@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
 #include "grt/GlobalRouter.h"
@@ -30,8 +31,18 @@
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
+#include "sta/PowerClass.hh"
+#include "sta/Scene.hh"
+#include "sta/SdcClass.hh"
+#include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
+#include "sta/StringUtil.hh"
+#include "sta/Transition.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace ram {
@@ -57,7 +68,8 @@ RamGen::RamGen(sta::dbNetwork* network,
                ppl::IOPlacer* io_placer,
                dpl::Opendp* opendp,
                grt::GlobalRouter* global_router,
-               drt::TritonRoute* detailed_router)
+               drt::TritonRoute* detailed_router,
+               sta::dbSta* sta)
 
     : network_(network),
       db_(db),
@@ -67,6 +79,7 @@ RamGen::RamGen(sta::dbNetwork* network,
       opendp_(opendp),
       global_router_(global_router),
       detailed_router_(detailed_router),
+      sta_(sta),
       ram_grid_(odb::horizontal)
 {
 }
@@ -1275,6 +1288,7 @@ void RamGen::generate(const int mask_size,
     auto in_name = fmt::format("we[{}]", slice);
     write_enable[slice] = makeBTerm(in_name, dbIoType::INPUT);
   }
+  write_enable_ = write_enable;
 
   // When column_mux_ratio > 1:  word_sel_nets[word_idx] is high/active when
   // word_idx is the addressed word within a physical row. Derived from the
@@ -2054,6 +2068,173 @@ endmodule
   vf << verilog_code;
   vf.close();
   logger_->info(RAM, 24, "Behavioral Verilog written for {}", module_name);
+}
+
+static bool isClockPin(const sta::Pin* pin, sta::dbNetwork* network)
+{
+  sta::LibertyPort* lp = network->libertyPort(pin);
+  if (!lp) {
+    return false;
+  }
+  return lp->isClock() || lp->isRegClk() || lp->isClockGateClock();
+}
+
+void RamGen::reportTimingAndPower()
+{
+  network_->setBlock(block_);
+  sta_->updateTiming(false);
+
+  sta::SceneSeq scenes = sta_->makeSceneSeq(sta_->cmdScene());
+  sta::StringSeq group_names;
+
+  // Include non clock primary inputs: D, address, write enable pins
+  auto collect_primary_inputs = [&]() -> sta::PinSet* {
+    auto* pins = new sta::PinSet(network_);
+    for (auto* bterm : data_inputs_) {
+      pins->insert(network_->dbToSta(bterm));
+    }
+    for (auto& port_addrs : addr_inputs_) {
+      for (auto* bterm : port_addrs) {
+        pins->insert(network_->dbToSta(bterm));
+      }
+    }
+    for (auto* bterm : write_enable_) {
+      pins->insert(network_->dbToSta(bterm));
+    }
+    return pins;
+  };
+
+  auto collect_all_outputs = [&]() -> sta::PinSet* {
+    auto* pins = new sta::PinSet(network_);
+    for (auto* inst : block_->getInsts()) {
+      for (auto* iterm : inst->getITerms()) {
+        auto* pin = network_->dbToSta(iterm);
+        if (!pin || isClockPin(pin, network_)) {
+          continue;
+        }
+        auto* lp = network_->libertyPort(pin);
+        if (lp && lp->direction()->isAnyOutput()) {
+          pins->insert(pin);
+        }
+      }
+    }
+    for (auto* bterm : block_->getBTerms()) {
+      auto* pin = network_->dbToSta(bterm);
+      if (pin && !isClockPin(pin, network_)
+          && network_->direction(pin)->isOutput()) {
+        pins->insert(pin);
+      }
+    }
+    return pins;
+  };
+
+  // Find worst unconstrained setup path delay/longest path
+  sta::ExceptionFrom* setup_from
+      = sta_->makeExceptionFrom(collect_primary_inputs(),
+                                nullptr,
+                                nullptr,
+                                sta::RiseFallBoth::riseFall(),
+                                sta_->cmdSdc());
+
+  sta::ExceptionTo* setup_to
+      = sta_->makeExceptionTo(collect_all_outputs(),
+                              nullptr,
+                              nullptr,
+                              sta::RiseFallBoth::riseFall(),
+                              sta::RiseFallBoth::riseFall(),
+                              sta_->cmdSdc());
+
+  sta::PathEndSeq setup_ends
+      = sta_->findPathEnds(setup_from,            /* from */
+                           nullptr,               /* thrus */
+                           setup_to,              /* to */
+                           true,                  /* unconstrained */
+                           scenes,                /* scenes */
+                           sta::MinMaxAll::max(), /* min_max */
+                           1,                     /* group_path_count */
+                           1,                     /* endpoint_path_count */
+                           false,                 /* unique_pins */
+                           false,                 /* unique_edges */
+                           -sta::INF,             /* slack_min */
+                           sta::INF,              /* slack_max */
+                           true,                  /* sort_by_slack */
+                           group_names,           /* group_names */
+                           true,                  /* setup */
+                           false,                 /* hold */
+                           false,                 /* recovery */
+                           false,                 /* removal */
+                           true,                  /* clk_gating_setup */
+                           false);                /* clk_gating_hold */
+
+  float setup_delay
+      = setup_ends.empty()
+            ? 0.0
+            : static_cast<float>(setup_ends[0]->dataArrivalTime(sta_));
+
+  // Find worst unconstrained hold path delay/shortest path
+  sta::ExceptionFrom* hold_from
+      = sta_->makeExceptionFrom(collect_primary_inputs(),
+                                nullptr,
+                                nullptr,
+                                sta::RiseFallBoth::riseFall(),
+                                sta_->cmdSdc());
+
+  sta::ExceptionTo* hold_to
+      = sta_->makeExceptionTo(collect_all_outputs(),
+                              nullptr,
+                              nullptr,
+                              sta::RiseFallBoth::riseFall(),
+                              sta::RiseFallBoth::riseFall(),
+                              sta_->cmdSdc());
+
+  sta::PathEndSeq hold_ends
+      = sta_->findPathEnds(hold_from,             /* from */
+                           nullptr,               /* thrus */
+                           hold_to,               /* to */
+                           true,                  /* unconstrained */
+                           scenes,                /* scenes */
+                           sta::MinMaxAll::min(), /* min_max */
+                           1,                     /* group_path_count */
+                           1,                     /* endpoint_path_count */
+                           false,                 /* unique_pins */
+                           false,                 /* unique_edges */
+                           -sta::INF,             /* slack_min */
+                           sta::INF,              /* slack_max */
+                           true,                  /* sort_by_slack */
+                           group_names,           /* group_names */
+                           false,                 /* setup */
+                           true,                  /* hold */
+                           false,                 /* recovery */
+                           false,                 /* removal */
+                           false,                 /* clk_gating_setup */
+                           true);                 /* clk_gating_hold */
+
+  float hold_delay
+      = hold_ends.empty()
+            ? 0.0
+            : static_cast<float>(hold_ends[0]->dataArrivalTime(sta_));
+
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  logger_->info(RAM,
+                44,
+                "RAM maximum path delay: {} {}",
+                time_unit->asString(setup_delay),
+                time_unit->scaleAbbrevSuffix());
+  logger_->info(RAM,
+                45,
+                "RAM minimum path delay: {} {}",
+                time_unit->asString(hold_delay),
+                time_unit->scaleAbbrevSuffix());
+
+  sta::PowerResult total, sequential, combinational, clock, macro, pad;
+  sta_->power(
+      sta_->cmdScene(), total, sequential, combinational, clock, macro, pad);
+  sta::Unit* power_unit = sta_->units()->powerUnit();
+  logger_->info(RAM,
+                46,
+                "RAM estimated power: {} {}",
+                power_unit->asString(total.total()),
+                power_unit->scaleAbbrevSuffix());
 }
 
 }  // namespace ram
