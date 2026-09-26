@@ -102,13 +102,8 @@ export class LayerExtents {
     // Resolves to whether the reply was adopted; never rejects.
     refetch(request) {
         const generation = this.invalidate();
-        let pending;
-        try {
-            pending = Promise.resolve(request({ type: 'layer_extents' }));
-        } catch (_) {
-            return Promise.resolve(false);
-        }
-        return pending
+        return Promise.resolve()
+            .then(() => request({ type: 'layer_extents' }))
             .then((resp) => this.apply(generation, resp))
             .catch(() => false);
     }

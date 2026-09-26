@@ -164,11 +164,22 @@ describe('LayerExtents: staying current across design edits', () => {
         // metal9, and must not win.
         const first = extents.refetch(request);
         const second = extents.refetch(request);
+        // The requests go out on the next microtask.
+        await Promise.resolve();
+        assert.equal(replies.length, 2);
         replies[1]({ supported: true,
                      layers: { metal1: [0, 0, 0.5, 1], metal9: [0, 0, 1, 1] } });
         replies[0](RESPONSE);
         assert.equal(await first, false);
         assert.equal(await second, true);
+        assert.equal(
+            extents.mayHaveContent('metal9', { x: 0, y: 0, z: 0 }, {}), true);
+    });
+
+    it('refetch() never rejects, even when request throws', async () => {
+        const extents = adopted();
+        const ok = await extents.refetch(() => { throw new Error('x'); });
+        assert.equal(ok, false);
         assert.equal(
             extents.mayHaveContent('metal9', { x: 0, y: 0, z: 0 }, {}), true);
     });
