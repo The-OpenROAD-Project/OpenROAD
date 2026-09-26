@@ -4,6 +4,7 @@
 add_library(db
     dbBTerm.cpp 
     dbStream.cpp 
+    dbStreamLayout.cpp
     dbBTermItr.cpp 
     dbBPinItr.cpp 
     dbBlock.cpp 

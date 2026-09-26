@@ -7808,6 +7808,15 @@ class dbDatabase : public dbObject
   void write(std::ostream& file);
 
   ///
+  /// Write a database to this stream, and to layout a description of
+  /// where each table slot lies in what was written, for tools that
+  /// reformat a .odb outside OpenROAD. The database bytes are the same as
+  /// write(file) produces. The layout is not part of the .odb format and
+  /// carries no compatibility promise; see src/db/dbStreamLayout.h.
+  ///
+  void write(std::ostream& file, std::ostream& layout);
+
+  ///
   /// ECO - The following methods implement a simple ECO mechanism for capturing
   /// netlist changes. The intent of the ECO mechanism is to support delta
   /// changes that occur in a "remote" node that must be applied back to the

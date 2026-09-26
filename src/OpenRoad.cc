@@ -3,14 +3,28 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <fcntl.h>
+#include <spawn.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <array>
+#include <cerrno>
+#include <csignal>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <streambuf>
 #include <string>
+#include <string_view>
+#include <system_error>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "ord/Version.hh"
@@ -105,6 +119,14 @@ extern const char* ord_tcl_inits[];
 extern "C" {
 extern int Ord_Init(Tcl_Interp* interp);
 }
+
+// posix_spawn passes the environment on explicitly.
+#if defined(__APPLE__)
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#else
+extern char** environ;
+#endif
 
 namespace ord {
 
@@ -564,13 +586,223 @@ void OpenRoad::write3Dbx(const std::string& filename)
   writer.writeDbx(filename, db_->getChip());
 }
 
+namespace {
+
+// The read end of a pipe as a stream. It keeps the last 64 KiB it
+// delivered, because dbIStream seeks back over what it buffered and did
+// not use when it is done, as it is when a read fails part way; a stream
+// that could not would turn that error into std::terminate.
+class FdInBuf : public std::streambuf
+{
+ public:
+  explicit FdInBuf(const int fd) : fd_(fd) {}
+
+ protected:
+  int_type underflow() override
+  {
+    const size_t keep
+        = std::min<size_t>(kWindow, static_cast<size_t>(egptr() - eback()));
+    if (keep > 0) {
+      std::memmove(buffer_.data(), egptr() - keep, keep);
+    }
+    consumed_ += (egptr() - eback()) - keep;
+    ssize_t n;
+    do {
+      n = ::read(fd_, buffer_.data() + keep, kWindow);
+    } while (n < 0 && errno == EINTR);
+    setg(buffer_.data(), buffer_.data() + keep, buffer_.data() + keep);
+    if (n <= 0) {
+      return traits_type::eof();
+    }
+    setg(buffer_.data(), buffer_.data() + keep, buffer_.data() + keep + n);
+    return traits_type::to_int_type(*gptr());
+  }
+
+  pos_type seekoff(const off_type off,
+                   const std::ios_base::seekdir dir,
+                   const std::ios_base::openmode which) override
+  {
+    if (dir != std::ios_base::cur || !(which & std::ios_base::in) || off > 0
+        || -off > gptr() - eback()) {
+      return pos_type(off_type(-1));
+    }
+    gbump(static_cast<int>(off));
+    return pos_type(static_cast<off_type>(consumed_ + (gptr() - eback())));
+  }
+
+ private:
+  static constexpr size_t kWindow = 65536;
+  const int fd_;
+  uint64_t consumed_ = 0;  // bytes before eback()
+  std::array<char, 2 * kWindow> buffer_;
+};
+
+// Removes a file when it goes out of scope, whatever happens in between.
+class RemoveOnExit
+{
+ public:
+  explicit RemoveOnExit(std::string path) : path_(std::move(path)) {}
+  RemoveOnExit(const RemoveOnExit&) = delete;
+  RemoveOnExit& operator=(const RemoveOnExit&) = delete;
+  ~RemoveOnExit()
+  {
+    std::error_code ignored;
+    std::filesystem::remove(path_, ignored);
+  }
+
+ private:
+  const std::string path_;
+};
+
+}  // namespace
+
+// ODB_CODEC names an executable that reformats .odb files, for instance
+// to make them compress better. It is the user's, not part of OpenROAD:
+// write_db runs "<codec> encode <file> <layout>" on the file it just
+// wrote, with a description of where the table slots lie in it
+// (dbDatabase::write), and read_db reads the database from the stdout of
+// "<codec> decode <file>". OpenROAD knows nothing of the codec's format
+// and promises nothing about it. A codec is handed every file read_db
+// opens, so one it did not encode must come out of decode unchanged. Unset, or
+// for a .gz file, both commands behave exactly as they would without it.
+static const char* odbCodec()
+{
+  const char* codec = std::getenv("ODB_CODEC");
+  return (codec != nullptr && *codec != '\0') ? codec : nullptr;
+}
+
+// Starts args with stdout on out_fd, or inherited when out_fd is -1.
+// Returns the pid, or -1 with errno set.
+static pid_t spawnCodec(const std::vector<std::string>& args, const int out_fd)
+{
+  std::vector<char*> argv;
+  argv.reserve(args.size() + 1);
+  for (const std::string& arg : args) {
+    argv.push_back(const_cast<char*>(arg.c_str()));
+  }
+  argv.push_back(nullptr);
+
+  posix_spawn_file_actions_t actions;
+  int error = posix_spawn_file_actions_init(&actions);
+  if (error != 0) {
+    errno = error;
+    return -1;
+  }
+  if (out_fd >= 0) {
+    error = posix_spawn_file_actions_adddup2(&actions, out_fd, STDOUT_FILENO);
+  }
+  pid_t pid = -1;
+  if (error == 0) {
+    error
+        = posix_spawnp(&pid, argv[0], &actions, nullptr, argv.data(), environ);
+  }
+  posix_spawn_file_actions_destroy(&actions);
+  if (error != 0) {
+    errno = error;
+    return -1;
+  }
+  return pid;
+}
+
+// The exit status of pid; a signal is reported as 128 plus its number.
+static int waitCodec(const pid_t pid)
+{
+  int status = 0;
+  while (waitpid(pid, &status, 0) < 0) {
+    if (errno != EINTR) {
+      return -errno;
+    }
+  }
+  if (WIFEXITED(status)) {
+    return WEXITSTATUS(status);
+  }
+  return 128 + WTERMSIG(status);
+}
+
+// Runs args to completion: its exit status, or -errno if it did not start.
+static int runCodec(const std::vector<std::string>& args)
+{
+  const pid_t pid = spawnCodec(args, -1);
+  if (pid < 0) {
+    return -errno;
+  }
+  return waitCodec(pid);
+}
+
+static void checkCodec(utl::Logger* logger,
+                       const char* codec,
+                       const char* verb,
+                       const char* filename,
+                       const int status)
+{
+  if (status < 0) {
+    logger->error(ORD,
+                  79,
+                  "ODB_CODEC {} could not be run to {} {}: {}",
+                  codec,
+                  verb,
+                  filename,
+                  std::strerror(-status));
+  }
+  if (status > 0) {
+    logger->error(ORD,
+                  80,
+                  "ODB_CODEC {} failed to {} {}: exit status {}",
+                  codec,
+                  verb,
+                  filename,
+                  status);
+  }
+}
+
+static void readDbThroughCodec(ord::OpenRoad* openroad,
+                               utl::Logger* logger,
+                               const char* codec,
+                               const char* filename)
+{
+  int fds[2];
+  if (pipe(fds) != 0) {
+    checkCodec(logger, codec, "decode", filename, -errno);
+  }
+  // Neither end is the codec's but the one it writes to, which it gets
+  // as its stdout.
+  fcntl(fds[0], F_SETFD, FD_CLOEXEC);
+  fcntl(fds[1], F_SETFD, FD_CLOEXEC);
+  const pid_t pid = spawnCodec({codec, "decode", filename}, fds[1]);
+  const int spawn_error = errno;
+  close(fds[1]);
+  if (pid < 0) {
+    close(fds[0]);
+    checkCodec(logger, codec, "decode", filename, -spawn_error);
+  }
+
+  FdInBuf buf(fds[0]);
+  std::istream stream(&buf);
+  try {
+    openroad->readDb(stream);
+  } catch (...) {
+    close(fds[0]);
+    // The codec may be blocked on something other than the pipe.
+    kill(pid, SIGKILL);
+    waitCodec(pid);
+    throw;
+  }
+  close(fds[0]);
+  checkCodec(logger, codec, "decode", filename, waitCodec(pid));
+}
+
 // TODO: bool hierarchy should be removed in the future.
 // It is retained for a while for backward compatibility.
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   try {
-    utl::InStreamHandler handler(filename, true);
-    readDb(handler.getStream());
+    const char* codec = odbCodec();
+    if (codec != nullptr && !std::string_view(filename).ends_with(".gz")) {
+      readDbThroughCodec(this, logger_, codec, filename);
+    } else {
+      utl::InStreamHandler handler(filename, true);
+      readDb(handler.getStream());
+    }
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
@@ -611,8 +843,25 @@ void OpenRoad::writeDb(std::ostream& stream)
 void OpenRoad::writeDb(const char* filename,
                        std::optional<int> compression_level)
 {
-  utl::OutStreamHandler stream_handler(filename, true, compression_level);
-  writeDb(stream_handler.getStream());
+  const char* codec = odbCodec();
+  if (codec == nullptr || std::string_view(filename).ends_with(".gz")) {
+    utl::OutStreamHandler stream_handler(filename, true, compression_level);
+    writeDb(stream_handler.getStream());
+    return;
+  }
+
+  const std::string layout_file = std::string(filename) + ".layout";
+  const RemoveOnExit remove_layout(layout_file);
+  {
+    utl::OutStreamHandler stream_handler(filename, true);
+    std::ostream& stream = stream_handler.getStream();
+    stream.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    std::ofstream layout(layout_file);
+    layout.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    db_->write(stream, layout);
+  }
+  const int status = runCodec({codec, "encode", filename, layout_file});
+  checkCodec(logger_, codec, "encode", filename, status);
 }
 
 void OpenRoad::readVerilog(const char* filename)
