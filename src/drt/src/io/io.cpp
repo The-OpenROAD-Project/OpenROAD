@@ -54,6 +54,12 @@ using odb::dbTechLayerType;
 
 namespace drt {
 
+static bool isSecondaryPowerNet(odb::dbNet* db_net)
+{
+  return db_net->getSigType().isSupply() && !db_net->getSWires().empty()
+         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty());
+}
+
 io::Parser::Parser(odb::dbDatabase* dbIn,
                    frDesign* designIn,
                    utl::Logger* loggerIn,
@@ -941,7 +947,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       // for each path end
     }
   }
-  if (net->isSpecial()) {
+  if (net->isSpecial() || isSecondaryPowerNet(net)) {
     for (auto swire : net->getSWires()) {
       for (auto box : swire->getWires()) {
         if (!box->isVia()) {
@@ -1037,12 +1043,14 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   bool has_jumpers = db_net->hasJumpers();
   bool is_abuted = db_net->isConnectedByAbutment();
   if (!is_special && db_net->getSigType().isSupply()) {
-    logger_->error(DRT,
-                   305,
-                   "Net {} of signal type {} is not routable by TritonRoute. "
-                   "Move to special nets.",
-                   db_net->getName(),
-                   db_net->getSigType().getString());
+    if (!isSecondaryPowerNet(db_net)) {
+      logger_->error(DRT,
+                     305,
+                     "Net {} of signal type {} is not routable by TritonRoute. "
+                     "Move to special nets.",
+                     db_net->getName(),
+                     db_net->getSigType().getString());
+    }
   }
   std::unique_ptr<frNet> net_in
       = std::make_unique<frNet>(db_net->getName(), router_cfg_);
@@ -1053,16 +1061,20 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   if (db_net->getSigType() == odb::dbSigType::CLOCK) {
     net_in->updateIsClock(true);
   }
-  if (is_special) {
+  if (is_special && !isSecondaryPowerNet(db_net)) {
     net_in->setIsSpecial(true);
   }
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
   net_in->setAutoTaperEnabled(db_net->isAutoTaperEnabled());
   updateNetRouting(net_in.get(), db_net);
-  net_in->setType(db_net->getSigType());
+  if (isSecondaryPowerNet(db_net)) {
+    net_in->setType(odb::dbSigType::SIGNAL);
+  } else {
+    net_in->setType(db_net->getSigType());
+  }
   frNet* raw_net_in = net_in.get();
-  if (is_special) {
+  if (is_special && !isSecondaryPowerNet(db_net)) {
     getBlock()->addSNet(std::move(net_in));
   } else {
     getBlock()->addNet(std::move(net_in));
