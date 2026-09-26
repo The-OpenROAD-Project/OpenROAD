@@ -108,6 +108,7 @@ ALL_TESTS = [
 
 PASSFAIL_TESTS = [
     "check_ip_liberty_pins",
+    "check_ip_liberty_values",
 ]
 
 filegroup(
