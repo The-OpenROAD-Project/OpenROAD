@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -140,7 +141,12 @@ class Opendp
   int padLeft(odb::dbInst* inst) const;
   int padRight(odb::dbInst* inst) const;
 
-  void checkPlacement(bool verbose, const std::string& report_file_name = "");
+  // When fixed_only is set, only fixed instances and macros are checked.
+  // This validates the floorplan (macros, tapcells, endcaps) before the
+  // standard cells have been placed.
+  void checkPlacement(bool verbose,
+                      const std::string& report_file_name = "",
+                      bool fixed_only = false);
   void fillerPlacement(const dbMasterSeq& filler_masters,
                        const char* prefix,
                        bool verbose);
@@ -217,10 +223,12 @@ class Opendp
   void saveViolations(const std::vector<Node*>& failures,
                       odb::dbMarkerCategory* category,
                       const std::string& violation_type = "") const;
-  void importDb();
+  // fixed_only imports only fixed instances and macros (see checkPlacement).
+  void importDb(bool fixed_only = false);
   void importClear();
   odb::Rect getBbox(odb::dbInst* inst);
-  void createNetwork();
+  void createNetwork(bool fixed_only);
+  void createNetworkConnectivity(odb::dbBlock* block);
   void createArchitecture();
   void setUpPlacementGroups();
   void adjustNodesOrient();
@@ -290,6 +298,26 @@ class Opendp
   void groupInitPixels2();
 
   // checkPlacement
+  struct CheckPlacementFailures
+  {
+    std::vector<Node*> placed;
+    std::vector<Node*> in_rows;
+    std::vector<Node*> overlap;
+    std::vector<Node*> padding;
+    std::vector<Node*> one_site_gap;
+    std::vector<Node*> site_align;
+    std::vector<Node*> region_placement;
+    std::vector<Node*> placement;  // cells DPL failed to place
+    std::vector<Node*> edge_spacing;
+    std::vector<Node*> blocked_layers;
+  };
+  void checkCellPlacement(Node* cell,
+                          const std::unordered_set<int>& row_coords,
+                          CheckPlacementFailures& failures);
+  size_t reportCheckPlacement(const CheckPlacementFailures& failures,
+                              bool verbose,
+                              bool fixed_only,
+                              const std::string& report_file_name);
   static bool isPlaced(const Node* cell);
   bool checkInRows(const Node& cell) const;
   const Node* checkOverlap(Node& cell) const;
@@ -307,16 +335,7 @@ class Opendp
       bool verbose,
       const std::function<void(Node* cell)>& report_failure) const;
   void reportOverlapFailure(Node* cell) const;
-  void saveFailures(const std::vector<Node*>& placed_failures,
-                    const std::vector<Node*>& in_rows_failures,
-                    const std::vector<Node*>& overlap_failures,
-                    const std::vector<Node*>& padding_failures,
-                    const std::vector<Node*>& one_site_gap_failures,
-                    const std::vector<Node*>& site_align_failures,
-                    const std::vector<Node*>& region_placement_failures,
-                    const std::vector<Node*>& placement_failures,
-                    const std::vector<Node*>& edge_spacing_failures,
-                    const std::vector<Node*>& blocked_layers_failures);
+  void saveFailures(const CheckPlacementFailures& failures);
   void writeJsonReport(const std::string& filename);
 
   void rectDist(const Node* cell,

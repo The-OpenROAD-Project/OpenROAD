@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "check7",
     "check8",
     "check9",
+    "check_fixed_only",
     "diamond01",
     "diamond_multi_height",
     "diamond_one_site_gap",
@@ -161,6 +162,9 @@ filegroup(
                 "extra.lef",
             ],
             "check9": [
+                "extra.lef",
+            ],
+            "check_fixed_only": [
                 "extra.lef",
             ],
             "diamond01": [
@@ -330,11 +334,13 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
+    data = ["extra.lef"],
     deps = [
         "//src/dpl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",
+        "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

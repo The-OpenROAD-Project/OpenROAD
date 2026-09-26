@@ -51,10 +51,10 @@ report_legalization_stats()
 }
 
 void
-check_placement_cmd(bool verbose, const char* report_file_name)
+check_placement_cmd(bool verbose, const char* report_file_name, bool fixed_only)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose, std::string(report_file_name));
+  opendp->checkPlacement(verbose, std::string(report_file_name), fixed_only);
 }
 
 
