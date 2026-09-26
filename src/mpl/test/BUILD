@@ -51,7 +51,12 @@ COMPULSORY_TESTS = [
     "unfixed_cells_dont_fit_in_core",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+# Self-checking tests: the last line of the log says "pass"; no .ok file.
+PASSFAIL_TESTS = [
+    "fixed_std_cell_no_unfixed_macros",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -103,6 +108,10 @@ filegroup(
                 ],
                 "fixed_macros2": [
                     "testcases/fixed_macros2.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "fixed_std_cell_no_unfixed_macros": [
+                    "testcases/fixed_macros1.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "guides1": [
@@ -256,8 +265,10 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = [] if test_name in COMPULSORY_TESTS + PASSFAIL_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
