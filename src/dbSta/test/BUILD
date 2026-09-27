@@ -158,6 +158,7 @@ filegroup(
                 "3dic_cross_flop_b.bmap",
                 "3dic_cross_flop_b.def",
                 "3dic_cross_top.v",
+                "3dic_read_db_reload.tcl",
             ],
             "block_sta1": [
                 "example1_typ.lib",
