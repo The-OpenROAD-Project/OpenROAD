@@ -143,4 +143,37 @@ library (check_ip_liberty_values) {
       voltage_name : VDD;
     }
   }
+
+  cell (lib_pin_max_transition) {
+    area : 1;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Z) {
+      direction : output;
+      max_transition : 3.0;
+      function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        rise_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 2.50");
+        }
+        cell_fall (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        fall_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+      }
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
 }
