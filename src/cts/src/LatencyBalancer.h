@@ -72,6 +72,7 @@ class LatencyBalancer
         network_(network),
         openSta_(sta),
         techChar_(techChar),
+        wireSegmentUnit_(techChar->getLengthUnit()),
         capPerDBU_(capPerDBU),
         resPerDBU_(resPerDBU),
         worseDelay_(std::numeric_limits<float>::min())
@@ -139,7 +140,7 @@ class LatencyBalancer
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
   TechChar* techChar_ = nullptr;
-  double wireSegmentUnit_ = 0.0;
+  double wireSegmentUnit_;
   double capPerDBU_;
   double resPerDBU_;
   double dpUnit_ = std::pow(10, 12);  // pico seconds

@@ -58,18 +58,32 @@ class DelayBufListTest : public tst::IntegratedFixture
   float driveResistance(const std::string& buf)
   {
     sta::LibertyCell* cell = db_network_->findLibertyCell(buf.c_str());
-    EXPECT_NE(cell, nullptr) << buf << " has no liberty cell";
+    if (cell == nullptr) {
+      ADD_FAILURE() << buf << " has no liberty cell";
+      return 0.0f;
+    }
     sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
+    if (out == nullptr) {
+      ADD_FAILURE() << buf << " is not a buffer";
+      return 0.0f;
+    }
     return out->driveResistance();
   }
 
   float intrinsicDelay(const std::string& buf)
   {
     sta::LibertyCell* cell = db_network_->findLibertyCell(buf.c_str());
-    EXPECT_NE(cell, nullptr) << buf << " has no liberty cell";
+    if (cell == nullptr) {
+      ADD_FAILURE() << buf << " has no liberty cell";
+      return 0.0f;
+    }
     sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
+    if (out == nullptr) {
+      ADD_FAILURE() << buf << " is not a buffer";
+      return 0.0f;
+    }
     return out->intrinsicDelay(sta_.get());
   }
 };
