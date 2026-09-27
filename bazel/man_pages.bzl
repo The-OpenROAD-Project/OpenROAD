@@ -18,6 +18,14 @@ many Tcl commands each module exposes), so outputs are declared as
 TreeArtifacts.
 """
 
+def _man_pages_resource_set(_os, _num_inputs):
+    # manpages_impl.py renders pages on one thread per CPU, so this action
+    # uses the whole host. Reserve all local CPUs to keep Bazel from
+    # co-scheduling other heavy actions alongside it and oversubscribing the
+    # machine. Bazel clamps the request to the cores actually available, so
+    # this is safe on small CI hosts too.
+    return {"cpu": 512.0}
+
 def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
@@ -76,6 +84,7 @@ def _man_pages_impl(ctx):
     )
 
     ctx.actions.run(
+        resource_set = _man_pages_resource_set,
         outputs = [cat_dir, html_dir],
         inputs = all_inputs,
         executable = impl,
