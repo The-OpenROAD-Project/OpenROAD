@@ -6,6 +6,7 @@
 // the binary, and these tests are what keeps a reintroduced remote reference
 // failing here rather than in someone else's browser.
 
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -53,7 +54,7 @@ bool isIdentifierUrl(const std::string_view url)
            // The namespace netlistsvg stamps into the SVG it produces.
            "https://github.com/nturley/netlistsvg",
        }) {
-    if (url.rfind(allowed, 0) == 0) {
+    if (url.starts_with(allowed)) {
       return true;
     }
   }

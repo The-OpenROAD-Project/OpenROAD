@@ -13,6 +13,7 @@
 #include <string>
 
 #include "web_assets.h"
+#include "zconf.h"
 #include "zlib.h"
 
 namespace web {
