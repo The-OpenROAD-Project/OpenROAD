@@ -130,9 +130,10 @@ def main():
             shutil.copy(f, man1_md)
 
         # Copy README files as {module}.md (replacing link_readmes.sh).
+        # ManPage uses the source mtime for its date, so preserve it.
         for spec in args.readme:
             module, path = spec.split(":", 1)
-            shutil.copy(path, os.path.join(man2_md, f"{module}.md"))
+            shutil.copy2(path, os.path.join(man2_md, f"{module}.md"))
 
         # Copy each module's messages.txt to ../src/{module}/messages.txt,
         # and the ORD messages (empty module) to ../messages.txt, so
@@ -141,7 +142,7 @@ def main():
             module, path = spec.split(":", 1)
             mod_dir = os.path.join(workdir, "src", module) if module else workdir
             os.makedirs(mod_dir, exist_ok=True)
-            shutil.copy(path, os.path.join(mod_dir, "messages.txt"))
+            shutil.copy2(path, os.path.join(mod_dir, "messages.txt"))
 
         # Track which .md files exist in man2 BEFORE the generator runs so
         # we can skip them when running pandoc (they're module-level READMEs,
