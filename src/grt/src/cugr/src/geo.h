@@ -140,7 +140,7 @@ class IntervalT
 
   // Geometric Query/Update
   // interval/range of union (not union of intervals)
-  IntervalT unionWith(const IntervalT& rhs) const
+  [[nodiscard]] IntervalT unionWith(const IntervalT& rhs) const
   {
     if (!isValid()) {
       return rhs;
@@ -153,7 +153,7 @@ class IntervalT
     return IntervalT(std::min(low_, rhs.low_), std::max(high_, rhs.high_));
   }
   // may return an invalid interval (as empty intersection)
-  IntervalT intersectWith(const IntervalT& rhs) const
+  [[nodiscard]] IntervalT intersectWith(const IntervalT& rhs) const
   {
     return IntervalT(std::max(low_, rhs.low_), std::min(high_, rhs.high_));
   }
@@ -309,11 +309,11 @@ class BoxT
   void fastUpdate(const PointT& pt) { fastUpdate(pt.x(), pt.y()); }
 
   // Geometric Query/Update
-  BoxT unionWith(const BoxT& rhs) const
+  [[nodiscard]] BoxT unionWith(const BoxT& rhs) const
   {
     return {x_.unionWith(rhs.x_), y_.unionWith(rhs.y_)};
   }
-  BoxT intersectWith(const BoxT& rhs) const
+  [[nodiscard]] BoxT intersectWith(const BoxT& rhs) const
   {
     return {x_.intersectWith(rhs.x_), y_.intersectWith(rhs.y_)};
   }
