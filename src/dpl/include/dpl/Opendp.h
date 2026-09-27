@@ -140,7 +140,13 @@ class Opendp
   int padLeft(odb::dbInst* inst) const;
   int padRight(odb::dbInst* inst) const;
 
-  void checkPlacement(bool verbose, const std::string& report_file_name = "");
+  // check_fixed covers fixed instances and macros (e.g. to validate the
+  // floorplan before the standard cells are placed); check_placeable covers
+  // the movable cells.
+  void checkPlacement(bool verbose,
+                      const std::string& report_file_name = "",
+                      bool check_fixed = true,
+                      bool check_placeable = true);
   void fillerPlacement(const dbMasterSeq& filler_masters,
                        const char* prefix,
                        bool verbose);
@@ -217,10 +223,11 @@ class Opendp
   void saveViolations(const std::vector<Node*>& failures,
                       odb::dbMarkerCategory* category,
                       const std::string& violation_type = "") const;
-  void importDb();
+  // fixed_only imports only fixed instances and macros (see checkPlacement).
+  void importDb(bool fixed_only = false);
   void importClear();
   odb::Rect getBbox(odb::dbInst* inst);
-  void createNetwork();
+  void createNetwork(bool fixed_only);
   void createArchitecture();
   void setUpPlacementGroups();
   void adjustNodesOrient();
