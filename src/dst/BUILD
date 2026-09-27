@@ -12,6 +12,31 @@ package(
 )
 
 cc_library(
+    name = "private_hdrs",
+    hdrs = [
+        "src/BalancerConnection.h",
+        "src/LoadBalancer.h",
+        "src/Worker.h",
+        "src/WorkerConnection.h",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//src/dst/test:__pkg__"],
+    deps = [
+        # TODO: we use headers provided by :dst, but that reveals cyclic dep
+        #":dst",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.asio",
+        "@boost.smart_ptr",
+    ] + select({
+        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
+        "//conditions:default": ["@boost.thread//:thread_posix"],
+    }),
+)
+
+cc_library(
     name = "dst",
     srcs = [
         "src/BalancerConnection.cc",
@@ -27,15 +52,12 @@ cc_library(
         "include/dst/Distributed.h",
         "include/dst/JobCallBack.h",
         "include/dst/JobMessage.h",
-        "src/BalancerConnection.h",
-        "src/LoadBalancer.h",
-        "src/Worker.h",
-        "src/WorkerConnection.h",
     ],
     includes = [
         "include",
     ],
     deps = [
+        ":private_hdrs",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
