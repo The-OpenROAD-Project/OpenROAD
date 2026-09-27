@@ -257,7 +257,7 @@ void GraphicsImpl::drawField(web::Painter& painter)
     if (efMax == 0.0f) {
       continue;
     }
-    const float field_scale = max_len / efMax;
+    const double field_scale = static_cast<double>(max_len) / efMax;
     for (auto& bin : bins) {
       const float fx = bin.electroFieldX();
       const float fy = bin.electroFieldY();
