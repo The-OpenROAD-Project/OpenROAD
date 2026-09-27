@@ -2879,7 +2879,7 @@ TEST_F(SelectHandlerTest, SelectLayerUnknownChipletFallsBackToDefaultTech)
   WebSocketRequest req;
   req.id = 53;
   req.type = WebSocketRequest::kSelectLayer;
-  req.json = parseObj(R"({"layer":"metal1","chiplet":"top.nonexistent"})");
+  req.json = parseObj(R"({"layer":"metal1","chiplet":"top/nonexistent"})");
 
   auto resp = handler_->handleSelectLayer(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);

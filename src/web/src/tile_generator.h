@@ -183,7 +183,7 @@ struct ChipletNode
   odb::dbBlock* block = nullptr;    // chip->getBlock()
   odb::dbChipInst* inst = nullptr;  // null for root
   odb::dbTransform world_xfm;       // local-to-root transform
-  std::string path;                 // "top.soc_inst.subip" — unique
+  std::string path;                 // "top/soc_inst/subip" — unique
   std::string parent_path;          // path of the parent ("" for the root)
   std::string name;                 // "top" or inst->getName()
   int depth = 0;
@@ -369,7 +369,7 @@ struct TileVisibility
   // Per-chiplet visibility: when has_visible_chiplets is true, the tile
   // renderer skips ChipletNodes whose `path` is not in this set.  Empty
   // set with the flag off renders every chiplet (default).  Paths match
-  // ChipletNode::path produced by collectChiplets() (e.g. "top.soc_inst").
+  // ChipletNode::path produced by collectChiplets() (e.g. "top/soc_inst").
   std::set<std::string> visible_chiplets;
   bool has_visible_chiplets = false;
   bool isChipletVisible(const std::string& path) const;
