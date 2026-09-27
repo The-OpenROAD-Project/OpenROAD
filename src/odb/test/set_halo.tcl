@@ -62,7 +62,7 @@ check "Non-macro instance has no halo" {$buf1 getHalo} "NULL"
 puts "Test 5: Testing error handling..."
 if { [catch { set_halo -instance MACRO1 } msg] } {
   puts "Expected error caught: $msg"
-  check "Missing -halo rejected" 1 [1]
+  check "Missing -halo rejected" {expr 1} 1
 } else {
   check "Missing -halo should have been rejected" 0 1
 }
@@ -70,7 +70,7 @@ if { [catch { set_halo -instance MACRO1 } msg] } {
 # Test 6: Error handling - halo list with an invalid number of values
 if { [catch { set_halo -halo { 1.0 2.0 3.0 } -instance MACRO1 } msg] } {
   puts "Expected error caught: $msg"
-  check "Invalid halo length rejected" 1 [1]
+  check "Invalid halo length rejected" {expr 1} 1
 } else {
   check "Invalid halo length should have been rejected" 0 1
 }
@@ -78,7 +78,7 @@ if { [catch { set_halo -halo { 1.0 2.0 3.0 } -instance MACRO1 } msg] } {
 # Test 7: Error handling - negative halo value
 if { [catch { set_halo -halo { -1.0 } -instance MACRO1 } msg] } {
   puts "Expected error caught: $msg"
-  check "Negative halo value rejected" 1 [1]
+  check "Negative halo value rejected" {expr 1} 1
 } else {
   check "Negative halo value should have been rejected" 0 1
 }
@@ -86,7 +86,7 @@ if { [catch { set_halo -halo { -1.0 } -instance MACRO1 } msg] } {
 # Test 8: Error handling - neither -instance nor -apply_to_all_macros given
 if { [catch { set_halo -halo 1.0 } msg] } {
   puts "Expected error caught: $msg"
-  check "Missing -instance/-apply_to_all_macros rejected" 1 [1]
+  check "Missing -instance/-apply_to_all_macros rejected" {expr 1} 1
 } else {
   check "Missing -instance/-apply_to_all_macros should have been rejected" 0 1
 }
@@ -98,7 +98,7 @@ if {
   } msg]
 } {
   puts "Expected error caught: $msg"
-  check "-instance and -apply_to_all_macros together rejected" 1 [1]
+  check "-instance and -apply_to_all_macros together rejected" {expr 1} 1
 } else {
   check "-instance and -apply_to_all_macros together should have been rejected" 0 1
 }
@@ -106,7 +106,7 @@ if {
 # Test 9: Error handling - non-existent instance
 if { [catch { set_halo -halo 1.0 -instance "non_existent" } msg] } {
   puts "Expected error caught: $msg"
-  check "Non-existent instance rejected" 1 [1]
+  check "Non-existent instance rejected" {expr 1} 1
 } else {
   check "Non-existent instance should have been rejected" 0 1
 }
@@ -114,7 +114,7 @@ if { [catch { set_halo -halo 1.0 -instance "non_existent" } msg] } {
 # Test 10: Error handling - instance that is not a macro
 if { [catch { set_halo -halo 1.0 -instance BUF1 } msg] } {
   puts "Expected error caught: $msg"
-  check "Non-macro instance rejected" 1 [1]
+  check "Non-macro instance rejected" {expr 1} 1
 } else {
   check "Non-macro instance should have been rejected" 0 1
 }
