@@ -984,7 +984,7 @@ export function populateDisplayControls(app, visibility, selectability,
     const chipletData = (techData && Array.isArray(techData.chiplets))
         ? techData.chiplets : [];
     if (chipletData.length > 1) {
-        // Cookie schema: { "<block_name>": ["hidden.path1", "hidden.path2"] }.
+        // Cookie schema: { "<block_name>": ["hidden/path1", "hidden/path2"] }.
         // Keying by top-block name keeps hidden state isolated per design —
         // opening design B no longer inherits design A's hides just because
         // both happen to expose a chiplet path like "top/soc_inst".
