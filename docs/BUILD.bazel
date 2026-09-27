@@ -87,6 +87,10 @@ man_pages(
         "//docs/src/scripts:manpage.py",
         "//docs/src/scripts:extract_utils.py",
     ],
+    stamp = select({
+        "//bazel:stamp": True,
+        "//conditions:default": False,
+    }),
     visibility = ["//visibility:public"],
 )
 

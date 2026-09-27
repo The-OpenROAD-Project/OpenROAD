@@ -41,6 +41,21 @@ def _run_pandoc(pandoc, src, dst, to_format):
     )
 
 
+def _source_date_epoch(stable_status):
+    """Return the page date as a SOURCE_DATE_EPOCH string.
+
+    The HEAD commit time when stamping, else "0": file mtimes differ per
+    checkout, so they are never used.
+    """
+    if stable_status:
+        with open(stable_status, encoding="utf-8") as f:
+            for line in f:
+                key, _, value = line.strip().partition(" ")
+                if key == "STABLE_GIT_COMMIT_TIME" and value.isdigit():
+                    return value
+    return "0"
+
+
 def _process_section(
     pandoc, md_dir, roff_scratch, html_dir, cat_dir, section_num, skip_stems=None
 ):
@@ -97,6 +112,10 @@ def main():
     p.add_argument(
         "--man1-src", action="append", default=[], help="man1 source .md files"
     )
+    p.add_argument(
+        "--stable-status",
+        help="Bazel stable-status.txt; its STABLE_GIT_COMMIT_TIME dates the pages",
+    )
     p.add_argument("--cat-out", required=True, help="Output directory for cat pages")
     p.add_argument("--html-out", required=True, help="Output directory for html pages")
     args = p.parse_args()
@@ -130,10 +149,9 @@ def main():
             shutil.copy(f, man1_md)
 
         # Copy README files as {module}.md (replacing link_readmes.sh).
-        # ManPage uses the source mtime for its date, so preserve it.
         for spec in args.readme:
             module, path = spec.split(":", 1)
-            shutil.copy2(path, os.path.join(man2_md, f"{module}.md"))
+            shutil.copy(path, os.path.join(man2_md, f"{module}.md"))
 
         # Copy each module's messages.txt to ../src/{module}/messages.txt,
         # and the ORD messages (empty module) to ../messages.txt, so
@@ -142,7 +160,7 @@ def main():
             module, path = spec.split(":", 1)
             mod_dir = os.path.join(workdir, "src", module) if module else workdir
             os.makedirs(mod_dir, exist_ok=True)
-            shutil.copy2(path, os.path.join(mod_dir, "messages.txt"))
+            shutil.copy(path, os.path.join(mod_dir, "messages.txt"))
 
         # Track which .md files exist in man2 BEFORE the generator runs so
         # we can skip them when running pandoc (they're module-level READMEs,
@@ -156,7 +174,11 @@ def main():
         subprocess.run(
             [sys.executable, os.path.join(scripts_dir, "md_roff_compat.py")],
             cwd=docs_dir,
-            env={**os.environ, "PYTHONPATH": scripts_dir},
+            env={
+                **os.environ,
+                "PYTHONPATH": scripts_dir,
+                "SOURCE_DATE_EPOCH": _source_date_epoch(args.stable_status),
+            },
             check=True,
         )
 

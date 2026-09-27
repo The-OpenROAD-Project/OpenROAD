@@ -10,6 +10,14 @@ load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_cons
 
 package(features = ["layering_check"])
 
+# True under --stamp (e.g. --config=release), for rules that read the
+# workspace status only when stamping.
+config_setting(
+    name = "stamp",
+    values = {"stamp": "1"},
+    visibility = ["//visibility:public"],
+)
+
 # Driver script that orchestrates man page generation inside Bazel's sandbox.
 py_binary(
     name = "manpages_impl",

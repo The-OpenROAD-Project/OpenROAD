@@ -8,6 +8,11 @@ messages.txt files, man1 source markdown, Python scripts) are declared
 as explicit Bazel dependencies.  No host PATH look-ups, no make, no
 nroff — pandoc --to=plain replaces nroff+col for cat pages.
 
+Page footer dates come from SOURCE_DATE_EPOCH, never from file mtimes.
+With stamp = True it is the HEAD commit time (STABLE_GIT_COMMIT_TIME from
+tools/workspace_status.sh); otherwise it is fixed at 0 so the output stays
+identical across commits and the action stays cached.
+
 Output filenames are not known at analysis time (they depend on how
 many Tcl commands each module exposes), so outputs are declared as
 TreeArtifacts.
@@ -33,6 +38,11 @@ def _man_pages_impl(ctx):
     args.add("--pandoc", pandoc)
     args.add("--cat-out", cat_dir.path)
     args.add("--html-out", html_dir.path)
+
+    inputs = []
+    if ctx.attr.stamp:
+        args.add("--stable-status", ctx.info_file)
+        inputs.append(ctx.info_file)
 
     for f in ctx.files.scripts:
         if f.basename.endswith(".py"):
@@ -60,7 +70,8 @@ def _man_pages_impl(ctx):
         ctx.files.scripts +
         ctx.files.readmes +
         ctx.files.messages +
-        [pandoc],
+        [pandoc] +
+        inputs,
         transitive = [ctx.attr._manpages_impl[DefaultInfo].default_runfiles.files],
     )
 
@@ -96,6 +107,11 @@ man_pages = rule(
         "scripts": attr.label_list(
             doc = "Python scripts for man page generation.",
             allow_files = True,
+        ),
+        "stamp": attr.bool(
+            doc = "Stamp the HEAD commit date into page footers. Set it " +
+                  "from //bazel:stamp so it follows --stamp.",
+            default = False,
         ),
         "_manpages_impl": attr.label(
             default = "//bazel:manpages_impl",
