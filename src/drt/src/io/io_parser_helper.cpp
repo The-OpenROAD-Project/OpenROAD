@@ -682,6 +682,7 @@ void io::Parser::convertLef58MinCutConstraints()
       std::unique_ptr<frConstraint> uCon
           = std::make_unique<frMinimumcutConstraint>();
       auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
+      rptr->setNumCuts(dbRule->getNumCuts());
       if (dbRule->isPerCutClass()) {
         const frViaDef* viaDefBelow = nullptr;
         if (lNum > bottomLayerNum) {
@@ -711,6 +712,10 @@ void io::Parser::convertLef58MinCutConstraints()
         if (!found) {
           continue;
         }
+      }
+      // Every via has at least one cut, so a single-cut rule can't be violated.
+      if (rptr->getNumCuts() <= 1) {
+        continue;
       }
 
       if (dbRule->isLengthValid()) {
