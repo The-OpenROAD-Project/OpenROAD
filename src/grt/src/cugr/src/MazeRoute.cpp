@@ -322,11 +322,8 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
               node->addChild(gradchild);
             }
             if (child->getFixedLayers().isValid()) {
-              if (node->getFixedLayers().isValid()) {
-                node->getFixedLayers().unionWith(child->getFixedLayers());
-              } else {
-                node->setFixedLayers(child->getFixedLayers());
-              }
+              node->setFixedLayers(
+                  node->getFixedLayers().unionWith(child->getFixedLayers()));
             }
             node->removeChild(child_index);
             child_index -= 1;
