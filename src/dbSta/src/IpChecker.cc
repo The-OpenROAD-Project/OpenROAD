@@ -23,6 +23,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/TableModel.hh"
@@ -872,10 +873,12 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
   Unit* time_unit = units->timeUnit();
   Unit* cap_unit = units->capacitanceUnit();
 
-  float max_slew = max_transition_;
-  bool has_max_slew = max_slew > 0.0;
-  if (!has_max_slew) {
-    library->defaultMaxSlew(max_slew, has_max_slew);
+  // A -max_transition override applies to every pin. Otherwise each output
+  // pin's own max_transition applies, with the library default as fallback.
+  float default_max_slew = max_transition_;
+  bool has_default_max_slew = default_max_slew > 0.0;
+  if (!has_default_max_slew) {
+    library->defaultMaxSlew(default_max_slew, has_default_max_slew);
   }
 
   // One model is shared by every arc with the same output edge, so only walk
@@ -932,9 +935,21 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
                       "instantaneous switch",
                       master_name,
                       arc_name,
-                      time_unit->staToUser(min_slew),
+                      time_unit->asString(min_slew),
                       time_unit->scaleAbbrevSuffix());
         warning_count_++;
+      }
+
+      float max_slew = default_max_slew;
+      bool has_max_slew = has_default_max_slew;
+      if (max_transition_ <= 0.0 && to != nullptr) {
+        float pin_max_slew = 0.0;
+        bool has_pin_max_slew = false;
+        to->slewLimit(MinMax::max(), pin_max_slew, has_pin_max_slew);
+        if (has_pin_max_slew) {
+          max_slew = pin_max_slew;
+          has_max_slew = true;
+        }
       }
 
       if (has_max_slew && peak_slew > max_slew) {
@@ -944,9 +959,9 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
                       "limit of {} {}",
                       master_name,
                       arc_name,
-                      time_unit->staToUser(peak_slew),
+                      time_unit->asString(peak_slew),
                       time_unit->scaleAbbrevSuffix(),
-                      time_unit->staToUser(max_slew),
+                      time_unit->asString(max_slew),
                       time_unit->scaleAbbrevSuffix());
         warning_count_++;
       }
@@ -983,9 +998,9 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
                     "load limit of {} {}",
                     master_name,
                     mterm->getName(),
-                    cap_unit->staToUser(cap),
+                    cap_unit->asString(cap),
                     cap_unit->scaleAbbrevSuffix(),
-                    cap_unit->staToUser(max_cap),
+                    cap_unit->asString(max_cap),
                     cap_unit->scaleAbbrevSuffix());
       warning_count_++;
     }
