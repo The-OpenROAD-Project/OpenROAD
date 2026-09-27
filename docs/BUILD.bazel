@@ -116,11 +116,11 @@ py_test(
             "_build/**",
             "_readthedocs/**",
             "main/**",
-            # Everything docs/.gitignore lists as intermediate output: the man
-            # page build (//docs:man_pages) writes these into the source tree,
-            # so globbing them would make this test's inputs -- and so its
-            # cache key and result -- depend on whether man pages happen to
-            # have been built here. conf.py excludes all four from the Sphinx
+            # Everything docs/.gitignore lists as intermediate output: a local
+            # man page build (make in docs/) writes these into the source
+            # tree, so globbing them would make this test's inputs -- and so
+            # its cache key and result -- depend on whether man pages happen
+            # to have been built here. conf.py excludes all four from the Sphinx
             # build anyway.
             "cat/**",
             "html/**",
