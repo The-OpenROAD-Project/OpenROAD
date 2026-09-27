@@ -17,7 +17,16 @@ def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
 
-    pandoc = ctx.file._pandoc
+    # The pypandoc-binary wheel (pinned in bazel/requirements.in) ships a
+    # statically linked pandoc; its other files are Python bindings the
+    # driver does not use, so only the binary becomes an action input.
+    pandoc = None
+    for f in ctx.files._pandoc:
+        if f.basename == "pandoc":
+            pandoc = f
+            break
+    if not pandoc:
+        fail("no 'pandoc' binary among the files of %s" % ctx.attr._pandoc.label)
     impl = ctx.executable._manpages_impl
 
     args = ctx.actions.args()
@@ -94,8 +103,10 @@ man_pages = rule(
             cfg = "exec",
         ),
         "_pandoc": attr.label(
-            default = "//bazel:pandoc",
-            allow_single_file = True,
+            default = "@openroad-pip//pypandoc_binary:extracted_whl_files",
+            allow_files = True,
+            # pandoc runs during the build, so take the wheel for the
+            # execution platform, not the target platform.
             cfg = "exec",
         ),
     },
