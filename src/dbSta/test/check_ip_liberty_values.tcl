@@ -26,9 +26,12 @@ expect_check_ip_pass lib_values_ok
 expect_check_ip_fail lib_zero_transition
 expect_check_ip_fail lib_long_transition
 expect_check_ip_fail lib_large_input_cap
+# A pin's own max_transition takes precedence over the library default.
+expect_check_ip_pass lib_pin_max_transition
 
 # The library limits are the default; the command line overrides them.
 expect_check_ip_fail lib_values_ok -max_transition 0.01
+expect_check_ip_fail lib_pin_max_transition -max_transition 2.0
 expect_check_ip_fail lib_values_ok -max_capacitance 0.0001
 
 puts "pass"
