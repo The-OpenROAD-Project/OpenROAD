@@ -445,7 +445,7 @@ HeatMapSourceHandle registerHeatMapSource(
     const std::string& short_name,
     const std::string& settings_group,
     const HeatMapSourceRegistration::Factory& factory);
-const std::vector<HeatMapSourceHandle>& getRegisteredHeatMapSources();
+std::vector<HeatMapSourceHandle> getRegisteredHeatMapSources();
 HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name);
 void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger);
 

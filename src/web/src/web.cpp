@@ -2265,6 +2265,20 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
   }
   const std::string chiplet_name = csv_rows[0][0];
   const std::string heat_map_name = csv_rows[0][1];
+  const auto parse_cell = [&](const std::string& cell, const size_t row) {
+    const char* begin = cell.c_str();
+    char* end = nullptr;
+    const double value = std::strtod(begin, &end);
+    if (end == begin || end != begin + cell.size() || !std::isfinite(value)) {
+      logger_->error(utl::WEB,
+                     114,
+                     "Invalid CSV file: {} - row {} has an invalid number {}",
+                     file_path,
+                     row,
+                     cell);
+    }
+    return value;
+  };
 
   std::vector<web::ExternalHeatMapDataSource::Entry> data;
   data.reserve(csv_rows.size() - 1);
@@ -2279,20 +2293,11 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
           i,
           row.size());
     }
-    try {
-      data.push_back({std::stod(row[0]),
-                      std::stod(row[1]),
-                      std::stod(row[2]),
-                      std::stod(row[3]),
-                      std::stod(row[4])});
-    } catch (const std::exception& e) {
-      logger_->error(utl::WEB,
-                     114,
-                     "Invalid CSV file: {} - exception in row {}: {}",
-                     file_path,
-                     i,
-                     std::string(e.what()));
-    }
+    data.push_back({parse_cell(row[0], i),
+                    parse_cell(row[1], i),
+                    parse_cell(row[2], i),
+                    parse_cell(row[3], i),
+                    parse_cell(row[4], i)});
   }
 
   // collectChiplets() is what the renderer itself places chiplets with, so
@@ -2306,10 +2311,16 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
       known += ", ";
     }
     known += candidate.path;
-    if (node == nullptr
-        && (candidate.path == chiplet_name || candidate.name == chiplet_name
-            || (candidate.chip != nullptr
-                && candidate.chip->getName() == chiplet_name))) {
+    if (candidate.path == chiplet_name || candidate.name == chiplet_name) {
+      if (node != nullptr) {
+        logger_->error(utl::WEB,
+                       116,
+                       "Chiplet {} is ambiguous; it matches both {} and {}. "
+                       "Use the hierarchical path instead.",
+                       chiplet_name,
+                       node->path,
+                       candidate.path);
+      }
       node = &candidate;
     }
   }

@@ -1334,8 +1334,9 @@ HeatMapSourceHandle registerHeatMapSource(
   return source;
 }
 
-const std::vector<HeatMapSourceHandle>& getRegisteredHeatMapSources()
+std::vector<HeatMapSourceHandle> getRegisteredHeatMapSources()
 {
+  std::lock_guard<std::mutex> lock(heatMapSourceMutex());
   return heatMapSources();
 }
 

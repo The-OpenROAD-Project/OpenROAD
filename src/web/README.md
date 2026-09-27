@@ -275,8 +275,10 @@ CSV format:
   microns)
 
 The chiplet name is matched against the hierarchical path (`top.soc_inst`), the
-instance name, or the chip name. The chiplet's world transform is applied
-automatically so the data renders in the correct place in a multi-die view.
+instance name, or the chip name. Only the path is unique, so if a name matches
+more than one chiplet the command errors and asks for the path. The chiplet's
+world transform is applied automatically so the data renders in the correct
+place in a multi-die view.
 
 ```tcl
 web_load_chiplet_heatmap
