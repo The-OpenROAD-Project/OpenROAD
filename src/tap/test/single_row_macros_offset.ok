@@ -3,8 +3,8 @@
 [INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
 [INFO ODB-0128] Design: single_row_macros_offset
 [INFO ODB-0131]     Created 2 components and 64 component-terminals.
-[INFO ODB-0303] The initial 101 rows (44743 sites) were cut with 2 shapes for a total of 181 rows (22103 sites).
-[INFO TAP-0003] Inserted 11 endcap corners.
+[INFO ODB-0303] The initial 101 rows (44743 sites) were cut with 2 shapes for a total of 182 rows (21920 sites).
+[INFO TAP-0003] Inserted 12 endcap corners.
 [INFO TAP-0004] Inserted 1080 endcaps.
 [INFO TAP-0005] Inserted 117 tapcells.
 No differences found.

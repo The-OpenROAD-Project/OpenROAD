@@ -58,8 +58,11 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
-  -cmake-build                                  Use CMake instead of Bazel to build.
-                                                 By default OpenROAD is built with Bazel.
+  -cmake-build                                  DEPRECATED: Force the CMake build instead
+                                                 of Bazel. Bazel is the supported build
+                                                 system and is used by default; CMake
+                                                 support will be removed in a future
+                                                 release.
   -lto                                          Bazel only: build with --config=opt to
                                                  enable link-time optimization (LTO).
                                                  Off by default because LTO incurs a large
@@ -174,6 +177,7 @@ while [ "$#" -gt 0 ]; do
             cmakeOptions+=("-DGPU=ON")
             ;;
         -cmake-build)
+            echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed in a future release." >&2
             useBazel=no
             ;;
         -lto)
@@ -392,7 +396,11 @@ if [[ "$useBazel" == "yes" ]]; then
     if command -v bazelisk &> /dev/null; then
         bazel_cmd="bazelisk"
     fi
-    bazelArgs=("--jobs=${numThreads}")
+    # Build.sh is the install path (ORFS, Docker, packaging). Plain
+    # `bazel build` embeds the "bazel-nostamp" placeholder so dev builds stay
+    # cacheable; --config=release turns on --stamp so `openroad -version`
+    # reports the same `git describe` string the CMake build always did.
+    bazelArgs=("--jobs=${numThreads}" "--config=release")
     if [[ "$bazelLto" == "yes" ]]; then
         bazelArgs+=("--config=opt")
     fi

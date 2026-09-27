@@ -7,25 +7,25 @@
 #include <variant>
 #include <vector>
 
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace web {
 
 // Captured draw style at the time a shape is emitted.  Separate pen and
-// brush state matches gui::Painter's semantics.
+// brush state matches web::Painter's semantics.
 struct PenState
 {
-  gui::Painter::Color color{0, 0, 0, 255};
+  web::Painter::Color color{0, 0, 0, 255};
   int width = 1;
   bool cosmetic = false;
 };
 
 struct BrushState
 {
-  gui::Painter::Color color{0, 0, 0, 0};  // alpha 0 means "no fill"
-  gui::Painter::Brush style = gui::Painter::Brush::kNone;
+  web::Painter::Color color{0, 0, 0, 0};  // alpha 0 means "no fill"
+  web::Painter::Brush style = web::Painter::Brush::kNone;
 };
 
 struct FontState
@@ -80,7 +80,7 @@ struct DrawStringOp
 {
   int x = 0;
   int y = 0;
-  gui::Painter::Anchor anchor = gui::Painter::kCenter;
+  web::Painter::Anchor anchor = web::Painter::kCenter;
   std::string text;
   bool rotate_90 = false;
   PenState pen;
@@ -96,7 +96,7 @@ using DrawOp = std::variant<DrawRectOp,
 
 // Records draw calls as DrawOps so existing drawObjects() code
 // (gpl::GraphicsImpl, etc.) can be reused unmodified for web rendering.
-class WebPainter : public gui::Painter
+class WebPainter : public web::Painter
 {
  public:
   WebPainter(const odb::Rect& bounds, double pixels_per_dbu);
@@ -104,16 +104,16 @@ class WebPainter : public gui::Painter
 
   const std::vector<DrawOp>& ops() const { return ops_; }
 
-  // --- gui::Painter overrides ---
+  // --- web::Painter overrides ---
   // Pull in the non-virtual helper overloads that the three-arg
   // setPen/setBrush/drawRect/drawLine overrides below would otherwise
   // hide (C++ name hiding on derived overrides).
-  using gui::Painter::drawLine;
-  using gui::Painter::drawRect;
-  using gui::Painter::drawRuler;
-  using gui::Painter::drawString;
-  using gui::Painter::setBrush;
-  using gui::Painter::setPen;
+  using web::Painter::drawLine;
+  using web::Painter::drawRect;
+  using web::Painter::drawRuler;
+  using web::Painter::drawString;
+  using web::Painter::setBrush;
+  using web::Painter::setPen;
 
   Color getPenColor() override { return pen_.color; }
   void setPen(odb::dbTechLayer* layer, bool cosmetic) override;

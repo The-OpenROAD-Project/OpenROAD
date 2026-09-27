@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <map>
 #include <memory>
@@ -33,6 +34,7 @@
 #include "odb/geom.h"
 #include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -110,6 +112,7 @@ enum class MoveType : uint8_t
   kUnbuffer,
   kSplitLoad,
   kReroute,
+  kBufferToInverters,
   kCount
 };
 
@@ -354,6 +357,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
+                   bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
@@ -520,6 +524,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  sta::LibertyCellSeq* equivCells(sta::LibertyCell* cell);
   VTCategory cellVTType(odb::dbMaster* master);
   double computeDesignArea();
 
@@ -559,7 +564,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
   // Compute slew RC factor based on library slew thresholds
-  float getSlewRCFactor() const;
+  float getSlewRCFactor() const { return slew_shape_factor_; }
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
@@ -604,6 +609,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isTristateDriver(const sta::Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
+  void clearEquivCells();
   bool bufferSizeOutmatched(sta::LibertyCell* worse,
                             sta::LibertyCell* better,
                             float max_drive_resist);
@@ -682,6 +688,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
+  // Returns true when there's no liberty or SDC fanout-load limit.
+  bool checkFanout(const sta::Pin* drvr_pin,
+                   const sta::Mode* mode,
+                   const sta::MinMax* min_max,
+                   // Return values.
+                   float& fanout,
+                   float& max_fanout,
+                   float& fanout_slack) const;
+  // Backstop for high-fanout nets with no liberty or SDC fanout constraint.
+  // This is a count of load pins, not a liberty fanout-load value.
+  static constexpr int kDefaultMaxFanout = 50;
+  int fanoutLoadCount(const sta::Pin* drvr_pin) const;
   float portCapacitance(sta::LibertyPort* input, const sta::Scene* scene) const;
   bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
@@ -939,6 +957,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isRegOutput(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
+  void computeSlewShapeFactor();
+  ////////////////////////////////////////////////////////////////
+
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
@@ -997,7 +1018,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
+
+  // Equivalence classes over the link cells, owned by equiv_cell_groups_ (a
+  // deque so the classes keep stable addresses).  No dont_use filtering;
+  // callers of equivCells apply dont_use_.  Cells with no equivalents are not
+  // in equiv_cells_.  Belongs in dbSta, but cannot move there until the two
+  // dont_use fields are unified.
   bool equiv_cells_made_ = false;
+  std::unordered_map<sta::LibertyCell*, sta::LibertyCellSeq*> equiv_cells_;
+  std::deque<sta::LibertyCellSeq> equiv_cell_groups_;
 
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
@@ -1061,6 +1090,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
+
+  // For Elmore slew modeling, see computeSlewShapeFactor()
+  float slew_shape_factor_ = 0.0;
 
   friend class BufferedNet;
   friend class GateCloner;

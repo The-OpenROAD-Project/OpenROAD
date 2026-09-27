@@ -15,13 +15,13 @@
 
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/isotropy.h"
+#include "web/core.h"
 
 namespace odb {
 class dbBlock;
@@ -78,6 +78,10 @@ class PadPlacer
       = boost::geometry::index::rtree<TermObsValue,
                                       boost::geometry::index::quadratic<16>>;
   using LayerTermObsTree = odb::PtrMap<odb::dbTechLayer, TermObsTree>;
+
+  // Halt the flow so the current state can be inspected in the GUI.  The
+  // reason is reported so the pause is actionable.
+  void guiPause(const std::string& reason) const;
 
   int placeInstance(int index,
                     odb::dbInst* inst,
@@ -295,7 +299,7 @@ class PlacerPadPlacer : public PadPlacer
   odb::PtrMap<odb::dbInst, int> ideal_positions_;
 
   // debug
-  gui::Chart* chart_{nullptr};
+  web::Chart* chart_{nullptr};
 
   // constants
   static constexpr int kMaxIterations = 5000;

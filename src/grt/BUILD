@@ -27,6 +27,19 @@ cc_library(
 )
 
 cc_library(
+    name = "abstract-cugr",
+    hdrs = [
+        "src/cugr/include/AbstractCugrRenderer.h",
+    ],
+    includes = ["src/cugr/include"],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":groute",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
     name = "groute",
     hdrs = ["include/grt/GRoute.h"],
     includes = [
@@ -58,6 +71,7 @@ cc_library(
     hdrs = [
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/Graph2D.h",
+        "src/fastroute/include/Overflow.h",
     ],
     copts = [
         "-fopenmp",
@@ -117,6 +131,7 @@ cc_library(
         "src/cugr/src",
     ],
     deps = [
+        ":abstract-cugr",
         ":groute",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -202,6 +217,7 @@ cc_library(
         "src/GrouteRenderer.cpp",
         "src/GrouteRenderer.h",
         "src/MakeGlobalRouter.cpp",
+        "src/cugr/src/CugrRenderer.cpp",
         "src/fastroute/src/FastRouteRenderer.cpp",
         "src/heatMap.cpp",
         "src/heatMap.h",
@@ -212,6 +228,7 @@ cc_library(
     ],
     hdrs = [
         "include/grt/MakeGlobalRouter.h",
+        "src/cugr/include/CugrRenderer.h",
         "src/fastroute/include/FastRouteRenderer.h",
     ],
     copts = [
@@ -221,19 +238,23 @@ cc_library(
     includes = [
         "include",
         "src",
+        "src/cugr/include",
+        "src/fastroute/include",
     ],
     deps = [
+        ":abstract-cugr",
         ":abstract-fastroute",
+        ":cugr",
         ":fastroute",
         ":groute",
         ":grt",
         ":grt_private_hdrs",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

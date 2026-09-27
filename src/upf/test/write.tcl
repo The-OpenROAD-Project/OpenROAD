@@ -10,4 +10,4 @@ read_upf -file data/mpd_top/mpd_top_combined.upf
 
 set upf_file [make_result_file write.upf]
 write_upf $upf_file
-diff_file $upf_file write.upfok
+diff_files $upf_file write.upfok

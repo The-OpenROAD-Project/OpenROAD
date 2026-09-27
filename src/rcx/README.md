@@ -42,11 +42,40 @@ define_process_corner
 | `-ext_model_index` | Extraction model index. Expects 2 inputs (an index, and corner name). |
 | `filename` | Path to process corner file `rcx_patterns.rules`. |
 
+### Set Extraction Rules File
+
+Sets the path to the parasitics extraction rules file. For a 3D design in
+which multiple technologies are used, the user must specify the technology
+for which they want to set the rules path as well as the assembly design kit
+extraction rules for the inter-chip parasitics with `-assembly`.
+
+```tcl
+set_extraction_rules_file
+    [-tech tech_name]
+    [-assembly]
+    rules_file
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tech` | Technology for which to set the extraction rules path. |
+| `-assembly` | Set the inter-chip extraction rules. Cannot be combined with `-tech`. |
+| `rules_file` | Path to the extraction rules file. |
+
 ### Extract Parasitics
 
 The `extract_parasitics` command performs parasitic extraction based on the
 routed design. If there are no information on routed design, no parasitics are
 returned. 
+
+For a 3D design, the command extracts each die using the extraction rules
+set for its technology and then extracts the inter-chip parasitics using the
+assembly design kit rules (see `set_extraction_rules_file`). Each bond
+between two dies is modeled as a resistor connecting the boundary terminals
+of the bonded bumps. 3D extraction supports only the v1 RC flow and a single
+process corner.
 
 ```tcl
 extract_parasitics
@@ -89,6 +118,10 @@ extract_parasitics
 
 The `write_spef` command writes the `.spef` output of the parasitics stored
 in the database.
+
+For a 3D design, the command writes one file per die, appending the chip
+name to the given filename (e.g., `design.chip_name.spef`), and one
+additional file with the inter-chip parasitics (`design.bonds.spef`).
 
 ```tcl
 write_spef
@@ -518,11 +551,6 @@ process node and corner automatically.
 The detailed documentation can be found [here](doc/calibration.md).
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+rcx)
-about this tool.
 
 ## License
 

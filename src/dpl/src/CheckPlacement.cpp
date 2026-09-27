@@ -408,8 +408,9 @@ Node* Opendp::checkOneSiteGaps(Node& cell) const
         }
         // check the abutting pixel
         const Pixel* abut_pixel = grid_->gridPixel(x + abut_x, y);
+        const bool site_exists = (abut_pixel && abut_pixel->is_valid);
         const bool abuttment_exists = (abut_pixel && abut_pixel->cell);
-        if (!abuttment_exists) {
+        if (site_exists && !abuttment_exists) {
           // check the 1 site gap pixel
           const Pixel* gap_pixel = grid_->gridPixel(x + GridX{2 * abut_x.v}, y);
           if (gap_pixel) {

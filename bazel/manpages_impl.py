@@ -134,11 +134,12 @@ def main():
             module, path = spec.split(":", 1)
             shutil.copy(path, os.path.join(man2_md, f"{module}.md"))
 
-        # Copy each module's messages.txt to ../src/{module}/messages.txt
-        # so md_roff_compat.py finds them relative to the docs/ directory.
+        # Copy each module's messages.txt to ../src/{module}/messages.txt,
+        # and the ORD messages (empty module) to ../messages.txt, so
+        # md_roff_compat.py finds them relative to the docs/ directory.
         for spec in args.messages:
             module, path = spec.split(":", 1)
-            mod_dir = os.path.join(workdir, "src", module)
+            mod_dir = os.path.join(workdir, "src", module) if module else workdir
             os.makedirs(mod_dir, exist_ok=True)
             shutil.copy(path, os.path.join(mod_dir, "messages.txt"))
 

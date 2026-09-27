@@ -19,6 +19,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <climits>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <vector>

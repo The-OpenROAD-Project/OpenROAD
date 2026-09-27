@@ -35,17 +35,17 @@ class DRCItemModel : public QStandardItemModel
   QVariant data(const QModelIndex& index, int role) const override;
 };
 
-class DRCRenderer : public Renderer
+class DRCRenderer : public web::Renderer
 {
  public:
   DRCRenderer();
 
   void setCategory(odb::dbMarkerCategory* category);
 
-  // Renderer
-  void drawObjects(Painter& painter) override;
-  SelectionSet select(odb::dbTechLayer* layer,
-                      const odb::Rect& region) override;
+  // web::Renderer
+  void drawObjects(web::Painter& painter) override;
+  web::SelectionSet select(odb::dbTechLayer* layer,
+                           const odb::Rect& region) override;
 
  private:
   odb::dbMarkerCategory* category_;
@@ -67,8 +67,8 @@ class DRCWidget : public QDockWidget, public odb::dbChipCallBackObj
   void inDbMarkerDestroy(odb::dbMarker* marker) override;
 
  signals:
-  void selectDRC(const Selected& selected, bool open_inspector);
-  void focus(const Selected& selected);
+  void selectDRC(const web::Selected& selected, bool open_inspector);
+  void focus(const web::Selected& selected);
 
  public slots:
   void loadReport(const QString& filename);
@@ -77,7 +77,7 @@ class DRCWidget : public QDockWidget, public odb::dbChipCallBackObj
   void doubleClicked(const QModelIndex& index);
   void selectReport();
   void toggleRenderer(bool visible);
-  void updateSelection(const Selected& selection);
+  void updateSelection(const web::Selected& selection);
   void selectCategory(odb::dbMarkerCategory* category);
 
   void selectionChanged(const QItemSelection& selected,

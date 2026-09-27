@@ -128,6 +128,7 @@ static void create_path_box(dbObject* obj,
                             dbTechLayer* layer,
                             int dw,
                             int designRuleWidth,
+                            int minSpacing,
                             int prev_x,
                             int prev_y,
                             int cur_x,
@@ -148,6 +149,7 @@ static void create_path_box(dbObject* obj,
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
     }
     box->setDesignRuleWidth(designRuleWidth);
+    box->setMinSpacing(minSpacing);
   } else if (cur_x == prev_x) {  // vert. path
     x1 = cur_x - dw;
     x2 = cur_x + dw;
@@ -166,6 +168,7 @@ static void create_path_box(dbObject* obj,
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
     }
     box->setDesignRuleWidth(designRuleWidth);
+    box->setMinSpacing(minSpacing);
   } else if (cur_y == prev_y) {  // horiz. path
     y1 = cur_y - dw;
     y2 = cur_y + dw;
@@ -184,6 +187,7 @@ static void create_path_box(dbObject* obj,
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
     }
     box->setDesignRuleWidth(designRuleWidth);
+    box->setMinSpacing(minSpacing);
   } else {
     logger->warn(utl::ODB, 175, "illegal: non-orthogonal-path at Pin");
   }
@@ -200,6 +204,7 @@ bool lefinReader::addGeoms(dbObject* object,
   dbTechLayer* layer = nullptr;
   int dw = 0;
   int designRuleWidth = -1;
+  int minSpacing = -1;
 
   for (int i = 0; i < count; i++) {
     master_modified_ = true;
@@ -218,6 +223,7 @@ bool lefinReader::addGeoms(dbObject* object,
 
         dw = dbdist(layer->getWidth()) >> 1;
         designRuleWidth = -1;
+        minSpacing = -1;
         break;
       }
       case LefParser::lefiGeomWidthE: {
@@ -230,8 +236,17 @@ bool lefinReader::addGeoms(dbObject* object,
         if (path->numPoints == 1) {
           int x = dbdist(path->x[0]);
           int y = dbdist(path->y[0]);
-          create_path_box(
-              object, is_pin, layer, dw, designRuleWidth, x, y, x, y, logger_);
+          create_path_box(object,
+                          is_pin,
+                          layer,
+                          dw,
+                          designRuleWidth,
+                          minSpacing,
+                          x,
+                          y,
+                          x,
+                          y,
+                          logger_);
           break;
         }
 
@@ -247,6 +262,7 @@ bool lefinReader::addGeoms(dbObject* object,
                           layer,
                           dw,
                           designRuleWidth,
+                          minSpacing,
                           prev_x,
                           prev_y,
                           cur_x,
@@ -285,6 +301,7 @@ bool lefinReader::addGeoms(dbObject* object,
                               layer,
                               dw,
                               designRuleWidth,
+                              minSpacing,
                               x,
                               y,
                               x,
@@ -307,6 +324,7 @@ bool lefinReader::addGeoms(dbObject* object,
                               layer,
                               dw,
                               designRuleWidth,
+                              minSpacing,
                               cur_x,
                               cur_y,
                               prev_x,
@@ -333,6 +351,7 @@ bool lefinReader::addGeoms(dbObject* object,
           box = dbBox::create((dbMaster*) object, layer, x1, y1, x2, y2);
         }
         box->setDesignRuleWidth(designRuleWidth);
+        box->setMinSpacing(minSpacing);
         break;
       }
       case LefParser::lefiGeomRectIterE: {
@@ -362,13 +381,18 @@ bool lefinReader::addGeoms(dbObject* object,
                                   y2 + dy);
             }
             box->setDesignRuleWidth(designRuleWidth);
+            box->setMinSpacing(minSpacing);
           }
         }
         break;
       }
       case LefParser::lefiGeomPolygonE: {
-        createPolygon(
-            object, is_pin, layer, geometry->getPolygon(i), designRuleWidth);
+        createPolygon(object,
+                      is_pin,
+                      layer,
+                      geometry->getPolygon(i),
+                      designRuleWidth,
+                      minSpacing);
         break;
       }
       case LefParser::lefiGeomPolygonIterE: {
@@ -391,6 +415,7 @@ bool lefinReader::addGeoms(dbObject* object,
                           layer,
                           &p,
                           designRuleWidth,
+                          minSpacing,
                           x * pItr->xStep,
                           y * pItr->yStep);
           }
@@ -453,10 +478,13 @@ bool lefinReader::addGeoms(dbObject* object,
         designRuleWidth = dbdist(geometry->getLayerRuleWidth(i));
         break;
       }
+      case LefParser::lefiGeomLayerMinSpacingE: {
+        minSpacing = dbdist(geometry->getLayerMinSpacing(i));
+        break;
+      }
       // FIXME??
       case LefParser::lefiGeomUnknown:  // error
       case LefParser::lefiGeomLayerExceptPgNetE:
-      case LefParser::lefiGeomLayerMinSpacingE:
       case LefParser::lefiGeomClassE:
 
       default:
@@ -472,6 +500,7 @@ void lefinReader::createPolygon(dbObject* object,
                                 dbTechLayer* layer,
                                 LefParser::lefiGeomPolygon* p,
                                 int design_rule_width,
+                                int min_spacing,
                                 double offset_x,
                                 double offset_y)
 {
@@ -492,6 +521,7 @@ void lefinReader::createPolygon(dbObject* object,
 
   if (pbox != nullptr) {
     pbox->setDesignRuleWidth(design_rule_width);
+    pbox->setMinSpacing(min_spacing);
   }
 }
 
@@ -736,6 +766,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")) {
         lefTechLayerCutEnclosureRuleParser encParser(this);
         encParser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURETABLE")) {
+        lefTechLayerCutEnclosureTableRuleParser encTableParser(this);
+        encTableParser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
@@ -1239,6 +1272,12 @@ void lefinReader::macroBegin(const char* name)
 
     if (master_ == nullptr) {
       master_ = dbMaster::create(lib_, name);
+    } else if (master_->isFrozen()) {
+      logger_->warn(utl::ODB,
+                    406,
+                    "duplicate MACRO ({}) ignoring...",
+                    master_->getName());
+      master_ = nullptr;
     }
   }
 
@@ -1761,6 +1800,15 @@ void lefinReader::pin(LefParser::lefiPin* pin)
     dbSet<dbMPin> pins = term->getMPins();
     if (pins.reversible() && pins.orderReversed()) {
       pins.reverse();
+    }
+  }
+
+  for (i = 0; i < pin->LefParser::lefiPin::numProperties(); i++) {
+    if (!strcmp(pin->LefParser::lefiPin::propName(i),
+                "LEF58_MUSTJOINALLPORTS")) {
+      if (strstr(pin->LefParser::lefiPin::propValue(i), "MUSTJOINALLPORTS")) {
+        term->setMustJoinAllPorts(true);
+      }
     }
   }
 }

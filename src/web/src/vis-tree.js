@@ -10,8 +10,62 @@
 // then propagates to its descendants) also render a second checkbox in the
 // selectability column.  When visibility is unchecked, the selectability
 // checkbox is disabled — matching the Qt GUI's displayControls behavior.
+//
+// Row layout mirrors the Qt GUI's column order (displayControls.cpp): the
+// name stretches on the left and the visibility / selectability checkboxes
+// sit in fixed-width columns pinned to the right edge, under the icons of
+// the panel header.  DOM order within a row is therefore name, visibility,
+// selectability.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
+import { makeGroupHeader, attachGroupCollapse } from './ui-utils.js';
+
+// Column header icons, matching the ones the Qt GUI puts in its QHeaderView
+// (DisplayControlModel::headerData): Material "visibility" over the visibility
+// column and Material "touch_app" over the selectability column.
+const VISIBLE_ICON_SVG =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>' +
+    '</svg>';
+const SELECT_ICON_SVG =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.44-.72c-.37-.08-.76.04-1.03.31l-1.06 1.06 5.53 5.53c.28.28.66.44 1.06.44h6.79c.75 0 1.38-.55 1.49-1.29l.74-5.18c.1-.72-.27-1.42-.92-1.74z"/>' +
+    '</svg>';
+
+// Row name cell.  It stretches (CSS `flex: 1`) so the checkbox columns that
+// follow it are pushed to the row's right edge.
+export function makeNameSpan(text) {
+    const span = document.createElement('span');
+    span.className = 'vis-name';
+    if (text != null) span.textContent = text;
+    return span;
+}
+
+// Layout-only placeholder keeping the selectability column aligned on rows
+// that have no selectability checkbox.
+export function makeSelSpacer() {
+    const span = document.createElement('span');
+    span.className = 'vis-sel-cb vis-sel-spacer';
+    return span;
+}
+
+// Header row for the display-controls panel: an empty stretching name cell
+// followed by the visibility and selectability column icons, so each icon
+// lines up with the checkbox column below it.
+export function makeColumnHeader() {
+    const header = document.createElement('div');
+    header.className = 'display-controls-header';
+    header.appendChild(makeNameSpan(''));
+    for (const [svg, title] of [[VISIBLE_ICON_SVG, 'Visible'],
+                                [SELECT_ICON_SVG, 'Selectable']]) {
+        const cell = document.createElement('span');
+        cell.className = 'vis-header-icon';
+        cell.title = title;
+        cell.innerHTML = svg;
+        header.appendChild(cell);
+    }
+    return header;
+}
 
 export class VisTree {
     constructor(visibility, selectability, onChange) {
@@ -163,75 +217,62 @@ export class VisTree {
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
+        cb.className = 'vis-cb';
         cb.title = 'Visible';
         node.cb = cb;
         cb.addEventListener('change', () => this.model.check(node.id, cb.checked));
 
         const selCb = this._buildSelCheckbox(node);
 
+        // Append the checkbox columns last so they land at the row's right
+        // edge; the name span between them and the arrow takes up the slack.
+        const appendColumns = (row) => {
+            row.appendChild(cb);
+            if (selCb) {
+                row.appendChild(selCb);
+                const selNode = this.selModel.get(node.id);
+                if (selNode) selNode.selLabel = row;
+            } else {
+                row.appendChild(makeSelSpacer());
+            }
+        };
+
         if (!node.children.length) {
-            const label = document.createElement('label');
-            label.className = 'vis-leaf';
+            // A <div>, not a <label>, for the same reason group headers are
+            // (see makeGroupHeader): a <label> wrapping the visibility
+            // checkbox activates it for a click anywhere in the row — the
+            // name, the indent spacer, the row's own padding — so a click
+            // that merely missed the 13px box flipped the layer.  Only the
+            // checkboxes toggle state now, matching the Qt GUI's tree.
+            const row = document.createElement('div');
+            row.className = 'vis-leaf';
             const spacer = document.createElement('span');
             spacer.className = 'vis-arrow';
             spacer.style.visibility = 'hidden';
             spacer.textContent = '▶';
-            label.appendChild(spacer);
-            label.appendChild(cb);
-            if (selCb) {
-                label.appendChild(selCb);
-                const selNode = this.selModel.get(node.id);
-                if (selNode) selNode.selLabel = label;
-            } else {
-                label.appendChild(this._selSpacer());
-            }
-            label.appendChild(document.createTextNode(spec.label));
-            node.el = label;
-            return label;
+            row.appendChild(spacer);
+            row.appendChild(makeNameSpan(spec.label));
+            appendColumns(row);
+            node.el = row;
+            return row;
         }
 
         const div = document.createElement('div');
         div.className = 'vis-group';
 
-        const header = document.createElement('label');
-        header.className = 'vis-group-header';
-        const arrow = document.createElement('span');
-        arrow.className = 'vis-arrow';
-        arrow.textContent = '▶';
-        header.appendChild(arrow);
-        header.appendChild(cb);
-        if (selCb) {
-            header.appendChild(selCb);
-            const selNode = this.selModel.get(node.id);
-            if (selNode) selNode.selLabel = header;
-        } else {
-            header.appendChild(this._selSpacer());
-        }
-        header.appendChild(document.createTextNode(spec.label));
+        const { header, arrow, name } = makeGroupHeader();
+        name.textContent = spec.label;
+        appendColumns(header);
         div.appendChild(header);
 
         const kids = document.createElement('div');
-        kids.className = 'vis-group-children collapsed';
+        kids.className = 'vis-group-children';
         if (spec.disabled) kids.classList.add('disabled');
         for (const c of node.children) kids.appendChild(this._dom(c));
         div.appendChild(kids);
 
-        arrow.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            kids.classList.toggle('collapsed');
-            arrow.textContent = kids.classList.contains('collapsed')
-                ? '▶' : '▼';
-        });
+        attachGroupCollapse(header, arrow, kids, true);
 
         return div;
-    }
-
-    // Empty placeholder that keeps the selectability column aligned for rows
-    // that have no selectability checkbox.
-    _selSpacer() {
-        const span = document.createElement('span');
-        span.className = 'vis-sel-cb vis-sel-spacer';
-        return span;
     }
 }

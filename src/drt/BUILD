@@ -26,6 +26,7 @@ cc_library(
     srcs = ["src/frBaseTypes.cpp"],
     hdrs = [
         "src/dr/FlexMazeTypes.h",
+        "src/dr/WatermarkCost.h",
         "src/frBaseTypes.h",
     ],
     includes = ["src"],
@@ -284,9 +285,9 @@ cc_library(
         ":drt",
         ":drt_private_hdrs",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

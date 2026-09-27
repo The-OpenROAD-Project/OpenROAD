@@ -83,7 +83,7 @@ target_link_libraries(dpl
   PRIVATE
     ${TCL_LIBRARY}
     dpl_lib
-    gui
+    gui_core
 )
 
 messages(
@@ -113,7 +113,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       ${Boost_LIBRARIES}
       dpl_lib
-      gui
+      gui_core
       odb
   )
 

@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -1429,6 +1430,7 @@ void extMain::makeCornerNameMap()
 
 std::unique_ptr<extRCModel> parseRules(
     odb::dbTech* tech,
+    const std::string& rules_file,
     const Array1D<extCorner*>* extractor_corner_table,
     bool is_v2,
     utl::Logger* logger)
@@ -1455,7 +1457,6 @@ std::unique_ptr<extRCModel> parseRules(
     }
   }
 
-  const std::string rules_file = tech->getExtractionRulesFile();
   if (rules_file.empty()) {
     logger->error(RCX,
                   17,
@@ -1619,7 +1620,7 @@ void extMain::getPrevControl()
 bool extMain::modelExists()
 {
   if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == nullptr)
-      && (_block->getTech()->getExtractionRulesFile().empty())) {
+      && (extraction_rules_file_.empty())) {
     logger_->warn(RCX,
                   127,
                   "No RC model was read with command <load_model>, "
@@ -1651,8 +1652,6 @@ void extMain::setCornerCount()
 
 void extMain::run()
 {
-  uint32_t debugNetId = 0;
-
   _diagFlow = true;
   _usingMetalPlanes = true;
 
@@ -1788,12 +1787,10 @@ void extMain::run()
 
     m._debugFP = nullptr;
     m._netId = 0;
-    debugNetId = 0;
-    if (debugNetId > 0) {
-      m._netId = debugNetId;
-      char bufName[32];
-      sprintf(bufName, "%d", debugNetId);
-      m._debugFP = fopen(bufName, "w");
+
+    if (_debug_net_id > 0) {
+      m._netId = _debug_net_id;
+      m._debugFP = fopen(std::to_string(m._netId).c_str(), "w");
     }
 
     getPeakMemory("Start CouplingFlow");
@@ -1858,7 +1855,13 @@ void extMain::run()
 
   */
   while (_modelTable->notEmpty()) {
-    delete _modelTable->pop();
+    // For multi chip extraction, we don't delete the model as it is
+    // owned by the multi chip extractor. However, we still need to
+    // clear the table for a possible subsequent block extraction.
+    extRCModel* rules_model = _modelTable->pop();
+    if (delete_model_at_extraction_) {
+      delete rules_model;
+    }
   }
   if (_batchScaleExt) {
     genScaledExt();

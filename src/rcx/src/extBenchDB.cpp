@@ -11,6 +11,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <set>
+#include <string>
 #include <vector>
 
 #include "odb/db.h"
@@ -441,6 +443,16 @@ uint32_t extMain::benchVerilog_assign(FILE* fp)
   }
   return n;
 }
+// The pattern name prefixes every net name in the pattern, so it has to be
+// unique for the whole bench block. Records the name this measurement maps
+// onto and returns false if it was already generated.
+bool extRCModel::isNewPattern(extMeasure* m,
+                              std::set<std::string>& pattern_names)
+{
+  mkNet_prefix(m, "");
+  return pattern_names.insert(_wireDirName).second;
+}
+
 uint32_t extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
 {
   auto widthTable = std::make_unique<Array1D<double>>(4);
@@ -535,6 +547,12 @@ uint32_t extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
   }
   bool use_symmetric_widths_spacings = false;
   if (!use_symmetric_widths_spacings) {
+    // The pattern name carries the widths and spacings rounded to a coarse
+    // integer nm grid, so distinct table entries can still collide on it (the
+    // spacing table is built from doubles, and setTargetParams floors the
+    // coupling spacing to 10nm). A collision would ask odb for a net name that
+    // already exists, so skip the repeat rather than build a broken pattern.
+    std::set<std::string> pattern_names;
     for (uint32_t ii = 0; ii < widthTable->getCnt(); ii++) {
       double w = widthTable->get(ii);  // layout
       double w2 = w;
@@ -544,6 +562,9 @@ uint32_t extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
           double s2 = s;
 
           measure->setTargetParams(w, s, 0.0, 0, 0, w2, s2);
+          if (!isNewPattern(measure, pattern_names)) {
+            continue;
+          }
           // measureResistance(measure, ro, top_widthR, bot_widthR, thicknessR);
           // measurePatternVar(measure, top_width, bot_width, thickness,
           // measure->_wireCnt, nullptr);
@@ -558,6 +579,9 @@ uint32_t extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
             double s2 = spaceTable->get(kk);
 
             measure->setTargetParams(w, s, 0.0, 0, 0, w2, s2);
+            if (!isNewPattern(measure, pattern_names)) {
+              continue;
+            }
             writeBenchWires_DB_res(measure);
 
             cnt++;

@@ -20,28 +20,10 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace odb {
-
-static std::string replaceBracketsWithUnderscores(std::string_view name)
-{
-  std::string sanitized_name;
-  sanitized_name.reserve(name.size());
-
-  for (size_t i = 0; i < name.size(); i++) {
-    const char ch = name[i];
-    if (ch == '\\' && i + 1 < name.size()
-        && (name[i + 1] == '[' || name[i + 1] == ']')) {
-      sanitized_name += '_';
-      i++;
-      continue;
-    }
-    sanitized_name += (ch == '[' || ch == ']') ? '_' : ch;
-  }
-
-  return sanitized_name;
-}
 
 dbInsertBuffer::dbInsertBuffer(dbNet* net)
     : net_(net),
@@ -524,8 +506,9 @@ dbNet* dbInsertBuffer::createNewFlatNet(
   }
 
   // Create a new net
-  dbNet* new_net = dbNet::create(
-      block_, new_net_name.c_str(), new_net_uniquify, target_module_);
+  std::string full_new_net_name = block_->makeNewNetName(
+      target_module_, new_net_name.c_str(), new_net_uniquify, nullptr, bterm);
+  dbNet* new_net = dbNet::create(block_, full_new_net_name.c_str());
   if (new_net == nullptr) {
     logger_->error(
         utl::ODB,
@@ -1232,7 +1215,8 @@ void dbInsertBuffer::connectPeerITerms(dbModule* mod,
 dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
                                                   dbModNet* mod_net,
                                                   dbIoType io_type,
-                                                  const char* suffix)
+                                                  const char* suffix,
+                                                  dbNet* corresponding_flat_net)
 {
   for (dbModBTerm* bterm : mod_net->getModBTerms()) {
     if (bterm->getIoType() == io_type) {
@@ -1243,12 +1227,21 @@ dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
   dbModule* parent_module = mod_net->getParent();
   assert(parent_module == current_mod);
 
-  std::string port_name = mod_net->getName();
+  const std::string mod_net_name = mod_net->getName();
+  std::string port_name = replaceBracketsWithUnderscores(mod_net_name);
   dbModInst* mod_inst = current_mod->getModInst();
   if (parent_module->findModBTerm(port_name.c_str()) != nullptr
       || (mod_inst != nullptr
           && mod_inst->findModITerm(port_name.c_str()) != nullptr)) {
     port_name = makeUniqueHierName(current_mod, port_name, suffix);
+  } else if (port_name != mod_net_name) {
+    // Sanitized port names must be unique in the Verilog module scope.
+    const std::string full_port_name
+        = block_->makeNewNetName(current_mod,
+                                 port_name.c_str(),
+                                 dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                                 corresponding_flat_net);
+    port_name = block_->getBaseName(full_port_name.c_str());
   }
 
   assert(parent_module->findModBTerm(port_name.c_str()) == nullptr);
@@ -1289,8 +1282,8 @@ dbObject* dbInsertBuffer::traceUp(dbObject* current_obj,
     dbModNet* mod_net
         = ensureModNet(current_obj, current_mod, corresponding_flat_net);
 
-    dbModBTerm* port
-        = findOrCreateTracePort(current_mod, mod_net, io_type, suffix);
+    dbModBTerm* port = findOrCreateTracePort(
+        current_mod, mod_net, io_type, suffix, corresponding_flat_net);
 
     current_obj = port->getParentModITerm();
     current_mod = current_mod->getModInst()->getParent();
@@ -1503,10 +1496,26 @@ void dbInsertBuffer::createNewFlatAndHierNets(
   if (needs_mod_net) {
     const char* base_name = block_->getBaseName(new_flat_net_->getConstName());
     dlogCreatingNewHierNet(base_name);
-    new_mod_net_ = dbModNet::create(target_module_,
-                                    base_name,
-                                    dbNameUniquifyType::IF_NEEDED,
-                                    new_flat_net_);
+
+    // Reuse only the exact BTerm that will move to the new flat net.
+    dbBTerm* associated_bterm = nullptr;
+    for (dbObject* load_obj : load_pins) {
+      if (load_obj->getObjectType() == dbBTermObj) {
+        dbBTerm* load_bterm = static_cast<dbBTerm*>(load_obj);
+        if (strcmp(load_bterm->getConstName(), base_name) == 0) {
+          associated_bterm = load_bterm;
+          break;
+        }
+      }
+    }
+    const std::string full_mod_net_name
+        = block_->makeNewNetName(target_module_,
+                                 base_name,
+                                 dbNameUniquifyType::IF_NEEDED,
+                                 new_flat_net_,
+                                 associated_bterm);
+    new_mod_net_ = dbModNet::create(
+        target_module_, block_->getBaseName(full_mod_net_name.c_str()));
   }
 }
 

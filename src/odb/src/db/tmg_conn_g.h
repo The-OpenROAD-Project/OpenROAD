@@ -9,54 +9,78 @@
 namespace odb {
 
 class tmg_conn;
-struct tmg_rcshort;
+struct Short;
 
-struct tcg_edge
-{
-  tcg_edge* next;
-  tcg_edge* reverse;
-  tmg_rcshort* s;
-  int fr;
-  int to;
-  int k;  // index to _rcV
-  bool visited;
-  bool skip;
-};
-
-struct tcg_pt
-{
-  tcg_edge* edges;
-  int ipath;
-  int visited;  // 1= from another descent, 2+k= _stackV[k]->fr
-};
-
-class tmg_conn_graph
+class ConnectionGraph
 {
  public:
+  struct Edge
+  {
+    int from{-1};
+    int to{-1};
+    Edge* next{nullptr};
+
+    // The same edge in the other direction. Every connection between
+    // two points is stored twice in the graph, once per direction, so
+    // a walk can leave a point along any of its edges.
+    Edge* reverse{nullptr};
+
+    // An edge is either a path or a short:
+    // If wire_short is nullptr and wire_section_index is != -1,
+    // the edge is a path. The opposite for a short.
+    Short* wire_short{nullptr};
+    int wire_section_index{-1};
+
+    // Note that when an edge is marked as visited, it's reverse version is
+    // also marked as visited.
+    bool visited{false};
+
+    // When an edge is removed from the graph, the latter is not rebuilt.
+    // Instead, that edge is marked as "skip" and the walkers will ignore
+    // it when traversing.
+    bool skip{false};
+  };
+
+  struct Point
+  {
+    int path_index{-1};
+
+    // Head of the chain of edges that leave this point.
+    Edge* first_edge{nullptr};
+
+    // Visit state.
+    // 0:     This point was not yet reached.
+    // 1:     This point was reached, but is no longer on the current descent.
+    // 2 + k: This point is on the current descent, and descent_edges_[k] is
+    //        the edge that leaves it.
+    int visited{0};
+  };
+
   void init(int ptN, int shortN);
-  tcg_edge* newEdge(const tmg_conn* conn, int fr, int to);
-  tcg_edge* newShortEdge(const tmg_conn* conn, int fr, int to);
-  tcg_edge* getNextEdge(bool ok_to_descend);
-  tcg_edge* getFirstEdge(int jstart);
-  tcg_edge* getFirstNonShortEdge(int& jstart);
+  Edge* newEdge(const tmg_conn* conn, int fr, int to);
+  Edge* newShortEdge(const tmg_conn* conn, int fr, int to);
+  Edge* getNextEdge(bool ok_to_descend);
+  Edge* getFirstEdge(int jstart);
+  Edge* getFirstNonShortEdge(int& jstart);
   void addEdges(const tmg_conn* conn, int i0, int i1, int k);
   void clearVisited();
   void relocateShorts(tmg_conn* conn);
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
-  tcg_pt& pt(const int index) { return ptV_[index]; }
-  const tcg_pt& pt(const int index) const { return ptV_[index]; }
+  Point& pt(const int index) { return points_[index]; }
+  const Point& pt(const int index) const { return points_[index]; }
 
   // TODO: make private
-  std::vector<tcg_pt> ptV_;
-  std::vector<tcg_edge*> stackV_;
+  std::vector<Point> points_;
+  std::vector<Edge*> descent_edges_;
 
  private:
-  void getEdgeRefCoord(const tmg_conn* conn, tcg_edge* pe, int& rx, int& ry);
-  bool isBadShort(tcg_edge* pe, const tmg_conn* conn);
+  void getEdgeRefCoord(const tmg_conn* conn, Edge* pe, int& rx, int& ry);
+  bool isBadShort(Edge* pe, const tmg_conn* conn);
 
-  tcg_edge* e_;
-  std::deque<tcg_edge> eV_;
+  std::deque<Edge> edges_;
+
+  Edge* next_edge_{nullptr};
 };
 
 }  // namespace odb

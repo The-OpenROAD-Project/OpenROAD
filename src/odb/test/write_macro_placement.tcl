@@ -9,4 +9,4 @@ set tcl_file [make_result_file write_macro_placement.tcl]
 
 write_macro_placement $tcl_file
 
-diff_file write_macro_placement.tclok $tcl_file
+diff_files write_macro_placement.tclok $tcl_file

@@ -465,7 +465,7 @@ proc rdl_route { args } {
   if { [info exists keys(-max_iterations)] } {
     set max_iterations $keys(-max_iterations)
   }
-  sta::check_positive_int "-max_iterations" $max_iterations
+  sta::check_positive_integer "-max_iterations" $max_iterations
 
   pad::route_rdl $layer \
     $bump_via $pad_via \

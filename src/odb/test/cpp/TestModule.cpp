@@ -1,14 +1,20 @@
 #include <cstdio>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <vector>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/util.h"
 
 namespace odb {
 namespace {
+
+using testing::ElementsAre;
 
 /*
   Extract the hierarchical information in human readable format.
@@ -235,6 +241,88 @@ class ModuleFixture : public SimpleDbFixture
   dbBlock* block_;
 };
 
+TEST(UtilTest, replaceBracketsPreservesBackslashPairs)
+{
+  EXPECT_EQ(replaceBracketsWithUnderscores(R"(foo\[3\])"), "foo_3_");
+  EXPECT_EQ(replaceBracketsWithUnderscores(R"(foo\\[0])"), R"(foo\\_0_)");
+}
+
+TEST_F(ModuleFixture, getBaseNamePreservesEscapedDelimiters)
+{
+  EXPECT_STREQ(block_->getBaseName(R"(parent/path\/leaf)"), R"(path\/leaf)");
+  EXPECT_STREQ(block_->getBaseName(R"(parent/path\\/leaf)"), "leaf");
+}
+
+// Splitting a flattened instance name into its path segments is how the web
+// viewer recovers a browsable hierarchy from a DEF-only design, where defin
+// creates no dbModules.  Splitting on the raw delimiter would silently
+// mis-cluster any name holding an escaped one, so getPathSegments() shares
+// getBaseName()'s escape rule -- see the last-segment invariant below.
+class PathSegmentsFixture : public ModuleFixture
+{
+ protected:
+  std::vector<std::string_view> split(const char* full_name)
+  {
+    std::vector<std::string_view> segments;
+    block_->getPathSegments(full_name, segments);
+    // The whole point of sharing the rule: the leaf getBaseName() reports is
+    // the leaf this splitter reports.  Asserted on every case below.
+    EXPECT_EQ(segments.back(), block_->getBaseName(full_name));
+    return segments;
+  }
+};
+
+TEST_F(PathSegmentsFixture, getPathSegmentsSplitsPlainPaths)
+{
+  EXPECT_THAT(split("leaf"), ElementsAre("leaf"));
+  EXPECT_THAT(split("parent/leaf"), ElementsAre("parent", "leaf"));
+  EXPECT_THAT(split("riscv/dp/_1234_"), ElementsAre("riscv", "dp", "_1234_"));
+}
+
+TEST_F(PathSegmentsFixture, getPathSegmentsPreservesEscapedDelimiters)
+{
+  // An escaped delimiter belongs to the local identifier: one segment, not
+  // two, and the escape stays in place so the segment reads as it does in
+  // the full name.
+  EXPECT_THAT(split(R"(parent/path\/leaf)"),
+              ElementsAre("parent", R"(path\/leaf)"));
+  // An escaped backslash does not escape the delimiter that follows it.
+  EXPECT_THAT(split(R"(parent/path\\/leaf)"),
+              ElementsAre("parent", R"(path\\)", "leaf"));
+  // Runs longer than two: parity decides, as in getBaseName().
+  EXPECT_THAT(split(R"(a/b\\\/c)"), ElementsAre("a", R"(b\\\/c)"));
+  EXPECT_THAT(split(R"(a/b\\\\/c)"), ElementsAre("a", R"(b\\\\)", "c"));
+  // A backslash that escapes something else leaves the delimiter alone --
+  // the run resets, which is what makes macro-style names like
+  // mem_bank\[0\]/leaf split where they should.
+  EXPECT_THAT(split(R"(mem_bank\[0\]/leaf)"),
+              ElementsAre(R"(mem_bank\[0\])", "leaf"));
+}
+
+TEST_F(PathSegmentsFixture, getPathSegmentsSplitsTextually)
+{
+  // Every unescaped delimiter separates two segments, empty or not.  Callers
+  // that treat an empty segment as meaningless drop it themselves.
+  EXPECT_THAT(split(""), ElementsAre(""));
+  EXPECT_THAT(split("a/"), ElementsAre("a", ""));
+  EXPECT_THAT(split("/a"), ElementsAre("", "a"));
+  EXPECT_THAT(split("a//b"), ElementsAre("a", "", "b"));
+}
+
+TEST_F(ModuleFixture, getPathSegmentsClearsAndToleratesNull)
+{
+  std::vector<std::string_view> segments{"stale"};
+  block_->getPathSegments(nullptr, segments);
+  EXPECT_TRUE(segments.empty());
+
+  block_->getPathSegments("a/b", segments);
+  EXPECT_THAT(segments, ElementsAre("a", "b"));
+  // Reused across calls without reallocating -- the synthesis pass runs this
+  // once per instance.
+  block_->getPathSegments("c", segments);
+  EXPECT_THAT(segments, ElementsAre("c"));
+}
+
 TEST_F(ModuleFixture, test_default)
 {
   // dbModule::create() Succeed
@@ -281,6 +369,7 @@ TEST_F(ModuleFixture, test_default)
   dbInst::destroy(inst1);
   EXPECT_EQ(parent_mod->getInsts().size(), 0);
 }
+
 TEST_F(ModuleFixture, test_find_modinst)
 {
   auto top = block_->getTopModule();
@@ -301,7 +390,7 @@ TEST_F(ModuleFixture, test_find_modinst)
 // as port").
 TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
 {
-  auto top = block_->getTopModule();
+  dbModule* top = block_->getTopModule();
   ASSERT_NE(top, nullptr);
 
   // Leaf (dbInst) collision: an instance named "_42_" exists in scope.
@@ -312,18 +401,155 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
       << "net name must not collide with leaf instance '_42_'";
 
   // Hierarchical (dbModInst) collision: a module instance named "_99_".
-  auto master = dbModule::create(block_, "anon_master");
+  dbModule* master = dbModule::create(block_, "anon_master");
   dbModInst::create(top, master, "_99_");
   std::string hier = block_->makeNewNetName(
       top, "_99_", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_STRNE(block_->getBaseName(hier.c_str()), "_99_")
       << "net name must not collide with module instance '_99_'";
 
+  // Escaped identifier collision: the local instance name contains '/'.
+  dbInst::create(block_, lib_->findMaster("and2"), "path\\/leaf");
+  std::string escaped_leaf = block_->makeNewNetName(
+      top, "path\\/leaf", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(escaped_leaf, "path\\/leaf")
+      << "net name must not collide with escaped instance 'path\\/leaf'";
+
+  // Parsed hierarchical instances retain their full block-level names.
+  dbModule* parsed_master = dbModule::create(block_, "parsed_master");
+  dbModInst::create(top, parsed_master, "h0");
+  dbInst::create(
+      block_, lib_->findMaster("and2"), "h0/drvr", false, parsed_master);
+  std::string parsed_leaf = block_->makeNewNetName(
+      parsed_master, "drvr", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(parsed_leaf, "h0/drvr")
+      << "net name must not collide with parsed leaf instance 'h0/drvr'";
+
+  // A concrete top port collides unless it belongs to the candidate net.
+  dbNet* top_port_net = dbNet::create(block_, "top_port_net");
+  ASSERT_NE(top_port_net, nullptr);
+  dbBTerm* top_port = dbBTerm::create(top_port_net, "top_port");
+  ASSERT_NE(top_port, nullptr);
+  std::string top_port_name = block_->makeNewNetName(
+      top, "top_port", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(top_port_name, "top_port")
+      << "net name must not collide with concrete top port 'top_port'";
+  std::string associated_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               top_port_net);
+  EXPECT_EQ(associated_port_name, "top_port");
+  std::string migrating_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               nullptr,
+                               top_port);
+  EXPECT_EQ(migrating_port_name, "top_port");
+  dbNet* unrelated_net = dbNet::create(block_, "unrelated_net");
+  std::string unrelated_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               unrelated_net);
+  EXPECT_NE(unrelated_port_name, "top_port");
+  dbNet* unrelated_same_base_net = dbNet::create(block_, "child/top_port");
+  ASSERT_NE(unrelated_same_base_net, nullptr);
+  std::string unrelated_same_base_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               unrelated_same_base_net);
+  EXPECT_NE(unrelated_same_base_port_name, "top_port");
+
+  // An escaped local delimiter must not fall back to an unrelated port.
+  dbModBTerm* escaped_port = dbModBTerm::create(top, "escaped_port");
+  ASSERT_NE(escaped_port, nullptr);
+  std::string escaped_port_name
+      = block_->makeNewNetName(top,
+                               "path\\/escaped_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_EQ(escaped_port_name, "path\\/escaped_port");
+
   // No collision: a fresh name is returned unchanged.
   std::string fresh = block_->makeNewNetName(
       top, "no_collision_here", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_STREQ(block_->getBaseName(fresh.c_str()), "no_collision_here");
 }
+
+// Mirror of makeNewNetName_avoids_instance_collision: makeNewInstName must
+// not hand out a name that already belongs to a net or port in the scope,
+// because a net/port and an instance cannot share a name in one Verilog
+// module scope ("Instance has the same name as port").
+TEST_F(ModuleFixture, makeNewInstName_avoids_net_collision)
+{
+  dbModule* top = block_->getTopModule();
+  ASSERT_NE(top, nullptr);
+
+  // Flat net collision: a net named "n1" exists in scope.
+  dbNet::create(block_, "n1");
+  std::string flat = block_->makeNewInstName(
+      nullptr, "n1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(flat.c_str()), "n1")
+      << "instance name must not collide with flat net 'n1'";
+
+  // ModNet collision: a modnet named "mn1" in the top module.
+  dbModNet::create(top, "mn1");
+  std::string hier_net = block_->makeNewInstName(
+      nullptr, "mn1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(hier_net.c_str()), "mn1")
+      << "instance name must not collide with modnet 'mn1'";
+
+  // Escaped identifier collision: the local ModNet name contains '/'.
+  dbModNet::create(top, "path\\/net");
+  std::string escaped_net = block_->makeNewInstName(
+      nullptr, "path\\/net", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(escaped_net, "path\\/net")
+      << "instance name must not collide with escaped ModNet 'path\\/net'";
+
+  // Escaped identifier collision: the local module instance contains '/'.
+  dbModule* escaped_master = dbModule::create(block_, "escaped_master");
+  dbModInst::create(top, escaped_master, "path\\/mod");
+  std::string escaped_hier = block_->makeNewInstName(
+      nullptr, "path\\/mod", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(escaped_hier, "path\\/mod")
+      << "instance name must not collide with escaped module instance "
+         "'path\\/mod'";
+
+  // Parsed hierarchical instances retain their full block-level names.
+  dbModule* parsed_master = dbModule::create(block_, "parsed_master");
+  dbModInst* parsed_parent = dbModInst::create(top, parsed_master, "h0");
+  dbInst::create(
+      block_, lib_->findMaster("and2"), "h0/drvr", false, parsed_master);
+  std::string parsed_leaf = block_->makeNewInstName(
+      parsed_parent, "drvr", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(parsed_leaf, "h0/drvr")
+      << "instance name must not collide with parsed leaf instance 'h0/drvr'";
+
+  // Module port collision: a modbterm named "p1" on the top module.
+  dbModBTerm::create(top, "p1");
+  std::string port = block_->makeNewInstName(
+      nullptr, "p1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(port.c_str()), "p1")
+      << "instance name must not collide with port 'p1'";
+
+  // Top port collision: the bterm name differs from its backing net.
+  dbNet* top_port_net = dbNet::create(block_, "top_port_net");
+  ASSERT_NE(top_port_net, nullptr);
+  dbBTerm* top_port = dbBTerm::create(top_port_net, "top_port");
+  ASSERT_NE(top_port, nullptr);
+  std::string top_port_name = block_->makeNewInstName(
+      nullptr, "top_port", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(top_port_name.c_str()), "top_port")
+      << "instance name must not collide with top port 'top_port'";
+
+  // No collision: a fresh name is returned unchanged.
+  std::string fresh = block_->makeNewInstName(
+      nullptr, "fresh_inst", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STREQ(block_->getBaseName(fresh.c_str()), "fresh_inst");
+}
+
 class DetailedFixture : public SimpleDbFixture
 {
  protected:
@@ -360,6 +586,7 @@ class DetailedFixture : public SimpleDbFixture
   dbInst* inst2;
   dbInst* inst3;
 };
+
 TEST_F(DetailedFixture, test_destroy)
 {
   EXPECT_EQ(block->getModInsts().size(), 3);

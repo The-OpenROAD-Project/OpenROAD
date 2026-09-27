@@ -5,6 +5,17 @@
 
 import { getThemeColors } from './theme.js';
 import { isStaticMode } from './ui-utils.js';
+import { downloadUrl } from './image-export.js';
+
+// Export filename for the clock on show, so exporting several tabs in a row
+// does not overwrite one file.  Anything a file name cannot carry becomes '_'
+// -- a hierarchical clock name holds '/', and Windows rejects more besides --
+// and a clock with no usable name still gets a file.
+export function clockTreePngName(clockName) {
+    const cleaned = String(clockName || '').replace(/[^A-Za-z0-9._-]/g, '_')
+        .replace(/^_+|_+$/g, '');
+    return (cleaned || 'clock_tree') + '.png';
+}
 
 export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
 export const kNodeSize = 10;       // base node shape size in pixels
@@ -189,18 +200,23 @@ export class ClockTreeWidget {
         const toolbar = document.createElement('div');
         toolbar.className = 'clock-tree-toolbar';
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
         if (isStaticMode(this._app)) {
             this._updateBtn.style.display = 'none';
         }
         this._fitBtn = document.createElement('button');
-        this._fitBtn.className = 'timing-btn';
+        this._fitBtn.className = 'or-btn';
         this._fitBtn.textContent = 'Fit';
+        this._pngBtn = document.createElement('button');
+        this._pngBtn.className = 'or-btn';
+        this._pngBtn.textContent = 'PNG';
+        this._pngBtn.title = 'Export the clock tree as a PNG image';
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
         toolbar.appendChild(this._updateBtn);
         toolbar.appendChild(this._fitBtn);
+        toolbar.appendChild(this._pngBtn);
         toolbar.appendChild(this._statusLabel);
         el.appendChild(toolbar);
 
@@ -216,7 +232,7 @@ export class ClockTreeWidget {
 
         // Tooltip
         this._tooltip = document.createElement('div');
-        this._tooltip.className = 'clock-tree-tooltip';
+        this._tooltip.className = 'or-tooltip';
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 
@@ -237,9 +253,28 @@ export class ClockTreeWidget {
         this._render();
     }
 
+    _pngFileName() {
+        const clock = this._clockData[this._selectedClockIdx];
+        return clockTreePngName(clock && clock.name);
+    }
+
+    // The clock tree is drawn in the browser, so the image is taken from the
+    // canvas rather than re-rendered server-side the way the Qt GUI's
+    // save_clocktree_image does.  _render() paints an opaque background
+    // first, so the PNG is not transparent.  The canvas is sized in device
+    // pixels (see _sizeCanvas), so this exports at the display's resolution.
+    _exportPng() {
+        try {
+            downloadUrl(this._canvas.toDataURL('image/png'), this._pngFileName());
+        } catch (err) {
+            console.error('PNG export failed:', err);
+        }
+    }
+
     _bindEvents() {
         this._updateBtn.addEventListener('click', () => this.update());
         this._fitBtn.addEventListener('click', () => this._fit());
+        this._pngBtn.addEventListener('click', () => this._exportPng());
 
         this._canvas.addEventListener('keydown', (e) => {
             if (e.key === 'f') {
@@ -400,7 +435,7 @@ export class ClockTreeWidget {
 
         if (!this._layout.length) {
             ctx.fillStyle = tc.canvasText;
-            ctx.font = '14px monospace';
+            ctx.font = '14px ' + tc.fontSans;
             ctx.textAlign = 'center';
             const msg = isStaticMode(this._app)
                 ? 'No clock tree data available'
@@ -596,7 +631,7 @@ export class ClockTreeWidget {
         ctx.save();
         ctx.fillStyle = tc.canvasLabel;
         ctx.strokeStyle = tc.canvasAxis;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
 

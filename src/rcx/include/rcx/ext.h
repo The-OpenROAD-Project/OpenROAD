@@ -18,6 +18,9 @@
 
 namespace rcx {
 
+class MultiChipExtractor;
+class MultiChipSpefWriter;
+
 class Ext
 {
  public:
@@ -70,6 +73,13 @@ class Ext
                        bool parallel,
                        int corner);
   void extract(ExtractOptions options);
+  void extractMultiChip(const ExtractOptions& options);
+
+  void setExtractionRulesFile(const std::string& rules_file);
+  void setExtractionRulesFile(const std::string& rules_file,
+                              const std::string& tech_name);
+  void setAssemblyExtractionRulesFile(
+      const std::string& assembly_extraction_rules_file);
 
   void define_process_corner(int ext_model_index, const std::string& name);
   void define_derived_corner(const std::string& name,
@@ -83,6 +93,7 @@ class Ext
   void adjust_rc(float res_factor, float cc_factor, float gndc_factor);
 
   void write_spef(const SpefOptions& options);
+  void writeMultiChipSpef(const SpefOptions& options);
 
   void read_spef(ReadSpefOpts& opt);
 
@@ -101,6 +112,9 @@ class Ext
   extMain* _ext = nullptr;
   utl::Logger* logger_ = nullptr;
   const char* spef_version_ = nullptr;
+
+  std::unique_ptr<MultiChipExtractor> multi_chip_extractor_;
+  std::unique_ptr<MultiChipSpefWriter> multi_chip_spef_writer_;
 };  // namespace rcx
 
 }  // namespace rcx

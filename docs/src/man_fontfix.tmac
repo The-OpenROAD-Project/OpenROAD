@@ -1,0 +1,20 @@
+.\" SPDX-License-Identifier: BSD-3-Clause
+.\" Copyright (c) 2026, The OpenROAD Authors
+.\"
+.\" Pandoc renders code and verbatim text in the Courier (CR) font family.
+.\" Output devices that lack Courier (e.g. nroff/tty) emit "cannot select
+.\" font" warnings when those fonts are selected, so on such devices remap
+.\" them to fonts that always exist. Devices that do provide Courier keep
+.\" monospaced rendering. Pandoc injects this file via --include-in-header,
+.\" after its own font setup and before the document body, so these
+.\" translations take precedence.
+.if !F CR .ftr C R
+.if !F CR .ftr CR R
+.if !F CR .ftr CI I
+.if !F CR .ftr CB B
+.if !F CR .ftr CBI BI
+.if !F CR .ftr V R
+.if !F CR .ftr VI I
+.if !F CR .ftr VB B
+.if !F CR .ftr VBI BI
+.if F CR .ftr C CR

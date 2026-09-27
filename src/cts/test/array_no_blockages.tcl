@@ -10,8 +10,8 @@ set pitch_multiplier 1.1
 set core_margin [expr 10 * 2000]
 set halo [expr 1 * 2000]
 
-read_lib $liberty_file
-read_lib array_tile.lib
+read_liberty $liberty_file
+read_liberty array_tile.lib
 
 read_lef $tech_lef
 read_lef $std_cell_lef
@@ -140,9 +140,6 @@ clock_tree_synthesis -sink_clustering_enable
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
 repair_clock_nets
-
-set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
-detailed_placement
 
 estimate_parasitics -placement
 report_clock_skew

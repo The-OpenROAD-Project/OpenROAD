@@ -116,8 +116,12 @@ class Opendp
                          int site_search_window = -1,
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
-                         bool disable_window_extension = false);
+                         bool disable_window_extension = false,
+                         bool quiet = false);
+  // C++ equivalent of `detailed_placement -quiet`.
+  void detailedPlacementQuiet();
   void reportLegalizationStats() const;
+  void reportLegalizationSummary(double runtime);
 
   void setPaddingGlobal(int left, int right);
   void setPadding(odb::dbMaster* master, int left, int right);
@@ -414,6 +418,19 @@ class Opendp
   int negotiation_debug_start_ = 0;
   bool incremental_ = false;
   bool use_diamond_legalizer_ = false;
+  bool quiet_ = false;
+  int total_moves_ = 0;
+  // Counters for reporting
+  int cumulative_moves_ = 0;
+  int64_t cumulative_displacement_ = 0;
+  int64_t cumulative_displacement_max_ = 0;
+  double cumulative_hpwl_delta_ = 0.0;
+  double cumulative_runtime_ = 0.0;
+  int negotiation_iters_phase1_ = 0;
+  int negotiation_iters_phase2_ = 0;
+  int negotiation_converge_phase_ = 0;
+  int negotiation_diamond_recoveries_ = 0;
+  std::string negotiation_finish_ = "not run";
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

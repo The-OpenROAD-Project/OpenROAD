@@ -67,6 +67,10 @@ class Design
   {
     return via_demand_length_upper_[i];
   }
+  double getWrongWayDemandLength(int i) const
+  {
+    return wrong_way_demand_length_[i];
+  }
 
   // For global routing
   const std::vector<std::vector<int>>& getGridlines() const
@@ -93,6 +97,7 @@ class Design
   void readLayers();
   void readNetlist();
   std::vector<CUGRPin> makeNetPins(odb::dbNet* db_net);
+  int clampPinLayerIdx(int layer_idx) const;
   void readInstanceObstructions();
   int readSpecialNetObstructions();
   void readDesignObstructions();
@@ -116,6 +121,7 @@ class Design
   // Effective via demand length per lower layer i (lower_ = i, upper_ = i+1).
   std::vector<double> via_demand_length_lower_;
   std::vector<double> via_demand_length_upper_;
+  std::vector<double> wrong_way_demand_length_;
   std::vector<CUGRNet> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_to_id_;
   std::vector<BoxOnLayer> obstacles_;

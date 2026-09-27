@@ -17,25 +17,32 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "gui/gui.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace gpl {
 
-gui::Chart* GraphicsImpl::main_chart_ = nullptr;
-gui::Chart* GraphicsImpl::density_chart_ = nullptr;
-gui::Chart* GraphicsImpl::stepLength_chart_ = nullptr;
-gui::Chart* GraphicsImpl::routing_chart_ = nullptr;
+web::Chart* GraphicsImpl::main_chart_ = nullptr;
+web::Chart* GraphicsImpl::density_chart_ = nullptr;
+web::Chart* GraphicsImpl::stepLength_chart_ = nullptr;
+web::Chart* GraphicsImpl::routing_chart_ = nullptr;
 
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
-  gui::Gui::get()->registerRenderer(this);
+}
+
+void GraphicsImpl::registerWithGui()
+{
+  if (!web::Gui::enabled()) {
+    return;
+  }
+  web::Gui::get()->registerRenderer(this);
 }
 
 GraphicsImpl::~GraphicsImpl() = default;
@@ -50,6 +57,7 @@ void GraphicsImpl::debugForMbff()
 {
   setDebugOn(true);
   mode_ = Mbff;
+  registerWithGui();
 }
 
 void GraphicsImpl::debugForInitialPlace(
@@ -60,6 +68,7 @@ void GraphicsImpl::debugForInitialPlace(
   pbc_ = std::move(pbc);
   pbVec_ = pbVec;
   mode_ = Initial;
+  registerWithGui();
 }
 
 void GraphicsImpl::debugForNesterovPlace(
@@ -81,7 +90,7 @@ void GraphicsImpl::debugForNesterovPlace(
   draw_bins_ = draw_bins;
   mode_ = Nesterov;
 
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 
@@ -89,7 +98,7 @@ void GraphicsImpl::debugForNesterovPlace(
     initCharts();
     addDisplayControl(kDrawInstances, true);
     addDisplayControl(kDrawTimingNets, false);
-    gui::Gui::get()->registerRenderer(this);
+    registerWithGui();
 
     if (debug_inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -152,10 +161,10 @@ void GraphicsImpl::initDebugHeatmap()
 
 void GraphicsImpl::initCharts()
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
-  gui::Gui* gui = gui::Gui::get();
+  web::Gui* gui = web::Gui::get();
 
   if (main_chart_ == nullptr) {
     main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
@@ -195,36 +204,36 @@ void GraphicsImpl::initCharts()
   }
 }
 
-void GraphicsImpl::drawBounds(gui::Painter& painter)
+void GraphicsImpl::drawBounds(web::Painter& painter)
 {
   // draw core bounds
   auto& die = pbc_->getDie();
-  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+  painter.setPen(web::Painter::kYellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
   painter.drawLine(die.coreUx(), die.coreUy(), die.coreLx(), die.coreUy());
   painter.drawLine(die.coreLx(), die.coreUy(), die.coreLx(), die.coreLy());
 }
 
-void GraphicsImpl::drawInitial(gui::Painter& painter)
+void GraphicsImpl::drawInitial(web::Painter& painter)
 {
   drawBounds(painter);
 
-  painter.setPen(gui::Painter::kWhite, /* cosmetic */ true);
+  painter.setPen(web::Painter::kWhite, /* cosmetic */ true);
   for (auto& inst : pbc_->placeInsts()) {
     int lx = inst->lx();
     int ly = inst->ly();
     int ux = inst->ux();
     int uy = inst->uy();
 
-    gui::Painter::Color color = gui::Painter::kDarkGreen;
+    web::Painter::Color color = web::Painter::kDarkGreen;
     color.a = 180;
     painter.setBrush(color);
     painter.drawRect({lx, ly, ux, uy});
   }
 }
 
-void GraphicsImpl::drawField(gui::Painter& painter)
+void GraphicsImpl::drawField(web::Painter& painter)
 {
   for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
     const auto& nb = nbVec_[nb_idx];
@@ -256,7 +265,7 @@ void GraphicsImpl::drawField(gui::Painter& painter)
       int cx = bin.cx();
       int cy = bin.cy();
 
-      gui::Painter::Color color
+      web::Painter::Color color
           = region_colors_[nb_idx % region_colors_.size()];
       painter.setPen(color, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
@@ -273,7 +282,7 @@ void GraphicsImpl::drawField(gui::Painter& painter)
 }
 
 void GraphicsImpl::drawCells(const std::vector<GCellHandle>& cells,
-                             gui::Painter& painter,
+                             web::Painter& painter,
                              size_t nb_index)
 {
   for (const auto& handle : cells) {
@@ -283,7 +292,7 @@ void GraphicsImpl::drawCells(const std::vector<GCellHandle>& cells,
 }
 
 void GraphicsImpl::drawCells(const std::vector<GCell*>& cells,
-                             gui::Painter& painter)
+                             web::Painter& painter)
 {
   for (const auto& gCell : cells) {
     drawSingleGCell(gCell, painter);
@@ -291,7 +300,7 @@ void GraphicsImpl::drawCells(const std::vector<GCell*>& cells,
 }
 
 void GraphicsImpl::drawSingleGCell(const GCell* gCell,
-                                   gui::Painter& painter,
+                                   web::Painter& painter,
                                    size_t nb_index)
 {
   const int gcx = gCell->dCx();
@@ -302,29 +311,29 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
   int xh = gcx + gCell->dx() / 2;
   int yh = gcy + gCell->dy() / 2;
 
-  gui::Painter::Color color;
+  web::Painter::Color color;
   // Highlight modified instances (overrides base color, unless selected)
   switch (gCell->changeType()) {
     case GCell::GCellChange::kRoutability:
-      color = gui::Painter::kWhite;
+      color = web::Painter::kWhite;
       color.a = 75;
       break;
     case GCell::GCellChange::kNewInstance:
-      color = gui::Painter::kDarkRed;
+      color = web::Painter::kDarkRed;
       break;
     case GCell::GCellChange::kDownsize:
-      color = gui::Painter::kDarkBlue;
+      color = web::Painter::kDarkBlue;
       break;
     case GCell::GCellChange::kUpsize:
-      color = gui::Painter::kOrange;
+      color = web::Painter::kOrange;
       break;
     case GCell::GCellChange::kResizeNoChange:
-      color = gui::Painter::kDarkYellow;
+      color = web::Painter::kDarkYellow;
       break;
     default:
       if (gCell->isInstance()) {
         color = gCell->isLocked()
-                    ? gui::Painter::kTurquoise
+                    ? web::Painter::kTurquoise
                     : instances_colors_[nb_index % instances_colors_.size()];
       } else if (gCell->isFiller()) {
         // Use different colors for each NesterovBase
@@ -336,18 +345,18 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
 
   // Highlight selection (highest priority)
   if (selected_ != kInvalidIndex && gCell == nbc_->getGCellByIndex(selected_)) {
-    color = gui::Painter::kYellow;
+    color = web::Painter::kYellow;
     color.a = 180;
   }
 
-  gui::Painter::Color outline = gui::Painter::kBlack;
+  web::Painter::Color outline = web::Painter::kBlack;
   outline.a = 150;
   painter.setPen(outline, /*cosmetic=*/false, /*width=*/1);
   painter.setBrush(color);
   painter.drawRect({xl, yl, xh, yh});
 }
 
-void GraphicsImpl::drawTimingNets(gui::Painter& painter)
+void GraphicsImpl::drawTimingNets(web::Painter& painter)
 {
   const auto& gnets = nbc_->getGNets();
 
@@ -360,7 +369,7 @@ void GraphicsImpl::drawTimingNets(gui::Painter& painter)
     return;
   }
 
-  painter.setBrush(gui::Painter::kTransparent);
+  painter.setBrush(web::Painter::kTransparent);
 
   for (const GNet* net : gnets) {
     const float w = net->getTimingWeight();
@@ -376,17 +385,17 @@ void GraphicsImpl::drawTimingNets(gui::Painter& painter)
   }
 }
 
-void GraphicsImpl::drawNesterov(gui::Painter& painter)
+void GraphicsImpl::drawNesterov(web::Painter& painter)
 {
   drawBounds(painter);
   if (draw_bins_) {
     // Draw the bins
-    painter.setPen(gui::Painter::kTransparent);
+    painter.setPen(web::Painter::kTransparent);
 
     for (const auto& nb : nbVec_) {
       for (auto& bin : nb->getBins()) {
         int density = bin.getDensity() * 50 + 20;
-        gui::Painter::Color color;
+        web::Painter::Color color;
         if (density > 255) {
           color = {255, 165, 0, 180};  // orange = out of the range
         } else {
@@ -402,7 +411,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
 
   // Draw the placeable objects
   if (checkDisplayControl(kDrawInstances)) {
-    painter.setPen(gui::Painter::kWhite);
+    painter.setPen(web::Painter::kWhite);
     drawCells(nbc_->getGCells(), painter);
     for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
       const auto& nb = nbVec_[nb_idx];
@@ -415,7 +424,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
   }
 
   // Create lighter versions of the region_colors_ with alpha 50
-  std::vector<gui::Painter::Color> light_colors;
+  std::vector<web::Painter::Color> light_colors;
   light_colors.reserve(region_colors_.size());
   for (const auto& color : region_colors_) {
     light_colors.emplace_back(color.r, color.g, color.b, 50);
@@ -423,7 +432,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
 
   for (size_t pb_idx = 0; pb_idx < pbVec_.size(); ++pb_idx) {
     const auto& pb = pbVec_[pb_idx];
-    gui::Painter::Color color = light_colors[pb_idx % light_colors.size()];
+    web::Painter::Color color = light_colors[pb_idx % light_colors.size()];
     painter.setBrush(color);
 
     for (auto& pb_inst : pb->nonPlaceInsts()) {
@@ -434,7 +443,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
 
   // Draw lines to neighbors
   if (selected_ != kInvalidIndex && nbc_->getGCellByIndex(selected_)) {
-    painter.setPen(gui::Painter::kYellow, true);
+    painter.setPen(web::Painter::kYellow, true);
     for (GPin* pin : nbc_->getGCellByIndex(selected_)->gPins()) {
       GNet* net = pin->getGNet();
       if (!net) {
@@ -494,7 +503,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     // Draw WL gradient line
     {
       auto [dx, dy] = scaleVector(wlGrad.x, wlGrad.y);
-      painter.setPen(gui::Painter::kRed, true);  // Use red for WL gradient
+      painter.setPen(web::Painter::kRed, true);  // Use red for WL gradient
       painter.drawLine(
           cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
     }
@@ -504,7 +513,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
       const float scaled_dx = densityPenalty * densityGrad.x;
       const float scaled_dy = densityPenalty * densityGrad.y;
       auto [dx, dy] = scaleVector(scaled_dx, scaled_dy);
-      painter.setPen(gui::Painter::kBlue,
+      painter.setPen(web::Painter::kBlue,
                      true);  // Use blue for Density gradient
       painter.drawLine(
           cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
@@ -513,7 +522,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     // Draw Overall gradient line
     {
       auto [dx, dy] = scaleVector(overall_x, overall_y);
-      painter.setPen(gui::Painter::kBlack,
+      painter.setPen(web::Painter::kBlack,
                      true);  // Use black for Overall gradient
       painter.drawLine(
           cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
@@ -526,9 +535,9 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
   }
 }
 
-void GraphicsImpl::drawMBFF(gui::Painter& painter)
+void GraphicsImpl::drawMBFF(web::Painter& painter)
 {
-  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+  painter.setPen(web::Painter::kYellow, /* cosmetic */ true);
   for (const auto& [start, end] : mbff_edges_) {
     painter.drawLine(start, end);
   }
@@ -539,7 +548,7 @@ void GraphicsImpl::drawMBFF(gui::Painter& painter)
   }
 }
 
-void GraphicsImpl::drawObjects(gui::Painter& painter)
+void GraphicsImpl::drawObjects(web::Painter& painter)
 {
   if (!enabled()) {
     return;
@@ -607,7 +616,7 @@ void GraphicsImpl::reportSelected()
 
 void GraphicsImpl::addIter(const int iter, const double overflow)
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
@@ -662,63 +671,63 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
 
 void GraphicsImpl::addTimingDrivenIter(const int iter)
 {
-  main_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+  main_chart_->addVerticalMarker(iter, web::Painter::kTurquoise);
   if (routing_chart_) {
-    routing_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+    routing_chart_->addVerticalMarker(iter, web::Painter::kTurquoise);
   }
 }
 
 void GraphicsImpl::addRoutabilitySnapshot(int iter)
 {
-  main_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  main_chart_->addVerticalMarker(iter, web::Painter::kYellow);
   if (routing_chart_) {
-    routing_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+    routing_chart_->addVerticalMarker(iter, web::Painter::kYellow);
   }
 }
 
 void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
 {
-  gui::Painter::Color color
-      = revert ? gui::Painter::kRed : gui::Painter::kGreen;
+  web::Painter::Color color
+      = revert ? web::Painter::kRed : web::Painter::kGreen;
   main_chart_->addVerticalMarker(iter, color);
   if (routing_chart_ && rb_) {
     routing_chart_->addVerticalMarker(
-        iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
+        iter, rb_->isMinRc() ? web::Painter::kMagenta : web::Painter::kBlack);
   }
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)
 {
-  gui::Gui::get()->redraw();
+  web::Gui::get()->redraw();
   if (pause) {
     reportSelected();
-    gui::Gui::get()->pause();
+    web::Gui::get()->pause();
   }
 }
 
 void GraphicsImpl::mbffMapping(const LineSegs& segs)
 {
   mbff_edges_ = segs;
-  gui::Gui::get()->redraw();
-  gui::Gui::get()->pause();
+  web::Gui::get()->redraw();
+  web::Gui::get()->pause();
   mbff_edges_.clear();
 }
 
 void GraphicsImpl::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
 {
   mbff_cluster_ = ffs;
-  gui::Gui::get()->redraw();
-  gui::Gui::get()->pause();
+  web::Gui::get()->redraw();
+  web::Gui::get()->pause();
   mbff_cluster_.clear();
 }
 
-gui::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
+web::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
                                        const odb::Rect& region)
 {
   selected_ = kInvalidIndex;
 
   if (layer || !nbc_) {
-    return gui::SelectionSet();
+    return web::SelectionSet();
   }
 
   for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -751,22 +760,22 @@ gui::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
         }
       }
     }
-    gui::Gui::get()->redraw();
+    web::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
-      gui::SelectionSet selected;
+      web::SelectionSet selected;
       for (Instance* inst : cell->insts()) {
-        selected.insert(gui::Gui::get()->makeSelected(inst->dbInst()));
+        selected.insert(web::Gui::get()->makeSelected(inst->dbInst()));
       }
       return selected;
     }
   }
-  return gui::SelectionSet();
+  return web::SelectionSet();
 }
 
 void GraphicsImpl::status(const std::string_view message)
 {
-  gui::Gui::get()->status(std::string(message));
+  web::Gui::get()->status(std::string(message));
 }
 
 double GraphicsImpl::getGridXSize() const
@@ -882,7 +891,7 @@ void GraphicsImpl::combineMapData(bool base_has_value,
 
 bool GraphicsImpl::enabled()
 {
-  return debug_on_ && gui::Gui::enabled();
+  return debug_on_ && web::Gui::enabled();
 }
 
 void GraphicsImpl::addFrameLabelImpl(const odb::Rect& bbox,
@@ -890,13 +899,13 @@ void GraphicsImpl::addFrameLabelImpl(const odb::Rect& bbox,
                                      std::string_view label_name,
                                      int image_width_px)
 {
-  gui::Gui* gui = gui::Gui::get();
+  web::Gui* gui = web::Gui::get();
 
   int label_x = bbox.xMin() + 300;
   int label_y = bbox.yMin() + 300;
 
-  gui::Painter::Color color = gui::Painter::kYellow;
-  gui::Painter::Anchor anchor = gui::Painter::kBottomLeft;
+  web::Painter::Color color = web::Painter::kYellow;
+  web::Painter::Anchor anchor = web::Painter::kBottomLeft;
 
   int font_size = std::clamp(image_width_px / 50, 15, 24);
 
@@ -914,7 +923,7 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
                                         std::string_view heatmap_control,
                                         int image_width_px)
 {
-  gui::Gui* gui = gui::Gui::get();
+  web::Gui* gui = web::Gui::get();
 
   odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
 
@@ -938,7 +947,7 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
 
 int GraphicsImpl::gifStart(std::string_view path)
 {
-  return gui::Gui::get()->gifStart(std::string(path));
+  return web::Gui::get()->gifStart(std::string(path));
 }
 
 void GraphicsImpl::gifAddFrameImpl(int key,
@@ -947,22 +956,22 @@ void GraphicsImpl::gifAddFrameImpl(int key,
                                    double dbu_per_pixel,
                                    std::optional<int> delay)
 {
-  gui::Gui::get()->gifAddFrame(key, region, width_px, dbu_per_pixel, delay);
+  web::Gui::get()->gifAddFrame(key, region, width_px, dbu_per_pixel, delay);
 }
 
 void GraphicsImpl::deleteLabel(std::string_view label_name)
 {
-  gui::Gui::get()->deleteLabel(std::string(label_name));
+  web::Gui::get()->deleteLabel(std::string(label_name));
 }
 
 void GraphicsImpl::gifEnd(int key)
 {
-  gui::Gui::get()->gifEnd(key);
+  web::Gui::get()->gifEnd(key);
 }
 
 void GraphicsImpl::setDisplayControl(std::string_view name, bool value)
 {
-  gui::Gui::get()->setDisplayControlsVisible(std::string(name), value);
+  web::Gui::get()->setDisplayControlsVisible(std::string(name), value);
 }
 
 }  // namespace gpl

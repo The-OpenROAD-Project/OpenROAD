@@ -65,3 +65,19 @@ proc make_array {
   }
   return $block
 }
+
+# Report the clock nets that got a non-default rule, sorted by name so that the
+# report does not depend on the order the nets were created in.
+proc report_ndr_nets { } {
+  set ndr_nets {}
+  foreach net [[ord::get_db_block] getNets] {
+    set ndr [$net getNonDefaultRule]
+    if { $ndr != "NULL" } {
+      lappend ndr_nets "[$net getName] [$ndr getName]"
+    }
+  }
+  puts "Nets with a non-default rule:"
+  foreach net [lsort $ndr_nets] {
+    puts "  $net"
+  }
+}

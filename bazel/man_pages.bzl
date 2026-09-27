@@ -36,9 +36,10 @@ def _man_pages_impl(ctx):
         args.add("--readme", "{}:{}".format(module, readme.path))
 
     for msg in ctx.files.messages:
-        # Derive module name: src/ant/messages.txt  →  ant
+        # Derive module name: src/ant/messages.txt  →  ant.  The ORD
+        # messages at the repository root (messages.txt) get an empty name.
         parts = msg.short_path.split("/")
-        module = parts[-2] if len(parts) >= 2 else msg.basename
+        module = parts[-2] if len(parts) >= 2 else ""
         args.add("--messages", "{}:{}".format(module, msg.path))
 
     for f in ctx.files.docs_srcs:

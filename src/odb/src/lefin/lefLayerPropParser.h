@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -144,6 +145,23 @@ class lefTechLayerCutEnclosureRuleParser
                    odb::dbTechLayerCutEnclosureRule* rule,
                    odb::dbTechLayer* layer);
 };
+
+class lefTechLayerCutEnclosureTableRuleParser
+{
+ public:
+  lefTechLayerCutEnclosureTableRuleParser(lefinReader*);
+  void parse(std::string_view, odb::dbTechLayer*);
+
+ private:
+  lefinReader* lefin_;
+  // Tracks whether the property parsed so far is still valid. Any
+  // intermediate check (e.g. a reference that fails to resolve) that finds a
+  // problem sets this to false via a warning of its own; the overall parse
+  // is then rejected even if the grammar matched syntactically.
+  bool ruleValid_{true};
+  void checkCutClass(const std::string& val, odb::dbTechLayer* layer);
+};
+
 class lefTechLayerEolExtensionRuleParser
 {
  public:

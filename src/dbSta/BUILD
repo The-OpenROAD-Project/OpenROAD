@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -9,6 +11,18 @@ load("//test:regression.bzl", "messages_txt")
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
+)
+
+cc_library(
+    name = "lambertw_delay_calc",
+    srcs = ["src/DmpCeffLambertWDelayCalc.cc"],
+    hdrs = ["src/DmpCeffLambertWDelayCalc.hh"],
+    # OpenSTA keeps dcalc/DmpCeff.hh private to its own target.
+    features = ["-layering_check"],
+    deps = [
+        "//src/sta:opensta_lib",
+        "@boost.math",
+    ],
 )
 
 cc_library(
@@ -26,6 +40,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSdcNetwork",
+        ":lambertw_delay_calc",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -105,8 +120,10 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dbNetwork",
         ":dbSta",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/utl",
     ],
 )
@@ -137,7 +154,6 @@ cc_library(
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
-        "//src/sta:StaConfig",
     ],
     hdrs = [
         "include/db_sta/MakeDbSta.hh",
@@ -155,6 +171,7 @@ cc_library(
         ":dbSta",
         "//:ord",
         "//src/odb/src/db",
+        "//src/sta:config",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
@@ -191,9 +208,51 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+        # The OpenSTA submodule declares its own swig options (the fork's
+        # STA_OPENROAD_FORK define; stock OpenSTA would declare none).
+        "//src/sta:sta_swig_defs",
     ],
 )
 
 messages_txt(
     visibility = ["//docs:__pkg__"],
+)
+
+cc_binary(
+    name = "ceff_training_data_generator",
+    srcs = ["src/ceff_training_data_generator.cc"],
+    data = [
+        "//src/dbSta/test:synthetic_linear.lib",
+    ],
+    # OpenSTA keeps dcalc/DmpCeff.hh private to its own target.
+    features = ["-layering_check"],
+    deps = [
+        "//src/sta:opensta_lib",
+    ],
+)
+
+py_binary(
+    name = "fit_pade",
+    srcs = ["src/fit_pade.py"],
+    deps = [
+        "@openroad-pip//numpy",
+        "@openroad-pip//pandas",
+        "@openroad-pip//scipy",
+    ],
+)
+
+genrule(
+    name = "generate_training_data",
+    srcs = ["//src/dbSta/test:synthetic_linear.lib"],
+    outs = ["dmp_training_data.csv"],
+    cmd = "$(location :ceff_training_data_generator) $(location //src/dbSta/test:synthetic_linear.lib) > $@",
+    tools = [":ceff_training_data_generator"],
+)
+
+genrule(
+    name = "generate_pade_coefficients",
+    srcs = [":dmp_training_data.csv"],
+    outs = ["PadeCoefficients.h"],
+    cmd = "$(location :fit_pade) --csv_path=$< --output=$@",
+    tools = [":fit_pade"],
 )

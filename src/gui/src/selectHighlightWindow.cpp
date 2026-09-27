@@ -20,7 +20,7 @@
 
 namespace gui {
 
-SelectionModel::SelectionModel(const SelectionSet& objs) : objs_(objs)
+SelectionModel::SelectionModel(const web::SelectionSet& objs) : objs_(objs)
 {
 }
 
@@ -67,7 +67,8 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index]->getBBox(bbox);
-    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox))
+    return valid ? QString::fromStdString(
+                       web::Descriptor::Property::toString(bbox))
                  : "<none>";
   }
   return QVariant();
@@ -91,7 +92,7 @@ QVariant SelectionModel::headerData(int section,
   return QVariant();
 }
 
-HighlightModel::HighlightModel(const HighlightSet& objs) : objs_(objs)
+HighlightModel::HighlightModel(const web::HighlightSet& objs) : objs_(objs)
 {
 }
 
@@ -134,7 +135,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   }
   if (role == Qt::BackgroundRole && index.column() == 3) {
     auto highlight_color
-        = Painter::kHighlightColors[table_data_[index.row()].first];
+        = web::Painter::kHighlightColors[table_data_[index.row()].first];
     return QColor(highlight_color.r,
                   highlight_color.g,
                   highlight_color.b,
@@ -162,7 +163,8 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index].second->getBBox(bbox);
-    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox))
+    return valid ? QString::fromStdString(
+                       web::Descriptor::Property::toString(bbox))
                  : "<none>";
   }
   if (index.column() == 3) {
@@ -207,8 +209,8 @@ bool HighlightModel::setData(const QModelIndex& index,
   return false;
 }
 
-SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
-                                             const HighlightSet& hlt_set,
+SelectHighlightWindow::SelectHighlightWindow(const web::SelectionSet& sel_set,
+                                             const web::HighlightSet& hlt_set,
                                              QWidget* parent)
     : QDockWidget(parent),
       ui_(),
@@ -371,7 +373,7 @@ void SelectHighlightWindow::showHighlightCustomMenu(QPoint pos)
 void SelectHighlightWindow::deselectItems()
 {
   auto sel_indices = ui_.selTableView->selectionModel()->selectedRows();
-  QList<const Selected*> desel_items;
+  QList<const web::Selected*> desel_items;
   for (auto& sel_item : sel_indices) {
     desel_items << selection_model_.getItemAt(sel_item.row());
   }
@@ -380,7 +382,7 @@ void SelectHighlightWindow::deselectItems()
 void SelectHighlightWindow::highlightSelectedItems()
 {
   auto sel_indices = ui_.selTableView->selectionModel()->selectedRows();
-  QList<const Selected*> sel_items;
+  QList<const web::Selected*> sel_items;
   for (auto& sel_item : sel_indices) {
     sel_items << selection_model_.getItemAt(sel_item.row());
   }
@@ -390,7 +392,7 @@ void SelectHighlightWindow::highlightSelectedItems()
 void SelectHighlightWindow::zoomInSelectedItems()
 {
   auto sel_indices = ui_.selTableView->selectionModel()->selectedRows();
-  QList<const Selected*> desel_items;
+  QList<const web::Selected*> desel_items;
   for (auto& sel_item : sel_indices) {
     desel_items << selection_model_.getItemAt(sel_item.row());
   }
@@ -400,7 +402,7 @@ void SelectHighlightWindow::zoomInSelectedItems()
 void SelectHighlightWindow::dehighlightItems()
 {
   auto sel_indices = ui_.hltTableView->selectionModel()->selectedRows();
-  QList<const Selected*> dehlt_items;
+  QList<const web::Selected*> dehlt_items;
   for (auto& sel_item : sel_indices) {
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
@@ -410,7 +412,7 @@ void SelectHighlightWindow::dehighlightItems()
 void SelectHighlightWindow::zoomInHighlightedItems()
 {
   auto sel_indices = ui_.hltTableView->selectionModel()->selectedRows();
-  QList<const Selected*> dehlt_items;
+  QList<const web::Selected*> dehlt_items;
   for (auto& sel_item : sel_indices) {
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
@@ -420,7 +422,7 @@ void SelectHighlightWindow::zoomInHighlightedItems()
 void SelectHighlightWindow::changeHighlight()
 {
   auto sel_indices = ui_.hltTableView->selectionModel()->selectedRows();
-  QList<const Selected*> items;
+  QList<const web::Selected*> items;
   for (auto& sel_item : sel_indices) {
     items << highlight_model_.getItemAt(sel_item.row());
   }

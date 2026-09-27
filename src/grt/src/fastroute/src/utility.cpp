@@ -177,9 +177,9 @@ void FastRouteCore::netpinOrderInc()
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
 
   // One-shot dump of the res-aware nets in routing order (their
-  // layer-assignment priority). Enable with -debug_level GRT resAware 1.
+  // layer-assignment priority). Enable with -debug_level GRT resAware 2.
   if (enable_resistance_aware_ && !is_incremental_grt_ && !res_aware_logged_
-      && logger_->debugCheck(GRT, "resAware", 1)) {
+      && logger_->debugCheck(GRT, "resAware", 2)) {
     res_aware_logged_ = true;
     logger_->report(
         "FastRoute res-aware nets in layer-assignment priority order:");
@@ -785,9 +785,9 @@ void FastRouteCore::updateSlacks()
     nets_[res_aware_list[i].first]->setIsResAware(true);
   }
 
-  // Res-aware set-growth instrumentation (-debug_level GRT resAware 1); reports
-  // per-call delta and running total, level 2 lists newly-marked nets.
-  if (logger_->debugCheck(GRT, "resAware", 1) && !is_incremental_grt_) {
+  // Res-aware set-growth instrumentation (-debug_level GRT resAware 2); reports
+  // per-call delta and running total, level 3 lists newly-marked nets.
+  if (logger_->debugCheck(GRT, "resAware", 2) && !is_incremental_grt_) {
     int total = 0;
     for (const int id : net_ids_) {
       if (nets_[id]->isResAware()) {
@@ -806,7 +806,7 @@ void FastRouteCore::updateSlacks()
         net_ids_.empty()
             ? 0.0f
             : 100.0f * total / static_cast<float>(net_ids_.size()));
-    if (logger_->debugCheck(GRT, "resAware", 2)) {
+    if (logger_->debugCheck(GRT, "resAware", 3)) {
       for (int i = 0; i < newly; i++) {
         FrNet* net = nets_[res_aware_list[i].first];
         logger_->report("  + {} slack={:.2f}ps R={:.2f} fanout={} len={}",
@@ -1203,13 +1203,19 @@ void FastRouteCore::assignEdge(const int netID,
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
 
-      v_edges_3D_[grids[k].layer][min_y][grids[k].x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(grids[k].x,
+                        min_y,
+                        grids[k].layer,
+                        EdgeDirection::Vertical,
+                        net->getLayerEdgeCost(grids[k].layer));
     } else {
       const int min_x = std::min(grids[k].x, grids[k + 1].x);
 
-      h_edges_3D_[grids[k].layer][grids[k].y][min_x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(min_x,
+                        grids[k].y,
+                        grids[k].layer,
+                        EdgeDirection::Horizontal,
+                        net->getLayerEdgeCost(grids[k].layer));
     }
   }
 }
@@ -1348,7 +1354,13 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kInitialResAwareNetsPercentage;
+  }
   updateSlacks();
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kMidResAwareNetsPercentage;
+  }
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
@@ -1738,14 +1750,20 @@ void FastRouteCore::recoverEdge(const int netID, const int edgeID)
       {
         const int ymin = std::min(grids[i].y, grids[i + 1].y);
         graph2d_.updateUsageV(grids[i].x, ymin, net, net->getEdgeCost());
-        v_edges_3D_[grids[i].layer][ymin][grids[i].x].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(grids[i].x,
+                          ymin,
+                          grids[i].layer,
+                          EdgeDirection::Vertical,
+                          net->getLayerEdgeCost(grids[i].layer));
       } else if (grids[i].y == grids[i + 1].y)  // a horizontal edge
       {
         const int xmin = std::min(grids[i].x, grids[i + 1].x);
         graph2d_.updateUsageH(xmin, grids[i].y, net, net->getEdgeCost());
-        h_edges_3D_[grids[i].layer][grids[i].y][xmin].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(xmin,
+                          grids[i].y,
+                          grids[i].layer,
+                          EdgeDirection::Horizontal,
+                          net->getLayerEdgeCost(grids[i].layer));
       }
     }
   }

@@ -23,9 +23,11 @@ namespace syn {
 class AbcTest : public tst::Fixture
 {
  protected:
-  void roundtrip(Graph& g, const std::string& commands = "&st")
+  void roundtrip(Graph& g,
+                 const std::string& commands = "&st",
+                 int naming_threshold = -1)
   {
-    abcRoundtrip(g, commands, getLogger());
+    abcRoundtrip(g, commands, getLogger(), naming_threshold);
     g.normalize();
   }
 };
@@ -209,6 +211,19 @@ TEST_F(AbcTest, Contradiction)
   const Output* output_ = g.findOne<Output>();
   ASSERT_EQ(output_->value().width(), 1);
   EXPECT_EQ(output_->value().asNet(), Net::zero());
+}
+
+TEST_F(AbcTest, NamingThreshold)
+{
+  Graph g;
+  Bundle a = g.add<Input>("a", 10);
+  Bundle andnot = g.add<Andnot>(a[0], a[1]);
+  g.add<Name>(
+      "flag", andnot, 0, 1, /* tentative */ true, /* is_vector */ false);
+  g.add<Output>("y", g.add<And>(andnot.asNet().repeated(8), a.slice(2, 8)));
+  roundtrip(g, "&st", 4);
+  // name should survive
+  EXPECT_NE(g.findOne<Name>(), nullptr);
 }
 
 }  // namespace syn

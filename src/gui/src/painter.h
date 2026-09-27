@@ -18,18 +18,19 @@
 
 namespace gui {
 
-// This class wraps the QPainter in the abstract Painter API for
-// Renderer instances to use.
-class GuiPainter : public Painter
+// This class wraps the QPainter in the abstract web::Painter API for
+// web::Renderer instances to use.
+class GuiPainter : public web::Painter
 {
  public:
   GuiPainter(QPainter* painter,
-             Options* options,
+             QtOptions* options,
              const odb::Rect& bounds,
              qreal pixels_per_dbu,
              int dbu_per_micron)
-      : Painter(options, bounds, pixels_per_dbu),
+      : web::Painter(options, bounds, pixels_per_dbu),
         painter_(painter),
+        qt_options_(options),
         dbu_per_micron_(dbu_per_micron)
   {
   }
@@ -42,7 +43,7 @@ class GuiPainter : public Painter
 
   void setPen(odb::dbTechLayer* layer, bool cosmetic) override
   {
-    QPen pen(getOptions()->color(layer));
+    QPen pen(qt_options_->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
@@ -54,7 +55,7 @@ class GuiPainter : public Painter
     pen.setWidth(width);
     painter_->setPen(pen);
   }
-  using Painter::setPen;
+  using web::Painter::setPen;
 
   void setPenWidth(int width) override
   {
@@ -66,8 +67,8 @@ class GuiPainter : public Painter
 
   void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
-    QColor color = getOptions()->color(layer);
-    Qt::BrushStyle brush_pattern = getOptions()->pattern(layer);
+    QColor color = qt_options_->color(layer);
+    Qt::BrushStyle brush_pattern = qt_options_->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
@@ -79,7 +80,7 @@ class GuiPainter : public Painter
     const QColor qcolor(color.r, color.g, color.b, color.a);
 
     Qt::BrushStyle brush_pattern;
-    if (color == Painter::kTransparent) {
+    if (color == web::Painter::kTransparent) {
       // if color is transparent, make it no brush
       brush_pattern = Qt::NoBrush;
     } else {
@@ -105,7 +106,7 @@ class GuiPainter : public Painter
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
-  using Painter::setBrush;
+  using web::Painter::setBrush;
 
   void setFont(const Font& font) override;
 
@@ -147,7 +148,7 @@ class GuiPainter : public Painter
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
-  using Painter::drawLine;
+  using web::Painter::drawLine;
 
   void drawCircle(int x, int y, int r) override
   {
@@ -176,7 +177,7 @@ class GuiPainter : public Painter
                   Anchor anchor,
                   const std::string& s,
                   bool rotate_90) override;
-  using Painter::drawString;
+  using web::Painter::drawString;
 
   odb::Rect stringBoundaries(int x,
                              int y,
@@ -217,12 +218,15 @@ class GuiPainter : public Painter
       drawRuler(mid_pt.x(), mid_pt.y(), x1, y1, y_label);
     }
   }
-  using Painter::drawRuler;
+  using web::Painter::drawRuler;
 
   QPainter* getPainter() { return painter_; }
 
  private:
   QPainter* painter_;
+  // Same object as web::Painter::getOptions(), typed so the Qt-only accessors
+  // are reachable.
+  QtOptions* qt_options_;
   int dbu_per_micron_;
 
   void drawRuler(int x0, int y0, int x1, int y1, const std::string& label);

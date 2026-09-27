@@ -47,6 +47,7 @@ add_library(utl_lib
   src/ThreadPool.cpp
   src/timer.cpp
   src/mem_stats.cpp
+  src/cpu_topology.cpp
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp

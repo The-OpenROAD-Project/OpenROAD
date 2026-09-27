@@ -27,7 +27,7 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/cts/test:__pkg__"],
     deps = [
         # TODO: we use headers provided by :cts, but that reveals cyclic dep
         #":cts",
@@ -98,9 +98,9 @@ cc_library(
         ":cts",
         ":private_hdrs",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

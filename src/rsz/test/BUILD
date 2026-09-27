@@ -86,6 +86,7 @@ TESTS = [
     "repair_fanout7_skip_pin_swap",
     "repair_fanout8",
     "repair_fanout8_multi",
+    "repair_fanout9",
     "repair_hold1",
     "repair_hold10",
     "repair_hold11",
@@ -154,6 +155,8 @@ TESTS = [
     "repair_setup_wns_guard",
     "repair_setup_wns_last_gasp_noop",
     "repair_setup_size_down_fanout",
+    "repair_setup_size_down_fanout_before_sizeup",
+    "repair_setup_size_down_fanout_hi",
     "repair_setup_size_down_fanout_legacy_basic",
     "repair_setup_sizeup_match",
     "repair_setup_sizeup_legacy_basic",
@@ -161,6 +164,8 @@ TESTS = [
     "repair_setup_sizeup_match_prev_fanout",
     "repair_setup_splitload_legacy_basic",
     "repair_setup_swappins_legacy_flat",
+    "repair_setup_buffer_to_inverters",
+    "repair_setup_buffer_to_inverters_hier",
     "repair_setup_unbuffer_legacy_bufx2",
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
@@ -223,6 +228,7 @@ TESTS = [
     "report_dont_use",
     "report_dont_use_corners",
     "report_equiv_cells",
+    "unset_dont_use_equiv_cells",
     "report_floating_nets1",
     "report_floating_nets2",
     "report_floating_nets3",
@@ -252,6 +258,7 @@ TESTS = [
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "repair_timing_crpr",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
     "inferred_clock_gator_time_borrow_repair_pin",
@@ -269,6 +276,15 @@ PASSFAIL_TESTS = [
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+# Hierarchical Verilog netlists reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
+# the conformance suite references them by relative path from its manifest.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = glob(["cpp/*.v"]),
+    visibility = ["//visibility:public"],
+)
 
 filegroup(
     name = "test_resources",
@@ -483,26 +499,20 @@ cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
-    data = glob(["cpp/TestResizer*.v"]) + [
+    data = glob([
+        "cpp/TestResizer*.lib",
+        "cpp/TestResizer*.v",
+    ]) + [
+        "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/ant",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/grt",
         "//src/odb/src/db",
         "//src/odb/src/defin",
         "//src/rsz",  # buildcleaner: keep provides the private headers
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -550,14 +560,11 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestBufferRemoval3_0.v",
     ],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
         "//src/rsz",
-        "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -574,21 +581,37 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
     ],
-    features = ["-layering_check"],
     deps = [
-        "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/grt",
         "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRepairHoldRollback",
+    srcs = ["cpp/TestRepairHoldRollback.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "gcd_nangate45_placed.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -617,6 +640,7 @@ py_test(
     srcs = ["gcd_resize.py"],
     data = [":test_resources"],
     main = "gcd_resize.py",
+    tags = ["py"],
     deps = [
         ":helpers",
         ":rsz_aux",
@@ -628,7 +652,10 @@ py_test(
     name = "rsz_man_tcl_check",
     srcs = ["rsz_man_tcl_check.py"],
     data = ["//src/rsz:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
