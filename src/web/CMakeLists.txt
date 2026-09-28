@@ -209,6 +209,22 @@ target_link_libraries(web
     utl_lib
 )
 
+# libdeflate compresses tile PNGs several times faster than lodepng's built-in
+# deflate.  It is optional: without it lodepng's own compressor is used.
+find_package(libdeflate CONFIG QUIET)
+if (TARGET libdeflate::libdeflate_static)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_static)
+elseif (TARGET libdeflate::libdeflate_shared)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_shared)
+endif()
+if (WEB_LIBDEFLATE)
+  message(STATUS "web: using libdeflate for PNG compression")
+  target_link_libraries(web PRIVATE ${WEB_LIBDEFLATE})
+  target_compile_definitions(web PRIVATE HAVE_LIBDEFLATE)
+else()
+  message(STATUS "web: libdeflate not found; PNG tiles use lodepng's compressor")
+endif()
+
 target_include_directories(web
   PUBLIC
     include

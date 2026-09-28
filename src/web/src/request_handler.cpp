@@ -291,7 +291,7 @@ static double quantizeDpr(const double raw)
 // it will use, so it names the pixel count.
 //
 // Clamped so a malformed request cannot ask for a gigantic buffer — the render
-// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// allocates about tile_px squared.  0 (absent or unusable) means "not
 // specified"; the generator falls back to 256*dpr.
 static int quantizeTilePx(const double raw)
 {
@@ -4479,26 +4479,12 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
-
-          odb::dbNet* net = nullptr;
-          if (iterm) {
-            net = iterm->getNet();
-          } else if (bterm) {
-            net = bterm->getNet();
-          }
-
-          if (net) {
-            collectNetShapes(net,
-                             iterm,
-                             bterm,
-                             nullptr,
-                             nullptr,
-                             kStageColor,
-                             new_rects,
-                             new_lines,
-                             node->world_xfm);
-          }
+          collectTimingStageShapes(chiplets,
+                                   paths[path_index],
+                                   pin_name,
+                                   kStageColor,
+                                   new_rects,
+                                   new_lines);
         }
       }
     }
@@ -5833,12 +5819,9 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
         // The frontend's addNumber control runs every value through
         // parseFloat, so int settings can arrive as JSON doubles.  Accept
         // either and round.
-        settings[option]
-            = value_v.is_int64()
-                  ? static_cast<int>(value_v.get_int64())
-                  : static_cast<int>(std::round(value_v.as_double()));
+        settings[option] = static_cast<int>(std::round(jsonToDouble(value_v)));
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[option] = value_v.as_double();
+        settings[option] = jsonToDouble(value_v);
       } else {
         settings[option] = std::string(value_v.as_string());
       }

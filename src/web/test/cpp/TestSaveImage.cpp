@@ -116,10 +116,10 @@ class SaveImageTest : public tst::Nangate45Fixture
   // True if any visible pixel isn't part of the always-on die/core outline,
   // which getBounds() now guarantees is in every saved image.  Matches
   // TileGeneratorTest::hasNonOutlinePixel: the outline is kOutlineGray and
-  // alpha is NOT checked, because tiles are rasterized supersampled and
-  // decimated, so its edge pixels come back at partial coverage while the RGB
-  // stays put.  Testing by colour rather than by carving out a border keeps
-  // the die edge itself in scope — that is where pin markers are drawn.
+  // alpha is NOT checked, because its edge pixels can come back at partial
+  // coverage while the RGB stays put.  Testing by colour rather than by carving
+  // out a border keeps the die edge itself in scope — that is where pin markers
+  // are drawn.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
@@ -387,14 +387,9 @@ TEST_F(SaveImageTest, EmptyDesign)
 
 // A hairline is authored as one CSS pixel, and drawLine's brush has to cover
 // that many pixels: its radius came out (width-1)/2, so an EVEN width -- which
-// is what hairlineCss() returns on the supersampled path -- lost a pixel and
-// the stroke went down at half its width.
-//
-// Measured on the GCell grid, which still strokes into the supersampled buffer
-// (the die outline moved to the output-resolution pass, where the hairline is
-// an odd 1 px and the bug cannot show).  Alpha is the tell: the grid line is
-// written opaque, and half a super-pixel decimates to a third of the colour
-// where a full one keeps about two thirds.
+// is what hairlineCss() returns at dpr 2 -- lost a pixel and the stroke went
+// down at half its width.  Measured on the GCell grid at dpr 2, where each
+// vertical grid line must be two device pixels wide.
 TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
 {
   odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
@@ -405,44 +400,54 @@ TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
 
   TileVisibility vis;
   vis.gcell_grid = true;
-  // 256 px is one whole tile, so the only resample in play is the tile's own
-  // decimation -- what the stroke width has to survive.
-  const std::string path = tempPng("hairline");
-  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
-
+  const std::vector<unsigned char> png = tile_gen_->generateTile("_gcell_grid",
+                                                                 0,
+                                                                 0,
+                                                                 0,
+                                                                 vis,
+                                                                 {},
+                                                                 {},
+                                                                 {},
+                                                                 {},
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 /*dpr=*/2.0);
+  std::vector<unsigned char> pixels;
   unsigned w = 0, h = 0;
-  const auto pixels = decodePngFile(path, w, h);
+  ASSERT_EQ(lodepng::decode(pixels, w, h, png), 0u);
+  ASSERT_EQ(w, 512u);
   // Sampled on rows that hold only the vertical lines: a row ALONG a
-  // horizontal line is solid white, and every crossing blends two strokes into
-  // one pixel and reaches full alpha whatever width they were drawn at.
-  unsigned char peak_alpha = 0;
+  // horizontal line is lit all the way across.
+  int runs = 0;
   for (unsigned y = 0; y < h; ++y) {
     const size_t row = static_cast<size_t>(y) * w * 4;
-    std::vector<unsigned char> white_alphas;
+    int lit = 0;
     for (unsigned x = 0; x < w; ++x) {
-      const size_t i = row + static_cast<size_t>(x) * 4;
-      if (pixels[i] == 255 && pixels[i + 1] == 255 && pixels[i + 2] == 255
-          && pixels[i + 3] > 0) {
-        white_alphas.push_back(pixels[i + 3]);
-      }
+      lit += pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
     }
-    // A horizontal line paints the whole row; the vertical lines paint a
-    // handful of pixels.  11 grid lines, so allow a little smearing.
-    if (white_alphas.empty() || white_alphas.size() > 30) {
+    if (lit == 0 || lit > 60) {
       continue;
     }
-    for (const unsigned char a : white_alphas) {
-      peak_alpha = std::max(peak_alpha, a);
+    int run = 0;
+    for (unsigned x = 0; x <= w; ++x) {
+      const bool on = x < w && pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
+      if (on) {
+        ++run;
+      } else if (run > 0) {
+        EXPECT_GE(run, 2) << "grid line at x=" << x - run << " y=" << y
+                          << " is thinner than the hairline width asked for";
+        ++runs;
+        run = 0;
+      }
     }
   }
-  EXPECT_GT(static_cast<int>(peak_alpha), 130)
-      << "the grid lines are thinner than the hairline width asked for";
+  EXPECT_GT(runs, 0) << "no vertical grid line was sampled";
 }
 
-// The die outline is a one-pixel stroke, and it has to survive BOTH resamples
-// a saved image goes through: the tile's Lanczos decimation (which is why it is
-// drawn after that, at output resolution) and the mosaic-to-image step, which
-// picked a single nearest sample and so dropped whole edges at some widths.
+// The die outline is a one-pixel stroke, and it has to survive the
+// mosaic-to-image resample a saved image goes through, which picked a single
+// nearest sample and so dropped whole edges at some widths.
 // Checked across widths because which edge fell in a skipped column depended on
 // the step between the two scales.
 TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)

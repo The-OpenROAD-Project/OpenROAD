@@ -322,7 +322,7 @@ describe('currentDpr', () => {
     });
 
     it('still clamps, because the clamp bounds tile memory', () => {
-        // A tile is rendered at (tileSize*dpr*supersample)^2 bytes.
+        // A tile is rendered at about (tileSize*dpr)^2 * 4 bytes.
         assert.equal(withDpr(8, currentDpr), 3);
         assert.equal(withDpr(0.5, currentDpr), 1);
     });

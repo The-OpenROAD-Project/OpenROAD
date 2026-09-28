@@ -146,8 +146,7 @@ struct TileFrame
   odb::Rect cull;
   // Pixels of THIS frame per CSS pixel.  Sizes authored in CSS px — pen widths,
   // font heights — are multiplied by it so they come out the same size on every
-  // display instead of shrinking as the ratio rises.  The display's dpr for an
-  // output-resolution frame; dpr * the supersample factor for a super one.
+  // display instead of shrinking as the ratio rises: the display's dpr.
   double px_per_css = 1.0;
 
   // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
@@ -1175,6 +1174,15 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// Highlight the path stage at `pin_name`: its net, or on an unrouted net the
+// flight line between the pin and its neighbor on that net in `path`.
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines);
 
 // ── JSON serialization helpers for TileGenerator responses ──
 

@@ -101,8 +101,6 @@ struct WirePoint
   WirePoint* next_for_clear{nullptr};
   WirePoint* sring{nullptr};
   int dbwire_id{-1};
-  bool fre{false};
-  bool jct{false};
   bool pinpt{false};
   bool c2pinpt{false};
 };

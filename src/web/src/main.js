@@ -1581,6 +1581,33 @@ async function resyncBounds(inlineBounds, inlineFitBounds,
     return true;
 }
 
+// Show the "Loading shapes…" overlay until the server reports the search
+// indices are built.  The "refresh" push normally hides it, but that push can
+// arrive before the initial tech/bounds/heatmaps requests all resolve, i.e.
+// before the overlay is shown, so also poll bounds until shapes are ready.
+function showLoadingOverlayUntilReady() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'flex';
+    const poll = () => {
+        if (overlay.style.display === 'none') {
+            return;
+        }
+        app.websocketManager.request({ type: 'bounds' })
+            .then((resp) => {
+                if (resp.shapes_ready) {
+                    overlay.style.display = 'none';
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (overlay.style.display !== 'none') {
+                    setTimeout(poll, 1000);
+                }
+            });
+    };
+    setTimeout(poll, 1000);
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
@@ -2018,7 +2045,7 @@ app.websocketManager.readyPromise.then(async () => {
         // aren't ready yet.  On browser reload (without server restart),
         // shapes are already built so we skip the overlay.
         if (hasDesign && !boundsData.shapes_ready) {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            showLoadingOverlayUntilReady();
         }
 
         // Seed the server's display-state cache with the cookie-restored

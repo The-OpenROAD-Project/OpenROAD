@@ -275,6 +275,7 @@ cc_library(
         "include",
         "src",
     ],
+    local_defines = ["HAVE_LIBDEFLATE"],
     deps = [
         ":color",
         ":core",
@@ -292,6 +293,7 @@ cc_library(
         "@boost.geometry",
         "@boost.json",
         "@boost.system",
+        "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
