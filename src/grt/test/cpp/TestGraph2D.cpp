@@ -23,6 +23,10 @@ class Graph2DTestPeer
   {
     graph.h_used_ggrid_.erase({x, y});
   }
+  static void corruptStatistics(Graph2D& graph)
+  {
+    graph.h_overflow_.usage.add(1, 0);
+  }
 };
 
 namespace {
@@ -38,10 +42,13 @@ class Graph2DTest : public testing::Test
   void SetUp() override
   {
     logger_.setDebugLevel(utl::GRT, "usedgridcheck", 1);
+    logger_.setDebugLevel(utl::GRT, "overflowcheck", 1);
     graph_.init(kXGrid, kYGrid, 2, &logger_);
     graph_.initCap3D();
     graph_.InitLastUsage(1);
     net_.setEdgeCost(1);
+    graph_.overflowStatistics(false);
+    graph_.overflowStatistics(true);
   }
 
   void expectReferenceMatch()
@@ -55,6 +62,8 @@ class Graph2DTest : public testing::Test
     EXPECT_EQ(graph_.getUsedGridsV(), reference.getUsedGridsV());
     EXPECT_TRUE(graph_.usedGridsMatchUsage());
     EXPECT_EQ(Graph2DTestPeer::pendingCount(graph_), 0u);
+    graph_.overflowStatistics(false);
+    graph_.overflowStatistics(true);
   }
 
   utl::Logger logger_;
@@ -171,6 +180,8 @@ TEST_F(Graph2DTest, CopiesPendingStateAndDeduplicationFlags)
     EXPECT_EQ(Graph2DTestPeer::pendingCount(copied), 2u);
     copied.prepareForIncrementalRun();
     EXPECT_TRUE(copied.usedGridsMatchUsage());
+    copied.overflowStatistics(false);
+    copied.overflowStatistics(true);
     EXPECT_TRUE(copied.getUsedGridsH().empty());
     EXPECT_EQ(copied.getUsedGridsV().size(), 1u);
 
@@ -179,6 +190,8 @@ TEST_F(Graph2DTest, CopiesPendingStateAndDeduplicationFlags)
     copied.copyRoutingStateFrom(graph_, include_ndr);
     copied.prepareForIncrementalRun();
     EXPECT_TRUE(copied.usedGridsMatchUsage());
+    copied.overflowStatistics(false);
+    copied.overflowStatistics(true);
     EXPECT_TRUE(copied.getUsedGridsH().empty());
     EXPECT_TRUE(copied.getUsedGridsV().empty());
     expectReferenceMatch();
@@ -257,6 +270,25 @@ TEST_F(Graph2DTest, DebugReferenceCheckDetectsMissingMembershipInRelease)
   Graph2DTestPeer::forgetHorizontalMembership(graph_, 1, 2);
   EXPECT_FALSE(graph_.usedGridsMatchUsage());
   EXPECT_THROW(graph_.prepareForIncrementalRun(), std::runtime_error);
+}
+
+TEST_F(Graph2DTest, PreservesUnsignedUsageAndCapacityConversions)
+{
+  graph_.addUsageH(1, 1, 65535);
+  graph_.addCapH(1, 1, 65535);
+  EXPECT_EQ(graph_.maxUsage(EdgeDirection::Horizontal), 65535);
+  graph_.addUsageH(1, 1, 1);
+  graph_.addCapH(1, 1, 1);
+  EXPECT_EQ(graph_.getUsageH(1, 1), 0);
+  EXPECT_EQ(graph_.getCapH(1, 1), 0);
+  EXPECT_EQ(graph_.maxUsage(EdgeDirection::Horizontal), 0);
+  expectReferenceMatch();
+}
+
+TEST_F(Graph2DTest, DebugCheckDetectsDrifting2DCountersInRelease)
+{
+  Graph2DTestPeer::corruptStatistics(graph_);
+  EXPECT_THROW(graph_.overflowStatistics(false), std::runtime_error);
 }
 
 }  // namespace
