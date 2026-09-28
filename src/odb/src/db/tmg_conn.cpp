@@ -71,10 +71,20 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 
 tmg_conn::~tmg_conn() = default;
 
+const WirePoint& tmg_conn::wirePoint(const int point_index) const
+{
+  return wire_points_[point_index];
+}
+
 int tmg_conn::distance(const int fr, const int to) const
 {
   return abs(wire_points_[fr].x - wire_points_[to].x)
          + abs(wire_points_[fr].y - wire_points_[to].y);
+}
+
+WirePoint& tmg_conn::wirePoint(const int point_index)
+{
+  return wire_points_[point_index];
 }
 
 WirePoint* tmg_conn::addWirePoint(int x, int y, dbTechLayer* layer)

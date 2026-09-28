@@ -171,22 +171,19 @@ class tmg_conn
   ~tmg_conn();
 
   void analyzeNet(dbNet* net);
+  void checkConnOrdered();
+
+  const WirePoint& wirePoint(int point_index) const;
+  int distance(int fr, int to) const;
+
+ private:
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
   bool isConnected() { return connected_; }
-  int distance(int fr, int to) const;
-  const WirePoint& wirePoint(const int point_index) const
-  {
-    return wire_points_[point_index];
-  }
-  void checkConnOrdered();
 
- private:
-  WirePoint& wirePoint(const int point_index)
-  {
-    return wire_points_[point_index];
-  }
+  WirePoint& wirePoint(int point_index);
+
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void identifyShorts();
