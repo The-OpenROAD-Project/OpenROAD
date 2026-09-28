@@ -29,8 +29,7 @@ cc_test(
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst",
-        "//src/dst:private_hdrs",
+        "//src/dst:dst_impl",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
@@ -83,8 +82,7 @@ cc_test(
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst",
-        "//src/dst:private_hdrs",
+        "//src/dst:dst_impl",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
