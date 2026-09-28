@@ -793,9 +793,9 @@ void NesterovPlace::runRoutability(int iter,
     routability_settle_wait_start_iter_ = iter;
     log_->info(GPL,
                99,
-               "Routability trigger held at iter = {}: overflow {:.4f} is at "
-               "or below {:.4f}, but cells are still moving at {:.0f}% of "
-               "peak displacement (settles at {:.0f}%).",
+               "Routability end extended at iter = {}: overflow {:.4f} "
+               "reached {:.4f}, but cells are still moving at {:.0f}% of "
+               "peak displacement (waiting for {:.0f}%).",
                iter + 1,
                average_overflow_unscaled_,
                npVars_.routability_end_overflow,
@@ -807,8 +807,8 @@ void NesterovPlace::runRoutability(int iter,
     if (routability_settle_wait_start_iter_ != -1) {
       log_->info(GPL,
                  103,
-                 "Routability trigger released at iter = {} after {} "
-                 "iterations held: overflow {:.4f}, cells moving at {:.0f}% "
+                 "Routability end extension finished at iter = {} after {} "
+                 "extra iterations: overflow {:.4f}, cells moving at {:.0f}% "
                  "of peak displacement.",
                  iter + 1,
                  iter - routability_settle_wait_start_iter_,
