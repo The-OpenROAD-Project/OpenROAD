@@ -678,13 +678,14 @@ int tmg_conn::getDisconnectedStart()
 
 void tmg_conn::copyWireIdToVisitedShorts(const int j)
 {
-  // copy wirePoint(j)._dbwire_id to visited points shorted to j
-  const int wire_id = wirePoint(j).dbwire_id;
+  // copy wirePoint(j).id_on_new_encoding to visited points shorted to j
+  const int wire_id = wirePoint(j).id_on_new_encoding;
   WirePoint* x0 = &wirePoint(j);
-  for (WirePoint* x = x0->sring; x && x != x0; x = x->sring) {
-    if (x->dbwire_id < 0
+  for (WirePoint* x = x0->next_in_short_ring; x && x != x0;
+       x = x->next_in_short_ring) {
+    if (x->id_on_new_encoding < 0
         && connection_graph_->pt(x - wire_points_.data()).visited) {
-      x->dbwire_id = wire_id;
+      x->id_on_new_encoding = wire_id;
     }
   }
 }
