@@ -123,7 +123,9 @@ TEST(WebAssets, TheIndexIsTheBundledPage)
   const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
   ASSERT_NE(asset, nullptr);
   const std::string html = assetText(*asset);
-  EXPECT_NE(html.find("app.min.js"), std::string::npos);
+  // A module, as in saved reports, so both run the bundle in strict mode.
+  EXPECT_NE(html.find("<script type=\"module\" src=\"app.min.js\">"),
+            std::string::npos);
   // The two golden-layout themes theme.js looks up by id.
   EXPECT_NE(html.find("gl-theme-dark"), std::string::npos);
   EXPECT_NE(html.find("gl-theme-light"), std::string::npos);
