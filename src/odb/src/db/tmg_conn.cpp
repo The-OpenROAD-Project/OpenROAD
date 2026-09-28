@@ -356,14 +356,9 @@ void tmg_conn::splitBySj(const int j,
       y = wire_points_[wire_sections_[k].from_idx].y;
     }
     klast = k;
+
     WirePoint* pt = addWirePoint(x, y, tlayer);
-    pt->terminal_index = -1;
-    pt->terminal_alternative_point = nullptr;
-    pt->next_terminal_point = nullptr;
-    pt->is_pin_point = false;
-    pt->is_connected_to_a_pin_point = false;
-    pt->next_for_clear = nullptr;
-    pt->next_in_short_ring = nullptr;
+
     const int endTo = wire_sections_[k].to_idx;
     wire_sections_[k].to_idx = wire_points_.size() - 1;
     // create new WireSection
@@ -578,14 +573,6 @@ void tmg_conn::identifyShorts()
     shape_search_ = std::make_unique<ShapeSearch>();
   }
   shape_search_->clear();
-
-  for (auto& pt : wire_points_) {
-    pt.is_pin_point = false;
-    pt.is_connected_to_a_pin_point = false;
-    pt.next_for_clear = nullptr;
-    pt.next_in_short_ring = nullptr;
-  }
-  first_for_clear_ = nullptr;
 
   // put wires in search
   for (size_t j = 0; j < wire_sections_.size(); j++) {
