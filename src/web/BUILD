@@ -89,11 +89,8 @@ js_library(
     deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
 )
 
-# What dist/ is built from, hashed, so the CMake build can tell when its
-# checked-in copy is older than the sources it is building.  Deliberately not
-# MODULE.bazel or this file: CI's dist_tests catch those, and listing them here
-# would make every unrelated edit to them regenerate dist/.  Keep the list in
-# step with WEB_BUNDLE_INPUTS in CMakeLists.txt.
+# What dist/ is built from, hashed; the CMake build checks these files.  Not
+# MODULE.bazel or this file, which CI's dist_tests cover.
 genrule(
     name = "bundle_manifest",
     srcs = _APP_SRCS + [

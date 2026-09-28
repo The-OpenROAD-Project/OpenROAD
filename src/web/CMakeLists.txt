@@ -79,33 +79,28 @@ swig_lib(NAME         web
 # to regenerate it.
 set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
-# dist/ is only as fresh as the last `bazel run //src/web/dist:dist`.  Rather
-# than embed a copy older than the sources being built, stop with that hint.
-# Keep this list in step with //src/web:bundle_manifest.
-file(GLOB WEB_BUNDLE_INPUTS CONFIGURE_DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.js
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.css
-)
-list(APPEND WEB_BUNDLE_INPUTS
-  ${CMAKE_CURRENT_SOURCE_DIR}/esbuild.config.mjs
-  ${CMAKE_CURRENT_SOURCE_DIR}/package.json
-  ${CMAKE_CURRENT_SOURCE_DIR}/pnpm-lock.yaml
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/collect_licenses.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/index.html
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/inline_styles.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/openroad_skin.svg
-)
+# Stop, rather than embed a stale dist/, when a file its manifest names has
+# changed since `bazel run //src/web/dist:dist`.
+set(WEB_DIST_MANIFEST ${WEB_BUNDLE_DIR}/SOURCES.sha256)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${WEB_DIST_MANIFEST})
+file(STRINGS ${WEB_DIST_MANIFEST} _web_dist_entries)
+set(WEB_BUNDLE_INPUTS "")
+foreach(_entry IN LISTS _web_dist_entries)
+  string(REGEX REPLACE "^[0-9a-f]+  " "" _input "${_entry}")
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_input})
+    list(APPEND WEB_BUNDLE_INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/${_input})
+  endif()
+endforeach()
 set(WEB_DIST_STAMP ${CMAKE_CURRENT_BINARY_DIR}/web_dist_fresh.stamp)
 add_custom_command(
   OUTPUT ${WEB_DIST_STAMP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/web_dist_manifest.py check
     --root ${CMAKE_CURRENT_SOURCE_DIR}
-    --manifest ${WEB_BUNDLE_DIR}/SOURCES.sha256
+    --manifest ${WEB_DIST_MANIFEST}
     --stamp ${WEB_DIST_STAMP}
-    ${WEB_BUNDLE_INPUTS}
   DEPENDS
     src/web_dist_manifest.py
-    ${WEB_BUNDLE_DIR}/SOURCES.sha256
+    ${WEB_DIST_MANIFEST}
     ${WEB_BUNDLE_INPUTS}
   COMMENT "Checking src/web/dist against its sources"
 )
