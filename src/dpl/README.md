@@ -141,10 +141,10 @@ remove_fillers
 The `check_placement` command checks the placement legality. It returns
 `0` if the placement is legal.
 
-With `-fixed`, only fixed instances and macros (e.g. tapcells, endcaps and
-macros) are checked, which validates the floorplan before the standard cells
-are placed. With `-placeable`, only the movable cells are checked. Without
-either option, both are checked.
+With `-fixed`, only fixed instances (e.g., tapcells and endcaps) and macros
+are checked, which validates the floorplan before the standard cells are
+placed. With `-placeable`, only the movable cells are checked. Without either
+option, both are checked.
 
 ```tcl
 check_placement

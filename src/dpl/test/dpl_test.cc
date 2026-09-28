@@ -97,7 +97,11 @@ class CheckPlacementTest : public tst::Nangate45Fixture
                         const odb::dbPlacementStatus status)
   {
     odb::dbMaster* master = lib_->findMaster(master_name);
-    EXPECT_NE(master, nullptr);
+    if (master == nullptr) {
+      // ASSERT_NE needs a void function, so report and return instead.
+      ADD_FAILURE() << "Master " << master_name << " not found";
+      return nullptr;
+    }
     return makeInst(
         block_, master, inst_name, {.location = location, .status = status});
   }
@@ -223,6 +227,7 @@ TEST_F(CheckPlacementTest, FixedOnlyReportsBlockedPinAccess)
 {
   odb::dbInst* buf = makeCell(
       "BUF_X1", "buf", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
+  ASSERT_NE(buf, nullptr);
   odb::dbNet* power = odb::dbNet::create(block_, "VDD");
   power->setSigType(odb::dbSigType::POWER);
   power->setSpecial();
