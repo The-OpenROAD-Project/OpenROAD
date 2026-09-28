@@ -16,12 +16,12 @@ proc check { label script } {
 }
 
 namespace eval tcl_unknown_test {
-  proc ns_abbrev {} {
-    return [[ord::get_db_bl] getName]
-  }
-  proc ns_bus {} {
-    return b[1]
-  }
+proc ns_abbrev { } {
+  return [[ord::get_db_bl] getName]
+}
+proc ns_bus { } {
+  return b[1]
+}
 }
 
 check "abbrev" { report_object_full_n [get_cells b1/r1] }
