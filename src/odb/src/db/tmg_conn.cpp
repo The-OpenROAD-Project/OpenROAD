@@ -22,43 +22,6 @@ namespace odb {
 
 using utl::ODB;
 
-static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
-{
-  *iterm = nullptr;
-  *bterm = nullptr;
-  dbSet<dbITerm> iterms = net->getITerms();
-  dbITerm* it_inout = nullptr;
-  for (dbITerm* it : iterms) {
-    if (it->getIoType() == dbIoType::OUTPUT) {
-      *iterm = it;
-      return;
-    }
-    if (it->getIoType() == dbIoType::INOUT && !it_inout) {
-      it_inout = it;
-    }
-  }
-  dbSet<dbBTerm> bterms = net->getBTerms();
-  dbBTerm* bt_inout = nullptr;
-  for (dbBTerm* bt : bterms) {
-    if (bt->getIoType() == dbIoType::INPUT) {
-      *bterm = bt;
-      return;
-    }
-    if (bt->getIoType() == dbIoType::INOUT && !bt_inout) {
-      bt_inout = bt;
-    }
-  }
-  if (bt_inout) {
-    *bterm = bt_inout;
-  } else if (it_inout) {
-    *iterm = it_inout;
-  } else if (!bterms.empty()) {
-    *bterm = *bterms.begin();
-  } else if (!iterms.empty()) {
-    *iterm = *iterms.begin();
-  }
-}
-
 tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
   wire_sections_.reserve(1024);
@@ -1377,7 +1340,7 @@ int tmg_conn::getStartNode()
 {
   dbITerm* it_drv;
   dbBTerm* bt_drv;
-  tmg_getDriveTerm(net_, &it_drv, &bt_drv);
+  findDriver(&it_drv, &bt_drv);
   for (const Terminal& x : terminals_) {
     if (x.iterm == it_drv && x.bterm == bt_drv) {
       if (!x.pt) {
@@ -1410,6 +1373,43 @@ int tmg_conn::getStartNode()
   }
 
   return 0;
+}
+
+void tmg_conn::findDriver(dbITerm** iterm, dbBTerm** bterm)
+{
+  *iterm = nullptr;
+  *bterm = nullptr;
+  dbSet<dbITerm> iterms = net_->getITerms();
+  dbITerm* it_inout = nullptr;
+  for (dbITerm* it : iterms) {
+    if (it->getIoType() == dbIoType::OUTPUT) {
+      *iterm = it;
+      return;
+    }
+    if (it->getIoType() == dbIoType::INOUT && !it_inout) {
+      it_inout = it;
+    }
+  }
+  dbSet<dbBTerm> bterms = net_->getBTerms();
+  dbBTerm* bt_inout = nullptr;
+  for (dbBTerm* bt : bterms) {
+    if (bt->getIoType() == dbIoType::INPUT) {
+      *bterm = bt;
+      return;
+    }
+    if (bt->getIoType() == dbIoType::INOUT && !bt_inout) {
+      bt_inout = bt;
+    }
+  }
+  if (bt_inout) {
+    *bterm = bt_inout;
+  } else if (it_inout) {
+    *iterm = it_inout;
+  } else if (!bterms.empty()) {
+    *bterm = *bterms.begin();
+  } else if (!iterms.empty()) {
+    *iterm = *iterms.begin();
+  }
 }
 
 bool tmg_conn::checkConnected()

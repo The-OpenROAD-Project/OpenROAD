@@ -218,6 +218,7 @@ class tmg_conn
   void sliceBPinsOverlappingITerms();
 
   int getStartNode();
+  void findDriver(dbITerm** iterm, dbBTerm** bterm);
   void dfsClear();
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
