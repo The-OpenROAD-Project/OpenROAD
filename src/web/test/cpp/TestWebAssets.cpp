@@ -176,6 +176,17 @@ TEST(WebAssets, ServesTheThirdPartyLicenses)
   EXPECT_NE(text.find("Eclipse Public License"), std::string::npos);
   EXPECT_NE(text.find("BSD"), std::string::npos);
   EXPECT_NE(text.find("MIT"), std::string::npos);
+  // What netlistsvg's own browser build compiles in, notices and all.
+  for (const char* package : {"lodash", "sax", "buffer", "readable-stream"}) {
+    EXPECT_NE(text.find(package), std::string::npos) << package;
+  }
+  size_t notices = 0;
+  for (size_t pos = text.find("Permission is hereby granted");
+       pos != std::string::npos;
+       pos = text.find("Permission is hereby granted", pos + 1)) {
+    ++notices;
+  }
+  EXPECT_GE(notices, 25u);
 }
 
 // The report's blobs are stored gzipped too; saveReport() inflates them.

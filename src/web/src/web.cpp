@@ -1770,8 +1770,12 @@ void WebServer::saveReport(const std::string& filename,
   // The report carries the bundled libraries' code, so their licences too.
   const EmbeddedAsset* licenses_asset
       = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
-  const std::string licenses = htmlCommentSafe(
-      licenses_asset ? assetText(*licenses_asset) : std::string());
+  if (!licenses_asset) {
+    logger_->error(
+        utl::WEB, 112, "The embedded third-party licences are missing.");
+    return;
+  }
+  const std::string licenses = htmlCommentSafe(assetText(*licenses_asset));
 
   std::ofstream out(filename);
   if (!out) {

@@ -94,6 +94,7 @@ js_library(
 genrule(
     name = "bundle_manifest",
     srcs = _APP_SRCS + glob(["patches/*.patch"]) + [
+        "licenses/netlistsvg-bundle.txt",
         "package.json",
         "pnpm-lock.yaml",
         "src/collect_licenses.py",
@@ -108,9 +109,12 @@ genrule(
 
 genrule(
     name = "third_party_licenses",
-    srcs = [":node_modules/%s/dir" % p for p in _BUNDLED_PACKAGES],
+    srcs = [":node_modules/%s/dir" % p for p in _BUNDLED_PACKAGES] + [
+        "licenses/netlistsvg-bundle.txt",
+    ],
     outs = ["THIRD_PARTY_LICENSES.txt"],
-    cmd = "$(execpath :collect_licenses) --output $@ " +
+    cmd = "$(execpath :collect_licenses) --output $@" +
+          " --extra $(location licenses/netlistsvg-bundle.txt) " +
           " ".join(["$(execpath :node_modules/%s/dir)" % p for p in _BUNDLED_PACKAGES]),
     tools = [":collect_licenses"],
 )

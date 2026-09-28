@@ -257,12 +257,17 @@ TEST_F(SaveReportTest, LeavesTheLivePanelsLibrariesOut)
   const std::string path = tempHtml("no_live_panels");
   generateReport(path);
   const std::string html = readFile(path);
+  // The script alone: the licence comment names these libraries too.
+  const size_t begin = html.find("<script type=\"module\">");
+  ASSERT_NE(begin, std::string::npos);
+  const std::string script
+      = html.substr(begin, html.find("</script>", begin) - begin);
 
   // Markers from the libraries themselves; the widgets' own code stays in.
-  EXPECT_FALSE(contains(html, "org.eclipse.elk"));
-  EXPECT_FALSE(contains(html, "onml"));
-  EXPECT_FALSE(contains(html, "__THREE__"));
-  EXPECT_FALSE(contains(html, "Three.js Authors"));
+  EXPECT_FALSE(contains(script, "org.eclipse.elk"));
+  EXPECT_FALSE(contains(script, "onml"));
+  EXPECT_FALSE(contains(script, "__THREE__"));
+  EXPECT_FALSE(contains(script, "Three.js Authors"));
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────

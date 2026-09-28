@@ -530,9 +530,10 @@ works on a machine with no network.
 | `elkjs` | schematic placement and routing |
 | `netlistsvg` | schematic rendering |
 
-Their licences are gathered into `THIRD_PARTY_LICENSES.txt`, which the server
-serves at `/THIRD_PARTY_LICENSES.txt` and every saved report carries in a
-comment.
+Their licences are gathered into `THIRD_PARTY_LICENSES.txt`, together with the
+notices of the code netlistsvg's prebuilt bundle compiles in
+(`licenses/netlistsvg-bundle.txt`). The server serves it at
+`/THIRD_PARTY_LICENSES.txt`, and every saved report carries it in a comment.
 
 Versions are pinned in `package.json` and `pnpm-lock.yaml`. To add or upgrade
 one:
