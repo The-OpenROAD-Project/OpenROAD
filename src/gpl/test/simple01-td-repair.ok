@@ -135,13 +135,13 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 33 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 33 (1.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.030 |       -0.1 |       -0.6 |     33 | _542_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.1 |       -0.3 |     33 | _539_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.1 |       -0.3 |     33 | _539_/D
-    final |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.1 |       -0.3 |     33 | _539_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.030 |       -0.6 |     33 | _542_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     33 | _539_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     33 | _539_/D
+    final |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     33 | _539_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

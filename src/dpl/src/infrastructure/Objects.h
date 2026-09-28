@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -46,6 +47,9 @@ class Master
   void setTopPowerType(int top_pwr);
   void setDbMaster(odb::dbMaster* db_master);
   odb::dbMaster* getDbMaster() const;
+  // Signal pin shapes in master coordinates, by routing level
+  void addPinShape(int level, const odb::Rect& rect);
+  const std::vector<odb::Rect>& getPinShapes(int level) const;
 
  private:
   odb::dbMaster* db_master_{nullptr};
@@ -54,6 +58,7 @@ class Master
   std::vector<MasterEdge> edges_;
   int bottom_pwr_{0};
   int top_pwr_{0};
+  std::array<std::vector<odb::Rect>, kMaxPinLevel + 1> pin_shapes_;
 };
 
 class Pin;

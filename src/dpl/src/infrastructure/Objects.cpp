@@ -84,6 +84,14 @@ odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
 }
+void Master::addPinShape(const int level, const odb::Rect& rect)
+{
+  pin_shapes_[level].push_back(rect);
+}
+const std::vector<odb::Rect>& Master::getPinShapes(const int level) const
+{
+  return pin_shapes_[level];
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

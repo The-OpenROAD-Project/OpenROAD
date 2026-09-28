@@ -10,13 +10,13 @@ Repair policy: LEGACY
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
 [INFO RSZ-0221] Using custom phase sequence: LEGACY
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 All dont-touch instances preserved after LEGACY.
@@ -27,13 +27,13 @@ Repair policy: LEGACY_MT
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
 [INFO RSZ-0221] Using custom phase sequence: LEGACY_MT
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 All dont-touch instances preserved after LEGACY_MT.

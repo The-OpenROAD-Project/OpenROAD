@@ -44,13 +44,13 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: SizeUpMatchMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-    final |       0 |      10 |        0 |      0 |     0 |   +13.3% |   -0.037 |       -0.0 |       -0.0 |      1 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+    final |       0 |      10 |        0 |      0 |     0 |   +13.3% |   -0.037 |       -0.0 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 10 instances: 10 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

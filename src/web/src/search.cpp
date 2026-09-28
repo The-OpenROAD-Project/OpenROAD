@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
@@ -309,6 +310,28 @@ void Search::clear()
   clearBlockages();
   clearObstructions();
   clearRows();
+}
+
+void Search::setInstGroups(
+    odb::dbBlock* block,
+    std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+    const uint64_t built_at_revision)
+{
+  BlockData& data = getData(block);
+  std::unique_lock lock(data.inst_groups_mutex);
+  data.inst_groups = std::move(inst_groups);
+  data.inst_groups_revision = built_at_revision;
+}
+
+std::shared_ptr<const std::vector<uint32_t>> Search::instGroups(
+    odb::dbBlock* block)
+{
+  BlockData& data = getData(block);
+  std::shared_lock lock(data.inst_groups_mutex);
+  if (data.inst_groups_revision != revision()) {
+    return nullptr;
+  }
+  return data.inst_groups;
 }
 
 void Search::clearShapes()
