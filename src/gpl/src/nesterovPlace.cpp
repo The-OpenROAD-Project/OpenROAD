@@ -671,7 +671,6 @@ bool NesterovPlace::isDiverged(float& curA)
   if (num_region_diverged_ > 0) {
     log_->report("Divergence occured in {} regions.", num_region_diverged_);
 
-
     if (tryRoutabilityDivergeRecovery(curA)
         && !npVars_.disableRevertIfDiverge) {
       num_region_diverged_ = 0;
@@ -699,6 +698,7 @@ bool NesterovPlace::isDiverged(float& curA)
         nb->revertToSnapshot(NesterovBase::SnapshotSlot::Diverge);
         nb->resetMinSumOverflow();
       }
+      // Reset momentum due to divergence.
       curA = 1.0;
 
       num_region_diverged_ = 0;
@@ -783,7 +783,8 @@ void NesterovPlace::runRoutability(int iter,
   const bool is_routability_active
       = npVars_.routability_driven_mode && is_routability_need_
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow;
-  const bool is_routability_settled = is_routability_active && isPlacementSettled();
+  const bool is_routability_settled
+      = is_routability_active && isPlacementSettled();
 
   if (is_routability_active && !is_routability_settled
       && routability_settle_wait_start_iter_ == -1) {
