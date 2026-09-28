@@ -68,7 +68,7 @@ class ConnectionGraph
   const Point& pt(const int index) const { return points_[index]; }
   int descentDepth() const { return descent_edges_.size(); }
   void setDescentDepth(const int depth) { descent_edges_.resize(depth); }
-  Edge* descentEdge(const int edge_index) { return descent_edges_[edge_index]; }
+  Edge* descentEdge(int edge_index) const;
 
  private:
   void getEdgeRefCoord(const tmg_conn* conn, Edge* pe, int& rx, int& ry);

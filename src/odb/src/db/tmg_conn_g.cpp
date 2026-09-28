@@ -638,6 +638,11 @@ bool ConnectionGraph::dfsNext(int* from,
   return true;
 }
 
+ConnectionGraph::Edge* ConnectionGraph::descentEdge(const int edge_index) const
+{
+  return descent_edges_[edge_index];
+}
+
 bool tmg_conn::dfsNext(int* from,
                        int* to,
                        int* k,
