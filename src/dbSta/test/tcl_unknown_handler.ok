@@ -4,14 +4,11 @@
 [INFO ODB-0131]     Created 6 components and 26 component-terminals.
 [INFO ODB-0133]     Created 5 nets and 6 connections.
 b1/r1
-abbrev: 
-ns abbrev: top
-ns abbrev metric: 
-ns abbrev in ns proc: top
-bus: b[2]
-bus in ns proc: b[1]
+top
+b[2]
+top
+b[1]
 sdc ns abbrev: top
 sdc odb method: top
 sdc bus: b[3]
-read_sdc: 
-handler after read_sdc: odb_unknown
+odb_unknown

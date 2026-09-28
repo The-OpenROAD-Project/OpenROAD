@@ -7,14 +7,17 @@ source "helpers.tcl"
 read_lef liberty1.lef
 read_def hier1.def
 
-proc check { label script } {
-  if { [catch { uplevel #0 $script } result] } {
-    puts "$label: error: $result"
-  } else {
-    puts "$label: $result"
-  }
-}
+# Command abbreviation
+report_object_full_n [get_cells b1/r1]
 
+# Namespace qualified command abbreviation
+puts [[ord::get_db_bl] getName]
+utl::metric_int "tcl_unknown_handler" 1
+
+# Unquoted bus subscript
+puts b[2]
+
+# Same from a proc in another namespace
 namespace eval tcl_unknown_test {
 proc ns_abbrev { } {
   return [[ord::get_db_bl] getName]
@@ -23,12 +26,9 @@ proc ns_bus { } {
   return b[1]
 }
 }
+puts [tcl_unknown_test::ns_abbrev]
+puts [tcl_unknown_test::ns_bus]
 
-check "abbrev" { report_object_full_n [get_cells b1/r1] }
-check "ns abbrev" { [ord::get_db_bl] getName }
-check "ns abbrev metric" { utl::metric_int "tcl_unknown_handler" 1 }
-check "ns abbrev in ns proc" { tcl_unknown_test::ns_abbrev }
-check "bus" { set bus b[2] }
-check "bus in ns proc" { tcl_unknown_test::ns_bus }
-check "read_sdc" { read_sdc tcl_unknown_handler.sdc }
-check "handler after read_sdc" { namespace unknown }
+# Abbreviations, odb handle methods and bus subscripts inside read_sdc
+read_sdc tcl_unknown_handler.sdc
+puts [namespace unknown]
