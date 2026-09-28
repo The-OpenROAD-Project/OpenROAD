@@ -170,15 +170,16 @@ class tmg_conn
   tmg_conn(utl::Logger* logger);
   ~tmg_conn();
 
-  void analyzeNet(dbNet* net);
-  void checkConnOrdered();
+  void analyzeNet();
+  void setNet(dbNet* net);
 
   const WirePoint& wirePoint(int point_index) const;
   int distance(int fr, int to) const;
 
  private:
-  void loadNet(dbNet* net);
-  void loadWire(dbWire* wire);
+  void clear();
+  void loadTerminals();
+  void loadWire();
   void loadSWire(dbNet* net);
   bool isConnected() { return connected_; }
 

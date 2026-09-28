@@ -71,6 +71,38 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 
 tmg_conn::~tmg_conn() = default;
 
+void tmg_conn::analyzeNet()
+{
+  clear();
+  loadWire();
+
+  if (wire_points_.empty()) {
+    net_->setDisconnected(false);
+    net_->setWireOrdered(false);
+    return;
+  }
+
+  loadTerminals();
+  identifyShorts();
+  removeWireLoops();
+  identifyTerminalWirePoints();
+
+  if (has_special_wires_) {
+    net_->destroySWires();
+  }
+
+  relocateShorts();
+  treeReorder(false);
+
+  net_->setDisconnected(!connected_);
+  net_->setWireOrdered(true);
+}
+
+void tmg_conn::setNet(dbNet* net)
+{
+  net_ = net;
+}
+
 const WirePoint& tmg_conn::wirePoint(const int point_index) const
 {
   return wire_points_[point_index];
@@ -176,9 +208,8 @@ void tmg_conn::addShort(const int i0, const int i1)
   shorts_.emplace_back(i0, i1);
 }
 
-void tmg_conn::loadNet(dbNet* net)
+void tmg_conn::clear()
 {
-  net_ = net;
   wire_sections_.clear();
   wire_points_.clear();
   terminals_.clear();
@@ -186,12 +217,15 @@ void tmg_conn::loadNet(dbNet* net)
   candidate_section_count_.clear();
   shorts_.clear();
   first_for_clear_ = nullptr;
+}
 
-  for (dbITerm* iterm : net->getITerms()) {
+void tmg_conn::loadTerminals()
+{
+  for (dbITerm* iterm : net_->getITerms()) {
     addITerm(iterm);
   }
 
-  for (dbBTerm* bterm : net->getBTerms()) {
+  for (dbBTerm* bterm : net_->getBTerms()) {
     addBTerm(bterm);
   }
 }
@@ -255,8 +289,14 @@ void tmg_conn::loadSWire(dbNet* net)
   }
 }
 
-void tmg_conn::loadWire(dbWire* wire)
+void tmg_conn::loadWire()
 {
+  odb::dbWire* wire = net_->getWire();
+
+  if (!wire) {
+    return;
+  }
+
   wire_points_.clear();
   dbWirePathItr pitr;
   dbWirePath path;
@@ -1370,40 +1410,6 @@ int tmg_conn::getStartNode()
   }
 
   return 0;
-}
-
-void tmg_conn::analyzeNet(dbNet* net)
-{
-  if (net->isWireOrdered()) {
-    net_ = net;
-    checkConnOrdered();
-  } else {
-    loadNet(net);
-
-    if (net->getWire()) {
-      loadWire(net->getWire());
-    }
-
-    if (wire_points_.empty()) {
-      net->setDisconnected(false);
-      net->setWireOrdered(false);
-      return;
-    }
-
-    identifyShorts();
-    removeWireLoops();
-    identifyTerminalWirePoints();
-
-    if (has_special_wires_) {
-      net->destroySWires();
-    }
-
-    relocateShorts();
-    treeReorder(false);
-  }
-
-  net->setDisconnected(!connected_);
-  net->setWireOrdered(true);
 }
 
 bool tmg_conn::checkConnected()
