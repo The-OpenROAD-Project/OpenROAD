@@ -510,7 +510,7 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/rsz",  # buildcleaner: keep provides the private headers
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -563,7 +563,7 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -585,7 +585,7 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
