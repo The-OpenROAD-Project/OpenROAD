@@ -22,6 +22,7 @@
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/DecapObjects.h"  // NOLINT(misc-include-cleaner) Needed for DecapCell/GapInfo completeness in ~Opendp()
 #include "infrastructure/Grid.h"
+#include "infrastructure/InstanceIndex.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"

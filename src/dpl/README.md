@@ -165,6 +165,37 @@ a weak attempt to reduce the total half-perimeter wirelength (HPWL).
 optimize_mirroring
 ```
 
+### Report Placement Density
+
+The `report_placement_density` command reports the placement density of the
+core, or with `-region` of the rectangle given by two opposite corners, as a
+number between 0 (empty) and 1 (no room left). Density is the instance area
+inside the region over the legal placement site area inside it, so a region
+with no site in it, because it lies outside the rows or under a hard
+blockage, is reported as holding no placement site rather than as a density.
+
+The instances counted are the ones the GUI's placement density heat map
+counts on its default settings: placed instances, with taps and endcaps
+included and fillers and IO excluded. A filler can be removed to make room,
+so the area it sits on still counts as room for a new cell. Note that the
+heat map divides by the area of its own tile rather than by the placement
+site area, so the two do not report the same number for a region that is
+partly off the rows.
+
+Nothing is cached, so each call measures the placement as it currently
+stands.
+
+```tcl
+report_placement_density
+    [-region {x1 y1 x2 y2}]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-region` | The two opposite corners of the region to measure, in microns. The default is the core area. |
+
 ### Improve Placement
 
 The `improve_placement` command optimizes a given placed design.

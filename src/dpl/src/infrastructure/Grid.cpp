@@ -55,6 +55,7 @@ void Grid::clear()
   pixels_.clear();
   row_y_dbu_to_index_.clear();
   row_index_to_y_dbu_.clear();
+  row_index_to_pixel_height_.clear();
 }
 
 void Grid::visitDbRows(odb::dbBlock* block,
