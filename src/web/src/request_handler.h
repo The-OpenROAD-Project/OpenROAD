@@ -335,13 +335,8 @@ struct SessionState
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
-// True if this Accept-Encoding value lets us hand back the gzipped bytes as
-// they are stored.  The embedded assets are compressed (issue #11065 put them
-// in the binary; gzip is what keeps that from costing ~3 MB), so this decides
-// between serving them verbatim and inflating them first.
-//
-// Accepts "gzip" or a "*" wildcard, each unless given q=0.  An empty header
-// means the client said nothing, which is not permission to compress.
+// True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
+// q=0, an explicit gzip deciding over *; an empty header does not count.
 bool acceptsGzip(std::string_view accept_encoding);
 
 // True if a WebSocket handshake carrying this Origin/Host may be accepted.

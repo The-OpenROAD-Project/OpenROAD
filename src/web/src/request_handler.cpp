@@ -27,6 +27,8 @@
 #include <vector>
 
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/core/string.hpp"
+#include "boost/beast/http/rfc7230.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -326,46 +328,22 @@ std::string assetPathFromTarget(const std::string_view target)
 
 bool acceptsGzip(const std::string_view accept_encoding)
 {
-  auto trim = [](std::string_view s) {
-    while (!s.empty() && (s.front() == ' ' || s.front() == '\t')) {
-      s.remove_prefix(1);
-    }
-    while (!s.empty() && (s.back() == ' ' || s.back() == '\t')) {
-      s.remove_suffix(1);
-    }
-    return s;
-  };
-
+  namespace beast = boost::beast;
+  // A trailing comma, which the grammar allows: ext_list gives a last coding
+  // with no parameters those of the coding before it (fixed in Beast f8805c6).
+  const std::string list = std::string(accept_encoding) + ',';
   bool wildcard = false;
-  std::string_view rest = accept_encoding;
-  while (!rest.empty()) {
-    const size_t comma = rest.find(',');
-    // substr clamps the count itself, so npos means "to the end".
-    const std::string_view element = trim(rest.substr(0, comma));
-    rest = comma == std::string_view::npos ? std::string_view()
-                                           : rest.substr(comma + 1);
-    if (element.empty()) {
-      continue;
-    }
-
-    // "gzip;q=0.5" -- the coding, then its parameters.
-    const size_t semi = element.find(';');
-    const std::string_view coding = trim(element.substr(0, semi));
-
-    // Only q matters here, and only whether it is zero.  A q-value is a
-    // number in [0, 1], so it is zero exactly when it has no nonzero digit --
-    // which also treats a malformed value as "do not compress".
+  for (const auto& [coding, params] : beast::http::ext_list(list)) {
+    // A q-value lies in [0, 1], so it is zero exactly when no digit is
+    // nonzero; a malformed one counts as a refusal too.
     bool acceptable = true;
-    if (semi != std::string_view::npos) {
-      const std::string_view params = element.substr(semi + 1);
-      const size_t q = params.find("q=");
-      if (q != std::string_view::npos) {
-        acceptable = params.substr(q + 2).find_first_of("123456789")
-                     != std::string_view::npos;
+    for (const auto& [name, value] : params) {
+      if (beast::iequals(name, "q")) {
+        const std::string_view q = value;
+        acceptable = q.find_first_of("123456789") != std::string_view::npos;
       }
     }
-
-    if (coding == "gzip" || coding == "x-gzip") {
+    if (beast::iequals(coding, "gzip") || beast::iequals(coding, "x-gzip")) {
       return acceptable;
     }
     if (coding == "*") {
