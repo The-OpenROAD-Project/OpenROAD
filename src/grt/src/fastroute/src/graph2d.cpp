@@ -424,8 +424,10 @@ bool Graph2D::usedGridsMatchUsage() const
   // population and ordering. This also detects missing positive-usage edges.
   const auto matches = [](const auto& edges, const auto& used) {
     std::set<std::pair<int, int>> reference;
-    for (int x = 0; x < edges.shape()[0]; x++) {
-      for (int y = 0; y < edges.shape()[1]; y++) {
+    const int x_count = static_cast<int>(edges.shape()[0]);
+    const int y_count = static_cast<int>(edges.shape()[1]);
+    for (int x = 0; x < x_count; x++) {
+      for (int y = 0; y < y_count; y++) {
         if (edges[x][y].usage > 0) {
           reference.insert({x, y});
         }
@@ -823,7 +825,7 @@ void Graph2D::updateCongestionHistory(const int up_type,
       }
       auto& edge = edges[x][y];
       if (!edge.history_dirty && (edge.last_usage != 0 || edge.congCNT != 0)) {
-        dirty.push_back(&edge - edges.data());
+        dirty.push_back(static_cast<size_t>(&edge - edges.data()));
         edge.history_dirty = true;
       }
       maxlimit = std::max<int>(maxlimit, edges[x][y].last_usage);
