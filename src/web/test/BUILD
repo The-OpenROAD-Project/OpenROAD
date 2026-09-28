@@ -271,6 +271,13 @@ js_test(
 )
 
 js_test(
+    name = "layer_extents_test",
+    data = JS_FILES,
+    entry_point = "js/test-layer-extents.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "dpr_test",
     data = JS_FILES,
     entry_point = "js/test-dpr.js",
