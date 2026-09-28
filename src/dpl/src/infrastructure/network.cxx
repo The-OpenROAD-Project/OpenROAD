@@ -85,24 +85,6 @@ Pin* Network::addPin(odb::dbITerm* term)
   upin->setPinWidth(DbuX{ww});
   upin->setPinLayer(0);  // Set to zero since not currently used.
   pins_.emplace_back(std::move(upin));
-
-  auto node = getNode(term->getInst());
-  if (node != nullptr) {
-    for (auto pin : term->getMTerm()->getMPins()) {
-      for (auto box : pin->getGeometry()) {
-        auto layer = box->getTechLayer();
-        if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
-          continue;
-        }
-        if (layer->getRoutingLevel() > kMaxPinLevel) {
-          continue;
-        }
-        node->addUsedLayer(layer->getRoutingLevel());
-        node->addUsedLayer(layer->getRoutingLevel()
-                           + 1);  // for via access from above
-      }
-    }
-  }
   return ptr;
 }
 Pin* Network::addPin(odb::dbBTerm* term)
@@ -461,6 +443,27 @@ void Network::addNode(odb::dbInst* inst)
   for (int level = 1; level <= kMaxPinLevel; level++) {
     if (!master->getPinShapes(level).empty()) {
       ndi.addPinLayer(level);
+    }
+  }
+  // Collect pin-access layers even when fixed-only checks skip connectivity.
+  for (odb::dbITerm* term : inst->getITerms()) {
+    odb::dbNet* net = term->getNet();
+    if (net == nullptr || net->getSigType().isSupply()) {
+      continue;
+    }
+    for (odb::dbMPin* pin : term->getMTerm()->getMPins()) {
+      for (odb::dbBox* box : pin->getGeometry()) {
+        odb::dbTechLayer* layer = box->getTechLayer();
+        if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+          continue;
+        }
+        if (layer->getRoutingLevel() > kMaxPinLevel) {
+          continue;
+        }
+        ndi.addUsedLayer(layer->getRoutingLevel());
+        ndi.addUsedLayer(layer->getRoutingLevel()
+                         + 1);  // for via access from above
+      }
     }
   }
   nodes_.emplace_back(std::make_unique<Node>(ndi));

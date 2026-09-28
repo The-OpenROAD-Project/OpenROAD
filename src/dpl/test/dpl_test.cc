@@ -219,6 +219,45 @@ TEST_F(CheckPlacementTest, FixedOnlyErrorsOnUnplacedMacro)
             "DPL-0405");
 }
 
+TEST_F(CheckPlacementTest, FixedOnlyReportsBlockedPinAccess)
+{
+  odb::dbInst* buf = makeCell(
+      "BUF_X1", "buf", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
+  odb::dbNet* power = odb::dbNet::create(block_, "VDD");
+  power->setSigType(odb::dbSigType::POWER);
+  power->setSpecial();
+  buf->findITerm("VDD")->connect(power);
+  odb::dbSWire* wire = odb::dbSWire::create(power, odb::dbWireType::ROUTED);
+  odb::dbTechLayer* metal2 = db_->getTech()->findLayer("metal2");
+  ASSERT_NE(metal2, nullptr);
+  ASSERT_NE(odb::dbSBox::create(wire,
+                                metal2,
+                                kCoreX + kSiteWidth,
+                                kCoreY,
+                                kCoreX + 2 * kSiteWidth,
+                                kCoreY + kRowHeight,
+                                odb::dbWireShapeType::STRIPE),
+            nullptr);
+
+  // Unconnected signal pins and supply connections do not need via access.
+  EXPECT_EQ(runCheck(/*check_fixed=*/true, /*check_placeable=*/false), "");
+  EXPECT_EQ(runCheck(), "");
+
+  // The signal pin is on metal1, so the metal2 stripe blocks its via access.
+  odb::dbNet* signal = odb::dbNet::create(block_, "input");
+  buf->findITerm("A")->connect(signal);
+  EXPECT_EQ(runCheck(/*check_fixed=*/true, /*check_placeable=*/false),
+            "DPL-0041");
+  odb::dbMarkerCategory* failures = findFailures("Blocked_layers_failures");
+  ASSERT_NE(failures, nullptr);
+  ASSERT_EQ(failures->getMarkerCount(), 1);
+  odb::dbMarker* marker = *failures->getMarkers().begin();
+  EXPECT_TRUE(marker->getSources().contains(buf));
+
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  EXPECT_EQ(failureCount("Blocked_layers_failures"), 1);
+}
+
 TEST_F(CheckPlacementTest, PlaceableIgnoresMisalignedTapcell)
 {
   makeCell("TAPCELL_X1",
