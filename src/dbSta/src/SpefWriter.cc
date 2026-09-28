@@ -203,20 +203,32 @@ void SpefWriter::writeNet(Scene* scene,
   int count = 1;
   bool label = false;
   for (auto node : parasitics->nodes(parasitic)) {
-    if (parasitics->pin(node) == nullptr) {
-      if (parasitics->nodeGndCap(node) == 0) {
-        continue;
-      }
-      if (!label) {
-        label = true;
-        stream << "*CAP" << '\n';
-      }
-
-      stream << count++ << " ";
-      stream << escapeSpecial(parasitics->name(node)) << " "
-             << parasitics->nodeGndCap(node) / cap_scale;
-      stream << '\n';
+    // Pin nodes can carry wire capacitance (e.g. global routing parasitics
+    // split pin-to-grid segment cap onto the pin node), so write them too.
+    if (parasitics->nodeGndCap(node) == 0) {
+      continue;
     }
+    if (!label) {
+      label = true;
+      stream << "*CAP" << '\n';
+    }
+
+    std::string node_name = parasitics->name(node);
+    auto pin = parasitics->pin(node);
+    if (pin != nullptr) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      network_->staToDb(pin, iterm, bterm, moditerm);
+      if (iterm != nullptr) {
+        node_name = fixPinDelimiter(node_name);
+      }
+    }
+
+    stream << count++ << " ";
+    stream << escapeSpecial(node_name) << " "
+           << parasitics->nodeGndCap(node) / cap_scale;
+    stream << '\n';
   }
   for (auto cap : parasitics->capacitors(parasitic)) {
     if (parasitics->value(cap) == 0) {
