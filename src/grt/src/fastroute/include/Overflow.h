@@ -27,6 +27,18 @@ class OverflowAccumulator
  public:
   void add(int usage, int capacity) { update(usage, capacity, 1); }
   void remove(int usage, int capacity) { update(usage, capacity, -1); }
+  void replace(int old_usage, int old_capacity, int usage, int capacity)
+  {
+    if (old_usage != usage || old_capacity != capacity) {
+      remove(old_usage, old_capacity);
+      add(usage, capacity);
+    }
+  }
+  void resetUsage()
+  {
+    totals_ = {.capacity = totals_.capacity};
+    histogram_.clear();
+  }
 
   OverflowStatistics statistics() const
   {
