@@ -574,8 +574,6 @@ void NesterovPlace::runTimingDriven(int iter,
         is_min_hpwl_ = true;
       }
 
-      // The repair replaced the topology, so the momentum accumulated on the
-      // old objective is stale. Restart FISTA on the next iteration.
       reset_nesterov_momentum_ = true;
     }
 
@@ -1148,9 +1146,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
-    // A previous non-virtual timing-driven iteration replaced topology; restart
-    // the accelerated-gradient momentum so the extrapolation coefficient below
-    // starts from zero rather than the stale ~0.99 pre-repair value.
     if (reset_nesterov_momentum_) {
       curA = 1.0;
       reset_nesterov_momentum_ = false;
