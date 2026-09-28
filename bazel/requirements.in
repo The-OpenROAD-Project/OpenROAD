@@ -31,3 +31,6 @@ sphinx-llm==1.0.0
 # imghdr was removed from the Python 3.13 stdlib; sphinx.builders.epub3 still
 # imports it. The standard-imghdr backport restores the module.
 standard-imghdr==3.13.0
+# docutils 0.22 dropped docutils.utils.roman; sphinx.builders.latex falls back
+# to the standalone roman package.
+roman==5.2
