@@ -250,9 +250,9 @@ The report includes:
   the live viewer (features that require server interaction show empty states).
 
 The report is self-contained: the stylesheets and the script are inlined, so it
-opens from the filesystem with no server and no network. The schematic panel is
-the one exception — its libraries are 1.9 MB and it needs a live server anyway,
-so it is left out of the report and stands down when opened there.
+opens from the filesystem with no server and no network. The schematic and 3D
+panels need a live server, so their libraries are left out of the report and
+the panels say so when opened there.
 
 #### Examples
 
@@ -576,8 +576,9 @@ Three things about the bundle are easy to break:
 - `leaflet` touches `window` as it loads, and nine modules use it as the global
   `L`. It stays a global (`leaflet-global.js`) so that the pure functions in
   those modules can still be unit-tested with no DOM.
-- The report bundle deliberately leaves out elk and netlistsvg — 1.9 MB for a
-  panel that needs a live server. `entry-report.js` is what draws that line.
+- The report bundle leaves out elk, netlistsvg and three, whose panels need a
+  live server. `entry-report.js` is what draws that line: those libraries reach
+  the page only through `vendor-globals.js`.
 
 ## Server API
 

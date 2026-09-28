@@ -225,19 +225,19 @@ TEST_F(SaveReportTest, IsSelfContained)
   EXPECT_FALSE(contains(html, "<link "));
 }
 
-// The schematic libraries are 1.9 MB and the panel needs a live server, so the
-// report bundle leaves them out (see entry-report.js).
-TEST_F(SaveReportTest, LeavesTheSchematicLibrariesOut)
+// The schematic and 3D panels need a live server, so the report bundle leaves
+// their libraries out (see entry-report.js).
+TEST_F(SaveReportTest, LeavesTheLivePanelsLibrariesOut)
 {
-  const std::string path = tempHtml("no_schematic");
+  const std::string path = tempHtml("no_live_panels");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // Markers from the two libraries themselves.  The schematic widget's own
-  // source stays in -- it is the widget that stands down, not the code that
-  // gets stripped -- so the netlistsvg namespace string is not a marker.
+  // Markers from the libraries themselves; the widgets' own code stays in.
   EXPECT_FALSE(contains(html, "org.eclipse.elk"));
   EXPECT_FALSE(contains(html, "onml"));
+  EXPECT_FALSE(contains(html, "__THREE__"));
+  EXPECT_FALSE(contains(html, "Three.js Authors"));
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────

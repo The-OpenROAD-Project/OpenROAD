@@ -22,9 +22,8 @@ _RULE = "=" * 78
 _HEADER = """\
 Third-party software in the OpenROAD web viewer
 
-The viewer's browser bundle includes the npm packages below, and a timing
-report saved from it all of them but elkjs and netlistsvg.  Their licences
-follow.
+The viewer's browser bundle includes the npm packages below; a timing report
+saved from it carries only golden-layout and leaflet.  Their licences follow.
 """
 
 _FOOTER = """\

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import * as THREE from 'three';
-
 import {getThemeColors, setCookie} from './theme.js';
 import {downloadUrl, copyPngToClipboard} from './image-export.js';
+
+// Set by vendor-globals.js; the saved report's bundle has no three.js.
+const THREE = globalThis.THREE;
 
 // Camera navigation tuning constants
 const kRotationSensitivity = 2.0;
@@ -84,6 +85,12 @@ export class ThreeDViewerWidget {
     this._element = document.createElement('div');
     this._element.className = 'three-d-viewer-widget';
     container.element.appendChild(this._element);
+
+    if (!THREE) {
+      this._showInfo('The 3D view is not available in saved reports.');
+      this._destroyed = true;
+      return;
+    }
 
     // Canvas container fills the widget; gives the absolute-positioned
     // tooltip a relative origin to anchor against.
