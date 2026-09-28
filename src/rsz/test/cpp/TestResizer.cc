@@ -8,8 +8,10 @@
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
 #include "RepairTargetCollector.hh"
 #include "gtest/gtest.h"
+#include "move/BufferCandidate.hh"
 #include "move/MoveGenerator.hh"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -46,6 +48,17 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+class RebufferTestPeer
+{
+ public:
+  // Mirror the setup SetupLegacyBase does before running BufferMove.
+  static void init(Rebuffer& rebuffer, sta::Scene* scene)
+  {
+    rebuffer.init();
+    rebuffer.initOnCorner(scene);
+  }
 };
 
 class TestResizer : public tst::IntegratedFixture
@@ -428,6 +441,65 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "mid_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "deep_buf0/Z"));
+}
+
+// BufferMove must report the buffers it inserts as touched, so buffer
+// removal recognizes them as rebuffering output and does not undo them.
+TEST_F(TestResizer, BufferMoveMarksInsertedBuffers)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  // Buffering needs wire RC; use metal3 as the Tcl tests do.
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* layer = tech->findLayer("metal3");
+  ASSERT_NE(layer, nullptr);
+  const double width_um
+      = static_cast<double>(layer->getWidth()) / tech->getDbUnitsPerMicron();
+  const double res_per_m = layer->getResistance() / width_um * 1e6;
+  const double cap_per_m
+      = (width_um * layer->getCapacitance() + 2 * layer->getEdgeCapacitance())
+        * 1e-12 * 1e6;
+  ep_.setHWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.setVWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  RebufferTestPeer::init(resizer_.rebuffer(), sta_->cmdScene());
+
+  std::vector<sta::Pin*> driver_pins;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() != nullptr
+          && iterm->getIoType() == odb::dbIoType::OUTPUT
+          && iterm->getSigType() == odb::dbSigType::SIGNAL) {
+        driver_pins.push_back(db_network_->dbToSta(iterm));
+      }
+    }
+  }
+
+  MoveCommitter committer(resizer_);
+  const Target target;
+  MoveResult result;
+  for (sta::Pin* driver_pin : driver_pins) {
+    BufferCandidate candidate(resizer_, target, driver_pin);
+    result = committer.commit(candidate);
+    if (result.accepted) {
+      break;
+    }
+  }
+  ASSERT_TRUE(result.accepted) << "no BufferMove inserted a buffer";
+  // The driver comes first, followed by the inserted buffers.
+  ASSERT_GT(result.touched_instances.size(), 1);
+
+  for (size_t i = 1; i < result.touched_instances.size(); i++) {
+    sta::Instance* buffer = result.touched_instances[i];
+    const sta::LibertyCell* cell = db_network_->libertyCell(buffer);
+    ASSERT_NE(cell, nullptr);
+    EXPECT_TRUE(cell->isBuffer());
+    std::string reason;
+    EXPECT_TRUE(committer.hasBlockingBufferRemovalMove(buffer, reason));
+    EXPECT_EQ(reason, "it was from rebuffering");
+  }
 }
 
 }  // namespace rsz

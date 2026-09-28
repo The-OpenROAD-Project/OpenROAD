@@ -45,6 +45,11 @@ class Rebuffer : public sta::dbStaState
   Rebuffer(Resizer* resizer);
   void fullyRebuffer(sta::Pin* user_pin = nullptr);
   void rebufferNet(const sta::Pin* drvr_pin);
+  // Buffers inserted by the most recent rebufferPin() call.
+  const std::vector<sta::Instance*>& lastInsertedBuffers() const
+  {
+    return last_inserted_buffers_;
+  }
 
  protected:
   void init();
@@ -185,8 +190,10 @@ class Rebuffer : public sta::dbStaState
   static constexpr float relaxation_factor_ = 0.01;
 
   double long_wire_stepping_runtime_ = 0;
+  std::vector<sta::Instance*> last_inserted_buffers_;
 
   friend class rsz::BufferCandidate;
+  friend class RebufferTestPeer;
   friend class rsz::SetupLegacyBase;
   friend class Resizer;
 };
