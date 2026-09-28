@@ -7,7 +7,7 @@
 
 import './elk-global.js';
 import netlistsvg from 'netlistsvg/built/netlistsvg.bundle.js';
-import * as THREE from 'three';
+import * as THREE from './three-subset.js';
 import openroadSkin from './openroad_skin.svg';
 
 window.netlistsvg = netlistsvg;

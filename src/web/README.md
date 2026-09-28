@@ -579,7 +579,9 @@ Three things about the bundle are easy to break:
   those modules can still be unit-tested with no DOM.
 - The report bundle leaves out elk, netlistsvg and three, whose panels need a
   live server. `entry-report.js` is what draws that line: those libraries reach
-  the page only through `vendor-globals.js`.
+  the page only through `vendor-globals.js`. three goes through
+  `three-subset.js`, which names the classes the 3D viewer uses so the rest is
+  left out; `//src/web/test:three_subset_test` fails when one is missing.
 
 ## Server API
 

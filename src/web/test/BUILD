@@ -118,6 +118,13 @@ js_test(
 )
 
 js_test(
+    name = "three_subset_test",
+    data = JS_SRCS + ["//src/web:node_modules/three"],
+    entry_point = "js/test-three-subset.js",
+    no_copy_to_bin = JS_SRCS,
+)
+
+js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
