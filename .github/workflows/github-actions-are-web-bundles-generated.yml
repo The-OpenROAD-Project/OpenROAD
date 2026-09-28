@@ -45,5 +45,5 @@ jobs:
       # This is the target write_source_files generates, and the one the docs
       # tell developers to run.  It diffs without writing into the checked-out
       # tree.
-      - name: Check that the web bundles match their sources
-        run: bazelisk test //src/web/dist:dist_tests
+      - name: Check the web bundles and the npm lock against their sources
+        run: bazelisk test //src/web/dist:dist_tests //src/web/test:npm_lock_test

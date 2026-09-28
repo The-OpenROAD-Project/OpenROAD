@@ -440,9 +440,8 @@ node.toolchain(node_version = "22.14.0")
 npm_web = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
 npm_web.npm_translate_lock(
     name = "npm_web",
-    # Without this the lock and the manifest can drift: a version bumped in
-    # package.json alone would keep resolving the old one, silently.
-    data = ["//src/web:package.json"],
+    # Only the lock is read; //src/web/test:npm_lock_test keeps it in step
+    # with src/web/package.json.
     pnpm_lock = "//src/web:pnpm-lock.yaml",
 )
 

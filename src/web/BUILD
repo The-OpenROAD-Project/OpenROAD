@@ -424,6 +424,14 @@ tcl_wrap_cc(
 
 exports_files(["README.md"])
 
+exports_files(
+    [
+        "package.json",
+        "pnpm-lock.yaml",
+    ],
+    visibility = ["//src/web/test:__pkg__"],
+)
+
 messages_txt(
     visibility = ["//docs:__pkg__"],
 )
