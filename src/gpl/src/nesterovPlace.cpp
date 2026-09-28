@@ -673,8 +673,8 @@ bool NesterovPlace::isDiverged(float& curA)
   if (num_region_diverged_ > 0) {
     log_->report("Divergence occured in {} regions.", num_region_diverged_);
 
-    if (tryRoutabilityDivergeRecovery(curA)
-        && !npVars_.disableRevertIfDiverge) {
+    if (!npVars_.disableRevertIfDiverge
+        && tryRoutabilityDivergeRecovery(curA)) {
       num_region_diverged_ = 0;
     } else if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved_
                && diverge_revert_count_ < kMaxDivergeReverts) {
