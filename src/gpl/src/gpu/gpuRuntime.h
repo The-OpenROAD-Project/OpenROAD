@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// GPU runtime helpers for the gpl GPU kernel series (HPWL, FFT, ...).
-//
-// This header is intentionally Kokkos-free: it declares only two free
-// functions and is safe to include from plain-C++ translation units (e.g.
-// the HPWL and FFT backend factories). The Kokkos-dependent definitions live
-// in gpuRuntime.cpp, which is compiled only when ENABLE_GPU=ON.
-
 #pragma once
+
+#include "kokkosRuntime.h"
 
 namespace gpl {
 
@@ -19,10 +14,5 @@ namespace gpl {
 // (case-insensitive) return false — the CPU opt-out for A/B testing and the
 // golden suite. Any other value returns true.
 bool gpuEnabled();
-
-// Lazily initializes Kokkos on first call (std::call_once) and registers a
-// std::atexit handler that finalizes it once at process shutdown. Safe to
-// call from every GPU kernel entry point.
-void ensureKokkosInitialized();
 
 }  // namespace gpl

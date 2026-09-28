@@ -33,8 +33,8 @@ struct KokkosDeviceState
   Kokkos::View<int*> d_inst_cy;
   // Host mirrors retained for callers that still stage via host (cold init
   // paths and DeviceState::syncInstCoordsFromHost).
-  Kokkos::View<int*>::HostMirror h_inst_cx;
-  Kokkos::View<int*>::HostMirror h_inst_cy;
+  Kokkos::View<int*>::host_mirror_type h_inst_cx;
+  Kokkos::View<int*>::host_mirror_type h_inst_cy;
 
   // Pin-level (size = num_pins):
   Kokkos::View<int*> d_pin_offset_cx;  // const, set once
@@ -99,8 +99,8 @@ struct KokkosDeviceState
   // Per-inst WA wirelength gradient (K5 output, host-readable mirror).
   Kokkos::View<float*> d_inst_wl_grad_x;
   Kokkos::View<float*> d_inst_wl_grad_y;
-  Kokkos::View<float*>::HostMirror h_inst_wl_grad_x;
-  Kokkos::View<float*>::HostMirror h_inst_wl_grad_y;
+  Kokkos::View<float*>::host_mirror_type h_inst_wl_grad_x;
+  Kokkos::View<float*>::host_mirror_type h_inst_wl_grad_y;
 
   // ---- Density gradient: per-inst params + gather output ----
   // Shared (not per-region): indexed by the global gCellStor instance id, so
@@ -114,8 +114,8 @@ struct KokkosDeviceState
   // Per-inst density gradient (gather output, host-readable mirror).
   Kokkos::View<float*> d_inst_density_grad_x;
   Kokkos::View<float*> d_inst_density_grad_y;
-  Kokkos::View<float*>::HostMirror h_inst_density_grad_x;
-  Kokkos::View<float*>::HostMirror h_inst_density_grad_y;
+  Kokkos::View<float*>::host_mirror_type h_inst_density_grad_x;
+  Kokkos::View<float*>::host_mirror_type h_inst_density_grad_y;
 };
 
 }  // namespace gpl

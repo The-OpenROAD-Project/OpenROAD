@@ -46,6 +46,9 @@ CUDA_COPTS = [
     # guard does not exist on aarch64). The hermetic toolchain is
     # libc++-only, and clang's CUDA mode handles libc++ fine in practice.
     "-D_ALLOW_UNSUPPORTED_LIBCPP",
+    # Boost.Core disables empty-base optimization for Clang CUDA. Restore
+    # it so embedded Boost containers have the same layout as in C++ TUs.
+    "-DBOOST_DETAIL_EMPTY_VALUE_BASE",
     # Device-side FMA off for bit-stable results — the CMake --fmad=false
     # equivalent. The global .bazelrc -ffp-contract=off also reaches these
     # TUs; this restates it at rule level so device code stays FMA-free
@@ -61,7 +64,6 @@ CUDA_COPTS = [
     # additional_compiler_inputs, which is what makes the expansion legal.
     "-include",
     "$(location //bazel/gpu:cuda_placement_new.h)",
-    # gpl's sources use OpenMP pragmas on the host side; same flag (and
-    # @openmp dependency) as the CPU //src/gpl target.
+    # Enable host OpenMP for Kokkos installations using that execution space.
     "-fopenmp",
 ]

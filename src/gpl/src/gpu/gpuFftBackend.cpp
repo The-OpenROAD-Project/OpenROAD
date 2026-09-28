@@ -69,10 +69,10 @@ struct GpuFftBackend::Impl
   Kokkos::View<float*> d_phi;
   Kokkos::View<float*> d_elec_x;
   Kokkos::View<float*> d_elec_y;
-  Kokkos::View<float*>::HostMirror h_density;
-  Kokkos::View<float*>::HostMirror h_phi;
-  Kokkos::View<float*>::HostMirror h_elec_x;
-  Kokkos::View<float*>::HostMirror h_elec_y;
+  Kokkos::View<float*>::host_mirror_type h_density;
+  Kokkos::View<float*>::host_mirror_type h_phi;
+  Kokkos::View<float*>::host_mirror_type h_elec_x;
+  Kokkos::View<float*>::host_mirror_type h_elec_y;
 };
 
 GpuFftBackend::GpuFftBackend(int bin_cnt_x,
