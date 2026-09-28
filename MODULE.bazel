@@ -323,6 +323,14 @@ archive_override(
     urls = ["https://github.com/keplertech/kepler-formal/archive/5eced47bf5d4330b60dcaadc7babdfdc092b0c3b.tar.gz"],
 )
 
+# yosys: only for `bazelisk run //:install`, which installs yosys next to
+# openroad so an ORFS checkout gets a local toolchain without setup.sh, CMake
+# or build_*.sh. Never linked into openroad. It must not raise any version
+# //:openroad depends on: its abc request (0.62) resolves to the abc that
+# syn/rmp already use, so yosys-abc is that same abc. No slang plugin until
+# sv-elab and syn can share one slang.
+bazel_dep(name = "yosys", version = "0.68.bcr.1", dev_dependency = True)
+
 # JavaScript / web UI — only used for JS unit tests in src/web/test
 bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
 bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)

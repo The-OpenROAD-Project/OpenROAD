@@ -189,6 +189,7 @@ The following are `dev_dependency` in OpenROAD and will not be forced
 on downstream projects via MVS:
 
 - rules_pkg — only needed for //:install
+- yosys — only needed for //:install
 - `llvm` (hermetic-llvm) toolchain registration
 
 The downstream test at `test/downstream/` verifies these invariants.
@@ -196,6 +197,23 @@ The downstream test at `test/downstream/` verifies these invariants.
 ## Build without testing
 
     bazelisk build :openroad
+
+## Installing OpenROAD and yosys for ORFS
+
+From `tools/OpenROAD` in an OpenROAD-flow-scripts (ORFS) checkout:
+
+    bazelisk run //:install [-- OPENROAD_DEST [YOSYS_DEST]]
+
+This installs `openroad` into `OPENROAD_DEST` (default `../install/OpenROAD`)
+and `yosys`, `yosys-abc` and `share/yosys` into `YOSYS_DEST` (default a
+`yosys` folder next to `OPENROAD_DEST`). That is the `tools/install` layout ORFS
+uses, so `make` in `flow/` picks up both tools without `setup.sh`, CMake or
+`build_openroad.sh`. Set `OPENROAD_INSTALL_YOSYS=0` to install only OpenROAD.
+
+The command and the install layout are meant to stay stable. What gets
+installed may change: yosys is currently the Bazel Central Registry release,
+with no slang frontend (`SYNTH_HDL_FRONTEND=slang`), and `yosys-abc` is the same
+abc OpenROAD links.
 
 ## Version stamping
 

@@ -10,6 +10,8 @@ sh_binary(
     data = [
         ":tarfile",
         "//docs:man_pages",
+        # yosys-abc and share/ come along as runfiles of the yosys binary.
+        "@yosys",
     ] + select({
         # Ship the desktop entry + icon only for GUI builds so install.sh
         # can register a menu launcher (mirrors the CMake GUI install).

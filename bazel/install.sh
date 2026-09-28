@@ -106,3 +106,34 @@ if [ "$INSTALL_DESKTOP" = "1" ] && [ -n "$DESKTOP_SRC" ] && [ -f "$DESKTOP_SRC" 
     fi
     echo "OpenROAD desktop entry installed to $APPS_DIR/openroad.desktop"
 fi
+
+# Install yosys next to OpenROAD, in the layout ORFS expects
+# (tools/install/yosys/{bin/yosys,bin/yosys-abc,share/yosys}), so an ORFS
+# checkout gets a local toolchain from this one command instead of setup.sh,
+# CMake and build_*.sh. yosys finds yosys-abc next to itself and share/ at
+# ../share/yosys. Set OPENROAD_INSTALL_YOSYS=0 to skip.
+if [ "${OPENROAD_INSTALL_YOSYS:-1}" = "1" ]; then
+    YOSYS_BIN="$(rlocation yosys/yosys)"
+    YOSYS_RUNFILES="$(dirname "$YOSYS_BIN")"
+    YOSYS_DEST=${2:-$(dirname "$ABS_DEST")/yosys}
+
+    # Remove previous yosys install artifacts. Bazel outputs are read-only,
+    # so make them writable before removing.
+    for f in "$YOSYS_DEST/bin/yosys" "$YOSYS_DEST/bin/yosys-abc" \
+        "$YOSYS_DEST/share/yosys"; do
+        if [ -e "$f" ]; then
+            chmod -R u+w "$f"
+            rm -rf "$f"
+        fi
+    done
+
+    mkdir -p "$YOSYS_DEST/bin" "$YOSYS_DEST/share"
+    cp -fL "$YOSYS_BIN" "$YOSYS_DEST/bin/yosys"
+    cp -fL "$YOSYS_RUNFILES/yosys-abc" "$YOSYS_DEST/bin/yosys-abc"
+    cp -rL "$YOSYS_RUNFILES/share" "$YOSYS_DEST/share/yosys"
+    chmod -R u+w "$YOSYS_DEST/bin/yosys" "$YOSYS_DEST/bin/yosys-abc" \
+        "$YOSYS_DEST/share/yosys"
+
+    echo "yosys installed to $(realpath "$YOSYS_DEST")"
+    echo "Note: this yosys has no slang frontend (SYNTH_HDL_FRONTEND=slang)."
+fi
