@@ -152,6 +152,18 @@ void SpefWriter::writePorts()
   }
 }
 
+// SPEF name of a parasitic node: instance pins use ':' as pin delimiter.
+std::string SpefWriter::nodeName(Parasitics* parasitics,
+                                 const ParasiticNode* node) const
+{
+  std::string name = parasitics->name(node);
+  const Pin* pin = parasitics->pin(node);
+  if (pin != nullptr && network_->flatPin(pin) != nullptr) {
+    name = fixPinDelimiter(name);
+  }
+  return escapeSpecial(name);
+}
+
 void SpefWriter::writeNet(Scene* scene,
                           const Net* net,
                           Parasitic* parasitic,
@@ -182,13 +194,12 @@ void SpefWriter::writeNet(Scene* scene,
       network_->staToDb(pin, iterm, bterm, moditerm);
 
       if (iterm != nullptr) {
-        stream << "*I "
-               << escapeSpecial(fixPinDelimiter(parasitics->name(node))) << " ";
+        stream << "*I " << nodeName(parasitics, node) << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
       } else if (bterm != nullptr) {
-        stream << "*P " << escapeSpecial(parasitics->name(node)) << " ";
+        stream << "*P " << nodeName(parasitics, node) << " ";
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
@@ -205,7 +216,8 @@ void SpefWriter::writeNet(Scene* scene,
   for (auto node : parasitics->nodes(parasitic)) {
     // Pin nodes can carry wire capacitance (e.g. global routing parasitics
     // split pin-to-grid segment cap onto the pin node), so write them too.
-    if (parasitics->nodeGndCap(node) == 0) {
+    const float gnd_cap = parasitics->nodeGndCap(node);
+    if (gnd_cap == 0) {
       continue;
     }
     if (!label) {
@@ -213,21 +225,8 @@ void SpefWriter::writeNet(Scene* scene,
       stream << "*CAP" << '\n';
     }
 
-    std::string node_name = parasitics->name(node);
-    auto pin = parasitics->pin(node);
-    if (pin != nullptr) {
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      network_->staToDb(pin, iterm, bterm, moditerm);
-      if (iterm != nullptr) {
-        node_name = fixPinDelimiter(node_name);
-      }
-    }
-
     stream << count++ << " ";
-    stream << escapeSpecial(node_name) << " "
-           << parasitics->nodeGndCap(node) / cap_scale;
+    stream << nodeName(parasitics, node) << " " << gnd_cap / cap_scale;
     stream << '\n';
   }
   for (auto cap : parasitics->capacitors(parasitic)) {
@@ -240,10 +239,8 @@ void SpefWriter::writeNet(Scene* scene,
     }
     stream << count++ << " ";
 
-    auto n1 = parasitics->node1(cap);
-    stream << escapeSpecial(parasitics->name(n1)) << " ";
-    auto n2 = parasitics->node2(cap);
-    stream << escapeSpecial(parasitics->name(n2)) << " ";
+    stream << nodeName(parasitics, parasitics->node1(cap)) << " ";
+    stream << nodeName(parasitics, parasitics->node2(cap)) << " ";
     stream << parasitics->value(cap) / cap_scale << '\n';
   }
 
@@ -256,35 +253,8 @@ void SpefWriter::writeNet(Scene* scene,
     }
     stream << count++ << " ";
 
-    auto n1 = parasitics->node1(res);
-    auto n2 = parasitics->node2(res);
-
-    odb::dbITerm* iterm = nullptr;
-    odb::dbBTerm* bterm = nullptr;
-    odb::dbModITerm* moditerm = nullptr;
-
-    std::string node1_name = parasitics->name(n1);
-    auto pin1 = parasitics->pin(n1);
-    if (pin1 != nullptr) {
-      network_->staToDb(pin1, iterm, bterm, moditerm);
-      if (iterm != nullptr) {
-        node1_name = fixPinDelimiter(node1_name);
-      }
-    }
-    node1_name = escapeSpecial(node1_name);
-
-    std::string node2_name = parasitics->name(n2);
-    auto pin2 = parasitics->pin(n2);
-    if (pin2 != nullptr) {
-      network_->staToDb(pin2, iterm, bterm, moditerm);
-      if (iterm != nullptr) {
-        node2_name = fixPinDelimiter(node2_name);
-      }
-    }
-    node2_name = escapeSpecial(node2_name);
-
-    stream << node1_name << " ";
-    stream << node2_name << " ";
+    stream << nodeName(parasitics, parasitics->node1(res)) << " ";
+    stream << nodeName(parasitics, parasitics->node2(res)) << " ";
     stream << parasitics->value(res) / res_scale << '\n';
   }
 
