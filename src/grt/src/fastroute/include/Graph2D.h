@@ -157,6 +157,7 @@ class Graph2D
   void initNDRnets();
   void resetNDRCap();
 
+  void foreachEdge(const std::function<void(Edge&)>& func);
   void markEstUsageDirty(int x, int y, EdgeDirection direction);
   void markUsedGridDirty(int x, int y, EdgeDirection direction);
   void insertUsedGrid(int x, int y, EdgeDirection direction);

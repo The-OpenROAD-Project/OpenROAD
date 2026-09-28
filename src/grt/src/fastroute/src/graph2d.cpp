@@ -856,6 +856,22 @@ void Graph2D::str_accu(const int rnd)
   accumulate(v_edges_, v_dirty_history_edges_);
 }
 
+// Applies a function to each edge in the graph.
+void Graph2D::foreachEdge(const std::function<void(Edge&)>& func)
+{
+  auto inner = [&](auto& edges) {
+    Edge* edges_data = edges.data();
+
+    const size_t num_edges = edges.num_elements();
+
+    for (size_t i = 0; i < num_edges; ++i) {
+      func(edges_data[i]);
+    }
+  };
+  inner(h_edges_);
+  inner(v_edges_);
+}
+
 void Graph2D::saveResources(const int x, const int y, bool is_horizontal)
 {
   if (is_horizontal) {
