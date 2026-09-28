@@ -195,6 +195,11 @@ class RouteBase
   int64_t getTotalInflation() const;
   int getRevertCount() const;
 
+  // Roll cell sizes, target density, fillers, accumulated inflation and net
+  // weights back to the pass that saw the least congestion. Callers must check
+  // getRevertCount() >= 1.
+  void revertToMinCongestion();
+
   void printGCellInflation() const;
 
  private:
@@ -245,7 +250,6 @@ class RouteBase
 
   void init();
   void resetRoutabilityResources();
-  void revertToMinCongestion();
 
   // The tile holding the given point, or nullptr if it falls outside the grid.
   Tile* getTile(int x, int y) const;
