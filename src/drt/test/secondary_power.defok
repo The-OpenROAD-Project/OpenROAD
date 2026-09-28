@@ -26,12 +26,16 @@ SPECIALNETS 1 ;
 END SPECIALNETS
 NETS 1 ;
     - VDDD ( inst2 A ) ( inst1 A ) + USE POWER
-      + ROUTED metal2 ( 3990 2380 ) ( * 4060 )
-      NEW metal2 ( 52250 2380 ) ( * 4060 )
-      NEW metal1 ( 3990 2380 ) ( 52250 * )
-      NEW metal1 ( 3990 2380 ) via1_7
+      + ROUTED metal3 ( 3990 4060 ) ( 25270 * )
+      NEW metal3 ( 31730 4060 ) ( 52250 * )
+      NEW metal1 ( 25270 4060 ) ( 31730 * )
+      NEW metal1 ( 25270 4060 ) via1_7
+      NEW metal2 ( 25270 4060 ) via2_5
       NEW metal1 ( 3990 4060 ) via1_4
-      NEW metal1 ( 52250 2380 ) via1_7
-      NEW metal1 ( 52250 4060 ) via1_4 ;
+      NEW metal2 ( 3990 4060 ) via2_5
+      NEW metal1 ( 31730 4060 ) via1_7
+      NEW metal2 ( 31730 4060 ) via2_5
+      NEW metal1 ( 52250 4060 ) via1_4
+      NEW metal2 ( 52250 4060 ) via2_5 ;
 END NETS
 END DESIGN

@@ -917,27 +917,37 @@ void GlobalRouter::routeSecondaryPowerNets()
       odb::Point pin_grid_pt = getPositionOnGrid(pin_pt);
       odb::Point closest_grid_pt = getPositionOnGrid(closest_pt);
 
-      // Add planar routing on pin layer to closest_pt
+      // Add via stack from pin layer to strap layer at pin position
+      int min_l = std::min(pin_level, closest_swire_level);
+      int max_l = std::max(pin_level, closest_swire_level);
+      for (int l = min_l; l < max_l; ++l) {
+        route.emplace_back(pin_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           l,
+                           pin_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           l + 1);
+      }
+
+      // Add planar routing on strap layer to closest_pt on strap
       if (pin_grid_pt.x() != closest_grid_pt.x()) {
         route.emplace_back(pin_grid_pt.x(),
                            pin_grid_pt.y(),
-                           pin_level,
+                           closest_swire_level,
                            closest_grid_pt.x(),
                            pin_grid_pt.y(),
-                           pin_level);
+                           closest_swire_level);
       }
       if (pin_grid_pt.y() != closest_grid_pt.y()) {
         route.emplace_back(closest_grid_pt.x(),
                            pin_grid_pt.y(),
-                           pin_level,
+                           closest_swire_level,
                            closest_grid_pt.x(),
                            closest_grid_pt.y(),
-                           pin_level);
+                           closest_swire_level);
       }
 
-      // Add via stack from pin layer to strap layer
-      int min_l = std::min(pin_level, closest_swire_level);
-      int max_l = std::max(pin_level, closest_swire_level);
+      // Also add via stack at closest_grid_pt
       for (int l = min_l; l < max_l; ++l) {
         route.emplace_back(closest_grid_pt.x(),
                            closest_grid_pt.y(),
@@ -946,6 +956,12 @@ void GlobalRouter::routeSecondaryPowerNets()
                            closest_grid_pt.y(),
                            l + 1);
       }
+      route.emplace_back(closest_grid_pt.x(),
+                         closest_grid_pt.y(),
+                         closest_swire_level,
+                         closest_grid_pt.x(),
+                         closest_grid_pt.y(),
+                         closest_swire_level);
     }
   }
 }
@@ -3595,7 +3611,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
                            db_net->getConstName());
           }
 
-          if (net->isLocal() || (isCoveringPin(net, segment))) {
+          if (net->isLocal() || (isCoveringPin(net, segment))
+              || isSecondaryPowerNet(db_net)) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
@@ -5230,8 +5247,13 @@ void GlobalRouter::findClockNets(const std::vector<Net*>& nets,
 
 bool GlobalRouter::isSecondaryPowerNet(odb::dbNet* db_net) const
 {
+  // A secondary power net is a supply net with pre-routed power straps (SWires)
+  // and specific cell ITerms/BTerms (e.g. level shifter secondary power pin).
+  // We check !isWildConnected() to exclude main power grid nets (VDD/VSS) which
+  // use wildcard connections (e.g. '* VDD') or global_connect.
   return db_net->getSigType().isSupply() && !db_net->getSWires().empty()
-         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty());
+         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty())
+         && !db_net->isWildConnected();
 }
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
