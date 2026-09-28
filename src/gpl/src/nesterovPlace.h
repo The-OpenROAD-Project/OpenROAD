@@ -151,22 +151,12 @@ class NesterovPlace
   bool is_diverge_snapshot_saved_ = false;
   float diverge_snapshot_wl_coef_x_ = 0;
   float diverge_snapshot_wl_coef_y_ = 0;
-  // min_hpwl_ as it stood when the snapshot was taken. Kept separately because
-  // a routability pass restarts the search for a minimum on the newly inflated
-  // design, which clears min_hpwl_ while the snapshot it produced is still the
-  // best thing to fall back on.
+  // min_hpwl_ at save time; a routability pass clears min_hpwl_ but keeps
+  // the snapshot.
   int64_t diverge_snapshot_hpwl_ = 0;
 
-  // A revert resumes placement from the snapshot instead of ending the run, so
-  // a design that keeps diverging would otherwise bounce off the same snapshot
-  // until the iteration budget runs out and report a max-iteration warning
-  // rather than the divergence that actually happened. Past this many reverts
-  // the run is treated as genuinely divergent and raises GPL-0307.
-  //
-  // Reverting is deterministic: the same snapshot, the same cell sizes and the
-  // same momentum reset replay the same trajectory and diverge in the same
-  // place. What makes a later attempt worth running is that the snapshot moves
-  // - the resumed descent records a new minimum HPWL before it diverges again.
+  // Repeats only help while the resumed descent keeps finding a better
+  // snapshot. Bounded so a diverging run reports GPL-0307, not max iterations.
   static constexpr int kMaxDivergeReverts = 3;
   int diverge_revert_count_ = 0;
 
@@ -176,12 +166,8 @@ class NesterovPlace
   float route_snapshot_wl_coef_x_ = 0;
   float route_snapshot_wl_coef_y_ = 0;
 
-  // Divergence recovery attempts that roll back to the routability snapshot.
-  // Each one puts a different inflation in place before resuming, so the count
-  // is bounded by how many distinct states there are to try: attempt 1 goes
-  // back to the least congested inflation and lets routability carry on,
-  // attempt 2 does the same but stops it inflating any further. A third would
-  // only repeat the second.
+  // Two attempts because there are two inflation states to try: min
+  // congestion with routability on, then the same with it off.
   static constexpr int kMaxRoutabilityDivergeAttempts = 2;
   int routability_diverge_attempt_count_ = 0;
 

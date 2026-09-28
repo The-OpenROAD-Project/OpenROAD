@@ -605,6 +605,8 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
   const bool is_last_attempt
       = routability_diverge_attempt_count_ == kMaxRoutabilityDivergeAttempts;
 
+  // Before the first pass there is no minimum on record and the stored
+  // target density is still zero, so reverting to it would zero the density.
   const bool has_inflation = rb_->getRevertCount() >= 1;
   if (has_inflation) {
     rb_->revertToMinCongestion();
@@ -881,12 +883,8 @@ void NesterovPlace::runRoutability(int iter,
     // GPL-0307. Start the search for a minimum over on the new design.
     min_hpwl_ = std::numeric_limits<int64_t>::max();
     is_min_hpwl_ = false;
-    // The snapshot that minimum produced is deliberately kept. Overflow climbs
-    // back above 0.25 when this pass reverts, so no new minimum - and no new
-    // snapshot - can be recorded until the descent brings it down again, and a
-    // divergence in that stretch would have nothing to fall back on. Its
-    // coordinates come from the design one inflation step ago, which the
-    // resumed descent simply places at the current cell sizes.
+    // The snapshot it produced is kept: no new one can be taken until
+    // overflow drops back under 0.25, and a divergence before then needs it.
 
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
