@@ -777,18 +777,18 @@ Consider an error such as:
 
     [ERROR GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
 
-In an ORFS checkout, with `OPENROAD_EXE` pointing at your build, run up to
-the failing stage and stop with ctrl-c on the step that you want to run the
-whittling down on:
+Run the following from the `flow/` directory of an ORFS checkout, with
+`OPENROAD_EXE` pointing at your build. First run up to the failing stage and
+stop with ctrl-c on the step that you want to run the whittling down on:
 
     make DESIGN_CONFIG=designs/asap7/gcd/config.mk place
 
 Now run the whittler with stock `python3` — no extra packages needed beyond
 the standard library. You are responsible for having `openroad` on your
 `PATH` first (e.g. after `bazelisk run //:install` and `source env.sh` in
-an ORFS checkout):
+the ORFS checkout). `$OPENROAD` below is your OpenROAD checkout:
 
-    python3 etc/whittle.py --error_string GPL-0305 --base_db_path results/asap7/gcd/base/3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make DESIGN_CONFIG=designs/asap7/gcd/config.mk do-3_3_place_gp"
+    python3 $OPENROAD/etc/whittle.py --error_string GPL-0305 --base_db_path results/asap7/gcd/base/3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make DESIGN_CONFIG=designs/asap7/gcd/config.mk do-3_3_place_gp"
 
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
