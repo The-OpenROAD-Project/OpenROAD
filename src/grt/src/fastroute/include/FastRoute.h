@@ -17,6 +17,7 @@
 
 #include "DataType.h"
 #include "Graph2D.h"
+#include "Overflow.h"
 #include "boost/functional/hash.hpp"
 #include "boost/icl/interval.hpp"
 #include "boost/icl/interval_set.hpp"
@@ -321,6 +322,7 @@ class FastRouteCore
 
  private:
   friend class Maze3DTestPeer;
+  friend class OverflowTestPeer;
 
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
@@ -371,6 +373,20 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
+  std::array<OverflowStatistics, 2> scanOverflow3D() const;
+  void invalidateOverflow3D();
+  void rebuildOverflow3D();
+  void updateUsedGrid3D(int x, int y, EdgeDirection direction, bool added);
+  void updateEdge3DUsage(int x,
+                         int y,
+                         int layer,
+                         EdgeDirection direction,
+                         int delta);
+  void setEdge3DCapacity(int x,
+                         int y,
+                         int layer,
+                         EdgeDirection direction,
+                         int cap);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(int net_id);
   bool areEdgesOverlapping(int net_id,
@@ -831,6 +847,9 @@ class FastRouteCore
   Graph2D graph2d_;
   multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
+  bool overflow_3d_valid_ = false;
+  OverflowAccumulator h_overflow_3d_;
+  OverflowAccumulator v_overflow_3d_;
   multi_array<int, 2> corr_edge_;
   multi_array<int16_t, 2> parent_x1_;
   multi_array<int16_t, 2> parent_y1_;
