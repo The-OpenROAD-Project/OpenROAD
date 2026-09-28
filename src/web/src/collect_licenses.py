@@ -14,9 +14,6 @@ import os
 
 _LICENSE_NAMES = ("license", "license.md", "license.txt", "licence", "copying")
 
-# saveReport() writes the text into an HTML comment, which these would end.
-_COMMENT_BREAKERS = ("-->", "--!>", "<!--")
-
 _RULE = "=" * 78
 
 _HEADER = """\
@@ -61,10 +58,6 @@ def main():
         parts.append(f"{_RULE}\n{name} {version} ({spdx})\n{_RULE}\n\n{text}\n")
     parts.append(_RULE + "\n\n" + _FOOTER)
     body = "\n".join(parts)
-
-    for breaker in _COMMENT_BREAKERS:
-        if breaker in body:
-            raise SystemExit(f"the licence text contains {breaker!r}")
 
     # Written aside and renamed: a failure must not leave a truncated file newer
     # than its inputs, which the next build would keep.

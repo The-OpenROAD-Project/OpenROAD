@@ -1714,6 +1714,22 @@ static std::string servedPageStyles(utl::Logger* logger)
   return html.substr(begin, end - begin);
 }
 
+// Text for the inside of an HTML comment: splits the sequences that would
+// open or close one early.
+static std::string htmlCommentSafe(std::string text)
+{
+  using Replacement = std::pair<std::string_view, std::string_view>;
+  for (const auto& [from, to] : {Replacement{"<!--", "<! --"},
+                                 Replacement{"--!>", "--! >"},
+                                 Replacement{"-->", "-- >"}}) {
+    for (size_t pos = text.find(from); pos != std::string::npos;
+         pos = text.find(from, pos + to.size())) {
+      text.replace(pos, from.size(), to);
+    }
+  }
+  return text;
+}
+
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
   static const char kChars[]
@@ -1754,8 +1770,8 @@ void WebServer::saveReport(const std::string& filename,
   // The report carries the bundled libraries' code, so their licences too.
   const EmbeddedAsset* licenses_asset
       = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
-  const std::string licenses
-      = licenses_asset ? assetText(*licenses_asset) : std::string();
+  const std::string licenses = htmlCommentSafe(
+      licenses_asset ? assetText(*licenses_asset) : std::string());
 
   std::ofstream out(filename);
   if (!out) {
@@ -1918,14 +1934,15 @@ void WebServer::saveReport(const std::string& filename,
   // inlined as data: URIs.  Nothing here reaches the network, so the file opens
   // with no server and no connection (issue #11065).
   out << R"(<!DOCTYPE html>
-<!--
-)" << licenses
-      << R"(-->
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
+<!--
+)" << licenses
+      << R"(
+-->
 )" << report_styles
       << R"(
 </head>

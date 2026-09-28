@@ -186,18 +186,22 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
 }
 
 // The report carries the bundled libraries' code, so it carries their licences
-// too, in a comment ahead of the page.
+// too, in a comment after the charset: a browser looks for that declaration
+// only in the first 1024 bytes.
 TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
 {
   const std::string path = tempHtml("licenses");
   generateReport(path);
   const std::string html = readFile(path);
 
+  const size_t charset = html.find("<meta charset=\"utf-8\">");
+  ASSERT_NE(charset, std::string::npos);
+  EXPECT_LT(charset, 1024u);
   const size_t begin = html.find("<!--");
   ASSERT_NE(begin, std::string::npos);
+  EXPECT_LT(charset, begin);
   const size_t end = html.find("-->", begin);
   ASSERT_NE(end, std::string::npos);
-  EXPECT_LT(end, html.find("<html>"));
   const std::string comment = html.substr(begin, end - begin);
   for (const char* package :
        {"elkjs", "golden-layout", "leaflet", "netlistsvg", "three"}) {
