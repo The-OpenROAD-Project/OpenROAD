@@ -39,6 +39,66 @@ class Graph2DTestPeer
            + graph.v_dirty_history_edges_.size();
   }
 
+  enum class DirtyListFault
+  {
+    MissingEntry,
+    MissingFlag,
+    UntrackedValue,
+    DuplicateEntry,
+    OutOfBounds
+  };
+
+  static void corruptDirtyList(Graph2D& graph,
+                               const bool estimated,
+                               const EdgeDirection direction,
+                               const DirtyListFault fault)
+  {
+    const bool horizontal = direction == EdgeDirection::Horizontal;
+    auto& edges = horizontal ? graph.h_edges_ : graph.v_edges_;
+    auto& estimates
+        = horizontal ? graph.h_dirty_est_edges_ : graph.v_dirty_est_edges_;
+    auto& history = horizontal ? graph.h_dirty_history_edges_
+                               : graph.v_dirty_history_edges_;
+    auto& edge = edges[1][1];
+    switch (fault) {
+      case DirtyListFault::MissingEntry:
+      case DirtyListFault::UntrackedValue:
+        if (estimated) {
+          estimates.clear();
+          if (fault == DirtyListFault::UntrackedValue) {
+            edge.est_usage_dirty = false;
+          }
+        } else {
+          history.clear();
+          if (fault == DirtyListFault::UntrackedValue) {
+            edge.history_dirty = false;
+          }
+        }
+        break;
+      case DirtyListFault::MissingFlag:
+        if (estimated) {
+          edge.est_usage_dirty = false;
+        } else {
+          edge.history_dirty = false;
+        }
+        break;
+      case DirtyListFault::DuplicateEntry:
+        if (estimated) {
+          estimates.push_back(estimates.front());
+        } else {
+          history.push_back(history.front());
+        }
+        break;
+      case DirtyListFault::OutOfBounds:
+        if (estimated) {
+          estimates.front() = {static_cast<int>(edges.shape()[0]), 0};
+        } else {
+          history.front() = edges.num_elements();
+        }
+        break;
+    }
+  }
+
   // Original full-grid operations, independent of the sparse lists.
   static void resetEstimates(Graph2D& graph)
   {
@@ -60,6 +120,19 @@ class Graph2DTestPeer
           edge.congCNT = 0;
         } else if (up_type == 2) {
           edge.last_usage = edge.last_usage * 0.2;
+        }
+      }
+    }
+  }
+
+  static void accumulateStress(Graph2D& graph, const int rnd)
+  {
+    for (auto* edges : {&graph.h_edges_, &graph.v_edges_}) {
+      for (size_t i = 0; i < edges->num_elements(); ++i) {
+        auto& edge = edges->data()[i];
+        const int overflow = edge.usage - edge.cap;
+        if (overflow > 0 || edge.congCNT > rnd) {
+          edge.last_usage += edge.congCNT * overflow / 2;
         }
       }
     }
@@ -117,6 +190,7 @@ class Graph2DTest : public testing::Test
   {
     logger_.setDebugLevel(utl::GRT, "usedgridcheck", 1);
     logger_.setDebugLevel(utl::GRT, "overflowcheck", 1);
+    logger_.setDebugLevel(utl::GRT, "dirtylistcheck", 1);
     graph_.init(kXGrid, kYGrid, 2, &logger_);
     graph_.initCap3D();
     graph_.InitLastUsage(1);
@@ -292,6 +366,43 @@ TEST_F(Graph2DTest, InitAndClearDiscardOldCoordinates)
   EXPECT_TRUE(graph_.usedGridsMatchUsage());
 }
 
+TEST_F(Graph2DTest, SameExtentInitDiscardsResetFlagsAndAllowsRequeueing)
+{
+  graph_.updateEstUsageH(1, 1, &net_, 2);
+  graph_.updateEstUsageV(2, 2, &net_, 3);
+  graph_.addUsageH(1, 1, 4);
+  graph_.addUsageV(2, 2, 5);
+  int max_adj = 0;
+  graph_.updateCongestionHistory(1, 20, false, max_adj);
+  ASSERT_EQ(Graph2DTestPeer::estimateCount(graph_), 2u);
+  ASSERT_EQ(Graph2DTestPeer::historyCount(graph_), 2u);
+
+  graph_.init(kXGrid, kYGrid, 2, &logger_);
+  ASSERT_EQ(Graph2DTestPeer::estimateCount(graph_), 0u);
+  ASSERT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
+  Graph2D fresh;
+  fresh.init(kXGrid, kYGrid, 2, &logger_);
+  Graph2DTestPeer::expectSameState(graph_, fresh);
+
+  graph_.updateEstUsageH(1, 1, &net_, 1);
+  graph_.updateEstUsageV(2, 2, &net_, 1);
+  graph_.addUsageH(1, 1, 2);
+  graph_.addUsageV(2, 2, 2);
+  graph_.updateCongestionHistory(1, 20, false, max_adj);
+  ASSERT_EQ(Graph2DTestPeer::estimateCount(graph_), 2u);
+  ASSERT_EQ(Graph2DTestPeer::historyCount(graph_), 2u);
+  EXPECT_EQ(graph_.getLastUsageH(1, 1), 2);
+  EXPECT_EQ(graph_.getLastUsageV(2, 2), 2);
+  graph_.InitEstUsage();
+  graph_.InitLastUsage(1);
+  EXPECT_EQ(graph_.getEstUsageH(1, 1), 0);
+  EXPECT_EQ(graph_.getEstUsageV(2, 2), 0);
+  EXPECT_EQ(graph_.getLastUsageH(1, 1), 0);
+  EXPECT_EQ(graph_.getLastUsageV(2, 2), 0);
+  EXPECT_EQ(Graph2DTestPeer::estimateCount(graph_), 0u);
+  EXPECT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
+}
+
 TEST_F(Graph2DTest, DeduplicatesAndReusesPendingListsAcrossManyRuns)
 {
   for (int run = 0; run < 2000; run++) {
@@ -413,9 +524,9 @@ TEST_F(Graph2DTest, ResetsHistoryAfterMembershipRemovalAndStressAccumulation)
     graph_.InitLastUsage(up_type);
     Graph2DTestPeer::resetHistory(reference, up_type);
     Graph2DTestPeer::expectSameState(graph_, reference);
-    // str_accu visits edges outside the used sets and reuses retained congCNT.
+    // History stays queued after membership removal and partial resets.
     graph_.str_accu(0);
-    reference.str_accu(0);
+    Graph2DTestPeer::accumulateStress(reference, 0);
     Graph2DTestPeer::expectSameState(graph_, reference);
     EXPECT_EQ(Graph2DTestPeer::historyCount(graph_), up_type == 1 ? 0u : 2u);
   }
@@ -445,7 +556,7 @@ TEST_F(Graph2DTest, CopiesEstimateAndHistoryResetState)
       copied.InitLastUsage(1);
       Graph2DTestPeer::resetHistory(reference, 1);
       copied.str_accu(0);
-      reference.str_accu(0);
+      Graph2DTestPeer::accumulateStress(reference, 0);
       Graph2DTestPeer::expectSameState(copied, reference);
       EXPECT_EQ(Graph2DTestPeer::estimateCount(copied), 0u);
       EXPECT_EQ(Graph2DTestPeer::historyCount(copied), 0u);
@@ -466,16 +577,17 @@ TEST_F(Graph2DTest, InitAndClearDiscardPendingResets)
     graph_.addUsageV(5, 3, 2);
     int max_adj = 0;
     graph_.updateCongestionHistory(1, 20, false, max_adj);
+    ASSERT_GT(Graph2DTestPeer::estimateCount(graph_), 0u);
+    ASSERT_GT(Graph2DTestPeer::historyCount(graph_), 0u);
     if (clear) {
       graph_.clear();
-      graph_.InitEstUsage();
-      graph_.InitLastUsage(1);
+    } else {
+      graph_.init(2, 2, 1, &logger_);
     }
-    graph_.init(2, 2, 1, &logger_);
+    ASSERT_EQ(Graph2DTestPeer::estimateCount(graph_), 0u);
+    ASSERT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
     graph_.InitEstUsage();
     graph_.InitLastUsage(1);
-    EXPECT_EQ(Graph2DTestPeer::estimateCount(graph_), 0u);
-    EXPECT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
     graph_.init(kXGrid, kYGrid, 2, &logger_);
     graph_.initCap3D();
   }
@@ -516,7 +628,7 @@ TEST_F(Graph2DTest, SparseResetsMatchFullGridAcrossRepeatedRuns)
     reference.updateCongestionHistory(up_type, 20, run % 2, reference_adj);
     EXPECT_EQ(actual_adj, reference_adj);
     graph_.str_accu(12);
-    reference.str_accu(12);
+    Graph2DTestPeer::accumulateStress(reference, 12);
     Graph2DTestPeer::expectSameState(graph_, reference);
     graph_.prepareForIncrementalRun();
     reference.prepareForIncrementalRun();
@@ -552,6 +664,60 @@ TEST_F(Graph2DTest, ResetListsRemainBoundedAcrossManyRuns)
     ASSERT_EQ(graph_.getLastUsageH(1, 1), 0);
     ASSERT_EQ(graph_.getLastUsageV(2, 2), 0);
   }
+}
+
+TEST_F(Graph2DTest, DirtyListCheckDetectsCorruptionBeforeReset)
+{
+  graph_.updateEstUsageH(1, 1, &net_, 1);
+  graph_.updateEstUsageV(1, 1, &net_, 1);
+  graph_.addUsageH(1, 1, 2);
+  graph_.addUsageV(1, 1, 2);
+  int max_adj = 0;
+  graph_.updateCongestionHistory(1, 20, false, max_adj);
+  using Fault = Graph2DTestPeer::DirtyListFault;
+  for (const auto fault : {Fault::MissingEntry,
+                           Fault::MissingFlag,
+                           Fault::UntrackedValue,
+                           Fault::DuplicateEntry,
+                           Fault::OutOfBounds}) {
+    SCOPED_TRACE(static_cast<int>(fault));
+    for (const auto direction :
+         {EdgeDirection::Horizontal, EdgeDirection::Vertical}) {
+      SCOPED_TRACE(static_cast<int>(direction));
+      for (const bool estimated : {false, true}) {
+        SCOPED_TRACE(estimated);
+        Graph2D corrupted;
+        corrupted.copyRoutingStateFrom(graph_, false);
+        Graph2DTestPeer::corruptDirtyList(
+            corrupted, estimated, direction, fault);
+        EXPECT_THROW(corrupted.InitEstUsage(), std::runtime_error);
+        EXPECT_THROW(corrupted.InitLastUsage(1), std::runtime_error);
+      }
+    }
+  }
+}
+
+TEST_F(Graph2DTest, DirtyListCheckAllowsQueuedZeroValues)
+{
+  graph_.updateEstUsageH(1, 1, &net_, 1);
+  graph_.updateEstUsageH(1, 1, &net_, -1);
+  graph_.updateEstUsageV(1, 1, &net_, 1);
+  graph_.updateEstUsageV(1, 1, &net_, -1);
+  graph_.addUsageH(1, 1, 1);
+  graph_.addUsageV(1, 1, 1);
+  int max_adj = 0;
+  graph_.updateCongestionHistory(1, 20, false, max_adj);
+  graph_.addUsageH(1, 1, -1);
+  graph_.addUsageV(1, 1, -1);
+  graph_.updateCongestionHistory(2, 0, false, max_adj);
+  ASSERT_EQ(Graph2DTestPeer::estimateCount(graph_), 2u);
+  ASSERT_EQ(Graph2DTestPeer::historyCount(graph_), 2u);
+  EXPECT_EQ(graph_.getLastUsageH(1, 1), 0);
+  EXPECT_EQ(graph_.getLastUsageV(1, 1), 0);
+  EXPECT_NO_THROW(graph_.InitEstUsage());
+  EXPECT_NO_THROW(graph_.InitLastUsage(1));
+  EXPECT_EQ(Graph2DTestPeer::estimateCount(graph_), 0u);
+  EXPECT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
 }
 
 }  // namespace
