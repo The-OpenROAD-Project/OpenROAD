@@ -129,9 +129,6 @@ regression_rule_test = rule(
             doc = "The OpenROAD executable, exec configuration.",
             executable = True,
             # Avoid building OpenROAD twice with "bazelisk test -c opt ..."
-            #
-            # OpenROAD is used to build more stuff in bazel-orfs,
-            # hence we want the "exec" (host) configuration.
             cfg = "exec",
         ),
         "openroad_sanitized": attr.label(
