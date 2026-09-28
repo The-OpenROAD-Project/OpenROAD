@@ -14,6 +14,9 @@
     "html-minifier-terser": "7.2.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": []
+    "onlyBuiltDependencies": [],
+    "patchedDependencies": {
+      "netlistsvg@1.0.2": "patches/netlistsvg@1.0.2.patch"
+    }
   }
 }

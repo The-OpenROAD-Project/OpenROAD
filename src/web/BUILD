@@ -93,7 +93,7 @@ js_library(
 # MODULE.bazel or this file, which CI's dist_tests cover.
 genrule(
     name = "bundle_manifest",
-    srcs = _APP_SRCS + [
+    srcs = _APP_SRCS + glob(["patches/*.patch"]) + [
         "package.json",
         "pnpm-lock.yaml",
         "src/collect_licenses.py",
@@ -428,6 +428,7 @@ exports_files(
     [
         "package.json",
         "pnpm-lock.yaml",
+        "src/openroad_skin.svg",
     ],
     visibility = ["//src/web/test:__pkg__"],
 )

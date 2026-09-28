@@ -1,0 +1,22 @@
+diff --git a/built/netlistsvg.bundle.js b/built/netlistsvg.bundle.js
+index 96cc1a2..ace8128 100755
+--- a/built/netlistsvg.bundle.js
++++ b/built/netlistsvg.bundle.js
+@@ -183,7 +183,7 @@ var Cell = /** @class */ (function () {
+                 width: Number(template[1]['s:width']),
+                 height: Number(this.getGenericHeight()),
+                 ports: inPorts.concat(outPorts),
+-                layoutOptions: { 'de.cau.cs.kieler.portConstraints': 'FIXED_POS' },
++                layoutOptions: { 'org.eclipse.elk.portConstraints': 'FIXED_POS' },
+                 labels: [],
+             };
+             this.addLabels(template, cell);
+@@ -204,7 +204,7 @@ var Cell = /** @class */ (function () {
+             width: nodeWidth,
+             height: Number(template[1]['s:height']),
+             ports: ports,
+-            layoutOptions: { 'de.cau.cs.kieler.portConstraints': 'FIXED_POS' },
++            layoutOptions: { 'org.eclipse.elk.portConstraints': 'FIXED_POS' },
+             labels: [],
+         };
+         this.addLabels(template, ret);

@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  netlistsvg@1.0.2:
+    hash: 72fdfcdb9b1fe921bb9c063472c6f99e80ac2f71e5826c1f8d49c8ad305c6ca5
+    path: patches/netlistsvg@1.0.2.patch
+
 importers:
 
   .:
@@ -19,7 +24,7 @@ importers:
         version: 1.9.4
       netlistsvg:
         specifier: 1.0.2
-        version: 1.0.2
+        version: 1.0.2(patch_hash=72fdfcdb9b1fe921bb9c063472c6f99e80ac2f71e5826c1f8d49c8ad305c6ca5)
       three:
         specifier: 0.160.0
         version: 0.160.0
@@ -547,7 +552,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  netlistsvg@1.0.2:
+  netlistsvg@1.0.2(patch_hash=72fdfcdb9b1fe921bb9c063472c6f99e80ac2f71e5826c1f8d49c8ad305c6ca5):
     dependencies:
       '@types/clone': 0.1.30
       '@types/json5': 0.0.30
