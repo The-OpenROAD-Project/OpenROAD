@@ -12,32 +12,7 @@ package(
 )
 
 cc_library(
-    name = "private_hdrs",
-    hdrs = [
-        "src/BalancerConnection.h",
-        "src/LoadBalancer.h",
-        "src/Worker.h",
-        "src/WorkerConnection.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//src/dst/test:__pkg__"],
-    deps = [
-        # TODO: we use headers provided by :dst, but that reveals cyclic dep
-        #":dst",
-        "@abseil-cpp//absl/base:core_headers",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.asio",
-        "@boost.smart_ptr",
-    ] + select({
-        "@platforms//os:macos": ["@boost.thread//:thread_mac"],
-        "//conditions:default": ["@boost.thread//:thread_posix"],
-    }),
-)
-
-cc_library(
-    name = "dst",
+    name = "dst_impl",
     srcs = [
         "src/BalancerConnection.cc",
         "src/Distributed.cc",
@@ -52,12 +27,19 @@ cc_library(
         "include/dst/Distributed.h",
         "include/dst/JobCallBack.h",
         "include/dst/JobMessage.h",
+        "src/BalancerConnection.h",
+        "src/LoadBalancer.h",
+        "src/Worker.h",
+        "src/WorkerConnection.h",
     ],
     includes = [
         "include",
+        "src",
+    ],
+    visibility = [
+        "//src/dst:__subpackages__",
     ],
     deps = [
-        ":private_hdrs",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
@@ -70,6 +52,25 @@ cc_library(
         "@platforms//os:macos": ["@boost.thread//:thread_mac"],
         "//conditions:default": ["@boost.thread//:thread_posix"],
     }),
+)
+
+cc_library(
+    name = "dst",
+    hdrs = [
+        "include/dst/BalancerJobDescription.h",
+        "include/dst/BroadcastJobDescription.h",
+        "include/dst/Distributed.h",
+        "include/dst/JobCallBack.h",
+        "include/dst/JobMessage.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dst_impl",
+        "@boost.asio",
+        "@boost.serialization",
+    ],
 )
 
 cc_library(
@@ -86,7 +87,7 @@ cc_library(
         "include",
     ],
     deps = [
-        ":dst",
+        ":dst_impl",
         "//:ord",
         "//src/utl",
         "@boost.stacktrace",
