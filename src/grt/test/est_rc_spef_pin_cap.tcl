@@ -10,8 +10,4 @@ global_route
 set spef_file [make_result_file est_rc_spef_pin_cap.spef]
 estimate_parasitics -global_routing -spef_file $spef_file
 
-set stream [open $spef_file r]
-set spef [read $stream]
-close $stream
-# *CAP line is "<idx> <node> <cap>"; *RES lines have 4 fields
-puts "u2:ZN *CAP: [regexp -line {^\d+ u2:ZN \S+$} $spef]"
+diff_files est_rc_spef_pin_cap.spefok $spef_file
