@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -14,6 +15,9 @@
 #include "odb/geom.h"
 
 namespace dpl {
+
+// Highest routing level tracked for pin layers and blocked layers
+inline constexpr int kMaxPinLevel = 3;
 
 class MasterEdge
 {
@@ -43,6 +47,9 @@ class Master
   void setTopPowerType(int top_pwr);
   void setDbMaster(odb::dbMaster* db_master);
   odb::dbMaster* getDbMaster() const;
+  // Signal pin shapes in master coordinates, by routing level
+  void addPinShape(int level, const odb::Rect& rect);
+  const std::vector<odb::Rect>& getPinShapes(int level) const;
 
  private:
   odb::dbMaster* db_master_{nullptr};
@@ -51,6 +58,7 @@ class Master
   std::vector<MasterEdge> edges_;
   int bottom_pwr_{0};
   int top_pwr_{0};
+  std::array<std::vector<odb::Rect>, kMaxPinLevel + 1> pin_shapes_;
 };
 
 class Pin;
@@ -107,6 +115,7 @@ class Node
   odb::Rect getBBox() const;
   odb::dbBTerm* getBTerm() const;
   uint8_t getUsedLayers() const;
+  uint8_t getPinLayers() const;
 
   // setters
   void setId(int id);
@@ -131,6 +140,7 @@ class Node
   void addPin(Pin* pin);
   void setGroupId(int id);
   void addUsedLayer(int layer);
+  void addPinLayer(int layer);
 
   bool adjustCurrOrient(const odb::dbOrientType& newOrient);
 
@@ -166,6 +176,8 @@ class Node
   std::vector<Pin*> pins_;
   // used layers
   uint8_t used_layers_{0};
+  // layers with pin shapes
+  uint8_t pin_layers_{0};
 };
 
 class Group

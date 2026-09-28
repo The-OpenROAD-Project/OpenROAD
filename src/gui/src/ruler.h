@@ -60,7 +60,7 @@ class Ruler
 
 using Rulers = std::vector<std::unique_ptr<Ruler>>;
 
-class RulerDescriptor : public Descriptor
+class RulerDescriptor : public web::Descriptor
 {
  public:
   RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers);
@@ -69,16 +69,16 @@ class RulerDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(const std::any& object, Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 
   Properties getProperties(const std::any& object) const override;
   Editors getEditors(const std::any& object) const override;
   Actions getActions(const std::any& object) const override;
-  Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
-      const std::function<void(const Selected&)>& func) const override;
+      const std::function<void(const web::Selected&)>& func) const override;
 
  private:
   static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);

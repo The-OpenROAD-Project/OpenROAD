@@ -9,28 +9,28 @@
 
 #include "AbstractCugrRenderer.h"
 #include "grt/GRoute.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace grt {
 
 CugrRenderer::CugrRenderer()
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void CugrRenderer::drawAndPause(CugrDebugFrame frame)
 {
   frame_ = std::move(frame);
 
-  auto* gui = gui::Gui::get();
+  auto* gui = web::Gui::get();
   gui->status("CUGR: " + stageLabel(frame_.stage, frame_.iteration));
   gui->redraw();
   gui->pause();
 }
 
-void CugrRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void CugrRenderer::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   const int level = layer->getRoutingLevel();
   // setPen resets the width, so it goes before setPenWidth.

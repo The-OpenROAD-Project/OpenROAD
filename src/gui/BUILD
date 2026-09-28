@@ -17,67 +17,26 @@ package(
     features = ["layering_check"],
 )
 
+# The gui as a binary with no Qt has it: the Qt-free core, plus the entry
+# points answering that there is no gui to open.  A Qt build links :gui_qt
+# instead, which carries Qt's own versions of those, so nothing reachable
+# from :openroad-qt depends on this target.
 cc_library(
     name = "gui",
     srcs = [
-        "src/bufferTreeDescriptor.h",
-        "src/dbDescriptors.cpp",
-        "src/dbDescriptors.h",
-        "src/descriptor_registry.cpp",
-        "src/heatMapCore.cpp",
-        "src/heatMapPinDensity.cpp",
-        "src/heatMapPinDensity.h",
-        "src/heatMapPlacementDensity.cpp",
-        "src/heatMapPlacementDensity.h",
-        "src/init_descriptors.cpp",
-        "src/staDescriptors.cpp",
-        "src/staDescriptors.h",
-        ":tcl",
+        "src/makeGui.cpp",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
-        "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
-        "include/gui/heatMap.h",
     ],
     includes = [
         "include",
         "src",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.algorithm",
-        "@boost.multi_array",
-        "@tcl_lang//:tcl",
-    ],
-)
-
-# CLI-only stub implementations of GUI dispatch symbols (Gui::enabled,
-# startGui, initGui, Painter::getOptions, ...). Split out of :gui so
-# that :openroad-qt — which links //src/gui:gui_qt for the real Qt
-# implementations and pulls :gui transitively via :ui modules — does
-# NOT also link the stub. With --allow-multiple-definition in effect
-# (LLVM toolchain default), having both stub and gui_qt definitions
-# present at link time causes the stub to silently win for symbols
-# like Gui::enabled, and the GUI never opens at runtime.
-#
-# Only the CLI :openroad binary (and :_openroadpy.so) need to dep
-# :gui_stub explicitly to satisfy those undefined references in :gui's
-# heatMapCore.cpp et al.
-cc_library(
-    name = "gui_stub",
-    srcs = [
-        "src/bufferTreeDescriptor.h",
-        "src/stub.cpp",
-    ],
-    deps = [
-        ":gui",
-        "//src/odb/src/db",
+        "//src/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -97,9 +56,10 @@ QT_GUI_PLATFORMS = {
             include = [
                 "src/*.cpp",
             ],
+            # makeGui.cpp answers the entry points for a build with no Qt;
+            # this target has gui.cpp's versions of them.
             exclude = [
-                "src/stub.cpp",
-                "src/stub_heatMap.cpp",
+                "src/makeGui.cpp",
             ],
         ) + [
             ":gui_swig",
@@ -107,9 +67,7 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
-            "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
-            "include/gui/heatMap.h",
         ],
         defines = select({
             "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
@@ -132,7 +90,7 @@ QT_GUI_PLATFORMS = {
             "//src/odb/src/defout",
             "//src/sta:opensta_lib",
             "//src/utl",
-            "//third-party/gif-h:gif_h",
+            "//src/web:core",
             "@abseil-cpp//absl/synchronization",
             "@boost.algorithm",
             "@boost.geometry",

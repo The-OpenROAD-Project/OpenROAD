@@ -24,10 +24,21 @@ single_version_override(
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
+
+# Host-space FFTW plans for the opt-in GPU build's KokkosFFT (see
+# bazel/gpu/system_gpu.bzl). Only reachable through @kokkos_fft, so it is
+# built from source solely under --config=gpu (the hermetic toolchain
+# cannot link a host-distribution libfftw3); CPU builds pay nothing beyond
+# the lockfile entry.
+bazel_dep(name = "fftw", version = "3.3.10")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_bison", version = "0.3.1")
+bazel_dep(name = "rules_bison", version = "0.4")
 bazel_dep(name = "rules_cc", version = "0.2.18")
-bazel_dep(name = "rules_flex", version = "0.3.1")
+bazel_dep(name = "rules_flex", version = "0.4")
+
+# rules_bison/rules_flex only require rules_m4 0.2.x, whose default m4
+# toolchain does not build here; 0.3 does.
+bazel_dep(name = "rules_m4", version = "0.3")
 
 # rules_go is transitive (or-tools, gazelle, grpc-java, rules_buf). The
 # MVS-selected 0.53.0 references the top-level CcInfo global that Bazel 9
@@ -150,7 +161,11 @@ single_version_override(
 # carries the upstream fix (BCR #7989).
 single_version_override(
     module_name = "gawk",
-    version = "5.3.2.bcr.7",
+    patch_strip = 1,
+    patches = [
+        "//bazel/gawk-patches:0001-load-environ-no-mutation.patch",
+    ],
+    version = "5.4.0.bcr.1",
 )
 
 bazel_dep(name = "git", version = "2.54.0")
@@ -178,6 +193,7 @@ single_version_override(
     version = "1.4.21.bcr.4",
 )
 
+bazel_dep(name = "libdeflate", version = "1.26")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
 
@@ -230,13 +246,25 @@ git_override(
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
 bazel_dep(name = "llvm", version = "0.8.18", dev_dependency = True)
 
+# Declare Bazel's built-in ThinLTO scoping features
+# (thin_lto_linkstatic_tests_use_shared_nonlto_backends and the all-linkstatic
+# variant) in the hermetic-llvm toolchain so --features=... can enable them;
+# Bazel silently ignores requested features the toolchain does not know.
+# --config=opt uses the tests variant to keep cc_test binaries off per-binary LTO.
+# Drop this override once hermetic-llvm declares them upstream.
+single_version_override(
+    module_name = "llvm",
+    patch_strip = 1,
+    patches = [
+        "//bazel/llvm-patches:0001-declare-thin-lto-shared-nonlto-backend-features.patch",
+    ],
+)
+
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
 bazel_dep(name = "bant", version = "0.3.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
-bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
-bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 
 # kepler-formal: the LEC engine the hierarchy conformance tests shell out to.
 # Never linked (GPL-3.0 vs BSD-3-Clause); built here only so the tests get the
@@ -275,9 +303,9 @@ bazel_dep(name = "kepler-formal", version = "1.0.0", dev_dependency = True)
 #     silently pin every other consumer of fmt.
 #   - zlib 1.3.2, likewise graph-wide, and into the shipped binaries.
 #
-# archive_override rather than git_override for the reason given for @orfs
-# below: a non-registry override is fetched during resolution of every bazel
-# command, so git_override makes every build need git access to github.com.
+# archive_override rather than git_override: a non-registry override is
+# fetched during resolution of every bazel command, so git_override makes
+# every build need git access to github.com.
 archive_override(
     module_name = "kepler-formal",
     integrity = "sha256-1ap3fiGjlWaZSG/kHAdxFpmgrTcMhqEmg6i1+1zssZY=",
@@ -299,59 +327,10 @@ archive_override(
 bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
 bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 
-# ORFS
-bazel_dep(name = "bazel-orfs", dev_dependency = True)
-bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
-
-BAZEL_ORFS_COMMIT = "551d4c72749411c4b1168c0d12322a9c34817c91"
-
-BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
-git_override(
-    module_name = "bazel-orfs",
-    commit = BAZEL_ORFS_COMMIT,
-    remote = BAZEL_ORFS_REMOTE,
-)
-
-git_override(
-    module_name = "bazel-orfs-verilog",
-    commit = BAZEL_ORFS_COMMIT,
-    remote = BAZEL_ORFS_REMOTE,
-    strip_prefix = "verilog",
-)
-
-# @orfs marks non-root-only directives (qt-bazel/yosys-slang git_overrides,
-# orfs.default(), toolchain registration) as dev_dependency, so they are no-ops
-# here; its bazel-orfs bazel_dep is non-dev so @orfs//flow can load
-# @bazel-orfs//:openroad.bzl when consumed non-root.
-#
-# Use archive_override (HTTPS tarball) rather than git_override so the
-# build resolves on networks that block direct git access to github.com.
-ORFS_COMMIT = "afad87da8d1ebd6ef1bc94288b4204420975a549"
-
-bazel_dep(name = "orfs", dev_dependency = True)
-archive_override(
-    module_name = "orfs",
-    sha256 = "3b61b0cb106bb64d5cb453dff404a346b29a16bf3614166532ffa6ef733e1f65",
-    strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
-    urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
-)
-
-bazel_dep(name = "yosys", version = "0.64", dev_dependency = True)
-bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
-archive_override(
-    module_name = "yosys-slang",
-    sha256 = "34198f2ed7b2d3175c3ce3c9fb1c6c91f28dbcfe531d97b91d6b12c48431bdef",
-    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
-    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
-)
-
 # --- Extensions ---
 
 register_toolchains(
     "@llvm//toolchain:all",
-    "@rules_verilator//verilator:verilator_toolchain",
     dev_dependency = True,
 )
 
@@ -427,6 +406,18 @@ pip.parse(
 )
 use_repo(pip, "openroad-pip")
 
+# Black gets its own hub: tclint 0.7.0 pins pathspec==0.11.2 and black >= 26
+# requires pathspec >= 1.0.0, so they cannot resolve together.
+pip.parse(
+    extra_pip_args = [
+        "--index-url=https://pypi.org/simple",
+    ],
+    hub_name = "openroad-black-pip",
+    python_version = "3.13",
+    requirements_lock = "//bazel:requirements_black_lock_3_13.txt",
+)
+use_repo(pip, "openroad-black-pip")
+
 # sv-lang pulls in rules_pycross, whose toolchain extension fails on Python
 # 3.8 (transitively registered via or-tools -> pybind11_abseil, dropped
 # from rules_python 2.0.0's MINOR_MAPPING). pycross.configure_environments
@@ -452,15 +443,6 @@ npm.npm_translate_lock(
 )
 use_repo(npm, "npm")
 
-orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
-orfs.default(
-    # Use OpenROAD of this repo instead of the one bundled with @orfs
-    openroad = "//:openroad",
-    # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
-    # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
-    yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
-)
-
 # --- External archives ---
 
 # Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
@@ -478,6 +460,40 @@ alias(
 )
 """,
     path = "bazel/slang-compat",
+)
+
+# --- GPU build (opt-in, non-hermetic) ---
+#
+# System-installed Kokkos / KokkosFFT / CUDA toolkit for the opt-in GPU
+# build (--config=gpu), mirroring the CMake ENABLE_GPU flow. Install
+# prefixes come from the shell environment (KOKKOS_ROOT, KOKKOS_FFT_ROOT,
+# OPENROAD_CUDA_PATH); the CUDA arch is read from the Kokkos install
+# (OPENROAD_CUDA_ARCH is only consulted when it cannot be). A missing or
+# unusable install yields a stub repo whose targets fail at analysis with
+# the reason, so the default CPU build, CI and `bazel query` never notice.
+# Registered non-dev because //src/gpl/BUILD loads @cuda_local//:defs.bzl
+# and @kokkos//:defs.bzl unconditionally (via bazel/gpu/copts.bzl).
+system_prefix_repo = use_repo_rule("//bazel/gpu:system_gpu.bzl", "system_prefix_repo")
+
+system_prefix_repo(
+    name = "kokkos",
+    default_path = "/usr/local/kokkos-libcxx",
+    env_var = "KOKKOS_ROOT",
+    flavor = "kokkos",
+)
+
+system_prefix_repo(
+    name = "kokkos_fft",
+    default_path = "/usr/local/kokkos-fft-libcxx",
+    env_var = "KOKKOS_FFT_ROOT",
+    flavor = "kokkos_fft",
+)
+
+system_prefix_repo(
+    name = "cuda_local",
+    default_path = "/usr/local/cuda-12.8",
+    env_var = "OPENROAD_CUDA_PATH",
+    flavor = "cuda_local",
 )
 
 # --- Overrides ---

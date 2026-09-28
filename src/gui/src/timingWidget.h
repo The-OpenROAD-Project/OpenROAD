@@ -77,7 +77,7 @@ class TimingWidget : public QDockWidget
 
  signals:
   void highlightTimingPath(TimingPath* timing_path);
-  void inspect(const Selected& selection);
+  void inspect(const web::Selected& selection);
   void setCommand(const QString& command);
 
  public slots:

@@ -335,6 +335,9 @@ class GlobalRouter
   // estimation is electrically connected (correct-by-construction).
   void addImplicitVias(GRoute& route);
 
+  // Remove duplicate vias from ODB guides, including reversed layer pairs.
+  void dedupViaSegments(GRoute& route);
+
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,
@@ -606,6 +609,10 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  // Whether the congestion of the current routes was accepted, decided
+  // when they were routed; later changes to allow_congestion_ do not
+  // withdraw it.
+  bool congestion_accepted_{false};
   bool incremental_congestion_report_pending_{false};
   // Block property recording which engine produced the persisted guides.
   static constexpr char kUseCugrProperty[] = "grt_use_cugr";

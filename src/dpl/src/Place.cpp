@@ -381,6 +381,7 @@ void Opendp::place()
   std::ranges::sort(sorted_cells, CellPlaceOrderLess(core_, this));
 
   int count = 0;
+  total_moves_ = 0;
   for (Node* cell : sorted_cells) {
     if (iterative_debug_) {
       count++;
@@ -391,23 +392,28 @@ void Opendp::place()
                       100.0 * count / sorted_cells.size());
     }
 
+    const odb::Point pos_before = getDplLocation(cell);
     bool diamond_move = diamondMove(cell);
     bool rip_up_move = false;
 
     if (!diamond_move) {
       // TODO: this is non-deteministic due to std::set<Node*>,
       // and experiments show no legalization for failed diamond searches.
+      // ripUpAndReplace() counts its own moves: it relocates the target cell
+      // plus every surrounding cell it rips up, and those neighbors were
+      // already placed (and counted) by an earlier iteration of this loop.
       rip_up_move = ripUpAndReplace(cell);
       if (!rip_up_move) {
         failed_rip_up++;
       }
+    } else if (getDplLocation(cell) != pos_before) {
+      total_moves_++;
     }
     diamond_move == 1 ? success_diamond_move++ : failed_diamond_move++;
 
     if (iterative_debug_) {
-      odb::Point initial_location = getOdbLocation(cell);
       odb::Point final_location = getDplLocation(cell);
-      float len = odb::Point::squaredDistance(initial_location, final_location);
+      float len = odb::Point::squaredDistance(pos_before, final_location);
       if (len > 0) {
         report_placement(cell, diamond_move, rip_up_move);
       }
@@ -681,6 +687,21 @@ void Opendp::deepIterativePause(const std::string& message, bool only_print)
 
 bool Opendp::ripUpAndReplace(Node* target_cell)
 {
+  // A cell can be relocated several times here: once as the target cell, and
+  // again as a surrounding cell of any later target.  Count every relocation,
+  // the way the negotiation legalizer counts each place() call, instead of
+  // once per cell.  unplaceCell() leaves the cell's coordinates alone, so
+  // sampling the position right before diamondMove() still reflects where the
+  // cell sat before the rip-up.
+  auto move_and_count = [this](Node* cell) {
+    const odb::Point pos_before = getDplLocation(cell);
+    const bool placed = diamondMove(cell);
+    if (getDplLocation(cell) != pos_before) {
+      total_moves_++;
+    }
+    return placed;
+  };
+
   const GridPt taget_cell_pixel = legalGridPt(target_cell, true);
   // magic number alert
   const GridY boundary_margin{3};
@@ -717,7 +738,7 @@ bool Opendp::ripUpAndReplace(Node* target_cell)
 
   // place target cell
   bool success = true;
-  if (!diamondMove(target_cell)) {
+  if (!move_and_count(target_cell)) {
     deepIterativePause(
         "failed diamondMove() inside ripUpAndReplace() for target cell "
             + target_cell->name(),
@@ -737,7 +758,7 @@ bool Opendp::ripUpAndReplace(Node* target_cell)
         + around_cell->name());
 
     if (target_cell->inGroup() == around_cell->inGroup()
-        && !diamondMove(around_cell)) {
+        && !move_and_count(around_cell)) {
       deepIterativePause(
           "failed diamondMove() inside ripUpAndReplace() for surrounding cell "
               + around_cell->name(),

@@ -54,6 +54,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
@@ -3213,6 +3214,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*skip_size_down=*/false,
         /*skip_buffering=*/false,
         /*skip_buffer_removal=*/false,
+        /*skip_buffer_to_inverters=*/false,
         /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
         /*skip_vt_swap=*/true,    // post-placement optimization
         /*skip_crit_vt_swap=*/true);
@@ -4533,6 +4535,51 @@ float Resizer::portFanoutLoad(sta::LibertyPort* port) const
   return 0.0;
 }
 
+bool Resizer::checkFanout(const sta::Pin* drvr_pin,
+                          const sta::Mode* mode,
+                          const sta::MinMax* min_max,
+                          // Return values.
+                          float& fanout,
+                          float& max_fanout,
+                          float& fanout_slack) const
+{
+  sta_->checkFanout(drvr_pin, mode, min_max, fanout, max_fanout, fanout_slack);
+
+  // Preserve the library and SDC fanout-load semantics when a constraint
+  // exists. The default is an RSZ-only load-pin backstop.
+  if (min_max != sta::MinMax::max() || max_fanout < sta::INF) {
+    return false;
+  }
+
+  // Match the pins OpenSTA excludes from fanout checking.
+  if (!network_->isDriver(drvr_pin) || sta_->isConstant(drvr_pin, mode)
+      || mode->sdc()->isDisabledConstraint(drvr_pin)
+      || mode->clkNetwork()->isIdealClock(drvr_pin)) {
+    return false;
+  }
+
+  const int load_count = fanoutLoadCount(drvr_pin);
+  if (load_count == 0) {
+    return false;
+  }
+
+  fanout = load_count;
+  max_fanout = kDefaultMaxFanout;
+  fanout_slack = max_fanout - fanout;
+  return true;
+}
+
+int Resizer::fanoutLoadCount(const sta::Pin* drvr_pin) const
+{
+  sta::PinSeq loads;
+  sta::PinSeq drvrs;
+  sta::PinSet visited_drvrs(db_network_);
+  sta::FindNetDrvrLoads visitor(
+      drvr_pin, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin, visitor);
+  return static_cast<int>(loads.size());
+}
+
 float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            const sta::RiseFall* rf,
                            float load_cap,
@@ -5279,6 +5326,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
+                          bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
@@ -5300,6 +5348,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
+  config.skip_buffer_to_inverters = skip_buffer_to_inverters;
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
@@ -6487,6 +6536,9 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   }
   if (lower == "reroute") {
     return MoveType::kReroute;
+  }
+  if (lower == "buffer_to_inverters") {
+    return MoveType::kBufferToInverters;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }

@@ -1,0 +1,13 @@
+# Black lives in its own pip hub, separate from bazel/requirements.in.
+# tclint 0.7.0 hard-pins pathspec==0.11.2 while black >= 26 requires
+# pathspec >= 1.0.0, so the two cannot share one resolution.
+#
+# Compiled into bazel/requirements_black_lock_3_13.txt via
+#   bazel run //bazel:requirements_black.update
+#
+# This version must match the psf/black action pinned in
+# .github/workflows/black.yaml and the black pin in
+# .github/workflows/github-actions-on-master-push.yml, otherwise //:fix_lint
+# and CI disagree on how the same file should be formatted. Update them
+# together.
+black==26.5.1

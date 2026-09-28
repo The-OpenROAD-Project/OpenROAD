@@ -106,6 +106,10 @@ ALL_TESTS = [
     "write_verilog9_hier",
 ]
 
+PASSFAIL_TESTS = [
+    "check_ip_liberty_pins",
+]
+
 filegroup(
     name = "regression_resources",
     srcs = [
@@ -340,16 +344,18 @@ filegroup(
             ],
         }.get(test_name, []),
     )
-    for test_name in ALL_TESTS
+    for test_name in ALL_TESTS + PASSFAIL_TESTS
 ]
 
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )
-    for test_name in ALL_TESTS
+    for test_name in ALL_TESTS + PASSFAIL_TESTS
 ]
 
 cc_test(
@@ -596,7 +602,7 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
-        "cpp/TestDbSta_StalePrevPath.v",
+        "cpp/TestDbSta_DriverInputPortAcrossNetlistEdits.v",
     ],
     deps = [
         "//src/dbSta:dbNetwork",

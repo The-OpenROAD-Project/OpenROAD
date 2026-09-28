@@ -39,7 +39,7 @@
 
 namespace gui {
 
-class GuiChart : public Chart
+class GuiChart : public web::Chart
 {
  public:
   GuiChart(QChart* chart,
@@ -52,7 +52,7 @@ class GuiChart : public Chart
   void addPoint(double x, const std::vector<double>& ys) override;
   void clearPoints() override;
 
-  void addVerticalMarker(double x, const Painter::Color& color) override;
+  void addVerticalMarker(double x, const web::Painter::Color& color) override;
 
  private:
   struct Series
@@ -175,7 +175,8 @@ void GuiChart::clearPoints()
   x_max_ = std::numeric_limits<double>::lowest();
 }
 
-void GuiChart::addVerticalMarker(const double x, const Painter::Color& color)
+void GuiChart::addVerticalMarker(const double x,
+                                 const web::Painter::Color& color)
 {
   QLineSeries* vline = new QLineSeries();
   QValueAxis* y_axis = series_[0].y_axis;
@@ -273,9 +274,9 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   setWidget(container);
 }
 
-Chart* ChartsWidget::addChart(const std::string& name,
-                              const std::string& x_label,
-                              const std::vector<std::string>& y_labels)
+web::Chart* ChartsWidget::addChart(const std::string& name,
+                                   const std::string& x_label,
+                                   const std::vector<std::string>& y_labels)
 {
   QChart* chart = new QChart;
   QChartView* view = new QChartView(chart);

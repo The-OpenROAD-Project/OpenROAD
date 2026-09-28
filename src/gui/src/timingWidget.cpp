@@ -424,7 +424,7 @@ void TimingWidget::focusNets(const QModelIndex& selected_index,
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
   std::vector<odb::dbNet*> nets = selected_path->getNets(path_section);
 
-  Gui* gui = Gui::get();
+  web::Gui* gui = web::Gui::get();
   for (odb::dbNet* net : nets) {
     gui->addFocusNet(net);
   }
@@ -763,7 +763,7 @@ void TimingWidget::detailRowDoubleClicked(const QModelIndex& index)
   }
 
   auto* node = model->getNodeAt(index);
-  auto* gui = Gui::get();
+  auto* gui = web::Gui::get();
 
   if (auto iterm = node->getPinAsITerm()) {
     emit inspect(gui->makeSelected(iterm));
@@ -864,11 +864,11 @@ void TimingWidget::modelWasReset()
 
 void TimingWidget::toggleRenderer(bool visible)
 {
-  if (!Gui::enabled() || path_renderer_ == nullptr) {
+  if (!web::Gui::enabled() || path_renderer_ == nullptr) {
     return;
   }
 
-  auto gui = Gui::get();
+  auto gui = web::Gui::get();
   if (visible) {
     gui->registerRenderer(path_renderer_.get());
   } else {

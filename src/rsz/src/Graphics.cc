@@ -4,15 +4,15 @@
 #include "Graphics.hh"
 
 #include "BufferedNet.hh"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace rsz {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void Graphics::setNet(odb::dbNet* net)
@@ -43,16 +43,16 @@ void Graphics::subdivide(const odb::Line& line)
   }
   lines_.emplace_back(line);
   if (stop_on_subdivide_step_) {
-    gui::Gui::get()->redraw();
-    gui::Gui::get()->pause();
+    web::Gui::get()->redraw();
+    web::Gui::get()->pause();
   }
 }
 
 void Graphics::subdivideDone()
 {
   if (!subdivide_ignore_) {
-    gui::Gui::get()->redraw();
-    gui::Gui::get()->pause();
+    web::Gui::get()->redraw();
+    web::Gui::get()->pause();
   }
 }
 
@@ -64,8 +64,8 @@ void Graphics::repairNetStart(const BufferedNetPtr& bnet, odb::dbNet* net)
   }
   if (!repair_net_ignore_) {
     bnet_ = bnet;
-    gui::Gui::get()->redraw();
-    gui::Gui::get()->pause();
+    web::Gui::get()->redraw();
+    web::Gui::get()->pause();
   }
 }
 
@@ -73,22 +73,22 @@ void Graphics::makeBuffer(odb::dbInst* inst)
 {
   if (!repair_net_ignore_) {
     buffers_.push_back(inst);
-    gui::Gui::get()->redraw();
-    gui::Gui::get()->pause();
+    web::Gui::get()->redraw();
+    web::Gui::get()->pause();
   }
 }
 
 void Graphics::repairNetDone()
 {
   if (!repair_net_ignore_) {
-    gui::Gui::get()->redraw();
-    gui::Gui::get()->pause();
+    web::Gui::get()->redraw();
+    web::Gui::get()->pause();
   }
   bnet_.reset();
   buffers_.clear();
 }
 
-void Graphics::drawBNet(const BufferedNetPtr& bnet, gui::Painter& painter)
+void Graphics::drawBNet(const BufferedNetPtr& bnet, web::Painter& painter)
 {
   switch (bnet->type()) {
     case BufferedNetType::via: {
@@ -118,17 +118,17 @@ void Graphics::drawBNet(const BufferedNetPtr& bnet, gui::Painter& painter)
   }
 }
 
-void Graphics::drawObjects(gui::Painter& painter)
+void Graphics::drawObjects(web::Painter& painter)
 {
-  painter.setPen(gui::Painter::kRed, true);
+  painter.setPen(web::Painter::kRed, true);
   for (const odb::Line& line : lines_) {
     painter.drawLine(line.pt0(), line.pt1());
   }
 
   if (bnet_) {
-    painter.setPenAndBrush(gui::Painter::kPink, true);
+    painter.setPenAndBrush(web::Painter::kPink, true);
     drawBNet(bnet_, painter);
-    painter.setPenAndBrush(gui::Painter::kGreen, true);
+    painter.setPenAndBrush(web::Painter::kGreen, true);
     for (odb::dbInst* buffer : buffers_) {
       painter.drawRect(buffer->getBBox()->getBox());
     }

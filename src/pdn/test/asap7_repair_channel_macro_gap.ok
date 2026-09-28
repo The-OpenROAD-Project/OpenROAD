@@ -1,0 +1,119 @@
+[INFO ODB-0227] LEF file: asap7_data/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7_data/repair_channel_macro_gap_cells.lef, created 4 library cells
+[INFO ODB-0227] LEF file: asap7_data/element.lef, created 1 library cells
+[INFO ODB-0128] Design: MockArray
+[INFO ODB-0131]     Created 2981 components and 40202 component-terminals.
+[INFO PDN-0001] Inserting grid: top
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[0\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[1\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[2\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[3\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[4\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[5\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[6\].ces_col\[7\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[0\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[1\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[2\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[3\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[4\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[5\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[6\].ces
+[INFO PDN-0001] Inserting grid: ElementGrid - ces_row\[7\].ces_col\[7\].ces
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (20.9400 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (20.9400 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (23.1000 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (23.1000 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (25.2600 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (25.2600 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (38.2200 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (38.2200 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (40.3800 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (40.3800 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (42.5400 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (42.5400 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (55.5000 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (55.5000 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (57.6600 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (57.6600 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (59.8200 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (59.8200 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (72.7800 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (72.7800 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (74.9400 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (74.9400 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (77.1000 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (77.1000 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (90.0600 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (90.0600 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (92.2200 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (92.2200 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (94.3800 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (94.3800 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (107.3400 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (107.3400 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (109.5000 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (109.5000 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (111.6600 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (111.6600 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (124.6200 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (124.6200 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (126.7800 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (126.7800 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (128.9400 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (128.9400 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (141.9000 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (141.9000 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (144.0600 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (144.0600 um, 161.3020 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (146.2200 um, 14.4220 um) for VSS
+[WARNING PDN-0195] Removing 6 via(s) between M5 and M6 at (146.2200 um, 161.3020 um) for VSS
+No differences found.
