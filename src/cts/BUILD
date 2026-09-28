@@ -67,7 +67,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "src",
     ],
     deps = [
         ":cts_impl",
