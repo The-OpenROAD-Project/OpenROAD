@@ -119,19 +119,11 @@ add_custom_command(
   OUTPUT ${REPORT_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_report_assets.py
     --output ${REPORT_ASSETS_CPP}
-    --vendor-css ${WEB_BUNDLE_DIR}/vendor.min.css
-    --theme-dark ${WEB_BUNDLE_DIR}/gl-dark.min.css
-    --theme-light ${WEB_BUNDLE_DIR}/gl-light.min.css
-    --app-css ${WEB_BUNDLE_DIR}/app.min.css
     --js ${WEB_BUNDLE_DIR}/report.min.js
   DEPENDS
     src/embed_report_assets.py
     src/embedded_blob.py
     ${WEB_DIST_STAMP}
-    ${WEB_BUNDLE_DIR}/vendor.min.css
-    ${WEB_BUNDLE_DIR}/gl-dark.min.css
-    ${WEB_BUNDLE_DIR}/gl-light.min.css
-    ${WEB_BUNDLE_DIR}/app.min.css
     ${WEB_BUNDLE_DIR}/report.min.js
   COMMENT "Generating report_assets.cpp"
 )

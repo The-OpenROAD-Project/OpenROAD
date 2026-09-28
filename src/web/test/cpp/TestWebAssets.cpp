@@ -18,14 +18,9 @@
 namespace web {
 namespace {
 
-// The report's blobs live outside the served asset table -- they are inlined
-// into a saved timing report, never handed out over HTTP -- so the tests below
-// have to reach them by name.
+// The report's blob lives outside the served asset table, so the tests below
+// reach it by name.
 const std::pair<const char*, const EmbeddedAsset*> kReportAssets[] = {
-    {"kReportVendorCSS", &kReportVendorCSS},
-    {"kReportThemeDark", &kReportThemeDark},
-    {"kReportThemeLight", &kReportThemeLight},
-    {"kReportAppCSS", &kReportAppCSS},
     {"kReportJS", &kReportJS},
 };
 

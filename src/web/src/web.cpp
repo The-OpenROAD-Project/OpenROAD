@@ -1699,6 +1699,21 @@ WebServer::~WebServer()
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
 }
 
+// Every <style> block of the served page and the line picking its starting
+// theme, so a saved report keeps the viewer's cascade.
+static std::string servedPageStyles(utl::Logger* logger)
+{
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  const std::string html = page ? assetText(*page) : std::string();
+  const size_t begin = html.find("<style");
+  const size_t end = html.find("</head>");
+  if (begin == std::string::npos || end == std::string::npos || end < begin) {
+    logger->error(
+        utl::WEB, 111, "The embedded viewer page has no stylesheets to copy.");
+  }
+  return html.substr(begin, end - begin);
+}
+
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
   static const char kChars[]
@@ -1734,10 +1749,7 @@ void WebServer::saveReport(const std::string& filename,
 
   // Inflated before the file is opened, so a blob that fails to inflate
   // leaves no half-written report behind.
-  const std::string vendor_css = assetText(kReportVendorCSS);
-  const std::string theme_dark = assetText(kReportThemeDark);
-  const std::string theme_light = assetText(kReportThemeLight);
-  const std::string app_css = assetText(kReportAppCSS);
+  const std::string report_styles = servedPageStyles(logger_);
   const std::string report_js = assetText(kReportJS);
   // The report carries the bundled libraries' code, so their licences too.
   const EmbeddedAsset* licenses_asset
@@ -1914,26 +1926,8 @@ void WebServer::saveReport(const std::string& filename,
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-)" <<  // The same four stylesheets index.html carries, in the same order: the
-       // themes have to beat goldenlayout-base, and style.css ends with a block
-       // that has to beat the themes.  See src/vendor.css.
-      R"(<style>
-)" << vendor_css
+)" << report_styles
       << R"(
-</style>
-<style id="gl-theme-dark">
-)" << theme_dark
-      << R"(
-</style>
-<style id="gl-theme-light">
-)" << theme_light
-      << R"(
-</style>
-<style>
-)" << app_css
-      << R"(
-</style>
-<script>document.getElementById('gl-theme-light').disabled = true;</script>
 </head>
 <body>
 <div id="menu-bar"></div>

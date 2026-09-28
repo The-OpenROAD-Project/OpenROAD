@@ -22,13 +22,9 @@ package(default_visibility = ["//src/web:__subpackages__"])
 _BUNDLES = [
     "SOURCES.sha256",
     "THIRD_PARTY_LICENSES.txt",
-    "app.min.css",
     "app.min.js",
-    "gl-dark.min.css",
-    "gl-light.min.css",
     "index.min.html",
     "report.min.js",
-    "vendor.min.css",
 ]
 
 write_source_files(

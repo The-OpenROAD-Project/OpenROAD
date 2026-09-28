@@ -19,6 +19,7 @@
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "web/web.h"
+#include "web_assets.h"
 
 namespace web {
 namespace {
@@ -139,6 +140,26 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
   // leaflet's stylesheet, bundled into the report's own <style> block.
   EXPECT_TRUE(contains(html, ".leaflet-pane"));
+}
+
+// The report copies the served page's stylesheets, so the two cascades cannot
+// drift apart.
+TEST_F(SaveReportTest, UsesTheServedPagesStylesheets)
+{
+  const std::string path = tempHtml("page_styles");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  ASSERT_NE(page, nullptr);
+  const std::string index = assetText(*page);
+  const size_t begin = index.find("<style");
+  const size_t end = index.find("</head>");
+  ASSERT_NE(begin, std::string::npos);
+  ASSERT_NE(end, std::string::npos);
+  EXPECT_TRUE(contains(html, index.substr(begin, end - begin)));
+  // golden-layout's base sheet, which the viewer needs as much as leaflet's.
+  EXPECT_TRUE(contains(html, ".lm_root"));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)

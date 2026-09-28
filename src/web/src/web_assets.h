@@ -28,12 +28,8 @@ struct EmbeddedAsset
 // or nullptr if not found.
 const EmbeddedAsset* findEmbeddedAsset(std::string_view path);
 
-// The saved report's stylesheets and script (report_assets.cpp).  Not in the
-// served table: saveReport() inflates them into the file it writes.
-extern const EmbeddedAsset kReportVendorCSS;
-extern const EmbeddedAsset kReportThemeDark;
-extern const EmbeddedAsset kReportThemeLight;
-extern const EmbeddedAsset kReportAppCSS;
+// The saved report's script (report_assets.cpp).  Not in the served table:
+// saveReport() inflates it into the file it writes.
 extern const EmbeddedAsset kReportJS;
 
 // The asset's bytes, inflating it first if it is stored gzipped.  For a client

@@ -14,15 +14,11 @@ the OpenROAD process, and the viewer works on a machine with no network.
 | `index.min.html` | served as `/index.html`; carries all four stylesheets inline |
 | `app.min.js` | served as `/app.min.js`; the app plus every library it uses |
 | `report.min.js` | inlined into a saved timing report; leaves out elk, netlistsvg and three |
-| `vendor.min.css` | leaflet and golden-layout's base sheet |
-| `gl-dark.min.css`, `gl-light.min.css` | the two `<style>` elements `theme.js` switches between |
-| `app.min.css` | the app's own `style.css`, last in the cascade |
 | `THIRD_PARTY_LICENSES.txt` | served as `/THIRD_PARTY_LICENSES.txt`, and copied into every saved report |
 | `SOURCES.sha256` | what the rest was built from; the CMake build stops when a source is newer |
 
-The four stylesheets are inlined into `index.min.html` for the served page, and
-embedded separately for the saved report. Their order is load-bearing — see
-`../src/vendor.css`.
+The four stylesheets live inline in `index.min.html`, and a saved report copies
+them from there. Their order is load-bearing — see `../src/vendor.css`.
 
 What the binary embeds from here is gzipped at build time and stored
 compressed; nothing here is.

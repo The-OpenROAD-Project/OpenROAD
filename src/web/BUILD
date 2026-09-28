@@ -183,25 +183,12 @@ genrule(
     tools = [":inline_styles"],
 )
 
-# The report's stylesheets and script.  All five are the bundler's output, so
-# nothing has to strip imports or keep a hand-written file order any more.
+# The saved report's script; saveReport() copies its styles from index.min.html.
 genrule(
     name = "report_assets",
-    srcs = [
-        "app.min.css",
-        "gl-dark.min.css",
-        "gl-light.min.css",
-        "report.min.js",
-        "vendor.min.css",
-    ],
+    srcs = ["report.min.js"],
     outs = ["src/report_assets.cpp"],
-    cmd = "$(execpath :embed_report_assets)" +
-          " --output $@" +
-          " --vendor-css $(location vendor.min.css)" +
-          " --theme-dark $(location gl-dark.min.css)" +
-          " --theme-light $(location gl-light.min.css)" +
-          " --app-css $(location app.min.css)" +
-          " --js $(location report.min.js)",
+    cmd = "$(execpath :embed_report_assets) --output $@ --js $(location report.min.js)",
     tools = [":embed_report_assets"],
 )
 

@@ -7,5 +7,4 @@
 # Only the artifacts; dist/BUILD and dist/README.md are hand-written and have
 # to stay reviewable.
 src/web/dist/*.js -diff linguist-generated
-src/web/dist/*.css -diff linguist-generated
 src/web/dist/*.html -diff linguist-generated
