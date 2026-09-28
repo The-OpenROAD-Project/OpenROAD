@@ -5,22 +5,21 @@
 # asset the same way on every machine, and writing it out as a C array.
 
 import gzip
+import io
 
-# Offset of the OS field in a gzip header, and the value meaning "unknown".
-# Python writes the host OS here, which differs between the interpreter Bazel
-# uses and the one CMake picks up -- enough to make the two builds embed
-# different bytes for identical input.
+# Offset of the OS field in a gzip header, and its "unknown" value; some
+# Pythons write the host OS there.
 _GZIP_OS_OFFSET = 9
 _GZIP_OS_UNKNOWN = 0xFF
 
 
 def gzip_bytes(data):
-    """gzip with mtime=0 and a pinned OS byte.
-
-    The embedded bytes are compared across build systems and machines, and both
-    fields otherwise vary with who is building.
-    """
-    packed = bytearray(gzip.compress(data, compresslevel=9, mtime=0))
+    """gzip with mtime=0 and a fixed OS byte, so builds agree on the bytes."""
+    # GzipFile, not gzip.compress(): the latter takes mtime only from 3.8.
+    buffer = io.BytesIO()
+    with gzip.GzipFile(fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as f:
+        f.write(data)
+    packed = bytearray(buffer.getvalue())
     packed[_GZIP_OS_OFFSET] = _GZIP_OS_UNKNOWN
     return bytes(packed)
 
