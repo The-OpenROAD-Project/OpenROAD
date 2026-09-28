@@ -1069,11 +1069,11 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
 
   for (WirePoint* pc = first_for_clear_; pc; pc = pc->next_for_clear) {
     if (pc->next_in_short_ring) {
-      int is_connected_to_a_pin_point = pc->is_connected_to_a_pin_point;
+      bool is_connected_to_a_pin_point = pc->is_connected_to_a_pin_point;
       for (WirePoint* x = pc->next_in_short_ring; x != pc;
            x = x->next_in_short_ring) {
         if (x->is_connected_to_a_pin_point) {
-          is_connected_to_a_pin_point = 1;
+          is_connected_to_a_pin_point = true;
         }
       }
       if (is_connected_to_a_pin_point) {
