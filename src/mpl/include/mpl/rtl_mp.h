@@ -64,11 +64,12 @@ class MacroPlacer
              float min_ar,
              const char* report_directory,
              bool keep_clustering_data,
-             bool use_full_halo);
+             bool pin_aware_channels);
 
   void blockMacroChannels();
 
-  bool checkMacroPlacement(const odb::Rect& global_fence, bool use_full_halo);
+  bool checkMacroPlacement(const odb::Rect& global_fence,
+                           bool pin_aware_channels);
 
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
@@ -80,12 +81,7 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
-  void setBaseHalo(int left, int bottom, int right, int top);
-  void setMacroHalo(odb::dbInst* macro,
-                    int left,
-                    int bottom,
-                    int right,
-                    int top);
+  void setMinChannelSize(int width, int height);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

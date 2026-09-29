@@ -11,6 +11,8 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "aes",
     "blockage01",
+    "blocked_via_layers",
+    "blocked_via_pins",
     "cell_on_block1",
     "cell_on_block2",
     "centered_floorplan",
@@ -125,6 +127,14 @@ filegroup(
             "blockage1-opt": [
                 "sky130hd/sky130hd.tlef",
                 "sky130hd/sky130hd_std_cell.lef",
+            ],
+            "blocked_via_layers": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
+            "blocked_via_pins": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
             ],
             "cell_on_block1": [
                 "block2.lef",

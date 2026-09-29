@@ -2375,6 +2375,14 @@ body {
     margin-right: 4px;
 }
 
+/* A row recovered from instance names rather than read from a dbModule.  The
+   tree is synthesized automatically on a flat design, so these rows have to
+   be visibly not-the-netlist: dotted underline marks the name as inferred. */
+.hierarchy-name-group > td:first-child {
+    text-decoration: underline dotted var(--fg-muted);
+    text-underline-offset: 3px;
+}
+
 /* ─── Clock Tree Widget ───────────────────────────────────────────────── */
 
 .clock-tree-widget {

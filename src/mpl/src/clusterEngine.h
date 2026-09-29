@@ -105,9 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(const HardMacro::Halo& base_halo,
-                bool use_full_halo,
-                const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
+  void setChannel(Channel min_channel, bool pin_aware_channels);
 
   // The checks run() makes before it clusters, and nothing after them.
   // Returns whether there are macros to place.
@@ -233,6 +231,8 @@ class ClusteringEngine
   bool isValidNet(odb::dbNet* net);
 
   HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
+  HardMacro::Halo buildPinAwareHalo(odb::dbInst* inst,
+                                    int minimum_spacing) const;
   int getMinimumSpacing() const;
   bool isEquidistantDifferentDirections(
       std::pair<int, Boundary> candidate,
@@ -265,9 +265,8 @@ class ClusteringEngine
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
-  HardMacro::Halo base_halo_;
-  bool use_full_halo_{false};
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
+  Channel min_channel_;
+  bool pin_aware_channels_{false};
 };
 
 }  // namespace mpl

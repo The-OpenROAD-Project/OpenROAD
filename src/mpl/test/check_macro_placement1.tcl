@@ -44,7 +44,7 @@ $macro_2 setPlacementStatus $macro_2_status
 # A feasible design: the checks pass and nothing changes.
 check "feasible: the check returns" { check_quietly } 0
 check "feasible: a macro to place" { set message } 1
-check "feasible: MPL-0079" { string match {*MPL-0079*} $log } 1
+check "feasible: MPL-0081" { string match {*MPL-0081*} $log } 1
 check "feasible: the design is unchanged" { expr { [snapshot $block] eq $design } } 1
 check "feasible: no report directory" { file exists hier_rtlmp } 0
 
@@ -61,24 +61,27 @@ check "fixed cell: rtl_macro_placer fails the same way" \
   { expr { $failed && [string match {*MPL-0050*} $placer_message] } } 1
 odb::dbInst_destroy [$block findInst fixed_buf]
 
-# Macro halos: a macro that no longer fits in the core with its halo, and
-# -use_full_halo reaching the checks as it reaches rtl_macro_placer.
-set_macro_base_halo 70 70
-check "halo too wide: the check fails" { check_quietly } 1
-check "halo too wide: MPL-0006" { string match {*MPL-0006*} $message } 1
-set failed [catch { rtl_macro_placer -report_directory [make_result_dir] } placer_message]
-check "halo too wide: rtl_macro_placer fails the same way" \
-  { expr { $failed && [string match {*MPL-0006*} $placer_message] } } 1
-set_macro_base_halo 58 58
-check "pin-aware halo: the check passes" { check_quietly } 0
-check "full halo: the check fails" { check_quietly -use_full_halo } 1
-check "full halo: MPL-0065" { string match {*MPL-0065*} $message } 1
+# Macro channels: a macro that no longer fits in the core with its halo,
+# and -min_channel_size and -pin_aware_channels reaching the checks as they
+# reach rtl_macro_placer.
+check "channel too wide: the check fails" { check_quietly -min_channel_size 140 } 1
+check "channel too wide: MPL-0006" { string match {*MPL-0006*} $message } 1
 set failed [catch {
-  rtl_macro_placer -use_full_halo -report_directory [make_result_dir]
+  rtl_macro_placer -min_channel_size 140 -report_directory [make_result_dir]
 } placer_message]
-check "full halo: rtl_macro_placer fails the same way" \
+check "channel too wide: rtl_macro_placer fails the same way" \
+  { expr { $failed && [string match {*MPL-0006*} $placer_message] } } 1
+check "pin-aware channels: the check passes" \
+  { check_quietly -min_channel_size 116 -pin_aware_channels } 0
+check "full channels: the check fails" { check_quietly -min_channel_size 116 } 1
+check "full channels: MPL-0065" { string match {*MPL-0065*} $message } 1
+set failed [catch {
+  rtl_macro_placer -min_channel_size 116 -report_directory [make_result_dir]
+} placer_message]
+check "full channels: rtl_macro_placer fails the same way" \
   { expr { $failed && [string match {*MPL-0065*} $placer_message] } } 1
-set_macro_base_halo 0 0
+# The channel persists, as it does for rtl_macro_placer: reset it.
+check "no channel: the check passes" { check_quietly -min_channel_size 0 } 0
 
 # The global fence reaches the checks as it reaches rtl_macro_placer: one
 # too small for the movable cells fails, one large enough passes.

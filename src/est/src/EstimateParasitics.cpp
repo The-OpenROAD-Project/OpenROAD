@@ -1011,14 +1011,13 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
     }
   }
 
-  odb::dbTechLayer* min_tech_layer = tech->findRoutingLayer(min_layer);
-  odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_layer);
+  const int min_number = tech->findRoutingLayer(min_layer)->getNumber();
+  const int max_number = tech->findRoutingLayer(max_layer)->getNumber();
 
-  for (int layer_idx = min_tech_layer->getNumber();
-       layer_idx <= max_tech_layer->getNumber();
-       layer_idx++) {
-    odb::dbTechLayer* layer = tech->findLayer(layer_idx);
-    if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    const int number = layer->getNumber();
+    if (number >= min_number && number <= max_number
+        && layer->getType() == odb::dbTechLayerType::CUT) {
       double res, cap;
       layerRC(layer, scene, res, cap);
       total_resistance += res;

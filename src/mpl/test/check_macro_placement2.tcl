@@ -1,11 +1,11 @@
-# check_macro_placement without a design is an error (MPL-0080), and when
+# check_macro_placement without a design is an error (MPL-0082), and when
 # the movable cells do not fit in the macro placement area it fails with the
 # error rtl_macro_placer gives for that (MPL-0065).
 source "helpers.tcl"
 
 set failed [catch { check_macro_placement } message]
 check "no design: the check fails" { set failed } 1
-check "no design: MPL-0080" { string match {*MPL-0080*} $message } 1
+check "no design: MPL-0082" { string match {*MPL-0082*} $message } 1
 
 read_lef "./Nangate45/Nangate45.lef"
 read_lef "./testcases/macro_only.lef"

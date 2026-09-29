@@ -1203,13 +1203,19 @@ void FastRouteCore::assignEdge(const int netID,
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
 
-      v_edges_3D_[grids[k].layer][min_y][grids[k].x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(grids[k].x,
+                        min_y,
+                        grids[k].layer,
+                        EdgeDirection::Vertical,
+                        net->getLayerEdgeCost(grids[k].layer));
     } else {
       const int min_x = std::min(grids[k].x, grids[k + 1].x);
 
-      h_edges_3D_[grids[k].layer][grids[k].y][min_x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(min_x,
+                        grids[k].y,
+                        grids[k].layer,
+                        EdgeDirection::Horizontal,
+                        net->getLayerEdgeCost(grids[k].layer));
     }
   }
 }
@@ -1744,14 +1750,20 @@ void FastRouteCore::recoverEdge(const int netID, const int edgeID)
       {
         const int ymin = std::min(grids[i].y, grids[i + 1].y);
         graph2d_.updateUsageV(grids[i].x, ymin, net, net->getEdgeCost());
-        v_edges_3D_[grids[i].layer][ymin][grids[i].x].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(grids[i].x,
+                          ymin,
+                          grids[i].layer,
+                          EdgeDirection::Vertical,
+                          net->getLayerEdgeCost(grids[i].layer));
       } else if (grids[i].y == grids[i + 1].y)  // a horizontal edge
       {
         const int xmin = std::min(grids[i].x, grids[i + 1].x);
         graph2d_.updateUsageH(xmin, grids[i].y, net, net->getEdgeCost());
-        h_edges_3D_[grids[i].layer][grids[i].y][xmin].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(xmin,
+                          grids[i].y,
+                          grids[i].layer,
+                          EdgeDirection::Horizontal,
+                          net->getLayerEdgeCost(grids[i].layer));
       }
     }
   }
@@ -1991,6 +2003,12 @@ void FastRouteCore::check2DEdgesUsage()
   const int max_usage_multiplier = 100;
   int max_h_edge_usage = max_usage_multiplier * h_capacity_;
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
+
+  if (!logger_->debugCheck(GRT, "overflowcheck", 1)
+      && graph2d_.maxUsage(EdgeDirection::Horizontal) <= max_h_edge_usage
+      && graph2d_.maxUsage(EdgeDirection::Vertical) <= max_v_edge_usage) {
+    return;
+  }
 
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
