@@ -40,12 +40,12 @@ filegroup(
 
 # The viewer's sources.  A test whose modules import an npm package lists it
 # from //src/web, where node looks for it (see three_subset_test).
-JS_SRCS = ["//src/web:js_files"]
+JS_FILES = ["//src/web:js_files"]
 
 DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
-] + JS_SRCS
+] + JS_FILES
 
 py_test(
     name = "npm_lock_test",
@@ -70,30 +70,30 @@ test_suite(
 
 js_test(
     name = "coordinates_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-coordinates.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "ui_utils_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-ui-utils.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "display_state_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-display-state.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "schematic_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
@@ -109,198 +109,198 @@ js_test(
 
 js_test(
     name = "three_subset_test",
-    data = JS_SRCS + ["//src/web:node_modules/three"],
+    data = JS_FILES + ["//src/web:node_modules/three"],
     entry_point = "js/test-three-subset.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "hierarchy_browser_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-hierarchy-browser.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "context_menu_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-context-menu.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "search_nav_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-search-nav.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "capture_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-capture.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "websocket_manager_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-websocket-manager.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "websocket_tile_layer_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-websocket-tile-layer.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "checkbox_tree_model_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-checkbox-tree-model.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "display_controls_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "clock_tree_widget_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-clock-tree-widget.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "charts_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-charts-widget.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "timing_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-timing-widget.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "timing_cone_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-timing-cone.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "inspector_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "ruler_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-ruler.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "label_manager_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-label-manager.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "tcl_completer_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-tcl-completer.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "drc_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-drc-widget.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "selection_browser_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-selection-browser.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "menu_bar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-menu-bar.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "toolbar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-toolbar.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "options_dialogs_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-options-dialogs.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "image_export_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-image-export.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "edit_dialogs_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-edit-dialogs.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "merged_tile_layer_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-merged-tile-layer.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "tile_merge_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-tile-merge.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
@@ -312,30 +312,30 @@ js_test(
 
 js_test(
     name = "dpr_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-dpr.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "device_pixels_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-device-pixels.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "theme_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-theme.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "title_test",
-    data = JS_SRCS,
+    data = JS_FILES,
     entry_point = "js/test-title.js",
-    no_copy_to_bin = JS_SRCS,
+    no_copy_to_bin = JS_FILES,
 )
 
 cc_test(

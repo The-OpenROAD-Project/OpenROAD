@@ -15,7 +15,7 @@ the OpenROAD process, and the viewer works on a machine with no network.
 | `app.min.js` | served as `/app.min.js`; the app plus every library it uses |
 | `report.min.js` | inlined into a saved timing report; leaves out elk, netlistsvg and three |
 | `THIRD_PARTY_LICENSES.txt` | served as `/THIRD_PARTY_LICENSES.txt`, and copied into every saved report |
-| `SOURCES.sha256` | what the rest was built from; the CMake build stops when a source is newer |
+| `SOURCES.sha256` | what the rest was built from; the CMake build stops when a source has changed |
 
 The four stylesheets live inline in `index.min.html`, and a saved report copies
 them from there. Their order is load-bearing — see `../src/vendor.css`.

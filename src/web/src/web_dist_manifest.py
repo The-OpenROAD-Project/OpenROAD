@@ -37,7 +37,6 @@ def main():
         mode.add_argument("--root", required=True, help="the src/web directory")
         mode.add_argument("--manifest", required=True)
     write.add_argument("files", nargs="+", help="what dist/ is built from")
-    check.add_argument("--stamp", help="touched when the check passes")
     args = parser.parse_args()
 
     if args.mode == "write":
@@ -46,11 +45,8 @@ def main():
             for path in args.files
         }
         # sha256sum's format, so `sha256sum -c` can read it too.
-        text = "".join(f"{entries[rel]}  {rel}\n" for rel in sorted(entries))
-        partial = args.manifest + ".tmp"
-        with open(partial, "w", encoding="utf-8") as out:
-            out.write(text)
-        os.replace(partial, args.manifest)
+        with open(args.manifest, "w", encoding="utf-8") as out:
+            out.write("".join(f"{entries[rel]}  {rel}\n" for rel in sorted(entries)))
         return
 
     stale = []
@@ -64,9 +60,6 @@ def main():
             + "\n  ".join(stale)
             + f"\nThe bundler only runs under Bazel; regenerate it with `{_FIX}`."
         )
-    if args.stamp:
-        with open(args.stamp, "w", encoding="utf-8"):
-            pass
 
 
 if __name__ == "__main__":

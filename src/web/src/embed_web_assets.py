@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Embed the web assets, each given as "<served path>=<file path>", as a .cpp
-# table of path, content (text gzipped here) and MIME type.
+# Embed the web assets as a .cpp: a table of served paths, plus each --extern
+# asset as its own EmbeddedAsset; contents are gzipped wherever that pays.
 
 import argparse
+import gzip
+import io
 import os
-
-from embedded_blob import gzip_bytes, write_char_array
 
 MIME_TYPES = {
     ".html": "text/html",
@@ -19,6 +19,35 @@ MIME_TYPES = {
     ".txt": "text/plain; charset=utf-8",
 }
 
+# One escape per byte value, so the loop below is a table lookup.
+_OCTAL_ESCAPES = [f"\\{b:03o}" for b in range(256)]
+
+# Octal escapes are 4 chars each; 20 bytes keeps the emitted line at 80 columns.
+_BYTES_PER_LINE = 20
+
+
+def gzip_bytes(data):
+    """gzip with mtime=0, so the same input and zlib give the same bytes."""
+    # GzipFile, not gzip.compress(): the latter takes mtime only from 3.8.
+    buffer = io.BytesIO()
+    with gzip.GzipFile(fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as f:
+        f.write(data)
+    return buffer.getvalue()
+
+
+def write_char_array(out, ident, data):
+    """Write data as `static const char <ident>_data[]`, in octal escapes.
+
+    Its length has to be passed along separately: a gzip stream may contain a
+    NUL, so sizeof - 1 is only right by accident.
+    """
+    escaped = "".join(map(_OCTAL_ESCAPES.__getitem__, data))
+    width = _BYTES_PER_LINE * 4
+    lines = (escaped[i : i + width] for i in range(0, len(escaped), width))
+    out.write(f'static const char {ident}_data[] =\n    "')
+    out.write('"\n    "'.join(lines))
+    out.write('";\n\n')
+
 
 def c_identifier(served_path):
     """Convert a served path to a valid C identifier."""
@@ -26,29 +55,40 @@ def c_identifier(served_path):
     return "k_" + "".join(c if c.isalnum() else "_" for c in stem)
 
 
-def parse_asset_arg(arg):
-    """Parse "<served path>=<file path>"."""
-    served, sep, path = arg.partition("=")
+def split_pair(arg):
+    """Split "<name>=<file path>"."""
+    name, sep, path = arg.partition("=")
     if not sep:
-        raise SystemExit(f"expected <served path>=<file path>, got: {arg}")
-    if not served.startswith("/"):
-        raise SystemExit(f"served path must be absolute: {served}")
-    return served, path
+        raise SystemExit(f"expected <name>=<file path>, got: {arg}")
+    return name, path
 
 
-def compress(data, mime):
-    """gzip the asset, or return it as it is when that would not pay."""
-    # Only what the table above recognises; the octet-stream fallback is an
-    # image or a font, already compressed.
-    if mime not in MIME_TYPES.values():
-        return data, False
+def load(path):
+    """The file's bytes, gzipped when that makes them smaller."""
+    with open(path, "rb") as f:
+        data = f.read()
     packed = gzip_bytes(data)
-    return (packed, True) if len(packed) < len(data) else (data, False)
+    if len(packed) < len(data):
+        return packed, True, len(data)
+    return data, False, len(data)
+
+
+def initializer(ident, path, data, gzipped, original_size):
+    mime = MIME_TYPES.get(os.path.splitext(path)[1], "application/octet-stream")
+    flag = "true" if gzipped else "false"
+    return f'{{{ident}_data, {len(data)}, "{mime}", {flag}, {original_size}}}'
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
+    parser.add_argument(
+        "--extern",
+        action="append",
+        default=[],
+        metavar="NAME=FILE",
+        help="an asset kept out of the table, as `extern const EmbeddedAsset NAME`",
+    )
     parser.add_argument(
         "assets",
         nargs="+",
@@ -56,42 +96,49 @@ def main():
     )
     args = parser.parse_args()
 
-    assets = []
-    seen = {}
     identifiers = {}
-    for arg in args.assets:
-        served, path = parse_asset_arg(arg)
-        if served in seen:
-            raise SystemExit(
-                f"two assets are served as {served}: {seen[served]} and {path}"
-            )
-        seen[served] = path
+
+    def claim(ident, name):
         # c_identifier() folds every non-alphanumeric to _, so two served paths
         # can collide into one name.
-        ident = c_identifier(served)
         if ident in identifiers:
-            raise SystemExit(f"{served} and {identifiers[ident]} both generate {ident}")
-        identifiers[ident] = served
-        mime = MIME_TYPES.get(os.path.splitext(served)[1], "application/octet-stream")
-        with open(path, "rb") as f:
-            data = f.read()
-        original_size = len(data)
-        data, gzipped = compress(data, mime)
-        assets.append((served, ident, mime, data, gzipped, original_size))
+            raise SystemExit(f"{name} and {identifiers[ident]} both generate {ident}")
+        identifiers[ident] = name
 
-    # Written aside and renamed: a failure must not leave a truncated .cpp newer
-    # than its inputs, which the next build would keep.
-    partial = args.output + ".tmp"
-    with open(partial, "w", encoding="utf-8") as out:
+    served = []
+    for arg in args.assets:
+        path_served, path = split_pair(arg)
+        if not path_served.startswith("/"):
+            raise SystemExit(f"served path must be absolute: {path_served}")
+        ident = c_identifier(path_served)
+        claim(ident, path_served)
+        served.append((path_served, ident, path) + load(path))
+
+    externs = []
+    for arg in args.extern:
+        name, path = split_pair(arg)
+        if not name.isidentifier():
+            raise SystemExit(f"--extern needs a C identifier, got: {name}")
+        claim(name, name)
+        externs.append((name, path) + load(path))
+
+    with open(args.output, "w", encoding="utf-8") as out:
         out.write("// Auto-generated by embed_web_assets.py — do not edit.\n")
         out.write('#include "web_assets.h"\n\n')
         out.write("#include <cstddef>\n")
         out.write("#include <string_view>\n\n")
         out.write("namespace web {\n\n")
 
-        for served, ident, _, data, _, _ in assets:
-            out.write(f"// {served}\n")
+        for path_served, ident, _, data, _, _ in served:
+            out.write(f"// {path_served}\n")
             write_char_array(out, ident, data)
+
+        for name, path, data, gzipped, original_size in externs:
+            write_char_array(out, name, data)
+            out.write(
+                f"extern const EmbeddedAsset {name} = "
+                f"{initializer(name, path, data, gzipped, original_size)};\n\n"
+            )
 
         # Sizes are byte counts, not sizeof - 1: every literal above is octal
         # escapes, and a gzip stream may contain a NUL.
@@ -99,12 +146,9 @@ def main():
         out.write("  const char* path;\n")
         out.write("  EmbeddedAsset asset;\n")
         out.write("} kAssetTable[] = {\n")
-        for served, ident, mime, data, gzipped, original_size in assets:
-            out.write(
-                f'    {{"{served}", {{{ident}_data, {len(data)}, "{mime}", '
-                f"{'true' if gzipped else 'false'}, "
-                f"{original_size}}}}},\n"
-            )
+        for path_served, ident, _, data, gzipped, original_size in served:
+            entry = initializer(ident, path_served, data, gzipped, original_size)
+            out.write(f'    {{"{path_served}", {entry}}},\n')
         out.write("};\n\n")
 
         out.write("const EmbeddedAsset* findEmbeddedAsset(std::string_view path)\n")
@@ -118,8 +162,6 @@ def main():
         out.write("}\n\n")
 
         out.write("}  // namespace web\n")
-
-    os.replace(partial, args.output)
 
 
 if __name__ == "__main__":

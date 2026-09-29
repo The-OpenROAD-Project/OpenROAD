@@ -17,21 +17,13 @@
 namespace web {
 namespace {
 
-// The report's blob lives outside the served asset table, so the tests below
-// reach it by name.
-const std::pair<const char*, const EmbeddedAsset*> kReportAssets[] = {
-    {"kReportJS", &kReportJS},
-};
-
-// What the page would fetch from elsewhere: absolute URLs that are not mere
-// identifiers, and scheme-relative ones.
-std::vector<std::string> remoteReferences(const std::string_view text)
+// The blobs that hold code: the two the server hands out, and the saved
+// report's script, which lives outside the served table.
+std::vector<std::pair<std::string_view, const EmbeddedAsset*>> codeBlobs()
 {
-  std::vector<std::string> found = test::externalUrls(text);
-  for (std::string& url : test::schemeRelativeUrls(text)) {
-    found.push_back(std::move(url));
-  }
-  return found;
+  return {{"/index.html", findEmbeddedAsset("/index.html")},
+          {"/app.min.js", findEmbeddedAsset("/app.min.js")},
+          {"kReportJS", &kReportJS}};
 }
 
 // ─── The scanner itself ─────────────────────────────────────────────────────
@@ -84,27 +76,17 @@ TEST(WebAssets, ServesTheTwoBundles)
 
 TEST(WebAssets, StoresThemGzipped)
 {
-  for (const std::string_view path : {"/index.html", "/app.min.js"}) {
-    const EmbeddedAsset* asset = findEmbeddedAsset(path);
-    ASSERT_NE(asset, nullptr) << path;
-    EXPECT_TRUE(asset->gzipped) << path;
+  for (const auto& [name, asset] : codeBlobs()) {
+    ASSERT_NE(asset, nullptr) << name;
+    EXPECT_TRUE(asset->gzipped) << name;
     // The gzip magic number: what the server hands to a browser that asked
     // for gzip has to actually be a gzip stream.
-    ASSERT_GE(asset->size, 2u) << path;
-    EXPECT_EQ(static_cast<unsigned char>(asset->data[0]), 0x1f) << path;
-    EXPECT_EQ(static_cast<unsigned char>(asset->data[1]), 0x8b) << path;
+    ASSERT_GE(asset->size, 2u) << name;
+    EXPECT_EQ(static_cast<unsigned char>(asset->data[0]), 0x1f) << name;
+    EXPECT_EQ(static_cast<unsigned char>(asset->data[1]), 0x8b) << name;
     // Compression that did not compress would mean the pipeline is wrong.
-    EXPECT_LT(asset->size, asset->original_size) << path;
-  }
-}
-
-TEST(WebAssets, InflatesToTheRecordedSize)
-{
-  for (const std::string_view path : {"/index.html", "/app.min.js"}) {
-    const EmbeddedAsset* asset = findEmbeddedAsset(path);
-    ASSERT_NE(asset, nullptr) << path;
-    const std::string text = assetText(*asset);
-    EXPECT_EQ(text.size(), asset->original_size) << path;
+    EXPECT_LT(asset->size, asset->original_size) << name;
+    EXPECT_EQ(assetText(*asset).size(), asset->original_size) << name;
   }
 }
 
@@ -123,29 +105,13 @@ TEST(WebAssets, TheIndexIsTheBundledPage)
   EXPECT_NE(html.find("data:image/png;base64,"), std::string::npos);
 }
 
-// The point of the whole exercise: nothing the page loads comes off the
-// network.
+// The point of the whole exercise: nothing the viewer or a saved report loads
+// comes off the network.
 TEST(WebAssets, NoAssetReferencesARemoteResource)
 {
-  for (const std::string_view path : {"/index.html", "/app.min.js"}) {
-    const EmbeddedAsset* asset = findEmbeddedAsset(path);
-    ASSERT_NE(asset, nullptr) << path;
-    const std::vector<std::string> urls = remoteReferences(assetText(*asset));
-    EXPECT_TRUE(urls.empty())
-        << path << " reaches out to " << (urls.empty() ? "" : urls.front())
-        << " (" << urls.size() << " in total)";
-  }
-}
-
-// A saved report opens with no server and possibly no network, and its script
-// is embedded apart from the served assets, so the scan above misses it.
-TEST(WebAssets, NoReportAssetReferencesARemoteResource)
-{
-  for (const auto& [name, asset] : kReportAssets) {
-    const std::vector<std::string> urls = remoteReferences(assetText(*asset));
-    EXPECT_TRUE(urls.empty())
-        << name << " reaches out to " << (urls.empty() ? "" : urls.front())
-        << " (" << urls.size() << " in total)";
+  for (const auto& [name, asset] : codeBlobs()) {
+    ASSERT_NE(asset, nullptr) << name;
+    EXPECT_TRUE(test::fetchesNothingRemote(assetText(*asset))) << name;
   }
 }
 
@@ -175,19 +141,6 @@ TEST(WebAssets, ServesTheThirdPartyLicenses)
     ++notices;
   }
   EXPECT_GE(notices, 25u);
-}
-
-// The report's blobs are stored gzipped too; saveReport() inflates them.
-TEST(WebAssets, StoresTheReportAssetsGzipped)
-{
-  for (const auto& [name, asset] : kReportAssets) {
-    EXPECT_TRUE(asset->gzipped) << name;
-    ASSERT_GE(asset->size, 2u) << name;
-    EXPECT_EQ(static_cast<unsigned char>(asset->data[0]), 0x1f) << name;
-    EXPECT_EQ(static_cast<unsigned char>(asset->data[1]), 0x8b) << name;
-    EXPECT_LT(asset->size, asset->original_size) << name;
-    EXPECT_EQ(assetText(*asset).size(), asset->original_size) << name;
-  }
 }
 
 }  // namespace

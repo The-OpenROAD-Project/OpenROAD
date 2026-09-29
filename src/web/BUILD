@@ -6,7 +6,7 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm_web//:defs.bzl", "npm_link_all_packages")
 load("@npm_web//src/web:html-minifier-terser/package_json.bzl", html_minifier = "bin")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -16,26 +16,10 @@ package(
     features = ["layering_check"],
 )
 
-py_library(
-    name = "embedded_blob",
-    srcs = ["src/embedded_blob.py"],
-    # The two scripts import it as a sibling, which is how the CMake build,
-    # running them straight from the source tree, finds it too.
-    imports = ["src"],
-)
-
-py_binary(
-    name = "embed_report_assets",
-    srcs = ["src/embed_report_assets.py"],
-    main = "src/embed_report_assets.py",
-    deps = [":embedded_blob"],
-)
-
 py_binary(
     name = "embed_web_assets",
     srcs = ["src/embed_web_assets.py"],
     main = "src/embed_web_assets.py",
-    deps = [":embedded_blob"],
 )
 
 py_binary(
@@ -178,26 +162,19 @@ genrule(
     tools = [":inline_styles"],
 )
 
-# The saved report's script; saveReport() copies its styles from index.min.html.
-genrule(
-    name = "report_assets",
-    srcs = ["report.min.js"],
-    outs = ["src/report_assets.cpp"],
-    cmd = "$(execpath :embed_report_assets) --output $@ --js $(location report.min.js)",
-    tools = [":embed_report_assets"],
-)
-
-# The two blobs the server hands out and their licences, gzipped by the script
-# itself so that neither build needs a gzip on the host.
+# The two blobs the server hands out, their licences, and the saved report's
+# script, gzipped by the script itself so that no build needs a host gzip.
 genrule(
     name = "web_assets",
     srcs = [
         "THIRD_PARTY_LICENSES.txt",
         "app.min.js",
         "index.min.html",
+        "report.min.js",
     ],
     outs = ["src/web_assets.cpp"],
     cmd = "$(execpath :embed_web_assets) --output $@" +
+          " --extern kReportJS=$(location report.min.js)" +
           " /index.html=$(location index.min.html)" +
           " /app.min.js=$(location app.min.js)" +
           " /THIRD_PARTY_LICENSES.txt=$(location THIRD_PARTY_LICENSES.txt)",
@@ -294,7 +271,6 @@ cc_library(
         "src/web_painter.cpp",
         "src/web_serve.cpp",
         "src/web_viewer_hook.cpp",
-        ":report_assets",
         ":web_assets",
     ],
     hdrs = [

@@ -86,8 +86,6 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
   const { SchematicWidget } = await import('/schematic-widget.js');
   const widget = new SchematicWidget({ element: document.getElementById('host') }, {});
   window.__render = async (json) => {
-    for (let i = 0; i < 300 && !widget._netlistsvgReady; i++)
-      await new Promise((r) => setTimeout(r, 50));
     if (!widget._netlistsvgReady) throw new Error('netlistsvg not ready');
     await widget.renderNetlist(json);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));

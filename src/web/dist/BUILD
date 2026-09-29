@@ -3,8 +3,6 @@
 
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
-package(default_visibility = ["//src/web:__subpackages__"])
-
 # A copy of //src/web's bundles for the CMake build, which cannot run the
 # bundler.  Regenerate everything but this file and README.md with:
 #

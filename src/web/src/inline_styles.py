@@ -13,13 +13,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--html", required=True)
     parser.add_argument("--output", "-o", required=True)
-    parser.add_argument(
-        "--style",
-        action="append",
-        default=[],
-        metavar="FILE",
-        required=True,
-    )
+    parser.add_argument("--style", action="append", metavar="FILE", required=True)
     args = parser.parse_args()
 
     with open(args.html, encoding="utf-8") as f:
@@ -37,12 +31,8 @@ def main():
             raise SystemExit(f"{path} contains '</style', which would end the block")
         html = html.replace(marker, css, 1)
 
-    # Written aside and renamed so a failure cannot leave a half-written file
-    # newer than its inputs, which the next build would keep.
-    partial = args.output + ".tmp"
-    with open(partial, "w", encoding="utf-8") as out:
+    with open(args.output, "w", encoding="utf-8") as out:
         out.write(html)
-    os.replace(partial, args.output)
 
 
 if __name__ == "__main__":

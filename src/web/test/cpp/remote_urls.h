@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "gtest/gtest.h"
+
 namespace web::test {
 
 // Absolute URLs the bundles quote as names rather than fetch: XML namespaces,
@@ -107,6 +109,21 @@ inline std::vector<std::string> schemeRelativeUrls(const std::string_view text)
     }
   }
   return found;
+}
+
+// For EXPECT_TRUE: whether `text` would fetch anything from elsewhere.
+inline ::testing::AssertionResult fetchesNothingRemote(
+    const std::string_view text)
+{
+  std::vector<std::string> urls = externalUrls(text);
+  for (std::string& url : schemeRelativeUrls(text)) {
+    urls.push_back(std::move(url));
+  }
+  if (urls.empty()) {
+    return ::testing::AssertionSuccess();
+  }
+  return ::testing::AssertionFailure() << "reaches out to " << urls.front()
+                                       << " (" << urls.size() << " in total)";
 }
 
 }  // namespace web::test

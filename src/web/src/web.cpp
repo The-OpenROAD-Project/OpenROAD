@@ -313,10 +313,7 @@ static http::response<http::string_body> handle_request(
         res.set(http::field::cache_control, "no-store");
         // Stored gzipped: browsers get those bytes as they are, and curl
         // without --compressed and the tests get them inflated.
-        if (asset->gzipped) {
-          // Either way the body depends on Accept-Encoding.
-          res.set(http::field::vary, "Accept-Encoding");
-        }
+        res.set(http::field::vary, "Accept-Encoding");
         if (asset->gzipped && acceptsGzip(req[http::field::accept_encoding])) {
           res.set(http::field::content_encoding, "gzip");
           res.body() = std::string(asset->content());

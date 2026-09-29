@@ -56,14 +56,9 @@ def main():
     for path in args.extra:
         with open(path, encoding="utf-8") as f:
             parts.append(f"{_RULE}\n{_RULE}\n\n{f.read().strip()}\n")
-    body = "\n".join(parts)
 
-    # Written aside and renamed: a failure must not leave a truncated file newer
-    # than its inputs, which the next build would keep.
-    partial = args.output + ".tmp"
-    with open(partial, "w", encoding="utf-8") as out:
-        out.write(body)
-    os.replace(partial, args.output)
+    with open(args.output, "w", encoding="utf-8") as out:
+        out.write("\n".join(parts))
 
 
 if __name__ == "__main__":

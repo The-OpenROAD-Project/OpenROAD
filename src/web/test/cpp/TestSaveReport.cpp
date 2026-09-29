@@ -187,6 +187,8 @@ TEST_F(SaveReportTest, ContainsStaticCache)
   EXPECT_TRUE(contains(html, "window.__STATIC_CACHE__"));
 }
 
+// Inline as a module: golden-layout will not lay out a page still being parsed,
+// and a classic <script> would run mid-parse and leave the report blank.
 TEST_F(SaveReportTest, ContainsInlinedJS)
 {
   const std::string path = tempHtml("inlined_js");
@@ -225,17 +227,6 @@ TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
   EXPECT_TRUE(contains(comment, "Eclipse Public License"));
 }
 
-// golden-layout will not lay out a page still being parsed, so the bundle has
-// to run deferred; an inline classic <script> would leave the report blank.
-TEST_F(SaveReportTest, RunsTheBundleOnceThePageIsParsed)
-{
-  const std::string path = tempHtml("deferred_js");
-  generateReport(path);
-
-  // The bundle itself, not some other script, is what sits in that block.
-  EXPECT_TRUE(contains(moduleScript(readFile(path)), "openroad-cone-sync"));
-}
-
 // A saved report opens with no server and no network, so nothing in it may
 // point elsewhere; the licence comment's links are text nothing fetches.
 TEST_F(SaveReportTest, IsSelfContained)
@@ -249,12 +240,7 @@ TEST_F(SaveReportTest, IsSelfContained)
   ASSERT_NE(end, std::string::npos);
   html.erase(begin, end + 3 - begin);
 
-  for (const std::vector<std::string>& urls :
-       {test::externalUrls(html), test::schemeRelativeUrls(html)}) {
-    EXPECT_TRUE(urls.empty())
-        << "the report reaches out to " << (urls.empty() ? "" : urls.front())
-        << " (" << urls.size() << " in total)";
-  }
+  EXPECT_TRUE(test::fetchesNothingRemote(html));
   for (const char* cdn : {"unpkg.com",
                           "cdn.jsdelivr.net",
                           "esm.sh",

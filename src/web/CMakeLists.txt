@@ -77,66 +77,32 @@ swig_lib(NAME         web
 set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
 # Stops the build when a file dist/'s manifest names has changed since
-# `bazel run //src/web/dist:dist` last ran.
-set(WEB_DIST_MANIFEST ${WEB_BUNDLE_DIR}/SOURCES.sha256)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${WEB_DIST_MANIFEST})
-file(STRINGS ${WEB_DIST_MANIFEST} _web_dist_entries)
-set(WEB_BUNDLE_INPUTS "")
-foreach(_entry IN LISTS _web_dist_entries)
-  string(REGEX REPLACE "^[0-9a-f]+  " "" _input "${_entry}")
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_input})
-    list(APPEND WEB_BUNDLE_INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/${_input})
-  endif()
-endforeach()
-set(WEB_DIST_STAMP ${CMAKE_CURRENT_BINARY_DIR}/web_dist_fresh.stamp)
-add_custom_command(
-  OUTPUT ${WEB_DIST_STAMP}
+# `bazel run //src/web/dist:dist` last ran; cheap enough to run every build.
+add_custom_target(web_dist_check
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/web_dist_manifest.py check
     --root ${CMAKE_CURRENT_SOURCE_DIR}
-    --manifest ${WEB_DIST_MANIFEST}
-    --stamp ${WEB_DIST_STAMP}
-  DEPENDS
-    src/web_dist_manifest.py
-    ${WEB_DIST_MANIFEST}
-    ${WEB_BUNDLE_INPUTS}
+    --manifest ${WEB_BUNDLE_DIR}/SOURCES.sha256
   COMMENT "Checking src/web/dist against its sources"
 )
+add_dependencies(web web_dist_check)
 
-# Each asset is <served path>=<file>.  The script gzips them itself: no host
-# gzip is needed, and with the same zlib both builds embed the same bytes.
-set(WEB_ASSET_ARGS
-  /index.html=${WEB_BUNDLE_DIR}/index.min.html
-  /app.min.js=${WEB_BUNDLE_DIR}/app.min.js
-  /THIRD_PARTY_LICENSES.txt=${WEB_BUNDLE_DIR}/THIRD_PARTY_LICENSES.txt
-)
-
-set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
-add_custom_command(
-  OUTPUT ${REPORT_ASSETS_CPP}
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_report_assets.py
-    --output ${REPORT_ASSETS_CPP}
-    --js ${WEB_BUNDLE_DIR}/report.min.js
-  DEPENDS
-    src/embed_report_assets.py
-    src/embedded_blob.py
-    ${WEB_DIST_STAMP}
-    ${WEB_BUNDLE_DIR}/report.min.js
-  COMMENT "Generating report_assets.cpp"
-)
-
+# Served assets are <served path>=<file>; --extern keeps one out of the table.
+# The script gzips them itself, so the host needs no gzip.
 set(WEB_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/web_assets.cpp)
 add_custom_command(
   OUTPUT ${WEB_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
     --output ${WEB_ASSETS_CPP}
-    ${WEB_ASSET_ARGS}
+    --extern kReportJS=${WEB_BUNDLE_DIR}/report.min.js
+    /index.html=${WEB_BUNDLE_DIR}/index.min.html
+    /app.min.js=${WEB_BUNDLE_DIR}/app.min.js
+    /THIRD_PARTY_LICENSES.txt=${WEB_BUNDLE_DIR}/THIRD_PARTY_LICENSES.txt
   DEPENDS
     src/embed_web_assets.py
-    src/embedded_blob.py
-    ${WEB_DIST_STAMP}
     ${WEB_BUNDLE_DIR}/index.min.html
     ${WEB_BUNDLE_DIR}/app.min.js
     ${WEB_BUNDLE_DIR}/THIRD_PARTY_LICENSES.txt
+    ${WEB_BUNDLE_DIR}/report.min.js
   COMMENT "Generating web_assets.cpp"
 )
 
@@ -159,7 +125,6 @@ target_sources(web
     src/web_painter.cpp
     src/web_viewer_hook.cpp
     src/MakeWeb.cpp
-    ${REPORT_ASSETS_CPP}
     ${WEB_ASSETS_CPP}
 )
 
