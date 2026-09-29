@@ -52,7 +52,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
-#include "odb/wOrder.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"

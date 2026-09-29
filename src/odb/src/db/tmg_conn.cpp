@@ -357,7 +357,7 @@ void tmg_conn::splitBySj(const int j,
     }
     klast = k;
 
-    WirePoint* pt = addWirePoint(x, y, tlayer);
+    addWirePoint(x, y, tlayer);
 
     const int endTo = wire_sections_[k].to_idx;
     wire_sections_[k].to_idx = wire_points_.size() - 1;
