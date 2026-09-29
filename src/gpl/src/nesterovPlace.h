@@ -172,6 +172,12 @@ class NesterovPlace
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
 
+  // Request a FISTA momentum restart on the next Nesterov iteration. Set after
+  // a non-virtual timing-driven iteration replaces topology (repair_design),
+  // so the accelerated-gradient extrapolation does not carry the pre-repair
+  // trajectory into the changed objective and diverge the placement.
+  bool reset_nesterov_momentum_ = false;
+
   std::string divergeMsg_;
   int divergeCode_ = 0;
 
