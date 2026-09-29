@@ -38,7 +38,9 @@ def main() -> int:
 
         readme_src = os.path.join(os.path.dirname(DOCS_DIR), "README.md")
         if os.path.exists(readme_src):
-            shutil.copy2(readme_src, os.path.join(temp_root, "README.md"))
+            readme_dst = os.path.join(temp_root, "README.md")
+            shutil.copyfile(readme_src, readme_dst)
+            os.chmod(readme_dst, 0o644)
 
         # conf.py's setup(app) hook uses cwd-relative paths like "./main"
         # and "../README.md", so it must run with docs/ as cwd.
