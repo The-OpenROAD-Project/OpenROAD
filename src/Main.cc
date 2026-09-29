@@ -297,7 +297,8 @@ int main(int argc, char* argv[])
         = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
     const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
-    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
+    const bool no_splash = findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash");
+    if (!no_splash) {
       showSplash();
     }
 
@@ -312,11 +313,10 @@ int main(int argc, char* argv[])
 
     const char* threads = findCmdLineKey(cmd_argc, cmd_argv, "-threads");
     if (threads) {
-      ord::OpenRoad::openRoad()->setThreadCount(threads);
+      ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
     } else {
-      // set to default number of threads
-      ord::OpenRoad::openRoad()->setThreadCount(
-          ord::OpenRoad::openRoad()->getThreadCount(), false);
+      // default to all available hardware threads
+      ord::OpenRoad::openRoad()->setThreadCount(-1, false);
     }
 
 #if PY_VERSION_HEX >= 0x03080000
@@ -470,9 +470,8 @@ static int tclAppInit(int& argc,
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
     } else {
-      // set to default number of threads
-      ord::OpenRoad::openRoad()->setThreadCount(
-          ord::OpenRoad::openRoad()->getThreadCount(), false);
+      // default to all available hardware threads
+      ord::OpenRoad::openRoad()->setThreadCount(-1, false);
     }
 
     // The web server now installs its HeadlessViewer late, in serve() (just
@@ -610,7 +609,7 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
-  printf("  -threads count|max    use count threads\n");
+  printf("  -threads count|max    use count threads (default max)\n");
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
