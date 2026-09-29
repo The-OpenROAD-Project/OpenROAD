@@ -47,6 +47,8 @@ add_library(rsz_lib
     move/BufferGenerator.cc
     move/CloneCandidate.cc
     move/CloneGenerator.cc
+    move/BufferToInvertersCandidate.cc
+    move/BufferToInvertersGenerator.cc
     move/MeasuredVtSwapCandidate.cc
     move/MeasuredVtSwapGenerator.cc
     move/MoveCandidate.cc

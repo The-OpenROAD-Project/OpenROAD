@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -1702,15 +1703,42 @@ void CoreGrid::cleanupShapes()
     macros.push_back(std::move(macro));
   }
 
+  // Every fixed instance is a candidate, standard cells included, so a
+  // design with many placed cells has millions of them; a shape is tested
+  // only against the instances on its layer whose box can hold it, found
+  // through one tree per layer. The tree narrows the search and decides
+  // nothing: each candidate still passes the bounding-box and outline tests
+  // below, and whether any candidate contains the shape does not depend on
+  // the order the tree returns them in.
+  using MacroBox = std::pair<odb::Rect, std::size_t>;
+  using MacroTree = bgi::rtree<MacroBox, bgi::quadratic<16>>;
+  odb::PtrMap<odb::dbTechLayer, std::vector<MacroBox>> boxes;
+  for (std::size_t i = 0; i < macros.size(); i++) {
+    for (auto* layer : macros[i].layers) {
+      boxes[layer].emplace_back(macros[i].bbox, i);
+    }
+  }
+  odb::PtrMap<odb::dbTechLayer, MacroTree> trees;
+  for (auto& [layer, layer_boxes] : boxes) {
+    trees.emplace(layer, MacroTree(layer_boxes.begin(), layer_boxes.end()));
+  }
+
   std::set<Shape*> remove;
   for (const auto& [layer, shapes] : getShapes()) {
+    auto tree = trees.find(layer);
+    if (tree == trees.end()) {
+      continue;
+    }
     for (const auto& shape : shapes) {
-      for (const Macro& macro : macros) {
-        if (!macro.layers.contains(layer)
-            || !macro.bbox.contains(shape->getRect())) {
+      const odb::Rect& rect = shape->getRect();
+      for (auto it = tree->second.qbegin(bgi::intersects(rect));
+           it != tree->second.qend();
+           ++it) {
+        const Macro& macro = macros[it->second];
+        if (!macro.bbox.contains(rect)) {
           continue;
         }
-        if (macro.outline.contains(Region(shape->getRect()))) {
+        if (macro.outline.contains(Region(rect))) {
           remove.insert(shape.get());
           break;
         }

@@ -4,10 +4,26 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
 
 package(features = ["layering_check"])
+
+# True under --stamp (e.g. --config=release), for rules that read the
+# workspace status only when stamping.
+config_setting(
+    name = "stamp",
+    values = {"stamp": "1"},
+    visibility = ["//visibility:public"],
+)
+
+# Driver script that orchestrates man page generation inside Bazel's sandbox.
+py_binary(
+    name = "manpages_impl",
+    srcs = ["manpages_impl.py"],
+    visibility = ["//visibility:public"],
+)
 
 exports_files(
     [

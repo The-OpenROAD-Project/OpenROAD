@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <shared_mutex>
 #include <string>
@@ -236,6 +237,27 @@ class Search : public odb::dbBlockCallBackObj
                                       int x_hi,
                                       int y_hi,
                                       int min_size = 0);
+
+  // Bounds of what is indexed on `layer` in `block`, nullopt when nothing is.
+  // Each builds the index it reads, like the searches do.
+  //
+  // shapeBounds: routing, via and BTerm boxes, special-net shapes, and the
+  // special-net vias indexed on it (their cut layer).
+  std::optional<odb::Rect> shapeBounds(odb::dbBlock* block,
+                                       odb::dbTechLayer* layer);
+  std::optional<odb::Rect> fillBounds(odb::dbBlock* block,
+                                      odb::dbTechLayer* layer);
+  std::optional<odb::Rect> obstructionBounds(odb::dbBlock* block,
+                                             odb::dbTechLayer* layer);
+
+  // Bounding box of the special-net vias indexed on `layer`.  A via is indexed
+  // on its cut layer, but its enclosures are drawn on the metal layers either
+  // side of it, so those layers' extents need this too.
+  std::optional<odb::Rect> snetViaBounds(odb::dbBlock* block,
+                                         odb::dbTechLayer* layer);
+
+  // Bounding box of every indexed instance in `block`.
+  std::optional<odb::Rect> instBounds(odb::dbBlock* block);
 
   // Find all rows in the given bounds with height of at least min_height.
   RowRange searchRows(odb::dbBlock* block,

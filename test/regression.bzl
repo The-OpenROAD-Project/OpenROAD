@@ -33,8 +33,7 @@ def _regression_test_impl(ctx):
     # Generate the test script
     ctx.actions.write(
         output = test_script,
-        content = """
-#!/usr/bin/env bash
+        content = """#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
@@ -130,9 +129,6 @@ regression_rule_test = rule(
             doc = "The OpenROAD executable, exec configuration.",
             executable = True,
             # Avoid building OpenROAD twice with "bazelisk test -c opt ..."
-            #
-            # OpenROAD is used to build more stuff in bazel-orfs,
-            # hence we want the "exec" (host) configuration.
             cfg = "exec",
         ),
         "openroad_sanitized": attr.label(
@@ -169,8 +165,7 @@ def _doc_check_test_impl(ctx):
 
     ctx.actions.write(
         output = test_script,
-        content = """
-#!/bin/bash
+        content = """#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}

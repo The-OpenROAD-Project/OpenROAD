@@ -188,6 +188,47 @@ finished building (the `refresh` push fires when this flips to true).
 `pin_max_size` is the largest BPin dimension in DBU, used by the client
 to size the pin-marker overlay.
 
+### `layer_extents`
+
+Return where each tech layer's `tile`s can have content, so the client
+can skip requesting tiles that would come back empty.
+
+No request fields beyond the envelope.
+
+**Response (JSON):**
+```json
+{
+  "supported": true,
+  "layers": {
+    "metal1": [x0, y0, x1, y1],
+    "metal9": null
+  },
+  "gated": {
+    "inst_pins": {"metal1": [x0, y0, x1, y1]},
+    "blockages": {"metal1": [x0, y0, x1, y1]},
+    "routing_obstructions": {},
+    "fills": {}
+  }
+}
+```
+
+Each rect is a conservative bounding box, as fractions of the zoom-0 tile
+with `y` running down, so tile `(z, x, y)` covers `[x, x+1] × [y, y+1] / 2^z`.
+`layers` holds each tech layer's routing, special-net and BTerm shapes
+(`null`: none anywhere). `gated` holds, per `tile` visibility flag, the
+extent of what that flag alone draws on each layer it reaches — master pins,
+master obstructions, routing obstructions and fills; a layer that source
+does not reach is absent. A tile can be skipped when it misses the layer's
+`layers` rect and every `gated` rect whose flag is not off. A layer missing
+from `layers` (the `_`-prefixed pseudo layers) must always be requested.
+Only design geometry is covered: tracks and the debug overlays also draw on
+layer tiles, so tiles are requested regardless while those are on.
+`supported` is false for multi-chiplet designs, and the client then
+requests every tile.
+
+The extents describe the design when the request was served; after a
+`refresh` push they must be discarded and fetched again.
+
 ### `tech`
 
 Return tech-layer metadata, sites, and block info.

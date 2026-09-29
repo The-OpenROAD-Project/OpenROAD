@@ -9009,10 +9009,13 @@ class dbPolygon : public dbObject
 
   int getDesignRuleWidth() const;
 
+  int getMinSpacing() const;
+
   // User Code Begin dbPolygon
   dbTechLayer* getTechLayer();
   dbSet<dbBox> getGeometry();
   void setDesignRuleWidth(int design_rule_width);
+  void setMinSpacing(int min_spacing);
 
   ///
   /// Add an obstruction to a master.

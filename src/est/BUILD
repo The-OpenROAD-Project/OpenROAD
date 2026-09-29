@@ -11,30 +11,6 @@ package(
     features = ["layering_check"],
 )
 
-cc_library(
-    name = "private_hdrs",
-    hdrs = [
-        "src/AbstractSteinerRenderer.h",
-        "src/MakeWireParasitics.h",
-        "src/OdbCallBack.h",
-        "src/SteinerRenderer.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/grt",
-        "//src/grt:groute",
-        "//src/grt:route_pt",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/web:core",
-    ],
-)
-
 # Abstract service interface published through utl::ServiceRegistry.
 # Consumers depend only on this target, not on //src/est, which keeps
 # them free of the full est implementation surface.
@@ -46,7 +22,7 @@ cc_library(
 )
 
 cc_library(
-    name = "est",
+    name = "est_impl",
     srcs = [
         "src/EstimateParasitics.cpp",
         "src/MakeWireParasitics.cpp",
@@ -56,13 +32,44 @@ cc_library(
     hdrs = [
         "include/est/EstimateParasitics.h",
         "include/est/SteinerTree.h",
+        "src/AbstractSteinerRenderer.h",
+        "src/MakeWireParasitics.h",
+        "src/OdbCallBack.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    visibility = [
+        "//src/est:__subpackages__",
+    ],
+    deps = [
+        ":parasitics_service",
+        "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
+        "//src/grt",
+        "//src/grt:groute",
+        "//src/grt:route_pt",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
+    ],
+)
+
+cc_library(
+    name = "est",
+    hdrs = [
+        "include/est/EstimateParasitics.h",
+        "include/est/SteinerTree.h",
     ],
     includes = [
         "include",
     ],
     deps = [
+        ":est_impl",
         ":parasitics_service",
-        ":private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -80,6 +87,7 @@ cc_library(
     srcs = [
         "src/MakeEstimateParasitics.cpp",
         "src/SteinerRenderer.cpp",
+        "src/SteinerRenderer.h",
         ":swig",
         ":tcl",
     ],
@@ -95,8 +103,7 @@ cc_library(
         "src",
     ],
     deps = [
-        ":est",
-        ":private_hdrs",
+        ":est_impl",
         "//:ord",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",

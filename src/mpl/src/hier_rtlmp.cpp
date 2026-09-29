@@ -115,28 +115,15 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
+void HierRTLMP::setMinChannelSize(int width, int height)
 {
-  if (!base_halo_.isZero()) {
-    logger_->warn(MPL, 71, "Overwriting base macro halo.");
-  }
-
-  base_halo_ = {left, bottom, right, top};
+  min_channel_ = {width, height};
 }
 
 void HierRTLMP::setGuidanceRegions(
     const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
-}
-
-void HierRTLMP::setMacroHalo(odb::dbInst* macro,
-                             int left,
-                             int bottom,
-                             int right,
-                             int top)
-{
-  macro_to_halo_[macro] = {left, bottom, right, top};
 }
 
 // Options related to clustering
@@ -192,9 +179,9 @@ void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
   keep_clustering_data_ = keep_clustering_data;
 }
 
-void HierRTLMP::setUseFullHalo(bool use_full_halo)
+void HierRTLMP::setPinAwareChannels(bool pin_aware_channels)
 {
-  use_full_halo_ = use_full_halo;
+  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Top Level Function
@@ -280,13 +267,12 @@ void HierRTLMP::blockMacroChannels()
     }
 
     HardMacro::Halo halo;
-    if (macro_to_halo_.contains(inst)) {
-      halo = macro_to_halo_.at(inst);
-    } else if (inst->getHalo() != nullptr) {
+
+    if (inst->getHalo() != nullptr) {
       const HardMacro::Halo inst_halo(inst->getHalo());
-      halo = inst_halo.floorTo(base_halo_);
+      halo = inst_halo.flooredToChannel(min_channel_);
     } else {
-      halo = base_halo_;
+      halo = halo.flooredToChannel(min_channel_);
     }
 
     HardMacro hard_macro(inst, halo);
@@ -327,7 +313,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(base_halo_, use_full_halo_, macro_to_halo_);
+  clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -2494,8 +2480,8 @@ void HierRTLMP::correctMacroOrientationByCluster()
 
 void HierRTLMP::correctAllMacrosOrientation()
 {
-  if (!use_full_halo_) {
-    // With pin-aware halos, restrict flips to column and row wise since
+  if (pin_aware_channels_) {
+    // With pin-aware channels, restrict flips to column and row wise since
     // flipping single macros could lead to unaccesible regions inside
     // a cluster
     correctMacroOrientationByCluster();
