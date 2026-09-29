@@ -1,15 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2026, The OpenROAD Authors */
 
-/* The third-party stylesheets, bundled so esbuild resolves the url() in them
-   and inlines the icons they reach (issue #11065: nothing may be fetched from
-   a CDN).
-
-   The cascade the app is written against is
-     leaflet -> goldenlayout-base -> the active theme -> style.css
-   so these two come first, the themes next (they share 12 selectors with
-   goldenlayout-base and must win), and style.css last -- it ends with a block
-   that overrides the active theme.  index.html places all four in that order. */
+/* Bundled so esbuild inlines the icons their url()s reach.  index.html puts
+   these first, then the themes, which override them, and style.css last. */
 
 @import 'leaflet/dist/leaflet.css';
 @import 'golden-layout/dist/css/goldenlayout-base.css';

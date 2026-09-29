@@ -2,13 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Sew the bundled stylesheets into index.html, replacing the placeholder comment
-# inside each <style> block.  This is what gets the page down to two embedded
-# assets: the HTML carries its own CSS, and the only other file is the JS bundle
-# (issue #11065 -- nothing is fetched from a CDN).
-#
-# Each --style is a css file; its basename is the marker inside the <style>
-# block it fills, e.g. "app.min.css" fills /*! app.min.css */.
+# Sew the bundled stylesheets into index.html: each --style file replaces the
+# marker named after it, e.g. app.min.css fills /*! app.min.css */.
 
 import argparse
 import os

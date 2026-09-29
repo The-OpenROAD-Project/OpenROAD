@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# What embed_web_assets.py and embed_report_assets.py share: compressing an
-# asset the same way on every machine, and writing it out as a C array.
+# What embed_web_assets.py and embed_report_assets.py share: a gzip that gives
+# the same bytes from the same zlib, and writing the result as a C array.
 
 import gzip
 import io
@@ -14,7 +14,7 @@ _GZIP_OS_UNKNOWN = 0xFF
 
 
 def gzip_bytes(data):
-    """gzip with mtime=0 and a fixed OS byte, so builds agree on the bytes."""
+    """gzip with mtime=0 and a fixed OS byte: same input and zlib, same bytes."""
     # GzipFile, not gzip.compress(): the latter takes mtime only from 3.8.
     buffer = io.BytesIO()
     with gzip.GzipFile(fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as f:
@@ -24,8 +24,7 @@ def gzip_bytes(data):
     return bytes(packed)
 
 
-# One escape per byte value, so the loop below is a table lookup rather than
-# a format call per byte.
+# One escape per byte value, so the loop below is a table lookup.
 _OCTAL_ESCAPES = [f"\\{b:03o}" for b in range(256)]
 
 # Octal escapes are 4 chars each; 20 bytes keeps the emitted line at 80 columns.

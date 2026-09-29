@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 //
-// The viewer used to load JavaScript from CDNs, one of them over plain http
-// (issue #11065).  Everything it needs is now bundled from npm and embedded in
-// the binary, and these tests are what keeps a reintroduced remote reference
-// failing here rather than in someone else's browser.
+// Everything the viewer loads is embedded in the binary; these tests catch a
+// reintroduced remote reference before any browser meets it.
 
 #include <cstddef>
 #include <string>
@@ -151,8 +149,7 @@ TEST(WebAssets, NoReportAssetReferencesARemoteResource)
   }
 }
 
-// The binary now distributes those libraries, so it has to carry their
-// licences as well.
+// The binary distributes the bundled libraries, so it carries their licences.
 TEST(WebAssets, ServesTheThirdPartyLicenses)
 {
   const EmbeddedAsset* asset = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");

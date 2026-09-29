@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Inflating the embedded assets.  They are stored gzipped (issue #11065 put
-// them in the binary in the first place; gzip is what keeps that from costing
-// ~3 MB), so everything that needs the text rather than the bytes -- the saved
-// report, the tests, a client that does not accept gzip -- comes through here.
-//
-// This lives outside web_assets.cpp because that file is generated.
+// Inflating the embedded assets, for whatever needs their text: the saved
+// report, the tests, a client that does not accept gzip.
 
 #include <cstddef>
 #include <stdexcept>
@@ -42,9 +38,8 @@ std::string assetText(const EmbeddedAsset& asset)
   const size_t produced = stream.total_out;
   inflateEnd(&stream);
 
-  // The generator records the size the stream inflates to, so anything other
-  // than "finished, and exactly that many bytes" means the table and the blob
-  // disagree -- a build problem, not bad input.
+  // The generator records the inflated size, so anything but "finished, at
+  // exactly that size" means the table and the blob disagree: a build bug.
   if (result != Z_STREAM_END || produced != asset.original_size) {
     throw std::runtime_error(
         "an embedded asset did not inflate to its recorded size");

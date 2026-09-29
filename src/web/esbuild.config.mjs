@@ -10,9 +10,8 @@ export default {
     platform: 'browser',
     target: ['es2022'],
     loader: {
-        // leaflet.css and the golden-layout themes reach their icons through
-        // relative url(); inlining them keeps the whole page to two files and
-        // means no icon is ever fetched from a CDN (issue #11065).
+        // leaflet.css and the golden-layout themes reach icons through relative
+        // url(); inlined, the page needs no file besides the two blobs.
         '.png': 'dataurl',
         // schematic-widget.js hands the skin to onml.p(), which wants raw XML.
         '.svg': 'text',

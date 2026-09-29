@@ -1,10 +1,4 @@
-# The web viewer's bundles are esbuild output, checked in so the CMake build
-# can embed them too (issue #11065).  See src/web/dist/README.md.
-#
-# -diff keeps a 2.9 MB minified blob out of `git diff` and out of a PR's
-# rendered changes; linguist-generated keeps it out of the language stats and
-# collapses it on GitHub.  Regenerate with `bazel run //src/web/dist:dist`.
-# Only the artifacts; dist/BUILD and dist/README.md are hand-written and have
-# to stay reviewable.
+# The generated web bundles (src/web/dist/README.md), kept out of diffs and
+# language stats; dist/BUILD and dist/README.md are hand-written, so not them.
 src/web/dist/*.js -diff linguist-generated
 src/web/dist/*.html -diff linguist-generated

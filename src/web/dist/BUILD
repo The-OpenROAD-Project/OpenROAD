@@ -5,20 +5,10 @@ load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 package(default_visibility = ["//src/web:__subpackages__"])
 
-# A checked-in copy of the browser bundles //src/web builds, for the CMake
-# build only.
-#
-# The viewer's libraries come from npm and are bundled and minified by esbuild,
-# which only Bazel can drive.  The Bazel build embeds that output directly;
-# `cmake -B build` has to keep working on its own, so it embeds this copy
-# instead, the way it reads src/web.tcl.
-#
-# Everything in this directory is generated.  To refresh it after changing
-# anything under src/web/src or bumping a dependency in src/web/package.json:
+# A copy of //src/web's bundles for the CMake build, which cannot run the
+# bundler.  Regenerate everything but this file and README.md with:
 #
 #     bazel run //src/web/dist:dist
-#
-# The test this rule generates is what fails when someone forgets.
 _BUNDLES = [
     "SOURCES.sha256",
     "THIRD_PARTY_LICENSES.txt",

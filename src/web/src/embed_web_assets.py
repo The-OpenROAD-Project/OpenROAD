@@ -2,13 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Embed the web assets in the OpenROAD binary, so the browser never fetches code
-# from a CDN (issue #11065).  Generates a .cpp with path -> (content, MIME type).
-#
-# Each asset is given as "<served path>=<file path>".  Text assets are stored
-# gzipped and handed straight to a browser that accepts gzip; the compression
-# happens here rather than in either build system, so Bazel and CMake embed the
-# same bytes and neither needs a gzip on the host.
+# Embed the web assets, each given as "<served path>=<file path>", as a .cpp
+# table of path, content (text gzipped here) and MIME type.
 
 import argparse
 import os

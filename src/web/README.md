@@ -574,9 +574,10 @@ Three things about the bundle are easy to break:
 - `netlistsvg` reads ELK off the global scope, so `elk-global.js` has to run
   first. A module's imports are hoisted above its own statements, which is why
   that assignment lives in a module of its own rather than inline.
-- `leaflet` touches `window` as it loads, and nine modules use it as the global
-  `L`. It stays a global (`leaflet-global.js`) so that the pure functions in
-  those modules can still be unit-tested with no DOM.
+- `leaflet` touches `window` as it loads, and the modules that draw on the map
+  use it as the global `L`. It stays a global (`leaflet-global.js`), which
+  Leaflet sets itself, so that the pure functions in those modules can still be
+  unit-tested with no DOM.
 - The report bundle leaves out elk, netlistsvg and three, whose panels need a
   live server. `entry-report.js` is what draws that line: those libraries reach
   the page only through `vendor-globals.js`. three goes through

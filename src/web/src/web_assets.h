@@ -32,9 +32,8 @@ const EmbeddedAsset* findEmbeddedAsset(std::string_view path);
 // saveReport() inflates it into the file it writes.
 extern const EmbeddedAsset kReportJS;
 
-// The asset's bytes, inflating it first if it is stored gzipped.  For a client
-// that does not accept gzip, and for the tests; the server hands content() over
-// as it is otherwise.
+// The asset's bytes, inflated first if stored gzipped: for clients without
+// gzip and for the tests, since the server otherwise sends content() as is.
 std::string assetText(const EmbeddedAsset& asset);
 
 }  // namespace web

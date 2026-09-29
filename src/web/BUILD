@@ -58,11 +58,8 @@ py_binary(
 
 # ── The browser bundles ─────────────────────────────────────────────────────
 #
-# The viewer used to pull leaflet, golden-layout, three, elkjs and netlistsvg
-# from CDNs, one of them over plain http (issue #11065).  They now come from
-# npm and are bundled and minified here, and the embed rules below take that
-# output directly.  The CMake build cannot run the bundler, so it embeds a
-# checked-in copy under dist/ instead -- see dist/README.md.
+# The viewer's npm libraries, bundled and minified for the embed rules below.
+# The CMake build cannot run the bundler and embeds dist/ (see dist/README.md).
 
 npm_link_all_packages(name = "node_modules")
 
@@ -119,36 +116,30 @@ genrule(
     tools = [":collect_licenses"],
 )
 
-# The JS bundles.  report_bundle leaves out elk and netlistsvg -- 1.9 MB for a
-# schematic panel that needs a live server, which a saved report has not got;
-# schematic-widget.js stands down when it misses them.
-#
-# sourcemap = "" turns off the rule's "linked" default: no .map is embedded or
-# served, so the comment it leaves behind would only make the page ask for a
-# file that 404s.  (The key is ignored in esbuild.config.mjs -- it has to be
-# set here.)
 [esbuild(
     name = name,
     config = "esbuild.config.mjs",
     entry_point = "src/%s" % entry,
     minify = True,
     output = output,
+    # Off, not the rule's "linked": no .map is served, so its comment would 404.
+    # esbuild.config.mjs cannot set this key.
     sourcemap = "",
     deps = [":app_js"],
 ) for name, entry, output in [
     ("app_bundle", "entry-app.js", "app.min.js"),
+    # Without elk, netlistsvg and three, whose panels need a live server.
     ("report_bundle", "entry-report.js", "report.min.js"),
-    # Four stylesheets rather than one: index.html interleaves them with the
-    # two themes, and the cascade order is load-bearing.  See src/vendor.css.
+    # index.html orders the four stylesheets around the two themes, and the
+    # cascade depends on that order (see src/vendor.css).
     ("vendor_css", "vendor.css", "vendor.min.css"),
     ("app_css", "style.css", "app.min.css"),
     ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
     ("gl_theme_light_bundle", "gl-theme-light.css", "gl-light.min.css"),
 ]]
 
-# Minified first, while it is still a source file: the stylesheets esbuild
-# produces are already minified, and stitching them in afterwards keeps the
-# minifier off a generated input.
+# Minified while still a source file; the stylesheets, which esbuild has
+# minified already, are stitched in afterwards.
 html_minifier.html_minifier_terser(
     name = "minify_html",
     srcs = ["src/index.html"],
@@ -163,8 +154,8 @@ html_minifier.html_minifier_terser(
         "-o",
         "index.min.html.in",
     ],
-    # js_run_binary resolves paths against the package inside the bindir, so
-    # the arguments above are package-relative rather than $(location)s.
+    # js_run_binary then runs inside the package's bindir, so the paths above
+    # are package-relative.
     chdir = package_name(),
 )
 
@@ -196,9 +187,8 @@ genrule(
     tools = [":embed_report_assets"],
 )
 
-# The two blobs the server hands out, and the licences of what is in them.
-# embed_web_assets.py gzips them itself, so neither build system needs a gzip
-# on the host.  Everything else the page needs is inside the two blobs.
+# The two blobs the server hands out and their licences, gzipped by the script
+# itself so that neither build needs a gzip on the host.
 genrule(
     name = "web_assets",
     srcs = [

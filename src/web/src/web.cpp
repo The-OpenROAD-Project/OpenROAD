@@ -311,9 +311,8 @@ static http::response<http::string_body> handle_request(
         // to have done nothing until someone thinks to hard-reload.  They
         // are served from memory, so re-fetching them costs nothing.
         res.set(http::field::cache_control, "no-store");
-        // The assets are stored gzipped.  Every browser accepts gzip, so this
-        // is the path that runs; the fallback is for curl without
-        // --compressed and for the tests.
+        // Stored gzipped: browsers get those bytes as they are, and curl
+        // without --compressed and the tests get them inflated.
         if (asset->gzipped) {
           // Either way the body depends on Accept-Encoding.
           res.set(http::field::vary, "Accept-Encoding");
@@ -322,10 +321,8 @@ static http::response<http::string_body> handle_request(
           res.set(http::field::content_encoding, "gzip");
           res.body() = std::string(asset->content());
         } else {
-          // assetText() throws when a blob and its recorded size disagree,
-          // which web_assets_test rules out at build time.  Caught anyway:
-          // this runs inside an asio completion handler, where an escaping
-          // exception takes the server down rather than the request.
+          // assetText() throws if a blob and its recorded size disagree; an
+          // exception escaping this asio handler would stop the server.
           try {
             res.body() = assetText(*asset);
           } catch (const std::exception& e) {
@@ -1934,9 +1931,8 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head.  The stylesheets are the bundler's, with their icons already
-  // inlined as data: URIs.  Nothing here reaches the network, so the file opens
-  // with no server and no connection (issue #11065).
+  // HTML head: the served page's stylesheets, icons inlined as data: URIs, so
+  // the file opens with no server and no network.
   out << R"(<!DOCTYPE html>
 <html>
 <head>

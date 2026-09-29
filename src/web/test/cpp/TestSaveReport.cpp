@@ -201,9 +201,8 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   }
 }
 
-// The report carries the bundled libraries' code, so it carries their licences
-// too, in a comment after the charset: a browser looks for that declaration
-// only in the first 1024 bytes.
+// The report carries the libraries' licences in a comment after the charset,
+// which a browser only looks for in the first 1024 bytes.
 TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
 {
   const std::string path = tempHtml("licenses");
@@ -226,9 +225,8 @@ TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
   EXPECT_TRUE(contains(comment, "Eclipse Public License"));
 }
 
-// golden-layout will not lay out a page that is still being parsed, so the
-// bundle has to run deferred, as the served page's app.min.js does.  An inline
-// classic <script> runs mid-parse and leaves the report blank.
+// golden-layout will not lay out a page still being parsed, so the bundle has
+// to run deferred; an inline classic <script> would leave the report blank.
 TEST_F(SaveReportTest, RunsTheBundleOnceThePageIsParsed)
 {
   const std::string path = tempHtml("deferred_js");

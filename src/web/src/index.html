@@ -8,21 +8,16 @@
          loads. -->
     <link rel="license" href="THIRD_PARTY_LICENSES.txt">
 
-    <!-- The stylesheets and the script below are bundled from npm by esbuild
-         and embedded in the OpenROAD binary: the viewer must not load code
-         from a CDN (issue #11065) and has to work with no network.  The four
-         <style> blocks are filled in at build time; theme.js switches the two
-         golden-layout themes through their `disabled` property, by id. -->
+    <!-- Filled in at build time from esbuild's bundles; theme.js switches the
+         two golden-layout themes through their `disabled` property, by id. -->
     <style>/*! vendor.min.css */</style>
     <style id="gl-theme-dark">/*! gl-dark.min.css */</style>
     <style id="gl-theme-light">/*! gl-light.min.css */</style>
     <!-- Last on purpose: style.css ends with a block that overrides the active
          golden-layout theme, and only wins while it comes after it. -->
     <style>/*! app.min.css */</style>
-    <!-- `disabled` is a property of <style>, not an attribute, so the light
-         theme cannot start disabled from the markup the way the old <link>
-         did.  theme.js sets both once it runs; this just avoids the two
-         themes applying at once until then. -->
+    <!-- `disabled` is a property of <style>, not an attribute; this keeps the
+         two themes from applying at once until theme.js sets both. -->
     <script>document.getElementById('gl-theme-light').disabled = true;</script>
 </head>
 <body>

@@ -72,15 +72,12 @@ swig_lib(NAME         web
 
 # ── The browser bundles ─────────────────────────────────────────────────────
 #
-# The viewer's libraries (leaflet, golden-layout, three, elkjs, netlistsvg) come
-# from npm and are bundled and minified by esbuild, so the browser never fetches
-# code from a CDN (issue #11065).  Only Bazel can drive that pipeline, so this
-# build embeds a copy of its output checked in under dist/.  See dist/README.md
-# to regenerate it.
+# esbuild output that only the Bazel build can produce, embedded from the copy
+# in dist/ (dist/README.md says how to regenerate it).
 set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
-# Stop, rather than embed a stale dist/, when a file its manifest names has
-# changed since `bazel run //src/web/dist:dist`.
+# Stops the build when a file dist/'s manifest names has changed since
+# `bazel run //src/web/dist:dist` last ran.
 set(WEB_DIST_MANIFEST ${WEB_BUNDLE_DIR}/SOURCES.sha256)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${WEB_DIST_MANIFEST})
 file(STRINGS ${WEB_DIST_MANIFEST} _web_dist_entries)
@@ -105,9 +102,8 @@ add_custom_command(
   COMMENT "Checking src/web/dist against its sources"
 )
 
-# Each asset is passed as <served path>=<file path>; embed_web_assets.py gzips
-# them itself, so this needs no gzip on the host and both build systems embed
-# identical bytes.
+# Each asset is <served path>=<file>.  The script gzips them itself: no host
+# gzip is needed, and with the same zlib both builds embed the same bytes.
 set(WEB_ASSET_ARGS
   /index.html=${WEB_BUNDLE_DIR}/index.min.html
   /app.min.js=${WEB_BUNDLE_DIR}/app.min.js

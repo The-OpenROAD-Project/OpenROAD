@@ -25,22 +25,14 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Set up bazel
-        # GitHub-hosted ubuntu-latest preinstalls bazelisk, but self-hosted
-        # runners do not. Install it explicitly so the workflow works on
-        # both runner types (same as the clang-tidy workflow).
+        # Self-hosted runners lack the bazelisk ubuntu-latest preinstalls; the
+        # clang-tidy workflow sets it up the same way.
         uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # 0.19.0
         with:
           bazelisk-version: 1.x
           bazelisk-cache: true
 
-      # The viewer's browser bundles are esbuild output, checked in under
-      # src/web/dist so the CMake build can embed them without a JS toolchain
-      # (issue #11065).  The Bazel build embeds the bundler's output directly,
-      # so a stale copy would only reach CMake builds.  Jenkins' bazel test
-      # covers this target too, but only after building everything; this job
-      # fails within minutes, with the "run this to fix" hint.
-      # This is the target write_source_files generates, and the one the docs
-      # tell developers to run.  It diffs without writing into the checked-out
-      # tree.
+      # dist_tests diffs src/web/dist, which the CMake build embeds, against the
+      # bundler's output and prints the fix, without writing to the checkout.
       - name: Check the web bundles and the npm lock against their sources
         run: bazelisk test //src/web/dist:dist_tests //src/web/test:npm_lock_test
