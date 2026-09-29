@@ -76,6 +76,7 @@ set(WEB_ASSET_FILES
     src/tile-merge.js
     src/tile-request.js
     src/device-pixels.js
+    src/layer-extents.js
     src/merged-tile-layer.js
     src/display-state.js
     src/coordinates.js
@@ -132,6 +133,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/device-pixels.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/layer-extents.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
@@ -208,6 +210,22 @@ target_link_libraries(web
     stb_truetype
     utl_lib
 )
+
+# libdeflate compresses tile PNGs several times faster than lodepng's built-in
+# deflate.  It is optional: without it lodepng's own compressor is used.
+find_package(libdeflate CONFIG QUIET)
+if (TARGET libdeflate::libdeflate_static)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_static)
+elseif (TARGET libdeflate::libdeflate_shared)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_shared)
+endif()
+if (WEB_LIBDEFLATE)
+  message(STATUS "web: using libdeflate for PNG compression")
+  target_link_libraries(web PRIVATE ${WEB_LIBDEFLATE})
+  target_compile_definitions(web PRIVATE HAVE_LIBDEFLATE)
+else()
+  message(STATUS "web: libdeflate not found; PNG tiles use lodepng's compressor")
+endif()
 
 target_include_directories(web
   PUBLIC

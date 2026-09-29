@@ -408,6 +408,22 @@ TEST_F(TileHandlerTest, BoundsReturnsJson)
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
 }
 
+TEST_F(TileHandlerTest, LayerExtentsReturnsJson)
+{
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kLayerExtents;
+
+  auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object json
+      = boost::json::parse(payloadStr(resp)).as_object();
+  EXPECT_EQ(boost::json::serialize(json),
+            boost::json::serialize(serializeLayerExtentsResponse(*gen_)));
+}
+
 TEST_F(TileHandlerTest, TechReturnsJson)
 {
   WebSocketRequest req;
@@ -765,7 +781,7 @@ TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
 
 TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
 {
-  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // A render allocates about tile_px^2 * 4 bytes, so a malformed or
   // hostile count must not be taken at face value.  0 and negatives mean "not
   // specified" and fall back to 256*dpr.
   const std::vector<std::pair<std::string, uint32_t>> cases = {

@@ -62,6 +62,9 @@ COMPULSORY_TESTS = [
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "dangling_clock_inverter",
+    "dont_touch_sink",
+    "dont_touch_skipped_net",
+    "dont_touch_timing_buffer",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -167,6 +170,15 @@ filegroup(
                 "ihp-sg13g2/sg13g2_stdcell.lef",
                 "check_max_fanout3.def",
             ],
+            "dont_touch_sink": [
+                "16sinks.def",
+            ],
+            "dont_touch_skipped_net": [
+                "16sinks.def",
+            ],
+            "dont_touch_timing_buffer": [
+                "16sinks.def",
+            ],
             "dummy_load": [
                 "check_buffers.def",
             ],
@@ -264,8 +276,7 @@ cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
     deps = [
-        "//src/cts",
-        "//src/cts:private_hdrs",
+        "//src/cts:cts_impl",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -281,7 +292,7 @@ cc_test(
         "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
     ],
     deps = [
-        "//src/cts",
+        "//src/cts:cts_impl",
         "//src/dbSta:dbNetwork",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
