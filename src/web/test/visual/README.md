@@ -22,10 +22,10 @@ npm install
 ```
 
 That pulls puppeteer-core plus elkjs and netlistsvg, which the harness serves
-itself. It no longer loads them from a CDN: the viewer stopped fetching code
-from the network in [#11065][issue], and this tool renders the real widget.
-
-[issue]: https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065
+itself, so a render fetches nothing from the network. npm does not apply the
+patch the viewer's bundle carries (`../../patches/netlistsvg@1.0.2.patch`), so
+the harness makes the same substitution as it serves netlistsvg; without it the
+wires would not meet the pins the way they do in the viewer.
 
 You also need Google Chrome / Chromium. The default path is
 `/usr/bin/google-chrome`; override with `CHROME=/path/to/chrome`.

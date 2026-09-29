@@ -9,11 +9,11 @@
 // inspected) instead of guessed at.
 //
 // Usage:
-//   cd src/web/test/visual && npm i puppeteer-core   # one-time
-//   node preview.mjs [outDir]
+//   cd src/web/test/visual && npm install   # one-time
+//   node preview.mjs [outDir] [netlist.json ...]
 //
-// Requires google-chrome (or set CHROME=/path/to/chrome) and network access
-// (netlistsvg is loaded from its CDN, same as the real viewer).
+// Requires google-chrome (or set CHROME=/path/to/chrome).  elkjs and
+// netlistsvg come from this directory's node_modules; nothing is fetched.
 
 import puppeteer from 'puppeteer-core';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync } from 'node:fs';
@@ -78,9 +78,11 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
 <script src="/vendor/netlistsvg.bundle.js"></script>
 </head><body><div id="host" style="width:760px;height:460px"></div>
 <script type="module">
-  // schematic-widget.js reads the skin off the global, the way vendor-globals.js
-  // sets it in the real app (issue #11065 moved it out of a runtime fetch).
-  window.openroadSkin = await (await fetch('/openroad_skin.svg')).text();
+  // schematic-widget.js reads the skin off the global, as vendor-globals.js
+  // sets it in the app.
+  const skin = await fetch('/openroad_skin.svg');
+  if (!skin.ok) throw new Error('openroad_skin.svg: HTTP ' + skin.status);
+  window.openroadSkin = await skin.text();
   const { SchematicWidget } = await import('/schematic-widget.js');
   const widget = new SchematicWidget({ element: document.getElementById('host') }, {});
   window.__render = async (json) => {
@@ -100,13 +102,15 @@ const MIME = {
   '.svg': 'image/svg+xml',
 };
 
-// The two libraries the widget reads off the global scope.  Served from this
-// tool's own node_modules rather than a CDN: the viewer stopped fetching code
-// from the network in issue #11065, and this harness renders the real widget.
+// The two libraries the widget reads off the global scope.
 const VENDOR = {
   '/vendor/elk.bundled.js': 'elkjs/lib/elk.bundled.js',
   '/vendor/netlistsvg.bundle.js': 'netlistsvg/built/netlistsvg.bundle.js',
 };
+// npm does not apply ../../patches/netlistsvg@1.0.2.patch, which the viewer's
+// bundle is built with, so the harness makes the same substitution.
+const NETLISTSVG_PATCH = ['de.cau.cs.kieler.portConstraints',
+                          'org.eclipse.elk.portConstraints'];
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (url === '/preview.html' || url === '/') {
@@ -118,7 +122,10 @@ const server = http.createServer((req, res) => {
     const file = VENDOR[url]
       ? join(here, 'node_modules', VENDOR[url])
       : join(srcDir, url);
-    res.end(readFileSync(file));
+    const body = readFileSync(file);
+    res.end(url === '/vendor/netlistsvg.bundle.js'
+      ? body.toString('utf8').replaceAll(...NETLISTSVG_PATCH)
+      : body);
   } catch (e) { res.statusCode = 404; res.end('not found'); }
 });
 await new Promise((r) => server.listen(0, r));
@@ -135,7 +142,9 @@ try {
     const errs = [];
     page.on('pageerror', (e) => errs.push(e.message));
     await page.goto(`http://localhost:${port}/preview.html`, { waitUntil: 'load' });
-    await page.waitForFunction('window.__ready === true', { timeout: 20000 });
+    // A harness error (say, a missing skin) would otherwise surface as a timeout.
+    await page.waitForFunction('window.__ready === true', { timeout: 20000 })
+      .catch((e) => { throw new Error(errs.join('; ') || e.message); });
     const svg = await page.evaluate((j) => window.__render(j), sample);
     await new Promise((r) => setTimeout(r, 250));
     await page.screenshot({ path: join(outDir, `${name}.png`) });
