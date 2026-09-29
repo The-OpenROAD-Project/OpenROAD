@@ -24,9 +24,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-          submodules: 'recursive'
       - name: Set up bazel
         # GitHub-hosted ubuntu-latest preinstalls bazelisk, but self-hosted
         # runners do not. Install it explicitly so the workflow works on
