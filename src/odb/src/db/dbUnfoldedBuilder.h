@@ -18,7 +18,7 @@ class _dbUnfoldedChipBumpInst;
 class _dbUnfoldedChipInst;
 class _dbUnfoldedChipRegionInst;
 class dbChip;
-class dbChipBumpInst;
+class dbChipITerm;
 class dbChipInst;
 class dbChipRegionInst;
 
@@ -50,7 +50,7 @@ class dbUnfoldedBuilder
       region_map_;
   std::unordered_map<
       uint32_t,
-      std::unordered_map<dbChipBumpInst*, dbId<_dbUnfoldedChipBumpInst>>>
+      std::unordered_map<dbChipITerm*, dbId<_dbUnfoldedChipBumpInst>>>
       bump_map_;
 };
 

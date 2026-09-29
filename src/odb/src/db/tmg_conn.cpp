@@ -1344,10 +1344,10 @@ int tmg_conn::getStartNode()
   // will NOT work if a die with such a net is loaded independently as a 2D
   // design. This will need to be revisited.
   if (bt_drv && bt_drv->getBPins().empty()) {
-    dbChipBump* chip_bump = bt_drv->getChipBump();
+    dbChipBTerm* chip_bterm = bt_drv->getChipBTerm();
 
-    if (chip_bump) {
-      dbInst* bump = chip_bump->getInst();
+    if (chip_bterm) {
+      dbInst* bump = chip_bterm->getInst();
 
       for (const Terminal& rc_term : terminals_) {
         dbITerm* iterm = rc_term.iterm;

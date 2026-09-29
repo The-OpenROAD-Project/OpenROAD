@@ -19,7 +19,7 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-class _dbChipBump;
+class _dbChipBTerm;
 class _dbTechLayer;
 
 class _dbChipRegion : public _dbObject
@@ -41,7 +41,7 @@ class _dbChipRegion : public _dbObject
   Rect box_;
   int z_min_;
   int z_max_;
-  dbTable<_dbChipBump>* chip_bump_tbl_;
+  dbTable<_dbChipBTerm>* chip_bterm_tbl_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipRegion& obj);

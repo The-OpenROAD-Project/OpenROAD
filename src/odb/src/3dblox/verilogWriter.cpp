@@ -37,17 +37,17 @@ void VerilogWriter::writeChiplet(const std::string& filename, odb::dbChip* chip)
 
   for (dbChipNet* net : chip->getChipNets()) {
     const std::string net_name = net->getName();
-    const uint32_t num_bumps = net->getNumBumpInsts();
+    const uint32_t num_bumps = net->getNumChipITerms();
     for (uint32_t i = 0; i < num_bumps; i++) {
       std::vector<dbChipInst*> path;
-      dbChipBumpInst* bump_inst = net->getBumpInst(i, path);
+      dbChipITerm* bump_inst = net->getChipITerm(i, path);
       if (bump_inst == nullptr || path.size() != 1) {
         continue;
       }
       // Only handle direct children (path length 1) — "single bump
       // connections".
       dbChipInst* chip_inst = path[0];
-      dbChipBump* bump = bump_inst->getChipBump();
+      dbChipBTerm* bump = bump_inst->getChipBTerm();
       if (bump == nullptr) {
         continue;
       }

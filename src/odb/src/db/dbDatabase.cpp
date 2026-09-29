@@ -8,8 +8,8 @@
 
 #include "dbAlignmentMarkerRule.h"
 #include "dbChip.h"
-#include "dbChipBumpInst.h"
 #include "dbChipConn.h"
+#include "dbChipITerm.h"
 #include "dbChipInst.h"
 #include "dbChipNet.h"
 #include "dbChipRegionInst.h"
@@ -46,8 +46,8 @@
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
-#include "dbChipBumpInstItr.h"
 #include "dbChipConnItr.h"
+#include "dbChipITermItr.h"
 #include "dbChipInstItr.h"
 #include "dbChipNetItr.h"
 #include "dbChipRegionInstItr.h"
@@ -123,7 +123,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*chip_conn_tbl_ != *rhs.chip_conn_tbl_) {
     return false;
   }
-  if (*chip_bump_inst_tbl_ != *rhs.chip_bump_inst_tbl_) {
+  if (*chip_iterm_tbl_ != *rhs.chip_iterm_tbl_) {
     return false;
   }
   if (*chip_net_tbl_ != *rhs.chip_net_tbl_) {
@@ -206,11 +206,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       dbChipRegionInstObj);
   chip_conn_tbl_ = new dbTable<_dbChipConn>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipConnObj);
-  chip_bump_inst_tbl_
-      = new dbTable<_dbChipBumpInst>(this,
-                                     this,
-                                     (GetObjTbl_t) &_dbDatabase::getObjectTable,
-                                     dbChipBumpInstObj);
+  chip_iterm_tbl_ = new dbTable<_dbChipITerm>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipITermObj);
   chip_net_tbl_ = new dbTable<_dbChipNet>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
   unfolded_chip_inst_tbl_ = new dbTable<_dbUnfoldedChipInst>(
@@ -268,7 +265,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
 
   chip_conn_itr_ = new dbChipConnItr(chip_conn_tbl_);
 
-  chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
+  chip_iterm_itr_ = new dbChipITermItr(chip_iterm_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
@@ -345,7 +342,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     stream >> *obj.chip_conn_tbl_;
   }
   if (obj.isSchema(kSchemaChipBump)) {
-    stream >> *obj.chip_bump_inst_tbl_;
+    stream >> *obj.chip_iterm_tbl_;
   }
   if (obj.isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_net_tbl_;
@@ -479,7 +476,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_inst_tbl_;
   stream << *obj.chip_region_inst_tbl_;
   stream << *obj.chip_conn_tbl_;
-  stream << *obj.chip_bump_inst_tbl_;
+  stream << *obj.chip_iterm_tbl_;
   stream << *obj.chip_net_tbl_;
   stream << *obj.alignment_marker_rule_tbl_;
   stream << obj.dbu_per_micron_;
@@ -503,8 +500,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return chip_region_inst_tbl_;
     case dbChipConnObj:
       return chip_conn_tbl_;
-    case dbChipBumpInstObj:
-      return chip_bump_inst_tbl_;
+    case dbChipITermObj:
+      return chip_iterm_tbl_;
     case dbChipNetObj:
       return chip_net_tbl_;
     case dbUnfoldedChipInstObj:
@@ -545,7 +542,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
   chip_region_inst_tbl_->collectMemInfo(info.children["chip_region_inst_tbl_"]);
   chip_conn_tbl_->collectMemInfo(info.children["chip_conn_tbl_"]);
-  chip_bump_inst_tbl_->collectMemInfo(info.children["chip_bump_inst_tbl_"]);
+  chip_iterm_tbl_->collectMemInfo(info.children["chip_iterm_tbl_"]);
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
   unfolded_chip_inst_tbl_->collectMemInfo(
       info.children["unfolded_chip_inst_tbl_"]);
@@ -574,7 +571,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_inst_tbl_;
   delete chip_region_inst_tbl_;
   delete chip_conn_tbl_;
-  delete chip_bump_inst_tbl_;
+  delete chip_iterm_tbl_;
   delete chip_net_tbl_;
   delete unfolded_chip_inst_tbl_;
   delete unfolded_chip_region_inst_tbl_;
@@ -590,7 +587,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_inst_itr_;
   delete chip_region_inst_itr_;
   delete chip_conn_itr_;
-  delete chip_bump_inst_itr_;
+  delete chip_iterm_itr_;
   delete chip_net_itr_;
   delete unfolded_region_itr_;
   delete unfolded_bump_itr_;
@@ -640,7 +637,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   chip_conn_itr_ = new dbChipConnItr(chip_conn_tbl_);
 
-  chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
+  chip_iterm_itr_ = new dbChipITermItr(chip_iterm_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
@@ -728,10 +725,10 @@ dbSet<dbChipConn> dbDatabase::getChipConns() const
   return dbSet<dbChipConn>(obj, obj->chip_conn_tbl_);
 }
 
-dbSet<dbChipBumpInst> dbDatabase::getChipBumpInsts() const
+dbSet<dbChipITerm> dbDatabase::getChipITerms() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return dbSet<dbChipBumpInst>(obj, obj->chip_bump_inst_tbl_);
+  return dbSet<dbChipITerm>(obj, obj->chip_iterm_tbl_);
 }
 
 dbSet<dbChipNet> dbDatabase::getChipNets() const

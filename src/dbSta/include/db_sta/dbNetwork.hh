@@ -557,7 +557,7 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBMODNET_ID = 0x7;
   static constexpr unsigned DBMODULE_ID = 0x8;
   static constexpr unsigned DBCHIPINST_ID = 0x9;
-  static constexpr unsigned DBCHIPBUMP_INST_ID = 0xA;
+  static constexpr unsigned DBCHIPITERM_ID = 0xA;
   static constexpr unsigned DBCHIPNET_ID = 0xB;
   static constexpr unsigned CONCRETE_OBJECT_ID = 0xF;
   // Number of lower bits used

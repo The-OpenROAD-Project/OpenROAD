@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "dbChipBump.h"
+#include "dbChipBTerm.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -48,7 +48,7 @@ bool _dbChipRegion::operator==(const _dbChipRegion& rhs) const
   if (z_max_ != rhs.z_max_) {
     return false;
   }
-  if (*chip_bump_tbl_ != *rhs.chip_bump_tbl_) {
+  if (*chip_bterm_tbl_ != *rhs.chip_bterm_tbl_) {
     return false;
   }
 
@@ -66,8 +66,8 @@ _dbChipRegion::_dbChipRegion(_dbDatabase* db)
   side_ = static_cast<uint8_t>(dbChipRegion::Side::FRONT);
   z_min_ = 0;
   z_max_ = 0;
-  chip_bump_tbl_ = new dbTable<_dbChipBump>(
-      db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBumpObj);
+  chip_bterm_tbl_ = new dbTable<_dbChipBTerm>(
+      db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBTermObj);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
@@ -79,7 +79,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.z_min_;
   stream >> obj.z_max_;
   if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
-    stream >> *obj.chip_bump_tbl_;
+    stream >> *obj.chip_bterm_tbl_;
   }
   return stream;
 }
@@ -92,15 +92,15 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipRegion& obj)
   stream << obj.box_;
   stream << obj.z_min_;
   stream << obj.z_max_;
-  stream << *obj.chip_bump_tbl_;
+  stream << *obj.chip_bterm_tbl_;
   return stream;
 }
 
 dbObjectTable* _dbChipRegion::getObjectTable(dbObjectType type)
 {
   switch (type) {
-    case dbChipBumpObj:
-      return chip_bump_tbl_;
+    case dbChipBTermObj:
+      return chip_bterm_tbl_;
     default:
       break;
   }
@@ -112,12 +112,12 @@ void _dbChipRegion::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   info.children["name"].add(name_);
-  chip_bump_tbl_->collectMemInfo(info.children["chip_bump_tbl_"]);
+  chip_bterm_tbl_->collectMemInfo(info.children["chip_bterm_tbl_"]);
 }
 
 _dbChipRegion::~_dbChipRegion()
 {
-  delete chip_bump_tbl_;
+  delete chip_bterm_tbl_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -145,10 +145,10 @@ Rect dbChipRegion::getBox() const
   return obj->box_;
 }
 
-dbSet<dbChipBump> dbChipRegion::getChipBumps() const
+dbSet<dbChipBTerm> dbChipRegion::getChipBTerms() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
-  return dbSet<dbChipBump>(obj, obj->chip_bump_tbl_);
+  return dbSet<dbChipBTerm>(obj, obj->chip_bterm_tbl_);
 }
 
 // User Code Begin dbChipRegionPublicMethods

@@ -2,11 +2,11 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "dbChipBumpInstItr.h"
+#include "dbChipITermItr.h"
 
 #include <cstdint>
 
-#include "dbChipBumpInst.h"
+#include "dbChipITerm.h"
 #include "dbChipRegionInst.h"
 #include "dbTable.h"
 // User Code Begin Includes
@@ -17,81 +17,80 @@ namespace odb {
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbChipBumpInstItr - Methods
+// dbChipITermItr - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipBumpInstItr::reversible() const
+bool dbChipITermItr::reversible() const
 {
   return true;
 }
 
-bool dbChipBumpInstItr::orderReversed() const
+bool dbChipITermItr::orderReversed() const
 {
   return true;
 }
 
-void dbChipBumpInstItr::reverse(dbObject* parent)
+void dbChipITermItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbChipRegionInst* chip_region_inst = (_dbChipRegionInst*) parent;
-  uint32_t id = chip_region_inst->chip_bump_insts_;
+  uint32_t id = chip_region_inst->chip_iterms_;
   uint32_t list = 0;
 
   while (id != 0) {
-    _dbChipBumpInst* chip_bump_inst = chip_bump_inst_tbl_->getPtr(id);
-    uint32_t n = chip_bump_inst->region_next_;
-    chip_bump_inst->region_next_ = list;
+    _dbChipITerm* chip_iterm = chip_iterm_tbl_->getPtr(id);
+    uint32_t n = chip_iterm->region_next_;
+    chip_iterm->region_next_ = list;
     list = id;
     id = n;
   }
-  chip_region_inst->chip_bump_insts_ = list;
+  chip_region_inst->chip_iterms_ = list;
   // User Code End reverse
 }
 
-uint32_t dbChipBumpInstItr::sequential() const
+uint32_t dbChipITermItr::sequential() const
 {
   return 0;
 }
 
-uint32_t dbChipBumpInstItr::size(dbObject* parent) const
+uint32_t dbChipITermItr::size(dbObject* parent) const
 {
   uint32_t id;
   uint32_t cnt = 0;
 
-  for (id = dbChipBumpInstItr::begin(parent);
-       id != dbChipBumpInstItr::end(parent);
-       id = dbChipBumpInstItr::next(id)) {
+  for (id = dbChipITermItr::begin(parent); id != dbChipITermItr::end(parent);
+       id = dbChipITermItr::next(id)) {
     ++cnt;
   }
 
   return cnt;
 }
 
-uint32_t dbChipBumpInstItr::begin(dbObject* parent) const
+uint32_t dbChipITermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChipRegionInst* chip_region_inst = (_dbChipRegionInst*) parent;
-  return chip_region_inst->chip_bump_insts_;
+  return chip_region_inst->chip_iterms_;
   // User Code End begin
 }
 
-uint32_t dbChipBumpInstItr::end(dbObject* /* unused: parent */) const
+uint32_t dbChipITermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint32_t dbChipBumpInstItr::next(uint32_t id, ...) const
+uint32_t dbChipITermItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
-  _dbChipBumpInst* chip_bump_inst = chip_bump_inst_tbl_->getPtr(id);
-  return chip_bump_inst->region_next_;
+  _dbChipITerm* chip_iterm = chip_iterm_tbl_->getPtr(id);
+  return chip_iterm->region_next_;
   // User Code End next
 }
 
-dbObject* dbChipBumpInstItr::getObject(uint32_t id, ...)
+dbObject* dbChipITermItr::getObject(uint32_t id, ...)
 {
-  return chip_bump_inst_tbl_->getPtr(id);
+  return chip_iterm_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp
