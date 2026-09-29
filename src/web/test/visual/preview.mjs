@@ -17,7 +17,7 @@
 
 import puppeteer from 'puppeteer-core';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync } from 'node:fs';
-import { dirname, join, basename } from 'node:path';
+import { dirname, join, basename, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import http from 'node:http';
@@ -109,6 +109,13 @@ const VENDOR = {
 // bundle is built with, so the harness makes the same substitution.
 const NETLISTSVG_PATCH = ['de.cau.cs.kieler.portConstraints',
                           'org.eclipse.elk.portConstraints'];
+
+// Only files under src/: anything else, ../ included, is a 404.
+function srcFile(url) {
+  const file = resolve(srcDir, '.' + url);
+  return file.startsWith(srcDir + sep) ? file : null;
+}
+
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (url === '/preview.html' || url === '/') {
@@ -119,14 +126,15 @@ const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', MIME[ext] || 'text/plain');
     const file = VENDOR[url]
       ? join(here, 'node_modules', VENDOR[url])
-      : join(srcDir, url);
+      : srcFile(url);
+    if (!file) throw new Error(`${url} is outside src/`);
     const body = readFileSync(file);
     res.end(url === '/vendor/netlistsvg.bundle.js'
       ? body.toString('utf8').replaceAll(...NETLISTSVG_PATCH)
       : body);
   } catch (e) { res.statusCode = 404; res.end('not found'); }
 });
-await new Promise((r) => server.listen(0, r));
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
 const browser = await puppeteer.launch({
@@ -139,7 +147,7 @@ try {
     await page.setViewport({ width: 760, height: 460, deviceScaleFactor: 2 });
     const errs = [];
     page.on('pageerror', (e) => errs.push(e.message));
-    await page.goto(`http://localhost:${port}/preview.html`, { waitUntil: 'load' });
+    await page.goto(`http://127.0.0.1:${port}/preview.html`, { waitUntil: 'load' });
     // A harness error (say, a missing skin) would otherwise surface as a timeout.
     await page.waitForFunction('window.__ready === true', { timeout: 20000 })
       .catch((e) => { throw new Error(errs.join('; ') || e.message); });
