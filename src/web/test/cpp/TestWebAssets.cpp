@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "remote_urls.h"
 #include "web_assets.h"
 
 namespace web {
@@ -24,60 +25,51 @@ const std::pair<const char*, const EmbeddedAsset*> kReportAssets[] = {
     {"kReportJS", &kReportJS},
 };
 
-// The bundles quote plenty of absolute URLs that are names, not fetches: XML
-// namespaces, JSON Schema dialects, licence and homepage links in the comments
-// the minifier keeps.  Only a scheme-relative or http(s) URL in a position that
-// would make the browser fetch it matters, so the scan allows these prefixes
-// and flags everything else for a human to look at.
-bool isIdentifierUrl(const std::string_view url)
+// What the page would fetch from elsewhere: absolute URLs that are not mere
+// identifiers, and scheme-relative ones.
+std::vector<std::string> remoteReferences(const std::string_view text)
 {
-  for (const std::string_view allowed : {
-           "http://www.w3.org/",
-           "http://www.eclipse.org/",
-           "http:///org/eclipse/",
-           "http://json-schema.org/",
-           "https://raw.githubusercontent.com/epoberezkin/ajv/",
-           "http://github.com/garycourt/uri-js",
-           "http://mths.be/",
-           "http://underscorejs.org/",
-           "https://lodash.com/",
-           "https://js.foundation/",
-           "https://feross.org",
-           "https://npms.io/",
-           "https://leafletjs.com",
-           "https://discourse.threejs.org/",
-           // The namespace netlistsvg stamps into the SVG it produces.
-           "https://github.com/nturley/netlistsvg",
-       }) {
-    if (url.starts_with(allowed)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Every absolute URL in an asset that is not one of the identifiers above.
-std::vector<std::string> externalUrls(const std::string_view text)
-{
-  std::vector<std::string> found;
-  for (size_t pos = 0;;) {
-    const size_t begin = text.find("http", pos);
-    if (begin == std::string_view::npos) {
-      break;
-    }
-    pos = begin + 4;
-    if (text.compare(begin, 7, "http://") != 0
-        && text.compare(begin, 8, "https://") != 0) {
-      continue;
-    }
-    const size_t end = text.find_first_of("\"'`) >,;\n", begin);
-    const std::string_view url
-        = text.substr(begin, end == std::string_view::npos ? 60 : end - begin);
-    if (!isIdentifierUrl(url)) {
-      found.emplace_back(url);
-    }
+  std::vector<std::string> found = test::externalUrls(text);
+  for (std::string& url : test::schemeRelativeUrls(text)) {
+    found.push_back(std::move(url));
   }
   return found;
+}
+
+// ─── The scanner itself ─────────────────────────────────────────────────────
+
+// A scanner that finds nothing would pass every test below, so it gets its own.
+TEST(RemoteUrls, AllowsAnIdentifierOnlyUpToItsBoundary)
+{
+  EXPECT_TRUE(test::isIdentifierUrl("https://feross.org"));
+  EXPECT_TRUE(test::isIdentifierUrl("https://feross.org/buffer"));
+  EXPECT_TRUE(test::isIdentifierUrl("http://www.w3.org/2000/svg"));
+  EXPECT_FALSE(test::isIdentifierUrl("https://feross.org.example.com/x.js"));
+  EXPECT_FALSE(test::isIdentifierUrl("https://leafletjs.com.example/l.js"));
+  EXPECT_FALSE(test::isIdentifierUrl("https://unpkg.com/leaflet"));
+}
+
+TEST(RemoteUrls, FindsAbsoluteUrlsInAnyCase)
+{
+  EXPECT_EQ(test::externalUrls("<script src=\"https://unpkg.com/l.js\">"),
+            std::vector<std::string>{"https://unpkg.com/l.js"});
+  EXPECT_EQ(test::externalUrls("s.src='HTTPS://CDN.example/x.js'").size(), 1u);
+  EXPECT_TRUE(
+      test::externalUrls("xmlns=\"http://www.w3.org/2000/svg\"").empty());
+}
+
+TEST(RemoteUrls, FindsSchemeRelativeFetches)
+{
+  for (const char* text : {"<script src=\"//cdn.example/x.js\">",
+                           "<link href='//cdn.example/x.css'>",
+                           "a{background:url(//cdn.example/i.png)}",
+                           "@import \"//cdn.example/x.css\";",
+                           "fetch('//cdn.example/x')",
+                           "import(\"//cdn.example/m.js\")",
+                           "import{a}from\"//cdn.example/m.js\""}) {
+    EXPECT_EQ(test::schemeRelativeUrls(text).size(), 1u) << text;
+  }
+  EXPECT_TRUE(test::schemeRelativeUrls("x=1;// a comment\ny=2").empty());
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -140,22 +132,19 @@ TEST(WebAssets, NoAssetReferencesARemoteResource)
   for (const std::string_view path : {"/index.html", "/app.min.js"}) {
     const EmbeddedAsset* asset = findEmbeddedAsset(path);
     ASSERT_NE(asset, nullptr) << path;
-    const std::string text = assetText(*asset);
-    const std::vector<std::string> urls = externalUrls(text);
+    const std::vector<std::string> urls = remoteReferences(assetText(*asset));
     EXPECT_TRUE(urls.empty())
         << path << " reaches out to " << (urls.empty() ? "" : urls.front())
         << " (" << urls.size() << " in total)";
   }
 }
 
-// A saved report is the copy that gets emailed around and opened months later,
-// with no server and possibly no network.  Its four blobs are embedded
-// separately from the served ones, so the scan above never reaches them -- and
-// a CDN reintroduced here would be exactly the regression #11065 was filed for.
+// A saved report opens with no server and possibly no network, and its script
+// is embedded apart from the served assets, so the scan above misses it.
 TEST(WebAssets, NoReportAssetReferencesARemoteResource)
 {
   for (const auto& [name, asset] : kReportAssets) {
-    const std::vector<std::string> urls = externalUrls(assetText(*asset));
+    const std::vector<std::string> urls = remoteReferences(assetText(*asset));
     EXPECT_TRUE(urls.empty())
         << name << " reaches out to " << (urls.empty() ? "" : urls.front())
         << " (" << urls.size() << " in total)";
@@ -202,17 +191,6 @@ TEST(WebAssets, StoresTheReportAssetsGzipped)
     EXPECT_LT(asset->size, asset->original_size) << name;
     EXPECT_EQ(assetText(*asset).size(), asset->original_size) << name;
   }
-}
-
-// A scheme-relative "//cdn.example.com/x.js" is a fetch too, and the scan above
-// would not see it.
-TEST(WebAssets, TheIndexHasNoSchemeRelativeReference)
-{
-  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
-  ASSERT_NE(asset, nullptr);
-  const std::string html = assetText(*asset);
-  EXPECT_EQ(html.find("src=\"//"), std::string::npos);
-  EXPECT_EQ(html.find("href=\"//"), std::string::npos);
 }
 
 }  // namespace

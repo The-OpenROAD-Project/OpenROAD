@@ -403,7 +403,10 @@ cc_test(
 
 cc_test(
     name = "web_assets_test",
-    srcs = ["cpp/TestWebAssets.cpp"],
+    srcs = [
+        "cpp/TestWebAssets.cpp",
+        "cpp/remote_urls.h",
+    ],
     deps = [
         "//src/web",
         "//src/web:core",
@@ -565,7 +568,10 @@ cc_test(
 
 cc_test(
     name = "save_report_test",
-    srcs = ["cpp/TestSaveReport.cpp"],
+    srcs = [
+        "cpp/TestSaveReport.cpp",
+        "cpp/remote_urls.h",
+    ],
     data = [
         "//test:nangate45_data",
     ],

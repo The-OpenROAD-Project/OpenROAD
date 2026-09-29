@@ -15,6 +15,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "remote_urls.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
@@ -229,15 +230,25 @@ TEST_F(SaveReportTest, RunsTheBundleOnceThePageIsParsed)
   EXPECT_TRUE(contains(script, "openroad-cone-sync"));
 }
 
-// The point of issue #11065: a saved report opens with no server and no
-// network.  It used to pull leaflet and golden-layout from CDNs and import
-// three and golden-layout from esm.sh; all four are in the bundle now.
+// A saved report opens with no server and no network, so nothing in it may
+// point elsewhere; the licence comment's links are text nothing fetches.
 TEST_F(SaveReportTest, IsSelfContained)
 {
   const std::string path = tempHtml("self_contained");
   generateReport(path);
-  const std::string html = readFile(path);
+  std::string html = readFile(path);
+  const size_t begin = html.find("<!--");
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("-->", begin);
+  ASSERT_NE(end, std::string::npos);
+  html.erase(begin, end + 3 - begin);
 
+  for (const std::vector<std::string>& urls :
+       {test::externalUrls(html), test::schemeRelativeUrls(html)}) {
+    EXPECT_TRUE(urls.empty())
+        << "the report reaches out to " << (urls.empty() ? "" : urls.front())
+        << " (" << urls.size() << " in total)";
+  }
   for (const char* cdn : {"unpkg.com",
                           "cdn.jsdelivr.net",
                           "esm.sh",
