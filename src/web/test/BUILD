@@ -38,24 +38,14 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in TESTS]
 
-# The viewer's sources, and the packages they import by bare specifier (issue
-# #11065 moved those off CDNs and into the bundle).  The packages come from
-# //src/web rather than from here: node resolves node_modules by walking up
-# from the importing file, and it is src/web/src/*.js that imports them.
-# elkjs and netlistsvg are absent because only vendor-globals.js touches them,
-# and no test reaches it.
+# The viewer's sources.  A test whose modules import an npm package lists it
+# from //src/web, where node looks for it (see three_subset_test).
 JS_SRCS = ["//src/web:js_files"]
-
-JS_FILES = JS_SRCS + [
-    "//src/web:node_modules/golden-layout",
-    "//src/web:node_modules/leaflet",
-    "//src/web:node_modules/three",
-]
 
 DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
-] + JS_FILES
+] + JS_SRCS
 
 py_test(
     name = "npm_lock_test",
@@ -80,14 +70,14 @@ test_suite(
 
 js_test(
     name = "coordinates_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-coordinates.js",
     no_copy_to_bin = JS_SRCS,
 )
 
 js_test(
     name = "ui_utils_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-ui-utils.js",
     no_copy_to_bin = JS_SRCS,
 )
@@ -135,7 +125,7 @@ js_test(
     name = "hierarchy_browser_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-hierarchy-browser.js",
-    no_copy_to_bin = JS_FILES,
+    no_copy_to_bin = JS_SRCS,
 )
 
 js_test(
@@ -161,21 +151,21 @@ js_test(
 
 js_test(
     name = "websocket_manager_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-websocket-manager.js",
     no_copy_to_bin = JS_SRCS,
 )
 
 js_test(
     name = "websocket_tile_layer_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-websocket-tile-layer.js",
     no_copy_to_bin = JS_SRCS,
 )
 
 js_test(
     name = "checkbox_tree_model_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-checkbox-tree-model.js",
     no_copy_to_bin = JS_SRCS,
 )
@@ -189,7 +179,7 @@ js_test(
 
 js_test(
     name = "clock_tree_widget_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-clock-tree-widget.js",
     no_copy_to_bin = JS_SRCS,
 )
@@ -224,14 +214,14 @@ js_test(
 
 js_test(
     name = "ruler_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-ruler.js",
     no_copy_to_bin = JS_SRCS,
 )
 
 js_test(
     name = "label_manager_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-label-manager.js",
     no_copy_to_bin = JS_SRCS,
 )
@@ -308,7 +298,7 @@ js_test(
 
 js_test(
     name = "tile_merge_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-tile-merge.js",
     no_copy_to_bin = JS_SRCS,
 )
@@ -322,14 +312,14 @@ js_test(
 
 js_test(
     name = "dpr_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-dpr.js",
     no_copy_to_bin = JS_SRCS,
 )
 
 js_test(
     name = "device_pixels_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-device-pixels.js",
     no_copy_to_bin = JS_SRCS,
 )
@@ -343,7 +333,7 @@ js_test(
 
 js_test(
     name = "title_test",
-    data = JS_FILES,
+    data = JS_SRCS,
     entry_point = "js/test-title.js",
     no_copy_to_bin = JS_SRCS,
 )
