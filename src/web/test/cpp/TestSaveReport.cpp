@@ -110,6 +110,21 @@ class SaveReportTest : public tst::Nangate45Fixture
     return haystack.find(needle) != std::string::npos;
   }
 
+  // The bundle's inline module, or "" when the report has none.
+  static std::string moduleScript(const std::string& html)
+  {
+    const std::string open = "<script type=\"module\">";
+    const size_t begin = html.find(open);
+    if (begin == std::string::npos) {
+      return {};
+    }
+    const size_t end = html.find("</script>", begin);
+    if (end == std::string::npos) {
+      return {};
+    }
+    return html.substr(begin + open.size(), end - begin - open.size());
+  }
+
   std::vector<std::string> output_files_;
 };
 
@@ -176,14 +191,14 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
 {
   const std::string path = tempHtml("inlined_js");
   generateReport(path);
-  const std::string html = readFile(path);
+  const std::string script = moduleScript(readFile(path));
 
-  // The script is minified, so its identifiers are gone; what survives is the
-  // strings it needs at runtime.  Size is the honest check that the bundle is
-  // really in there rather than an empty <script>.
-  EXPECT_GT(html.size(), 500u * 1024u);
-  EXPECT_TRUE(contains(html, "openroad-cone-sync"));
-  EXPECT_TRUE(contains(html, "gl-container"));
+  // Minifying renames identifiers but keeps strings and property names: the
+  // cone-sync channel, the static cache lookup and two widgets' names.
+  for (const char* marker :
+       {"openroad-cone-sync", "fromCache", "TimingWidget", "ChartsWidget"}) {
+    EXPECT_TRUE(contains(script, marker)) << marker;
+  }
 }
 
 // The report carries the bundled libraries' code, so it carries their licences
@@ -218,16 +233,9 @@ TEST_F(SaveReportTest, RunsTheBundleOnceThePageIsParsed)
 {
   const std::string path = tempHtml("deferred_js");
   generateReport(path);
-  const std::string html = readFile(path);
 
-  const std::string open = "<script type=\"module\">";
-  const size_t begin = html.find(open);
-  ASSERT_NE(begin, std::string::npos);
-  const size_t end = html.find("</script>", begin);
-  ASSERT_NE(end, std::string::npos);
   // The bundle itself, not some other script, is what sits in that block.
-  const std::string script = html.substr(begin, end - begin);
-  EXPECT_TRUE(contains(script, "openroad-cone-sync"));
+  EXPECT_TRUE(contains(moduleScript(readFile(path)), "openroad-cone-sync"));
 }
 
 // A saved report opens with no server and no network, so nothing in it may
@@ -267,12 +275,9 @@ TEST_F(SaveReportTest, LeavesTheLivePanelsLibrariesOut)
 {
   const std::string path = tempHtml("no_live_panels");
   generateReport(path);
-  const std::string html = readFile(path);
   // The script alone: the licence comment names these libraries too.
-  const size_t begin = html.find("<script type=\"module\">");
-  ASSERT_NE(begin, std::string::npos);
-  const std::string script
-      = html.substr(begin, html.find("</script>", begin) - begin);
+  const std::string script = moduleScript(readFile(path));
+  ASSERT_FALSE(script.empty());
 
   // Markers from the libraries themselves; the widgets' own code stays in.
   EXPECT_FALSE(contains(script, "org.eclipse.elk"));
