@@ -1,0 +1,23 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN cugr_detour_limit ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 50400 50400 ) ;
+TRACKS X 190 DO 133 STEP 380 LAYER metal1 metal2 metal3 ;
+TRACKS Y 140 DO 180 STEP 280 LAYER metal1 metal2 metal3 ;
+PINS 2 ;
+  - source + NET test_net + DIRECTION INPUT + USE SIGNAL
+    + LAYER metal3 ( -70 -70 ) ( 70 70 ) + PLACED ( 6300 23100 ) N ;
+  - sink + NET test_net + DIRECTION OUTPUT + USE SIGNAL
+    + LAYER metal3 ( -70 -70 ) ( 70 70 ) + PLACED ( 39900 23100 ) N ;
+END PINS
+BLOCKAGES 3 ;
+  - LAYER metal3 RECT ( 12600 21210 ) ( 33600 24990 ) ;
+  - LAYER metal3 RECT ( 12600 17200 ) ( 33600 18800 ) ;
+  - LAYER metal3 RECT ( 12600 25600 ) ( 33600 27200 ) ;
+END BLOCKAGES
+NETS 1 ;
+  - test_net ( PIN source ) ( PIN sink ) ;
+END NETS
+END DESIGN
