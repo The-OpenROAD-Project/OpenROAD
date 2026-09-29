@@ -145,6 +145,13 @@ class Opendp
 
   // Report the density of a region.  Backs report_placement_density.
   void reportPlacementDensity(const odb::Rect& region) const;
+
+  // Whether a placement grid exists, i.e. whether initPlacementGrid() or
+  // initMacrosAndGrid() has run.  A caller that only wants the density
+  // queries uses this to build the grid just when nothing else has: either
+  // init rebuilds it from scratch, and initPlacementGrid() leaves out the
+  // fixed-cell painting that legalCellPos() reads.
+  bool hasPlacementGrid() const;
   ////////////////////////////////////////////////////////////////
 
   // legalize/report

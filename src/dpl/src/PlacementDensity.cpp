@@ -166,6 +166,10 @@ void InstanceIndex::visit(
 }
 
 ////////////////////////////////////////////////////////////////
+bool Opendp::hasPlacementGrid() const
+{
+  return block_ != nullptr && grid_->getRowCount() > 0;
+}
 
 odb::dbBlock* Opendp::densityBlock() const
 {
@@ -232,7 +236,7 @@ void Opendp::visitPlacedInstances(
     odb::dbMaster* master = inst->getMaster();
     // A filler is removable, so the room it sits on is still room for a new
     // cell.
-    if (master->isFiller()) {
+    if (isFiller(inst)) {
       return;
     }
     // Pads and covers sit outside the rows, so they would be charged
