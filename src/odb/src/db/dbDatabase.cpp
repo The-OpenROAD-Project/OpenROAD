@@ -947,6 +947,8 @@ static void resumeSuspendedEco(_dbBlock* block)
   if (block->journal_stack_.empty() || !block->journal_stack_.top().resume) {
     return;
   }
+  assert(block->journal_ == nullptr);
+  assert(block->journal_stack_.top().journal != nullptr);
   block->journal_ = block->journal_stack_.top().journal;
   block->journal_stack_.pop();
 }
@@ -958,6 +960,7 @@ void dbDatabase::beginEco(dbBlock* block_)
     // Suspend the enclosing ECO; it resumes when this one is committed
     // or undone.
     block->journal_stack_.push({block->journal_, true});
+    block->journal_ = nullptr;
   }
   block->journal_ = new dbJournal(block_);
   assert(block->journal_);
