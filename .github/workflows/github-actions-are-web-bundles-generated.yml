@@ -18,6 +18,9 @@ on:
     - 'MODULE.bazel'
     - 'MODULE.bazel.lock'
 
+permissions:
+  contents: read
+
 jobs:
   Are-Web-Bundles-Generated:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
