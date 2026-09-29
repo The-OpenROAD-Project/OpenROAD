@@ -213,16 +213,11 @@ class tmg_conn
   void connectTerm(int terminal_index, bool soft);
   void connectTermSoft(int terminal_index, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
-  void relocateShorts();
   void setSring();
   void sliceBPinsOverlappingITerms();
 
   int getStartNode();
   void findDriver(dbITerm** iterm, dbBTerm** bterm);
-  void dfsClear();
-  bool dfsStart(int& j);
-  bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
-  bool isVisited(int j) const;
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
   int getExtension(int ipt, const WireSection* wire_section);
   int addPoint(int ipt, const WireSection* wire_section);

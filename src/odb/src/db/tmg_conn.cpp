@@ -54,7 +54,7 @@ void tmg_conn::analyzeNet()
     net_->destroySWires();
   }
 
-  relocateShorts();
+  connection_graph_->relocateShorts(this);
   treeReorder(false);
 
   net_->setDisconnected(!connected_);
@@ -169,11 +169,6 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
 void tmg_conn::addShort(const int i0, const int i1)
 {
   shorts_.emplace_back(i0, i1);
-}
-
-void tmg_conn::relocateShorts()
-{
-  connection_graph_->relocateShorts(this);
 }
 
 void tmg_conn::clear()
@@ -1641,30 +1636,6 @@ void tmg_conn::findDriver(dbITerm** iterm, dbBTerm** bterm)
   }
 }
 
-void tmg_conn::dfsClear()
-{
-  connection_graph_->clearVisited();
-}
-
-bool tmg_conn::dfsStart(int& j)
-{
-  return connection_graph_->dfsStart(j);
-}
-
-bool tmg_conn::dfsNext(int* from,
-                       int* to,
-                       int* k,
-                       bool* is_short,
-                       bool* is_loop)
-{
-  return connection_graph_->dfsNext(from, to, k, is_short, is_loop);
-}
-
-bool tmg_conn::isVisited(int j) const
-{
-  return connection_graph_->pt(j).visited;
-}
-
 bool tmg_conn::checkConnected()
 {
   for (const Terminal& x : terminals_) {
@@ -1683,8 +1654,8 @@ bool tmg_conn::checkConnected()
     xstart = x;
     restart_terminals_.push_back(x);
   }
-  dfsClear();
-  if (!dfsStart(jstart)) {
+  connection_graph_->clearVisited();
+  if (!connection_graph_->dfsStart(jstart)) {
     return false;
   }
   int tstack0 = 0;
@@ -1692,7 +1663,7 @@ bool tmg_conn::checkConnected()
     // do a physically-connected subtree
     int jfr, jto, k;
     bool is_short, is_loop;
-    while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
+    while (connection_graph_->dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
       if (wire_points_[jto].terminal_index >= 0) {
         Terminal* x = &terminals_[wire_points_[jto].terminal_index];
         if (x == xstart && !is_short) {
@@ -1726,7 +1697,7 @@ bool tmg_conn::checkConnected()
     while (tstack0 < restart_terminals_.size() && !pt) {
       Terminal* x = restart_terminals_[tstack0++];
       for (pt = x->pt; pt; pt = pt->next_terminal_point) {
-        if (!isVisited(pt - wire_points_.data())) {
+        if (!connection_graph_->isVisited(pt - wire_points_.data())) {
           break;
         }
       }
@@ -1738,7 +1709,7 @@ bool tmg_conn::checkConnected()
       break;
     }
     jstart = pt - wire_points_.data();
-    if (!dfsStart(jstart)) {
+    if (!connection_graph_->dfsStart(jstart)) {
       return false;
     }
   }
@@ -1809,8 +1780,8 @@ void tmg_conn::treeReorder(const bool no_convert)
     xstart = x;
     restart_terminals_.push_back(x);
   }
-  dfsClear();
-  if (!dfsStart(jstart)) {
+  connection_graph_->clearVisited();
+  if (!connection_graph_->dfsStart(jstart)) {
     logger_->error(ODB,
                    395,
                    "Could not order wires of net {}. No wire segment is "
@@ -1825,7 +1796,7 @@ void tmg_conn::treeReorder(const bool no_convert)
     Terminal* x = nullptr;
     int jfr, jto, k;
     bool is_short, is_loop;
-    while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
+    while (connection_graph_->dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
       x = nullptr;
       if (wire_points_[jto].terminal_index >= 0) {
         x = &terminals_[wire_points_[jto].terminal_index];
@@ -1864,7 +1835,7 @@ void tmg_conn::treeReorder(const bool no_convert)
     while (tstack0 < restart_terminals_.size() && !pt) {
       x = restart_terminals_[tstack0++];
       for (pt = x->pt; pt; pt = pt->next_terminal_point) {
-        if (!isVisited(pt - wire_points_.data())) {
+        if (!connection_graph_->isVisited(pt - wire_points_.data())) {
           break;
         }
       }
@@ -1877,7 +1848,8 @@ void tmg_conn::treeReorder(const bool no_convert)
       int j;
       for (j = last_term_index; j < terminals_.size(); j++) {
         x = &terminals_[j];
-        if (x->pt && !isVisited(x->pt - wire_points_.data())) {
+        if (x->pt
+            && !connection_graph_->isVisited(x->pt - wire_points_.data())) {
           break;
         }
       }
@@ -1898,7 +1870,7 @@ void tmg_conn::treeReorder(const bool no_convert)
       }
     }
     jstart = pt - wire_points_.data();
-    if (!dfsStart(jstart)) {
+    if (!connection_graph_->dfsStart(jstart)) {
       logger_->error(ODB,
                      396,
                      "Could not order wires of net {}. No wire segment is "
@@ -2192,8 +2164,8 @@ void tmg_conn::addToWire(const int fr,
       && wire_points_[to].terminal_index != wire_points_[fr].terminal_index
       && wire_points_[to].terminal_alternative_point
       && wire_points_[to].terminal_alternative_point->terminal_index < 0
-      && !isVisited(wire_points_[to].terminal_alternative_point
-                    - wire_points_.data())) {
+      && !connection_graph_->isVisited(
+          wire_points_[to].terminal_alternative_point - wire_points_.data())) {
     // move an ambiguous connection to the later point
     // this is for receiver; we should not get here for driver
     WirePoint* pother = wire_points_[to].terminal_alternative_point;

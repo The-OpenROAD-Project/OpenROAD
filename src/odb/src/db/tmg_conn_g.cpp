@@ -399,6 +399,11 @@ bool ConnectionGraph::dfsNext(int* from,
   return true;
 }
 
+bool ConnectionGraph::isVisited(const int point_index) const
+{
+  return pt(point_index).visited;
+}
+
 ConnectionGraph::Edge* ConnectionGraph::descentEdge(const int edge_index) const
 {
   return descent_edges_[edge_index];
