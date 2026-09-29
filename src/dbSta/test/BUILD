@@ -93,6 +93,7 @@ ALL_TESTS = [
     "sta5",
     "sta_to_db1",
     "sta_to_db1_hier",
+    "tcl_unknown_handler",
     "write_sdc1",
     "write_verilog1",
     "write_verilog2",
@@ -318,6 +319,9 @@ filegroup(
                 "example1_typ.lib",
                 "example1.lef",
                 "hier3.v",
+            ],
+            "tcl_unknown_handler": [
+                "hier1.def",
             ],
             "write_sdc1": [
                 "hier1.sdc",
