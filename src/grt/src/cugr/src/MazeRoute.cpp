@@ -1,7 +1,6 @@
 #include "MazeRoute.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cstdio>
 #include <limits>
 #include <memory>
@@ -324,7 +323,16 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
             if (child->getFixedLayers().isValid()) {
               // Access-point selection already combines colocated pin
               // layers. Only one node here can carry fixed layers.
-              assert(!node->getFixedLayers().isValid());
+              if (node->getFixedLayers().isValid()) {
+                logger_->error(
+                    utl::GRT,
+                    312,
+                    "Colocated maze-tree nodes both have fixed layers "
+                    "on net {} at grid point ({}, {}).",
+                    net_->getName(),
+                    node->x(),
+                    node->y());
+              }
               node->setFixedLayers(child->getFixedLayers());
             }
             node->removeChild(child_index);
