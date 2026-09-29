@@ -429,6 +429,7 @@ use_repo(pip, "openroad-black-pip")
 pycross = use_extension("@rules_pycross//pycross/extensions:pycross.bzl", "pycross")
 pycross.configure_environments(python_versions = ["3.13"])
 
+# Not a dev dependency: //:openroad's web assets are built on it.
 node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
@@ -448,14 +449,18 @@ npm_web.npm_translate_lock(
 # elkjs ships its EPL-2.0 licence as LICENSE.md, which the default "basic"
 # preset strips with every other *.md; //src/web:third_party_licenses needs it.
 npm_web.npm_exclude_package_contents(
-    package = "elkjs",
+    package = "elkjs@0.9.3",
     presets = [],
 )
 use_repo(npm_web, "npm_web")
 
 # Regenerate //src/web:pnpm-lock.yaml after editing //src/web:package.json:
 #   bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
-pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm")
+pnpm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "pnpm",
+    dev_dependency = True,
+)
 use_repo(pnpm, "pnpm")
 
 npm = use_extension(
