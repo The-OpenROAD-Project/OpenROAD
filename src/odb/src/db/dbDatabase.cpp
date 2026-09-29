@@ -940,11 +940,24 @@ void dbDatabase::write(std::ostream& file)
   file.flush();
 }
 
+// Make the enclosing ECO the active journal again if a nested beginEco
+// suspended it, so later edits are recorded and can be undone with it.
+static void resumeSuspendedEco(_dbBlock* block)
+{
+  if (block->journal_stack_.empty() || !block->journal_stack_.top().resume) {
+    return;
+  }
+  block->journal_ = block->journal_stack_.top().journal;
+  block->journal_stack_.pop();
+}
+
 void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (block->journal_) {
-    endEco(block_);
+    // Suspend the enclosing ECO; it resumes when this one is committed
+    // or undone.
+    block->journal_stack_.push({block->journal_, true});
   }
   block->journal_ = new dbJournal(block_);
   assert(block->journal_);
@@ -960,7 +973,7 @@ void dbDatabase::endEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   assert(block->journal_);
-  block->journal_stack_.push(block->journal_);
+  block->journal_stack_.push({block->journal_, false});
   block->journal_ = nullptr;
   debugPrint(block_->getImpl()->getLogger(),
              utl::ODB,
@@ -968,7 +981,7 @@ void dbDatabase::endEco(dbBlock* block_)
              2,
              "ECO: Ended ECO #{} (size {}) and pushed to ECO stack",
              block->journal_stack_.size() - 1,
-             block->journal_stack_.top()->size());
+             block->journal_stack_.top().journal->size());
 }
 
 void dbDatabase::commitEco(dbBlock* block_)
@@ -977,11 +990,11 @@ void dbDatabase::commitEco(dbBlock* block_)
   // Commit the current ECO or the last ECO into stack
   assert(block->journal_ || !block->journal_stack_.empty());
   if (!block->journal_) {
-    block->journal_ = block->journal_stack_.top();
+    block->journal_ = block->journal_stack_.top().journal;
     block->journal_stack_.pop();
   }
   if (!block->journal_stack_.empty()) {
-    dbJournal* prev_journal = block->journal_stack_.top();
+    dbJournal* prev_journal = block->journal_stack_.top().journal;
     int old_size = prev_journal->size();
     prev_journal->append(block->journal_);
     debugPrint(block_->getImpl()->getLogger(),
@@ -993,7 +1006,7 @@ void dbDatabase::commitEco(dbBlock* block_)
                block->journal_->size(),
                block->journal_stack_.size() - 1,
                old_size,
-               block->journal_stack_.top()->size());
+               prev_journal->size());
   } else {
     debugPrint(block_->getImpl()->getLogger(),
                utl::ODB,
@@ -1005,6 +1018,7 @@ void dbDatabase::commitEco(dbBlock* block_)
   }
   delete block->journal_;
   block->journal_ = nullptr;
+  resumeSuspendedEco(block);
 }
 
 void dbDatabase::undoEco(dbBlock* block_)
@@ -1012,7 +1026,7 @@ void dbDatabase::undoEco(dbBlock* block_)
   _dbBlock* block = (_dbBlock*) block_;
   assert(block->journal_ || !block->journal_stack_.empty());
   if (!block->journal_) {
-    block->journal_ = block->journal_stack_.top();
+    block->journal_ = block->journal_stack_.top().journal;
     block->journal_stack_.pop();
   }
   debugPrint(block_->getImpl()->getLogger(),
@@ -1026,6 +1040,7 @@ void dbDatabase::undoEco(dbBlock* block_)
   block->journal_ = nullptr;
   journal->undo();
   delete journal;
+  resumeSuspendedEco(block);
 }
 
 bool dbDatabase::ecoEmpty(dbBlock* block_)
@@ -1084,7 +1099,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
     stream.flush();
   } else if (!block->journal_stack_.empty()) {
     dbOStream stream(block->getDatabase(), file);
-    stream << *block->journal_stack_.top();
+    stream << *block->journal_stack_.top().journal;
     stream.flush();
   }
 }
