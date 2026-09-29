@@ -514,7 +514,7 @@ The module has two parts:
   resizable panels. Communicates with the server over a binary WebSocket
   protocol.
 
-### Browser libraries
+## Browser libraries
 
 The viewer used to load its libraries from CDNs, one of them over plain http
 ([#11065](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065)).
