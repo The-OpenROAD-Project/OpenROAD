@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -15,12 +16,14 @@
 
 #include "Coordinates.h"
 #include "Objects.h"
+#include "boost/geometry/index/rtree.hpp"
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
 
@@ -48,7 +51,8 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   uint8_t blocked_layers = 0;
-  // Routing levels holding power via or patch metal outside the stripes
+  // Routing levels with power via or patch metal outside the stripes (plus
+  // a min spacing halo) in this pixel; see Grid::overlapsPinBlockage
   uint8_t blocked_pin_layers = 0;
   // Cell that reserved this pixel for padding
   Node* padding_reserved_by = nullptr;
@@ -166,6 +170,11 @@ class Grid
   GridY getRowCount(DbuY row_height) const;
 
   odb::Rect getCore() const { return core_; }
+
+  // True if rect (core relative) is within min spacing of power via or
+  // patch metal outside the stripes on the given routing level
+  bool overlapsPinBlockage(int level, const odb::Rect& rect) const;
+
   bool cellFitsInCore(Node* cell) const;
 
   bool isMultiHeight(odb::dbMaster* master) const;
@@ -205,6 +214,9 @@ class Grid
                                                SitesCombiner>;
 
   using Pixels = std::vector<std::vector<Pixel>>;
+  using RectTree
+      = boost::geometry::index::rtree<odb::Rect,
+                                      boost::geometry::index::quadratic<16>>;
 
   void markHopeless(odb::dbBlock* block,
                     int max_displacement_x,
@@ -225,6 +237,9 @@ class Grid
 
   // Indexed by row (GridY)
   std::vector<RowSitesMap> row_sites_;
+
+  // Power via/patch metal outside the stripes (core relative), by level
+  std::array<RectTree, kMaxPinLevel + 1> pin_blockages_;
 
   bool has_hybrid_rows_ = false;
   odb::Rect core_;

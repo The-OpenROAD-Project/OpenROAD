@@ -17,10 +17,10 @@ global_route -allow_congestion -verbose -congestion_report_file $rpt_file \
 
 write_guides $guide_file
 
-diff_file congestion7.guideok $guide_file
-diff_file congestion7.rptok $rpt_file
+diff_files congestion7.guideok $guide_file
+diff_files congestion7.rptok $rpt_file
 
 # check the congestion progress reports generated
 set rpt_folder [file dirname $rpt_file]
-diff_file congestion7-20.rptok [file join $rpt_folder congestion7-tcl-20.rpt]
-diff_file congestion7-40.rptok [file join $rpt_folder congestion7-tcl-40.rpt]
+diff_files congestion7-20.rptok [file join $rpt_folder congestion7-tcl-20.rpt]
+diff_files congestion7-40.rptok [file join $rpt_folder congestion7-tcl-40.rpt]

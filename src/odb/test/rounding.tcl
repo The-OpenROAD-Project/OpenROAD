@@ -14,4 +14,4 @@ set lef_file [make_result_file rounding.lef]
 
 write_abstract_lef $lef_file
 
-diff_file $lef_file "rounding.lefok"
+diff_files $lef_file "rounding.lefok"

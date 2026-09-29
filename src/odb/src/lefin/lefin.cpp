@@ -387,8 +387,12 @@ bool lefinReader::addGeoms(dbObject* object,
         break;
       }
       case LefParser::lefiGeomPolygonE: {
-        createPolygon(
-            object, is_pin, layer, geometry->getPolygon(i), designRuleWidth);
+        createPolygon(object,
+                      is_pin,
+                      layer,
+                      geometry->getPolygon(i),
+                      designRuleWidth,
+                      minSpacing);
         break;
       }
       case LefParser::lefiGeomPolygonIterE: {
@@ -411,6 +415,7 @@ bool lefinReader::addGeoms(dbObject* object,
                           layer,
                           &p,
                           designRuleWidth,
+                          minSpacing,
                           x * pItr->xStep,
                           y * pItr->yStep);
           }
@@ -495,6 +500,7 @@ void lefinReader::createPolygon(dbObject* object,
                                 dbTechLayer* layer,
                                 LefParser::lefiGeomPolygon* p,
                                 int design_rule_width,
+                                int min_spacing,
                                 double offset_x,
                                 double offset_y)
 {
@@ -515,6 +521,7 @@ void lefinReader::createPolygon(dbObject* object,
 
   if (pbox != nullptr) {
     pbox->setDesignRuleWidth(design_rule_width);
+    pbox->setMinSpacing(min_spacing);
   }
 }
 

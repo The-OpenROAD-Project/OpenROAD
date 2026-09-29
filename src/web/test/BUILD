@@ -89,6 +89,13 @@ js_test(
 )
 
 js_test(
+    name = "hierarchy_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-hierarchy-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "context_menu_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-context-menu.js",
@@ -264,6 +271,13 @@ js_test(
 )
 
 js_test(
+    name = "layer_extents_test",
+    data = JS_FILES,
+    entry_point = "js/test-layer-extents.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "dpr_test",
     data = JS_FILES,
     entry_point = "js/test-dpr.js",
@@ -301,6 +315,26 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "hierarchy_report_test",
+    srcs = ["cpp/TestHierarchyReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
         "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",

@@ -34,6 +34,7 @@ TESTS = [
     "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-td-repair",
+    "simple01-td-restart",
     "simple01-uniform",
     "simple01-vcts",
     "simple01-vcts-clamp",
@@ -57,6 +58,7 @@ TESTS = [
 PASSFAIL_TESTS = [
     "incremental02",
     "place_ios01",
+    "place_ios_few_cells",
     "place_ios_top_layer",
 ]
 
@@ -207,8 +209,7 @@ cc_test(
     env = GPU_ENV_OFF,
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//src/gpl",  # buildcleaner: keep: needs fixing gpl layering first.
-        "//src/gpl:gpl_private_hdrs",
+        "//src/gpl:gpl_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
@@ -226,8 +227,7 @@ cc_test(
     tags = ["gpu"],
     target_compatible_with = GPU_ONLY,
     deps = [
-        "//src/gpl",
-        "//src/gpl:gpl_private_hdrs",
+        "//src/gpl:gpl_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -273,7 +273,7 @@ cc_test(
         "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",
-        "//src/gpl",
+        "//src/gpl:gpl_impl",
         "//src/grt",
         "//src/odb/src/db",
         "//src/rsz",
@@ -291,8 +291,7 @@ cc_test(
     srcs = ["placer_base_test.cpp"],
     env = GPU_ENV_OFF,
     deps = [
-        "//src/gpl",
-        "//src/gpl:gpl_private_hdrs",
+        "//src/gpl:gpl_impl",
         "//src/odb/src/db",
         "//src/tst:db_fixture",
         "//src/utl",
@@ -305,8 +304,7 @@ cc_test(
     name = "estimate_target_density_test",
     srcs = ["estimate_target_density_test.cpp"],
     deps = [
-        "//src/gpl",
-        "//src/gpl:gpl_private_hdrs",
+        "//src/gpl:gpl_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",

@@ -1763,11 +1763,22 @@ void WebServer::saveReport(const std::string& filename,
                   "Multi-die design: the module hierarchy section will be "
                   "empty, it is not aggregated across chiplets yet.");
   }
+  // Read before the walk; see TileGenerator::setInstGroups.
+  const uint64_t search_revision = generator_->searchRevision();
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
+
+  // The tiles below are rendered in-process, so the module overlay baked into
+  // them reads the same mapping the live viewer would.
+  if (hier_result.name_grouped) {
+    generator_->setInstGroups(block,
+                              std::make_shared<const std::vector<uint32_t>>(
+                                  std::move(hier_result.inst_group)),
+                              search_revision);
+  }
 
   auto module_colors = computeDefaultModuleColors(hier_result);
   const std::map<uint32_t, Color>* mod_colors_ptr
