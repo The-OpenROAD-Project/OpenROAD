@@ -8,7 +8,6 @@ load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 #
 #     bazel run //src/web/dist:dist
 _BUNDLES = [
-    "SOURCES.sha256",
     "THIRD_PARTY_LICENSES.txt",
     "app.min.js",
     "index.min.html",

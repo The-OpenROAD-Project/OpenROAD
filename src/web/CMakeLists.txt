@@ -76,16 +76,6 @@ swig_lib(NAME         web
 # in dist/ (dist/README.md says how to regenerate it).
 set(WEB_BUNDLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist)
 
-# Stops the build when a file dist/'s manifest names has changed since
-# `bazel run //src/web/dist:dist` last ran; cheap enough to run every build.
-add_custom_target(web_dist_check
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/web_dist_manifest.py check
-    --root ${CMAKE_CURRENT_SOURCE_DIR}
-    --manifest ${WEB_BUNDLE_DIR}/SOURCES.sha256
-  COMMENT "Checking src/web/dist against its sources"
-)
-add_dependencies(web web_dist_check)
-
 # Served assets are <served path>=<file>; --extern keeps one out of the table.
 # The script gzips them itself, so the host needs no gzip.
 set(WEB_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/web_assets.cpp)

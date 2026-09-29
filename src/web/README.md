@@ -547,8 +547,8 @@ bazel run //src/web/dist:dist              # rebuild the checked-in bundles
 
 **Changing anything under `src/web/src/` needs that last step too**, then commit
 what it changed: `bazel build //:openroad` embeds the bundler's output directly,
-but the CMake build embeds the copy in [`dist/`](dist/README.md) and stops with
-that hint when it is stale.
+but the CMake build embeds the copy in [`dist/`](dist/README.md) as it stands,
+so regenerate it before a CMake rebuild. CI fails a PR whose copy is stale.
 
 `//src/web:BUILD` turns those into:
 
