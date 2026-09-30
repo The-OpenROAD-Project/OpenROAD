@@ -189,19 +189,21 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     return;
   }
 
-  // Roughly place the unplaced objects (allow more overflow).
-  // Limit iterations to prevent objects drifting too far or
-  // non-convergence.
+  // Phase 1: place the unplaced (new) objects with everything else locked,
+  // capped at 600 iterations so it can't run away if it fails to converge.
   PlaceOptions locked_options = options;
-  locked_options.overflow = std::max(options.overflow, 0.2f);
-  locked_options.nesterovPlaceMaxIter = 300;
-
-  // Use uniform density for incremental runs to fill gaps effectively
-  if (!options.uniformTargetDensityMode) {
-    locked_options.uniformTargetDensityMode = true;
-  }
+  locked_options.nesterovPlaceMaxIter = 600;
 
   doInitialPlace(threads, locked_options);
+
+  // Build NesterovBase now (instead of lazily in doNesterovPlace() below) so
+  // fillers can be redistributed before phase 1 sees its first iteration.
+  if (initNesterovPlace(locked_options, threads, true)) {
+    for (auto& nb : nbVec_) {
+      nb->redistributeFillerCells();
+    }
+  }
+
   const int iter = doNesterovPlace(threads, locked_options);
 
   // Finish the overflow resolution from the locked placement

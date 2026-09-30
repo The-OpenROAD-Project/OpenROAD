@@ -1096,6 +1096,9 @@ class NesterovBase
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
+  // Sets densityPenalty_ from the wirelength/density gradient ratio times
+  // factor
+  void updateDensityPenaltyFromRatio(float factor);
 
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
@@ -1295,6 +1298,9 @@ class NesterovBase
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
   void clearRemovedFillers() { removed_fillers_.clear(); }
+
+  // Directly redistributes the existing filler into the free space.
+  void redistributeFillerCells();
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
