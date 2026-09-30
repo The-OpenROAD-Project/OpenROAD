@@ -880,8 +880,10 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
   estimate_parasitics_->ensureWireParasitic(drvr_pin);
   load_cap = graph_delay_calc_->loadCap(drvr_pin, corner, max_);
 
-  if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst) && cell
-      && resizer_->isLogicStdCell(inst)) {
+  // A fixed driver keeps its master: a wider one would overlap the fixed
+  // cells around it, and nothing may move it. Buffering repairs the net.
+  if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst)
+      && !resizer_->isFixed(inst) && cell && resizer_->isLogicStdCell(inst)) {
     sta::LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
