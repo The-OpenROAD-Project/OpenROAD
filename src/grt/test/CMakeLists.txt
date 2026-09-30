@@ -27,6 +27,7 @@ or_integration_tests(
     est_rc3
     est_rc4
     est_rc_cugr1
+    est_rc_spef_pin_cap
     estimate_path_resistance
     gcd
     gcd_cugr
@@ -142,6 +143,7 @@ or_integration_tests(
     write_segments2
   PASSFAIL_TESTS
     congestion_markers_cugr
+    congestion_acceptance_is_recorded
     congestion_report_file_cugr
     snapshot_batched_bus_route
     snapshot_batched_incremental_state

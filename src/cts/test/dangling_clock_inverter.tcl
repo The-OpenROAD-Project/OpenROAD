@@ -8,7 +8,7 @@
 source "helpers.tcl"
 source Nangate45/Nangate45.vars
 
-read_lib $liberty_file
+read_liberty $liberty_file
 read_lef $tech_lef
 read_lef $std_cell_lef
 

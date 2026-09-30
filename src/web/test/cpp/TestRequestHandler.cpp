@@ -408,6 +408,22 @@ TEST_F(TileHandlerTest, BoundsReturnsJson)
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
 }
 
+TEST_F(TileHandlerTest, LayerExtentsReturnsJson)
+{
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kLayerExtents;
+
+  auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object json
+      = boost::json::parse(payloadStr(resp)).as_object();
+  EXPECT_EQ(boost::json::serialize(json),
+            boost::json::serialize(serializeLayerExtentsResponse(*gen_)));
+}
+
 TEST_F(TileHandlerTest, TechReturnsJson)
 {
   WebSocketRequest req;
@@ -765,7 +781,7 @@ TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
 
 TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
 {
-  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // A render allocates about tile_px^2 * 4 bytes, so a malformed or
   // hostile count must not be taken at face value.  0 and negatives mean "not
   // specified" and fall back to 256*dpr.
   const std::vector<std::pair<std::string, uint32_t>> cases = {
@@ -1822,6 +1838,28 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     // 150.5 rounds to 151 (std::round half-away-from-zero).
     EXPECT_EQ(state_.heatmaps.at("Pin")->getColorAlpha(), 151);
+  }
+}
+
+// The converse: JS serializes whole numbers without a decimal point, so a
+// double-typed setting like DisplayMin arrives as a JSON integer when the user
+// types 90.  The handler must accept it rather than failing as_double().
+TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 10;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"DisplayMin","value":90})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_DOUBLE_EQ(state_.heatmaps.at("Pin")->getDisplayRangeMin(), 90.0);
   }
 }
 

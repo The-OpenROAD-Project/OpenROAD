@@ -164,6 +164,8 @@ TESTS = [
     "repair_setup_sizeup_match_prev_fanout",
     "repair_setup_splitload_legacy_basic",
     "repair_setup_swappins_legacy_flat",
+    "repair_setup_buffer_to_inverters",
+    "repair_setup_buffer_to_inverters_hier",
     "repair_setup_unbuffer_legacy_bufx2",
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
@@ -259,6 +261,7 @@ TESTS = [
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "repair_timing_crpr",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
     "inferred_clock_gator_time_borrow_repair_pin",
@@ -273,9 +276,16 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "repair_design_fixed_driver",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+# PASSFAIL tests that assert their own results and have no .ok to diff,
+# as CMake runs every PASSFAIL test.
+SELF_CHECKING_TESTS = [
+    "repair_design_fixed_driver",
+]
 
 # Hierarchical Verilog netlists reused as corpus input by
 # //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
@@ -335,6 +345,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_log = test_name not in SELF_CHECKING_TESTS,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )
@@ -510,7 +521,7 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/rsz",  # buildcleaner: keep provides the private headers
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -563,7 +574,7 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -585,7 +596,7 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",

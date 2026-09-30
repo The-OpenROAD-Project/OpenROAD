@@ -10,4 +10,4 @@ set def_file [make_result_file exclude1.def]
 
 write_def $def_file
 
-diff_file exclude1.defok $def_file
+diff_files exclude1.defok $def_file

@@ -40,4 +40,4 @@ global_route -verbose -use_cugr
 
 write_guides $guide_file
 
-diff_file ndr_upper_layers_cugr.guideok $guide_file
+diff_files ndr_upper_layers_cugr.guideok $guide_file

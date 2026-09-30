@@ -13,25 +13,7 @@ package(
 )
 
 cc_library(
-    name = "rsz_private_hdrs",
-    hdrs = [
-        "src/BufferedNet.hh",
-        "src/ResizerObserver.hh",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "@spdlog",
-    ],
-)
-
-cc_library(
-    name = "rsz",
+    name = "rsz_impl",
     srcs = [
         "src/BufferedNet.cc",
         "src/ConcreteSwapArithModules.cc",
@@ -66,6 +48,10 @@ cc_library(
         "src/move/BufferCandidate.hh",
         "src/move/BufferGenerator.cc",
         "src/move/BufferGenerator.hh",
+        "src/move/BufferToInvertersCandidate.cc",
+        "src/move/BufferToInvertersCandidate.hh",
+        "src/move/BufferToInvertersGenerator.cc",
+        "src/move/BufferToInvertersGenerator.hh",
         "src/move/CloneCandidate.cc",
         "src/move/CloneCandidate.hh",
         "src/move/CloneGenerator.cc",
@@ -144,18 +130,14 @@ cc_library(
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
-        # The following are used in rsz tests, so we should have them
-        # as separate libraries and have tests depend on these (possibly with
-        # appropriate visibility only for the test and rsz lib).
-        # For now, since everything is somewhat entangled, make visible here
-        # in hdrs, which then is a good starting point to do the next
-        # transformations.
+        "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
         "src/MoveCommitter.hh",
         "src/MoveTracker.hh",
         "src/OptimizerTypes.hh",
         "src/RepairSetupContext.hh",
         "src/RepairTargetCollector.hh",
+        "src/ResizerObserver.hh",
         "src/move/MoveCandidate.hh",
         "src/move/MoveGenerator.hh",
         "src/move/VtSwapMtCandidate.hh",
@@ -169,8 +151,10 @@ cc_library(
         "src/policy",
     ],
     linkopts = ["-pthread"],
+    visibility = [
+        "//src/rsz:__subpackages__",
+    ],
     deps = [
-        ":rsz_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -186,6 +170,31 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
+    ],
+)
+
+cc_library(
+    name = "rsz",
+    hdrs = [
+        "include/rsz/GlobalSizingConfig.hh",
+        "include/rsz/OdbCallBack.hh",
+        "include/rsz/Resizer.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":rsz_impl",
+        "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
     ],
 )
 
@@ -206,8 +215,7 @@ cc_library(
         "src",
     ],
     deps = [
-        ":rsz",
-        ":rsz_private_hdrs",
+        ":rsz_impl",
         "//:ord",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
