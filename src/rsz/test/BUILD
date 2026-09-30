@@ -271,6 +271,7 @@ PASSFAIL_TESTS = [
     # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
     # build directory structure not compatible with Bazel
     # "cpp_tests",
+    "repair_timing_fixed",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
     "repair_design_fixed_driver",

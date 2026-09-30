@@ -1347,6 +1347,9 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
 
 void Opendp::legalCellPos(odb::dbInst* db_inst)
 {
+  if (db_inst->getPlacementStatus().isFixed()) {
+    return;
+  }
   Node cell;
   convertDbToCell(db_inst, cell);
   // returns the initial position of the cell
