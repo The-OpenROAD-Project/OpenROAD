@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -204,7 +205,22 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     }
   }
 
-  const int iter = doNesterovPlace(threads, locked_options);
+  // doNesterovPlace() logs and throws on divergence (see Logger::error(),
+  // [[noreturn]]); catch it here so phase 2 still gets a chance to recover
+  // the placement instead of aborting the whole incremental run.
+  bool phase1_diverged = false;
+  int iter = 0;
+  try {
+    iter = doNesterovPlace(threads, locked_options);
+  } catch (const std::runtime_error& e) {
+    phase1_diverged = true;
+    log_->warn(GPL,
+               195,
+               "Phase 1 of incremental placement diverged before reaching "
+               "overflow {:.3f} ({}); continuing to phase 2 anyway.",
+               locked_options.overflow,
+               e.what());
+  }
 
   // Finish the overflow resolution from the locked placement
   log_->info(GPL, 133, "Unlocking all instances");
@@ -212,12 +228,17 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     pb->unlockAll();
   }
 
-  if (options.overflow < locked_options.overflow) {
-    PlaceOptions final_options = options;
-    final_options.uniformTargetDensityMode = true;
-    final_options.initDensityPenaltyFactor = 1;
+  // Phase 1 may have run out of its iteration budget short of the real
+  // target even without diverging, so check the actual overflow reached
+  // rather than trusting the target alone.
+  const bool phase1_missed_target
+      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
 
-    doNesterovPlace(threads, final_options, iter + 1);
+  if (phase1_diverged || phase1_missed_target) {
+    // Arm the guard so phase 2 escalates the density penalty in place
+    // whenever overflow regresses, instead of backing off.
+    np_->armIncrementalDensityPenaltyGuard();
+    doNesterovPlace(threads, options, iter + 1);
   }
 }
 
