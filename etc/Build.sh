@@ -24,7 +24,6 @@ depsPrefixesFile=""
 compiler=gcc
 compilerSet=no
 useBazel=yes
-bazelLto=no
 noGui=no
 installPrefix=""
 
@@ -63,11 +62,10 @@ OPTIONS:
                                                  system and is used by default; CMake
                                                  support will be removed in a future
                                                  release.
-  -lto                                          Bazel only: build with --config=opt to
-                                                 enable link-time optimization (LTO).
-                                                 Off by default because LTO incurs a large
-                                                 link-time penalty; the default build is
-                                                 still compiled with -c opt (from .bazelrc).
+  -lto                                          Bazel only: accepted for compatibility.
+                                                 The Bazel build always uses
+                                                 --config=release, which includes
+                                                 --config=opt (-O3 with ThinLTO).
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
@@ -181,7 +179,6 @@ while [ "$#" -gt 0 ]; do
             useBazel=no
             ;;
         -lto)
-            bazelLto=yes
             ;;
         -bazel)
             echo "[WARNING] -bazel is deprecated: Bazel is now the default build system." >&2
@@ -400,10 +397,10 @@ if [[ "$useBazel" == "yes" ]]; then
     # `bazel build` embeds the "bazel-nostamp" placeholder so dev builds stay
     # cacheable; --config=release turns on --stamp so `openroad -version`
     # reports the same `git describe` string the CMake build always did.
+    # --config=release already includes --config=opt. Adding --config=opt
+    # again repeats its flags (-O3 twice), which changes every compile
+    # action key so no action hits the remote cache that CI fills.
     bazelArgs=("--jobs=${numThreads}" "--config=release")
-    if [[ "$bazelLto" == "yes" ]]; then
-        bazelArgs+=("--config=opt")
-    fi
     if [[ "$noGui" == "yes" ]]; then
         bazelArgs+=("--//:platform=cli")
     else
