@@ -108,7 +108,7 @@ int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
   TclCmdInputWidget* widget = (TclCmdInputWidget*) instance_data;
 
   // exit was called, so ensure continue after close is cleared
-  Gui::get()->clearContinueAfterClose();
+  web::Gui::get()->clearContinueAfterClose();
 
   // announces exit to Qt
   emit widget->exiting();

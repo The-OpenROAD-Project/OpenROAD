@@ -144,6 +144,23 @@ cc_test(
 )
 
 cc_test(
+    name = "elab_diag_test",
+    srcs = ["elab_diag_test.cc"],
+    data = [
+        "elab_diag_expr.sv",
+        "elab_diag_hier.sv",
+        "elab_diag_stmt.sv",
+        "elab_diag_tops.sv",
+    ],
+    deps = [
+        "//src/syn/src/elab",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "elab_test",
     srcs = [
         "elab_test.cc",

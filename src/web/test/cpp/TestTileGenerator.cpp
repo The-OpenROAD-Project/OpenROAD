@@ -3,15 +3,19 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
+#include <map>
 #include <memory>
 #include <numbers>
 #include <set>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include "boost/json/object.hpp"
@@ -19,13 +23,14 @@
 #include "boost/json/serialize.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
+#include "timing_report.h"
 #include "tst/nangate45_fixture.h"
+#include "web/heatMap.h"
 
 namespace web {
 namespace {
@@ -90,13 +95,13 @@ enum class Axis
 // the block bbox passed by the caller (which the tests align to a tile seam);
 // the tile grid uses TileGenerator::getBounds(), which adds a symmetric
 // pin-label margin, so the seam stays at the bbox center where the bin sits.
-class BoundaryHeatMap : public gui::HeatMapDataSource
+class BoundaryHeatMap : public web::HeatMapDataSource
 {
  public:
   BoundaryHeatMap(utl::Logger* logger,
                   const odb::Rect& bounds,
                   const odb::Rect& cell)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Boundary HM",
                                "BoundaryHM",
                                "BoundaryHM"),
@@ -361,6 +366,12 @@ class TileGeneratorTest : public tst::Nangate45Fixture
         getDb(), /*sta=*/nullptr, getLogger());
   }
 
+  // Shrink the die onto the placed content.  getBounds() covers the die area
+  // too, so a test whose shapes sit in one corner of the fixture's 50 um die
+  // would otherwise frame the whole die and render those shapes sub-pixel.
+  // Call after placing content and before makeTileGen().
+  void fitDieToContent() { block_->setDieArea(block_->getBBox()->getBox()); }
+
   // Decode a PNG byte vector into raw RGBA pixels.
   std::vector<unsigned char> decodePng(
       const std::vector<unsigned char>& png_data,
@@ -396,24 +407,131 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return count;
   }
 
-  // Return true if any visible pixel is NOT the gray die/core outline
-  // ({128,128,128,255}) drawn on the _instances pass.
-  // True if any visible pixel isn't part of the always-on die/core outline.
-  // The outline is neutral gray (kOutlineGray); alpha is NOT checked because
-  // tiles are rasterized supersampled and Lanczos-decimated, so edge pixels
-  // come back with partial coverage (observed 64..197) while the RGB stays
-  // 128,128,128.
+  // Render the _instances tile twice, with and without the blockage hatch,
+  // and report how many of the label's solid pixels the hatch washed out.
+  //
+  // The hatch shows up in the blue channel: the label over a hatch line stays
+  // strongly yellow (min(R,G) - B ~ 210), while a hatch line over the label
+  // flattens it (~0 once the hatch is opaque grey).  Alpha is only tested for
+  // "mostly covered" because a glyph's anti-aliased pixels come back below the
+  // 220 the label colour carries.
+  struct LabelWash
+  {
+    int label_px = 0;
+    int washed_out = 0;
+    int min_yellowness = 255;
+    std::vector<unsigned char> hatched;
+    unsigned w = 0;
+    unsigned h = 0;
+  };
+
+  LabelWash measureLabelWash()
+  {
+    LabelWash out;
+    TileVisibility vis;
+    vis.inst_names = true;
+
+    unsigned pw = 0, ph = 0;
+    vis.placement_blockages = false;
+    const auto plain = decodePng(
+        tile_gen_->generateTile("_instances", 0, 0, 0, vis), pw, ph);
+    vis.placement_blockages = true;
+    out.hatched = decodePng(
+        tile_gen_->generateTile("_instances", 0, 0, 0, vis), out.w, out.h);
+    EXPECT_EQ(pw, out.w);
+    EXPECT_EQ(ph, out.h);
+
+    for (size_t i = 0; i + 3 < plain.size() && i + 3 < out.hatched.size();
+         i += 4) {
+      const bool solid_label = plain[i] > 200 && plain[i + 1] > 200
+                               && plain[i + 2] < 40 && plain[i + 3] > 128;
+      if (!solid_label) {
+        continue;
+      }
+      ++out.label_px;
+      const int yellowness = std::min<int>(out.hatched[i], out.hatched[i + 1])
+                             - out.hatched[i + 2];
+      out.min_yellowness = std::min(out.min_yellowness, yellowness);
+      if (yellowness < 100) {
+        ++out.washed_out;
+      }
+    }
+    return out;
+  }
+
+  static void expectLabelSurvived(const LabelWash& wash)
+  {
+    ASSERT_GT(wash.label_px, 150)
+        << "precondition: the label must be large enough to meet several "
+           "hatch lines; only "
+        << wash.label_px << " solid pixels";
+    EXPECT_EQ(wash.washed_out, 0)
+        << wash.washed_out << " of " << wash.label_px
+        << " label pixels were painted over by the blockage hatch (weakest "
+           "yellowness "
+        << wash.min_yellowness << ")";
+  }
+
+  // True if the RGBA pixel at `p` carries the die/core outline colour.  Alpha
+  // is NOT checked because edge pixels can come back with partial coverage
+  // while the RGB stays kOutlineGray.  Read from the shared
+  // constant rather than spelled out, so the renderer cannot drift from it.
+  static bool isOutlineGray(const unsigned char* p)
+  {
+    return p[0] == kOutlineGray.r && p[1] == kOutlineGray.g
+           && p[2] == kOutlineGray.b;
+  }
+
+  // True if any visible pixel isn't part of the always-on die/core outline
+  // drawn on the _instances pass.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
       if (rgba[i + 3] == 0) {
         continue;
       }
-      if (rgba[i] != 128 || rgba[i + 1] != 128 || rgba[i + 2] != 128) {
+      if (!isOutlineGray(&rgba[i])) {
         return true;
       }
     }
     return false;
+  }
+
+  // True if any pixel carries the green of a row/site outline (row_color in
+  // renderTileBuffer).  Distinguishes them from the neutral gray die/core
+  // outline, which a plain "is anything drawn" check cannot: the outline is
+  // always painted on the _instances pass, so it satisfies that check on its
+  // own.  Tested by dominance rather than equality because the green blends
+  // with whatever it crosses.
+  static bool hasRowColorPixel(const std::vector<unsigned char>& rgba)
+  {
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i + 3] == 0) {
+        continue;
+      }
+      if (rgba[i + 1] > rgba[i] + 10 && rgba[i + 1] > rgba[i + 2] + 10) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // DBU -> tile pixel, for the tile the generator produced at some zoom.  The
+  // scale (bounds.maxDXDY() spread over the tile's width) and the Y flip are
+  // the tile georeference; keeping one copy means a change to it breaks the
+  // tests loudly instead of leaving them measuring the wrong pixel.
+  // Unclamped: callers that inset or window around the result need to see
+  // out-of-range values before they clamp.
+  static int colOf(const odb::Rect& bounds, unsigned w, int dbu)
+  {
+    const double dbu_per_px = static_cast<double>(bounds.maxDXDY()) / w;
+    return static_cast<int>((dbu - bounds.xMin()) / dbu_per_px);
+  }
+
+  static int rowOf(const odb::Rect& bounds, unsigned w, unsigned h, int dbu)
+  {
+    const double dbu_per_px = static_cast<double>(bounds.maxDXDY()) / w;
+    return static_cast<int>((h - 1) - (dbu - bounds.yMin()) / dbu_per_px);
   }
 
   odb::dbInst* placeInst(const char* master_name,
@@ -590,6 +708,377 @@ TEST_F(TileGeneratorTest, BoundsIncludeLabelMargin)
   EXPECT_GT(margin, pin_max);
 }
 
+// The request path quantizes dpr into [1, 3] before it ever reaches the
+// generator, but generateTile() takes it as a plain argument, and several
+// derived quantities are unsafe at zero -- a zero font height, a zero hatch
+// period, and latticeAnchor()'s modulo by that period.  So the generator
+// clamps too, and a caller that skips the request path still gets a tile
+// rendered at the nearest supported ratio instead of a crash.
+TEST_F(TileGeneratorTest, OutOfRangeDprIsClampedNotHonored)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  const auto tile_at = [&](double dpr) {
+    return tile_gen_->generateTile("_instances",
+                                   0,
+                                   0,
+                                   0,
+                                   vis,
+                                   {},
+                                   {},
+                                   {},
+                                   {},
+                                   nullptr,
+                                   nullptr,
+                                   nullptr,
+                                   dpr);
+  };
+
+  unsigned w = 0, h = 0;
+  auto baseline = decodePng(tile_at(1.0), w, h);
+  ASSERT_GT(w, 0u);
+  const unsigned baseline_px = w;
+
+  // Below the range, and degenerate values, all render as dpr 1.
+  for (const double dpr : {0.001, 0.5, 0.0, -1.0}) {
+    SCOPED_TRACE(dpr);
+    unsigned dw = 0, dh = 0;
+    auto pixels = decodePng(tile_at(dpr), dw, dh);
+    EXPECT_EQ(dw, baseline_px);
+    EXPECT_EQ(pixels, baseline);
+  }
+
+  // Above the range it saturates rather than scaling without bound.
+  unsigned hw = 0, hh = 0;
+  decodePng(tile_at(1000.0), hw, hh);
+  EXPECT_EQ(hw, baseline_px * 3);
+}
+
+// Issue #11280: a floorplan holding one macro in a corner of a much larger die
+// framed on the macro, because dbBlock::getBBox() covers the placed SHAPES and
+// not the die.  Qt's LayoutViewer::getBounds() merges the die area; so must
+// this one.
+TEST_F(TileGeneratorTest, BoundsCoverDieAreaWhenContentIsSmaller)
+{
+  placeInst("BUF_X16", "lone", 90000, 90000);
+  makeTileGen();
+
+  const odb::Rect die = block_->getDieArea();
+  const odb::Rect bbox = block_->getBBox()->getBox();
+  ASSERT_LT(bbox.dx(), die.dx()) << "precondition: content smaller than die";
+
+  const odb::Rect bounds = tile_gen_->getBounds();
+  EXPECT_LE(bounds.xMin(), die.xMin());
+  EXPECT_LE(bounds.yMin(), die.yMin());
+  EXPECT_GE(bounds.xMax(), die.xMax());
+  EXPECT_GE(bounds.yMax(), die.yMax());
+}
+
+// Issue #11338: getBounds() reserves room for the pin labels that hang outward
+// from the die edge, because the tile grid is clamped to it and labels outside
+// would have no tiles.  That margin must not reach the zoom-to-fit box, or the
+// design is framed with it as dead space around the design.
+TEST_F(TileGeneratorTest, FitBoundsExcludesThePinLabelMargin)
+{
+  placeInst("BUF_X16", "inst", 0, 0);
+  // A long name, so the label margin is large enough to be unmistakable.
+  makeBTermAtEdge("a_deliberately_long_pin_name", "metal1", 0, 40000, 200, 200);
+  makeTileGen();
+
+  const odb::Rect fit = tile_gen_->getFitBounds();
+  const odb::Rect geo = tile_gen_->getBounds();
+
+  // The fit box is the design proper: the die, as Qt's LayoutViewer::getBounds
+  // returns it.
+  const odb::Rect die = block_->getDieArea();
+  EXPECT_LE(fit.xMin(), die.xMin());
+  EXPECT_LE(fit.yMin(), die.yMin());
+  EXPECT_GE(fit.xMax(), die.xMax());
+  EXPECT_GE(fit.yMax(), die.yMax());
+
+  // The georeference rect is that box grown by the same margin on all four
+  // sides -- which is what the tiles need and the fit must not carry.
+  const int margin = fit.xMin() - geo.xMin();
+  EXPECT_GT(margin, 0) << "precondition: this design has a label margin";
+  EXPECT_EQ(geo.xMax() - fit.xMax(), margin);
+  EXPECT_EQ(fit.yMin() - geo.yMin(), margin);
+  EXPECT_EQ(geo.yMax() - fit.yMax(), margin);
+}
+
+// The margin scales with the longest pin name, so the georeference rect grows
+// as names get longer.  The framing rect must not move with them at all --
+// that is the whole point of keeping the two apart.
+TEST_F(TileGeneratorTest, FitBoundsIsIndifferentToPinNameLength)
+{
+  placeInst("BUF_X16", "inst", 0, 0);
+  makeBTermAtEdge("s", "metal1", 0, 40000, 200, 200);
+  makeTileGen();
+  const odb::Rect short_fit = tile_gen_->getFitBounds();
+  const odb::Rect short_geo = tile_gen_->getBounds();
+
+  makeBTermAtEdge(
+      "a_very_much_longer_pin_name_indeed", "metal1", 0, 50000, 200, 200);
+  makeTileGen();
+
+  EXPECT_EQ(tile_gen_->getFitBounds(), short_fit);
+  EXPECT_LT(tile_gen_->getBounds().xMin(), short_geo.xMin());
+}
+
+// The consequence of the bug above, and the one the reporter saw: the tile
+// grid is georeferenced on getBounds() and its indices are clamped to it, so
+// die area outside those bounds had no tiles at all and simply went missing.
+TEST_F(TileGeneratorTest, DieOutlineFarFromContentIsRasterized)
+{
+  // One instance in the upper-right corner; the die's lower-left corner is as
+  // far from it as this fixture allows.
+  placeInst("BUF_X16", "lone", 90000, 90000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  // Both dimensions: they bound the std::clamp ranges below, which need
+  // lo <= hi.
+  ASSERT_GT(w, 0u);
+  ASSERT_GT(h, 0u);
+
+  // Sample where the die's lower-left corner lands at z=0.
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const odb::Rect die = block_->getDieArea();
+  const auto col_of = [&](int dbu) {
+    return static_cast<unsigned>(
+        std::clamp(colOf(bounds, w, dbu), 0, static_cast<int>(w) - 1));
+  };
+  const auto row_of = [&](int dbu) {
+    return static_cast<unsigned>(
+        std::clamp(rowOf(bounds, w, h, dbu), 0, static_cast<int>(h) - 1));
+  };
+
+  // The outline is a hairline that antialiasing spreads a pixel or two, so
+  // accept a hit anywhere in a small window around the corner.
+  const auto drawn_near = [&](unsigned cx, unsigned cy) {
+    for (unsigned y = (cy > 2 ? cy - 2 : 0); y <= std::min(cy + 2, h - 1);
+         ++y) {
+      for (unsigned x = (cx > 2 ? cx - 2 : 0); x <= std::min(cx + 2, w - 1);
+           ++x) {
+        if (pixels[4UL * (y * w + x) + 3] > 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  EXPECT_TRUE(drawn_near(col_of(die.xMin()), row_of(die.yMin() + die.dy() / 2)))
+      << "the die's left edge must be rasterized, not clipped away";
+  EXPECT_TRUE(drawn_near(col_of(die.xMin() + die.dx() / 2), row_of(die.yMin())))
+      << "the die's bottom edge must be rasterized, not clipped away";
+}
+
+// Qt draws a diagonal across the master's origin corner
+// (drawInstanceOutlines), which is what tells a flipped instance from an
+// unflipped one.  The tag rides the instance transform, so R0 puts it at the
+// bottom-left of the footprint and MX at the top-left.
+//
+// Renders the instance alone: the hatch and the name would both put ink in the
+// interior, and the tag is the only thing left that can.
+TEST_F(TileGeneratorTest, OrientationTagMarksTheMasterOrigin)
+{
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+
+  TileVisibility vis;
+  vis.placement_blockages = false;
+  vis.inst_names = false;
+
+  // Counts interior ink per half of the footprint, ignoring a 3 px frame so
+  // the instance outline itself is never sampled.
+  const std::pair<odb::dbOrientType, bool> cases[]
+      = {{odb::dbOrientType::R0, true}, {odb::dbOrientType::MX, false}};
+  for (const auto& [orient, expect_bottom] : cases) {
+    SCOPED_TRACE(odb::dbOrientType(orient).getString());
+    inst->setOrient(orient);
+    fitDieToContent();
+    makeTileGen();
+    tile_gen_->eagerInit();
+
+    auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+    unsigned w = 0, h = 0;
+    auto pixels = decodePng(png, w, h);
+    ASSERT_GT(w, 16u);
+
+    const odb::Rect bounds = tile_gen_->getBounds();
+    const odb::Rect box = inst->getBBox()->getBox();
+    // Rows grow downwards, so the footprint's yMin is the LAST row.
+    const int top = rowOf(bounds, w, h, box.yMax()) + 3;
+    const int bottom = rowOf(bounds, w, h, box.yMin()) - 3;
+    const int left = colOf(bounds, w, box.xMin()) + 3;
+    const int right = colOf(bounds, w, box.xMax()) - 3;
+    ASSERT_LT(top, bottom) << "footprint too small to sample";
+    const int mid = (top + bottom) / 2;
+
+    int ink_top = 0, ink_bottom = 0;
+    for (int y = std::max(top, 0); y <= std::min<int>(bottom, h - 1); ++y) {
+      for (int x = std::max(left, 0); x <= std::min<int>(right, w - 1); ++x) {
+        if (pixels[4UL * (y * w + x) + 3] > 0) {
+          if (y < mid) {
+            ++ink_top;
+          } else {
+            ++ink_bottom;
+          }
+        }
+      }
+    }
+    ASSERT_GT(ink_top + ink_bottom, 0) << "no orientation tag was drawn";
+    EXPECT_EQ(ink_bottom > ink_top, expect_bottom);
+  }
+}
+
+// Qt fills every visible instance with the placement-blockage hatch, in
+// drawBlockages(), whether or not the design has a real dbBlockage — that is
+// what makes a lone macro read as a solid object rather than an empty frame.
+TEST_F(TileGeneratorTest, InstanceFootprintIsHatched)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.inst_names = false;
+
+  vis.placement_blockages = true;
+  auto png_on = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels_on = decodePng(png_on, w, h);
+
+  vis.placement_blockages = false;
+  auto png_off = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  auto pixels_off = decodePng(png_off, w, h);
+
+  // The hatch is many pixels; the outline and the tag under it are a handful.
+  EXPECT_GT(countNonTransparentPixels(pixels_on),
+            2 * countNonTransparentPixels(pixels_off))
+      << "the instance footprint should be hatched when blockages are shown";
+}
+
+// Qt brushes blockages with Qt::BDiagPattern, whose lines run "/" -- up to the
+// right.  Mirroring them to "\" is the same texture but not the same picture,
+// and the two GUIs sit side by side in review screenshots.
+TEST_F(TileGeneratorTest, BlockageHatchRunsUpToTheRightLikeQt)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.inst_names = false;
+  vis.placement_blockages = true;
+  unsigned w = 0, h = 0;
+  const auto px
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+
+  // Chase each lit pixel along both diagonals and keep the longest unbroken
+  // run.  A "/" line runs its whole length up-to-the-right, while across the
+  // other diagonal it is only as long as the band is wide -- a separation that
+  // holds whatever the lattice period is, unlike counting neighbours, where a
+  // band a quarter of the period wide already answers to both directions.
+  const auto is_hatch = [&](int x, int y) {
+    if (x < 0 || y < 0 || x >= static_cast<int>(w)
+        || y >= static_cast<int>(h)) {
+      return false;
+    }
+    const size_t i = 4UL * (static_cast<unsigned>(y) * w + x);
+    // Any coverage counts: a 1 px line at 45 degrees need not leave a fully
+    // covered pixel.  The hatch is the only neutral grey on this tile once the
+    // outline is excluded.
+    const bool neutral = px[i] == px[i + 1] && px[i + 1] == px[i + 2];
+    return px[i + 3] > 0 && px[i] > 20 && neutral && !isOutlineGray(&px[i]);
+  };
+  const auto longest_run = [&](int dy) {
+    int best = 0;
+    for (int y = 0; y < static_cast<int>(h); ++y) {
+      for (int x = 0; x < static_cast<int>(w); ++x) {
+        if (!is_hatch(x, y) || is_hatch(x - 1, y - dy)) {
+          continue;  // not the start of a run
+        }
+        int run = 0;
+        while (is_hatch(x + run, y + run * dy)) {
+          ++run;
+        }
+        best = std::max(best, run);
+      }
+    }
+    return best;
+  };
+  const int up_right = longest_run(-1);
+  const int down_right = longest_run(1);
+  ASSERT_GT(up_right + down_right, 20) << "precondition: no hatch was drawn";
+  EXPECT_GT(up_right, 3 * down_right)
+      << "hatch runs the wrong way: longest run is " << up_right
+      << " up-right vs " << down_right << " down-right";
+}
+
+// Qt paints instance names near the END of drawBlock, after drawBlockages, so
+// a hatch line never crosses a label.  The web renderer must do the same.
+TEST_F(TileGeneratorTest, BlockageHatchDoesNotCrossInstanceNames)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  expectLabelSurvived(measureLabelWash());
+}
+
+// Same rule for a standalone dbBlockage laid over the instance: Qt hatches
+// every blockage before it labels any instance, so the label still wins.
+TEST_F(TileGeneratorTest, StandaloneBlockageDoesNotCrossInstanceNames)
+{
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  // A die a little larger than the instance, so the blockage reaches past the
+  // instance footprint -- the two hatch sources cannot be confused -- while
+  // the instance still fills enough of the tile to carry a long label.
+  const odb::Rect box = inst->getBBox()->getBox();
+  const odb::Rect die(box.xMin() - box.dx() / 10,
+                      box.yMin() - box.dy() / 10,
+                      box.xMax() + box.dx() / 10,
+                      box.yMax() + box.dy() / 10);
+  block_->setDieArea(die);
+  odb::dbBlockage::create(
+      block_, die.xMin(), die.yMin(), die.xMax(), die.yMax());
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const LabelWash wash = measureLabelWash();
+  expectLabelSurvived(wash);
+
+  // The die margin the instance footprint does not reach: hatch there can only
+  // have come from the standalone-blockage pass, so it keeps this test from
+  // passing vacuously if that pass ever stops running.
+  int margin_hatch = 0;
+  const unsigned qx = wash.w / 8;
+  for (unsigned y = 0; y < wash.h; ++y) {
+    for (unsigned x = 0; x < qx; ++x) {
+      const size_t i = 4UL * (y * wash.w + x);
+      if (wash.hatched[i + 3] > 0 && !isOutlineGray(&wash.hatched[i])
+          && wash.hatched[i] > 100) {
+        ++margin_hatch;
+      }
+    }
+  }
+  EXPECT_GT(margin_hatch, 0)
+      << "the standalone-blockage pass drew nothing; the test above proves "
+         "nothing";
+}
+
 TEST_F(TileGeneratorTest, GetLayers)
 {
   makeTileGen();
@@ -666,13 +1155,13 @@ TEST_F(TileGeneratorTest, FillPatternControlsShapeCoverage)
   EXPECT_LT(diagonal, solid) << "a hatch should paint fewer pixels than solid";
 }
 
-// Layer colors must mirror gui::DisplayControls::techInit so the GUI and the
+// Layer colors must mirror web::DisplayControls::techInit so the GUI and the
 // web frontend show the same color for the same layer.  Nangate45 only has 10
 // routing + 9 cut layers, all within the 14-entry built-in palettes, so we
 // extend the tech to 20 routing + 19 cut layers to also exercise the overflow
 // path: layers past the palette get deterministic mt19937(1)-seeded random
 // colors.  The expected RGB values below were computed by replaying the exact
-// blue/green/red draw order (matching gui::DisplayControls::techInit) over the
+// blue/green/red draw order (matching web::DisplayControls::techInit) over the
 // full getLayers() iteration, including the MASTERSLICE/OVERLAP layers that
 // also consume random draws.
 TEST_F(TileGeneratorTest, GetLayerColorMapMatchesGuiPalette)
@@ -910,7 +1399,8 @@ TEST_F(TileGeneratorTest, GeomCacheReusedWhenDesignUnchanged)
 // silently dropping the geometry of any master or via the edit introduced.
 TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
 {
-  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* inst
+      = placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
   makeTileGen();
   // Registers Search as a db callback object and builds the indices, so the
   // first edit below is the valid→invalid transition and the second is not.
@@ -931,6 +1421,134 @@ TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
   EXPECT_NE(after_first, after_second)
       << "geometry cache went stale across an edit that the debounced "
          "design-changed callback does not report";
+}
+
+// ─── Name-group overlay (flat designs) ──────────────────────────────────────
+//
+// A flat design has no dbModule tree, so the module overlay colors by groups
+// synthesized from instance names instead.  The mapping lives on Search, which
+// drops it once an edit makes it stale -- these cover the renderer reading it
+// and the drop actually taking effect.
+
+// Count pixels matching an RGB triple exactly.
+static size_t countPixelsOfColor(const std::vector<unsigned char>& rgba,
+                                 const Color& color)
+{
+  size_t count = 0;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (rgba[i] == color.r && rgba[i + 1] == color.g && rgba[i + 2] == color.b
+        && rgba[i + 3] > 0) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
+{
+  odb::dbInst* left = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  odb::dbInst* right = placeInst("BUF_X16", "grp_b/_2_", 50000, 50000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // The ids are opaque keys as far as the renderer is concerned; what matters
+  // is that it resolves an instance through the mapping rather than through
+  // dbInst::getModule(), which on a flat design returns the top for both.
+  constexpr uint32_t kGroupA = 7;
+  constexpr uint32_t kGroupB = 8;
+  auto groups = std::make_shared<std::vector<uint32_t>>(
+      std::max(left->getId(), right->getId()) + 1, 0);
+  (*groups)[left->getId()] = kGroupA;
+  (*groups)[right->getId()] = kGroupB;
+  tile_gen_->setInstGroups(block_, groups, tile_gen_->searchRevision());
+
+  const Color red{.r = 255, .g = 0, .b = 0, .a = 255};
+  const Color blue{.r = 0, .g = 0, .b = 255, .a = 255};
+  const std::map<uint32_t, Color> colors{{kGroupA, red}, {kGroupB, blue}};
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePng(
+      tile_gen_->generateTile(
+          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+      w,
+      h);
+
+  EXPECT_GT(countPixelsOfColor(pixels, red), 0u)
+      << "the instance mapped to group " << kGroupA << " was not colored";
+  EXPECT_GT(countPixelsOfColor(pixels, blue), 0u)
+      << "the instance mapped to group " << kGroupB << " was not colored";
+}
+
+// Module colours are drawn as given, not through the coverage path, so the
+// coverage quantization must leave them alone: a translucent module colour has
+// to reach the client with its own alpha, not rounded onto the coverage grid.
+TEST_F(TileGeneratorTest, TranslucentModuleColourIsNotQuantized)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  constexpr uint32_t kGroupA = 7;
+  auto groups = std::make_shared<std::vector<uint32_t>>(inst->getId() + 1, 0);
+  (*groups)[inst->getId()] = kGroupA;
+  tile_gen_->setInstGroups(block_, groups, tile_gen_->searchRevision());
+
+  // 180 is not a multiple of 255/15, so any snapping onto that grid moves it.
+  const Color translucent{.r = 40, .g = 200, .b = 90, .a = 180};
+  const std::map<uint32_t, Color> colors{{kGroupA, translucent}};
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePng(
+      tile_gen_->generateTile(
+          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+      w,
+      h);
+  size_t exact = 0;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    exact += pixels[i] == translucent.r && pixels[i + 1] == translucent.g
+             && pixels[i + 2] == translucent.b
+             && pixels[i + 3] == translucent.a;
+  }
+  EXPECT_GT(exact, 0u) << "the module colour did not reach the client with "
+                          "its own alpha";
+}
+
+TEST_F(TileGeneratorTest, NameGroupMappingIsDroppedAfterAnEdit)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  constexpr uint32_t kGroupA = 7;
+  auto groups = std::make_shared<std::vector<uint32_t>>(inst->getId() + 1, 0);
+  (*groups)[inst->getId()] = kGroupA;
+  tile_gen_->setInstGroups(block_, groups, tile_gen_->searchRevision());
+
+  const Color red{.r = 255, .g = 0, .b = 0, .a = 255};
+  const std::map<uint32_t, Color> colors{{kGroupA, red}};
+
+  auto renderModules = [&] {
+    unsigned w = 0, h = 0;
+    return countPixelsOfColor(
+        decodePng(
+            tile_gen_->generateTile(
+                "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+            w,
+            h),
+        red);
+  };
+
+  ASSERT_GT(renderModules(), 0u) << "mapping was not picked up to begin with";
+
+  // Moving an instance bumps Search::revision(), which is what the mapping is
+  // stamped against.  The group ids it holds may no longer describe the
+  // design, and coloring instances by a group they are not in reads as
+  // authoritative while being wrong -- so the overlay goes uncolored until the
+  // client installs a fresh mapping.
+  inst->setLocation(20000, 20000);
+
+  EXPECT_EQ(renderModules(), 0u)
+      << "a stale instance -> name-group mapping survived a design edit";
 }
 
 // Build a HIER root chip holding `num_insts` instances of the fixture's chip,
@@ -1029,6 +1647,374 @@ TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterChipletInstCreated)
          "vias would not draw";
 }
 
+// A 3DBlox top chip owns no dbBlock, so the frame has to come from the chiplet
+// union; framing on the (absent) top block yielded a blank overlay.
+TEST_F(TileGeneratorTest, RenderOverlayPngFramesChipletsWithNoTopBlock)
+{
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBlock(), nullptr)
+      << "fixture no longer reproduces the block-less top chip";
+
+  const odb::Rect bounds = tile_gen_->getBounds();
+  ASSERT_GT(bounds.dx(), 0);
+  // A filled rect over the middle half of the design, so it survives the
+  // crop-and-resample down to the final image whatever the exact framing is.
+  const std::vector<ColoredRect> rects
+      = {ColoredRect{.rect = odb::Rect(bounds.xMin() + bounds.dx() / 4,
+                                       bounds.yMin() + bounds.dy() / 4,
+                                       bounds.xMin() + 3 * bounds.dx() / 4,
+                                       bounds.yMin() + 3 * bounds.dy() / 4),
+                     .color = Color{.r = 255, .g = 255, .b = 0, .a = 255},
+                     .layer = "",
+                     .filled = true}};
+
+  auto png = tile_gen_->renderOverlayPng(/*width_px=*/512, rects, {});
+  ASSERT_FALSE(png.empty()) << "overlay dropped for a block-less top chip";
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_GT(w, 0u);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "overlay rendered but drew nothing over the chiplets";
+}
+
+// The viewer stretches this image over exactly getBounds() (app.fitBounds in
+// main.js), so framing on anything wider lands the highlight off the tiles.
+TEST_F(TileGeneratorTest, RenderOverlayPngCropsToBoundsWithNoMargin)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  // A filled rect covering the whole frame: whatever the viewer stretches this
+  // image over, the color has to reach all four edges of the image.
+  const odb::Rect bounds = tile_gen_->getBounds();
+  ASSERT_GT(bounds.dx(), 0);
+  const std::vector<ColoredRect> rects
+      = {ColoredRect{.rect = bounds,
+                     .color = Color{.r = 255, .g = 255, .b = 0, .a = 255},
+                     .layer = "",
+                     .filled = true}};
+
+  constexpr int kWidthPx = 512;
+  auto png = tile_gen_->renderOverlayPng(kWidthPx, rects, {});
+  ASSERT_FALSE(png.empty());
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_GT(w, 0u);
+  ASSERT_GT(h, 0u);
+
+  // Match the overlay's own color rather than mere opacity: the _instances pass
+  // always draws the gray die outline, which would otherwise count as content.
+  auto is_overlay = [&](unsigned x, unsigned y) {
+    const size_t i = 4UL * (y * w + x);
+    return pixels[i] > 200 && pixels[i + 1] > 200 && pixels[i + 2] < 100;
+  };
+  // Inset absorbs the partial coverage at the very edge.
+  const unsigned inset_x = std::max(2u, w / 50);
+  const unsigned inset_y = std::max(2u, h / 50);
+
+  EXPECT_TRUE(is_overlay(inset_x, h / 2))
+      << "overlay inset from the left edge: a margin here shifts every "
+         "highlight off the tiles it labels";
+  EXPECT_TRUE(is_overlay(w - 1 - inset_x, h / 2)) << "inset from the right";
+  EXPECT_TRUE(is_overlay(w / 2, inset_y)) << "inset from the top";
+  EXPECT_TRUE(is_overlay(w / 2, h - 1 - inset_y)) << "inset from the bottom";
+}
+
+// An overlay with nothing to draw stays empty -- the caller uses the byte size
+// to decide whether a path got an image at all.
+TEST_F(TileGeneratorTest, RenderOverlayPngIsEmptyWithNoShapes)
+{
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  makeTileGen();
+
+  EXPECT_TRUE(tile_gen_->renderOverlayPng(/*width_px=*/512, {}, {}).empty());
+}
+
+// Regression: getPinLocation falls back to the die origin for a null terminal,
+// so an unrouted net with an unresolved end used to draw a flight line from the
+// pin off to the corner of the die.  The stage highlight passes no sink at all.
+TEST_F(TileGeneratorTest, CollectNetShapesSkipsFlightLineWithoutBothPins)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  ASSERT_NE(inst, nullptr);
+  odb::dbITerm* drv = inst->findITerm("Z");
+  ASSERT_NE(drv, nullptr);
+  odb::dbNet* net = odb::dbNet::create(block_, "n1");
+  drv->connect(net);
+  ASSERT_EQ(net->getWire(), nullptr) << "net must be unrouted for this test";
+
+  const Color color{.r = 255, .g = 255, .b = 0, .a = 255};
+  std::vector<ColoredRect> rects;
+  std::vector<FlightLine> lines;
+  collectNetShapes(net,
+                   drv,
+                   /*drv_bterm=*/nullptr,
+                   /*snk_iterm=*/nullptr,
+                   /*snk_bterm=*/nullptr,
+                   color,
+                   rects,
+                   lines,
+                   odb::dbTransform{});
+  EXPECT_TRUE(lines.empty())
+      << "flight line drawn to the die origin for a missing sink pin";
+  EXPECT_TRUE(rects.empty());
+}
+
+// The chiplet-aware resolvePin keys off the chip-inst name, which is the prefix
+// TimingReport::expandPath puts on a 3DBlox pin name.
+TEST_F(TileGeneratorTest, ResolvePinFindsAChipletPinByChipInstPrefix)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  ASSERT_NE(inst, nullptr);
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  makeTileGen();
+
+  const std::vector<ChipletNode>& chiplets = tile_gen_->chiplets();
+  auto [iterm, bterm, node] = resolvePin(chiplets, "die0/buf1/Z");
+  EXPECT_EQ(bterm, nullptr);
+  ASSERT_NE(iterm, nullptr) << "chip-inst-prefixed pin name did not resolve";
+  EXPECT_EQ(iterm, inst->findITerm("Z"));
+  ASSERT_NE(node, nullptr) << "resolved pin carries no chiplet, so the caller "
+                              "cannot transform it into world coordinates";
+  EXPECT_EQ(node->block, block_);
+
+  // A prefix that names a chiplet claims the pin: not finding it there must not
+  // fall through and resolve it against a different chiplet.
+  auto [claimed_iterm, claimed_bterm, claimed_node]
+      = resolvePin(chiplets, "die0/no_such_inst/Z");
+  EXPECT_EQ(claimed_iterm, nullptr);
+  EXPECT_EQ(claimed_bterm, nullptr);
+  EXPECT_EQ(claimed_node, nullptr);
+
+  // An unprefixed name still resolves -- this is the single-die path, where the
+  // root node carries the top block and contributes no prefix of its own.
+  auto [flat_iterm, flat_bterm, flat_node] = resolvePin(chiplets, "buf1/Z");
+  EXPECT_EQ(flat_bterm, nullptr);
+  EXPECT_EQ(flat_iterm, inst->findITerm("Z"));
+  ASSERT_NE(flat_node, nullptr);
+  EXPECT_EQ(flat_node->block, block_);
+}
+
+// Regression: dbBlock::findITerm splits the name at its last '/' and looks the
+// rest up as one instance name, and flattened hierarchical names do contain
+// '/'.  Searching the chiplets with the whole name before honoring the prefix
+// therefore let an earlier die claim a pin naming a later one -- drawn on the
+// wrong die, with the wrong transform.
+TEST_F(TileGeneratorTest, ResolvePinPrefersThePrefixedChiplet)
+{
+  // die0 holds a decoy: an instance whose flat name is exactly the prefixed
+  // pin's instance path.
+  odb::dbInst* decoy = placeInst("BUF_X16", "die1/buf2", 0, 0);
+  ASSERT_NE(decoy, nullptr);
+  ASSERT_EQ(block_->findITerm("die1/buf2/Z"), decoy->findITerm("Z"))
+      << "die0 no longer answers the whole prefixed name, so this test cannot "
+         "reproduce the collision";
+
+  // die1 is a chiplet of its own, holding the real buf2.
+  odb::dbChip* die1_chip
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "die1_chip");
+  odb::dbBlock* die1_block = odb::dbBlock::create(die1_chip, "die1_top");
+  die1_block->setDieArea(odb::Rect(0, 0, 20000, 20000));
+  odb::dbInst* real
+      = odb::dbInst::create(die1_block, lib_->findMaster("BUF_X16"), "buf2");
+  real->setLocation(5000, 5000);
+  real->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  // Stacked above die0, which is also what puts die0 first in chiplets() --
+  // the search order the collision needs.
+  odb::dbChipInst::create(root, die1_chip, "die1")
+      ->setLoc(odb::Point3D(0, 0, 1));
+  makeTileGen();
+
+  const std::vector<ChipletNode>& chiplets = tile_gen_->chiplets();
+  const auto die0_at = std::ranges::find(chiplets, "die0", &ChipletNode::name);
+  const auto die1_at = std::ranges::find(chiplets, "die1", &ChipletNode::name);
+  ASSERT_NE(die0_at, chiplets.end());
+  ASSERT_NE(die1_at, chiplets.end());
+  ASSERT_LT(die0_at, die1_at) << "die0 must be searched first for this test to "
+                                 "reproduce the collision";
+
+  auto [iterm, bterm, node] = resolvePin(chiplets, "die1/buf2/Z");
+  EXPECT_EQ(bterm, nullptr);
+  ASSERT_NE(iterm, nullptr);
+  EXPECT_EQ(iterm, real->findITerm("Z"))
+      << "prefixed pin resolved against an earlier chiplet holding a "
+         "same-named hierarchical instance";
+  ASSERT_NE(node, nullptr);
+  EXPECT_EQ(node->block, die1_block);
+}
+
+// Regression: getPinLocation has no location for a bterm with no dbBPin, and
+// used to answer the die origin, so an unrouted net ending on an unplaced port
+// drew a flight line off to the corner of the die.
+TEST_F(TileGeneratorTest, CollectNetShapesSkipsFlightLineForBTermWithoutBPin)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  ASSERT_NE(inst, nullptr);
+  odb::dbITerm* drv = inst->findITerm("Z");
+  ASSERT_NE(drv, nullptr);
+  odb::dbNet* net = odb::dbNet::create(block_, "n1");
+  drv->connect(net);
+  odb::dbBTerm* port = odb::dbBTerm::create(net, "out1");
+  ASSERT_NE(port, nullptr);
+  ASSERT_TRUE(port->getBPins().empty()) << "port must be unplaced here";
+  ASSERT_EQ(net->getWire(), nullptr) << "net must be unrouted for this test";
+
+  std::vector<ColoredRect> rects;
+  std::vector<FlightLine> lines;
+  collectNetShapes(net,
+                   drv,
+                   /*drv_bterm=*/nullptr,
+                   /*snk_iterm=*/nullptr,
+                   port,
+                   Color{.r = 255, .g = 255, .b = 0, .a = 255},
+                   rects,
+                   lines,
+                   odb::dbTransform{});
+  EXPECT_TRUE(lines.empty())
+      << "flight line drawn to the die origin for a port with no pin box";
+}
+
+// A path pin pair that shares no net is only a connection to draw when it
+// actually crosses chiplets; PathExpanded emits every vertex, so within one die
+// such a pair is just a cell's own input-to-output arc.
+TEST_F(TileGeneratorTest, CollectTimingPathShapesSkipsIntraCellHop)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  ASSERT_NE(inst, nullptr);
+  makeTileGen();
+
+  TimingPathSummary path;
+  path.data_nodes
+      = {TimingNode{.pin_name = "buf1/A"}, TimingNode{.pin_name = "buf1/Z"}};
+
+  std::vector<ColoredRect> rects;
+  std::vector<FlightLine> lines;
+  collectTimingPathShapes(tile_gen_->chiplets(), path, rects, lines);
+  EXPECT_TRUE(lines.empty())
+      << "flight line drawn across a cell's own input-to-output arc";
+  EXPECT_TRUE(rects.empty());
+}
+
+// The 3DBlox case collectTimingPathShapes exists for: a top chip with no block
+// of its own, and a pin pair split across two placed chiplets.  Each end has to
+// land in top-level coordinates, or the highlight sits on the raw in-die
+// position of a die that is elsewhere on the stack.
+TEST_F(TileGeneratorTest,
+       CollectTimingPathShapesDrawsCrossChipletLineInWorldCoords)
+{
+  odb::dbInst* buf1 = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* buf2 = placeInst("BUF_X16", "buf2", 10000, 10000);
+  ASSERT_NE(buf1, nullptr);
+  ASSERT_NE(buf2, nullptr);
+
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  odb::dbChipInst* die1 = root->findChipInst("die1");
+  ASSERT_NE(die1, nullptr);
+  // Flipped and offset, so a missing transform is unmistakable.
+  die1->setOrient(
+      odb::dbOrientType3D(odb::dbOrientType::MY, /*mirror_z=*/true));
+  die1->setLoc(odb::Point3D(300000, 40000, 1));
+
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBlock(), nullptr)
+      << "fixture no longer reproduces the block-less top chip";
+
+  TimingPathSummary path;
+  path.data_nodes = {TimingNode{.pin_name = "die0/buf1/Z"},
+                     TimingNode{.pin_name = "die1/buf2/A"}};
+
+  std::vector<ColoredRect> rects;
+  std::vector<FlightLine> lines;
+  collectTimingPathShapes(tile_gen_->chiplets(), path, rects, lines);
+  ASSERT_EQ(lines.size(), 1u)
+      << "cross-chiplet pin pair drew " << lines.size() << " flight lines";
+
+  auto pin_center = [](odb::dbITerm* iterm) {
+    int x = 0;
+    int y = 0;
+    EXPECT_TRUE(iterm->getAvgXY(&x, &y));
+    return odb::Point(x, y);
+  };
+  const odb::Point p1 = pin_center(buf1->findITerm("Z"));
+  odb::Point p2 = pin_center(buf2->findITerm("A"));
+  const odb::Point p2_raw = p2;
+  die1->getTransform().apply(p2);
+
+  // die0 sits at the origin unrotated, so its end is the raw pin location.
+  EXPECT_EQ(lines[0].p1, p1);
+  EXPECT_NE(lines[0].p2, p2_raw)
+      << "chiplet end left at its in-die position, ignoring the placement";
+  EXPECT_EQ(lines[0].p2, p2);
+}
+
+// Both node lists walk the common clock, and only the wire branch keeps a seen
+// set, so a clock hop across chiplets used to be drawn twice -- the capture
+// pass repainting the launch pass's line in another color.
+TEST_F(TileGeneratorTest, CollectTimingPathShapesDrawsACommonClockHopOnce)
+{
+  ASSERT_NE(placeInst("BUF_X16", "buf1", 0, 0), nullptr);
+  ASSERT_NE(placeInst("BUF_X16", "buf2", 10000, 10000), nullptr);
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  ASSERT_NE(root->findChipInst("die1"), nullptr);
+  makeTileGen();
+
+  const std::vector<TimingNode> hop
+      = {TimingNode{.pin_name = "die0/buf1/Z", .is_clock = true},
+         TimingNode{.pin_name = "die1/buf2/A", .is_clock = true}};
+  TimingPathSummary path;
+  path.data_nodes = hop;
+  path.capture_nodes = hop;
+
+  std::vector<ColoredRect> rects;
+  std::vector<FlightLine> lines;
+  collectTimingPathShapes(tile_gen_->chiplets(), path, rects, lines);
+  EXPECT_EQ(lines.size(), 1u) << "common clock hop drawn once per node list";
+}
+
+// Selecting a pin in the path detail highlights its stage.  On an unrouted net
+// that is a flight line, which needs the neighbor pin on the net as its other
+// end; either end of the hop selects the same line.
+TEST_F(TileGeneratorTest, CollectTimingStageShapesDrawsUnroutedHop)
+{
+  odb::dbInst* buf1 = placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbInst* buf2 = placeInst("BUF_X16", "buf2", 10000, 10000);
+  ASSERT_NE(buf1, nullptr);
+  ASSERT_NE(buf2, nullptr);
+  odb::dbNet* net = odb::dbNet::create(block_, "n1");
+  buf1->findITerm("Z")->connect(net);
+  buf2->findITerm("A")->connect(net);
+  ASSERT_EQ(net->getWire(), nullptr) << "net must be unrouted for this test";
+  makeTileGen();
+
+  TimingPathSummary path;
+  path.data_nodes = {TimingNode{.pin_name = "buf1/A"},
+                     TimingNode{.pin_name = "buf1/Z"},
+                     TimingNode{.pin_name = "buf2/A"},
+                     TimingNode{.pin_name = "buf2/Z"}};
+
+  int x = 0;
+  int y = 0;
+  ASSERT_TRUE(buf1->findITerm("Z")->getAvgXY(&x, &y));
+  const odb::Point drv(x, y);
+  ASSERT_TRUE(buf2->findITerm("A")->getAvgXY(&x, &y));
+  const odb::Point snk(x, y);
+
+  const Color yellow{.r = 255, .g = 255, .b = 0, .a = 180};
+  for (const char* pin : {"buf1/Z", "buf2/A"}) {
+    std::vector<ColoredRect> rects;
+    std::vector<FlightLine> lines;
+    collectTimingStageShapes(
+        tile_gen_->chiplets(), path, pin, yellow, rects, lines);
+    ASSERT_EQ(lines.size(), 1u) << "no stage flight line for " << pin;
+    EXPECT_EQ(lines[0].p1, drv) << pin;
+    EXPECT_EQ(lines[0].p2, snk) << pin;
+    EXPECT_TRUE(rects.empty()) << pin;
+  }
+}
+
 TEST_F(TileGeneratorTest, SerializeTechResponseIncludesLayerColors)
 {
   makeTileGen();
@@ -1070,8 +2056,9 @@ TEST_F(TileGeneratorTest, TileContentRegistersWithIdealGrid)
   constexpr int kZoom = 10;
   const int num_tiles = 1 << kZoom;
 
-  // Pin the block bbox to a known square: getBounds() follows the bbox (the
-  // die area alone does not move it), and the tile grid is derived from it.
+  // Pin the block bbox to the same known square as the die, so getBounds()
+  // (their union, plus the label margin) is that square, and with it the
+  // tile grid derived from it.
   odb::dbMaster* master = lib_->findMaster("BUF_X16");
   ASSERT_NE(master, nullptr);
   block_->setDieArea(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide));
@@ -1758,7 +2745,7 @@ TEST_F(TileGeneratorTest, IsNetVisibleRespectsSignalType)
   EXPECT_FALSE(vis.isNetVisible(clk_net));
 }
 
-TEST_F(TileGeneratorTest, TileVisibilityDefaultAllTrue)
+TEST_F(TileGeneratorTest, TileVisibilityDefaults)
 {
   TileVisibility vis;
   EXPECT_TRUE(vis.stdcells);
@@ -1769,7 +2756,8 @@ TEST_F(TileGeneratorTest, TileVisibilityDefaultAllTrue)
   EXPECT_TRUE(vis.pin_markers);
   EXPECT_TRUE(vis.pin_names);
   EXPECT_TRUE(vis.inst_pins);
-  EXPECT_TRUE(vis.inst_pin_names);
+  // The one unchecked leaf under Instances in the Qt display controls.
+  EXPECT_FALSE(vis.inst_pin_names);
   EXPECT_TRUE(vis.blockages);
   EXPECT_TRUE(vis.net_signal);
   EXPECT_TRUE(vis.net_power);
@@ -1911,11 +2899,14 @@ TEST_F(TileGeneratorTest, PinMarkersRespectNetVisibility)
 
 TEST_F(TileGeneratorTest, PinNamesGatesBTermLabels)
 {
-  // Use a tiny die so that pin markers are large enough for labels.
-  // die_pin_size = max(0.02 * 100, 8) = 8; scale = 256/100 = 2.56;
-  // 8 * 2.56 = 20.48 >= kMinPinNameSizePixels (20) → labels render.
-  block_->setDieArea(odb::Rect(0, 0, 100, 100));
-  makeBTermAtEdge("label_test_pin", "metal1", 0, 40, 10, 10);
+  // Use a tiny die so that pin markers are large enough for labels:
+  // die_pin_size = max(0.02 * 64, 8) = 8, and getBounds() spans the die plus
+  // a symmetric pin-label margin, so scale = 256 / (64 + 2 * margin).  The
+  // margin grows with the pin NAME, hence the one-character name here — it
+  // keeps 8 * scale above kMinPinNameSizePixels (20), which is what makes the
+  // renderer emit labels at all.
+  block_->setDieArea(odb::Rect(0, 0, 64, 64));
+  makeBTermAtEdge("p", "metal1", 0, 40, 10, 10);
   makeTileGen();
   tile_gen_->eagerInit();
 
@@ -2129,7 +3120,6 @@ TEST_F(TileGeneratorTest, AccessPointsRespectLayerVisibility)
 TEST_F(TileGeneratorTest, RegionsOverlayGatedByFlag)
 {
   block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
-  // Anchor the block bbox (getBounds uses content, not the die area).
   placeInst("BUF_X16", "buf1", 0, 0);
 
   odb::dbRegion* region = odb::dbRegion::create(block_, "test_dom");
@@ -2459,8 +3449,7 @@ TEST_F(TileGeneratorTest, DieAndCoreOutlinesOnInstancesLayer)
     int gray = 0;
     for (unsigned xx = 0; xx < w; ++xx) {
       const size_t i = 4UL * (yy * w + xx);
-      if (pixels[i] == 128 && pixels[i + 1] == 128 && pixels[i + 2] == 128
-          && pixels[i + 3] > 0) {
+      if (pixels[i + 3] > 0 && isOutlineGray(&pixels[i])) {
         ++gray;
       }
     }
@@ -2468,6 +3457,53 @@ TEST_F(TileGeneratorTest, DieAndCoreOutlinesOnInstancesLayer)
   }
   EXPECT_GE(max_gray_in_row, 4)
       << "Expected die + core vertical edges crossing the same row";
+}
+
+TEST_F(TileGeneratorTest, PolygonFloorplanOutlineFollowsDiagonalEdge)
+{
+  const odb::Polygon die({odb::Point(0, 0),
+                          odb::Point(4000, 0),
+                          odb::Point(4000, 3000),
+                          odb::Point(2500, 4000),
+                          odb::Point(0, 4000)});
+  block_->setDieArea(die);
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  unsigned w = 0, h = 0;
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+  ASSERT_GT(w, 0u);
+  ASSERT_GT(h, 0u);
+
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const auto grayNear = [&](double x, double y) {
+    const int cx = colOf(bounds, w, static_cast<int>(x));
+    const int cy = rowOf(bounds, w, h, static_cast<int>(y));
+    for (int yy = std::max(cy - 2, 0);
+         yy <= std::min(cy + 2, static_cast<int>(h) - 1);
+         ++yy) {
+      for (int xx = std::max(cx - 2, 0);
+           xx <= std::min(cx + 2, static_cast<int>(w) - 1);
+           ++xx) {
+        const size_t i = 4UL * (static_cast<size_t>(yy) * w + xx);
+        if (pixels[i + 3] > 0 && isOutlineGray(&pixels[i])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // The slanted edge runs from (4000,3000) to (2500,4000).  A rectangular
+  // renderer would leave all of these points empty.
+  for (const double t : {0.2, 0.5, 0.8}) {
+    SCOPED_TRACE(t);
+    EXPECT_TRUE(grayNear(4000.0 - 1500.0 * t, 3000.0 + 1000.0 * t));
+  }
 }
 
 TEST_F(TileGeneratorTest, NoOutlineOnTechLayerTiles)
@@ -2492,6 +3528,198 @@ TEST_F(TileGeneratorTest, NoOutlineOnTechLayerTiles)
   auto pixels = decodePng(png, w, h);
   EXPECT_FALSE(hasNonTransparentPixel(pixels))
       << "Tech-layer tiles must not carry the die/core outline";
+}
+
+//------------------------------------------------------------------------------
+// Track rendering: the tracks must stop at the die area, as in the Qt GUI
+// (RenderThread::drawTracks clips to block->getDieArea()).
+//------------------------------------------------------------------------------
+
+constexpr int kTrackDieSide = 40000;  // die: (0,0)-(40000,40000)
+constexpr int kTrackPitch = 2000;     // 21 tracks per axis across the die
+
+// Visibility that draws the tracks and nothing else, so any lit pixel in the
+// assertions below is a track.
+TileVisibility trackOnlyVisibility()
+{
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.routing = false;
+  vis.special_nets = false;
+  vis.pins = false;
+  vis.inst_pins = false;
+  vis.blockages = false;
+  vis.tracks_pref = true;
+  vis.tracks_non_pref = true;
+  return vis;
+}
+
+// Tracks are lines in their layer's RGB at alpha 150, drawn into the same
+// tile as that layer's coverage-filled shapes.  Coverage quantization must
+// leave them alone: only pixels the coverage fills produced are snapped, so a
+// track keeps its alpha even though its RGB is the pins'.
+TEST_F(TileGeneratorTest, TracksKeepTheirAlphaNextToCoverageShapes)
+{
+  block_->setDieArea(odb::Rect(0, 0, kTrackDieSide, kTrackDieSide));
+  placeInst("BUF_X16", "buf", 0, 0);
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
+  grid->addGridPatternX(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const auto& colors = tile_gen_->getLayerColorMap(getDb()->getTech());
+  const auto entry = colors.find(metal1);
+  ASSERT_NE(entry, colors.end());
+  const Color layer = entry->second;
+
+  TileVisibility vis = trackOnlyVisibility();
+  vis.stdcells = true;
+  vis.inst_pins = true;
+  unsigned w = 0, h = 0;
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("metal1", 0, 0, 0, vis), w, h);
+  size_t pin = 0;
+  size_t track = 0;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i] != layer.r || pixels[i + 1] != layer.g
+        || pixels[i + 2] != layer.b) {
+      continue;
+    }
+    pin += pixels[i + 3] == layer.a;
+    track += pixels[i + 3] == 150;
+  }
+  ASSERT_GT(pin, 0u) << "precondition: the pins must be drawn by coverage";
+  EXPECT_GT(track, 0u) << "coverage quantization changed the tracks' alpha";
+}
+
+TEST_F(TileGeneratorTest, TracksAreClippedToTheDieArea)
+{
+  block_->setDieArea(odb::Rect(0, 0, kTrackDieSide, kTrackDieSide));
+  // getBounds() is the union of the die area and the block bbox, so an
+  // instance placed beyond the die stretches the viewport past it.  That gap
+  // outside the die is where the tracks used to run on, drawn to the tile edge
+  // instead of stopping at the die boundary.
+  placeInst("BUF_X16", "inside", 0, 0);
+  placeInst("BUF_X16", "outside", kTrackDieSide + 20000, kTrackDieSide + 20000);
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
+  grid->addGridPatternX(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  ASSERT_NE(block_->findTrackGrid(metal1), nullptr)
+      << "precondition: the track grid must be reachable from the block";
+
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, trackOnlyVisibility());
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_GT(w, 0u);
+
+  // Map pixels back to DBU exactly as the renderer does at z=0: one tile
+  // spanning getBounds().maxDXDY(), Y flipped.
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double dbu_per_px = static_cast<double>(bounds.maxDXDY()) / w;
+  ASSERT_GT(dbu_per_px, 0.0);
+  // Three pixels of slack for a hairline's partial coverage either side of
+  // it, so a track sitting on the die edge may tint just past it.
+  // The defect this guards against is nothing like that: it drew tracks to the
+  // tile edge, tens of pixels beyond the die.
+  const double slack = 3 * dbu_per_px;
+
+  size_t inside = 0;
+  size_t outside = 0;
+  // First offender only: enough to point at the failure, and cheaper than
+  // tracking the whole bounding box of the strays.
+  double stray_x = 0;
+  double stray_y = 0;
+  for (unsigned py = 0; py < h; ++py) {
+    for (unsigned px = 0; px < w; ++px) {
+      if (pixels[4UL * (py * w + px) + 3] == 0) {
+        continue;
+      }
+      const double dbu_x = bounds.xMin() + px * dbu_per_px;
+      const double dbu_y = bounds.yMin() + (h - 1 - py) * dbu_per_px;
+      const bool in_die = dbu_x >= -slack && dbu_x <= kTrackDieSide + slack
+                          && dbu_y >= -slack && dbu_y <= kTrackDieSide + slack;
+      if (in_die) {
+        ++inside;
+      } else if (outside++ == 0) {
+        stray_x = dbu_x;
+        stray_y = dbu_y;
+      }
+    }
+  }
+
+  EXPECT_EQ(outside, 0u) << "tracks must stop at the die area (die side "
+                         << kTrackDieSide << ", slack " << slack
+                         << " dbu; first stray pixel at " << stray_x << ","
+                         << stray_y << "; inside=" << inside << ")";
+  EXPECT_GT(inside, 0u) << "the tracks inside the die must still be drawn";
+}
+
+TEST_F(TileGeneratorTest, TracksSpanTheWholeTileWhenTheDieCoversIt)
+{
+  // The common case — every design in the flow has die == bbox — must be
+  // untouched by the clip: the tracks still run edge to edge.
+  // Anchor the viewport to the die corners (the bbox covers shapes, not the
+  // die area).
+  placeInst("BUF_X16", "ll", 0, 0);
+  placeInst("BUF_X16", "ur", 90000, 90000);
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
+  // The fixture's die, set in SetUp(); cover it entirely.
+  constexpr int kFixtureDieSide = 100000;
+  grid->addGridPatternX(0, kFixtureDieSide / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, kFixtureDieSide / kTrackPitch + 1, kTrackPitch);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, trackOnlyVisibility());
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  // Both dimensions: they bound the std::clamp ranges below, which need
+  // lo <= hi.
+  ASSERT_GT(w, 0u);
+  ASSERT_GT(h, 0u);
+
+  // Rows reuse the fixture's coveredColumns(); columns have no equivalent.
+  const auto row_has_pixel
+      = [&](unsigned py) { return coveredColumns(pixels, w, py) > 0; };
+  const auto col_has_pixel = [&](unsigned px) {
+    for (unsigned py = 0; py < h; ++py) {
+      if (pixels[4UL * (py * w + px) + 3] > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // getBounds() adds a symmetric pin-label margin, so the die does not reach
+  // the tile edge; sample just inside each die border instead of at pixel 0.
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const auto col_of = [&](int dbu) {
+    return static_cast<unsigned>(
+        std::clamp(colOf(bounds, w, dbu), 0, static_cast<int>(w) - 1));
+  };
+  const auto row_of = [&](int dbu) {
+    return static_cast<unsigned>(
+        std::clamp(rowOf(bounds, w, h, dbu), 0, static_cast<int>(h) - 1));
+  };
+
+  EXPECT_TRUE(row_has_pixel(row_of(2000)) && row_has_pixel(row_of(98000)))
+      << "horizontal tracks must still reach both ends of the die";
+  EXPECT_TRUE(col_has_pixel(col_of(2000)) && col_has_pixel(col_of(98000)))
+      << "vertical tracks must still reach both ends of the die";
 }
 
 //------------------------------------------------------------------------------
@@ -2560,10 +3788,8 @@ TEST_F(TileGeneratorTest, GcellGridClosedAtDieBoundary)
   // (die bottom edge, interior line at y=2000, die top edge).  Vertical
   // lines only contribute isolated pixels per row, so a >=20px run filter
   // isolates the horizontal lines.
-  // A single 1-CSS-px line lands on more than one output row: the tile is
-  // rasterized supersampled and Lanczos-decimated, which spreads each line
-  // over ~3 rows with partial alpha.  Count contiguous BANDS of such rows,
-  // not the rows themselves.
+  // A single 1-CSS-px line can land on more than one output row with partial
+  // alpha.  Count contiguous BANDS of such rows, not the rows themselves.
   int bands = 0;
   bool in_band = false;
   for (unsigned yy = 0; yy < h; ++yy) {
@@ -2683,8 +3909,7 @@ TEST_F(TileGeneratorTest, FlywireSlopePreservedAtExtremeZoom)
   const odb::Rect bounds = tile_gen_->getBounds();
   const int num_tiles = 1 << kZoom;
   const double tile_dbu = bounds.maxDXDY() / static_cast<double>(num_tiles);
-  // Offsets are relative to the bounds, which follow the block BBox (and so the
-  // instance above), not the die area.
+  // Offsets are relative to the bounds, not to the die area.
   const int diag_offset = bounds.maxDXDY() / 4;
   const int far = 100 * bounds.maxDXDY();
   const odb::Point on_diagonal(bounds.xMin() + diag_offset,
@@ -2971,6 +4196,7 @@ TEST_F(TileGeneratorTest, SpecialNetViaEnclosureDrawnOnMetalLayer)
       swire, via_def, 500, 500, odb::dbWireShapeType::IOWIRE);
   ASSERT_NE(sbox, nullptr);
 
+  fitDieToContent();
   makeTileGen();
   tile_gen_->eagerInit();
 
@@ -3049,7 +4275,10 @@ TEST_F(RowRenderingTest, RowOutlineDrawnWhenVisible)
   auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
   unsigned w = 0, h = 0;
   auto pixels = decodePng(png, w, h);
-  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+  // By colour, not by "anything drawn": the gray die/core outline is painted
+  // on every _instances tile, so a plain non-transparent test passes even with
+  // row drawing removed entirely.
+  EXPECT_TRUE(hasRowColorPixel(pixels))
       << "Row outline should be drawn when rows are visible";
 }
 
@@ -3071,6 +4300,10 @@ TEST_F(RowRenderingTest, RowHiddenWhenSiteNotVisible)
       << "Row should be hidden when its site is not in the visibility list";
 }
 
+// Samples a tile lying STRICTLY inside the row, so neither the row's own
+// edges nor the die outline reach it and the only thing that can ink it is a
+// site edge.  A tile at the row origin would be inked by the row corner and by
+// the die corner alike, and so would pass with site drawing removed.
 TEST_F(RowRenderingTest, IndividualSitesDrawnWhenZoomedIn)
 {
   makeTileGen();
@@ -3079,45 +4312,46 @@ TEST_F(RowRenderingTest, IndividualSitesDrawnWhenZoomedIn)
   vis.parseFromJson(parseObj(
       R"({"rows":true,"stdcells":false,"site_FreePDK45_38x28_10R_NP_162NW_34O":true})"));
 
-  // At zoom 0, tile covers the full design. Site is 380 DBU wide.
-  // site_px = 380 * (256 / ~104000) ≈ 0.9 → no individual sites.
-  auto png_z0 = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
-  unsigned w0 = 0, h0 = 0;
-  auto pixels_z0 = decodePng(png_z0, w0, h0);
-  EXPECT_TRUE(hasNonTransparentPixel(pixels_z0))
-      << "Row outline should be visible at zoom 0";
-
-  // At a high zoom, site_px should exceed the 5px threshold and
-  // individual sites should be drawn.  Use renderTileBuffer to scan
-  // for the tile that contains our row at y=[0, 2800].
-  const int zoom = 8;  // 256 tiles, ~400 DBU per tile → site_px ≈ 240
+  // 256 tiles → ~400 DBU per tile, so the 380 DBU site clears the 5 px gate
+  // and a whole tile still fits inside the row's 2800 DBU height.
+  const int zoom = 8;
   const int num_tiles = 1 << zoom;
   const odb::Rect bounds = tile_gen_->getBounds();
   const double tile_dbu = static_cast<double>(bounds.maxDXDY()) / num_tiles;
+  const odb::Rect row_box = row_->getBBox();
 
-  // Find the tile column/row containing the row origin (0,0).
-  const int tx = static_cast<int>((0 - bounds.xMin()) / tile_dbu);
+  // First tile index whose whole DBU span sits between `lo` and `hi`.
+  const auto index_inside = [&](int origin, int lo, int hi) {
+    for (int i = 0; i < num_tiles; ++i) {
+      const double a = origin + i * tile_dbu;
+      if (a > lo && a + tile_dbu < hi) {
+        return i;
+      }
+    }
+    return -1;
+  };
+  const int tx = index_inside(bounds.xMin(), row_box.xMin(), row_box.xMax());
+  const int dbu_y_idx
+      = index_inside(bounds.yMin(), row_box.yMin(), row_box.yMax());
+  ASSERT_GE(tx, 0) << "no tile column falls strictly inside the row";
+  ASSERT_GE(dbu_y_idx, 0) << "no tile row falls strictly inside the row";
   // Leaflet y is flipped: dbu_y_index = num_tiles - 1 - leaflet_y.
-  const int dbu_y_idx = static_cast<int>((0 - bounds.yMin()) / tile_dbu);
   const int ly = num_tiles - 1 - dbu_y_idx;
 
-  ASSERT_GE(tx, 0);
-  ASSERT_LT(tx, num_tiles);
-  ASSERT_GE(ly, 0);
-  ASSERT_LT(ly, num_tiles);
+  auto png = tile_gen_->generateTile("_instances", zoom, tx, ly, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_TRUE(hasRowColorPixel(pixels))
+      << "site outlines should ink a tile inside the row";
 
-  auto png_hi = tile_gen_->generateTile("_instances", zoom, tx, ly, vis);
-  unsigned wh = 0, hh = 0;
-  auto pixels_hi = decodePng(png_hi, wh, hh);
-
-  int count_hi = 0;
-  for (size_t i = 3; i < pixels_hi.size(); i += 4) {
-    if (pixels_hi[i] > 0) {
-      ++count_hi;
-    }
-  }
-  EXPECT_GT(count_hi, 0)
-      << "Zoomed-in tile at row origin should have site outlines";
+  // Control: with rows off the same tile is empty, which is what proves the
+  // ink above came from the sites and not from something always drawn.
+  TileVisibility vis_off;
+  vis_off.parseFromJson(parseObj(R"({"rows":false,"stdcells":false})"));
+  auto png_off = tile_gen_->generateTile("_instances", zoom, tx, ly, vis_off);
+  auto pixels_off = decodePng(png_off, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "nothing but rows should reach a tile inside the row";
 }
 
 TEST_F(RowRenderingTest, RowsDefaultOff)
@@ -3239,6 +4473,135 @@ TEST_F(TileGeneratorTest, SelectAtGatesInstancesByLayerSelectability)
   vis.parseFromJson(parseObj(R"({"selectable_layers":[]})"));
   EXPECT_TRUE(vis.has_selectable_layers);
   auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  EXPECT_EQ(results.size(), 1u);
+}
+
+//------------------------------------------------------------------------------
+// Renderer::select — a click can hit an object a renderer owns.  Qt walks the
+// layers in reverse, visible AND selectable only, then makes one pass with a
+// null layer (LayoutViewer::selectAt).
+//------------------------------------------------------------------------------
+
+// Records the layers it is asked about and can claim the click.
+struct RendererSelectRecorder
+{
+  std::vector<std::string> asked;   // "" for the layer-independent pass
+  bool claim_on_null_pass = false;  // return an object on that pass
+
+  void install()
+  {
+    TileGenerator::setRendererHooks(
+        {.select = [this](odb::dbTechLayer* layer,
+                          const odb::Rect& region,
+                          std::vector<SelectionResult>& out) {
+          asked.emplace_back(layer != nullptr ? layer->getName() : "");
+          if (layer == nullptr && claim_on_null_pass) {
+            out.push_back({std::any{},
+                           "renderer-object",
+                           "GCell",
+                           region,
+                           odb::dbTransform(),
+                           /*is_inst=*/false});
+          }
+        }});
+  }
+
+  static void clear() { TileGenerator::setRendererHooks({}); }
+};
+
+TEST_F(TileGeneratorTest, RendererSelectAsksEveryLayerThenTheNullPassLast)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  RendererSelectRecorder recorder;
+  recorder.install();
+  TileVisibility vis;
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis);
+  RendererSelectRecorder::clear();
+
+  ASSERT_FALSE(recorder.asked.empty());
+  // psm::DebugGui::select clears its state on the null pass, so it has to be
+  // the last thing asked.
+  EXPECT_EQ(recorder.asked.back(), "")
+      << "the layer-independent pass must come after every layer";
+  EXPECT_EQ(std::ranges::count(recorder.asked, std::string()), 1)
+      << "and it must happen exactly once";
+  // Reverse layer order, as in Qt: metal2 is asked before metal1.
+  const auto m1 = std::ranges::find(recorder.asked, std::string("metal1"));
+  const auto m2 = std::ranges::find(recorder.asked, std::string("metal2"));
+  ASSERT_NE(m1, recorder.asked.end());
+  ASSERT_NE(m2, recorder.asked.end());
+  EXPECT_LT(m2 - recorder.asked.begin(), m1 - recorder.asked.begin());
+}
+
+TEST_F(TileGeneratorTest, RendererSelectSkipsHiddenAndUnselectableLayers)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // Only metal1 visible.
+  RendererSelectRecorder hidden;
+  hidden.install();
+  TileVisibility vis;
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis, {"metal1"});
+  RendererSelectRecorder::clear();
+  EXPECT_EQ(hidden.asked, (std::vector<std::string>{"metal1", ""}));
+
+  // Visible but not selectable ⇒ not asked at all.
+  RendererSelectRecorder unselectable;
+  unselectable.install();
+  TileVisibility vis_no_sel;
+  vis_no_sel.parseFromJson(parseObj(R"({"selectable_layers":[]})"));
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis_no_sel, {"metal1"});
+  RendererSelectRecorder::clear();
+  EXPECT_EQ(unselectable.asked, (std::vector<std::string>{""}))
+      << "only the layer-independent pass survives";
+}
+
+// Qt pushes renderer hits before searching the design, so a renderer's object
+// wins the click.  Here the sort that promotes instances must not bury it.
+TEST_F(TileGeneratorTest, RendererSelectResultsComeBeforeDesignObjects)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  RendererSelectRecorder recorder;
+  recorder.claim_on_null_pass = true;
+  recorder.install();
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  RendererSelectRecorder::clear();
+
+  ASSERT_GE(results.size(), 2u) << "the instance and the renderer object";
+  EXPECT_EQ(results.front().name, "renderer-object");
+  EXPECT_EQ(results.front().type_name, "GCell");
+  EXPECT_TRUE(std::ranges::any_of(results, [](const SelectionResult& r) {
+    return r.is_inst;
+  })) << "the instance is still picked, just behind";
+}
+
+// With no callback installed nothing changes: the plain openroad binary with
+// no web server never installs one.
+TEST_F(TileGeneratorTest, RendererSelectIsANoOpWithoutACallback)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt((bbox.xMin() + bbox.xMax()) / 2,
+                                     (bbox.yMin() + bbox.yMax()) / 2,
+                                     /*zoom=*/0,
+                                     vis);
   EXPECT_EQ(results.size(), 1u);
 }
 
@@ -3379,9 +4742,8 @@ TEST_F(MoireArrayTest, DenseArraySubPixelHasNoBeat)
   const int ih = static_cast<int>(h);
   // Measure the central macro-uniform window: the full-tile profile is
   // dominated by the array's outer edge / surrounding margin (a legitimate
-  // low-frequency envelope, not a beat).  In the interior the supersample +
-  // Lanczos-2 decimation must keep the beat band nearly empty — round-8 (1px
-  // coverage) measured ~0.2-0.3 here; the fix drives it to <0.01.
+  // low-frequency envelope, not a beat).  In the interior the beat band must
+  // stay nearly empty.
   const double beat
       = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
   EXPECT_LT(beat, 0.06) << "moiré beat present in dense sub-pixel bump array";
@@ -3443,6 +4805,199 @@ TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
   // the structure survived (high block-CV), i.e. it wasn't smeared to a tint.
   EXPECT_GT(blockAlphaCV(pixels, w, h, 8), 0.10)
       << "resolved grid was over-blurred into a flat tint";
+}
+
+// Spread of the per-column and per-row mean alpha over the central half of a
+// tile, relative to their mean: 0 for a flat tint.  A beat shows up as bands of
+// columns or rows carrying more or less ink.
+double profileSpread(const std::vector<unsigned char>& rgba, const int w)
+{
+  const int x0 = w / 4;
+  const int x1 = 3 * w / 4;
+  std::vector<double> cols(x1 - x0, 0.0);
+  std::vector<double> rows(x1 - x0, 0.0);
+  for (int y = x0; y < x1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      const double a = rgba[(static_cast<size_t>(y) * w + x) * 4 + 3];
+      cols[x - x0] += a;
+      rows[y - x0] += a;
+    }
+  }
+  double worst = 0.0;
+  for (const auto* v : {&cols, &rows}) {
+    const auto [lo, hi] = std::ranges::minmax(*v);
+    double mean = 0.0;
+    for (const double c : *v) {
+      mean += c;
+    }
+    mean /= v->size();
+    if (mean > 0.0) {
+      worst = std::max(worst, (hi - lo) / mean);
+    }
+  }
+  return worst;
+}
+
+// Place an n x n array of INV_X1 tagged COVER_BUMP on `pitch`, with the die
+// fitted to it.
+void placeBumpArray(odb::dbBlock* block,
+                    odb::dbMaster* m,
+                    const int n,
+                    const int pitch)
+{
+  m->setType(odb::dbMasterType::COVER_BUMP);
+  block->setDieArea(odb::Rect(0, 0, n * pitch, n * pitch));
+  int id = 0;
+  for (int iy = 0; iy < n; ++iy) {
+    for (int ix = 0; ix < n; ++ix) {
+      odb::dbInst* inst = odb::dbInst::create(
+          block, m, ("bump" + std::to_string(id++)).c_str());
+      inst->setLocation(ix * pitch, iy * pitch);
+      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+  }
+}
+
+// "Detailed view" re-admits sub-pixel instances and their pin shapes, which the
+// coverage rasterizer must still draw without a beat: an array of sub-pixel
+// bumps on a ~2 px pitch, on both the instance pass and a metal layer.  Snapped
+// rendering makes each bump 1 or 2 px depending on its phase, which shows up
+// here as whole columns and rows of extra ink.
+TEST_F(MoireArrayTest, DetailedViewSubPixelBumpArrayHasNoBeat)
+{
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  placeBumpArray(block_, m, /*n=*/128, 2 * m->getHeight());
+  makeTileGen();
+  TileVisibility vis;
+  vis.detailed = true;
+  for (const char* layer : {"_instances", "metal1"}) {
+    const std::vector<unsigned char> png
+        = tile_gen_->generateTile(layer, 0, 0, 0, vis);
+    unsigned w = 0;
+    unsigned h = 0;
+    const auto pixels = decodePng(png, w, h);
+    ASSERT_TRUE(hasNonTransparentPixel(pixels)) << layer;
+    // A tint lying near an alpha-quantization boundary can tip single
+    // columns or rows one level (1/15 of the colour's alpha, ~8% of the
+    // mean here) up or down; a beat moves whole bands by far more.
+    EXPECT_LT(profileSpread(pixels, static_cast<int>(w)), 0.10)
+        << "moiré beat on " << layer;
+    // Coverage is quantized so the tile keeps the indexed PNG path; byte 25
+    // of a PNG is the IHDR colour type, 3 for a palette.
+    ASSERT_GT(png.size(), 25u);
+    EXPECT_EQ(png[25], 3) << layer << " fell back to full-colour PNG";
+  }
+}
+
+// A dot's coverage footprint reaches past the dot, so dots just across a tile
+// boundary must still paint this tile's edge pixels.  Sub-pixel dots on a 2 px
+// pitch at z=1: any four adjacent columns span two periods, so the four
+// columns straddling the boundary between tiles x=0 and x=1 must carry the
+// same ink as the average column.
+TEST_F(MoireArrayTest, DotFootprintsCrossTileEdgesWithoutASeam)
+{
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  placeBumpArray(block_, m, /*n=*/256, 4 * m->getHeight());
+  makeTileGen();
+  TileVisibility vis;
+  vis.detailed = true;
+  unsigned w = 0;
+  unsigned h = 0;
+  const auto left
+      = decodePng(tile_gen_->generateTile("_instances", 1, 0, 0, vis), w, h);
+  const auto right
+      = decodePng(tile_gen_->generateTile("_instances", 1, 1, 0, vis), w, h);
+  ASSERT_EQ(w, 256u);
+  // Column ink across the two tiles side by side.
+  std::vector<double> ink(2 * w, 0.0);
+  for (unsigned y = 0; y < h; ++y) {
+    for (unsigned x = 0; x < w; ++x) {
+      ink[x] += left[(static_cast<size_t>(y) * w + x) * 4 + 3];
+      ink[w + x] += right[(static_cast<size_t>(y) * w + x) * 4 + 3];
+    }
+  }
+  double interior = 0.0;
+  for (unsigned x = 32; x < 2 * w - 32; ++x) {
+    interior += ink[x];
+  }
+  interior /= 2 * w - 64;
+  ASSERT_GT(interior, 0.0);
+  const double seam = (ink[w - 2] + ink[w - 1] + ink[w] + ink[w + 1]) / 4;
+  EXPECT_NEAR(seam / interior, 1.0, 0.03)
+      << "tile edges lost the ink of dots just across the boundary";
+}
+
+// The die outline is drawn on the pixel just inside the die.  A 3DBlox top
+// chip has no block, so no label margin widens the bounds and at z=0 the die
+// fills the tile exactly: there is no neighbouring tile beyond its right and
+// top edges, so the one tile must draw all four.
+// Instances are drawn into a buffer that extends kTileApronPx past every tile
+// edge, and the checks that decide whether an outline edge falls in the tile
+// must span all of it.  An instance whose right edge lies 1.2 px inside the
+// tile's right boundary must have that edge drawn; the neighbouring tile only
+// draws it into its own apron, which is cropped.
+TEST_F(TileGeneratorTest, InstanceEdgeInTheLastPixelsOfATileIsDrawn)
+{
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = bounds.maxDXDY() / 2.0;  // z=1
+  const double dbu_per_px = tile_dbu / 256.0;
+  odb::dbMaster* m = lib_->findMaster("BUF_X16");
+  ASSERT_NE(m, nullptr);
+  const int xh = static_cast<int>(bounds.xMin() + tile_dbu - 1.2 * dbu_per_px);
+  const int y = static_cast<int>(bounds.yMin() + tile_dbu / 2);
+  placeInst("BUF_X16", "edge", xh - static_cast<int>(m->getWidth()), y);
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBounds(), bounds)
+      << "placing the instance moved the tile grid";
+
+  TileVisibility vis;
+  vis.placement_blockages = false;
+  unsigned w = 0, h = 0;
+  // z=1 x=0 is the left column; y=1 is the lower row (Leaflet counts down).
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 1, 0, 1, vis), w, h);
+  ASSERT_EQ(w, 256u);
+  int lit = 0;
+  for (unsigned row = 0; row < h; ++row) {
+    lit += pixels[(static_cast<size_t>(row) * w + 255) * 4 + 3] > 0;
+  }
+  const int height_px = static_cast<int>(m->getHeight() / dbu_per_px);
+  EXPECT_GE(lit, height_px - 2)
+      << "the instance's right edge was dropped near the tile boundary";
+}
+
+TEST_F(TileGeneratorTest, DieOutlineDrawsAllFourEdgesWhenItFillsTheTile)
+{
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBounds(), block_->getDieArea())
+      << "fixture no longer frames the die exactly";
+  unsigned w = 0;
+  unsigned h = 0;
+  const auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  ASSERT_EQ(w, 256u);
+  ASSERT_EQ(h, 256u);
+  auto lit = [&](const int x, const int y) {
+    return pixels[(static_cast<size_t>(y) * w + x) * 4 + 3] > 0;
+  };
+  int left = 0;
+  int right = 0;
+  int top = 0;
+  int bottom = 0;
+  for (int i = 0; i < 256; ++i) {
+    left += lit(0, i);
+    right += lit(255, i);
+    top += lit(i, 0);
+    bottom += lit(i, 255);
+  }
+  EXPECT_GT(left, 250) << "left die edge";
+  EXPECT_GT(right, 250) << "right die edge";
+  EXPECT_GT(top, 250) << "top die edge";
+  EXPECT_GT(bottom, 250) << "bottom die edge";
 }
 
 TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsCulled)
@@ -3589,13 +5144,12 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdCulledUniformlyAcrossTileSeam)
 
   // The _instances pass also draws the always-on gray die/core outline (Qt
   // drawChip parity).  That isn't array coverage, so exclude it: neutral
-  // gray at any alpha (the supersampled render is decimated, so outline
-  // pixels come back with partial coverage).
+  // gray at any alpha (outline pixels can come back with partial coverage).
   auto is_array_pixel = [](const unsigned char* p) {
     if (p[3] == 0) {
       return false;
     }
-    return p[0] != 128 || p[1] != 128 || p[2] != 128;
+    return !isOutlineGray(p);
   };
 
   auto coverage = [&](const std::vector<unsigned char>& px, int xa, int xb) {
@@ -3921,11 +5475,743 @@ TEST(DbuFormatTest, NoScaleFallsBackToRawDbu)
   EXPECT_EQ(dbuToMicronString(12345, -1.0), "12345");
 }
 
+// Heat-map bins tile the plane, so every pixel belongs to exactly one bin.
+// Rounding each bin's edges outward handed the pixels on a shared edge to both
+// neighbours, and each was composited twice: a lattice of darker seams over the
+// whole map, and — because a doubled pixel mixes two ramp entries — a tile
+// colour count far past the 256 the ramp holds.  Every bin here carries the
+// same value, so one colour is the whole of a correctly drawn tile.
+TEST_F(TileGeneratorTest, HeatMapBinsDoNotOverlapOnSharedEdges)
+{
+  // A cell spanning the design populates every bin, so the tile is full of
+  // shared bin edges.
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide)));
+  // Below 255 a second composite lands on a different colour than the first.
+  heatmap_->setColorAlpha(150);
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba = decodePng(
+      tile_gen_->generateHeatMapTile(*heatmap_, 0, 0, 0), width, height);
+  ASSERT_TRUE(hasNonTransparentPixel(rgba));
+
+  std::set<std::array<unsigned char, 4>> colors;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (rgba[i + 3] != 0) {
+      colors.insert({rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]});
+    }
+  }
+  EXPECT_EQ(colors.size(), 1u)
+      << "a pixel covered by two bins blends the bin colour with itself";
+}
+
+// A layer with nothing in the tile encodes to bytes that depend only on the
+// tile's size, so every such tile is the same image and is served from one
+// shared encoding.  Checked through two different empty layers: a cache keyed
+// on anything but the size would hand back different bytes for them.
+TEST_F(TileGeneratorTest, EmptyTilesShareOneTransparentEncoding)
+{
+  makeTileGen();
+
+  const std::vector<unsigned char> metal1
+      = tile_gen_->generateTile("metal1", 0, 0, 0);
+  const std::vector<unsigned char> metal2
+      = tile_gen_->generateTile("metal2", 0, 0, 0);
+  EXPECT_EQ(metal1, metal2);
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba = decodePng(metal1, width, height);
+  EXPECT_EQ(width, static_cast<unsigned>(kTileSize));
+  EXPECT_EQ(height, static_cast<unsigned>(kTileSize));
+  EXPECT_FALSE(hasNonTransparentPixel(rgba));
+}
+
+// Tiles are encoded from a palette when they hold few enough colours, which has
+// to reproduce them exactly — a shifted or quantized colour would put the web
+// viewer's layers out of step with the Qt GUI's.  The drawn pixels here must be
+// the layer's own colour, unchanged.
+TEST_F(TileGeneratorTest, IndexedEncodingPreservesTheLayerColour)
+{
+  placeInst("BUF_X16", "buf", 0, 0);
+  makeTileGen();
+  fitDieToContent();
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  const auto& colors = tile_gen_->getLayerColorMap(getDb()->getTech());
+  const auto entry = colors.find(metal1);
+  ASSERT_NE(entry, colors.end());
+  const Color expected = entry->second;
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba
+      = decodePng(tile_gen_->generateTile("metal1", 0, 0, 0), width, height);
+  ASSERT_TRUE(hasNonTransparentPixel(rgba));
+
+  std::set<std::array<unsigned char, 4>> colors_seen;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (rgba[i + 3] != 0) {
+      colors_seen.insert({rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]});
+    }
+  }
+  ASSERT_FALSE(colors_seen.empty());
+  // The tile carries the die outline and the instance's pin shapes too, so
+  // only require that the layer's own colour survives the round trip intact:
+  // a palette that shifted or quantized it would leave this exact tuple absent.
+  const std::array<unsigned char, 4> layer_color{
+      expected.r, expected.g, expected.b, expected.a};
+  EXPECT_TRUE(colors_seen.contains(layer_color))
+      << "the layer colour must reach the client unchanged";
+}
+
+// Off-grid coordinates are an empty tile, not an empty result.  Returning no
+// bytes put a zero-length body behind a PNG frame on the wire, which a client
+// can only fail to decode; every tile entry point owes its caller a decodable
+// image for "nothing here".
+TEST_F(TileGeneratorTest, OffGridHeatMapTileIsStillADecodablePng)
+{
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
+
+  struct Coord
+  {
+    int z, x, y;
+  };
+  for (const Coord& c : {Coord{0, -1, 0}, Coord{0, 3, 7}, Coord{2, 9999, 0}}) {
+    const std::vector<unsigned char> png
+        = tile_gen_->generateHeatMapTile(*heatmap_, c.z, c.x, c.y);
+    ASSERT_FALSE(png.empty()) << "z/x/y=" << c.z << "/" << c.x << "/" << c.y;
+
+    unsigned width = 0;
+    unsigned height = 0;
+    const std::vector<unsigned char> rgba = decodePng(png, width, height);
+    EXPECT_EQ(width, static_cast<unsigned>(kTileSize));
+    EXPECT_EQ(height, static_cast<unsigned>(kTileSize));
+    EXPECT_FALSE(hasNonTransparentPixel(rgba));
+  }
+}
+
+// isBlankTilePng() has to recognize a blank image at whatever size the caller
+// rendered it, not just at the tile size.  The static report leans on that: it
+// filters blank layer tiles and blank timing-path overlays through the same
+// call, and the overlays are rendered at twice the tile size.  The byte
+// threshold this replaced was derived for a 256 px tile (a transparent one is
+// exactly 102 bytes) and could not see a blank 512 px overlay, which is 125.
+TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
+{
+  // Nothing placed, so metal1 has no geometry to draw; the die outline still
+  // puts content on _instances.
+  makeTileGen();
+
+  // 1 and 2 give 256 px and 512 px -- the tile size the report filters at and
+  // the overlay size it filters at, whose blank encodings are 102 and 125
+  // bytes.  A single threshold cannot separate content from blank across both.
+  for (const double dpr : {1.0, 2.0}) {
+    const std::vector<unsigned char> blank = tile_gen_->generateTile(
+        "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, nullptr, dpr);
+    ASSERT_FALSE(blank.empty()) << "dpr=" << dpr;
+    unsigned width = 0;
+    unsigned height = 0;
+    const std::vector<unsigned char> rgba = decodePng(blank, width, height);
+    ASSERT_FALSE(hasNonTransparentPixel(rgba)) << "dpr=" << dpr;
+    EXPECT_TRUE(TileGenerator::isBlankTilePng(blank))
+        << "a blank " << width << " px image must read as blank";
+
+    const std::vector<unsigned char> drawn
+        = tile_gen_->generateTile("_instances",
+                                  0,
+                                  0,
+                                  0,
+                                  {},
+                                  {},
+                                  {},
+                                  {},
+                                  {},
+                                  nullptr,
+                                  nullptr,
+                                  nullptr,
+                                  dpr);
+    ASSERT_FALSE(drawn.empty()) << "dpr=" << dpr;
+    EXPECT_FALSE(TileGenerator::isBlankTilePng(drawn))
+        << "a " << width << " px image with the die outline on it is not blank";
+  }
+
+  // An encode that failed carries no bytes; that is not a blank image, and a
+  // caller that treated it as one would swallow the failure.
+  EXPECT_FALSE(TileGenerator::isBlankTilePng({}));
+}
+
+// A heat-map bin is converted to pixels whole, not clipped to the tile first --
+// that is what keeps the bin lattice identical in every tile the bin crosses.
+// So the bin's far edge in tile pixels grows with zoom without bound, and deep
+// enough it passes what an int holds.  Casting that is undefined, and what it
+// did in practice was wrap to a negative span and drop the bin: the map went
+// blank exactly where it was most magnified.
+TEST_F(TileGeneratorTest, DeepZoomKeepsABinLargerThanTheIntPixelRange)
+{
+  // Every bin populated, so whichever one the tile lands in is drawn.
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide)));
+
+  constexpr int kZoom = 27;
+  const double num_tiles = std::pow(2, kZoom);
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = bounds.maxDXDY() / num_tiles;
+
+  // The tile over the die centre, which is interior to the bin grid -- the
+  // corner tiles at this zoom sit in the pin-label margin, outside every bin.
+  const int centre = kSeamDieSide / 2;
+  const int tx = static_cast<int>((centre - bounds.xMin()) / tile_dbu);
+  const int ty_up = static_cast<int>((centre - bounds.yMin()) / tile_dbu);
+  const int ty = static_cast<int>(num_tiles) - 1 - ty_up;
+
+  // The die centre is the centre of the middle bin of the 3x3 grid, so each of
+  // that bin's edges is half a bin from the tile -- which is the distance the
+  // conversion has to survive.  Assert the premise: without it, a zoom that
+  // stopped short of the overflow would make this test pass for no reason.
+  constexpr double kBinDbu = 30000.0;  // setGridSizes(15, 15) at 2000 dbu/um
+  const double edge_px = (kBinDbu / 2) * kTileSize / tile_dbu;
+  ASSERT_GT(edge_px, static_cast<double>(std::numeric_limits<int>::max()))
+      << "the zoom is not deep enough to exercise the clamp";
+
+  unsigned width = 0;
+  unsigned height = 0;
+  const std::vector<unsigned char> rgba = decodePng(
+      tile_gen_->generateHeatMapTile(*heatmap_, kZoom, tx, ty), width, height);
+
+  // The tile is a speck inside one bin, so the bin covers all of it.
+  ASSERT_EQ(rgba.size(), static_cast<size_t>(kTileSize) * kTileSize * 4);
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    ASSERT_NE(rgba[i + 3], 0)
+        << "pixel " << i / 4 << " of a tile wholly inside a bin is unpainted";
+  }
+}
+
 // The scale the tests above model is the one the fixture's tech actually has.
 TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 {
   EXPECT_EQ(getDb()->getDbuPerMicron(), 2000u);
   EXPECT_EQ(dbuPrecision(getDb()->getDbuPerMicron()), 4);
+}
+
+//------------------------------------------------------------------------------
+// Debug-graphics overlay: the two halves of the web::Renderer API.  Qt calls
+// drawLayer once per tech layer and drawObjects once after the layers; the web
+// used to call only drawObjects, and once per layer tile at that.
+//------------------------------------------------------------------------------
+
+// Records which layer each debug-overlay invocation was for.  nullptr stands
+// for the layer-independent drawObjects pass.
+struct DebugOverlayRecorder
+{
+  std::vector<std::string> layer_calls;  // one entry per drawLayer pass
+  int object_calls = 0;                  // drawObjects passes
+
+  void install()
+  {
+    TileGenerator::setRendererHooks({.draw = [this](std::vector<unsigned char>&,
+                                                    const TileFrame&,
+                                                    bool,
+                                                    odb::dbTechLayer* layer) {
+      if (layer != nullptr) {
+        layer_calls.emplace_back(layer->getName());
+      } else {
+        ++object_calls;
+      }
+    }});
+  }
+
+  static void clear() { TileGenerator::setRendererHooks({}); }
+};
+
+TEST_F(TileGeneratorTest, DebugOverlayPassesTheTileTechLayer)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  tile_gen_->generateTile("metal3", 0, 0, 0, vis);
+  DebugOverlayRecorder::clear();
+
+  // Each layer tile drives Renderer::drawLayer for its OWN layer, so a
+  // renderer that draws per layer lands on the right tile.
+  EXPECT_EQ(recorder.layer_calls,
+            (std::vector<std::string>{"metal1", "metal3"}));
+  EXPECT_EQ(recorder.object_calls, 0)
+      << "the layer tiles must not carry the drawObjects pass";
+}
+
+TEST_F(TileGeneratorTest, DebugOverlayObjectsPassRunsOncePerTile)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  // What a client does for one tile: a tile per visible layer, plus one
+  // overlay tile.  drawObjects used to run once per layer here.
+  for (const char* layer : {"metal1", "metal2", "metal3", "metal4"}) {
+    tile_gen_->generateTile(layer, 0, 0, 0, vis);
+  }
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 /*highlight_rects=*/{},
+                                 /*highlight_polys=*/{},
+                                 /*colored_rects=*/{},
+                                 /*flight_lines=*/{},
+                                 /*route_guide_net_ids=*/nullptr,
+                                 /*has_visible_layers=*/false,
+                                 /*visible_layers=*/{},
+                                 /*dpr=*/1.0,
+                                 /*tile_px=*/0,
+                                 /*colored_polys=*/{},
+                                 /*labels=*/{},
+                                 /*debug_renderers=*/true,
+                                 /*debug_live=*/true);
+  DebugOverlayRecorder::clear();
+
+  EXPECT_EQ(recorder.object_calls, 1)
+      << "drawObjects belongs to the overlay tile, not to every layer";
+  EXPECT_EQ(recorder.layer_calls.size(), 4u);
+}
+
+// The pseudo layers ("_instances", the grid overlays) have no tech layer, so
+// they take no part in the per-layer pass -- otherwise a renderer would be
+// asked to draw a layer that does not exist.
+TEST_F(TileGeneratorTest, DebugOverlaySkipsPseudoLayers)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  tile_gen_->generateTile("_mfg_grid", 0, 0, 0, vis);
+  DebugOverlayRecorder::clear();
+
+  EXPECT_TRUE(recorder.layer_calls.empty());
+  EXPECT_EQ(recorder.object_calls, 0);
+}
+
+// An overlay tile with no shapes at all still has to render: while a tool is
+// paused mid-run the debug graphics are the only thing on it.
+TEST_F(TileGeneratorTest, DebugOverlayDefeatsTheEmptyOverlayShortCircuit)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 {},
+                                 {},
+                                 {},
+                                 {},
+                                 nullptr,
+                                 false,
+                                 {},
+                                 1.0,
+                                 0,
+                                 {},
+                                 {},
+                                 /*debug_renderers=*/true,
+                                 /*debug_live=*/true);
+  EXPECT_EQ(recorder.object_calls, 1);
+
+  // And with the toggle off the short-circuit still applies.
+  recorder.object_calls = 0;
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 {},
+                                 {},
+                                 {},
+                                 {},
+                                 nullptr,
+                                 false,
+                                 {},
+                                 1.0,
+                                 0,
+                                 {},
+                                 {},
+                                 /*debug_renderers=*/false,
+                                 /*debug_live=*/false);
+  DebugOverlayRecorder::clear();
+  EXPECT_EQ(recorder.object_calls, 0);
+}
+
+// WebServer::stop() clears the hooks from the Tcl thread while the io threads
+// may still be serving a tile, so installing and calling must be serialized.
+// This passes either way without a sanitizer; its job is to give TSan the
+// interleaving to catch (configure a build with -DTSAN=ON to check).
+TEST_F(TileGeneratorTest, RendererHooksSurviveConcurrentInstallAndCall)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+
+  constexpr int kIterations = 200;
+  std::atomic<bool> stop{false};
+  std::atomic<int> draws{0};
+
+  std::thread installer([&] {
+    for (int i = 0; i < kIterations && !stop.load(); ++i) {
+      TileGenerator::setRendererHooks(
+          {.draw = [&draws](std::vector<unsigned char>&,
+                            const TileFrame&,
+                            bool,
+                            odb::dbTechLayer*) { ++draws; }});
+      TileGenerator::setRendererHooks({});
+    }
+  });
+
+  for (int i = 0; i < kIterations; ++i) {
+    tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  }
+  stop.store(true);
+  installer.join();
+  TileGenerator::setRendererHooks({});
+
+  // The count is racy by nature — the point is that neither thread tore the
+  // other's std::function out from under it.
+  SUCCEED();
+}
+
+// ─── Layer extents ──────────────────────────────────────────────────────────
+//
+// The client skips every layer tile outside its layer's extent, so an extent
+// that misses a shape blanks that shape for good -- until the next refresh.
+// These pin down that it never does, including for shapes added after the
+// extents were first read.
+
+// One extent against one tile, as layer-extents.js tileOverlaps() does it.
+static bool extentCoversTile(const boost::json::value& extent,
+                             const int z,
+                             const int x,
+                             const int y)
+{
+  if (extent.is_null()) {
+    return false;
+  }
+  const boost::json::array& e = extent.as_array();
+  const double n = std::pow(2.0, z);
+  const double margin = 1.0 / 16 / n;
+  const double x0 = x / n - margin;
+  const double y0 = y / n - margin;
+  const double x1 = (x + 1) / n + margin;
+  const double y1 = (y + 1) / n + margin;
+  return e[0].to_number<double>() <= x1 && e[2].to_number<double>() >= x0
+         && e[1].to_number<double>() <= y1 && e[3].to_number<double>() >= y0;
+}
+
+// The client's decision (layer-extents.js mayHaveContent) on the
+// serializeLayerExtentsResponse wire form: the layer's ungated extent, or the
+// extent of any source whose visibility flag is on.
+static bool clientKeepsTile(const boost::json::object& resp,
+                            const std::string& layer,
+                            const TileVisibility& vis,
+                            const int z,
+                            const int x,
+                            const int y)
+{
+  if (extentCoversTile(resp.at("layers").at(layer), z, x, y)) {
+    return true;
+  }
+  const std::pair<const char*, bool> flags[] = {
+      {"inst_pins", vis.inst_pins},
+      {"blockages", vis.blockages},
+      {"routing_obstructions", vis.routing_obstructions},
+      {"fills", vis.fills},
+  };
+  const boost::json::object& gated = resp.at("gated").as_object();
+  for (const auto& [flag, on] : flags) {
+    const boost::json::object& layers = gated.at(flag).as_object();
+    if (on && layers.contains(layer)
+        && extentCoversTile(layers.at(layer), z, x, y)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+class LayerExtentsTest : public TileGeneratorTest
+{
+ protected:
+  odb::dbTechLayer* layer(const char* name)
+  {
+    odb::dbTechLayer* l = getDb()->getTech()->findLayer(name);
+    EXPECT_NE(l, nullptr) << name;
+    return l;
+  }
+
+  odb::dbSWire* powerWire()
+  {
+    odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+    pwr->setSigType(odb::dbSigType::POWER);
+    return odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  }
+
+  // Every tile of `layers` at zoom `z` that draws anything under `vis` must be
+  // one the client keeps, and at least one tile per layer must draw (or the
+  // check says nothing).
+  void expectExtentsKeepEveryDrawnTile(const std::vector<std::string>& layers,
+                                       const int z,
+                                       const TileVisibility& vis = {})
+  {
+    const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+    ASSERT_TRUE(resp.at("supported").as_bool());
+    const int n = 1 << z;
+    for (const std::string& name : layers) {
+      ASSERT_TRUE(resp.at("layers").as_object().contains(name)) << name;
+      int drawn = 0;
+      for (int x = 0; x < n; ++x) {
+        for (int y = 0; y < n; ++y) {
+          const std::vector<unsigned char> png
+              = tile_gen_->generateTile(name, z, x, y, vis);
+          if (TileGenerator::isBlankTilePng(png)) {
+            continue;
+          }
+          ++drawn;
+          EXPECT_TRUE(clientKeepsTile(resp, name, vis, z, x, y))
+              << name << " tile " << z << "/" << x << "/" << y
+              << " draws, but its extents would have the client skip it";
+        }
+      }
+      EXPECT_GT(drawn, 0) << name << " drew nothing; the check is vacuous";
+    }
+  }
+};
+
+TEST_F(LayerExtentsTest, EmptyLayerHasNoExtent)
+{
+  odb::dbSBox::create(powerWire(),
+                      layer("metal3"),
+                      10000,
+                      20000,
+                      60000,
+                      22000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  ASSERT_TRUE(extents->supported);
+  ASSERT_TRUE(extents->layers.contains("metal10"));
+  const TileGenerator::LayerExtents::Extent& m10
+      = extents->layers.at("metal10");
+  EXPECT_FALSE(m10.shapes || m10.inst_pins || m10.blockages
+               || m10.routing_obstructions || m10.fills);
+  ASSERT_TRUE(extents->layers.at("metal3").shapes.has_value());
+  EXPECT_EQ(*extents->layers.at("metal3").shapes,
+            odb::Rect(10000, 20000, 60000, 22000));
+  // Pseudo layers are not tech layers and are never listed.
+  EXPECT_FALSE(extents->layers.contains("_instances"));
+}
+
+TEST_F(LayerExtentsTest, InstanceShapesExtendTheirLayers)
+{
+  // Master pins and obstructions are drawn per instance, so every layer a
+  // master has them on reaches wherever the instances are.
+  odb::dbInst* inst = placeInst("BUF_X16", "buf", 30000, 40000);
+  makeTileGen();
+
+  // Only the master's geometry is on metal1, so the ungated extent stays
+  // empty and the instance shows up under the flag that draws it.
+  const auto extents = tile_gen_->layerExtents();
+  const TileGenerator::LayerExtents::Extent& m1 = extents->layers.at("metal1");
+  EXPECT_FALSE(m1.shapes.has_value());
+  ASSERT_TRUE(m1.inst_pins.has_value());
+  EXPECT_TRUE(m1.inst_pins->contains(inst->getBBox()->getBox()));
+}
+
+TEST_F(LayerExtentsTest, SpecialViaEnclosuresExtendTheAdjacentMetals)
+{
+  // A special via is indexed on its cut layer, but its enclosures are drawn on
+  // metal1 and metal2 -- which have no other shapes here.
+  odb::dbTechVia* via = getDb()->getTech()->findVia("via1_0");
+  ASSERT_NE(via, nullptr);
+  odb::dbSWire* swire = powerWire();
+  odb::dbSBox::create(
+      swire, layer("metal3"), 0, 0, 1000, 1000, odb::dbWireShapeType::STRIPE);
+  ASSERT_NE(
+      odb::dbSBox::create(swire, via, 500, 500, odb::dbWireShapeType::IOWIRE),
+      nullptr);
+  fitDieToContent();
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  for (const char* name : {"via1", "metal1", "metal2"}) {
+    const std::optional<odb::Rect>& shapes = extents->layers.at(name).shapes;
+    ASSERT_TRUE(shapes.has_value()) << name;
+    EXPECT_TRUE(shapes->intersects(odb::Point(500, 500))) << name;
+  }
+  expectExtentsKeepEveryDrawnTile({"via1", "metal1", "metal2"}, 2);
+}
+
+TEST_F(LayerExtentsTest, ExtentsKeepEveryDrawnTile)
+{
+  placeInst("BUF_X16", "buf_a", 10000, 10000);
+  placeInst("BUF_X16", "buf_b", 70000, 60000);
+  odb::dbSWire* swire = powerWire();
+  odb::dbSBox::create(swire,
+                      layer("metal4"),
+                      20000,
+                      5000,
+                      21000,
+                      90000,
+                      odb::dbWireShapeType::STRIPE);
+  odb::dbSBox::create(swire,
+                      layer("metal5"),
+                      5000,
+                      80000,
+                      95000,
+                      81000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  expectExtentsKeepEveryDrawnTile({"metal1", "metal4", "metal5"}, 3);
+}
+
+TEST_F(LayerExtentsTest, ShapesAddedLaterAreCovered)
+{
+  placeInst("BUF_X16", "buf", 10000, 10000);
+  makeTileGen();
+  // Registers Search for db callbacks and builds the indices, as serving does.
+  tile_gen_->eagerInit();
+
+  const auto before = tile_gen_->layerExtents();
+  EXPECT_FALSE(before->layers.at("metal7").shapes.has_value());
+  EXPECT_FALSE(before->layers.at("metal8").shapes.has_value());
+  EXPECT_FALSE(before->layers.at("metal9").shapes.has_value());
+
+  // First edit: the indices were valid, so this one fires the refresh push.
+  odb::dbSWire* swire = powerWire();
+  odb::dbSBox::create(swire,
+                      layer("metal7"),
+                      60000,
+                      60000,
+                      90000,
+                      62000,
+                      odb::dbWireShapeType::STRIPE);
+  const auto after_first = tile_gen_->layerExtents();
+  ASSERT_TRUE(after_first->layers.at("metal7").shapes.has_value());
+  EXPECT_EQ(*after_first->layers.at("metal7").shapes,
+            odb::Rect(60000, 60000, 90000, 62000));
+
+  // Two more edits with no read between them: the second finds the index
+  // already invalid and fires no refresh of its own, but the next fetch must
+  // still see both.
+  odb::dbSBox::create(swire,
+                      layer("metal8"),
+                      5000,
+                      70000,
+                      8000,
+                      95000,
+                      odb::dbWireShapeType::STRIPE);
+  odb::dbSBox::create(swire,
+                      layer("metal9"),
+                      40000,
+                      5000,
+                      45000,
+                      8000,
+                      odb::dbWireShapeType::STRIPE);
+  const auto after_batch = tile_gen_->layerExtents();
+  EXPECT_TRUE(after_batch->layers.at("metal8").shapes.has_value());
+  EXPECT_TRUE(after_batch->layers.at("metal9").shapes.has_value());
+
+  expectExtentsKeepEveryDrawnTile({"metal7", "metal8", "metal9"}, 3);
+}
+
+TEST_F(LayerExtentsTest, GatedSourcesCountOnlyWhileTheirFlagIsOn)
+{
+  // A routing obstruction is metal6's only shape: its tiles draw while
+  // routing_obstructions is on and are empty, and skippable, while it is off.
+  odb::dbObstruction::create(
+      block_, layer("metal6"), 30000, 30000, 50000, 50000);
+  // Keeps the bounds off the obstruction, so it is not the whole grid.
+  odb::dbSBox::create(powerWire(),
+                      layer("metal3"),
+                      0,
+                      0,
+                      100000,
+                      1000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  const TileGenerator::LayerExtents::Extent& m6 = extents->layers.at("metal6");
+  EXPECT_FALSE(m6.shapes.has_value());
+  ASSERT_TRUE(m6.routing_obstructions.has_value());
+  EXPECT_EQ(*m6.routing_obstructions, odb::Rect(30000, 30000, 50000, 50000));
+
+  TileVisibility on;
+  expectExtentsKeepEveryDrawnTile({"metal6"}, 3, on);
+
+  TileVisibility off;
+  off.routing_obstructions = false;
+  const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+  for (int x = 0; x < 8; ++x) {
+    for (int y = 0; y < 8; ++y) {
+      EXPECT_FALSE(clientKeepsTile(resp, "metal6", off, 3, x, y));
+      EXPECT_TRUE(TileGenerator::isBlankTilePng(
+          tile_gen_->generateTile("metal6", 3, x, y, off)));
+    }
+  }
+}
+
+TEST_F(LayerExtentsTest, ResponseIsOnTheTileGrid)
+{
+  odb::dbSBox::create(powerWire(),
+                      layer("metal3"),
+                      10000,
+                      20000,
+                      60000,
+                      22000,
+                      odb::dbWireShapeType::STRIPE);
+  makeTileGen();
+
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double side = bounds.maxDXDY();
+  const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+  ASSERT_TRUE(resp.at("supported").as_bool());
+  const boost::json::object& layers = resp.at("layers").as_object();
+  EXPECT_TRUE(layers.at("metal10").is_null());
+  for (const char* flag :
+       {"inst_pins", "blockages", "routing_obstructions", "fills"}) {
+    ASSERT_TRUE(resp.at("gated").as_object().contains(flag)) << flag;
+    EXPECT_FALSE(resp.at("gated").at(flag).as_object().contains("metal10"))
+        << flag;
+  }
+  const boost::json::array& e = layers.at("metal3").as_array();
+  ASSERT_EQ(e.size(), 4u);
+  // x runs right from the grid's left edge; y runs DOWN from its top edge.
+  EXPECT_DOUBLE_EQ(e[0].as_double(), (10000 - bounds.xMin()) / side);
+  EXPECT_DOUBLE_EQ(e[1].as_double(), 1.0 - (22000 - bounds.yMin()) / side);
+  EXPECT_DOUBLE_EQ(e[2].as_double(), (60000 - bounds.xMin()) / side);
+  EXPECT_DOUBLE_EQ(e[3].as_double(), 1.0 - (20000 - bounds.yMin()) / side);
 }
 
 }  // namespace

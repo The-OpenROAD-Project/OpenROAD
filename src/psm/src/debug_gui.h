@@ -14,13 +14,13 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "gui/gui.h"
 #include "ir_network.h"
 #include "node.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
+#include "web/core.h"
 
 namespace psm {
 class Node;
@@ -32,7 +32,7 @@ class SourceNode;
 class IRSolver;
 class IRNetwork;
 
-class SolverDescriptor : public gui::Descriptor
+class SolverDescriptor : public web::Descriptor
 {
  public:
   SolverDescriptor(
@@ -57,15 +57,15 @@ class NodeDescriptor : public SolverDescriptor
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
-  gui::Descriptor::Properties getProperties(
+  web::Descriptor::Properties getProperties(
       const std::any& object) const override;
-  gui::Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(const std::any& object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 };
 
 class ITermNodeDescriptor : public NodeDescriptor
@@ -78,12 +78,12 @@ class ITermNodeDescriptor : public NodeDescriptor
   std::string getTypeName() const override { return "PSM ITerm Node"; }
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  gui::Descriptor::Properties getProperties(
+  web::Descriptor::Properties getProperties(
       const std::any& object) const override;
-  gui::Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(const std::any& object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 };
 
 class BPinNodeDescriptor : public NodeDescriptor
@@ -96,12 +96,12 @@ class BPinNodeDescriptor : public NodeDescriptor
   std::string getTypeName() const override { return "PSM BPin Node"; }
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  gui::Descriptor::Properties getProperties(
+  web::Descriptor::Properties getProperties(
       const std::any& object) const override;
-  gui::Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(const std::any& object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 };
 
 class ConnectionDescriptor : public SolverDescriptor
@@ -115,29 +115,29 @@ class ConnectionDescriptor : public SolverDescriptor
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
-  gui::Descriptor::Properties getProperties(
+  web::Descriptor::Properties getProperties(
       const std::any& object) const override;
-  gui::Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
-  void highlight(const std::any& object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 };
 
-class DebugGui : public gui::Renderer
+class DebugGui : public web::Renderer
 {
  public:
   DebugGui(IRNetwork* network);
 
-  gui::SelectionSet select(odb::dbTechLayer* layer,
+  web::SelectionSet select(odb::dbTechLayer* layer,
                            const odb::Rect& region) override;
 
   void populate();
   void reset();
 
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
 
   const char* getDisplayControlGroupName() override
   {
@@ -181,26 +181,26 @@ class DebugGui : public gui::Renderer
   bool isSelected(const Shape* shape) const;
   bool isSelected(const Connection* connection) const;
 
-  void drawShape(const Shape* shape, gui::Painter& painter) const;
+  void drawShape(const Shape* shape, web::Painter& painter) const;
   void drawNode(const Node* node,
-                gui::Painter& painter,
-                const gui::Painter::Color& color) const;
-  void drawSource(const Node* node, gui::Painter& painter) const;
-  void drawSource(const odb::Rect& rect, gui::Painter& painter) const;
+                web::Painter& painter,
+                const web::Painter::Color& color) const;
+  void drawSource(const Node* node, web::Painter& painter) const;
+  void drawSource(const odb::Rect& rect, web::Painter& painter) const;
   void drawConnection(const Connection* connection,
-                      gui::Painter& painter) const;
+                      web::Painter& painter) const;
 
   IRNetwork* network_;
 
   std::string control_group_;
 
-  const gui::Painter::Color shape_color_;
-  const gui::Painter::Color node_color_;
-  const gui::Painter::Color src_node_color_;
-  const gui::Painter::Color iterm_node_color_;
-  const gui::Painter::Color bpin_node_color_;
-  const gui::Painter::Color connection_color_;
-  const gui::Painter::Color term_connection_color_;
+  const web::Painter::Color shape_color_;
+  const web::Painter::Color node_color_;
+  const web::Painter::Color src_node_color_;
+  const web::Painter::Color iterm_node_color_;
+  const web::Painter::Color bpin_node_color_;
+  const web::Painter::Color connection_color_;
+  const web::Painter::Color term_connection_color_;
 
   bool found_select_;
 

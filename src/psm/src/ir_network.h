@@ -12,12 +12,12 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "psm/pdnsim.h"
 #include "utl/Logger.h"
 
@@ -60,8 +60,6 @@ class IRNetwork
       = boost::geometry::index::rtree<Node*,
                                       boost::geometry::index::quadratic<16>,
                                       PointIndexableGetter<Node>>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning);
 
@@ -153,15 +151,15 @@ class IRNetwork
 
   std::set<Node*> getSharedShapeNodes() const;
 
-  Polygon90 rectToPolygon(const odb::Rect& rect) const;
-  LayerMap<Polygon90Set> generatePolygonsFromSWire(odb::dbSWire* wire);
-  LayerMap<Polygon90Set> generatePolygonsFromITerms(
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromSWire(
+      odb::dbSWire* wire);
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromITerms(
       std::vector<TerminalNode*>& terminals);
-  LayerMap<Polygon90Set> generatePolygonsFromBTerms(
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromBTerms(
       std::vector<TerminalNode*>& terminals);
   void processPolygonToRectangles(
       odb::dbTechLayer* layer,
-      const Polygon90& polygon,
+      const odb::geom::BoostPolygon90WithHoles& polygon,
       const TerminalTree& terminals,
       std::vector<std::unique_ptr<Shape>>& new_shapes,
       std::vector<std::unique_ptr<Node>>& new_nodes,
@@ -170,7 +168,7 @@ class IRNetwork
                                bool single_via,
                                std::vector<std::unique_ptr<Node>>& new_nodes,
                                Connections& new_connections);
-  LayerMap<Polygon90Set> generatePolygonsFromBox(
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromBox(
       odb::dbBox* box,
       const odb::dbTransform& transform) const;
 

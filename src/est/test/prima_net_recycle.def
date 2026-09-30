@@ -1,0 +1,49 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN prima_net_recycle ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 4000 4000 ) ;
+ROW ROW_0 asap7sc7p5t 540 540 N DO 54 BY 1 STEP 54 0 ;
+ROW ROW_1 asap7sc7p5t 540 810 FS DO 54 BY 1 STEP 54 0 ;
+ROW ROW_2 asap7sc7p5t 540 1080 N DO 54 BY 1 STEP 54 0 ;
+ROW ROW_3 asap7sc7p5t 540 1350 FS DO 54 BY 1 STEP 54 0 ;
+ROW ROW_4 asap7sc7p5t 540 1620 N DO 54 BY 1 STEP 54 0 ;
+ROW ROW_5 asap7sc7p5t 540 1890 FS DO 54 BY 1 STEP 54 0 ;
+ROW ROW_6 asap7sc7p5t 540 2160 N DO 54 BY 1 STEP 54 0 ;
+ROW ROW_7 asap7sc7p5t 540 2430 FS DO 54 BY 1 STEP 54 0 ;
+ROW ROW_8 asap7sc7p5t 540 2700 N DO 54 BY 1 STEP 54 0 ;
+ROW ROW_9 asap7sc7p5t 540 2970 FS DO 54 BY 1 STEP 54 0 ;
+COMPONENTS 6 ;
+    - l0 INVx2_ASAP7_75t_R + PLACED ( 2376 2430 ) FS ;
+    - l1 INVx2_ASAP7_75t_R + PLACED ( 2700 1890 ) FS ;
+    - l2 INVx2_ASAP7_75t_R + PLACED ( 2700 2160 ) N ;
+    - r1 DFFHQx4_ASAP7_75t_R + PLACED ( 1674 2700 ) N ;
+    - r2 DFFHQx4_ASAP7_75t_R + PLACED ( 1998 2970 ) FS ;
+    - u1 INVx2_ASAP7_75t_R + PLACED ( 2754 2430 ) FS ;
+END COMPONENTS
+PINS 3 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -42 ) ( 12 42 )
+        + PLACED ( 2124 3958 ) N ;
+    - in + NET in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -42 ) ( 12 42 )
+        + PLACED ( 1932 3958 ) N ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -42 ) ( 12 42 )
+        + PLACED ( 2028 3958 ) N ;
+END PINS
+NETS 8 ;
+    - clk ( PIN clk ) ( r2 CLK ) ( r1 CLK ) + USE SIGNAL ;
+    - d1 ( l1 Y ) + USE SIGNAL ;
+    - d2 ( l2 Y ) + USE SIGNAL ;
+    - in ( PIN in ) ( r1 D ) + USE SIGNAL ;
+    - n0 ( u1 A ) ( r1 Q ) + USE SIGNAL ;
+    - n1 ( u1 Y ) ( l2 A ) ( l1 A ) ( l0 A ) + USE SIGNAL ;
+    - n2 ( r2 D ) ( l0 Y ) + USE SIGNAL ;
+    - out ( PIN out ) ( r2 Q ) + USE SIGNAL ;
+END NETS
+END DESIGN

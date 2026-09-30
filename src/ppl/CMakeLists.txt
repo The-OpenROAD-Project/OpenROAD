@@ -38,7 +38,7 @@ target_link_libraries(ppl
     Munkres
     odb
     utl_lib
-    gui
+    gui_core
     Boost::boost
 )
                       

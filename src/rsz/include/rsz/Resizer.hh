@@ -112,6 +112,7 @@ enum class MoveType : uint8_t
   kUnbuffer,
   kSplitLoad,
   kReroute,
+  kBufferToInverters,
   kCount
 };
 
@@ -234,6 +235,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
+  // A FIRM, LOCKED or COVER instance: its master must not change size.
+  bool isFixed(const sta::Instance* inst) const;
   void setDontTouch(const sta::Net* net, bool dont_touch);
   bool dontTouch(const sta::Net* net) const;
 
@@ -356,6 +359,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
+                   bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
@@ -686,6 +690,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
+  // Returns true when there's no liberty or SDC fanout-load limit.
+  bool checkFanout(const sta::Pin* drvr_pin,
+                   const sta::Mode* mode,
+                   const sta::MinMax* min_max,
+                   // Return values.
+                   float& fanout,
+                   float& max_fanout,
+                   float& fanout_slack) const;
+  // Backstop for high-fanout nets with no liberty or SDC fanout constraint.
+  // This is a count of load pins, not a liberty fanout-load value.
+  static constexpr int kDefaultMaxFanout = 50;
+  int fanoutLoadCount(const sta::Pin* drvr_pin) const;
   float portCapacitance(sta::LibertyPort* input, const sta::Scene* scene) const;
   bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,

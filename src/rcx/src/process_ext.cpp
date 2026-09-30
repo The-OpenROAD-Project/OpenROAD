@@ -7,7 +7,6 @@
 #include <sstream>
 #include <string>
 
-#include "odb/wOrder.h"
 #include "rcx/ext.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSolverGen.h"

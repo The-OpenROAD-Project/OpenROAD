@@ -12,32 +12,8 @@ package(
     features = ["layering_check"],
 )
 
-# Headers owned by :dpl but also consumed by :ui. Kept package-private so
-# nothing outside //src/dpl can depend on them.
 cc_library(
-    name = "dpl_private_hdrs",
-    hdrs = [
-        "src/graphics/DplObserver.h",
-        "src/infrastructure/Coordinates.h",
-        "src/infrastructure/Grid.h",
-        "src/infrastructure/Objects.h",
-        "src/infrastructure/architecture.h",
-        "src/infrastructure/network.h",
-    ],
-    includes = ["src"],
-    visibility = ["//visibility:private"],
-    deps = [
-        # TODO: we use headers provided by :dpl, but that reveals cyclic dep
-        #":dpl",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.icl",
-        "@boost.utility",
-    ],
-)
-
-cc_library(
-    name = "dpl",
+    name = "dpl_impl",
     srcs = [
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
@@ -99,21 +75,48 @@ cc_library(
     hdrs = [
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
+        "src/graphics/DplObserver.h",
+        "src/infrastructure/Coordinates.h",
+        "src/infrastructure/Grid.h",
+        "src/infrastructure/Objects.h",
+        "src/infrastructure/architecture.h",
+        "src/infrastructure/network.h",
     ],
     includes = [
         "include",
         "src",
     ],
+    visibility = [
+        "//src/dpl:__subpackages__",
+    ],
     deps = [
-        ":dpl_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
+        "@boost.icl",
         "@boost.polygon",
         "@boost.random",
         "@boost.tokenizer",
+        "@boost.utility",
         "@coin-or-lemon//:lemon",
+    ],
+)
+
+cc_library(
+    name = "dpl",
+    hdrs = [
+        "include/dpl/Opendp.h",
+        "include/dpl/OptMirror.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.geometry",
     ],
 )
 
@@ -134,12 +137,11 @@ cc_library(
         "src",
     ],
     deps = [
-        ":dpl",
-        ":dpl_private_hdrs",
+        ":dpl_impl",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.icl",
         "@boost.polygon",
         "@boost.stacktrace",

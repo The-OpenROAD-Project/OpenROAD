@@ -3,6 +3,63 @@
 
 include("openroad")
 
+# The Qt-free half of what used to be the gui: the data model every other
+# module draws through -- Painter, Renderer, Descriptor/Selected,
+# HeatMapDataSource -- published through gui/core.h.  It lives here because
+# the web viewer is its main consumer and nothing in it needs Qt; the Qt gui
+# links it too, so a binary carries one copy either way.  Mirrors
+# //src/web:core in the Bazel build; keep the two source lists in step.
+#
+# Not complete on its own.  It carries Gui's dispatch spine and everything a
+# module outside gui calls, but the Qt gui's own Tcl command surface stays in
+# gui.cpp, and the startGui/initGui entry points are implemented once per
+# build -- gui.cpp for a Qt one, makeGui.cpp for a CLI one -- so a binary has
+# to link one of those too.
+#
+# This target does not take the gui target's LTO opt-out.  That one is there
+# for a crash in Qt plugin loading, and nothing here is Qt: no
+# QApplication, no static QPA plugin, nothing that takes part in loading one.
+# descriptor_registry.cpp and the heatmap sources have also been built with
+# LTO all along, through the gui_descriptors and gui_heatmap_core targets this
+# replaces, and they are on the web tile renderer's hot path.
+add_library(gui_core
+  src/bufferTreeDescriptor.cpp
+  src/colorGenerator.cpp
+  src/dbDescriptors.cpp
+  src/descriptor_registry.cpp
+  src/heatMapCore.cpp
+  src/heatMapPinDensity.cpp
+  src/heatMapPlacementDensity.cpp
+  src/gifWriter.cpp
+  src/guiDispatch.cpp
+  src/init_descriptors.cpp
+  src/renderer.cpp
+  src/staDescriptors.cpp
+)
+target_link_libraries(gui_core
+  PUBLIC
+    odb
+  PRIVATE
+    absl::synchronization
+    dbSta_lib
+    utl_lib
+    Boost::boost
+    OpenSTA
+)
+target_include_directories(gui_core
+  PUBLIC
+    include
+    # The Qt gui's widgets include the descriptor and colour-palette headers
+    # from here.  Bazel names just those four in :core's hdrs; CMake can only
+    # publish a directory, so this is wider than it needs to be.
+    src
+  PRIVATE
+    ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
+    ${OPENROAD_HOME}
+)
+
+
 swig_lib(NAME         web
          NAMESPACE    web
          I_FILE       src/web.i
@@ -19,7 +76,9 @@ set(WEB_ASSET_FILES
     src/tile-merge.js
     src/tile-request.js
     src/device-pixels.js
+    src/layer-extents.js
     src/merged-tile-layer.js
+    src/display-state.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
@@ -29,9 +88,17 @@ set(WEB_ASSET_FILES
     src/display-controls.js
     src/inspector.js
     src/ruler.js
+    src/label-manager.js
     src/tcl-completer.js
     src/hierarchy-browser.js
     src/menu-bar.js
+    src/options-dialogs.js
+    src/context-menu.js
+    src/search-nav.js
+    src/capture.js
+    src/toolbar.js
+    src/image-export.js
+    src/edit-dialogs.js
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
@@ -40,6 +107,7 @@ set(WEB_ASSET_FILES
     src/timing-widget.js
     src/drc-widget.js
     src/3d-viewer-widget.js
+    src/selection-browser.js
     src/main.js
 )
 
@@ -56,6 +124,7 @@ add_custom_command(
     --output ${REPORT_ASSETS_CPP}
     --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
     --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-state.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
@@ -64,14 +133,23 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/device-pixels.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/layer-extents.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/label-manager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/options-dialogs.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/context-menu.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/search-nav.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/toolbar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/image-export.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/edit-dialogs.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
@@ -79,6 +157,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/selection-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
@@ -112,6 +191,7 @@ target_sources(web
     src/web.cpp
     src/web_serve.cpp
     src/web_chart.cpp
+    src/web_gif.cpp
     src/web_painter.cpp
     src/web_viewer_hook.cpp
     src/MakeWeb.cpp
@@ -124,13 +204,28 @@ target_link_libraries(web
     odb
   PRIVATE
     cli_completer
-    gui_descriptors
-    gui_heatmap_core
+    gui_core
     dbSta_lib
     lodepng
     stb_truetype
     utl_lib
 )
+
+# libdeflate compresses tile PNGs several times faster than lodepng's built-in
+# deflate.  It is optional: without it lodepng's own compressor is used.
+find_package(libdeflate CONFIG QUIET)
+if (TARGET libdeflate::libdeflate_static)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_static)
+elseif (TARGET libdeflate::libdeflate_shared)
+  set(WEB_LIBDEFLATE libdeflate::libdeflate_shared)
+endif()
+if (WEB_LIBDEFLATE)
+  message(STATUS "web: using libdeflate for PNG compression")
+  target_link_libraries(web PRIVATE ${WEB_LIBDEFLATE})
+  target_compile_definitions(web PRIVATE HAVE_LIBDEFLATE)
+else()
+  message(STATUS "web: libdeflate not found; PNG tiles use lodepng's compressor")
+endif()
 
 target_include_directories(web
   PUBLIC

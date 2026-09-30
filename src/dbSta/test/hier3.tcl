@@ -10,7 +10,7 @@ link_design top -hier
 
 puts "Find b1/out2: [get_property [get_pins b1/out2] full_name]"
 puts "Find b2/out2: [get_property [get_pins b2/out2] full_name]"
-puts "Find bus pin b3/bus_out: [get_property [get_pins b3/bus_out[0]] full_name]"
+puts "Find bus pin b3/bus_out: [get_property [get_pins {b3/bus_out[0]}] full_name]"
 
 set bus_pins [get_pins b3/bus_out]
 foreach pin $bus_pins {

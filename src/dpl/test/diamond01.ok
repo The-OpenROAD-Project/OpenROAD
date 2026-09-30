@@ -18,8 +18,10 @@ Rip-up and replace Success:        0 (  0.00% of diamond failures)
 Rip-up and replace Failure:        0
 Total Placement Failures:          0
 ---------------------------------------
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            diamond search
+total moves                 294
 total displacement        630.2 u
 average displacement        1.1 u
 max displacement            8.6 u

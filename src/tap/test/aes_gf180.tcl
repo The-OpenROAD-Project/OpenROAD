@@ -22,4 +22,4 @@ tapcell -distance 100 \
 
 write_def $def_file
 
-diff_file aes_gf180.defok $def_file
+diff_files aes_gf180.defok $def_file

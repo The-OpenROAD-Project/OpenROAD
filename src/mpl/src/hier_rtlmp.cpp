@@ -18,6 +18,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -114,28 +115,15 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
+void HierRTLMP::setMinChannelSize(int width, int height)
 {
-  if (!base_halo_.isZero()) {
-    logger_->warn(MPL, 71, "Overwriting base macro halo.");
-  }
-
-  base_halo_ = {left, bottom, right, top};
+  min_channel_ = {width, height};
 }
 
 void HierRTLMP::setGuidanceRegions(
     const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
-}
-
-void HierRTLMP::setMacroHalo(odb::dbInst* macro,
-                             int left,
-                             int bottom,
-                             int right,
-                             int top)
-{
-  macro_to_halo_[macro] = {left, bottom, right, top};
 }
 
 // Options related to clustering
@@ -191,9 +179,9 @@ void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
   keep_clustering_data_ = keep_clustering_data;
 }
 
-void HierRTLMP::setUseFullHalo(bool use_full_halo)
+void HierRTLMP::setPinAwareChannels(bool pin_aware_channels)
 {
-  use_full_halo_ = use_full_halo;
+  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Top Level Function
@@ -279,13 +267,12 @@ void HierRTLMP::blockMacroChannels()
     }
 
     HardMacro::Halo halo;
-    if (macro_to_halo_.contains(inst)) {
-      halo = macro_to_halo_.at(inst);
-    } else if (inst->getHalo() != nullptr) {
+
+    if (inst->getHalo() != nullptr) {
       const HardMacro::Halo inst_halo(inst->getHalo());
-      halo = inst_halo.floorTo(base_halo_);
+      halo = inst_halo.flooredToChannel(min_channel_);
     } else {
-      halo = base_halo_;
+      halo = halo.flooredToChannel(min_channel_);
     }
 
     HardMacro hard_macro(inst, halo);
@@ -326,7 +313,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(base_halo_, use_full_halo_, macro_to_halo_);
+  clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -1405,6 +1392,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
   int run_id = 0;
 
   std::unique_ptr<SACoreSoftMacro> best_sa;
+  std::set<int> skipped_utilization_indices;
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
     // We need to track the utilization indices, because, when creating the
@@ -1417,6 +1405,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
       const int utilization_index = run_id++;
       const float utilization = utilization_list[utilization_index];
       if (!validUtilization(utilization, outline, macros)) {
+        if (parent == tree_->root.get()) {
+          skipped_utilization_indices.insert(utilization_index);
+        }
+
         continue;
       }
 
@@ -1500,12 +1492,24 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   if (!best_sa) {
-    logger_->error(MPL,
-                   40,
-                   "Annealing engine failed to find a valid solution.\nCluster "
-                   "Id: {}\n Cluster Name: {}",
-                   parent->getId(),
-                   parent->getName());
+    if (parent == tree_->root.get()) {
+      logger_->error(
+          MPL,
+          40,
+          "Failed to find a valid solution for any of the standard cell "
+          "densities below.\n\n{}\n\nCore utilization is probably too high. "
+          "Please, reduce it and try again.",
+          buildClusterPlacementErrorTable(utilization_list,
+                                          skipped_utilization_indices));
+    } else {
+      logger_->error(MPL,
+                     8,
+                     "Annealing engine failed to find a valid solution. "
+                     "Please, report this internal error.\nFailed at cluster "
+                     "({}): {}",
+                     parent->getId(),
+                     parent->getName());
+    }
   }
 
   best_sa->fillDeadSpace();
@@ -1552,6 +1556,46 @@ std::vector<float> HierRTLMP::computeUtilizationList(
   }
 
   return utilization_list;
+}
+
+std::string HierRTLMP::buildClusterPlacementErrorTable(
+    const std::vector<float>& utilization_list,
+    const std::set<int>& skipped_utilization_indices) const
+{
+  constexpr std::string_view area_failure_message
+      = "Macros and cells area is larger than the outline area.";
+  constexpr std::string_view convergence_failure_message
+      = "Annealer could not converge.";
+
+  std::vector<std::string> rows;
+  rows.emplace_back("   Run   | Std Cell Density |  Result");
+
+  for (int i = 0; i < utilization_list.size(); i++) {
+    const std::string_view failure_message
+        = skipped_utilization_indices.contains(i) ? area_failure_message
+                                                  : convergence_failure_message;
+
+    rows.push_back(fmt::format("{: >8d} | {: >16.4f} |  {}",
+                               i + 1,
+                               utilization_list[i],
+                               failure_message));
+  }
+
+  size_t width = 0;
+  for (const std::string& row : rows) {
+    width = std::max(width, row.size());
+  }
+
+  const std::string separator(width, '-');
+
+  std::string table = rows.front() + "\n" + separator + "\n";
+  for (int i = 1; i < rows.size(); i++) {
+    table += rows[i] + "\n";
+  }
+
+  table += separator;
+
+  return table;
 }
 
 RectList HierRTLMP::findOffsetIntersections(const RectList& candidate_blockages,
@@ -2436,8 +2480,8 @@ void HierRTLMP::correctMacroOrientationByCluster()
 
 void HierRTLMP::correctAllMacrosOrientation()
 {
-  if (!use_full_halo_) {
-    // With pin-aware halos, restrict flips to column and row wise since
+  if (pin_aware_channels_) {
+    // With pin-aware channels, restrict flips to column and row wise since
     // flipping single macros could lead to unaccesible regions inside
     // a cluster
     correctMacroOrientationByCluster();
@@ -2537,13 +2581,15 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
-    assert(inst->getGroup() == nullptr);
-    cluster_group->addInst(inst);
+    if (inst->getGroup() == nullptr) {
+      cluster_group->addInst(inst);
+    }
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
-    assert(macro->getGroup() == nullptr);
-    cluster_group->addInst(macro);
+    if (macro->getGroup() == nullptr) {
+      cluster_group->addInst(macro);
+    }
   }
 
   for (const auto& child : cluster->getChildren()) {
@@ -2556,6 +2602,11 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
         // Skip if it is part of a child cluster
         continue;
       }
+
+      if (inst->isBlock() && cluster->getClusterType() == StdCellCluster) {
+        continue;
+      }
+
       cluster_group->addInst(inst);
     }
   }
@@ -2579,6 +2630,11 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
   }
 
   out << odb::generateMacroPlacementString(block_);
+
+  logger_->info(MPL,
+                78,
+                "The locations generated for the standard cells were not "
+                "included in the macro placement file.");
 }
 
 void HierRTLMP::clear()

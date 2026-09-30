@@ -73,7 +73,7 @@ target_link_libraries(stt_lib
 target_link_libraries(stt
     stt_lib
     utl_lib
-    gui
+    gui_core
 )
 
 messages(

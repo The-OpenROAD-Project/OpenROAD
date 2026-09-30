@@ -48,7 +48,6 @@
 #include "globalConnectDialog.h"
 #include "gotoDialog.h"
 #include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "helpWidget.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -68,6 +67,7 @@
 #include "utl/Logger.h"
 #include "utl/Progress.h"
 #include "utl/algorithms.h"
+#include "web/heatMap.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -91,7 +91,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           highlighted_,
           rulers_,
           labels_,
-          Gui::get(),
+          web::Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
@@ -181,13 +181,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(viewers_,
           &LayoutTabs::selected,
           this,
-          qOverload<const Selected&, bool>(&MainWindow::setSelected));
+          qOverload<const web::Selected&, bool>(&MainWindow::setSelected));
   connect(viewers_,
-          qOverload<const Selected&>(&LayoutTabs::addSelected),
-          [this](const Selected& selection) { addSelected(selection); });
-  connect(viewers_,
-          qOverload<const SelectionSet&>(&LayoutTabs::addSelected),
-          [this](const SelectionSet& selections) { addSelected(selections); });
+          qOverload<const web::Selected&>(&LayoutTabs::addSelected),
+          [this](const web::Selected& selection) { addSelected(selection); });
+  connect(
+      viewers_,
+      qOverload<const web::SelectionSet&>(&LayoutTabs::addSelected),
+      [this](const web::SelectionSet& selections) { addSelected(selections); });
 
   connect(
       viewers_, &LayoutTabs::addRuler, [this](int x0, int y0, int x1, int y1) {
@@ -216,15 +217,15 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(controls_,
           &DisplayControls::selected,
-          [this](const Selected& selected) { setSelected(selected); });
+          [this](const web::Selected& selected) { setSelected(selected); });
 
   connect(inspector_,
           &Inspector::selected,
           this,
-          qOverload<const Selected&, bool>(&MainWindow::setSelected));
+          qOverload<const web::Selected&, bool>(&MainWindow::setSelected));
   connect(inspector_,
           &Inspector::addSelected,
-          [this](const Selected& selection) { addSelected(selection); });
+          [this](const web::Selected& selection) { addSelected(selection); });
   connect(inspector_,
           &Inspector::removeSelected,
           this,
@@ -254,12 +255,13 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
-          [this](const QList<const Selected*>& selected) {
+          [this](const QList<const web::Selected*>& selected) {
             removeFromHighlighted(selected);
           });
-  connect(inspector_,
-          &Inspector::addHighlight,
-          [this](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(
+      inspector_,
+      &Inspector::addHighlight,
+      [this](const web::SelectionSet& selected) { addHighlighted(selected); });
   connect(
       inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
   connect(script_,
@@ -273,14 +275,15 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
-          [this](const SelectionSet& selected) { setSelected(selected); });
+          [this](const web::SelectionSet& selected) { setSelected(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeSelect,
           this,
           &MainWindow::removeSelected);
-  connect(hierarchy_widget_,
-          &BrowserWidget::highlight,
-          [this](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(
+      hierarchy_widget_,
+      &BrowserWidget::highlight,
+      [this](const web::SelectionSet& selected) { addHighlighted(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeHighlight,
           this,
@@ -294,11 +297,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           viewers_,
           &LayoutTabs::updateModuleColor);
 
-  connect(
-      timing_widget_, &TimingWidget::inspect, [this](const Selected& selected) {
-        inspector_->inspect(selected);
-        inspector_->raise();
-      });
+  connect(timing_widget_,
+          &TimingWidget::inspect,
+          [this](const web::Selected& selected) {
+            inspector_->inspect(selected);
+            inspector_->raise();
+          });
   connect(selection_browser_,
           &SelectHighlightWindow::selected,
           inspector_,
@@ -313,19 +317,19 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &SelectHighlightWindow::updateHighlightModel);
   connect(clock_viewer_,
           &ClockWidget::selected,
-          [this](const Selected& selection) { addSelected(selection); });
+          [this](const web::Selected& selection) { addSelected(selection); });
   connect(this,
-          qOverload<const Selected&>(&MainWindow::findInCts),
+          qOverload<const web::Selected&>(&MainWindow::findInCts),
           clock_viewer_,
-          qOverload<const Selected&>(&ClockWidget::findInCts));
+          qOverload<const web::Selected&>(&ClockWidget::findInCts));
   connect(this,
-          qOverload<const SelectionSet&>(&MainWindow::findInCts),
+          qOverload<const web::SelectionSet&>(&MainWindow::findInCts),
           clock_viewer_,
-          qOverload<const SelectionSet&>(&ClockWidget::findInCts));
+          qOverload<const web::SelectionSet&>(&ClockWidget::findInCts));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
-          [this] { this->setSelected(Selected(), false); });
+          [this] { this->setSelected(web::Selected(), false); });
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllHighlights,
           [this] { this->clearHighlighted(); });
@@ -341,13 +345,13 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearHighlightedItems,
-          [this](const QList<const Selected*>& selected) {
+          [this](const QList<const web::Selected*>& selected) {
             removeFromHighlighted(selected);
           });
 
   connect(selection_browser_,
           &SelectHighlightWindow::highlightSelectedItemsSig,
-          [this](const QList<const Selected*>& items) {
+          [this](const QList<const web::Selected*>& items) {
             updateHighlightedSet(items);
           });
 
@@ -371,7 +375,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
   connect(drc_viewer_,
           &DRCWidget::selectDRC,
-          [this](const Selected& selected, const bool open_inspector) {
+          [this](const web::Selected& selected, const bool open_inspector) {
             if (open_inspector) {
               setSelected(selected, false);
             }
@@ -450,11 +454,11 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
 
-  Descriptor::Property::convert_dbu
+  web::Descriptor::Property::convert_dbu
       = [this](int value, bool add_units) -> std::string {
     return convertDBUToString(value, add_units);
   };
-  Descriptor::Property::convert_string
+  web::Descriptor::Property::convert_string
       = [this](const std::string& value, bool* ok) -> int {
     return convertStringToDBU(value, ok);
   };
@@ -493,13 +497,13 @@ void MainWindow::showEvent(QShowEvent* event)
 
 MainWindow::~MainWindow()
 {
-  auto* gui = Gui::get();
+  auto* gui = web::Gui::get();
   // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<Label*>();
   gui->unregisterDescriptor<odb::dbNet*>();
-  gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
-  gui->unregisterDescriptor<BufferTree>();
+  gui->unregisterDescriptor<web::DbNetDescriptor::NetWithSink>();
+  gui->unregisterDescriptor<web::BufferTree>();
   gui->unregisterDescriptor<odb::dbITerm*>();
   gui->unregisterDescriptor<odb::dbMTerm*>();
 
@@ -533,7 +537,7 @@ void MainWindow::updateTitle()
   }
 }
 
-const SelectionSet& MainWindow::selection()
+const web::SelectionSet& MainWindow::selection()
 {
   return selected_;
 }
@@ -544,7 +548,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   if (block != nullptr) {
     save_->setEnabled(true);
   }
-  for (auto* heat_map : Gui::get()->getHeatMaps()) {
+  for (auto* heat_map : web::Gui::get()->getHeatMaps()) {
     heat_map->setChip(block != nullptr ? block->getChip() : nullptr);
   }
   hierarchy_widget_->setBlock(block);
@@ -561,98 +565,103 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   help_widget_->init(help_path);
 
   // register descriptors
-  auto* gui = Gui::get();
-  auto* inst_descriptor = new DbInstDescriptor(db_, sta);
+  auto* gui = web::Gui::get();
+  auto* inst_descriptor = new web::DbInstDescriptor(db_, sta);
   gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
-  gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
+  gui->registerDescriptor<odb::dbMaster*>(
+      new web::DbMasterDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbNet*>(
-      new DbNetDescriptor(db_,
-                          sta,
-                          viewers_->getFocusNets(),
-                          viewers_->getRouteGuides(),
-                          viewers_->getNetTracks()));
-  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(
-      new DbNetDescriptor(db_,
-                          sta,
-                          viewers_->getFocusNets(),
-                          viewers_->getRouteGuides(),
-                          viewers_->getNetTracks()));
-  gui->registerDescriptor<odb::dbWire*>(new DbWireDescriptor(db_));
-  gui->registerDescriptor<odb::dbSWire*>(new DbSWireDescriptor(db_));
-  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(
-      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
-  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
-      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
-  gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
-  gui->registerDescriptor<odb::dbBPin*>(new DbBPinDescriptor(db_));
-  gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
-  gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
-  gui->registerDescriptor<odb::dbObstruction*>(
-      new DbObstructionDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
-  gui->registerDescriptor<DbTermAccessPoint>(
-      new DbTermAccessPointDescriptor(db_));
-  gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
-  gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
-  gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
-  gui->registerDescriptor<odb::dbModBTerm*>(new DbModBTermDescriptor(db_));
-  gui->registerDescriptor<odb::dbModITerm*>(new DbModITermDescriptor(db_));
-  gui->registerDescriptor<odb::dbModInst*>(new DbModInstDescriptor(db_));
-  gui->registerDescriptor<odb::dbModNet*>(new DbModNetDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechViaRule*>(
-      new DbTechViaRuleDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechViaLayerRule*>(
-      new DbTechViaLayerRuleDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
-      new DbGenerateViaDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
-      new DbNonDefaultRuleDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechSameNetRule*>(
-      new DbTechSameNetRuleDescriptor(db_));
-  gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
-  gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
-      new DbSiteDescriptor(db_));
-  gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
-  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_));
-  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, logger_));
-  gui->registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db_));
-  gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
-  gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
-      new DbMetalWidthViaMapDescriptor(db_));
-  gui->registerDescriptor<odb::dbMarkerCategory*>(
-      new DbMarkerCategoryDescriptor(db_));
-  gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
-  gui->registerDescriptor<odb::dbScanInst*>(new DbScanInstDescriptor(db_));
-  gui->registerDescriptor<odb::dbScanList*>(new DbScanListDescriptor(db_));
-  gui->registerDescriptor<odb::dbScanPartition*>(
-      new DbScanPartitionDescriptor(db_));
-  gui->registerDescriptor<odb::dbScanChain*>(new DbScanChainDescriptor(db_));
-  gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
-  gui->registerDescriptor<odb::dbSBox*>(new DbSBoxDescriptor(db_));
-  gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
-      new DbBoxDescriptor(db_));
-  gui->registerDescriptor<odb::dbMasterEdgeType*>(
-      new DbMasterEdgeTypeDescriptor(db_));
-  gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
-      new DbCellEdgeSpacingDescriptor(db_));
-
-  gui->registerDescriptor<sta::Scene*>(new SceneDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyLibrary*>(
-      new LibertyLibraryDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
-  gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
-  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
-
-  gui->registerDescriptor<BufferTree>(
-      new BufferTreeDescriptor(db_,
+      new web::DbNetDescriptor(db_,
                                sta,
                                viewers_->getFocusNets(),
                                viewers_->getRouteGuides(),
                                viewers_->getNetTracks()));
+  gui->registerDescriptor<web::DbNetDescriptor::NetWithSink>(
+      new web::DbNetDescriptor(db_,
+                               sta,
+                               viewers_->getFocusNets(),
+                               viewers_->getRouteGuides(),
+                               viewers_->getNetTracks()));
+  gui->registerDescriptor<odb::dbWire*>(new web::DbWireDescriptor(db_));
+  gui->registerDescriptor<odb::dbSWire*>(new web::DbSWireDescriptor(db_));
+  gui->registerDescriptor<odb::dbITerm*>(new web::DbITermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
+  gui->registerDescriptor<odb::dbMTerm*>(new web::DbMTermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
+  gui->registerDescriptor<odb::dbBTerm*>(new web::DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBPin*>(new web::DbBPinDescriptor(db_));
+  gui->registerDescriptor<odb::dbVia*>(new web::DbViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbBlockage*>(new web::DbBlockageDescriptor(db_));
+  gui->registerDescriptor<odb::dbObstruction*>(
+      new web::DbObstructionDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechLayer*>(
+      new web::DbTechLayerDescriptor(db_));
+  gui->registerDescriptor<web::DbTermAccessPoint>(
+      new web::DbTermAccessPointDescriptor(db_));
+  gui->registerDescriptor<odb::dbGroup*>(new web::DbGroupDescriptor(db_));
+  gui->registerDescriptor<odb::dbRegion*>(new web::DbRegionDescriptor(db_));
+  gui->registerDescriptor<odb::dbModule*>(new web::DbModuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbModBTerm*>(new web::DbModBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModITerm*>(new web::DbModITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModInst*>(new web::DbModInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbModNet*>(new web::DbModNetDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechVia*>(new web::DbTechViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaRule*>(
+      new web::DbTechViaRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaLayerRule*>(
+      new web::DbTechViaLayerRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
+      new web::DbGenerateViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
+      new web::DbNonDefaultRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechLayerRule*>(
+      new web::DbTechLayerRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechSameNetRule*>(
+      new web::DbTechSameNetRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbSite*>(new web::DbSiteDescriptor(db_));
+  gui->registerDescriptor<web::DbSiteDescriptor::SpecificSite>(
+      new web::DbSiteDescriptor(db_));
+  gui->registerDescriptor<odb::dbRow*>(new web::DbRowDescriptor(db_));
+  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_));
+  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, logger_));
+  gui->registerDescriptor<odb::dbBlock*>(new web::DbBlockDescriptor(db_));
+  gui->registerDescriptor<odb::dbTech*>(new web::DbTechDescriptor(db_));
+  gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
+      new web::DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarkerCategory*>(
+      new web::DbMarkerCategoryDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarker*>(new web::DbMarkerDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanInst*>(new web::DbScanInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanList*>(new web::DbScanListDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanPartition*>(
+      new web::DbScanPartitionDescriptor(db_));
+  gui->registerDescriptor<odb::dbScanChain*>(
+      new web::DbScanChainDescriptor(db_));
+  gui->registerDescriptor<odb::dbBox*>(new web::DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbSBox*>(new web::DbSBoxDescriptor(db_));
+  gui->registerDescriptor<web::DbBoxDescriptor::BoxWithTransform>(
+      new web::DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbMasterEdgeType*>(
+      new web::DbMasterEdgeTypeDescriptor(db_));
+  gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
+      new web::DbCellEdgeSpacingDescriptor(db_));
+
+  gui->registerDescriptor<sta::Scene*>(new web::SceneDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyLibrary*>(
+      new web::LibertyLibraryDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyCell*>(
+      new web::LibertyCellDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyPort*>(
+      new web::LibertyPortDescriptor(sta));
+  gui->registerDescriptor<sta::Instance*>(new web::StaInstanceDescriptor(sta));
+  gui->registerDescriptor<sta::Clock*>(new web::ClockDescriptor(sta));
+
+  gui->registerDescriptor<web::BufferTree>(
+      new web::BufferTreeDescriptor(db_,
+                                    sta,
+                                    viewers_->getFocusNets(),
+                                    viewers_->getRouteGuides(),
+                                    viewers_->getNetTracks()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
@@ -814,7 +823,7 @@ void MainWindow::createActions()
 
 void MainWindow::setUseDBU(bool use_dbu)
 {
-  for (auto* heat_map : Gui::get()->getHeatMaps()) {
+  for (auto* heat_map : web::Gui::get()->getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
   }
   if (db_) {
@@ -872,7 +881,7 @@ void MainWindow::createMenus()
   tools_menu_->addAction(build_ruler_);
   auto heat_maps = tools_menu_->addMenu("&Heat maps");
   heat_maps->setObjectName("HeatMaps");
-  for (auto* heat_map : Gui::get()->getHeatMaps()) {
+  for (auto* heat_map : web::Gui::get()->getHeatMaps()) {
     registerHeatMap(heat_map);
   }
   tools_menu_->addAction(global_connect_);
@@ -1117,12 +1126,12 @@ void MainWindow::setClearLocation()
   location_->setText("");
 }
 
-void MainWindow::updateSelectedStatus(const Selected& selection)
+void MainWindow::updateSelectedStatus(const web::Selected& selection)
 {
   status(selection ? selection.getName() : "");
 }
 
-void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
+void MainWindow::addSelected(const web::Selected& selection, bool find_in_cts)
 {
   if (selection) {
     selected_.emplace(selection);
@@ -1134,7 +1143,7 @@ void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
   emit updateSelectedStatus(selection);
 }
 
-void MainWindow::removeSelected(const Selected& selection)
+void MainWindow::removeSelected(const web::Selected& selection)
 {
   auto itr = std::ranges::find(selected_, selection);
   if (itr != selected_.end()) {
@@ -1143,7 +1152,7 @@ void MainWindow::removeSelected(const Selected& selection)
   }
 }
 
-void MainWindow::removeHighlighted(const Selected& selection)
+void MainWindow::removeHighlighted(const web::Selected& selection)
 {
   for (auto& group : highlighted_) {
     auto itr = std::ranges::find(group, selection);
@@ -1173,7 +1182,8 @@ void MainWindow::removeSelectedByType(const std::string& type)
   }
 }
 
-void MainWindow::addSelected(const SelectionSet& selections, bool find_in_cts)
+void MainWindow::addSelected(const web::SelectionSet& selections,
+                             bool find_in_cts)
 {
   int prev_selected_size = selected_.size();
   for (const auto& selection : selections) {
@@ -1190,13 +1200,14 @@ void MainWindow::addSelected(const SelectionSet& selections, bool find_in_cts)
   }
 }
 
-void MainWindow::setSelected(const SelectionSet& selections)
+void MainWindow::setSelected(const web::SelectionSet& selections)
 {
   selected_.clear();
   addSelected(selections);
 }
 
-void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
+void MainWindow::setSelected(const web::Selected& selection,
+                             bool show_connectivity)
 {
   selected_.clear();
   addSelected(selection);
@@ -1207,7 +1218,7 @@ void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
   emit selectionChanged();
 }
 
-void MainWindow::addHighlighted(const SelectionSet& highlights,
+void MainWindow::addHighlighted(const web::SelectionSet& highlights,
                                 int highlight_group)
 {
   if (highlight_group < 0) {
@@ -1233,16 +1244,16 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
 std::string MainWindow::addLabel(int x,
                                  int y,
                                  const std::string& text,
-                                 std::optional<Painter::Color> color,
+                                 std::optional<web::Painter::Color> color,
                                  std::optional<int> size,
-                                 std::optional<Painter::Anchor> anchor,
+                                 std::optional<web::Painter::Anchor> anchor,
                                  std::optional<std::string> name)
 {
   auto new_label
       = std::make_unique<Label>(odb::Point(x, y),
                                 text,
-                                anchor.value_or(Painter::Anchor::kCenter),
-                                color.value_or(gui::Painter::kWhite),
+                                anchor.value_or(web::Painter::Anchor::kCenter),
+                                color.value_or(web::Painter::kWhite),
                                 size,
                                 std::move(name));
   std::string new_name = new_label->getName();
@@ -1267,7 +1278,7 @@ void MainWindow::deleteLabel(const std::string& name)
       labels_, [name](const auto& l) { return l->getName() == name; });
   if (label_find != labels_.end()) {
     // remove from selected set
-    auto remove_selected = Gui::get()->makeSelected(label_find->get());
+    auto remove_selected = web::Gui::get()->makeSelected(label_find->get());
     if (selected_.find(remove_selected) != selected_.end()) {
       selected_.erase(remove_selected);
       emit selectionChanged();
@@ -1310,7 +1321,7 @@ void MainWindow::deleteRuler(const std::string& name)
       rulers_, [name](const auto& l) { return l->getName() == name; });
   if (ruler_find != rulers_.end()) {
     // remove from selected set
-    auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
+    auto remove_selected = web::Gui::get()->makeSelected(ruler_find->get());
     if (selected_.find(remove_selected) != selected_.end()) {
       selected_.erase(remove_selected);
       emit selectionChanged();
@@ -1329,7 +1340,7 @@ int MainWindow::requestHighlightGroup()
   return dlg.getSelectedHighlightGroup();
 }
 
-void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
+void MainWindow::updateHighlightedSet(const QList<const web::Selected*>& items,
                                       int highlight_group)
 {
   if (highlight_group < 0) {
@@ -1344,7 +1355,7 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
   }
 
   // Hold on to selected items as the pointers will be invalid
-  QList<Selected> items_storage;
+  QList<web::Selected> items_storage;
   for (auto item : items) {
     items_storage.push_back(*item);
   }
@@ -1381,7 +1392,7 @@ void MainWindow::clearLabels()
   if (labels_.empty()) {
     return;
   }
-  Gui::get()->removeSelected<Label*>();
+  web::Gui::get()->removeSelected<Label*>();
   labels_.clear();
   emit labelsChanged();
 }
@@ -1391,12 +1402,12 @@ void MainWindow::clearRulers()
   if (rulers_.empty()) {
     return;
   }
-  Gui::get()->removeSelected<Ruler*>();
+  web::Gui::get()->removeSelected<Ruler*>();
   rulers_.clear();
   emit rulersChanged();
 }
 
-void MainWindow::removeFromSelected(const QList<const Selected*>& items)
+void MainWindow::removeFromSelected(const QList<const web::Selected*>& items)
 {
   if (items.empty()) {
     return;
@@ -1407,7 +1418,7 @@ void MainWindow::removeFromSelected(const QList<const Selected*>& items)
   emit selectionChanged();
 }
 
-void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
+void MainWindow::removeFromHighlighted(const QList<const web::Selected*>& items,
                                        int highlight_group)
 {
   if (items.empty()) {
@@ -1438,7 +1449,7 @@ void MainWindow::zoomTo(const odb::Point& focus, int diameter)
   viewers_->zoomTo(focus, diameter);
 }
 
-void MainWindow::zoomInToItems(const QList<const Selected*>& items)
+void MainWindow::zoomInToItems(const QList<const web::Selected*>& items)
 {
   if (items.empty()) {
     return;
@@ -1520,12 +1531,12 @@ bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 void MainWindow::selectHighlightConnectedInsts(bool select_flag,
                                                int highlight_group)
 {
-  SelectionSet connected_insts;
+  web::SelectionSet connected_insts;
   for (auto& sel_obj : selected_) {
     if (sel_obj.isNet()) {
       auto net_obj = std::any_cast<odb::dbNet*>(sel_obj.getObject());
       for (auto inst_term : net_obj->getITerms()) {
-        connected_insts.insert(Gui::get()->makeSelected(inst_term));
+        connected_insts.insert(web::Gui::get()->makeSelected(inst_term));
       }
     }
   }
@@ -1544,7 +1555,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               bool input,
                                               int highlight_group)
 {
-  SelectionSet connected_nets;
+  web::SelectionSet connected_nets;
   for (auto& sel_obj : selected_) {
     if (sel_obj.isInst()) {
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
@@ -1558,13 +1569,15 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT)) {
-          connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet()));
+          connected_nets.insert(
+              web::Gui::get()->makeSelected(inst_term->getNet()));
         }
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT)) {
-          connected_nets.insert(Gui::get()->makeSelected(
-              DbNetDescriptor::NetWithSink{inst_term->getNet(), inst_term}));
+          connected_nets.insert(
+              web::Gui::get()->makeSelected(web::DbNetDescriptor::NetWithSink{
+                  inst_term->getNet(), inst_term}));
         }
       }
     }
@@ -1582,7 +1595,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
 void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
                                                      int highlight_group)
 {
-  SelectionSet connected_objects;
+  web::SelectionSet connected_objects;
   for (auto& sel_obj : selected_) {
     if (sel_obj.isInst()) {
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
@@ -1598,7 +1611,7 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
             continue;
           }
           connected_objects.insert(
-              Gui::get()->makeSelected(gui::BufferTree(net_obj)));
+              web::Gui::get()->makeSelected(web::BufferTree(net_obj)));
         }
       }
     }
@@ -1823,7 +1836,7 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   return new_value.toDouble(ok) * dbu_per_micron;
 }
 
-void MainWindow::timingCone(Gui::Term term, bool fanin, bool fanout)
+void MainWindow::timingCone(web::Gui::Term term, bool fanin, bool fanout)
 {
   auto* renderer = timing_widget_->getConeRenderer();
 
@@ -1834,7 +1847,7 @@ void MainWindow::timingCone(Gui::Term term, bool fanin, bool fanout)
   }
 }
 
-void MainWindow::timingPathsThrough(const std::set<Gui::Term>& terms)
+void MainWindow::timingPathsThrough(const std::set<web::Gui::Term>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});
@@ -1850,7 +1863,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::Term>& terms)
   timing_widget_->raise();
 }
 
-void MainWindow::registerHeatMap(HeatMapDataSource* heatmap)
+void MainWindow::registerHeatMap(web::HeatMapDataSource* heatmap)
 {
   auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
   auto* action
@@ -1859,7 +1872,7 @@ void MainWindow::registerHeatMap(HeatMapDataSource* heatmap)
   connect(action, &QAction::triggered, [heatmap]() { heatmap->showSetup(); });
 }
 
-void MainWindow::unregisterHeatMap(HeatMapDataSource* heatmap)
+void MainWindow::unregisterHeatMap(web::HeatMapDataSource* heatmap)
 {
   auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
   heat_maps->removeAction(heatmap_actions_[heatmap]);

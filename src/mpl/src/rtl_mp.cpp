@@ -56,7 +56,7 @@ bool MacroPlacer::place(const int num_threads,
                         const float min_ar,
                         const char* report_directory,
                         const bool keep_clustering_data,
-                        const bool use_full_halo)
+                        const bool pin_aware_channels)
 {
   utl::Timer timer;
   hier_rtlmp_->init();
@@ -80,7 +80,7 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-  hier_rtlmp_->setUseFullHalo(use_full_halo);
+  hier_rtlmp_->setPinAwareChannels(pin_aware_channels);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();
@@ -100,6 +100,11 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
 
   const int x1 = block->micronsToDbu(x_origin);
   const int y1 = block->micronsToDbu(y_origin);
+
+  // Orientation must be set before checking if the macro fits in the core and
+  // before setting its location.
+  inst->setOrient(orientation);
+
   const int x2 = x1 + inst->getBBox()->getDX();
   const int y2 = y1 + inst->getBBox()->getDY();
 
@@ -122,9 +127,6 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                    block->dbuToMicrons(core_area.yMax()));
   }
 
-  // Orientation must be set before location so we don't end up flipping
-  // and misplacing the macro.
-  inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
   if (orientation.isRightAngleRotation()) {
@@ -219,18 +221,9 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
   guidance_regions_[macro] = region;
 }
 
-void MacroPlacer::setBaseHalo(int left, int bottom, int right, int top)
+void MacroPlacer::setMinChannelSize(int width, int height)
 {
-  hier_rtlmp_->setBaseHalo(left, bottom, right, top);
-}
-
-void MacroPlacer::setMacroHalo(odb::dbInst* macro,
-                               int left,
-                               int bottom,
-                               int right,
-                               int top)
-{
-  hier_rtlmp_->setMacroHalo(macro, left, bottom, right, top);
+  hier_rtlmp_->setMinChannelSize(width, height);
 }
 
 void MacroPlacer::blockMacroChannels()

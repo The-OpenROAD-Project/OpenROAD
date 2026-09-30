@@ -571,13 +571,14 @@ double GridGraph::getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
       if (node->getLayerIdx() == child->getLayerIdx()) {
         // Wire segment on a single layer.
         const int layer = node->getLayerIdx();
+        if (layer < 0) {
+          continue;
+        }
         const MetalLayer& metal_layer = design_->getLayer(layer);
         // NDR width if set on this layer, else the layer default; matches the
         // width getWireResistanceCost uses.
         const int ndr_width
-            = (layer >= 0 && std::cmp_less(layer, ndr_widths.size()))
-                  ? ndr_widths[layer]
-                  : 0;
+            = std::cmp_less(layer, ndr_widths.size()) ? ndr_widths[layer] : 0;
         const double width = ndr_width > 0 ? ndr_width : metal_layer.getWidth();
         if (width <= 0.0) {
           continue;
@@ -840,6 +841,34 @@ void GridGraph::commitWire(const int layer_index,
   }
 }
 
+// Enumerate the preferred-direction edges flanking `loc` on `layer`;
+// fn(edge_loc, edge_sum) runs per existing edge with their summed span.
+template <typename F>
+void GridGraph::forEachFlankEdge(const int layer,
+                                 const PointT loc,
+                                 F&& fn) const
+{
+  const int direction = layer_directions_[layer];
+  PointT lower_loc = loc;
+  lower_loc[direction] -= 1;
+  const int lower_edge_length
+      = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction]) : 0;
+  const int higher_edge_length = loc[direction] < getSize(direction) - 1
+                                     ? getEdgeLength(direction, loc[direction])
+                                     : 0;
+  // Prevent division by zero
+  const int edge_sum = lower_edge_length + higher_edge_length;
+  if (edge_sum == 0) {
+    return;
+  }
+  if (lower_edge_length > 0) {
+    fn(lower_loc, edge_sum);
+  }
+  if (higher_edge_length > 0) {
+    fn(loc, edge_sum);
+  }
+}
+
 template <typename F>
 void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
                                         const PointT loc,
@@ -847,31 +876,12 @@ void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
                                         F&& fn) const
 {
   for (int l = layer_index; l <= layer_index + 1 && l < num_layers_; l++) {
-    const int direction = layer_directions_[l];
-    PointT lower_loc = loc;
-    lower_loc[direction] -= 1;
-    const int lower_edge_length
-        = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction])
-                             : 0;
-    const int higher_edge_length
-        = loc[direction] < getSize(direction) - 1
-              ? getEdgeLength(direction, loc[direction])
-              : 0;
-
-    // Prevent division by zero
-    if (lower_edge_length > 0 || higher_edge_length > 0) {
-      const CapacityT demand
-          = viaDemand(layer_index, l, lower_edge_length + higher_edge_length);
-      // Use the per-layer NDR factor for `l`, not a net-wide value.
-      const double layer_factor
-          = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
-      if (lower_edge_length > 0) {
-        fn(l, lower_loc, demand, layer_factor);
-      }
-      if (higher_edge_length > 0) {
-        fn(l, loc, demand, layer_factor);
-      }
-    }
+    // Use the per-layer NDR factor for `l`, not a net-wide value.
+    const double layer_factor
+        = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
+    forEachFlankEdge(l, loc, [&](PointT edge_loc, int edge_sum) {
+      fn(l, edge_loc, viaDemand(layer_index, l, edge_sum), layer_factor);
+    });
   }
 }
 
@@ -882,6 +892,30 @@ void GridGraph::forEachViaFlankEdge(
     const std::function<void(int, PointT, CapacityT, double)>& fn) const
 {
   forEachViaFlankEdgeImpl(layer_index, loc, net_costs, fn);
+}
+
+template <typename F>
+void GridGraph::forEachWireEdgeImpl(const int layer_index,
+                                    const PointT u,
+                                    const PointT v,
+                                    F&& fn) const
+{
+  const int direction = layer_directions_[layer_index];
+  const auto [lo, hi] = std::minmax(u[direction], v[direction]);
+  for (int c = lo; c < hi; c++) {
+    PointT lower;
+    lower[direction] = c;
+    lower[1 - direction] = u[1 - direction];
+    fn(lower);
+  }
+}
+
+void GridGraph::forEachWireEdge(const int layer_index,
+                                const PointT u,
+                                const PointT v,
+                                const std::function<void(PointT)>& fn) const
+{
+  forEachWireEdgeImpl(layer_index, u, v, fn);
 }
 
 void GridGraph::commitVia(const int layer_index,
@@ -908,6 +942,28 @@ void GridGraph::commitVia(const int layer_index,
   } else {
     total_num_vias_ += 1;
   }
+}
+
+void GridGraph::commitWrongWayWire(const int layer_index,
+                                   const PointT loc,
+                                   const bool rip_up,
+                                   const double layer_factor)
+{
+  forEachFlankEdge(layer_index, loc, [&](PointT edge_loc, int edge_sum) {
+    const CapacityT demand
+        = design_->getWrongWayDemandLength(layer_index) / edge_sum;
+    commit(layer_index, edge_loc, (rip_up ? -demand : demand), layer_factor);
+  });
+}
+
+void GridGraph::addTreeUsage(const GRNet& net)
+{
+  addTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.isAdopted());
+}
+
+void GridGraph::removeTreeUsage(const GRNet& net)
+{
+  removeTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.isAdopted());
 }
 
 std::vector<std::vector<std::vector<CapacityT>>> GridGraph::snapshotDemand()
@@ -940,41 +996,56 @@ void GridGraph::restoreDemand(
 
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool rip_up,
-                           const std::vector<double>& net_costs)
+                           const std::vector<double>& net_costs,
+                           const bool adopted)
 {
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
         const int layer = node->getLayerIdx();
+        // Detailed routes may dip below min_routing_layer for pin access;
+        // those layers hold no capacity, so adopted spans commit no demand.
+        // Native trees fall through to the GRT-0307 tripwire in commitWire.
+        if (adopted && layer < constants_.min_routing_layer) {
+          continue;
+        }
         const int direction = layer_directions_[layer];
+        const int perp = 1 - direction;
         const double wire_factor
             = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
-        if (direction == MetalLayer::H) {
-          if (node->y() != child->y()) {
-            logger_->error(utl::GRT,
-                           1252,
-                           "Horizontal wire endpoints have different y "
-                           "coordinates: {} != {}.",
-                           node->y(),
-                           child->y());
+        if ((*node)[perp] != (*child)[perp]) {
+          // Native trees are direction-legal by construction; only routes
+          // adopted from detailed wires may carry wrong-way spans. Diagonal
+          // edges are always malformed.
+          const bool is_diagonal = (*node)[direction] != (*child)[direction];
+          if (!adopted || is_diagonal) {
+            if (direction == MetalLayer::H) {
+              logger_->error(utl::GRT,
+                             1252,
+                             "Horizontal wire endpoints have different y "
+                             "coordinates: {} != {}.",
+                             node->y(),
+                             child->y());
+            } else {
+              logger_->error(utl::GRT,
+                             1253,
+                             "Vertical wire endpoints have different x "
+                             "coordinates: {} != {}.",
+                             node->x(),
+                             child->x());
+            }
           }
-          const auto [l, h] = std::minmax({node->x(), child->x()});
-          for (int x = l; x < h; x++) {
-            commitWire(layer, {x, node->y()}, rip_up, wire_factor);
+          const auto [l, h] = std::minmax({(*node)[perp], (*child)[perp]});
+          for (int c = l; c < h; c++) {
+            PointT cell;
+            cell[direction] = (*node)[direction];
+            cell[perp] = c;
+            commitWrongWayWire(layer, cell, rip_up, wire_factor);
           }
         } else {
-          if (node->x() != child->x()) {
-            logger_->error(utl::GRT,
-                           1253,
-                           "Vertical wire endpoints have different x "
-                           "coordinates: {} != {}.",
-                           node->x(),
-                           child->x());
-          }
-          const auto [l, h] = std::minmax({node->y(), child->y()});
-          for (int y = l; y < h; y++) {
-            commitWire(layer, {node->x(), y}, rip_up, wire_factor);
-          }
+          forEachWireEdgeImpl(layer, *node, *child, [&](PointT lower) {
+            commitWire(layer, lower, rip_up, wire_factor);
+          });
         }
       } else {
         const int max_layer_index
@@ -1338,18 +1409,20 @@ void GridGraph::write(const std::string& heatmap_file) const
 }
 
 void GridGraph::addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                             const std::vector<double>& net_costs)
+                             const std::vector<double>& net_costs,
+                             const bool adopted)
 {
   if (tree) {
-    commitTree(tree, false, net_costs);
+    commitTree(tree, false, net_costs, adopted);
   }
 }
 
 void GridGraph::removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                                const std::vector<double>& net_costs)
+                                const std::vector<double>& net_costs,
+                                const bool adopted)
 {
   if (tree) {
-    commitTree(tree, true, net_costs);
+    commitTree(tree, true, net_costs, adopted);
   }
 }
 

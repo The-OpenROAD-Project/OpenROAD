@@ -21,10 +21,10 @@ tee -file $rpt3 { test_tee_utl "FILE1" }
 tee -file $rpt4 { test_tee_utl "FILE2" }
 tee -append -file $rpt4 { test_tee_utl "FILE3" }
 
-diff_file tee_1.rptok $rpt1
-diff_file tee_2.rptok $rpt2
-diff_file tee_3.rptok $rpt3
-diff_file tee_4.rptok $rpt4
+diff_files tee_1.rptok $rpt1
+diff_files tee_2.rptok $rpt2
+diff_files tee_3.rptok $rpt3
+diff_files tee_4.rptok $rpt4
 
 set rpt5 [make_result_file tee_5.rpt]
 set rpt6 [make_result_file tee_6.rpt]
@@ -41,10 +41,10 @@ tee -quiet -file $rpt8 { test_tee_utl "FILE5" }
 tee -quiet -append -file $rpt8 { test_tee_utl "FILE6" }
 puts "quiet end"
 
-diff_file tee_5.rptok $rpt5
-diff_file tee_6.rptok $rpt6
-diff_file tee_7.rptok $rpt7
-diff_file tee_8.rptok $rpt8
+diff_files tee_5.rptok $rpt5
+diff_files tee_6.rptok $rpt6
+diff_files tee_7.rptok $rpt7
+diff_files tee_8.rptok $rpt8
 
 puts "string redirect start"
 tee -variable puts_redirect {puts "PUTS REDIRECT"}

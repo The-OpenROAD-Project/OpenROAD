@@ -28,10 +28,14 @@ target_link_libraries(slang_frontend PUBLIC syn_ir)
 
 # Fold helpers into slang_frontend. Keeping them in syn_elab would create a
 # static-link cycle (syn_elab depends on slang_frontend and vice versa).
+# diagnostics.cc is folded in for the same reason: slang_frontend's own
+# sources call reportError()/elabLogger().
 target_sources(slang_frontend PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/abort_helpers.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/diagnostics.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/ir.cc
 )
+target_link_libraries(slang_frontend PUBLIC utl_lib)
 
 target_link_libraries(syn_elab
   PUBLIC

@@ -122,6 +122,62 @@ odb::Rect VoltageDomain::getDomainArea() const
   return block_->getCoreArea();
 }
 
+Region VoltageDomain::getDomainRegion() const
+{
+  const odb::Rect area = getDomainArea();
+  if (hasRegion()) {
+    // a region is required to be a single rectangle, PDN-0104
+    return Region(area);
+  }
+
+  // dbBlock::getCoreAreaPolygon() cannot serve: it is the merged row
+  // footprint, so once rows have been cut around a macro it carries a bite for
+  // every macro, and getCoreArea() is only its bounding box.  Rebuild the
+  // outline by merging the rows with the macros standing in them and closing
+  // the holes that leaves.
+  //
+  // Every row in the block, not getRows(): that hands back the rows this
+  // domain owns, which for the core domain excludes whatever sits inside
+  // another domain's region.  A region carved out of the core is a place a
+  // different grid gets built, not a place the core stops.
+  std::vector<odb::Rect> shapes;
+  for (odb::dbRow* row : block_->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    shapes.push_back(row->getBBox());
+  }
+  if (shapes.empty()) {
+    return Region(area);
+  }
+
+  Region outline(shapes);
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock() && inst->isFixed()) {
+      // the real outline, not the bounding box: on a polygon die the bounding
+      // box of a macro tucked into a corner reaches into the part of the die
+      // that is not there, and adding that back would claim it as core
+      outline = outline.unite(getInstanceOutline(inst));
+    }
+  }
+
+  // Clip to the core bounding box so a macro sitting outside the core cannot
+  // drag the outline out with it, and to the die so the core stays inside it
+  // by construction -- Rings::checkDieArea measures against that.
+  outline = outline.fillHoles().intersect(area).intersect(
+      Region(block_->getDieAreaPolygon()));
+
+  // And it has to look like an outline before it is trusted: one piece,
+  // reaching every side of the core bounding box.  Anything else is a
+  // floorplan whose rows do not describe its core, and the bounding box is the
+  // better answer there.
+  if (outline.getPolygons().size() != 1 || outline.getEnclosingRect() != area) {
+    return Region(area);
+  }
+
+  return outline;
+}
+
 int VoltageDomain::getRegionRectCount(odb::dbRegion* region) const
 {
   if (region == nullptr) {

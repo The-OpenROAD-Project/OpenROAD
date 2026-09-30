@@ -45,10 +45,13 @@ namespace utl {
 class Logger;
 }
 
+namespace web {
+class ColorGenerator;
+}
+
 namespace gui {
 
 class ClockNodeGraphicsViewItem;
-class ColorGenerator;
 
 enum class RendererState
 {
@@ -57,12 +60,12 @@ enum class RendererState
   kNeverShow
 };
 
-class ClockTreeRenderer : public Renderer
+class ClockTreeRenderer : public web::Renderer
 {
  public:
   ClockTreeRenderer(ClockTree* tree);
 
-  void drawObjects(Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   void setPathTo(odb::dbITerm* term);
   void clearPathTo();
@@ -82,12 +85,12 @@ class ClockTreeRenderer : public Renderer
   static constexpr int kPenWidth = 2;
   static constexpr const char* kRenderLabel = "Clock trees";
 
-  void drawTree(Painter& painter,
-                const Descriptor* descriptor,
-                ColorGenerator& colorgenerator,
+  void drawTree(web::Painter& painter,
+                const web::Descriptor* descriptor,
+                web::ColorGenerator& colorgenerator,
                 ClockTree* tree,
                 int depth);
-  void setPen(Painter& painter, const Painter::Color& color);
+  void setPen(web::Painter& painter, const web::Painter::Color& color);
 };
 
 // Handles drawing a dbNet in the clock tree scene
@@ -401,13 +404,14 @@ class ClockTreeView : public QGraphicsView
   ClockTreeRenderer* getRenderer() const { return renderer_.get(); }
   ClockNodeGraphicsViewItem* getItemFromName(const std::string& name);
   void clearSelection() { scene_->clearSelection(); };
-  std::set<ClockNodeGraphicsViewItem*> getNodes(const SelectionSet& selections);
-  bool changeSelection(const SelectionSet& selections);
+  std::set<ClockNodeGraphicsViewItem*> getNodes(
+      const web::SelectionSet& selections);
+  bool changeSelection(const web::SelectionSet& selections);
   void fitSelection();
   void clear();
 
  signals:
-  void selected(const Selected& selected);
+  void selected(const web::Selected& selected);
 
  public slots:
   void build();
@@ -501,7 +505,7 @@ class ClockTreeView : public QGraphicsView
   {
     T value = data.value<T>();
     if (value != nullptr) {
-      emit selected(Gui::get()->makeSelected(value));
+      emit selected(web::Gui::get()->makeSelected(value));
       return true;
     }
     return false;
@@ -532,14 +536,14 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   void postReadLiberty() override;
 
  signals:
-  void selected(const Selected& selected);
+  void selected(const web::Selected& selected);
 
  public slots:
   void setBlock(odb::dbBlock* block);
   void populate(sta::Scene* scene = nullptr);
   void fit();
-  void findInCts(const Selected& selection);
-  void findInCts(const SelectionSet& selections);
+  void findInCts(const web::Selected& selection);
+  void findInCts(const web::SelectionSet& selections);
 
  private slots:
   void currentClockChanged(int index);

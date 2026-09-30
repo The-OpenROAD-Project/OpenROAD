@@ -160,7 +160,7 @@ estimate_parasitics
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/EstimateParasitics.cpp) or the [swig file](./src/EstimateParasitics.i).
 
 | Command Name | Description |
 | ----- | ----- |

@@ -1,0 +1,49 @@
+# Minimal routing tech with no TYPE OVERLAP layer.  The metal1/metal3
+# parameters mirror Nangate45 so the obstructions written for a polygon
+# floorplan match abstract_polygon.lefok apart from the missing OVERLAP
+# section.
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+LAYER metal1
+  TYPE ROUTING ;
+  SPACING 0.065 ;
+  WIDTH 0.07 ;
+  PITCH 0.14 ;
+  DIRECTION HORIZONTAL ;
+END metal1
+
+LAYER via1
+  TYPE CUT ;
+  SPACING 0.08 ;
+END via1
+
+LAYER metal2
+  TYPE ROUTING ;
+  SPACING 0.07 ;
+  WIDTH 0.07 ;
+  PITCH 0.14 ;
+  DIRECTION VERTICAL ;
+END metal2
+
+LAYER via2
+  TYPE CUT ;
+  SPACING 0.08 ;
+END via2
+
+LAYER metal3
+  TYPE ROUTING ;
+  SPACING 0.07 ;
+  WIDTH 0.07 ;
+  PITCH 0.14 ;
+  DIRECTION HORIZONTAL ;
+END metal3
+
+END LIBRARY

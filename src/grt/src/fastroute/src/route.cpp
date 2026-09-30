@@ -2,9 +2,11 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <queue>
 #include <vector>
 
@@ -1021,7 +1023,10 @@ void FastRouteCore::routeMonotonic(const int netID,
   }
   int cnt = 0;
   std::vector<GPoint3D>& grids = treeedge->route.grids;
-  grids.resize(x_range_ + y_range_);
+  // The route is two L-shaped segments through (bestp1x, bestp1y), so its
+  // length is the sum of the two Manhattan distances plus the end point.
+  grids.resize(std::abs(bestp1x - x1) + std::abs(bestp1y - y1)
+               + std::abs(x2 - bestp1x) + std::abs(y2 - bestp1y) + 1);
   const int8_t edgeCost = nets_[netID]->getEdgeCost();
 
   /**
@@ -1032,6 +1037,7 @@ void FastRouteCore::routeMonotonic(const int netID,
   auto walkH = [&](int16_t from_x, int16_t to_x, int16_t y) {
     const int step = (to_x >= from_x) ? 1 : -1;
     for (int16_t i = from_x; i != to_x; i += step) {
+      assert(cnt < static_cast<int>(grids.size()));
       grids[cnt++] = {.x = i, .y = y};
       graph2d_.updateUsageH(step > 0 ? i : i - 1, y, net, edgeCost);
     }
@@ -1045,6 +1051,7 @@ void FastRouteCore::routeMonotonic(const int netID,
   auto walkV = [&](int16_t x, int16_t from_y, int16_t to_y) {
     const int step = (to_y >= from_y) ? 1 : -1;
     for (int16_t i = from_y; i != to_y; i += step) {
+      assert(cnt < static_cast<int>(grids.size()));
       grids[cnt++] = {.x = x, .y = i};
       graph2d_.updateUsageV(x, step > 0 ? i : i - 1, net, edgeCost);
     }
@@ -1072,12 +1079,13 @@ void FastRouteCore::routeMonotonic(const int netID,
   walkSegment(BL1, x1, y1, bestp1x, bestp1y);
   walkSegment(BL2, bestp1x, bestp1y, x2, y2);
 
+  assert(cnt < static_cast<int>(grids.size()));
   grids[cnt] = {x2, y2};
   cnt++;
 
   treeedge->route.routelen = cnt - 1;
 
-  grids.resize(cnt);
+  assert(cnt == static_cast<int>(grids.size()));
 }
 
 void FastRouteCore::routeMonotonicAll(const int threshold,

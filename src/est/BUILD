@@ -4,36 +4,11 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
-)
-
-cc_library(
-    name = "private_hdrs",
-    hdrs = [
-        "src/AbstractSteinerRenderer.h",
-        "src/MakeWireParasitics.h",
-        "src/OdbCallBack.h",
-        "src/SteinerRenderer.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/grt",
-        "//src/grt:groute",
-        "//src/grt:route_pt",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-    ] + select({
-        "//:platform_cli": ["//src/gui"],
-        "//:platform_gui": ["//src/gui:gui_qt"],
-    }),
 )
 
 # Abstract service interface published through utl::ServiceRegistry.
@@ -43,10 +18,11 @@ cc_library(
     name = "parasitics_service",
     hdrs = ["include/est/ParasiticsService.h"],
     includes = ["include"],
+    deps = ["//src/grt:groute"],
 )
 
 cc_library(
-    name = "est",
+    name = "est_impl",
     srcs = [
         "src/EstimateParasitics.cpp",
         "src/MakeWireParasitics.cpp",
@@ -56,13 +32,44 @@ cc_library(
     hdrs = [
         "include/est/EstimateParasitics.h",
         "include/est/SteinerTree.h",
+        "src/AbstractSteinerRenderer.h",
+        "src/MakeWireParasitics.h",
+        "src/OdbCallBack.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    visibility = [
+        "//src/est:__subpackages__",
+    ],
+    deps = [
+        ":parasitics_service",
+        "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
+        "//src/grt",
+        "//src/grt:groute",
+        "//src/grt:route_pt",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
+    ],
+)
+
+cc_library(
+    name = "est",
+    hdrs = [
+        "include/est/EstimateParasitics.h",
+        "include/est/SteinerTree.h",
     ],
     includes = [
         "include",
     ],
     deps = [
+        ":est_impl",
         ":parasitics_service",
-        ":private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -80,6 +87,7 @@ cc_library(
     srcs = [
         "src/MakeEstimateParasitics.cpp",
         "src/SteinerRenderer.cpp",
+        "src/SteinerRenderer.h",
         ":swig",
         ":tcl",
     ],
@@ -95,14 +103,13 @@ cc_library(
         "src",
     ],
     deps = [
-        ":est",
-        ":private_hdrs",
+        ":est_impl",
         "//:ord",
         "//src/dbSta:dbNetwork",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -131,4 +138,10 @@ tcl_wrap_cc(
         "../sta",
         "src",
     ],
+)
+
+exports_files(["README.md"])
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

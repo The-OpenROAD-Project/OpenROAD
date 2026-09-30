@@ -1,0 +1,41 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# A base core site plus 2x, 3x and 4x multi-height sites, geometry identical to
+# sky130hd's unithd/unithddbl family and named by track count the way many
+# foundry platforms name theirs.
+#
+# The names matter as much as the heights.  InitFloorplan::makeUniformRows walks
+# its sites through a map keyed by site NAME, so rows are created in
+# alphabetical order of the name -- and "core_18T", "core_27T" and "core_36T"
+# all sort ahead of "core_9T" because a single digit follows the underscore.
+# That is the same inversion a platform gets from
+#   PLACE_SITE = core_700 ; ADDITIONAL_SITES = core_1400 core_2100 core_2800
+# where core_700 likewise sorts last of the four.
+
+SITE core_9T
+  SYMMETRY Y ;
+  CLASS CORE ;
+  SIZE 0.46 BY 2.72 ;
+END core_9T
+
+SITE core_18T
+  SYMMETRY Y ;
+  CLASS CORE ;
+  SIZE 0.46 BY 5.44 ;
+END core_18T
+
+SITE core_27T
+  SYMMETRY Y ;
+  CLASS CORE ;
+  SIZE 0.46 BY 8.16 ;
+END core_27T
+
+SITE core_36T
+  SYMMETRY Y ;
+  CLASS CORE ;
+  SIZE 0.46 BY 10.88 ;
+END core_36T
+
+END LIBRARY
