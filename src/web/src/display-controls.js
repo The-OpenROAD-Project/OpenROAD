@@ -348,7 +348,7 @@ export function populateDisplayControls(app, visibility, selectability,
                 || hierarchyNode.name === 'Other')) {
             nodeData.startCollapsed = true;
         }
-        // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
+        // chipletPath is the canonical "top/wrapper_1/MEM_2" string the
         // backend emits in layer_hierarchy; it matches ChipletNode::path
         // exactly so toggling this node can drive app.visibleChiplets.
         // Category nodes (e.g. "Backside") are pure UI folders — they have
@@ -978,16 +978,16 @@ export function populateDisplayControls(app, visibility, selectability,
     // `gui::DisplayControls::setCurrentChip` only switches the active
     // chip, it does not toggle per-chiplet visibility.  Backend sends
     // one entry per dbChip / dbChipInst node with a unique `path`
-    // ("top", "top.soc_inst", "top.soc_inst.sub_ip", …).  Toggling a
+    // ("top", "top/soc_inst", "top/soc_inst/sub_ip", …).  Toggling a
     // node refreshes every Leaflet tile so the server's chiplet
     // filter (`visible_chiplets`) takes effect on the next render.
     const chipletData = (techData && Array.isArray(techData.chiplets))
         ? techData.chiplets : [];
     if (chipletData.length > 1) {
-        // Cookie schema: { "<block_name>": ["hidden.path1", "hidden.path2"] }.
+        // Cookie schema: { "<block_name>": ["hidden/path1", "hidden/path2"] }.
         // Keying by top-block name keeps hidden state isolated per design —
         // opening design B no longer inherits design A's hides just because
-        // both happen to expose a chiplet path like "top.soc_inst".
+        // both happen to expose a chiplet path like "top/soc_inst".
         // When block_name is empty (anonymous design) we skip persistence
         // entirely rather than collapse every nameless design into the
         // shared "" bucket.

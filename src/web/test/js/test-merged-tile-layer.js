@@ -894,12 +894,12 @@ describe('cache-invalidation and refresh paths must reach a merged pane', () => 
             await new Promise(r => setTimeout(r, 0));
             assert.deepEqual(mgr.sent[0].visible_chiplets, ['top']);
 
-            app.visibleChiplets.add('top.mem_0');
+            app.visibleChiplets.add('top/mem_0');
             mgr.sent.length = 0;
             layer.refreshTiles();
             await new Promise(r => setTimeout(r, 0));
             assert.deepEqual(mgr.sent[0].visible_chiplets.sort(),
-                             ['top', 'top.mem_0']);
+                             ['top', 'top/mem_0']);
         } finally {
             stub.restore();
         }
