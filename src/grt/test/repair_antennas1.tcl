@@ -17,8 +17,8 @@ check_placement
 
 set guide_file [make_result_file repair_antennas1.guide]
 write_guides $guide_file
-diff_file repair_antennas1.guideok $guide_file
+diff_files repair_antennas1.guideok $guide_file
 
 set def_file [make_result_file repair_antennas1.def]
 write_def $def_file
-diff_file repair_antennas1.defok $def_file
+diff_files repair_antennas1.defok $def_file

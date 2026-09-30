@@ -161,8 +161,10 @@ Iteration | Violations |    Cells |    Sites
         0 |         10 |         2 |         8
         1 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 1.
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                  20
 total displacement         81.1 u
 average displacement        3.7 u
 max displacement            9.6 u
@@ -219,10 +221,15 @@ Detailed placement improvement.
 [INFO DPL-0314] Found 0 site alignment problems.
 [INFO DPL-0311] Found 0 overlaps between adjacent cells.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
-Detailed Improvement Results
-------------------------------------------
-Original HPWL             1113.5 u (     590.5,      523.0)
-Final HPWL                 987.6 u (     529.0,      458.6)
-Delta HPWL                 -11.3 % (     -10.4,      -12.3)
+Place Optimization Analysis
+---------------------------------
+total attempts              440
+relocated cells              20
+total displacement        151.3 u
+average displacement        7.6 u
+max displacement           13.8 u
+original HPWL            1113.5 u
+improved HPWL             987.6 u
+delta HPWL                  -11 %
 
 No differences found.

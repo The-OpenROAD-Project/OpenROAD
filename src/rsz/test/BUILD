@@ -164,6 +164,8 @@ TESTS = [
     "repair_setup_sizeup_match_prev_fanout",
     "repair_setup_splitload_legacy_basic",
     "repair_setup_swappins_legacy_flat",
+    "repair_setup_buffer_to_inverters",
+    "repair_setup_buffer_to_inverters_hier",
     "repair_setup_unbuffer_legacy_bufx2",
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
@@ -256,6 +258,7 @@ TESTS = [
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "repair_timing_crpr",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
     "inferred_clock_gator_time_borrow_repair_pin",
@@ -515,7 +518,7 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/rsz",  # buildcleaner: keep provides the private headers
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -568,7 +571,7 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -590,7 +593,7 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",

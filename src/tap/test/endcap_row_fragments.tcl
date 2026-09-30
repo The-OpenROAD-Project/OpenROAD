@@ -17,4 +17,4 @@ check_placement -verbose
 
 set def_file [make_result_file ${test_name}.def]
 write_def $def_file
-diff_file ${test_name}.defok $def_file
+diff_files ${test_name}.defok $def_file

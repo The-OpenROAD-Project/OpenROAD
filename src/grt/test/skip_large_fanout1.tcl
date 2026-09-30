@@ -9,4 +9,4 @@ global_route -verbose -skip_large_fanout_nets 30
 
 write_guides $guide_file
 
-diff_file skip_large_fanout1.guideok $guide_file
+diff_files skip_large_fanout1.guideok $guide_file

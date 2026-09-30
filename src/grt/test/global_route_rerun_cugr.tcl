@@ -12,4 +12,4 @@ global_route -verbose -use_cugr
 
 write_guides $guide_file
 
-diff_file gcd_cugr.guideok $guide_file
+diff_files gcd_cugr.guideok $guide_file
