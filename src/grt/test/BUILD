@@ -202,6 +202,13 @@ regression_test(
 )
 
 regression_test(
+    name = "resistance_aware_asap7_fr_threads",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "thread_count_reports",
     check_log = False,
     check_passfail = True,
