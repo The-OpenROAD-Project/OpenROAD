@@ -2675,8 +2675,8 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
-  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && !isFixed(inst)
+      && cell && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
     if (hasMultipleOutputs(inst)) {
       revisiting_inst = resized_multi_output_insts_.contains(inst);

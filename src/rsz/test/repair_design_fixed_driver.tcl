@@ -70,4 +70,11 @@ check "the FIRM driver is still FIRM" \
 check "the FIRM driver does not overlap its neighbour" \
   { overlaps fixed_drvr neighbour } 0
 
+# repair_design also sizes repeaters to a target slew; that sizing keeps
+# the master of a fixed instance too.
+rsz::resize_to_target_slew [get_pin fixed_drvr/Z]
+check "resize_to_target_slew keeps the FIRM master" { master fixed_drvr } BUF_X1
+check "the FIRM driver still does not overlap its neighbour" \
+  { overlaps fixed_drvr neighbour } 0
+
 exit_summary
