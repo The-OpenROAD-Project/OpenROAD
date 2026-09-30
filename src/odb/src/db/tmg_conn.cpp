@@ -36,29 +36,29 @@ tmg_conn::~tmg_conn() = default;
 
 void tmg_conn::analyzeNet()
 {
-  clear();
   loadWire();
 
   if (wire_points_.empty()) {
     net_->setDisconnected(false);
     net_->setWireOrdered(false);
-    return;
+  } else {
+    loadTerminals();
+    identifyShorts();
+    removeWireLoops();
+    identifyTerminalWirePoints();
+
+    if (has_special_wires_) {
+      net_->destroySWires();
+    }
+
+    connection_graph_->relocateShorts(this);
+    treeReorder(false);
+
+    net_->setDisconnected(!connected_);
+    net_->setWireOrdered(true);
   }
 
-  loadTerminals();
-  identifyShorts();
-  removeWireLoops();
-  identifyTerminalWirePoints();
-
-  if (has_special_wires_) {
-    net_->destroySWires();
-  }
-
-  connection_graph_->relocateShorts(this);
-  treeReorder(false);
-
-  net_->setDisconnected(!connected_);
-  net_->setWireOrdered(true);
+  clear();
 }
 
 void tmg_conn::setNet(dbNet* net)
@@ -173,13 +173,27 @@ void tmg_conn::addShort(const int i0, const int i1)
 
 void tmg_conn::clear()
 {
+  net_ = nullptr;
+  has_special_wires_ = false;
+
   wire_sections_.clear();
   wire_points_.clear();
   terminals_.clear();
+  shorts_.clear();
+
   candidate_sections_.clear();
   candidate_section_count_.clear();
-  shorts_.clear();
   first_for_clear_ = nullptr;
+
+  restart_terminals_.clear();
+  last_id_ = -1;
+  net_rule_ = nullptr;
+  path_rule_ = nullptr;
+  need_short_wire_id_ = false;
+  first_segment_after_via_ = false;
+  new_wire_ = nullptr;
+
+  connected_ = false;
 }
 
 void tmg_conn::loadTerminals()
@@ -195,7 +209,6 @@ void tmg_conn::loadTerminals()
 
 void tmg_conn::loadSWire(dbNet* net)
 {
-  has_special_wires_ = false;
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.empty()) {
     return;
@@ -260,7 +273,6 @@ void tmg_conn::loadWire()
     return;
   }
 
-  wire_points_.clear();
   dbWirePathItr pitr;
   dbWirePath path;
   pitr.begin(wire);
@@ -1646,7 +1658,6 @@ bool tmg_conn::checkConnected()
   if (terminals_.empty()) {
     return true;
   }
-  restart_terminals_.clear();
   int jstart = getStartNode();
   Terminal* xstart = nullptr;
   if (wire_points_[jstart].terminal_index >= 0) {
@@ -1741,12 +1752,9 @@ void tmg_conn::checkVisited()
 void tmg_conn::treeReorder(const bool no_convert)
 {
   connected_ = true;
-  need_short_wire_id_ = false;
   if (wire_points_.empty()) {
     return;
   }
-  new_wire_ = nullptr;
-  last_id_ = -1;
   if (!no_convert) {
     new_wire_ = net_->getWire();
     if (!new_wire_) {
