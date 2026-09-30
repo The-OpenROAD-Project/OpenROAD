@@ -62,10 +62,6 @@ OPTIONS:
                                                  system and is used by default; CMake
                                                  support will be removed in a future
                                                  release.
-  -lto                                          Bazel only: accepted for compatibility.
-                                                 The Bazel build always uses
-                                                 --config=release, which includes
-                                                 --config=opt (-O3 with ThinLTO).
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
@@ -177,8 +173,6 @@ while [ "$#" -gt 0 ]; do
         -cmake-build)
             echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed in a future release." >&2
             useBazel=no
-            ;;
-        -lto)
             ;;
         -bazel)
             echo "[WARNING] -bazel is deprecated: Bazel is now the default build system." >&2
