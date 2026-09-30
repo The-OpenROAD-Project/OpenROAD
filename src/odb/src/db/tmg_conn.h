@@ -181,7 +181,6 @@ class tmg_conn
   void loadTerminals();
   void loadWire();
   void loadSWire(dbNet* net);
-  bool isConnected() { return connected_; }
 
   WirePoint& wirePoint(int point_index);
 
