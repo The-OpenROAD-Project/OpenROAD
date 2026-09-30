@@ -61,6 +61,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":gif_test",
+        ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
         ":tile_generator_test",
@@ -399,6 +400,15 @@ cc_test(
     ],
     deps = [
         "//src/web",
+    name = "heat_map_test",
+    srcs = ["cpp/TestHeatMap.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
         "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

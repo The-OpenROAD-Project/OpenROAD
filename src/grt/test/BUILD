@@ -31,6 +31,7 @@ TESTS = [
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
