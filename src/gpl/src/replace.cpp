@@ -235,9 +235,9 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
       = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
 
   if (phase1_diverged || phase1_missed_target) {
-    // Arm the guard so phase 2 escalates the density penalty in place
-    // whenever overflow regresses, instead of backing off.
-    np_->armIncrementalDensityPenaltyGuard();
+    // Enable phase 2's density-penalty controller to ramp the penalty up in
+    // place whenever overflow regresses, instead of backing off.
+    np_->enableIncrementalDensityPenaltyGuard();
     doNesterovPlace(threads, options, iter + 1);
   }
 }

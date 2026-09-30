@@ -583,7 +583,7 @@ void NesterovPlace::runTimingDriven(int iter,
   }
 }
 
-void NesterovPlace::armIncrementalDensityPenaltyGuard()
+void NesterovPlace::enableIncrementalDensityPenaltyGuard()
 {
   incremental_penalty_guard_requested_ = true;
 }
@@ -1151,7 +1151,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     applyDensityPenaltyFactor(penalty_guard_factor);
     log_->info(GPL,
                191,
-               "Incremental density-penalty guard armed: penalty factor "
+               "Incremental density-penalty guard enabled: penalty factor "
                "{:g}, starting overflow {:.3f}.",
                penalty_guard_factor,
                penalty_guard_best_overflow);

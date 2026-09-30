@@ -66,9 +66,9 @@ class NesterovPlace
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
-  // Arms the incremental density-penalty guard for the next doNesterovPlace()
-  // call; consumed (disarmed) at the start of that call.
-  void armIncrementalDensityPenaltyGuard();
+  // Enables the incremental density-penalty guard for the next
+  // doNesterovPlace() call; consumed (cleared) at the start of that call.
+  void enableIncrementalDensityPenaltyGuard();
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -131,7 +131,7 @@ class NesterovPlace
   // again.
   void applyDensityPenaltyFactor(float factor);
   // Checked once per outer iteration while the incremental density-penalty
-  // guard is armed. On any regression past best_overflow, escalates
+  // guard is enabled. On any regression past best_overflow, escalates
   // current_factor in place (no revert - see the .cpp for why) and keeps
   // running; otherwise a no-op. The escalation multiplier is fixed at the
   // best value found by a guard-parameter sweep (see the .cpp).
