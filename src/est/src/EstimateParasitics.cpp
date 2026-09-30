@@ -114,9 +114,14 @@ void EstimateParasitics::estimateAllGlobalRouteParasitics(const int threads)
 
 void EstimateParasitics::estimateRoutesInParallel(
     const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
-    const int threads,
+    int threads,
     const bool partial)
 {
+  if (work.empty()) {
+    return;
+  }
+  // No more threads, and arc delay calculator copies, than nets.
+  threads = std::min(threads, static_cast<int>(work.size()));
   // Each net is estimated and reduced on its own and stored by net and
   // driver pin, so the result does not depend on the thread count or the
   // order the threads run in. The parasitics store locks its own writes;
