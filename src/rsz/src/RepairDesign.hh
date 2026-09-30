@@ -66,6 +66,9 @@ class RepairDesign : sta::dbStaState
                     int& cap_violations,
                     int& fanout_violations,
                     int& length_violations);
+  // Split nets that exceed max fanout using only pin locations, so it can
+  // run before parasitics are estimated.
+  void repairFanout(int& repaired_net_count, int& fanout_violations);
   bool rerouteEnabled() const;
   int insertedBufferCount() const { return inserted_buffer_count_; }
   void repairNet(sta::Net* net,
@@ -130,6 +133,12 @@ class RepairDesign : sta::dbStaState
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
+  bool repairNetFanout(const sta::Net* net,
+                       const sta::Pin* drvr_pin,
+                       bool check_slew,
+                       bool check_cap,
+                       int max_length,  // dbu
+                       bool resize_drvr);
   bool needRepairCap(const sta::Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,

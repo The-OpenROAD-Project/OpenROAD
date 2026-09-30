@@ -46,6 +46,7 @@ or_integration_tests(
     simple09
     simple10
     region01
+    td_high_fanout
   PASSFAIL_TESTS
     incremental02
     place_ios01

@@ -3159,9 +3159,18 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
   if (run_journal_restore) {
     journalBegin();
   }
-  estimate_parasitics_->estimateParasitics(parasitics_src);
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
+
+  // Split high-fanout nets before estimating parasitics so no Steiner tree
+  // is built for them.
+  if (parasitics_src == est::ParasiticsSrc::kPlacement) {
+    repair_design_->repairFanout(repaired_net_count, fanout_violations);
+    repair_design_->reportViolationCounters(
+        false, 0, 0, fanout_violations, 0, repaired_net_count);
+  }
+
+  estimate_parasitics_->estimateParasitics(parasitics_src);
 
   // Start incremental global routing if global routing parasitics are being
   // used.

@@ -2215,6 +2215,20 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       continue;
     }
 
+    // Stripping the buffers would leave more loads than the fanout limit
+    // on a single Steiner tree; keep the existing buffering instead.
+    if (original_tree->loadCount() > fanout_limit_) {
+      debugPrint(logger_,
+                 RSZ,
+                 "rebuffer",
+                 1,
+                 "skipping pin {}: {} loads exceed max_fanout={}",
+                 network_->name(drvr_pin),
+                 original_tree->loadCount(),
+                 fanout_limit_);
+      continue;
+    }
+
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug) {
       logger_->setDebugLevel(RSZ, "rebuffer", 4);

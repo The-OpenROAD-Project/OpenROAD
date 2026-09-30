@@ -52,6 +52,7 @@ TESTS = [
     "simple09",
     "simple10",
     "region01",
+    "td_high_fanout",
 ]
 
 PASSFAIL_TESTS = [

@@ -1,0 +1,164 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 286 components and 1624 component-terminals.
+[INFO ODB-0133]     Created 356 nets and 1052 connections.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0036] Movable instances area:        583.072 um^2
+[INFO GPL-0037] Total instances area:          583.072 um^2
+[INFO GPL-0035] Pin density area adjust:        40.903 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:               342
+[INFO GPL-0007] Movable instances:                 342
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    356
+[INFO GPL-0011] Number of pins:                   1162
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                   953.876 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        623.975 um^2
+[INFO GPL-0019] Utilization:                    65.415 %
+[INFO GPL-0020] Standard cells area:           623.975 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 342	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 5614340
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000010 HPWL: 5001186
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 4991841
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 4999683
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 5003531
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      1.824 um^2
+[INFO GPL-0025] Ideal bin area:                  2.606 um^2
+[INFO GPL-0026] Ideal bin count:                   365
+[INFO GPL-0027] Total bin area:                953.876 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.8361 |  1.797834e+03 |   +0.00% |  4.93e-14 |      
+       10 |   0.7275 |  2.055086e+03 |  +14.31% |  8.02e-14 |      
+       20 |   0.7332 |  2.045849e+03 |   -0.45% |  1.31e-13 |      
+       30 |   0.7347 |  2.046052e+03 |   +0.01% |  2.13e-13 |      
+       40 |   0.7339 |  2.046233e+03 |   +0.01% |  3.47e-13 |      
+       50 |   0.7338 |  2.046219e+03 |   -0.00% |  5.65e-13 |      
+       60 |   0.7339 |  2.046229e+03 |   +0.00% |  9.20e-13 |      
+       70 |   0.7340 |  2.046269e+03 |   +0.00% |  1.50e-12 |      
+       80 |   0.7338 |  2.046447e+03 |   +0.01% |  2.44e-12 |      
+       90 |   0.7335 |  2.046780e+03 |   +0.02% |  3.98e-12 |      
+      100 |   0.7333 |  2.047182e+03 |   +0.02% |  6.48e-12 |      
+      110 |   0.7328 |  2.047879e+03 |   +0.03% |  1.05e-11 |      
+      120 |   0.7320 |  2.049044e+03 |   +0.06% |  1.72e-11 |      
+      130 |   0.7306 |  2.050820e+03 |   +0.09% |  2.80e-11 |      
+      140 |   0.7285 |  2.053784e+03 |   +0.14% |  4.56e-11 |      
+      150 |   0.7239 |  2.058046e+03 |   +0.21% |  7.43e-11 |      
+      160 |   0.7126 |  2.064430e+03 |   +0.31% |  1.21e-10 |      
+      170 |   0.7038 |  2.072470e+03 |   +0.39% |  1.97e-10 |      
+      180 |   0.6875 |  2.084738e+03 |   +0.59% |  3.21e-10 |      
+      190 |   0.6698 |  2.103023e+03 |   +0.88% |  5.23e-10 |      
+      200 |   0.6604 |  2.129053e+03 |   +1.24% |  8.52e-10 |      
+      210 |   0.6334 |  2.159773e+03 |   +1.44% |  1.39e-09 |      
+[INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
+[INFO GPL-0101]    Iter: 211, overflow: 0.633, keep resizer changes at: 1, HPWL: 4319545
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       413
+    final |     +0.3% |       0 |       1 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       320
+       32 |     +0.0% |       0 |        0 |       288
+       64 |     +0.0% |       0 |        0 |       256
+       96 |     +0.0% |       0 |        0 |       224
+      128 |     +0.0% |       0 |        0 |       192
+      160 |     +0.0% |       0 |        0 |       160
+      192 |     +0.0% |       0 |        0 |       128
+      224 |     +0.0% |       0 |        0 |        96
+      256 |     +0.0% |       0 |        0 |        64
+      288 |     +0.0% |       0 |        0 |        32
+    final |     +0.0% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack 1.3797397e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: 2.660 um^2 (+0.43%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 2 (+0.58%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 2, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.7027886
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      220 |   0.6492 |  2.161325e+03 |   +0.07% |  2.26e-09 |      
+      230 |   0.5842 |  2.212474e+03 |   +2.37% |  3.68e-09 |      
+      240 |   0.5510 |  2.243807e+03 |   +1.42% |  6.00e-09 |      
+      250 |   0.4996 |  2.280633e+03 |   +1.64% |  9.77e-09 |      
+      260 |   0.4440 |  2.304961e+03 |   +1.07% |  1.59e-08 |      
+      270 |   0.3912 |  2.329193e+03 |   +1.05% |  2.59e-08 |      
+      280 |   0.3444 |  2.367247e+03 |   +1.63% |  4.22e-08 |      
+      290 |   0.3053 |  2.383270e+03 |   +0.68% |  6.22e-08 |      
+      300 |   0.2664 |  2.404229e+03 |   +0.88% |  9.16e-08 |      
+      310 |   0.2346 |  2.416329e+03 |   +0.50% |  1.35e-07 |      
+      320 |   0.2072 |  2.444557e+03 |   +1.17% |  1.99e-07 |      
+[INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
+[INFO GPL-0101]    Iter: 324, overflow: 0.195, keep resizer changes at: 1, HPWL: 4899839
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       414
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       320
+       32 |     +0.0% |       0 |        0 |       288
+       64 |     +0.0% |       0 |        0 |       256
+       96 |     +0.0% |       0 |        0 |       224
+      128 |     +0.0% |       0 |        0 |       192
+      160 |     +0.0% |       0 |        0 |       160
+      192 |     +0.0% |       0 |        0 |       128
+      224 |     +0.0% |       0 |        0 |        96
+      256 |     +0.0% |       0 |        0 |        64
+      288 |     +0.0% |       0 |        0 |        32
+    final |     +0.1% |       0 |        1 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack 1.3762415e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: 0.798 um^2 (+0.13%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 1 (+0.29%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 1, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.70362514
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      330 |   0.1885 |  2.519588e+03 |   +3.07% |  2.93e-07 |      
+      340 |   0.1579 |  2.569700e+03 |   +1.99% |  4.31e-07 |      
+      350 |   0.1409 |  2.567848e+03 |   -0.07% |  6.35e-07 |      
+      360 |   0.1181 |  2.571860e+03 |   +0.16% |  9.36e-07 |      
+      370 |   0.1067 |  2.588115e+03 |   +0.63% |  1.38e-06 |      
+      374 |   0.0997 |  2.593135e+03 |          |  1.67e-06 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 374
+[INFO GPL-1002] Placed Cell Area              627.4328
+[INFO GPL-1003] Available Free Area           953.8760
+[INFO GPL-1004] Minimum Feasible Density        0.6600 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.7309
+[INFO GPL-1008]     - For 80% usage of free space: 0.8222
+[INFO GPL-1011] Original area (um^2): 623.97
+[INFO GPL-1013] Total timing-driven delta area: 3.46 (+0.55%)
+[INFO GPL-1014] Final placement area: 627.43 (+0.55%)
+[INFO GPL-1018] Final HPWL (um): 2590.75
+max signal net pins: 36

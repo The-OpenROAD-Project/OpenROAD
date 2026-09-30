@@ -402,6 +402,40 @@ void RepairDesign::repairDesign(
   db_network_->removeUnusedPortsAndPinsOnModuleInstances();
 }
 
+void RepairDesign::repairFanout(int& repaired_net_count, int& fanout_violations)
+{
+  init();
+  repaired_net_count = 0;
+  fanout_violations = 0;
+  inserted_buffer_count_ = 0;
+  resize_count_ = 0;
+  rerouted_nets_ = 0;
+  corner_ = sta_->cmdScene();
+
+  // Only levelizes and finds the clock network; no delay calculation.
+  sta_->checkFanoutPreamble();
+  const sta::VertexSeq driver_vertices = sta_->levelizedDrvrVertices();
+  for (int i = driver_vertices.size() - 1; i >= 0; i--) {
+    const sta::Pin* drvr_pin = driver_vertices[i]->pin();
+    sta::Net* net = db_network_->findFlatNet(drvr_pin);
+    if (!net || db_network_->isSpecial(net) || resizer_->dontTouch(net)
+        || db_network_->staToDb(net)->isConnectedByAbutment()
+        || sta_->isClock(drvr_pin, sta_->cmdMode())
+        || sta_->isConstant(drvr_pin, sta_->cmdMode())) {
+      continue;
+    }
+    if (repairNetFanout(net,
+                        drvr_pin,
+                        false /* check_slew */,
+                        false /* check_cap */,
+                        0 /* max_length */,
+                        false /* resize_drvr */)) {
+      fanout_violations++;
+      repaired_net_count++;
+    }
+  }
+}
+
 // Repair long wires from clock input pins to clock tree root buffer
 // because CTS ignores the issue.
 // no max_fanout/max_cap checks.
@@ -1016,27 +1050,12 @@ void RepairDesign::repairNet(sta::Net* net,
     const sta::Scene* corner = sta_->cmdScene();
     bool repaired_net = false;
 
-    // Fanout is addressed by creating region repeaters
     if (check_fanout) {
-      float fanout, max_fanout, fanout_slack;
-      resizer_->checkFanout(
-          drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
-
-      if (max_fanout > 0.0 && fanout_slack < 0.0) {
+      corner_ = corner;
+      if (repairNetFanout(
+              net, drvr_pin, check_slew, check_cap, max_length, resize_drvr)) {
         fanout_violations++;
         repaired_net = true;
-
-        debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
-        LoadRegion region = findLoadRegions(net, drvr_pin, max_fanout);
-        corner_ = corner;
-        makeRegionRepeaters(region,
-                            max_fanout,
-                            1,
-                            drvr_pin,
-                            check_slew,
-                            check_cap,
-                            max_length,
-                            resize_drvr);
       }
     }
 
@@ -1196,6 +1215,35 @@ void RepairDesign::repairNet(sta::Net* net,
       repaired_net_count++;
     }
   }
+}
+
+// Fanout is addressed by creating region repeaters.
+// Returns true if the net had a fanout violation.
+bool RepairDesign::repairNetFanout(const sta::Net* net,
+                                   const sta::Pin* drvr_pin,
+                                   bool check_slew,
+                                   bool check_cap,
+                                   int max_length,  // dbu
+                                   bool resize_drvr)
+{
+  float fanout, max_fanout, fanout_slack;
+  resizer_->checkFanout(
+      drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
+  if (max_fanout <= 0.0 || fanout_slack >= 0.0) {
+    return false;
+  }
+
+  debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
+  LoadRegion region = findLoadRegions(net, drvr_pin, max_fanout);
+  makeRegionRepeaters(region,
+                      max_fanout,
+                      1,
+                      drvr_pin,
+                      check_slew,
+                      check_cap,
+                      max_length,
+                      resize_drvr);
+  return true;
 }
 
 bool RepairDesign::needRepairCap(const sta::Pin* drvr_pin,
@@ -2098,6 +2146,12 @@ void RepairDesign::makeFanoutRepeater(sta::PinSeq& repeater_loads,
                     repeater_out_pin)) {
     return;
   }
+  repeater_inputs.push_back(repeater_in_pin);
+  repeater_loads.clear();
+  if (!check_slew && !check_cap && max_length == 0 && !resize_drvr) {
+    return;
+  }
+
   sta::Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
   int repaired_net_count = 0, slew_violations = 0, cap_violations = 0;
   int fanout_violations = 0, length_violations = 0;
@@ -2116,8 +2170,6 @@ void RepairDesign::makeFanoutRepeater(sta::PinSeq& repeater_loads,
             cap_violations,
             fanout_violations,
             length_violations);
-  repeater_inputs.push_back(repeater_in_pin);
-  repeater_loads.clear();
 }
 
 odb::Rect RepairDesign::findBbox(sta::PinSeq& pins)
