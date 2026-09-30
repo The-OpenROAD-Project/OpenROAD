@@ -256,6 +256,7 @@ or_integration_tests(
     repair_setup_legacy_mt
     repair_setup_mt1
     repair_design_fixed_driver
+    gain_buffering_top_port_hier
     cpp_tests
 )
 
