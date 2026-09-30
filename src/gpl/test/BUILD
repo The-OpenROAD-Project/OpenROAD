@@ -221,7 +221,6 @@ cc_test(
     name = "fft_gpu_test",
     srcs = ["fft_gpu_test.cc"],
     env = {"ENABLE_GPU": "1"},
-    features = ["-layering_check"],  # includes private headers
     linkstatic = True,
     tags = ["gpu"],
     target_compatible_with = GPU_ONLY,
