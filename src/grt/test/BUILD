@@ -31,6 +31,7 @@ TESTS = [
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
@@ -226,6 +227,22 @@ regression_test(
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
+)
+
+cc_test(
+    name = "TestOverflow",
+    size = "small",
+    srcs = ["cpp/TestOverflow.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
 
 cc_test(

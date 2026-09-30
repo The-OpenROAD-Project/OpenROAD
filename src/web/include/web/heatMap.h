@@ -236,6 +236,9 @@ class HeatMapDataSource
   odb::PtrSet<odb::dbInst> getSelectedInsts() const;
 
  private:
+  // Drops the values of bins that lie entirely outside a polygon die area.
+  void clearOutsideDieArea();
+
   const std::string name_;
   const std::string short_name_;
   const std::string settings_group_;

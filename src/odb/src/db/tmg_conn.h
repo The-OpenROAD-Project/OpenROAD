@@ -92,17 +92,34 @@ struct WirePoint
 {
   WirePoint(int x, int y, dbTechLayer* layer) : x(x), y(y), layer(layer) {}
 
-  const int x;  // nominal point
+  const int x;
   const int y;
+
   dbTechLayer* const layer;
-  int tindex{-1};  // index to terminals_
-  WirePoint* next_for_term{nullptr};
-  WirePoint* t_alt{nullptr};
+
+  // A short ring is a circular list joining all the points that are
+  // shorted to each other, directly or through other shorts.
+  WirePoint* next_in_short_ring{nullptr};
+
+  // A point that lies inside a terminal's shape on the same routing level.
+  bool is_pin_point{false};
+
+  // Another point connected to a pin point through either
+  // a candidate section or a short.
+  bool is_connected_to_a_pin_point{false};
+
+  // The next point on the list that carries the state of the two flags above.
   WirePoint* next_for_clear{nullptr};
-  WirePoint* sring{nullptr};
-  int dbwire_id{-1};
-  bool pinpt{false};
-  bool c2pinpt{false};
+
+  int terminal_index{-1};
+  WirePoint* next_terminal_point{nullptr};
+
+  // The other end of the candidate section through which this point was
+  // bound to its terminal. If another terminal claims this point, or the
+  // walk reaches it coming from another terminal, the binding moves there.
+  WirePoint* terminal_alternative_point{nullptr};
+
+  int id_on_new_encoding{-1};
 };
 
 struct Terminal
@@ -206,7 +223,7 @@ class tmg_conn
   void dfsClear();
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
-  int isVisited(int j) const;
+  bool isVisited(int j) const;
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
   int getExtension(int ipt, const WireSection* wire_section);
   int addPoint(int ipt, const WireSection* wire_section);
