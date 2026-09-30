@@ -713,7 +713,7 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
   } else {
     try {
       max_threads = std::stoi(threads);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::logic_error&) {  // invalid_argument or out_of_range
       logger_->warn(
           ORD, 32, "Invalid thread number specification: {}.", threads);
     }
