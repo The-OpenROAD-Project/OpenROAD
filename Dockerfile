@@ -18,13 +18,13 @@ ARG INSTALLER_ARGS=""
 COPY etc/DependencyInstaller.sh /tmp/.
 RUN <<EOF
 set -e
-/tmp/DependencyInstaller.sh -ci -base
+/tmp/DependencyInstaller.sh -cmake -ci -base
 # The dev image serves both build systems, so it carries the Bazel dependency
 # set too: bazelisk plus the libxml2 and X11/xcb runtime libraries the Bazel
 # build needs, which on Ubuntu 26.04 include the libxml2.so.2 compatibility
 # symlink without which the prebuilt LLVM lld cannot load.
 /tmp/DependencyInstaller.sh -bazel
-/tmp/DependencyInstaller.sh -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt $INSTALLER_ARGS
+/tmp/DependencyInstaller.sh -cmake -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt $INSTALLER_ARGS
 if echo "$fromImage" | grep -q "ubuntu"; then
     echo "fromImage contains 'ubuntu' — stripping section from libQt5Core.so"
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so || true

@@ -335,7 +335,7 @@ echo -e "${YELLOW}Running pre-compilation system checks...${NC}"
 check_command() {
     if ! command -v "$1" &> /dev/null; then
         echo -e "${RED}[ERROR] Required dependency '$1' is missing!${NC}"
-        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh' before building."
+        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh -cmake' before building."
         exit 1
     else
         echo -e "${GREEN}[OK] Found $1${NC}"
