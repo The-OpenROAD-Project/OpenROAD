@@ -23,6 +23,14 @@ class PlacementDensityDataSource : public HeatMapDataSource,
     return "Only use selected instances";
   }
 
+  // The grid is fixed while it is being taken from global placement.
+  bool canAdjustGrid() const override { return !hasPlacementBinSize(); }
+  // Global placement bins go below a micron on advanced nodes, so the size it
+  // reports has to stay representable instead of being clamped.
+  double getGridSizeMinimumValue() const override { return 0.1; }
+  double getGridXSize() const override;
+  double getGridYSize() const override;
+
   void onShow() override;
   void onHide() override;
 
@@ -48,6 +56,9 @@ class PlacementDensityDataSource : public HeatMapDataSource,
   bool destroyMapOnNotVisible() const override { return true; }
 
  private:
+  // Whether global placement has published a bin size for this block.
+  bool hasPlacementBinSize() const;
+
   bool include_taps_{true};
   bool include_filler_{false};
   bool include_io_{false};

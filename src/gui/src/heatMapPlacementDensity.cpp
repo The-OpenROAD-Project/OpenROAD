@@ -39,6 +39,29 @@ PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger)
       [this](bool new_value) { include_io_ = new_value; });
 }
 
+bool PlacementDensityDataSource::hasPlacementBinSize() const
+{
+  auto* block = getBlock();
+  return block != nullptr && block->getPlacementBinSizeX() > 0
+         && block->getPlacementBinSizeY() > 0;
+}
+
+double PlacementDensityDataSource::getGridXSize() const
+{
+  if (!hasPlacementBinSize()) {
+    return HeatMapDataSource::getGridXSize();
+  }
+  return getBlock()->dbuToMicrons(getBlock()->getPlacementBinSizeX());
+}
+
+double PlacementDensityDataSource::getGridYSize() const
+{
+  if (!hasPlacementBinSize()) {
+    return HeatMapDataSource::getGridYSize();
+  }
+  return getBlock()->dbuToMicrons(getBlock()->getPlacementBinSizeY());
+}
+
 bool PlacementDensityDataSource::populateMap()
 {
   if (getBlock() == nullptr) {
