@@ -69,6 +69,11 @@ class NesterovPlace
   // Enables the incremental density-penalty guard for the next
   // doNesterovPlace() call; consumed (cleared) at the start of that call.
   void enableIncrementalDensityPenaltyGuard();
+  // Clears a divergence left over from a previous doNesterovPlace() call
+  // (e.g. one the caller caught and intends to retry from). Without this,
+  // the leftover state trips the divergence check at the very start of the
+  // next doNesterovPlace() call before it does any work.
+  void clearDivergence();
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);

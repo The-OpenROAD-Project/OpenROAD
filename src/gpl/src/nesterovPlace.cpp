@@ -588,6 +588,13 @@ void NesterovPlace::enableIncrementalDensityPenaltyGuard()
   incremental_penalty_guard_requested_ = true;
 }
 
+void NesterovPlace::clearDivergence()
+{
+  num_region_diverged_ = 0;
+  divergeMsg_ = "";
+  divergeCode_ = 0;
+}
+
 void NesterovPlace::applyDensityPenaltyFactor(float factor)
 {
   for (auto& nb : nbVec_) {
@@ -603,6 +610,7 @@ void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
   // patience delay to be best) by escalating the density penalty in place.
   constexpr float kOverflowTolerance = 0.005f;
   constexpr float kGrowthRatio = 2.0f;
+  constexpr int kMaxRetries = 10;
 
   if (average_overflow_unscaled_ < best_overflow - kOverflowTolerance) {
     best_overflow = average_overflow_unscaled_;
@@ -610,6 +618,10 @@ void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
   }
 
   if (average_overflow_unscaled_ <= best_overflow + kOverflowTolerance) {
+    return;
+  }
+
+  if (retries >= kMaxRetries) {
     return;
   }
 

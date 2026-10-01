@@ -220,6 +220,10 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
                "overflow {:.3f} ({}); continuing to phase 2 anyway.",
                locked_options.overflow,
                e.what());
+    // doNesterovPlace() only throws when it could not revert to a snapshot,
+    // which leaves np_'s divergence state set; clear it or phase 2 below
+    // re-throws the same error on its very first iteration, uncaught.
+    np_->clearDivergence();
   }
 
   // Finish the overflow resolution from the locked placement
