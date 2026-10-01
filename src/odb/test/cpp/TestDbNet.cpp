@@ -315,4 +315,18 @@ TEST_F(TestDbNet, FlatNetNameCollisionWithBareModBTermThrows)
                std::runtime_error);
 }
 
+TEST_F(TestDbNet, DestroyWireClearsOrderingFlags)
+{
+  dbNet* net = dbNet::create(block_, "net");
+  dbWire* wire = dbWire::create(net);
+
+  net->setWireOrdered(true);
+  net->setDisconnected(true);
+
+  dbWire::destroy(wire);
+
+  EXPECT_FALSE(net->isWireOrdered());
+  EXPECT_FALSE(net->isDisconnected());
+}
+
 }  // namespace odb
