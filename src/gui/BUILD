@@ -35,7 +35,9 @@ cc_library(
         "src",
     ],
     deps = [
+        "//src/dbSta",
         "//src/odb/src/db",
+        "//src/utl",
         "//src/web:core",
         "@tcl_lang//:tcl",
     ],
