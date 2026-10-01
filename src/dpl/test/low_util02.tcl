@@ -6,4 +6,4 @@ check_placement
 
 set def_file [make_result_file low_util02.def]
 write_def $def_file
-diff_file low_util02.defok $def_file
+diff_files low_util02.defok $def_file

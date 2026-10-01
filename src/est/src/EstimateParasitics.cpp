@@ -3,6 +3,8 @@
 
 #include "est/EstimateParasitics.h"
 
+#include <omp.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -87,11 +89,67 @@ EstimateParasitics::~EstimateParasitics()
   service_registry_->withdraw<ParasiticsService>(this);
 }
 
-void EstimateParasitics::estimateAllGlobalRouteParasitics()
+void EstimateParasitics::estimateAllGlobalRouteParasitics(const int threads)
 {
   clearParasitics();
-  for (auto& [db_net, route] : global_router_->getPartialRoutes()) {
-    estimateGlobalRouteParasitics(db_net, route);
+  auto routes = global_router_->getPartialRoutes();
+  // The est_rc debug report prints per net: keep it in net order.
+  if (threads <= 1 || logger_->debugCheck(EST, "est_rc", 1)) {
+    for (auto& [db_net, route] : routes) {
+      estimateGlobalRouteParasitics(db_net, route);
+    }
+    return;
+  }
+
+  initBlock();
+  std::vector<std::pair<odb::dbNet*, grt::GRoute*>> work;
+  work.reserve(routes.size());
+  for (auto& [db_net, route] : routes) {
+    if (!route.empty()) {
+      work.emplace_back(db_net, &route);
+    }
+  }
+  estimateRoutesInParallel(work, threads, true);
+}
+
+void EstimateParasitics::estimateRoutesInParallel(
+    const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
+    int threads,
+    const bool partial)
+{
+  if (work.empty()) {
+    return;
+  }
+  // No more threads, and arc delay calculator copies, than nets.
+  threads = std::min(threads, static_cast<int>(work.size()));
+  // Each net is estimated and reduced on its own and stored by net and
+  // driver pin, so the result does not depend on the thread count or the
+  // order the threads run in. The parasitics store locks its own writes;
+  // the reduction goes through one arc delay calculator per thread, as
+  // sta::GraphDelayCalc does for its threads.
+  std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
+  calcs.reserve(threads);
+  for (int i = 0; i < threads; ++i) {
+    calcs.emplace_back(sta_->arcDelayCalc()->copy());
+  }
+  odb::dbTech* tech = block_->getTech();
+#pragma omp parallel for num_threads(threads) schedule(dynamic, 64)
+  for (int i = 0; i < static_cast<int>(work.size()); ++i) {
+    auto [db_net, route] = work[i];
+    MakeWireParasitics builder(logger_,
+                               this,
+                               sta_,
+                               tech,
+                               block_,
+                               global_router_,
+                               calcs[omp_get_thread_num()].get());
+    // A partial route before layer assignment is 2D; a full route is
+    // always estimated as a 3D one, as the serial loops do.
+    if (!partial || route->at(0).is3DRoute()) {
+      builder.estimateParasitics(db_net, *route, nullptr);
+    } else {
+      builder.estimateParasitics(db_net, *route);
+    }
   }
 }
 
@@ -629,14 +687,29 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
     scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
   }
 
-  MakeWireParasitics builder(
-      logger_, this, sta_, block_->getTech(), block_, global_router_);
+  auto& routes = global_router_->getRoutes();
+  const int threads = sta_->threadCount();
+  // A SPEF file and the est_rc debug report are written per net: keep
+  // them in net order.
+  if (spef_writer || threads <= 1 || logger_->debugCheck(EST, "est_rc", 1)) {
+    MakeWireParasitics builder(
+        logger_, this, sta_, block_->getTech(), block_, global_router_);
+    for (auto& [db_net, route] : routes) {
+      if (!route.empty()) {
+        builder.estimateParasitics(db_net, route, spef_writer);
+      }
+    }
+    return;
+  }
 
-  for (auto& [db_net, route] : global_router_->getRoutes()) {
+  std::vector<std::pair<odb::dbNet*, grt::GRoute*>> work;
+  work.reserve(routes.size());
+  for (auto& [db_net, route] : routes) {
     if (!route.empty()) {
-      builder.estimateParasitics(db_net, route, spef_writer);
+      work.emplace_back(db_net, &route);
     }
   }
+  estimateRoutesInParallel(work, threads, false);
 }
 
 void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
@@ -1011,14 +1084,13 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
     }
   }
 
-  odb::dbTechLayer* min_tech_layer = tech->findRoutingLayer(min_layer);
-  odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_layer);
+  const int min_number = tech->findRoutingLayer(min_layer)->getNumber();
+  const int max_number = tech->findRoutingLayer(max_layer)->getNumber();
 
-  for (int layer_idx = min_tech_layer->getNumber();
-       layer_idx <= max_tech_layer->getNumber();
-       layer_idx++) {
-    odb::dbTechLayer* layer = tech->findLayer(layer_idx);
-    if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    const int number = layer->getNumber();
+    if (number >= min_number && number <= max_number
+        && layer->getType() == odb::dbTechLayerType::CUT) {
       double res, cap;
       layerRC(layer, scene, res, cap);
       total_resistance += res;

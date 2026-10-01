@@ -14,4 +14,4 @@ set def_file [make_result_file place_pin4.def]
 
 write_def $def_file
 
-diff_file place_pin4.defok $def_file
+diff_files place_pin4.defok $def_file

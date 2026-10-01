@@ -172,10 +172,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        "//src/drt",  # buildcleaner: keep for private headers
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -199,11 +197,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        # drt only exports header TritonRoute.h, but we need other symbols
-        "//src/drt",  # buildcleaner: keep
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",

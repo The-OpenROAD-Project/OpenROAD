@@ -13,4 +13,4 @@ place_tapcells -distance 15 -master sky130_fd_sc_hs__tap_1
 
 write_def $def_file
 
-diff_file gcd_sky130.defok $def_file
+diff_files gcd_sky130.defok $def_file

@@ -97,6 +97,7 @@ struct WebSocketRequest
   {
     kTile,
     kBounds,
+    kLayerExtents,
     kTech,
     kSelect,
     kInspect,
@@ -636,6 +637,8 @@ class TileHandler
   static WebSocketResponse serializeBounds(uint32_t id,
                                            const TileGenerator& gen);
   static WebSocketResponse serializeTech(uint32_t id, const TileGenerator& gen);
+  static WebSocketResponse serializeLayerExtents(uint32_t id,
+                                                 const TileGenerator& gen);
   static WebSocketResponse renderTile(
       uint32_t id,
       const std::string& layer,

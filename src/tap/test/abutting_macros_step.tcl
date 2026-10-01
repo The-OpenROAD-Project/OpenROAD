@@ -29,4 +29,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file abutting_macros_step.defok $def_file
+diff_files abutting_macros_step.defok $def_file

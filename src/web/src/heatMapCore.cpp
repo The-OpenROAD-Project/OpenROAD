@@ -30,6 +30,8 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 #include "web/core.h"
@@ -766,6 +768,8 @@ void HeatMapDataSource::ensureMap()
     populated_ = populateMap();
 
     if (isPopulated()) {
+      clearOutsideDieArea();
+
       debugPrint(
           logger_, utl::WEB, "HeatMap", 1, "{} - Correcting map scale", name_);
       correctMapScale(map_);
@@ -776,6 +780,42 @@ void HeatMapDataSource::ensureMap()
     debugPrint(
         logger_, utl::WEB, "HeatMap", 1, "{} - Assigning map colors", name_);
     assignMapColors();
+  }
+}
+
+void HeatMapDataSource::clearOutsideDieArea()
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  // The map always covers a rectangle.  With a polygon die, the bins that
+  // fall outside the die only see the blockages odb reserves there, so drop
+  // their values: they are not drawn or dumped, and do not count towards the
+  // map's scale.
+  const odb::Polygon die_area = block->getDieAreaPolygon();
+  if (die_area.isRect()) {
+    return;
+  }
+
+  const std::vector<odb::Rect> die_rects
+      = odb::geom::extractRectangles(odb::geom::toPolygonSet90(die_area));
+  for (const auto& map_col : map_) {
+    for (const auto& map_pt : map_col) {
+      if (map_pt == nullptr || !map_pt->has_value) {
+        continue;
+      }
+
+      const bool in_die
+          = std::ranges::any_of(die_rects, [&](const odb::Rect& die_rect) {
+              return die_rect.overlaps(map_pt->rect);
+            });
+      if (!in_die) {
+        map_pt->has_value = false;
+        map_pt->value = 0.0;
+      }
+    }
   }
 }
 
