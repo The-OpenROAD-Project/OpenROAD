@@ -263,6 +263,10 @@ build --jobs=200
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache
 
+# SourceForge downloads fall back to the BCR's Cloudflare mirror, so a
+# SourceForge outage does not fail a fetch. See bazel/downloader.cfg.
+common --downloader_config=bazel/downloader.cfg
+
 # CI only needs to know if the build succeeded, not the artifacts themselves.
 build:ci --remote_download_minimal
 build:ci --remote_upload_local_results=true
