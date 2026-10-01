@@ -68,12 +68,18 @@ class RowMaxTree
   // Lowest row in [lo, hi) whose x is > min_x, or -1.
   int first(const int lo, const int hi, const int min_x) const
   {
+    if (lo >= hi) {
+      return -1;
+    }
     return first(1, 0, size_, lo, hi, min_x);
   }
 
   // Highest row in [lo, hi) whose x is > min_x, or -1.
   int last(const int lo, const int hi, const int min_x) const
   {
+    if (lo >= hi) {
+      return -1;
+    }
     return last(1, 0, size_, lo, hi, min_x);
   }
 
