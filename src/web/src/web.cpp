@@ -653,9 +653,10 @@ WebSocketSession::WebSocketSession(
     }
   }
 
-  if (generator_->getBlock()) {
-    tile_handler_.initializeHeatMaps(state_);
-  }
+  // createHeatMapInstance() already leaves out built-ins the root chip has
+  // no block for, so this can run unconditionally -- a chiplet heat map
+  // registered before this session connects still needs to be picked up.
+  tile_handler_.initializeHeatMaps(state_);
 
   // DB-mutating requests (set_property) notify every connected client so
   // all views re-render.  Fire-and-forget; safe from any thread.
@@ -2302,8 +2303,8 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
 
   // collectChiplets() is what the renderer itself places chiplets with, so
   // resolving here means the heat map lands exactly where the chiplet is
-  // drawn.  Accept either the short name or the hierarchical path, since a
-  // master placed more than once has one name but distinct paths.
+  // drawn.  Match on the hierarchical path only: it is the one identifier
+  // guaranteed unique when a master is placed more than once.
   const ChipletNode* node = nullptr;
   std::string known;
   for (const ChipletNode& candidate : gen.chiplets()) {
@@ -2311,17 +2312,9 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
       known += ", ";
     }
     known += candidate.path;
-    if (candidate.path == chiplet_name || candidate.name == chiplet_name) {
-      if (node != nullptr) {
-        logger_->error(utl::WEB,
-                       116,
-                       "Chiplet {} is ambiguous; it matches both {} and {}. "
-                       "Use the hierarchical path instead.",
-                       chiplet_name,
-                       node->path,
-                       candidate.path);
-      }
+    if (candidate.path == chiplet_name) {
       node = &candidate;
+      break;
     }
   }
   if (node == nullptr) {

@@ -630,7 +630,9 @@ class TileHandler
  private:
   // Build one session's instance of a registered source.  Defaults the chip
   // to the root only when the factory left it unset, so a source bound to a
-  // specific chiplet keeps its binding.
+  // specific chiplet keeps its binding.  Returns nullptr for an unbound
+  // (built-in) source when the root chip has no block: there is nothing for
+  // it to read, so it is left out rather than bound to an invalid chip.
   std::shared_ptr<web::HeatMapDataSource> createHeatMapInstance(
       const web::HeatMapSourceRegistration& registration) const;
 

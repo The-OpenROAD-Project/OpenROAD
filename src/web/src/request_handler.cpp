@@ -5013,8 +5013,9 @@ void TileHandler::initializeHeatMaps(SessionState& state)
   std::lock_guard<std::mutex> lock(state.heatmap_mutex);
   state.heatmaps.clear();
   for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
-    state.heatmaps[source_handle->getShortName()]
-        = createHeatMapInstance(*source_handle);
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[source_handle->getShortName()] = std::move(source);
+    }
   }
 }
 
@@ -5026,6 +5027,12 @@ std::shared_ptr<web::HeatMapDataSource> TileHandler::createHeatMapInstance(
   // chiplet its data describes, so only default the un-bound built-ins to
   // the root chip -- overriding here would drag the data back to the top.
   if (source->getChip() == nullptr) {
+    // Built-ins read off dbBlock; a block-less root (3DBlox stack) has
+    // nothing for them to show, so leave them out instead of binding them
+    // to an invalid chip, where they'd show no data and log WEB-0098.
+    if (gen_->getBlock() == nullptr) {
+      return nullptr;
+    }
     source->setChip(gen_->getChip());
   }
   return source;
@@ -5039,8 +5046,11 @@ void TileHandler::syncHeatMapsLocked(SessionState& state)
 {
   for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
     const std::string& name = source_handle->getShortName();
-    if (state.heatmaps.find(name) == state.heatmaps.end()) {
-      state.heatmaps[name] = createHeatMapInstance(*source_handle);
+    if (state.heatmaps.find(name) != state.heatmaps.end()) {
+      continue;
+    }
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[name] = std::move(source);
     }
   }
 }

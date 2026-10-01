@@ -1284,11 +1284,20 @@ bool ExternalHeatMapDataSource::populateMap()
     return false;
   }
   const double dbu_per_micron = getDbuPerMicron();
+  // CSV coordinates are user-supplied and can be finite but far larger than
+  // DBU space allows, so clamp before the cast -- converting an
+  // out-of-range double to int is undefined behavior.
+  const auto toDbu = [&](const double microns) {
+    constexpr double kMax = std::numeric_limits<int>::max();
+    constexpr double kMin = std::numeric_limits<int>::min();
+    const double dbu = std::round(microns * dbu_per_micron);
+    return static_cast<int>(std::clamp(dbu, kMin, kMax));
+  };
   for (const auto& entry : *data_entries_) {
-    const int x0 = static_cast<int>(std::round(entry.x0 * dbu_per_micron));
-    const int y0 = static_cast<int>(std::round(entry.y0 * dbu_per_micron));
-    const int x1 = static_cast<int>(std::round(entry.x1 * dbu_per_micron));
-    const int y1 = static_cast<int>(std::round(entry.y1 * dbu_per_micron));
+    const int x0 = toDbu(entry.x0);
+    const int y0 = toDbu(entry.y0);
+    const int x1 = toDbu(entry.x1);
+    const int y1 = toDbu(entry.y1);
     odb::Rect rect(
         std::min(x0, x1), std::min(y0, y1), std::max(x0, x1), std::max(y0, y1));
     transform_.apply(rect);
@@ -1304,14 +1313,16 @@ odb::Rect ExternalHeatMapDataSource::getBounds() const
   return bounds;
 }
 
-void ExternalHeatMapDataSource::combineMapData(
-    bool base_has_value,
-    double& base,
-    const double new_data,
-    const double /* data_area */,
-    const double /* intersection_area */,
-    const double /* rect_area */)
+void ExternalHeatMapDataSource::combineMapData(bool base_has_value,
+                                               double& base,
+                                               const double new_data,
+                                               const double /* data_area */,
+                                               const double intersection_area,
+                                               const double /* rect_area */)
 {
+  if (intersection_area <= 0) {
+    return;
+  }
   base = base_has_value ? std::max(base, new_data) : new_data;
 }
 
