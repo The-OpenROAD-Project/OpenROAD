@@ -349,6 +349,14 @@ struct less<odb::dbChipBumpInst*>
 };
 
 template <>
+struct less<odb::dbChipCapNode*>
+{
+  bool operator()(const odb::dbChipCapNode* lhs,
+                  const odb::dbChipCapNode* rhs) const
+      = delete;
+};
+
+template <>
 struct less<odb::dbChipConn*>
 {
   bool operator()(const odb::dbChipConn* lhs, const odb::dbChipConn* rhs) const
@@ -389,6 +397,13 @@ struct less<odb::dbChipRegionInst*>
 {
   bool operator()(const odb::dbChipRegionInst* lhs,
                   const odb::dbChipRegionInst* rhs) const
+      = delete;
+};
+
+template <>
+struct less<odb::dbChipRSeg*>
+{
+  bool operator()(const odb::dbChipRSeg* lhs, const odb::dbChipRSeg* rhs) const
       = delete;
 };
 

@@ -40,9 +40,7 @@ bool parseRule(Iterator first,
             &setMinWidth, _1, layer, lefinReader)]
         >> lit(";");
 
-  bool valid = qi::phrase_parse(first, last, MinWidthRule, space);
-
-  return valid && first == last;
+  return qi::phrase_parse(first, last, MinWidthRule >> qi::eoi, space);
 }
 }  // namespace
 

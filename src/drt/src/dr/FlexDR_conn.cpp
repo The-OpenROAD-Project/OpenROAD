@@ -364,10 +364,16 @@ bool FlexDRConnectivityChecker::astar(
     int cost;
     bool operator<(const wf& b) const
     {
-      if (cost == b.cost) {
+      // Total order so that priority_queue pop order (and therefore the
+      // chosen predecessor on cost ties) does not depend on the standard
+      // library's heap implementation.
+      if (cost != b.cost) {
+        return cost > b.cost;
+      }
+      if (nodeIdx != b.nodeIdx) {
         return nodeIdx > b.nodeIdx;
       }
-      return cost > b.cost;
+      return prevIdx > b.prevIdx;
     }
   };
   for (int findNode = nNetRouteObjs; findNode < nNetObjs - 1; findNode++) {

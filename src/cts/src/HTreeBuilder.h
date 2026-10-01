@@ -128,6 +128,8 @@ class HTreeBuilder : public TreeBuilder
       return branchSinkLocs_[branchIdx];
     }
 
+    double getLargestSinkRegionHPWL(unsigned wireSegmentUnit) const;
+
     void setOutputSlew(unsigned slew) { outputSlew_ = slew; }
     unsigned getOutputSlew() const { return outputSlew_; }
     void setOutputCap(unsigned cap) { outputCap_ = cap; }

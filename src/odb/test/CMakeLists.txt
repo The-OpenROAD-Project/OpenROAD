@@ -2,6 +2,8 @@ or_integration_tests(
   "odb"
   TESTS
     abstract_origin
+    abstract_polygon
+    abstract_polygon_no_overlap
     all_pins_placed1
     all_pins_placed2
     bterm_hier_create
@@ -12,11 +14,6 @@ or_integration_tests(
     create_sboxes
     def_dup_net
     def_parser
-    design_is_routed1
-    design_is_routed2
-    design_is_routed3
-    design_is_routed_fail1
-    design_is_routed_fail2
     dont_touch
     dump_netlists
     dump_netlists_withfill
@@ -48,6 +45,9 @@ or_integration_tests(
     read_def_virtual
     read_def58
     read_lef
+    read_lef_dup_macro
+    read_lef_minwidth_wrongdirection
+    read_lef_polygon_spacing
     read_zipped
     replace_hier_mod1
     replace_hier_mod2
@@ -58,9 +58,9 @@ or_integration_tests(
     replace_hier_mod_report_checks
     rounding
     row_settings
+    set_halo
     sky130hd_multi_patterned
     smash_vias
-    swap_master
     transform
     wire_encoder
     write_cdl
@@ -69,6 +69,7 @@ or_integration_tests(
     write_def58
     write_def58_gzip
     write_lef_and_def
+    write_lef_obs_spacing
     write_lef_polygon
     write_macro_placement
   PASSFAIL_TESTS
@@ -84,6 +85,7 @@ or_integration_tests(
     test_iterm
     test_module
     test_net
+    test_tcl_handles
     test_wire_codec
 )
 

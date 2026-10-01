@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: ../../../test/asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: ../../../test/asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0127] Reading DEF file: prima_net_recycle.def
+[INFO ODB-0128] Design: prima_net_recycle
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 6 components and 26 component-terminals.
+[INFO ODB-0133]     Created 8 nets and 14 connections.
+[INFO ODB-0134] Finished DEF file: prima_net_recycle.def
+worst slack max 402.83

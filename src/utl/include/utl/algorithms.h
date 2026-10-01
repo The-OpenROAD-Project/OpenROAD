@@ -80,10 +80,20 @@ inline std::string to_numeric_string(const double number, const int precision)
 
   auto str = ss.str();
 
+  // std::fixed emits a decimal point only when the precision is positive, so
+  // there is no fractional part to tidy up here.  Running the strip below would
+  // chew into the integer part instead -- 1200 -> "12", and 0 -> "", whose
+  // back() is undefined behavior.  Tested on the parameter rather than searched
+  // for in the string, so this costs nothing.
+  if (precision <= 0) {
+    return str;
+  }
+
   // remove trailing zeros
   str = str.substr(0, str.find_last_not_of('0') + 1);
 
-  // Remove the decimal point if there is nothing after it anymore
+  // Remove the decimal point if there is nothing after it anymore.  The point
+  // guaranteed above is not a '0', so the strip cannot have emptied the string.
   if (str.back() == '.') {
     str.pop_back();
   }

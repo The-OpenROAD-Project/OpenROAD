@@ -6,20 +6,20 @@
 #include <vector>
 
 #include "Netlist.h"
-#include "gui/gui.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace ppl {
 
 IOPlacerRenderer::IOPlacerRenderer()
     : painting_interval_(0), current_iteration_(0), is_no_pause_mode_(false)
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 IOPlacerRenderer::~IOPlacerRenderer()
 {
-  gui::Gui::get()->unregisterRenderer(this);
+  web::Gui::get()->unregisterRenderer(this);
 }
 
 bool IOPlacerRenderer::isDrawingNeeded() const
@@ -54,9 +54,9 @@ void IOPlacerRenderer::setPinAssignment(const std::vector<IOPin>& assignment)
   pin_assignment_ = assignment;
 }
 
-void IOPlacerRenderer::drawObjects(gui::Painter& painter)
+void IOPlacerRenderer::drawObjects(web::Painter& painter)
 {
-  painter.setPen(gui::Painter::kYellow, true);
+  painter.setPen(web::Painter::kYellow, true);
 
   if (isDrawingNeeded()) {
     for (int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {
@@ -72,7 +72,7 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 void IOPlacerRenderer::redrawAndPause()
 {
   if (isDrawingNeeded()) {
-    auto* gui = gui::Gui::get();
+    auto* gui = web::Gui::get();
     gui->redraw();
 
     int wait_time = is_no_pause_mode_ ? 1000 : 0;  // in milliseconds

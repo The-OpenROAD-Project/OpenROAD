@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -20,7 +19,6 @@ namespace dpl {
 
 class DplObserver;
 class Opendp;
-class Padding;
 class Node;
 class Network;
 class Group;
@@ -74,36 +72,18 @@ struct FenceRegion
 struct NegCell
 {
   odb::dbInst* db_inst{nullptr};
+  Node* node{nullptr};  // cached network_->getNode(db_inst)
 
-  int init_x{0};     // position after global placement (sites)
-  int init_y{0};     // position after global placement (rows)
-  int x{0};          // current legalised position (sites)
-  int y{0};          // current legalised position (rows)
-  int width{0};      // footprint width  (sites)
-  int height{0};     // footprint height (row units: 1–4)
-  int pad_left{0};   // left padding (sites)
-  int pad_right{0};  // right padding (sites)
+  int init_x{0};  // position after global placement (sites)
+  int init_y{0};  // position after global placement (rows)
+  int x{0};       // current legalised position (sites)
+  int y{0};       // current legalised position (rows)
+  int width{0};   // footprint width  (sites)
+  int height{0};  // footprint height (row units: 1–4)
 
   bool fixed{false};
   int fence_id{-1};   // -1 → default region
   bool legal{false};  // updated each negotiation iteration
-
-  [[nodiscard]] int displacement() const
-  {
-    return std::abs(x - init_x) + std::abs(y - init_y);
-  }
-};
-
-// ---------------------------------------------------------------------------
-// AbacusCluster – transient state during the Abacus row sweep
-// ---------------------------------------------------------------------------
-struct AbacusCluster
-{
-  std::vector<int> cell_indices;  // ordered left-to-right within the row
-  double optimal_x{0.0};          // solved optimal left-edge (fractional)
-  double total_weight{0.0};
-  double total_q{0.0};  // Σ w_i * x_i^0
-  int total_width{0};   // Σ cell widths (sites)
 };
 
 // ---------------------------------------------------------------------------
@@ -115,7 +95,6 @@ class NegotiationLegalizer
   NegotiationLegalizer(Opendp* opendp,
                        odb::dbDatabase* db,
                        utl::Logger* logger,
-                       const Padding* padding = nullptr,
                        DplObserver* debug_observer = nullptr,
                        Network* network = nullptr);
   ~NegotiationLegalizer() = default;
@@ -134,7 +113,6 @@ class NegotiationLegalizer
   void commitNegotiationPosToDpl();
 
   // Tuning knobs (all have paper-default values)
-  void setRunAbacus(bool run) { run_abacus_ = run; }
   void setMf(double mf) { max_disp_multiplier_ = mf; }
   void setTh(int th) { max_disp_threshold_ = th; }
   void setMaxIterNeg(int n) { max_iter_neg_ = n; }
@@ -142,27 +120,59 @@ class NegotiationLegalizer
   void setRowSearchWindow(int w) { row_search_window_ = w; }
   void setDrcPenalty(double p) { drc_penalty_ = p; }
   void setNumThreads(int n) { num_threads_ = n; }
+  // When set, site_search_window_/row_search_window_ are used as hard
+  // ranges: disables both window extensions.
+  void setDisableWindowExtension(bool disable)
+  {
+    disable_window_extension_ = disable;
+  }
+  // Suppresses the configuration and per-iteration progress output.  Warnings
+  // (stalls, non-convergence) are always reported.
+  void setQuiet(bool quiet) { quiet_ = quiet; }
 
-  // Metrics (valid after legalize())
+  // Metrics (valid after legalize()), in site widths on both axes.
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
+  [[nodiscard]] int totalMoves() const { return total_moves_; }
+  // Iterations actually executed by each phase.
+  [[nodiscard]] int phase1Iterations() const { return phase1_iterations_; }
+  [[nodiscard]] int phase2Iterations() const { return phase2_iterations_; }
+  [[nodiscard]] int totalIterations() const
+  {
+    return phase1_iterations_ + phase2_iterations_;
+  }
+  // Phase that drove the violation count to zero: 1 or 2.  -1 when the run
+  // ended without converging (phase-2 iteration limit, or a stall handed to
+  // the diamond search), 0 when negotiation never ran because every cell was
+  // already legal.
+  [[nodiscard]] int convergePhase() const;
+  [[nodiscard]] int diamondRecoveries() const { return diamond_recoveries_; }
+  [[nodiscard]] std::string finishDescription() const;
+  [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
  private:
+  // How runNegotiation terminated.  Phase 1 falling back to the diamond
+  // search is not a terminal state: the run continues into phase 2.
+  enum class Finish
+  {
+    kNotRun,           // negotiation was never entered (no illegal cell)
+    kPhase1Converged,  // zero violations reached during phase 1
+    kPhase2Converged,  // zero violations reached during phase 2
+    kPhase2Recovery,   // phase 2 stalled, diamond search took over
+    kPhase2IterLimit   // phase-2 iteration limit exhausted
+  };
+
   // Initialisation
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
+  void initialSnap();
   void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
                                      // GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
 
-  // Abacus pass
-  [[nodiscard]] std::vector<int> runAbacus();
-  void abacusRow(int rowIdx, std::vector<int>& cellsInRow);
-  void collapseClusters(std::vector<AbacusCluster>& clusters, int rowIdx);
-  void assignClusterPositions(const AbacusCluster& cluster, int rowIdx);
   [[nodiscard]] bool isCellLegal(int cell_idx) const;
 
   // Negotiation pass
@@ -175,8 +185,27 @@ class NegotiationLegalizer
   void place(int cell_idx, int x, int y);
   [[nodiscard]] std::pair<int, int> findBestLocation(int cell_idx,
                                                      int iter = 0) const;
-  [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double negotiationCost(int cell_idx,
+                                       int x,
+                                       int y,
+                                       double abort_bound) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double targetCostFromDisp(int disp) const;
+  // A row is several site widths tall (7.4x on nangate45), so adding raw row
+  // and site counts would price a row jump like a single site step.
+  [[nodiscard]] int rowDispInSites(int y_from, int y_to) const
+  {
+    const int dy_dbu = std::abs(row_y_dbu_[y_to] - row_y_dbu_[y_from]);
+    return (dy_dbu + site_width_ / 2) / site_width_;
+  }
+  // The one definition of displacement: site widths on both axes. Pass the
+  // cell's own x/y for how far it has moved.
+  [[nodiscard]] int displacementInSites(const NegCell& cell,
+                                        int at_x,
+                                        int at_y) const
+  {
+    return std::abs(at_x - cell.init_x) + rowDispInSites(cell.init_y, at_y);
+  }
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
@@ -191,21 +220,58 @@ class NegotiationLegalizer
       const std::unordered_map<int, int>& no_cand_by_height,
       const std::unordered_map<int, int>& same_pos_by_height) const;
 
-  // Post-optimisation
-  void greedyImprove(int passes);
-  void cellSwap();
+  [[nodiscard]] bool shouldPrintIteration(int iter) const
+  {
+    return !quiet_ && (iter < 10 || iter % 10 == 0);
+  }
+
+  // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
+  // Collect up to `count_per_side` rows on each side of `seed_y`
+  // that can host the cell somewhere in [x_lo, x_hi]. A side
+  // stops after `max_scan` steps or at an off-core wall; quota it could not
+  // fill extends the other side.
+  [[nodiscard]] std::vector<int> verticalWindowRows(const NegCell& cell,
+                                                    int seed_y,
+                                                    int x_lo,
+                                                    int x_hi,
+                                                    int count_per_side,
+                                                    int max_scan) const;
   [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
-  [[nodiscard]] std::pair<int, int> snapToLegal(int cell_idx,
-                                                int x,
-                                                int y) const;
+  [[nodiscard]] int effectiveSiteWindow(const NegCell& cell) const;
+  [[nodiscard]] int effectiveRowCap(const NegCell& cell) const;
 
+  // The rectangular candidate region findBestLocation scans around an anchor
+  // point. The horizontal reach (dx_lo..dx_hi, inclusive offsets from
+  // anchor_x) is already shifted away from any macro/off-core wall, and `rows`
+  // is the set of valid rows to visit, vertically extended past an off-core
+  // wall. Built once per anchor by buildSearchWindow().
+  struct SearchWindow
+  {
+    int dx_lo{0};
+    int dx_hi{0};
+    std::vector<int> rows;
+  };
+  [[nodiscard]] SearchWindow buildSearchWindow(const NegCell& cell,
+                                               int anchor_x,
+                                               int anchor_y) const;
+
+  // Asymmetric X search bounds around base_x on row target_y. When a macro or
+  // the core boundary cuts one side of the symmetric [-site_window,
+  // +site_window] window short, the lost reach is shifted to the opposite side
+  // so the same number of candidate sites is still explored. Returns the
+  // inclusive (dx_lo, dx_hi) offsets.
+  [[nodiscard]] std::pair<int, int> horizontalWindowBounds(
+      const NegCell& cell,
+      int base_x,
+      int target_y,
+      int site_window) const;
   // DPL Grid synchronisation helpers – keep the Opendp pixel grid in sync
   // with NegotiationLegalizer cell positions so that PlacementDRC neighbour
   // lookups (edge spacing, padding, one-site gaps) see correct data.
@@ -228,21 +294,10 @@ class NegotiationLegalizer
   }
   void addUsage(int cell_idx, int delta);
 
-  // Effective padded footprint helpers (inclusive of padding zones).
-  [[nodiscard]] int effXBegin(const NegCell& cell) const
-  {
-    return std::max(0, cell.x - cell.pad_left);
-  }
-  [[nodiscard]] int effXEnd(const NegCell& cell) const
-  {
-    return std::min(grid_w_, cell.x + cell.width + cell.pad_right);
-  }
-
   // Data
   Opendp* opendp_{nullptr};
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
-  const Padding* padding_{nullptr};
   DplObserver* debug_observer_{nullptr};
   Network* network_{nullptr};
 
@@ -258,15 +313,20 @@ class NegotiationLegalizer
   std::vector<FenceRegion> fences_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
+  // Per-row y origins from Grid::gridYToDbu, so hybrid (non-uniform) row
+  // heights are exact.  Monotone in y, which findBestLocation's wavefront
+  // relies on.  One extra entry for the core top edge (index grid_h_).
+  std::vector<int> row_y_dbu_;
 
-  // Reusable scratch set for updateHistoryCosts() pixel deduplication,
-  // kept as a member so the per-iteration allocation is amortized.
-  std::unordered_set<int> hist_seen_pixels_;
+  // Per-pixel "already bumped this call" marker for updateHistoryCosts().
+  std::vector<uint32_t> hist_seen_stamp_;
+  uint32_t hist_gen_{0};
 
   double max_disp_multiplier_{kMfDefault};  // mf on the paper
   int max_disp_threshold_{kThDefault};      // th on the paper
   int max_iter_neg_{kMaxIterNeg};
   int site_search_window_{kSiteSearchWindow};
+  int row_search_window_{kRowSearchWindow};
   int current_iter_{0};  // updated at the start of each negotiationIter call
 
   // Last-iteration stats, kept so runNegotiation can print the final row.
@@ -276,24 +336,17 @@ class NegotiationLegalizer
   int last_illegal_cells_{0};
   int last_illegal_sites_{0};
 
-  // Cells that actually changed position during the current negotiation
-  // iteration. Passed to the debug observer so cells from prior iterations
-  // are rendered in grey while current-iteration movers keep directional
-  // colors.
-  std::unordered_set<odb::dbInst*> current_iter_movers_;
-  int row_search_window_{kRowSearchWindow};
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
-  bool run_abacus_{false};
+  bool disable_window_extension_{false};
+  bool quiet_{false};
+  int total_moves_{0};
 
-  // Mutable profiling accumulators for findBestLocation breakdown (seconds).
-  mutable double prof_init_search_s_{0};
-  mutable double prof_curr_search_s_{0};
-  mutable double prof_filter_s_{0};
-  mutable double prof_neg_cost_s_{0};
-  mutable double prof_drc_s_{0};
-  mutable int prof_candidates_evaluated_{0};
-  mutable int prof_candidates_filtered_{0};
+  // Convergence stats for the current runNegotiation call.
+  int phase1_iterations_{0};
+  int phase2_iterations_{0};
+  int diamond_recoveries_{0};
+  Finish finish_{Finish::kNotRun};
 
   // Stuck-cell tallies for the current runNegotiation call. Reset at the
   // start of runNegotiation and printed at the end. The per-height maps are

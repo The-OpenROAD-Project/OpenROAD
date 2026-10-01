@@ -10,6 +10,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-halo_width_x halo_x]\
                                 [-halo_width_y halo_y]\
                                 [-row_min_width row_min_width]\
+                                [-row_min_height row_min_height]\
                                 [-tap_nwin2_master tap_nwin2_master]\
                                 [-tap_nwin3_master tap_nwin3_master]\
                                 [-tap_nwout2_master tap_nwout2_master]\
@@ -29,7 +30,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
 proc tapcell { args } {
   sta::parse_key_args "tapcell" args \
     keys {-tapcell_master -endcap_master -endcap_cpp -distance -halo_width_x \
-            -halo_width_y -row_min_width -tap_nwin2_master -tap_nwin3_master \
+            -halo_width_y -row_min_width -row_min_height -tap_nwin2_master -tap_nwin3_master \
               -tap_nwout2_master -tap_nwout3_master -tap_nwintie_master \
               -tap_nwouttie_master -cnrcap_nwin_master -cnrcap_nwout_master \
               -incnrcap_nwin_master -incnrcap_nwout_master -tbtie_cpp -tap_prefix \
@@ -70,6 +71,11 @@ proc tapcell { args } {
   set row_min_width -1
   if { [info exists keys(-row_min_width)] } {
     set row_min_width $keys(-row_min_width)
+  }
+
+  set row_min_height 0
+  if { [info exists keys(-row_min_height)] } {
+    set row_min_height $keys(-row_min_height)
   }
 
   set tap_nwin2_master ""
@@ -144,6 +150,7 @@ proc tapcell { args } {
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
   set row_min_width [ord::microns_to_dbu $row_min_width]
+  set row_min_height [ord::microns_to_dbu $row_min_height]
   set dist [ord::microns_to_dbu $dist]
 
   set tapcell_master "NULL"
@@ -165,7 +172,7 @@ proc tapcell { args } {
     }
   }
 
-  tap::run $endcap_master $halo_x $halo_y $row_min_width $cnrcap_nwin_master \
+  tap::run $endcap_master $halo_x $halo_y $row_min_width $row_min_height $cnrcap_nwin_master \
     $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master \
     $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master \
     $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master \
@@ -175,11 +182,13 @@ proc tapcell { args } {
 sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\
                                  [-halo_width_x halo_x]\
                                  [-halo_width_y halo_y]\
-                                 [-row_min_width row_min_width]
+                                 [-row_min_width row_min_width]\
+                                 [-row_min_height row_min_height]
 }
 proc cut_rows { args } {
   sta::parse_key_args "cut_rows" args \
-    keys {-endcap_master -halo_width_x -halo_width_y -row_min_width} flags {}
+    keys {-endcap_master -halo_width_x -halo_width_y -row_min_width \
+          -row_min_height} flags {}
 
   sta::check_argc_eq0 "cut_rows" $args
 
@@ -195,10 +204,15 @@ proc cut_rows { args } {
   if { [info exists keys(-row_min_width)] } {
     set row_min_width $keys(-row_min_width)
   }
+  set row_min_height 0
+  if { [info exists keys(-row_min_height)] } {
+    set row_min_height $keys(-row_min_height)
+  }
 
   set halo_x [ord::microns_to_dbu $halo_x]
   set halo_y [ord::microns_to_dbu $halo_y]
   set row_min_width [ord::microns_to_dbu $row_min_width]
+  set row_min_height [ord::microns_to_dbu $row_min_height]
 
   set endcap_master "NULL"
   if { [info exists keys(-endcap_master)] } {
@@ -209,7 +223,7 @@ proc cut_rows { args } {
     }
   }
 
-  tap::cut_rows $endcap_master $halo_x $halo_y $row_min_width
+  tap::cut_rows $endcap_master $halo_x $halo_y $row_min_width $row_min_height
 }
 
 sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\

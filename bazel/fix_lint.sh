@@ -15,16 +15,30 @@ BZL_FMT_BUILDIFIER="$6"
 BZL_LINT_SH="$7"
 BZL_LINT_BUILDIFIER="$8"
 GIT="$9"
+YAML_TIDY_SH="${10:-}"
+YAMLFIX="${11:-}"
+PY_TIDY_SH="${12:-}"
+BLACK="${13:-}"
 
 export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
-
 # TCL: auto-format then lint
-"${TCL_TIDY_SH}" "${TCLFMT}"
+"${TCL_TIDY_SH}" "${TCLFMT}" "${GIT}"
 "${TCL_LINT_SH}" "${TCLINT}" "${GIT}" || rc=$?
 
 # Bazel: auto-format then lint
-"${BZL_TIDY_SH}" "${BZL_FMT_BUILDIFIER}"
+"${BZL_TIDY_SH}" "${BZL_FMT_BUILDIFIER}" "${GIT}"
 "${BZL_LINT_SH}" "${BZL_LINT_BUILDIFIER}" "${GIT}" || rc=$?
+
+# YAML: auto-format
+if [ -n "${YAML_TIDY_SH}" ] && [ -n "${YAMLFIX}" ]; then
+    "${YAML_TIDY_SH}" "${YAMLFIX}" "${GIT}" || rc=$?
+fi
+
+# Python: auto-format. Every black violation is auto-fixable, so there is no
+# separate lint pass to run afterwards.
+if [ -n "${PY_TIDY_SH}" ] && [ -n "${BLACK}" ]; then
+    "${PY_TIDY_SH}" "${BLACK}" "${GIT}" || rc=$?
+fi
 
 "${GIT}" -C "$BUILD_WORKSPACE_DIRECTORY" status
 

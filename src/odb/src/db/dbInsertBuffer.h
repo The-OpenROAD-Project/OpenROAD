@@ -146,7 +146,8 @@ class dbInsertBuffer
   dbModBTerm* findOrCreateTracePort(dbModule* current_mod,
                                     dbModNet* mod_net,
                                     dbIoType io_type,
-                                    const char* suffix);
+                                    const char* suffix,
+                                    dbNet* corresponding_flat_net);
 
   ///
   /// Trace up the module hierarchy from current_mod to target_mod,

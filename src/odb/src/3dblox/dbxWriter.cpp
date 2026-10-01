@@ -3,11 +3,14 @@
 
 #include "dbxWriter.h"
 
+#include <filesystem>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "baseWriter.h"
 #include "odb/db.h"
+#include "odb/defout.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 #include "yaml-cpp/yaml.h"
@@ -21,6 +24,10 @@ DbxWriter::DbxWriter(utl::Logger* logger, odb::dbDatabase* db)
 
 void DbxWriter::writeChiplet(const std::string& filename, odb::dbChip* chiplet)
 {
+  auto path = std::filesystem::path(filename);
+  if (path.has_parent_path()) {
+    current_dir_path_ = path.parent_path().string() + "/";
+  }
   YAML::Node root;
   writeYamlContent(root, chiplet);
   writeYamlToFile(filename, root);
@@ -56,17 +63,49 @@ void DbxWriter::writeDesign(YAML::Node& design_node, odb::dbChip* chiplet)
 void DbxWriter::writeChipletInsts(YAML::Node& instances_node,
                                   odb::dbChip* chiplet)
 {
+  // The DEF is master (design) data shared by all instances of a chiplet, so it
+  // is emitted for exactly one instance per master chiplet. Choose that
+  // instance deterministically as the one with the smallest name.
+  std::unordered_map<odb::dbChip*, std::string> def_inst_by_master;
+  for (auto inst : chiplet->getChipInsts()) {
+    odb::dbChip* master = inst->getMasterChip();
+    if (master->getBlock() == nullptr) {
+      continue;
+    }
+    const std::string& name = inst->getName();
+    auto it = def_inst_by_master.find(master);
+    if (it == def_inst_by_master.end() || name < it->second) {
+      def_inst_by_master[master] = name;
+    }
+  }
+
   for (auto inst : chiplet->getChipInsts()) {
     YAML::Node instance_node = instances_node[std::string(inst->getName())];
-    writeChipletInst(instance_node, inst);
+    auto it = def_inst_by_master.find(inst->getMasterChip());
+    const bool write_def
+        = it != def_inst_by_master.end() && it->second == inst->getName();
+    writeChipletInst(instance_node, inst, write_def);
   }
 }
 
 void DbxWriter::writeChipletInst(YAML::Node& instance_node,
-                                 odb::dbChipInst* inst)
+                                 odb::dbChipInst* inst,
+                                 bool write_def)
 {
-  auto master_name = inst->getMasterChip()->getName();
-  instance_node["reference"] = master_name;
+  odb::dbChip* master = inst->getMasterChip();
+  instance_node["reference"] = master->getName();
+
+  // Per the 3DBlox standard the DEF file is attached to a chiplet instance.
+  // Dump the master block to a DEF and reference it from a single instance of
+  // each master chiplet.
+  if (write_def) {
+    std::string def_file = std::string(master->getName()) + ".def";
+    odb::DefOut def_writer(logger_);
+    def_writer.writeBlock(master->getBlock(),
+                          (current_dir_path_ + def_file).c_str());
+    YAML::Node external_node = instance_node["external"];
+    external_node["def_file"] = def_file;
+  }
 }
 
 void DbxWriter::writeStack(YAML::Node& stack_node, odb::dbChip* chiplet)

@@ -23,4 +23,4 @@ repair_timing -setup -sequence "split" -skip_last_gasp -repair_tns 100
 report_worst_slack -max
 set def_out [make_result_file "repair_setup_splitload_legacy_out.def"]
 write_def $def_out
-diff_file repair_setup_splitload_legacy_out.defok $def_out
+diff_files repair_setup_splitload_legacy_out.defok $def_out

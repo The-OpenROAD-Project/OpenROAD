@@ -25,6 +25,10 @@ namespace syn {
 class Graph;
 class Net;
 
+namespace acd {
+class Resynthesis;
+}
+
 class Synthesis : public sta::dbStaState
 {
  public:
@@ -86,10 +90,21 @@ class Synthesis : public sta::dbStaState
   void mapCombinationals();
 
   // Export AIG to ABC, run commands, reimport.
-  void abcRoundtrip(const std::string& commands);
+  void abcRoundtrip(const std::string& commands, int naming_threshold = -1);
 
   // Post-mapping cell fusion optimization.
   void gateFuseOpt();
+
+  // Resynthesize cones of the mapped ODB netlist with Ashenhurst-Curtis
+  // decomposition.  Operates on ODB, so it runs after exportToOdb.
+  void acdResynth(int max_leaves,
+                  int max_intermediate_leaves,
+                  int max_cells,
+                  int max_outerfans,
+                  bool exclude_buffers,
+                  bool allow_lateral,
+                  float timing_opt_effort,
+                  bool apply);
 
   // 4-valued liveness propagation: replace registers (and optionally any
   // combinational driver) whose value is provably never A with a constant.
@@ -112,6 +127,7 @@ class Synthesis : public sta::dbStaState
   rsz::Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<Graph> graph_;
+  std::unique_ptr<acd::Resynthesis> resynthesis_;
 };
 
 // Free-function entry points re-declared here so tests don't need to
@@ -126,7 +142,10 @@ void mapCombinationals(Graph& g,
                        sta::Network* network,
                        utl::Logger* logger,
                        const Synthesis& syn);
-void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger);
+void abcRoundtrip(Graph& g,
+                  const std::string& commands,
+                  utl::Logger* logger,
+                  int naming_threshold = -1);
 void livenessOpt(Graph& g,
                  utl::Logger* logger,
                  bool replace_combinational = false);

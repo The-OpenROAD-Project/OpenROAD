@@ -12,7 +12,7 @@
 #include "odb/gdsin.h"
 #include "odb/gdsout.h"
 #include "odb/geom.h"
-#include "tst/fixture.h"
+#include "tst/db_fixture.h"
 #include "utl/Logger.h"
 
 namespace odb::gds {
@@ -20,9 +20,9 @@ namespace {
 
 static const std::string prefix("_main/src/odb/test/");
 
-using tst::Fixture;
+using tst::DbFixture;
 
-TEST_F(Fixture, reader)
+TEST_F(DbFixture, reader)
 {
   GDSReader reader(&logger_);
   std::string path = getFilePath(prefix + "data/sky130_fd_sc_hd__inv_1.gds");
@@ -80,7 +80,7 @@ TEST_F(Fixture, reader)
   EXPECT_EQ(text0->getTransform().angle_, 0);
 }
 
-TEST_F(Fixture, writer)
+TEST_F(DbFixture, writer)
 {
   GDSReader reader(&logger_);
   std::string path = getFilePath(prefix + "data/sky130_fd_sc_hd__inv_1.gds");
@@ -146,7 +146,7 @@ TEST_F(Fixture, writer)
   EXPECT_EQ(text0->getTransform().angle_, 0);
 }
 
-TEST_F(Fixture, edit)
+TEST_F(DbFixture, edit)
 {
   std::string libname = "test_lib";
   dbGDSLib* lib = createEmptyGDSLib(db_.get(), libname);

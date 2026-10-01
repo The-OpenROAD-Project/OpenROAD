@@ -18,6 +18,12 @@
       "name": "region_next_",
       "type": "dbId<_dbUnfoldedChipBumpInst>",
       "flags": ["private"]
+    },
+    {
+      "name": "pad_for_pointer_tag_alignment_",
+      "type": "uint32_t",
+      "default": 0,
+      "flags": ["private", "no-serial", "no-cmp", "no-get"]
     }
   ],
   "h_includes": [

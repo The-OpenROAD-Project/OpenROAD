@@ -32,6 +32,7 @@ struct InitialPlaceVars
   const float netWeightScale;
   const bool debug;
   const bool forceCenter;
+  const bool placeIosMode;
 };
 
 using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;

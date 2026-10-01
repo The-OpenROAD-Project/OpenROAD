@@ -15,11 +15,11 @@
 #include <string>
 #include <variant>
 
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 
-HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
+HeatMapSetup::HeatMapSetup(web::HeatMapDataSource& source,
                            const QString& title,
                            bool use_dbu,
                            int dbu,
@@ -51,13 +51,15 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   QFormLayout* form = new QFormLayout;
 
   for (const auto& option : source_.getMapSettings()) {
-    if (std::holds_alternative<HeatMapDataSource::MapSettingBoolean>(option)) {
-      addBooleanOption(form,
-                       std::get<HeatMapDataSource::MapSettingBoolean>(option));
-    } else if (std::holds_alternative<HeatMapDataSource::MapSettingMultiChoice>(
-                   option)) {
+    if (std::holds_alternative<web::HeatMapDataSource::MapSettingBoolean>(
+            option)) {
+      addBooleanOption(
+          form, std::get<web::HeatMapDataSource::MapSettingBoolean>(option));
+    } else if (std::holds_alternative<
+                   web::HeatMapDataSource::MapSettingMultiChoice>(option)) {
       addMultiChoiceOption(
-          form, std::get<HeatMapDataSource::MapSettingMultiChoice>(option));
+          form,
+          std::get<web::HeatMapDataSource::MapSettingMultiChoice>(option));
     }
   }
 
@@ -342,7 +344,7 @@ void HeatMapSetup::updateUseSelectedOnly(int option)
 
 void HeatMapSetup::addBooleanOption(
     QFormLayout* layout,
-    const HeatMapDataSource::MapSettingBoolean& option)
+    const web::HeatMapDataSource::MapSettingBoolean& option)
 {
   QCheckBox* check_box = new QCheckBox(this);
   check_box->setCheckState(option.getter() ? Qt::Checked : Qt::Unchecked);
@@ -359,7 +361,7 @@ void HeatMapSetup::addBooleanOption(
 
 void HeatMapSetup::addMultiChoiceOption(
     QFormLayout* layout,
-    const HeatMapDataSource::MapSettingMultiChoice& option)
+    const web::HeatMapDataSource::MapSettingMultiChoice& option)
 {
   QComboBox* combo_box = new QComboBox(this);
   for (const auto& value : option.choices()) {

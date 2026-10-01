@@ -11,11 +11,11 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_graphics.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_graphics.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA_graphics.h"
+#include "web/core.h"
 
 namespace drt {
 class GraphicsFactory : public AbstractGraphicsFactory

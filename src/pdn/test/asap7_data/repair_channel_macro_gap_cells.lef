@@ -1,0 +1,242 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+SITE asap7sc7p5t
+    CLASS CORE ;
+    SYMMETRY Y ;
+    SIZE 0.054 BY 0.27 ;
+END asap7sc7p5t
+
+MACRO DFFHQNx1_ASAP7_75t_R
+    CLASS CORE ;
+    SIZE 1.08 BY 0.27 ;
+    SYMMETRY X Y ;
+    SITE asap7sc7p5t ;
+    PIN CLK
+        DIRECTION INPUT ; 
+        USE CLOCK ; 
+        PORT
+            LAYER M1 ;
+              RECT  0.099 0.164 0.117 0.236 ;
+              RECT  0.072 0.07 0.117 0.106 ;
+              RECT  0.099 0.034 0.117 0.106 ;
+              RECT  0.072 0.164 0.117 0.2 ;
+              RECT  0.072 0.07 0.09 0.2 ;
+        END
+    END CLK
+    PIN D
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M1 ;
+              RECT  0.234 0.126 0.29 0.144 ;
+              RECT  0.234 0.225 0.271 0.243 ;
+              RECT  0.234 0.027 0.271 0.045 ;
+              RECT  0.234 0.027 0.252 0.243 ;
+        END
+    END D
+    PIN QN
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M1 ;
+              RECT  1.012 0.225 1.062 0.243 ;
+              RECT  1.044 0.027 1.062 0.243 ;
+              RECT  1.012 0.027 1.062 0.045 ;
+        END
+    END QN
+    PIN VDD
+        DIRECTION INOUT ; 
+        USE POWER ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 0.261 1.08 0.279 ;
+        END
+    END VDD
+    PIN VSS
+        DIRECTION INOUT ; 
+        USE GROUND ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 -0.009 1.08 0.009 ;
+        END
+    END VSS
+    OBS
+      LAYER M1 ;
+        RECT  0.85 0.225 0.954 0.243 ;
+        RECT  0.936 0.027 0.954 0.243 ;
+        RECT  0.774 0.027 0.792 0.119 ;
+        RECT  0.774 0.027 0.954 0.045 ;
+        RECT  0.688 0.224 0.738 0.242 ;
+        RECT  0.72 0.027 0.738 0.242 ;
+        RECT  0.72 0.153 0.9 0.171 ;
+        RECT  0.882 0.117 0.9 0.171 ;
+        RECT  0.828 0.117 0.846 0.171 ;
+        RECT  0.634 0.027 0.738 0.045 ;
+        RECT  0.576 0.225 0.63 0.243 ;
+        RECT  0.612 0.081 0.63 0.243 ;
+        RECT  0.496 0.081 0.63 0.099 ;
+        RECT  0.585 0.045 0.603 0.099 ;
+        RECT  0.364 0.225 0.468 0.243 ;
+        RECT  0.45 0.027 0.468 0.243 ;
+        RECT  0.45 0.122 0.576 0.14 ;
+        RECT  0.418 0.027 0.468 0.045 ;
+        RECT  0.315 0.126 0.333 0.203 ;
+        RECT  0.315 0.126 0.367 0.144 ;
+        RECT  0.148 0.225 0.198 0.243 ;
+        RECT  0.18 0.027 0.198 0.243 ;
+        RECT  0.148 0.027 0.198 0.045 ;
+        RECT  0.009 0.225 0.068 0.243 ;
+        RECT  0.009 0.027 0.027 0.243 ;
+        RECT  0.009 0.144 0.047 0.162 ;
+        RECT  0.009 0.027 0.068 0.045 ;
+        RECT  0.99 0.09 1.008 0.167 ;
+        RECT  0.666 0.101 0.684 0.167 ;
+        RECT  0.504 0.165 0.522 0.203 ;
+        RECT  0.396 0.106 0.414 0.167 ;
+        RECT  0.142 0.106 0.16 0.167 ;
+      LAYER M2 ;
+        RECT  0.877 0.144 1.013 0.162 ;
+        RECT  0.019 0.144 0.689 0.162 ;
+        RECT  0.175 0.18 0.527 0.198 ;
+      LAYER V1 ;
+        RECT  0.99 0.144 1.008 0.162 ;
+        RECT  0.882 0.144 0.9 0.162 ;
+        RECT  0.666 0.144 0.684 0.162 ;
+        RECT  0.504 0.18 0.522 0.198 ;
+        RECT  0.396 0.144 0.414 0.162 ;
+        RECT  0.315 0.18 0.333 0.198 ;
+        RECT  0.18 0.18 0.198 0.198 ;
+        RECT  0.142 0.144 0.16 0.162 ;
+        RECT  0.024 0.144 0.042 0.162 ;
+      LAYER RVTN ;
+        RECT  0 0 1.08 0.135 ;
+      LAYER RVTP ;
+        RECT  0 0.135 1.08 0.27 ;
+    END
+END DFFHQNx1_ASAP7_75t_R
+
+MACRO INVx3_ASAP7_75t_R
+    CLASS CORE ;
+    SIZE 0.27 BY 0.27 ;
+    SYMMETRY X Y ;
+    SITE asap7sc7p5t ;
+    PIN A
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M1 ;
+              RECT  0.018 0.126 0.078 0.144 ;
+              RECT  0.018 0.225 0.055 0.243 ;
+              RECT  0.018 0.027 0.055 0.045 ;
+              RECT  0.018 0.027 0.036 0.243 ;
+        END
+    END A
+    PIN VDD
+        DIRECTION INOUT ; 
+        USE POWER ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 0.261 0.27 0.279 ;
+        END
+    END VDD
+    PIN VSS
+        DIRECTION INOUT ; 
+        USE GROUND ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 -0.009 0.27 0.009 ;
+        END
+    END VSS
+    PIN Y
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M1 ;
+              RECT  0.094 0.225 0.252 0.243 ;
+              RECT  0.234 0.027 0.252 0.243 ;
+              RECT  0.094 0.027 0.252 0.045 ;
+        END
+    END Y
+    OBS
+      LAYER RVTN ;
+        RECT  0 0 0.27 0.135 ;
+      LAYER RVTP ;
+        RECT  0 0.135 0.27 0.27 ;
+    END
+END INVx3_ASAP7_75t_R
+
+MACRO TAPCELL_ASAP7_75t_R
+    CLASS CORE WELLTAP ;
+    SIZE 0.108 BY 0.27 ;
+    SYMMETRY X Y ;
+    SITE asap7sc7p5t ;
+    PIN VDD
+        DIRECTION INOUT ; 
+        USE POWER ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 0.261 0.108 0.279 ;
+        END
+    END VDD
+    PIN VSS
+        DIRECTION INOUT ; 
+        USE GROUND ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 -0.009 0.108 0.009 ;
+        END
+    END VSS
+    OBS
+      LAYER RVTN ;
+        RECT  0 0 0.108 0.135 ;
+      LAYER RVTP ;
+        RECT  0 0.135 0.108 0.27 ;
+    END
+END TAPCELL_ASAP7_75t_R
+
+MACRO TIELOx1_ASAP7_75t_R
+    CLASS CORE TIELOW ;
+    SIZE 0.162 BY 0.27 ;
+    SYMMETRY X Y ;
+    SITE asap7sc7p5t ;
+    PIN L
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M1 ;
+              RECT  0.067 0.182 0.144 0.2 ;
+              RECT  0.126 0.027 0.144 0.2 ;
+              RECT  0.094 0.027 0.144 0.045 ;
+        END
+    END L
+    PIN VDD
+        DIRECTION INOUT ; 
+        USE POWER ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 0.261 0.162 0.279 ;
+        END
+    END VDD
+    PIN VSS
+        DIRECTION INOUT ; 
+        USE GROUND ; 
+        PORT
+            LAYER M1 ;
+              RECT  0 -0.009 0.162 0.009 ;
+        END
+    END VSS
+    OBS
+      LAYER M1 ;
+        RECT  0.018 0.225 0.068 0.243 ;
+        RECT  0.018 0.097 0.036 0.243 ;
+        RECT  0.018 0.097 0.095 0.115 ;
+      LAYER RVTN ;
+        RECT  0 0 0.162 0.135 ;
+      LAYER RVTP ;
+        RECT  0 0.135 0.162 0.27 ;
+    END
+END TIELOx1_ASAP7_75t_R
+
+END LIBRARY

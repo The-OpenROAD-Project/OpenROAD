@@ -3,6 +3,32 @@
 
 cmake_minimum_required (VERSION 3.16)
 
+# Bazel is the supported build system; the CMake build is deprecated. The
+# banner is printed at the start and at the end of the configure step so it
+# is seen whether or not configuration succeeds.
+macro(openroad_cmake_deprecation_banner)
+  message(NOTICE "")
+  message(NOTICE "**********************************************************************")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   WARNING: the CMake build of OpenROAD is DEPRECATED.              *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   Bazel is the supported build system.  CMake support is no        *")
+  message(NOTICE "*   longer developed and will be removed in a future release.        *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   Please switch to Bazel:                                          *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*       bazelisk build --//:platform=gui //:openroad                 *")
+  message(NOTICE "*       bazelisk run   --//:platform=gui //:install                  *")
+  message(NOTICE "*       bazelisk test  src/...                                       *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "*   See docs/user/Build.md and docs/user/Bazel.md for details.       *")
+  message(NOTICE "*                                                                    *")
+  message(NOTICE "**********************************************************************")
+  message(NOTICE "")
+endmacro()
+
+openroad_cmake_deprecation_banner()
+
 # Use standard target names
 cmake_policy(SET CMP0078 NEW)
 
@@ -75,7 +101,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set_property(DIRECTORY PROPERTY TEST_DISCOVERY_TIMEOUT 60)
+# Defer GoogleTest case discovery from build time (POST_BUILD default, which
+# execs each test binary during the build) to ctest time. On a loaded CI host
+# the build-time discovery run can exceed the timeout and fail the whole build.
+set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
 
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)
@@ -180,6 +209,25 @@ if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
 endif()
 message(STATUS "LTO/IPO is ${LTO_STATUS}")
 
+# Compress DWARF debug sections in builds that emit debug info. This is a
+# large on-disk win for template-heavy C++ (debug info dominates these
+# binaries) and is transparent to gdb/readelf/addr2line/lldb. It is a no-op
+# for builds without -g (e.g. Release), so it is safe to apply globally.
+# Excluded on Apple platforms: Mach-O does not support -gz=zlib and AppleClang
+# (which CMAKE_CXX_COMPILER_ID matches as "Clang") would fail the build.
+# The compile flag is scoped to C/C++: -gz is a GCC/Clang host-compiler flag
+# that nvcc does not accept (it would need explicit -Xcompiler forwarding), so
+# applying it directory-wide would break CUDA (ENABLE_GPU) debug builds where
+# gpl marks GPU sources as LANGUAGE CUDA. The link flag needs no such guard:
+# linking is driven by the host C++ compiler.
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   AND NOT APPLE)
+  set(DEBUG_CONFIG_GENEX "$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>")
+  add_compile_options(
+    "$<$<AND:${DEBUG_CONFIG_GENEX},$<COMPILE_LANGUAGE:CXX,C>>:-gz=zlib>")
+  add_link_options("$<${DEBUG_CONFIG_GENEX}:-gz=zlib>")
+endif()
+
 # configure a header file to pass some of the CMake settings
 configure_file(
   ${OPENROAD_HOME}/include/ord/Version.hh.cmake
@@ -269,3 +317,5 @@ message(STATUS " Tests Enabled  : ${ENABLE_TESTS}")
 message(STATUS "=========================================================")
 message(STATUS " Configuration complete.")
 message(STATUS "")
+
+openroad_cmake_deprecation_banner()

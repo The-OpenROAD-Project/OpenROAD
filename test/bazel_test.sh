@@ -9,6 +9,12 @@ export RESULTS_DIR="${TEST_UNDECLARED_OUTPUTS_DIR}/results"
 export REGRESSION_TEST=$(realpath $REGRESSION_TEST)
 if [ -n "${TEST_SRCDIR:-}" ]; then
 	export BAZEL_TEST=1
+	# Tests cd into their source directory, so importing a shared helper
+	# (helpers.py, ppl_aux.py, ...) makes CPython write __pycache__ .pyc
+	# files back into the source tree mid-action. Bazel then sees a
+	# concurrent modification and skips caching the result
+	# (--guard_against_concurrent_changes). Suppress bytecode writing.
+	export PYTHONDONTWRITEBYTECODE=1
 	workspace_root="${TEST_SRCDIR}/${TEST_WORKSPACE:-_main}"
 	python_paths="${workspace_root}"
 	if [ -d "${workspace_root}/python" ]; then

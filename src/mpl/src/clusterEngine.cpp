@@ -84,12 +84,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-void ClusteringEngine::setHalos(
-    const HardMacro::Halo& base_halo,
-    const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
+void ClusteringEngine::setChannel(const Channel min_channel,
+                                  const bool pin_aware_channels)
 {
-  base_halo_ = base_halo;
-  macro_to_halo_ = macro_to_halo;
+  min_channel_ = min_channel;
+  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -101,19 +100,22 @@ void ClusteringEngine::init()
   setFloorplanShape();
   createHardMacros();
 
-  if (!movableCellsFitInMacroPlacementArea()) {
-    logger_->error(
-        MPL, 65, "The movable cells do not fit in the macro placement area.");
-  }
-
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
-
+  // With no macro to place there is nothing to cluster or check: the
+  // checks below guard the placement, and a design whose macros are all
+  // fixed may legitimately hold fixed standard cells in the core.
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
     return;
   }
+
+  if (!movableCellsFitInMacroPlacementArea()) {
+    logger_->error(
+        MPL, 65, "The movable cells do not fit in the macro placement area.");
+  }
+
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
   const float inst_area_with_halos
@@ -309,7 +311,7 @@ void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
       "\tNumber of macros: {}\n"
       "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
+      "\tMinimum channel (Width, Height): ({:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -321,10 +323,8 @@ void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
       design_metrics_->getNumMacro(),
       num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(base_halo_.left),
-      block_->dbuToMicrons(base_halo_.bottom),
-      block_->dbuToMicrons(base_halo_.right),
-      block_->dbuToMicrons(base_halo_.top),
+      block_->dbuToMicrons(min_channel_.width),
+      block_->dbuToMicrons(min_channel_.height),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2063,6 +2063,7 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
+  const int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
@@ -2082,18 +2083,7 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo;
-      if (macro_to_halo_.contains(inst)) {
-        halo = macro_to_halo_.at(inst);
-      } else if (inst->getHalo() != nullptr) {
-        const HardMacro::Halo inst_halo(inst->getHalo());
-        halo = inst_halo;
-        if (!inst->getHalo()->isSoft()) {
-          halo = inst_halo.floorTo(base_halo_);
-        }
-      } else {
-        halo = base_halo_;
-      }
+      HardMacro::Halo halo = buildMacroHalo(inst, minimum_spacing);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
@@ -2161,6 +2151,141 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
     }
   }
   return number_of_ios;
+}
+
+HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
+                                                 int minimum_spacing) const
+{
+  HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  if (inst->getHalo() != nullptr) {
+    const HardMacro::Halo inst_halo(inst->getHalo());
+    halo = halo.flooredToHalo(inst_halo);
+  } else if (pin_aware_channels_) {
+    halo = buildPinAwareHalo(inst, minimum_spacing);
+  }
+
+  // Adjust halo orientation for fixed macros here, since those
+  // are skipped during orientation improve and thus never properly adjusted
+  if (inst->getPlacementStatus().isFixed()) {
+    auto orient = inst->getOrient();
+    if (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180) {
+      std::swap(halo.bottom, halo.top);
+    }
+    if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
+      std::swap(halo.left, halo.right);
+    }
+  }
+
+  return halo;
+}
+
+HardMacro::Halo ClusteringEngine::buildPinAwareHalo(odb::dbInst* inst,
+                                                    int minimum_spacing) const
+{
+  HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  HardMacro::Halo min_halo(minimum_spacing);
+
+  odb::dbMaster* master = inst->getMaster();
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::Rect pin_rect = box->getBox();
+
+        std::vector<std::pair<int, Boundary>> dist_to_boundary{
+            {pin_rect.xMin(), Boundary::L},
+            {pin_rect.yMin(), Boundary::B},
+            {master->getWidth() - pin_rect.xMax(), Boundary::R},
+            {master->getHeight() - pin_rect.yMax(), Boundary::T}};
+
+        std::ranges::sort(dist_to_boundary);
+
+        Boundary closest = dist_to_boundary[0].second;
+
+        auto& candidate = dist_to_boundary[0];
+        auto& second_candidate = dist_to_boundary[1];
+
+        // When a pin is equally distant from two or more edges (i.e. in the
+        // corner) the pin's layer direction is used to choose between
+        // candidates
+        if (isEquidistantDifferentDirections(candidate, second_candidate)) {
+          auto direction
+              = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+          if (direction == odb::dbTechLayerDir::VERTICAL) {
+            closest = isVertical(candidate.second) ? second_candidate.second
+                                                   : candidate.second;
+          } else {
+            closest = isVertical(candidate.second) ? candidate.second
+                                                   : second_candidate.second;
+          }
+        }
+
+        switch (closest) {
+          case Boundary::B:
+            min_halo.bottom = halo.bottom;
+            break;
+          case Boundary::L:
+            min_halo.left = halo.left;
+            break;
+          case Boundary::T:
+            min_halo.top = halo.top;
+            break;
+          case Boundary::R:
+            min_halo.right = halo.right;
+            break;
+        }
+      }
+    }
+  }
+
+  return min_halo;
+}
+
+int ClusteringEngine::getMinimumSpacing() const
+{
+  int spacing = 0;
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      odb::dbMaster* master = inst->getMaster();
+
+      for (odb::dbBox* obs : master->getObstructions()) {
+        if (auto layer = obs->getTechLayer()) {
+          spacing = std::max(spacing, layer->getSpacing());
+        }
+      }
+
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* geom : mpin->getGeometry()) {
+            if (auto layer = geom->getTechLayer()) {
+              spacing = std::max(spacing, layer->getSpacing());
+            }
+          }
+        }
+      }
+    }
+  }
+  return spacing;
+}
+
+bool ClusteringEngine::isEquidistantDifferentDirections(
+    std::pair<int, Boundary> candidate,
+    std::pair<int, Boundary> second_candidate) const
+{
+  return (candidate.first == second_candidate.first)
+         && ((isVertical(candidate.second)
+              && !isVertical(second_candidate.second))
+             || (!isVertical(candidate.second)
+                 && isVertical(second_candidate.second)));
 }
 
 ///////////////////////////////////////////////

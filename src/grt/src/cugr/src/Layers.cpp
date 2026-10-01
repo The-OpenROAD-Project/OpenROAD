@@ -14,12 +14,14 @@ namespace grt {
 MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
                        odb::dbTrackGrid* track_grid)
 {
+  tech_layer_ = tech_layer;
   name_ = tech_layer->getName();
   index_ = tech_layer->getRoutingLevel() - 1;
   direction_
       = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL ? H : V;
   width_ = tech_layer->getWidth();
   min_width_ = tech_layer->getMinWidth();
+  spacing_ = tech_layer->getSpacing();
 
   // Sheet R and the via-cut R above (for the res-aware cost); 0 when the
   // tech leaves them undefined.

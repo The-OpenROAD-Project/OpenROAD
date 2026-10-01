@@ -41,6 +41,11 @@ using sta::Instance;
 %include "sdc/Sdc.i"
 %include "sdf/Sdf.i"
 %include "search/Property.i"
+// Set by CMakeLists.txt/BUILD when the OpenSTA submodule is the
+// OpenROAD fork rather than stock (parallaxsw) OpenSTA.
+#ifdef STA_OPENROAD_FORK
+%include "search/AnalysisCorner.i"
+#endif
 %include "search/Search.i"
 %include "spice/WriteSpice.i"
 %include "util/Util.i"
@@ -192,6 +197,14 @@ sta_to_db_mod_net(Net *net)
   return db_mod_net;
 }
 
+Net *
+db_net_to_sta(odb::dbNet *db_net)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->dbToSta(db_net);
+}
+
 odb::dbMaster *
 sta_to_db_master(LibertyCell *cell)
 {
@@ -257,7 +270,6 @@ write_verilog_cmd(const char *filename,
   sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
   sta::writeVerilog(filename, include_pwr_gnd, remove_cells, network);
-  delete remove_cells;
 }
 
 void

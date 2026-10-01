@@ -18,7 +18,8 @@ target_sources(pad
     src/ICeWall.cpp
     src/PadPlacer.cpp
     src/RDLRouter.cpp
-    src/RDLRoute.cpp
+    src/RDLSegment.cpp
+    src/RDLNet.cpp
     src/RDLGui.cpp
     src/Utilities.cpp
 )
@@ -32,7 +33,7 @@ target_link_libraries(pad
   PRIVATE
     utl_lib
     odb
-    gui
+    gui_core
     Boost::boost
 )
 

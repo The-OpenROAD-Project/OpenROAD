@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -473,7 +474,7 @@ void NesterovPlace::runTimingDriven(int iter,
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
     // }
 
-    nbVec_[0]->setTrueReprintIterHeader();
+    getTopLevelNB()->setTrueReprintIterHeader();
     ++timing_driven_count;
 
     const int nbc_total_gcells_delta
@@ -732,9 +733,22 @@ void NesterovPlace::runRoutability(int iter,
                                    float& curA)
 {
   // check routability using RUDY or GR
+  //
+  // The overflow gate alone says the design is spread; it does not say the
+  // cells have stopped moving, and those come apart when the penalty schedule
+  // changes pace. Measured on one design at the same overflow of 0.30: cells
+  // moving 2.02 bins per iteration read a congestion of 1.6447, and cells
+  // moving 6.44 bins per iteration - the same overflow, a faster schedule -
+  // read 2.3458. Inflation sized from the second reading is aimed at a
+  // placement that no longer exists by the time it lands. Wait for the motion
+  // to come off its peak as well.
+  //
+  // This can only ever delay the trigger, so a design already settled at its
+  // overflow gate is unaffected.
   if (npVars_.routability_driven_mode && is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
-    nbVec_[0]->setTrueReprintIterHeader();
+      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+      && isPlacementSettled()) {
+    getTopLevelNB()->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
     if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
@@ -792,6 +806,15 @@ void NesterovPlace::runRoutability(int iter,
     is_routability_need_ = result.first;
     bool isRevertInitNeeded = result.second;
 
+    // Every routability pass inflates cells, so the design placed after this
+    // one is not the design min_hpwl_ was measured on. Held across the change,
+    // the old minimum is unbeatable - there is more cell area to place now -
+    // and is_min_hpwl_ never comes true again, so no divergence snapshot is
+    // ever taken and a later divergence has nothing to fall back on but
+    // GPL-0307. Start the search for a minimum over on the new design.
+    min_hpwl_ = std::numeric_limits<int64_t>::max();
+    is_min_hpwl_ = false;
+
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
     }
@@ -842,6 +865,18 @@ void NesterovPlace::runRoutability(int iter,
   }
 }
 
+// Every region has to have settled: routability acts on one congestion map
+// covering all of them.
+bool NesterovPlace::isPlacementSettled() const
+{
+  for (const auto& nb : nbVec_) {
+    if (!nb->isSettled()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool NesterovPlace::isConverged(int gpl_iter_count,
                                 int routability_gpl_iter_count)
 {
@@ -860,6 +895,14 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
     return true;
   }
   return false;
+}
+
+NesterovBase* NesterovPlace::getTopLevelNB() const
+{
+  if (nbVec_.empty()) {
+    log_->error(GPL, 103, "Top-level NesterovBase is not initialized.");
+  }
+  return nbVec_[0].get();
 }
 
 std::string NesterovPlace::getReportsDir() const
@@ -988,6 +1031,7 @@ void NesterovPlace::reportResults(int nesterov_iter,
                1011,
                "Original area (um^2): {:.2f}",
                block->dbuAreaToMicrons(original_area));
+    log_->metric("gpl__area__original", block->dbuAreaToMicrons(original_area));
   }
 
   if (npVars_.routability_driven_mode) {
@@ -999,6 +1043,9 @@ void NesterovPlace::reportResults(int nesterov_iter,
                "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
                block->dbuAreaToMicrons(routability_inflation_area),
                routability_diff);
+    log_->metric("gpl__area__routability_inflation",
+                 block->dbuAreaToMicrons(routability_inflation_area));
+    log_->metric("gpl__area__routability_inflation__percent", routability_diff);
   }
 
   if (npVars_.timingDrivenMode) {
@@ -1008,6 +1055,9 @@ void NesterovPlace::reportResults(int nesterov_iter,
                "Total timing-driven delta area: {:.2f} ({:+.2f}%)",
                block->dbuAreaToMicrons(td_accumulated_delta_area),
                td_diff);
+    log_->metric("gpl__area__timing_delta",
+                 block->dbuAreaToMicrons(td_accumulated_delta_area));
+    log_->metric("gpl__area__timing_delta__percent", td_diff);
   }
 
   int64_t new_area = 0;
@@ -1021,6 +1071,8 @@ void NesterovPlace::reportResults(int nesterov_iter,
              "Final placement area: {:.2f} ({:+.2f}%)",
              block->dbuAreaToMicrons(new_area),
              placement_diff);
+  log_->metric("gpl__area__final", block->dbuAreaToMicrons(new_area));
+  log_->metric("gpl__area__final__percent", placement_diff);
 }
 
 int NesterovPlace::doNesterovPlace(int start_iter)
@@ -1266,6 +1318,9 @@ void NesterovPlace::updateDb()
     nb->pullCoordsFromDevice();
   }
   nbc_->updateDbGCells();
+  for (auto& nb : nbVec_) {
+    nb->updateDbIoPins();
+  }
 }
 
 // divergence detection on
@@ -1295,7 +1350,7 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 
   odb::dbRegion* region = db_inst->getRegion();
   if (!region) {
-    nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+    getTopLevelNB()->createCbkGCell(db_inst, gcell_index);
     return;
   }
 

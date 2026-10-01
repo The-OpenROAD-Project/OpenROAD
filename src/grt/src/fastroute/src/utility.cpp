@@ -177,9 +177,9 @@ void FastRouteCore::netpinOrderInc()
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
 
   // One-shot dump of the res-aware nets in routing order (their
-  // layer-assignment priority). Enable with -debug_level GRT resAware 1.
+  // layer-assignment priority). Enable with -debug_level GRT resAware 2.
   if (enable_resistance_aware_ && !is_incremental_grt_ && !res_aware_logged_
-      && logger_->debugCheck(GRT, "resAware", 1)) {
+      && logger_->debugCheck(GRT, "resAware", 2)) {
     res_aware_logged_ = true;
     logger_->report(
         "FastRoute res-aware nets in layer-assignment priority order:");
@@ -704,7 +704,9 @@ void FastRouteCore::updateSlacks()
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
     if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-      estimator->estimateAllGlobalRouteParasitics();
+      // The router is idle here: nothing else reads or writes
+      // parasitics or delays until the estimate returns.
+      estimator->estimateAllGlobalRouteParasitics(num_threads_);
     }
   }
 
@@ -785,9 +787,9 @@ void FastRouteCore::updateSlacks()
     nets_[res_aware_list[i].first]->setIsResAware(true);
   }
 
-  // Res-aware set-growth instrumentation (-debug_level GRT resAware 1); reports
-  // per-call delta and running total, level 2 lists newly-marked nets.
-  if (logger_->debugCheck(GRT, "resAware", 1) && !is_incremental_grt_) {
+  // Res-aware set-growth instrumentation (-debug_level GRT resAware 2); reports
+  // per-call delta and running total, level 3 lists newly-marked nets.
+  if (logger_->debugCheck(GRT, "resAware", 2) && !is_incremental_grt_) {
     int total = 0;
     for (const int id : net_ids_) {
       if (nets_[id]->isResAware()) {
@@ -806,7 +808,7 @@ void FastRouteCore::updateSlacks()
         net_ids_.empty()
             ? 0.0f
             : 100.0f * total / static_cast<float>(net_ids_.size()));
-    if (logger_->debugCheck(GRT, "resAware", 2)) {
+    if (logger_->debugCheck(GRT, "resAware", 3)) {
       for (int i = 0; i < newly; i++) {
         FrNet* net = nets_[res_aware_list[i].first];
         logger_->report("  + {} slack={:.2f}ps R={:.2f} fanout={} len={}",
@@ -1203,13 +1205,19 @@ void FastRouteCore::assignEdge(const int netID,
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
 
-      v_edges_3D_[grids[k].layer][min_y][grids[k].x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(grids[k].x,
+                        min_y,
+                        grids[k].layer,
+                        EdgeDirection::Vertical,
+                        net->getLayerEdgeCost(grids[k].layer));
     } else {
       const int min_x = std::min(grids[k].x, grids[k + 1].x);
 
-      h_edges_3D_[grids[k].layer][grids[k].y][min_x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(min_x,
+                        grids[k].y,
+                        grids[k].layer,
+                        EdgeDirection::Horizontal,
+                        net->getLayerEdgeCost(grids[k].layer));
     }
   }
 }
@@ -1348,7 +1356,13 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kInitialResAwareNetsPercentage;
+  }
   updateSlacks();
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kMidResAwareNetsPercentage;
+  }
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
@@ -1646,7 +1660,7 @@ float FastRouteCore::CalculatePartialSlack()
   std::vector<float> slacks;
   slacks.reserve(netCount());
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-    estimator->estimateAllGlobalRouteParasitics();
+    estimator->estimateAllGlobalRouteParasitics(num_threads_);
   }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
@@ -1738,14 +1752,20 @@ void FastRouteCore::recoverEdge(const int netID, const int edgeID)
       {
         const int ymin = std::min(grids[i].y, grids[i + 1].y);
         graph2d_.updateUsageV(grids[i].x, ymin, net, net->getEdgeCost());
-        v_edges_3D_[grids[i].layer][ymin][grids[i].x].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(grids[i].x,
+                          ymin,
+                          grids[i].layer,
+                          EdgeDirection::Vertical,
+                          net->getLayerEdgeCost(grids[i].layer));
       } else if (grids[i].y == grids[i + 1].y)  // a horizontal edge
       {
         const int xmin = std::min(grids[i].x, grids[i + 1].x);
         graph2d_.updateUsageH(xmin, grids[i].y, net, net->getEdgeCost());
-        h_edges_3D_[grids[i].layer][grids[i].y][xmin].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(xmin,
+                          grids[i].y,
+                          grids[i].layer,
+                          EdgeDirection::Horizontal,
+                          net->getLayerEdgeCost(grids[i].layer));
       }
     }
   }
@@ -1985,6 +2005,12 @@ void FastRouteCore::check2DEdgesUsage()
   const int max_usage_multiplier = 100;
   int max_h_edge_usage = max_usage_multiplier * h_capacity_;
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
+
+  if (!logger_->debugCheck(GRT, "overflowcheck", 1)
+      && graph2d_.maxUsage(EdgeDirection::Horizontal) <= max_h_edge_usage
+      && graph2d_.maxUsage(EdgeDirection::Vertical) <= max_v_edge_usage) {
+    return;
+  }
 
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
@@ -2996,6 +3022,18 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
   auto& treenodes = sttrees_[netID].nodes;
 
   // Setting the values needed for each TreeNode
+  //
+  // Coordinate deduplication: non-terminal nodes that share a grid (x,y)
+  // position with an earlier node are aliased (stackAlias) to that earlier
+  // node. The original implementation found the earliest matching node with an
+  // O(numpoints) linear scan, making the whole loop O(numpoints^2). For large
+  // multi-pin nets this dominates global routing runtime. We replace the scan
+  // with a hash-map keyed by the packed (x,y) position, mapping to the dcor
+  // index of the FIRST node inserted at that position. This yields identical
+  // results (same first-match semantics, same xcor_/ycor_/dcor_ contents)
+  // with O(1) average lookups.
+  auto& coord_map = tree_node_coord_dedup_;
+  coord_map.clear();
   for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
     treenodes[d].topL = -1;
     treenodes[d].botL = num_layers_;
@@ -3006,6 +3044,12 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     treenodes[d].lID = BIG_INT;
     treenodes[d].status = 0;
 
+    // Pack the int16_t grid coordinates into a single unsigned 32-bit key.
+    // Unsigned avoids undefined behavior from shifting into the sign bit.
+    const uint32_t key
+        = (static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].x)) << 16)
+          | static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].y));
+
     if (d < num_terminals) {
       const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
       treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
@@ -3013,20 +3057,21 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
       treenodes[d].assigned = true;
       treenodes[d].status = 1;
 
+      // Terminals are always appended (they are never aliased away), matching
+      // the original behavior. Record only the first dcor per position so
+      // later lookups resolve to the earliest insertion, as the linear scan
+      // did.
+      coord_map.try_emplace(key, d);
       xcor_[numpoints] = treenodes[d].x;
       ycor_[numpoints] = treenodes[d].y;
       dcor_[numpoints] = d;
       numpoints++;
     } else {
-      bool redundant = false;
-      for (int k = 0; k < numpoints; k++) {
-        if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
-          treenodes[d].stackAlias = dcor_[k];
-          redundant = true;
-          break;
-        }
-      }
-      if (!redundant) {
+      const auto it = coord_map.find(key);
+      if (it != coord_map.end()) {
+        treenodes[d].stackAlias = it->second;
+      } else {
+        coord_map.emplace(key, d);
         xcor_[numpoints] = treenodes[d].x;
         ycor_[numpoints] = treenodes[d].y;
         dcor_[numpoints] = d;

@@ -43,4 +43,10 @@ jobs:
         # You can also manually trigger a workflow dispatch with the force
         # value equal to 'true'.
         force: ${{ github.event.inputs.force || (secrets.UPSTREAM_SYNC == 'always overwrite master branch') }}
+        # Quarterly release tags are only created upstream (see
+        # github-actions-quarterly-tag.yml); mirror the exact tag object
+        # here instead of letting this repo mint its own, which is what
+        # caused tag drift (same commit, two different annotated tag
+        # objects, breaking plain `git fetch` between the two remotes).
+        syncTags: true
         deployKey: ${{ secrets.DEPLOY_KEY }}

@@ -72,7 +72,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   // Model file is required if not option _lefRC is used.
   // _lefRC option requires Resistance and Capacitance values per Layer and
   // Technology to be taken from LEF file.
-  if (!_lefRC && !modelExists(extRules)) {
+  if (!_lefRC && !modelExists()) {
     return;
   }
 
@@ -986,10 +986,6 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
 
   // uint32_t cornerTable[10];
   uint32_t extCornerDbCnt = 0;
-
-  _minModelIndex = 0;
-  _maxModelIndex = 0;
-  _typModelIndex = 0;
 
   if (_processCornerTable != nullptr) {
     // User define process corners using <ext define_process_corner>

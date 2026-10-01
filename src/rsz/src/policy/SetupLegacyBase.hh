@@ -140,6 +140,12 @@ class SetupLegacyBase : public OptimizationPolicy
                            const sta::Path* path,
                            sta::Slack focus_slack,
                            Target& target) const;
+  bool makePinTargetInExpandedPath(const sta::Pin* pin,
+                                   sta::Vertex* vertex,
+                                   const sta::Path* path,
+                                   sta::PathExpanded& expanded,
+                                   sta::Slack focus_slack,
+                                   Target& target) const;
   bool makePinTarget(const sta::Pin* pin,
                      sta::Slack focus_slack,
                      Target& target) const;
@@ -178,10 +184,7 @@ class SetupLegacyBase : public OptimizationPolicy
   int fanout(sta::Vertex* vertex) const;
 
   // === Progress reporting ===================================================
-  void printProgress(int iteration,
-                     bool force,
-                     char phase_marker,
-                     bool use_startpoint_metrics = false) const;
+  void printProgress(int iteration, bool force, char phase_marker) const;
   bool terminateProgress(int iteration,
                          float initial_tns,
                          float& prev_tns,

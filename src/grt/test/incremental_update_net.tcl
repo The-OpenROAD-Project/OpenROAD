@@ -50,4 +50,12 @@ check "n_bypass net has routing guides" {
   expr { [string first "n_bypass" $content] >= 0 }
 } 1
 
+# n2 lost both pins to n_bypass; its stale guides must be cleared.
+check "emptied n2 net has no routing guides" {
+  set fh [open $guide_file r]
+  set content [read $fh]
+  close $fh
+  expr { [regexp {(^|\n)n2(\n|$)} $content] }
+} 0
+
 exit_summary

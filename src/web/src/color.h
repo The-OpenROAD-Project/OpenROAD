@@ -16,4 +16,42 @@ struct Color
   Color darken(double factor = 0.5) const;
 };
 
+// Per-layer brush pattern used when rasterizing layer shapes.  The integer
+// values mirror web::Painter::Brush so the web frontend, this enum and the
+// Qt GUI all agree on the ordering.
+enum class FillPattern
+{
+  kNone = 0,      // no fill (skip)
+  kSolid = 1,     // full fill (default; current behavior)
+  kDiagonal = 2,  // diagonal hatch
+  kCross = 3,     // crosshatch grid
+  kDots = 4,      // dotted
+};
+
+// Selection-highlight yellow shared by the tile highlight border
+// (TileGenerator::drawHighlight) and the selection flywires
+// (request_handler's collectNetFlightLines).
+inline constexpr Color kSelectionYellow{.r = 255, .g = 255, .b = 0, .a = 255};
+
+// Instance names and instance-pin labels.  Slightly translucent so a label
+// over dense geometry still lets the shapes read through, as Qt's does.
+inline constexpr Color kLabelYellow{.r = 255, .g = 255, .b = 0, .a = 220};
+
+// Die, core, region and instance outlines, plus the instance orientation tag.
+// Qt paints all of them with QPen(Qt::gray, 0) — drawChip, drawRegions and
+// drawInstanceOutlines in renderThread.cpp — and Qt::gray is #A0A0A4, not the
+// neutral #808080 that is Qt::darkGray.  Shared with the tests so the value
+// cannot drift back.
+inline constexpr Color kOutlineGray{.r = 160, .g = 160, .b = 164, .a = 255};
+
+// Number of entries in the built-in spectrum (Turbo) colormap.
+inline constexpr int kSpectrumColorCount = 256;
+
+// Map a normalized value in [0, 1] to a color on the Turbo colormap, with the
+// given alpha.  Values outside [0, 1] are clamped.  This is a self-contained
+// port of web::SpectrumGenerator's 256-entry table so libweb has no link
+// dependency on the Qt GUI.  Used by the timing-cone overlay to color pins and
+// flight lines by slack (or logic depth).
+Color spectrumColor(double value, unsigned char alpha = 255);
+
 }  // namespace web

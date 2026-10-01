@@ -29,6 +29,22 @@
             "flags": [
                 "private"
             ]
+        },
+        {
+            "name": "first_cap_node_",
+            "type": "dbId<_dbChipCapNode>",
+            "flags": [
+                "private"
+            ],
+            "schema": "kSchemaChipParasitics"
+        },
+        {
+            "name": "first_r_seg_",
+            "type": "dbId<_dbChipRSeg>",
+            "flags": [
+                "private"
+            ],
+            "schema": "kSchemaChipParasitics"
         }
     ],
     "h_includes": [

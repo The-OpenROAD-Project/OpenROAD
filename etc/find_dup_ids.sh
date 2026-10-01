@@ -20,5 +20,33 @@ if [ ! -f "${FIND_MESSAGES}" ]; then
     echo "ERROR: Cannot find find_messages.py at ${FIND_MESSAGES}" >&2
     exit 1
 fi
+# Absolute: the scan below runs from a different directory.
+FIND_MESSAGES="$(realpath "${FIND_MESSAGES}")"
 
-python3 "${FIND_MESSAGES}" -d src
+# The interpreter the Bazel Python toolchain resolved, so this test does not
+# depend on the host's python3. A hermetic toolchain names it relative to the
+# runfiles root -- which is what a test starts in, so resolve it here, before
+# the cd below leaves that tree. A platform toolchain names an absolute host
+# path instead, which realpath passes through unchanged. Outside Bazel the
+# variable is unset and PATH decides.
+if [[ -n "${PYTHON3_ROOTPATH:-}" ]]; then
+    PYTHON3="$(realpath "${PYTHON3_ROOTPATH}")"
+else
+    PYTHON3=python3
+fi
+
+# Run from the source tree. A test runs in its runfiles directory, which holds
+# nothing but its own declared data, so scanning "src" from there would walk a
+# path that does not exist -- find_messages.py would report zero messages and
+# the check would pass unconditionally. MODULE.bazel is declared as data purely
+# so its runfiles entry is a symlink pointing back at the real workspace, the
+# same handle the lint tests use.
+[ -L MODULE.bazel ] || { echo "MODULE.bazel missing from runfiles" >&2; exit 1; }
+cd "$(dirname "$(readlink MODULE.bazel)")"
+
+# One walk over all of src, so an ID reused across two modules is caught along
+# with one reused inside a single module. This is wider than the per-module
+# //src/<module>:messages_txt targets, which each scan their own module only.
+# find_messages.py exits non-zero naming both sites; its listing of every
+# message goes to stdout and is not interesting here.
+"${PYTHON3}" "${FIND_MESSAGES}" -d src > /dev/null

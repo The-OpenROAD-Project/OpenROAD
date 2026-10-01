@@ -6,6 +6,8 @@ or_integration_tests(
   TESTS
     aes
     blockage01
+    blocked_via_layers
+    blocked_via_pins
     cell_on_block1
     cell_on_block2
     centered_floorplan
@@ -18,6 +20,10 @@ or_integration_tests(
     check7
     check8
     check9
+    diamond01
+    diamond_multi_height
+    diamond_one_site_gap
+    diamond_regions
     fence01
     fence02
     fence03
@@ -48,12 +54,10 @@ or_integration_tests(
     mirror1
     mirror2
     mirror3
+    mirror_edge_spacing
     multi_height_one_site_gap_disallow
     multi_height_power_align
     multi_height_rows
-    negotiation01
-    negotiation_one_site_gap
-    negotiation_regions
     obstruction1
     obstruction2
     one_site_gap_disallow

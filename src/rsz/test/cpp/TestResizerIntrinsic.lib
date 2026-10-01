@@ -1,0 +1,92 @@
+library (TestResizerIntrinsic) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit (1, pf);
+
+  input_threshold_pct_rise : 50.0;
+  input_threshold_pct_fall : 50.0;
+  output_threshold_pct_rise : 50.0;
+  output_threshold_pct_fall : 50.0;
+  slew_lower_threshold_pct_rise : 20.0;
+  slew_lower_threshold_pct_fall : 20.0;
+  slew_upper_threshold_pct_rise : 80.0;
+  slew_upper_threshold_pct_fall : 80.0;
+
+  lu_table_template (output_slew) {
+    variable_1 : total_output_net_capacitance;
+    index_1 ("1.0, 2.0");
+  }
+
+  cell (INTRINSIC_FAST) {
+    area : 1.0;
+    cell_footprint : intrinsic_tie;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.1;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 2.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) {
+          values ("0.1");
+        }
+        cell_fall (scalar) {
+          values ("0.1");
+        }
+        rise_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+        fall_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+      }
+    }
+  }
+
+  cell (INTRINSIC_SLOW) {
+    area : 1.0;
+    cell_footprint : intrinsic_tie;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.1;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 2.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) {
+          values ("0.2");
+        }
+        cell_fall (scalar) {
+          values ("0.2");
+        }
+        rise_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+        fall_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+      }
+    }
+  }
+}

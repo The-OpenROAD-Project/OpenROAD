@@ -1,0 +1,60 @@
+diff -urN base6/bazel/slang.BUILD.bazel mod6/bazel/slang.BUILD.bazel
+--- a/bazel/slang.BUILD.bazel	2026-08-14 14:37:47.212655790 -0400
++++ b/bazel/slang.BUILD.bazel	2026-08-14 14:37:47.275292540 -0400
+@@ -1,3 +1,4 @@
++load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ 
+ # Generated syntax files
+@@ -22,7 +23,8 @@
+         "TokenKind.cpp",
+         "KnownSystemName.cpp",
+     ],
+-    cmd = "python3 $(location scripts/syntax_gen.py) --dir $(@D) --syntax $(location scripts/syntax.txt)",
++    cmd = "$(PYTHON3) $(location scripts/syntax_gen.py) --dir $(@D) --syntax $(location scripts/syntax.txt)",
++    toolchains = ["@rules_python//python:current_py_toolchain"],
+ )
+ 
+ # Generated diagnostic files
+@@ -54,15 +56,21 @@
+         "slang/diagnostics/TypesDiags.h",
+         "DiagCode.cpp",
+     ],
+-    cmd = "python3 $(location scripts/diagnostic_gen.py) --outDir $(@D) --diagnostics $(location scripts/diagnostics.txt) --srcDir $$(dirname $(location source/CMakeLists.txt)) --incDir $$(dirname $(location include/slang/util/Util.h))/..",
++    cmd = "$(PYTHON3) $(location scripts/diagnostic_gen.py) --outDir $(@D) --diagnostics $(location scripts/diagnostics.txt) --srcDir $$(dirname $(location source/CMakeLists.txt)) --incDir $$(dirname $(location include/slang/util/Util.h))/..",
++    toolchains = ["@rules_python//python:current_py_toolchain"],
+ )
+ 
+ # Generated VersionInfo.cpp
+-genrule(
++expand_template(
+     name = "gen_version_info",
+-    srcs = ["source/util/VersionInfo.cpp.in"],
+-    outs = ["VersionInfo.cpp"],
+-    cmd = "sed -e 's/@SLANG_VERSION_MAJOR@/11/g' -e 's/@SLANG_VERSION_MINOR@/0/g' -e 's/@SLANG_VERSION_PATCH@/0/g' -e 's/@SLANG_VERSION_VERSION@/11.0.0/g' $< > $@",
++    out = "VersionInfo.cpp",
++    substitutions = {
++        "@SLANG_VERSION_MAJOR@": "11",
++        "@SLANG_VERSION_MINOR@": "0",
++        "@SLANG_VERSION_PATCH@": "0",
++        "@SLANG_VERSION_VERSION@": "11.0.0",
++    },
++    template = "source/util/VersionInfo.cpp.in",
+ )
+ 
+ # Generated slang_export.h
+diff -urN base6/MODULE.bazel mod6/MODULE.bazel
+--- a/MODULE.bazel	2026-08-14 14:37:47.238801361 -0400
++++ b/MODULE.bazel	2026-08-14 14:37:47.275253166 -0400
+@@ -23,6 +23,11 @@
+ bazel_dep(name = "bison", version = "3.8.2.bcr.7")
+ bazel_dep(name = "flex", version = "2.6.4.bcr.5")
+ bazel_dep(name = "m4", version = "1.4.21.bcr.4")
++
++# For @rules_python//python:current_py_toolchain, so slang's code generators
++# run on the interpreter the build resolves rather than whatever `python3` the
++# host happens to have on PATH.
++bazel_dep(name = "rules_python", version = "1.8.5")
+ # TBB from the BCR module rather than the cmake-built @onetbb overlay. Both
+ # build the same upstream tarball (uxlfoundation/oneTBB v2022.3.0); the BCR one
+ # is a plain cc_library, so it needs no rules_foreign_cc and therefore no cmake

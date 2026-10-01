@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_no_max_cap",
     "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
@@ -36,11 +37,14 @@ COMPULSORY_TESTS = [
     "gated_clock3",
     "gated_clock4",
     "gated_clock5",
+    "gated_clock_ndr_full",
+    "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
     "inverters",
     "lvt_lib",
     "max_cap",
+    "max_wl_two_sinks",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",
@@ -49,12 +53,21 @@ COMPULSORY_TESTS = [
     "simple_test_clustered_max_cap",
     "simple_test_hier",
     "sink_clustering_collision",
+    "sink_clustering_single_sink",
     "skip_nets",
     "twice",
     "virtual_clock_latency",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+    "dangling_clock_inverter",
+    "dont_touch_sink",
+    "dont_touch_skipped_net",
+    "dont_touch_timing_buffer",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -114,6 +127,10 @@ filegroup(
                 "array_tile.lib",
                 "array_max_wl.defok",
             ],
+            "buffer_no_max_cap": [
+                "16sinks.def",
+                "Nangate45/Nangate45_typ_no_max_cap.lib",
+            ],
             "check_buffer_inference1": [
                 "ModNangate45/ModNangate45_typ.lib",
                 "check_buffers.def",
@@ -153,6 +170,15 @@ filegroup(
                 "ihp-sg13g2/sg13g2_stdcell.lef",
                 "check_max_fanout3.def",
             ],
+            "dont_touch_sink": [
+                "16sinks.def",
+            ],
+            "dont_touch_skipped_net": [
+                "16sinks.def",
+            ],
+            "dont_touch_timing_buffer": [
+                "16sinks.def",
+            ],
             "dummy_load": [
                 "check_buffers.def",
             ],
@@ -168,6 +194,14 @@ filegroup(
             "gated_clock5": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
+            ],
+            "gated_clock_ndr_full": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
+            "gated_clock_ndr_root": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
             ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
@@ -229,6 +263,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],
@@ -239,10 +275,27 @@ filegroup(
 cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
-    features = ["-layering_check"],  # TODO: accesses private headers
     deps = [
-        "//src/cts",
+        "//src/cts:cts_impl",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDelayBufList",
+    srcs = ["cpp/TestDelayBufList.cc"],
+    data = [
+        "clkdly_footprint.lib",
+        "clkdly_name.lib",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+    ],
+    deps = [
+        "//src/cts:cts_impl",
+        "//src/dbSta:dbNetwork",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -252,7 +305,10 @@ py_test(
     name = "cts_man_tcl_check",
     srcs = ["cts_man_tcl_check.py"],
     data = ["//src/cts:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstddef>
+#include <string_view>
+
 #include "glyph_cache.h"
 #include "gtest/gtest.h"
 
@@ -10,6 +13,53 @@ namespace {
 TEST(GlyphCacheTest, TextWidthPositive)
 {
   EXPECT_GT(glyphCache().textWidth("hello", 14), 0);
+}
+
+// textWidth() is the sum of the cached advances and the cached kerning pairs,
+// so it has to agree with what those two report on their own.
+TEST(GlyphCacheTest, TextWidthIsAdvancesPlusKerning)
+{
+  constexpr std::string_view text = "AVATAR wo.Ty";
+  const GlyphCache::FontSize font = glyphCache().getFont(16);
+
+  int expected = 0;
+  for (size_t i = 0; i < text.size(); ++i) {
+    expected += font.glyph(text[i]).advance;
+    if (i + 1 < text.size()) {
+      expected += font.kern(text[i], text[i + 1]);
+    }
+  }
+  EXPECT_EQ(font.textWidth(text), expected);
+}
+
+// The kerning table is built once per size and read for every pair a label
+// measures.  A table that was allocated but never filled would leave every
+// pair at zero and silently narrow every label, so check the font really does
+// kern something.
+TEST(GlyphCacheTest, KerningTableIsPopulated)
+{
+  const GlyphCache::FontSize font = glyphCache().getFont(48);
+
+  int nonzero_pairs = 0;
+  for (char first = '!'; first <= '~'; ++first) {
+    for (char second = '!'; second <= '~'; ++second) {
+      if (font.kern(first, second) != 0) {
+        ++nonzero_pairs;
+      }
+    }
+  }
+  EXPECT_GT(nonzero_pairs, 0);
+}
+
+// Characters outside the cached range have no table entry; they must read as
+// zero rather than indexing past it.
+TEST(GlyphCacheTest, KerningOutsideTheCachedRangeIsZero)
+{
+  const GlyphCache::FontSize font = glyphCache().getFont(14);
+
+  EXPECT_EQ(font.kern('\n', 'A'), 0);
+  EXPECT_EQ(font.kern('A', '\x7f'), 0);
+  EXPECT_EQ(font.kern('\x80', '\xff'), 0);
 }
 
 TEST(GlyphCacheTest, TextWidthEmpty)
