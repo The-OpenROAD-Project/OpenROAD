@@ -400,6 +400,10 @@ cc_test(
     ],
     deps = [
         "//src/web",
+    ],
+)
+
+cc_test(
     name = "heat_map_test",
     srcs = ["cpp/TestHeatMap.cpp"],
     data = [
