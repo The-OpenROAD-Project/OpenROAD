@@ -34,6 +34,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -907,7 +908,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(
                "estimate wire {}",
                sdc_network_->pathName(net));
     for (sta::Scene* corner : sta_->scenes()) {
-      if (sta_->isIdealClock(drvr_pin, corner->mode())) {
+      if (hasIdealClocks(corner->mode())
+          && sta_->isIdealClock(drvr_pin, corner->mode())) {
         continue;
       }
       std::set<const Pin*> connected_pins;
@@ -1330,11 +1332,15 @@ bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
   bool is_clock = false;
   bool ideal_clock = true;
   bool irrelevant_in_all_modes = true;
+  // With no ideal clock in any mode, no pin is an ideal clock. Asking
+  // whether the pin is a clock would then only rebuild the clock network,
+  // which repair_clock_nets invalidates with every repeater it inserts.
+  const bool ideal_clocks = hasIdealClocks();
   for (sta::Mode* mode : sta_->modes()) {
     // In multi-mode designs, a pin may be an ideal clock only in a subset of
     // modes. Ignore modes where the pin is not a clock at all.
     // e.g., scan clock pin may not be defined as clock in function mode.
-    if (sta_->isClock(pin, mode)) {
+    if (ideal_clocks && sta_->isClock(pin, mode)) {
       is_clock = true;
       if (!sta_->isIdealClock(pin, mode)) {
         ideal_clock = false;
@@ -1358,6 +1364,28 @@ bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
     return true;
   }
 
+  return false;
+}
+
+bool EstimateParasitics::hasIdealClocks(const sta::Mode* mode) const
+{
+  // ClkNetwork finds ideal clock pins only from clocks that are not
+  // propagated.
+  for (const sta::Clock* clk : mode->sdc()->clocks()) {
+    if (!clk->isPropagated()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool EstimateParasitics::hasIdealClocks() const
+{
+  for (const sta::Mode* mode : sta_->modes()) {
+    if (hasIdealClocks(mode)) {
+      return true;
+    }
+  }
   return false;
 }
 
