@@ -7,9 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <deque>
-#include <limits>
 #include <map>
-#include <numeric>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -17,6 +15,7 @@
 #include "boost/heap/d_ary_heap.hpp"
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
+#include "neighbors.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -29,91 +28,6 @@ using odb::Point;
 using std::vector;
 using stt::Tree;
 using utl::Logger;
-
-/////////// Nearest Neighbors
-
-// This is the method in "Prim-Dijkstra Revisited" section 4.
-// The key idea is: "We say that vi is a neighbor of vj if the smallest
-// bounding box containing vi and vj contains no other nodes."
-
-// Below implements the double monotone chains algorithm described in
-// "Provably Optimal Planar Pareto Nearest Neighbor Search with Double
-// Monotone Chains" (Guo et al, DATE'26).
-// This is output-optimal, 39x faster than brute force and 1.3x faster
-// than the lossy Guibas-Stolfi algorithm.
-
-using Neighbors = std::vector<int>;
-static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
-{
-  thread_local static vector<int> data;
-  data.clear();
-
-  const size_t pt_count = pts.size();
-
-  vector<Neighbors> neighbors(pt_count);
-
-  data.resize(pt_count * 6);
-  std::fill_n(data.begin(), pt_count * 4, -1);
-  int *yprev_w_smallx = &data[0];
-  int *ynext_w_smallx = &data[pt_count];
-  int *curx_yprev_w_largex = &data[pt_count * 2];
-  int *curx_ynext_w_largex = &data[pt_count * 3];
-  int *sorted_x = &data[pt_count * 4];
-  int *sorted_y = &data[pt_count * 5];
-
-  std::iota(sorted_x, sorted_x + pt_count, 0);
-  std::iota(sorted_y, sorted_y + pt_count, 0);
-  std::sort(sorted_x, sorted_x + pt_count, [&pts] (int i, int j) {
-    return std::make_tuple(pts[i].getX(), pts[i].getY()) < std::make_tuple(pts[j].getX(), pts[j].getY());
-  });
-  std::sort(sorted_y, sorted_y + pt_count, [&pts] (int i, int j) {
-    return std::make_tuple(pts[i].getY(), pts[i].getX()) < std::make_tuple(pts[j].getY(), pts[j].getX());
-  });
-
-  // x left to right
-  // first compute "the previous/next (order by y) i that has smaller x"
-  for (int syi = 1; syi < pt_count; ++syi) {
-    int i = sorted_y[syi];
-    int xi = pts[i].getX();
-    int j = sorted_y[syi - 1];
-    while (j >= 0 && pts[j].getX() > xi) {
-      j = yprev_w_smallx[j];
-    }
-    yprev_w_smallx[i] = j;
-  }
-  for (int syi = pt_count - 2; syi >= 0; --syi) {
-    int i = sorted_y[syi];
-    int xi = pts[i].getX();
-    int j = sorted_y[syi + 1];
-    while (j >= 0 && pts[j].getX() > xi) {
-      j = ynext_w_smallx[j];
-    }
-    ynext_w_smallx[i] = j;
-  }
-  // next, add nodes one by one with increasing x.
-  // for currently encountered nodes, maintain next/prev larger x.
-  for (int sxi = 0; sxi < pt_count; ++sxi) {
-    int i = sorted_x[sxi], j;
-    // upper left
-    j = ynext_w_smallx[i];
-    while (j >= 0) {
-      neighbors[j].push_back(i);
-      neighbors[i].push_back(j);
-      curx_yprev_w_largex[j] = i;
-      j = curx_ynext_w_largex[j];
-    }
-    // lower left
-    j = yprev_w_smallx[i];
-    while (j >= 0) {
-      neighbors[j].push_back(i);
-      neighbors[i].push_back(j);
-      curx_ynext_w_largex[j] = i;
-      j = curx_yprev_w_largex[j];
-    }
-  }
-
-  return neighbors;
-}
 
 /////////// Minimum Spanning Tree per PD costing
 
@@ -464,7 +378,7 @@ Tree primDijkstra(const vector<int>& x,
     node_point[graph.addNode()] = pts[i];
   }
 
-  const auto nn = get_nearest_neighbors(pts);
+  const auto nn = getNearestNeighbors(pts);
 
   auto driver_node = ListGraph::nodeFromId(driver_index);
   buildSpanningTree(node_point, driver_node, alpha, nn, graph);
