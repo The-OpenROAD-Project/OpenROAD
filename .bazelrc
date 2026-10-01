@@ -95,13 +95,16 @@ build --host_per_file_copt=.*external/.*@-w
 # per_file_copt -w above only covers compiling external *source* files; this
 # covers external *headers* included by our own sources.
 #
-# The feature is global (target and exec config) and also demotes a from-source
-# dep's own -iquote entries to -isystem. Tools that rely on -iquote precedence
-# to shadow libc headers are patched to restore it -- e.g. git's
-# builtin/get-tar-commit-id.c includes git's own tar.h, which must win over
-# glibc's <tar.h>. See the git single_version_override in MODULE.bazel (same
-# class of fix as the bison/sed/gawk/m4 -I-over-isystem overrides).
+# --features sets the target config only. --host_features sets the exec config,
+# where our own sources also compile as tools that other actions run.
+# The feature also demotes a from-source dep's own -iquote entries to
+# -isystem. Tools that rely on -iquote precedence to shadow libc headers are
+# patched to restore it -- e.g. git's builtin/get-tar-commit-id.c includes
+# git's own tar.h, which must win over glibc's <tar.h>. See the git
+# single_version_override in MODULE.bazel (same class of fix as the
+# bison/sed/gawk/m4 -I-over-isystem overrides).
 build --features=external_include_paths
+build --host_features=external_include_paths
 
 # This avoid problems with building -c dbg which enables asserts.
 # Without this libstdc++ vs libc++ differences cause link errors.
