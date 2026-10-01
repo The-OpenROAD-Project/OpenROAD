@@ -1,0 +1,19 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN bump_pin_access ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+COMPONENTS 1 ;
+    - bump1 TEST_BUMP + FIXED ( 25000 15000 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - a + NET n1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -200 -200 ) ( 200 200 )
+        + FIXED ( 5000 20000 ) N ;
+END PINS
+NETS 1 ;
+    - n1 ( PIN a ) ( bump1 PAD ) + USE SIGNAL ;
+END NETS
+END DESIGN

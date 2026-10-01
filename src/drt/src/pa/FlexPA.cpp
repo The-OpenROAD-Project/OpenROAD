@@ -439,12 +439,26 @@ bool FlexPA::isMacroCellTerm(frInstTerm* inst_term)
   return inst_term && isMacroCell(inst_term->getInst());
 }
 
-// It is sometimes important to understand that when PA is checking for nullptr
-// it means its checking for an io term, not a corner case with an invalid
-// inst_term. This function is made to avoid confusion
-bool FlexPA::isIOTerm(frInstTerm* inst_term)
+// PA represents a block terminal (top-level pin) with a null inst_term
+bool FlexPA::isBTerm(frInstTerm* inst_term)
 {
   return inst_term == nullptr;
+}
+
+bool FlexPA::isBumpCell(frInst* inst)
+{
+  return inst->getMaster()->getMasterType() == odb::dbMasterType::COVER_BUMP;
+}
+
+bool FlexPA::isBumpTerm(frInstTerm* inst_term)
+{
+  return inst_term && isBumpCell(inst_term->getInst());
+}
+
+// IO terms are the design's external terminals: block terminals and bumps
+bool FlexPA::isIOTerm(frInstTerm* inst_term)
+{
+  return isBTerm(inst_term) || isBumpTerm(inst_term);
 }
 
 int FlexPA::main()

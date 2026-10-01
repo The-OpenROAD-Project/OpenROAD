@@ -340,7 +340,8 @@ void FlexPA::createMultipleAccessPoints(
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   bool allow_via = true;
-  bool allow_planar = true;
+  // Bumps are only reached from below
+  bool allow_planar = !isBumpTerm(inst_term);
   //  only VIA_ACCESS_LAYERNUM layer can have via access
   if (isStdCellTerm(inst_term)) {
     if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
@@ -1121,8 +1122,8 @@ void FlexPA::filterMultipleAPAccesses(
     frInstTerm* inst_term,
     const bool& is_std_cell_pin)
 {
-  if (isIOTerm(inst_term)) {
-    // if the pin is an I/O pin, and there is planar access, return
+  if (isBTerm(inst_term)) {
+    // if the pin is a block terminal, and there is planar access, return
     for (auto& ap : aps) {
       if (ap->hasPlanarAccess()) {
         return;
@@ -1274,6 +1275,14 @@ bool FlexPA::EnoughAccessPoints(
     frInstTerm* inst_term,
     pa_requirements_met& reqs)
 {
+  if (isBumpTerm(inst_term)) {
+    for (auto& ap : aps) {
+      if (ap->hasAccess(frDirEnum::D)) {
+        return true;
+      }
+    }
+    return false;
+  }
   if (isIOTerm(inst_term)) {
     return !aps.empty();
   }
@@ -1542,8 +1551,9 @@ void FlexPA::genAllAccessPoints()
   for (const auto& unique_class : unique) {  // NOLINT
     try {
       auto candidate_inst = unique_class->getFirstInst();
-      // only do for core and block cells
-      if (!isStdCell(candidate_inst) && !isMacroCell(candidate_inst)) {
+      // only do for core, block and bump cells
+      if (!isStdCell(candidate_inst) && !isMacroCell(candidate_inst)
+          && !isBumpCell(candidate_inst)) {
         continue;
       }
 

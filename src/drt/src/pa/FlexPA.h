@@ -189,6 +189,9 @@ class FlexPA
   bool isStdCellTerm(frInstTerm* inst_term);
   bool isMacroCell(frInst* unique_inst);
   bool isMacroCellTerm(frInstTerm* inst_term);
+  bool isBumpCell(frInst* inst);
+  bool isBumpTerm(frInstTerm* inst_term);
+  bool isBTerm(frInstTerm* inst_term);
   bool isIOTerm(frInstTerm* inst_term);
 
   /**
