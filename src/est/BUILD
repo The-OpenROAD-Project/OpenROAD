@@ -36,6 +36,9 @@ cc_library(
         "src/MakeWireParasitics.h",
         "src/OdbCallBack.h",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     includes = [
         "include",
         "src",
@@ -55,6 +58,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
+        "@openmp",
     ],
 )
 
