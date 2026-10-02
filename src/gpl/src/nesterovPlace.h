@@ -70,10 +70,22 @@ class NesterovPlace
   // doNesterovPlace() call; consumed (cleared) at the start of that call.
   void enableIncrementalDensityPenaltyGuard();
   // Clears a divergence left over from a previous doNesterovPlace() call
-  // (e.g. one the caller caught and intends to retry from). Without this,
-  // the leftover state trips the divergence check at the very start of the
-  // next doNesterovPlace() call before it does any work.
+  // (e.g. one the caller intends to retry from). Without this, the leftover
+  // state trips the divergence check at the very start of the next
+  // doNesterovPlace() call before it does any work.
   void clearDivergence();
+  // When true, a divergence is reported as a warning and doNesterovPlace()
+  // returns normally (check divergedLastRun()) instead of logging an ERROR
+  // and throwing. Defaults to false, so a plain (non-incremental) placement
+  // run still fails loudly and immediately on divergence, as before. The
+  // caller is responsible for toggling this back off once the recoverable
+  // window has passed (e.g. incremental placement's phase 2 has no further
+  // fallback, so it should not set this).
+  void setAllowDivergenceRecovery(bool allow)
+  {
+    allow_divergence_recovery_ = allow;
+  }
+  bool divergedLastRun() const { return num_region_diverged_ > 0; }
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -194,6 +206,7 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
+  bool allow_divergence_recovery_ = false;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;

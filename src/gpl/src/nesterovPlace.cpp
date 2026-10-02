@@ -1137,6 +1137,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function, Nesterov must be skipped.
   if (num_region_diverged_ > 0) {
+    if (allow_divergence_recovery_) {
+      log_->warn(GPL, divergeCode_, divergeMsg_);
+      return start_iter;
+    }
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
@@ -1318,7 +1322,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   updateDb();
 
   if (num_region_diverged_ > 0) {
-    log_->error(GPL, divergeCode_, divergeMsg_);
+    if (allow_divergence_recovery_) {
+      log_->warn(GPL, divergeCode_, divergeMsg_);
+    } else {
+      log_->error(GPL, divergeCode_, divergeMsg_);
+    }
   }
 
   if (graphics_ && graphics_->enabled() && npVars_.debug) {

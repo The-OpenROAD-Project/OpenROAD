@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -178,6 +177,13 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     }
   }
 
+  if (total_placeable_insts_ == 0) {
+    // initNesterovPlace() would hit this same condition and refuse to build
+    // np_, so bail out here instead of leaving every later np_ use guarded.
+    log_->warn(GPL, 139, "No placeable instances - skipping placement.");
+    return;
+  }
+
   log_->info(GPL, 154, "Identified {} placed instances", placed_cnt);
   log_->info(GPL, 155, "Identified {} not placed instances", unplaced_cnt);
 
@@ -205,26 +211,25 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     }
   }
 
-  // doNesterovPlace() logs and throws on divergence (see Logger::error(),
-  // [[noreturn]]); catch it here so phase 2 still gets a chance to recover
-  // the placement instead of aborting the whole incremental run.
-  bool phase1_diverged = false;
-  int iter = 0;
-  try {
-    iter = doNesterovPlace(threads, locked_options);
-  } catch (const std::runtime_error& e) {
-    phase1_diverged = true;
+  // Phase 1 is allowed to diverge and hand off to phase 2 instead of
+  // aborting the whole incremental run, so doNesterovPlace() must not throw
+  // (and log an ERROR) on a divergence it is expected to recover from; it
+  // reports one via divergedLastRun() instead. Any other error (a resizer or
+  // timing-driven failure, say) still throws and propagates normally -
+  // nothing here is set up to recover from those.
+  np_->setAllowDivergenceRecovery(true);
+  int iter = doNesterovPlace(threads, locked_options);
+  const bool phase1_diverged = np_->divergedLastRun();
+  if (phase1_diverged) {
     log_->warn(GPL,
                195,
                "Phase 1 of incremental placement diverged before reaching "
-               "overflow {:.3f} ({}); continuing to phase 2 anyway.",
-               locked_options.overflow,
-               e.what());
-    // doNesterovPlace() only throws when it could not revert to a snapshot,
-    // which leaves np_'s divergence state set; clear it or phase 2 below
-    // re-throws the same error on its very first iteration, uncaught.
+               "overflow {:.3f}; continuing to phase 2 anyway.",
+               locked_options.overflow);
     np_->clearDivergence();
   }
+  // Phase 2 has no further fallback, so a divergence there must fail loudly.
+  np_->setAllowDivergenceRecovery(false);
 
   // Finish the overflow resolution from the locked placement
   log_->info(GPL, 133, "Unlocking all instances");
@@ -234,11 +239,9 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 
   // Phase 1 may have run out of its iteration budget short of the real
   // target even without diverging, so check the actual overflow reached
-  // rather than trusting the target alone. np_ stays null when there were no
-  // placeable instances to begin with (doNesterovPlace() returns early in
-  // that case without ever throwing), so guard the dereference.
+  // rather than trusting the target alone.
   const bool phase1_missed_target
-      = !phase1_diverged && np_ && np_->getAverageOverflow() > options.overflow;
+      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
 
   if (phase1_diverged || phase1_missed_target) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in
