@@ -764,17 +764,17 @@ class FlexGridGraph
   }
 
   // unsafe access, no idx check
-  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = true; }
-  void setSrc(const FlexMazeIdx& mi)
+  void setSrc(frMIdx x, frMIdx y, frMIdx z)
   {
-    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = true;
+    nodeStates_[getIdx(x, y, z)] |= kSrcBit;
   }
+  void setSrc(const FlexMazeIdx& mi) { setSrc(mi.x(), mi.y(), mi.z()); }
   // unsafe access, no idx check
-  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = true; }
-  void setDst(const FlexMazeIdx& mi)
+  void setDst(frMIdx x, frMIdx y, frMIdx z)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = true;
+    nodeStates_[getIdx(x, y, z)] |= kDstBit;
   }
+  void setDst(const FlexMazeIdx& mi) { setDst(mi.x(), mi.y(), mi.z()); }
   // unsafe access
   void setSVia(frMIdx x, frMIdx y, frMIdx z)
   {
@@ -841,21 +841,15 @@ class FlexGridGraph
   // unsafe access, no idx check
   void resetSrc(frMIdx x, frMIdx y, frMIdx z)
   {
-    srcs_[getIdx(x, y, z)] = false;
+    nodeStates_[getIdx(x, y, z)] &= ~kSrcBit;
   }
-  void resetSrc(const FlexMazeIdx& mi)
-  {
-    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = false;
-  }
+  void resetSrc(const FlexMazeIdx& mi) { resetSrc(mi.x(), mi.y(), mi.z()); }
   // unsafe access, no idx check
   void resetDst(frMIdx x, frMIdx y, frMIdx z)
   {
-    dsts_[getIdx(x, y, z)] = false;
+    nodeStates_[getIdx(x, y, z)] &= ~kDstBit;
   }
-  void resetDst(const FlexMazeIdx& mi)
-  {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = false;
-  }
+  void resetDst(const FlexMazeIdx& mi) { resetDst(mi.x(), mi.y(), mi.z()); }
   void resetGridCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
     correct(x, y, z, dir);
@@ -898,8 +892,7 @@ class FlexGridGraph
   bool hasGuide(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     reverse(x, y, z, dir);
-    auto idx = getIdx(x, y, z);
-    return guides_[idx];
+    return nodeStates_[getIdx(x, y, z)] & kGuideBit;
   }
   // must be safe access because idx1 and idx2 may be invalid
   void setGuide(frMIdx x1, frMIdx y1, frMIdx x2, frMIdx y2, frMIdx z)
@@ -912,14 +905,14 @@ class FlexGridGraph
         for (int i = y1; i <= y2; i++) {
           auto idx1 = getIdx(x1, i, z);
           auto idx2 = getIdx(x2, i, z);
-          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
+          setStateBits(idx1, idx2, kGuideBit);
         }
         break;
       case odb::dbTechLayerDir::VERTICAL:
         for (int i = x1; i <= x2; i++) {
           auto idx1 = getIdx(i, y1, z);
           auto idx2 = getIdx(i, y2, z);
-          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
+          setStateBits(idx1, idx2, kGuideBit);
         }
         break;
       case odb::dbTechLayerDir::NONE:
@@ -937,14 +930,14 @@ class FlexGridGraph
         for (int i = y1; i <= y2; i++) {
           auto idx1 = getIdx(x1, i, z);
           auto idx2 = getIdx(x2, i, z);
-          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
+          clearStateBits(idx1, idx2, kGuideBit);
         }
         break;
       case odb::dbTechLayerDir::VERTICAL:
         for (int i = x1; i <= x2; i++) {
           auto idx1 = getIdx(i, y1, z);
           auto idx2 = getIdx(i, y2, z);
-          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
+          clearStateBits(idx1, idx2, kGuideBit);
         }
         break;
       case odb::dbTechLayerDir::NONE:
@@ -1062,12 +1055,8 @@ class FlexGridGraph
   {
     nodes_.clear();
     nodes_.shrink_to_fit();
-    srcs_.clear();
-    srcs_.shrink_to_fit();
-    dsts_.clear();
-    dsts_.shrink_to_fit();
-    guides_.clear();
-    guides_.shrink_to_fit();
+    nodeStates_.clear();
+    nodeStates_.shrink_to_fit();
     xCoords_.clear();
     xCoords_.shrink_to_fit();
     yCoords_.clear();
@@ -1180,10 +1169,11 @@ class FlexGridGraph
   static_assert(sizeof(Node) == 16);
 #endif
   frVector<Node> nodes_;
-  std::vector<bool> prevDirs_;
-  std::vector<bool> srcs_;
-  std::vector<bool> dsts_;
-  std::vector<bool> guides_;
+  static constexpr uint8_t kPrevDirMask = 0b000111;
+  static constexpr uint8_t kSrcBit = 0b001000;
+  static constexpr uint8_t kDstBit = 0b010000;
+  static constexpr uint8_t kGuideBit = 0b100000;
+  std::vector<uint8_t> nodeStates_;
   frVector<frCoord> xCoords_;
   frVector<frCoord> yCoords_;
   frVector<frLayerNum> zCoords_;
@@ -1216,38 +1206,52 @@ class FlexGridGraph
   // unsafe access, no idx check
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
-    auto baseIdx = static_cast<std::size_t>(getIdx(x, y, z)) * 3;
-    prevDirs_[baseIdx] = ((uint16_t) dir >> 2) & 1;
-    prevDirs_[baseIdx + 1] = ((uint16_t) dir >> 1) & 1;
-    prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
+    uint8_t& state = nodeStates_[getIdx(x, y, z)];
+    state = (state & ~kPrevDirMask) | ((uint8_t) dir & kPrevDirMask);
   }
 
   // unsafe access, no check
   frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
-    auto baseIdx
-        = static_cast<std::size_t>(getIdx(idx.x(), idx.y(), idx.z())) * 3;
-    return (frDirEnum) (((uint16_t) (prevDirs_[baseIdx]) << 2)
-                        + ((uint16_t) (prevDirs_[baseIdx + 1]) << 1)
-                        + ((uint16_t) (prevDirs_[baseIdx + 2]) << 0));
+    return (frDirEnum) (nodeStates_[getIdx(idx.x(), idx.y(), idx.z())]
+                        & kPrevDirMask);
   }
 
   // unsafe access, no check
   bool isSrc(frMIdx x, frMIdx y, frMIdx z) const
   {
-    return srcs_[getIdx(x, y, z)];
+    return nodeStates_[getIdx(x, y, z)] & kSrcBit;
   }
   // unsafe access, no check
   bool isDst(frMIdx x, frMIdx y, frMIdx z) const
   {
-    return dsts_[getIdx(x, y, z)];
+    return nodeStates_[getIdx(x, y, z)] & kDstBit;
   }
   bool isDst(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     getNextGrid(x, y, z, dir);
-    bool b = dsts_[getIdx(x, y, z)];
+    bool b = isDst(x, y, z);
     getPrevGrid(x, y, z, dir);
     return b;
+  }
+  // set/clear bits in the states of nodes idx1..idx2 (inclusive)
+  void setStateBits(frMIdx idx1, frMIdx idx2, uint8_t bits)
+  {
+    for (frMIdx i = idx1; i <= idx2; i++) {
+      nodeStates_[i] |= bits;
+    }
+  }
+  void clearStateBits(frMIdx idx1, frMIdx idx2, uint8_t bits)
+  {
+    for (frMIdx i = idx1; i <= idx2; i++) {
+      nodeStates_[i] &= ~bits;
+    }
+  }
+  void clearStateBits(uint8_t bits)
+  {
+    for (uint8_t& state : nodeStates_) {
+      state &= ~bits;
+    }
   }
 
   // internal getters
