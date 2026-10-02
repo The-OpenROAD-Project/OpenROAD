@@ -1369,11 +1369,18 @@ bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
 
 bool EstimateParasitics::hasIdealClocks(const sta::Mode* mode) const
 {
-  // ClkNetwork finds ideal clock pins only from clocks that are not
-  // propagated.
-  for (const sta::Clock* clk : mode->sdc()->clocks()) {
-    if (!clk->isPropagated()) {
-      return true;
+  // Mirrors ClkNetwork::findClkPins: ideal clock pins start only from leaf
+  // pins of non-propagated clocks that are not propagated themselves. A
+  // virtual clock has no leaf pins.
+  const sta::Sdc* sdc = mode->sdc();
+  for (const sta::Clock* clk : sdc->clocks()) {
+    if (clk->isPropagated()) {
+      continue;
+    }
+    for (const sta::Pin* pin : clk->leafPins()) {
+      if (!sdc->isPropagatedClock(pin)) {
+        return true;
+      }
     }
   }
   return false;
