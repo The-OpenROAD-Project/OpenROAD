@@ -33,7 +33,7 @@ Path Type: max
 
 
 -- reg2reg
-[INFO RSZ-0226] Created path group 'reg2reg'.
+[INFO RSZ-0228] Created path group 'reg2reg'.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 5 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 5 out of 5 (100.00%) violating endpoints...
@@ -46,7 +46,7 @@ Path Type: max
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- in2reg
-[INFO RSZ-0226] Created path group 'in2reg'.
+[INFO RSZ-0228] Created path group 'in2reg'.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...

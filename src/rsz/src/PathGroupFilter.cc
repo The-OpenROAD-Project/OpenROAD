@@ -199,7 +199,7 @@ void makePathGroup(Resizer* resizer,
                                               sdc);
   sta->makeGroupPath(
       name, /*is_default=*/false, from, /*thrus=*/nullptr, to, "", sdc);
-  resizer->logger()->info(utl::RSZ, 226, "Created path group '{}'.", name);
+  resizer->logger()->info(utl::RSZ, 228, "Created path group '{}'.", name);
 }
 
 }  // namespace
@@ -244,7 +244,7 @@ std::string resolvePathGroupName(Resizer* resizer, const char* name)
       valid += path_group_name;
     }
     resizer->logger()->warn(utl::RSZ,
-                            225,
+                            227,
                             "Unknown -path_group '{}'. Valid path groups are "
                             "{}. Timing optimization is not restricted to a "
                             "path group.",
@@ -385,8 +385,28 @@ std::optional<sta::Slack> PathGroupFilter::groupSlack(
   if (!enabled()) {
     return sta_->slack(endpoint, min_max);
   }
-  if (endpoint == nullptr) {
+  sta::PathEnd* end = worstGroupEnd(endpoint, min_max);
+  if (end == nullptr) {
     return std::nullopt;
+  }
+  return end->slack(sta_);
+}
+
+sta::Path* PathGroupFilter::groupPath(sta::Vertex* endpoint,
+                                      const sta::MinMax* min_max) const
+{
+  if (!enabled()) {
+    return nullptr;
+  }
+  sta::PathEnd* end = worstGroupEnd(endpoint, min_max);
+  return end != nullptr ? end->path() : nullptr;
+}
+
+sta::PathEnd* PathGroupFilter::worstGroupEnd(sta::Vertex* endpoint,
+                                             const sta::MinMax* min_max) const
+{
+  if (endpoint == nullptr) {
+    return nullptr;
   }
 
   // findPathEnds takes ownership of the ExceptionTo.
@@ -422,10 +442,9 @@ std::optional<sta::Slack> PathGroupFilter::groupSlack(
       /*removal=*/false,
       /*clk_gating_setup=*/setup,
       /*clk_gating_hold=*/!setup);
-  if (ends.empty()) {
-    return std::nullopt;
-  }
-  return ends[0]->slack(sta_);
+  // The PathEnd itself is owned by the search and dies on the next query, but
+  // only its slack and its graph owned path are read from it here.
+  return ends.empty() ? nullptr : ends[0];
 }
 
 bool PathGroupFilter::startpointInGroup(sta::Vertex* startpoint) const

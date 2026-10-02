@@ -263,7 +263,8 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
     } else {
       viol_pins = target_collector_->collectViolators(1, -1, sort_type);
     }
-    sta::Path* focus_path = sta_->vertexWorstSlackPath(current_endpoint, max_);
+    sta::Path* focus_path
+        = target_collector_->findWorstSlackPath(current_endpoint);
 
     std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
     bool changed;

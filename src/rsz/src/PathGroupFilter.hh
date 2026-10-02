@@ -13,6 +13,8 @@
 namespace sta {
 class MinMax;
 class Network;
+class Path;
+class PathEnd;
 class Pin;
 class Sdc;
 class Sta;
@@ -107,12 +109,32 @@ class PathGroupFilter
   std::optional<sta::Slack> groupSlack(sta::Vertex* endpoint,
                                        const sta::MinMax* min_max) const;
 
+  // The worst path to `endpoint` that OpenSTA puts in the selected group, or
+  // nullptr when the endpoint hosts none.  nullptr as well when no group is
+  // selected, so that callers keep using their own path lookup by default.
+  //
+  // Repairing the endpoint's overall worst path is wrong under a group: an
+  // endpoint qualifies here by hosting *a* path in the group, and its worst
+  // path usually belongs to a different one.  Taking the path from the same
+  // query that decided the endpoint keeps repair on the paths that
+  // `report_checks -path_group` reports.
+  //
+  // The path belongs to the graph, not to the query, because the one path end
+  // asked for below skips path enumeration.  It stays valid exactly as long as
+  // a sta::vertexWorstSlackPath() result would.
+  sta::Path* groupPath(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
+
   // True when `startpoint` can launch a path in the selected group.  Only the
   // start side of the group is checked here; the end side is enforced by
   // endpointInGroup().
   bool startpointInGroup(sta::Vertex* startpoint) const;
 
  private:
+  // Worst path end at `endpoint` within the selected group, or nullptr when
+  // there is none.  Shared by groupSlack() and groupPath() so that both answer
+  // from one query.
+  sta::PathEnd* worstGroupEnd(sta::Vertex* endpoint,
+                              const sta::MinMax* min_max) const;
   bool isPrimaryInput(const sta::Pin* pin) const;
   bool isPrimaryOutput(const sta::Pin* pin) const;
   bool isGatedClockEnable(const sta::Vertex* vertex) const;

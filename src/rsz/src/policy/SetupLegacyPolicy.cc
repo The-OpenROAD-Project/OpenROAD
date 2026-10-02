@@ -195,7 +195,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       prev_tns_local = sta_->totalNegativeSlack(max_);
     }
 
-    sta::Path* end_path = sta_->vertexWorstSlackPath(endpoint_state.end, max_);
+    sta::Path* end_path
+        = target_collector_->findWorstSlackPath(endpoint_state.end);
     const bool changed = repairPath(
         end_path, endpoint_state.end_slack, endpoint_state.force_single_repair);
     if (!changed) {

@@ -5,7 +5,7 @@
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 path groups: core_clock asynchronous {path delay} {gated clock} unconstrained
-[WARNING RSZ-0225] Unknown -path_group 'bogus'. Valid path groups are reg2reg, in2reg, reg2out, in2out, gated_clock. Timing optimization is not restricted to a path group.
+[WARNING RSZ-0227] Unknown -path_group 'bogus'. Valid path groups are reg2reg, in2reg, reg2out, in2out, gated_clock. Timing optimization is not restricted to a path group.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 40 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...
@@ -23,7 +23,7 @@ path groups: core_clock asynchronous {path delay} {gated clock} unconstrained
 [INFO RSZ-0051] Resized 21 instances: 21 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-[INFO RSZ-0226] Created path group 'reg2out'.
+[INFO RSZ-0228] Created path group 'reg2out'.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 13 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 13 out of 13 (100.00%) violating endpoints...
@@ -78,7 +78,7 @@ Path Type: max
            -0.181   slack (VIOLATED)
 
 
-[INFO RSZ-0226] Created path group 'reg2reg'.
+[INFO RSZ-0228] Created path group 'reg2reg'.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
@@ -99,24 +99,24 @@ Path Type: max
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |   0.123 |   0.000 | _862_/D
-    final |       0 |      92 |            0 |   +10.6% |   0.146 |   0.000 | _864_/D
+    final |       0 |      37 |            0 |    +4.2% |   0.123 |   0.000 | _862_/D
 --------------------------------------------------------------------------------------
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
-[INFO RSZ-0032] Inserted 92 hold buffers.
+[INFO RSZ-0032] Inserted 37 hold buffers.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.033 |       -0.4 |     26 | _877_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.028 |       -0.3 |     26 | _877_/D
-      26* |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -0.0 |     26 | _879_/D
-    final |       4 |       1 |        1 |      0 |     1 |    -0.6% |   -0.004 |       -0.0 |      2 | _879_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.061 |       -1.1 |     26 | _877_/D
+       1* |       1 |       0 |        0 |      0 |     0 |    -0.1% |   -0.060 |       -1.1 |     26 | _877_/D
+      26* |       7 |       2 |        1 |      0 |     1 |    -0.8% |   -0.004 |       -0.0 |     26 | _879_/D
+    final |       7 |       2 |        1 |      0 |     1 |    -0.8% |   -0.004 |       -0.0 |      2 | _879_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 4 buffers.
+[INFO RSZ-0059] Removed 7 buffers.
 [INFO RSZ-0040] Inserted 1 buffers.
-[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 path groups: core_clock reg2out reg2reg asynchronous {path delay} {gated clock} unconstrained

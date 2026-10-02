@@ -880,7 +880,6 @@ void RepairTargetCollector::walkStartpoints(
 {
   startpoints.clear();
   const PathGroupFilter path_group_filter(resizer_);
-  int all_startpoints = 0;
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
@@ -987,6 +986,18 @@ void RepairTargetCollector::collectViolatingStartpoints()
 sta::Path* RepairTargetCollector::findWorstSlackPath(
     sta::Vertex* endpoint) const
 {
+  if (restrictedToPathGroup()) {
+    // An endpoint earns its place in violating_endpoints_ by hosting a path in
+    // the group, not by its worst path being in it. Repairing the worst path
+    // would therefore optimize whatever group that path belongs to instead of
+    // the requested one, so take the path from the same query that selected
+    // the endpoint. Falls through when the group has no path here, which the
+    // endpoint's slack having gone non-violating can cause mid run.
+    const PathGroupFilter path_group_filter(resizer_);
+    if (sta::Path* path = path_group_filter.groupPath(endpoint, max_)) {
+      return path;
+    }
+  }
   return sta_->vertexWorstSlackPath(endpoint, max_);
 }
 

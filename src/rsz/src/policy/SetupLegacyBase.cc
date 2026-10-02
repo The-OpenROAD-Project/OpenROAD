@@ -98,7 +98,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   }
 
   const sta::Slack end_slack = sta_->slack(end_vertex, max_);
-  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, max_);
+  sta::Path* end_path = target_collector_->findWorstSlackPath(end_vertex);
   if (end_path == nullptr) {
     return false;
   }
