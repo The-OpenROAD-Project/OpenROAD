@@ -117,6 +117,11 @@ _coverity_upload() {
         echo "SKIP_COVERITY_UPLOAD is set. Skipping Coverity upload."
         return 0
     fi
+    # Check after the skip so a scan-only run does not need jq.
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "Coverity upload failed: jq is required." >&2
+        return 1
+    fi
 
     # Step 1: Initialize a build. Fetch a cloud upload url.
     # Omit --fail so an HTTP error body reaches the jq check in Step 2 and is

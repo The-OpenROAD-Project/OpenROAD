@@ -96,6 +96,19 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertIn("openroad.tgz does not exist", result.stderr)
         self.assertNotIn("curl", commands)
 
+    def test_upload_requires_jq(self):
+        result, _, _, commands = self._run(
+            "upload",
+            artifact=True,
+            version_file="fedcba9876543210\n",
+            skip_upload=False,
+            hide_jq=True,
+        )
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("jq is required", result.stderr)
+        self.assertNotIn("curl", commands)
+
     def test_plain_text_initialization_error_is_reported(self):
         message = (
             "Your build is already in the queue for analysis. "
@@ -125,6 +138,7 @@ class CodeCoverageTest(unittest.TestCase):
         version_file=None,
         version_arg=None,
         skip_upload=True,
+        hide_jq=False,
         init_response='{"url":"https://upload.example/build","build_id":825340}\n',
     ):
         with tempfile.TemporaryDirectory() as tmp:
@@ -179,7 +193,16 @@ esac
             env["COMMAND_LOG"] = str(command_log)
             env["BUILD_LOG_SOURCE"] = str(build_log_source)
             env["COVERITY_INIT_RESPONSE"] = init_response
-            env["PATH"] = f"{fake_bin}:{env['PATH']}"
+            if hide_jq:
+                # Expose only the tools that the upload path runs before
+                # it needs jq.
+                tools = root / "tools"
+                tools.mkdir()
+                for name in ("bash", "env", "dirname", "readlink"):
+                    (tools / name).symlink_to(shutil.which(name))
+                env["PATH"] = f"{fake_bin}:{tools}"
+            else:
+                env["PATH"] = f"{fake_bin}:{env['PATH']}"
             if skip_upload:
                 env["SKIP_COVERITY_UPLOAD"] = "1"
             else:
