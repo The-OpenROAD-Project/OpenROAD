@@ -25,6 +25,7 @@
 #include "slang/driver/Driver.h"
 #include "slang_frontend.h"
 #include "syn/ir/Graph.h"
+#include "utl/Logger.h"
 
 namespace utl {
 class Logger;
@@ -44,11 +45,6 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
 {
   slang::driver::Driver driver;
   driver.addStandardArgs();
-
-  // Diagnostics raised deep inside the shared frontend reach the logger, and
-  // the source manager they need to place an AST node in the user's HDL,
-  // through slang_frontend::elabLogger()/elabSourceManager().
-  ElabDiagnosticScope diagnostic_scope(logger, &driver.sourceManager);
 
   SynthesisSettings settings;
   settings.addOptions(driver.cmdLine);
@@ -121,35 +117,56 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
                     + std::to_string(tops.size()));
   }
 
-  auto* instance = tops[0];
-  HierarchyQueue hqueue;
-  auto backend = std::make_unique<BackendGraphBuilder>();
-  backend->graph_->setLogger(logger);
-  NetlistContext netlist(
-      std::move(backend), settings, *compilation, *tops.front());
-  populate_netlist(hqueue, netlist);
+  try {
+    auto* instance = tops[0];
+    HierarchyQueue hqueue;
+    auto backend = std::make_unique<BackendGraphBuilder>();
+    backend->graph_->setLogger(logger);
+    NetlistContext netlist(
+        std::move(backend), settings, *compilation, *tops.front());
+    populate_netlist(hqueue, netlist);
 
-  {
-    // Report per-netlist diagnostics.
-    slang::Diagnostics diags;
-    diags.append_range(netlist.issued_diagnostics);
-    diags.sort(driver.sourceManager);
-    for (int j = 0; j < diags.size(); j++) {
-      if (j > 0 && diags[j] == diags[j - 1]) {
-        continue;
+    {
+      // Report per-netlist diagnostics.
+      slang::Diagnostics diags;
+      diags.append_range(netlist.issued_diagnostics);
+      diags.sort(driver.sourceManager);
+      for (int j = 0; j < diags.size(); j++) {
+        if (j > 0 && diags[j] == diags[j - 1]) {
+          continue;
+        }
+        driver.diagEngine.issue(diags[j]);
       }
-      driver.diagEngine.issue(diags[j]);
+    }
+
+    if (!driver.reportDiagnostics(/*quiet=*/false)) {
+      return nullptr;
+    }
+
+    // Extract the graph from the top netlist's backend.
+    auto* builder = static_cast<BackendGraphBuilder*>(netlist.backend.get());
+    builder->graph().setName(std::string(instance->name));
+    return std::move(builder->graph_);
+  } catch (slang_frontend::InternalError& exc) {
+    if (exc.range.start().valid()) {
+      auto location = exc.range.start();
+      reportError(
+          logger,
+          73,
+          "language frontend raised an internal error attached to "
+          "source location "
+              + std::string(driver.sourceManager.getFileName(location)) + ":"
+              + std::to_string(driver.sourceManager.getLineNumber(location))
+              + ":"
+              + std::to_string(driver.sourceManager.getColumnNumber(location))
+              + ": " + exc.what());
+    } else {
+      reportError(logger,
+                  74,
+                  std::string("language frontend raised an internal error: ")
+                      + exc.what());
     }
   }
-
-  if (!driver.reportDiagnostics(/*quiet=*/false)) {
-    return nullptr;
-  }
-
-  // Extract the graph from the top netlist's backend.
-  auto* builder = static_cast<BackendGraphBuilder*>(netlist.backend.get());
-  builder->graph().setName(std::string(instance->name));
-  return std::move(builder->graph_);
 }
 
 std::unique_ptr<Graph> elaborate(utl::Logger* logger,

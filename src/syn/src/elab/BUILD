@@ -6,63 +6,48 @@ load("//test:regression.bzl", "message_srcs")
 
 package(features = ["layering_check"])
 
-# Headers that the slang-elab shared frontend code needs to find:
-# ir.h, backend_builder.h, diagnostics.h, log_stubs.h
-# This is a header-only target so the frontend can compile against
-# our ir:: types and backend interface.
-cc_library(
-    name = "elab_hdrs",
-    hdrs = [
-        "backend_builder.h",
-        "diagnostics.h",
-        "ir.h",
-        "log_stubs.h",
-    ],
-    includes = ["."],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//src/syn/src/ir",
-        # TODO: backend_builder.h includes slang_frontend.h, so we need
-        # :slang_frontend, but that indirectly depends on this, creating cycle.
-        # So can't add the following dependency right now.
-        #"//third-party/slang-elab/src:slang_frontend",
-        "@slang",
-    ],
-)
-
-# syn IR backend for slang-elab — full library with implementations
+# syn IR backend for slang-elab — full library with implementations.
+#
+# The shared slang-elab frontend is pulled in as file lists (@sv-elab's
+# common_srcs/frontend_hdrs) and compiled into this target together with the
+# backend. The frontend's sources include this package's ir.h/backend_builder.h
+# and this backend includes slang_frontend.h, so the two sides must share one
+# compilation unit rather than being split across Bazel modules/targets.
 cc_library(
     name = "elab",
     srcs = [
-        "abort_helpers.cc",
         "backend_builder.cc",
         "blackboxes.cc",
-        "diagnostics.cc",
         "driver.cc",
         "error.cc",
         "ir.cc",
+        "@sv-elab//:common_srcs",
     ],
     hdrs = [
+        "backend_builder.h",
         "blackboxes.h",
         "driver.h",
+        "ir.h",
     ],
     defines = [
         "SLANG_MUX_LOWERING",
         "SLANG_NO_YOSYS",
     ],
-    # slang keeps its parser/syntax headers private to its own target.
-    features = ["-layering_check"],
     includes = ["."],
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//src/syn:__pkg__",
+        "//src/syn/test:__pkg__",
+    ],
     deps = [
-        ":elab_hdrs",
         "//src/dbSta",
         "//src/sta:opensta_lib",
         "//src/syn/src/ir",
         "//src/utl",
-        "//third-party/slang-elab/src:slang_frontend",
         "@fmt",
-        "@sv-lang//:libsvlang",
+        "@sv-elab//:frontend_hdrs",
+        "@sv-elab//:hashlib",
+        "@sv-elab//:slang",
+        "@sv-elab//:version_hdrs",
     ],
     alwayslink = True,
 )

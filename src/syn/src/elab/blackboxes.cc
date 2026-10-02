@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -181,7 +182,8 @@ void importBlackboxesFromLiberty(SourceManager& mgr,
 
         std::string port_name = port->name();
         port_list.push_back(alloc.emplace<ImplicitAnsiPortSyntax>(
-            *alloc.emplace<SyntaxList<AttributeInstanceSyntax>>(nullptr),
+            *alloc.emplace<SyntaxList<AttributeInstanceSyntax>>(
+                alloc, std::span<const TokenOrSyntax>{}),
             *alloc.emplace<VariablePortHeaderSyntax>(
                 Token(),
                 token(direction, "", false, true),
@@ -189,11 +191,12 @@ void importBlackboxesFromLiberty(SourceManager& mgr,
                 *alloc.emplace<ImplicitTypeSyntax>(
                     Token(),
                     *alloc.emplace<SyntaxList<VariableDimensionSyntax>>(
-                        dims.copy(target)),
+                        alloc, dims.copy(target)),
                     Token())),
             *alloc.emplace<DeclaratorSyntax>(
                 token(TokenKind::Identifier, port_name, true),
-                *alloc.emplace<SyntaxList<VariableDimensionSyntax>>(nullptr),
+                *alloc.emplace<SyntaxList<VariableDimensionSyntax>>(
+                    alloc, std::span<const TokenOrSyntax>{}),
                 nullptr)));
         port_list.push_back(token(TokenKind::Comma));
       }
@@ -207,12 +210,13 @@ void importBlackboxesFromLiberty(SourceManager& mgr,
           token(TokenKind::ModuleKeyword, "", false, true),
           Token(),
           token(TokenKind::Identifier, cell_name, true),
-          *alloc.emplace<SyntaxList<PackageImportDeclarationSyntax>>(nullptr),
+          *alloc.emplace<SyntaxList<PackageImportDeclarationSyntax>>(
+              alloc, std::span<const TokenOrSyntax>{}),
           nullptr,  // parameters
           alloc.emplace<AnsiPortListSyntax>(
               token(TokenKind::OpenParenthesis),
               *alloc.emplace<SeparatedSyntaxList<MemberSyntax>>(
-                  port_list.copy(target)),
+                  alloc, port_list.copy(target)),
               token(TokenKind::CloseParenthesis)),
           token(TokenKind::Semicolon));
 
@@ -225,16 +229,17 @@ void importBlackboxesFromLiberty(SourceManager& mgr,
           token(TokenKind::OpenParenthesis),
           token(TokenKind::Star),
           *alloc.emplace<SeparatedSyntaxList<AttributeSpecSyntax>>(
-              attrs_spec.copy(target)),
+              alloc, attrs_spec.copy(target)),
           token(TokenKind::Star, "", true),
           token(TokenKind::CloseParenthesis)));
 
       auto syntax = alloc.emplace<ModuleDeclarationSyntax>(
           SyntaxKind::ModuleDeclaration,
           *alloc.emplace<SyntaxList<AttributeInstanceSyntax>>(
-              attrs.copy(target)),
+              alloc, attrs.copy(target)),
           *header,
-          *alloc.emplace<SyntaxList<MemberSyntax>>(nullptr),
+          *alloc.emplace<SyntaxList<MemberSyntax>>(
+              alloc, std::span<const TokenOrSyntax>{}),
           token(TokenKind::EndModuleKeyword, "", false, true),
           nullptr);
 
@@ -247,7 +252,7 @@ void importBlackboxesFromLiberty(SourceManager& mgr,
   }
 
   auto unit_syntax = alloc.emplace<CompilationUnitSyntax>(
-      *target.emplace<SyntaxList<MemberSyntax>>(decls.copy(target)),
+      *target.emplace<SyntaxList<MemberSyntax>>(alloc, decls.copy(target)),
       token(TokenKind::EndOfFile, "", false, false));
   auto tree = std::make_shared<SyntaxTree>(
       unit_syntax, mgr, std::move(alloc), &target.getDefaultLibrary(), nullptr);
