@@ -42,7 +42,6 @@
 
 namespace rsz {
 
-using std::max;
 using std::min;
 using std::string;
 using std::vector;
@@ -720,8 +719,8 @@ void RepairHold::mergeInit(Slacks& slacks)
 {
   slacks[rise_index_][min_index_] = sta::INF;
   slacks[fall_index_][min_index_] = sta::INF;
-  slacks[rise_index_][max_index_] = -sta::INF;
-  slacks[fall_index_][max_index_] = -sta::INF;
+  slacks[rise_index_][max_index_] = sta::INF;
+  slacks[fall_index_][max_index_] = sta::INF;
 }
 
 void RepairHold::mergeInto(Slacks& from, Slacks& result)
@@ -731,9 +730,9 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
   result[fall_index_][min_index_]
       = min(result[fall_index_][min_index_], from[fall_index_][min_index_]);
   result[rise_index_][max_index_]
-      = max(result[rise_index_][max_index_], from[rise_index_][max_index_]);
+      = min(result[rise_index_][max_index_], from[rise_index_][max_index_]);
   result[fall_index_][max_index_]
-      = max(result[fall_index_][max_index_], from[fall_index_][max_index_]);
+      = min(result[fall_index_][max_index_], from[fall_index_][max_index_]);
 }
 
 RepairHold::HoldMoveStats RepairHold::makeHoldDelay(
