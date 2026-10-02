@@ -24,6 +24,11 @@ class dbSta;
 
 namespace syn {
 
+// Defined in error.cc to work around fmt version conflict, see error.cc
+[[noreturn]] void reportError(utl::Logger* logger,
+                              int code,
+                              std::string_view message);
+
 // Parse and elaborate SystemVerilog sources into a Graph.
 // Arguments are passed through to slang's command-line parser
 // (file paths, -I, --top, defines, etc.).
