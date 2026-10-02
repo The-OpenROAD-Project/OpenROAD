@@ -119,9 +119,11 @@ _coverity_upload() {
     fi
 
     # Step 1: Initialize a build. Fetch a cloud upload url.
+    # Omit --fail so an HTTP error body reaches the jq check in Step 2 and is
+    # reported. --fail-with-body needs curl 7.76, which Ubuntu 20.04 lacks.
     local response_file
     response_file=$(mktemp)
-    if ! curl --fail-with-body --silent --show-error -X POST \
+    if ! curl --silent --show-error -X POST \
         -d "version=${version}" \
         -d "description=build=${version}" \
         -d email=openroad@ucsd.edu \
@@ -155,7 +157,7 @@ _coverity_upload() {
     rm -f "${response_file}"
 
     # Step 3: Upload the tarball to the Cloud.
-    if ! curl --fail-with-body --silent --show-error -X PUT \
+    if ! curl --fail --silent --show-error -X PUT \
         --header 'Content-Type: application/json' \
         --upload-file openroad.tgz \
         "${upload_url}"; then
@@ -164,7 +166,7 @@ _coverity_upload() {
     fi
 
     # Step 4: Trigger the build on Scan.
-    if ! curl --fail-with-body --silent --show-error -X PUT \
+    if ! curl --fail --silent --show-error -X PUT \
         -d "token=${token}" \
         "https://scan.coverity.com/projects/21946/builds/${build_id}/enqueue"; then
         echo "Coverity enqueue failed." >&2

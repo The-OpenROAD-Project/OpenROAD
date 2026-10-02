@@ -72,6 +72,8 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertIn("version=fedcba9876543210", commands)
         self.assertIn("--upload-file openroad.tgz", commands)
         self.assertIn("builds/825340/enqueue", commands)
+        # curl 7.68 (Ubuntu 20.04) does not support --fail-with-body.
+        self.assertNotIn("--fail-with-body", commands)
 
     def test_upload_accepts_a_version_for_a_legacy_archive(self):
         result, _, version, commands = self._run(
