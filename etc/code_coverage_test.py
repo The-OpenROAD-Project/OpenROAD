@@ -8,6 +8,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+# The upload parses the Coverity reply with jq. The Bazel CI image does not
+# install jq, so tests that reach that parse run only where jq exists.
+requires_jq = unittest.skipUnless(shutil.which("jq"), "jq is not installed")
+
 
 class CodeCoverageTest(unittest.TestCase):
     def test_static_bazel_uses_uncached_local_capture(self):
@@ -56,6 +60,7 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertIsNone(version)
         self.assertIn("Only got 84%", result.stdout)
 
+    @requires_jq
     def test_upload_reuses_the_archive_without_running_a_capture(self):
         result, archive_exists, version, commands = self._run(
             "upload",
@@ -75,6 +80,7 @@ class CodeCoverageTest(unittest.TestCase):
         # curl 7.68 (Ubuntu 20.04) does not support --fail-with-body.
         self.assertNotIn("--fail-with-body", commands)
 
+    @requires_jq
     def test_upload_accepts_a_version_for_a_legacy_archive(self):
         result, _, version, commands = self._run(
             "upload",
@@ -109,6 +115,7 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertIn("jq is required", result.stderr)
         self.assertNotIn("curl", commands)
 
+    @requires_jq
     def test_plain_text_initialization_error_is_reported(self):
         message = (
             "Your build is already in the queue for analysis. "
