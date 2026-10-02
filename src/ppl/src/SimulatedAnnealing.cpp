@@ -381,7 +381,7 @@ int SimulatedAnnealing::getPinCost(int pin_idx)
 {
   int slot_idx = pin_assignment_[pin_idx];
   const odb::Point& position = slots_[slot_idx].pos;
-  return netlist_->computeIONetHPWL(pin_idx, position);
+  return netlist_->computeIOCost(pin_idx, position);
 }
 
 int64 SimulatedAnnealing::getGroupCost(int group_idx)
@@ -390,7 +390,7 @@ int64 SimulatedAnnealing::getGroupCost(int group_idx)
   for (int pin_idx : pin_groups_[group_idx].pin_indices) {
     int slot_idx = pin_assignment_[pin_idx];
     const odb::Point& position = slots_[slot_idx].pos;
-    cost += netlist_->computeIONetHPWL(pin_idx, position);
+    cost += netlist_->computeIOCost(pin_idx, position);
   }
 
   return cost;

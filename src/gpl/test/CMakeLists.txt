@@ -48,9 +48,8 @@ or_integration_tests(
     region01
   PASSFAIL_TESTS
     incremental02
-    place_ios01
-    place_ios_few_cells
-    place_ios_top_layer
+    place_ios_rd
+    place_ios_td
 )
 
 # On an ENABLE_GPU=ON build the gpl FFT defaults to the GPU PoissonSolver,
@@ -169,6 +168,32 @@ target_sources(mbff_test
   mbff_test.cpp
 )
 
+add_executable(place_ios_test place_ios_test.cc)
+
+target_include_directories(place_ios_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(place_ios_test
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+  ifp
+  ppl
+  tst
+  defin
+)
+
+gtest_discover_tests(place_ios_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME place_ios_test_load_sentinel
+           COMMAND $<TARGET_FILE:place_ios_test> --gtest_list_tests)
+endif()
+
 add_executable(placer_base_test
   placer_base_test.cpp
 )
@@ -219,7 +244,7 @@ if(ENABLE_GPU)
 endif()
 
 add_dependencies(build_and_test fft_test mbff_test placer_base_test
-  estimate_target_density_test)
+  estimate_target_density_test place_ios_test)
 
 # GPU FFT correctness test. Built only on ENABLE_GPU=ON: it links the GPU FFT
 # backend (src/gpl/src/gpu/gpuFftBackend.cpp) via gpl_lib and, with the default

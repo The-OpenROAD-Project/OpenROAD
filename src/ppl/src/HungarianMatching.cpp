@@ -70,7 +70,7 @@ void HungarianMatching::createMatrix()
         }
         hungarian_matrix_[slot_index].resize(num_io_pins_,
                                              std::numeric_limits<int>::max());
-        const int io_net_hpwl = netlist_->computeIONetHPWL(idx, slot_pos);
+        const int io_net_hpwl = netlist_->computeIOCost(idx, slot_pos);
         const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
         const int hpwl = io_net_hpwl + mirrored_cost;
         larger_costs.push_back(std::max(io_net_hpwl, mirrored_cost));
@@ -253,7 +253,7 @@ void HungarianMatching::createMatrixForGroups()
           hungarian_matrix_[slot_index].resize(num_pin_groups_,
                                                std::numeric_limits<int>::max());
           IOPin& io_pin = netlist_->getIoPin(io_idx);
-          int pin_hpwl = netlist_->computeIONetHPWL(io_idx, slot_pos);
+          int pin_hpwl = netlist_->computeIOCost(io_idx, slot_pos);
           if (pin_hpwl == hungarian_fail_) {
             group_hpwl = hungarian_fail_;
             break;
@@ -395,7 +395,7 @@ int HungarianMatching::getMirroredPinCost(IOPin& io_pin,
 {
   if (io_pin.getBTerm()->hasMirroredBTerm()) {
     odb::Point mirrored_pos = core_->getMirroredPosition(position);
-    return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
+    return netlist_->computeIOCost(io_pin.getMirrorPinIdx(), mirrored_pos);
   }
 
   return 0;

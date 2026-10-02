@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstddef>
@@ -28,6 +29,7 @@
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
+#include "ppl/IOPlacer.h"
 #include "routeBase.h"
 #include "utl/Logger.h"
 namespace odb {
@@ -811,6 +813,9 @@ struct NesterovBaseVars
   const bool isSetBinCnt;
   const bool useUniformTargetDensity;
   bool placeIosMode = false;
+  odb::dbTechLayer* placeIosHorLayer = nullptr;
+  odb::dbTechLayer* placeIosVerLayer = nullptr;
+  const std::vector<ppl::SlotPosition>* placeIosSlots = nullptr;
   bool isMaxPhiCoefChanged = false;  // not user config
   const float targetDensity;
   const int binCntX;
@@ -1513,8 +1518,6 @@ class NesterovBase
   // concurrent IO pin placement (-place_ios)
   std::vector<GCell> ioPinStor_;
   std::vector<odb::Point> io_last_written_pos_;
-  odb::dbTechLayer* io_hor_layer_ = nullptr;
-  odb::dbTechLayer* io_ver_layer_ = nullptr;
   // define_pin_shape_pattern grid, used by pins with a 2D up: region.
   odb::dbTechLayer* io_top_layer_ = nullptr;
   int io_top_pin_width_ = 0;
@@ -1532,7 +1535,6 @@ class NesterovBase
   std::vector<std::pair<uint32_t, uint32_t>> io_mirror_pairs_;
   std::vector<size_t> io_master_to_follower_;
   std::vector<char> io_is_follower_;
-  std::vector<FloatPoint> io_follower_wl_grad_;
 
   enum class DieEdge : uint8_t
   {
@@ -1545,6 +1547,24 @@ class NesterovBase
   {
     return edge == DieEdge::kBottom || edge == DieEdge::kTop;
   }
+  odb::dbTechLayer* ioPinLayer(DieEdge edge, float pos) const;
+  static constexpr std::array<DieEdge, 4> kIoRingOrder
+      = {DieEdge::kBottom, DieEdge::kRight, DieEdge::kTop, DieEdge::kLeft};
+  static bool ringAscends(DieEdge edge)
+  {
+    return edge == DieEdge::kBottom || edge == DieEdge::kRight;
+  }
+
+  std::array<std::vector<float>, 4> io_edge_slots_;
+  std::array<std::vector<odb::dbTechLayer*>, 4> io_edge_slot_layers_;
+  std::array<std::vector<float>, 2> io_axis_slots_;
+  struct RingSlot
+  {
+    DieEdge edge;
+    float pos;
+  };
+  std::vector<RingSlot> io_slot_ring_;
+  std::array<size_t, 4> io_ring_begin_{};
 
   struct PerimSegment
   {
@@ -1558,8 +1578,12 @@ class NesterovBase
   // interval, so these pins are clamped to the box instead of projected.
   std::vector<std::optional<odb::Rect>> io_box_constraints_;
 
+  void separateIoPins(std::vector<FloatPoint>& coordi) const;
+  void separateMirroredIoPins(std::vector<FloatPoint>& coordi) const;
+  float ringIndexAt(DieEdge edge, float pos) const;
+  FloatPoint ringPointAt(float r) const;
+  void initIoSlots();
   void initIoPinGCells();
-  void pickIoPinDummyLayers();
   void pickIoPinTopLayerGrid();
   void initIoConstraints();
   static std::vector<PerimSegment> mirrorSegments(
@@ -1579,6 +1603,7 @@ class NesterovBase
                                      FloatPoint* projection) const;
   const std::vector<PerimSegment>& ioLocus(size_t io_index) const;
   FloatPoint projectIoPin(size_t io_index, float x, float y) const;
+  FloatPoint ioPinOptimum(size_t io_index, const FloatPoint& cur) const;
   DieEdge ioEdgeOnLocus(size_t io_index, int cx, int cy) const;
 
   FloatPoint mirrorOfIoPin(size_t master_io, const FloatPoint& p) const;
@@ -1699,5 +1724,18 @@ inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
 inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
 inline constexpr const char* format_label_um2_with_delta
     = "{:27} {:10.3f} um^2 ({:+.2f}%)";
+
+void updateDbGCellsAndIoPins(
+    NesterovBaseCommon& nbc,
+    const std::vector<std::shared_ptr<NesterovBase>>& nbVec);
+
+// -place_ios slot index arithmetic. A pin is a (slot index, IO pin index).
+float slotIndexAt(const std::vector<float>& slots, float q);
+float slotCoordinateAt(const std::vector<float>& slots, float g);
+float unrollRingAtWidestGap(std::vector<std::pair<float, size_t>>& pins, int n);
+void poolAdjacentViolators(std::vector<float>& z, float lo, float hi);
+std::vector<float> fitSpacing(const std::vector<std::pair<float, size_t>>& pins,
+                              float lo,
+                              int total);
 
 }  // namespace gpl

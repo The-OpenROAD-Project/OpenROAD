@@ -1,0 +1,63 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[ERROR PPL-0026] Both horizontal and vertical pin layers are required. Pass -hor_layers and -ver_layers, or set_place_config -io_pin_hor_layers and -io_pin_ver_layers.
+PPL-0026
+[ERROR GPL-0192] -io_pin_min_distance_in_tracks requires -io_pin_min_distance.
+GPL-0192
+Found 0 macro blocks.
+[ERROR PPL-0037] -min_distance_in_tracks requires -min_distance.
+PPL-0037
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: 1.0 um
+Found 0 macro blocks.
+[INFO PPL-0001] Number of available slots 348
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 763.29 um.
+Found 0 macro blocks.
+[INFO PPL-0001] Number of available slots 488
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 759.17 um.
+Found 0 macro blocks.
+[INFO PPL-0001] Number of available slots 348
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 763.29 um.
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: unset
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 1220
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 818.55 um.
+io_pin_hor_layers: unset
+io_pin_ver_layers: unset
+io_pin_corner_avoidance: unset
+io_pin_min_distance: unset
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[ERROR PPL-0026] Both horizontal and vertical pin layers are required. Pass -hor_layers and -ver_layers, or set_place_config -io_pin_hor_layers and -io_pin_ver_layers.
+PPL-0026
