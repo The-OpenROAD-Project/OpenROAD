@@ -2079,7 +2079,7 @@ static bool isClockPin(const sta::Pin* pin, sta::dbNetwork* network)
   return lp->isClock() || lp->isRegClk() || lp->isClockGateClock();
 }
 
-void RamGen::reportTimingAndPower()
+double RamGen::reportTiming()
 {
   network_->setBlock(block_);
   sta_->updateTiming(false);
@@ -2225,6 +2225,22 @@ void RamGen::reportTimingAndPower()
                 "RAM minimum path delay: {} {}",
                 time_unit->asString(hold_delay),
                 time_unit->scaleAbbrevSuffix());
+
+  if (setup_delay <= 0.0F) {
+    return 0.0;
+  }
+  logger_->info(RAM,
+                47,
+                "Using maximum path delay of {} {} as the clock period for "
+                "power estimation",
+                time_unit->asString(setup_delay),
+                time_unit->scaleAbbrevSuffix());
+  return time_unit->staToUser(setup_delay);
+}
+
+void RamGen::reportPower()
+{
+  sta_->updateTiming(false);
 
   sta::PowerResult total, sequential, combinational, clock, macro, pad;
   sta_->power(
