@@ -38,7 +38,10 @@ void tmg_conn::analyzeNet()
 {
   loadWire();
 
-  if (!wire_points_.empty()) {
+  if (wire_points_.empty()) {
+    net_->setDisconnected(false);
+    net_->setWireOrdered(false);
+  } else {
     loadTerminals();
     identifyShorts();
     removeWireLoops();
