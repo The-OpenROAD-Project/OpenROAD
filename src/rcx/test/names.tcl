@@ -26,8 +26,11 @@ set i [$block findInst "b/disolved_block\\/leaf"]
 $i setLocation 5700 0
 $i setPlacementStatus PLACED
 
-# Route the net
-set_routing_layers -signal $global_routing_layers
+# Route the net. This test only checks name handling in SPEF, not routing
+# richness, so use a minimal signal range rather than the platform's full
+# $global_routing_layers (metal2-metal10): this core is a tiny 2-instance
+# toy design, too small to fit even two tracks of the upper metal layers.
+set_routing_layers -signal metal2-metal4
 global_route
 detailed_route -verbose 0
 
