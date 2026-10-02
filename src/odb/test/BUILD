@@ -222,6 +222,7 @@ COMPULSORY_TESTS = [
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
+    "write_lef_obs_spacing",
     "write_lef_polygon",
     "write_macro_placement",
 ]

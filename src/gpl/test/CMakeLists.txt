@@ -50,6 +50,7 @@ or_integration_tests(
     incremental02
     incremental03
     place_ios01
+    place_ios_few_cells
     place_ios_top_layer
 )
 

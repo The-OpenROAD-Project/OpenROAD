@@ -45,7 +45,8 @@ MakeWireParasitics::MakeWireParasitics(
     sta::dbSta* sta,
     odb::dbTech* tech,
     odb::dbBlock* block,
-    grt::GlobalRouter* grouter)
+    grt::GlobalRouter* grouter,
+    sta::ArcDelayCalc* arc_delay_calc)
     : global_router_(grouter),
       estimate_parasitics_(estimate_parasitics),
       tech_(tech),
@@ -53,7 +54,7 @@ MakeWireParasitics::MakeWireParasitics(
       logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
-      arc_delay_calc_(sta_->arcDelayCalc()),
+      arc_delay_calc_(arc_delay_calc ? arc_delay_calc : sta_->arcDelayCalc()),
       min_max_(sta::MinMax::max()),
       resistor_id_(1)
 {
