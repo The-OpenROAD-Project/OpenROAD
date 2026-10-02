@@ -87,10 +87,9 @@ bool RepairHold::repairHold(
       ends1.push_back(end);
       continue;
     }
-    // Hold paths are min delay paths, so ask the group against min_. Keep the
-    // endpoint only when the group's own hold slack is what needs repairing;
-    // merely hosting some in-group path would let nearly every register
-    // through and defeat the restriction.
+    // Hold paths are min delay paths, so ask the group against min_. Keep
+    // the endpoint only when the group's own hold slack needs repairing;
+    // merely hosting an in-group path would let nearly every register through.
     const sta::Slack slack = sta_->slack(end, min_);
     if (!sta::fuzzyLess(slack, hold_margin)) {
       continue;
@@ -559,10 +558,9 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  // The endpoint reached this point because the selected group's hold slack
-  // violates, which its worst hold path need not belong to. Repair the group's
-  // own path so that the buffers land on what was asked for, falling back to
-  // the worst path when no group is selected or has no path here.
+  // The endpoint is here because the group's hold slack violates, which its
+  // worst hold path need not belong to. Repair the group's own path so the
+  // buffers land on what was asked for.
   const PathGroupFilter path_group_filter(resizer_);
   sta::Path* end_path = path_group_filter.groupPath(end_vertex, min_);
   if (end_path == nullptr) {

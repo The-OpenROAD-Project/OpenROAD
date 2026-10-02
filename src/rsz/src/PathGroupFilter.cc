@@ -31,7 +31,7 @@ namespace rsz {
 
 namespace {
 
-// The "<start>2<end>" group names split back into the two ends they describe.
+// The "<start>2<end>" names split back into the two ends they describe.
 // gated_clock is the exception: OpenSTA groups every clock gating check
 // together regardless of where the enable path started.
 StartpointKind groupStartpointKind(const PathGroupType type)
@@ -85,9 +85,8 @@ const char* endpointKindName(const EndpointKind kind)
   return "?";
 }
 
-// The name OpenSTA knows the group by.  Only gated_clock differs: OpenSTA
-// collects every clock gating check under a built-in group of its own, so
-// there is never a group_path to make for it.
+// The name OpenSTA knows the group by.  Only gated_clock differs: it has a
+// built-in group, so there is never a group_path to make for it.
 std::string_view staPathGroupName(const PathGroupType type)
 {
   switch (type) {
@@ -107,8 +106,8 @@ std::string_view staPathGroupName(const PathGroupType type)
   return "";
 }
 
-// Pins of the top level ports on one side of the design.  Mirrors
-// all_inputs -no_clocks / all_outputs.  Caller owns the set.
+// Top level port pins on one side.  Mirrors all_inputs -no_clocks /
+// all_outputs.  Caller owns the set.
 sta::PinSet* primaryPins(Resizer* resizer, const bool inputs)
 {
   sta::dbSta* sta = resizer->sta();
@@ -135,8 +134,8 @@ sta::PinSet* primaryPins(Resizer* resizer, const bool inputs)
   return pins;
 }
 
-// Register/latch data or clock pins.  Mirrors
-// all_registers -data_pins / -clock_pins.  Caller owns the set.
+// Register/latch data or clock pins.  Mirrors all_registers -data_pins /
+// -clock_pins.  Caller owns the set.
 sta::PinSet* registerPins(Resizer* resizer, const bool data_pins)
 {
   sta::dbSta* sta = resizer->sta();
@@ -163,9 +162,8 @@ void makePathGroup(Resizer* resizer,
 {
   const EndpointKind endpoint_kind = groupEndpointKind(type);
   if (endpoint_kind == EndpointKind::kGatedClockEnable) {
-    // Clock gating check ends are found by OpenSTA rather than named by pin,
-    // so there is no group_path that expresses them.  OpenSTA already reports
-    // them under its own built-in group, so nothing has to be made here.
+    // OpenSTA finds clock gating check ends itself rather than naming them
+    // by pin, so no group_path can express them and none is needed.
     return;
   }
 
@@ -178,8 +176,8 @@ void makePathGroup(Resizer* resizer,
                              ? primaryPins(resizer, /*inputs=*/false)
                              : registerPins(resizer, /*data_pins=*/true);
   if (from_pins->empty() || to_pins->empty()) {
-    // No path in the design can belong to the group.  repair_timing still
-    // honors the restriction; it simply finds nothing to repair.
+    // No path can belong to the group.  repair_timing still honors the
+    // restriction; it simply finds nothing to repair.
     delete from_pins;
     delete to_pins;
     return;
@@ -269,7 +267,6 @@ PathGroupFilter::PathGroupFilter(Resizer* resizer)
 {
   if (enabled()) {
     // Endpoint classification asks whether pins are on the clock network.
-    // No-op once the network is up to date.
     sta_->ensureClkNetwork(sta_->cmdMode());
   }
 }
@@ -287,15 +284,14 @@ bool PathGroupFilter::isPrimaryOutput(const sta::Pin* pin) const
 }
 
 // A clock gating check ends at the enable input of a gate whose output drives
-// the clock network.  OpenSTA reports those paths in its own "gated clock"
-// group, so they must not be counted as register endpoints.
+// the clock network.  OpenSTA reports those under its own "gated clock" group,
+// so they must not count as register endpoints.
 bool PathGroupFilter::isGatedClockEnable(const sta::Vertex* vertex) const
 {
   const sta::Pin* pin = vertex->pin();
   const sta::Mode* mode = sta_->cmdMode();
   if (sta_->isClock(pin, mode)) {
-    // On the clock network itself, so this is the gate's clock side, not the
-    // enable side.
+    // On the clock network, so this is the gate's clock side, not enable.
     return false;
   }
   const sta::Instance* inst = network_->instance(pin);
@@ -335,9 +331,8 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
   if (endpoint == nullptr) {
     return false;
   }
-  // Endpoint side is structural: a primary output ends *2out paths, a clock
-  // gate enable ends gated_clock paths, a register/latch data pin ends *2reg
-  // paths.
+  // Structural: a primary output ends *2out, a clock gate enable ends
+  // gated_clock, a register/latch data pin ends *2reg.
   const EndpointKind kind = endpointKind(endpoint);
   if (kind != groupEndpointKind(type_)) {
     debugPrint(logger_,
@@ -350,11 +345,10 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
                endpointKindName(kind));
     return false;
   }
-  // The endpoint kind above is exact and cheap, but it cannot tell reg2reg
-  // from in2reg (nor reg2out from in2out) because those groups share their
-  // endpoints and differ only in where the path started.  Ask OpenSTA for the
-  // group's own slack at this endpoint rather than guessing from the
-  // endpoint's overall worst path, which frequently belongs to another group.
+  // The kind above cannot tell reg2reg from in2reg (nor reg2out from
+  // in2out): those share endpoints and differ only in where the path started.
+  // Ask OpenSTA for the group's slack instead of guessing from the endpoint's
+  // worst path, which frequently belongs to another group.
   const std::optional<sta::Slack> slack = groupSlack(endpoint, min_max);
   if (!slack.has_value()) {
     debugPrint(logger_,
@@ -442,8 +436,8 @@ sta::PathEnd* PathGroupFilter::worstGroupEnd(sta::Vertex* endpoint,
       /*removal=*/false,
       /*clk_gating_setup=*/setup,
       /*clk_gating_hold=*/!setup);
-  // The PathEnd itself is owned by the search and dies on the next query, but
-  // only its slack and its graph owned path are read from it here.
+  // The PathEnd dies on the next query, but only its slack and its graph
+  // owned path are read from it.
   return ends.empty() ? nullptr : ends[0];
 }
 

@@ -826,9 +826,8 @@ void RepairTargetCollector::collectViolatingEndpoints()
   const sta::VertexSet& endpoints = sta_->endpoints();
   for (sta::Vertex* endpoint : endpoints) {
     const sta::Slack slack = sta_->slack(endpoint, max_);
-    // The endpoint's own slack is the worst over all of its paths, so it
-    // bounds every path group's slack here. Endpoints that pass this cheap
-    // test are the only ones worth the path group query below.
+    // The endpoint's own slack bounds every group's slack here, so only
+    // endpoints passing this cheap test are worth the query below.
     if (!sta::fuzzyLess(slack, slack_margin_)) {
       continue;
     }
@@ -836,9 +835,8 @@ void RepairTargetCollector::collectViolatingEndpoints()
       violating_endpoints_.emplace_back(endpoint->pin(), slack);
       continue;
     }
-    // Record the group's slack, not the endpoint's: the endpoint's worst path
-    // usually belongs to another group, and driving WNS/TNS and the repair
-    // order off it would optimize paths outside the requested group.
+    // Record the group's slack, not the endpoint's: driving WNS/TNS and the
+    // repair order off the worst path would optimize the wrong group.
     const std::optional<sta::Slack> group_slack
         = path_group_filter.groupSlack(endpoint, max_);
     if (group_slack.has_value()
@@ -987,12 +985,10 @@ sta::Path* RepairTargetCollector::findWorstSlackPath(
     sta::Vertex* endpoint) const
 {
   if (restrictedToPathGroup()) {
-    // An endpoint earns its place in violating_endpoints_ by hosting a path in
-    // the group, not by its worst path being in it. Repairing the worst path
-    // would therefore optimize whatever group that path belongs to instead of
-    // the requested one, so take the path from the same query that selected
-    // the endpoint. Falls through when the group has no path here, which the
-    // endpoint's slack having gone non-violating can cause mid run.
+    // An endpoint qualifies by hosting a path in the group, not by its worst
+    // path being in it, so repair the path the group query returns. Falls
+    // through when the group has no path here, as happens mid run once the
+    // endpoint stops violating.
     const PathGroupFilter path_group_filter(resizer_);
     if (sta::Path* path = path_group_filter.groupPath(endpoint, max_)) {
       return path;
@@ -2602,7 +2598,7 @@ sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
     return sta_->totalNegativeSlack(max_);
   }
   if (!use_cone) {
-    // Design wide TNS counts endpoints outside the path group being repaired.
+    // Design wide TNS counts endpoints outside the group being repaired.
     sta::Slack total_tns = 0.0;
     for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
       const sta::Slack endpoint_wns = getEndpointWns(endpoint_pin);

@@ -5,8 +5,8 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def gcd_nangate45_placed.def
 
-# The large input delay makes the in2reg path the worst one at every register
-# endpoint, while violating reg2reg paths remain underneath it. Classifying an
+# The large input delay makes in2reg the worst path at every register
+# endpoint, hiding violating reg2reg paths underneath it. Classifying an
 # endpoint by its single worst path would drop all of reg2reg here.
 create_clock -name core_clock -period 0.65 [get_ports clk]
 set_input_delay -clock core_clock 0.50 [all_inputs -no_clocks]
@@ -18,9 +18,9 @@ estimate_parasitics -placement
 
 rsz::resolve_path_group reg2reg
 
-# The endpoints overlap: in2reg holds every register endpoint, reg2reg holds
-# the subset that also violates from a register, so the counts add up to more
-# than the unrestricted run sees.
+# The endpoints overlap: in2reg holds every register endpoint and reg2reg the
+# subset also violating from a register, so the counts exceed the unrestricted
+# run's.
 set collect_only {-max_passes 0 -skip_last_gasp -skip_crit_vt_swap -skip_vt_swap}
 foreach path_group {reg2reg in2reg} {
   puts "-- $path_group"

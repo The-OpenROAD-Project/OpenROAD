@@ -22,15 +22,12 @@ estimate_parasitics -placement
 report_checks -path_group [list "gated clock"] -digits 4 -fields {} \
   -path_delay max
 
-# Every violating endpoint must land in some group, with the gated clock enable
-# landing in gated_clock and not in reg2reg. The groups may overlap, since an
-# endpoint fed by both a primary input and a register violates in in2reg and
-# reg2reg at once, so the per group counts can add up to more than the
-# unrestricted count.
+# The gated clock enable must land in gated_clock, not reg2reg. Groups overlap
+# (an endpoint fed by both a primary input and a register violates in in2reg
+# and reg2reg at once), so per group counts can exceed the unrestricted count.
 #
-# -max_passes 0 plus the skip flags collects the violating endpoints without
-# committing any move, so every count below is measured against the same
-# untouched netlist.
+# -max_passes 0 plus the skip flags collects endpoints without committing a
+# move, so every count below is measured against the same netlist.
 set collect_only {-max_passes 0 -skip_last_gasp -skip_crit_vt_swap -skip_vt_swap}
 foreach path_group {reg2reg in2reg reg2out in2out gated_clock} {
   puts "-- $path_group"

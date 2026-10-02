@@ -29,9 +29,8 @@ namespace rsz {
 
 class Resizer;
 
-// The path groups `repair_timing -path_group` accepts.  Each one pairs a
-// startpoint kind with an endpoint kind, which is all that is needed to decide
-// whether a timing path belongs to the group.
+// The path groups `repair_timing -path_group` accepts, each a startpoint kind
+// paired with an endpoint kind.
 enum class PathGroupType
 {
   kNone,  // No restriction; every path is in the group.
@@ -42,9 +41,8 @@ enum class PathGroupType
   kGatedClock
 };
 
-// What a path ends at.  Clock gating checks end at the enable input of a gate
-// that drives the clock network, which is neither a register data pin nor a
-// primary output, so they form their own group.
+// What a path ends at.  A clock gate enable is neither a register data pin nor
+// a primary output, so it forms its own group.
 enum class EndpointKind
 {
   kRegister,
@@ -52,8 +50,7 @@ enum class EndpointKind
   kGatedClockEnable
 };
 
-// What a path starts at.  kAny belongs to a group that does not split by
-// startpoint.
+// What a path starts at.  kAny is a group that does not split by startpoint.
 enum class StartpointKind
 {
   kAny,
@@ -61,32 +58,29 @@ enum class StartpointKind
   kPrimaryInput
 };
 
-// Names accepted by `repair_timing -path_group`, in the order they are
-// reported to the user.
+// Names accepted by `repair_timing -path_group`, in report order.
 const std::vector<std::string_view>& pathGroupNames();
 
 // kNone for an empty or unrecognized name.
 PathGroupType findPathGroupType(std::string_view name);
 
-// Validates a `repair_timing -path_group` name and returns the group repair
-// should be restricted to, or "" to leave every path group eligible.  An
-// unrecognized name warns and falls back to no restriction rather than failing
-// the command.  A supported name that the SDC has no group_path for yet gets
-// one here, so that timing reports group paths the same way repair_timing
+// Validates a `repair_timing -path_group` name, returning the group to
+// restrict repair to or "" for no restriction.  An unrecognized name warns
+// instead of failing the command.  A supported name with no group_path in the
+// SDC gets one here, so timing reports group paths the way repair_timing
 // optimizes them.
 //
 // Reached from Tcl through Resizer::resolvePathGroup(), which is what keeps
 // this header out of the swig wrapper.
 std::string resolvePathGroupName(Resizer* resizer, const char* name);
 
-// Decides whether the critical path at a start/endpoint belongs to the path
-// group selected with `repair_timing -path_group`.  Classification is
-// structural (primary port vs register vs clock gate enable) rather than SDC
-// based, so it tracks the group names above no matter how the matching OpenSTA
-// group_path was written.
+// Decides whether the critical path at a start/endpoint belongs to the group
+// selected with `repair_timing -path_group`.  Classification is structural
+// (primary port vs register vs clock gate enable), so it holds however the
+// matching OpenSTA group_path was written.
 //
-// Cheap to build - construct one where it is used instead of caching it, so
-// that it always reflects the group in effect for the current repair run.
+// Cheap to build - construct one where it is used rather than caching it, so
+// it always reflects the group in effect for the current repair run.
 class PathGroupFilter
 {
  public:
@@ -98,41 +92,32 @@ class PathGroupFilter
   // Always true when no group is selected.
   bool endpointInGroup(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
 
-  // Worst slack among the paths to `endpoint` that OpenSTA puts in the
-  // selected group, or nullopt when the endpoint hosts no path in the group.
+  // Worst slack among the group's paths to `endpoint`, or nullopt when it
+  // hosts none; the endpoint's plain slack when no group is selected.
   //
-  // An endpoint hosts paths from several groups at once, and its overall
-  // worst path often belongs to a different group than the one being
-  // repaired, so the group's own slack has to come from OpenSTA rather than
-  // from the endpoint's worst path.  Returns the endpoint's plain slack when
-  // no group is selected.
+  // An endpoint hosts paths from several groups at once and its worst one
+  // often belongs to another group, so the group's slack must come from
+  // OpenSTA rather than from the endpoint's worst path.
   std::optional<sta::Slack> groupSlack(sta::Vertex* endpoint,
                                        const sta::MinMax* min_max) const;
 
-  // The worst path to `endpoint` that OpenSTA puts in the selected group, or
-  // nullptr when the endpoint hosts none.  nullptr as well when no group is
-  // selected, so that callers keep using their own path lookup by default.
+  // The group's worst path to `endpoint`, or nullptr when it hosts none or no
+  // group is selected, leaving callers on their own path lookup.
   //
-  // Repairing the endpoint's overall worst path is wrong under a group: an
-  // endpoint qualifies here by hosting *a* path in the group, and its worst
-  // path usually belongs to a different one.  Taking the path from the same
-  // query that decided the endpoint keeps repair on the paths that
-  // `report_checks -path_group` reports.
+  // An endpoint qualifies by hosting *a* path in the group, so repairing its
+  // worst path would optimize whatever group that one belongs to instead.
   //
-  // The path belongs to the graph, not to the query, because the one path end
-  // asked for below skips path enumeration.  It stays valid exactly as long as
-  // a sta::vertexWorstSlackPath() result would.
+  // The path is owned by the graph, not the query, since asking for one path
+  // end skips enumeration; it lives as long as a vertexWorstSlackPath() would.
   sta::Path* groupPath(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
 
   // True when `startpoint` can launch a path in the selected group.  Only the
-  // start side of the group is checked here; the end side is enforced by
-  // endpointInGroup().
+  // start side is checked; endpointInGroup() enforces the end side.
   bool startpointInGroup(sta::Vertex* startpoint) const;
 
  private:
-  // Worst path end at `endpoint` within the selected group, or nullptr when
-  // there is none.  Shared by groupSlack() and groupPath() so that both answer
-  // from one query.
+  // Worst path end at `endpoint` within the group, nullptr when none.  Shared
+  // by groupSlack() and groupPath() so both answer from one query.
   sta::PathEnd* worstGroupEnd(sta::Vertex* endpoint,
                               const sta::MinMax* min_max) const;
   bool isPrimaryInput(const sta::Pin* pin) const;
