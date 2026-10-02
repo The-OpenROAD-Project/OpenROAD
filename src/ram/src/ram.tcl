@@ -297,4 +297,10 @@ proc generate_ram { args } {
   ram::ram_filler $filler_cells
 
   ram::ram_routing
+  estimate_parasitics -global_routing
+  set clock_period [ram::ram_report_timing]
+  if { $clock_period > 0 } {
+    create_clock -name ram_clk -period $clock_period [get_ports clk]
+  }
+  ram::ram_report_power
 }
