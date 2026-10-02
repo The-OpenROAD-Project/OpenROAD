@@ -161,10 +161,8 @@ void Opendp::improvePlacement(const int seed,
   int64_t hpwlAfter_x = 0;
   int64_t hpwlAfter_y = 0;
   const int64_t hpwlAfter = eval.hpwl(hpwlAfter_x, hpwlAfter_y);
-  const int hpwl_delta_pct
-      = (hpwlBefore == 0)
-            ? 0
-            : std::round((hpwlAfter - hpwlBefore) / (double) hpwlBefore * 100);
+  const int hpwl_delta_pct = static_cast<int>(
+      std::round(100.0 * (hpwlAfter - hpwlBefore) / hpwlBefore));
 
   const int total_attempts = mgr.getTotalAttempts();
   logger_->report("Place Optimization Analysis");

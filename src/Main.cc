@@ -311,12 +311,12 @@ int main(int argc, char* argv[])
       logger->warn(utl::ORD, 39, ".openroad ignored with -python");
     }
 
+    // Default to all available hardware threads; an invalid -threads value
+    // leaves this default in place.
+    ord::OpenRoad::openRoad()->setThreadCount(-1, false);
     const char* threads = findCmdLineKey(cmd_argc, cmd_argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
-    } else {
-      // default to all available hardware threads
-      ord::OpenRoad::openRoad()->setThreadCount(-1, false);
     }
 
 #if PY_VERSION_HEX >= 0x03080000
@@ -466,12 +466,12 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
+    // Default to all available hardware threads; an invalid -threads value
+    // leaves this default in place.
+    ord::OpenRoad::openRoad()->setThreadCount(-1, false);
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
-    } else {
-      // default to all available hardware threads
-      ord::OpenRoad::openRoad()->setThreadCount(-1, false);
     }
 
     // The web server now installs its HeadlessViewer late, in serve() (just
