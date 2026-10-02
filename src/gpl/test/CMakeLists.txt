@@ -18,7 +18,6 @@ or_integration_tests(
     diverge01
     error01
     incremental01
-    incremental03
     nograd01
     simple01
     simple01-obs
@@ -49,6 +48,7 @@ or_integration_tests(
     region01
   PASSFAIL_TESTS
     incremental02
+    incremental03
     place_ios01
     place_ios_top_layer
 )

@@ -19,7 +19,6 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
-    "incremental03",
     "mbff_hier",
     "mbff_orig_name",
     "mbff_clock_power_off",
@@ -57,6 +56,7 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "incremental02",
+    "incremental03",
     "place_ios01",
     "place_ios_top_layer",
 ]
