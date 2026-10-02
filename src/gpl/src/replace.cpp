@@ -234,9 +234,11 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 
   // Phase 1 may have run out of its iteration budget short of the real
   // target even without diverging, so check the actual overflow reached
-  // rather than trusting the target alone.
+  // rather than trusting the target alone. np_ stays null when there were no
+  // placeable instances to begin with (doNesterovPlace() returns early in
+  // that case without ever throwing), so guard the dereference.
   const bool phase1_missed_target
-      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
+      = !phase1_diverged && np_ && np_->getAverageOverflow() > options.overflow;
 
   if (phase1_diverged || phase1_missed_target) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in

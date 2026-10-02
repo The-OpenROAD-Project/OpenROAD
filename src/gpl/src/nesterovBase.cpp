@@ -5437,6 +5437,7 @@ void NesterovBase::redistributeFillerCells()
     remainder[b] = exact - static_cast<double>(quota[b]);
     assigned += quota[b];
   }
+  assigned = std::min(assigned, num_fillers);
   const size_t leftover = num_fillers - assigned;
   if (leftover > 0) {
     std::vector<size_t> order;
@@ -5515,6 +5516,22 @@ void NesterovBase::redistributeFillerCells()
   }
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityFieldBin();
+
+#ifdef ENABLE_GPU
+  // The loop above wrote the new filler positions to the host vectors only;
+  // push them to the device context (built earlier, before this call, by
+  // Replace::initNesterovPlace) so the Nesterov loop does not start from the
+  // pre-redistribution filler positions. Mirrors revertToSnapshot().
+  if (nb_device_ctx_) {
+    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                       prevSLPCoordi_,
+                                       curCoordi_,
+                                       curSLPSumGrads_,
+                                       prevSLPSumGrads_);
+    commitCoordsToDeviceState(SlpSlot::Cur);
+    host_coords_fresh_ = true;
+  }
+#endif
 
   log_->info(GPL,
              333,
