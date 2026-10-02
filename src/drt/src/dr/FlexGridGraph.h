@@ -1289,46 +1289,29 @@ class FlexGridGraph
   }
 
   // internal utility
+  static frDirEnum oppositeDir(frDirEnum dir)
+  {
+    static_assert(int(frDirEnum::D) + int(frDirEnum::U) == 7
+                  && int(frDirEnum::S) + int(frDirEnum::N) == 7
+                  && int(frDirEnum::W) + int(frDirEnum::E) == 7);
+    return dir == frDirEnum::UNKNOWN ? dir
+                                     : static_cast<frDirEnum>(7 - int(dir));
+  }
   void correct(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
   {
-    switch (dir) {
-      case frDirEnum::W:
-      case frDirEnum::S:
-      case frDirEnum::D:
-        reverse(x, y, z, dir);
-        break;
-      default:;
+    x -= (dir == frDirEnum::W);
+    y -= (dir == frDirEnum::S);
+    z -= (dir == frDirEnum::D);
+    if (dir == frDirEnum::W || dir == frDirEnum::S || dir == frDirEnum::D) {
+      dir = oppositeDir(dir);
     }
   }
   void reverse(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
   {
-    switch (dir) {
-      case frDirEnum::E:
-        x++;
-        dir = frDirEnum::W;
-        break;
-      case frDirEnum::S:
-        y--;
-        dir = frDirEnum::N;
-        break;
-      case frDirEnum::W:
-        x--;
-        dir = frDirEnum::E;
-        break;
-      case frDirEnum::N:
-        y++;
-        dir = frDirEnum::S;
-        break;
-      case frDirEnum::U:
-        z++;
-        dir = frDirEnum::D;
-        break;
-      case frDirEnum::D:
-        z--;
-        dir = frDirEnum::U;
-        break;
-      default:;
-    }
+    x += (dir == frDirEnum::E) - (dir == frDirEnum::W);
+    y += (dir == frDirEnum::N) - (dir == frDirEnum::S);
+    z += (dir == frDirEnum::U) - (dir == frDirEnum::D);
+    dir = oppositeDir(dir);
   }
   frMIdx getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
   frMIdx getUpperBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
