@@ -316,8 +316,7 @@ cc_test(
     name = "nesterov_divergence_test",
     srcs = ["nesterov_divergence_test.cpp"],
     deps = [
-        "//src/gpl",
-        "//src/gpl:gpl_private_hdrs",
+        "//src/gpl:gpl_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
