@@ -1,0 +1,78 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 24951 components and 119534 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 49902 connections.
+[INFO ODB-0133]     Created 21886 nets and 69632 connections.
+[INFO GPL-0083] Execute incremental mode global placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: ( 10.070 12.600 ) ( 1009.850 910.000 ) um
+[INFO GPL-0016] Core area:                  897202.572 um^2
+[INFO GPL-0036] Movable instances area:      44590.378 um^2
+[INFO GPL-0037] Total instances area:        45615.542 um^2
+[INFO GPL-0035] Pin density area adjust:      2991.582 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:             24951
+[INFO GPL-0007] Movable instances:               21097
+[INFO GPL-0008] Fixed instances:                  3854
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                  21886
+[INFO GPL-0011] Number of pins:                  70020
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 1020.000 920.800 ) um
+[INFO GPL-0013] Placement BBox: ( 10.070 12.600 ) ( 1009.850 910.000 ) um
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                897202.572 um^2
+[INFO GPL-0017] Fixed instances area:         1025.164 um^2
+[INFO GPL-0018] Movable instances area:      47581.960 um^2
+[INFO GPL-0019] Utilization:                     5.309 %
+[INFO GPL-0020] Standard cells area:         47581.960 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0154] Identified 16461 placed instances
+[INFO GPL-0155] Identified 4636 not placed instances
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 4636	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000064 HPWL: 2618966940
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000071 HPWL: 1334055877
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000043 HPWL: 1308202162
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000043 HPWL: 1299215494
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000034 HPWL: 1293142080
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.3000
+[INFO GPL-0024] Movable insts average area:      2.255 um^2
+[INFO GPL-0025] Ideal bin area:                  7.518 um^2
+[INFO GPL-0026] Ideal bin count:                119341
+[INFO GPL-0027] Total bin area:             897202.572 um^2
+[INFO GPL-0028] Bin count (X, Y):         256 ,    256
+[INFO GPL-0029] Bin size (W * H):       3.905 *  3.505 um
+[INFO GPL-0030] Number of bins:                  65536
+[INFO GPL-0333] Redistributed 102361 filler cells into free bin capacity (235801.323 um^2 available, 221271.272 um^2 needed).
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.3032 |  5.958685e+05 |   +0.00% |  5.98e-14 |      
+       10 |   0.2755 |  7.817555e+05 |  +31.20% |  3.73e+03 |      
+       20 |   0.1223 |  1.905584e+06 | +143.76% |  1.23e+17 |      
+[INFO GPL-1014] Final placement area: 47581.96 (+0.00%)
+[WARNING GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
+[INFO GPL-1018] Final HPWL (um): 2127078.58
+[WARNING GPL-0195] Phase 1 of incremental placement diverged before reaching overflow 0.100; continuing to phase 2 anyway.
+[INFO GPL-0133] Unlocking all instances
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0191] Incremental density-penalty guard enabled: penalty factor 1, starting overflow 0.117.
+       30 |   0.1171 |  2.113359e+06 |  +10.90% |  2.56e-07 |      
+       34 |   0.0701 |  2.136936e+06 |          |  6.19e+01 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 34
+[INFO GPL-1002] Placed Cell Area            47581.9595
+[INFO GPL-1003] Available Free Area         896177.4080
+[INFO GPL-1004] Minimum Feasible Density        0.0600 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0590
+[INFO GPL-1008]     - For 80% usage of free space: 0.0664
+[INFO GPL-1009]     - For 50% usage of free space: 0.1062
+[INFO GPL-1014] Final placement area: 47581.96 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 2137015.33
