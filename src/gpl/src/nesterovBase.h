@@ -813,8 +813,6 @@ struct NesterovBaseVars
   const bool isSetBinCnt;
   const bool useUniformTargetDensity;
   bool placeIosMode = false;
-  odb::dbTechLayer* placeIosHorLayer = nullptr;
-  odb::dbTechLayer* placeIosVerLayer = nullptr;
   const std::vector<ppl::SlotPosition>* placeIosSlots = nullptr;
   bool isMaxPhiCoefChanged = false;  // not user config
   const float targetDensity;

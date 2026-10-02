@@ -2675,8 +2675,8 @@ void NesterovBase::initIoPinGCells()
   }
 
   // Initialize constraints before seeding.
-  initIoConstraints();
   initIoSlots();
+  initIoConstraints();
 
   // Followers are derived after their masters are placed.
   for (size_t i = 0; i < ioPinStor_.size(); ++i) {
@@ -2838,6 +2838,9 @@ void NesterovBase::initIoConstraints()
   }
 
   auto addFreeEdge = [&](DieEdge edge, float span_lo, float span_hi) {
+    if (io_edge_slots_[static_cast<size_t>(edge)].empty()) {
+      return;
+    }
     auto& blk = blocked[static_cast<int>(edge)];
     std::sort(blk.begin(), blk.end());
     float cursor = span_lo;
@@ -3259,7 +3262,8 @@ void NesterovBase::initIoSlots()
   for (const ppl::SlotPosition& slot : *nbVars_.placeIosSlots) {
     // Skip blocked slots, and top-layer and polygon slots, which are not on a
     // die edge.
-    if (slot.blocked || slot.edge > ppl::Edge::right) {
+    if (slot.blocked || slot.edge == ppl::Edge::invalid
+        || slot.edge == ppl::Edge::polygonEdge) {
       continue;
     }
     const DieEdge edge = kFromPpl[static_cast<size_t>(slot.edge)];
@@ -3302,13 +3306,7 @@ odb::dbTechLayer* NesterovBase::ioPinLayer(const DieEdge edge,
                                            const float pos) const
 {
   const size_t e = static_cast<size_t>(edge);
-  const std::vector<float>& slots = io_edge_slots_[e];
-  if (slots.empty()) {
-    // ppl's convention: a horizontal die edge carries vertical-layer pins.
-    return isHorizontalEdge(edge) ? nbVars_.placeIosVerLayer
-                                  : nbVars_.placeIosHorLayer;
-  }
-  const size_t k = std::lround(slotIndexAt(slots, pos));
+  const size_t k = std::lround(slotIndexAt(io_edge_slots_[e], pos));
   return io_edge_slot_layers_[e][k];
 }
 

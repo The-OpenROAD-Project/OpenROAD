@@ -301,11 +301,6 @@ void Replace::initIoPinPlace(NesterovBaseVars& nbVars)
                 "-io_pin_hor_layers and -io_pin_ver_layers with "
                 "set_place_config.");
   }
-  odb::dbTech* tech = db_->getTech();
-  nbVars.placeIosHorLayer
-      = tech->findRoutingLayer(*settings.hor_layers.begin());
-  nbVars.placeIosVerLayer
-      = tech->findRoutingLayer(*settings.ver_layers.begin());
   io_slots_ = pin_placer_->buildSlotGrid();
   nbVars.placeIosSlots = &io_slots_;
 }

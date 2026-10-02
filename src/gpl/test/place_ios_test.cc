@@ -393,6 +393,23 @@ TEST_F(PlaceIos, SolveSkipsTheSlotsThePinPlacerBlocks)
   EXPECT_EQ(placeAndCountMoved(), 0);
 }
 
+TEST_F(PlaceIos, SolveSkipsAnEdgeWithNoFreeSlot)
+{
+  unplacePorts();
+  odb::dbObstruction::create(block_,
+                             layer("metal6"),
+                             die_.xMin(),
+                             die_.yMin(),
+                             die_.xMax(),
+                             die_.yMin() + 800);
+  setPinLayers({"metal5"}, {"metal6"});
+
+  EXPECT_EQ(placeAndCountMoved(), 0);
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    EXPECT_NE(edgeOf(pinBox(bterm)->getBox()), 'B') << bterm->getName();
+  }
+}
+
 TEST_F(PlaceIos, PinsUseTheSlotsOfEveryLayer)
 {
   unplacePorts();
