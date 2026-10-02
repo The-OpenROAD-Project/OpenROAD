@@ -576,7 +576,7 @@ void NesterovPlace::runTimingDriven(int iter,
         is_min_hpwl_ = true;
       }
 
-      reset_nesterov_momentum_ = true;
+      // reset_nesterov_momentum_ = true;
     }
 
     // problem occured
