@@ -1246,7 +1246,6 @@ void dbWire::destroy(dbWire* wire_)
       net->global_wire_ = 0;
     } else {
       net->wire_ = 0;
-      net->flags_.disconnected = 0;
       net->flags_.wire_ordered = 0;
       net->flags_.wire_altered = 1;
     }
