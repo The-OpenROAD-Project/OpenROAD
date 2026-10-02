@@ -95,6 +95,9 @@ class NesterovPlace
                        int64_t& td_accumulated_delta_area,
                        bool is_routability_gpl_iter,
                        int& virtual_cts_count);
+  // Re-evaluate every GCell's current gradient at curSLP, so that the next
+  // step length estimate compares gradients of the same objective.
+  void refreshCurGradients(int iter);
   bool isDiverged(float& diverge_snapshot_WlCoefX,
                   float& diverge_snapshot_WlCoefY,
                   bool& is_diverge_snapshot_saved);
@@ -125,7 +128,7 @@ class NesterovPlace
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
                         const std::string& routability_driven_dir) const;
-  void doBackTracking(float coeff);
+  void doBackTracking(float coeff, int iter);
   void reportResults(int nesterov_iter,
                      int64_t original_area,
                      int64_t td_accumulated_delta_area);
@@ -177,6 +180,11 @@ class NesterovPlace
   // so the accelerated-gradient extrapolation does not carry the pre-repair
   // trajectory into the changed objective and diverge the placement.
   bool reset_nesterov_momentum_ = false;
+
+  // global_placement_debug -inst: number of Nesterov iterations after a
+  // timing-driven refresh for which each backtracking try is traced.
+  static constexpr int kTdTraceIters = 3;
+  int td_trace_iters_left_ = 0;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
