@@ -339,21 +339,30 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
-  auto sdc = openSta_->cmdMode()->sdc();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
       if (!isSink(iterm)) {
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
-          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
-              && !sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
+          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()) {
+            bool isLeafPin = false;
+            for (sta::Mode* mode : openSta_->modes()) {
+              sta::Sdc* sdc =mode->sdc();
+              if (sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
+                isLeafPin = true;
+                break;
+              }
+            }
+            if(isLeafPin) {
+              continue;
+            }
             if (clockBuilder == nullptr
                 && net2builder_[clkInputNet] != nullptr) {
               initOneClockTree(outputNet,
-                               clkInputNet,
-                               sdcClockName,
-                               net2builder_[clkInputNet]);
+                              clkInputNet,
+                              sdcClockName,
+                              net2builder_[clkInputNet]);
             } else {
               initOneClockTree(
                   outputNet, clkInputNet, sdcClockName, clockBuilder);
@@ -1249,19 +1258,21 @@ void TritonCTS::populateTritonCTS()
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
     staClockNets_ = openSta_->findClkNets();
-    sta::Sdc* sdc = openSta_->cmdMode()->sdc();
-    for (auto clk : sdc->clocks()) {
-      std::string clkName = clk->name();
-      odb::PtrSet<odb::dbNet> clkNets;
-      findClockRoots(clk, clkNets);
-      for (auto net : clkNets) {
-        if (allClkNets.find(net) != allClkNets.end()) {
-          logger_->error(
-              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+    for (sta::Mode* mode : openSta_->modes()) {
+      sta::Sdc* sdc =mode->sdc();
+      for (auto clk : sdc->clocks()) {
+        std::string clkName = clk->name();
+        odb::PtrSet<odb::dbNet> clkNets;
+        findClockRoots(clk, clkNets);
+        for (auto net : clkNets) {
+          if (allClkNets.find(net) != allClkNets.end()) {
+            logger_->error(
+                CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+          }
         }
+        clockNetsInfo.emplace_back(clkNets, clkName);
+        allClkNets.insert(clkNets.begin(), clkNets.end());
       }
-      clockNetsInfo.emplace_back(clkNets, clkName);
-      allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
   // Seed with all existing instance positions to prevent clones from
