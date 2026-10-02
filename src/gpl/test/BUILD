@@ -314,6 +314,19 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "nesterov_divergence_test",
+    srcs = ["nesterov_divergence_test.cpp"],
+    deps = [
+        "//src/gpl",
+        "//src/gpl:gpl_private_hdrs",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "gpl_man_tcl_check",
     srcs = ["gpl_man_tcl_check.py"],

@@ -1285,6 +1285,9 @@ class NesterovBase
   void resetMinSumOverflow();
 
   bool isDiverged() const { return isDiverged_; }
+  // Resets isDiverged_ when no snapshot exists to revert to instead (the only
+  // other place that clears it is revertToSnapshot()).
+  void clearDivergence() { isDiverged_ = false; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(

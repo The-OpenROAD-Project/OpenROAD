@@ -593,6 +593,9 @@ void NesterovPlace::clearDivergence()
   num_region_diverged_ = 0;
   divergeMsg_ = "";
   divergeCode_ = 0;
+  for (auto& nb : nbVec_) {
+    nb->clearDivergence();
+  }
 }
 
 void NesterovPlace::applyDensityPenaltyFactor(float factor)
