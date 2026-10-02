@@ -56,6 +56,7 @@ class IOPin
         const odb::dbPlacementStatus& placement_status)
       : bterm_(bterm),
         pos_(pos),
+        initial_pos_(pos),
         direction_(dir),
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
@@ -66,6 +67,8 @@ class IOPin
   void setOrientation(const Orientation o) { orientation_ = o; }
   Orientation getOrientation() const { return orientation_; }
   odb::Point getPosition() const { return pos_; }
+  // Where the pin was before the placer moved it.
+  const odb::Point& getInitialPosition() const { return initial_pos_; }
   void setX(const int x) { pos_.setX(x); }
   void setY(const int y) { pos_.setY(y); }
   void setPosition(const odb::Point& pos) { pos_ = pos; }
@@ -125,6 +128,7 @@ class IOPin
  private:
   odb::dbBTerm* bterm_;
   odb::Point pos_;
+  odb::Point initial_pos_;
   Orientation orientation_{Orientation::north};
   Direction direction_;
   odb::Point lower_bound_;
@@ -168,7 +172,13 @@ class Netlist
   void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int idx, const odb::Point& slot_pos);
+  int computeIOCost(int idx, const odb::Point& slot_pos);
   int computeDstIOtoPins(int idx, const odb::Point& slot_pos);
+  void setMinimizeDisplacement(bool minimize)
+  {
+    minimize_displacement_ = minimize;
+  }
+  bool getMinimizeDisplacement() const { return minimize_displacement_; }
   void sortPinsFromGroup(int group_idx, Edge edge);
   odb::Rect getBB(int idx, const odb::Point& slot_pos);
   void reset();
@@ -179,6 +189,7 @@ class Netlist
   std::vector<IOPin> io_pins_;
   std::vector<PinGroupByIndex> io_groups_;
   odb::PtrMap<odb::dbBTerm, int> db_pin_idx_map_;
+  bool minimize_displacement_ = false;
 };
 
 }  // namespace ppl
