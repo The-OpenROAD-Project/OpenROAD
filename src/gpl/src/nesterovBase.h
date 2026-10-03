@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstddef>
@@ -1251,6 +1252,9 @@ class NesterovBase
   // overflow can sit at very different displacements depending on how fast
   // the penalty schedule happens to be ramping.
   bool isSettled() const;
+  float getSettleRatio() const;
+  static constexpr float getSettleFraction() { return kSettleFraction; }
+
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
@@ -1259,8 +1263,18 @@ class NesterovBase
   void resetConverged() { isConverged_ = false; }
 
   bool checkDivergence();
-  void saveSnapshot();
-  bool revertToSnapshot();
+
+  // Separate snapshot storage for routability and divergence recovery, since
+  // a divergence can happen in the middle of a routability pass.
+  enum class SnapshotSlot
+  {
+    Routability,
+    Diverge
+  };
+  static constexpr size_t kNumSnapshotSlots = 2;
+
+  void saveSnapshot(SnapshotSlot slot);
+  bool revertToSnapshot(SnapshotSlot slot);
 
   // GPU device-resident density path: the hot loop no longer syncs coords
   // (or host GCell density centers) every iteration. Cold-path consumers
@@ -1388,6 +1402,16 @@ class NesterovBase
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances_;
 
+  // One gcell's worth of a Snapshot, saved when a filler is cut out so the
+  // stored placements survive a routability filler cut/restore round trip.
+  struct SnapshotPoint
+  {
+    FloatPoint coordi;
+    FloatPoint slpCoordi;
+    FloatPoint slpSumGrads;
+    FloatPoint prevSLPSumGrads;
+  };
+
   struct RemovedFillerState
   {
     GCell gcell;
@@ -1406,10 +1430,8 @@ class NesterovBase
     FloatPoint curCoordi;
     FloatPoint nextCoordi;
     FloatPoint initCoordi;
-    FloatPoint snapshotCoordi;
-    FloatPoint snapshotSLPCoordi;
-    FloatPoint snapshotSLPSumGrads;
-    FloatPoint snapshotPrevSLPSumGrads;
+    // One entry per SnapshotSlot, in slot order.
+    std::array<SnapshotPoint, kNumSnapshotSlots> snapshots;
   };
 
   std::vector<RemovedFillerState> removed_fillers_;
@@ -1463,13 +1485,22 @@ class NesterovBase
   // save initial coordinates -- needed for RD
   std::vector<FloatPoint> initCoordi_;
 
-  // Snapshot data for routability, parallel vectors
-  std::vector<FloatPoint> snapshotCoordi_;
-  std::vector<FloatPoint> snapshotSLPCoordi_;
-  std::vector<FloatPoint> snapshotSLPSumGrads_;
-  std::vector<FloatPoint> snapshotPrevSLPSumGrads_;
-  float snapshotDensityPenalty_ = 0;
-  float snapshotStepLength_ = 0;
+  // Snapshot data, parallel vectors. One set per SnapshotSlot.
+  struct Snapshot
+  {
+    std::vector<FloatPoint> coordi;
+    std::vector<FloatPoint> slpCoordi;
+    std::vector<FloatPoint> slpSumGrads;
+    std::vector<FloatPoint> prevSLPSumGrads;
+    float densityPenalty = 0;
+    float stepLength = 0;
+  };
+  std::array<Snapshot, kNumSnapshotSlots> snapshots_;
+
+  Snapshot& snapshot(SnapshotSlot slot)
+  {
+    return snapshots_[static_cast<size_t>(slot)];
+  }
 
   // For destroying elements in parallel vectors
   void swapAndPop(std::vector<FloatPoint>& vec,

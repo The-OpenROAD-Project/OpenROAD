@@ -95,29 +95,25 @@ class NesterovPlace
                        int64_t& td_accumulated_delta_area,
                        bool is_routability_gpl_iter,
                        int& virtual_cts_count);
-  bool isDiverged(float& diverge_snapshot_WlCoefX,
-                  float& diverge_snapshot_WlCoefY,
-                  bool& is_diverge_snapshot_saved);
+  bool isDiverged(float& curA);
   void routabilitySnapshot(int iter,
                            float curA,
                            const std::string& routability_driven_dir,
                            int routability_driven_count,
-                           int timing_driven_count,
-                           bool& is_routability_snapshot_saved,
-                           float& route_snapshot_WlCoefX,
-                           float& route_snapshot_WlCoefY,
-                           float& route_snapshotA);
+                           int timing_driven_count);
   void runRoutability(int iter,
                       int timing_driven_count,
                       const std::string& routability_driven_dir,
-                      float route_snapshotA,
-                      float route_snapshot_WlCoefX,
-                      float route_snapshot_WlCoefY,
                       int& routability_driven_count,
                       float& curA);
+  // Recover from a divergence by rolling back to the routability snapshot with
+  // a different inflation in place. Returns false when no attempt is left or
+  // there is no routability snapshot to go to.
+  bool tryRoutabilityDivergeRecovery(float& curA);
   // True when the per-iteration cell displacement has come off its peak in
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
+  float getWorstSettleRatio() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   // The top-level (unfenced/full-die) region is always nbVec_[0].
@@ -152,6 +148,28 @@ class NesterovPlace
   int64_t min_hpwl_ = INT64_MAX;
   int diverge_snapshot_iter_ = 0;
   bool is_min_hpwl_ = false;
+  bool is_diverge_snapshot_saved_ = false;
+  float diverge_snapshot_wl_coef_x_ = 0;
+  float diverge_snapshot_wl_coef_y_ = 0;
+  // min_hpwl_ at save time; a routability pass clears min_hpwl_ but keeps
+  // the snapshot.
+  int64_t diverge_snapshot_hpwl_ = 0;
+
+  // Repeats only help while the resumed descent keeps finding a better
+  // snapshot. Bounded so a diverging run reports GPL-0307, not max iterations.
+  static constexpr int kMaxDivergeReverts = 3;
+  int diverge_revert_count_ = 0;
+
+  // Snapshot saving for routability
+  bool is_routability_snapshot_saved_ = false;
+  float route_snapshot_a_ = 0;
+  float route_snapshot_wl_coef_x_ = 0;
+  float route_snapshot_wl_coef_y_ = 0;
+
+  // Two attempts because there are two inflation states to try: min
+  // congestion with routability on, then the same with it off.
+  static constexpr int kMaxRoutabilityDivergeAttempts = 2;
+  int routability_diverge_attempt_count_ = 0;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
@@ -171,6 +189,7 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
+  int routability_settle_wait_start_iter_ = -1;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
