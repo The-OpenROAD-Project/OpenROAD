@@ -142,6 +142,12 @@ cc_test(
 )
 
 py_test(
+    name = "rcx_aux_test",
+    srcs = ["rcx_aux_test.py"],
+    data = ["rcx_aux.py"],
+)
+
+py_test(
     name = "rcx_man_tcl_check",
     srcs = ["rcx_man_tcl_check.py"],
     data = ["//src/rcx:doc_files"],
