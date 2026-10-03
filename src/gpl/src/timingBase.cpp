@@ -26,7 +26,7 @@ using utl::GPL;
 
 // Percentile of the worst-slack net set that anchors the bottom of the timing
 // weight ramp. 0 reproduces using the single worst net.
-static constexpr size_t kSlackMinPercentile = 1;
+static constexpr size_t kSlackMinPercentile = 2;
 
 // TimingBase
 TimingBase::TimingBase() = default;
