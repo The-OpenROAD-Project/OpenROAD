@@ -71,10 +71,12 @@ if { ![gui::supported] } {
   set reopened [make_result_file {save_image_$reopened[list].png}]
   set windowed [make_result_file save_image_windowed.png]
   set die_area [make_result_file save_image_die_area.png]
+  set no_width [make_result_file save_image_no_width.png]
+  set interactive [make_result_file save_image_interactive.png]
 
   # results/ survives between runs, so clear the targets first.  Otherwise a
   # run that writes nothing at all still finds last run's files and passes.
-  foreach path [list $reopened $windowed $die_area] {
+  foreach path [list $reopened $windowed $die_area $no_width $interactive] {
     file delete $path
   }
 
@@ -87,10 +89,23 @@ if { ![gui::supported] } {
     # Zero area: offscreen there is no meaningful viewport, so the die area
     # is used instead.
     gui::save_image $die_area 0 0 0 0 500
+    # Neither an area nor a width.  The resolution otherwise comes from the
+    # viewport, which an offscreen platform plugin never sizes, so this is the
+    # call that used to render a null image and warn GUI-0078.
+    gui::save_image $no_width 0 0 0 0 0
     gui::hide
   }] false
 
-  foreach path [list $reopened $windowed $die_area] {
+  # Same again with the gui started INTERACTIVELY.  The window is still never
+  # mapped under an offscreen platform plugin, so the viewport is still
+  # unusable -- but WA_DontShowOnScreen is not set, so only the plugin name
+  # tells isOffscreen() that (openroad -gui under QT_QPA_PLATFORM=offscreen).
+  gui::show [subst -nocommands {
+    gui::save_image $interactive 0 0 0 0 500
+    gui::hide
+  }] true
+
+  foreach path [list $reopened $windowed $die_area $no_width $interactive] {
     if { ![file exists $path] } {
       fail "[file tail $path] was not written"
     }
@@ -122,6 +137,24 @@ if { ![gui::supported] } {
   if { $die_height == $height } {
     fail "die area rendered the same shape as the 30x10 region; the\
           zero-area fallback did not fire"
+  }
+
+  # No width asked for: the fallback resolution frames the same square die,
+  # just at its own width.
+  lassign [png_size $no_width] free_width free_height
+  if { $free_width <= 0 || $free_height <= 0 } {
+    fail "the no-width image is empty: ${free_width}x${free_height}"
+  }
+  if { $free_width != $free_height } {
+    fail "the square die should stay square without a width, got\
+          ${free_width}x${free_height}"
+  }
+
+  # Started interactively, the offscreen plugin still has to route this to the
+  # die area rather than to an unmapped window's viewport, so it matches the
+  # non-interactive render above.
+  if { [read_file_bytes $interactive] ne [read_file_bytes $die_area] } {
+    fail "an interactively started gui rendered the die area differently"
   }
 
   puts "pass"

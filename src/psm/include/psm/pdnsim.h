@@ -32,10 +32,10 @@ class EstimateParasitics;
 namespace dpl {
 class Opendp;
 }
-namespace gui {
+namespace web {
 class HeatMapSourceRegistration;
 using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
-}  // namespace gui
+}  // namespace web
 
 namespace psm {
 class IRDropDataSource;
@@ -144,7 +144,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
-  gui::HeatMapSourceHandle heatmap_source_;
+  web::HeatMapSourceHandle heatmap_source_;
 
   bool debug_gui_enabled_ = false;
 

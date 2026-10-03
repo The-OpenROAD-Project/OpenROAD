@@ -9,4 +9,4 @@ check_placement -verbose
 
 set def_file [make_result_file pad06.def]
 write_def $def_file
-diff_file pad06.defok $def_file
+diff_files pad06.defok $def_file

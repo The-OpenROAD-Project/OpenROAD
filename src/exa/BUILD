@@ -13,22 +13,29 @@ package(
 )
 
 cc_library(
-    name = "exa_private_hdrs",
+    name = "exa_impl",
+    srcs = [
+        "src/example.cpp",
+    ],
     hdrs = [
+        "include/exa/example.h",
         "src/observer.h",
     ],
     includes = [
+        "include",
         "src",
     ],
-    visibility = ["//visibility:private"],
-    deps = ["//src/odb/src/db"],
+    visibility = [
+        "//src/exa:__subpackages__",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+    ],
 )
 
 cc_library(
     name = "exa",
-    srcs = [
-        "src/example.cpp",
-    ],
     hdrs = [
         "include/exa/example.h",
     ],
@@ -36,7 +43,7 @@ cc_library(
         "include",
     ],
     deps = [
-        ":exa_private_hdrs",
+        ":exa_impl",
         "//src/odb/src/db",
         "//src/utl",
     ],
@@ -59,12 +66,11 @@ cc_library(
         "src",
     ],
     deps = [
-        ":exa",
-        ":exa_private_hdrs",
+        ":exa_impl",
         "//:ord",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

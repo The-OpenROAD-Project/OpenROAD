@@ -16,34 +16,6 @@ package(
     features = ["layering_check"],
 )
 
-# Headers owned by :gpl but also consumed by :ui and GPL tests. Keep them
-# visible only to //src/gpl and its tests.
-cc_library(
-    name = "gpl_private_hdrs",
-    hdrs = [
-        "src/fft.h",
-        "src/fftBackend.h",
-        "src/nesterovBase.h",
-        "src/nesterovPlace.h",
-        "src/placerBase.h",
-        "src/point.h",
-        "src/routeBase.h",
-    ],
-    includes = ["src"],
-    visibility = [
-        "//src/gpl/test:__pkg__",
-        "//visibility:private",
-    ],
-    deps = [
-        # TODO: we use headers provided by :gpl, but that reveals cyclic dep
-        #":gpl",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.random",
-        "@boost.unordered",
-    ],
-)
-
 # The Kokkos/CUDA backends plus fft.cpp. fft.cpp itself includes only
 # Kokkos-free PIMPL headers, but it is compiled as CUDA here to mirror
 # the CMake flow's set_source_files_properties(... LANGUAGE CUDA) list in
@@ -90,6 +62,10 @@ cc_library(
         "src/gpu/wirelengthOp.cpp",
         "src/gpu/wirelengthOp.h",
         "src/hpwlBackend.h",
+        "src/nesterovBase.h",
+        "src/placerBase.h",
+        "src/point.h",
+        "src/routeBase.h",
         "src/wirelengthGradientBackend.h",
     ],
     additional_compiler_inputs = [
@@ -113,9 +89,9 @@ cc_library(
     # kernel launchers directly.
     visibility = ["//src/gpl/test:__pkg__"],
     deps = [
-        ":gpl_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.random",
         "@boost.unordered",
         "@kokkos",
         "@kokkos_fft",
@@ -124,7 +100,7 @@ cc_library(
 )
 
 cc_library(
-    name = "gpl",
+    name = "gpl_impl",
     srcs = [
         "src/AbstractGraphics.cpp",
         "src/backendContext.h",
@@ -173,21 +149,31 @@ cc_library(
     hdrs = [
         "include/gpl/Replace.h",
         "src/AbstractGraphics.h",
+        "src/fft.h",
+        "src/fftBackend.h",
         "src/graphicsNone.h",
         "src/mbff.h",
+        "src/nesterovBase.h",
+        "src/nesterovPlace.h",
+        "src/placerBase.h",
+        "src/point.h",
+        "src/routeBase.h",
     ],
     copts = [
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     local_defines = select({
         "//:gpu_cuda": ["ENABLE_GPU"],
         "//conditions:default": [],
     }),
+    visibility = [
+        "//src/gpl:__subpackages__",
+    ],
     deps = [
-        ":gpl_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/grt",
@@ -199,6 +185,7 @@ cc_library(
         "@boost.polygon",
         "@boost.random",
         "@boost.scope_exit",
+        "@boost.unordered",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
@@ -210,6 +197,19 @@ cc_library(
         "//:gpu_cuda": [":gpl_kokkos"],
         "//conditions:default": [],
     }),
+)
+
+cc_library(
+    name = "gpl",
+    hdrs = [
+        "include/gpl/Replace.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":gpl_impl",
+    ],
 )
 
 cc_library(
@@ -232,13 +232,12 @@ cc_library(
         "src",
     ],
     deps = [
-        ":gpl",
-        ":gpl_private_hdrs",
+        ":gpl_impl",
         "//:ord",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

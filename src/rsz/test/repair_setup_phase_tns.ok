@@ -45,12 +45,12 @@ Path Type: max
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
 [INFO RSZ-0221] Using custom phase sequence: TNS
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |       -0.3 |      4 | r2/D
-    final |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |       -0.3 |      1 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |      4 | r2/D
+    final |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

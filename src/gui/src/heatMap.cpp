@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2026, The OpenROAD Authors
 
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 #include <QDialog>
 #include <QObject>
@@ -16,7 +16,7 @@ namespace gui {
 
 namespace {
 
-using SetupMap = std::map<HeatMapDataSource*, HeatMapSetup*>;
+using SetupMap = std::map<web::HeatMapDataSource*, HeatMapSetup*>;
 
 SetupMap& activeSetups()
 {
@@ -26,7 +26,7 @@ SetupMap& activeSetups()
 
 }  // namespace
 
-void showHeatMapSetupDialog(HeatMapDataSource* source)
+void showHeatMapSetupDialog(web::HeatMapDataSource* source)
 {
   if (source == nullptr || source->getBlock() == nullptr) {
     return;

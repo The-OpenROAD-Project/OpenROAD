@@ -15,4 +15,4 @@ global_route -allow_congestion -verbose
 
 write_guides $guide_file
 
-diff_file congestion1.guideok $guide_file
+diff_files congestion1.guideok $guide_file

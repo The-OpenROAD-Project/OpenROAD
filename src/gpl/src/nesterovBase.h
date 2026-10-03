@@ -1151,6 +1151,9 @@ class NesterovBase
   //
   float getUniformTargetDensity() const;
 
+  // estimate target density based on the current placement
+  float estimateTargetDensity(float overflow);
+
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and
   // would be changed dynamically in RD loop

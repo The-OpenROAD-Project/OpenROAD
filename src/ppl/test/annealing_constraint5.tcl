@@ -12,4 +12,4 @@ set def_file [make_result_file annealing_constraint5.def]
 
 write_def $def_file
 
-diff_file annealing_constraint5.defok $def_file
+diff_files annealing_constraint5.defok $def_file

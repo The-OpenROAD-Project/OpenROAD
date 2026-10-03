@@ -71,6 +71,7 @@ cc_library(
     hdrs = [
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/Graph2D.h",
+        "src/fastroute/include/Overflow.h",
     ],
     copts = [
         "-fopenmp",
@@ -143,26 +144,7 @@ cc_library(
 )
 
 cc_library(
-    name = "grt_private_hdrs",
-    hdrs = [
-        "src/AbstractGrouteRenderer.h",
-        "src/AbstractRoutingCongestionDataSource.h",
-        "src/Net.h",
-        "src/Pin.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        ":groute",
-        ":route_pt",
-        "//src/odb/src/db",
-    ],
-)
-
-cc_library(
-    name = "grt",
+    name = "grt_impl",
     srcs = [
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
@@ -178,19 +160,26 @@ cc_library(
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
         "include/grt/Rudy.h",
+        "src/AbstractGrouteRenderer.h",
+        "src/AbstractRoutingCongestionDataSource.h",
+        "src/Net.h",
+        "src/Pin.h",
     ],
     copts = [
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
+    ],
+    visibility = [
+        "//src/grt:__subpackages__",
     ],
     deps = [
         ":abstract-fastroute",
         ":cugr",
         ":fastroute",
         ":groute",
-        ":grt_private_hdrs",
         ":route_pt",
         "//src/ant",
         "//src/dbSta",
@@ -207,6 +196,24 @@ cc_library(
         "@boost.iterator",
         "@boost.polygon",
         "@openmp",
+    ],
+)
+
+cc_library(
+    name = "grt",
+    hdrs = [
+        "include/grt/GlobalRouter.h",
+        "include/grt/PinGridLocation.h",
+        "include/grt/Rudy.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":groute",
+        ":grt_impl",
+        ":route_pt",
+        "//src/odb/src/db",
     ],
 )
 
@@ -246,14 +253,13 @@ cc_library(
         ":cugr",
         ":fastroute",
         ":groute",
-        ":grt",
-        ":grt_private_hdrs",
+        ":grt_impl",
         "//:ord",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

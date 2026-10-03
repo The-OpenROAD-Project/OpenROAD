@@ -39,6 +39,7 @@ genrule(
         "src/tile-merge.js",
         "src/tile-request.js",
         "src/device-pixels.js",
+        "src/layer-extents.js",
         "src/websocket-tile-layer.js",
         "src/merged-tile-layer.js",
         "src/display-controls.js",
@@ -79,6 +80,7 @@ genrule(
           " $(location src/tile-merge.js)" +
           " $(location src/tile-request.js)" +
           " $(location src/device-pixels.js)" +
+          " $(location src/layer-extents.js)" +
           " $(location src/websocket-tile-layer.js)" +
           " $(location src/merged-tile-layer.js)" +
           " $(location src/display-controls.js)" +
@@ -113,6 +115,7 @@ _WEB_ASSET_FILES = [
     "src/tile-merge.js",
     "src/tile-request.js",
     "src/device-pixels.js",
+    "src/layer-extents.js",
     "src/merged-tile-layer.js",
     "src/display-state.js",
     "src/3d-viewer-widget.js",
@@ -156,6 +159,64 @@ genrule(
     tools = [":embed_web_assets"],
 )
 
+# The Qt-free half of what used to be the gui: the data model every other
+# module draws through -- Painter, Renderer, Descriptor/Selected,
+# HeatMapDataSource -- published through gui/core.h.  It lives here because
+# the web viewer is its main consumer and nothing in it needs Qt; the Qt gui
+# links it too, so a binary carries one copy either way.
+#
+# Still the gui:: namespace and the gui/ include prefix.  Renaming those is a
+# much wider change and is not part of moving the code.
+cc_library(
+    name = "core",
+    srcs = [
+        "src/bufferTreeDescriptor.cpp",
+        "src/colorGenerator.cpp",
+        "src/dbDescriptors.cpp",
+        "src/descriptor_registry.cpp",
+        "src/gifWriter.cpp",
+        "src/guiDispatch.cpp",
+        "src/heatMapCore.cpp",
+        "src/heatMapPinDensity.cpp",
+        "src/heatMapPinDensity.h",
+        "src/heatMapPlacementDensity.cpp",
+        "src/heatMapPlacementDensity.h",
+        "src/heatMapRenderer.h",
+        "src/init_descriptors.cpp",
+        "src/renderer.cpp",
+        "src/staDescriptors.cpp",
+    ],
+    hdrs = [
+        "include/web/core.h",
+        "include/web/descriptor_registry.h",
+        "include/web/heatMap.h",
+        # The Qt gui's widgets build on these: its windows and views name
+        # the descriptors, and its layout tabs take colours from the same
+        # palette.  Private while this code and the gui shared a package;
+        # part of the interface now that they do not.
+        "src/bufferTreeDescriptor.h",
+        "src/colorGenerator.h",
+        "src/dbDescriptors.h",
+        "src/staDescriptors.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "//third-party/gif-h:gif_h",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
+        "@boost.multi_array",
+    ],
+)
+
 cc_library(
     name = "color",
     srcs = ["src/color.cpp"],
@@ -173,7 +234,6 @@ cc_library(
         "src/font_data.h",
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
-        "src/hierarchy_report.h",
         "src/module_color_palette.h",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
@@ -208,6 +268,7 @@ cc_library(
         "src/web_viewer_hook.h",
         "src/request_handler.h",
         "src/clock_tree_report.h",
+        "src/hierarchy_report.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -217,12 +278,13 @@ cc_library(
         "include",
         "src",
     ],
+    local_defines = ["HAVE_LIBDEFLATE"],
     deps = [
         ":color",
+        ":core",
         "//:cli_completer",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -234,6 +296,7 @@ cc_library(
         "@boost.geometry",
         "@boost.json",
         "@boost.system",
+        "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],

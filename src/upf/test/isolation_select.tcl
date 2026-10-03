@@ -19,4 +19,4 @@ initialize_floorplan -die_area { 0 0 500 500 } \
 
 set v_file [make_result_file isolation_select.v]
 write_verilog -include_pwr_gnd $v_file
-diff_file $v_file isolation_select.vok
+diff_files $v_file isolation_select.vok

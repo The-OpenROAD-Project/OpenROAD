@@ -3363,6 +3363,88 @@ float NesterovBase::getUniformTargetDensity() const
   return uniformTargetDensity_;
 }
 
+float NesterovBase::estimateTargetDensity(float overflow)
+{
+  if (getNesterovInstsArea() == 0) {
+    return uniformTargetDensity_;
+  }
+
+  // Populates each bin's placed-instance area
+  bg_.updateBinsGCellDensityArea(nb_gcells_,
+                                 static_cast<int>(nbc_->getNumThreads()));
+
+  // Do a binary search to find the density value that results in the
+  // target overflow.
+  auto bins = bg_.getBinsConst();
+
+  float min_density = uniformTargetDensity_;
+  float max_density = 1.0;
+  float current_density;
+  float current_overflow;
+
+  // 20 iterations should reach an error less than 1/2^20
+  int max_iter = 20;
+  for (int iter = 0; iter < max_iter; iter++) {
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "iter ({:}|{:})",
+               iter,
+               max_iter);
+    current_density = (min_density + max_density) / 2;
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "current_density {:g} ({:g}, {:g})",
+               current_density,
+               min_density,
+               max_density);
+    float sum_overflow_area_unscaled = 0;
+    for (auto& bin : bins) {
+      float non_place_area_unscaled = bin.getNonPlaceAreaUnscaled()
+                                      / bin.getTargetDensity()
+                                      * current_density;
+      float scaled_bin_area = bin.getBinArea() * current_density;
+
+      sum_overflow_area_unscaled
+          += std::max(0.0f,
+                      static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                          + non_place_area_unscaled - scaled_bin_area);
+    }
+
+    current_overflow = sum_overflow_area_unscaled / getNesterovInstsArea();
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "current_overflow {:10.9f}, sum_overflow_areaUnscaled "
+               "{:13.9e}, getNesterovInstsArea(): {:13.9e}",
+               current_overflow,
+               sum_overflow_area_unscaled,
+               static_cast<float>(getNesterovInstsArea()));
+    if (std::abs(current_overflow - overflow) < 1e-6) {
+      return current_density;
+    }
+
+    if (current_overflow < overflow) {
+      max_density = current_density;
+    } else {
+      min_density = current_density;
+    }
+  }
+  log_->warn(
+      GPL,
+      186,
+      "Binary search didn't converge after {} iterations. The best density "
+      "found was {:g}, with an overflow of {:6.5f}.",
+      max_iter,
+      current_density,
+      current_overflow);
+  return current_density;
+}
+
 float NesterovBase::initTargetDensity() const
 {
   return nbVars_.targetDensity;
@@ -5734,19 +5816,26 @@ static float fastExp(float exp)
 }
 
 // skip_indices holds the nb_gcells_ positions to leave out of the norm, in any
-// order. Subtracting them keeps the no-IO-pin path a plain loop over floats.
+// order (swapAndPop remaps them). With no IO pins the loop is a plain sum.
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
                          const std::vector<size_t>& skip_indices)
 {
+  // The skip list is short (the IO pins), so walk a sorted copy of it
+  // alongside the loop.
+  std::vector<size_t> skip = skip_indices;
+  std::ranges::sort(skip);
+  auto next_skip = skip.begin();
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
+    if (next_skip != skip.end() && *next_skip == i) {
+      while (next_skip != skip.end() && *next_skip == i) {
+        ++next_skip;
+      }
+      continue;
+    }
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
-  }
-  for (const size_t i : skip_indices) {
-    sumDistance -= (a[i].x - b[i].x) * (a[i].x - b[i].x);
-    sumDistance -= (a[i].y - b[i].y) * (a[i].y - b[i].y);
   }
 
   const size_t n = a.size() - skip_indices.size();

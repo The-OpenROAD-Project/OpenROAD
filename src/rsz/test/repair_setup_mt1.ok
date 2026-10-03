@@ -109,10 +109,10 @@
 [INFO RSZ-2023] SetupMt1Policy committed 98 / 100 moves.
 [INFO RSZ-2023] SetupMt1Policy committed 99 / 100 moves.
 [INFO RSZ-2023] SetupMt1Policy committed 100 / 100 moves.
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-    final |       0 |     100 |        0 |      0 |     0 |    +1.1% |  -44.102 |     -593.3 |     -520.9 |     41 | resp_msg[15]
+    final |       0 |     100 |        0 |      0 |     0 |    +1.1% |  -44.102 |     -520.9 |     41 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 100 instances: 14 up, 0 up match, 0 down, 86 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

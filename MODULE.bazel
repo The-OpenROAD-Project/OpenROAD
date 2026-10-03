@@ -32,9 +32,13 @@ bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
 # the lockfile entry.
 bazel_dep(name = "fftw", version = "3.3.10")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_bison", version = "0.3.1")
+bazel_dep(name = "rules_bison", version = "0.4")
 bazel_dep(name = "rules_cc", version = "0.2.18")
-bazel_dep(name = "rules_flex", version = "0.3.1")
+bazel_dep(name = "rules_flex", version = "0.4")
+
+# rules_bison/rules_flex only require rules_m4 0.2.x, whose default m4
+# toolchain does not build here; 0.3 does.
+bazel_dep(name = "rules_m4", version = "0.3")
 
 # rules_go is transitive (or-tools, gazelle, grpc-java, rules_buf). The
 # MVS-selected 0.53.0 references the top-level CcInfo global that Bazel 9
@@ -153,11 +157,10 @@ single_version_override(
 
 # gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
 # libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
-# hermetic-llvm's explicit libc -isystem entries (BCR #7642). 5.3.2.bcr.7
-# carries the upstream fix (BCR #7989).
+# hermetic-llvm's explicit libc -isystem entries.
 single_version_override(
     module_name = "gawk",
-    version = "5.3.2.bcr.7",
+    version = "5.4.0.bcr.2",
 )
 
 bazel_dep(name = "git", version = "2.54.0")
@@ -185,6 +188,7 @@ single_version_override(
     version = "1.4.21.bcr.4",
 )
 
+bazel_dep(name = "libdeflate", version = "1.26")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
 
@@ -256,8 +260,6 @@ single_version_override(
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
 bazel_dep(name = "bant", version = "0.3.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
-bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
-bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 
 # kepler-formal: the LEC engine the hierarchy conformance tests shell out to.
 # Never linked (GPL-3.0 vs BSD-3-Clause); built here only so the tests get the
@@ -296,9 +298,9 @@ bazel_dep(name = "kepler-formal", version = "1.0.0", dev_dependency = True)
 #     silently pin every other consumer of fmt.
 #   - zlib 1.3.2, likewise graph-wide, and into the shipped binaries.
 #
-# archive_override rather than git_override for the reason given for @orfs
-# below: a non-registry override is fetched during resolution of every bazel
-# command, so git_override makes every build need git access to github.com.
+# archive_override rather than git_override: a non-registry override is
+# fetched during resolution of every bazel command, so git_override makes
+# every build need git access to github.com.
 archive_override(
     module_name = "kepler-formal",
     integrity = "sha256-1ap3fiGjlWaZSG/kHAdxFpmgrTcMhqEmg6i1+1zssZY=",
@@ -320,59 +322,10 @@ archive_override(
 bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
 bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 
-# ORFS
-bazel_dep(name = "bazel-orfs", dev_dependency = True)
-bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
-
-BAZEL_ORFS_COMMIT = "551d4c72749411c4b1168c0d12322a9c34817c91"
-
-BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
-git_override(
-    module_name = "bazel-orfs",
-    commit = BAZEL_ORFS_COMMIT,
-    remote = BAZEL_ORFS_REMOTE,
-)
-
-git_override(
-    module_name = "bazel-orfs-verilog",
-    commit = BAZEL_ORFS_COMMIT,
-    remote = BAZEL_ORFS_REMOTE,
-    strip_prefix = "verilog",
-)
-
-# @orfs marks non-root-only directives (qt-bazel/yosys-slang git_overrides,
-# orfs.default(), toolchain registration) as dev_dependency, so they are no-ops
-# here; its bazel-orfs bazel_dep is non-dev so @orfs//flow can load
-# @bazel-orfs//:openroad.bzl when consumed non-root.
-#
-# Use archive_override (HTTPS tarball) rather than git_override so the
-# build resolves on networks that block direct git access to github.com.
-ORFS_COMMIT = "afad87da8d1ebd6ef1bc94288b4204420975a549"
-
-bazel_dep(name = "orfs", dev_dependency = True)
-archive_override(
-    module_name = "orfs",
-    sha256 = "3b61b0cb106bb64d5cb453dff404a346b29a16bf3614166532ffa6ef733e1f65",
-    strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
-    urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
-)
-
-bazel_dep(name = "yosys", version = "0.64", dev_dependency = True)
-bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
-archive_override(
-    module_name = "yosys-slang",
-    sha256 = "34198f2ed7b2d3175c3ce3c9fb1c6c91f28dbcfe531d97b91d6b12c48431bdef",
-    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
-    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
-)
-
 # --- Extensions ---
 
 register_toolchains(
     "@llvm//toolchain:all",
-    "@rules_verilator//verilator:verilator_toolchain",
     dev_dependency = True,
 )
 
@@ -484,15 +437,6 @@ npm.npm_translate_lock(
     pnpm_lock = "//src/web/test:pnpm-lock.yaml",
 )
 use_repo(npm, "npm")
-
-orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
-orfs.default(
-    # Use OpenROAD of this repo instead of the one bundled with @orfs
-    openroad = "//:openroad",
-    # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
-    # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
-    yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
-)
 
 # --- External archives ---
 

@@ -152,7 +152,7 @@ ScriptWidget::~ScriptWidget()
              this,
              &ScriptWidget::outputChanged);
   if (logger_ != nullptr) {
-    // make sure to remove the Gui sink from logger
+    // make sure to remove the web::Gui sink from logger
     logger_->removeSink(sink_);
   }
 }

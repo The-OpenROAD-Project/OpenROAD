@@ -50,6 +50,7 @@ ARG numThreads=NotSet
 ARG orVersion=""
 
 RUN <<EOF
+set -e
 groupadd user --gid 9000
 useradd --create-home --uid 9000 -g user --skel /etc/skel --shell /bin/bash user
 EOF
@@ -59,8 +60,10 @@ WORKDIR /OpenROAD
 COPY --chown=user:user . .
 # Keep Bazel's build cache out of the published builder image.
 RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 <<EOF
+set -e
 OPENROAD_VERSION="${orVersion}" \
     bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
+test -x /OpenROAD/install/bin/openroad
 # Preserve the path used by builder-image consumers.
 mkdir -p build/bin
 ln -s ../../install/bin/openroad build/bin/openroad
@@ -79,6 +82,7 @@ COPY --chown=root:root --from=builder /OpenROAD/install/ /usr/
 ENV OPENROAD_EXE=/usr/bin/openroad
 
 RUN <<EOF
+set -e
 groupadd user --gid 9000
 useradd --create-home --uid 9000 -g user --skel /etc/skel --shell /bin/bash user
 EOF

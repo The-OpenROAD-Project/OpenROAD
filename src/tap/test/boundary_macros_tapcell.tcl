@@ -26,4 +26,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file boundary_macros_tapcell.defok $def_file
+diff_files boundary_macros_tapcell.defok $def_file

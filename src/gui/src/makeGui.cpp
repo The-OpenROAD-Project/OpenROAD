@@ -10,9 +10,9 @@
 #include <string>
 
 #include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "tcl.h"
+#include "web/heatMap.h"
 
 namespace gui {
 
@@ -38,9 +38,9 @@ void initGui(Tcl_Interp* interp,
              utl::Logger* logger)
 {
   // Brings up the descriptor registry and the heat map sources for the web
-  // viewer and other non-Qt consumers, and gives Gui the database and logger
-  // its own dispatch reports through.
-  Gui::get()->initCommon(db, sta, logger);
+  // viewer and other non-Qt consumers, and gives web::Gui the database and
+  // logger its own dispatch reports through.
+  web::Gui::get()->initCommon(db, sta, logger);
 
   // Tcl requires this to be a writable string
   std::string cmd_save_image(

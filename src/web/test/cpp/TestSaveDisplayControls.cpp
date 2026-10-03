@@ -11,9 +11,9 @@
 
 #include "boost/json.hpp"
 #include "gtest/gtest.h"
-#include "gui/core.h"
-#include "gui/heatMap.h"
 #include "tst/nangate45_fixture.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 #include "web/web.h"
 #include "web_viewer_hook.h"
 
@@ -219,14 +219,14 @@ TEST_F(SaveDisplayControlsTest, SaveThenRestoreRoundTrip)
 namespace {
 
 // A renderer that only exists to carry display controls.
-class ControlsOnlyRenderer : public gui::Renderer
+class ControlsOnlyRenderer : public web::Renderer
 {
  public:
   ControlsOnlyRenderer(const char* group) : group_(group) {}
   const char* getDisplayControlGroupName() override { return group_; }
 
   // Exposed so the tests can build the control set they need.
-  using gui::Renderer::addDisplayControl;
+  using web::Renderer::addDisplayControl;
 
  private:
   const char* group_;
@@ -240,7 +240,7 @@ TEST(RendererControlExclusivity, TurningOneOnTurnsOffTheNamedSiblings)
   renderer.addDisplayControl("Maze search", true, {}, {"Graph edges"});
   renderer.addDisplayControl("Graph edges", true);
   renderer.addDisplayControl("Route guides", true);
-  gui::Gui::get()->registerRenderer(&renderer);
+  web::Gui::get()->registerRenderer(&renderer);
 
   WebViewerHook hook;
   for (const char* name : {"Maze search", "Graph edges", "Route guides"}) {
@@ -255,7 +255,7 @@ TEST(RendererControlExclusivity, TurningOneOnTurnsOffTheNamedSiblings)
   EXPECT_TRUE(hook.checkDisplayControlVisible("Detailed Router/Route guides"))
       << "an unnamed sibling is untouched";
 
-  gui::Gui::get()->unregisterRenderer(&renderer);
+  web::Gui::get()->unregisterRenderer(&renderer);
 }
 
 TEST(RendererControlExclusivity, EmptyNameExcludesEverySibling)
@@ -264,7 +264,7 @@ TEST(RendererControlExclusivity, EmptyNameExcludesEverySibling)
   renderer.addDisplayControl("Shapes", true, {}, {""});
   renderer.addDisplayControl("Nodes", true);
   renderer.addDisplayControl("Sources", true);
-  gui::Gui::get()->registerRenderer(&renderer);
+  web::Gui::get()->registerRenderer(&renderer);
 
   WebViewerHook hook;
   for (const char* name : {"Shapes", "Nodes", "Sources"}) {
@@ -276,7 +276,7 @@ TEST(RendererControlExclusivity, EmptyNameExcludesEverySibling)
   EXPECT_FALSE(hook.checkDisplayControlVisible("IR Drop/Nodes"));
   EXPECT_FALSE(hook.checkDisplayControlVisible("IR Drop/Sources"));
 
-  gui::Gui::get()->unregisterRenderer(&renderer);
+  web::Gui::get()->unregisterRenderer(&renderer);
 }
 
 TEST(RendererControlExclusivity, DoesNotReachIntoAnotherGroup)
@@ -285,8 +285,8 @@ TEST(RendererControlExclusivity, DoesNotReachIntoAnotherGroup)
   router.addDisplayControl("Maze search", true, {}, {""});
   ControlsOnlyRenderer pdn("PDN");
   pdn.addDisplayControl("Vias", true);
-  gui::Gui::get()->registerRenderer(&router);
-  gui::Gui::get()->registerRenderer(&pdn);
+  web::Gui::get()->registerRenderer(&router);
+  web::Gui::get()->registerRenderer(&pdn);
 
   WebViewerHook hook;
   hook.setDisplayControlVisible("Detailed Router/Maze search", true);
@@ -296,8 +296,8 @@ TEST(RendererControlExclusivity, DoesNotReachIntoAnotherGroup)
   EXPECT_TRUE(hook.checkDisplayControlVisible("PDN/Vias"))
       << "exclusivity is scoped to the parent group";
 
-  gui::Gui::get()->unregisterRenderer(&router);
-  gui::Gui::get()->unregisterRenderer(&pdn);
+  web::Gui::get()->unregisterRenderer(&router);
+  web::Gui::get()->unregisterRenderer(&pdn);
 }
 
 // A control with no exclusivity set changes nothing else.
@@ -306,7 +306,7 @@ TEST(RendererControlExclusivity, NoExclusivityIsANoOp)
   ControlsOnlyRenderer renderer("PDN");
   renderer.addDisplayControl("Vias", true);
   renderer.addDisplayControl("Straps", true);
-  gui::Gui::get()->registerRenderer(&renderer);
+  web::Gui::get()->registerRenderer(&renderer);
 
   WebViewerHook hook;
   hook.setDisplayControlVisible("PDN/Vias", true);
@@ -315,7 +315,7 @@ TEST(RendererControlExclusivity, NoExclusivityIsANoOp)
 
   EXPECT_TRUE(hook.checkDisplayControlVisible("PDN/Straps"));
 
-  gui::Gui::get()->unregisterRenderer(&renderer);
+  web::Gui::get()->unregisterRenderer(&renderer);
 }
 
 // ─── The served list of per-renderer controls ────────────────────────────────
@@ -325,7 +325,7 @@ TEST(RendererControlsJson, ListsARegisteredRenderersControls)
   ControlsOnlyRenderer renderer("PDN");
   renderer.addDisplayControl("Vias", false);
   renderer.addDisplayControl("Straps", true);
-  gui::Gui::get()->registerRenderer(&renderer);
+  web::Gui::get()->registerRenderer(&renderer);
 
   WebViewerHook hook;
   const boost::json::value parsed
@@ -344,7 +344,7 @@ TEST(RendererControlsJson, ListsARegisteredRenderersControls)
   EXPECT_FALSE(seen.at("PDN/Vias")) << "the renderer's own default is served";
   EXPECT_TRUE(seen.at("PDN/Straps"));
 
-  gui::Gui::get()->unregisterRenderer(&renderer);
+  web::Gui::get()->unregisterRenderer(&renderer);
 }
 
 // The web draws heat maps through its own tile layer and its own panel group,
@@ -354,17 +354,17 @@ TEST(RendererControlsJson, ListsARegisteredRenderersControls)
 // drawn a second time through the renderer path.
 TEST(RendererControlsJson, OmitsHeatMapControlsButStillSeedsThem)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, nullptr);
-  const auto& sources = gui::getRegisteredHeatMapSources();
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, nullptr);
+  const auto& sources = web::getRegisteredHeatMapSources();
   ASSERT_FALSE(sources.empty()) << "registerBuiltinHeatMapSources ran";
   const std::string source_name = sources.front()->getName();
 
-  // Stand in for the HeatMapRenderer that gui::Gui::registerHeatMap creates in
+  // Stand in for the HeatMapRenderer that web::Gui::registerHeatMap creates in
   // the real binary: same group, and a control named after the source, off by
   // default (HeatMapRenderer passes initial_visible = false).
   ControlsOnlyRenderer renderer("Heat Maps");
   renderer.addDisplayControl(source_name, false);
-  gui::Gui::get()->registerRenderer(&renderer);
+  web::Gui::get()->registerRenderer(&renderer);
 
   WebViewerHook hook;
   const boost::json::value parsed
@@ -379,7 +379,7 @@ TEST(RendererControlsJson, OmitsHeatMapControlsButStillSeedsThem)
   EXPECT_FALSE(hook.checkDisplayControlVisible("Heat Maps/" + source_name))
       << "it is still seeded off, so the renderer path draws nothing";
 
-  gui::Gui::get()->unregisterRenderer(&renderer);
+  web::Gui::get()->unregisterRenderer(&renderer);
 }
 
 }  // namespace
@@ -388,14 +388,14 @@ TEST(RendererControlsJson, OmitsHeatMapControlsButStillSeedsThem)
 // some other renderer's group, is a real control and must still be listed.
 TEST(RendererControlsJson, KeepsAHeatMapNameThatBelongsToAnotherGroup)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, nullptr);
-  const auto& sources = gui::getRegisteredHeatMapSources();
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, nullptr);
+  const auto& sources = web::getRegisteredHeatMapSources();
   ASSERT_FALSE(sources.empty());
   const std::string source_name = sources.front()->getName();
 
   ControlsOnlyRenderer renderer("Detailed Router");
   renderer.addDisplayControl(source_name, true);
-  gui::Gui::get()->registerRenderer(&renderer);
+  web::Gui::get()->registerRenderer(&renderer);
 
   WebViewerHook hook;
   const boost::json::value parsed
@@ -411,7 +411,7 @@ TEST(RendererControlsJson, KeepsAHeatMapNameThatBelongsToAnotherGroup)
   }
   EXPECT_TRUE(found) << "only the heat map renderer's own group is filtered";
 
-  gui::Gui::get()->unregisterRenderer(&renderer);
+  web::Gui::get()->unregisterRenderer(&renderer);
 }
 
 }  // namespace web
