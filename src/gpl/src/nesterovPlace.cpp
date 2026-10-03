@@ -564,7 +564,7 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      refreshCurGradients();
+      // refreshCurGradients();
 
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
