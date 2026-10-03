@@ -21,6 +21,7 @@ COMPULSORY_TESTS = [
     "ndr_no_auto_taper",
     "obstruction",
     "pa_single_pin",
+    "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
     "ta_pin_aligned",
