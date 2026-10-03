@@ -162,6 +162,15 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   float slack(const odb::dbNet* net, const MinMax* min_max);
 
+  // Timing constraints in odb (see dbSdcInDb.hh). saveSdcToDb() stores the
+  // current constraints in the block so an .odb is self-describing;
+  // restoreSdcFromDb() brings them back and returns whether any were
+  // found; sdcInDbKind() reports "native", "text" or "none".
+  void saveSdcToDb();
+  void clearSdcInDb();
+  bool restoreSdcFromDb();
+  const char* sdcInDbKind();
+
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
