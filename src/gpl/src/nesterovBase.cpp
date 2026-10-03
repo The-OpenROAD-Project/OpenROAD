@@ -4084,78 +4084,6 @@ void NesterovBase::nbUpdateNextGradient(float wlCoeffX, float wlCoeffY)
                   wlCoeffY);
 }
 
-void NesterovBase::updateSinglePrevGradient(size_t gCellIndex,
-                                            float wlCoeffX,
-                                            float wlCoeffY)
-{
-  updateSingleGradient(gCellIndex,
-                       prevSLPSumGrads_,
-                       prevSLPWireLengthGrads_,
-                       prevSLPDensityGrads_,
-                       wlCoeffX,
-                       wlCoeffY);
-}
-
-void NesterovBase::updateSingleCurGradient(size_t gCellIndex,
-                                           float wlCoeffX,
-                                           float wlCoeffY)
-{
-  updateSingleGradient(gCellIndex,
-                       curSLPSumGrads_,
-                       curSLPWireLengthGrads_,
-                       curSLPDensityGrads_,
-                       wlCoeffX,
-                       wlCoeffY);
-}
-
-void NesterovBase::updateSingleGradient(
-    size_t gCellIndex,
-    std::vector<FloatPoint>& sumGrads,
-    std::vector<FloatPoint>& wireLengthGrads,
-    std::vector<FloatPoint>& densityGrads,
-    float wlCoeffX,
-    float wlCoeffY)
-{
-  if (gCellIndex >= nb_gcells_.size()) {
-    return;
-  }
-
-  GCell* gCell = nb_gcells_.at(gCellIndex);
-  if (gCell->isLocked()) {
-    wireLengthGrads[gCellIndex] = FloatPoint(0, 0);
-    densityGrads[gCellIndex] = FloatPoint(0, 0);
-    sumGrads[gCellIndex] = FloatPoint(0, 0);
-    return;
-  }
-
-  (void) wlCoeffX;
-  (void) wlCoeffY;
-  // Cold path (db callback when a gCell is added mid-iter). updateForce
-  // has been refreshed by the most recent NesterovPlace iter's
-  // updateWireLengthForceWA call; the backend (CPU or GPU) returns the
-  // per-cell grad consistent with that state.
-  wireLengthGrads[gCellIndex] = nbc_->getSingleWireLengthGradientWA(gCell);
-  densityGrads[gCellIndex] = density_grad_backend_->getCellGradient(gCell);
-
-  sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
-                           + densityPenalty_ * densityGrads[gCellIndex].x;
-  sumGrads[gCellIndex].y = wireLengthGrads[gCellIndex].y
-                           + densityPenalty_ * densityGrads[gCellIndex].y;
-
-  FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell);
-  FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
-
-  FloatPoint sumPrecondi(
-      wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
-      wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
-
-  sumPrecondi.x = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
-  sumPrecondi.y = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
-
-  sumGrads[gCellIndex].x /= sumPrecondi.x;
-  sumGrads[gCellIndex].y /= sumPrecondi.y;
-}
-
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
   assert(omp_get_thread_num() == 0);
@@ -4821,7 +4749,21 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   }
 }
 
-void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
+std::optional<NesterovBase::SlpState> NesterovBase::getSlpState(
+    odb::dbInst* db_inst) const
+{
+  const auto it = db_inst_to_nb_index_.find(db_inst);
+  if (it == db_inst_to_nb_index_.end()) {
+    return std::nullopt;
+  }
+  const size_t k = it->second;
+  return SlpState{prevSLPCoordi_[k],
+                  prevSLPSumGrads_[k],
+                  curSLPCoordi_[k],
+                  curSLPSumGrads_[k]};
+}
+
+void NesterovBase::updateGCellState()
 {
   for (auto& db_inst : new_instances_) {
     auto db_it = db_inst_to_nb_index_.find(db_inst);
@@ -4865,32 +4807,14 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
           = curCoordi_[gcells_index] = initCoordi_[gcells_index]
           = FloatPoint(gcell->dCx(), gcell->dCy());
 
-      // analogous to updateCurGradient()
-      updateSingleCurGradient(gcells_index, wlCoeffX, wlCoeffY);
-
-      // analogous to NesterovBase::updateInitialPrevSLPCoordi()
-      GCell* curGCell = nb_gcells_[gcells_index];
-      float prevCoordiX = curSLPCoordi_[gcells_index].x
-                          - npVars_->initialPrevCoordiUpdateCoef
-                                * curSLPSumGrads_[gcells_index].x;
-      float prevCoordiY = curSLPCoordi_[gcells_index].y
-                          - npVars_->initialPrevCoordiUpdateCoef
-                                * curSLPSumGrads_[gcells_index].y;
-      FloatPoint newCoordi(
-          getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
-          getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
-      prevSLPCoordi_[gcells_index] = newCoordi;
-
-      // analogous to
-      // NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
-      nb_gcells_[gcells_index]->setDensityCenterLocation(
-          prevSLPCoordi_[gcells_index].x, prevSLPCoordi_[gcells_index].y);
-
-      // analogous to updatePrevGradient()
-      updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
+      // Gradients are left to NesterovPlace::refreshCurGradients(), which
+      // evaluates every GCell once the whole repair has landed. The prev slot
+      // needs no seeding: only init() reads it, and updateNextIter() rotates
+      // it out before the next read.
     } else {
       // Not finding a db_inst in the map should not be a problem. Just ignore
       // Occurs when instance created and destroyed in same iteration.
+      // destroyCbkGCell() now drops such entries, so this is not expected.
       debugPrint(log_,
                  GPL,
                  "callbacks",
@@ -4913,7 +4837,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
              db_inst->getName());
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
-    new_instances_.push_back(db_inst);
+    new_instances_.insert(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
     size_t gcells_index = nb_gcells_.size() - 1;
     debugPrint(log_,
@@ -4993,6 +4917,10 @@ std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
              "NesterovBase {}: destroyCbkGCell {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level",
              db_inst->getName());
+  // An instance created and destroyed before updateGCellState() runs must not
+  // be seeded later through a stale pointer.
+  new_instances_.erase(db_inst);
+
   auto db_it = db_inst_to_nb_index_.find(db_inst);
   if (db_it == db_inst_to_nb_index_.end()) {
     // not found

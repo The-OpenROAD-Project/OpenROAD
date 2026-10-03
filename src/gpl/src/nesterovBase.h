@@ -17,6 +17,7 @@
 #include <ostream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -932,11 +933,6 @@ class NesterovBaseCommon
   void getAllWireLengthGradientsWA(const std::vector<GCellHandle>& gCells,
                                    std::vector<FloatPoint>& out);
 
-  // Single-cell wirelength gradient (cold path — NesterovBase::
-  // updateSingleGradient via the db callback). Defined in
-  // wirelengthGradient.cpp.
-  FloatPoint getSingleWireLengthGradientWA(const GCell* gCell);
-
   // GPU path: run the per-inst gradient gather on device only (no host
   // copy) so the NB-level device scatter can consume it. No-op on the CPU
   // backend. Defined in wirelengthGradient.cpp.
@@ -1213,21 +1209,6 @@ class NesterovBase
   void nbUpdateCurGradient(float wlCoeffX, float wlCoeffY);
   void nbUpdateNextGradient(float wlCoeffX, float wlCoeffY);
 
-  // Used for updates based on callbacks
-  void updateSingleGradient(size_t gCellIndex,
-                            std::vector<FloatPoint>& sumGrads,
-                            std::vector<FloatPoint>& wireLengthGrads,
-                            std::vector<FloatPoint>& densityGrads,
-                            float wlCoeffX,
-                            float wlCoeffY);
-
-  void updateSinglePrevGradient(size_t gCellIndex,
-                                float wlCoeffX,
-                                float wlCoeffY);
-  void updateSingleCurGradient(size_t gCellIndex,
-                               float wlCoeffX,
-                               float wlCoeffY);
-
   void updateInitialPrevSLPCoordi();
 
   float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
@@ -1290,7 +1271,19 @@ class NesterovBase
 
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
-  void updateGCellState(float wlCoeffX, float wlCoeffY);
+  void updateGCellState();
+
+  // Previous and current position and stored gradient of the instance's GCell
+  // (the current gradient is the one the next Nesterov step uses).
+  struct SlpState
+  {
+    FloatPoint prev_pos;
+    FloatPoint prev_grad;
+    FloatPoint cur_pos;
+    FloatPoint cur_grad;
+  };
+  // std::nullopt when the instance is not in this region.
+  std::optional<SlpState> getSlpState(odb::dbInst* db_inst) const;
 
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
@@ -1385,8 +1378,10 @@ class NesterovBase
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
   std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
-  // used to update gcell states after fixPointers() is called
-  std::vector<odb::dbInst*> new_instances_;
+  // used to update gcell states after fixPointers() is called. Holds only
+  // instances that are still alive: destroyCbkGCell() drops its entry, so a
+  // deleted dbInst whose memory odb reuses cannot appear twice.
+  std::unordered_set<odb::dbInst*> new_instances_;
 
   struct RemovedFillerState
   {
