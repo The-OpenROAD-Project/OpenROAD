@@ -704,7 +704,9 @@ void FastRouteCore::updateSlacks()
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
     if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-      estimator->estimateAllGlobalRouteParasitics();
+      // The router is idle here: nothing else reads or writes
+      // parasitics or delays until the estimate returns.
+      estimator->estimateAllGlobalRouteParasitics(num_threads_);
     }
   }
 
@@ -1658,7 +1660,7 @@ float FastRouteCore::CalculatePartialSlack()
   std::vector<float> slacks;
   slacks.reserve(netCount());
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-    estimator->estimateAllGlobalRouteParasitics();
+    estimator->estimateAllGlobalRouteParasitics(num_threads_);
   }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];

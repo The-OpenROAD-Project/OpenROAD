@@ -575,8 +575,6 @@ void NesterovPlace::runTimingDriven(int iter,
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       }
-
-      reset_nesterov_momentum_ = true;
     }
 
     // problem occured
@@ -1164,12 +1162,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
-    if (reset_nesterov_momentum_) {
-      curA = 1.0;
-      reset_nesterov_momentum_ = false;
-      log_->info(GPL, 111, "Timing-driven: restarting Nesterov momentum.");
-    }
-
     const float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)

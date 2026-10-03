@@ -58,18 +58,32 @@ class DelayBufListTest : public tst::IntegratedFixture
   float driveResistance(const std::string& buf)
   {
     sta::LibertyCell* cell = db_network_->findLibertyCell(buf.c_str());
-    EXPECT_NE(cell, nullptr) << buf << " has no liberty cell";
+    if (cell == nullptr) {
+      ADD_FAILURE() << buf << " has no liberty cell";
+      return 0.0f;
+    }
     sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
+    if (out == nullptr) {
+      ADD_FAILURE() << buf << " is not a buffer";
+      return 0.0f;
+    }
     return out->driveResistance();
   }
 
   float intrinsicDelay(const std::string& buf)
   {
     sta::LibertyCell* cell = db_network_->findLibertyCell(buf.c_str());
-    EXPECT_NE(cell, nullptr) << buf << " has no liberty cell";
+    if (cell == nullptr) {
+      ADD_FAILURE() << buf << " has no liberty cell";
+      return 0.0f;
+    }
     sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
+    if (out == nullptr) {
+      ADD_FAILURE() << buf << " is not a buffer";
+      return 0.0f;
+    }
     return out->intrinsicDelay(sta_.get());
   }
 };
@@ -119,6 +133,10 @@ TEST_F(DelayBufListTest, KeptBuffersAreMoreThan10PercentApart)
   for (size_t i = 1; i < result.size(); ++i) {
     const float prev = driveResistance(result[i - 1]);
     const float cur = driveResistance(result[i]);
+    if (cur <= 0.0f) {
+      ADD_FAILURE() << result[i] << " has non-positive drive resistance";
+      continue;
+    }
     EXPECT_GT((cur - prev) / cur, 0.1) << result[i - 1] << " vs " << result[i];
   }
 }
@@ -129,8 +147,13 @@ TEST_F(DelayBufListTest, KeepsLargerIntrinsicDelayWithinResistanceGroup)
 {
   const std::vector<std::string> group = {"BUF_X1", "CLKBUF_X1"};
   // Precondition: the two are within 10% of each other.
-  ASSERT_LT(std::abs(driveResistance("BUF_X1") - driveResistance("CLKBUF_X1"))
-                / driveResistance("CLKBUF_X1"),
+  const float buf_resistance = driveResistance("BUF_X1");
+  const float clkbuf_resistance = driveResistance("CLKBUF_X1");
+  if (clkbuf_resistance <= 0.0f) {
+    ADD_FAILURE() << "CLKBUF_X1 has non-positive drive resistance";
+    return;
+  }
+  ASSERT_LT(std::abs(buf_resistance - clkbuf_resistance) / clkbuf_resistance,
             0.1);
 
   const std::vector<std::string> result = delayBufList(group);
