@@ -564,7 +564,7 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      refreshCurGradients(iter);
+      refreshCurGradients();
 
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
@@ -576,7 +576,7 @@ void NesterovPlace::runTimingDriven(int iter,
         is_min_hpwl_ = true;
       }
 
-      // reset_nesterov_momentum_ = true;
+      reset_nesterov_momentum_ = true;
     }
 
     // problem occured
@@ -587,26 +587,10 @@ void NesterovPlace::runTimingDriven(int iter,
   }
 }
 
-// repair_design rebuilt nets and instances, so the cached current gradients
-// were measured on a netlist that no longer exists. The step length estimate
-// compares them against the first post-repair gradient, and that mismatch does
-// not shrink with the step: backtracking reads it as extreme curvature and,
-// with the momentum restarted, drives the step length to its floor, where the
-// cells stop moving. Evaluate every gradient at curSLP on the repaired
+// Evaluate every gradient at curSLP on the repaired
 // netlist, in the same order as init().
-void NesterovPlace::refreshCurGradients(int iter)
+void NesterovPlace::refreshCurGradients()
 {
-  // global_placement_debug -inst: show the selected instance's gradient as it
-  // was cached before the repair and as re-evaluated on the repaired netlist.
-  odb::dbInst* debug_inst = npVars_.debug_inst;
-  if (debug_inst) {
-    td_trace_iters_left_ = kTdTraceIters;
-    for (auto& nb : nbVec_) {
-      nb->reportCurGradient(
-          debug_inst, fmt::format("Iter {} cached (before refresh)", iter + 1));
-    }
-  }
-
   for (auto& nb : nbVec_) {
     nb->updateDensityCenterCurSLP();
     nb->updateDensityFieldBin();
@@ -614,15 +598,21 @@ void NesterovPlace::refreshCurGradients(int iter)
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
+  // GUI debug: the selected instance's report now pairs the gradient evaluated
+  // on the repaired netlist with the stale one still stored for the next step.
+  const bool report = graphics_ && graphics_->enabled() && npVars_.debug;
+  if (report) {
+    log_->report("Timing-driven repair: before replacing stored gradients");
+    graphics_->cellPlot(true);
+  }
+
   for (auto& nb : nbVec_) {
     npUpdateCurGradient(nb);
   }
 
-  if (debug_inst) {
-    for (auto& nb : nbVec_) {
-      nb->reportCurGradient(
-          debug_inst, fmt::format("Iter {} fresh (after refresh)", iter + 1));
-    }
+  if (report) {
+    log_->report("Timing-driven repair: after replacing stored gradients");
+    graphics_->cellPlot(true);
   }
 }
 
@@ -981,22 +971,12 @@ void NesterovPlace::cleanReportsDirs(
   }
 }
 
-void NesterovPlace::doBackTracking(const float coeff, const int iter)
+void NesterovPlace::doBackTracking(const float coeff)
 {
-  // global_placement_debug -inst: trace each try for the selected instance
-  // during the first iterations after a timing-driven refresh.
-  odb::dbInst* trace_inst
-      = td_trace_iters_left_ > 0 ? npVars_.debug_inst : nullptr;
-  std::vector<float> step_used(nbVec_.size());
-
   // Back-Tracking loop
   int numBackTrak = 0;
   for (numBackTrak = 0; numBackTrak < NesterovPlaceVars::maxBackTrack;
        numBackTrak++) {
-    for (size_t i = 0; i < nbVec_.size(); ++i) {
-      step_used[i] = nbVec_[i]->getStoredStepLength();
-    }
-
     // fill in nextCoordinates with given stepLength_
     for (auto& nb : nbVec_) {
       nb->nesterovUpdateCoordinates(coeff);
@@ -1024,20 +1004,6 @@ void NesterovPlace::doBackTracking(const float coeff, const int iter)
       num_region_diverged_ += nb->isDiverged();
     }
 
-    if (trace_inst) {
-      const bool accepted = stepLengthLimitOK != nbVec_.size();
-      for (size_t i = 0; i < nbVec_.size(); ++i) {
-        nbVec_[i]->reportStepTry(
-            trace_inst,
-            fmt::format("Iter {} try {} (momentum coeff {:g}, {})",
-                        iter,
-                        numBackTrak + 1,
-                        coeff,
-                        accepted ? "accepted" : "retry"),
-            step_used[i]);
-      }
-    }
-
     if (num_region_diverged_ > 0) {
       divergeMsg_
           = "RePlAce diverged during gradient descent calculation, resulting "
@@ -1051,10 +1017,6 @@ void NesterovPlace::doBackTracking(const float coeff, const int iter)
     if (stepLengthLimitOK != nbVec_.size()) {
       break;
     }
-  }
-
-  if (td_trace_iters_left_ > 0) {
-    --td_trace_iters_left_;
   }
 
   debugPrint(log_, GPL, "np", 1, "NumBackTrak: {}", numBackTrak + 1);
@@ -1230,7 +1192,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
     const float coeff = (prevA - 1.0) / curA;
 
-    doBackTracking(coeff, nesterov_iter);
+    doBackTracking(coeff);
 
     // Adjust Phi dynamically for larger designs
     for (auto& nb : nbVec_) {

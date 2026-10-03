@@ -4749,81 +4749,18 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   }
 }
 
-void NesterovBase::reportCurGradient(odb::dbInst* db_inst,
-                                     std::string_view label) const
+std::optional<NesterovBase::SlpState> NesterovBase::getSlpState(
+    odb::dbInst* db_inst) const
 {
   const auto it = db_inst_to_nb_index_.find(db_inst);
   if (it == db_inst_to_nb_index_.end()) {
-    return;
+    return std::nullopt;
   }
   const size_t k = it->second;
-  dbBlock* block = pb_->db()->getChip()->getBlock();
-  const FloatPoint& pos = curSLPCoordi_[k];
-  const FloatPoint& wl = curSLPWireLengthGrads_[k];
-  const FloatPoint& density = curSLPDensityGrads_[k];
-  const FloatPoint& sum = curSLPSumGrads_[k];
-
-  log_->report("{} Inst: {}", label, db_inst->getName());
-  log_->report("  position (curSLP)      ({:.4f}, {:.4f}) um",
-               block->dbuToMicrons(static_cast<double>(pos.x)),
-               block->dbuToMicrons(static_cast<double>(pos.y)));
-  log_->report("  wire length            ({:+.6e}, {:+.6e})", wl.x, wl.y);
-  log_->report("  density * penalty      ({:+.6e}, {:+.6e}) (penalty: {:g})",
-               densityPenalty_ * density.x,
-               densityPenalty_ * density.y,
-               densityPenalty_);
-  log_->report(
-      "  stored (preconditioned, used by the next step) ({:+.6e}, {:+.6e})",
-      sum.x,
-      sum.y);
-}
-
-void NesterovBase::reportStepTry(odb::dbInst* db_inst,
-                                 std::string_view label,
-                                 const float step_used) const
-{
-  const auto it = db_inst_to_nb_index_.find(db_inst);
-  if (it == db_inst_to_nb_index_.end()) {
-    return;
-  }
-  const size_t k = it->second;
-  dbBlock* block = pb_->db()->getChip()->getBlock();
-  const FloatPoint& cur_pos = curSLPCoordi_[k];
-  const FloatPoint& next_pos = nextSLPCoordi_[k];
-  const FloatPoint& cur_grad = curSLPSumGrads_[k];
-  const FloatPoint& next_grad = nextSLPSumGrads_[k];
-  const double d_pos
-      = std::hypot(next_pos.x - cur_pos.x, next_pos.y - cur_pos.y);
-  const double d_grad
-      = std::hypot(next_grad.x - cur_grad.x, next_grad.y - cur_grad.y);
-
-  log_->report("{} Inst: {} (step length used: {:g})",
-               label,
-               db_inst->getName(),
-               step_used);
-  log_->report("  cur  pos ({:.4f}, {:.4f}) um  grad ({:+.6e}, {:+.6e})",
-               block->dbuToMicrons(static_cast<double>(cur_pos.x)),
-               block->dbuToMicrons(static_cast<double>(cur_pos.y)),
-               cur_grad.x,
-               cur_grad.y);
-  log_->report("  next pos ({:.4f}, {:.4f}) um  grad ({:+.6e}, {:+.6e})",
-               block->dbuToMicrons(static_cast<double>(next_pos.x)),
-               block->dbuToMicrons(static_cast<double>(next_pos.y)),
-               next_grad.x,
-               next_grad.y);
-  log_->report(
-      "  this inst: |next pos - cur pos| {:g} DBU, |next grad - cur grad| "
-      "{:g}, ratio {:g}",
-      d_pos,
-      d_grad,
-      d_grad > 0 ? d_pos / d_grad : 0.0);
-  log_->report(
-      "  all insts: coordiDistance {:g}, gradDistance {:g}, estimate {:g}, "
-      "stored step length {:g}",
-      coordiDistance_,
-      gradDistance_,
-      gradDistance_ > 0 ? coordiDistance_ / gradDistance_ : 0.0f,
-      stepLength_);
+  return SlpState{prevSLPCoordi_[k],
+                  prevSLPSumGrads_[k],
+                  curSLPCoordi_[k],
+                  curSLPSumGrads_[k]};
 }
 
 void NesterovBase::updateGCellState()

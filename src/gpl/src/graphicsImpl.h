@@ -171,6 +171,9 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   static constexpr const char* kDrawTimingNets = "Draw Timing Nets";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
+  // Selected instance by identity; selected_ indexes GCell storage, which
+  // timing-driven repairs reorder.
+  odb::dbInst* selected_inst_ = nullptr;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;

@@ -1273,17 +1273,17 @@ class NesterovBase
   // including parallel vectors.
   void updateGCellState();
 
-  // Report one instance's position and its current gradient as stored for the
-  // next Nesterov step (global_placement_debug -inst). No-op when the instance
-  // is not in this region.
-  void reportCurGradient(odb::dbInst* db_inst, std::string_view label) const;
-  // Report one backtracking try for one instance: current and candidate
-  // position and gradient, the instance's own share of the step length
-  // estimate, and the region-wide distances the estimate is made from. Call
-  // after nesterovUpdateStepLength().
-  void reportStepTry(odb::dbInst* db_inst,
-                     std::string_view label,
-                     float step_used) const;
+  // Previous and current position and stored gradient of the instance's GCell
+  // (the current gradient is the one the next Nesterov step uses).
+  struct SlpState
+  {
+    FloatPoint prev_pos;
+    FloatPoint prev_grad;
+    FloatPoint cur_pos;
+    FloatPoint cur_grad;
+  };
+  // std::nullopt when the instance is not in this region.
+  std::optional<SlpState> getSlpState(odb::dbInst* db_inst) const;
 
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
