@@ -101,6 +101,7 @@ class Parser
                                   frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
   void updateNetRouting(frNet*, odb::dbNet*);
+  void addSecondaryPowerStrapTerms(frNet* net_in, odb::dbNet* db_net);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,

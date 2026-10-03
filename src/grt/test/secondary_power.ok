@@ -1,0 +1,45 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: secondary_power
+[INFO ODB-0131]     Created 2 components and 8 component-terminals.
+[INFO ODB-0132]     Created 1 special nets and 0 connections.
+[INFO ODB-0133]     Created 1 nets and 2 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0021] Max routing layer: metal4
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 10
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 0
+[INFO GRT-0002] Maximum degree: 0
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal       1914          1914          0.00%
+metal2     Vertical         1422          1422          0.00%
+metal3     Horizontal       1712          1712          0.00%
+metal4     Vertical          963           963          0.00%
+---------------------------------------------------------------
+
+[INFO GRT-0999] Routing secondary power net VDDD to nearest strap.
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
+---------------------------------------------------------------------------------------
+metal1            1914             0            0.00%             0 /  0 /  0
+metal2            1422             0            0.00%             0 /  0 /  0
+metal3            1712             0            0.00%             0 /  0 /  0
+metal4             963             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total             6011             0            0.00%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 28 um
+[INFO GRT-0014] Routed nets: 1
+No differences found.
