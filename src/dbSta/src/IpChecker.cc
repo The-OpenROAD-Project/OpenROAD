@@ -294,8 +294,9 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
 
   std::string master_name = master->getName();
 
-  // Collect minimum-width signal pin centers grouped by layer
-  // key: layer, value: list of pin center positions along routing direction
+  // Collect minimum-width signal pin centers grouped by layer.
+  // For horizontal routing layers the center is a Y coordinate; for vertical
+  // routing layers it is an X coordinate.
   odb::PtrMap<odb::dbTechLayer, std::vector<int>> layer_pin_centers;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -315,41 +316,38 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
         bool is_horizontal
             = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
-        // Only check minimum-width pins
-        // For wider pins, routing might connect regardless of offset
+        // Only check minimum-width pins. Wider pins may connect to a track
+        // regardless of their center offset.
         int pin_dim = is_horizontal ? rect.dy() : rect.dx();
         if (min_width > 0 && static_cast<uint32_t>(pin_dim) > min_width) {
-          continue;  // Wider than minimum, skip for now
+          continue;
         }
 
-        // Pin center along the routing direction
         int center = is_horizontal ? rect.yCenter() : rect.xCenter();
         layer_pin_centers[layer].push_back(center);
       }
     }
   }
 
-  // For each layer, compute GCD of distances and check against track pitch
+  struct LayerAlignmentConstraint
+  {
+    odb::dbTechLayer* layer;
+    int pitch;
+    int required_offset;
+    bool is_horizontal;
+  };
+  std::vector<LayerAlignmentConstraint> constraints;
+
+  auto positive_mod = [](int value, int modulus) {
+    int result = value % modulus;
+    return result < 0 ? result + modulus : result;
+  };
+
+  // First validate alignment within each layer, then keep the translation
+  // congruence required by that layer for the cross-layer check below.
   for (auto& [layer, centers] : layer_pin_centers) {
-    if (centers.size() < 2) {
-      continue;  // Need at least 2 pins to compute distances
-    }
-
-    // Sort to compute distances between consecutive pin centers.
-    // Sorting is needed because pins are collected per-mterm, not in spatial
-    // order. Consecutive distances after sorting give the minimal spacings
-    // whose GCD represents the pin grid.
-    std::ranges::sort(centers);
-    int distance_gcd = 0;
-    for (size_t i = 1; i < centers.size(); i++) {
-      int dist = centers[i] - centers[i - 1];
-      if (dist > 0) {
-        distance_gcd = std::gcd(distance_gcd, dist);
-      }
-    }
-
-    if (distance_gcd == 0) {
-      continue;  // All pins at same position
+    if (centers.empty()) {
+      continue;
     }
 
     odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
@@ -357,23 +355,20 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
       continue;
     }
 
-    // Compute the effective pitch across all track patterns on this layer.
-    // Multiple patterns with different offsets create a finer effective pitch.
     bool is_horizontal
         = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
     int num_patterns = is_horizontal ? track_grid->getNumGridPatternsY()
                                      : track_grid->getNumGridPatternsX();
-
     if (num_patterns == 0) {
       continue;
     }
 
-    // Collect all origins and pitches
     std::vector<int> origins;
     int effective_pitch = 0;
-
     for (int i = 0; i < num_patterns; i++) {
-      int origin = 0, line_count = 0, pitch = 0;
+      int origin = 0;
+      int line_count = 0;
+      int pitch = 0;
       if (is_horizontal) {
         track_grid->getGridPatternY(i, origin, line_count, pitch);
       } else {
@@ -386,7 +381,6 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
       }
     }
 
-    // The offsets between pattern origins also refine the effective pitch
     for (size_t i = 1; i < origins.size(); i++) {
       int offset_diff = std::abs(origins[i] - origins[0]);
       if (offset_diff > 0) {
@@ -394,14 +388,20 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
       }
     }
 
-    if (effective_pitch <= 0) {
+    if (effective_pitch <= 0 || origins.empty()) {
       continue;
     }
 
-    // Pin distance GCD must be a multiple of the effective pitch
-    bool compatible = (distance_gcd % effective_pitch == 0);
+    std::ranges::sort(centers);
+    int distance_gcd = 0;
+    for (size_t i = 1; i < centers.size(); i++) {
+      int dist = centers[i] - centers[i - 1];
+      if (dist > 0) {
+        distance_gcd = std::gcd(distance_gcd, dist);
+      }
+    }
 
-    if (!compatible) {
+    if (distance_gcd > 0 && distance_gcd % effective_pitch != 0) {
       logger_->warn(utl::CHK,
                     30,
                     "Master {} signal pins on layer {} cannot be aligned "
@@ -412,6 +412,53 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
                     distance_gcd,
                     effective_pitch);
       warning_count_++;
+      continue;
+    }
+
+    // All track-pattern origins are congruent modulo effective_pitch because
+    // origin differences participate in the GCD above. A macro translation
+    // must therefore satisfy this residue for this layer.
+    constraints.push_back(
+        {layer,
+         effective_pitch,
+         positive_mod(origins[0] - centers[0], effective_pitch),
+         is_horizontal});
+  }
+
+  // A single macro translation must satisfy every layer that moves on the
+  // same placement axis. By the generalized Chinese Remainder Theorem,
+  // t = a (mod m) and t = b (mod n) are compatible iff a-b is divisible by
+  // gcd(m, n). Horizontal routing layers constrain Y; vertical layers X.
+  for (size_t i = 0; i < constraints.size(); i++) {
+    for (size_t j = i + 1; j < constraints.size(); j++) {
+      const auto& first = constraints[i];
+      const auto& second = constraints[j];
+      if (first.is_horizontal != second.is_horizontal) {
+        continue;
+      }
+
+      int common_pitch = std::gcd(first.pitch, second.pitch);
+      if (common_pitch <= 0) {
+        continue;
+      }
+
+      int offset_delta = first.required_offset - second.required_offset;
+      if (positive_mod(offset_delta, common_pitch) != 0) {
+        logger_->warn(
+            utl::CHK,
+            31,
+            "Master {} signal pins on layers {} and {} cannot be aligned "
+            "simultaneously to their track grids (required offsets {} mod {} "
+            "and {} mod {})",
+            master_name,
+            first.layer->getName(),
+            second.layer->getName(),
+            first.required_offset,
+            first.pitch,
+            second.required_offset,
+            second.pitch);
+        warning_count_++;
+      }
     }
   }
 }

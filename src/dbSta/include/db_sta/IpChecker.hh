@@ -22,7 +22,7 @@ namespace sta {
 // Checks performed:
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
 // LEF-CHK-002: Pin coordinates aligned to manufacturing grid
-// LEF-CHK-003: Pin routing grid alignment
+// LEF-CHK-003: Pin routing grid alignment, including cross-layer compatibility
 // LEF-CHK-004-005: Pin accessibility (signal and power)
 // LEF-CHK-006: Polygon count
 // LEF-CHK-007: Antenna information present
@@ -66,7 +66,7 @@ class IpChecker
   // LEF-CHK-002: Pin coordinates aligned to manufacturing grid
   void checkPinManufacturingGridAlignment(odb::dbMaster* master);
 
-  // LEF-CHK-003: Pin routing grid alignment
+  // LEF-CHK-003: Pin routing grid alignment, including cross-layer compatibility
   void checkPinRoutingGridAlignment(odb::dbMaster* master);
 
   // LEF-CHK-004-005: Pin accessibility (signal and power)
