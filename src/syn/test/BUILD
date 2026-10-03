@@ -16,6 +16,20 @@ regression_test(
     ],
 )
 
+regression_test(
+    name = "comb_loop",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
+        "comb_loop.ok",
+        "comb_loop.v",
+        "comb_loop_cells.lef",
+        "comb_loop_cells.lib",
+    ],
+)
+
 # No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
 # defines its own.

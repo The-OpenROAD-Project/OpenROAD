@@ -29,6 +29,7 @@ proc synthesize { args } {
   # now bitblast incl. arithmetic
   syn::bitblast_cmd true
   syn::opt_cmd
+  syn::check_combinational_loops_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
     set script {&ps; &st; &dc2 -v; &dc2 -v; &if -g -K 6; &dc2 -v; &dc2 -v; &dc2 -v; &ps}
