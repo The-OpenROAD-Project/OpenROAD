@@ -54,7 +54,11 @@ std::unordered_map<uint32_t, std::string> collectNetNames(const Graph& g)
       }
       std::string str = name->nameStr();
       if (name->isVector()) {
-        str += "[" + std::to_string(name->from() + i) + "]";
+        // Same bit mapping as Synthesis::resolveNetRef, so the name can be
+        // passed back to dump_fanin_cone.
+        const uint32_t index
+            = name->from() <= name->to() ? name->from() + i : name->from() - i;
+        str += "[" + std::to_string(index) + "]";
       }
       names[id] = std::move(str);
       tentative[id] = name->tentative();
@@ -359,19 +363,19 @@ void checkCombinationalLoops(Graph& g, utl::Logger* logger)
       cycle.pop_back();  // the start net is repeated at the end
     }
     for (Net net : cycle) {
-      auto it = names.find(Graph::netId(net));
-      if (it == names.end()) {
-        continue;
+      const uint32_t id = Graph::netId(net);
+      auto it = names.find(id);
+      if (it == names.end() && g.resolve(net).first->is<LoopBreaker>()) {
+        continue;  // an alias of its input, which is also on the cycle
       }
       if (reported == kMaxReportedNames) {
         nets += ", ...";
         break;
       }
-      nets += (reported ? ", " : "") + it->second;
+      // Unnamed nets print as %<id>, which dump_fanin_cone also accepts.
+      nets += (reported ? ", " : "")
+              + (it != names.end() ? it->second : "%" + std::to_string(id));
       reported++;
-    }
-    if (nets.empty()) {
-      nets = "<unnamed nets>";
     }
     logger->warn(utl::SYN, 79, "Combinational loop through: {}", nets);
   }

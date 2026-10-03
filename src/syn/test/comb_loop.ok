@@ -55,7 +55,7 @@ Top level design units:
 
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
-[WARNING SYN-0079] Combinational loop through: y
+[WARNING SYN-0079] Combinational loop through: y, %5
 [ERROR SYN-0080] Design contains 1 combinational loop(s). Combinational loops, including latches inferred from incomplete assignments in always blocks, are not supported.
 SYN-0080
 Top level design units:
@@ -63,6 +63,6 @@ Top level design units:
 
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
-[WARNING SYN-0079] Combinational loop through: en_latch
+[WARNING SYN-0079] Combinational loop through: %9, en_latch, %8
 [ERROR SYN-0080] Design contains 1 combinational loop(s). Combinational loops, including latches inferred from incomplete assignments in always blocks, are not supported.
 SYN-0080
