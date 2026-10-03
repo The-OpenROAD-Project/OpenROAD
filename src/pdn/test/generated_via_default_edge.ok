@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: generated_via_enclosure/edge_macro.lef, created 1 library cells
+[INFO ODB-0128] Design: enclosure_fixture
+[INFO ODB-0131]     Created 1 components and 2 component-terminals.
+[INFO PDN-0001] Inserting grid: core
+[INFO PDN-0001] Inserting grid: macro_grid - macro
+[WARNING PDN-0110] No via inserted between metal4 and metal5 at (21.0000, 36.5400) - (69.0000, 36.5500) on VSS
+GENERATED_VIAS 209 NEGATIVE_ENCLOSURE_INSTANCES 0 INVALID_ENCLOSURE_INSTANCES 0
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VSS are connected.
+POWER_GRID_VDD 0 1
+POWER_GRID_VSS 0 1
+ENCLOSURE_REGRESSION_PASS
