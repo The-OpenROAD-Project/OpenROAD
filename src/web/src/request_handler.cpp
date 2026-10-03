@@ -27,6 +27,8 @@
 #include <vector>
 
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/core/string.hpp"
+#include "boost/beast/http/rfc7230.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -322,6 +324,33 @@ std::string assetPathFromTarget(const std::string_view target)
     return "/index.html";
   }
   return path;
+}
+
+bool acceptsGzip(const std::string_view accept_encoding)
+{
+  namespace beast = boost::beast;
+  // A trailing comma, which the grammar allows: ext_list gives a last coding
+  // with no parameters those of the coding before it (fixed in Beast f8805c6).
+  const std::string list = std::string(accept_encoding) + ',';
+  bool wildcard = false;
+  for (const auto& [coding, params] : beast::http::ext_list(list)) {
+    // A q-value lies in [0, 1], so it is zero exactly when no digit is
+    // nonzero; a malformed one counts as a refusal too.
+    bool acceptable = true;
+    for (const auto& [name, value] : params) {
+      if (beast::iequals(name, "q")) {
+        const std::string_view q = value;
+        acceptable = q.find_first_of("123456789") != std::string_view::npos;
+      }
+    }
+    if (beast::iequals(coding, "gzip") || beast::iequals(coding, "x-gzip")) {
+      return acceptable;
+    }
+    if (coding == "*") {
+      wildcard = acceptable;
+    }
+  }
+  return wildcard;
 }
 
 bool webSocketOriginAllowed(const std::string_view origin,

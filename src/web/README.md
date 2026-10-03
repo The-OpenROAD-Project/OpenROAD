@@ -249,8 +249,10 @@ The report includes:
 - **Display controls**, hierarchy browser, clock tree, and other panels from
   the live viewer (features that require server interaction show empty states).
 
-The report requires an internet connection to load Leaflet and GoldenLayout
-CSS/JS from CDN.
+The report is self-contained: the stylesheets and the script are inlined, so it
+opens from the filesystem with no server and no network. The schematic and 3D
+panels need a live server, so their libraries are left out of the report and
+the panels say so when opened there.
 
 #### Examples
 
@@ -511,6 +513,72 @@ The module has two parts:
   A single-page application using Leaflet.js for the map and GoldenLayout for
   resizable panels. Communicates with the server over a binary WebSocket
   protocol.
+
+## Browser libraries
+
+The viewer used to load its libraries from CDNs, one of them over plain http
+([#11065](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065)).
+They now come from npm and are bundled into two blobs embedded in the OpenROAD
+binary, so the browser only ever talks to the OpenROAD process and the viewer
+works on a machine with no network.
+
+| Package | Used for |
+| --- | --- |
+| `leaflet` | the tiled layout view |
+| `golden-layout` | the dockable panel layout |
+| `three` | the 3D viewer |
+| `elkjs` | schematic placement and routing |
+| `netlistsvg` | schematic rendering |
+
+Their licences are gathered into `THIRD_PARTY_LICENSES.txt`, together with the
+notices of the code netlistsvg's prebuilt bundle compiles in
+(`licenses/netlistsvg-bundle.txt`). The server serves it at
+`/THIRD_PARTY_LICENSES.txt`, and every saved report carries it in a comment.
+
+Versions are pinned in `package.json` and `pnpm-lock.yaml`. To add or upgrade
+one:
+
+```sh
+# edit the version in src/web/package.json, then
+bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+bazel mod deps --lockfile_mode=update      # refresh MODULE.bazel.lock
+bazel run //src/web/dist:dist              # rebuild the checked-in bundles
+```
+
+**Changing anything under `src/web/src/` needs that last step too**, then commit
+what it changed: `bazel build //:openroad` embeds the bundler's output directly,
+but the CMake build embeds the copy in [`dist/`](dist/README.md) as it stands,
+so regenerate it before a CMake rebuild. CI fails a PR whose copy is stale.
+
+`//src/web:BUILD` turns those into:
+
+| Target | Output | Where it goes |
+| --- | --- | --- |
+| `app_bundle` | `app.min.js` | served as `/app.min.js` |
+| `report_bundle` | `report.min.js` | inlined into a saved report |
+| `vendor_css`, `app_css` | `vendor.min.css`, `app.min.css` | inlined, first and last in the cascade |
+| `gl_theme_{dark,light}_bundle` | `gl-*.min.css` | inlined between them, switched by id |
+| `minify_html` + `index_html` | `index.min.html` | served as `/index.html` |
+| `third_party_licenses` | `THIRD_PARTY_LICENSES.txt` | served, and copied into saved reports |
+
+Everything embedded is gzipped at build time and stored compressed. The server
+hands its assets over as they are when the request accepts gzip, and inflates
+them otherwise; a saved report inflates its own (`src/asset_gzip.cpp`).
+
+Three things about the bundle are easy to break:
+
+- `netlistsvg` reads ELK off the global scope, so `elk-global.js` has to run
+  first. A module's imports are hoisted above its own statements, which is why
+  that assignment lives in a module of its own rather than inline.
+- `leaflet` touches `window` as it loads, and the modules that draw on the map
+  use it as the global `L`. It stays a global (`leaflet-global.js`), which
+  Leaflet sets itself, so that the pure functions in those modules can still be
+  unit-tested with no DOM.
+- The report bundle leaves out elk, netlistsvg and three, whose panels need a
+  live server. `entry-report.js` is what draws that line: those libraries reach
+  the page only through `vendor-globals.js`. three goes through
+  `three-subset.js`, which names the classes the 3D viewer uses so the rest is
+  left out; `//src/web/test:three_subset_test` fails when one is missing.
 
 ## Server API
 

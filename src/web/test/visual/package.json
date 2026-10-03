@@ -2,5 +2,10 @@
   "name": "schematic-render-preview",
   "private": true,
   "type": "module",
-  "description": "Dev-only headless render preview for the web schematic widget. Run: npm install puppeteer-core"
+  "description": "Dev-only headless render preview for the web schematic widget. Run: npm install",
+  "dependencies": {
+    "elkjs": "0.9.3",
+    "netlistsvg": "1.0.2",
+    "puppeteer-core": "^24.0.0"
+  }
 }

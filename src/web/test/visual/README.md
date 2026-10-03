@@ -11,15 +11,21 @@ The viewer renders gates natively via netlistsvg: the server tags cells with a
 skin draws, and netlistsvg lays them out. This tool serves `src/` directly, so
 it picks up edits to `openroad_skin.svg` and `schematic-widget.js` immediately.
 
-This is a developer tool, not part of CI: it needs a local Chrome and loads the
-netlistsvg JS bundle from its CDN (same as the viewer itself).
+This is a developer tool, not part of CI: it needs a local Chrome and a local
+`npm install` (see below).
 
 ## Setup (one-time)
 
 ```sh
 cd src/web/test/visual
-npm install puppeteer-core
+npm install
 ```
+
+That pulls puppeteer-core plus elkjs and netlistsvg, which the harness serves
+itself, so a render fetches nothing from the network. npm does not apply the
+patch the viewer's bundle carries (`../../patches/netlistsvg@1.0.2.patch`), so
+the harness makes the same substitution as it serves netlistsvg; without it the
+wires would not meet the pins the way they do in the viewer.
 
 You also need Google Chrome / Chromium. The default path is
 `/usr/bin/google-chrome`; override with `CHROME=/path/to/chrome`.

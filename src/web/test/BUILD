@@ -1,9 +1,11 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@openroad-pip//:requirements.bzl", "requirement")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -36,12 +38,24 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in TESTS]
 
+# The viewer's sources.  A test whose modules import an npm package lists it
+# from //src/web, where node looks for it (see three_subset_test).
 JS_FILES = ["//src/web:js_files"]
 
 DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
 ] + JS_FILES
+
+py_test(
+    name = "npm_lock_test",
+    srcs = ["npm_lock_test.py"],
+    data = [
+        "//src/web:package.json",
+        "//src/web:pnpm-lock.yaml",
+    ],
+    deps = [requirement("pyyaml")],
+)
 
 test_suite(
     name = "cpp_tests",
@@ -51,6 +65,7 @@ test_suite(
         ":request_handler_test",
         ":save_display_controls_test",
         ":tile_generator_test",
+        ":web_assets_test",
     ],
 )
 
@@ -79,6 +94,24 @@ js_test(
     name = "schematic_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "schematic_pins_test",
+    data = [
+        "//src/web:node_modules/elkjs",
+        "//src/web:node_modules/netlistsvg",
+        "//src/web:src/openroad_skin.svg",
+    ],
+    entry_point = "js/test-schematic-pins.js",
+    no_copy_to_bin = ["//src/web:src/openroad_skin.svg"],
+)
+
+js_test(
+    name = "three_subset_test",
+    data = JS_FILES + ["//src/web:node_modules/three"],
+    entry_point = "js/test-three-subset.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -360,6 +393,17 @@ cc_test(
 )
 
 cc_test(
+    name = "web_assets_test",
+    srcs = [
+        "cpp/TestWebAssets.cpp",
+        "cpp/remote_urls.h",
+    ],
+    deps = [
+        "//src/web",
+    ],
+)
+
+cc_test(
     name = "heat_map_test",
     srcs = ["cpp/TestHeatMap.cpp"],
     data = [
@@ -528,7 +572,10 @@ cc_test(
 
 cc_test(
     name = "save_report_test",
-    srcs = ["cpp/TestSaveReport.cpp"],
+    srcs = [
+        "cpp/TestSaveReport.cpp",
+        "cpp/remote_urls.h",
+    ],
     data = [
         "//test:nangate45_data",
     ],

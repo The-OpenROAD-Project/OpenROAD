@@ -9,15 +9,15 @@
 // inspected) instead of guessed at.
 //
 // Usage:
-//   cd src/web/test/visual && npm i puppeteer-core   # one-time
-//   node preview.mjs [outDir]
+//   cd src/web/test/visual && npm install   # one-time
+//   node preview.mjs [outDir] [netlist.json ...]
 //
-// Requires google-chrome (or set CHROME=/path/to/chrome) and network access
-// (netlistsvg is loaded from its CDN, same as the real viewer).
+// Requires google-chrome (or set CHROME=/path/to/chrome).  elkjs and
+// netlistsvg come from this directory's node_modules; nothing is fetched.
 
 import puppeteer from 'puppeteer-core';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync } from 'node:fs';
-import { dirname, join, basename } from 'node:path';
+import { dirname, join, basename, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import http from 'node:http';
@@ -74,15 +74,18 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
 <style>:root{--bg-panel:#fff;--fg-primary:#111;--bg-header:#eee;--border:#ccc;
   --bg-main:#fff;--fg-muted:#999;--accent:#e05a00;--fg-white:#fff;}
   body{margin:0;background:#fff}#host svg{color:#111}</style>
-<script src="https://nturley.github.io/netlistsvg/elk.bundled.js"></script>
-<script src="https://nturley.github.io/netlistsvg/built/netlistsvg.bundle.js"></script>
+<script src="/vendor/elk.bundled.js"></script>
+<script src="/vendor/netlistsvg.bundle.js"></script>
 </head><body><div id="host" style="width:760px;height:460px"></div>
 <script type="module">
-  import { SchematicWidget } from '/schematic-widget.js';
+  // schematic-widget.js reads the skin off the global, as vendor-globals.js
+  // sets it in the app.
+  const skin = await fetch('/openroad_skin.svg');
+  if (!skin.ok) throw new Error('openroad_skin.svg: HTTP ' + skin.status);
+  window.openroadSkin = await skin.text();
+  const { SchematicWidget } = await import('/schematic-widget.js');
   const widget = new SchematicWidget({ element: document.getElementById('host') }, {});
   window.__render = async (json) => {
-    for (let i = 0; i < 300 && !widget._netlistsvgReady; i++)
-      await new Promise((r) => setTimeout(r, 50));
     if (!widget._netlistsvgReady) throw new Error('netlistsvg not ready');
     await widget.renderNetlist(json);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -91,7 +94,28 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
   window.__ready = true;
 </script></body></html>`;
 
-const MIME = { '.js': 'application/javascript', '.html': 'text/html' };
+const MIME = {
+  '.js': 'application/javascript',
+  '.html': 'text/html',
+  '.svg': 'image/svg+xml',
+};
+
+// The two libraries the widget reads off the global scope.
+const VENDOR = {
+  '/vendor/elk.bundled.js': 'elkjs/lib/elk.bundled.js',
+  '/vendor/netlistsvg.bundle.js': 'netlistsvg/built/netlistsvg.bundle.js',
+};
+// npm does not apply ../../patches/netlistsvg@1.0.2.patch, which the viewer's
+// bundle is built with, so the harness makes the same substitution.
+const NETLISTSVG_PATCH = ['de.cau.cs.kieler.portConstraints',
+                          'org.eclipse.elk.portConstraints'];
+
+// Only files under src/: anything else, ../ included, is a 404.
+function srcFile(url) {
+  const file = resolve(srcDir, '.' + url);
+  return file.startsWith(srcDir + sep) ? file : null;
+}
+
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (url === '/preview.html' || url === '/') {
@@ -100,10 +124,17 @@ const server = http.createServer((req, res) => {
   try {
     const ext = url.slice(url.lastIndexOf('.'));
     res.setHeader('Content-Type', MIME[ext] || 'text/plain');
-    res.end(readFileSync(join(srcDir, url)));
+    const file = VENDOR[url]
+      ? join(here, 'node_modules', VENDOR[url])
+      : srcFile(url);
+    if (!file) throw new Error(`${url} is outside src/`);
+    const body = readFileSync(file);
+    res.end(url === '/vendor/netlistsvg.bundle.js'
+      ? body.toString('utf8').replaceAll(...NETLISTSVG_PATCH)
+      : body);
   } catch (e) { res.statusCode = 404; res.end('not found'); }
 });
-await new Promise((r) => server.listen(0, r));
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
 const browser = await puppeteer.launch({
@@ -116,8 +147,10 @@ try {
     await page.setViewport({ width: 760, height: 460, deviceScaleFactor: 2 });
     const errs = [];
     page.on('pageerror', (e) => errs.push(e.message));
-    await page.goto(`http://localhost:${port}/preview.html`, { waitUntil: 'load' });
-    await page.waitForFunction('window.__ready === true', { timeout: 20000 });
+    await page.goto(`http://127.0.0.1:${port}/preview.html`, { waitUntil: 'load' });
+    // A harness error (say, a missing skin) would otherwise surface as a timeout.
+    await page.waitForFunction('window.__ready === true', { timeout: 20000 })
+      .catch((e) => { throw new Error(errs.join('; ') || e.message); });
     const svg = await page.evaluate((j) => window.__render(j), sample);
     await new Promise((r) => setTimeout(r, 250));
     await page.screenshot({ path: join(outDir, `${name}.png`) });
