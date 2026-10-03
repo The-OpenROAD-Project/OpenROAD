@@ -21,7 +21,7 @@ void BmapWriter::writeFile(const std::string& filename,
   const auto u = region->getDb()->getDbuPerMicron();
   std::ofstream bmap_file(filename);
   if (bmap_file.is_open()) {
-    for (auto bump : region->getChipBumps()) {
+    for (auto bump : region->getChipBTerms()) {
       std::string line;
       const auto inst_name = bump->getInst()->getName();
       const auto cell_type = bump->getInst()->getMaster()->getName();

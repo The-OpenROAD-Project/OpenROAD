@@ -32,11 +32,11 @@ odb::dbITerm* findBumpTerminal(odb::dbChipCapNode* cap_node,
                                utl::Logger* logger)
 {
   odb::dbITerm* bump_terminal = nullptr;
-  odb::dbChipBump* chip_bump = cap_node->getChipBumpInst()->getChipBump();
-  odb::dbNet* net = chip_bump->getNet();
+  odb::dbChipBTerm* chip_bterm = cap_node->getChipITerm()->getChipBTerm();
+  odb::dbNet* net = chip_bterm->getNet();
 
   if (net) {
-    for (odb::dbITerm* iterm : chip_bump->getInst()->getITerms()) {
+    for (odb::dbITerm* iterm : chip_bterm->getInst()->getITerms()) {
       if (iterm->getNet() == net) {
         bump_terminal = iterm;
         break;
@@ -154,12 +154,12 @@ void MultiChipSpefWriter::writeChipSpef(odb::dbChip* chip,
 std::string MultiChipSpefWriter::bondNodeName(odb::dbChipCapNode* cap_node)
 {
   odb::dbChipNet* chip_net = cap_node->getChipNet();
-  odb::dbChipBumpInst* bump_inst = cap_node->getChipBumpInst();
+  odb::dbChipITerm* bump_inst = cap_node->getChipITerm();
 
   std::vector<odb::dbChipInst*> chip_inst_path;
-  for (uint32_t i = 0; i < chip_net->getNumBumpInsts(); ++i) {
+  for (uint32_t i = 0; i < chip_net->getNumChipITerms(); ++i) {
     std::vector<odb::dbChipInst*> candidate_path;
-    if (chip_net->getBumpInst(i, candidate_path) == bump_inst) {
+    if (chip_net->getChipITerm(i, candidate_path) == bump_inst) {
       chip_inst_path = std::move(candidate_path);
       break;
     }

@@ -95,11 +95,11 @@ add_library(db
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
     dbChip.cpp
-    dbChipBump.cpp
-    dbChipBumpInst.cpp
+    dbChipBTerm.cpp
     dbChipCapNode.cpp
     dbChipConn.cpp
     dbChipInst.cpp
+    dbChipITerm.cpp
     dbChipNet.cpp
     dbChipPath.cpp
     dbChipRegion.cpp
@@ -167,9 +167,9 @@ add_library(db
     dbUnfoldedChipInst.cpp
     dbUnfoldedChipNet.cpp
     dbUnfoldedChipRegionInst.cpp
-    dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
+    dbChipITermItr.cpp
     dbChipNetCapNodeItr.cpp
     dbChipNetItr.cpp
     dbChipNetRSegItr.cpp

@@ -193,13 +193,13 @@
       "includes": ["dbChipConn.h", "dbChip.h"]
     },
     {
-      "name": "dbChipBumpInstItr",
-      "parentObject": "dbChipBumpInst",
-      "tableName": "chip_bump_inst_tbl",
+      "name": "dbChipITermItr",
+      "parentObject": "dbChipITerm",
+      "tableName": "chip_iterm_tbl",
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbChipBumpInst.h", "dbChipRegionInst.h"]
+      "includes": ["dbChipITerm.h", "dbChipRegionInst.h"]
     },
     {
       "name": "dbChipNetItr",
@@ -534,10 +534,10 @@
     },
     {
       "parent":"dbChipRegion",
-      "child":"dbChipBump",
+      "child":"dbChipBTerm",
       "type":"1_n", 
       "schema":"kSchemaChipBump",
-      "tbl_name":"chip_bump_tbl_"
+      "tbl_name":"chip_bterm_tbl_"
     },
     {
       "parent":"dbDatabase",
@@ -581,9 +581,9 @@
     },
     {
       "parent":"dbDatabase",
-      "child":"dbChipBumpInst",
+      "child":"dbChipITerm",
       "type":"1_n",
-      "tbl_name":"chip_bump_inst_tbl_",
+      "tbl_name":"chip_iterm_tbl_",
       "schema":"kSchemaChipBump",
       "flags": ["no-serial"]
     },

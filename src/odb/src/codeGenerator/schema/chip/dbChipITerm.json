@@ -1,10 +1,11 @@
 {
-  "name": "dbChipBumpInst",
+  "name": "dbChipITerm",
+  "hash": "0xC3302A8D",
   "type": "dbObject",
   "fields": [
-    { "name": "chip_bump_", "type":"dbId<_dbChipBump>", "flags": ["private"] },
+    { "name": "chip_bterm_", "type":"dbId<_dbChipBTerm>", "flags": ["private"] },
     { "name": "chip_region_inst_", "type":"dbId<_dbChipRegionInst>", "flags": ["private"] },
-    { "name": "region_next_", "type":"dbId<_dbChipBumpInst>", "flags": ["private"] }
+    { "name": "region_next_", "type":"dbId<_dbChipITerm>", "flags": ["private"] }
   ],
   "h_includes": ["odb/dbId.h"],
   "cpp_includes": ["dbInst.h", "dbChip.h"]

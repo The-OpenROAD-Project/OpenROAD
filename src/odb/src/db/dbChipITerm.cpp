@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "dbChipBumpInst.h"
+#include "dbChipITerm.h"
 
 #include "dbChip.h"
 #include "dbCore.h"
@@ -11,17 +11,17 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
-#include "dbChipBump.h"
+#include "dbChipBTerm.h"
 #include "dbChipRegion.h"
 #include "dbChipRegionInst.h"
 // User Code End Includes
 namespace odb {
-template class dbTable<_dbChipBumpInst>;
+template class dbTable<_dbChipITerm>;
 
-bool _dbChipBumpInst::operator==(const _dbChipBumpInst& rhs) const
+bool _dbChipITerm::operator==(const _dbChipITerm& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  if (chip_bump_ != rhs.chip_bump_) {
+  if (chip_bterm_ != rhs.chip_bterm_) {
     return false;
   }
   if (chip_region_inst_ != rhs.chip_region_inst_) {
@@ -35,32 +35,32 @@ bool _dbChipBumpInst::operator==(const _dbChipBumpInst& rhs) const
   // NOLINTEND(readability-simplify-boolean-expr)
 }
 
-bool _dbChipBumpInst::operator<(const _dbChipBumpInst& rhs) const
+bool _dbChipITerm::operator<(const _dbChipITerm& rhs) const
 {
   return true;
 }
 
-_dbChipBumpInst::_dbChipBumpInst(_dbDatabase* db)
+_dbChipITerm::_dbChipITerm(_dbDatabase* db)
 {
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbChipBumpInst& obj)
+dbIStream& operator>>(dbIStream& stream, _dbChipITerm& obj)
 {
-  stream >> obj.chip_bump_;
+  stream >> obj.chip_bterm_;
   stream >> obj.chip_region_inst_;
   stream >> obj.region_next_;
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbChipBumpInst& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbChipITerm& obj)
 {
-  stream << obj.chip_bump_;
+  stream << obj.chip_bterm_;
   stream << obj.chip_region_inst_;
   stream << obj.region_next_;
   return stream;
 }
 
-void _dbChipBumpInst::collectMemInfo(MemInfo& info)
+void _dbChipITerm::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
@@ -68,29 +68,29 @@ void _dbChipBumpInst::collectMemInfo(MemInfo& info)
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbChipBumpInst - Methods
+// dbChipITerm - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-// User Code Begin dbChipBumpInstPublicMethods
+// User Code Begin dbChipITermPublicMethods
 
-dbChipBump* dbChipBumpInst::getChipBump() const
+dbChipBTerm* dbChipITerm::getChipBTerm() const
 {
-  _dbChipBumpInst* obj = (_dbChipBumpInst*) this;
+  _dbChipITerm* obj = (_dbChipITerm*) this;
   dbChipRegionInst* chip_region_inst = getChipRegionInst();
   _dbChipRegion* chip_region
       = (_dbChipRegion*) chip_region_inst->getChipRegion();
-  return (dbChipBump*) chip_region->chip_bump_tbl_->getPtr(obj->chip_bump_);
+  return (dbChipBTerm*) chip_region->chip_bterm_tbl_->getPtr(obj->chip_bterm_);
 }
 
-dbChipRegionInst* dbChipBumpInst::getChipRegionInst() const
+dbChipRegionInst* dbChipITerm::getChipRegionInst() const
 {
-  _dbChipBumpInst* obj = (_dbChipBumpInst*) this;
+  _dbChipITerm* obj = (_dbChipITerm*) this;
   _dbDatabase* db = obj->getDatabase();
   return (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr(
       obj->chip_region_inst_);
 }
 
-// User Code End dbChipBumpInstPublicMethods
+// User Code End dbChipITermPublicMethods
 }  // namespace odb
 // Generator Code End Cpp

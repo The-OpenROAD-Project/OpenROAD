@@ -5,7 +5,7 @@
 #include "dbChipCapNode.h"
 
 #include "dbChip.h"
-#include "dbChipBumpInst.h"
+#include "dbChipITerm.h"
 #include "dbChipNet.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -23,7 +23,7 @@ bool _dbChipCapNode::operator==(const _dbChipCapNode& rhs) const
   if (next_chip_net_cap_node_ != rhs.next_chip_net_cap_node_) {
     return false;
   }
-  if (chip_bump_inst_ != rhs.chip_bump_inst_) {
+  if (chip_iterm_ != rhs.chip_iterm_) {
     return false;
   }
   if (capacitance_ != rhs.capacitance_) {
@@ -48,7 +48,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipCapNode& obj)
 {
   stream >> obj.chip_net_;
   stream >> obj.next_chip_net_cap_node_;
-  stream >> obj.chip_bump_inst_;
+  stream >> obj.chip_iterm_;
   stream >> obj.capacitance_;
   return stream;
 }
@@ -57,7 +57,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipCapNode& obj)
 {
   stream << obj.chip_net_;
   stream << obj.next_chip_net_cap_node_;
-  stream << obj.chip_bump_inst_;
+  stream << obj.chip_iterm_;
   stream << obj.capacitance_;
   return stream;
 }
@@ -144,40 +144,39 @@ dbChipNet* dbChipCapNode::getChipNet() const
   return (dbChipNet*) chip_net;
 }
 
-dbChipBumpInst* dbChipCapNode::getChipBumpInst() const
+dbChipITerm* dbChipCapNode::getChipITerm() const
 {
   _dbChipCapNode* chip_cap_node = (_dbChipCapNode*) this;
 
-  if (chip_cap_node->chip_bump_inst_ == 0) {
+  if (chip_cap_node->chip_iterm_ == 0) {
     return nullptr;
   }
 
   _dbChip* chip = (_dbChip*) chip_cap_node->getOwner();
   _dbDatabase* db = chip->getDatabase();
 
-  return (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(
-      chip_cap_node->chip_bump_inst_);
+  return (dbChipITerm*) db->chip_iterm_tbl_->getPtr(chip_cap_node->chip_iterm_);
 }
 
-void dbChipCapNode::setChipBumpInst(dbChipBumpInst* chip_bump_inst)
+void dbChipCapNode::setChipITerm(dbChipITerm* chip_iterm)
 {
   _dbChipCapNode* chip_cap_node = (_dbChipCapNode*) this;
-  chip_cap_node->chip_bump_inst_ = chip_bump_inst->getId();
+  chip_cap_node->chip_iterm_ = chip_iterm->getId();
 }
 
 dbBTerm* dbChipCapNode::getBTerm() const
 {
-  dbChipBumpInst* chip_bump_inst = getChipBumpInst();
-  if (!chip_bump_inst) {
+  dbChipITerm* chip_iterm = getChipITerm();
+  if (!chip_iterm) {
     return nullptr;
   }
 
-  dbChipBump* chip_bump = chip_bump_inst->getChipBump();
-  if (!chip_bump) {
+  dbChipBTerm* chip_bterm = chip_iterm->getChipBTerm();
+  if (!chip_bterm) {
     return nullptr;
   }
 
-  return chip_bump->getBTerm();
+  return chip_bterm->getBTerm();
 }
 
 // User Code End dbChipCapNodePublicMethods

@@ -117,8 +117,8 @@ TEST_F(DbvFixture, test_bump_map_parser)
 {
   auto region = db_->findChip("SoC")->findChipRegion("back_reg");
   ASSERT_NE(region, nullptr);
-  EXPECT_EQ(region->getChipBumps().size(), 2);
-  auto bump = *region->getChipBumps().begin();
+  EXPECT_EQ(region->getChipBTerms().size(), 2);
+  auto bump = *region->getChipBTerms().begin();
   EXPECT_EQ(bump->getInst()->getName(), "bump1");
   EXPECT_EQ(bump->getInst()->getMaster()->getName(), "BUMP");
   const double bump_size2 = 29.0 / 2;
@@ -131,9 +131,9 @@ TEST_F(DbvFixture, test_bump_map_parser)
   auto soc_inst = db_->getChip()->findChipInst("soc_inst");
   auto region_inst = soc_inst->findChipRegionInst("back_reg");
   ASSERT_NE(region_inst, nullptr);
-  EXPECT_EQ(region_inst->getChipBumpInsts().size(), 2);
-  auto bump_inst = *region_inst->getChipBumpInsts().begin();
-  EXPECT_EQ(bump_inst->getChipBump(), bump);
+  EXPECT_EQ(region_inst->getChipITerms().size(), 2);
+  auto bump_inst = *region_inst->getChipITerms().begin();
+  EXPECT_EQ(bump_inst->getChipBTerm(), bump);
   EXPECT_EQ(bump_inst->getChipRegionInst(), region_inst);
 }
 
@@ -391,7 +391,7 @@ TEST_F(SimpleDbFixture, test_bump_map_reader_no_bterms)
   EXPECT_THROW(parser.readBMap(path), std::runtime_error);
 }
 
-TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
+TEST_F(SimpleDbFixture, test_bterm_get_chip_bterm)
 {
   createSimpleDB();
 
@@ -412,7 +412,7 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
   ASSERT_NE(bump_inst, nullptr);
 
   // Create a chip bump
-  dbChipBump* bump = dbChipBump::create(region, bump_inst);
+  dbChipBTerm* bump = dbChipBTerm::create(region, bump_inst);
   ASSERT_NE(bump, nullptr);
 
   // Create bterms: one that will be associated with the bump, one that won't
@@ -421,16 +421,16 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
   ASSERT_NE(sig1, nullptr);
   ASSERT_NE(sig2, nullptr);
 
-  // Before setBTerm: both bterms return nullptr for getChipBump
-  EXPECT_EQ(sig1->getChipBump(), nullptr);
-  EXPECT_EQ(sig2->getChipBump(), nullptr);
+  // Before setBTerm: both bterms return nullptr for getChipBTerm
+  EXPECT_EQ(sig1->getChipBTerm(), nullptr);
+  EXPECT_EQ(sig2->getChipBTerm(), nullptr);
 
   // Associate sig1 with the bump
   bump->setBTerm(sig1);
 
   // After setBTerm: sig1 returns the bump, sig2 still returns nullptr
-  EXPECT_EQ(sig1->getChipBump(), bump);
-  EXPECT_EQ(sig2->getChipBump(), nullptr);
+  EXPECT_EQ(sig1->getChipBTerm(), bump);
+  EXPECT_EQ(sig2->getChipBTerm(), nullptr);
 
   // Verify the reverse link is also consistent
   EXPECT_EQ(bump->getBTerm(), sig1);

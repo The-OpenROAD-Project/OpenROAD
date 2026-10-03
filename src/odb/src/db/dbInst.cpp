@@ -16,7 +16,7 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbChip.h"
-#include "dbChipBump.h"
+#include "dbChipBTerm.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
@@ -1310,7 +1310,7 @@ uint32_t dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
-dbChipBump* dbInst::getChipBump() const
+dbChipBTerm* dbInst::getChipBTerm() const
 {
   _dbInst* inst = (_dbInst*) this;
   if (inst->bump_ == 0) {
@@ -1319,7 +1319,7 @@ dbChipBump* dbInst::getChipBump() const
   _dbChip* chip = (_dbChip*) getBlock()->getChip();
   _dbChipRegion* chip_region
       = (_dbChipRegion*) chip->chip_region_tbl_->getPtr(inst->chip_region_);
-  return (dbChipBump*) chip_region->chip_bump_tbl_->getPtr(inst->bump_);
+  return (dbChipBTerm*) chip_region->chip_bterm_tbl_->getPtr(inst->bump_);
 }
 
 dbInst* dbInst::create(dbBlock* block,

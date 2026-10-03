@@ -14,7 +14,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChipNet;
-class _dbChipBumpInst;
+class _dbChipITerm;
 
 class _dbChipCapNode : public _dbObject
 {
@@ -28,7 +28,7 @@ class _dbChipCapNode : public _dbObject
 
   dbId<_dbChipNet> chip_net_;
   dbId<_dbChipCapNode> next_chip_net_cap_node_;
-  dbId<_dbChipBumpInst> chip_bump_inst_;
+  dbId<_dbChipITerm> chip_iterm_;
   float capacitance_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipCapNode& obj);

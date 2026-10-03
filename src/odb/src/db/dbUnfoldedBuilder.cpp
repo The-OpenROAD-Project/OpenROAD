@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "dbChip.h"
-#include "dbChipBumpInst.h"
 #include "dbChipConn.h"
+#include "dbChipITerm.h"
 #include "dbChipInst.h"
 #include "dbChipNet.h"
 #include "dbChipRegion.h"
@@ -178,14 +178,14 @@ void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
                                     dbChipRegionInst* region_inst)
 {
   auto& chip_bump_map = bump_map_[uf_region->parent_chip_];
-  for (auto* bump_inst : region_inst->getChipBumpInsts()) {
-    dbChipBump* bump = bump_inst->getChipBump();
+  for (auto* bump_inst : region_inst->getChipITerms()) {
+    dbChipBTerm* bump = bump_inst->getChipBTerm();
     if (bump->getInst() == nullptr) {
       continue;
     }
     _dbUnfoldedChipBumpInst* uf_bump
         = db_->unfolded_chip_bump_inst_tbl_->create();
-    uf_bump->chip_bump_inst_ = bump_inst->getImpl()->getOID();
+    uf_bump->chip_iterm_ = bump_inst->getImpl()->getOID();
     uf_bump->parent_region_ = uf_region->getOID();
     uf_bump->region_next_ = uf_region->bump_;
     uf_region->bump_ = uf_bump->getOID();
@@ -248,9 +248,9 @@ void dbUnfoldedBuilder::unfoldNets(dbChip* chip,
   for (auto* net : chip->getChipNets()) {
     _dbUnfoldedChipNet* uf_net = db_->unfolded_chip_net_tbl_->create();
     uf_net->chip_net_ = net->getImpl()->getOID();
-    for (uint32_t i = 0; i < net->getNumBumpInsts(); i++) {
+    for (uint32_t i = 0; i < net->getNumChipITerms(); i++) {
       std::vector<dbChipInst*> rel_path;
-      dbChipBumpInst* b_inst = net->getBumpInst(i, rel_path);
+      dbChipITerm* b_inst = net->getChipITerm(i, rel_path);
       _dbUnfoldedChipInst* uf_chip
           = findUnfoldedChip(concatPath(parent_path, rel_path));
       if (uf_chip == nullptr) {

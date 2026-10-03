@@ -70,11 +70,11 @@ class VerilogWriterFixture : public tst::DbFixture
   // Create a bump on a chip region and attach a named BTerm (Verilog port).
   // Must be called BEFORE creating any dbChipInst that uses this chip,
   // so the bump inst is propagated into the region inst at create time.
-  dbChipBump* createBump(dbChip* chip,
-                         dbChipRegion* region,
-                         const char* bump_name,
-                         int x,
-                         int y)
+  dbChipBTerm* createBump(dbChip* chip,
+                          dbChipRegion* region,
+                          const char* bump_name,
+                          int x,
+                          int y)
   {
     dbBlock* block = chip->getBlock();
     dbTechLayer* layer = tech_->findLayer("layer1");
@@ -85,7 +85,7 @@ class VerilogWriterFixture : public tst::DbFixture
     inst->setPlacementStatus(dbPlacementStatus::PLACED);
 
     // Chip-level bump object.
-    dbChipBump* chip_bump = dbChipBump::create(region, inst);
+    dbChipBTerm* chip_bterm = dbChipBTerm::create(region, inst);
 
     // Net + BTerm — the BTerm name becomes the Verilog port name.
     const std::string net_name = std::string(bump_name) + "_net";
@@ -98,9 +98,9 @@ class VerilogWriterFixture : public tst::DbFixture
     bpin->setPlacementStatus(dbPlacementStatus::PLACED);
     dbBox::create(bpin, layer, x, y, x + 100, y + 100);
 
-    chip_bump->setNet(net);
-    chip_bump->setBTerm(bterm);
-    return chip_bump;
+    chip_bterm->setNet(net);
+    chip_bterm->setBTerm(bterm);
+    return chip_bterm;
   }
 
   // Write the top chip's Verilog to a fixed temp file and return the path.
@@ -135,12 +135,12 @@ TEST_F(VerilogWriterFixture, test_direct_child_written)
   // Retrieve the bump inst auto-created on the region inst.
   dbChipRegionInst* ri1 = inst1->findChipRegionInst("r1_fr");
   ASSERT_NE(ri1, nullptr);
-  dbChipBumpInst* bump_inst = *ri1->getChipBumpInsts().begin();
+  dbChipITerm* bump_inst = *ri1->getChipITerms().begin();
   ASSERT_NE(bump_inst, nullptr);
 
   // Wire the bump to a net via a direct (path length 1) path.
   dbChipNet* chip_net = dbChipNet::create(top_chip_, "net_signal");
-  chip_net->addBumpInst(bump_inst, {inst1});
+  chip_net->addChipITerm(bump_inst, {inst1});
 
   const std::string filename = writeVerilog();
   const std::string content = readFileContent(filename);
@@ -168,12 +168,12 @@ TEST_F(VerilogWriterFixture, test_nested_child_skipped)
 
   dbChipRegionInst* ri1 = inst1->findChipRegionInst("r1_fr");
   ASSERT_NE(ri1, nullptr);
-  dbChipBumpInst* bump_inst = *ri1->getChipBumpInsts().begin();
+  dbChipITerm* bump_inst = *ri1->getChipITerms().begin();
   ASSERT_NE(bump_inst, nullptr);
 
   // Path of length 2 — nested child; writer must skip this bump.
   dbChipNet* chip_net = dbChipNet::create(top_chip_, "net_deep");
-  chip_net->addBumpInst(bump_inst, {inst1, inst2});
+  chip_net->addChipITerm(bump_inst, {inst1, inst2});
 
   const std::string filename = writeVerilog();
   const std::string content = readFileContent(filename);

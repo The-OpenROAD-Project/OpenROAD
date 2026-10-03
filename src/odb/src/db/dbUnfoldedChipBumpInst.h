@@ -13,7 +13,7 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-class _dbChipBumpInst;
+class _dbChipITerm;
 class _dbUnfoldedChipRegionInst;
 
 class _dbUnfoldedChipBumpInst : public _dbObject
@@ -29,7 +29,7 @@ class _dbUnfoldedChipBumpInst : public _dbObject
   bool operator<(const _dbUnfoldedChipBumpInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  dbId<_dbChipBumpInst> chip_bump_inst_;
+  dbId<_dbChipITerm> chip_iterm_;
   dbId<_dbUnfoldedChipRegionInst> parent_region_;
   dbId<_dbUnfoldedChipBumpInst> region_next_;
   uint32_t pad_for_pointer_tag_alignment_;

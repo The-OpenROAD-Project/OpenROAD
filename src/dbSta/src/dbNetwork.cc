@@ -253,8 +253,8 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
     case odb::dbChipInstObj: {
       return ((db_id << DBIDTAG_WIDTH) | DBCHIPINST_ID);
     } break;
-    case odb::dbChipBumpInstObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBCHIPBUMP_INST_ID);
+    case odb::dbChipITermObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBCHIPITERM_ID);
     } break;
     case odb::dbChipNetObj: {
       return ((db_id << DBIDTAG_WIDTH) | DBCHIPNET_ID);
@@ -1005,7 +1005,7 @@ bool dbNetwork::isChipSupportedForTiming(odb::dbChip* chip) const
     supported = false;
   }
 
-  // Per-bump endpoint checks. A dbChipBump is the chiplet's external logical
+  // Per-bump endpoint checks. A dbChipBTerm is the chiplet's external logical
   // connection endpoint, merging a boundary bterm and a bump-pad inst/iterm
   // into one point. The 3dblox "blackbox" stage allows these bindings to be
   // loose, but the 3D network cannot be built on a loose endpoint, so check
@@ -1020,19 +1020,19 @@ bool dbNetwork::isChipSupportedForTiming(odb::dbChip* chip) const
   //      physical endpoint the bump represents (a passive bump pad;
   //      parasitic/endpoint resolution is ambiguous otherwise).
   for (odb::dbChipNet* chip_net : chip->getChipNets()) {
-    const uint32_t n_bumps = chip_net->getNumBumpInsts();
+    const uint32_t n_bumps = chip_net->getNumChipITerms();
     for (uint32_t i = 0; i < n_bumps; ++i) {
       std::vector<odb::dbChipInst*> path;
-      odb::dbChipBumpInst* bump_inst = chip_net->getBumpInst(i, path);
+      odb::dbChipITerm* bump_inst = chip_net->getChipITerm(i, path);
       if (bump_inst == nullptr) {
         continue;
       }
-      odb::dbChipBump* chip_bump = bump_inst->getChipBump();
-      odb::dbInst* pad_inst = chip_bump->getInst();
+      odb::dbChipBTerm* chip_bterm = bump_inst->getChipBTerm();
+      odb::dbInst* pad_inst = chip_bterm->getInst();
       const std::string bump_name
           = pad_inst ? pad_inst->getName() : std::string("<no inst>");
-      odb::dbChip* master = chip_bump->getChip();
-      if (chip_bump->getBTerm() == nullptr) {
+      odb::dbChip* master = chip_bterm->getChip();
+      if (chip_bterm->getBTerm() == nullptr) {
         logger_->warn(utl::STA,
                       3005,
                       "3DIC chip bump {} of chiplet master {} is connected "
@@ -1151,7 +1151,7 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
         = makeCell(chip_master_lib_, master->getName(), /*is_leaf=*/false, "");
     chip_master_cells_[master] = master_cell;
     for (odb::dbChipRegion* region : master->getChipRegions()) {
-      for (odb::dbChipBump* bump : region->getChipBumps()) {
+      for (odb::dbChipBTerm* bump : region->getChipBTerms()) {
         odb::dbBTerm* bterm = bump->getBTerm();
         if (bterm == nullptr) {
           // Spare bump (no port/net binding): not a logical endpoint, no
@@ -1202,7 +1202,7 @@ odb::dbChipInst* dbNetwork::chipInstOf(odb::dbBlock* block) const
 // for pad insts with no iterm -- neither is a logical endpoint.
 odb::dbITerm* dbNetwork::bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const
 {
-  odb::dbChipBump* cb = bump->getChipBumpInst()->getChipBump();
+  odb::dbChipBTerm* cb = bump->getChipITerm()->getChipBTerm();
   if (cb->getBTerm() == nullptr) {
     return nullptr;
   }
@@ -1833,7 +1833,7 @@ Pin* dbNetwork::findPin(const Instance* instance,
     if (bterm == nullptr) {
       return nullptr;
     }
-    odb::dbChipBump* bump = bterm->getChipBump();
+    odb::dbChipBTerm* bump = bterm->getChipBTerm();
     odb::dbInst* pad_inst = bump ? bump->getInst() : nullptr;
     if (pad_inst == nullptr) {
       return nullptr;
