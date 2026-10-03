@@ -464,6 +464,7 @@ cc_test(
         "//src/web",
         "//src/web:color",
         "//src/web:core",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
