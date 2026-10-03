@@ -39,19 +39,38 @@ class ClockTreeReport;
 // shutdown signal for the browser.
 inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
-// Thread-safe Tcl command evaluation.  Log output emitted while the
-// command runs is captured by WebLogSink (registered on the logger via
-// addSink) and pushed to clients as {"type":"log",...} messages — do
-// NOT redirect the logger to a string here.  redirectStringBegin clears
-// the entire sink list, which would unhook WebLogSink (and any other
-// sink) for the duration of the command and break log streaming.  After
-// each eval the optional drain_output hook is invoked so any buffered
-// log output reaches clients before the eval response is sent.
+// Tcl command evaluation that always runs on the main (interp-owning)
+// thread.  Browser worker threads call eval(); when invoked from a
+// non-main thread, the implementation marshals the request to the main
+// thread via Tcl_ThreadQueueEvent and waits on a condition variable for
+// the result.  This is required under Tcl 9, which isolates per-thread
+// interpreter state — direct cross-thread Tcl_Eval doesn't see globals
+// set on the main thread (e.g., `set x 1` at the launching prompt
+// followed by `puts $x` in the browser console returns an unset error).
+//
+// Log output emitted while the command runs is captured by WebLogSink
+// (registered on the logger via addSink) and pushed to clients as
+// {"type":"log",...} messages — do NOT redirect the logger to a string
+// here.  redirectStringBegin clears the entire sink list, which would
+// unhook WebLogSink (and any other sink) for the duration of the
+// command and break log streaming.  After each eval the optional
+// drain_output hook is invoked so any buffered log output reaches
+// clients before the eval response is sent.
+//
+// `mutex` (a reference to a mutex owned by WebServer) serializes STA /
+// interp access among request handlers (handleSelect, etc.) that touch
+// STA directly.  Marshalled eval also locks it so main-thread Tcl_Eval
+// and worker-thread STA reads don't race.
+//
+// `main_thread_id` is captured by serve() (Tcl_GetCurrentThread() at
+// the top of serve, before any worker is spawned) and is the target
+// of Tcl_ThreadQueueEvent / Tcl_ThreadAlert.
 struct TclEvaluator
 {
   Tcl_Interp* interp;
   utl::Logger* logger;
-  std::mutex mutex;
+  std::mutex& mutex;
+  Tcl_ThreadId main_thread_id;
   std::function<void()> drain_output;
 
   struct Result
@@ -60,33 +79,18 @@ struct TclEvaluator
     bool is_error;
   };
 
-  TclEvaluator(Tcl_Interp* interp, utl::Logger* logger)
-      : interp(interp), logger(logger)
+  TclEvaluator(Tcl_Interp* interp,
+               utl::Logger* logger,
+               std::mutex& mutex,
+               Tcl_ThreadId main_thread_id)
+      : interp(interp),
+        logger(logger),
+        mutex(mutex),
+        main_thread_id(main_thread_id)
   {
   }
 
-  Result eval(const std::string& cmd)
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    const int rc = Tcl_Eval(interp, cmd.c_str());
-    Result r;
-    r.result = Tcl_GetStringResult(interp);
-    r.is_error = (rc != TCL_OK);
-    // Flush Tcl stdout/stderr so `puts` output — which sta::ReportTcl
-    // encapsulates into utl::Logger — reaches WebLogSink and the browser
-    // console.  The web eval path has no Tcl event loop to flush the channel
-    // buffer like the CLI/GUI do, so a `puts` would otherwise never surface.
-    if (Tcl_Channel out = Tcl_GetStdChannel(TCL_STDOUT)) {
-      Tcl_Flush(out);
-    }
-    if (Tcl_Channel err = Tcl_GetStdChannel(TCL_STDERR)) {
-      Tcl_Flush(err);
-    }
-    if (drain_output) {
-      drain_output();
-    }
-    return r;
-  }
+  Result eval(const std::string& cmd);
 };
 
 struct WebSocketRequest

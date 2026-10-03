@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -193,7 +194,11 @@ class SnapHandlerTest : public tst::Nangate45Fixture
     placeInst("BUF_X16", "buf1", 0, 0);
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
-    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(
+        /*interp=*/nullptr,
+        getLogger(),
+        tcl_mutex_,
+        /*main_thread_id=*/nullptr);
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
   }
 
@@ -211,6 +216,7 @@ class SnapHandlerTest : public tst::Nangate45Fixture
   }
 
   std::shared_ptr<TileGenerator> gen_;
+  std::mutex tcl_mutex_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::unique_ptr<SelectHandler> handler_;
 };
