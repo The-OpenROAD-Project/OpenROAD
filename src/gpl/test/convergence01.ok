@@ -42,11 +42,11 @@
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 65	Core center = 0	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000007 HPWL: 607347
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000006 HPWL: 464249
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 463366
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 463419
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 463137
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 607347
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000010 HPWL: 464249
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000003 HPWL: 463366
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 463419
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 463137
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.5000
 [INFO GPL-0024] Movable insts average area:      0.222 um^2
