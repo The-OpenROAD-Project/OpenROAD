@@ -42,6 +42,9 @@ or_integration_tests(
     max_wl_two_sinks
     no_clocks
     no_sinks
+    report_clock_tree
+    num_max_leaf_sinks
+    num_max_leaf_sinks_default
     post_cts_opt
     simple_test
     simple_test_clustered
