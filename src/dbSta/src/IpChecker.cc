@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -790,6 +791,27 @@ void IpChecker::checkLibertyPins(odb::dbMaster* master)
         utl::CHK, 120, "LEF macro {} missing Liberty cell", master_name);
     warning_count_++;
     return;
+  }
+
+  odb::dbTech* tech = db_->getTech();
+  if (tech != nullptr) {
+    const double dbu_per_micron = tech->getDbUnitsPerMicron();
+    const double lef_area
+        = static_cast<double>(master->getWidth()) * master->getHeight()
+          / (dbu_per_micron * dbu_per_micron);
+    const double liberty_area = liberty_cell->area();
+    const double area_tolerance = std::max(1e-6, lef_area * 1e-3);
+
+    if (std::abs(lef_area - liberty_area) > area_tolerance) {
+      logger_->warn(utl::CHK,
+                    122,
+                    "Master {} area mismatch between LEF ({:.6f}) and "
+                    "Liberty ({:.6f})",
+                    master_name,
+                    lef_area,
+                    liberty_area);
+      warning_count_++;
+    }
   }
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
