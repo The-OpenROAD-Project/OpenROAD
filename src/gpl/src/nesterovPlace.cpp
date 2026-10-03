@@ -598,21 +598,8 @@ void NesterovPlace::refreshCurGradients()
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
-  // GUI debug: the selected instance's report now pairs the gradient evaluated
-  // on the repaired netlist with the stale one still stored for the next step.
-  const bool report = graphics_ && graphics_->enabled() && npVars_.debug;
-  if (report) {
-    log_->report("Timing-driven repair: before replacing stored gradients");
-    graphics_->cellPlot(true);
-  }
-
   for (auto& nb : nbVec_) {
     npUpdateCurGradient(nb);
-  }
-
-  if (report) {
-    log_->report("Timing-driven repair: after replacing stored gradients");
-    graphics_->cellPlot(true);
   }
 }
 
