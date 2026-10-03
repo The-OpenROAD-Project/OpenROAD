@@ -87,6 +87,19 @@ void _dbInst::setInstBBox(_dbInst* inst)
   block->add_rect(box->shape_.rect);
 }
 
+void _dbInst::setModule(dbId<_dbModule> module)
+{
+  if (module_ == module) {
+    return;
+  }
+
+  module_ = module;
+  _dbBlock* block = (_dbBlock*) getOwner();
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
+    cb->inDbPostInstParentChange((dbInst*) this);
+  }
+}
+
 _dbInst::_dbInst(_dbDatabase*)
 {
   flags_.orient = dbOrientType::R0;
@@ -157,7 +170,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
   stream << inst.inst_hdr_;
   stream << inst.bbox_;
   stream << inst.region_;
-  stream << inst.module_;
+  stream << inst.getModuleId();
   stream << inst.group_;
   stream << inst.region_next_;
   stream << inst.module_next_;
@@ -185,7 +198,9 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst.inst_hdr_;
   stream >> inst.bbox_;
   stream >> inst.region_;
-  stream >> inst.module_;
+  dbId<_dbModule> module;
+  stream >> module;
+  inst.setModuleQuiet(module);
   stream >> inst.group_;
   stream >> inst.region_next_;
   stream >> inst.module_next_;
@@ -866,12 +881,13 @@ dbModule* dbInst::getModule()
 {
   _dbInst* inst = (_dbInst*) this;
 
-  if (inst->module_ == 0) {
+  const dbId<_dbModule> module_id = inst->getModuleId();
+  if (module_id == 0) {
     return nullptr;
   }
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  _dbModule* module = block->module_tbl_->getPtr(inst->module_);
+  _dbModule* module = block->module_tbl_->getPtr(module_id);
   return (dbModule*) module;
 }
 
@@ -1072,7 +1088,7 @@ bool dbInst::isPhysicalOnly()
 {
   _dbInst* inst = (_dbInst*) this;
 
-  return inst->module_ == 0;
+  return inst->getModuleId() == 0;
 }
 
 dbInst* dbInst::getParent()
@@ -1589,7 +1605,7 @@ void dbInst::destroy(dbInst* inst_)
     block->journal_->pushParam(inst->x_);
     block->journal_->pushParam(inst->y_);
     block->journal_->pushParam(inst->group_);
-    block->journal_->pushParam(inst->module_);
+    block->journal_->pushParam(inst->getModuleId());
     block->journal_->pushParam(inst->region_);
     block->journal_->endAction();
   }
