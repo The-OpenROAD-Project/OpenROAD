@@ -5,14 +5,9 @@ source "helpers.tcl"
 # there too, so the restored design times identically.
 read_3dbx 3dic_cross.3dbx
 
-set db_file [make_result_file 3dic_read_db.odb]
-write_db $db_file
-read_db $db_file
+write_db [make_result_file 3dic_read_db.odb]
 
-# Structural model restored.
-report_3dic_summary
-
-# Timing network restored: the same cross-chiplet constrained path forms.
-create_clock -name clk -period 1.0 \
-  [get_pins -of_objects [get_nets clk_top]]
-report_checks -path_delay max
+# Reload in a separate process so nothing from read_3dbx is reused.
+puts [exec [info nameofexecutable] -no_splash -no_init -exit \
+  -threads [thread_count] \
+  [file join [file dirname [info script]] "3dic_read_db_reload.tcl"] 2>@1]

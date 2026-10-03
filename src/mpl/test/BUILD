@@ -25,7 +25,6 @@ COMPULSORY_TESTS = [
     "halos2",
     "halos3",
     "halos4",
-    "halos5",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -43,6 +42,7 @@ COMPULSORY_TESTS = [
     "macros_without_pins1",
     "mixed_ios1",
     "no_unfixed_macros",
+    "no_unfixed_macros_and_fixed_cells",
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
@@ -129,10 +129,6 @@ filegroup(
                     "testcases/orientation_improve1.lef",
                 ],
                 "halos4": [
-                    "testcases/halo3.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "halos5": [
                     "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
@@ -221,6 +217,10 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                     "testcases/macro_only.v",
+                    "testcases/no_unfixed_macros.def",
+                ],
+                "no_unfixed_macros_and_fixed_cells": [
+                    "testcases/macro_only.lef",
                     "testcases/no_unfixed_macros.def",
                 ],
                 "orientation_improve1": [

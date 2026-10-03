@@ -162,6 +162,7 @@ bool resolveLoadContext(const SizeDownFanoutContext& ctx,
   load_ctx.load_cell = load_ctx.load_port->libertyCell();
   load_ctx.load_inst = ctx.resizer.network()->instance(load_ctx.load_pin);
   if (load_ctx.load_inst == nullptr || ctx.resizer.dontTouch(load_ctx.load_inst)
+      || ctx.resizer.isFixed(load_ctx.load_inst)
       || !ctx.resizer.isLogicStdCell(load_ctx.load_inst)) {
     return false;
   }

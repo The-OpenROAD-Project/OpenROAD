@@ -19,6 +19,7 @@
 #include "boost/multi_array.hpp"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "web/core.h"
 
 namespace odb {
@@ -236,6 +237,9 @@ class HeatMapDataSource
   odb::PtrSet<odb::dbInst> getSelectedInsts() const;
 
  private:
+  // Drops the values of bins that lie entirely outside a polygon die area.
+  void clearOutsideDieArea();
+
   const std::string name_;
   const std::string short_name_;
   const std::string settings_group_;
@@ -343,7 +347,12 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
  public:
   PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
 
-  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+  // See PinDensityDataSource::getBounds(): no block means no core to measure.
+  odb::Rect getBounds() const override
+  {
+    odb::dbBlock* block = getBlock();
+    return block != nullptr ? block->getCoreArea() : odb::Rect();
+  }
 
   std::string getSelectionFilterLabel() const override
   {
@@ -369,6 +378,41 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   std::string scene_;
 
   sta::Scene* getScene() const;
+};
+
+// Data source that loads heatmap data from a CSV file.
+class ExternalHeatMapDataSource : public HeatMapDataSource
+{
+ public:
+  struct Entry
+  {
+    double x0, y0, x1, y1, value;
+  };
+  using EntryList = std::shared_ptr<const std::vector<Entry>>;
+
+  ExternalHeatMapDataSource(utl::Logger* logger,
+                            const std::string& name,
+                            const std::string& short_name,
+                            EntryList data);
+
+  void setTransform(const odb::dbTransform& transform)
+  {
+    transform_ = transform;
+  }
+
+ protected:
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
+  odb::Rect getBounds() const override;
+
+ private:
+  EntryList data_entries_;
+  odb::dbTransform transform_;
 };
 
 class HeatMapSourceRegistration
@@ -404,7 +448,7 @@ HeatMapSourceHandle registerHeatMapSource(
     const std::string& short_name,
     const std::string& settings_group,
     const HeatMapSourceRegistration::Factory& factory);
-const std::vector<HeatMapSourceHandle>& getRegisteredHeatMapSources();
+std::vector<HeatMapSourceHandle> getRegisteredHeatMapSources();
 HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name);
 void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger);
 
