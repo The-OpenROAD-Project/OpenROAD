@@ -33,6 +33,8 @@ synthesize
 
 The integrated synthesis tool does not support mapping to latches, always flattens the design, and loses the names of instantiated macros.
 
+`synthesize` fails with an error if the design contains a combinational loop. This includes latches inferred from incomplete assignments in `always` blocks (e.g. a latch-based clock gate), since combinational optimization does not preserve the state such a loop holds. A loop is only reported where each step is combinational: it is broken by a flip-flop, and by a cell output that neither has a liberty `function` using the input nor a combinational timing arc from it (such as a RAM read port).
+
 ## Authors
 
 The original `syn` was developed and contributed by Martin Povišer of Precision Innovations Inc. Design of the intermediate representation used by syn internally derives from the [prjunnamed project](https://prjunnamed.org/): `Copyright (C) Project Unnamed contributors`; distributed under the terms of the BSD-0 license.
