@@ -787,10 +787,34 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
 
     sortClkAndSignalLayers();
 
-    odb::dbSet<odb::dbNet> nets = block_->getNets();
-    for (auto db_net : nets) {
-      sta::Net* cur_net = db_network_->dbToSta(db_net);
-      estimateWireParasitic(cur_net, spef_writer);
+    // The nets to estimate, with their drivers, found serially:
+    // Network::drivers fills a cache, and isSkipPin propagates constants
+    // on first use. The per-net estimate repeats these checks.
+    std::vector<std::pair<const sta::Pin*, const sta::Net*>> work;
+    for (odb::dbNet* db_net : block_->getNets()) {
+      const sta::Net* net = db_network_->dbToSta(db_net);
+      PinSet* drivers = network_->drivers(net);
+      if (drivers == nullptr || drivers->empty() || network_->isPower(net)
+          || network_->isGround(net) || db_net->isSpecial()) {
+        continue;
+      }
+      const sta::Pin* drvr_pin = *drivers->begin();
+      if (isPadNet(net) || !isSkipPin(drvr_pin)) {
+        work.emplace_back(drvr_pin, net);
+      }
+    }
+    const int threads = std::min(static_cast<int>(sta_->threadCount()),
+                                 static_cast<int>(work.size()));
+    // A SPEF file and the debug reports are written per net: keep them in
+    // net order.
+    if (spef_writer || threads <= 1
+        || logger_->debugCheck(EST, "estimate_parasitics", 1)
+        || logger_->debugCheck(EST, "steiner", 1)) {
+      for (auto [drvr_pin, net] : work) {
+        estimateWireParasitic(drvr_pin, net, spef_writer);
+      }
+    } else {
+      estimateWireParasiticsInParallel(work, threads);
     }
     parasitics_src_ = ParasiticsSrc::kPlacement;
     parasitics_invalid_.clear();
@@ -807,19 +831,47 @@ void EstimateParasitics::estimateWireParasitic(const sta::Net* net,
   }
 }
 
-void EstimateParasitics::estimateWireParasitic(const sta::Pin* drvr_pin,
-                                               const sta::Net* net,
-                                               sta::SpefWriter* spef_writer)
+void EstimateParasitics::estimateWireParasiticsInParallel(
+    const std::vector<std::pair<const sta::Pin*, const sta::Net*>>& work,
+    const int threads)
 {
+  // Each net is estimated and reduced on its own and stored by net and
+  // driver pin, so the result does not depend on the thread count or the
+  // order the threads run in. The parasitics store locks its own writes;
+  // the reduction goes through one arc delay calculator per thread, as
+  // sta::GraphDelayCalc does for its threads.
+  stt_builder_->prepareForThreads();
+  std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
+  calcs.reserve(threads);
+  for (int i = 0; i < threads; ++i) {
+    calcs.emplace_back(arc_delay_calc_->copy());
+  }
+#pragma omp parallel for num_threads(threads) schedule(dynamic, 64)
+  for (int i = 0; i < static_cast<int>(work.size()); ++i) {
+    auto [drvr_pin, net] = work[i];
+    estimateWireParasitic(
+        drvr_pin, net, nullptr, calcs[omp_get_thread_num()].get());
+  }
+}
+
+void EstimateParasitics::estimateWireParasitic(
+    const sta::Pin* drvr_pin,
+    const sta::Net* net,
+    sta::SpefWriter* spef_writer,
+    sta::ArcDelayCalc* arc_delay_calc)
+{
+  if (arc_delay_calc == nullptr) {
+    arc_delay_calc = arc_delay_calc_;
+  }
   if (!network_->isPower(net) && !network_->isGround(net)
       && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net)) {
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
       // wire capacitance to prevent wireload model parasitics from being used.
-      makePadParasitic(net, spef_writer);
+      makePadParasitic(net, spef_writer, arc_delay_calc);
     } else {
-      estimateWireParasiticSteiner(drvr_pin, net, spef_writer);
+      estimateWireParasiticSteiner(drvr_pin, net, spef_writer, arc_delay_calc);
     }
   }
 }
@@ -865,7 +917,8 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
 }
 
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
-                                          sta::SpefWriter* spef_writer)
+                                          sta::SpefWriter* spef_writer,
+                                          sta::ArcDelayCalc* arc_delay_calc)
 {
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
@@ -883,8 +936,8 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
 
-    if (arc_delay_calc_->reduceSupported()) {
-      arc_delay_calc_->reduceParasitic(
+    if (arc_delay_calc->reduceSupported()) {
+      arc_delay_calc->reduceParasitic(
           parasitic, net, corner, sta::MinMaxAll::all());
       parasitics->deleteParasiticNetwork(net);
     }
@@ -894,7 +947,8 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
 void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Pin* drvr_pin,
     const sta::Net* net,
-    sta::SpefWriter* spef_writer)
+    sta::SpefWriter* spef_writer,
+    sta::ArcDelayCalc* arc_delay_calc)
 {
   if (isSkipPin(drvr_pin)) {
     return;
@@ -1015,8 +1069,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(
         spef_writer->writeNet(corner, net, parasitic, parasitics);
       }
 
-      if (arc_delay_calc_->reduceSupported()) {
-        arc_delay_calc_->reduceParasitic(
+      if (arc_delay_calc->reduceSupported()) {
+        arc_delay_calc->reduceParasitic(
             parasitic, net, corner, sta::MinMaxAll::all());
         parasitics->deleteParasiticNetwork(net);
       }
