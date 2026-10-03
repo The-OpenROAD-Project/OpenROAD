@@ -22,6 +22,7 @@ or_integration_tests(
     cugr_adjustment1
     cugr_adjustment2
     cugr_adjustment3
+    cugr_detour_limit
     est_rc1
     est_rc2
     est_rc3

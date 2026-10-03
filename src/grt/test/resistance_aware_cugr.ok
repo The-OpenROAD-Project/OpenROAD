@@ -47,25 +47,25 @@ Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (64).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (62).
 Routing statistics
-Wire length:           49305
-Total via count:       2403
-Total congestion:      63.62
-Min resource:          -1.21
-Bottleneck:            (1, 29, 10)
+Wire length:           50927
+Total via count:       2402
+Total congestion:      62.78
+Min resource:          -0.89
+Bottleneck:            (1, 15, 15)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
 --------------------------------------------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
-met1      H      6126.71       956.00       147.12      1103.12      18.01      24.64       5.67          1.21
-met2      V      5000.00       859.00       119.13       978.13      19.56      12.59       2.15          0.89
-met3      H      3248.00       413.00        62.69       475.69      14.65      13.89       1.81          0.53
-met4      V      2496.00       278.00        13.87       291.87      11.69       0.87       0.02          0.45
-met5      H      1640.00        18.00         3.94        21.94       1.34       1.65       0.32          0.20
+met1      H      6126.71       959.00       147.84      1106.84      18.07      24.53       5.70          0.89
+met2      V      5000.00       887.00       118.15      1005.15      20.10      11.41       1.91          0.83
+met3      H      3248.00       432.00        62.72       494.72      15.23      15.35       1.79          0.54
+met4      V      2496.00       327.00        12.52       339.52      13.60       1.27       0.02          0.45
+met5      H      1640.00         4.00         1.58         5.58       0.34       0.61       0.18          0.39
 --------------------------------------------------------------------------------------------------------------
-Total           18510.71      2524.00       346.74      2870.74      15.51      53.64       9.97          1.21
-[INFO GRT-0018] Total wirelength: 25164 um
+Total           18510.71      2609.00       342.79      2951.79      15.95      53.18       9.60          0.89
+[INFO GRT-0018] Total wirelength: 25776 um
 [INFO GRT-0014] Routed nets: 348
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.
