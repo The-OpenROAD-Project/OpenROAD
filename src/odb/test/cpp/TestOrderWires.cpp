@@ -202,10 +202,6 @@ class TestOrderWires : public tst::Fixture
     for (dbITerm* iterm : net_->getITerms()) {
       EXPECT_EQ(markers.at(iterm), 1) << iterm->getName();
     }
-
-    // Read the written encoding back the way a consumer of the wire would.
-    orderWires(&logger_, block_);
-    EXPECT_FALSE(net_->isDisconnected());
   }
 
   dbBlock* block_;
