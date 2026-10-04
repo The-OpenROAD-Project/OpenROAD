@@ -39,27 +39,42 @@ PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger)
       [this](bool new_value) { include_io_ = new_value; });
 }
 
-bool PlacementDensityDataSource::hasPlacementBinSize() const
+std::optional<int> PlacementDensityDataSource::getPlacementBinSize(
+    const char* name) const
 {
   auto* block = getBlock();
-  return block != nullptr && block->getPlacementBinSizeX() > 0
-         && block->getPlacementBinSizeY() > 0;
+  if (block == nullptr) {
+    return {};
+  }
+  auto* prop = odb::dbIntProperty::find(block, name);
+  if (prop == nullptr || prop->getValue() <= 0) {
+    return {};
+  }
+  return prop->getValue();
+}
+
+bool PlacementDensityDataSource::hasPlacementBinSize() const
+{
+  return getPlacementBinSize("gpl_bin_size_x")
+         && getPlacementBinSize("gpl_bin_size_y");
 }
 
 double PlacementDensityDataSource::getGridXSize() const
 {
-  if (!hasPlacementBinSize()) {
+  const auto size = getPlacementBinSize("gpl_bin_size_x");
+  if (!size) {
     return HeatMapDataSource::getGridXSize();
   }
-  return getBlock()->dbuToMicrons(getBlock()->getPlacementBinSizeX());
+  return getBlock()->dbuToMicrons(*size);
 }
 
 double PlacementDensityDataSource::getGridYSize() const
 {
-  if (!hasPlacementBinSize()) {
+  const auto size = getPlacementBinSize("gpl_bin_size_y");
+  if (!size) {
     return HeatMapDataSource::getGridYSize();
   }
-  return getBlock()->dbuToMicrons(getBlock()->getPlacementBinSizeY());
+  return getBlock()->dbuToMicrons(*size);
 }
 
 bool PlacementDensityDataSource::populateMap()

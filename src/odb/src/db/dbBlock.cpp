@@ -2515,25 +2515,6 @@ void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
   block->max_layer_for_clock_ = max_layer_for_clock;
 }
 
-int dbBlock::getPlacementBinSizeX() const
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->placement_bin_size_x_;
-}
-
-int dbBlock::getPlacementBinSizeY() const
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->placement_bin_size_y_;
-}
-
-void dbBlock::setPlacementBinSize(const int size_x, const int size_y)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->placement_bin_size_x_ = size_x;
-  block->placement_bin_size_y_ = size_y;
-}
-
 int dbBlock::getGCellTileSize()
 {
   _dbBlock* block = (_dbBlock*) this;

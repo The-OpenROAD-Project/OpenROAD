@@ -2286,8 +2286,17 @@ NesterovBase::NesterovBase(
   // grid the placer optimized on. Region groups cover only part of the core,
   // so only the top-level region is representative.
   if (pb_->getGroup() == nullptr) {
-    pb_->db()->getChip()->getBlock()->setPlacementBinSize(
-        std::lround(bg_.getBinSizeX()), std::lround(bg_.getBinSizeY()));
+    odb::dbBlock* block = pb_->db()->getChip()->getBlock();
+    auto set_bin_size = [block](const char* name, int value) {
+      auto* prop = odb::dbIntProperty::find(block, name);
+      if (prop == nullptr) {
+        odb::dbIntProperty::create(block, name, value);
+      } else {
+        prop->setValue(value);
+      }
+    };
+    set_bin_size("gpl_bin_size_x", std::lround(bg_.getBinSizeX()));
+    set_bin_size("gpl_bin_size_y", std::lround(bg_.getBinSizeY()));
   }
 
 #ifdef ENABLE_GPU

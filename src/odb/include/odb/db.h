@@ -1219,18 +1219,6 @@ class dbBlock : public dbObject
   void setMaxLayerForClock(int max_layer_for_clock);
 
   ///
-  /// Get the density bin size, in DBU, that global placement last used on this
-  /// block. Zero until global placement runs. Not saved with the block.
-  ///
-  int getPlacementBinSizeX() const;
-  int getPlacementBinSizeY() const;
-
-  ///
-  /// Set the density bin size, in DBU, used by global placement.
-  ///
-  void setPlacementBinSize(int size_x, int size_y);
-
-  ///
   /// Get the gcell tile size
   ///
   int getGCellTileSize();

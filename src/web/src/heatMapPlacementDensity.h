@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include "odb/dbBlockCallBackObj.h"
@@ -61,6 +62,9 @@ class PlacementDensityDataSource : public HeatMapDataSource,
   bool destroyMapOnNotVisible() const override { return true; }
 
  private:
+  // Bin size, in DBU, published by global placement under the given block
+  // property. Empty until global placement runs.
+  std::optional<int> getPlacementBinSize(const char* name) const;
   // Whether global placement has published a bin size for this block.
   bool hasPlacementBinSize() const;
 

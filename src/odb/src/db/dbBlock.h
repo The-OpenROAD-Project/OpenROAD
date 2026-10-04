@@ -232,12 +232,6 @@ class _dbBlock : public _dbObject
       1};  // unique index used to create a new inst name
 
   // NON-PERSISTANT-STREAMED-MEMBERS
-  // Density bin size global placement last used on this block, so consumers
-  // in other modules (the GUI placement density heat map) can bin on the same
-  // grid. Zero until global placement runs in this process.
-  int placement_bin_size_x_{0};
-  int placement_bin_size_y_{0};
-
   dbTable<_dbBTerm>* bterm_tbl_;
   dbTable<_dbITerm, 1024>* iterm_tbl_;
   dbTable<_dbNet>* net_tbl_;
