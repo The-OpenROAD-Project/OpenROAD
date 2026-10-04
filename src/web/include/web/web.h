@@ -169,6 +169,15 @@ class WebServer
   void deleteLabel(const std::string& name);
   void clearLabels();
 
+  // Load a heat map from a CSV file and attach it to one chiplet of the
+  // design; returns the short name clients use to reference it.
+  // CSV row 0 = (chiplet_name, heatmap_name); rows 1+ = x0,y0,x1,y1,value
+  // with the coordinates in the chiplet's local frame, in microns.  The
+  // chiplet is resolved against TileGenerator::chiplets(), so its world
+  // transform is applied and the data lands in the right place in a
+  // multi-die view.
+  std::string loadChipletHeatMap(const std::string& file_path);
+
   // Persist the connected client's current display-controls state (as
   // synced via the "set_display_state" request) to a JSON file.  The cache
   // holds a single snapshot: with several clients connected, the state of
@@ -236,6 +245,17 @@ class WebServer
   // and live outside ODB, so nothing else notifies the other sessions that a
   // Tcl-driven add/delete/clear changed what they should draw.
   void broadcastLabels();
+
+  // Tell every connected client the registered heat-map set changed, so it
+  // re-requests "heatmaps" and redraws its control panel.  Sessions build
+  // their heat-map instances from the registry, so a source registered after
+  // a client connected is invisible to it until this push arrives.
+  void broadcastHeatMapsChanged();
+
+  // Serial for the short names handed out by loadChipletHeatMap.  The
+  // registry keys on short name and keeps the first registration, so these
+  // must not collide across calls.
+  int chiplet_heat_map_count_ = 0;
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
