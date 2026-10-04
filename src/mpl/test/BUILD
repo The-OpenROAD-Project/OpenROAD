@@ -54,6 +54,11 @@ COMPULSORY_TESTS = [
 
 ALL_TESTS = COMPULSORY_TESTS
 
+# Self-checking: the script reports pass/fail, no golden log.
+PASSFAIL_TESTS = [
+    "rerun1",
+]
+
 filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
@@ -261,6 +266,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
