@@ -9,4 +9,5 @@ write_db [make_result_file 3dic_read_db.odb]
 
 # Reload in a separate process so nothing from read_3dbx is reused.
 puts [exec [info nameofexecutable] -no_splash -no_init -exit \
+  -threads [thread_count] \
   [file join [file dirname [info script]] "3dic_read_db_reload.tcl"] 2>@1]

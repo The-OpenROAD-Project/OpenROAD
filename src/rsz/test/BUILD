@@ -271,6 +271,7 @@ PASSFAIL_TESTS = [
     # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
     # build directory structure not compatible with Bazel
     # "cpp_tests",
+    "repair_timing_fixed",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
     "repair_design_fixed_driver",
@@ -610,6 +611,29 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "gcd_nangate45_placed.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRepairHold",
+    srcs = ["cpp/TestRepairHold.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold_shared_driver.def",
     ],
     deps = [
         "//src/dbSta",

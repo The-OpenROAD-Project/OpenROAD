@@ -31,20 +31,20 @@ met3       Horizontal      14023          6808          51.45%
 met4       Vertical        10804          5032          53.42%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 5
+[INFO GRT-0197] Via related to pin nodes: 7
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 8
-[INFO GRT-0112] Final usage 3D: 25
+[INFO GRT-0111] Final number of vias: 10
+[INFO GRT-0112] Final usage 3D: 31
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
 met1              4366             0            0.00%             0 /  0 /  0
-met2              5772             0            0.00%             0 /  0 /  0
+met2              5772             1            0.02%             0 /  0 /  0
 met3              6808             0            0.00%             0 /  0 /  0
-met4              5032             1            0.02%             0 /  0 /  0
+met4              5032             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            21978             1            0.00%             0 /  0 /  0
 

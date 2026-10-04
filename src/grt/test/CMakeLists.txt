@@ -145,6 +145,7 @@ or_integration_tests(
     congestion_markers_cugr
     congestion_acceptance_is_recorded
     congestion_report_file_cugr
+    resistance_aware_asap7_fr_threads
     snapshot_batched_bus_route
     snapshot_batched_incremental_state
     snapshot_batched_single_thread_smoke
