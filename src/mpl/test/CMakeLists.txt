@@ -29,6 +29,7 @@ or_integration_tests(
     keep_clustering_data2
     fixed_macros1
     fixed_macros2
+    rerun1
     fixed_covers
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
