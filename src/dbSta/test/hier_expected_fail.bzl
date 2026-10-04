@@ -310,18 +310,6 @@ CONFORMANCE_EXPECTED_FAIL = [
             "wb_sta_reader_module_shadows_cell_after.v",
         ],
     ),
-    # The flat writer drops sub_module's `assign out_bus = in_bus[3:2];`
-    # entirely, leaving sub_out_bus undriven and taking top_out_bus[1] and
-    # top_out_single with it (SEC coverage 4/6). The hier path emits the assigns
-    # correctly.
-    xfail(
-        path = "flat",
-        mode = "partial",
-        symptom = "flat write drops a submodule bus-slice feedthrough assign, leaving two top outputs undriven",
-        netlists = [
-            "get_ports1.v",
-        ],
-    ),
     # The flat writer builds an instance name by joining the hierarchy path with
     # '/' and escapes the result, so the path instance `x` -> instance `y` is
     # emitted as `\x/y ` -- colliding with an instance whose name is literally
@@ -656,24 +644,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         ],
     ),
     xfail(
-        path = "flat",
-        mode = "partial",
-        symptom = "SEC coverage 25.00%",
-        netlists = [
-            "getports_wholein.v",
-            "gp_bitassign_top.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "partial",
-        symptom = "SEC coverage 33.33%",
-        netlists = [
-            "gp_no_bus_ft.v",
-            "gp_no_scalar_ft.v",
-        ],
-    ),
-    xfail(
         path = "hier",
         mode = "partial",
         symptom = "SEC coverage 33.33%",
@@ -690,9 +660,6 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_bus_geometry_const_gatepin_top.v",
             "bx_bus_geometry_const_scalar_port.v",
             "bx_constants_mixed_cell_literal.v",
-            "getports_nocell.v",
-            "min_ft_one_read_only.v",
-            "nameorder_wire_before.v",
             "wb_dbsta_link_supply_net_hier_boundary.v",
         ],
     ),
@@ -729,8 +696,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         symptom = "SEC coverage 66.67%",
         netlists = [
             "bx_constants_assign_out_bitsel.v",
-            "getports_bitassign.v",
-            "getports_replica.v",
         ],
     ),
     xfail(
@@ -1064,24 +1029,10 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         mode = "tool-error",
-        symptom = "SEC cannot run on this design pair - Missing observed output expression for `197.0.`",
-        netlists = [
-            "nameorder_out_before_in.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "tool-error",
         symptom = "SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
         netlists = [
             "bx_dangling_positional_inv_live.v",
             "bx_dangling_positional_leaf_live.v",
-            "gp_full_inbus.v",
-            "gp_no_topin_in_concat.v",
-            "nameorder_busslice.v",
-            "nameorder_deep_chain.v",
-            "nameorder_h_before_i.v",
-            "nameorder_minimal_repro.v",
             "wb_sta_reader_supply_tie.v",
         ],
     ),
