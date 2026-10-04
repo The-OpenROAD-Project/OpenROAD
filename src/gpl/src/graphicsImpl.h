@@ -81,6 +81,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
   void gifEnd(int key) override;
+  void instDestroyed(odb::dbInst* db_inst) override;
 
  protected:
   void cellPlotImpl(bool pause) override;
@@ -194,6 +195,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void drawInitial(web::Painter& painter);
   void drawMBFF(web::Painter& painter);
   void drawBounds(web::Painter& painter);
+  void resyncSelection();
   void reportSelected();
 };
 

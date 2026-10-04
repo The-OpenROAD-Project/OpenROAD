@@ -1405,6 +1405,9 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
     log_->warn(GPL, 328, "Trying to destroy odb::dbInst* nullptr");
     return;
   }
+  if (graphics_) {
+    graphics_->instDestroyed(db_inst);
+  }
 
   bool destroyed = false;
   for (auto& nesterov : nbVec_) {

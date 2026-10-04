@@ -570,23 +570,46 @@ void GraphicsImpl::drawObjects(web::Painter& painter)
   }
 }
 
+void GraphicsImpl::instDestroyed(odb::dbInst* db_inst)
+{
+  if (db_inst == selected_inst_) {
+    selected_ = kInvalidIndex;
+    nb_selected_index_ = kInvalidIndex;
+    selected_inst_ = nullptr;
+  }
+}
+
+// Timing-driven repairs swap-remove and append GCells, so selected_ can be
+// stale or past the end of storage; find the selected instance's GCell again.
+void GraphicsImpl::resyncSelection()
+{
+  if (selected_ == kInvalidIndex || !nbc_) {
+    return;
+  }
+  const size_t size = nbc_->getGCells().size();
+  if (selected_ < size
+      && (!selected_inst_
+          || nbc_->getGCellByIndex(selected_)->contains(selected_inst_))) {
+    return;
+  }
+  selected_ = kInvalidIndex;
+  if (!selected_inst_) {
+    return;
+  }
+  for (size_t idx = 0; idx < size; ++idx) {
+    if (nbc_->getGCellByIndex(idx)->contains(selected_inst_)) {
+      selected_ = idx;
+      return;
+    }
+  }
+}
+
 void GraphicsImpl::reportSelected()
 {
   if (selected_ == kInvalidIndex) {
     return;
   }
-  // Timing-driven repairs reorder GCell storage, so selected_ can go stale;
-  // find the selected instance's GCell again.
   const GCell* gcell = nbc_->getGCellByIndex(selected_);
-  if (selected_inst_ && !gcell->contains(selected_inst_)) {
-    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
-      if (nbc_->getGCellByIndex(idx)->contains(selected_inst_)) {
-        selected_ = idx;
-        gcell = nbc_->getGCellByIndex(idx);
-        break;
-      }
-    }
-  }
   logger_->report("Inst: {}", gcell->getName());
 
   if (np_) {
@@ -733,6 +756,7 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
 
 void GraphicsImpl::cellPlotImpl(bool pause)
 {
+  resyncSelection();
   web::Gui::get()->redraw();
   if (pause) {
     reportSelected();
