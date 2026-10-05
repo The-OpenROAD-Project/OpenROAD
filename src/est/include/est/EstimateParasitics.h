@@ -253,9 +253,6 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void makePadParasitic(const sta::Net* net,
                         sta::SpefWriter* spef_writer,
                         sta::ArcDelayCalc* arc_delay_calc);
-  void estimateWireParasiticsInParallel(
-      const std::vector<std::pair<const sta::Pin*, const sta::Net*>>& work,
-      int threads);
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;

@@ -786,34 +786,37 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
 
     sortClkAndSignalLayers();
 
-    // The nets to estimate, with their drivers, found serially:
-    // Network::drivers fills a cache, and isSkipPin propagates constants
-    // on first use. The per-net estimate repeats these checks.
+    // Network::drivers fills a cache and the first isConstant per mode
+    // propagates constants: do both before the threads.
     std::vector<std::pair<const sta::Pin*, const sta::Net*>> work;
     for (odb::dbNet* db_net : block_->getNets()) {
       const sta::Net* net = db_network_->dbToSta(db_net);
       PinSet* drivers = network_->drivers(net);
-      if (drivers == nullptr || drivers->empty() || network_->isPower(net)
-          || network_->isGround(net) || db_net->isSpecial()) {
-        continue;
-      }
-      const sta::Pin* drvr_pin = *drivers->begin();
-      if (isPadNet(net) || !isSkipPin(drvr_pin)) {
-        work.emplace_back(drvr_pin, net);
+      if (drivers && !drivers->empty()) {
+        work.emplace_back(*drivers->begin(), net);
       }
     }
-    const int threads = std::min(static_cast<int>(sta_->threadCount()),
-                                 static_cast<int>(work.size()));
-    // A SPEF file and the debug reports are written per net: keep them in
-    // net order.
-    if (spef_writer || threads <= 1
-        || logger_->debugCheck(EST, "estimate_parasitics", 1)
-        || logger_->debugCheck(EST, "steiner", 1)) {
-      for (auto [drvr_pin, net] : work) {
-        estimateWireParasitic(drvr_pin, net, spef_writer);
-      }
-    } else {
-      estimateWireParasiticsInParallel(work, threads);
+    if (!work.empty()) {
+      (void) isSkipPin(work.front().first);
+    }
+    // SPEF and the debug reports are written per net, in net order.
+    const int threads
+        = spef_writer || logger_->debugCheck(EST, "estimate_parasitics", 1)
+                  || logger_->debugCheck(EST, "steiner", 1)
+              ? 1
+              : sta_->threadCount();
+    stt_builder_->prepareForThreads();
+    std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
+    calcs.reserve(threads);
+    for (int i = 0; i < threads; ++i) {
+      calcs.emplace_back(arc_delay_calc_->copy());
+    }
+#pragma omp parallel for num_threads(threads) \
+    schedule(dynamic, 64) if (threads > 1)
+    for (int i = 0; i < static_cast<int>(work.size()); ++i) {
+      auto [drvr_pin, net] = work[i];
+      estimateWireParasitic(
+          drvr_pin, net, spef_writer, calcs[omp_get_thread_num()].get());
     }
     parasitics_src_ = ParasiticsSrc::kPlacement;
     parasitics_invalid_.clear();
@@ -827,29 +830,6 @@ void EstimateParasitics::estimateWireParasitic(const sta::Net* net,
   if (drivers && !drivers->empty()) {
     const Pin* drvr_pin = *drivers->begin();
     estimateWireParasitic(drvr_pin, net, spef_writer);
-  }
-}
-
-void EstimateParasitics::estimateWireParasiticsInParallel(
-    const std::vector<std::pair<const sta::Pin*, const sta::Net*>>& work,
-    const int threads)
-{
-  // Each net is estimated and reduced on its own and stored by net and
-  // driver pin, so the result does not depend on the thread count or the
-  // order the threads run in. The parasitics store locks its own writes;
-  // the reduction goes through one arc delay calculator per thread, as
-  // sta::GraphDelayCalc does for its threads.
-  stt_builder_->prepareForThreads();
-  std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
-  calcs.reserve(threads);
-  for (int i = 0; i < threads; ++i) {
-    calcs.emplace_back(arc_delay_calc_->copy());
-  }
-#pragma omp parallel for num_threads(threads) schedule(dynamic, 64)
-  for (int i = 0; i < static_cast<int>(work.size()); ++i) {
-    auto [drvr_pin, net] = work[i];
-    estimateWireParasitic(
-        drvr_pin, net, nullptr, calcs[omp_get_thread_num()].get());
   }
 }
 
