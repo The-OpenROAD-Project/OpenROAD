@@ -7,8 +7,8 @@
 #include <string>
 #include <utility>
 
-#include "gui/gui.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace utl {
 class Logger;
@@ -18,7 +18,7 @@ namespace pad {
 
 class RDLRouter;
 
-class RDLGui : public gui::Renderer
+class RDLGui : public web::Renderer
 {
  public:
   explicit RDLGui(utl::Logger* logger);
@@ -26,7 +26,7 @@ class RDLGui : public gui::Renderer
 
   void setRouter(RDLRouter* router);
 
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   const char* getDisplayControlGroupName() override { return "RDL Router"; }
 
@@ -43,7 +43,7 @@ class RDLGui : public gui::Renderer
   RDLRouter* router_ = nullptr;
 
   std::set<std::pair<odb::Point, odb::Point>> snap_;
-  gui::Painter::Color snap_color_ = gui::Painter::kWhite;
+  web::Painter::Color snap_color_ = web::Painter::kWhite;
 
   static constexpr const char* kDrawVertex = "Vertices";
   static constexpr const char* kDrawEdge = "Edges";

@@ -1,6 +1,62 @@
 version: 2
+
+# MODULE.bazel is not covered: Dependabot has no Bazel ecosystem.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    # v3 greets returning contributors as first-timers (actions/first-interaction#369).
+    ignore:
+      - dependency-name: "actions/first-interaction"
+        update-types: ["version-update:semver-major"]
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/bazel"
+      - "/docs"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directories:
+      - "/src/web"
+      - "/src/web/test"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/bazel"
+      - "/etc"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      images:
+        patterns:
+          - "*"

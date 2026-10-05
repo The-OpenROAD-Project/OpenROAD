@@ -139,7 +139,7 @@ def man2(path=DEST_DIR2):
 # The whole-tree build above silences it: repeated across every module it
 # drowns out the diagnostics worth reading.
 def man2_translate(doc, path, quiet=False):
-    with open(doc) as f:
+    with open(doc, encoding="utf-8") as f:
         text = f.read()
         # new function names (reading tcl synopsis + convert gui:: to gui_)
         func_names = extract_tcl_command(text)
@@ -258,7 +258,7 @@ def man3(path=DEST_DIR3):
 
 
 def man3_translate(doc, path, quiet=False):
-    with open(doc) as f:
+    with open(doc, encoding="utf-8") as f:
         for line in f:
             parts = line.split()
             module, num, message, level = (

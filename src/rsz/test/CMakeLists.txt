@@ -71,6 +71,7 @@ or_integration_tests(
     repair_fanout6
     repair_fanout7
     repair_fanout8
+    repair_fanout9
     repair_hold1
     repair_hold1_hier
     repair_hold2
@@ -112,6 +113,8 @@ or_integration_tests(
     repair_setup_wns_guard
     repair_setup_wns_last_gasp_noop
     repair_setup_size_down_fanout
+    repair_setup_size_down_fanout_before_sizeup
+    repair_setup_size_down_fanout_hi
     repair_setup_size_down_fanout_legacy_basic
     repair_setup_sizeup_match
     repair_setup_sizeup_legacy_basic
@@ -119,6 +122,8 @@ or_integration_tests(
     repair_setup_sizeup_match_prev_fanout
     repair_setup_splitload_legacy_basic
     repair_setup_swappins_legacy_flat
+    repair_setup_buffer_to_inverters
+    repair_setup_buffer_to_inverters_hier
     repair_setup_unbuffer_legacy_bufx2
     repair_setup_unbuffer_legacy_bufx8
     repair_setup1
@@ -242,14 +247,17 @@ or_integration_tests(
     global_sizing
     global_sizing_threads
     global_sizing_presize
+    repair_timing_crpr
     inferred_clock_gator_time_borrow
     inferred_clock_gator_time_borrow_covered
     inferred_clock_gator_time_borrow_repair_pin
     inferred_clock_gator_time_borrow_tns
     latch_borrow_chain
   PASSFAIL_TESTS
+    repair_timing_fixed
     repair_setup_legacy_mt
     repair_setup_mt1
+    repair_design_fixed_driver
     cpp_tests
 )
 

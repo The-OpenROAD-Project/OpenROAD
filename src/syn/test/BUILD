@@ -16,6 +16,20 @@ regression_test(
     ],
 )
 
+regression_test(
+    name = "comb_loop",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
+        "comb_loop.ok",
+        "comb_loop.v",
+        "comb_loop_cells.lef",
+        "comb_loop_cells.lib",
+    ],
+)
+
 # No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
 # defines its own.
@@ -139,6 +153,23 @@ cc_test(
     deps = [
         "//src/syn",
         "//src/syn/src/ir",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "elab_diag_test",
+    srcs = ["elab_diag_test.cc"],
+    data = [
+        "elab_diag_expr.sv",
+        "elab_diag_hier.sv",
+        "elab_diag_stmt.sv",
+        "elab_diag_tops.sv",
+    ],
+    deps = [
+        "//src/syn/src/elab",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
     ],
 )

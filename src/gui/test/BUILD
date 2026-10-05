@@ -10,11 +10,17 @@ package(features = ["layering_check"])
 ALL_TESTS = [
     "supported",
     "clocktree_virtual_clock",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "clocktree_virtual_clock",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
 ]
 
 filegroup(
@@ -50,7 +56,10 @@ py_test(
     name = "gui_man_tcl_check",
     srcs = ["gui_man_tcl_check.py"],
     data = ["//src/gui:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

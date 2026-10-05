@@ -59,6 +59,9 @@ export class WebSocketManager {
         // id arrives — even a stale one for a cancelled request.
         this._inFlight = 0;
         this._inFlightIds = new Set();
+        // Payload types this build does not know, so handleMessage can report
+        // each one once instead of once per message (see there).
+        this._unknownPayloadTypes = new Set();
         this._maxInFlight = DEFAULT_MAX_IN_FLIGHT; // updated by server "config"
         this._lastRecvAt = 0;     // perf.now() of the last message of any kind
         this._bufStuckSince = 0;  // liveness: when bufferedAmount got stuck
@@ -96,6 +99,7 @@ export class WebSocketManager {
         mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
         mgr._inFlight = 0;
         mgr._inFlightIds = new Set();
+        mgr._unknownPayloadTypes = new Set();
         mgr._maxInFlight = DEFAULT_MAX_IN_FLIGHT;
         mgr._lastRecvAt = 0;
         mgr.reconnectDelay = 0;
@@ -268,6 +272,35 @@ export class WebSocketManager {
             }
         } else if (type === 1) {
             handler.resolve(new Blob([payload], { type: 'image/png' }));
+        } else if (type === 3) {
+            // A tile the server drew nothing into. Resolving null rather than
+            // a transparent PNG is the point: no Blob, no decode, and no
+            // full-size bitmap held for an image with nothing in it. Every
+            // tile consumer already treats a null payload as "draw nothing".
+            handler.resolve(null);
+        } else {
+            // An unrecognised payload type must still settle the promise, or
+            // the tile it belongs to hangs unresolved forever and Leaflet
+            // never reveals it. A server newer than this client lands here.
+            //
+            // Rejected rather than resolved with null: only type 3 carries
+            // "blank tile", and this manager is shared with the JSON endpoints,
+            // whose callers would read the null as data — `tech` and `bounds`
+            // dereference the reply directly. A tile caller catches and leaves
+            // the tile blank, which is what it does for any dropped request.
+            //
+            // Reported once per type rather than per message: the cause is a
+            // version mismatch, so every reply arrives this way and a warning
+            // each would bury the first one.
+            if (!this._unknownPayloadTypes.has(type)) {
+                this._unknownPayloadTypes.add(type);
+                console.warn(
+                    `Unrecognized websocket payload type ${type}. The server `
+                    + 'is likely newer than this page — reload to pick up the '
+                    + 'current client.');
+            }
+            handler.reject(
+                new Error(`Unsupported websocket payload type ${type}`));
         }
     }
 

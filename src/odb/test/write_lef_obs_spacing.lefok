@@ -1,0 +1,35 @@
+VERSION 5.8 ;
+NAMESCASESENSITIVE ON ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+PROPERTYDEFINITIONS
+    LAYER LEF58_TYPE STRING ;
+END PROPERTYDEFINITIONS
+
+
+MACRO obs_spacing
+    CLASS CORE ;
+    SIZE 2 BY 2 ;
+    PIN A
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER met1 SPACING 0.1 ;
+              RECT  0 0 0.2 0.2 ;
+        END
+    END A
+    OBS
+      LAYER met1 SPACING 0.2 ;
+        POLYGON  0 1 0 2 0.5 2 0.5 1.5 1 1.5 1 1 ;
+      LAYER met1 SPACING 0.2 ;
+        RECT  0.5 0.5 1 1 ;
+      LAYER met1 ;
+        RECT  1 1 1.5 1.5 ;
+      LAYER met2 DESIGNRULEWIDTH 0.3 ;
+        RECT  0 0 1 1 ;
+      LAYER met3 SPACING 0 ;
+        RECT  0 0 1 1 ;
+    END
+END obs_spacing
+END LIBRARY

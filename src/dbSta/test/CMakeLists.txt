@@ -65,6 +65,7 @@ or_integration_tests(
     sta5
     sta_to_db1
     sta_to_db1_hier
+    tcl_unknown_handler
     write_sdc1
     write_verilog1
     write_verilog2
@@ -76,6 +77,8 @@ or_integration_tests(
     write_verilog8
     write_verilog9
     write_verilog9_hier
+  PASSFAIL_TESTS
+    check_ip_liberty_pins
 )
 
 if(ENABLE_TESTS)

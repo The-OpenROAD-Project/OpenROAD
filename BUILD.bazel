@@ -56,6 +56,27 @@ config_setting(
     },
 )
 
+# Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
+# A string flag rather than a bool leaves room for a "hip" value, mirroring
+# the backend branches in cmake/KokkosBackend.cmake.
+string_flag(
+    name = "gpu",
+    build_setting_default = "none",
+    values = [
+        "none",
+        "cuda",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "gpu_cuda",
+    flag_values = {
+        ":gpu": "cuda",
+    },
+    visibility = ["//visibility:public"],
+)
+
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
     "//src/ant",
@@ -119,6 +140,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
+    "//src/wmk",
+    "//src/wmk:ui",
     ":ord",
 ]
 
@@ -204,7 +227,6 @@ cc_binary(
             ":platform_cli": [
                 ":openroad_lib",
                 "//src/gui",
-                "//src/gui:gui_stub",
             ],
             ":platform_gui": [
                 ":openroad_lib_qt",
@@ -391,7 +413,6 @@ cc_binary(
         "//src/gpl",
         "//src/grt",
         "//src/gui",
-        "//src/gui:gui_stub",
         "//src/ifp",
         "//src/odb/src/db",
         "//src/par",
@@ -403,6 +424,9 @@ cc_binary(
         "//src/stt",
         "//src/tap",
         "//src/utl",
+        "//src/web:core",
+        "//src/wmk",
+        "//src/wmk:hmac_sha256",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -457,6 +481,7 @@ python_wrap_cc(
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
+        "//src/wmk:swig-py",
     ],
 )
 
@@ -530,7 +555,13 @@ sh_test(
         # The handle the script uses to find the source tree it scans.
         "MODULE.bazel",
         "//etc:find_messages.py",
+        # The interpreter itself, so the script runs on the one the toolchain
+        # resolved rather than whatever python3 the host has on PATH.
+        "@rules_python//python:current_py_toolchain",
     ],
+    env = {
+        "PYTHON3_ROOTPATH": "$(PYTHON3_ROOTPATH)",
+    },
     # external: the sources being scanned are not declared inputs, so nothing
     # invalidates a cached result when one of them gains a duplicate ID. Without
     # this the check reports "(cached) PASSED" over a tree it never looked at.
@@ -538,6 +569,7 @@ sh_test(
         "external",
         "local",
     ],
+    toolchains = ["@rules_python//python:current_py_toolchain"],
 )
 
 # Make sure the Qt GUI variant keeps building. :openroad is exercised by
@@ -735,12 +767,54 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
+# --- Python formatting check (black --check) ------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_py_test",
+    srcs = ["//bazel:py_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:black)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "//bazel:black",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    tags = [
+        "external",
+        "local",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# --- Python auto-format only (black) --------------------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_py",
+    srcs = ["//bazel:py_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:black)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "//bazel:black",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
         ":fmt_bzl_test",
+        ":fmt_py_test",
         ":fmt_tcl_test",
         ":fmt_yaml_test",
         ":lint_bzl_test",
@@ -769,15 +843,19 @@ sh_binary(
         "$(rootpath @git)",
         "$(rootpath //bazel:yaml_tidy.sh)",
         "$(rootpath //bazel:yamlfix)",
+        "$(rootpath //bazel:py_tidy.sh)",
+        "$(rootpath //bazel:black)",
     ],
     data = [
         "MODULE.bazel",
         "tclint.toml",
         "yamlfix.ignore",
         "yamlfix.toml",
+        "//bazel:black",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
         "//bazel:git_ls_files.sh",
+        "//bazel:py_tidy.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",

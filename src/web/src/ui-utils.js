@@ -3,6 +3,9 @@
 
 // Shared UI utilities.
 
+import { dbuRectToBounds } from './coordinates.js';
+import { TILE_SIZE_CSS, TILE_SIZE_QUANTUM } from './tile-request.js';
+
 // True when the app was bootstrapped from a saved/static report
 // (i.e. there is no live WebSocket backend).
 export function isStaticMode(app) {
@@ -73,11 +76,10 @@ export function showConfirmModal({ title, message, confirmLabel = 'OK',
         const buttons = document.createElement('div');
         buttons.className = 'or-modal-buttons';
         const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'or-modal-btn';
+        cancelBtn.className = 'or-btn';
         cancelBtn.textContent = 'Cancel';
         const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'or-modal-btn'
-            + (danger ? ' or-modal-btn-danger' : '');
+        confirmBtn.className = 'or-btn' + (danger ? ' or-btn-danger' : '');
         confirmBtn.textContent = confirmLabel;
 
         const close = (result) => {
@@ -106,30 +108,52 @@ export function showConfirmModal({ title, message, confirmLabel = 'OK',
     });
 }
 
+// Fraction of each dimension left empty on every side by zoom-to-fit.  Qt's
+// LayoutViewer::zoomTo divides the fitted pixels-per-DBU by (1 + 2*margin) with
+// defaultZoomMargin = 0.05, so the design fills 1/1.1 of the viewport.
+export const kZoomMargin = 0.05;
+
+// Grow a DBU rect by `fraction` of each of its own dimensions on every side.
+// Per-dimension, not by the larger one: that is what dividing the fitted
+// pixels-per-DBU by (1 + 2*fraction) amounts to, since Qt fits on
+// min(W/dx, H/dy).
+function bloatRect([[yMin, xMin], [yMax, xMax]], fraction) {
+    const padX = (xMax - xMin) * fraction;
+    const padY = (yMax - yMin) * fraction;
+    return [[yMin - padY, xMin - padX], [yMax + padY, xMax + padX]];
+}
+
 // Coordinate transforms derived from a server bounds response
 // ([[yMin, xMin], [yMax, xMax]], the tile-grid georeference).  Pure so it
 // can be unit-tested; returns null when the design is empty.
-export function computeBoundsTransforms(designBounds, tileSize = 256) {
-    if (!designBounds) return null;
+//
+// `fitRect`, in the same wire order, is what the map zooms to fit: the design
+// without the pin-label margin the georeference rect carries.  Framing on the
+// georeference rect instead leaves that margin as dead space around the design
+// (issue #11338).  Omitted, the georeference rect is fitted, as before.
+export function computeBoundsTransforms(designBounds, tileSize = 256,
+                                        fitRect = null) {
+    if (!isUsableRect(designBounds)) return null;
     const minY = designBounds[0][0];
     const minX = designBounds[0][1];
-    const maxY = designBounds[1][0];
-    const maxX = designBounds[1][1];
-    const width = maxX - minX;
-    const height = maxY - minY;
-    if (!(width > 0) || !(height > 0)) return null;
-    const maxDXDY = Math.max(width, height);
+    const maxDXDY = Math.max(designBounds[1][1] - minX,
+                             designBounds[1][0] - minY);
     const scale = tileSize / maxDXDY;
+    const fit = isUsableRect(fitRect) ? fitRect : designBounds;
+    const [[fitYMin, fitXMin], [fitYMax, fitXMax]] = bloatRect(fit, kZoomMargin);
     return {
         scale,
         maxDXDY,
         originX: minX,
         originY: minY,
-        fitBounds: [
-            [-maxDXDY * scale, 0],
-            [(height - maxDXDY) * scale, width * scale],
-        ],
+        fitBounds: dbuRectToBounds(fitXMin, fitYMin, fitXMax, fitYMax,
+                                   scale, maxDXDY, minX, minY),
     };
+}
+
+// A bounds-response rect with a positive extent in both axes.
+function isUsableRect(r) {
+    return !!r && r[1][0] > r[0][0] && r[1][1] > r[0][1];
 }
 
 // True when two bounds responses describe the same rectangle.
@@ -183,8 +207,11 @@ export function onSelectionReset(app, fn) {
 // guarantees the pane is only ever upscaled) prevents that.
 //
 // `crs` is parameterized so this is unit-testable without the Leaflet global.
+// `prefs` carries the two Options-menu preferences the map itself owns
+// (see kArrowStepDefault and installWheelPanning).
 export function buildMapOptions(
-    crs = (typeof L !== 'undefined' ? L.CRS.Simple : undefined)) {
+    crs = (typeof L !== 'undefined' ? L.CRS.Simple : undefined),
+    prefs = {}) {
     return {
         crs,
         zoom: 1,
@@ -192,7 +219,50 @@ export function buildMapOptions(
         zoomDelta: 1,
         fadeAnimation: false,
         attributionControl: false,
+        // Qt Options > "Mouse wheel mapped to zoom by default".  The live
+        // viewer never reads this: installWheelPanning turns Leaflet's own
+        // wheel handler off and implements both directions itself, because
+        // Leaflet cannot pan on the wheel.  Kept so the option carries the
+        // preference for a consumer that does not install that handler, and
+        // absent preference keeps the wheel zooming, which is what shipped.
+        scrollWheelZoom: prefs.wheelZoom !== false,
+        keyboardPanDelta: clampArrowStep(prefs.arrowStep),
     };
+}
+
+// Qt Options > "Arrow keys scroll step": how far one arrow press pans, in CSS
+// px.  Qt's dialog accepts 10..1000 with a default of 20; the default here
+// stays at Leaflet's 80 because that is what the web viewer has always done
+// and dropping to 20 would quietly make every arrow press a quarter as far.
+export const kArrowStepDefault = 80;
+export const kArrowStepMin = 10;
+export const kArrowStepMax = 1000;
+
+// Coerce a stored or user-typed step to a usable number.  Anything
+// unparseable falls back to the default rather than to NaN, which Leaflet
+// would turn into a map that ignores the arrow keys entirely.
+export function clampArrowStep(value) {
+    // Number('') and Number(null) are both 0, which would clamp to the
+    // minimum; an unset cookie has to read as absent, not as "10 px".
+    const step = (value === '' || value === null)
+        ? NaN : Math.round(Number(value));
+    if (!Number.isFinite(step)) {
+        return kArrowStepDefault;
+    }
+    return Math.min(kArrowStepMax, Math.max(kArrowStepMin, step));
+}
+
+// Push a new arrow-key step into an already-open map.
+//
+// Leaflet reads options.keyboardPanDelta once, in Keyboard.initialize, so
+// assigning that option on a live map does nothing -- the distance lives in
+// the handler's own key map, which _setPanDelta rebuilds from this argument
+// (Leaflet 1.9.4, Map.Keyboard.js).  Hence the push rather than an option
+// write.  _setPanDelta is private, so every hop is optional-chained: a static
+// report has no keyboard handler, and setArrowStep can run before the map
+// exists.  buildMapOptions carries the value for the next map either way.
+export function applyArrowStep(map, step) {
+    map?.keyboard?._setPanDelta?.(step);
 }
 
 // Build a display-controls group header row: an expand/collapse triangle and
@@ -275,6 +345,72 @@ export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
     // that one DBU already fills the budget at zoom 0 would otherwise pin the
     // user at the fit zoom with no way to zoom in at all.
     return Math.max(1, Math.min(MAX_TILE_ZOOM, z));
+}
+
+// The CSS tile size that makes zoom-to-fit land on an integer zoom level.
+//
+// The map rests only on integer zoom (buildMapOptions), and Leaflet's
+// fitBounds FLOORS the zoom it computes, so the design is displayed anywhere
+// between half and all of what would fit — 52% of the viewport in the case
+// reported as issue #11338, against 91% in the Qt GUI.
+//
+// The lever is the tile size, because it is the one free parameter left. At
+// zoom z the design spans `Dx * (T/M) * 2^z` CSS px, so the zoom the fit wants
+// is
+//
+//     z*(T) = log2(min(W, H) / the framed box at tile size T)
+//
+// and T scales z* without touching anything else: the tile grid is indexed by
+// zoom alone, so tile (z,x,y) still covers the same DBU (see
+// useFittedTileSize). Taking T' = TILE_SIZE_CSS * 2^frac(z*) — which lands in
+// [TILE_SIZE_CSS, 2*TILE_SIZE_CSS) — makes z* whole and the floor stops
+// costing a level.
+//
+// T' is rounded DOWN to a multiple of TILE_SIZE_QUANTUM: down because a T'
+// above the ideal drops z* just below the integer and the floor takes a whole
+// level back, and to the quantum because a tile size has to stay a whole
+// number of device pixels at every ratio a display can report, not just at
+// today's one. That leaves two sizes to pick from, so the design fills at
+// least 2/3 of the framed box rather than the 1/2 the bare floor allows.
+//
+// Only the zoom-to-fit rect gets this: every other fitBounds caller (zoom to
+// selection, the DRC widget, rubber-band zoom) still loses up to a level to
+// the same floor, and a size picked for this rect cannot help theirs.
+//
+// The choice depends on the viewport, so it is made once, at boot: a later
+// window resize detunes it until the next reload, which costs at worst the
+// level the fit loses today.
+export function fittedTileSizeCss({ designBounds, fitRect, viewW, viewH }) {
+    // The framed box, margin and fit-rect fallback included, in the map units
+    // TILE_SIZE_CSS defines -- so this cannot drift from what fitBounds sees.
+    const t = computeBoundsTransforms(designBounds, TILE_SIZE_CSS, fitRect);
+    const finitePositive = (v) => Number.isFinite(v) && v > 0;
+    if (!t || !finitePositive(viewW) || !finitePositive(viewH)) {
+        return TILE_SIZE_CSS;
+    }
+    const framedW = t.fitBounds[1][1] - t.fitBounds[0][1];
+    const framedH = t.fitBounds[1][0] - t.fitBounds[0][0];
+    // Pixels the framed box may grow by before it leaves the viewport, which
+    // is 2^(the zoom fitBounds wants) at tile size TILE_SIZE_CSS.
+    const room = Math.min(viewW / framedW, viewH / framedH);
+    const zStar = Math.log2(room);
+    // Below zoom 0 the map is already pinned at its minZoom and the fit has
+    // nothing left to floor, so a bigger tile would only overflow the viewport.
+    if (!Number.isFinite(zStar) || zStar < 0) {
+        return TILE_SIZE_CSS;
+    }
+    const target = Math.floor(zStar);
+    const ideal = TILE_SIZE_CSS * 2 ** (zStar - target);
+    // ideal < 2 * TILE_SIZE_CSS and the quantum is half of it, so there is at
+    // most one size above the base to consider.  Re-derive the zoom rather
+    // than trust it: at exactly the ideal size the fit zoom IS the integer,
+    // and one ULP below it the floor takes the whole level straight back.
+    const bigger = Math.floor(ideal / TILE_SIZE_QUANTUM) * TILE_SIZE_QUANTUM;
+    if (bigger > TILE_SIZE_CSS
+        && Math.log2(TILE_SIZE_CSS * room / bigger) >= target) {
+        return bigger;
+    }
+    return TILE_SIZE_CSS;
 }
 
 // --- Display units ---
@@ -505,4 +641,153 @@ export function makeResizableHeaders(table, widths) {
             document.addEventListener('mouseup', onMouseUp);
         });
     });
+}
+
+// ─── Panel tab icons ────────────────────────────────────────────────────────
+
+// A 16-viewBox stroke glyph per panel, keyed by the tab title in
+// defaultLayoutConfig (and in componentTitles, which must agree).  A stack can
+// hold six panels whose titles all read alike at tab width; the icon is what
+// makes one findable at a glance.
+const kPanelIconPaths = {
+    'Layout':           '<rect x="2.5" y="2.5" width="19" height="19" rx="2"/>'
+                        + '<path d="M2.5 9h19M9 2.5v19"/>',
+    'Schematic':        '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/>'
+                        + '<path d="M6 15.5V8a2 2 0 012-2h7.5"/>',
+    '3D Viewer':        '<path d="M12 2.5l9 5v9l-9 5-9-5v-9z"/><path d="M12 12l9-4.5M12 12v9.5M12 12L3 7.5"/>',
+    'Display Controls': '<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2"/>'
+                        + '<circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
+    'Inspector':        '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    'Hierarchy':        '<path d="M5 4v13a2 2 0 002 2h4M5 10h6"/>'
+                        + '<rect x="13" y="2" width="7" height="5" rx="1"/>'
+                        + '<rect x="13" y="15" width="7" height="5" rx="1"/>',
+    'Timing':           '<path d="M2 14h5l3-8 4 14 3-6h5"/>',
+    'DRC':              '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+    'Select Highlight': '<path d="M4 3l14 9-6 1 4 7-3 2-4-7-5 4z"/>',
+    'Clock Tree':       '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    'Charts':           '<path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/>',
+    'Tcl Console':      '<path d="M5 8l4 4-4 4M12 16h7"/>',
+    'Help':             '<circle cx="12" cy="12" r="9"/>'
+                        + '<path d="M9.5 9.5a2.5 2.5 0 115 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
+};
+
+// Build the icon element for a tab title, or null when the title has none --
+// a Tcl-added panel, say, which should get a plain tab rather than a wrong
+// icon.
+export function panelTabIcon(title) {
+    const path = kPanelIconPaths[title];
+    if (!path) return null;
+    const span = document.createElement('span');
+    span.className = 'or-tab-icon';
+    span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
+        + ' aria-hidden="true">' + path + '</svg>';
+    return span;
+}
+
+// Prepend the icon to every tab that does not have one yet, and return how
+// many were added.  Idempotent, so it can be called again after any layout
+// change -- Golden Layout rebuilds tab elements when a stack is dragged, split
+// or reordered -- without accumulating icons.  Titles are read from .lm_title
+// rather than from the component, so the overflow dropdown's tabs are
+// decorated by the same pass.
+//
+// The return value matters: an icon widens its tab, and Golden Layout decides
+// which tabs fit in a header before these exist, so the caller has to make it
+// measure again.  Reporting zero when there was nothing to do is what keeps
+// that re-measure from looping through the layout event that triggered it.
+export function decorateTabIcons(root = document) {
+    let added = 0;
+    for (const tab of root.querySelectorAll('.lm_tab:not([data-or-icon])')) {
+        const titleEl = tab.querySelector('.lm_title');
+        if (!titleEl) continue;
+        const title = titleEl.textContent.trim();
+        // An empty title means the tab is not built yet.  Marking it now would
+        // spend its one chance at an icon on a title we cannot match, so leave
+        // it for the next layout change.
+        if (!title) continue;
+        // Mark before the lookup, so a title with no icon of its own is not
+        // re-examined on every subsequent layout change.
+        tab.setAttribute('data-or-icon', '');
+        const icon = panelTabIcon(title);
+        if (icon) {
+            tab.insertBefore(icon, titleEl);
+            added++;
+        }
+    }
+    return added;
+}
+
+// Qt's LayoutScroll::wheelEvent, ported.  The preference and the Ctrl modifier
+// pick between panning and zooming, so Ctrl always does whichever one the
+// preference did not: with the preference off (Qt's default) the wheel pans and
+// Ctrl+wheel zooms, and with it on they swap.
+//
+// Both branches live here and Leaflet's own scrollWheelZoom is left disabled:
+// Leaflet has no pan-on-wheel option, and leaving its handler on would zoom in
+// addition to whatever this one did.  Zooming goes through setZoomAround so the
+// point under the cursor stays put, matching Qt's zoomIn(mouse_pos, true) and
+// the viewer's own Z / Shift+Z keys.
+export function installWheelPanning(map, wheelZoomEnabled) {
+    map.scrollWheelZoom.disable();
+    map.getContainer().addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (wheelZoomEnabled() === e.ctrlKey) {
+            const [dx, dy] = wheelDeltaPx(e, map.getContainer());
+            map.panBy([dx, dy], { animate: false });
+            return;
+        }
+        // A wheel notch is one zoom level, like the Z / Shift+Z keys.
+        const step = e.deltaY < 0 ? 1 : -1;
+        map.setZoomAround(map.mouseEventToLatLng(e), map.getZoom() + step);
+    }, { passive: false });
+}
+
+// A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
+// Firefox reports lines, and a page-mode event (rare, but produced by some
+// remote-desktop stacks) means a viewport at a time.  Treating either as pixels
+// would make one notch pan by a couple of pixels.
+function wheelDeltaPx(e, container) {
+    const kLineHeightPx = 16;
+    let scale = 1;
+    if (e.deltaMode === 1) {
+        scale = kLineHeightPx;
+    } else if (e.deltaMode === 2) {
+        scale = container.clientHeight || kLineHeightPx;
+    }
+    return [e.deltaX * scale, e.deltaY * scale];
+}
+
+// A modal dialog shell: title, caller-supplied body, an error line and
+// Cancel/OK.  Closes on the X, Cancel, Escape and a click on the backdrop.
+// `dialogClass` selects the per-dialog CSS (width, row layout).
+export function buildModal(title, bodyHtml, okLabel, dialogClass) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-dialog ${dialogClass}">
+            <button class="modal-close" title="Close" aria-label="Close">&times;</button>
+            <h3>${title}</h3>
+            ${bodyHtml}
+            <div class="modal-error" style="display:none"></div>
+            <div class="modal-buttons">
+                <button class="or-btn cancel">Cancel</button>
+                <button class="or-btn or-btn-primary ok">${okLabel}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    overlay.querySelector('.cancel').addEventListener('click', close);
+    overlay.querySelector('.modal-close').addEventListener('click', close);
+
+    const errorDiv = overlay.querySelector('.modal-error');
+    const showError = (msg, isInfo) => {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = msg ? 'block' : 'none';
+        errorDiv.classList.toggle('info', !!isInfo);
+    };
+    return { overlay, close, okBtn: overlay.querySelector('.ok'), showError };
 }

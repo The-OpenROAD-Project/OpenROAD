@@ -40,6 +40,7 @@ Connect:
   Connect layers metal4 -> metal7
 Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
 Type: Instance
+Orientation: R0
 Halo:
   Left: 0.0000
   Bottom: 0.0000

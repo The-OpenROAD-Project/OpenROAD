@@ -387,8 +387,12 @@ bool lefinReader::addGeoms(dbObject* object,
         break;
       }
       case LefParser::lefiGeomPolygonE: {
-        createPolygon(
-            object, is_pin, layer, geometry->getPolygon(i), designRuleWidth);
+        createPolygon(object,
+                      is_pin,
+                      layer,
+                      geometry->getPolygon(i),
+                      designRuleWidth,
+                      minSpacing);
         break;
       }
       case LefParser::lefiGeomPolygonIterE: {
@@ -411,6 +415,7 @@ bool lefinReader::addGeoms(dbObject* object,
                           layer,
                           &p,
                           designRuleWidth,
+                          minSpacing,
                           x * pItr->xStep,
                           y * pItr->yStep);
           }
@@ -495,6 +500,7 @@ void lefinReader::createPolygon(dbObject* object,
                                 dbTechLayer* layer,
                                 LefParser::lefiGeomPolygon* p,
                                 int design_rule_width,
+                                int min_spacing,
                                 double offset_x,
                                 double offset_y)
 {
@@ -515,6 +521,7 @@ void lefinReader::createPolygon(dbObject* object,
 
   if (pbox != nullptr) {
     pbox->setDesignRuleWidth(design_rule_width);
+    pbox->setMinSpacing(min_spacing);
   }
 }
 
@@ -759,6 +766,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")) {
         lefTechLayerCutEnclosureRuleParser encParser(this);
         encParser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURETABLE")) {
+        lefTechLayerCutEnclosureTableRuleParser encTableParser(this);
+        encTableParser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
@@ -1262,6 +1272,12 @@ void lefinReader::macroBegin(const char* name)
 
     if (master_ == nullptr) {
       master_ = dbMaster::create(lib_, name);
+    } else if (master_->isFrozen()) {
+      logger_->warn(utl::ODB,
+                    406,
+                    "duplicate MACRO ({}) ignoring...",
+                    master_->getName());
+      master_ = nullptr;
     }
   }
 
@@ -1784,6 +1800,15 @@ void lefinReader::pin(LefParser::lefiPin* pin)
     dbSet<dbMPin> pins = term->getMPins();
     if (pins.reversible() && pins.orderReversed()) {
       pins.reverse();
+    }
+  }
+
+  for (i = 0; i < pin->LefParser::lefiPin::numProperties(); i++) {
+    if (!strcmp(pin->LefParser::lefiPin::propName(i),
+                "LEF58_MUSTJOINALLPORTS")) {
+      if (strstr(pin->LefParser::lefiPin::propValue(i), "MUSTJOINALLPORTS")) {
+        term->setMustJoinAllPorts(true);
+      }
     }
   }
 }

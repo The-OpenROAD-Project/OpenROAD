@@ -94,6 +94,8 @@
 #include "utl/decode.h"
 #include "web/MakeWeb.h"
 #include "web/web.h"
+#include "wmk/MakeWatermark.h"
+#include "wmk/Watermark.h"
 
 namespace ord {
 extern const char* ord_tcl_inits[];
@@ -154,6 +156,7 @@ OpenRoad::~OpenRoad()
   delete stt_builder_;
   delete dft_;
   delete estimate_parasitics_;
+  delete watermark_;
   delete logger_;
   delete verilog_reader_;
   delete service_registry_;
@@ -274,6 +277,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
+  watermark_
+      = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -315,10 +320,16 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft::initDft(tcl_interp);
   est::initTcl(tcl_interp);
   web::initWeb(tcl_interp);
+  wmk::initWatermark(tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // "$handle method args..." on an odb handle resolves here.  Installed after
+  // OpenSTA's handler, which odb_unknown falls back to for everything that is
+  // not an odb handle.
+  Tcl_Eval(tcl_interp, "odb_install_unknown");
 
   // Initialize tcl history
   if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
@@ -580,7 +591,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 
 void OpenRoad::readDb(std::istream& stream)
 {
-  if (db_->getChip() && db_->getChip()->getBlock()) {
+  if (!db_->getChips().empty()) {
     logger_->error(
         ORD, 47, "You can't load a new db file as the db is already populated");
   }
@@ -700,9 +711,18 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;  // -1 is max cores
   } else {
+    bool valid = false;
     try {
-      max_threads = std::stoi(threads);
-    } catch (const std::invalid_argument&) {
+      size_t pos = 0;
+      const int parsed = std::stoi(threads, &pos);
+      // Reject trailing characters such as "4abc" or "8.5".
+      if (threads[pos] == '\0') {
+        max_threads = parsed;
+        valid = true;
+      }
+    } catch (const std::logic_error&) {  // invalid_argument or out_of_range
+    }
+    if (!valid) {
       logger_->warn(
           ORD, 32, "Invalid thread number specification: {}.", threads);
     }

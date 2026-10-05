@@ -8,13 +8,13 @@
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
 #include "FastRoute.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "web/core.h"
 
 namespace grt {
 
-class FastRouteRenderer : public gui::Renderer, public AbstractFastRouteRenderer
+class FastRouteRenderer : public web::Renderer, public AbstractFastRouteRenderer
 {
  public:
   FastRouteRenderer(odb::dbTech* tech);
@@ -27,18 +27,18 @@ class FastRouteRenderer : public gui::Renderer, public AbstractFastRouteRenderer
 
   void redrawAndPause() override;
 
-  void drawObjects(gui::Painter& /* painter */) override;
+  void drawObjects(web::Painter& /* painter */) override;
 
  private:
-  void drawTreeEdges(gui::Painter& painter);
-  void drawCircleObjects(gui::Painter& painter);
+  void drawTreeEdges(web::Painter& painter);
+  void drawCircleObjects(web::Painter& painter);
   void drawLineObject(int x1,
                       int y1,
                       int layer1,
                       int x2,
                       int y2,
                       int layer2,
-                      gui::Painter& painter);
+                      web::Painter& painter);
 
   TreeStructure treeStructure_;
 

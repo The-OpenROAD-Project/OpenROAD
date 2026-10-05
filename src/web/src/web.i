@@ -16,10 +16,10 @@
 namespace web {
 
 void
-web_server_cmd(int port)
+web_server_cmd(int port, const char *bind_address)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
-  server->serve(port);
+  server->serve(port, bind_address);
 }
 
 void
@@ -91,6 +91,15 @@ delete_label_cmd(const char* name)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
   server->deleteLabel(name ? name : "");
+}
+
+const char*
+load_chiplet_heatmap_cmd(const char* file_path)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  static std::string result;
+  result = server->loadChipletHeatMap(file_path ? file_path : "");
+  return result.c_str();
 }
 
 void

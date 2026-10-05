@@ -22,4 +22,4 @@ set def_file [make_result_file add_constraint_debug.def]
 
 write_def $def_file
 
-diff_file add_constraint_debug.defok $def_file
+diff_files add_constraint_debug.defok $def_file

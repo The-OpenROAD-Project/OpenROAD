@@ -32,7 +32,7 @@ export class DrcWidget {
         toolbar.appendChild(this._categorySelect);
 
         this._loadBtn = document.createElement('button');
-        this._loadBtn.className = 'drc-btn';
+        this._loadBtn.className = 'or-btn or-btn-sm';
         this._loadBtn.textContent = 'Load...';
         toolbar.appendChild(this._loadBtn);
 
@@ -157,17 +157,10 @@ export class DrcWidget {
         const total = this._markerTree.total_count || 0;
         this._infoBar.textContent = `${total} total violation${total !== 1 ? 's' : ''}`;
 
+        const rootName = this._markerTree.name || this._activeCategory;
         const subcats = this._markerTree.subcategories || [];
         const directMarkers = this._markerTree.markers || [];
-        const topNodes = [...subcats];
-        if (directMarkers.length > 0) {
-            topNodes.unshift({
-                name: this._markerTree.name || 'Markers',
-                count: directMarkers.length,
-                markers: directMarkers,
-            });
-        }
-        if (topNodes.length === 0) {
+        if (subcats.length === 0 && directMarkers.length === 0) {
             this._treeContainer.innerHTML = '<div class="drc-empty">No violations</div>';
             return;
         }
@@ -175,14 +168,28 @@ export class DrcWidget {
         const tree = document.createElement('div');
         tree.className = 'drc-tree';
 
-        for (const node of topNodes) {
-            tree.appendChild(this._buildCategoryNode(node));
+        // Markers hanging directly off the selected category are shown under a
+        // node named after that category, so its path is the root path itself.
+        if (directMarkers.length > 0) {
+            tree.appendChild(this._buildCategoryNode({
+                name: rootName || 'Markers',
+                count: directMarkers.length,
+                markers: directMarkers,
+            }, []));
+        }
+        for (const sub of subcats) {
+            tree.appendChild(this._buildCategoryNode(sub, [rootName]));
         }
 
         this._treeContainer.appendChild(tree);
     }
 
-    _buildCategoryNode(category) {
+    // `parentPath` is the chain of category names from the top-level category
+    // down to this node's parent. Names are unique only among siblings, so the
+    // full path is what addresses a category on the server.
+    _buildCategoryNode(category, parentPath = []) {
+        const path = [...parentPath, category.name];
+
         const node = document.createElement('div');
         node.className = 'drc-tree-node';
 
@@ -193,7 +200,7 @@ export class DrcWidget {
         toggle.className = 'drc-toggle';
         const hasChildren = (category.subcategories && category.subcategories.length > 0)
             || (category.markers && category.markers.length > 0);
-        const nodeKey = category.name;
+        const nodeKey = JSON.stringify(path);
         const expanded = this._expandedNodes.has(nodeKey);
         toggle.textContent = hasChildren ? (expanded ? '\u25BC' : '\u25B6') : ' ';
         header.appendChild(toggle);
@@ -204,7 +211,7 @@ export class DrcWidget {
         checkbox.className = 'drc-visibility-check';
         checkbox.addEventListener('change', (e) => {
             e.stopPropagation();
-            this._toggleCategoryVisibility(category, checkbox.checked);
+            this._toggleCategoryVisibility(category, checkbox.checked, path);
         });
         header.appendChild(checkbox);
 
@@ -226,7 +233,7 @@ export class DrcWidget {
 
         if (category.subcategories) {
             for (const sub of category.subcategories) {
-                children.appendChild(this._buildCategoryNode(sub));
+                children.appendChild(this._buildCategoryNode(sub, path));
             }
         }
 
@@ -505,7 +512,7 @@ export class DrcWidget {
         return true;
     }
 
-    _toggleCategoryVisibility(category, visible) {
+    _toggleCategoryVisibility(category, visible, path) {
         const snapshot = this._snapshotMarkerVisibility(category);
         this._setMarkersVisible(category, visible);
         this._renderTree();
@@ -513,6 +520,7 @@ export class DrcWidget {
         this._app.websocketManager.request({
             type: 'drc_update_category_visibility',
             category: category.name,
+            path: path || [category.name],
             visible: !!visible
         }).then(() => {
             this._refreshOverlay();
@@ -569,8 +577,8 @@ class DrcFileDialog {
                        placeholder="Server-side path to .rpt, .drc, or .json file">
                 <div class="modal-error" style="display:none"></div>
                 <div class="modal-buttons">
-                    <button class="cancel">Cancel</button>
-                    <button class="primary ok" disabled>Load</button>
+                    <button class="or-btn cancel">Cancel</button>
+                    <button class="or-btn or-btn-primary ok" disabled>Load</button>
                 </div>
             </div>`;
         document.body.appendChild(this._overlay);

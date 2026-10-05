@@ -119,6 +119,17 @@ dbSet<dbChipCapNode> dbChipNet::getChipCapNodes() const
   return dbSet<dbChipCapNode>(chip_net, chip->chip_net_cap_node_itr_);
 }
 
+float dbChipNet::getTotalCapacitance() const
+{
+  float total_capacitance = 0.0;
+
+  for (odb::dbChipCapNode* cap_node : getChipCapNodes()) {
+    total_capacitance += cap_node->getCapacitance();
+  }
+
+  return total_capacitance;
+}
+
 dbSet<dbChipRSeg> dbChipNet::getChipRSegs() const
 {
   _dbChipNet* chip_net = (_dbChipNet*) this;

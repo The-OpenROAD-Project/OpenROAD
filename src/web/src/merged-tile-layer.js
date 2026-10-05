@@ -23,6 +23,7 @@ import {
     buildTileRequestFor, floorClampZoom, nativeDpr, tileDevicePx,
     withDeviceExactTileSize,
 } from './tile-request.js';
+import { tileMayHaveContent } from './layer-extents.js';
 
 // Decode a websocket tile payload into something drawable.
 //
@@ -108,7 +109,6 @@ export function createMergedTileLayer(ctx, options = {}) {
             const canvas = document.createElement('canvas');
             canvas.setAttribute('role', 'presentation');
             const dpr = dprOf();
-            this._sizeCanvas(canvas, dpr);
             // Stored on the element rather than held only by this render, so
             // whichever render paints first can complete the handshake.  A
             // refresh that lands before the first paint replaces the render but
@@ -130,13 +130,16 @@ export function createMergedTileLayer(ctx, options = {}) {
         // still sized for the old one would scale every incoming tile into the
         // wrong backing store, leaving existing tiles blurry and inconsistent
         // with any created afterwards.
-        _sizeCanvas: function(canvas, dpr) {
+        //
+        // `empty` releases the backing store instead, for a tile with nothing
+        // to draw (see _renderTile); the CSS box stays, so the grid is intact.
+        _sizeCanvas: function(canvas, dpr, { empty = false } = {}) {
             const size = this.getTileSize();
             // The same count the request asks the server for, so the image
             // arrives at exactly the backing store's size and drawImage is a
             // straight blit.
-            const w = tileDevicePx(size.x, dpr);
-            const h = tileDevicePx(size.y, dpr);
+            const w = empty ? 0 : tileDevicePx(size.x, dpr);
+            const h = empty ? 0 : tileDevicePx(size.y, dpr);
             if (canvas.width !== w || canvas.height !== h) {
                 // Assigning width/height also clears the canvas, which is what
                 // we want here — the caller is about to redraw it.
@@ -159,9 +162,15 @@ export function createMergedTileLayer(ctx, options = {}) {
         },
 
         _renderTile: function(canvas, coords, dpr) {
-            this._sizeCanvas(canvas, dpr);
             const generation = this._generation;
-            const items = this.visibleItems();
+            const items = this.visibleItems().filter(
+                item => tileMayHaveContent(ctx, item.layer, coords));
+            // A tile none of whose layers can draw here keeps no backing store
+            // at all.  A full-size canvas per tile position per pane is what the
+            // browser pays for on a zoom -- allocating, clearing and compositing
+            // it -- whether or not anything is drawn into it, and most panes are
+            // empty in most views.
+            this._sizeCanvas(canvas, dpr, { empty: items.length === 0 });
             const context = canvas.getContext('2d');
             // Request ids are tracked per tile so _removeTile can cancel the
             // whole group's in-flight work when the tile is pruned.

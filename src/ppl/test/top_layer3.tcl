@@ -15,4 +15,4 @@ set def_file [make_result_file top_layer3.def]
 
 write_def $def_file
 
-diff_file top_layer3.defok $def_file
+diff_files top_layer3.defok $def_file

@@ -52,12 +52,21 @@ cc_library(
         "include",
     ],
     deps = [
+        ":pdr_neighbors",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.heap",
         "@boost.multi_array",
         "@coin-or-lemon//:lemon",
     ],
+)
+
+cc_library(
+    name = "pdr_neighbors",
+    srcs = ["src/pdr/src/neighbors.cpp"],
+    hdrs = ["src/pdr/src/neighbors.h"],
+    includes = ["src/pdr/src"],
+    deps = ["//src/odb/src/db"],
 )
 
 cc_library(
@@ -82,9 +91,9 @@ cc_library(
     deps = [
         ":stt",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

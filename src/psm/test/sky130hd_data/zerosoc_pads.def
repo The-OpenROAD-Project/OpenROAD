@@ -45282,199 +45282,199 @@ END COMPONENTS
 PINS 40 ;
     - ea_pad[0] + NET ea_pad[0] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 300500 ) N ;
     - ea_pad[1] + NET ea_pad[1] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 398500 ) N ;
     - ea_pad[2] + NET ea_pad[2] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 496500 ) N ;
     - ea_pad[3] + NET ea_pad[3] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 594500 ) N ;
     - ea_pad[4] + NET ea_pad[4] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 692500 ) N ;
     - ea_pad[5] + NET ea_pad[5] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 790500 ) N ;
     - ea_pad[6] + NET ea_pad[6] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 888500 ) N ;
     - ea_pad[7] + NET ea_pad[7] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 986500 ) N ;
     - ea_pad[8] + NET ea_pad[8] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34475 -31300 ) ( 27975 31300 )
         + FIXED ( 2229035 1084500 ) N ;
     - no_pad[0] + NET no_pad[0] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 314500 1729035 ) N ;
     - no_pad[1] + NET no_pad[1] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 448500 1729035 ) N ;
     - no_pad[2] + NET no_pad[2] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 583500 1729035 ) N ;
     - no_pad[3] + NET no_pad[3] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 717500 1729035 ) N ;
     - no_pad[4] + NET no_pad[4] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 851500 1729035 ) N ;
     - no_pad[5] + NET no_pad[5] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 986500 1729035 ) N ;
     - no_pad[6] + NET no_pad[6] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 1120500 1729035 ) N ;
     - no_pad[7] + NET no_pad[7] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 1254500 1729035 ) N ;
     - no_pad[8] + NET no_pad[8] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -34475 ) ( 31300 27975 )
         + FIXED ( 1388500 1729035 ) N ;
     - so_pad[0] + NET so_pad[0] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 314500 70965 ) N ;
     - so_pad[1] + NET so_pad[1] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 448500 70965 ) N ;
     - so_pad[2] + NET so_pad[2] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 583500 70965 ) N ;
     - so_pad[3] + NET so_pad[3] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 717500 70965 ) N ;
     - so_pad[4] + NET so_pad[4] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 851500 70965 ) N ;
     - so_pad[5] + NET so_pad[5] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 1523500 70965 ) N ;
     - so_pad[6] + NET so_pad[6] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 1657500 70965 ) N ;
     - so_pad[7] + NET so_pad[7] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 1791500 70965 ) N ;
     - so_pad[8] + NET so_pad[8] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -31300 -27975 ) ( 31300 34475 )
         + FIXED ( 1926500 70965 ) N ;
     - vdd + NET vdd + SPECIAL + DIRECTION INOUT + USE POWER
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34590 -30800 ) ( 28025 31900 )
         + FIXED ( 77965 790000 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -34590 ) ( 31900 28025 )
         + FIXED ( 986000 77965 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -28025 ) ( 31900 34590 )
         + FIXED ( 1791000 1722035 ) N
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -28025 -30800 ) ( 34590 31900 )
         + FIXED ( 2222035 1378000 ) N ;
     - vddio + NET vddio + SPECIAL + DIRECTION INOUT + USE POWER
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34590 -30800 ) ( 28025 31900 )
         + FIXED ( 77965 986000 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -34590 ) ( 31900 28025 )
         + FIXED ( 1254000 77965 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -28025 ) ( 31900 34590 )
         + FIXED ( 1523000 1722035 ) N
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -28025 -30800 ) ( 34590 31900 )
         + FIXED ( 2222035 1182000 ) N ;
     - vss + NET vss + SPECIAL + DIRECTION INOUT + USE GROUND
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34590 -30800 ) ( 28025 31900 )
         + FIXED ( 77965 888000 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -34590 ) ( 31900 28025 )
         + FIXED ( 1120000 77965 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -28025 ) ( 31900 34590 )
         + FIXED ( 1926000 1722035 ) N
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -28025 -30800 ) ( 34590 31900 )
         + FIXED ( 2222035 1280000 ) N ;
     - vssio + NET vssio + SPECIAL + DIRECTION INOUT + USE GROUND
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -34590 -30800 ) ( 28025 31900 )
         + FIXED ( 77965 1084000 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -34590 ) ( 31900 28025 )
         + FIXED ( 1388000 77965 ) N
       + PORT
-        + LAYER met5 ( -32700 -37700 ) ( 32700 37700 )
+        + LAYER met5 ( -30800 -28025 ) ( 31900 34590 )
         + FIXED ( 1657000 1722035 ) N
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -28025 -30800 ) ( 34590 31900 )
         + FIXED ( 2222035 1476000 ) N ;
     - we_pad[0] + NET we_pad[0] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 300500 ) N ;
     - we_pad[1] + NET we_pad[1] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 398500 ) N ;
     - we_pad[2] + NET we_pad[2] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 496500 ) N ;
     - we_pad[3] + NET we_pad[3] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 594500 ) N ;
     - we_pad[4] + NET we_pad[4] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 692500 ) N ;
     - we_pad[5] + NET we_pad[5] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 1182500 ) N ;
     - we_pad[6] + NET we_pad[6] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 1280500 ) N ;
     - we_pad[7] + NET we_pad[7] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 1378500 ) N ;
     - we_pad[8] + NET we_pad[8] + SPECIAL + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER met5 ( -37700 -32700 ) ( 37700 32700 )
+        + LAYER met5 ( -27975 -31300 ) ( 34475 31300 )
         + FIXED ( 70965 1476500 ) N ;
 END PINS
 SPECIALNETS 48 ;

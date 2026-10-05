@@ -224,14 +224,14 @@ export class SelectionBrowser {
             tabs.appendChild(tab);
         }
         const refreshBtn = document.createElement('button');
-        refreshBtn.className = 'sb-tool';
+        refreshBtn.className = 'or-btn or-btn-sm sb-tool';
         refreshBtn.title = 'Refresh';
         refreshBtn.textContent = '⟳';
         refreshBtn.addEventListener('click', () => this.refresh());
         tabs.appendChild(refreshBtn);
         if (this._tab === 'highlighted' && hlCount > 0) {
             const clearBtn = document.createElement('button');
-            clearBtn.className = 'sb-tool';
+            clearBtn.className = 'or-btn or-btn-sm sb-tool';
             clearBtn.title = 'Clear all highlights';
             clearBtn.textContent = 'Clear';
             clearBtn.addEventListener('click', () => this._clearHighlights());
