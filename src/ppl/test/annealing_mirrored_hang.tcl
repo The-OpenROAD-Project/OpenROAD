@@ -36,4 +36,4 @@ set def_file [make_result_file annealing_mirrored_hang.def]
 
 write_def $def_file
 
-diff_file annealing_mirrored_hang.defok $def_file
+diff_files annealing_mirrored_hang.defok $def_file

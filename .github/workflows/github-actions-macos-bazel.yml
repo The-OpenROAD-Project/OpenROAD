@@ -30,6 +30,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
+      # Downloaded external archives (tcl, boost, ...) live in the repository
+      # cache, separate from the disk cache. Fork PRs have no access to the
+      # remote downloader, so without this every fetch goes to upstream hosts.
+      - name: Restore Bazel Repository Cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/bazel-repository-cache
+          key: ${{ runner.os }}-repository-cache-${{ hashFiles('MODULE.bazel.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-repository-cache-
+
       - name: Install Bazelisk
         run: brew install bazelisk
 
@@ -70,3 +81,10 @@ jobs:
         with:
           path: ~/.cache/bazel-disk-cache
           key: ${{ runner.os }}-bazel-${{ github.sha }}
+
+      - name: Save Bazel Repository Cache
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/bazel-repository-cache
+          key: ${{ runner.os }}-repository-cache-${{ hashFiles('MODULE.bazel.lock') }}

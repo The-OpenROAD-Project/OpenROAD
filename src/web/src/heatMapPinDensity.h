@@ -16,7 +16,14 @@ class PinDensityDataSource : public RealValueHeatMapDataSource,
  public:
   PinDensityDataSource(utl::Logger* logger);
 
-  odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+  // Pin density is a property of a block's core, so a source bound to a chip
+  // that has no block (the root of a 3DBlox stack) has nothing to show.
+  // setupMap() reads empty bounds as exactly that.
+  odb::Rect getBounds() const override
+  {
+    odb::dbBlock* block = getBlock();
+    return block != nullptr ? block->getCoreArea() : odb::Rect();
+  }
 
   std::string getSelectionFilterLabel() const override
   {

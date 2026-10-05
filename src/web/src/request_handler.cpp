@@ -291,7 +291,7 @@ static double quantizeDpr(const double raw)
 // it will use, so it names the pixel count.
 //
 // Clamped so a malformed request cannot ask for a gigantic buffer — the render
-// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// allocates about tile_px squared.  0 (absent or unusable) means "not
 // specified"; the generator falls back to 256*dpr.
 static int quantizeTilePx(const double raw)
 {
@@ -1409,6 +1409,16 @@ WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
   resp.id = id;
   resp.type = WebSocketResponse::kJson;
   writePayload(resp, serializeBoundsResponse(gen, gen.shapesReady()));
+  return resp;
+}
+
+WebSocketResponse TileHandler::serializeLayerExtents(const uint32_t id,
+                                                     const TileGenerator& gen)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kJson;
+  writePayload(resp, serializeLayerExtentsResponse(gen));
   return resp;
 }
 
@@ -4479,26 +4489,12 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
-
-          odb::dbNet* net = nullptr;
-          if (iterm) {
-            net = iterm->getNet();
-          } else if (bterm) {
-            net = bterm->getNet();
-          }
-
-          if (net) {
-            collectNetShapes(net,
-                             iterm,
-                             bterm,
-                             nullptr,
-                             nullptr,
-                             kStageColor,
-                             new_rects,
-                             new_lines,
-                             node->world_xfm);
-          }
+          collectTimingStageShapes(chiplets,
+                                   paths[path_index],
+                                   pin_name,
+                                   kStageColor,
+                                   new_rects,
+                                   new_lines);
         }
       }
     }
@@ -4931,6 +4927,11 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  d.add("layer_extents",
+        WebSocketRequest::kLayerExtents,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
   d.add("tech",
         WebSocketRequest::kTech,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -5012,9 +5013,45 @@ void TileHandler::initializeHeatMaps(SessionState& state)
   std::lock_guard<std::mutex> lock(state.heatmap_mutex);
   state.heatmaps.clear();
   for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
-    auto source = source_handle->createInstance();
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[source_handle->getShortName()] = std::move(source);
+    }
+  }
+}
+
+std::shared_ptr<web::HeatMapDataSource> TileHandler::createHeatMapInstance(
+    const web::HeatMapSourceRegistration& registration) const
+{
+  auto source = registration.createInstance();
+  // A chiplet heat map (web_load_chiplet_heatmap) binds itself to the one
+  // chiplet its data describes, so only default the un-bound built-ins to
+  // the root chip -- overriding here would drag the data back to the top.
+  if (source->getChip() == nullptr) {
+    // Built-ins read off dbBlock; a block-less root (3DBlox stack) has
+    // nothing for them to show, so leave them out instead of binding them
+    // to an invalid chip, where they'd show no data and log WEB-0098.
+    if (gen_->getBlock() == nullptr) {
+      return nullptr;
+    }
     source->setChip(gen_->getChip());
-    state.heatmaps[source_handle->getShortName()] = std::move(source);
+  }
+  return source;
+}
+
+// Sources can be registered after a session is built (web_load_chiplet_heatmap
+// from Tcl), so pick up anything missing before answering.  Existing entries
+// are left alone: their settings and the active selection are session state
+// the client expects to survive.
+void TileHandler::syncHeatMapsLocked(SessionState& state)
+{
+  for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
+    const std::string& name = source_handle->getShortName();
+    if (state.heatmaps.find(name) != state.heatmaps.end()) {
+      continue;
+    }
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[name] = std::move(source);
+    }
   }
 }
 
@@ -5026,6 +5063,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       return serializeBounds(req.id, *gen_);
     case WebSocketRequest::kTech:
       return serializeTech(req.id, *gen_);
+    case WebSocketRequest::kLayerExtents:
+      return serializeLayerExtents(req.id, *gen_);
     case WebSocketRequest::kTile:
       break;
     default: {
@@ -5748,6 +5787,8 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+    syncHeatMapsLocked(state);
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -5776,16 +5817,20 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
     }
 
     state.active_heatmap.clear();
+    web::HeatMapDataSource* shown = nullptr;
     if (!name.empty()) {
       auto next = state.heatmaps.find(name);
       if (next == state.heatmaps.end()) {
         throw std::runtime_error("invalid heat map");
       }
       state.active_heatmap = name;
-      next->second->onShow();
+      shown = next->second.get();
     }
 
     const std::string json = buildHeatMapsPayloadLocked(state);
+    if (shown != nullptr) {
+      shown->onShow();
+    }
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -5833,12 +5878,9 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
         // The frontend's addNumber control runs every value through
         // parseFloat, so int settings can arrive as JSON doubles.  Accept
         // either and round.
-        settings[option]
-            = value_v.is_int64()
-                  ? static_cast<int>(value_v.get_int64())
-                  : static_cast<int>(std::round(value_v.as_double()));
+        settings[option] = static_cast<int>(std::round(jsonToDouble(value_v)));
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[option] = value_v.as_double();
+        settings[option] = jsonToDouble(value_v);
       } else {
         settings[option] = std::string(value_v.as_string());
       }

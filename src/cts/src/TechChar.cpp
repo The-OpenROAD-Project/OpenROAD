@@ -865,11 +865,11 @@ void TechChar::createDelayBufList()
     }
 
     if (!footprintClkDly.empty()) {
-      properDlyBuffers = footprintClkDly;
+      properDlyBuffers = std::move(footprintClkDly);
       debugPrint(
           logger_, CTS, "insertion delay", 1, "Using footprint for clkdly");
     } else if (!nameClkDly.empty()) {
-      properDlyBuffers = nameClkDly;
+      properDlyBuffers = std::move(nameClkDly);
       debugPrint(logger_, CTS, "insertion delay", 1, "Using name for clkdly");
     }
   }
@@ -1950,7 +1950,13 @@ void TechChar::create()
                                            sta::RiseFallBoth::riseFall(),
                                            inputslew);
             // Updates timing for the new pattern.
-            openStaChar_->updateTiming(true);
+            // The slew annotation (setAnnotatedSlew) and parasitic updates
+            // (makePiElmore/setElmore) above already mark the affected
+            // delays invalid incrementally, so a full arrivals
+            // invalidation is unnecessary: an incremental update
+            // (updateTiming(false)) recomputes exactly the affected cones
+            // and yields identical arrivals/slews.
+            openStaChar_->updateTiming(false);
 
             // Gets the results (delay, slew, power...) for the pattern.
             ResultData results = computeTopologyResults(

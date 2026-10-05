@@ -74,8 +74,8 @@ build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declara
 build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
 build --cxxopt "-Wno-c++20-designator"   --host_cxxopt "-Wno-c++20-designator"
 
-# The warning acceptance bar in CI for PRs is set by -Werror of a specific
-# version of some chosen compiler. Disable warnings from other compilers until
+# The warning acceptance bar in CI for PRs is set by -Werror (see build:ci)
+# with the hermetic clang. Disable warnings from other compilers until
 # they are fixed and under CI -Werror acceptance critera as there is nothing the
 # developers can(they can't be reproduced locally or in CI) or should do about
 # these warnings in code they are not working on.
@@ -95,13 +95,16 @@ build --host_per_file_copt=.*external/.*@-w
 # per_file_copt -w above only covers compiling external *source* files; this
 # covers external *headers* included by our own sources.
 #
-# The feature is global (target and exec config) and also demotes a from-source
-# dep's own -iquote entries to -isystem. Tools that rely on -iquote precedence
-# to shadow libc headers are patched to restore it -- e.g. git's
-# builtin/get-tar-commit-id.c includes git's own tar.h, which must win over
-# glibc's <tar.h>. See the git single_version_override in MODULE.bazel (same
-# class of fix as the bison/sed/gawk/m4 -I-over-isystem overrides).
+# --features sets the target config only. --host_features sets the exec config,
+# where our own sources also compile as tools that other actions run.
+# The feature also demotes a from-source dep's own -iquote entries to
+# -isystem. Tools that rely on -iquote precedence to shadow libc headers are
+# patched to restore it -- e.g. git's builtin/get-tar-commit-id.c includes
+# git's own tar.h, which must win over glibc's <tar.h>. See the git
+# single_version_override in MODULE.bazel (same class of fix as the
+# bison/sed/gawk/m4 -I-over-isystem overrides).
 build --features=external_include_paths
+build --host_features=external_include_paths
 
 # This avoid problems with building -c dbg which enables asserts.
 # Without this libstdc++ vs libc++ differences cause link errors.
@@ -260,6 +263,10 @@ build --jobs=200
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache
 
+# SourceForge downloads fall back to the BCR's Cloudflare mirror, so a
+# SourceForge outage does not fail a fetch. See bazel/downloader.cfg.
+common --downloader_config=bazel/downloader.cfg
+
 # CI only needs to know if the build succeeded, not the artifacts themselves.
 build:ci --remote_download_minimal
 build:ci --remote_upload_local_results=true
@@ -267,6 +274,11 @@ build:ci --remote_upload_local_results=true
 build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
+# CI fails on any compiler warning in our own sources, including the sources
+# generated from them (SWIG wrappers etc.). Vendored third-party/ code and
+# external repos stay exempt. Local builds keep warnings as warnings.
+build:ci --per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
+build:ci --host_per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
 
 # Launch py_binary via a shell stub instead of rules_python's legacy python
 # stub, whose '#!/usr/bin/env python3' shebang needs a host python3 before
@@ -281,9 +293,6 @@ build --remote_upload_local_results=false
 # CI: gRPC + Remote Asset API, requires --remote_header
 build:ci --remote_cache=grpcs://bazel.precisioninno.com:443
 build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
-
-# Without this, bazelisk build ... builds the bazel-orfs tests
-build --build_tag_filters=-orfs
 
 # clang-tidy via aspect_rules_lint, using clang-tidy from the LLVM toolchain.
 # Usage: bazel build --config=lint //src/utl/...

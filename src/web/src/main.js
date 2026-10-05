@@ -47,6 +47,7 @@ import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { ContextMenu } from './context-menu.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { captureLayout } from './capture.js';
+import { LayerExtents } from './layer-extents.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -1223,10 +1224,15 @@ if (staticCache) {
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    // Where each tech layer has shapes, so tiles that would come back empty
+    // are never requested (see layer-extents.js).  Static reports have no
+    // server to ask and keep requesting everything.
+    app.layerExtents = new LayerExtents();
     // On reconnect the server may have been restarted (possibly with a
     // different design) — resync the coordinate transforms; a bounds
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
+        refetchLayerExtents();
         resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
     };
 }
@@ -1581,10 +1587,49 @@ async function resyncBounds(inlineBounds, inlineFitBounds,
     return true;
 }
 
+// Show the "Loading shapes…" overlay until the server reports the search
+// indices are built.  The "refresh" push normally hides it, but that push can
+// arrive before the initial tech/bounds/heatmaps requests all resolve, i.e.
+// before the overlay is shown, so also poll bounds until shapes are ready.
+function showLoadingOverlayUntilReady() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'flex';
+    const poll = () => {
+        if (overlay.style.display === 'none') {
+            return;
+        }
+        app.websocketManager.request({ type: 'bounds' })
+            .then((resp) => {
+                if (resp.shapes_ready) {
+                    overlay.style.display = 'none';
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (overlay.style.display !== 'none') {
+                    setTimeout(poll, 1000);
+                }
+            });
+    };
+    setTimeout(poll, 1000);
+}
+
+// Discard the layer extents and fetch them again.  Until the reply lands every
+// tile is requested, so a caller that redraws right after this cannot skip a
+// layer on the strength of extents that predate an edit.
+function refetchLayerExtents() {
+    if (!app.layerExtents) return;
+    app.layerExtents.refetch((req) => app.websocketManager.request(req));
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
+        // The design changed: drop the extents BEFORE the redraw below, so it
+        // cannot skip a layer on extents from before the edit.  It requests
+        // every layer until the fresh extents arrive.
+        refetchLayerExtents();
         // An edit may have changed the design bounds (and with them the
         // tile georeference); resync transforms before/along the redraw.
         // resyncBounds already redraws when the bounds changed, so only
@@ -1613,6 +1658,14 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'heatmaps_changed') {
+        // A heat map was registered server-side after this client connected
+        // (web_load_chiplet_heatmap from Tcl).  The instance is per-session,
+        // so the push carries no data: re-request the set to have the server
+        // build ours and to redraw the control panel with the new entry.
+        app.websocketManager.request({ type: 'heatmaps' })
+            .then(updateHeatMaps)
+            .catch(err => console.error('Heat map refresh failed', err));
     } else if (msg.type === 'labels_changed') {
         // Labels live server-side and are shared, so another client's edit
         // (or a Tcl add_label) changes what this one should be drawing.
@@ -1695,6 +1748,9 @@ app.websocketManager.readyPromise.then(async () => {
             app.websocketManager.request({ type: 'bounds' }),
             app.websocketManager.request({ type: 'heatmaps' }),
         ]);
+        // Not awaited: tiles requested before the extents arrive are simply
+        // not skipped.
+        refetchLayerExtents();
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
         updateDocumentTitle(techData.block_name);
@@ -2018,7 +2074,7 @@ app.websocketManager.readyPromise.then(async () => {
         // aren't ready yet.  On browser reload (without server restart),
         // shapes are already built so we skip the overlay.
         if (hasDesign && !boundsData.shapes_ready) {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            showLoadingOverlayUntilReady();
         }
 
         // Seed the server's display-state cache with the cookie-restored
