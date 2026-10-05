@@ -111,6 +111,22 @@ class PathGroupFilter
   // end skips enumeration; it lives as long as a vertexWorstSlackPath() would.
   sta::Path* groupPath(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
 
+  // The selected group's worst path across the whole design.
+  struct GroupWorst
+  {
+    sta::Slack slack;
+    const sta::Pin* endpoint;
+  };
+
+  // Worst slack in the selected group and the endpoint it lands on, or nullopt
+  // when no group is selected or the group has no path.
+  //
+  // This is the group's analogue of sta::worstSlack(), and like it reflects
+  // the design as it stands.  Scanning a list of endpoints collected earlier
+  // in the run would go stale the moment a repair pushes some other endpoint
+  // of the group negative.
+  std::optional<GroupWorst> groupWorst(const sta::MinMax* min_max) const;
+
   // True when `startpoint` can launch a path in the selected group.  Only the
   // start side is checked; endpointInGroup() enforces the end side.
   bool startpointInGroup(sta::Vertex* startpoint) const;

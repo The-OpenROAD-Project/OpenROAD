@@ -13,6 +13,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
@@ -379,6 +380,9 @@ std::optional<sta::Slack> PathGroupFilter::groupSlack(
   if (!enabled()) {
     return sta_->slack(endpoint, min_max);
   }
+  if (endpoint == nullptr) {
+    return std::nullopt;
+  }
   sta::PathEnd* end = worstGroupEnd(endpoint, min_max);
   if (end == nullptr) {
     return std::nullopt;
@@ -389,20 +393,46 @@ std::optional<sta::Slack> PathGroupFilter::groupSlack(
 sta::Path* PathGroupFilter::groupPath(sta::Vertex* endpoint,
                                       const sta::MinMax* min_max) const
 {
-  if (!enabled()) {
+  if (!enabled() || endpoint == nullptr) {
     return nullptr;
   }
   sta::PathEnd* end = worstGroupEnd(endpoint, min_max);
   return end != nullptr ? end->path() : nullptr;
 }
 
+std::optional<PathGroupFilter::GroupWorst> PathGroupFilter::groupWorst(
+    const sta::MinMax* min_max) const
+{
+  if (!enabled()) {
+    return std::nullopt;
+  }
+  // Scan the endpoints live, pruned by the fact that an endpoint's own
+  // slack is the worst over every group and so lower bounds its slack in this
+  // one. Once some endpoint's group slack is known, any endpoint whose plain
+  // slack is no better cannot beat it and is skipped on a cached lookup. The
+  // bound tightens quickly, so only a handful of endpoints are ever queried.
+  sta::Slack best = sta::INF;
+  const sta::Pin* best_pin = nullptr;
+  for (sta::Vertex* endpoint : sta_->endpoints()) {
+    if (best_pin != nullptr
+        && !sta::fuzzyLess(sta_->slack(endpoint, min_max), best)) {
+      continue;
+    }
+    const std::optional<sta::Slack> slack = groupSlack(endpoint, min_max);
+    if (slack.has_value() && (best_pin == nullptr || *slack < best)) {
+      best = *slack;
+      best_pin = endpoint->pin();
+    }
+  }
+  if (best_pin == nullptr) {
+    return std::nullopt;
+  }
+  return GroupWorst{best, best_pin};
+}
+
 sta::PathEnd* PathGroupFilter::worstGroupEnd(sta::Vertex* endpoint,
                                              const sta::MinMax* min_max) const
 {
-  if (endpoint == nullptr) {
-    return nullptr;
-  }
-
   // findPathEnds takes ownership of the ExceptionTo.
   auto* to_pins = new sta::PinSet(network_);
   to_pins->insert(endpoint->pin());

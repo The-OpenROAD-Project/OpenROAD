@@ -2626,8 +2626,15 @@ sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
 sta::Slack RepairTargetCollector::getWns() const
 {
   if (restrictedToPathGroup()) {
-    // The design's worst path may well be outside the group being repaired.
-    return getOverallEndpointWns();
+    // The design's worst path may well be outside the group being repaired,
+    // so ask OpenSTA for the group's own worst. Querying it live rather than
+    // scanning the endpoints collected at the start of the run matters: a
+    // repair can clean every collected endpoint while pushing a different one
+    // of the group negative, and a stale scan would report 0 for that.
+    const PathGroupFilter path_group_filter(resizer_);
+    const std::optional<PathGroupFilter::GroupWorst> worst
+        = path_group_filter.groupWorst(max_);
+    return worst.has_value() ? worst->slack : sta::Slack(0.0);
   }
   // WNS is the same regardless of whether we look at startpoints or endpoints
   // because the critical path is always from a startpoint to an endpoint
@@ -2669,17 +2676,12 @@ const sta::Pin* RepairTargetCollector::getWorstPin(bool use_startpoints) const
     return worst_pin;
   }
   if (restrictedToPathGroup()) {
-    // Report the group's worst endpoint, not the design's.
-    const sta::Pin* worst_pin = nullptr;
-    sta::Slack worst_slack = std::numeric_limits<float>::max();
-    for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
-      const sta::Slack endpoint_wns = getEndpointWns(endpoint_pin);
-      if (endpoint_wns < worst_slack) {
-        worst_slack = endpoint_wns;
-        worst_pin = endpoint_pin;
-      }
-    }
-    return worst_pin;
+    // Report the group's worst endpoint, not the design's. Same single live
+    // query as getWns(), so the two always name the same path.
+    const PathGroupFilter path_group_filter(resizer_);
+    const std::optional<PathGroupFilter::GroupWorst> worst
+        = path_group_filter.groupWorst(max_);
+    return worst.has_value() ? worst->endpoint : nullptr;
   }
   // For endpoints, use STA's worstSlack to get the worst vertex
   sta::Slack wns;
