@@ -13,6 +13,6 @@ remove_buffers b2
 
 set block [ord::get_db_block]
 set b2 [$block findInst b2]
-if {$b2 == "NULL" || ![$b2 isDoNotTouch]} {
+if { $b2 == "NULL" || ![$b2 isDoNotTouch] } {
   error "b2 dont_touch changed after rejected remove_buffers"
 }
