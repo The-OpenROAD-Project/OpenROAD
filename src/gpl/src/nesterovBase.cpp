@@ -3795,6 +3795,20 @@ void NesterovBase::pullCoordsFromDevice()
 #endif
 }
 
+void NesterovBase::pullSlpFromDevice()
+{
+#ifdef ENABLE_GPU
+  // On the GPU path updateGradients writes sum-grads only to device; the
+  // host vectors stay at zero. With the device-resident density pipeline the
+  // coord vectors are stale too — refresh them first.
+  if (nb_device_ctx_) {
+    pullCoordsFromDevice();
+    nb_device_ctx_->syncCurSumGradsToHost(curSLPSumGrads_);
+    nb_device_ctx_->syncPrevSumGradsToHost(prevSLPSumGrads_);
+  }
+#endif
+}
+
 void NesterovBase::commitCoordsToDeviceState(SlpSlot source)
 {
 #ifdef ENABLE_GPU
@@ -4429,18 +4443,9 @@ void NesterovBase::saveSnapshot()
     return;
   }
 
-#ifdef ENABLE_GPU
-  // On the GPU path updateGradients writes sum-grads only to device; the
-  // host vectors stay at zero. Pull both from device before snapshotting so
-  // the subsequent revertToSnapshot pushes back real values, not zeros.
-  // With the device-resident density pipeline the coord vectors are stale
-  // too — refresh them first.
-  if (nb_device_ctx_) {
-    pullCoordsFromDevice();
-    nb_device_ctx_->syncCurSumGradsToHost(curSLPSumGrads_);
-    nb_device_ctx_->syncPrevSumGradsToHost(prevSLPSumGrads_);
-  }
-#endif
+  // Pull from device so the subsequent revertToSnapshot pushes back real
+  // values, not zeros.
+  pullSlpFromDevice();
 
   // save snapshots for routability-driven
   snapshotCoordi_ = curCoordi_;
@@ -4750,12 +4755,13 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 }
 
 std::optional<NesterovBase::SlpState> NesterovBase::getSlpState(
-    odb::dbInst* db_inst) const
+    odb::dbInst* db_inst)
 {
   const auto it = db_inst_to_nb_index_.find(db_inst);
   if (it == db_inst_to_nb_index_.end()) {
     return std::nullopt;
   }
+  pullSlpFromDevice();
   const size_t k = it->second;
   return SlpState{prevSLPCoordi_[k],
                   prevSLPSumGrads_[k],

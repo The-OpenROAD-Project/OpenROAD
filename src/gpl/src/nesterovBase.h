@@ -1250,6 +1250,9 @@ class NesterovBase
   // No-op on the CPU path or when host state is already fresh. (TD and
   // routability runs never hold a device context, so they need no call.)
   void pullCoordsFromDevice();
+  // pullCoordsFromDevice() plus the cur/prev SLP sum-grads, which the GPU
+  // path keeps only on device. No-op on the CPU path.
+  void pullSlpFromDevice();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
@@ -1282,8 +1285,9 @@ class NesterovBase
     FloatPoint cur_pos;
     FloatPoint cur_grad;
   };
-  // std::nullopt when the instance is not in this region.
-  std::optional<SlpState> getSlpState(odb::dbInst* db_inst) const;
+  // std::nullopt when the instance is not in this region. Pulls from the
+  // device first on the GPU path.
+  std::optional<SlpState> getSlpState(odb::dbInst* db_inst);
 
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
