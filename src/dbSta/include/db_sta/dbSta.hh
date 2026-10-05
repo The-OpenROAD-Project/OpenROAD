@@ -170,6 +170,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   // Find clock nets connected by combinational gates from the clock roots.
   odb::PtrSet<odb::dbNet> findClkNets();
+  odb::PtrSet<odb::dbNet> findClkNets(Mode* mode);
   odb::PtrSet<odb::dbNet> findClkNets(const Clock* clk);
 
   void deleteInstance(Instance* inst) override;

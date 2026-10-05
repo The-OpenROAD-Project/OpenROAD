@@ -348,21 +348,21 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()) {
             bool isLeafPin = false;
             for (sta::Mode* mode : openSta_->modes()) {
-              sta::Sdc* sdc =mode->sdc();
+              sta::Sdc* sdc = mode->sdc();
               if (sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
                 isLeafPin = true;
                 break;
               }
             }
-            if(isLeafPin) {
+            if (isLeafPin) {
               continue;
             }
             if (clockBuilder == nullptr
                 && net2builder_[clkInputNet] != nullptr) {
               initOneClockTree(outputNet,
-                              clkInputNet,
-                              sdcClockName,
-                              net2builder_[clkInputNet]);
+                               clkInputNet,
+                               sdcClockName,
+                               net2builder_[clkInputNet]);
             } else {
               initOneClockTree(
                   outputNet, clkInputNet, sdcClockName, clockBuilder);
@@ -1257,21 +1257,35 @@ void TritonCTS::populateTritonCTS()
     allClkNets.insert(clockNets.begin(), clockNets.end());
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
-    staClockNets_ = openSta_->findClkNets();
+    staClockNets_.clear();
     for (sta::Mode* mode : openSta_->modes()) {
-      sta::Sdc* sdc =mode->sdc();
+      odb::PtrSet<odb::dbNet> modeStaClkNets = openSta_->findClkNets(mode);
+      staClockNets_.insert(modeStaClkNets.begin(), modeStaClkNets.end());
+    }
+    for (sta::Mode* mode : openSta_->modes()) {
+      sta::Sdc* sdc = mode->sdc();
+      // Modes share clock roots, so overlap is an error only within a mode.
+      odb::PtrSet<odb::dbNet> modeClkNets;
       for (auto clk : sdc->clocks()) {
         std::string clkName = clk->name();
         odb::PtrSet<odb::dbNet> clkNets;
         findClockRoots(clk, clkNets);
+        odb::PtrSet<odb::dbNet> newClkNets;
         for (auto net : clkNets) {
-          if (allClkNets.find(net) != allClkNets.end()) {
+          if (modeClkNets.find(net) != modeClkNets.end()) {
             logger_->error(
                 CTS, 114, "Clock {} overlaps a previous clock.", clkName);
           }
+          if (allClkNets.find(net) == allClkNets.end()) {
+            newClkNets.insert(net);
+          }
         }
-        clockNetsInfo.emplace_back(clkNets, clkName);
-        allClkNets.insert(clkNets.begin(), clkNets.end());
+        modeClkNets.insert(clkNets.begin(), clkNets.end());
+        if (newClkNets.empty()) {
+          continue;
+        }
+        clockNetsInfo.emplace_back(newClkNets, clkName);
+        allClkNets.insert(newClkNets.begin(), newClkNets.end());
       }
     }
   }
