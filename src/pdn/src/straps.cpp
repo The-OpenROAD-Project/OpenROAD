@@ -26,6 +26,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom_boost.h"
+#include "odb/isotropy.h"
 #include "pdn/PdnGen.hh"
 #include "polygon.h"
 #include "renderer.h"
@@ -2157,10 +2158,24 @@ bool isMacroEdgeConnection(const Shape* shape)
 // Whether a direction out of a macro runs along y.  Only the four compass
 // values ever reach here: odb's UP and DOWN are via directions and NONE is the
 // absence of one, and none of the three is a way out of a macro.
-bool isVertical(const odb::dbDirection direction)
+bool isVertical(const odb::Direction2D direction)
 {
-  return direction == odb::dbDirection::NORTH
-         || direction == odb::dbDirection::SOUTH;
+  return direction == odb::north || direction == odb::south;
+}
+
+const char* directionToString(const odb::Direction2D direction)
+{
+  switch (direction) {
+    case odb::Direction2D::North:
+      return "North";
+    case odb::Direction2D::South:
+      return "South";
+    case odb::Direction2D::East:
+      return "East";
+    case odb::Direction2D::West:
+      return "West";
+  }
+  return "Unknown";
 }
 
 // The nearest shape off the face of pin that direction points out of, limited
@@ -2170,29 +2185,25 @@ bool isVertical(const odb::dbDirection direction)
 // chance at a via, and growing the pin cannot give it another.
 ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
                            const odb::Rect& pin,
-                           const odb::dbDirection direction,
+                           const odb::Direction2D direction,
                            const odb::Rect& die,
                            odb::dbNet* net,
                            int& distance)
 {
   odb::Rect band = pin;
-  switch (direction.getValue()) {
-    case odb::dbDirection::NORTH:
+  switch (direction) {
+    case odb::Direction2D::North:
       band.set_yhi(die.yMax());
       break;
-    case odb::dbDirection::SOUTH:
+    case odb::Direction2D::South:
       band.set_ylo(die.yMin());
       break;
-    case odb::dbDirection::EAST:
+    case odb::Direction2D::East:
       band.set_xhi(die.xMax());
       break;
-    case odb::dbDirection::WEST:
+    case odb::Direction2D::West:
       band.set_xlo(die.xMin());
       break;
-    case odb::dbDirection::NONE:
-    case odb::dbDirection::UP:
-    case odb::dbDirection::DOWN:
-      return nullptr;
   }
 
   const bool is_vertical = isVertical(direction);
@@ -2222,23 +2233,19 @@ ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
     }
 
     int new_distance = 0;
-    switch (direction.getValue()) {
-      case odb::dbDirection::NORTH:
+    switch (direction) {
+      case odb::Direction2D::North:
         new_distance = rect.yMin() - pin.yMax();
         break;
-      case odb::dbDirection::SOUTH:
+      case odb::Direction2D::South:
         new_distance = pin.yMin() - rect.yMax();
         break;
-      case odb::dbDirection::EAST:
+      case odb::Direction2D::East:
         new_distance = rect.xMin() - pin.xMax();
         break;
-      case odb::dbDirection::WEST:
+      case odb::Direction2D::West:
         new_distance = pin.xMin() - rect.xMax();
         break;
-      case odb::dbDirection::NONE:
-      case odb::dbDirection::UP:
-      case odb::dbDirection::DOWN:
-        continue;
     }
 
     if (new_distance <= 0 || new_distance >= distance) {
@@ -2255,7 +2262,7 @@ ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
 // A way out of a pin: the end it leaves by and the nearest target off it.
 struct LateralCandidate
 {
-  odb::dbDirection direction;
+  odb::Direction2D direction;
   int distance;
   ShapePtr target;
 };
@@ -2266,21 +2273,17 @@ struct LateralCandidate
 // the only place the four directions are written as offsets.
 int macroBeyond(const Region& outline,
                 const odb::Rect& pin,
-                const odb::dbDirection direction)
+                const odb::Direction2D direction)
 {
-  switch (direction.getValue()) {
-    case odb::dbDirection::NORTH:
+  switch (direction) {
+    case odb::Direction2D::North:
       return outline.getMarginBeyond(pin, odb::Point(0, 1));
-    case odb::dbDirection::SOUTH:
+    case odb::Direction2D::South:
       return outline.getMarginBeyond(pin, odb::Point(0, -1));
-    case odb::dbDirection::EAST:
+    case odb::Direction2D::East:
       return outline.getMarginBeyond(pin, odb::Point(1, 0));
-    case odb::dbDirection::WEST:
+    case odb::Direction2D::West:
       return outline.getMarginBeyond(pin, odb::Point(-1, 0));
-    case odb::dbDirection::NONE:
-    case odb::dbDirection::UP:
-    case odb::dbDirection::DOWN:
-      break;
   }
 
   return 0;
@@ -2350,7 +2353,7 @@ MacroEdgeConnectionStraps::MacroEdgeConnectionStraps(
     odb::dbITerm* iterm,
     odb::dbTechLayer* layer,
     const odb::Rect& pin,
-    const odb::dbDirection direction,
+    const odb::Direction2D direction,
     const ShapePtr& target,
     std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions)
     // A zero pitch is what keeps Straps from deriving a spacing from it, which
@@ -2395,27 +2398,23 @@ void MacroEdgeConnectionStraps::makeShapes(
   const int landing = getWidth();
   odb::Rect rect = pin_;
   const odb::Rect& target = target_->getRect();
-  switch (direction_.getValue()) {
-    case odb::dbDirection::NORTH:
+  switch (direction_) {
+    case odb::Direction2D::North:
       rect.set_ylo(pin_.yMax() - landing);
       rect.set_yhi(target.yMax());
       break;
-    case odb::dbDirection::SOUTH:
+    case odb::Direction2D::South:
       rect.set_yhi(pin_.yMin() + landing);
       rect.set_ylo(target.yMin());
       break;
-    case odb::dbDirection::EAST:
+    case odb::Direction2D::East:
       rect.set_xlo(pin_.xMax() - landing);
       rect.set_xhi(target.xMax());
       break;
-    case odb::dbDirection::WEST:
+    case odb::Direction2D::West:
       rect.set_xhi(pin_.xMin() + landing);
       rect.set_xlo(target.xMin());
       break;
-    case odb::dbDirection::NONE:
-    case odb::dbDirection::UP:
-    case odb::dbDirection::DOWN:
-      return;
   }
 
   auto* layer = getLayer();
@@ -2500,7 +2499,7 @@ void MacroEdgeConnectionStraps::report() const
   logger->report("    Pin: {}", getName());
   logger->report("    Net: {}", iterm_->getNet()->getName());
   logger->report("    Layer: {}", getLayer()->getName());
-  logger->report("    Direction: {}", direction_.getString());
+  logger->report("    Direction: {}", directionToString(direction_));
   logger->report("    Target: {}", target_->getReportText());
 }
 
@@ -2643,17 +2642,17 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                    pin.layer->getName());
         continue;
       }
-      const std::array<odb::dbDirection, 2> ends
-          = *vertical ? std::array<odb::dbDirection, 2>{odb::dbDirection::NORTH,
-                                                        odb::dbDirection::SOUTH}
-                      : std::array<odb::dbDirection, 2>{odb::dbDirection::EAST,
-                                                        odb::dbDirection::WEST};
+      const std::array<odb::Direction2D, 2> ends
+          = *vertical ? std::array<odb::Direction2D, 2>{odb::Direction2D::North,
+                                                        odb::Direction2D::South}
+                      : std::array<odb::Direction2D, 2>{odb::Direction2D::East,
+                                                        odb::Direction2D::West};
       const std::array<int, 2> margins
           = {macroBeyond(outline, pin.rect, ends[0]),
              macroBeyond(outline, pin.rect, ends[1])};
       const int way_out = std::min(margins[0], margins[1]);
 
-      std::vector<odb::dbDirection> directions;
+      std::vector<odb::Direction2D> directions;
       for (size_t i = 0; i < ends.size(); i++) {
         if (margins[i] == way_out) {
           directions.push_back(ends[i]);
@@ -2661,7 +2660,7 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
       }
 
       std::vector<LateralCandidate> candidates;
-      for (const odb::dbDirection direction : directions) {
+      for (const odb::Direction2D direction : directions) {
         ShapePtr best_target = nullptr;
         int best_distance = std::numeric_limits<int>::max();
         for (auto* search_layer : connectable) {
@@ -2683,7 +2682,7 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                      "MacroEdge",
                      1,
                      "No shape {} of {} on {} to reach",
-                     direction.getString(),
+                     directionToString(direction),
                      iterm->getName(),
                      pin.layer->getName());
           continue;
@@ -2728,7 +2727,7 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                    "Connecting {} on {} {} to {}",
                    iterm->getName(),
                    pin.layer->getName(),
-                   candidate.direction.getString(),
+                   directionToString(candidate.direction),
                    candidate.target->getReportText());
         added.push_back(strap_ptr);
         break;

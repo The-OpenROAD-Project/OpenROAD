@@ -15,6 +15,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "pdn/PdnGen.hh"
 #include "polygon.h"
 #include "shape.h"
@@ -298,7 +299,7 @@ class MacroEdgeConnectionStraps : public Straps
       odb::dbITerm* iterm,
       odb::dbTechLayer* layer,
       const odb::Rect& pin,
-      odb::dbDirection direction,
+      odb::Direction2D direction,
       const ShapePtr& target,
       std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions);
 
@@ -336,7 +337,7 @@ class MacroEdgeConnectionStraps : public Straps
   odb::dbITerm* iterm_;
   odb::Rect pin_;
   // the end of the pin the strap leaves by: one of NORTH, SOUTH, EAST or WEST
-  odb::dbDirection direction_;
+  odb::Direction2D direction_;
   ShapePtr target_;
   // the macro's own metal, shared by every strap grown out of it
   std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions_;
