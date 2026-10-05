@@ -101,7 +101,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.wild_connect = 0;
   flags_.wire_ordered = 0;
   flags_.disable_auto_taper = 0;
-  flags_.disconnected = 0;
+  flags_.unused2 = 0;
   flags_.spef = 0;
   flags_.select = 0;
   flags_.mark = 0;
@@ -219,10 +219,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.disable_auto_taper != rhs.flags_.disable_auto_taper) {
-    return false;
-  }
-
-  if (flags_.disconnected != rhs.flags_.disconnected) {
     return false;
   }
 
@@ -1042,35 +1038,6 @@ void dbNet::setWireOrdered(bool value)
              "DB_EDIT",
              2,
              "EDIT: {}, setWireOrdered: {}",
-             net->getDebugName(),
-             value);
-
-  if (block->journal_) {
-    block->journal_->updateField(
-        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
-  }
-}
-
-bool dbNet::isDisconnected()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->flags_.disconnected == 1;
-}
-
-void dbNet::setDisconnected(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint32_t prev_flags = flagsToUInt(net);
-
-  net->flags_.disconnected = (value) ? 1 : 0;
-
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_EDIT",
-             2,
-             "EDIT: {}, setDisconnected: {}",
              net->getDebugName(),
              value);
 

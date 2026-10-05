@@ -39,7 +39,7 @@ struct _dbNetFlags
   uint32_t wild_connect : 1;
   uint32_t wire_ordered : 1;
   uint32_t disable_auto_taper : 1;  // was unused2; free bit reused
-  uint32_t disconnected : 1;  // this flag is only valid if wire_ordered == true
+  uint32_t unused2 : 1;
   uint32_t spef : 1;
   uint32_t select : 1;
   uint32_t mark : 1;

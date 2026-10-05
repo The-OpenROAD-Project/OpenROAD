@@ -1205,7 +1205,6 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
   }
 
   net->flags_.wire_ordered = 0;
-  net->flags_.disconnected = 0;
   for (auto callback : block->callbacks_) {
     callback->inDbWireCreate((dbWire*) wire);
   }
