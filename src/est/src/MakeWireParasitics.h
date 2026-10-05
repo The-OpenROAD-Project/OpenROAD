@@ -48,7 +48,8 @@ class MakeWireParasitics
                      sta::dbSta* sta,
                      odb::dbTech* tech,
                      odb::dbBlock* block,
-                     grt::GlobalRouter* grouter);
+                     grt::GlobalRouter* grouter,
+                     sta::ArcDelayCalc* arc_delay_calc = nullptr);
   void estimateParasitics(odb::dbNet* net,
                           grt::GRoute& route,
                           sta::SpefWriter* spef_writer);
@@ -129,7 +130,7 @@ class MakeWireParasitics
   utl::Logger* logger_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
-  sta::ArcDelayCalc* arc_delay_calc_;
+  sta::ArcDelayCalc* arc_delay_calc_;  // the timer's, or a thread's copy
   const sta::MinMax* min_max_;
   size_t resistor_id_;
 };

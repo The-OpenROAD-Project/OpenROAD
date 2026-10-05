@@ -1096,6 +1096,9 @@ class NesterovBase
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
+  // Sets densityPenalty_ from the wirelength/density gradient ratio times
+  // factor
+  void updateDensityPenaltyFromRatio(float factor);
 
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
@@ -1282,6 +1285,9 @@ class NesterovBase
   void resetMinSumOverflow();
 
   bool isDiverged() const { return isDiverged_; }
+  // Resets isDiverged_ when no snapshot exists to revert to instead (the only
+  // other place that clears it is revertToSnapshot()).
+  void clearDivergence() { isDiverged_ = false; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
@@ -1295,6 +1301,9 @@ class NesterovBase
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
   void clearRemovedFillers() { removed_fillers_.clear(); }
+
+  // Directly redistributes the existing filler into the free space.
+  void redistributeFillerCells();
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,

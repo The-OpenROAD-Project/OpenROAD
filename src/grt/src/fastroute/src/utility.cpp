@@ -704,7 +704,9 @@ void FastRouteCore::updateSlacks()
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
     if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-      estimator->estimateAllGlobalRouteParasitics();
+      // The router is idle here: nothing else reads or writes
+      // parasitics or delays until the estimate returns.
+      estimator->estimateAllGlobalRouteParasitics(num_threads_);
     }
   }
 
@@ -1658,7 +1660,7 @@ float FastRouteCore::CalculatePartialSlack()
   std::vector<float> slacks;
   slacks.reserve(netCount());
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-    estimator->estimateAllGlobalRouteParasitics();
+    estimator->estimateAllGlobalRouteParasitics(num_threads_);
   }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
@@ -2003,6 +2005,12 @@ void FastRouteCore::check2DEdgesUsage()
   const int max_usage_multiplier = 100;
   int max_h_edge_usage = max_usage_multiplier * h_capacity_;
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
+
+  if (!logger_->debugCheck(GRT, "overflowcheck", 1)
+      && graph2d_.maxUsage(EdgeDirection::Horizontal) <= max_h_edge_usage
+      && graph2d_.maxUsage(EdgeDirection::Vertical) <= max_v_edge_usage) {
+    return;
+  }
 
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {

@@ -847,13 +847,13 @@ describe('flipped chiplet layer order', () => {
             sites: [],
             chiplets: [
                 { path: 'top', name: 'top', parent: null, depth: 0 },
-                { path: 'top.die0', name: 'die0', parent: 'top', depth: 1 },
+                { path: 'top/die0', name: 'die0', parent: 'top', depth: 1 },
             ],
             layer_hierarchy: {
                 name: 'top', type: 'block', path: 'top', flipped: false,
                 layers: [],
                 instances: [{
-                    name: 'die0', type: 'instance', path: 'top.die0',
+                    name: 'die0', type: 'instance', path: 'top/die0',
                     flipped,
                     layers: [
                         { name: 'metal1', color: [1, 2, 3] },
@@ -917,22 +917,22 @@ describe('flipped chiplet layer order', () => {
             sites: [],
             chiplets: [
                 { path: 'top', name: 'top', parent: null, depth: 0 },
-                { path: 'top.w', name: 'w', parent: 'top', depth: 1 },
+                { path: 'top/w', name: 'w', parent: 'top', depth: 1 },
             ],
             layer_hierarchy: {
                 name: 'top', type: 'block', path: 'top', flipped: false,
                 layers: [],
                 instances: [{
                     // The wrapper is face-down and owns no layers of its own.
-                    name: 'w', type: 'instance', path: 'top.w', flipped: true,
+                    name: 'w', type: 'instance', path: 'top/w', flipped: true,
                     layers: [],
                     instances: [
                         // Emitted lower-world-z first, as the backend sorts.
-                        { name: 'lower', type: 'instance', path: 'top.w.lower',
+                        { name: 'lower', type: 'instance', path: 'top/w/lower',
                           flipped: true,
                           layers: [{ name: 'lo', color: [1, 2, 3] }],
                           instances: [] },
-                        { name: 'upper', type: 'instance', path: 'top.w.upper',
+                        { name: 'upper', type: 'instance', path: 'top/w/upper',
                           flipped: true,
                           layers: [{ name: 'up', color: [4, 5, 6] }],
                           instances: [] },

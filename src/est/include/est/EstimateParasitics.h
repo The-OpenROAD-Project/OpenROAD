@@ -14,6 +14,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"
@@ -88,7 +89,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                      grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
 
-  void estimateAllGlobalRouteParasitics() override;
+  void estimateAllGlobalRouteParasitics(int threads = 1) override;
   void updateGlobalRouteParasitics(odb::dbNet* net,
                                    grt::GRoute& route) override;
   void initSteinerRenderer(
@@ -153,9 +154,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
+  // arc_delay_calc reduces the parasitics; nullptr uses the STA's.
   void estimateWireParasitic(const sta::Pin* drvr_pin,
                              const sta::Net* net,
-                             sta::SpefWriter* spef_writer = nullptr);
+                             sta::SpefWriter* spef_writer = nullptr,
+                             sta::ArcDelayCalc* arc_delay_calc = nullptr);
   void makeWireParasitic(sta::Net* net,
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
@@ -190,6 +193,10 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateGlobalRouteRC(sta::SpefWriter* spef_writer = nullptr);
   void estimateGlobalRouteRC(odb::dbNet* db_net);
   void estimateGlobalRouteParasitics(odb::dbNet* net, grt::GRoute& route);
+  void estimateRoutesInParallel(
+      const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
+      int threads,
+      bool partial);
   void clearParasitics();
 
   ////////////////////////////////////////////////////////////////
@@ -238,11 +245,16 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
   void ensureParasitics();
   bool isSkipPin(const sta::Pin* pin) const;
+  bool hasIdealClocks(const sta::Mode* mode) const;
+  bool hasIdealClocks() const;
   bool isSkipNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
-                                    sta::SpefWriter* spef_writer);
-  void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
+                                    sta::SpefWriter* spef_writer,
+                                    sta::ArcDelayCalc* arc_delay_calc);
+  void makePadParasitic(const sta::Net* net,
+                        sta::SpefWriter* spef_writer,
+                        sta::ArcDelayCalc* arc_delay_calc);
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;

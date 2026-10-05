@@ -416,22 +416,27 @@ TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
   std::vector<unsigned char> pixels;
   unsigned w = 0, h = 0;
   ASSERT_EQ(lodepng::decode(pixels, w, h, png), 0u);
-  ASSERT_EQ(w, 512u);
+  constexpr unsigned kTileDimension = 512;
+  ASSERT_EQ(w, kTileDimension);
+  ASSERT_EQ(h, kTileDimension);
+  ASSERT_EQ(pixels.size(),
+            static_cast<size_t>(kTileDimension) * kTileDimension * 4);
   // Sampled on rows that hold only the vertical lines: a row ALONG a
   // horizontal line is lit all the way across.
   int runs = 0;
-  for (unsigned y = 0; y < h; ++y) {
-    const size_t row = static_cast<size_t>(y) * w * 4;
+  for (unsigned y = 0; y < kTileDimension; ++y) {
+    const size_t row = static_cast<size_t>(y) * kTileDimension * 4;
     int lit = 0;
-    for (unsigned x = 0; x < w; ++x) {
+    for (unsigned x = 0; x < kTileDimension; ++x) {
       lit += pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
     }
     if (lit == 0 || lit > 60) {
       continue;
     }
     int run = 0;
-    for (unsigned x = 0; x <= w; ++x) {
-      const bool on = x < w && pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
+    for (unsigned x = 0; x <= kTileDimension; ++x) {
+      const bool on = x < kTileDimension
+                      && pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
       if (on) {
         ++run;
       } else if (run > 0) {
@@ -464,14 +469,19 @@ TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
     tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), width, 0, {});
 
     unsigned w = 0, h = 0;
-    const auto pixels = decodePngFile(path, w, h);
-    ASSERT_EQ(w, static_cast<unsigned>(width));
+    const std::vector<unsigned char> pixels = decodePngFile(path, w, h);
+    const unsigned expected_dimension = static_cast<unsigned>(width);
+    ASSERT_EQ(w, expected_dimension);
+    ASSERT_EQ(h, expected_dimension);
+    ASSERT_EQ(pixels.size(),
+              static_cast<size_t>(expected_dimension) * expected_dimension * 4);
 
     // The middle row crosses the left and right edges of the die and nothing
     // else, so it must carry exactly two runs of outline.
     int lit = 0;
-    const size_t mid_row = static_cast<size_t>(h / 2) * w * 4;
-    for (unsigned x = 0; x < w; ++x) {
+    const size_t mid_row
+        = static_cast<size_t>(expected_dimension / 2) * expected_dimension * 4;
+    for (unsigned x = 0; x < expected_dimension; ++x) {
       if (pixels[mid_row + x * 4 + 3] > 0) {
         ++lit;
       }
