@@ -2991,7 +2991,7 @@ void collectChipletsRec(odb::dbChip* chip,
     local.concat(parent_world_xfm);
     node.world_xfm = local;
     node.name = inst->getName();
-    node.path = parent_path + "." + node.name;
+    node.path = parent_path + odb::kChipletPathDelimiter + node.name;
     node.global_z = parent_global_z + inst->getLoc().z();
   } else {
     node.world_xfm = parent_world_xfm;
@@ -7402,7 +7402,7 @@ std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
     if (node.inst == nullptr || !node.block
         || pin_view.size() <= node.name.size()
         || !pin_view.starts_with(node.name)
-        || pin_view[node.name.size()] != '/') {
+        || pin_view[node.name.size()] != odb::kChipletPathDelimiter) {
       continue;
     }
     prefix_matched = true;
