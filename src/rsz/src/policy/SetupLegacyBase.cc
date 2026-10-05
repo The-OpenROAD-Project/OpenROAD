@@ -549,11 +549,22 @@ bool SetupLegacyBase::repairPins(
     prewarmTargets(prewarm_targets);
   }
 
+  // A target holds raw STA paths. Every accepted move invalidates the paths
+  // through the logic it touched, so a pass that repairs many pins has to
+  // bring timing up to date before it builds the next target from them.
+  bool timing_stale = false;
   for (const sta::Pin* driver_pin : pins) {
     if (changed >= repairs_per_pass) {
       break;
     }
 
+    if (timing_stale) {
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+      timing_stale = false;
+    }
+
+    const int changed_before = changed;
     Target target;
     const bool has_target
         = focus_path != nullptr
@@ -581,6 +592,7 @@ bool SetupLegacyBase::repairPins(
         && accepted_type.has_value()) {
       chosen_moves->emplace_back(driver_pin, *accepted_type);
     }
+    timing_stale = changed != changed_before;
   }
 
   return changed > 0;
