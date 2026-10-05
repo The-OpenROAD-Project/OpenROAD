@@ -342,13 +342,13 @@ void tmg_conn::splitBySj(const int j,
       }
       if (wire_points_[wire_sections_[k].from_idx].y
           > wire_points_[wire_sections_[k].to_idx].y) {
-        wire_sections_[k].shape.setYmin(
+        wire_sections_[k].shape.set_ylo(
             wire_points_[wire_sections_[j].from_idx].y
             - (wire_sections_[k].width / 2));
         nymax = wire_points_[wire_sections_[j].from_idx].y
                 + wire_sections_[k].width / 2;
       } else {
-        wire_sections_[k].shape.setYmax(
+        wire_sections_[k].shape.set_yhi(
             wire_points_[wire_sections_[j].from_idx].y
             + (wire_sections_[k].width / 2));
         nymin = wire_points_[wire_sections_[j].from_idx].y
@@ -365,13 +365,13 @@ void tmg_conn::splitBySj(const int j,
       }
       if (wire_points_[wire_sections_[k].from_idx].x
           > wire_points_[wire_sections_[k].to_idx].x) {
-        wire_sections_[k].shape.setXmin(
+        wire_sections_[k].shape.set_xlo(
             wire_points_[wire_sections_[j].from_idx].x
             - (wire_sections_[k].width / 2));
         nxmax = wire_points_[wire_sections_[j].from_idx].x
                 + wire_sections_[k].width / 2;
       } else {
-        wire_sections_[k].shape.setXmax(
+        wire_sections_[k].shape.set_xhi(
             wire_points_[wire_sections_[j].from_idx].x
             + (wire_sections_[k].width / 2));
         nxmin = wire_points_[wire_sections_[j].from_idx].x
@@ -643,7 +643,7 @@ void tmg_conn::identifyShorts()
 
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      shape_search_->addShape(rt, s->rect(), ShapeSearch::Type::kWire, j);
+      shape_search_->addShape(rt, *s, ShapeSearch::Type::kWire, j);
     }
   }
 
@@ -708,7 +708,7 @@ void tmg_conn::identifyShorts()
       }
     } else {
       const int rt = s->getTechLayer()->getRoutingLevel();
-      shape_search_->searchStart(rt, s->rect(), ShapeSearch::Type::kWire);
+      shape_search_->searchStart(rt, *s, ShapeSearch::Type::kWire);
       int klast = -1;
       int k;
       while (shape_search_->searchNext(&k)) {

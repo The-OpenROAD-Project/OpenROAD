@@ -24,15 +24,15 @@ using CandidateSections = std::array<CandidateSection, kMaxCandidateSections>;
 
 struct WireSection
 {
-  class Shape
+  class Shape : public Rect
   {
    public:
-    Shape(Rect rect,
+    Shape(const Rect& rect,
           dbTechLayer* layer,
           dbTechVia* tech_via,
           dbVia* block_via,
           dbTechNonDefaultRule* rule = nullptr)
-        : rect_(rect),
+        : Rect(rect),
           layer_(layer),
           tech_via_(tech_via),
           block_via_(block_via),
@@ -40,25 +40,13 @@ struct WireSection
     {
     }
 
-    const Rect& rect() const { return rect_; }
-    int xMin() const { return rect_.xMin(); }
-    int xMax() const { return rect_.xMax(); }
-    int yMin() const { return rect_.yMin(); }
-    int yMax() const { return rect_.yMax(); }
-
     bool isVia() const { return (tech_via_ || block_via_); }
     dbTechVia* getTechVia() const { return tech_via_; }
     dbVia* getVia() const { return block_via_; }
     dbTechLayer* getTechLayer() const { return layer_; }
     dbTechNonDefaultRule* getRule() const { return rule_; }
 
-    void setXmin(int x) { rect_.set_xlo(x); }
-    void setXmax(int x) { rect_.set_xhi(x); }
-    void setYmin(int y) { rect_.set_ylo(y); }
-    void setYmax(int y) { rect_.set_yhi(y); }
-
    private:
-    Rect rect_;
     dbTechLayer* layer_{nullptr};
     dbTechVia* tech_via_{nullptr};
     dbVia* block_via_{nullptr};
