@@ -248,6 +248,28 @@ describe('buildMapOptions', () => {
         assert.equal(opts.fadeAnimation, false);
         assert.equal(opts.attributionControl, false);
     });
+
+    // Options-menu preferences (2.15).  With none supplied the map must keep
+    // behaving as it always has: wheel zooms, arrows pan by Leaflet's 80 px.
+    it('defaults to wheel-zoom on and the default arrow step', () => {
+        const opts = buildMapOptions(null);
+        assert.equal(opts.scrollWheelZoom, true);
+        assert.equal(opts.keyboardPanDelta, 80);
+    });
+
+    it('carries the wheel-zoom preference through', () => {
+        assert.equal(buildMapOptions(null, { wheelZoom: false })
+                         .scrollWheelZoom, false);
+        assert.equal(buildMapOptions(null, { wheelZoom: true })
+                         .scrollWheelZoom, true);
+    });
+
+    it('clamps the arrow step it is given', () => {
+        assert.equal(buildMapOptions(null, { arrowStep: 250 })
+                         .keyboardPanDelta, 250);
+        assert.equal(buildMapOptions(null, { arrowStep: 1 })
+                         .keyboardPanDelta, 10);
+    });
 });
 
 describe('floorClampZoom (upscale-only invariant)', () => {
@@ -300,7 +322,7 @@ describe('currentDpr', () => {
     });
 
     it('still clamps, because the clamp bounds tile memory', () => {
-        // A tile is rendered at (tileSize*dpr*supersample)^2 bytes.
+        // A tile is rendered at about (tileSize*dpr)^2 * 4 bytes.
         assert.equal(withDpr(8, currentDpr), 3);
         assert.equal(withDpr(0.5, currentDpr), 1);
     });
@@ -472,6 +494,30 @@ describe('the layer body must resolve every name it references', () => {
         assert.equal(done_calls, 1);
         assert.equal(done_with.err, null);
         assert.equal(done_with.t, tile);
+    });
+
+    it('does not request a layer the extents rule out', async () => {
+        const { LayerExtents } = await import('../../src/layer-extents.js');
+        const layerExtents = new LayerExtents();
+        layerExtents.apply(layerExtents.invalidate(),
+                           { supported: true, layers: { metal1: null } });
+        const sent = [];
+        const { tile, done_with, done_calls } = await emptyTile(() => {
+            const Layer = createWebSocketTileLayer(
+                { stdcells: true }, new Set(['metal1']), null, null,
+                { layerExtents });
+            return new Layer({ nextId: 1,
+                               request: (msg) => {
+                                   sent.push(msg);
+                                   return Promise.resolve(null);
+                               },
+                               cancel() {} }, 'metal1', {});
+        });
+        assert.deepEqual(sent, []);
+        // Completed exactly like a tile the server answered as empty.
+        assert.equal(tile.src, BLANK_TILE);
+        assert.equal(done_calls, 1);
+        assert.equal(done_with.err, null);
     });
 
     it('gives an empty overlay tile the blank image too', async () => {

@@ -64,6 +64,10 @@ the two umbrella targets.
 | `//:lint_bzl_test` | `sh_test` | Runs `buildifier -mode=check -lint=warn` (lint rules) |
 | `//:fmt_bzl_test` | `sh_test` | Runs `buildifier -mode=check -lint=off` (formatting) |
 | `//:tidy_bzl` | `sh_binary` | Runs `buildifier -mode=fix -lint=fix` (auto-format) |
+| `//:fmt_yaml_test` | `sh_test` | Runs `yamlfix` on a copy and diffs it (formatting) |
+| `//:tidy_yaml` | `sh_binary` | Runs `yamlfix` (auto-format) |
+| `//:fmt_py_test` | `sh_test` | Runs `black --check` (formatting) |
+| `//:tidy_py` | `sh_binary` | Runs `black` (auto-format) |
 
 ## Configuration
 
@@ -75,6 +79,14 @@ Bazel formatting and linting are controlled by `.buildifier.json` at the
 repository root. The test scripts (`bzl_lint_test.sh`, `bzl_fmt_test.sh`)
 explicitly pass `-mode=check` to override the default `mode: fix` in that
 config, ensuring they remain read-only checks.
+
+Python formatting is controlled by the `[tool.black]` section of
+`pyproject.toml` at the repository root, which is also what the `black` CI
+workflow reads — the two see the same exclusions. The `black` version in
+`bazel/requirements_black.in` must match the `psf/black` action pinned in
+`.github/workflows/black.yaml`; a mismatch lets `//:fix_lint` produce
+formatting that CI then rejects. Black has its own requirements file and pip
+hub because `tclint` pins `pathspec==0.11.2`, which black >= 26 cannot use.
 
 ## POLA
 
@@ -104,7 +116,8 @@ The following linters and formatters are planned for `//:lint_test` and
 `//:fix_lint`, replacing their ad-hoc CI equivalents:
 
 - **C++ clang-format** — formatting check/fix for C++ and header files
-- **Python ruff** — lint + format for Python scripts in `etc/`, `docs/`, tests
+- **Python ruff** — lint rules for Python scripts in `etc/`, `docs/`, tests
+  (formatting is already covered by `//:fmt_py_test` / `//:tidy_py`)
 - **ShellCheck** — lint for bash scripts in `test/`, `bazel/`, `etc/`
 - **Duplicate message ID check** — replace Jenkins "Find Duplicated Message IDs" stage
 - **Doc consistency checks** — replace Jenkins "Documentation Checks" stage
@@ -116,10 +129,16 @@ testable locally with a single command.
 
 ## Relationship to CI
 
-The GitHub Actions workflow (`.github/workflows/github-actions-lint-tcl.yml`)
-runs the same `tclint` and `tclfmt` checks. Once Bazel lint targets are
-validated in CI, the GitHub Actions workflow can be retired. The same applies
-to the Jenkins documentation and duplicate ID check stages.
+The GitHub Actions workflows `github-actions-lint-tcl.yml` (`tclint`,
+`tclfmt`) and `black.yaml` (`black`) run the same checks over the same files
+as `//:lint_tcl_test` / `//:fmt_tcl_test` and `//:fmt_py_test`. Once Bazel
+lint targets are validated in CI, those workflows can be retired. The same
+applies to the Jenkins documentation and duplicate ID check stages.
+
+While both exist, the tool versions have to be kept in sync by hand:
+`bazel/requirements.in` on the Bazel side, and the workflow pins on the CI
+side (`black.yaml`, `github-actions-lint-tcl.yml` and the auto-format step of
+`github-actions-on-master-push.yml`).
 
 C++ clang-tidy is provided via a separate Bazel aspect (`--config=lint`)
 rather than the `//:lint_test` umbrella. Aspects participate in Bazel's

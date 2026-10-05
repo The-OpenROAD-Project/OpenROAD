@@ -646,6 +646,21 @@ IRSolver::LayerPolygons IRSolver::getMasterTerms(odb::dbMTerm* mterm) const
           odb::geom::toPolygonSet(pin->getPolygon()));
     }
     for (odb::dbBox* pin : mpin->getGeometry(false)) {
+      if (pin->isVia()) {
+        // a via has no layer of its own, expand it into the boxes it
+        // holds on each layer
+        std::vector<odb::dbShape> via_boxes;
+        pin->getViaBoxes(via_boxes);
+        for (const odb::dbShape& via_box : via_boxes) {
+          odb::dbTechLayer* layer = via_box.getTechLayer();
+          if (layer == nullptr) {
+            // via box
+            continue;
+          }
+          terms[layer].insert(odb::geom::toPolygonSet(via_box.getBox()));
+        }
+        continue;
+      }
       terms[pin->getTechLayer()].insert(odb::geom::toPolygonSet(pin->getBox()));
     }
   }
@@ -694,6 +709,24 @@ IRSolver::LayerPolygons IRSolver::getMasterObstructions(
             odb::geom::toPolygonSet(geom->getPolygon()) + 1);
       }
       for (odb::dbBox* geom : mpin->getGeometry(false)) {
+        if (geom->isVia()) {
+          // a via has no layer of its own, expand it into the boxes it
+          // holds on each layer so its enclosures come out of the
+          // obstructions too
+          std::vector<odb::dbShape> via_boxes;
+          geom->getViaBoxes(via_boxes);
+          for (const odb::dbShape& via_box : via_boxes) {
+            odb::dbTechLayer* layer = via_box.getTechLayer();
+            if (layer == nullptr) {
+              // via box
+              continue;
+            }
+            odb::Rect pin;
+            via_box.getBox().bloat(1, pin);
+            pins[layer].insert(odb::geom::toPolygonSet(pin));
+          }
+          continue;
+        }
         odb::Rect pin;
         geom->getBox().bloat(1, pin);
         pins[geom->getTechLayer()].insert(odb::geom::toPolygonSet(pin));
@@ -1088,24 +1121,40 @@ SourceNodes IRSolver::generateSourceNodesGenericFull() const
 SourceNodes IRSolver::generateSourceNodesGenericStraps() const
 {
   odb::dbTechLayer* top_layer = network_->getTopLayer();
+  // The connect layer is the routing layer immediately outside the source
+  // layer, it sets the pitch and width of the generated strap pattern.
+  // Backside layers are declared outermost-first, so their routing level
+  // grows toward the substrate and the layer outside this one is at
+  // level - 1 rather than level + 1.
+  const int connect_level
+      = top_layer->getRoutingLevel() + (top_layer->isBackside() ? -1 : 1);
+  // Routing levels are 1-based, a level of 0 would match the non-routing
+  // layers rather than miss.
   odb::dbTechLayer* connect_layer
-      = getTech()->findRoutingLayer(top_layer->getRoutingLevel() + 1);
+      = connect_level > 0 ? getTech()->findRoutingLayer(connect_level)
+                          : nullptr;
   if (connect_layer == nullptr) {
     connect_layer = top_layer;
   }
   const int pitch = generated_source_settings_.strap_track_pitch
                     * connect_layer->getPitch();
+  if (pitch <= 0) {
+    logger_->error(utl::PSM, 76, "Invalid pitch for strap generation.");
+  }
   const int offset = pitch / 2;
   const int width = connect_layer->getWidth();
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
-  logger_->info(
-      utl::PSM,
-      72,
-      "Using strap pattern on {} with pitch {:.4f}um and offset {:.4f}um.",
-      connect_layer->getName(),
-      pitch / dbus,
-      offset / dbus);
+  // The sources land on the top layer, connect_layer only sets the pitch
+  // and width of the pattern, so name both.
+  logger_->info(utl::PSM,
+                72,
+                "Using strap pattern on {} with {} pitch {:.4f}um and offset "
+                "{:.4f}um.",
+                top_layer->getName(),
+                connect_layer->getName(),
+                pitch / dbus,
+                offset / dbus);
 
   const odb::Rect core_area = getBlock()->getCoreArea();
   const odb::Rect die_area = getBlock()->getDieArea();
@@ -1151,8 +1200,9 @@ SourceNodes IRSolver::generateSourceNodesGenericBumps() const
 
   logger_->info(utl::PSM,
                 73,
-                "Using bump pattern with x-pitch {:.4f}um, y-pitch {:.4f}um, "
-                "and size {:.4f}um with an reduction factor of {}x.",
+                "Using bump pattern on {} with x-pitch {:.4f}um, y-pitch "
+                "{:.4f}um, and size {:.4f}um with a reduction factor of {}x.",
+                network_->getTopLayer()->getName(),
                 dx / dbus,
                 dy / dbus,
                 size / dbus,

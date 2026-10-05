@@ -188,6 +188,47 @@ finished building (the `refresh` push fires when this flips to true).
 `pin_max_size` is the largest BPin dimension in DBU, used by the client
 to size the pin-marker overlay.
 
+### `layer_extents`
+
+Return where each tech layer's `tile`s can have content, so the client
+can skip requesting tiles that would come back empty.
+
+No request fields beyond the envelope.
+
+**Response (JSON):**
+```json
+{
+  "supported": true,
+  "layers": {
+    "metal1": [x0, y0, x1, y1],
+    "metal9": null
+  },
+  "gated": {
+    "inst_pins": {"metal1": [x0, y0, x1, y1]},
+    "blockages": {"metal1": [x0, y0, x1, y1]},
+    "routing_obstructions": {},
+    "fills": {}
+  }
+}
+```
+
+Each rect is a conservative bounding box, as fractions of the zoom-0 tile
+with `y` running down, so tile `(z, x, y)` covers `[x, x+1] × [y, y+1] / 2^z`.
+`layers` holds each tech layer's routing, special-net and BTerm shapes
+(`null`: none anywhere). `gated` holds, per `tile` visibility flag, the
+extent of what that flag alone draws on each layer it reaches — master pins,
+master obstructions, routing obstructions and fills; a layer that source
+does not reach is absent. A tile can be skipped when it misses the layer's
+`layers` rect and every `gated` rect whose flag is not off. A layer missing
+from `layers` (the `_`-prefixed pseudo layers) must always be requested.
+Only design geometry is covered: tracks and the debug overlays also draw on
+layer tiles, so tiles are requested regardless while those are on.
+`supported` is false for multi-chiplet designs, and the client then
+requests every tile.
+
+The extents describe the design when the request was served; after a
+`refresh` push they must be discarded and fetched again.
+
 ### `tech`
 
 Return tech-layer metadata, sites, and block info.
@@ -782,14 +823,24 @@ Toggle one marker's `visited` or `visible` flag.
 
 ### `drc_update_category_visibility`
 
-Bulk-set every marker in a category to a single `visible` value.
+Bulk-set every marker in a category — and in its subcategories — to a
+single `visible` value.
 
-| Field      | Type     | Required | Description           |
-| ---------- | -------- | :------: | --------------------- |
-| `category` | `string` |    ✓     | Top-level name.       |
-| `visible`  | `bool`   |    ✓     | New visibility.       |
+| Field      | Type       | Required | Description                                                                                     |
+| ---------- | ---------- | :------: | ----------------------------------------------------------------------------------------------- |
+| `path`     | `string[]` |          | Category names from the top-level category down to the target, e.g. `["PSM","VDD","Unconnected shape"]`. |
+| `category` | `string`   |          | Top-level name. Used only when `path` is absent or empty.                                       |
+| `visible`  | `bool`     |    ✓     | New visibility.                                                                                 |
 
-**Response (JSON):** `{"ok": 1, "category": "...", "visible": <bool>, "count": <updated>}`.
+One of `path` or `category` must name a category. Subcategory names are
+unique only among siblings — `check_power_grid` builds both
+`PSM/VDD/Unconnected shape` and `PSM/VSS/Unconnected shape` — so a
+subcategory can be addressed only by its full `path`.
+
+**Response (JSON):** `{"ok": 1, "category": "<leaf name>", "path": [...], "visible": <bool>, "count": <updated>}`.
+
+When no category matches, the response is an error with
+`Category not found: <path joined by "/">`.
 
 ### `drc_highlight`
 
@@ -887,7 +938,8 @@ always sends the full set.
 | `net_signal`, `net_power`, `net_ground`, `net_clock`, `net_reset`, `net_tieoff`, `net_scan`, `net_analog` | `true` | By `dbSigType`. |
 | `routing`, `routing_segments`, `routing_vias`, `special_nets`, `srouting_segments`, `srouting_vias` | `true` | Wires & vias. |
 | `pins`, `pin_markers`, `pin_names` | `true` | BTerm shapes & labels. |
-| `inst_names`, `inst_pins`, `inst_pin_names` | `true` | ITerm shapes & labels. |
+| `inst_names`, `inst_pins` | `true` | Instance labels & ITerm shapes. |
+| `inst_pin_names`       | `false` | ITerm labels, off as in the Qt GUI. |
 | `blockages`, `placement_blockages`, `routing_obstructions` | `true` | dbBlockage / dbObstruction. |
 | `rows`                 | `false` | Enables the row-outline overlay; gates `site_<name>` lookup. |
 | `tracks_pref`, `tracks_non_pref` | `false` | Routing-track overlay. |

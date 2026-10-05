@@ -3,7 +3,7 @@
  ,"DPL::design_area" : "2212.7999999999997"
  ,"DPL::utilization" : "53.04"
  ,"RSZ::repair_design_buffer_count" : "243"
- ,"RSZ::max_slew_slack" : "-19.98867702484131"
+ ,"RSZ::max_slew_slack" : "-66.7734317779541"
  ,"RSZ::max_capacitance_slack" : "0"
  ,"RSZ::max_fanout_slack" : "0"
  ,"RSZ::worst_slack_min" : "-39.9782396286304"

@@ -1855,7 +1855,13 @@ void extMain::run()
 
   */
   while (_modelTable->notEmpty()) {
-    delete _modelTable->pop();
+    // For multi chip extraction, we don't delete the model as it is
+    // owned by the multi chip extractor. However, we still need to
+    // clear the table for a possible subsequent block extraction.
+    extRCModel* rules_model = _modelTable->pop();
+    if (delete_model_at_extraction_) {
+      delete rules_model;
+    }
   }
   if (_batchScaleExt) {
     genScaledExt();

@@ -11,6 +11,6 @@ source $tcl_file
 
 write_def $def_file
 
-diff_file write_pin_placement5.defok $def_file
+diff_files write_pin_placement5.defok $def_file
 
-diff_file write_pin_placement5.tclok $tcl_file
+diff_files write_pin_placement5.tclok $tcl_file

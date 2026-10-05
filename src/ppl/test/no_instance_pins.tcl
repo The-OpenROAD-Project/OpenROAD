@@ -10,4 +10,4 @@ set def_file [make_result_file no_instance_pins.def]
 
 write_def $def_file
 
-diff_file no_instance_pins.defok $def_file
+diff_files no_instance_pins.defok $def_file

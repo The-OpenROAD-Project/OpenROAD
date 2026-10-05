@@ -31,6 +31,7 @@ TESTS = [
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
@@ -109,6 +110,7 @@ TESTS = [
     "repair_antennas_cugr",
     "repair_antennas_from_odb",
     "repair_antennas_from_odb_cugr",
+    "repair_antennas_odb_roundtrip",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
@@ -200,7 +202,21 @@ regression_test(
 )
 
 regression_test(
+    name = "resistance_aware_asap7_fr_threads",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_acceptance_is_recorded",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
@@ -221,9 +237,78 @@ regression_test(
 )
 
 cc_test(
+    name = "TestOverflow",
+    size = "small",
+    srcs = ["cpp/TestOverflow.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGraph2D",
+    size = "small",
+    srcs = ["cpp/TestGraph2D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestCongestionNets",
     size = "small",
     srcs = ["cpp/TestCongestionNets.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGuideRestore",
+    size = "small",
+    srcs = ["cpp/TestGuideRestore.cpp"],
+    data = [
+        "remove_buffers1.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/grt",
+        "//src/grt:groute",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestMaze3D",
+    size = "small",
+    srcs = ["cpp/TestMaze3D.cpp"],
     deps = [
         "//src/grt",
         "//src/grt:fastroute",

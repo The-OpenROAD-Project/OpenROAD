@@ -53,7 +53,7 @@ const char* ClockTreeNode::typeToString(Type t)
   }
 }
 
-// ---- Internal tree structure (mirrors gui::ClockTree) ----
+// ---- Internal tree structure (mirrors web::ClockTree) ----
 
 namespace {
 

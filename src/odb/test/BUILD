@@ -155,6 +155,8 @@ py_test(
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
+    "abstract_polygon",
+    "abstract_polygon_no_overlap",
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
@@ -198,6 +200,7 @@ COMPULSORY_TESTS = [
     "read_lef",
     "read_lef_dup_macro",
     "read_lef_minwidth_wrongdirection",
+    "read_lef_polygon_spacing",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",
@@ -208,6 +211,7 @@ COMPULSORY_TESTS = [
     "replace_hier_mod_report_checks",
     "rounding",
     "row_settings",
+    "set_halo",
     "sky130hd_multi_patterned",
     "smash_vias",
     "transform",
@@ -218,6 +222,7 @@ COMPULSORY_TESTS = [
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
+    "write_lef_obs_spacing",
     "write_lef_polygon",
     "write_macro_placement",
 ]
@@ -311,6 +316,7 @@ filegroup(
         "data/lef58_celledgespacing_numeric.lef",
         "data/lef58_macro_edgetype_numeric.lef",
         "data/lef58_minwidth_wrongdirection.lef",
+        "data/lef58_mustjoinallports.lef",
         "data/lef58class_gscl45nm.lef",
         "data/lef_dup_macro.lef",
         "data/mask.lef",
@@ -380,6 +386,13 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abstract_polygon": [
+                "abstract_polygon_bloat.lefok",
+            ],
+            "abstract_polygon_no_overlap": [
+                "abstract_polygon.def",
+                "abstract_polygon_no_overlap_bloat.lefok",
+            ],
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
             ],

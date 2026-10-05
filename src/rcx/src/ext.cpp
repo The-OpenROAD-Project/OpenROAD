@@ -33,7 +33,8 @@ Ext::Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version)
       logger_(logger),
       spef_version_(spef_version),
       multi_chip_extractor_(std::make_unique<MultiChipExtractor>(db, logger)),
-      multi_chip_spef_writer_(std::make_unique<MultiChipSpefWriter>(db, logger))
+      multi_chip_spef_writer_(
+          std::make_unique<MultiChipSpefWriter>(db, logger, spef_version))
 {
   _ext->init(db, logger);
 }

@@ -723,7 +723,7 @@ void RDLRouter::removeTerminalAccess(const TerminalAccess& access)
   }
 
   for (const auto& [pt0, pt1, weight] : access.removed_edges) {
-    addGraphEdge(pt0, pt1, weight, true, true);
+    addGraphEdge(pt0, pt1, {.weight = weight});
   }
 }
 
@@ -1081,13 +1081,13 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
     }
 
     // target to new
-    if (addGraphEdge(snap, target.center, 1.0, false)) {
+    if (addGraphEdge(snap, target.center, {.check_obstructions = false})) {
       access.added_edges.push_back(Edge{snap, target.center});
     }
 
     for (const auto& vertex : vertex_to_modify) {
       const odb::Point& pt = vertex_point_map_[vertex];
-      if (addGraphEdge(snap, pt)) {
+      if (addGraphEdge(snap, pt, {})) {
         access.added_edges.push_back(Edge{snap, pt});
       }
 
@@ -1151,7 +1151,10 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 void RDLRouter::uncommitRoute(const std::vector<RDLRouter::GridEdge>& route)
 {
   for (const auto& [p0, p1, weight] : route) {
-    addGraphEdge(p0, p1, weight, false, false);
+    addGraphEdge(
+        p0,
+        p1,
+        {.weight = weight, .check_obstructions = false, .check_routes = false});
   }
 }
 
@@ -1264,14 +1267,12 @@ std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
 
 RDLRouter::GridEdge RDLRouter::removeGraphEdge(const GridGraphEdge& edge)
 {
-  const float weight = graph_weight_[edge];
+  const int64_t weight = graph_weight_[edge];
   boost::remove_edge(edge, graph_);
 
   return {vertex_point_map_[edge.m_source],
           vertex_point_map_[edge.m_target],
-          weight
-              / distance(vertex_point_map_[edge.m_source],
-                         vertex_point_map_[edge.m_target])};
+          weight};
 }
 
 std::vector<GridGraphVertex> RDLRouter::run(const odb::Point& source,
@@ -1390,16 +1391,16 @@ void RDLRouter::makeGraph()
       const odb::Point center(x_grid_[i], y_grid_[j]);
 
       if (j + 1 < y_grid_.size()) {
-        addGraphEdge(center, {x_grid_[i], y_grid_[j + 1]});
+        addGraphInitialEdge(center, {x_grid_[i], y_grid_[j + 1]});
       }
       if (j != 0) {
-        addGraphEdge(center, {x_grid_[i], y_grid_[j - 1]});
+        addGraphInitialEdge(center, {x_grid_[i], y_grid_[j - 1]});
       }
       if (i != 0) {
-        addGraphEdge(center, {x_grid_[i - 1], y_grid_[j]});
+        addGraphInitialEdge(center, {x_grid_[i - 1], y_grid_[j]});
       }
       if (i + 1 < x_grid_.size()) {
-        addGraphEdge(center, {x_grid_[i + 1], y_grid_[j]});
+        addGraphInitialEdge(center, {x_grid_[i + 1], y_grid_[j]});
       }
 
       if (allow45_) {
@@ -1408,16 +1409,16 @@ void RDLRouter::makeGraph()
           continue;
         }
         if (i + 1 < x_grid_.size() && j + 1 < y_grid_.size()) {
-          addGraphEdge(center, {x_grid_[i + 1], y_grid_[j + 1]});
+          addGraphInitialEdge(center, {x_grid_[i + 1], y_grid_[j + 1]});
         }
         if (i + 1 < x_grid_.size() && j != 0) {
-          addGraphEdge(center, {x_grid_[i + 1], y_grid_[j - 1]});
+          addGraphInitialEdge(center, {x_grid_[i + 1], y_grid_[j - 1]});
         }
         if (i != 0 && j + 1 < y_grid_.size()) {
-          addGraphEdge(center, {x_grid_[i - 1], y_grid_[j + 1]});
+          addGraphInitialEdge(center, {x_grid_[i - 1], y_grid_[j + 1]});
         }
         if (i != 0 && j != 0) {
-          addGraphEdge(center, {x_grid_[i - 1], y_grid_[j - 1]});
+          addGraphInitialEdge(center, {x_grid_[i - 1], y_grid_[j - 1]});
         }
       }
     }
@@ -1525,11 +1526,15 @@ void RDLRouter::removeGraphVertex(const odb::Point& point)
   vertex_point_map_.erase(idx);
 }
 
+bool RDLRouter::addGraphInitialEdge(const odb::Point& point0,
+                                    const odb::Point& point1)
+{
+  return addGraphEdge(point0, point1, {});
+}
+
 bool RDLRouter::addGraphEdge(const odb::Point& point0,
                              const odb::Point& point1,
-                             float edge_weight_scale,
-                             bool check_obstructions,
-                             bool check_routes)
+                             const AddEdgeConfig& config)
 {
   auto point0check = point_vertex_map_.find(point0);
   if (point0check == point_vertex_map_.end()) {
@@ -1559,7 +1564,8 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
     return false;
   }
 
-  if (check_obstructions && isEdgeObstructed(point0, point1, check_routes)) {
+  if (config.check_obstructions
+      && isEdgeObstructed(point0, point1, config.check_routes)) {
     debugPrint(logger_,
                utl::PAD,
                "Router_edge",
@@ -1588,9 +1594,13 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
     return false;
   }
 
-  const int64_t direction_bias = point0.y() == point1.y() ? 1 : 0;
-  const int64_t weight
-      = edge_weight_scale * distance(point0, point1) + direction_bias;
+  int64_t weight = 0;
+  if (config.weight.has_value()) {
+    weight = config.weight.value();
+  } else {
+    const int64_t direction_bias = point0.y() == point1.y() ? 1 : 0;
+    weight = distance(point0, point1) + direction_bias;
+  }
 
   debugPrint(logger_,
              utl::PAD,

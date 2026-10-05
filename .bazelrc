@@ -5,10 +5,6 @@ common --enable_bzlmod
 common --@abc//:use_readline=false
 build --workspace_status_command=tools/workspace_status.sh
 
-# Release builds embed real git version info; dev builds use cache-safe placeholders.
-# Usage: bazel build --config=release //...
-build:release --stamp
-
 # suppress distracting warning about newer module
 # versions found in dependency graph.
 common --check_direct_dependencies=off
@@ -78,8 +74,8 @@ build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declara
 build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
 build --cxxopt "-Wno-c++20-designator"   --host_cxxopt "-Wno-c++20-designator"
 
-# The warning acceptance bar in CI for PRs is set by -Werror of a specific
-# version of some chosen compiler. Disable warnings from other compilers until
+# The warning acceptance bar in CI for PRs is set by -Werror (see build:ci)
+# with the hermetic clang. Disable warnings from other compilers until
 # they are fixed and under CI -Werror acceptance critera as there is nothing the
 # developers can(they can't be reproduced locally or in CI) or should do about
 # these warnings in code they are not working on.
@@ -99,13 +95,16 @@ build --host_per_file_copt=.*external/.*@-w
 # per_file_copt -w above only covers compiling external *source* files; this
 # covers external *headers* included by our own sources.
 #
-# The feature is global (target and exec config) and also demotes a from-source
-# dep's own -iquote entries to -isystem. Tools that rely on -iquote precedence
-# to shadow libc headers are patched to restore it -- e.g. git's
-# builtin/get-tar-commit-id.c includes git's own tar.h, which must win over
-# glibc's <tar.h>. See the git single_version_override in MODULE.bazel (same
-# class of fix as the bison/sed/gawk/m4 -I-over-isystem overrides).
+# --features sets the target config only. --host_features sets the exec config,
+# where our own sources also compile as tools that other actions run.
+# The feature also demotes a from-source dep's own -iquote entries to
+# -isystem. Tools that rely on -iquote precedence to shadow libc headers are
+# patched to restore it -- e.g. git's builtin/get-tar-commit-id.c includes
+# git's own tar.h, which must win over glibc's <tar.h>. See the git
+# single_version_override in MODULE.bazel (same class of fix as the
+# bison/sed/gawk/m4 -I-over-isystem overrides).
 build --features=external_include_paths
+build --host_features=external_include_paths
 
 # This avoid problems with building -c dbg which enables asserts.
 # Without this libstdc++ vs libc++ differences cause link errors.
@@ -130,7 +129,11 @@ build:macos --host_macos_minimum_os=13.3
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
-build:asan --copt=-fsanitize=address
+# As with --config=tsan below, use hermetic-llvm's switch rather than a bare
+# -fsanitize=address copt: the toolchain builds compiler-rt's asan runtime from
+# source and stages it in the resource directory, which a plain driver flag
+# cannot find under the zero sysroot.
+build:asan --@llvm//config:asan=true
 build:asan --copt=-DADDRESS_SANITIZER
 build:asan --copt=-O1
 build:asan --copt=-g
@@ -138,12 +141,18 @@ build:asan --copt=-fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:asan --copt=-gz=zlib
 build:asan --linkopt=-gz=zlib
-build:asan --linkopt=-fsanitize=address
 # TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
 # dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
 # Override the per-target malloc attribute to use the system allocator, which
 # ASan intercepts cleanly.
 build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
+# ASan bundles LeakSanitizer, which reports every allocation still reachable at
+# exit. OpenROAD keeps a great deal of state for the life of the process, so
+# that buries the memory errors asan is here for: with leak checking on, 2648 of
+# 3997 tests fail on reachable state and 17 on an actual memory error. Leave it
+# off so a run means something, and hunt leaks explicitly with
+# --test_env=ASAN_OPTIONS=detect_leaks=1.
+build:asan --test_env=ASAN_OPTIONS=detect_leaks=0
 
 # Settings for --config=tsan thread sanitizer build
 build:tsan --strip=never
@@ -253,6 +262,10 @@ build --jobs=200
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache
 
+# SourceForge downloads fall back to the BCR's Cloudflare mirror, so a
+# SourceForge outage does not fail a fetch. See bazel/downloader.cfg.
+common --downloader_config=bazel/downloader.cfg
+
 # CI only needs to know if the build succeeded, not the artifacts themselves.
 build:ci --remote_download_minimal
 build:ci --remote_upload_local_results=true
@@ -260,6 +273,11 @@ build:ci --remote_upload_local_results=true
 build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
+# CI fails on any compiler warning in our own sources, including the sources
+# generated from them (SWIG wrappers etc.). Vendored third-party/ code and
+# external repos stay exempt. Local builds keep warnings as warnings.
+build:ci --per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
+build:ci --host_per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
 
 # Launch py_binary via a shell stub instead of rules_python's legacy python
 # stub, whose '#!/usr/bin/env python3' shebang needs a host python3 before
@@ -275,13 +293,44 @@ build --remote_upload_local_results=false
 build:ci --remote_cache=grpcs://bazel.precisioninno.com:443
 build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 
-# Without this, bazelisk build ... builds the bazel-orfs tests
-build --build_tag_filters=-orfs
-
 # clang-tidy via aspect_rules_lint, using clang-tidy from the LLVM toolchain.
 # Usage: bazel build --config=lint //src/utl/...
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
 build:lint --output_groups=rules_lint_report
 build:lint --remote_download_outputs=all
+
+# Telling real work from cache hits.
+#
+# The console counter ("[7,203 / 18,048] Compiling detailed_abu.cxx; 20s
+# disk-cache, remote-cache, processwrapper-sandbox") advances for cache hits
+# and real compiles alike. The strategy list is the sequence of stages the
+# action has passed through, so the last entry is what is happening right now:
+# a trailing local strategy (processwrapper-sandbox, linux-sandbox, local)
+# means both caches missed and the compiler is running. A cache hit reaches no
+# local strategy and disappears within a fraction of a second. The
+# end-of-build "INFO: N processes: ..." line breaks the whole build down by
+# runner (action cache hit / disk cache hit / remote cache hit / the local
+# strategies), and needs no flags.
+#
+# --config=explain adds, per action that was not served from the action cache,
+# the reason Bazel considered it out of date.
+# Usage: bazelisk build --config=explain //src/dpl:dpl
+build:explain --explain=bazel-cachelog-explain.txt
+build:explain --verbose_explanations
+
+# --config=cachelog additionally records every spawn Bazel looked up or ran
+# along with the runner that served it, for etc/bazel-cache-summary.py. Each
+# record carries the spawn's full input list, a few MB per executed action, so
+# this is meant for incremental builds rather than for building everything.
+# Usage: bazelisk build --config=cachelog //src/dpl:dpl
+#        etc/bazel-cache-summary.py
+build:cachelog --config=explain
+build:cachelog --execution_log_json_file=bazel-cachelog.json
+
+# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Usage: bazel build --config=release //...
+build:release --stamp
+# Tell the 'release' config to include 'opt'
+build:release --config=opt
 
 try-import %workspace%/user.bazelrc

@@ -14,7 +14,6 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "connection.h"
-#include "gui/gui.h"
 #include "ir_network.h"
 #include "ir_solver.h"
 #include "node.h"
@@ -23,6 +22,7 @@
 #include "odb/geom.h"
 #include "shape.h"
 #include "sta/Scene.hh"
+#include "web/core.h"
 
 namespace psm {
 
@@ -73,14 +73,14 @@ bool NodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   return true;
 }
 
-gui::Descriptor::Properties NodeDescriptor::getProperties(
+web::Descriptor::Properties NodeDescriptor::getProperties(
     const std::any& object) const
 {
   auto node = std::any_cast<Node*>(object);
 
-  gui::Descriptor::Properties props;
+  web::Descriptor::Properties props;
 
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   auto solver = getSolver(node);
   if (solver == nullptr) {
     return props;
@@ -95,12 +95,12 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(
   props.push_back({"Layer", gui->makeSelected(node->getLayer())});
   props.push_back(
       {"X",
-       gui::Descriptor::Property::convert_dbu(node->getPoint().x(), true)});
+       web::Descriptor::Property::convert_dbu(node->getPoint().x(), true)});
   props.push_back(
       {"Y",
-       gui::Descriptor::Property::convert_dbu(node->getPoint().y(), true)});
+       web::Descriptor::Property::convert_dbu(node->getPoint().y(), true)});
 
-  gui::Descriptor::PropertyList net_voltages;
+  web::Descriptor::PropertyList net_voltages;
   for (auto* corner : corners) {
     net_voltages.emplace_back(corner->name(), solver->getNetVoltage(corner));
   }
@@ -108,7 +108,7 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(
     props.push_back({"Net voltage", net_voltages});
   }
 
-  gui::Descriptor::PropertyList voltages;
+  web::Descriptor::PropertyList voltages;
   for (auto* corner : corners) {
     if (!solver->hasSolution(corner)) {
       continue;
@@ -127,12 +127,12 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(
   return props;
 }
 
-gui::Selected NodeDescriptor::makeSelected(const std::any& object) const
+web::Selected NodeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto node = std::any_cast<Node*>(&object)) {
-    return gui::Selected(*node, this);
+    return web::Selected(*node, this);
   }
-  return gui::Selected();
+  return web::Selected();
 }
 
 bool NodeDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -143,7 +143,7 @@ bool NodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void NodeDescriptor::highlight(const std::any& object,
-                               gui::Painter& painter) const
+                               web::Painter& painter) const
 {
   auto node = std::any_cast<Node*>(object);
   auto& pt = node->getPoint();
@@ -171,25 +171,25 @@ bool ITermNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   return true;
 }
 
-gui::Descriptor::Properties ITermNodeDescriptor::getProperties(
+web::Descriptor::Properties ITermNodeDescriptor::getProperties(
     const std::any& object) const
 {
   auto node = std::any_cast<ITermNode*>(object);
 
   auto props = NodeDescriptor::getProperties(static_cast<Node*>(node));
 
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   props.push_back({"ITerm", gui->makeSelected(node->getITerm())});
 
   return props;
 }
 
-gui::Selected ITermNodeDescriptor::makeSelected(const std::any& object) const
+web::Selected ITermNodeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto node = std::any_cast<ITermNode*>(&object)) {
-    return gui::Selected(*node, this);
+    return web::Selected(*node, this);
   }
-  return gui::Selected();
+  return web::Selected();
 }
 
 bool ITermNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -200,7 +200,7 @@ bool ITermNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void ITermNodeDescriptor::highlight(const std::any& object,
-                                    gui::Painter& painter) const
+                                    web::Painter& painter) const
 {
   auto node = std::any_cast<ITermNode*>(object);
   NodeDescriptor::highlight(static_cast<Node*>(node), painter);
@@ -227,25 +227,25 @@ bool BPinNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   return true;
 }
 
-gui::Descriptor::Properties BPinNodeDescriptor::getProperties(
+web::Descriptor::Properties BPinNodeDescriptor::getProperties(
     const std::any& object) const
 {
   auto node = std::any_cast<BPinNode*>(object);
 
   auto props = NodeDescriptor::getProperties(static_cast<Node*>(node));
 
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   props.push_back({"BTerm", gui->makeSelected(node->getBPin()->getBTerm())});
 
   return props;
 }
 
-gui::Selected BPinNodeDescriptor::makeSelected(const std::any& object) const
+web::Selected BPinNodeDescriptor::makeSelected(const std::any& object) const
 {
   if (auto node = std::any_cast<BPinNode*>(&object)) {
-    return gui::Selected(*node, this);
+    return web::Selected(*node, this);
   }
-  return gui::Selected();
+  return web::Selected();
 }
 
 bool BPinNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -256,7 +256,7 @@ bool BPinNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void BPinNodeDescriptor::highlight(const std::any& object,
-                                   gui::Painter& painter) const
+                                   web::Painter& painter) const
 {
   auto node = std::any_cast<BPinNode*>(object);
   NodeDescriptor::highlight(static_cast<Node*>(node), painter);
@@ -284,14 +284,14 @@ bool ConnectionDescriptor::getBBox(const std::any& object,
   return true;
 }
 
-gui::Descriptor::Properties ConnectionDescriptor::getProperties(
+web::Descriptor::Properties ConnectionDescriptor::getProperties(
     const std::any& object) const
 {
   auto conn = std::any_cast<Connection*>(object);
 
-  gui::Descriptor::Properties props;
+  web::Descriptor::Properties props;
 
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
 
   auto solver = getSolver(conn);
   if (solver == nullptr) {
@@ -309,7 +309,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
 
   props.push_back({"Is via", conn->isVia()});
 
-  gui::Descriptor::PropertyList resistances;
+  web::Descriptor::PropertyList resistances;
   for (auto* corner : corners) {
     const auto res_map = solver->getResistanceMap(corner);
     resistances.emplace_back(corner->name(), conn->getResistance(res_map));
@@ -318,7 +318,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
     props.push_back({"Resistances", resistances});
   }
 
-  gui::Descriptor::PropertyList currents;
+  web::Descriptor::PropertyList currents;
   for (auto* corner : corners) {
     const auto res_map = solver->getResistanceMap(corner);
     const auto cond = conn->getConductance(res_map);
@@ -338,12 +338,12 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
   return props;
 }
 
-gui::Selected ConnectionDescriptor::makeSelected(const std::any& object) const
+web::Selected ConnectionDescriptor::makeSelected(const std::any& object) const
 {
   if (auto conn = std::any_cast<Connection*>(&object)) {
-    return gui::Selected(*conn, this);
+    return web::Selected(*conn, this);
   }
-  return gui::Selected();
+  return web::Selected();
 }
 
 bool ConnectionDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -354,7 +354,7 @@ bool ConnectionDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void ConnectionDescriptor::highlight(const std::any& object,
-                                     gui::Painter& painter) const
+                                     web::Painter& painter) const
 {
   auto conn = std::any_cast<Connection*>(object);
   painter.drawLine(conn->getNode0()->getPoint(), conn->getNode1()->getPoint());
@@ -365,13 +365,13 @@ void ConnectionDescriptor::highlight(const std::any& object,
 DebugGui::DebugGui(IRNetwork* network)
     : network_(network),
       control_group_("PSM: " + network_->getNet()->getName()),
-      shape_color_(gui::Painter::kWhite),
-      node_color_(gui::Painter::kCyan),
-      src_node_color_(gui::Painter::kMagenta),
-      iterm_node_color_(gui::Painter::kRed),
-      bpin_node_color_(gui::Painter::kBlue),
-      connection_color_(gui::Painter::kYellow),
-      term_connection_color_(gui::Painter::kRed),
+      shape_color_(web::Painter::kWhite),
+      node_color_(web::Painter::kCyan),
+      src_node_color_(web::Painter::kMagenta),
+      iterm_node_color_(web::Painter::kRed),
+      bpin_node_color_(web::Painter::kBlue),
+      connection_color_(web::Painter::kYellow),
+      term_connection_color_(web::Painter::kRed),
       found_select_(false)
 {
   addDisplayControl(kShapesText, true);
@@ -382,7 +382,7 @@ DebugGui::DebugGui(IRNetwork* network)
   addDisplayControl(kSourceText, true);
   addDisplayControl(kSourceShapeText, true);
 
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void DebugGui::reset()
@@ -462,7 +462,7 @@ void DebugGui::populate()
   redraw();
 }
 
-void DebugGui::drawShape(const Shape* shape, gui::Painter& painter) const
+void DebugGui::drawShape(const Shape* shape, web::Painter& painter) const
 {
   const bool bold = isSelected(shape);
   if (bold) {
@@ -476,8 +476,8 @@ void DebugGui::drawShape(const Shape* shape, gui::Painter& painter) const
 }
 
 void DebugGui::drawNode(const Node* node,
-                        gui::Painter& painter,
-                        const gui::Painter::Color& color) const
+                        web::Painter& painter,
+                        const web::Painter::Color& color) const
 {
   const bool bold = isSelected(node);
   if (bold) {
@@ -492,11 +492,11 @@ void DebugGui::drawNode(const Node* node,
 }
 
 void DebugGui::drawConnection(const Connection* connection,
-                              gui::Painter& painter) const
+                              web::Painter& painter) const
 {
   const bool is_terminal_connection
       = dynamic_cast<const TermConnection*>(connection) != nullptr;
-  gui::Painter::Color color
+  web::Painter::Color color
       = is_terminal_connection ? term_connection_color_ : connection_color_;
   const bool bold = isSelected(connection);
   if (bold) {
@@ -516,7 +516,7 @@ void DebugGui::drawConnection(const Connection* connection,
   }
 }
 
-void DebugGui::drawSource(const Node* node, gui::Painter& painter) const
+void DebugGui::drawSource(const Node* node, web::Painter& painter) const
 {
   const int src_node_size
       = std::max(kSrcNodeMaxSize,
@@ -527,12 +527,12 @@ void DebugGui::drawSource(const Node* node, gui::Painter& painter) const
   painter.drawCircle(pt.getX(), pt.getY(), src_node_size);
 }
 
-void DebugGui::drawSource(const odb::Rect& rect, gui::Painter& painter) const
+void DebugGui::drawSource(const odb::Rect& rect, web::Painter& painter) const
 {
   painter.drawRect(rect);
 }
 
-void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void DebugGui::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   const odb::Rect& rect = painter.getBounds();
 
@@ -590,7 +590,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (checkDisplayControl(kSourceShapeText)) {
-    gui::Painter::Color color = src_node_color_;
+    web::Painter::Color color = src_node_color_;
     color.a = 100;
     painter.setPen(color, /* cosmetic */ true, 1);
 
@@ -613,7 +613,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  gui::DiscreteLegend legend;
+  web::DiscreteLegend legend;
   legend.addLegendKey(shape_color_, "Shape");
   legend.addLegendKey(node_color_, "Node");
   legend.addLegendKey(iterm_node_color_, "ITerm Node");
@@ -624,7 +624,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   legend.draw(painter);
 }
 
-gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
+web::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
                                    const odb::Rect& region)
 {
   if (layer == nullptr) {
@@ -635,7 +635,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
     }
     found_select_ = false;
   } else {
-    gui::SelectionSet selection;
+    web::SelectionSet selection;
 
     if (checkDisplayControl(kShapesText)) {
       for (auto shape_itr
@@ -651,7 +651,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
            node_itr != nodes_[layer].qend();
            node_itr++) {
         selected_nodes_.insert(*node_itr);
-        selection.insert(gui::Gui::get()->makeSelected(*node_itr));
+        selection.insert(web::Gui::get()->makeSelected(*node_itr));
       }
     }
     if (checkDisplayControl(kItermNodesText)) {
@@ -660,7 +660,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
            node_itr != iterm_nodes_[layer].qend();
            node_itr++) {
         selected_nodes_.insert(*node_itr);
-        selection.insert(gui::Gui::get()->makeSelected(*node_itr));
+        selection.insert(web::Gui::get()->makeSelected(*node_itr));
       }
     }
     if (checkDisplayControl(kBpinNodesText)) {
@@ -669,7 +669,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
            node_itr != bpin_nodes_[layer].qend();
            node_itr++) {
         selected_nodes_.insert(*node_itr);
-        selection.insert(gui::Gui::get()->makeSelected(*node_itr));
+        selection.insert(web::Gui::get()->makeSelected(*node_itr));
       }
     }
     if (checkDisplayControl(kConnectivityText)) {
@@ -678,7 +678,7 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
            conn_itr != connections_[layer].qend();
            conn_itr++) {
         selected_connections_.insert(conn_itr->second);
-        selection.insert(gui::Gui::get()->makeSelected(conn_itr->second));
+        selection.insert(web::Gui::get()->makeSelected(conn_itr->second));
       }
     }
 

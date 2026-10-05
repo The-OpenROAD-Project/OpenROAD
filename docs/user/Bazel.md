@@ -1,5 +1,11 @@
 # Testing local changes with Bazel
 
+```{note}
+Bazel is the supported build system for OpenROAD. The CMake build is
+deprecated and will be removed in a future release; see
+[Installing OpenROAD](Build.md).
+```
+
 First [install Baselisk](https://bazel.build/install/bazelisk), then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
     bazelisk test --jobs=4 src/...
@@ -7,7 +13,7 @@ First [install Baselisk](https://bazel.build/install/bazelisk), then you're read
 - `...` means everything below this folder, so use `src/gpl/...` to run a smaller set of tests.
 - `--jobs=4` limits parallel builds to 4 cores, default is use all cores.
 
-For more comprehensive testing locally, includes longer OpenROAD integration tests and some ORFS smoke tests, install either [podman](https://podman.io/), which works without root permissions or Docker, then run:
+For more comprehensive testing locally, including longer OpenROAD integration tests, run:
 
     bazelisk test ...
 
@@ -69,6 +75,61 @@ shipped to end users; keep the default for the local edit-rebuild loop.
 The CMake build has LTO on by default in Release mode -- see the
 [CMake LTO option](Build.md#lto-options).
 
+## Is it compiling, or hitting the cache?
+
+The console counter advances for cache hits and real compiles alike:
+
+    [7,203 / 18,048] Compiling src/dpl/src/objective/detailed_abu.cxx; 20s disk-cache, remote-cache, processwrapper-sandbox ... (16 actions, 12 running)
+
+The strategy list after the elapsed time is the sequence of stages the action
+has passed through, so the **last entry is what is happening right now**. Above,
+the disk cache missed, the remote cache missed, and the compiler has been
+running for 20s under the process-wrapper sandbox. An action served from a
+cache never reaches a local strategy (`processwrapper-sandbox`, `linux-sandbox`,
+`local`) and disappears within a fraction of a second.
+
+The end-of-build line gives the breakdown for the whole build, with no flags
+needed:
+
+    INFO: 2 processes: 1229 action cache hit, 1 disk cache hit, 1 internal.        # nothing compiled
+    INFO: 2 processes: 1229 action cache hit, 1 internal, 1 processwrapper-sandbox. # one real compile
+
+Three different mechanisms are summarized there:
+
+| Runner | Meaning |
+|--------|---------|
+| `action cache hit` | Bazel's local action cache; the spawn never ran and never appears in the progress display |
+| `disk cache hit`, `remote cache hit` | the action ran, but its outputs were fetched from `--disk_cache`/`--remote_cache` instead of being built |
+| `processwrapper-sandbox`, `linux-sandbox`, `local`, `worker` | actually compiled here |
+
+For which actions those were, and why they were not up to date:
+
+```shell
+bazelisk build --config=cachelog //src/dpl:dpl
+etc/bazel-cache-summary.py
+```
+
+```
+bazel-cachelog.json: 3 spawns
+
+  ran for real: 3 spawns, 16.6s of wall time
+    processwrapper-sandbox              3       16.6s
+
+Slowest of the 3 spawns that ran for real:
+       5.8s  CppCompile     src/dpl/src/objective/detailed_abu.cxx
+       ...
+
+bazel-cachelog-explain.txt: why actions were not up to date
+         3  action changed since cached execution
+            e.g. Compiling src/dpl/src/objective/detailed_hpwl.cxx
+```
+
+`--config=cachelog` writes an execution log recording the runner that served
+every spawn. Each record carries the spawn's full input list -- a few MB per
+executed action -- so use it on incremental builds rather than on a build of
+everything. `--config=explain` is the cheap half on its own: it writes only the
+per-action reason, a few bytes per action.
+
 ## Using OpenROAD as a dependency from another project
 
 OpenROAD can be consumed as a Bazel module (`bazel_dep`) from another
@@ -128,7 +189,6 @@ The following are `dev_dependency` in OpenROAD and will not be forced
 on downstream projects via MVS:
 
 - rules_pkg — only needed for //:install
-- `rules_verilator`, `verilator` — only needed for test/orfs simulation
 - `llvm` (hermetic-llvm) toolchain registration
 
 The downstream test at `test/downstream/` verifies these invariants.
@@ -146,8 +206,18 @@ To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=rele
     bazelisk build --config=release :openroad
     ./bazel-bin/openroad -version
 
-`etc/Build.sh` always passes `--config=release`, so installs made through it
-(including ORFS `build_openroad.sh`) carry the real version.
+A release build reads the version with `git describe`, and gives `unknown` when
+the tree has no git metadata. Set `OPENROAD_VERSION` to supply the version
+directly:
+
+    OPENROAD_VERSION=26Q1 bazelisk build --config=release :openroad
+
+The Docker build needs this, because `.dockerignore` keeps `.git` out of the
+build context. Pass the version with `--build-arg orVersion=<version>`.
+
+`etc/Build.sh` always passes `--config=release` and forwards `OPENROAD_VERSION`,
+so installs made through it (including ORFS `build_openroad.sh` and the Docker
+build) carry the real version.
 
 ## Platforms
 
@@ -173,20 +243,69 @@ Or "nuke it from orbit":
     sudo pkill -9 java
     sudo rm -rf ~/.cache/bazel
 
-## Run tests with [address sanetizers](https://github.com/google/sanitizers/wiki/addresssanitizer):
+## Run tests with the [address sanitizer](https://github.com/google/sanitizers/wiki/addresssanitizer):
 
-    bazelisk test --config=asan src/...
+    bazelisk test --config=asan --test_tag_filters=-py src/...
 
-Example output:
+Or to get an instrumented binary to run under ORFS:
 
-```
-[deleted]
-Direct leak of 18191 byte(s) in 2525 object(s) allocated from:
-    #0 0x5f8556654e04  (/home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/external/org_swig/swig+0x37de04) (BuildId: f982b51b51338154ba961612c62b330f)
-[deleted]
-SUMMARY: AddressSanitizer: 27236 byte(s) leaked in 3801 allocation(s).
-[deleted]
-```
+    bazelisk build --config=asan :openroad
+
+The first `--config=asan` invocation builds compiler-rt's asan runtime from
+source, so expect a few minutes before any OpenROAD source is compiled.
+
+Instrumented code runs roughly 2x slower and uses several times the memory, so
+prefer the smallest design that reproduces the problem.
+
+ASan bundles LeakSanitizer, which reports every allocation still reachable at
+exit. OpenROAD keeps a great deal of state for the life of the process --
+`pdn::PdnGen` holds its grid vias, `sta::TimingArcSet` its arcs -- and none of
+it is freed before `main` returns, so LSan reports all of it. With leak
+checking on, 2648 of 3997 tests fail that way and 17 on an actual memory
+error, which is the wrong signal to leave on by default. The config therefore
+sets `detect_leaks=0`. To go leak hunting anyway:
+
+    bazelisk test --config=asan --test_tag_filters=-py --test_env=ASAN_OPTIONS=detect_leaks=1 src/...
+
+`--test_tag_filters=-py` skips the Python tests; see "Sanitizers and the
+Python extension modules" below for why.
+
+### Known findings
+
+A `--config=asan --test_tag_filters=-py src/...` sweep reports 1053 of 3997
+tests failing, but all but 19 come from one external binary.
+
+The hierarchy conformance suite and `TestLec` shell out to `kepler-formal`,
+which is a prebuilt, uninstrumented binary. It trips a container-overflow
+report and exits 1, failing 1034 tests that have nothing wrong with them:
+
+| Origin | Tests |
+| --- | --- |
+| `//src/dbSta/test:dbsta_hier_conformance_case_*` | 1033 |
+| `//src/tst:TestLec` | 1 |
+
+Both pass under
+`--test_env=ASAN_OPTIONS=detect_leaks=0:detect_container_overflow=0`. The
+config does not set that globally, because the container-overflow asan reports
+in OpenROAD's own code are real -- see `ScanStitch.cpp` below.
+
+That leaves 18 tests on a genuine finding, to be fixed separately:
+
+| Site | Check | Tests |
+| --- | --- | --- |
+| eigen `Core/arch/SSE/PacketMath.h`, `Core/functors/AssignmentFunctors.h` | `heap-buffer-overflow` | 10, via `psm` |
+| `src/dft/src/stitch/ScanStitch.cpp:102` | `container-overflow` | 5 |
+| `src/sta/search/Path.cc:383` | `heap-use-after-free` | 1, via `dbSta` |
+| `src/odb/include/odb/dbCommon.h:26` | `stack-use-after-scope` | 1, in `web` |
+| `spdlog::logger::should_log` reached through `utl::Logger` | `SEGV` | 1, in `web` |
+
+The `dft` one is a plain read past the end: the loop at `ScanStitch.cpp:100`
+runs while `it != scan_cells.end()` and dereferences `*(it + 1)`, so the last
+iteration reads `end()`.
+
+One further test, `//src/grt/test:repair_antennas_post_drt_cugr-tcl_test`,
+times out rather than failing -- instrumented code is slow enough to push it
+past its limit.
 
 ## Run tests with the [thread sanitizer](https://github.com/google/sanitizers/wiki/threadsanitizercppmanual):
 
@@ -294,9 +413,9 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 
 ## Sanitizers and the Python extension modules
 
-`--config=tsan` and `--config=ubsan` cover the C++ and Tcl tests, which run
-the instrumented `openroad` binary. They do **not** work for the `py`-tagged
-tests, which import OpenROAD as a Python extension module:
+`--config=asan`, `--config=tsan` and `--config=ubsan` cover the C++ and Tcl
+tests, which run the instrumented `openroad` binary. They do **not** work for
+the `py`-tagged tests, which import OpenROAD as a Python extension module:
 
     ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
 
@@ -324,7 +443,7 @@ Python counterparts.
 
 The Tcl tests do get instrumented. `test/regression.bzl` normally takes the
 `openroad` binary from the exec configuration, to avoid building it twice when
-it is also used as a build tool by bazel-orfs. The sanitizer configs only
+it is also used as a build tool. The sanitizer configs only
 instrument the target configuration, so under `//bazel:sanitizer_build` the
 rule takes the binary from there instead. Only the binary under test moves;
 swig, bison and the other exec-configuration tools stay uninstrumented, and
@@ -390,11 +509,6 @@ caused by linking a host-built Kokkos into a hermetic OpenROAD binary.
   OpenROAD GPU sources for the new target.
 - The CMake `ENABLE_GPU` flow is unchanged and continues to use the Kokkos and
   KokkosFFT installations selected by its CMake configuration.
-- The ORFS flow targets under `test/orfs` run their stages as build actions,
-  which carry no `ENABLE_GPU` pin, so under `--config=gpu` they place on the
-  GPU. The GPU placer is not bit-identical to the CPU one and the gcd/asap7
-  metadata rules are tuned for the CPU result, so `//test/orfs/...` is not
-  expected to pass under `--config=gpu`; run it on the default build.
 - After upgrading CUDA in place, run `bazelisk shutdown` (or change
   `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
   file list.
@@ -451,80 +565,13 @@ Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, em
     708	      if (pt.x() == x && pt.y() == y) {
     709	        return true;
 
-## Creating an ORFS issue with bazel-orfs targets using `//:deps`
+## Debugging ORFS flow failures
 
-Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can find if carefully searching the logs for `ERROR:` and looking for `target`:
-
-    $ bazelisk test //test/orfs/mock-array:MockArray_test
-    [deleted]
-    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
-    [deleted]
-    [ERROR MPL-0040] Failed on cluster root
-    Error: macro_place.tcl, 5 MPL-0040
-    [deleted]
-    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
-
-To create an ORFS `make issue`, follow these steps:
-
-    bazelisk run //:deps -- //test/orfs/mock-array:MockArray_floorplan
-
-- In Bazel `//test/orfs/mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
-- bazel-orfs provides a `//:deps` wrapper that builds only the `deps` output group (cheap config/template operations) and deploys the dependencies for running `make do-floorplan`. The same works for any stage: synth, place, cts, grt, route or final.
-- Files are placed in `tmp/test/orfs/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
-
-First run `do-floorplan` until the failure, notice that the `do-` prefix is used to disable the dependency checking in ORFS as bazel-orfs handles dependencies:
-
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make do-floorplan
-
-Now create an issue for e.g. `macro_place.tcl`:
-
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make macro_place_issue
-
-The generated file is placed into the `_main` subfolder:
-
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/_main/macro_place_MockArray_asap7_base_2025-06-19_21-50.tar.gz
-
-## Creating an ORFS issue with bazel-orfs targets using `--sandbox_debug`
-
-Hermeticity in Bazel requires some extra steps when debugging failures. If the action fails, then `--sandbox_debug` can be used. If the action succeeds or it is cached, `--sandbox_debug` does nothing.
-
-If you have a failure in `//test/orfs/mock-array:MockArray_floorplan`, look for `ERROR:` and looking for `target`, find the error:
-
-    $ bazelisk test //test/orfs/mock-array:MockArray_test
-    [deleted]
-    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
-    [deleted]
-    [ERROR MPL-0040] Failed on cluster root
-    Error: macro_place.tcl, 5 MPL-0040
-    [deleted]
-    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
-
-Use `--sandbox_debug` to keep the files around after failure:
-
-    bazelisk build //test/orfs/mock-array:MockArray_floorplan --sandbox_debug
-
-Scan the log for setting up the shell and enviornment variables without linux-sandbox.
-
-    (cd /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/sandbox/linux-sandbox/8901/execroot/_main && \
-    exec env - \
-        DESIGN_CONFIG=bazel-out/k8-fastbuild/bin/test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.mk \
-        [deleted]
-    /home/oyvind/.cache/bazel/_bazel_oyvind/install/772f324362dbeab9bc869b8fb3248094/linux-sandbox -t 15 -w /dev/shm -w /home/oyvind/.cache/bazel/_bazel_oyvind/
-    [deleted]
-    /mock-array/reports/asap7/MockArray/base/2_floorplan_final.rpt && external/bazel-orfs++orfs_repositories+docker_orfs/usr/bin/make $@' '' --file external/bazel-orfs++orfs_repositories+docker_orfs/OpenROAD-flow-scripts/flow/Makefile do-floorplan)
-
-Do a bit of suregery to remove the `linux-sandbox` and `exec env -` part, which can be a bit tempremental, to launch a bash shell. This leaves you with a) changing directory b) setting up environment variables c) launching bash shell:
-
-    (cd /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/sandbox/linux-sandbox/8901/execroot/_main && \
-        DESIGN_CONFIG=bazel-out/k8-fastbuild/bin/test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.mk \
-        [deleted]
-    bash)
-
-Now run `make issue` as usual:
-
-    $ make --file external/bazel-orfs++orfs_repositories+docker_orfs/OpenROAD-flow-scripts/flow/Makefile macro_place_issue
-    Archiving issue to macro_place_MockArray_asap7_base_2025-06-20_12-57.tar.gz
-    Using pigz to compress tar file
+OpenROAD CI does not run ORFS flows; flow-level integration is tested in
+[ORFS](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) and
+[bazel-orfs](https://github.com/The-OpenROAD-Project/bazel-orfs). Run the ORFS
+flow with your OpenROAD build as shown above, and use ORFS `make <stage>_issue`
+(or bazel-orfs' `//:deps` workflow) to create a standalone test case.
 
 ## Some OpenROAD and OpenSTA Bazel Specifics
 
@@ -533,7 +580,7 @@ Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) conf
 In the OpenROAD Bazel build:
 
 - `bazelisk build ...` builds all targets in the **target configuration** (`cfg=target`), assuming you're building for deployment or installation.
-- `bazelisk test ...`, on the other hand, uses OpenROAD and OpenSTA **as host tools**, meaning they are built and run in the **execution configuration** (`cfg=exec`), often to run tests or launch `bazel-orfs` builds.
+- `bazelisk test ...`, on the other hand, uses OpenROAD and OpenSTA **as host tools**, meaning they are built and run in the **execution configuration** (`cfg=exec`), to run tests.
 
 ### ⚠️ Avoiding Redundant Builds
 
@@ -634,33 +681,15 @@ OpenSTA has an additional challenge in that only the https://github.com/The-Open
 
 ## Testing the GUI with gcd on a pull request by number
 
-To test a PR with the GUI on gcd, run:
+To test a PR with the GUI on gcd, build the PR and run ORFS with it:
 
 ```
     $ git fetch origin pull/7856/head
     $ git checkout FETCH_HEAD
-    $ bazelisk run test/orfs/gcd:gcd_final gui_final
+    $ bazelisk build //:openroad
+    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk
+    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk gui_final
 ```
-
-This will:
-
-- fetch and checkout pull request 7856
-- build OpenROAD
-- run bazel-orfs flow on gcd
-- set up ORFS project in `tmp/test/orfs/gcd/gcd_final/`
-- launch the GUI opening gui_final gcd
-
-`bazelisk run test/orfs/gcd:gcd_final` run alone would set up the project. Additional arguments are forwarded to the `tmp/test/orfs/gcd/gcd_final/make` script.
-
-## Hacking ORFS with `//test/orfs/gcd:gcd_test` test case
-
-First set up a local work folder with all dependencies for the step that you want to work on:
-
-    bazelisk run //:deps -- //test/orfs/gcd:gcd_floorplan
-
-Now run make directly with the work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
-
-    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir tmp/test/orfs/gcd/gcd_floorplan_deps/_main DESIGN_CONFIG=config.mk do-floorplan
 
 ## Whittling down .odb files
 
@@ -670,29 +699,22 @@ Consider an error such as:
 
     [ERROR GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
 
-First set up a folder with all the dependencies to run global placement:
+Run the following from the `flow/` directory of an ORFS checkout, with
+`OPENROAD_EXE` pointing at your build. First run up to the failing stage and
+stop with ctrl-c on the step that you want to run the whittling down on:
 
-    bazelisk run //:deps -- //test/orfs/gcd:gcd_place
-
-Drop into a shell that has the build environment set up:
-
-    $ tmp/test/orfs/gcd/gcd_place_deps/make bash
-    Makefile Environment  tmp/test/orfs/gcd/gcd_place_deps/_main
-
-Run up to the failing stage and stop with ctrl-c on the step that you want to run the whittling down on:
-
-    make --file=$FLOW_HOME/Makefile do-place
+    make DESIGN_CONFIG=designs/asap7/gcd/config.mk place
 
 Now run the whittler with stock `python3` — no extra packages needed beyond
 the standard library. You are responsible for having `openroad` on your
 `PATH` first (e.g. after `bazelisk run //:install` and `source env.sh` in
-an ORFS checkout):
+the ORFS checkout). `$OPENROAD` below is your OpenROAD checkout:
 
-    python3 etc/whittle.py --error_string GPL-0305 --base_db_path 3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
+    python3 $OPENROAD/etc/whittle.py --error_string GPL-0305 --base_db_path results/asap7/gcd/base/3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make DESIGN_CONFIG=designs/asap7/gcd/config.mk do-3_3_place_gp"
 
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
-    tmp/test/orfs/gcd/gcd_place_deps/make global_place_issue
+    make DESIGN_CONFIG=designs/asap7/gcd/config.mk global_place_issue
 
 ### Monitoring progress
 

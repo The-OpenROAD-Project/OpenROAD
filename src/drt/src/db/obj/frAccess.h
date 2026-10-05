@@ -86,14 +86,11 @@ class frAccessPoint : public frBlockObject
   bool hasViaDef(int numCut = 1, int idx = 0) const
   {
     // first check numCuts
-    int numCutIdx = numCut - 1;
-    if (numCutIdx >= 0 && numCutIdx < (int) viaDefs_.size()) {
-      ;
-    } else {
+    if (numCut < 1 || numCut > (int) viaDefs_.size()) {
       return false;
     }
     // then check idx
-    if (idx >= 0 && idx < (int) (viaDefs_[numCutIdx].size())) {
+    if (idx >= 0 && idx < (int) viaDefs_[numCut - 1].size()) {
       return true;
     }
     return false;
@@ -234,7 +231,7 @@ class frPinAccess : public frBlockObject
     return aps_;
   }
   frAccessPoint* getAccessPoint(int idx) const { return aps_[idx].get(); }
-  int getNumAccessPoints() const { return aps_.size(); }
+  int getNumAccessPoints() const { return (int) aps_.size(); }
   frPin* getPin() const { return pin_; }
   // setters
   void addAccessPoint(std::unique_ptr<frAccessPoint> in)

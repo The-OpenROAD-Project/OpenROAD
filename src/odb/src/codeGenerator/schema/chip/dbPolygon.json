@@ -31,6 +31,13 @@
       "default": "0"
     },
     {
+      "name":"min_spacing_",
+      "type":"int",
+      "flags":["no-set"],
+      "default": "-1",
+      "schema":"kSchemaPolygonMinSpacing"
+    },
+    {
       "name": "owner_",
       "type": "uint32_t",
       "flags": [

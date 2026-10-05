@@ -10,11 +10,17 @@ package(features = ["layering_check"])
 ALL_TESTS = [
     "supported",
     "clocktree_virtual_clock",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "clocktree_virtual_clock",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
 ]
 
 filegroup(

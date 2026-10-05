@@ -101,7 +101,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void setTitle(const std::string& title);
 
   // Return the selected set
-  const SelectionSet& selection();
+  const web::SelectionSet& selection();
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -126,7 +126,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void pause(int timeout);
 
   // The selected set of objects has changed
-  void selectionChanged(const Selected& selection = Selected());
+  void selectionChanged(const web::Selected& selection = web::Selected());
 
   // The highlight set of objects has changed
   void highlightChanged();
@@ -140,10 +140,10 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void displayUnitsChanged(int dbu_per_micron, bool use_dbu);
 
   // Find selection in the CTS Viewer
-  void findInCts(const Selected& selection);
+  void findInCts(const web::Selected& selection);
 
   // Find selections in the CTS Viewer
-  void findInCts(const SelectionSet& selection);
+  void findInCts(const web::SelectionSet& selection);
 
  public slots:
   // Save the current state into settings for the next session.
@@ -153,39 +153,42 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void setLocation(int x, int y);
 
   // Update selected name in status bar
-  void updateSelectedStatus(const Selected& selection);
+  void updateSelectedStatus(const web::Selected& selection);
 
   // Add to the selection
-  void addSelected(const Selected& selection, bool find_in_cts = false);
+  void addSelected(const web::Selected& selection, bool find_in_cts = false);
 
   // Add the selections to the current selections
-  void addSelected(const SelectionSet& selections, bool find_in_cts = false);
+  void addSelected(const web::SelectionSet& selections,
+                   bool find_in_cts = false);
 
   // Sets and replaces the current selections
-  void setSelected(const SelectionSet& selections);
+  void setSelected(const web::SelectionSet& selections);
 
   // Remove a selection from the set of selections
-  void removeSelected(const Selected& selection);
+  void removeSelected(const web::Selected& selection);
 
   // Remove a selection type from the set of selections
   void removeSelectedByType(const std::string& type);
 
   // Displays the selection in the status bar
-  void setSelected(const Selected& selection, bool show_connectivity = false);
+  void setSelected(const web::Selected& selection,
+                   bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& highlights, int highlight_group = -1);
+  void addHighlighted(const web::SelectionSet& highlights,
+                      int highlight_group = -1);
 
   // Remove a selection from the set of highlights
-  void removeHighlighted(const Selected& selection);
+  void removeHighlighted(const web::Selected& selection);
 
   // Add Label to Layout View
   std::string addLabel(int x,
                        int y,
                        const std::string& text,
-                       std::optional<Painter::Color> color = {},
+                       std::optional<web::Painter::Color> color = {},
                        std::optional<int> size = {},
-                       std::optional<Painter::Anchor> anchor = {},
+                       std::optional<web::Painter::Anchor> anchor = {},
                        std::optional<std::string> name = {});
 
   // Delete Label from Layout View
@@ -207,8 +210,9 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void deleteRuler(const std::string& name);
 
   // Add the selections(List) to highlight set
-  void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
-                            int highlight_group = -1);
+  void updateHighlightedSet(
+      const QList<const web::Selected*>& items_to_highlight,
+      int highlight_group = -1);
 
   // Higlight set will be cleared with this explicit call
   void clearHighlighted(int highlight_group = -1 /* -1 : clear all Groups */);
@@ -216,11 +220,11 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // Clear Rulers
   void clearRulers();
 
-  // Remove items from the Selected Set
-  void removeFromSelected(const QList<const Selected*>& items);
+  // Remove items from the web::Selected Set
+  void removeFromSelected(const QList<const web::Selected*>& items);
 
   // Remove items from the Highlighted Set
-  void removeFromHighlighted(const QList<const Selected*>& items,
+  void removeFromHighlighted(const QList<const web::Selected*>& items,
                              int highlight_group
                              = -1 /* Search and remove...*/);
 
@@ -231,7 +235,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void zoomTo(const odb::Point& focus, int diameter);
 
   // Zoom In To Items such that its bbox is in visible Area
-  void zoomInToItems(const QList<const Selected*>& items);
+  void zoomInToItems(const QList<const web::Selected*>& items);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -273,11 +277,11 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void selectHighlightConnectedBufferTrees(bool select_flag,
                                            int highlight_group = 0);
 
-  void timingCone(Gui::Term term, bool fanin, bool fanout);
-  void timingPathsThrough(const std::set<Gui::Term>& terms);
+  void timingCone(web::Gui::Term term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<web::Gui::Term>& terms);
 
-  void registerHeatMap(HeatMapDataSource* heatmap);
-  void unregisterHeatMap(HeatMapDataSource* heatmap);
+  void registerHeatMap(web::HeatMapDataSource* heatmap);
+  void unregisterHeatMap(web::HeatMapDataSource* heatmap);
 
  private slots:
   void setUseDBU(bool use_dbu);
@@ -320,8 +324,8 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
-  SelectionSet selected_;
-  HighlightSet highlighted_;
+  web::SelectionSet selected_;
+  web::HighlightSet highlighted_;
   Rulers rulers_;
   Labels labels_;
 
@@ -390,7 +394,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
 
   // heat map actions
-  std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+  std::map<web::HeatMapDataSource*, QAction*> heatmap_actions_;
 
   std::unique_ptr<utl::Progress> cli_progress_ = nullptr;
 

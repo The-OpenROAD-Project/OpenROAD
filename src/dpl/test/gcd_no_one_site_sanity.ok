@@ -21,8 +21,10 @@ Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 0.
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                  17
 total displacement          0.1 u
 average displacement        0.0 u
 max displacement            0.1 u
@@ -43,8 +45,10 @@ delta HPWL                    0 %
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 549 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   0
 total displacement          0.0 u
 average displacement        0.0 u
 max displacement            0.0 u
@@ -65,8 +69,10 @@ delta HPWL                    0 %
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 549 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   0
 total displacement          0.0 u
 average displacement        0.0 u
 max displacement            0.0 u
@@ -87,8 +93,10 @@ delta HPWL                    0 %
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 549 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   0
 total displacement          0.0 u
 average displacement        0.0 u
 max displacement            0.0 u
@@ -109,8 +117,10 @@ delta HPWL                    0 %
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 549 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   0
 total displacement          0.0 u
 average displacement        0.0 u
 max displacement            0.0 u
@@ -131,8 +141,10 @@ delta HPWL                    0 %
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 549 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   0
 total displacement          0.0 u
 average displacement        0.0 u
 max displacement            0.0 u

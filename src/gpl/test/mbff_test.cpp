@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "ant/AntennaChecker.hh"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
@@ -40,6 +40,15 @@ class MBFFTestPeer
   }
 
   static void ReadLibs(MBFF* uut) { uut->ReadLibs(); }
+
+  static void KMeans(MBFF* uut,
+                     const std::vector<Flop>& flops,
+                     int knn,
+                     std::vector<std::vector<Flop>>& clusters,
+                     const std::vector<int>& rand_nums)
+  {
+    uut->KMeans(flops, knn, clusters, rand_nums);
+  }
 };
 
 namespace {
@@ -174,6 +183,57 @@ TEST_F(MBFFTestFixture, ReadLibsSuccessfullyProcessesTestCells)
   // nested inside a test_cell block. Without consistent Liberty cell views,
   // GetPinMapping returns empty vectors and triggers an out-of-bounds crash.
   EXPECT_NO_FATAL_FAILURE(MBFFTestPeer::ReadLibs(mbff_.get()));
+}
+
+TEST_F(MBFFTestFixture, KMeansHandlesColocatedFlopsWithoutCrashing)
+{
+  // Prior to legalization (dpl), flip-flops in global placement can sit on
+  // top of each other at identical (x, y) coordinates (or have fewer than knn
+  // unique locations), making tot_sum == 0 in KMeans. This must not crash.
+  std::vector<Flop> flops = {
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 0, .prob = 0.0},
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 1, .prob = 0.0},
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 2, .prob = 0.0},
+      Flop{.pt = Point{.x = 100.0, .y = 100.0}, .idx = 3, .prob = 0.0},
+  };
+  std::vector<std::vector<Flop>> clusters;
+  std::vector<int> rand_nums = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+  EXPECT_NO_FATAL_FAILURE(
+      MBFFTestPeer::KMeans(mbff_.get(), flops, /*knn=*/2, clusters, rand_nums));
+  ASSERT_EQ(clusters.size(), 2);
+  // KMeans appends the cluster center to the back of each cluster vector.
+  int total_assigned = 0;
+  for (auto& cluster : clusters) {
+    ASSERT_FALSE(cluster.empty());
+    cluster.pop_back();  // remove center
+    total_assigned += cluster.size();
+  }
+  EXPECT_EQ(total_assigned, flops.size());
+}
+
+TEST_F(MBFFTestFixture, KMeansHandlesColocatedFlopsWithMultipleClusters)
+{
+  std::vector<Flop> flops = {
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 0, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 1, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 2, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 3, .prob = 0.0},
+      Flop{.pt = Point{.x = 50.0, .y = 50.0}, .idx = 4, .prob = 0.0},
+  };
+  std::vector<std::vector<Flop>> clusters;
+  std::vector<int> rand_nums = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+
+  EXPECT_NO_FATAL_FAILURE(
+      MBFFTestPeer::KMeans(mbff_.get(), flops, /*knn=*/3, clusters, rand_nums));
+  ASSERT_EQ(clusters.size(), 3);
+  int total_assigned = 0;
+  for (auto& cluster : clusters) {
+    ASSERT_FALSE(cluster.empty());
+    cluster.pop_back();
+    total_assigned += cluster.size();
+  }
+  EXPECT_EQ(total_assigned, flops.size());
 }
 
 }  // namespace

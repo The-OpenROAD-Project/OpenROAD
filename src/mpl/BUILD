@@ -51,26 +51,8 @@ cc_library(
     ],
 )
 
-# Headers owned by :mpl but also consumed by :ui. Kept package-private so
-# nothing outside //src/mpl can depend on them.
 cc_library(
-    name = "mpl_private_hdrs",
-    hdrs = [
-        "src/MplObserver.h",
-        "src/clusterEngine.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        ":pusher",
-        "//src/odb/src/db",
-    ],
-)
-
-cc_library(
-    name = "mpl",
+    name = "mpl_impl",
     srcs = [
         "src/SACoreHardMacro.cpp",
         "src/SACoreHardMacro.h",
@@ -85,12 +67,17 @@ cc_library(
     ],
     hdrs = [
         "include/mpl/rtl_mp.h",
+        "src/MplObserver.h",
+        "src/clusterEngine.h",
     ],
     includes = [
         "include",
+        "src",
+    ],
+    visibility = [
+        "//src/mpl:__subpackages__",
     ],
     deps = [
-        ":mpl_private_hdrs",
         ":pusher",
         ":snapper",
         "//src/dbSta:dbNetwork",
@@ -100,6 +87,21 @@ cc_library(
         "//src/utl",
         "@boost.polygon",
         "@boost.random",
+    ],
+)
+
+cc_library(
+    name = "mpl",
+    hdrs = [
+        "include/mpl/rtl_mp.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":mpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
     ],
 )
 
@@ -120,13 +122,12 @@ cc_library(
         "src",
     ],
     deps = [
-        ":mpl",
-        ":mpl_private_hdrs",
+        ":mpl_impl",
         ":pusher",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

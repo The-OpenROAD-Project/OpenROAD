@@ -7,6 +7,7 @@ import {
     BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
     tileSizeFields, withDeviceExactTileSize,
 } from './tile-request.js';
+import { tileMayHaveContent } from './layer-extents.js';
 
 // Imported AND re-exported: `export { x } from '...'` alone re-exports without
 // creating a local binding, so _clampZoom below would reference an undefined
@@ -101,6 +102,12 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             // when the tile is discarded (e.g. during zoom).
             tile._websocketRequestId = this._websocketManager.nextId;
 
+            if (!tileMayHaveContent(ctx, this._layerName, coords)) {
+                tile._websocketRequestId = undefined;
+                applyTilePayload(tile, null);
+                return tile;
+            }
+
             this._websocketManager.request(
                 buildTileRequest(coords, this._layerName, ctx)
             ).then(data => {
@@ -130,6 +137,12 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 // Cancel any pending request for this tile
                 if (tile._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile._websocketRequestId);
+                }
+
+                if (!tileMayHaveContent(ctx, this._layerName, coords)) {
+                    tile._websocketRequestId = undefined;
+                    applyTilePayload(tile, null);
+                    continue;
                 }
 
                 tile._websocketRequestId = this._websocketManager.nextId;
@@ -175,7 +188,16 @@ export function createOverlayTileLayer(visibility, app) {
             // and no longer sits exactly on the shape it highlights.
             ...tileSizeFields(currentDpr(), tileSize),
             debug_renderers: !!visibility.debug_renderers,
+            // The overlay tile carries the layer-independent
+            // Renderer::drawObjects pass, so it needs the same pause/live gate
+            // the layer tiles get through TileVisibility.
+            debug_live: !!visibility.debug_live,
             flywires_only: !!visibility.flywires_only,
+            // Options > "Show polygon decomposition" (2.15).  Not a display
+            // control: the server owns the value and hands it to every client,
+            // and echoing it back is how a session learns its highlight shapes
+            // were derived under the previous setting.
+            poly_decomp: !!(app && app.polyDecomp),
             focused_nets_guides: !!visibility.focused_nets_guides,
             highlight_selected: visibility.highlight_selected !== false,
             // User labels (2.12) are server-drawn; honor the "Labels" toggle.
