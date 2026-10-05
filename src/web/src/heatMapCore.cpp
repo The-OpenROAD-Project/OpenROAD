@@ -1225,10 +1225,10 @@ bool PowerDensityDataSource::populateMap()
         pwr += power.internal();
       }
       if (include_leakage_) {
-        pwr += power.switching();
+        pwr += power.leakage();
       }
       if (include_switching_) {
-        pwr += power.leakage();
+        pwr += power.switching();
       }
     }
 
