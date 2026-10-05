@@ -2142,20 +2142,6 @@ std::optional<bool> growsVertically(const odb::Rect& pin,
   return std::nullopt;
 }
 
-std::string directionName(const odb::Point& normal)
-{
-  if (normal.y() > 0) {
-    return "north";
-  }
-  if (normal.y() < 0) {
-    return "south";
-  }
-  if (normal.x() > 0) {
-    return "east";
-  }
-  return "west";
-}
-
 // True for a shape this pass has already grown out of some other pin of the
 // same macro.  One is on the right net and would serve, but it is also being
 // invented as the pass runs, so letting it be a target would make what each
@@ -2168,30 +2154,48 @@ bool isMacroEdgeConnection(const Shape* shape)
          && component->type() == GridComponent::kMacroEdgeConnect;
 }
 
-// The nearest shape off the face of pin that normal points out of, limited to
-// the ones a via could actually be dropped on: the same net, crossing the pin
-// rather than running alongside it, and covering the whole of its width.  A
+// Whether a direction out of a macro runs along y.  Only the four compass
+// values ever reach here: odb's UP and DOWN are via directions and NONE is the
+// absence of one, and none of the three is a way out of a macro.
+bool isVertical(const odb::dbDirection direction)
+{
+  return direction == odb::dbDirection::NORTH
+         || direction == odb::dbDirection::SOUTH;
+}
+
+// The nearest shape off the face of pin that direction points out of, limited
+// to the ones a via could actually be dropped on: the same net, crossing the
+// pin rather than running alongside it, and covering the whole of its width.  A
 // shape that already overlaps the pin is not a candidate -- it has had its
 // chance at a via, and growing the pin cannot give it another.
 ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
                            const odb::Rect& pin,
-                           const odb::Point& normal,
+                           const odb::dbDirection direction,
                            const odb::Rect& die,
                            odb::dbNet* net,
                            int& distance)
 {
   odb::Rect band = pin;
-  if (normal.y() > 0) {
-    band.set_yhi(die.yMax());
-  } else if (normal.y() < 0) {
-    band.set_ylo(die.yMin());
-  } else if (normal.x() > 0) {
-    band.set_xhi(die.xMax());
-  } else {
-    band.set_xlo(die.xMin());
+  switch (direction.getValue()) {
+    case odb::dbDirection::NORTH:
+      band.set_yhi(die.yMax());
+      break;
+    case odb::dbDirection::SOUTH:
+      band.set_ylo(die.yMin());
+      break;
+    case odb::dbDirection::EAST:
+      band.set_xhi(die.xMax());
+      break;
+    case odb::dbDirection::WEST:
+      band.set_xlo(die.xMin());
+      break;
+    case odb::dbDirection::NONE:
+    case odb::dbDirection::UP:
+    case odb::dbDirection::DOWN:
+      return nullptr;
   }
 
-  const bool is_vertical = normal.y() != 0;
+  const bool is_vertical = isVertical(direction);
 
   ShapePtr closest = nullptr;
   distance = std::numeric_limits<int>::max();
@@ -2218,14 +2222,23 @@ ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
     }
 
     int new_distance = 0;
-    if (normal.y() > 0) {
-      new_distance = rect.yMin() - pin.yMax();
-    } else if (normal.y() < 0) {
-      new_distance = pin.yMin() - rect.yMax();
-    } else if (normal.x() > 0) {
-      new_distance = rect.xMin() - pin.xMax();
-    } else {
-      new_distance = pin.xMin() - rect.xMax();
+    switch (direction.getValue()) {
+      case odb::dbDirection::NORTH:
+        new_distance = rect.yMin() - pin.yMax();
+        break;
+      case odb::dbDirection::SOUTH:
+        new_distance = pin.yMin() - rect.yMax();
+        break;
+      case odb::dbDirection::EAST:
+        new_distance = rect.xMin() - pin.xMax();
+        break;
+      case odb::dbDirection::WEST:
+        new_distance = pin.xMin() - rect.xMax();
+        break;
+      case odb::dbDirection::NONE:
+      case odb::dbDirection::UP:
+      case odb::dbDirection::DOWN:
+        continue;
     }
 
     if (new_distance <= 0 || new_distance >= distance) {
@@ -2242,10 +2255,36 @@ ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
 // A way out of a pin: the end it leaves by and the nearest target off it.
 struct LateralCandidate
 {
-  odb::Point normal;
+  odb::dbDirection direction;
   int distance;
   ShapePtr target;
 };
+
+// How much macro stands beyond the given end of a pin -- 0 when the pin ends
+// on a wall, so that end is the way out.  Region takes an outward normal as an
+// odb::Point, and this is the only thing that asks it anything, so it is also
+// the only place the four directions are written as offsets.
+int macroBeyond(const Region& outline,
+                const odb::Rect& pin,
+                const odb::dbDirection direction)
+{
+  switch (direction.getValue()) {
+    case odb::dbDirection::NORTH:
+      return outline.getMarginBeyond(pin, odb::Point(0, 1));
+    case odb::dbDirection::SOUTH:
+      return outline.getMarginBeyond(pin, odb::Point(0, -1));
+    case odb::dbDirection::EAST:
+      return outline.getMarginBeyond(pin, odb::Point(1, 0));
+    case odb::dbDirection::WEST:
+      return outline.getMarginBeyond(pin, odb::Point(-1, 0));
+    case odb::dbDirection::NONE:
+    case odb::dbDirection::UP:
+    case odb::dbDirection::DOWN:
+      break;
+  }
+
+  return 0;
+}
 
 // The supply pin geometry of an instance in placed coordinates, keeping the
 // iterm each rectangle came from.  This is InstanceGrid::getInstancePins split
@@ -2281,6 +2320,14 @@ std::vector<InstancePinRect> getPinRects(odb::dbITerm* iterm,
         // a pin drawn as a via still puts metal on the routing layers
         odb::dbTechVia* tech_via = box->getTechVia();
         if (tech_via == nullptr) {
+          odb::dbVia* via = box->getBlockVia();
+          if (via == nullptr) {
+            continue;
+          }
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : via->getBoxes()) {
+            add(via_box->getTechLayer(), via_box->getBox(), via_transform);
+          }
           continue;
         }
         const odb::dbTransform via_transform(box->getViaXY());
@@ -2303,7 +2350,7 @@ MacroEdgeConnectionStraps::MacroEdgeConnectionStraps(
     odb::dbITerm* iterm,
     odb::dbTechLayer* layer,
     const odb::Rect& pin,
-    const odb::Point& normal,
+    const odb::dbDirection direction,
     const ShapePtr& target,
     std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions)
     // A zero pitch is what keeps Straps from deriving a spacing from it, which
@@ -2311,13 +2358,13 @@ MacroEdgeConnectionStraps::MacroEdgeConnectionStraps(
     : Straps(grid, layer, pin.minDXDY(), /* pitch */ 0),
       iterm_(iterm),
       pin_(pin),
-      normal_(normal),
+      direction_(direction),
       target_(target),
       macro_obstructions_(std::move(macro_obstructions))
 {
   // the wire runs the way the pin grows, whatever the layer prefers
-  setDirection(normal_.y() != 0 ? odb::dbTechLayerDir::VERTICAL
-                                : odb::dbTechLayerDir::HORIZONTAL);
+  setDirection(isVertical(direction_) ? odb::dbTechLayerDir::VERTICAL
+                                      : odb::dbTechLayerDir::HORIZONTAL);
 }
 
 std::string MacroEdgeConnectionStraps::getName() const
@@ -2337,26 +2384,38 @@ void MacroEdgeConnectionStraps::makeShapes(
   // far side of the target so the via has the whole of it to be placed in.
   //
   // The landing is one strap width, which is the least metal that is itself a
-  // legal piece of wire, and the whole pin when the pin is shorter than that.
-  // Covering the pin outright -- which is what a pad connection does, where a
-  // pin is a short stub on the edge of the cell -- would connect the same two
-  // things, but on a macro pin that runs the width of the body it would draw
-  // a wire from one side of the macro to the other to do it.
+  // legal piece of wire.  Covering the pin outright -- which is what a pad
+  // connection does, where a pin is a short stub on the edge of the cell --
+  // would connect the same two things, but on a macro pin that runs the width
+  // of the body it would draw a wire from one side of the macro to the other
+  // to do it.
+  //
+  // The landing always fits: it is the pin's shorter dimension, and the pin
+  // grows along its longer one.
   const int landing = getWidth();
   odb::Rect rect = pin_;
   const odb::Rect& target = target_->getRect();
-  if (normal_.y() > 0) {
-    rect.set_ylo(std::max(pin_.yMin(), pin_.yMax() - landing));
-    rect.set_yhi(target.yMax());
-  } else if (normal_.y() < 0) {
-    rect.set_yhi(std::min(pin_.yMax(), pin_.yMin() + landing));
-    rect.set_ylo(target.yMin());
-  } else if (normal_.x() > 0) {
-    rect.set_xlo(std::max(pin_.xMin(), pin_.xMax() - landing));
-    rect.set_xhi(target.xMax());
-  } else {
-    rect.set_xhi(std::min(pin_.xMax(), pin_.xMin() + landing));
-    rect.set_xlo(target.xMin());
+  switch (direction_.getValue()) {
+    case odb::dbDirection::NORTH:
+      rect.set_ylo(pin_.yMax() - landing);
+      rect.set_yhi(target.yMax());
+      break;
+    case odb::dbDirection::SOUTH:
+      rect.set_yhi(pin_.yMin() + landing);
+      rect.set_ylo(target.yMin());
+      break;
+    case odb::dbDirection::EAST:
+      rect.set_xlo(pin_.xMax() - landing);
+      rect.set_xhi(target.xMax());
+      break;
+    case odb::dbDirection::WEST:
+      rect.set_xhi(pin_.xMin() + landing);
+      rect.set_xlo(target.xMin());
+      break;
+    case odb::dbDirection::NONE:
+    case odb::dbDirection::UP:
+    case odb::dbDirection::DOWN:
+      return;
   }
 
   auto* layer = getLayer();
@@ -2441,7 +2500,7 @@ void MacroEdgeConnectionStraps::report() const
   logger->report("    Pin: {}", getName());
   logger->report("    Net: {}", iterm_->getNet()->getName());
   logger->report("    Layer: {}", getLayer()->getName());
-  logger->report("    Direction: {}", directionName(normal_));
+  logger->report("    Direction: {}", direction_.getString());
   logger->report("    Target: {}", target_->getReportText());
 }
 
@@ -2584,32 +2643,32 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                    pin.layer->getName());
         continue;
       }
-      const std::array<odb::Point, 2> ends
-          = *vertical
-                ? std::array<odb::Point, 2>{odb::Point(0, 1), odb::Point(0, -1)}
-                : std::array<odb::Point, 2>{odb::Point(1, 0),
-                                            odb::Point(-1, 0)};
+      const std::array<odb::dbDirection, 2> ends
+          = *vertical ? std::array<odb::dbDirection, 2>{odb::dbDirection::NORTH,
+                                                        odb::dbDirection::SOUTH}
+                      : std::array<odb::dbDirection, 2>{odb::dbDirection::EAST,
+                                                        odb::dbDirection::WEST};
       const std::array<int, 2> margins
-          = {outline.getMarginBeyond(pin.rect, ends[0]),
-             outline.getMarginBeyond(pin.rect, ends[1])};
+          = {macroBeyond(outline, pin.rect, ends[0]),
+             macroBeyond(outline, pin.rect, ends[1])};
       const int way_out = std::min(margins[0], margins[1]);
 
-      std::vector<odb::Point> normals;
+      std::vector<odb::dbDirection> directions;
       for (size_t i = 0; i < ends.size(); i++) {
         if (margins[i] == way_out) {
-          normals.push_back(ends[i]);
+          directions.push_back(ends[i]);
         }
       }
 
       std::vector<LateralCandidate> candidates;
-      for (const odb::Point& normal : normals) {
+      for (const odb::dbDirection direction : directions) {
         ShapePtr best_target = nullptr;
         int best_distance = std::numeric_limits<int>::max();
         for (auto* search_layer : connectable) {
           search_layer_pair(search_layer, [&](const Shape::ShapeTree& shapes) {
             int distance = 0;
             const ShapePtr target = findLateralTarget(
-                shapes, pin.rect, normal, die, net, distance);
+                shapes, pin.rect, direction, die, net, distance);
             if (target == nullptr || distance >= best_distance) {
               return;
             }
@@ -2624,13 +2683,13 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                      "MacroEdge",
                      1,
                      "No shape {} of {} on {} to reach",
-                     directionName(normal),
+                     direction.getString(),
                      iterm->getName(),
                      pin.layer->getName());
           continue;
         }
 
-        candidates.push_back({normal, best_distance, best_target});
+        candidates.push_back({direction, best_distance, best_target});
       }
 
       std::ranges::sort(candidates, [](const auto& lhs, const auto& rhs) {
@@ -2643,7 +2702,7 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                                                           iterm,
                                                           pin.layer,
                                                           pin.rect,
-                                                          candidate.normal,
+                                                          candidate.direction,
                                                           candidate.target,
                                                           macro_obstructions);
         auto* strap_ptr = strap.get();
@@ -2669,7 +2728,7 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
                    "Connecting {} on {} {} to {}",
                    iterm->getName(),
                    pin.layer->getName(),
-                   directionName(candidate.normal),
+                   candidate.direction.getString(),
                    candidate.target->getReportText());
         added.push_back(strap_ptr);
         break;
