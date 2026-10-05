@@ -108,6 +108,9 @@ void RepairTargetCollector::printViolators(int numPrint = 0) const
       break;
     }
     sta::LibertyPort* port = network_->libertyPort(pin);
+    if (port == nullptr) {
+      continue;
+    }
     sta::LibertyCell* cell = port->libertyCell();
     float slack = pin_data_.at(pin).slack;
     float tns = pin_data_.at(pin).tns;
@@ -1647,9 +1650,11 @@ RepairTargetCollector::collectViolatorsByFanoutTraversal(
   std::set<const sta::Pin*> collected_pins_set;  // Use set to avoid duplicates
   std::queue<sta::Vertex*> to_visit;
 
-  // Include the startpoint pin itself (e.g., flip-flop output)
+  // Include the startpoint pin itself (e.g., flip-flop output). A top-level
+  // input port startpoint has no liberty driver to repair, so only its
+  // fanout is collected.
   const sta::Pin* startpoint_pin = startpoint->pin();
-  if (startpoint_pin) {
+  if (startpoint_pin && !network_->isTopLevelPort(startpoint_pin)) {
     sta::Slack pin_slack = sta_->slack(startpoint_pin,
                                        sta::RiseFall::rise()->asRiseFallBoth(),
                                        sta_->scenes(),
