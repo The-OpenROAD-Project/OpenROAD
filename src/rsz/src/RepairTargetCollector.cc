@@ -2142,11 +2142,11 @@ sta::Slack RepairTargetCollector::computeAdaptiveThreshold(
     }
   }
 
-  if (!in_range && pin_count == 0) {
-    // Even the tightest margin holds more than the target range (or the
-    // cone has no pin near the endpoint slack). The endpoint slack itself
-    // is not a usable threshold: no pin is strictly worse than it, so it
-    // collects nothing. Take the worst pins up to the target range instead.
+  if (!in_range) {
+    // No margin lands in the target range: the tightest one already holds
+    // too many pins, or the widest still holds too few. The endpoint slack
+    // itself is not a usable threshold, since no pin is strictly worse than
+    // it. Take the worst pins up to the target range instead.
     const int keep = std::min(cone_size, kConeMaxTargetPins);
     chosen_threshold
         = keep < cone_size ? pins_with_slack[keep].second : sta::Slack(0.0);
