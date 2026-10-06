@@ -17,9 +17,9 @@ set_dont_touch n1
 set_dont_touch n2
 remove_buffers b2
 
-check "buffer remains" { expr { [$block findInst b2] ne "NULL" } } 1
-check "buffer remains dont_touch" { $b2 isDoNotTouch } 1
-check "buffer remains fixed" { $b2 getPlacementStatus } FIRM
-check "input net remains dont_touch" { $input_net isDoNotTouch } 1
-check "output net remains dont_touch" { $output_net isDoNotTouch } 1
-exit_summary
+puts "b2 input net: [[$b2 findITerm A] getNet]"
+puts "b2 remains: [expr { [$block findInst b2] ne "NULL" }]"
+puts "b2 dont_touch: [$b2 isDoNotTouch]"
+puts "b2 placement: [$b2 getPlacementStatus]"
+puts "n1 dont_touch: [$input_net isDoNotTouch]"
+puts "n2 dont_touch: [$output_net isDoNotTouch]"

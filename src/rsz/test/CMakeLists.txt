@@ -45,6 +45,7 @@ or_integration_tests(
     remove_buffers2
     remove_buffers3
     remove_buffers_dont_touch_rejected
+    remove_buffers_disconnected_input_rejected
     remove_buffers4
     remove_buffers4_hier
     remove_buffers5
@@ -258,7 +259,6 @@ or_integration_tests(
     repair_setup_legacy_mt
     repair_setup_mt1
     repair_design_fixed_driver
-    remove_buffers_disconnected_input_rejected
     gain_buffering_top_port_hier
     cpp_tests
 )
