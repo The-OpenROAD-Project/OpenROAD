@@ -169,9 +169,12 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                2,
                "Processing driver {}",
                network_->pathName(drvr_pin));
-    // Always get the flat net for the top level port.
+    // Always get the flat net for the top level port: in a hierarchical
+    // netlist the port's term net is the top module's dbModNet, which
+    // gain buffering cannot insert buffers on.
     sta::Net* net = network_->isTopLevelPort(drvr_pin)
-                        ? network_->net(network_->term(drvr_pin))
+                        ? db_network_->dbToSta(
+                              db_network_->flatNet(network_->term(drvr_pin)))
                         : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (!net) {
       continue;
