@@ -8,6 +8,7 @@
 
 #include "ord/OpenRoad.hh"
 #include "ram/ram.h"
+#include "ram/regfile.h"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -94,6 +95,17 @@ generate_ram_netlist_cmd(int mask_size,
   ram_gen->generate(mask_size, word_size, num_words, rw_ports, r_ports, w_ports,
                     column_mux_ratio, use_latch, storage_cell, tristate_cell, inv_cell, 
                     tapcell, max_tap_dist);
+}
+
+void generate_regfile_cmd(const char* spec_path,
+                          const char* verilog_path,
+                          const char* def_path,
+                          const char* lef_path,
+                          const char* liberty_path,
+                          const char* check_ports)
+{
+  generateRegfile(ord::getDb(), ord::getLogger(), spec_path, verilog_path,
+                  def_path, lef_path, liberty_path, check_ports);
 }
 
 void ram_pdngen(const char* power_net_name, const char* ground_net_name,

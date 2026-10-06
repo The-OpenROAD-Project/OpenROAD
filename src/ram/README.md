@@ -80,9 +80,67 @@ generate_ram [-mask_size bits]
 | `-use_latch` | If set to `1`, uses a two-phase latch-based design instead of flip-flops for the storage elements. Functionally equivalent to flip-flop design with smaller storage cell area. Default: `0`. |
 | `-write_behavioral_verilog` | Write a behavioral Verilog model of the RAM array to the specified file. |
 
+### Register File Generation
+
+The `generate_regfile` command builds a register file, many read and
+write ports over few words, as an array of placed standard cells: word
+rows by bit columns, each tile a flop, its write select and an AND per
+read port, the read word lines decoded in a header column and the read
+bit lines as OR trees in a footer row. Every cell is placed by
+construction. The block is built into the current database, whose
+libraries must hold the cells the spec names.
+
+```tcl
+generate_regfile -spec file
+                 [-check_ports verilog_file]
+                 [-verilog file]
+                 [-def file]
+                 [-lef file]
+                 [-liberty file]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---------------------- | -------------------------------------- |
+| `-spec` | The spec file, below. |
+| `-check_ports` | A Verilog file declaring the spec's module. The command stops if the module's ports are not the ports the spec names, at the widths the spec implies. |
+| `-verilog` | Write the cells as structural Verilog. |
+| `-def` | Write the placed block as DEF. |
+| `-lef` | Write an abstract LEF of the block. |
+| `-liberty` | Write a timing model; a `_pre_layout.lib` beside it has ideal clocks. |
+
+#### Spec
+
+One key per line, `#` comments:
+
+| Key | Description |
+| ---------------------- | -------------------------------------- |
+| `module name` | The module and block name. |
+| `mode macro\|netlist` | `macro` (default): the block is a macro to its parent. `netlist`: the parent places the cells; the address decode is left unplaced for the parent's placer and resizer, and the abstract's pins sit where their connections land in the array. |
+| `words n`, `bits n` | Depth and width. |
+| `clock port` | The clock port. |
+| `reset port` | A reset port the RTL has and the array ignores. |
+| `read addr data` | A read port, by the module's port names. Repeat per port. |
+| `read_banked addr0 data0 addr1 data1 ...` | A read port with an address and a data port per bank. |
+| `write addr data [en]` | A write port. Repeat per port. |
+| `cell role master` | The cells: `flop`, `and2`, `or2`, `ao22`, `inv`, `tap`. |
+| `pins role pin...` | The pin names of a cell role (`flop`, `and2`, `or2`, `ao22`, `inv`), for a library whose names differ from the defaults. |
+| `flop_output Q\|QN` | Whether the flop's output is inverted. |
+| `pin_layer layer`, `pin_layer_v layer` | The layers of the pins on the left and right edges, and on the top and bottom. |
+| `pin_track offset pitch` | The track grid the pins are centred on, in microns. |
+| `banks n`, `bank_columns n`, `bank_order contiguous\|interleaved` | Word columns side by side, how many of them stand in a row, and how words fall into them. |
+| `bit_folds n` | The word split into `n` bit bands stacked one above the other. |
+| `read_latency 0\|1` | `1` registers each read address on the clock first. |
+| `zero_word n` | A word with no storage that reads 0 and drops writes (RISC-V x0). |
+| `tap_columns n`, `service_sites n` | A tap column every `n` bit columns, and free sites beside each for the clock tree. |
+| `store_name pattern`, `read_reg_name pattern` | Instance names of the flops, from `{word}`, `{bit}`, `{port}` and `{bank}`. |
+| `lib knob value` | The timing model's parameters: `gate_delay_ps`, `wire_factor`, `input_load_ff`, `clock_load_ff`, `leakage_nw_per_cell`, `output_max_cap_ff`, `hold_ps`. |
+
 ## Example scripts
 
-See [test/make_8x8_sky130.tcl](test/make_8x8_sky130.tcl).
+See [test/make_8x8_sky130.tcl](test/make_8x8_sky130.tcl) and
+[test/generate_regfile_asap7.tcl](test/generate_regfile_asap7.tcl).
 
 ## Regression tests
 

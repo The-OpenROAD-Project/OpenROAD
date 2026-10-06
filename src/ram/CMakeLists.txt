@@ -15,6 +15,9 @@ target_sources(ram
     src/ram.cpp
     src/layout.cpp
     src/MakeRam.cpp
+    src/regfile.cpp
+    src/regfile_cmd.cpp
+    src/views.cpp
 )
 
 target_include_directories(ram

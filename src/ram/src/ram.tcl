@@ -298,3 +298,28 @@ proc generate_ram { args } {
 
   ram::ram_routing
 }
+
+sta::define_cmd_args "generate_regfile" {-spec file
+                                         [-verilog file]
+                                         [-def file]
+                                         [-lef file]
+                                         [-liberty file]
+                                         [-check_ports verilog_file]}
+
+# A multi-port register file as placed standard cells, from a spec file
+# (src/regfile.h): the block is built into the current database, whose
+# libraries must hold the spec's cells, and each view asked for is written.
+proc generate_regfile { args } {
+  sta::parse_key_args "generate_regfile" args \
+    keys { -spec -verilog -def -lef -liberty -check_ports } flags {}
+  sta::check_argc_eq0 "generate_regfile" $args
+  if { ![info exists keys(-spec)] } {
+    utl::error RAM 51 "generate_regfile needs -spec."
+  }
+  set views {}
+  foreach k { -verilog -def -lef -liberty -check_ports } {
+    lappend views [expr { [info exists keys($k)] ? $keys($k) : "" }]
+  }
+  ram::generate_regfile_cmd $keys(-spec) {*}$views
+  ord::design_created
+}
