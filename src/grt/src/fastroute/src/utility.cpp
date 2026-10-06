@@ -563,8 +563,10 @@ float FastRouteCore::getWireResistance(const int layer,
   if (ndr != nullptr) {
     odb::dbTechLayer* db_layer = getTechLayer(layer, false);
     odb::dbTechLayerRule* layerRule = ndr->getLayerRule(db_layer);
-    const float layer_width = dbuToMicrons(layerRule->getWidth());
-    res_ohm_per_micron = db_layer->getResistance() / layer_width;
+    if (layerRule != nullptr) {
+      const float layer_width = dbuToMicrons(layerRule->getWidth());
+      res_ohm_per_micron = db_layer->getResistance() / layer_width;
+    }
   }
 
   const float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
