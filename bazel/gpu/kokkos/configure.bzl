@@ -1,37 +1,271 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""Configuration headers for the Bazel-built Kokkos dependency."""
+"""Configuration headers for the Bazel-built Kokkos and KokkosFFT.
 
-load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+Kokkos's and KokkosFFT's CMake builds write a handful of configuration
+headers into their build trees; nothing in the source archives provides
+them. The BUILD overlays (BUILD.kokkos.bazel, BUILD.kokkos_fft.bazel) call
+kokkos_config() and kokkos_fft_config() below to write the equivalent
+headers at build time, so no generated file is checked in and the backend
+lists in this file are the single source for all of them.
+
+Adding or removing a backend means editing KOKKOS_HOST_BACKENDS /
+KOKKOS_DEVICE_BACKENDS here, adding a host backend to _SUPPORTED_HOST_BACKENDS
+or a device backend to _DEVICE_BACKEND_CONFIG, and updating the matching
+backend sources, copts and deps in BUILD.kokkos.bazel by hand. A device
+backend without a _DEVICE_BACKEND_CONFIG entry fails the build instead of
+being left out of a header; nothing checks BUILD.kokkos.bazel against these
+lists.
+
+Recompare whenever the Kokkos or KokkosFFT pin in MODULE.bazel changes:
+  - kokkos/cmake/KokkosCore_config.h.in
+  - kokkos/cmake/kokkos_enable_devices.cmake (backend order, defaults)
+  - kokkos/cmake/KokkosCore_Config_HeaderSet.in (+ kokkos_tribits.cmake)
+  - kokkos/tpls/desul/Config.hpp.cmake.in (+ core/src/CMakeLists.txt)
+  - kokkos/tpls/desul-hash.txt, kokkos/tpls/mdspan-hash.txt
+  - kokkos-fft/cmake/KokkosFFT_config.hpp.in
+  - kokkos-fft/CMakeLists.txt, kokkos-fft/cmake/KokkosFFT_tpls.cmake (TPLs)
+"""
+
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel/gpu:archs.bzl", "CUDA_ARCH_DEFINES", "CUDA_ARCH_FLAG_ERROR")
 
-def _kokkos_config_header_impl(ctx):
-    arch = ctx.attr.cuda_arch[BuildSettingInfo].value
-    defines = CUDA_ARCH_DEFINES.get(arch)
-    if defines == None:
-        fail(CUDA_ARCH_FLAG_ERROR)
+KOKKOS_VERSION = (5, 2, 2)
+KOKKOSFFT_VERSION = (2, 0, 0)
 
-    ctx.actions.expand_template(
-        template = ctx.file.template,
-        output = ctx.outputs.out,
-        substitutions = {
-            "@OPENROAD_KOKKOS_ARCH_DEFINES@": "\n".join(["#define " + define for define in defines]),
-        },
-    )
-    return [DefaultInfo(files = depset([ctx.outputs.out]))]
+# Backends, in the order Kokkos's CMake enumerates them: host backends first,
+# then device backends, because the generated backend headers must include
+# host spaces before device spaces (cmake/kokkos_enable_devices.cmake). Within
+# the host group OpenMP precedes Serial, as in CMake's option order.
+# Independently of this order, Kokkos_Core_fwd.hpp makes Kokkos::OpenMP the
+# DefaultHostExecutionSpace whenever OPENMP is enabled.
+KOKKOS_HOST_BACKENDS = ["OPENMP", "SERIAL"]
+KOKKOS_DEVICE_BACKENDS = ["CUDA"]
+KOKKOS_BACKENDS = KOKKOS_HOST_BACKENDS + KOKKOS_DEVICE_BACKENDS
 
-kokkos_config_header = rule(
-    implementation = _kokkos_config_header_impl,
-    attrs = {
-        "cuda_arch": attr.label(
-            default = Label("//:cuda_arch"),
-            providers = [BuildSettingInfo],
-        ),
-        "out": attr.output(mandatory = True),
-        "template": attr.label(
-            allow_single_file = True,
-            default = "KokkosCore_config.h.tpl",
-        ),
+# Host backends whose sources are listed in BUILD.kokkos.bazel (kept in step
+# by hand). Host backends need no setup header, desul switch or FFT TPL.
+_SUPPORTED_HOST_BACKENDS = ["OPENMP", "SERIAL"]
+
+# Per device backend: its setup/Kokkos_Setup_<name>.hpp prelude (note the
+# mixed case), the desul atomics switch Kokkos's CMake turns on for it
+# (core/src/CMakeLists.txt), and the KokkosFFT TPL that serves its memory
+# space. Only CUDA is wired up (@cuda_local); HIP or SYCL would be added here.
+_DEVICE_BACKEND_CONFIG = {
+    "CUDA": {
+        "desul": "DESUL_ATOMICS_ENABLE_CUDA",
+        "fft_tpl": "CUFFT",
+        "setup": "Cuda",
     },
-)
+}
+
+# General settings of a CMake-generated KokkosCore_config.h for a static C++20
+# build with CUDA_CONSTEXPR and the deprecated APIs enabled.
+# DEPRECATED_CODE_4 is required by gpl's View::HostMirror usage.
+_KOKKOS_OPTIONS = [
+    "KOKKOS_ENABLE_CXX20",
+    "KOKKOS_ENABLE_CUDA_CONSTEXPR",
+    "KOKKOS_ENABLE_DEPRECATED_CODE_4",
+    "KOKKOS_ENABLE_DEPRECATED_CODE_5",
+    "KOKKOS_ENABLE_DEPRECATION_WARNINGS",
+    "KOKKOS_ENABLE_COMPLEX_ALIGN",
+    "KOKKOS_ENABLE_IMPL_MDSPAN",
+    "KOKKOS_ENABLE_IMPL_REF_COUNT_BRANCH_UNLIKELY",
+    "KOKKOS_ENABLE_LIBDL",
+]
+
+# Git revisions of the desul and mdspan copies bundled under tpls/ in the
+# pinned Kokkos archive (tpls/desul-hash.txt and tpls/mdspan-hash.txt, which
+# core/src/CMakeLists.txt reads into KOKKOS_DESUL_VERSION /
+# KOKKOS_MDSPAN_VERSION).
+_DESUL_REVISION = "83d26f34db50b4fefe30ed4db38b10e04c7a9384"
+_MDSPAN_REVISION = "5d4eb209c77f4744980c0b0c2af44636cc81b08b"
+
+_KOKKOS_HEADER_PREAMBLE = [
+    "// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project",
+    "// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception",
+    "",
+    "// Generated by @openroad//bazel/gpu/kokkos:configure.bzl; do not edit.",
+    "",
+]
+
+def _defines(names):
+    return ["#define " + name for name in names]
+
+def _check_backends():
+    for backend in KOKKOS_HOST_BACKENDS:
+        if backend not in _SUPPORTED_HOST_BACKENDS:
+            fail("bazel/gpu/kokkos/configure.bzl: host backend %s is not wired up; add its sources to BUILD.kokkos.bazel and to _SUPPORTED_HOST_BACKENDS" % backend)
+    for backend in KOKKOS_DEVICE_BACKENDS:
+        if backend not in _DEVICE_BACKEND_CONFIG:
+            fail("bazel/gpu/kokkos/configure.bzl: device backend %s has no _DEVICE_BACKEND_CONFIG entry (setup header, desul switch, KokkosFFT TPL)" % backend)
+
+def _kokkos_core_config(arch_defines):
+    """KokkosCore_config.h for one CUDA architecture."""
+    major, minor, patch = KOKKOS_VERSION
+    return _KOKKOS_HEADER_PREAMBLE + [
+        "#if !defined(KOKKOS_MACROS_HPP) || defined(KOKKOS_CORE_CONFIG_H)",
+        "#error \"Do not include KokkosCore_config.h directly; include Kokkos_Macros.hpp instead.\"",
+        "#else",
+        "#define KOKKOS_CORE_CONFIG_H",
+        "#endif",
+        "",
+        "#define KOKKOS_VERSION %d" % (major * 10000 + minor * 100 + patch),
+        "#define KOKKOS_VERSION_MAJOR %d" % major,
+        "#define KOKKOS_VERSION_MINOR %d" % minor,
+        "#define KOKKOS_VERSION_PATCH %d" % patch,
+        "",
+        "/* Execution Spaces */",
+    ] + _defines(["KOKKOS_ENABLE_" + backend for backend in KOKKOS_BACKENDS]) + [
+        "",
+        "/* General Settings */",
+    ] + _defines(_KOKKOS_OPTIONS) + [
+        "",
+        "/* Embedded dependencies */",
+        "#define KOKKOS_IMPL_DESUL_VERSION \"%s\"" % _DESUL_REVISION,
+        "#define KOKKOS_IMPL_MDSPAN_VERSION \"%s\"" % _MDSPAN_REVISION,
+        "",
+        "/* Architecture (from --//:cuda_arch) */",
+    ] + _defines(arch_defines) + [""]
+
+def _kokkos_backend_header(guard, prefix, names):
+    """One of the KokkosCore_Config_*Backend.hpp include lists."""
+    return _KOKKOS_HEADER_PREAMBLE + [
+        "#ifndef %s_HPP_" % guard,
+        "#define %s_HPP_" % guard,
+        "",
+    ] + ["#include <%s_%s.hpp>" % (prefix, name) for name in names] + [
+        "",
+        "#endif",
+        "",
+    ]
+
+def _desul_config():
+    """desul/atomics/Config.hpp.
+
+    Kokkos's CMake enables desul's CUDA/HIP/SYCL atomics for the matching
+    device backend and its OpenACC atomics only under NVHPC. It never sets
+    DESUL_ATOMICS_ENABLE_OPENMP: defining it would switch desul from the GCC
+    builtin atomics to `#pragma omp atomic` (desul/atomics/Macros.hpp). So
+    the host backends contribute nothing here.
+    """
+    return [
+        "// Copyright (c) 2019, Lawrence Livermore National Security, LLC",
+        "// SPDX-License-Identifier: BSD-3-Clause",
+        "",
+        "// Generated by @openroad//bazel/gpu/kokkos:configure.bzl; do not edit.",
+        "",
+        "#ifndef DESUL_ATOMICS_CONFIG_HPP_",
+        "#define DESUL_ATOMICS_CONFIG_HPP_",
+        "",
+    ] + _defines([
+        _DEVICE_BACKEND_CONFIG[backend]["desul"]
+        for backend in KOKKOS_DEVICE_BACKENDS
+    ]) + [
+        "",
+        "#endif",
+        "",
+    ]
+
+def _kokkos_fft_config():
+    """KokkosFFT_config.hpp: FFTW for the host plus one TPL per device backend.
+
+    This matches a KokkosFFT CMake configure with KokkosFFT_ENABLE_FFTW=ON;
+    KokkosFFT's own default turns FFTW off once a device backend is enabled,
+    but gpl runs its FFTs on the host. FFTW's threads library is not built
+    (see BUILD.kokkos_fft.bazel), so host plans must use Kokkos::Serial.
+    """
+    major, minor, patch = KOKKOSFFT_VERSION
+    tpls = ["FFTW"] + [
+        _DEVICE_BACKEND_CONFIG[backend]["fft_tpl"]
+        for backend in KOKKOS_DEVICE_BACKENDS
+    ]
+    return [
+        "// SPDX-FileCopyrightText: (C) The Kokkos-FFT development team, see COPYRIGHT.md file",
+        "//",
+        "// SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception",
+        "",
+        "// Generated by @openroad//bazel/gpu/kokkos:configure.bzl; do not edit.",
+        "",
+        "#ifndef KOKKOSFFT_CONFIG_HPP",
+        "#define KOKKOSFFT_CONFIG_HPP",
+        "",
+        "#define KOKKOSFFT_VERSION %d" % (major * 10000 + minor * 100 + patch),
+        "#define KOKKOSFFT_VERSION_MAJOR %d" % major,
+        "#define KOKKOSFFT_VERSION_MINOR %d" % minor,
+        "#define KOKKOSFFT_VERSION_PATCH %d" % patch,
+        "",
+    ] + _defines(["KOKKOSFFT_ENABLE_TPL_" + tpl for tpl in tpls]) + [
+        "",
+        "#endif",
+        "",
+    ]
+
+def _config_library(name, headers, **kwargs):
+    """write_file each (path, lines) and expose them as cc_library `name`.
+
+    The files land under <name>/ and are served with that prefix stripped,
+    so `#include <KokkosCore_config.h>` and `#include <desul/atomics/
+    Config.hpp>` resolve exactly as against a CMake build tree.
+    """
+    outs = []
+    for path, content in headers.items():
+        out = name + "/" + path
+        write_file(
+            name = name + "_" + path.replace("/", "_").replace(".", "_"),
+            out = out,
+            content = content,
+        )
+        outs.append(out)
+    cc_library(
+        name = name,
+        hdrs = outs,
+        strip_include_prefix = name,
+        **kwargs
+    )
+
+def kokkos_config(name, **kwargs):
+    """The configuration headers Kokkos's CMake build would have generated.
+
+    KokkosCore_config.h carries the KOKKOS_ARCH_* macros for the selected
+    --//:cuda_arch, so it is chosen with a select() over the same dict that
+    drives --cuda-gpu-arch (bazel/gpu/archs.bzl); plain --config=gpu without
+    an architecture fails here with the shared guidance message.
+    """
+    _check_backends()
+    _config_library(
+        name,
+        {
+            "KokkosCore_Config_DeclareBackend.hpp": _kokkos_backend_header(
+                "KOKKOS_DECLARE",
+                "decl/Kokkos_Declare",
+                KOKKOS_BACKENDS,
+            ),
+            "KokkosCore_Config_FwdBackend.hpp": _kokkos_backend_header(
+                "KOKKOS_FWD",
+                "fwd/Kokkos_Fwd",
+                KOKKOS_BACKENDS,
+            ),
+            "KokkosCore_Config_SetupBackend.hpp": _kokkos_backend_header(
+                "KOKKOS_SETUP",
+                "setup/Kokkos_Setup",
+                [_DEVICE_BACKEND_CONFIG[b]["setup"] for b in KOKKOS_DEVICE_BACKENDS],
+            ),
+            "KokkosCore_config.h": select(
+                {
+                    Label("//:cuda_arch_" + arch): _kokkos_core_config(defines)
+                    for arch, defines in CUDA_ARCH_DEFINES.items()
+                },
+                no_match_error = CUDA_ARCH_FLAG_ERROR,
+            ),
+            "desul/atomics/Config.hpp": _desul_config(),
+        },
+        **kwargs
+    )
+
+def kokkos_fft_config(name, **kwargs):
+    """KokkosFFT_config.hpp; see _kokkos_fft_config for how it differs from CMake."""
+    _check_backends()
+    _config_library(name, {"KokkosFFT_config.hpp": _kokkos_fft_config()}, **kwargs)

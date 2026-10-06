@@ -79,7 +79,13 @@ cc_library(
         "-layering_check",
         "-parse_headers",
     ],
-    includes = ["include"],
+    # "src" lets the GPU sources include the gpl src/ headers listed above
+    # by bare name (nesterovBase.h, fftBackend.h, ...). :gpl_impl also
+    # exports this path but cannot be a dep here (cycle).
+    includes = [
+        "include",
+        "src",
+    ],
     local_defines = ["ENABLE_GPU"],
     # Keep wildcard builds (bazel build //...) CPU-clean; this target is
     # only reachable through :gpl under --//:gpu=cuda.

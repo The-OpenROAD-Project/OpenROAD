@@ -21,6 +21,19 @@ namespace gpl {
 
 namespace {
 
+// The host-side FFTs below run on Kokkos::Serial, not on
+// DefaultHostExecutionSpace. With the OpenMP (or Threads) backend enabled the
+// default host space is parallel, and KokkosFFT then switches FFTW to its
+// threaded planner: that needs the FFTW threads library, which the Bazel
+// @fftw does not build, and may pick plans that round differently from the
+// single-threaded ones. Serial keeps the transform single-threaded, so the
+// result does not depend on which host backends Kokkos was built with.
+#if !defined(KOKKOS_ENABLE_SERIAL)
+#error \
+    "gpl's GPU FFT needs Kokkos built with the Serial backend (CMake: -DKokkos_ENABLE_SERIAL=ON; Bazel: SERIAL in KOKKOS_HOST_BACKENDS, bazel/gpu/kokkos/configure.bzl) to keep host FFTs single-threaded."
+#endif
+using HostFftSpace = Kokkos::Serial;
+
 // Defensive guard: PoissonSolver's ctor validates power-of-2 dimensions at
 // construction, so callers going through GpuFftBackend can't reach here
 // with a bad N or M. Keep the per-function check as a safety net for any
@@ -86,7 +99,7 @@ void dct_2d_fft(const int M,
 
   // For consistency we always calculate FFT on CPU (as Kokkos uses a different
   // implementation for GPU)
-  Kokkos::DefaultHostExecutionSpace hostSpace;
+  HostFftSpace hostSpace;
   auto hPre2d = Kokkos::create_mirror_view_and_copy(hostSpace, pre2d);
   auto hFft2d = Kokkos::create_mirror_view(hostSpace, fft2d);
 
@@ -330,7 +343,7 @@ void idct_2d_fft(
 
   // For consistency we always calculate iFFT on CPU (as Kokkos uses a different
   // implementation for GPU)
-  Kokkos::DefaultHostExecutionSpace hostSpace;
+  HostFftSpace hostSpace;
   auto hPre2d = Kokkos::create_mirror_view_and_copy(hostSpace, pre2d);
   auto hIfft2d = Kokkos::create_mirror_view(hostSpace, ifft2d);
 

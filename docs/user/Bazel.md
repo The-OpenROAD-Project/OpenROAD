@@ -455,9 +455,10 @@ built once.
 `--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
 and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. Kokkos 5.2.2 and
 KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
-hermetic LLVM toolchain. Only the CUDA toolkit remains host-provided. Default
-CPU targets neither download nor compile Kokkos and do not compile or link
-against CUDA. Because the CUDA repository definition is loaded by shared Bazel
+hermetic LLVM toolchain, with the OpenMP, Serial, and CUDA backends enabled
+(`bazel/gpu/kokkos/configure.bzl`). Only the CUDA toolkit remains
+host-provided. Default CPU targets neither download nor compile Kokkos and do
+not compile or link against CUDA. Because the CUDA repository definition is loaded by shared Bazel
 configuration, CPU invocations still probe the configured toolkit path.
 
 Choose the configuration matching the device compute capability:
@@ -492,7 +493,11 @@ the CUDA toolkit used for the build.
 The Bazel build does not use `KOKKOS_ROOT` or `KOKKOS_FFT_ROOT`. Its BUILD
 overlays compile Kokkos with the same clang, libc++, glibc headers, CUDA target,
 and C++ standard as OpenROAD. This avoids the C++ ABI and libc symbol mismatches
-caused by linking a host-built Kokkos into a hermetic OpenROAD binary.
+caused by linking a host-built Kokkos into a hermetic OpenROAD binary. The
+configuration headers that Kokkos's and KokkosFFT's CMake builds generate
+(`KokkosCore_config.h`, the backend include lists, `desul/atomics/Config.hpp`,
+`KokkosFFT_config.hpp`) are written at build time from one backend list in
+`bazel/gpu/kokkos/configure.bzl`; none is checked in.
 
 ### Notes
 
@@ -502,13 +507,24 @@ caused by linking a host-built Kokkos into a hermetic OpenROAD binary.
   golden logs (`test/regression.bzl`); the GPU-only tests
   (`region01_gpu`, `region01_gpu_asym`, `fft_gpu_test`, `wl_gpu_test`) pin it
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
+- When the GPU path first initializes Kokkos, its OpenMP backend prints
+  `Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not
+  set` on stderr unless `OMP_PROC_BIND` is set (for example to `false`). It
+  never reaches the golden logs: those tests pin `ENABLE_GPU=0`, so Kokkos is
+  not initialized, and the GPU-only tests are pass/fail. A Kokkos warning about
+  a CUDA architecture mismatch, by contrast, is worth acting on.
+- Host-side FFTs on the GPU path run on `Kokkos::Serial`. The Bazel `@fftw`
+  has no threads library, so FFTW's threaded planner is unavailable.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
 - The first GPU build downloads the two pinned source archives and compiles
   Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
   OpenROAD GPU sources for the new target.
-- The CMake `ENABLE_GPU` flow is unchanged and continues to use the Kokkos and
-  KokkosFFT installations selected by its CMake configuration.
+- The CMake `ENABLE_GPU` flow continues to use the Kokkos and KokkosFFT
+  installations selected by its CMake configuration. That Kokkos must include
+  the Serial backend (`-DKokkos_ENABLE_SERIAL=ON`), which Kokkos's CMake turns
+  off by default once OpenMP is enabled; configuration stops with a message
+  otherwise.
 - After upgrading CUDA in place, run `bazelisk shutdown` (or change
   `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
   file list.
