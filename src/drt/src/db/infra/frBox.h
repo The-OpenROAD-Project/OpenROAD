@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "db/infra/frPoint.h"
+#include "frBaseTypes.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

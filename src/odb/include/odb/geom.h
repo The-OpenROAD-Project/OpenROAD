@@ -96,6 +96,8 @@ class Point3D
     setZ(z);
   }
 
+  Point xy() const { return {x_, y_}; }
+
   friend dbIStream& operator>>(dbIStream& stream, Point3D& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point3D& p);
 
