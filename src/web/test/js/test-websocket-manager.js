@@ -104,8 +104,8 @@ describe('WebSocketManager', () => {
 
         it('rejects an unknown payload type rather than hanging', async () => {
             // A server newer than this client must not leave a promise pending
-            // forever -- Leaflet keeps such a tile hidden and its load event
-            // never completes.  It must not resolve null either: only type 3
+            // forever -- the view would wait on such a tile and its slot
+            // would never settle.  It must not resolve null either: only type 3
             // means "blank tile", and the JSON callers on this same manager
             // would read the null as data.
             const mgr = new WebSocketManager('ws://fake');
@@ -423,7 +423,7 @@ describe('WebSocketManager flow control', () => {
 
     it('cancelling a sent request settles its promise', async () => {
         // The sent branch has to settle for the same reason the queued one
-        // does, and the cost of not doing so is higher: the merged tile layer
+        // does, and the cost of not doing so is higher: renderMergedTile
         // releases its decoded ImageBitmaps in a finally, which never runs if
         // the await never returns.  Every pruned or refreshed tile would then
         // keep its decodes alive — the growth the merge exists to bound.
@@ -451,6 +451,110 @@ describe('WebSocketManager flow control', () => {
         // And the stale reply must still be harmless once it arrives.
         deliverReply(mgr, id);
         assert.equal(mgr._inFlight, 0, 'the reply freed the slot');
+    });
+});
+
+// Tiles prefetched around the view (#11340) must never delay one on screen.
+describe('WebSocketManager background requests', () => {
+    async function saturated() {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 1;
+        const first = mgr.request({ type: 'tile', n: 0 });
+        first.catch(() => {});
+        return { mgr, first };
+    }
+
+    it('go out only once the foreground queue is empty', async () => {
+        const { mgr, first } = await saturated();
+        const bg = mgr.request({ type: 'tile', n: 1 }, { background: true });
+        bg.catch(() => {});
+        const fg = mgr.request({ type: 'tile', n: 2 });
+        fg.catch(() => {});
+
+        deliverReply(mgr, first.requestId);
+        assert.deepEqual(sentIds(mgr), [first.requestId, fg.requestId],
+            'the later foreground request overtakes the background one');
+        deliverReply(mgr, fg.requestId);
+        assert.deepEqual(sentIds(mgr),
+            [first.requestId, fg.requestId, bg.requestId]);
+    });
+
+    it('are left out of pendingCount', async () => {
+        const { mgr, first } = await saturated();
+        mgr.request({ type: 'tile', n: 1 }, { background: true })
+            .catch(() => {});
+        assert.equal(mgr.pendingCount, 1, 'queued background is not counted');
+
+        deliverReply(mgr, first.requestId);
+        assert.equal(mgr.pending.size, 1, 'the background request was sent');
+        assert.equal(mgr.pendingCount, 0, 'nor is it once on the wire');
+    });
+
+    it('can be cancelled while queued', async () => {
+        const { mgr } = await saturated();
+        const bg = mgr.request({ type: 'tile', n: 1 }, { background: true });
+        mgr.cancel(bg.requestId);
+        await assert.rejects(bg, { message: 'Request cancelled' });
+        assert.equal(mgr._bgQueue.size, 0);
+    });
+
+    it('stop being tracked when cancelled on the wire', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        const bg = mgr.request({ type: 'tile', n: 0 }, { background: true });
+        bg.catch(() => {});
+        mgr.cancel(bg.requestId);
+        assert.equal(mgr._bgSent.size, 0);
+        assert.equal(mgr.pendingCount, 0);
+    });
+
+    it('are rejected when the socket closes', async () => {
+        const { mgr } = await saturated();
+        const bg = mgr.request({ type: 'tile', n: 1 }, { background: true });
+        mgr._shutdown = true;  // close without scheduling a reconnect
+        mgr._handleClose();
+        await assert.rejects(bg, { message: 'WebSocket closed' });
+        assert.equal(mgr._bgQueue.size, 0);
+    });
+});
+
+// A ring tile that comes on screen while still queued must stop waiting
+// behind the foreground (TileGrid promotes it).
+describe('WebSocketManager.promote', () => {
+    it('moves a queued background request into the foreground queue', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 1;
+        const first = mgr.request({ type: 'tile', n: 0 });
+        first.catch(() => {});
+        const bg = mgr.request({ type: 'tile', n: 1 }, { background: true });
+        bg.catch(() => {});
+        const fg = mgr.request({ type: 'tile', n: 2 });
+        fg.catch(() => {});
+        mgr.promote(bg.requestId);
+        assert.equal(mgr._bgQueue.size, 0);
+        assert.equal(mgr.pendingCount, 3, 'now counted as on-screen work');
+        deliverReply(mgr, first.requestId);
+        deliverReply(mgr, fg.requestId);
+        assert.deepEqual(sentIds(mgr),
+                         [first.requestId, fg.requestId, bg.requestId]);
+    });
+
+    it('counts a background request already on the wire again', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        const bg = mgr.request({ type: 'tile', n: 0 }, { background: true });
+        bg.catch(() => {});
+        assert.equal(mgr.pendingCount, 0);
+        mgr.promote(bg.requestId);
+        assert.equal(mgr.pendingCount, 1);
+    });
+
+    it('ignores an unknown id', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        assert.doesNotThrow(() => mgr.promote(12345));
     });
 });
 

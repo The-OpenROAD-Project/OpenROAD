@@ -5,20 +5,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    BYTES_PER_PIXEL, DEFAULT_BUDGET_BYTES, UNMERGED_PANE_COUNT, tileBytes,
-    estimateTilesPerPane, measureViewport, reserveForUnmergedPanes,
-    setItemVisible, computeGroupCount,
-    partitionIntoGroups, mergeOntoContext, closeAll, describePlan,
-    MERGED_PANE_OPACITY, mergedPaneOptions, blendOver, compositeStack,
+    setItemVisible, mergeOntoContext, closeAll, blendOver, compositeStack,
     renderMergedTile,
 } from '../../src/tile-merge.js';
 
-// The measured figures this module is sized against: 97 panes, 24 tiles/pane,
-// dpr 1, 1240x999 window => 582 MB of decoded tile images, against a ~458 MB
-// ceiling above which the browser starts discarding decodes.
-const PANES = 97;
-const TILES_PER_PANE = 24;
-const TILE_BYTES = 256 * 256 * BYTES_PER_PIXEL;
+// The merged tile carries the layer opacities inside it, so it is drawn at 1.
+const MERGED_OPACITY = 1;
 
 // Let every promise continuation that is ready to run, run.
 //
@@ -58,179 +50,14 @@ function makeGates(layers) {
 }
 
 describe('tile-merge is pure', () => {
-    it('exports plain functions with no DOM or Leaflet dependency', () => {
-        // Everything here is arithmetic and compositing rules, so it stays
-        // testable without a browser. The Leaflet and canvas parts live in
-        // merged-tile-layer.js.
-        for (const fn of [tileBytes, estimateTilesPerPane, measureViewport,
-                          computeGroupCount, partitionIntoGroups,
-                          mergeOntoContext, closeAll, describePlan]) {
+    it('exports plain functions with no DOM or renderer dependency', () => {
+        // Everything here is compositing rules with the canvas injected, so it
+        // stays testable without a browser.  The view parts live in
+        // tile-sources.js.
+        for (const fn of [setItemVisible, mergeOntoContext, closeAll,
+                          blendOver, compositeStack, renderMergedTile]) {
             assert.equal(typeof fn, 'function');
         }
-        assert.equal(typeof DEFAULT_BUDGET_BYTES, 'number');
-    });
-});
-
-describe('tileBytes', () => {
-    it('is the decoded RGBA size, not the PNG size', () => {
-        // The browser holds 32 bits per pixel whatever the PNG's bit depth, so
-        // compressing harder buys nothing — this is the number that matters.
-        assert.equal(tileBytes(256, 1), 256 * 256 * 4);
-        assert.equal(tileBytes(256, 1), 262144);
-    });
-
-    it('scales with the square of dpr', () => {
-        assert.equal(tileBytes(256, 2), 4 * tileBytes(256, 1));
-        assert.equal(tileBytes(256, 3), 9 * tileBytes(256, 1));
-    });
-
-    it('rounds the device-pixel side length', () => {
-        assert.equal(tileBytes(256, 1.5), 384 * 384 * 4);
-    });
-});
-
-describe('computeGroupCount', () => {
-    it('turns the measured budget into a group count', () => {
-        // 350 MB / (24 tiles * 256 KB) = 350 / 6 = 58 groups.
-        const n = computeGroupCount({
-            budgetBytes: 350 * 1024 * 1024,
-            tilesPerPane: TILES_PER_PANE,
-            bytesPerTile: TILE_BYTES,
-            paneCount: PANES,
-        });
-        assert.equal(n, 58);
-        // And that must actually fit under the budget.
-        assert.ok(n * TILES_PER_PANE * TILE_BYTES <= 350 * 1024 * 1024);
-    });
-
-    it('shrinks N as the window grows, which is the whole point', () => {
-        // 2560x1440 needs ~77 tiles/pane instead of 24. A fixed N chosen at one
-        // window size would put a maximised 4K window back over the ceiling
-        // (97 panes there is ~1.9 GB), so N has to fall as tilesPerPane rises.
-        const small = computeGroupCount({
-            tilesPerPane: 24, bytesPerTile: TILE_BYTES, paneCount: PANES,
-        });
-        const large = computeGroupCount({
-            tilesPerPane: 77, bytesPerTile: TILE_BYTES, paneCount: PANES,
-        });
-        assert.ok(large < small, `${large} should be < ${small}`);
-        assert.ok(large * 77 * TILE_BYTES <= DEFAULT_BUDGET_BYTES);
-    });
-
-    it('shrinks N on a HiDPI display', () => {
-        // dpr 2 quadruples the bytes per tile, so N has to fall by about 4x.
-        // Asserted as the contract (falls, and still fits) rather than as
-        // at1 === 4*at2: flooring does not distribute over division, so the
-        // exact identity is false (58 vs 4*14=56) even though the code is right.
-        const at1 = computeGroupCount({
-            tilesPerPane: 24, bytesPerTile: tileBytes(256, 1), paneCount: 400,
-        });
-        const at2 = computeGroupCount({
-            tilesPerPane: 24, bytesPerTile: tileBytes(256, 2), paneCount: 400,
-        });
-        assert.ok(at2 < at1, `${at2} should be < ${at1}`);
-        assert.ok(at2 <= Math.ceil(at1 / 4), `${at2} vs ~${at1 / 4}`);
-        // The contract that actually matters: whatever N is, it fits.
-        for (const [n, dpr] of [[at1, 1], [at2, 2]]) {
-            assert.ok(n * 24 * tileBytes(256, dpr) <= DEFAULT_BUDGET_BYTES,
-                      `N=${n} at dpr ${dpr} exceeds the budget`);
-        }
-    });
-
-    it('never exceeds the pane count', () => {
-        // More groups than panes cannot help and would just rebuild the
-        // one-pane-per-layer situation this exists to avoid.
-        const n = computeGroupCount({
-            budgetBytes: 100 * 1024 * 1024 * 1024,
-            tilesPerPane: 1, bytesPerTile: 4, paneCount: 12,
-        });
-        assert.equal(n, 12);
-    });
-
-    it('never returns less than 1', () => {
-        // A budget too small for even one group still has to render something;
-        // returning 0 would blank the viewer.
-        assert.equal(computeGroupCount({
-            budgetBytes: 1, tilesPerPane: TILES_PER_PANE,
-            bytesPerTile: TILE_BYTES, paneCount: PANES,
-        }), 1);
-    });
-
-    it('degrades to 1 on missing or nonsense inputs', () => {
-        assert.equal(computeGroupCount(), 1);
-        assert.equal(computeGroupCount({ tilesPerPane: 0, bytesPerTile: 4,
-                                         paneCount: 4 }), 1);
-        assert.equal(computeGroupCount({ tilesPerPane: 4, bytesPerTile: 0,
-                                         paneCount: 4 }), 1);
-        assert.equal(computeGroupCount({ tilesPerPane: 4, bytesPerTile: 4,
-                                         paneCount: 0 }), 1);
-    });
-
-    it('defaults to a budget with margin under the measured ceiling', () => {
-        // 458 MB was where it broke, 462 MB already flickered. A default at or
-        // above that would ship the bug.
-        assert.ok(DEFAULT_BUDGET_BYTES < 458 * 1024 * 1024);
-    });
-});
-
-describe('partitionIntoGroups', () => {
-    const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-    it('produces contiguous runs of the z-order', () => {
-        // THE correctness constraint. Each group is rasterized into one image,
-        // and two images can only be stacked to reproduce the original if
-        // neither interleaves with the other: for z-order [1,2,3,4], the
-        // grouping {1,3},{2,4} has NO stacking that yields the original.
-        const groups = partitionIntoGroups(items, 3);
-        const flat = groups.flat();
-        assert.deepEqual(flat, items, 'flattening must restore the z-order');
-        for (const g of groups) {
-            for (let i = 1; i < g.length; i++) {
-                assert.equal(g[i], g[i - 1] + 1,
-                             `group ${JSON.stringify(g)} is not contiguous`);
-            }
-        }
-    });
-
-    it('covers every item exactly once', () => {
-        for (const n of [1, 2, 3, 4, 7, 10]) {
-            const flat = partitionIntoGroups(items, n).flat();
-            assert.deepEqual(flat, items, `n=${n}`);
-        }
-    });
-
-    it('makes exactly n groups when n <= length', () => {
-        for (const n of [1, 2, 3, 4, 7, 10]) {
-            assert.equal(partitionIntoGroups(items, n).length, n);
-        }
-    });
-
-    it('balances group sizes to within one', () => {
-        const sizes = partitionIntoGroups(items, 3).map(g => g.length);
-        assert.equal(Math.max(...sizes) - Math.min(...sizes) <= 1, true,
-                     JSON.stringify(sizes));
-        assert.equal(sizes.reduce((a, b) => a + b, 0), items.length);
-    });
-
-    it('caps at one item per group when n exceeds the item count', () => {
-        const groups = partitionIntoGroups(items, 40);
-        assert.equal(groups.length, items.length);
-        assert.ok(groups.every(g => g.length === 1));
-    });
-
-    it('handles the degenerate inputs', () => {
-        assert.deepEqual(partitionIntoGroups([], 4), []);
-        assert.deepEqual(partitionIntoGroups(null, 4), []);
-        // n of 0 or negative must still produce one usable group.
-        assert.equal(partitionIntoGroups(items, 0).length, 1);
-        assert.equal(partitionIntoGroups(items, -3).length, 1);
-    });
-
-    it('preserves order for the real shape', () => {
-        const panes = Array.from({ length: PANES }, (_, i) => i);
-        const groups = partitionIntoGroups(panes, 58);
-        assert.equal(groups.length, 58);
-        assert.deepEqual(groups.flat(), panes);
     });
 });
 
@@ -349,38 +176,11 @@ describe('closeAll', () => {
     });
 });
 
-describe('describePlan', () => {
-    it('reports the real before and after for the measured shape', () => {
-        const plan = describePlan({
-            paneCount: PANES, groupCount: 58,
-            tilesPerPane: TILES_PER_PANE, bytesPerTile: TILE_BYTES,
-        });
-        assert.equal(plan.beforeMB, 582);
-        assert.equal(plan.afterMB, 348);
-        assert.ok(plan.afterMB < 458, 'must land under the measured ceiling');
-    });
-
-    it('reports the transient peak, which grows as N shrinks', () => {
-        // Small N means large groups, and a group's sources are decoded
-        // together before being closed. Merging all 97 into 1 has a far bigger
-        // transient than merging into 58, and that is worth seeing.
-        const wide = describePlan({
-            paneCount: PANES, groupCount: 58,
-            tilesPerPane: TILES_PER_PANE, bytesPerTile: TILE_BYTES,
-        });
-        const narrow = describePlan({
-            paneCount: PANES, groupCount: 1,
-            tilesPerPane: TILES_PER_PANE, bytesPerTile: TILE_BYTES,
-        });
-        assert.ok(narrow.transientMB > wide.transientMB);
-    });
-});
-
-describe('opacity semantics (Leaflet applies it to the container div)', () => {
+describe('opacity semantics (the merged tile is drawn at 1)', () => {
     // Every layer is created opaque today (transparency lives in the tile
     // pixels), so a partial opacity is exercised here as a stand-in: the
     // associativity these tests pin down is what keeps the merge honest if a
-    // pane ever does carry one.
+    // layer ever does carry one.
     const PARTIAL = 0.7;
 
     const A = [200, 40, 40, 255];    // opaque red-ish layer
@@ -408,15 +208,15 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         const direct = compositeStack(stack, BG);
 
         // Merge into a transparent intermediate (what the canvas holds), then
-        // composite that intermediate at MERGED_PANE_OPACITY.
+        // composite that intermediate at MERGED_OPACITY.
         const merged = compositeStack(stack, [0, 0, 0, 0]);
-        const viaGroup = blendOver(BG, merged, MERGED_PANE_OPACITY);
+        const viaGroup = blendOver(BG, merged, MERGED_OPACITY);
 
         near(viaGroup, direct, 1e-9, 'grouped vs direct');
     });
 
     it('holds when the group mixes opacities', () => {
-        // An opaque pane under two partly transparent ones — grouping those
+        // An opaque layer under two partly transparent ones — grouping those
         // together must not change the result.
         const stack = [
             { rgba: C, opacity: 1 },        // _instances
@@ -425,7 +225,7 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         ];
         const direct = compositeStack(stack, BG);
         const merged = compositeStack(stack, [0, 0, 0, 0]);
-        near(blendOver(BG, merged, MERGED_PANE_OPACITY), direct, 1e-9);
+        near(blendOver(BG, merged, MERGED_OPACITY), direct, 1e-9);
     });
 
     it('holds for any split point, which is what makes N groups safe', () => {
@@ -442,14 +242,14 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         for (let split = 0; split <= stack.length; split++) {
             const lower = compositeStack(stack.slice(0, split), [0, 0, 0, 0]);
             const upper = compositeStack(stack.slice(split), [0, 0, 0, 0]);
-            let out = blendOver(BG, lower, MERGED_PANE_OPACITY);
-            out = blendOver(out, upper, MERGED_PANE_OPACITY);
+            let out = blendOver(BG, lower, MERGED_OPACITY);
+            out = blendOver(out, upper, MERGED_OPACITY);
             near(out, direct, 1e-9, `split at ${split}`);
         }
     });
 
-    it('DOUBLE-APPLIES if the merged pane keeps the layer opacity', () => {
-        // The trap: leaving the merged pane at a source's opacity multiplies
+    it('DOUBLE-APPLIES if the merged tile keeps the layer opacity', () => {
+        // The trap: drawing the merged tile at a source's opacity multiplies
         // every source by it twice (0.7 -> 0.49) and washes the view out. Pinned
         // as a real numeric
         // difference so the guard cannot be quietly dropped.
@@ -458,23 +258,13 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         const direct = compositeStack(stack, BG);
         const merged = compositeStack(stack, [0, 0, 0, 0]);
 
-        const correct = blendOver(BG, merged, MERGED_PANE_OPACITY);
+        const correct = blendOver(BG, merged, MERGED_OPACITY);
         const doubled = blendOver(BG, merged, PARTIAL);
         near(correct, direct, 1e-9);
         assert.ok(Math.abs(doubled[3] - direct[3]) > 1,
-                  'a pane opacity of 0.7 must visibly differ — it is the bug');
+                  'a tile opacity of 0.7 must visibly differ — it is the bug');
         // And it is specifically an under-blend: less opaque than intended.
         assert.ok(doubled[3] < direct[3]);
-    });
-
-    it('mergedPaneOptions never hands back a translucent pane', () => {
-        assert.equal(MERGED_PANE_OPACITY, 1);
-        assert.equal(mergedPaneOptions().opacity, 1);
-        assert.equal(mergedPaneOptions({ zIndex: 7 }).opacity, 1);
-        assert.equal(mergedPaneOptions({ zIndex: 7 }).zIndex, 7);
-        // tileSize is only forwarded when asked for, so Leaflet's default holds.
-        assert.equal('tileSize' in mergedPaneOptions(), false);
-        assert.equal(mergedPaneOptions({ tileSize: 256 }).tileSize, 256);
     });
 });
 
@@ -663,6 +453,7 @@ describe('renderMergedTile', () => {
         const stats = await renderMergedTile(h.opts);
         assert.equal(stats.requested, 3);
         assert.equal(stats.arrived, 2);
+        assert.equal(stats.failed, 1);
         assert.equal(stats.drawn, 2);
         const last = h.drawnCalls[h.drawnCalls.length - 1];
         assert.deepEqual(last.map(d => d.id), ['metal1', null, '_instances']);
@@ -769,159 +560,12 @@ describe('dpr must match the server and honour the display', () => {
         assert.equal(quantizeDpr(NaN), 1);
         assert.equal(quantizeDpr(undefined), 1);
     });
-
-    it('makes the byte estimate match the pixels actually rendered', async () => {
-        const { quantizeDpr } = await import('../../src/tile-request.js');
-        // The budget must reserve what the tile really costs.
-        assert.equal(tileBytes(256, quantizeDpr(1.75)), 448 * 448 * 4);
-        assert.equal(tileBytes(256, quantizeDpr(2.5)), 640 * 640 * 4);
-    });
 });
 
-describe('measureViewport: a zero-sized container silently disables merging', () => {
-    // The bug this exists for. A container that is hidden or not yet laid out
-    // reports clientWidth 0. estimateTilesPerPane(0,0) returns 1, so
-    // computeGroupCount divides the whole budget by ONE tile and comes back
-    // with groupCount == paneCount — one pane per layer, no merging at all —
-    // while the startup log reports "merged 94 layers into 94 panes". The
-    // failure then arrives the moment the panel is shown.
-    const WIN = { innerWidth: 1600, innerHeight: 1000 };
-
-    it('uses the container when it has been laid out', () => {
-        assert.deepEqual(
-            measureViewport({ clientWidth: 1240, clientHeight: 999 }, WIN),
-            { width: 1240, height: 999 });
-    });
-
-    it('falls back to the window for a zero-sized container', () => {
-        assert.deepEqual(measureViewport({ clientWidth: 0, clientHeight: 0 },
-                                         WIN),
-                         { width: 1600, height: 1000 });
-    });
-
-    it('falls back per axis, not all or nothing', () => {
-        assert.deepEqual(measureViewport({ clientWidth: 1240, clientHeight: 0 },
-                                         WIN),
-                         { width: 1240, height: 1000 });
-    });
-
-    it('falls back to a sane default with no container and no window', () => {
-        assert.deepEqual(measureViewport(null, null),
-                         { width: 1024, height: 768 });
-        assert.deepEqual(measureViewport(undefined,
-                                         { innerWidth: 0, innerHeight: 0 }),
-                         { width: 1024, height: 768 });
-    });
-
-    it('keeps merging enabled when the container is not laid out yet', () => {
-        // End to end: the whole point is that the group count stays bounded.
-        const perTile = tileBytes(256, 1);
-        const bare = computeGroupCount({
-            tilesPerPane: estimateTilesPerPane(0, 0),
-            bytesPerTile: perTile,
-            paneCount: PANES,
-        });
-        assert.equal(bare, PANES, 'unguarded, this is one pane per layer');
-
-        const { width, height } = measureViewport({ clientWidth: 0,
-                                                    clientHeight: 0 }, WIN);
-        const guarded = computeGroupCount({
-            tilesPerPane: estimateTilesPerPane(width, height),
-            bytesPerTile: perTile,
-            paneCount: PANES,
-        });
-        assert.ok(guarded < PANES,
-                  `still one pane per layer: ${guarded} of ${PANES}`);
-        assert.ok(guarded * estimateTilesPerPane(width, height) * perTile
-                  <= DEFAULT_BUDGET_BYTES);
-    });
-
-    it('errs toward fewer panes, which is the safe direction', () => {
-        // The window is larger than the map panel inside it, so falling back
-        // over-estimates tiles per pane and under-estimates how many panes fit.
-        // Under-estimating panes is conservative; over-estimating is the
-        // failure mode.
-        const perTile = tileBytes(256, 1);
-        const fromWindow = computeGroupCount({
-            tilesPerPane: estimateTilesPerPane(1600, 1000),
-            bytesPerTile: perTile, paneCount: PANES,
-        });
-        const fromPanel = computeGroupCount({
-            tilesPerPane: estimateTilesPerPane(800, 600),
-            bytesPerTile: perTile, paneCount: PANES,
-        });
-        assert.ok(fromWindow < fromPanel,
-                  `${fromWindow} should be < ${fromPanel}`);
-    });
-});
-
-describe('reserveForUnmergedPanes: the panes outside the grouping are not free', () => {
-    // _instances, _pins and the always-on highlight overlay each hold a full
-    // tile grid and are never merged. At dpr 1 they are ~6 MB each and hardly
-    // matter; at dpr 3 a pane is ~54 MB, so ignoring them let the budget report
-    // a comfortable fit while the real total sat above the ceiling.
-    const TILES = 24;
-
-    it('charges the unmerged panes before the merged ones', () => {
-        const perTile = tileBytes(256, 1);
-        const perPane = TILES * perTile;
-        const budget = 350 * 1024 * 1024;
-        assert.equal(reserveForUnmergedPanes(budget, TILES, perTile),
-                     budget - UNMERGED_PANE_COUNT * perPane);
-    });
-
-    it('keeps the real total under budget on a HiDPI display', () => {
-        // The case that motivated it: dpr 3, where each unmerged pane is ~54 MB.
-        const perTile = tileBytes(256, 3);
-        const budget = 350 * 1024 * 1024;
-        const naive = computeGroupCount({
-            budgetBytes: budget, tilesPerPane: TILES,
-            bytesPerTile: perTile, paneCount: PANES,
-        });
-        const guarded = computeGroupCount({
-            budgetBytes: reserveForUnmergedPanes(budget, TILES, perTile),
-            tilesPerPane: TILES, bytesPerTile: perTile, paneCount: PANES,
-        });
-        assert.ok(guarded < naive, `${guarded} should be < ${naive}`);
-
-        const perPane = TILES * perTile;
-        assert.ok((naive + UNMERGED_PANE_COUNT) * perPane > budget,
-                  'the unguarded total should indeed bust the budget');
-        assert.ok((guarded + UNMERGED_PANE_COUNT) * perPane <= budget,
-                  'the guarded total must fit including the unmerged panes');
-    });
-
-    it('never starves the merged panes entirely', () => {
-        // A budget too small for the unmerged panes alone must still leave room
-        // for one group: a blank map is worse than a slow one.
-        const perTile = tileBytes(256, 3);
-        const left = reserveForUnmergedPanes(1, TILES, perTile);
-        assert.equal(left, TILES * perTile);
-        assert.equal(computeGroupCount({
-            budgetBytes: left, tilesPerPane: TILES,
-            bytesPerTile: perTile, paneCount: PANES,
-        }), 1);
-    });
-
-    it('degrades to the raw budget on nonsense input', () => {
-        assert.equal(reserveForUnmergedPanes(1000, 0, 4), 1000);
-        assert.equal(reserveForUnmergedPanes(1000, 4, 0), 1000);
-    });
-
-    it('honours a caller-supplied pane count', () => {
-        const perTile = tileBytes(256, 1);
-        const perPane = TILES * perTile;
-        assert.equal(reserveForUnmergedPanes(100 * perPane, TILES, perTile, 5),
-                     95 * perPane);
-    });
-});
-
-describe('setItemVisible: only a real change may dirty a pane', () => {
+describe('setItemVisible: only a real change may dirty a slot', () => {
     // The layer tree's onChange walks every node and asserts the desired state
     // on each one. Reporting a change every time made a single checkbox click
-    // re-request every tile in every pane — ~2300 requests on the 97-layer
-    // design. The per-layer panes never had this problem because Leaflet's
-    // addTo() is a no-op for a layer already on the map.
+    // re-request every tile.
     it('reports a change only when the state moves', () => {
         const item = { layer: 'metal1', opacity: 0.7, visible: false };
         assert.equal(setItemVisible(item, true), true);
@@ -970,10 +614,8 @@ describe('renderMergedTile: incremental painting', () => {
         const drawnCalls = [];
         const released = [];
         const gates = makeGates(gated);
-        let firstDraws = 0;
         return {
             drawnCalls, released, arrive: gates.arrive,
-            firstDraws: () => firstDraws,
             opts: {
                 items,
                 request: async (item) => {
@@ -993,7 +635,6 @@ describe('renderMergedTile: incremental painting', () => {
                         s => (s.image ? s.image.id : null)));
                     return sources.filter(s => s.image).length;
                 },
-                onFirstDraw: () => { firstDraws++; },
             },
         };
     }
@@ -1036,20 +677,6 @@ describe('renderMergedTile: incremental painting', () => {
         assert.deepEqual(h.drawnCalls[2], ['a', 'b', 'c']);
     });
 
-    it('reports the first paint once, so the tile becomes visible early', async () => {
-        // Leaflet hides a tile until done() marks it loaded, so onFirstDraw is
-        // what makes incremental painting visible at all — and it must fire
-        // exactly once, not on every repaint.
-        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
-        const done = renderMergedTile(h.opts);
-        await h.arrive('a');
-        await h.arrive('b');
-        await h.arrive('c');
-
-        await done;
-        assert.equal(h.firstDraws(), 1);
-    });
-
     it('does not let one stuck request blank the whole group', async () => {
         // The motivating case. With a batch draw, a request that never settles
         // left the tile blank indefinitely; now it costs one layer.
@@ -1059,19 +686,18 @@ describe('renderMergedTile: incremental painting', () => {
         assert.ok(h.drawnCalls.length >= 1, 'must paint without the straggler');
         const last = h.drawnCalls[h.drawnCalls.length - 1];
         assert.deepEqual(last, ['a', null, 'c']);
-        assert.equal(h.firstDraws(), 1, 'the tile is visible');
     });
 
     it('paints an all-blank composite when nothing arrives', async () => {
-        // Otherwise a tile whose every layer failed would stay hidden forever,
-        // because Leaflet only reveals it once done() has been called.
+        // Otherwise a tile whose every layer failed would never settle, and
+        // the view would wait on it forever.
         const h = incHarness(ITEMS3);
         h.opts.request = async () => { throw new Error('cancelled'); };
         const stats = await renderMergedTile(h.opts);
         assert.equal(stats.arrived, 0);
+        assert.equal(stats.failed, 3);
         assert.equal(stats.paints, 1);
         assert.deepEqual(h.drawnCalls[0], [null, null, null]);
-        assert.equal(h.firstDraws(), 1);
     });
 
     it('holds the decodes until the tile is complete, then frees them all', async () => {
@@ -1091,6 +717,76 @@ describe('renderMergedTile: incremental painting', () => {
         await h.arrive('b');
         await h.arrive('c');
 
+        await done;
+        assert.deepEqual(h.released.sort(), ['a', 'b', 'c']);
+    });
+
+    // ── Options > "Double buffering" (#11340) ──
+    //
+    // Every paint clears the canvas first, so repainting a tile that is already
+    // on screen shows the group being rebuilt layer by layer.  One composite,
+    // after everything has settled, makes the swap atomic — the canvas is the
+    // buffer, because a synchronous clear-and-composite is never presented half
+    // done.
+
+    it('paints once, at the end, when buffering', async () => {
+        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
+        const done = renderMergedTile({ ...h.opts, incremental: false });
+        await h.arrive('a');
+        await h.arrive('b');
+        assert.deepEqual(h.drawnCalls, [], 'nothing painted mid-flight');
+
+        await h.arrive('c');
+        const stats = await done;
+        assert.equal(stats.paints, 1);
+        assert.deepEqual(h.drawnCalls, [['a', 'b', 'c']]);
+    });
+
+    // The mode decides WHEN the composite is shown, never what it contains.
+    it('composites the same result either way', async () => {
+        const buffered = incHarness(ITEMS3);
+        const incremental = incHarness(ITEMS3);
+        await renderMergedTile({ ...buffered.opts, incremental: false });
+        await renderMergedTile(incremental.opts);
+        const last = (h) => h.drawnCalls[h.drawnCalls.length - 1];
+        assert.deepEqual(last(buffered), last(incremental));
+    });
+
+    // The cost of buffering, stated in a test rather than in a comment: the
+    // tile now appears at the pace of its slowest layer, so a request that
+    // never settles holds it hidden instead of costing one missing layer.  That
+    // rests on cancel() rejecting rather than leaving a request pending — see
+    // WebSocketManager.cancel.
+    it('waits for a layer the incremental mode would paint around', async () => {
+        const buffered = incHarness(ITEMS3, { hang: ['b'] });
+        renderMergedTile({ ...buffered.opts, incremental: false });
+        await flush();
+        assert.deepEqual(buffered.drawnCalls, [], 'nothing shown yet');
+
+        const incremental = incHarness(ITEMS3, { hang: ['b'] });
+        renderMergedTile(incremental.opts);
+        await flush();
+        assert.ok(incremental.drawnCalls.length > 0, 'a and c are already up');
+    });
+
+    it('paints an all-blank composite when nothing arrives, buffered too',
+       async () => {
+           const h = incHarness(ITEMS3);
+           h.opts.request = async () => { throw new Error('cancelled'); };
+           const stats = await renderMergedTile(
+               { ...h.opts, incremental: false });
+           assert.equal(stats.paints, 1);
+           assert.deepEqual(h.drawnCalls, [[null, null, null]]);
+       });
+
+    // The decodes are held to the end in both modes, so buffering costs no
+    // extra memory — the reason no off-screen canvas is needed.
+    it('frees every decode when buffering', async () => {
+        const h = incHarness(ITEMS3, { gated: ['a', 'b', 'c'] });
+        const done = renderMergedTile({ ...h.opts, incremental: false });
+        await h.arrive('a');
+        await h.arrive('b');
+        await h.arrive('c');
         await done;
         assert.deepEqual(h.released.sort(), ['a', 'b', 'c']);
     });

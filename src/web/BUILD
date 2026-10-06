@@ -30,7 +30,6 @@ genrule(
         "src/style.css",
         "src/theme.js",
         "src/display-state.js",
-        "src/3d-viewer-widget.js",
         "src/coordinates.js",
         "src/ui-utils.js",
         "src/checkbox-tree-model.js",
@@ -38,10 +37,13 @@ genrule(
         "src/websocket-manager.js",
         "src/tile-merge.js",
         "src/tile-request.js",
-        "src/device-pixels.js",
         "src/layer-extents.js",
-        "src/websocket-tile-layer.js",
-        "src/merged-tile-layer.js",
+        "src/view-math.js",
+        "src/zoom-swap.js",
+        "src/tile-grid.js",
+        "src/tile-sources.js",
+        "src/layout-view.js",
+        "src/view-input.js",
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
@@ -62,6 +64,7 @@ genrule(
         "src/charts-widget.js",
         "src/timing-widget.js",
         "src/drc-widget.js",
+        "src/3d-viewer-widget.js",
         "src/selection-browser.js",
         "src/main.js",
     ],
@@ -71,7 +74,6 @@ genrule(
           " --css $(location src/style.css)" +
           " --js $(location src/theme.js)" +
           " $(location src/display-state.js)" +
-          " $(location src/3d-viewer-widget.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
           " $(location src/checkbox-tree-model.js)" +
@@ -79,10 +81,13 @@ genrule(
           " $(location src/websocket-manager.js)" +
           " $(location src/tile-merge.js)" +
           " $(location src/tile-request.js)" +
-          " $(location src/device-pixels.js)" +
           " $(location src/layer-extents.js)" +
-          " $(location src/websocket-tile-layer.js)" +
-          " $(location src/merged-tile-layer.js)" +
+          " $(location src/view-math.js)" +
+          " $(location src/zoom-swap.js)" +
+          " $(location src/tile-grid.js)" +
+          " $(location src/tile-sources.js)" +
+          " $(location src/layout-view.js)" +
+          " $(location src/view-input.js)" +
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
@@ -103,6 +108,7 @@ genrule(
           " $(location src/charts-widget.js)" +
           " $(location src/timing-widget.js)" +
           " $(location src/drc-widget.js)" +
+          " $(location src/3d-viewer-widget.js)" +
           " $(location src/selection-browser.js)" +
           " $(location src/main.js)",
     tools = [":embed_report_assets"],
@@ -114,9 +120,13 @@ _WEB_ASSET_FILES = [
     "src/theme.js",
     "src/tile-merge.js",
     "src/tile-request.js",
-    "src/device-pixels.js",
     "src/layer-extents.js",
-    "src/merged-tile-layer.js",
+    "src/view-math.js",
+    "src/zoom-swap.js",
+    "src/tile-grid.js",
+    "src/tile-sources.js",
+    "src/layout-view.js",
+    "src/view-input.js",
     "src/display-state.js",
     "src/3d-viewer-widget.js",
     "src/coordinates.js",
@@ -124,7 +134,6 @@ _WEB_ASSET_FILES = [
     "src/checkbox-tree-model.js",
     "src/vis-tree.js",
     "src/websocket-manager.js",
-    "src/websocket-tile-layer.js",
     "src/display-controls.js",
     "src/inspector.js",
     "src/ruler.js",

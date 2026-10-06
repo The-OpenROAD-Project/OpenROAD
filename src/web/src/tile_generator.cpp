@@ -31,6 +31,8 @@
 #include <vector>
 
 #include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
 #include "color.h"
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
@@ -1052,89 +1054,102 @@ inline int hairlineCss(const TileFrame& frame)
   return std::max(1, static_cast<int>(std::lround(frame.px_per_css)));
 }
 
+struct BoolField
+{
+  const char* key;
+  bool TileVisibility::*field;
+  bool default_val;
+};
+
+// Every visibility flag a tile render reads, with its default.  Parsing and
+// the tile-cache key walk the same list.
+// clang-format off
+// NOLINTBEGIN(modernize-use-designated-initializers)
+const BoolField kVisibilityFields[] = {
+  {"stdcells",           &TileVisibility::stdcells,           true},
+  {"macros",             &TileVisibility::macros,             true},
+  {"pad_input",          &TileVisibility::pad_input,          true},
+  {"pad_output",         &TileVisibility::pad_output,         true},
+  {"pad_inout",          &TileVisibility::pad_inout,          true},
+  {"pad_power",          &TileVisibility::pad_power,          true},
+  {"pad_spacer",         &TileVisibility::pad_spacer,         true},
+  {"pad_areaio",         &TileVisibility::pad_areaio,         true},
+  {"pad_other",          &TileVisibility::pad_other,          true},
+  {"phys_fill",          &TileVisibility::phys_fill,          true},
+  {"phys_endcap",        &TileVisibility::phys_endcap,        true},
+  {"phys_welltap",       &TileVisibility::phys_welltap,       true},
+  {"phys_tie",           &TileVisibility::phys_tie,           true},
+  {"phys_antenna",       &TileVisibility::phys_antenna,       true},
+  {"phys_cover",         &TileVisibility::phys_cover,         true},
+  {"phys_bump",          &TileVisibility::phys_bump,          true},
+  {"phys_other",         &TileVisibility::phys_other,         true},
+  {"std_bufinv",         &TileVisibility::std_bufinv,         true},
+  {"std_bufinv_timing",  &TileVisibility::std_bufinv_timing,  true},
+  {"std_clock_bufinv",   &TileVisibility::std_clock_bufinv,   true},
+  {"std_clock_gate",     &TileVisibility::std_clock_gate,     true},
+  {"std_level_shift",    &TileVisibility::std_level_shift,    true},
+  {"std_sequential",     &TileVisibility::std_sequential,     true},
+  {"std_combinational",  &TileVisibility::std_combinational,  true},
+  {"net_signal",         &TileVisibility::net_signal,         true},
+  {"net_power",          &TileVisibility::net_power,          true},
+  {"net_ground",         &TileVisibility::net_ground,         true},
+  {"net_clock",          &TileVisibility::net_clock,          true},
+  {"net_reset",          &TileVisibility::net_reset,          true},
+  {"net_tieoff",         &TileVisibility::net_tieoff,         true},
+  {"net_scan",           &TileVisibility::net_scan,           true},
+  {"net_analog",         &TileVisibility::net_analog,         true},
+  {"routing",            &TileVisibility::routing,            true},
+  {"routing_segments",   &TileVisibility::routing_segments,   true},
+  {"routing_vias",       &TileVisibility::routing_vias,       true},
+  {"special_nets",       &TileVisibility::special_nets,       true},
+  {"srouting_segments",  &TileVisibility::srouting_segments,  true},
+  {"srouting_vias",      &TileVisibility::srouting_vias,      true},
+  {"labels",             &TileVisibility::labels,             true},
+  {"pins",               &TileVisibility::pins,               true},
+  {"pin_markers",        &TileVisibility::pin_markers,        true},
+  {"pin_names",          &TileVisibility::pin_names,          true},
+  {"access_points",      &TileVisibility::access_points,      false},
+  {"regions",            &TileVisibility::regions,            true},
+  {"mfg_grid",           &TileVisibility::mfg_grid,           false},
+  {"gcell_grid",         &TileVisibility::gcell_grid,         false},
+  {"rudy",               &TileVisibility::rudy,               false},
+  {"inst_names",         &TileVisibility::inst_names,         true},
+  {"inst_pins",          &TileVisibility::inst_pins,          true},
+  {"inst_pin_names",     &TileVisibility::inst_pin_names,     false},
+  {"blockages",              &TileVisibility::blockages,              true},
+  {"placement_blockages",    &TileVisibility::placement_blockages,    true},
+  {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
+  {"fills",                  &TileVisibility::fills,                  false},
+  {"rows",                   &TileVisibility::rows,                   false},
+  {"tracks_pref",            &TileVisibility::tracks_pref,            false},
+  {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
+  {"detailed",               &TileVisibility::detailed,               false},
+  {"debug",                  &TileVisibility::debug,                  false},
+  {"debug_renderers",        &TileVisibility::debug_renderers,        false},
+  {"debug_live",             &TileVisibility::debug_live,             false},
+};
+// NOLINTEND(modernize-use-designated-initializers)
+// clang-format on
+
 }  // namespace
+
+/* static */
+std::vector<std::string_view> TileVisibility::flagKeys()
+{
+  std::vector<std::string_view> keys;
+  keys.reserve(std::size(kVisibilityFields));
+  for (const BoolField& f : kVisibilityFields) {
+    keys.emplace_back(f.key);
+  }
+  return keys;
+}
 
 void TileVisibility::parseFromJson(const boost::json::object& json)
 {
-  struct BoolField
-  {
-    const char* key;
-    bool TileVisibility::*field;
-    bool default_val;
-  };
-
-  // clang-format off
-  // NOLINTBEGIN(modernize-use-designated-initializers)
-  static const BoolField kFields[] = {
-    {"stdcells",           &TileVisibility::stdcells,           true},
-    {"macros",             &TileVisibility::macros,             true},
-    {"pad_input",          &TileVisibility::pad_input,          true},
-    {"pad_output",         &TileVisibility::pad_output,         true},
-    {"pad_inout",          &TileVisibility::pad_inout,          true},
-    {"pad_power",          &TileVisibility::pad_power,          true},
-    {"pad_spacer",         &TileVisibility::pad_spacer,         true},
-    {"pad_areaio",         &TileVisibility::pad_areaio,         true},
-    {"pad_other",          &TileVisibility::pad_other,          true},
-    {"phys_fill",          &TileVisibility::phys_fill,          true},
-    {"phys_endcap",        &TileVisibility::phys_endcap,        true},
-    {"phys_welltap",       &TileVisibility::phys_welltap,       true},
-    {"phys_tie",           &TileVisibility::phys_tie,           true},
-    {"phys_antenna",       &TileVisibility::phys_antenna,       true},
-    {"phys_cover",         &TileVisibility::phys_cover,         true},
-    {"phys_bump",          &TileVisibility::phys_bump,          true},
-    {"phys_other",         &TileVisibility::phys_other,         true},
-    {"std_bufinv",         &TileVisibility::std_bufinv,         true},
-    {"std_bufinv_timing",  &TileVisibility::std_bufinv_timing,  true},
-    {"std_clock_bufinv",   &TileVisibility::std_clock_bufinv,   true},
-    {"std_clock_gate",     &TileVisibility::std_clock_gate,     true},
-    {"std_level_shift",    &TileVisibility::std_level_shift,    true},
-    {"std_sequential",     &TileVisibility::std_sequential,     true},
-    {"std_combinational",  &TileVisibility::std_combinational,  true},
-    {"net_signal",         &TileVisibility::net_signal,         true},
-    {"net_power",          &TileVisibility::net_power,          true},
-    {"net_ground",         &TileVisibility::net_ground,         true},
-    {"net_clock",          &TileVisibility::net_clock,          true},
-    {"net_reset",          &TileVisibility::net_reset,          true},
-    {"net_tieoff",         &TileVisibility::net_tieoff,         true},
-    {"net_scan",           &TileVisibility::net_scan,           true},
-    {"net_analog",         &TileVisibility::net_analog,         true},
-    {"routing",            &TileVisibility::routing,            true},
-    {"routing_segments",   &TileVisibility::routing_segments,   true},
-    {"routing_vias",       &TileVisibility::routing_vias,       true},
-    {"special_nets",       &TileVisibility::special_nets,       true},
-    {"srouting_segments",  &TileVisibility::srouting_segments,  true},
-    {"srouting_vias",      &TileVisibility::srouting_vias,      true},
-    {"labels",             &TileVisibility::labels,             true},
-    {"pins",               &TileVisibility::pins,               true},
-    {"pin_markers",        &TileVisibility::pin_markers,        true},
-    {"pin_names",          &TileVisibility::pin_names,          true},
-    {"access_points",      &TileVisibility::access_points,      false},
-    {"regions",            &TileVisibility::regions,            true},
-    {"mfg_grid",           &TileVisibility::mfg_grid,           false},
-    {"gcell_grid",         &TileVisibility::gcell_grid,         false},
-    {"rudy",               &TileVisibility::rudy,               false},
-    {"inst_names",         &TileVisibility::inst_names,         true},
-    {"inst_pins",          &TileVisibility::inst_pins,          true},
-    {"inst_pin_names",     &TileVisibility::inst_pin_names,     false},
-    {"blockages",              &TileVisibility::blockages,              true},
-    {"placement_blockages",    &TileVisibility::placement_blockages,    true},
-    {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
-    {"fills",                  &TileVisibility::fills,                  false},
-    {"rows",                   &TileVisibility::rows,                   false},
-    {"tracks_pref",            &TileVisibility::tracks_pref,            false},
-    {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
-    {"detailed",               &TileVisibility::detailed,               false},
-    {"debug",                  &TileVisibility::debug,                  false},
-    {"debug_renderers",        &TileVisibility::debug_renderers,        false},
-    {"debug_live",             &TileVisibility::debug_live,             false},
-  };
-  // NOLINTEND(modernize-use-designated-initializers)
-  // clang-format on
-
   // Visibility flags are nominally always sent by the web frontend, but
   // tests and the saveImage Tcl entry point can pass partial payloads;
   // fall back to the per-field default when a flag is omitted.
-  for (const auto& f : kFields) {
+  for (const auto& f : kVisibilityFields) {
     this->*(f.field) = jsonOr<bool>(json, f.key, f.default_val);
   }
 
@@ -1170,12 +1185,8 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   // Per-layer fill pattern for the requested layer (int mirrors FillPattern /
   // web::Painter::Brush).  Defaults to solid; clamp unknown values so a bad
   // payload can't index outside the enum.
-  const int64_t pattern
-      = jsonOr<int64_t>(json, "pattern", static_cast<int>(FillPattern::kSolid));
-  fill_pattern = (pattern >= static_cast<int>(FillPattern::kNone)
-                  && pattern <= static_cast<int>(FillPattern::kDots))
-                     ? static_cast<FillPattern>(pattern)
-                     : FillPattern::kSolid;
+  fill_pattern = toFillPattern(
+      jsonOr<int64_t>(json, "pattern", static_cast<int>(FillPattern::kSolid)));
 
   // ── Selectability peers ──
   // clang-format off
@@ -1653,6 +1664,7 @@ void TileGenerator::eagerInit()
     std::lock_guard lock(tile_cache_mutex_);
     tile_cache_lru_.clear();
     tile_cache_index_.clear();
+    tile_cache_bytes_ = 0;
   }
   // suppress_guard restores suppress_design_changed_ to false on return.
 }
@@ -1676,6 +1688,7 @@ void TileGenerator::onDesignChanged()
     std::lock_guard lock(tile_cache_mutex_);
     tile_cache_lru_.clear();
     tile_cache_index_.clear();
+    tile_cache_bytes_ = 0;
   }
 
   // The geometry cache is NOT dropped here.  This hook is debounced (see
@@ -1716,18 +1729,27 @@ bool TileGenerator::tileCacheGet(const std::string& key,
 void TileGenerator::tileCachePut(std::string key,
                                  std::vector<unsigned char> png) const
 {
+  // Keeping it would evict everything else.
+  if (png.size() > kTileCacheBytesCap) {
+    return;
+  }
   std::lock_guard lock(tile_cache_mutex_);
   const auto it = tile_cache_index_.find(key);
   if (it != tile_cache_index_.end()) {
     // Already present: refresh contents and promote to most-recent.
+    tile_cache_bytes_ -= it->second->second.size();
+    tile_cache_bytes_ += png.size();
     it->second->second = std::move(png);
     tile_cache_lru_.splice(
         tile_cache_lru_.begin(), tile_cache_lru_, it->second);
-    return;
+  } else {
+    tile_cache_bytes_ += png.size();
+    tile_cache_lru_.emplace_front(key, std::move(png));
+    tile_cache_index_[std::move(key)] = tile_cache_lru_.begin();
   }
-  tile_cache_lru_.emplace_front(key, std::move(png));
-  tile_cache_index_[std::move(key)] = tile_cache_lru_.begin();
-  if (tile_cache_lru_.size() > kTileCacheCap) {
+  while (tile_cache_lru_.size() > kTileCacheCap
+         || tile_cache_bytes_ > kTileCacheBytesCap) {
+    tile_cache_bytes_ -= tile_cache_lru_.back().second.size();
     tile_cache_index_.erase(tile_cache_lru_.back().first);
     tile_cache_lru_.pop_back();
   }
@@ -1737,6 +1759,67 @@ size_t TileGenerator::tileCacheSize() const
 {
   std::lock_guard lock(tile_cache_mutex_);
   return tile_cache_lru_.size();
+}
+
+size_t TileGenerator::tileCacheBytes() const
+{
+  std::lock_guard lock(tile_cache_mutex_);
+  return tile_cache_bytes_;
+}
+
+/* static */
+std::string TileGenerator::tileCacheKey(const TileVisibility& vis,
+                                        const std::string_view layer)
+{
+  // A pseudo layer's own flag matters to that layer alone, and the others
+  // excepted here are each read by a single pass.  Every other flag counts.
+  const auto affects = [layer](const BoolField& f) {
+    for (const PseudoLayerDef& def : pseudoLayerDefs()) {
+      if (def.flag == f.field) {
+        return layer == def.name;
+      }
+    }
+    const std::string_view key = f.key;
+    if (key == "pin_markers" || key == "pin_names") {
+      return layer == "_pins";
+    }
+    if (key == "rows") {
+      return layer == "_instances";
+    }
+    // Labels are drawn by the overlay tile.
+    return key != "labels";
+  };
+
+  std::string flags;
+  flags.reserve(std::size(kVisibilityFields));
+  for (const BoolField& f : kVisibilityFields) {
+    flags += !affects(f) ? '-' : (vis.*(f.field) ? '1' : '0');
+  }
+
+  boost::json::object key;
+  key["v"] = flags;
+  key["p"] = static_cast<int>(vis.fill_pattern);
+  if (vis.has_visible_chiplets) {
+    key["c"] = boost::json::array(vis.visible_chiplets.begin(),
+                                  vis.visible_chiplets.end());
+  }
+  // Only the pin markers and the access points filter by tech layer.
+  if (vis.has_visible_layers
+      && (layer == "_pins" || layer == "_access_points")) {
+    key["l"] = boost::json::array(vis.visible_layers.begin(),
+                                  vis.visible_layers.end());
+  }
+  if (vis.rows && layer == "_instances") {
+    std::vector<std::pair<std::string, bool>> sites(vis.sites.begin(),
+                                                    vis.sites.end());
+    std::ranges::sort(sites);
+    boost::json::object site_flags;
+    for (const auto& [name, visible] : sites) {
+      site_flags[name] = visible;
+    }
+    key["s"] = std::move(site_flags);
+  }
+  return boost::json::serialize(key);
 }
 
 namespace {
@@ -2867,7 +2950,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   }
   // Compute a search margin of 2 pixels at the current zoom level.
   // This accounts for coordinate conversion rounding between the client's
-  // Leaflet CRS.Simple coordinates and the server's DBU space.
+  // view coordinates and the server's DBU space.
   const int num_tiles = 1 << std::max(0, zoom);
   const int margin
       = std::max(1, getBounds().maxDXDY() / (kTileSizeInPixel * num_tiles) * 2);
@@ -3360,6 +3443,66 @@ std::vector<unsigned char> TileGenerator::generateTile(
     lodepng::save_file(png_data, filename);
   }
 
+  return png_data;
+}
+
+std::vector<unsigned char> TileGenerator::generateGroupTile(
+    const std::vector<std::string>& layers,
+    const std::vector<FillPattern>& patterns,
+    const int z,
+    const int x,
+    const int y,
+    const TileVisibility& vis,
+    const std::set<uint32_t>* focus_net_ids,
+    const double dpr,
+    const int tile_px,
+    const std::function<bool()>& aborted) const
+{
+  TileVisibility layer_vis = vis;
+  std::vector<unsigned char> composite;
+  int dim = 0;
+  for (size_t i = 0; i < layers.size(); ++i) {
+    if (aborted()) {
+      return {};
+    }
+    layer_vis.fill_pattern = patterns[i];
+    std::vector<unsigned char> layer_buffer = renderTileBuffer(layers[i],
+                                                               z,
+                                                               x,
+                                                               y,
+                                                               layer_vis,
+                                                               {},
+                                                               {},
+                                                               {},
+                                                               {},
+                                                               nullptr,
+                                                               focus_net_ids,
+                                                               nullptr,
+                                                               dpr,
+                                                               tile_px);
+    // Transparent pixels come back all-zero, so the bottom layer is already
+    // its own composite onto an empty tile.
+    if (composite.empty()) {
+      dim = bufferDim(layer_buffer);
+      composite = std::move(layer_buffer);
+    } else {
+      compositeTile(layer_buffer, dim, composite.data(), dim, 0, 0);
+    }
+  }
+  if (composite.empty()) {
+    return {};
+  }
+
+  unsigned encode_error = 0;
+  std::vector<unsigned char> png_data
+      = encodeImagePng(composite, dim, dim, &encode_error);
+  if (encode_error != 0) {
+    logger_->report("PNG encoder error on group tile {}/{}/{}: {}",
+                    z,
+                    x,
+                    y,
+                    lodepng_error_text(encode_error));
+  }
   return png_data;
 }
 
@@ -4015,12 +4158,12 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
     const std::vector<std::string>& tech_layers)
 {
-  // Bottom to top, by the z order the client stacks the layers in on screen
-  // (addPseudoLayer / the layer loop in display-controls.js): Leaflet paints
-  // by zIndex, so a PNG composited in any other order is not the view the
-  // user saw.  Compositing in registry order — every pseudo layer last — put
-  // the manufacturing grid over the routing and the pin markers over the tech
-  // layers.  These three mirror the client's non-pseudo values;
+  // Bottom to top, by the SAME z order the client stacks the layers in on
+  // screen (the draw lists in display-controls.js): the view paints in
+  // that order, so a PNG composited in any other order is not the view
+  // the user saw.  Compositing in registry order — every pseudo layer last —
+  // put the manufacturing grid over the routing and the pin markers over the
+  // tech layers.  These three mirror the client's non-pseudo values;
   // PseudoLayerDef::z_index carries the overlays'.
   //
   // `tech_layers` arrives already in the client's paint order — see
@@ -4062,8 +4205,8 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
 const std::array<TileGenerator::PseudoLayerDef, 5>&
 TileGenerator::pseudoLayerDefs()
 {
-  // z_index mirrors addPseudoLayer() in display-controls.js (see
-  // saveImageLayerOrder); those values in turn follow the GUI's paint order
+  // z_index mirrors the client's draw lists in display-controls.js (see
+  // saveImageLayerOrder); that order in turn follows the GUI's paint order
   // (renderThread.cpp:1201-1298), where the manufacturing grid goes down before
   // the routing layers and access points, regions and the gcell grid on top.
   static const std::array<PseudoLayerDef, 5> defs = {{
@@ -4250,7 +4393,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               : size_limit_dbu;
     // The geometry the tile request resolves to: which slice of the design it
     // covers and at what resolution.  `y` here is already flipped out of the
-    // client's Leaflet convention, so it will not match the requested y.  The
+    // client's top-down convention, so it will not match the requested y.  The
     // micron window depends only on the design bounds and z; tile_px/draw_px
     // and the cull limits are the dpr-derived part.
     const double dbu_per_micron = db_->getDbuPerMicron();
@@ -6272,12 +6415,12 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       const int out_ox = (tx - tx_min) * kTileSizeInPixel;
       // Y is flipped: ty is bottom-up, output is top-down.
       const int out_oy = (ty_max - ty) * kTileSizeInPixel;
-      // Leaflet-style y coordinate (before the flip in renderTileBuffer).
-      const int leaflet_y = num_tiles - 1 - ty;
+      // Client (top-down) y coordinate, before the flip in renderTileBuffer.
+      const int top_down_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
         const auto tile_buf
-            = renderTileBuffer(layer, z, tx, leaflet_y, image_vis);
+            = renderTileBuffer(layer, z, tx, top_down_y, image_vis);
         compositeTile(tile_buf,
                       kTileSizeInPixel,
                       output.data(),
@@ -6289,7 +6432,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       // User text labels go on top of all layers (Qt parity: labels appear
       // in save_image).
       if (!labels.empty()) {
-        const auto label_buf = renderLabelTile(z, tx, leaflet_y, labels);
+        const auto label_buf = renderLabelTile(z, tx, top_down_y, labels);
         if (!label_buf.empty()) {
           compositeTile(label_buf,
                         kTileSizeInPixel,
@@ -6591,10 +6734,10 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
     for (int tx = 0; tx <= tx_max; ++tx) {
       const int out_ox = tx * kTileSizeInPixel;
       const int out_oy = (ty_max - ty) * kTileSizeInPixel;
-      const int leaflet_y = num_tiles - 1 - ty;
+      const int top_down_y = num_tiles - 1 - ty;
 
       auto tile_buf = renderTileBuffer(
-          "_instances", z, tx, leaflet_y, vis, {}, {}, rects, lines);
+          "_instances", z, tx, top_down_y, vis, {}, {}, rects, lines);
 
       for (int py = 0; py < kTileSizeInPixel; ++py) {
         for (int px = 0; px < kTileSizeInPixel; ++px) {

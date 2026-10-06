@@ -10,6 +10,7 @@
 
 import argparse
 import re
+import sys
 
 
 def process_js_file(content):
@@ -19,7 +20,16 @@ def process_js_file(content):
     # consumed whole and no real code can be swallowed.  A single-line-only
     # pattern left the tail of a wrapped import behind, which is a syntax error
     # for the whole concatenated bundle.
+    aliases = import_aliases(content)
     content = re.sub(r"^import\s[^;]*;[ \t]*$", "", content, flags=re.MULTILINE)
+    # An aliased import loses its local name with the import; take it from
+    # the global the exporting module leaves behind.
+    if aliases:
+        content = (
+            "\n".join(f"const {local} = {name};" for name, local in aliases)
+            + "\n"
+            + content
+        )
 
     # Find exported names and strip the export keyword.
     # Two patterns:
@@ -27,15 +37,15 @@ def process_js_file(content):
     #   2. export { InternalA as ExportedA, InternalB, ... }
     exported_names = []
 
-    # Pattern 1: export function/class/const Name
+    # Pattern 1: export [async] function/class/const Name
     def capture_export_decl(m):
-        keyword = m.group(1)  # function, class, or const
+        keyword = m.group(1)  # [async] function, class, or const
         name = m.group(2)
         exported_names.append(name)
         return keyword + " " + name
 
     content = re.sub(
-        r"^export\s+(function|class|const)\s+(\w+)",
+        r"^export\s+((?:async\s+)?function|class|const)\s+(\w+)",
         capture_export_decl,
         content,
         flags=re.MULTILINE,
@@ -96,20 +106,83 @@ def process_js_file(content):
     return "\n".join(lines)
 
 
+def import_aliases(content):
+    """(name, local) for each `name as local` in a named import."""
+    pairs = []
+    for m in re.finditer(r"^import\s*\{([^}]*)\}[^;]*;", content, flags=re.MULTILINE):
+        for item in m.group(1).split(","):
+            parts = item.split()
+            if len(parts) == 3 and parts[1] == "as":
+                pairs.append((parts[0], parts[2]))
+    for name, _ in pairs:
+        if re.search(
+            r"^(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+"
+            + name
+            + r"\b",
+            content,
+            flags=re.MULTILINE,
+        ):
+            sys.exit(f"embed_report_assets: '{name}' is both imported and declared")
+    return pairs
+
+
+def local_imports(content):
+    """Basenames of the sibling modules a JS file imports ('./x.js')."""
+    return re.findall(
+        r"^import\s(?:[^;]*?from\s+)?['\"]\./([\w.-]+\.js)['\"]",
+        content,
+        flags=re.MULTILINE,
+    )
+
+
+def dependency_order(sources):
+    """`sources` ([(path, content)]) with each file after the files it imports,
+    else in the given order: a file's top-level code runs as it is reached."""
+    by_name = {path.split("/")[-1]: (path, content) for path, content in sources}
+    done, visiting, ordered = set(), [], []
+
+    def visit(name):
+        if name in done:
+            return
+        if name in visiting:
+            cycle = visiting[visiting.index(name) :] + [name]
+            sys.exit("embed_report_assets: import cycle " + " -> ".join(cycle))
+        visiting.append(name)
+        for dep in local_imports(by_name[name][1]):
+            if dep not in by_name:
+                sys.exit(
+                    f"embed_report_assets: {name} imports {dep}, "
+                    "which is not in --js"
+                )
+            visit(dep)
+        visiting.pop()
+        done.add(name)
+        ordered.append(by_name[name])
+
+    for path, _ in sources:
+        visit(path.split("/")[-1])
+    return ordered
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
     parser.add_argument("--css", required=True, help="style.css path")
     parser.add_argument(
-        "--js", nargs="+", required=True, help="JS files in dependency order"
+        "--js",
+        nargs="+",
+        required=True,
+        help="JS files; each is emitted after the files it imports",
     )
     args = parser.parse_args()
 
     # Read and process JS files.
-    js_parts = []
+    sources = []
     for path in args.js:
         with open(path, encoding="utf-8") as f:
-            content = f.read()
+            sources.append((path, f.read()))
+    js_parts = []
+    for path, content in dependency_order(sources):
         js_parts.append(f'// ── {path.split("/")[-1]} ──')
         js_parts.append(process_js_file(content))
     combined_js = "\n".join(js_parts)

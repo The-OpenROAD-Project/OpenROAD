@@ -133,8 +133,8 @@ export class LayerExtents {
     }
 }
 
-// Whether a tile layer should request `layer` at `coords`.  `ctx` is a tile
-// layer's context ({ visibility, app }); app.layerExtents is absent until
+// Whether a tile source should request `layer` at `coords`.  `ctx` is the
+// tile request context ({ visibility, app }); app.layerExtents is absent until
 // main.js installs it, and in that case everything is requested.
 export function tileMayHaveContent(ctx, layer, coords) {
     const extents = ctx && ctx.app && ctx.app.layerExtents;

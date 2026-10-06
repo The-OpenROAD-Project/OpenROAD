@@ -73,9 +73,9 @@ export class ContextMenu {
             }
         });
 
-        // Hide the menu when the map moves.
-        if (this._app.map) {
-            this._app.map.on('movestart', () => this.hide());
+        // Hide the menu when the view moves.
+        if (this._app.view) {
+            this._app.view.on('movestart', () => this.hide());
         }
     }
 
@@ -134,9 +134,9 @@ export class ContextMenu {
         const maxLeft = window.innerWidth - rect.width - margin;
         const maxTop = window.innerHeight - rect.height - margin;
         const left = Math.max(margin,
-            Math.min(e.originalEvent.clientX, maxLeft));
+            Math.min(e.clientX, maxLeft));
         const top = Math.max(margin,
-            Math.min(e.originalEvent.clientY, maxTop));
+            Math.min(e.clientY, maxTop));
         this._el.style.left = left + 'px';
         this._el.style.top = top + 'px';
     }
@@ -259,10 +259,7 @@ export class ContextMenu {
         if (action === 'clear_selections' || action === 'clear_all') {
             app.updateInspector?.(null);
             app.stopSelectionAnimation?.();
-            if (app.highlightRect && app.map) {
-                app.map.removeLayer(app.highlightRect);
-                app.highlightRect = null;
-            }
+            app.clearSelectionOutline?.();
             app.lastSelectionBounds = null;
         } else {
             // Selection count/index and the highlight-group badge changed.

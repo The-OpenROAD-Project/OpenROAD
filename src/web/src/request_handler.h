@@ -96,6 +96,7 @@ struct WebSocketRequest
   enum Type
   {
     kTile,
+    kTileGroup,
     kBounds,
     kLayerExtents,
     kTech,
@@ -391,8 +392,8 @@ constexpr int kMaxTileZoom = 30;
 // Read the z/x/y grid coordinates of a tile request into `z`/`x`/`y`.
 // Returns false, with `error` describing the offending field, when a
 // coordinate is missing, is not an integer, or the zoom is outside
-// [0, kMaxTileZoom].  x and y are not bounded to the grid: Leaflet asks for
-// off-grid tiles as a matter of course and the renderers answer with a
+// [0, kMaxTileZoom].  x and y are not bounded to the grid: the client may
+// ask for off-grid tiles and the renderers answer with a
 // transparent tile.
 //
 // The type check is not paranoia about hand-written clients: JSON.stringify
@@ -597,6 +598,9 @@ class TileHandler
   void syncHeatMapsLocked(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
+  // One PNG for a run of tech layers, composited bottom to top.
+  WebSocketResponse handleTileGroup(const WebSocketRequest& req,
+                                    SessionState& state);
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
                                       SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);

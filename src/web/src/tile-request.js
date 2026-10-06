@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Wire format for tile requests, shared by the per-layer tile layer and the
-// merged (multi-layer) one.
-//
-// Split out of websocket-tile-layer.js so both layer types share one definition
-// of the payload and cannot drift on the wire — a divergence would give the two
-// paths different server-side tile-cache keys, and one of them would miss the
-// cache entirely.
+// Wire format for tile requests, shared by every tile source so they cannot
+// drift on the wire — a divergence would give two paths different server-side
+// tile-cache keys, and one of them would miss the cache entirely.
 
 // Normalize the display's device pixel ratio into the value sent on the wire.
 //
 // The pixel size of a tile no longer comes from this: `tile_px` carries the
-// exact device-pixel square the tile will occupy (see buildTileRequestFor), so
+// exact device-pixel square the tile will occupy (see tileRequestBuilder), so
 // the image maps 1:1 onto the device grid and the browser never resamples it —
 // which is what would otherwise reintroduce the moiré beat on HiDPI displays.
 // Rounding the ratio and multiplying by the tile size, as this once did, cannot
@@ -38,47 +34,25 @@ export function quantizeDpr(raw) {
 // 256 is not such a number. At a 1.6667 display scale (166%, ordinary on
 // Windows and Linux) 256 CSS px is 426.67 device px, so the tile *pitch* is
 // fractional: boundaries land at 426.67k device px and only every third one can
-// sit on the grid, whatever the pane offset is. The browser antialiases the
+// sit on the grid, whatever the view offset is. The browser antialiases the
 // other two into their neighbours, src-over leaves the coverage short of 1, and
-// the pane background shows through as a dark hairline on every seam.
+// the background shows through as a dark hairline on every seam.
 //
 // 240 = 2^4 * 3 * 5 is divisible by the denominator of every real ratio —
 // 1.25 = 5/4, 1.5 = 3/2, 1.6667 = 5/3, 1.75 = 7/4, 1.375 = 11/8, 1.1 = 11/10,
 // 2.5 = 5/2 — so tileSize*dpr comes out whole and the pitch is exact.
 //
 // Total decoded bytes barely move: the tiles are 6% smaller on a side and there
-// are ~14% more of them, so the pixel count is a wash (see tile-merge.js for the
-// budget). The cost is the extra request per tile.
+// are ~14% more of them, so the pixel count is a wash. The cost is the extra
+// request per tile.
 export const TILE_SIZE_CSS = 240;
 
 // Static reports carry tiles pre-rasterized at 256 CSS px by whoever authored
 // them. Those are files, not requests, so that path keeps the old size.
 export const STATIC_TILE_SIZE_CSS = 256;
 
-// What an <img> tile holds when the server drew nothing into it: a 1x1
-// transparent GIF.
-//
-// It has to hold SOMETHING.  An <img> with no src attribute but a CSS width and
-// height is not nothing to the browser -- Chrome paints the empty replaced
-// element, and since most tiles in a viewport are empty that came out as a grey
-// grid over the whole layout, one cell per tile.  Clearing the attribute is the
-// obvious way to say "no image" and it is the wrong one.
-//
-// This costs a 1x1 decode, 4 bytes, so it keeps what the empty response is for:
-// the tile still does not decode a full-size transparent PNG or hold a bitmap
-// the size of the tile.  Its load event also fires, which is what completes the
-// tile with Leaflet -- see the tile layers, which keep a tile hidden until then.
-//
-// It carries a Graphic Control Extension declaring colour 0 transparent.  A 1x1
-// GIF without one is a common paste and is NOT transparent: an <img> stretches
-// its single opaque pixel over the whole tile, so a viewport of empty tiles
-// comes out a solid wash instead of showing the layout underneath.
-export const BLANK_TILE
-    = 'data:image/gif;base64,'
-      + 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
 // The CSS tile size in force for this session.  Resolved once rather than
-// passed around: the map's coordinate scale, all three tile layers and the
+// passed around: the view's coordinate scale, every tile slot and the
 // request payload must agree on it, and a value threaded through five call
 // sites is a value that eventually disagrees with itself.
 let tile_size_css = TILE_SIZE_CSS;
@@ -112,7 +86,7 @@ const LAYOUT_UNIT = 1 / 64;
 // a size is whole in device pixels at ALL of them exactly when it is a
 // multiple of lcm(4,3,8,2,3,4,6,2,10) = 120.  Sizes chosen for the current
 // ratio alone would come apart the moment devicePixelRatio changes -- browser
-// zoom, or the window moving to another monitor -- and the tile panes are
+// zoom, or the window moving to another monitor -- and the tile slots are
 // built once, so nothing re-picks the size.  Keeping to the quantum makes the
 // choice independent of dpr and bounds the tile-cache key space the server
 // sees to two sizes instead of a continuum.
@@ -140,16 +114,6 @@ export function isDeviceExactTileSize(size, dpr) {
 // 240 while the server's kTileSizeInPixel is 256 is the same fact.
 export function useFittedTileSize(size) {
     tile_size_css = size;
-}
-
-// Merge the device-exact tile size into a Leaflet options object without
-// overriding an explicit choice (the static path passes its own).
-export function withDeviceExactTileSize(options) {
-    const opts = { ...(options || {}) };
-    if (opts.tileSize === undefined) {
-        opts.tileSize = tileSizeCss();
-    }
-    return opts;
 }
 
 // Device pixels for one tile: what the server is asked to render, and what a
@@ -209,44 +173,71 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
 // so the wire schema stays uniform with selectAt requests.
 //
 // `dpr` is passed in rather than read here so a caller can override it without
-// this module knowing anything about why.
-export function buildTileRequestFor(coords, layerName, ctx, dpr,
-                                    tileSize = tileSizeCss()) {
-    const { visibility, selectability, visibleLayers, selectableLayers, app }
-        = ctx;
-    const vf = {};
-    for (const [k, v] of Object.entries(visibility || {})) {
-        vf[k] = !!v;
-    }
+// this module knowing anything about why.  Returns `layerName => request`,
+// with the fields every layer shares built once.
+export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
+    const { selectability, selectableLayers, app } = ctx;
+    const shared = {
+        ...renderFields(coords, ctx, dpr, tileSize),
+        selectable_layers: selectableLayers ? [...selectableLayers] : [],
+    };
     if (selectability) {
         for (const [k, v] of Object.entries(selectability)) {
-            vf['s_' + k] = !!v;
+            shared['s_' + k] = !!v;
         }
     }
+    return (layerName) => {
+        const req = { type: 'tile', layer: layerName, ...shared };
+        const p = layerPattern(app, layerName);
+        if (p !== 1) {
+            req.pattern = p;
+        }
+        return req;
+    };
+}
+
+// One request for a run of layers, which the server composites bottom to top
+// into a single image.  Selectability changes no pixel, so it is left off.
+export function buildGroupTileRequestFor(coords, layerNames, ctx, dpr,
+                                         tileSize = tileSizeCss()) {
     const req = {
-        type: 'tile',
-        layer: layerName,
+        type: 'tile_group',
+        layers: [...layerNames],
+        ...renderFields(coords, ctx, dpr, tileSize),
+    };
+    const patterns = layerNames.map(name => layerPattern(ctx.app, name));
+    if (patterns.some(p => p !== 1)) {
+        req.patterns = patterns;
+    }
+    return req;
+}
+
+// The fields a layer render reads, shared by 'tile' and 'tile_group' so the
+// two cannot drift.
+function renderFields(coords, ctx, dpr, tileSize) {
+    const { visibility, visibleLayers, app } = ctx;
+    const fields = {
         z: coords.z,
         x: coords.x,
         y: coords.y,
         ...tileSizeFields(dpr, tileSize),
         visible_layers: visibleLayers ? [...visibleLayers] : [],
-        selectable_layers: selectableLayers ? [...selectableLayers] : [],
-        ...vf,
     };
+    for (const [k, v] of Object.entries(visibility || {})) {
+        fields[k] = !!v;
+    }
     if (app && app.visibleChiplets instanceof Set) {
-        req.visible_chiplets = [...app.visibleChiplets];
+        fields.visible_chiplets = [...app.visibleChiplets];
     }
-    // Per-layer fill pattern (int matching the server's FillPattern enum;
-    // 1 = solid). Read lazily so a change via the layer context menu is picked
-    // up on the next refresh without rebuilding the layer.
-    if (app && app.layerPatterns) {
-        const p = app.layerPatterns[layerName];
-        if (p !== undefined && p !== 1) {
-            req.pattern = p;
-        }
-    }
-    return req;
+    return fields;
+}
+
+// Per-layer fill pattern (int matching the server's FillPattern enum; 1 =
+// solid). Read lazily so a change via the layer context menu is picked up on
+// the next refresh without rebuilding the layer.
+function layerPattern(app, layerName) {
+    const p = app && app.layerPatterns ? app.layerPatterns[layerName] : undefined;
+    return p === undefined ? 1 : p;
 }
 
 // Call `onChange` whenever devicePixelRatio changes — a window dragged to
@@ -298,14 +289,4 @@ export function watchDevicePixelRatio(onChange) {
         query = null;
         handler = null;
     };
-}
-
-// Floor the map's REAL (possibly fractional) zoom so the displayed tile pane is
-// only ever UPSCALED (scale 2^(realZoom-floor) ∈ [1,2)), never downscaled.
-// Upscaling a band-limited tile cannot reintroduce the moiré beat; downscaling
-// can. Reading the live map zoom (not the passed arg) keeps this correct during
-// zoom-animation frames and robust even if zoomSnap:0 is re-enabled.
-export function floorClampZoom(layer, zoom) {
-    const real = (layer && layer._map) ? layer._map.getZoom() : zoom;
-    return Math.floor(real);
 }

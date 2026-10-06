@@ -3,7 +3,7 @@
 
 // Shared UI utilities.
 
-import { dbuRectToBounds } from './coordinates.js';
+import { dbuRectToWorldRect } from './coordinates.js';
 import { TILE_SIZE_CSS, TILE_SIZE_QUANTUM } from './tile-request.js';
 
 // True when the app was bootstrapped from a saved/static report
@@ -146,8 +146,9 @@ export function computeBoundsTransforms(designBounds, tileSize = 256,
         maxDXDY,
         originX: minX,
         originY: minY,
-        fitBounds: dbuRectToBounds(fitXMin, fitYMin, fitXMax, fitYMax,
-                                   scale, maxDXDY, minX, minY),
+        // World rect [minX, minY, maxX, maxY] (layout-view.js).
+        fitRect: dbuRectToWorldRect(fitXMin, fitYMin, fitXMax, fitYMax,
+                                    scale, minX, minY),
     };
 }
 
@@ -197,50 +198,17 @@ export function onSelectionReset(app, fn) {
     app.selectionResetters.push(fn);
 }
 
-// Leaflet map options for the 2D layout viewer.
-//
-// zoomSnap:1 + zoomDelta:1 force the map to rest only at INTEGER zoom levels,
-// so server tiles are displayed 1:1 at rest with no fractional CSS rescaling
-// of the tile pane.  Downscaling a band-limited dense raster (bump arrays)
-// re-introduces the moiré beat the server worked to remove; resting on integer
-// zoom (combined with the floor _clampZoom override in the tile layers, which
-// guarantees the pane is only ever upscaled) prevents that.
-//
-// `crs` is parameterized so this is unit-testable without the Leaflet global.
-// `prefs` carries the two Options-menu preferences the map itself owns
-// (see kArrowStepDefault and installWheelPanning).
-export function buildMapOptions(
-    crs = (typeof L !== 'undefined' ? L.CRS.Simple : undefined),
-    prefs = {}) {
-    return {
-        crs,
-        zoom: 1,
-        zoomSnap: 1,
-        zoomDelta: 1,
-        fadeAnimation: false,
-        attributionControl: false,
-        // Qt Options > "Mouse wheel mapped to zoom by default".  The live
-        // viewer never reads this: installWheelPanning turns Leaflet's own
-        // wheel handler off and implements both directions itself, because
-        // Leaflet cannot pan on the wheel.  Kept so the option carries the
-        // preference for a consumer that does not install that handler, and
-        // absent preference keeps the wheel zooming, which is what shipped.
-        scrollWheelZoom: prefs.wheelZoom !== false,
-        keyboardPanDelta: clampArrowStep(prefs.arrowStep),
-    };
-}
-
 // Qt Options > "Arrow keys scroll step": how far one arrow press pans, in CSS
 // px.  Qt's dialog accepts 10..1000 with a default of 20; the default here
-// stays at Leaflet's 80 because that is what the web viewer has always done
-// and dropping to 20 would quietly make every arrow press a quarter as far.
+// stays at 80 because that is what the web viewer has always done and
+// dropping to 20 would quietly make every arrow press a quarter as far.
 export const kArrowStepDefault = 80;
 export const kArrowStepMin = 10;
 export const kArrowStepMax = 1000;
 
 // Coerce a stored or user-typed step to a usable number.  Anything
-// unparseable falls back to the default rather than to NaN, which Leaflet
-// would turn into a map that ignores the arrow keys entirely.
+// unparseable falls back to the default rather than to NaN, which would make
+// the arrow keys move the view nowhere.
 export function clampArrowStep(value) {
     // Number('') and Number(null) are both 0, which would clamp to the
     // minimum; an unset cookie has to read as absent, not as "10 px".
@@ -250,19 +218,6 @@ export function clampArrowStep(value) {
         return kArrowStepDefault;
     }
     return Math.min(kArrowStepMax, Math.max(kArrowStepMin, step));
-}
-
-// Push a new arrow-key step into an already-open map.
-//
-// Leaflet reads options.keyboardPanDelta once, in Keyboard.initialize, so
-// assigning that option on a live map does nothing -- the distance lives in
-// the handler's own key map, which _setPanDelta rebuilds from this argument
-// (Leaflet 1.9.4, Map.Keyboard.js).  Hence the push rather than an option
-// write.  _setPanDelta is private, so every hop is optional-chained: a static
-// report has no keyboard handler, and setArrowStep can run before the map
-// exists.  buildMapOptions carries the value for the next map either way.
-export function applyArrowStep(map, step) {
-    map?.keyboard?._setPanDelta?.(step);
 }
 
 // Build a display-controls group header row: an expand/collapse triangle and
@@ -319,9 +274,8 @@ export function attachGroupCollapse(header, arrow, children, collapsed) {
 
 // Deepest zoom worth offering, given `designScale` (pixels per DBU at zoom 0).
 //
-// Leaflet's default maxZoom is Infinity unless a layer supplies one, and
-// L.GridLayer -- unlike L.TileLayer -- supplies none.  Left unbounded the zoom
-// keeps climbing past any useful magnification until the arithmetic gives out:
+// Left unbounded the zoom keeps climbing past any useful magnification until
+// the arithmetic gives out:
 // the server's tile span (maxDXDY / 2^z) underflows to zero, so tiles come back
 // empty and the design appears to vanish, and the map's own 2^z factors reach
 // Infinity, which JSON.stringify writes as `null` in the tile request.
@@ -329,7 +283,7 @@ export function attachGroupCollapse(header, arrow, children, collapsed) {
 // The cap is where one DBU already covers `maxPxPerDbu` screen pixels: a DBU is
 // the smallest distance the database can express, so magnifying it further
 // shows nothing that was not already visible.  Returned as an integer because
-// the map rests on integer zoom levels (see buildMapOptions).
+// the view rests on integer zoom levels (layout-view.js).
 // Must match kMaxTileZoom in request_handler.h: the server refuses a deeper
 // tile, so asking for one would only trade blank tiles for error responses.
 export const MAX_TILE_ZOOM = 30;
@@ -349,8 +303,8 @@ export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
 
 // The CSS tile size that makes zoom-to-fit land on an integer zoom level.
 //
-// The map rests only on integer zoom (buildMapOptions), and Leaflet's
-// fitBounds FLOORS the zoom it computes, so the design is displayed anywhere
+// The view rests only on integer zoom, and fitting FLOORS the zoom it computes
+// (view-math.js fitView), so the design is shown
 // between half and all of what would fit — 52% of the viewport in the case
 // reported as issue #11338, against 91% in the Qt GUI.
 //
@@ -373,7 +327,7 @@ export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
 // today's one. That leaves two sizes to pick from, so the design fills at
 // least 2/3 of the framed box rather than the 1/2 the bare floor allows.
 //
-// Only the zoom-to-fit rect gets this: every other fitBounds caller (zoom to
+// Only the zoom-to-fit rect gets this: every other fit caller (zoom to
 // selection, the DRC widget, rubber-band zoom) still loses up to a level to
 // the same floor, and a size picked for this rect cannot help theirs.
 //
@@ -382,19 +336,19 @@ export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
 // level the fit loses today.
 export function fittedTileSizeCss({ designBounds, fitRect, viewW, viewH }) {
     // The framed box, margin and fit-rect fallback included, in the map units
-    // TILE_SIZE_CSS defines -- so this cannot drift from what fitBounds sees.
+    // TILE_SIZE_CSS defines -- so this cannot drift from what the fit sees.
     const t = computeBoundsTransforms(designBounds, TILE_SIZE_CSS, fitRect);
     const finitePositive = (v) => Number.isFinite(v) && v > 0;
     if (!t || !finitePositive(viewW) || !finitePositive(viewH)) {
         return TILE_SIZE_CSS;
     }
-    const framedW = t.fitBounds[1][1] - t.fitBounds[0][1];
-    const framedH = t.fitBounds[1][0] - t.fitBounds[0][0];
+    const framedW = t.fitRect[2] - t.fitRect[0];
+    const framedH = t.fitRect[3] - t.fitRect[1];
     // Pixels the framed box may grow by before it leaves the viewport, which
-    // is 2^(the zoom fitBounds wants) at tile size TILE_SIZE_CSS.
+    // is 2^(the zoom the fit wants) at tile size TILE_SIZE_CSS.
     const room = Math.min(viewW / framedW, viewH / framedH);
     const zStar = Math.log2(room);
-    // Below zoom 0 the map is already pinned at its minZoom and the fit has
+    // Below zoom 0 the view is already pinned at its minZoom and the fit has
     // nothing left to floor, so a bigger tile would only overflow the viewport.
     if (!Number.isFinite(zStar) || zStar < 0) {
         return TILE_SIZE_CSS;
@@ -488,17 +442,25 @@ export function cssColorToHex(s) {
 
 // Wrap fn in a single-flight requestAnimationFrame scheduler: calls made
 // while a frame is already pending coalesce into one invocation of fn.
-export function rafCoalesce(fn) {
-    let pending = null;
+// `schedule` stands in for requestAnimationFrame (a view's injected one).
+export function rafCoalesce(fn, schedule = (cb) => requestAnimationFrame(cb)) {
+    let pending = false;
     return () => {
-        if (pending !== null) {
+        if (pending) {
             return;
         }
-        pending = requestAnimationFrame(() => {
-            pending = null;
+        pending = true;
+        schedule(() => {
+            pending = false;
             fn();
         });
     };
+}
+
+// The user asked the system for less motion.
+export function prefersReducedMotion() {
+    return typeof matchMedia === 'function'
+        && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 // Round a positive value to the nearest 1/2/5/10 × 10^n, returning both the
@@ -716,46 +678,6 @@ export function decorateTabIcons(root = document) {
         }
     }
     return added;
-}
-
-// Qt's LayoutScroll::wheelEvent, ported.  The preference and the Ctrl modifier
-// pick between panning and zooming, so Ctrl always does whichever one the
-// preference did not: with the preference off (Qt's default) the wheel pans and
-// Ctrl+wheel zooms, and with it on they swap.
-//
-// Both branches live here and Leaflet's own scrollWheelZoom is left disabled:
-// Leaflet has no pan-on-wheel option, and leaving its handler on would zoom in
-// addition to whatever this one did.  Zooming goes through setZoomAround so the
-// point under the cursor stays put, matching Qt's zoomIn(mouse_pos, true) and
-// the viewer's own Z / Shift+Z keys.
-export function installWheelPanning(map, wheelZoomEnabled) {
-    map.scrollWheelZoom.disable();
-    map.getContainer().addEventListener('wheel', (e) => {
-        e.preventDefault();
-        if (wheelZoomEnabled() === e.ctrlKey) {
-            const [dx, dy] = wheelDeltaPx(e, map.getContainer());
-            map.panBy([dx, dy], { animate: false });
-            return;
-        }
-        // A wheel notch is one zoom level, like the Z / Shift+Z keys.
-        const step = e.deltaY < 0 ? 1 : -1;
-        map.setZoomAround(map.mouseEventToLatLng(e), map.getZoom() + step);
-    }, { passive: false });
-}
-
-// A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
-// Firefox reports lines, and a page-mode event (rare, but produced by some
-// remote-desktop stacks) means a viewport at a time.  Treating either as pixels
-// would make one notch pan by a couple of pixels.
-function wheelDeltaPx(e, container) {
-    const kLineHeightPx = 16;
-    let scale = 1;
-    if (e.deltaMode === 1) {
-        scale = kLineHeightPx;
-    } else if (e.deltaMode === 2) {
-        scale = container.clientHeight || kLineHeightPx;
-    }
-    return [e.deltaX * scale, e.deltaY * scale];
 }
 
 // A modal dialog shell: title, caller-supplied body, an error line and

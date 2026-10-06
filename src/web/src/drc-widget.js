@@ -4,7 +4,7 @@
 // DRC viewer widget — category selector, violation tree, load/highlight.
 // Matches the capabilities of the Qt GUI DRCWidget.
 
-import { dbuRectToBounds } from './coordinates.js';
+import { dbuRectToWorldRect } from './coordinates.js';
 
 export class DrcWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
@@ -369,7 +369,7 @@ export class DrcWidget {
     }
 
     _zoomToBBox(bbox) {
-        if (!this._app.designScale || !this._app.map) return;
+        if (!this._app.designScale || !this._app.view) return;
 
         const [xMin, yMin, xMax, yMax] = bbox;
         const dx = xMax - xMin;
@@ -384,11 +384,11 @@ export class DrcWidget {
         const zoomoutBox = 2 * Math.max(dx, dy);
         const margin = Math.min(zoomoutDist, zoomoutBox);
 
-        this._app.map.fitBounds(
-            dbuRectToBounds(
+        this._app.view.fitWorldRect(
+            dbuRectToWorldRect(
                 xMin - margin, yMin - margin,
                 xMax + margin, yMax + margin,
-                this._app.designScale, this._app.designMaxDXDY,
+                this._app.designScale,
                 this._app.designOriginX, this._app.designOriginY));
     }
 
@@ -412,15 +412,7 @@ export class DrcWidget {
     }
 
     _flashHighlight() {
-        const container = this._app.map?.getContainer();
-        if (!container) return;
-        container.classList.remove('drc-flashing');
-        // Force reflow so re-adding the class restarts the animation.
-        void container.offsetWidth;
-        container.classList.add('drc-flashing');
-        container.addEventListener('animationend', () => {
-            container.classList.remove('drc-flashing');
-        }, { once: true });
+        this._app.view?.flashTiles();
     }
 
     _update3DHighlights() {

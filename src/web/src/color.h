@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace web {
 
 struct Color
@@ -27,6 +29,15 @@ enum class FillPattern
   kCross = 3,     // crosshatch grid
   kDots = 4,      // dotted
 };
+
+// A pattern as sent on the wire; anything out of range is solid.
+inline constexpr FillPattern toFillPattern(const int64_t value)
+{
+  return (value >= static_cast<int64_t>(FillPattern::kNone)
+          && value <= static_cast<int64_t>(FillPattern::kDots))
+             ? static_cast<FillPattern>(value)
+             : FillPattern::kSolid;
+}
 
 // Selection-highlight yellow shared by the tile highlight border
 // (TileGenerator::drawHighlight) and the selection flywires

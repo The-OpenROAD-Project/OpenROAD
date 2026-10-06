@@ -99,6 +99,10 @@ describe('applyDisplayStateEntries', () => {
             or_arrow_step: '120',
             or_font_family: 'monospace',
             or_font_scale: '125',
+            // Rendering preferences (#11340).
+            or_control_smoothing: '1',
+            or_double_buffer: '0',
+            or_defer_tile_updates: '0',
         };
         const { dom, mod } = await loadDisplayState();
         mod.applyDisplayStateEntries(all);

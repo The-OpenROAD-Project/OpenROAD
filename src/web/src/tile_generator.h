@@ -130,7 +130,7 @@ std::string dbuToMicronString(int dbu, double dbu_per_micron);
 //
 // The tile grid step is maxDXDY / 2^z — a FRACTIONAL number of DBU — so a
 // tile's lower-left corner is fractional too, and `origin_x/origin_y` keep it
-// that way.  The client lays the tiles out on that exact grid (the DBU↔latLng
+// that way.  The client lays the tiles out on that exact grid (the DBU↔world
 // transform in coordinates.js), so rounding the corner here would shift a
 // tile's content by its own fractional part, a different amount in each tile.
 // Neighbours then disagree about where the shared edge is and a hairline seam
@@ -464,6 +464,9 @@ struct TileVisibility
 
   void parseFromJson(const boost::json::object& json);
 
+  // JSON keys of every visibility flag parseFromJson reads.
+  static std::vector<std::string_view> flagKeys();
+
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
   // Visibility for an already-classified instance.  Lets callers that already
@@ -721,6 +724,21 @@ class TileGenerator
       // back to the historical 256*dpr.
       int tile_px = 0) const;
 
+  // `layers` rendered bottom to top into one tile, each with its own fill
+  // pattern, and encoded once.  Empty when `aborted` returns true between
+  // layers.
+  std::vector<unsigned char> generateGroupTile(
+      const std::vector<std::string>& layers,
+      const std::vector<FillPattern>& patterns,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis,
+      const std::set<uint32_t>* focus_net_ids,
+      double dpr,
+      int tile_px,
+      const std::function<bool()>& aborted) const;
+
   // Render only highlight/overlay shapes (selection, hover, timing, DRC,
   // route guides, flight lines) on a fully transparent background.  Used
   // by the overlay tile layer so base tiles can stay cached when only
@@ -794,7 +812,7 @@ class TileGenerator
                  const Color& bg = {}) const;
 
   // The layers saveImage composites, bottom to top.  Public so a test can pin
-  // the order down: it has to match the zIndex the client gives each layer in
+  // the order down: it has to match the client's draw lists in
   // display-controls.js, or the saved PNG is not the view on screen.
   static std::vector<std::string> saveImageLayerOrder(
       const TileVisibility& vis,
@@ -857,18 +875,29 @@ class TileGenerator
   // PNG-encoded "clean" tiles (no per-session overlays) keyed by a string
   // fingerprint of the full render determinant.  Re-rendering tiles at
   // 256*dpr*S is expensive, so pan/zoom-back and visibility toggles reuse
-  // the cached bytes.  LRU eviction at kTileCacheCap; cleared on design
+  // the cached bytes.  LRU eviction at kTileCacheCap entries or
+  // kTileCacheBytesCap bytes, whichever comes first; cleared on design
   // reload via eagerInit().  Thread-safe (mirrors chiplets_mutex_).
   bool tileCacheGet(const std::string& key,
                     std::vector<unsigned char>& out) const;
   void tileCachePut(std::string key, std::vector<unsigned char> png) const;
+
+  // Entries vary widely in size, so the bytes are bounded as well.
+  static constexpr size_t kTileCacheCap = 2048;
+  static constexpr size_t kTileCacheBytesCap = size_t{64} << 20;
+
+  // The visibility part of `layer`'s tile-cache key: the parsed fields that
+  // can change its pixels, and none of the others.
+  static std::string tileCacheKey(const TileVisibility& vis,
+                                  std::string_view layer);
 
   // Install (or clear with `{}`) a callback invoked after a design edit has
   // invalidated the tile cache — WebServer wires this to broadcast a
   // {"type":"refresh"} push so clients re-request tiles (mirrors the Qt GUI's
   // Search::modified → LayoutViewer::fullRepaint).  Set at serve() startup.
   void setDesignChangedCallback(std::function<void()> cb);
-  size_t tileCacheSize() const;  // for tests
+  size_t tileCacheSize() const;   // for tests
+  size_t tileCacheBytes() const;  // for tests
 
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
@@ -955,10 +984,10 @@ class TileGenerator
                       const TileFrame& frame) const;
 
   // Raw (un-encoded) RGBA tile with only the user labels drawn on a
-  // transparent background, for the given Leaflet z/x/y.  Used to composite
-  // labels into save_image.  `labels` is passed in (snapshot once per image)
-  // so the mutex isn't locked and copied per tile.  Returns empty if `labels`
-  // is empty.
+  // transparent background, for the given client z/x/y (y top-down).  Used to
+  // composite labels into save_image.  `labels` is passed in (snapshot once
+  // per image) so the mutex isn't locked and copied per tile.  Returns empty
+  // if `labels` is empty.
   std::vector<unsigned char> renderLabelTile(
       int z,
       int x,
@@ -1098,7 +1127,7 @@ class TileGenerator
   mutable std::list<TileCacheEntry> tile_cache_lru_;
   mutable std::unordered_map<std::string, std::list<TileCacheEntry>::iterator>
       tile_cache_index_;
-  static constexpr size_t kTileCacheCap = 512;
+  mutable size_t tile_cache_bytes_ = 0;  // sum of the cached PNG sizes
 
   // Design-change → invalidation wiring.  search_ fires on_modified (see
   // Search::setOnModified) on any geometry edit; onDesignChanged() drops the
