@@ -353,6 +353,7 @@ TEST_F(TestResizer, BufferRemovalPreservesCandidateAndSurvivorFlags)
   db_buffer->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   db_survivor->setDoNotTouch(true);
   db_removed->setDoNotTouch(true);
+  EXPECT_FALSE(resizer_.canRemoveBuffer(buffer, true));
   ASSERT_TRUE(resizer_.canRemoveBuffer(buffer, false));
   EXPECT_TRUE(db_buffer->isDoNotTouch());
   EXPECT_TRUE(db_buffer->isFixed());

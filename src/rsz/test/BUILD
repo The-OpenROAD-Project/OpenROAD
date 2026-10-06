@@ -276,6 +276,7 @@ PASSFAIL_TESTS = [
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
     "repair_design_fixed_driver",
+    "remove_buffers_disconnected_input_rejected",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -284,6 +285,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 # as CMake runs every PASSFAIL test.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "remove_buffers_disconnected_input_rejected",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
