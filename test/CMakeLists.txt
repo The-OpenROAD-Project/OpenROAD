@@ -18,4 +18,5 @@ or_integration_tests(
     db_option_quoting
     init_file_error
     upf_aes
+    est_placement_threads
 )

@@ -50,6 +50,7 @@ COMPULSORY_TESTS = [
     "placement_blockages1",
     "rerun1",
     "unfixed_cells_dont_fit_in_core",
+    "write_macro_placement",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -256,6 +257,10 @@ filegroup(
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
+                ],
+                "write_macro_placement": [
+                    "testcases/io_constraints1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
             }.get(test_name, []),
         ),
