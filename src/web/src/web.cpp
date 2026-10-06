@@ -1891,7 +1891,7 @@ void WebServer::saveReport(const std::string& filename,
   // ── Render tiles at a fixed zoom level ──
 
   // Pick z so the design fits in a typical panel (~500px).
-  // In Leaflet CRS.Simple, the design spans 256 units = 256*2^z pixels.
+  // At zoom z the design spans 256*2^z pixels (256 px tiles).
   // z=1 → 512px, a good fit for most panel sizes.
   constexpr int kZ = 1;
   const int num_tiles = 1 << kZ;

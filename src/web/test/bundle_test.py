@@ -40,6 +40,13 @@ _IDENTIFIER_URLS = {
     "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
+    # Links in the comments of luma.gl's shader sources.
+    "https://en.wikipedia.org/wiki/find_first_set",
+    "https://en.wikipedia.org/wiki/single-precision_floating-point_format",
+    "https://en.wikipedia.org/wiki/double-precision_floating-point_format",
+    # The bare schemes loaders.gl tests a path against.
+    "http://",
+    "https://",
 }
 
 _URL = r"[^\"'`) >,;\n]*"
@@ -133,10 +140,11 @@ class Page(unittest.TestCase):
         text = _read(_LICENSES)
         # netlistsvg's dependencies too: the bundle carries their code.
         for package in (
+            "@deck.gl/core",
+            "@luma.gl/webgl",
             "clone",
             "elkjs",
             "golden-layout",
-            "leaflet",
             "lodash",
             "netlistsvg",
             "onml",

@@ -31,6 +31,28 @@ const elkBrowserBuild = {
     },
 };
 
+// loaders.gl fetches worker scripts and codec libraries from unpkg when it has
+// no copy of its own.  The layout view hands deck.gl decoded images and never
+// loads through it, so that fallback is pointed at nothing remote.
+const kLoadersCdn = 'https://unpkg.com/@loaders.gl';
+const noLoadersCdn = {
+    name: 'no-loaders-cdn',
+    setup(build) {
+        build.onLoad({ filter: /[\\/]@loaders\.gl[\\/].*\.js$/ },
+            async ({ path }) => {
+                const text = await readFile(path, 'utf8');
+                if (!text.includes(kLoadersCdn)) {
+                    return undefined;
+                }
+                return {
+                    contents: text.replaceAll(kLoadersCdn,
+                                              'loaders.gl-cdn-disabled'),
+                    loader: 'js',
+                };
+            });
+    },
+};
+
 export default {
     // iife: one self-contained script whose top-level names stay out of the
     // page's global scope, however the page loads it.
@@ -38,9 +60,9 @@ export default {
     platform: 'browser',
     target: ['es2022'],
     loader: {
-        // leaflet.css and the golden-layout themes reach icons through relative
+        // The golden-layout stylesheets reach icons through relative
         // url(); inlined, the page needs no file besides the bundles.
         '.png': 'dataurl',
     },
-    plugins: [compactSvg, elkBrowserBuild],
+    plugins: [compactSvg, elkBrowserBuild, noLoadersCdn],
 };

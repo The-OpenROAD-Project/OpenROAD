@@ -42,7 +42,7 @@
     --space-xl: 16px;
 
     /* Floating overlays on the layout canvas -- scale bar, coordinate
-     * readout, heat-map legend, Leaflet's zoom and Fit controls.  These do
+     * readout, heat-map legend, the zoom and Fit buttons.  These do
      * not flip with the theme: they sit on --bg-map, which is black in both
      * themes for Qt parity, so a light surface here would be a bright block
      * on black and light-theme ink on it would be unreadable. */
@@ -286,14 +286,11 @@ html[data-theme="light"] {
 
 /* ─── Ruler overlay ──────────────────────────────────────────────────────── */
 
-/* Placement-mode crosshair for the ruler and label tools.  Qualified with
-   .leaflet-container so it outranks that element's own `cursor: default
-   !important` below on specificity; a bare .ruler-mode-cursor ties it and
-   loses the source-order tiebreak.  .leaflet-dragging still wins over both,
-   so panning shows the grab cursor. */
-.leaflet-container.ruler-mode-cursor,
-.leaflet-container.label-mode-cursor {
-    cursor: crosshair !important;
+/* Placement-mode crosshair for the ruler and label tools.  The canvas takes
+   its cursor from the view (setCursorMode); this covers the markers above it. */
+.or-view.ruler-mode-cursor,
+.or-view.label-mode-cursor {
+    cursor: crosshair;
 }
 .ruler-label {
     background: var(--bg-hud);
@@ -1477,66 +1474,87 @@ ide-tab.lm_active,
     background: var(--line-2);
 }
 
-/* Leaflet map cursor */
-.leaflet-container {
-    cursor: default !important;
+/* ─── Layout view ─────────────────────────────────────────────────────────── */
+
+/* The view's container (layout-view.js): the deck.gl canvas, sized to whole
+   device pixels from the top-left corner, and DOM markers pinned over it. */
+.or-view {
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    touch-action: none;
 }
-/* Leaflet draws its own control chrome (white background, dark border), which
-   is the app's theme only by coincidence.  Restyle the bar rather than each
-   control, so the zoom buttons and the Fit button below them match. */
-.leaflet-bar {
+.or-view-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+.or-view-markers {
+    position: absolute;
+    inset: 0;
+    z-index: 700;
+    overflow: hidden;
+    pointer-events: none;
+}
+.or-view-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+.or-view-marker.label-handle {
+    pointer-events: auto;
+}
+
+/* Zoom in / out and Fit, top-left of the view. */
+.or-zoom-control {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--border-hud);
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 14px var(--shadow-strong);
     overflow: hidden;
 }
-.leaflet-bar a,
-.leaflet-bar a:hover {
+.or-zoom-control button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-hud);
     background: var(--bg-hud);
     color: var(--fg-hud);
-    border-bottom-color: var(--border-hud);
+    font: bold 18px/30px var(--font-mono);
+    text-align: center;
+    cursor: pointer;
     backdrop-filter: blur(3px);
     transition: background-color 120ms ease, color 120ms ease;
 }
-.leaflet-bar a:hover {
+.or-zoom-control button:last-child {
+    border-bottom: none;
+}
+.or-zoom-control button:hover {
     background: rgba(255, 255, 255, 0.14);
     color: #fff;
 }
-.leaflet-bar a.leaflet-disabled {
+.or-zoom-control button:disabled {
     background: var(--bg-hud);
     color: rgba(238, 244, 248, 0.4);
-}
-/* "Fit" control button — inherits .leaflet-bar sizing from Leaflet's CSS. */
-.leaflet-control-fit a {
-    font-size: var(--fs-16);
-    font-weight: bold;
-    line-height: 26px;
-    text-align: center;
-}
-.leaflet-dragging .leaflet-container {
-    cursor: grabbing !important;
-}
-
-/* Leaflet tiles.
-   Keep `auto` (bilinear): tiles are band-limited server-side and displayed
-   1:1 at rest (integer zoom) and HiDPI-exact (256*dpr image in a 256 CSS-px
-   box), so the only resampling is benign upscaling during zoom animation,
-   where bilinear is correct.  `pixelated` would block-up that upscale. */
-.leaflet-tile {
-    image-rendering: auto;
+    cursor: default;
 }
 
 .layout-viewer {
     position: relative;
 }
 /* Drawn as an overlay rather than a border, for two reasons: a border on this
-   element would change the size Leaflet measures for the map, and an inset
-   box-shadow would be painted under the tile panes and never seen.  z-index
-   800 puts it over the panes (Leaflet's go up to 700) but under the HUD (900)
-   and Leaflet's own controls (1000), so it frames the canvas without drawing
-   a line across either.  The inner shadow is invisible against the default
-   black and does its work when the Background control is set to something
-   light. */
+   element would change the size the view measures, and an inset box-shadow
+   would be painted under the canvas and never seen.  z-index 800 puts it over
+   the canvas and markers (700) but under the HUD (900) and the zoom buttons
+   (1000), so it frames the canvas without drawing a line across either.  The
+   inner shadow is invisible against the default black and does its work when
+   the Background control is set to something light. */
 .layout-viewer::after {
     content: '';
     position: absolute;
@@ -1577,19 +1595,6 @@ ide-tab.lm_active,
 @keyframes or-progress-sweep {
     from { left: -34%; }
     to { left: 100%; }
-}
-
-/* Leaflet popups */
-.leaflet-popup-content-wrapper {
-    background: var(--bg-context);
-    color: var(--fg-bright);
-    border-radius: var(--radius-sm);
-}
-.leaflet-popup-content {
-    font-family: var(--font-mono);
-}
-.leaflet-popup-content strong {
-    color: var(--accent-text);
 }
 
 /* Status overlay */
@@ -2531,49 +2536,6 @@ ide-tab.lm_active,
     display: none;
 }
 
-/* Hover highlight pulse animation */
-.hover-highlight {
-    stroke: #ffe85c;
-    stroke-width: 3px;
-    stroke-opacity: 1;
-    fill: #fff27a;
-    fill-opacity: 0.14;
-    vector-effect: non-scaling-stroke;
-    animation: hover-pulse 0.9s ease-out 3;
-}
-@keyframes hover-pulse {
-    0% {
-        stroke: #fff6b0;
-        stroke-width: 7px;
-        stroke-opacity: 1;
-        fill-opacity: 0.28;
-    }
-    55% {
-        stroke: #ffffff;
-        stroke-width: 5px;
-        stroke-opacity: 1;
-        fill-opacity: 0.06;
-    }
-    100% {
-        stroke: #ffe85c;
-        stroke-width: 3px;
-        stroke-opacity: 0.95;
-        fill-opacity: 0.14;
-    }
-}
-
-/* Selection pulse: brief flash when the inspector changes its target */
-.selection-pulse {
-    pointer-events: none;
-    animation: selection-pulse 350ms ease-in-out 3;
-    animation-fill-mode: forwards;
-}
-@keyframes selection-pulse {
-    0%   { stroke-opacity: 0;   fill-opacity: 0; }
-    50%  { stroke-opacity: 1;   fill-opacity: 0.28; }
-    100% { stroke-opacity: 0;   fill-opacity: 0; }
-}
-
 /* ─── Timing Widget ────────────────────────────────────────────────────── */
 
 .timing-widget {
@@ -3187,16 +3149,6 @@ html[data-theme="dark"] .schematic-widget svg {
 }
 .drc-error {
     color: var(--error);
-}
-
-/* DRC highlight flash animation — pulses tile opacity to mimic
-   the Qt GUI's yellow blinking highlight on visible markers. */
-@keyframes drc-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-.drc-flashing .leaflet-tile-pane {
-    animation: drc-pulse 0.4s ease-in-out 3;
 }
 
 /* ─── Focus and motion ────────────────────────────────────────────────────── */
