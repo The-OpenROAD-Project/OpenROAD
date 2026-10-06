@@ -693,7 +693,11 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
   const bool is_last_attempt
       = routability_diverge_attempt_count_ == kMaxRoutabilityDivergeAttempts;
 
-  rb_->revertToMinCongestion();
+  // Once routability is off the sizes are final: already reverted to the
+  // minimum congestion pass, or the set that met the target.
+  if (is_routability_need_) {
+    rb_->revertToMinCongestion();
+  }
 
   if (is_last_attempt) {
     is_routability_need_ = false;
