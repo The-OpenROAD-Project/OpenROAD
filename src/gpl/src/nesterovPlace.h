@@ -116,6 +116,9 @@ class NesterovPlace
                        int64_t& td_accumulated_delta_area,
                        bool is_routability_gpl_iter,
                        int& virtual_cts_count);
+  // Re-evaluate every GCell's current gradient at curSLP, so that the next
+  // step length estimate compares gradients of the same objective.
+  void refreshCurGradients();
   bool isDiverged(float& diverge_snapshot_WlCoefX,
                   float& diverge_snapshot_WlCoefY,
                   bool& is_diverge_snapshot_saved);
@@ -207,6 +210,12 @@ class NesterovPlace
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
   bool allow_divergence_recovery_ = false;
+
+  // Request a FISTA momentum restart on the next Nesterov iteration. Set after
+  // a non-virtual timing-driven iteration replaces topology (repair_design),
+  // so the accelerated-gradient extrapolation does not carry the pre-repair
+  // trajectory into the changed objective and diverge the placement.
+  bool reset_nesterov_momentum_ = false;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
