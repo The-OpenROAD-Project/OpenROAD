@@ -81,23 +81,21 @@ bool RepairHold::repairHold(
   sta::VertexSet& ends = sta_->search()->endpoints();
   const PathGroupFilter path_group_filter(resizer_);
   sta::VertexSeq ends1;
-  for (sta::Vertex* end : ends) {
-    if (!path_group_filter.enabled()) {
-      ends1.push_back(end);
-      continue;
+  if (path_group_filter.enabled()) {
+    // Hold paths are min delay paths, so ask the group against min_. One
+    // query returns every endpoint whose own hold slack in the group needs
+    // repairing; merely hosting an in-group path would let nearly every
+    // register through.
+    for (const auto& [pin, slack] :
+         path_group_filter.groupEndpointSlacks(min_, hold_margin)) {
+      // slack_max is inclusive; the margin test here is strict.
+      sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+      if (vertex != nullptr && sta::fuzzyLess(slack, hold_margin)) {
+        ends1.push_back(vertex);
+      }
     }
-    // Hold paths are min delay paths, so ask the group against min_. Keep
-    // the endpoint only when the group's own hold slack needs repairing;
-    // merely hosting an in-group path would let nearly every register through.
-    const sta::Slack slack = sta_->slack(end, min_);
-    if (!sta::fuzzyLess(slack, hold_margin)) {
-      continue;
-    }
-    const std::optional<sta::Slack> group_slack
-        = path_group_filter.groupSlack(end, min_);
-    if (group_slack.has_value() && sta::fuzzyLess(*group_slack, hold_margin)) {
-      ends1.push_back(end);
-    }
+  } else {
+    ends1.assign(ends.begin(), ends.end());
   }
   sta::sort(ends1, sta::VertexIdLess(graph_));
 

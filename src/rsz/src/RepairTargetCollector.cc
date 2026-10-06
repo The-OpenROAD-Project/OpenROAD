@@ -817,46 +817,47 @@ void RepairTargetCollector::sortByHeuristic(float load_delay_threshold)
   }
 }
 
+void RepairTargetCollector::refreshGroupSlacks()
+{
+  group_slacks_.clear();
+  if (!restrictedToPathGroup()) {
+    return;
+  }
+  const PathGroupFilter path_group_filter(resizer_);
+  // findPathEnds' slack_max is inclusive; repair counts an endpoint only
+  // when it is strictly below the margin, so drop the ones sitting on it.
+  for (const auto& [pin, slack] :
+       path_group_filter.groupEndpointSlacks(max_, slack_margin_)) {
+    if (sta::fuzzyLess(slack, slack_margin_)) {
+      group_slacks_.emplace_back(pin, slack);
+    }
+  }
+  debugPrint(logger_,
+             RSZ,
+             "path_group",
+             1,
+             "Path group '{}' has {} violating endpoints.",
+             resizer_->pathGroup(),
+             group_slacks_.size());
+}
+
 void RepairTargetCollector::collectViolatingEndpoints()
 {
   violating_endpoints_.clear();
 
-  const PathGroupFilter path_group_filter(resizer_);
-  int path_group_rejects = 0;
-  const sta::VertexSet& endpoints = sta_->endpoints();
-  for (sta::Vertex* endpoint : endpoints) {
-    const sta::Slack slack = sta_->slack(endpoint, max_);
-    // The endpoint's own slack bounds every group's slack here, so only
-    // endpoints passing this cheap test are worth the query below.
-    if (!sta::fuzzyLess(slack, slack_margin_)) {
-      continue;
+  if (restrictedToPathGroup()) {
+    // One query for the whole group, already carrying each endpoint's slack
+    // in it. Testing endpoints one at a time would repeat the same search
+    // setup per endpoint for the same answer.
+    refreshGroupSlacks();
+    violating_endpoints_.assign(group_slacks_.begin(), group_slacks_.end());
+  } else {
+    for (sta::Vertex* endpoint : sta_->endpoints()) {
+      const sta::Slack slack = sta_->slack(endpoint, max_);
+      if (sta::fuzzyLess(slack, slack_margin_)) {
+        violating_endpoints_.emplace_back(endpoint->pin(), slack);
+      }
     }
-    if (!path_group_filter.enabled()) {
-      violating_endpoints_.emplace_back(endpoint->pin(), slack);
-      continue;
-    }
-    // Record the group's slack, not the endpoint's: driving WNS/TNS and the
-    // repair order off the worst path would optimize the wrong group.
-    const std::optional<sta::Slack> group_slack
-        = path_group_filter.groupSlack(endpoint, max_);
-    if (group_slack.has_value()
-        && sta::fuzzyLess(*group_slack, slack_margin_)) {
-      violating_endpoints_.emplace_back(endpoint->pin(), *group_slack);
-    } else {
-      ++path_group_rejects;
-    }
-  }
-  if (path_group_filter.enabled()) {
-    debugPrint(logger_,
-               RSZ,
-               "path_group",
-               1,
-               "Path group '{}' kept {} and dropped {} violating endpoints. "
-               "Use 'set_debug_level RSZ path_group 2' for the per endpoint "
-               "reason.",
-               resizer_->pathGroup(),
-               violating_endpoints_.size(),
-               path_group_rejects);
   }
 
   // Preserve equal-slack STA endpoint order for legacy QoR parity.
@@ -2583,6 +2584,20 @@ sta::Slack RepairTargetCollector::getOverallEndpointWns() const
 {
   sta::Slack worst_slack = std::numeric_limits<float>::max();
 
+  if (restrictedToPathGroup()) {
+    for (const auto& [endpoint_pin, slack] : group_slacks_) {
+      worst_slack = std::min(slack, worst_slack);
+    }
+    if (worst_slack != std::numeric_limits<float>::max()) {
+      return worst_slack;
+    }
+    // Nothing violating: the group's best path is still its WNS.
+    const PathGroupFilter path_group_filter(resizer_);
+    const std::optional<PathGroupFilter::GroupWorst> worst
+        = path_group_filter.groupWorst(max_);
+    return worst.has_value() ? worst->slack : sta::Slack(0.0);
+  }
+
   for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
     sta::Slack sp_wns = getEndpointWns(endpoint_pin);
     worst_slack = std::min(sp_wns, worst_slack);
@@ -2600,8 +2615,7 @@ sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
   if (!use_cone) {
     // Design wide TNS counts endpoints outside the group being repaired.
     sta::Slack total_tns = 0.0;
-    for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
-      const sta::Slack endpoint_wns = getEndpointWns(endpoint_pin);
+    for (const auto& [endpoint_pin, endpoint_wns] : group_slacks_) {
       if (endpoint_wns < 0.0) {
         total_tns
             = sta::delayAsFloat(total_tns) + sta::delayAsFloat(endpoint_wns);
@@ -2626,15 +2640,8 @@ sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
 sta::Slack RepairTargetCollector::getWns() const
 {
   if (restrictedToPathGroup()) {
-    // The design's worst path may well be outside the group being repaired,
-    // so ask OpenSTA for the group's own worst. Querying it live rather than
-    // scanning the endpoints collected at the start of the run matters: a
-    // repair can clean every collected endpoint while pushing a different one
-    // of the group negative, and a stale scan would report 0 for that.
-    const PathGroupFilter path_group_filter(resizer_);
-    const std::optional<PathGroupFilter::GroupWorst> worst
-        = path_group_filter.groupWorst(max_);
-    return worst.has_value() ? worst->slack : sta::Slack(0.0);
+    // The design's worst path may well be outside the group being repaired.
+    return getOverallEndpointWns();
   }
   // WNS is the same regardless of whether we look at startpoints or endpoints
   // because the critical path is always from a startpoint to an endpoint
@@ -2676,8 +2683,19 @@ const sta::Pin* RepairTargetCollector::getWorstPin(bool use_startpoints) const
     return worst_pin;
   }
   if (restrictedToPathGroup()) {
-    // Report the group's worst endpoint, not the design's. Same single live
-    // query as getWns(), so the two always name the same path.
+    // Report the group's worst endpoint, not the design's.
+    const sta::Pin* worst_pin = nullptr;
+    sta::Slack worst_slack = std::numeric_limits<float>::max();
+    for (const auto& [endpoint_pin, slack] : group_slacks_) {
+      if (slack < worst_slack) {
+        worst_slack = slack;
+        worst_pin = endpoint_pin;
+      }
+    }
+    if (worst_pin != nullptr) {
+      return worst_pin;
+    }
+    // Nothing violating; name the group's best path, as getWns() reports it.
     const PathGroupFilter path_group_filter(resizer_);
     const std::optional<PathGroupFilter::GroupWorst> worst
         = path_group_filter.groupWorst(max_);

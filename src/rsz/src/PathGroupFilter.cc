@@ -400,34 +400,63 @@ sta::Path* PathGroupFilter::groupPath(sta::Vertex* endpoint,
   return end != nullptr ? end->path() : nullptr;
 }
 
+PathGroupFilter::GroupSlacks PathGroupFilter::groupEndpointSlacks(
+    const sta::MinMax* min_max,
+    const sta::Slack slack_max,
+    const size_t max_endpoints) const
+{
+  GroupSlacks slacks;
+  if (!enabled()) {
+    return slacks;
+  }
+
+  const bool setup = min_max == sta::MinMax::max();
+  sta::StringSeq group_names{std::string(staPathGroupName(type_))};
+  // No `to` filter: one unfiltered query returns the whole group.
+  const sta::PathEndSeq ends = sta_->findPathEnds(
+      /*from=*/nullptr,
+      /*thrus=*/nullptr,
+      /*to=*/nullptr,
+      /*unconstrained=*/false,
+      sta_->scenes(),
+      setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+      /*group_path_count=*/max_endpoints != 0
+          ? max_endpoints
+          : sta::PathGroup::group_path_count_max,
+      /*endpoint_path_count=*/1,
+      /*unique_pins=*/true,
+      /*unique_edges=*/false,
+      -sta::INF,
+      sta::delayAsFloat(slack_max),
+      /*sort_by_slack=*/true,
+      group_names,
+      /*setup=*/setup,
+      /*hold=*/!setup,
+      /*recovery=*/false,
+      /*removal=*/false,
+      /*clk_gating_setup=*/setup,
+      /*clk_gating_hold=*/!setup);
+
+  slacks.reserve(ends.size());
+  for (sta::PathEnd* end : ends) {
+    sta::Vertex* vertex = end->vertex(sta_);
+    if (vertex != nullptr) {
+      slacks.emplace_back(vertex->pin(), end->slack(sta_));
+    }
+  }
+  return slacks;
+}
+
 std::optional<PathGroupFilter::GroupWorst> PathGroupFilter::groupWorst(
     const sta::MinMax* min_max) const
 {
-  if (!enabled()) {
+  // Only the single worst end is wanted, so cap the query at one.
+  const GroupSlacks worst
+      = groupEndpointSlacks(min_max, sta::INF, /*max_endpoints=*/1);
+  if (worst.empty()) {
     return std::nullopt;
   }
-  // Scan the endpoints live, pruned by the fact that an endpoint's own
-  // slack is the worst over every group and so lower bounds its slack in this
-  // one. Once some endpoint's group slack is known, any endpoint whose plain
-  // slack is no better cannot beat it and is skipped on a cached lookup. The
-  // bound tightens quickly, so only a handful of endpoints are ever queried.
-  sta::Slack best = sta::INF;
-  const sta::Pin* best_pin = nullptr;
-  for (sta::Vertex* endpoint : sta_->endpoints()) {
-    if (best_pin != nullptr
-        && !sta::fuzzyLess(sta_->slack(endpoint, min_max), best)) {
-      continue;
-    }
-    const std::optional<sta::Slack> slack = groupSlack(endpoint, min_max);
-    if (slack.has_value() && (best_pin == nullptr || *slack < best)) {
-      best = *slack;
-      best_pin = endpoint->pin();
-    }
-  }
-  if (best_pin == nullptr) {
-    return std::nullopt;
-  }
-  return GroupWorst{best, best_pin};
+  return GroupWorst{worst.front().second, worst.front().first};
 }
 
 sta::PathEnd* PathGroupFilter::worstGroupEnd(sta::Vertex* endpoint,

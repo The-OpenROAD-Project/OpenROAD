@@ -862,6 +862,9 @@ void SetupLegacyBase::printProgress(const int iteration,
     target_collector_->collectViolatingStartpoints();
   }
 
+  // Re-run the group query so the reported numbers reflect the edits made
+  // since the endpoints were collected.
+  target_collector_->refreshGroupSlacks();
   const sta::Slack wns = target_collector_->getWns();
   const sta::Slack en_tns = target_collector_->getTns(false);
   const sta::Pin* worst_pin

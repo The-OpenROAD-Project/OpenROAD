@@ -111,6 +111,16 @@ class PathGroupFilter
   // end skips enumeration; it lives as long as a vertexWorstSlackPath() would.
   sta::Path* groupPath(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
 
+  using GroupSlacks = std::vector<std::pair<const sta::Pin*, sta::Slack>>;
+
+  // Every endpoint below `slack_max` in the selected group, worst first, from
+  // one OpenSTA query. Far cheaper than asking endpoint by endpoint: each
+  // point query re-tests paths against the group_path exception, which names
+  // every register pin in the design. Empty when no group is selected.
+  GroupSlacks groupEndpointSlacks(const sta::MinMax* min_max,
+                                  sta::Slack slack_max,
+                                  size_t max_endpoints = 0) const;
+
   // The selected group's worst path across the whole design.
   struct GroupWorst
   {
