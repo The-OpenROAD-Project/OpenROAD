@@ -210,13 +210,10 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
   void endIncremental(bool save_guides = false);
-  // True between startIncremental() and endIncremental(), i.e. while ODB
-  // changes are being collected into dirty_nets_ and rerouteDirtyNets() can
-  // be called to reroute just those nets.
+  // True between startIncremental() and endIncremental().
   bool isIncrementalSessionOpen() const { return grouter_cbk_ != nullptr; }
-  // Reroute the nets accumulated in dirty_nets_ without ending the
-  // incremental session.  Lets a caller evaluate the routing consequences of
-  // a netlist change it may still roll back.
+  // Reroute dirty_nets_ without ending the incremental session, so a caller
+  // can evaluate a netlist change it may still roll back.
   void rerouteDirtyNets();
   void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
@@ -392,9 +389,7 @@ class GlobalRouter
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
 
-  // Shared routing congestion service; see grt/RoutingCongestion.h.  Answers
-  // congestion queries from GRT data when the design is routed and from RUDY
-  // before that, so consumers need not choose.
+  // Shared routing congestion service; see grt/RoutingCongestion.h.
   RoutingCongestion* getRoutingCongestion();
 
   void writePinLocations(const char* file_name);

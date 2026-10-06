@@ -13,23 +13,13 @@ namespace grt {
 
 class GlobalRouter;
 
-// Shared routing congestion service.
+// Shared routing congestion service owned by GlobalRouter, for consumers
+// choosing where to put something (a buffer, a clone, a decap) without making
+// routing worse.
 //
-// Answers "how routing-congested is this location?" for consumers that must
-// choose *where* to put something (a rebuffered buffer, a clone, a decap)
-// without making routing worse.  Like grt::Rudy it is a shared, on-demand
-// spatial service owned by GlobalRouter, so consumers do not each reimplement
-// congestion lookup.
-//
-// Two sources back the same query, picked by what the flow stage has produced:
-//
-//   * post-GRT: the per-GCell usage/capacity map GRT writes into ODB.  More
-//     accurate, preferred whenever it exists.
-//   * pre-GRT: RUDY's per-tile demand estimate.  Cheap and available before
-//     any routing exists.
-//
-// Callers ask for a score and get the best available signal; they do not need
-// to know which one was used (source() reports it for logging/debug).
+// Answers from the post-GRT per-GCell usage/capacity map in ODB when it
+// exists, otherwise from RUDY's pre-GRT estimate.  Callers get the best
+// available signal; source() reports which one answered.
 class RoutingCongestion
 {
  public:
@@ -67,14 +57,12 @@ class RoutingCongestion
     float congestion = 0.0f;
   };
 
-  // Every GCell overlapping `region`, ordered least congested first, then by
-  // distance from `prefer_near`.  Empty when no congestion information is
-  // available, which callers must treat as "no preference" rather than
-  // "nowhere is acceptable".
+  // Every GCell overlapping `region`, least congested first, ties broken by
+  // distance from `prefer_near`.  Empty means no congestion information, i.e.
+  // "no preference", not "nowhere is acceptable".
   //
-  // `bucket` quantizes the congestion key: GCells whose congestion falls in
-  // the same bucket rank as equally congested and are ordered by distance
-  // instead.  Pass 0 to rank on the exact value, which lets an arbitrarily
+  // `bucket` quantizes the congestion key so near-equal GCells rank by
+  // distance instead; 0 ranks on the exact value, which lets an arbitrarily
   // small congestion difference outrank an arbitrarily large distance.
   std::vector<GCell> gcellsByCongestion(const odb::Rect& region,
                                         const odb::Point& prefer_near,
@@ -114,8 +102,7 @@ class RoutingCongestion
   std::vector<float> scores_;
   int tile_size_ = 0;
 
-  // A GCell at 90% of capacity already detours nets, so treat it as congested
-  // rather than waiting for a real overflow.
+  // 90%: a GCell this full already detours nets, before any real overflow.
   float threshold_ = 0.9f;
 };
 

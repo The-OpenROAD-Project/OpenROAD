@@ -99,9 +99,8 @@ bool RoutingCongestion::buildFromGlobalRoutes()
 
   const size_t x_count = x_grid.size();
   const size_t y_count = y_grid.size();
-  // Horizontal and vertical resources are separate budgets; a GCell is only as
-  // good as its worse direction, so they are accumulated apart and combined at
-  // the end.
+  // H and V are separate budgets; a GCell is only as good as its worse one,
+  // so they are accumulated apart and combined at the end.
   std::vector<float> h_usage(x_count * y_count, 0.0f);
   std::vector<float> h_capacity(x_count * y_count, 0.0f);
   std::vector<float> v_usage(x_count * y_count, 0.0f);
@@ -130,8 +129,7 @@ bool RoutingCongestion::buildFromGlobalRoutes()
     }
   }
   if (!any_capacity) {
-    // The grid exists but GRT never filled it in (e.g. only a floorplan was
-    // read); there is no post-GRT signal to report.
+    // The grid exists but GRT never filled it in (floorplan only).
     return false;
   }
 
@@ -159,15 +157,14 @@ bool RoutingCongestion::buildFromGlobalRoutes()
 bool RoutingCongestion::buildFromRudy()
 {
   if (block_ == nullptr || block_->getTrackGrids().empty()) {
-    // RUDY needs a routing grid, which needs tracks.  A design without them
-    // (a bare floorplan, most unit tests) simply has no congestion signal.
+    // RUDY needs a routing grid, which needs tracks.
     return false;
   }
   Rudy* rudy = nullptr;
   try {
-    // Building the RUDY grid initializes global routing, which can still fail
-    // on an incomplete floorplan.  Congestion is advisory, so a failure must
-    // not abort the caller.
+    // Building RUDY initializes global routing, which can fail on an
+    // incomplete floorplan.  Congestion is advisory, so that must not abort
+    // the caller.
     rudy = grouter_->getRudy();
     if (rudy != nullptr) {
       rudy->calculateRudy();
@@ -302,8 +299,7 @@ std::vector<RoutingCongestion::GCell> RoutingCongestion::gcellsByCongestion(
   const int y_count = static_cast<int>(y_lines_.size());
   gcells.reserve(static_cast<size_t>(x_hi - x_lo + 1) * (y_hi - y_lo + 1));
   for (int x = x_lo; x <= x_hi; x++) {
-    // The last line is the lower edge of the final tile, whose upper edge is
-    // not in the grid; fall back to one tile width.
+    // The final tile's upper edge is not in the grid; use one tile width.
     const int x_max = x + 1 < x_count ? x_lines_[x + 1]
                                       : x_lines_[x] + std::max(tile_size_, 1);
     for (int y = y_lo; y <= y_hi; y++) {
