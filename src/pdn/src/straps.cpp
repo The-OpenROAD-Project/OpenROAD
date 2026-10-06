@@ -2688,7 +2688,8 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
           continue;
         }
 
-        candidates.push_back({direction, best_distance, best_target});
+        candidates.push_back(
+            {direction, best_distance, std::move(best_target)});
       }
 
       std::ranges::sort(candidates, [](const auto& lhs, const auto& rhs) {
