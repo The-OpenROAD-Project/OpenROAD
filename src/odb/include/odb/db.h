@@ -2505,15 +2505,11 @@ class dbNet : public dbObject
 
   ///
   /// True if can merge the iterms and bterms of the in_net with this net
-  ///
-  bool canMergeNet(dbNet* in_net);
-
-  ///
-  /// Check a merge while optionally ignoring net protection and one instance.
+  /// Defaults to checking net protection and every connected instance.
   ///
   bool canMergeNet(dbNet* in_net,
-                   const dbInst* ignored_inst,
-                   bool honor_dont_touch_nets);
+                   const dbInst* ignored_inst = nullptr,
+                   bool honor_dont_touch_nets = true);
 
   ///
   /// Merge the iterms and bterms of the in_net with this net

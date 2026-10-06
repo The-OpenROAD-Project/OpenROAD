@@ -2330,11 +2330,6 @@ dbNet* dbNet::getValidNet(dbBlock* block, uint32_t oid)
   return (dbNet*) block_impl->net_tbl_->getPtr(oid);
 }
 
-bool dbNet::canMergeNet(dbNet* in_net)
-{
-  return canMergeNet(in_net, nullptr, true);
-}
-
 bool dbNet::canMergeNet(dbNet* in_net,
                         const dbInst* ignored_inst,
                         bool honor_dont_touch_nets)
