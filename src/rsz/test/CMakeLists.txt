@@ -259,6 +259,7 @@ or_integration_tests(
     repair_setup_mt1
     repair_design_fixed_driver
     remove_buffers_disconnected_input_rejected
+    gain_buffering_top_port_hier
     cpp_tests
 )
 
