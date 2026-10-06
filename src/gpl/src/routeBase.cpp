@@ -273,6 +273,12 @@ void RouteBase::resetRoutabilityResources()
 
 void RouteBase::revertToMinCongestion()
 {
+  // Before the first pass there is no minimum on record and the stored
+  // target density is still zero, so reverting to it would zero the density.
+  if (revert_count_ < 1) {
+    return;
+  }
+
   log_->info(GPL,
              55,
              "Reverting inflation and target density to the pass with the "

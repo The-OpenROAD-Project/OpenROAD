@@ -5475,8 +5475,10 @@ void NesterovBase::redistributeFillerCells()
     nextCoordi_[i] = pos;
     nextSLPCoordi_[i] = pos;
     initCoordi_[i] = pos;
-    snapshotCoordi_[i] = pos;
-    snapshotSLPCoordi_[i] = pos;
+    for (Snapshot& snap : snapshots_) {
+      snap.coordi[i] = pos;
+      snap.slpCoordi[i] = pos;
+    }
 
     // Reset the gradients
     curSLPWireLengthGrads_[i] = FloatPoint();

@@ -672,80 +672,6 @@ void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
              retries);
 }
 
-// Evaluate every gradient at curSLP on the repaired
-// netlist, in the same order as init().
-void NesterovPlace::refreshCurGradients()
-{
-  for (auto& nb : nbVec_) {
-    nb->updateDensityCenterCurSLP();
-    nb->updateDensityFieldBin();
-  }
-
-  nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
-  for (auto& nb : nbVec_) {
-    npUpdateCurGradient(nb);
-  }
-}
-
-void NesterovPlace::enableIncrementalDensityPenaltyGuard()
-{
-  incremental_penalty_guard_requested_ = true;
-}
-
-void NesterovPlace::clearDivergence()
-{
-  num_region_diverged_ = 0;
-  divergeMsg_ = "";
-  divergeCode_ = 0;
-  for (auto& nb : nbVec_) {
-    nb->clearDivergence();
-  }
-}
-
-void NesterovPlace::applyDensityPenaltyFactor(float factor)
-{
-  for (auto& nb : nbVec_) {
-    nb->updateDensityPenaltyFromRatio(factor);
-  }
-}
-
-void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
-                                                   float& best_overflow,
-                                                   int& retries)
-{
-  // React on the very first regression (a guard-parameter sweep found no
-  // patience delay to be best) by escalating the density penalty in place.
-  constexpr float kOverflowTolerance = 0.005f;
-  constexpr float kGrowthRatio = 2.0f;
-  constexpr int kMaxRetries = 10;
-
-  if (average_overflow_unscaled_ < best_overflow - kOverflowTolerance) {
-    best_overflow = average_overflow_unscaled_;
-    return;
-  }
-
-  if (average_overflow_unscaled_ <= best_overflow + kOverflowTolerance) {
-    return;
-  }
-
-  if (retries >= kMaxRetries) {
-    return;
-  }
-
-  ++retries;
-  current_factor *= kGrowthRatio;
-  applyDensityPenaltyFactor(current_factor);
-  log_->info(GPL,
-             193,
-             "Incremental density-penalty guard: overflow regressed past "
-             "{:.3f}; escalating the penalty factor to {:g} in place "
-             "(retry {}).",
-             best_overflow,
-             current_factor,
-             retries);
-}
-
 bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
 {
   if (!is_routability_snapshot_saved_
@@ -753,30 +679,33 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
     return false;
   }
 
+  // After routability, the min hpwl snapshot is the fresher fallback.
+  if (!is_routability_need_
+      && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)) {
+    return false;
+  }
+
   ++routability_diverge_attempt_count_;
+  // With routability already off, a second attempt would replay this one.
+  if (!is_routability_need_) {
+    routability_diverge_attempt_count_ = kMaxRoutabilityDivergeAttempts;
+  }
   const bool is_last_attempt
       = routability_diverge_attempt_count_ == kMaxRoutabilityDivergeAttempts;
 
-  // Before the first pass there is no minimum on record and the stored
-  // target density is still zero, so reverting to it would zero the density.
-  const bool has_inflation = rb_->getRevertCount() >= 1;
-  if (has_inflation) {
-    rb_->revertToMinCongestion();
-  }
+  rb_->revertToMinCongestion();
 
   if (is_last_attempt) {
     is_routability_need_ = false;
   }
 
-  log_->warn(
-      GPL,
-      112,
-      "Divergence detected, reverting to the routability snapshot "
-      "(attempt {} of {}): inflation {}, further inflation {}.",
-      routability_diverge_attempt_count_,
-      kMaxRoutabilityDivergeAttempts,
-      has_inflation ? "rolled back to minimum congestion" : "none applied yet",
-      is_last_attempt ? "disabled" : "still allowed");
+  log_->warn(GPL,
+             112,
+             "Divergence detected, reverting to the routability snapshot "
+             "(attempt {} of {}), further inflation {}.",
+             routability_diverge_attempt_count_,
+             kMaxRoutabilityDivergeAttempts,
+             is_last_attempt ? "disabled" : "still allowed");
 
   wireLengthCoefX_ = route_snapshot_wl_coef_x_;
   wireLengthCoefY_ = route_snapshot_wl_coef_y_;
@@ -790,15 +719,31 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
   // Momentum reset due to divergence.
   curA = 1.0;
   routability_settle_wait_start_iter_ = -1;
-  if (has_inflation) {
-    min_hpwl_ = std::numeric_limits<int64_t>::max();
-    is_min_hpwl_ = false;
-  }
+  // The placement min_hpwl_ was measured on has just been discarded.
+  min_hpwl_ = std::numeric_limits<int64_t>::max();
+  is_min_hpwl_ = false;
 
   return true;
 }
 
-bool NesterovPlace::isDiverged(float& curA)
+void NesterovPlace::revertToDivergeSnapshot()
+{
+  log_->warn(GPL,
+             999,
+             "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
+             diverge_snapshot_iter_,
+             diverge_snapshot_average_overflow_unscaled_,
+             diverge_snapshot_hpwl_);
+  wireLengthCoefX_ = diverge_snapshot_wl_coef_x_;
+  wireLengthCoefY_ = diverge_snapshot_wl_coef_y_;
+  nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+  for (auto& nb : nbVec_) {
+    nb->revertToSnapshot(NesterovBase::SnapshotSlot::Diverge);
+    nb->resetMinSumOverflow();
+  }
+}
+
+NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
 {
   // diverge detection on
   // large max_phi_cof value + large design
@@ -811,8 +756,11 @@ bool NesterovPlace::isDiverged(float& curA)
     num_region_diverged_ += nb->checkDivergence();
   }
 
+  // While routability is active a divergence reverts to the routability
+  // snapshot, if we keep diverting we will turn off routability
   if (num_region_diverged_ == 0 && is_min_hpwl_
-      && !npVars_.disableRevertIfDiverge) {
+      && !npVars_.disableRevertIfDiverge
+      && (!npVars_.routability_driven_mode || !is_routability_need_)) {
     diverge_snapshot_wl_coef_x_ = wireLengthCoefX_;
     diverge_snapshot_wl_coef_y_ = wireLengthCoefY_;
     diverge_snapshot_hpwl_ = min_hpwl_;
@@ -822,54 +770,58 @@ bool NesterovPlace::isDiverged(float& curA)
     is_diverge_snapshot_saved_ = true;
   }
 
-  if (num_region_diverged_ > 0) {
-    log_->report("Divergence occured in {} regions.", num_region_diverged_);
-
-    if (!npVars_.disableRevertIfDiverge
-        && tryRoutabilityDivergeRecovery(curA)) {
-      num_region_diverged_ = 0;
-    } else if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved_
-               && diverge_revert_count_ < kMaxDivergeReverts) {
-      // Go back to the min hpwl placement stored since overflow below 0.25 and
-      // descend from there again.
-      ++diverge_revert_count_;
-      log_->warn(GPL,
-                 998,
-                 "Divergence detected, reverting to snapshot with min hpwl "
-                 "and resuming ({} of {} reverts allowed).",
-                 diverge_revert_count_,
-                 kMaxDivergeReverts);
-      log_->warn(GPL,
-                 999,
-                 "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
-                 diverge_snapshot_iter_,
-                 diverge_snapshot_average_overflow_unscaled_,
-                 diverge_snapshot_hpwl_);
-      wireLengthCoefX_ = diverge_snapshot_wl_coef_x_;
-      wireLengthCoefY_ = diverge_snapshot_wl_coef_y_;
-      nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-      for (auto& nb : nbVec_) {
-        nb->revertToSnapshot(NesterovBase::SnapshotSlot::Diverge);
-        nb->resetMinSumOverflow();
-      }
-      // Reset momentum due to divergence.
-      curA = 1.0;
-      // Resuming from the same snapshot replays the same descent, so another
-      // revert is only allowed once a new min hpwl snapshot has been saved.
-      is_diverge_snapshot_saved_ = false;
-
-      num_region_diverged_ = 0;
-    } else {
-      divergeMsg_
-          = "RePlAce divergence detected: "
-            "Current overflow is low and increasing relative to minimum,"
-            "and the HPWL has significantly worsened. "
-            "Consider re-running with a smaller max_phi_cof value.";
-      divergeCode_ = 307;
-    }
-    return true;
+  if (num_region_diverged_ == 0) {
+    return DivergeAction::kNone;
   }
-  return false;
+
+  log_->report("Divergence occured in {} regions.", num_region_diverged_);
+
+  if (!npVars_.disableRevertIfDiverge && tryRoutabilityDivergeRecovery(curA)) {
+    num_region_diverged_ = 0;
+    return DivergeAction::kResume;
+  }
+
+  if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved_
+      && diverge_revert_count_ < kMaxDivergeReverts) {
+    // Go back to the min hpwl placement stored since overflow below 0.25 and
+    // descend from there again.
+    ++diverge_revert_count_;
+    log_->warn(GPL,
+               998,
+               "Divergence detected, reverting to snapshot with min hpwl "
+               "and resuming ({} of {} reverts allowed).",
+               diverge_revert_count_,
+               kMaxDivergeReverts);
+    revertToDivergeSnapshot();
+    // Reset momentum due to divergence.
+    curA = 1.0;
+    // Resuming from the same snapshot replays the same descent, so another
+    // revert is only allowed once a new min hpwl snapshot has been saved.
+    is_diverge_snapshot_saved_ = false;
+
+    num_region_diverged_ = 0;
+    return DivergeAction::kResume;
+  }
+
+  // A previous revert means the Diverge slot still holds a min hpwl
+  // placement, even when resuming from it again is not allowed.
+  if (!npVars_.disableRevertIfDiverge && diverge_revert_count_ > 0) {
+    log_->warn(GPL,
+               997,
+               "Divergence detected again, reverting to snapshot with min "
+               "hpwl and stopping.");
+    revertToDivergeSnapshot();
+    num_region_diverged_ = 0;
+    return DivergeAction::kStop;
+  }
+
+  divergeMsg_
+      = "RePlAce divergence detected: "
+        "Current overflow is low and increasing relative to minimum,"
+        "and the HPWL has significantly worsened. "
+        "Consider re-running with a smaller max_phi_cof value.";
+  divergeCode_ = 307;
+  return DivergeAction::kStop;
 }
 
 void NesterovPlace::routabilitySnapshot(
@@ -1038,8 +990,6 @@ void NesterovPlace::runRoutability(int iter,
     // GPL-0307. Start the search for a minimum over on the new design.
     min_hpwl_ = std::numeric_limits<int64_t>::max();
     is_min_hpwl_ = false;
-    // The snapshot it produced is kept: no new one can be taken until
-    // overflow drops back under 0.25, and a divergence before then needs it.
 
     if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
@@ -1135,7 +1085,7 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
 NesterovBase* NesterovPlace::getTopLevelNB() const
 {
   if (nbVec_.empty()) {
-    log_->error(GPL, 111, "Top-level NesterovBase is not initialized.");
+    log_->error(GPL, 116, "Top-level NesterovBase is not initialized.");
   }
   return nbVec_[0].get();
 }
@@ -1461,10 +1411,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                     is_routability_gpl_iter,
                     virtual_cts_count);
 
-    if (isDiverged(curA)) {
-      if (num_region_diverged_ > 0) {
-        break;
-      }
+    const DivergeAction diverge_action = isDiverged(curA);
+    if (diverge_action == DivergeAction::kStop) {
+      break;
+    }
+    if (diverge_action == DivergeAction::kResume) {
       // Skip due to snapshot revert.
       continue;
     }

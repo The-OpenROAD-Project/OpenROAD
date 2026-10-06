@@ -119,7 +119,14 @@ class NesterovPlace
   // Re-evaluate every GCell's current gradient at curSLP, so that the next
   // step length estimate compares gradients of the same objective.
   void refreshCurGradients();
-  bool isDiverged(float& curA);
+  enum class DivergeAction
+  {
+    kNone,
+    kResume,
+    kStop
+  };
+  DivergeAction isDiverged(float& curA);
+  void revertToDivergeSnapshot();
   void routabilitySnapshot(int iter,
                            float curA,
                            const std::string& routability_driven_dir,
@@ -194,7 +201,8 @@ class NesterovPlace
   int64_t diverge_snapshot_hpwl_ = 0;
 
   // Repeats only help while the resumed descent keeps finding a better
-  // snapshot. Bounded so a diverging run reports GPL-0307, not max iterations.
+  // snapshot. Bounded so a diverging run stops on its min hpwl snapshot, not
+  // at max iterations.
   static constexpr int kMaxDivergeReverts = 3;
   int diverge_revert_count_ = 0;
 
