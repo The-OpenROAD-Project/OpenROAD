@@ -847,7 +847,7 @@ struct NesterovPlaceVars
   // Fraction of the design's HPWL a derived referenceHpwl spans. A wirelength
   // change of this size is what pulls the penalty ramp from its maximum to its
   // minimum, so it sets the controller's headroom before it saturates.
-  static constexpr float kReferenceHpwlFraction = 1.0f;
+  static constexpr float kReferenceHpwlFraction = 0.01f;
   const float routability_end_overflow;
   const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
