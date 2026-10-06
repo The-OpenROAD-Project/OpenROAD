@@ -3239,6 +3239,10 @@ void Resizer::findResizeSlacks1()
   const sta::VertexSeq& drvrs = sta_->levelizedDrvrVertices();
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
+    // Skip loadless drivers, whose required times may be unset.
+    if (!drvr->hasFanout()) {
+      continue;
+    }
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
@@ -3246,7 +3250,11 @@ void Resizer::findResizeSlacks1()
         // Hands off special nets.
         && !db_network_->isSpecial(net)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())) {
-      net_slack_map_[net] = sta_->slack(drvr, max_);
+      const sta::Slack slack = sta_->slack(drvr, max_);
+      // Exclude unconstrained nets from ranking and weighting.
+      if (!sta::fuzzyInf(slack)) {
+        net_slack_map_[net] = slack;
+      }
     }
   }
 }

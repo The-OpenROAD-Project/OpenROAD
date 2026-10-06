@@ -395,7 +395,7 @@ namespace eval gpl {
 proc place_config_block { } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GPL 191 "No design block found."
+    utl::error GPL 192 "No design block found."
   }
   return $block
 }

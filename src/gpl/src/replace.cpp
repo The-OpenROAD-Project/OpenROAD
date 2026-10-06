@@ -184,6 +184,13 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     }
   }
 
+  if (total_placeable_insts_ == 0) {
+    // initNesterovPlace() would hit this same condition and refuse to build
+    // np_, so bail out here instead of leaving every later np_ use guarded.
+    log_->warn(GPL, 139, "No placeable instances - skipping placement.");
+    return;
+  }
+
   log_->info(GPL, 154, "Identified {} placed instances", placed_cnt);
   log_->info(GPL, 155, "Identified {} not placed instances", unplaced_cnt);
 
@@ -196,20 +203,40 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     return;
   }
 
-  // Roughly place the unplaced objects (allow more overflow).
-  // Limit iterations to prevent objects drifting too far or
-  // non-convergence.
+  // Phase 1: place the unplaced (new) objects with everything else locked,
+  // capped at 600 iterations so it can't run away if it fails to converge.
   PlaceOptions locked_options = options;
-  locked_options.overflow = std::max(options.overflow, 0.2f);
-  locked_options.nesterovPlaceMaxIter = 300;
-
-  // Use uniform density for incremental runs to fill gaps effectively
-  if (!options.uniformTargetDensityMode) {
-    locked_options.uniformTargetDensityMode = true;
-  }
+  locked_options.nesterovPlaceMaxIter = 600;
 
   doInitialPlace(threads, locked_options);
-  const int iter = doNesterovPlace(threads, locked_options);
+
+  // Build NesterovBase now (instead of lazily in doNesterovPlace() below) so
+  // fillers can be redistributed before phase 1 sees its first iteration.
+  if (initNesterovPlace(locked_options, threads, true)) {
+    for (auto& nb : nbVec_) {
+      nb->redistributeFillerCells();
+    }
+  }
+
+  // Phase 1 is allowed to diverge and hand off to phase 2 instead of
+  // aborting the whole incremental run, so doNesterovPlace() must not throw
+  // (and log an ERROR) on a divergence it is expected to recover from; it
+  // reports one via divergedLastRun() instead. Any other error (a resizer or
+  // timing-driven failure, say) still throws and propagates normally -
+  // nothing here is set up to recover from those.
+  np_->setAllowDivergenceRecovery(true);
+  int iter = doNesterovPlace(threads, locked_options);
+  const bool phase1_diverged = np_->divergedLastRun();
+  if (phase1_diverged) {
+    log_->warn(GPL,
+               195,
+               "Phase 1 of incremental placement diverged before reaching "
+               "overflow {:.3f}; continuing to phase 2 anyway.",
+               locked_options.overflow);
+    np_->clearDivergence();
+  }
+  // Phase 2 has no further fallback, so a divergence there must fail loudly.
+  np_->setAllowDivergenceRecovery(false);
 
   // Finish the overflow resolution from the locked placement
   log_->info(GPL, 133, "Unlocking all instances");
@@ -217,12 +244,17 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     pb->unlockAll();
   }
 
-  if (options.overflow < locked_options.overflow) {
-    PlaceOptions final_options = options;
-    final_options.uniformTargetDensityMode = true;
-    final_options.initDensityPenaltyFactor = 1;
+  // Phase 1 may have run out of its iteration budget short of the real
+  // target even without diverging, so check the actual overflow reached
+  // rather than trusting the target alone.
+  const bool phase1_missed_target
+      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
 
-    doNesterovPlace(threads, final_options, iter + 1);
+  if (phase1_diverged || phase1_missed_target) {
+    // Enable phase 2's density-penalty controller to ramp the penalty up in
+    // place whenever overflow regresses, instead of backing off.
+    np_->enableIncrementalDensityPenaltyGuard();
+    doNesterovPlace(threads, options, iter + 1);
   }
 }
 

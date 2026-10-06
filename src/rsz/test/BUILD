@@ -275,6 +275,7 @@ PASSFAIL_TESTS = [
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
     "repair_design_fixed_driver",
+    "gain_buffering_top_port_hier",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -283,6 +284,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 # as CMake runs every PASSFAIL test.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "gain_buffering_top_port_hier",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -611,6 +613,29 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "gcd_nangate45_placed.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRepairHold",
+    srcs = ["cpp/TestRepairHold.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold_shared_driver.def",
     ],
     deps = [
         "//src/dbSta",

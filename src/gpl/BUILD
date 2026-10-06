@@ -89,6 +89,7 @@ cc_library(
     # kernel launchers directly.
     visibility = ["//src/gpl/test:__pkg__"],
     deps = [
+        #":gpl_impl",  # Needed, but causes cyclic dependencies.
         "//src/odb/src/db",
         "//src/utl",
         "@boost.random",
