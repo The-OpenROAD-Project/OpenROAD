@@ -74,6 +74,7 @@ struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
+class RoutingCongestion;
 class Rudy;
 
 struct RegionAdjustment
@@ -209,6 +210,14 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
   void endIncremental(bool save_guides = false);
+  // True between startIncremental() and endIncremental(), i.e. while ODB
+  // changes are being collected into dirty_nets_ and rerouteDirtyNets() can
+  // be called to reroute just those nets.
+  bool isIncrementalSessionOpen() const { return grouter_cbk_ != nullptr; }
+  // Reroute the nets accumulated in dirty_nets_ without ending the
+  // incremental session.  Lets a caller evaluate the routing consequences of
+  // a netlist change it may still roll back.
+  void rerouteDirtyNets();
   void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
   void saveCongestion();
@@ -382,6 +391,11 @@ class GlobalRouter
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
+
+  // Shared routing congestion service; see grt/RoutingCongestion.h.  Answers
+  // congestion queries from GRT data when the design is routed and from RUDY
+  // before that, so consumers need not choose.
+  RoutingCongestion* getRoutingCongestion();
 
   void writePinLocations(const char* file_name);
 
@@ -649,6 +663,7 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
+  std::unique_ptr<RoutingCongestion> routing_congestion_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
