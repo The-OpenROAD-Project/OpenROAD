@@ -16,7 +16,6 @@
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
@@ -188,13 +187,6 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
              slack_max,
              slack_min_index + 1,
              worst_slack_nets.size());
-
-  if (sta::fuzzyInf(worst_slack)) {
-    log_->warn(GPL,
-               102,
-               "Timing-driven: no slacks found. Timing-driven mode disabled.");
-    return false;
-  }
 
   int weighted_net_count = 0;
   for (auto& gNet : nbc_->getGNets()) {
