@@ -2889,9 +2889,17 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   if (honor_dont_touch_fixed) {
     return db_net_survivor->canMergeNet(db_net_removed);
   }
-  // The legacy override ignores protection on the candidate nets and buffer
-  // while still checking other instances on the removed net.
-  return db_net_survivor->canMergeNet(db_net_removed, db_inst, false);
+  // Explicit removal (remove_buffers <insts>) overrides protection on the
+  // buffer and its two nets only. mergeNet() still reconnects every other
+  // sink of the removed net, which OpenDB refuses for dont_touch instances,
+  // so those must keep rejecting the removal.
+  for (odb::dbITerm* iterm : db_net_removed->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (inst != db_inst && inst->isDoNotTouch()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 namespace {
@@ -2905,12 +2913,11 @@ class BufferRemovalProtection
                           odb::dbNet* removed)
       : survivor_(survivor), restore_survivor_(survivor->isDoNotTouch())
   {
-    // Release the buffer's flags for pin disconnect and deletion.
+    // Release the buffer's dont_touch for pin disconnect and deletion.
+    // OpenDB does not enforce a fixed placement status on either operation,
+    // so the placement status is left untouched.
     if (db_inst->isDoNotTouch()) {
       db_inst->setDoNotTouch(false);
-    }
-    if (db_inst->isFixed()) {
-      db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     }
     // Restore the survivor on scope exit; the removed net, when present,
     // stays unprotected because mergeNet() destroys it.

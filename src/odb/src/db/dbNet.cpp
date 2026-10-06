@@ -2330,17 +2330,14 @@ dbNet* dbNet::getValidNet(dbBlock* block, uint32_t oid)
   return (dbNet*) block_impl->net_tbl_->getPtr(oid);
 }
 
-bool dbNet::canMergeNet(dbNet* in_net,
-                        const dbInst* ignored_inst,
-                        bool honor_dont_touch_nets)
+bool dbNet::canMergeNet(dbNet* in_net)
 {
-  if (honor_dont_touch_nets && (isDoNotTouch() || in_net->isDoNotTouch())) {
+  if (isDoNotTouch() || in_net->isDoNotTouch()) {
     return false;
   }
 
   for (dbITerm* iterm : in_net->getITerms()) {
-    dbInst* inst = iterm->getInst();
-    if (inst != ignored_inst && inst->isDoNotTouch()) {
+    if (iterm->getInst()->isDoNotTouch()) {
       return false;
     }
   }
