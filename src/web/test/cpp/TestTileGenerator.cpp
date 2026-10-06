@@ -4949,8 +4949,10 @@ TEST_F(TileGeneratorTest, LayerHierarchyBacksideCategory)
       break;
     }
   }
-  ASSERT_NE(backside_node, nullptr)
-      << "layer_hierarchy missing Backside category node";
+  if (backside_node == nullptr) {
+    ADD_FAILURE() << "layer_hierarchy missing Backside category node";
+    return;
+  }
   EXPECT_EQ(backside_node->at("type").as_string(), "category");
 
   // The backside node should contain exactly metal1 and via1.
