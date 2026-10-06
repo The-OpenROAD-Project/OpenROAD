@@ -2896,7 +2896,7 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
 
 namespace {
 
-// OpenDB rejects edits to protected instances and nets during buffer removal.
+// Temporarily unprotects a buffer and its nets, then restores the survivor.
 class BufferRemovalProtection
 {
  public:
@@ -2905,12 +2905,15 @@ class BufferRemovalProtection
                           odb::dbNet* removed)
       : survivor_(survivor), restore_survivor_(survivor->isDoNotTouch())
   {
+    // Release the buffer's flags for pin disconnect and deletion.
     if (db_inst->isDoNotTouch()) {
       db_inst->setDoNotTouch(false);
     }
     if (db_inst->isFixed()) {
       db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     }
+    // Restore the survivor on scope exit; the removed net, when present,
+    // stays unprotected because mergeNet() destroys it.
     if (restore_survivor_) {
       survivor_->setDoNotTouch(false);
     }
