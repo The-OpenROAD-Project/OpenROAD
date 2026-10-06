@@ -62,9 +62,30 @@ class NesterovPlace
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   NesterovPlaceVars& getNpVars() { return npVars_; }
+  float getAverageOverflow() const { return average_overflow_unscaled_; }
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
+  // Enables the incremental density-penalty guard for the next
+  // doNesterovPlace() call; consumed (cleared) at the start of that call.
+  void enableIncrementalDensityPenaltyGuard();
+  // Clears a divergence left over from a previous doNesterovPlace() call
+  // (e.g. one the caller intends to retry from). Without this, the leftover
+  // state trips the divergence check at the very start of the next
+  // doNesterovPlace() call before it does any work.
+  void clearDivergence();
+  // When true, a divergence is reported as a warning and doNesterovPlace()
+  // returns normally (check divergedLastRun()) instead of logging an ERROR
+  // and throwing. Defaults to false, so a plain (non-incremental) placement
+  // run still fails loudly and immediately on divergence, as before. The
+  // caller is responsible for toggling this back off once the recoverable
+  // window has passed (e.g. incremental placement's phase 2 has no further
+  // fallback, so it should not set this).
+  void setAllowDivergenceRecovery(bool allow)
+  {
+    allow_divergence_recovery_ = allow;
+  }
+  bool divergedLastRun() const { return num_region_diverged_ > 0; }
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -123,6 +144,20 @@ class NesterovPlace
   bool isPlacementSettled() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  // Re-derives densityPenalty_ for every region via
+  // NesterovBase::updateDensityPenaltyFromRatio() - the same formula
+  // NesterovBase::initDensity2() uses at true init, just re-triggered
+  // mid-run. Leaves wireLengthCoefX_/Y_ untouched, unlike calling init()
+  // again.
+  void applyDensityPenaltyFactor(float factor);
+  // Checked once per outer iteration while the incremental density-penalty
+  // guard is enabled. On any regression past best_overflow, escalates
+  // current_factor in place (no revert - see the .cpp for why) and keeps
+  // running; otherwise a no-op. The escalation multiplier is fixed at the
+  // best value found by a guard-parameter sweep (see the .cpp).
+  void guardIncrementalDensityPenalty(float& current_factor,
+                                      float& best_overflow,
+                                      int& retries);
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
   std::string getReportsDir() const;
@@ -174,6 +209,7 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
+  bool allow_divergence_recovery_ = false;
 
   // Request a FISTA momentum restart on the next Nesterov iteration. Set after
   // a non-virtual timing-driven iteration replaces topology (repair_design),
@@ -189,6 +225,8 @@ class NesterovPlace
 
   int placement_gif_key_ = -1;
   int routability_gif_key_ = -1;
+
+  bool incremental_penalty_guard_requested_ = false;
 
   void init();
   void reset();

@@ -603,6 +603,64 @@ void NesterovPlace::refreshCurGradients()
   }
 }
 
+void NesterovPlace::enableIncrementalDensityPenaltyGuard()
+{
+  incremental_penalty_guard_requested_ = true;
+}
+
+void NesterovPlace::clearDivergence()
+{
+  num_region_diverged_ = 0;
+  divergeMsg_ = "";
+  divergeCode_ = 0;
+  for (auto& nb : nbVec_) {
+    nb->clearDivergence();
+  }
+}
+
+void NesterovPlace::applyDensityPenaltyFactor(float factor)
+{
+  for (auto& nb : nbVec_) {
+    nb->updateDensityPenaltyFromRatio(factor);
+  }
+}
+
+void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
+                                                   float& best_overflow,
+                                                   int& retries)
+{
+  // React on the very first regression (a guard-parameter sweep found no
+  // patience delay to be best) by escalating the density penalty in place.
+  constexpr float kOverflowTolerance = 0.005f;
+  constexpr float kGrowthRatio = 2.0f;
+  constexpr int kMaxRetries = 10;
+
+  if (average_overflow_unscaled_ < best_overflow - kOverflowTolerance) {
+    best_overflow = average_overflow_unscaled_;
+    return;
+  }
+
+  if (average_overflow_unscaled_ <= best_overflow + kOverflowTolerance) {
+    return;
+  }
+
+  if (retries >= kMaxRetries) {
+    return;
+  }
+
+  ++retries;
+  current_factor *= kGrowthRatio;
+  applyDensityPenaltyFactor(current_factor);
+  log_->info(GPL,
+             193,
+             "Incremental density-penalty guard: overflow regressed past "
+             "{:.3f}; escalating the penalty factor to {:g} in place "
+             "(retry {}).",
+             best_overflow,
+             current_factor,
+             retries);
+}
+
 bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
                                float& diverge_snapshot_WlCoefY,
                                bool& is_diverge_snapshot_saved)
@@ -1099,6 +1157,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function, Nesterov must be skipped.
   if (num_region_diverged_ > 0) {
+    if (allow_divergence_recovery_) {
+      log_->warn(GPL, divergeCode_, divergeMsg_);
+      return start_iter;
+    }
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
@@ -1115,6 +1177,24 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   // backTracking variable.
   float curA = 1.0;
+
+  // density penalty guard info
+  bool penalty_guard_active = incremental_penalty_guard_requested_
+                              && !npVars_.routability_driven_mode;
+  incremental_penalty_guard_requested_ = false;
+  float penalty_guard_factor = 1;
+  float penalty_guard_best_overflow = average_overflow_unscaled_;
+  int penalty_guard_retries = 0;
+
+  if (penalty_guard_active) {
+    applyDensityPenaltyFactor(penalty_guard_factor);
+    log_->info(GPL,
+               191,
+               "Incremental density-penalty guard enabled: penalty factor "
+               "{:g}, starting overflow {:.3f}.",
+               penalty_guard_factor,
+               penalty_guard_best_overflow);
+  }
 
   int routability_driven_revert_count = 0;
   int routability_gpl_iter_count_ = 0;
@@ -1192,6 +1272,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     updateNextIter(nesterov_iter);
 
+    if (penalty_guard_active) {
+      guardIncrementalDensityPenalty(penalty_guard_factor,
+                                     penalty_guard_best_overflow,
+                                     penalty_guard_retries);
+    }
+
     updateIterGraphics(nesterov_iter,
                        reports_dir,
                        routability_driven_dir,
@@ -1262,7 +1348,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   updateDb();
 
   if (num_region_diverged_ > 0) {
-    log_->error(GPL, divergeCode_, divergeMsg_);
+    if (allow_divergence_recovery_) {
+      log_->warn(GPL, divergeCode_, divergeMsg_);
+    } else {
+      log_->error(GPL, divergeCode_, divergeMsg_);
+    }
   }
 
   if (graphics_ && graphics_->enabled() && npVars_.debug) {

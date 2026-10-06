@@ -57,6 +57,8 @@ std::string GridComponent::typeToString(Type type)
       return "Followpin";
     case kPadConnect:
       return "Pad connect";
+    case kMacroEdgeConnect:
+      return "Macro edge connect";
     case kRepairChannel:
       return "Repair channel";
   }
