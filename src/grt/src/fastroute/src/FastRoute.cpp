@@ -1330,6 +1330,8 @@ std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
   worker->congestion_file_name_ = congestion_file_name_;
   worker->layer_directions_ = layer_directions_;
   worker->db_layers_ = db_layers_;
+  worker->dbu_per_micron_ = dbu_per_micron_;
+  worker->layer_res_per_micron_ = layer_res_per_micron_;
   worker->en_estimate_parasitics_ = en_estimate_parasitics_;
   worker->resistance_aware_ = resistance_aware_;
   worker->enable_resistance_aware_ = enable_resistance_aware_;
