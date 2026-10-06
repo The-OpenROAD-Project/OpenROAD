@@ -31,8 +31,8 @@ When using the `-timing_driven` flag, `gpl` does a virtual `repair_design`
 to find slacks and
 weight nets with low slack. It adjusts the worst slacks (modified with 
 `-timing_driven_nets_percentage`) using a multiplier (modified with 
-`-timing_driven_net_weight_max`). The multiplier
-is scaled from the full value for the worst slack, to 1.0 at the
+`-timing_driven_net_weight_max`). The multiplier is at its full value for the
+worst 2% of that set and is scaled down linearly to 1.0 at the
 `timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing. 
 
