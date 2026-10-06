@@ -1494,6 +1494,7 @@ class NesterovBase
     std::vector<FloatPoint> prevSLPSumGrads;
     float densityPenalty = 0;
     float stepLength = 0;
+    int64_t prevHpwl = 0;
   };
   std::array<Snapshot, kNumSnapshotSlots> snapshots_;
 

@@ -702,6 +702,9 @@ bool NesterovPlace::isDiverged(float& curA)
       }
       // Reset momentum due to divergence.
       curA = 1.0;
+      // Resuming from the same snapshot replays the same descent, so another
+      // revert is only allowed once a new min hpwl snapshot has been saved.
+      is_diverge_snapshot_saved_ = false;
 
       num_region_diverged_ = 0;
     } else {

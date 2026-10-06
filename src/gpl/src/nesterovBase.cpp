@@ -4523,6 +4523,7 @@ void NesterovBase::saveSnapshot(SnapshotSlot slot)
   snap.prevSLPSumGrads = prevSLPSumGrads_;
   snap.densityPenalty = densityPenalty_;
   snap.stepLength = stepLength_;
+  snap.prevHpwl = prev_hpwl_;
 }
 
 bool NesterovBase::checkConvergence(int gpl_iter_count,
@@ -4726,6 +4727,9 @@ bool NesterovBase::revertToSnapshot(SnapshotSlot slot)
   prevSLPSumGrads_ = snap.prevSLPSumGrads;
   densityPenalty_ = snap.densityPenalty;
   stepLength_ = snap.stepLength;
+  // Otherwise the first phi coef after the revert compares against the
+  // placement that was abandoned.
+  prev_hpwl_ = snap.prevHpwl;
 
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityFieldBin();
