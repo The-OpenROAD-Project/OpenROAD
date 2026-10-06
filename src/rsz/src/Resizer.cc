@@ -2854,7 +2854,7 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
   odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
   if (honor_dont_touch_fixed
-      && (db_inst == nullptr || db_inst->isDoNotTouch() || db_inst->isFixed()
+      && (db_inst->isDoNotTouch() || db_inst->isFixed()
           || (input_db_net != nullptr && input_db_net->isDoNotTouch())
           || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
     return false;
@@ -2894,22 +2894,7 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
         }
       }
     }
-    if (!can_merge_nets) {
-      return false;
-    }
-    if (db_inst->isDoNotTouch()) {
-      db_inst->setDoNotTouch(false);
-    }
-    if (db_inst->isFixed()) {
-      db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    }
-    if (input_db_net != nullptr) {
-      input_db_net->setDoNotTouch(false);
-    }
-    if (output_db_net != nullptr) {
-      output_db_net->setDoNotTouch(false);
-    }
-    return true;
+    return can_merge_nets;
   }
 
   return false;
@@ -2948,8 +2933,23 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
     return false;
   }
 
+  odb::dbInst* db_inst = db_network_->staToDb(buffer);
   if (output_db_net == nullptr) {
-    odb::dbInst::destroy(db_network_->staToDb(buffer));
+    // OpenDB requires the instance and its input net to be editable on destroy.
+    const bool input_dont_touch = input_db_net->isDoNotTouch();
+    if (input_dont_touch) {
+      input_db_net->setDoNotTouch(false);
+    }
+    if (db_inst->isDoNotTouch()) {
+      db_inst->setDoNotTouch(false);
+    }
+    if (db_inst->isFixed()) {
+      db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+    odb::dbInst::destroy(db_inst);
+    if (input_dont_touch) {
+      input_db_net->setDoNotTouch(true);
+    }
     return true;
   }
 
@@ -3010,6 +3010,21 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
     }
   }
 
+  // OpenDB requires editable pins and nets during disconnect and merge.
+  const bool survivor_dont_touch = db_survivor->isDoNotTouch();
+  if (db_inst->isDoNotTouch()) {
+    db_inst->setDoNotTouch(false);
+  }
+  if (db_inst->isFixed()) {
+    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+  if (survivor_dont_touch) {
+    db_survivor->setDoNotTouch(false);
+  }
+  if (db_removed->isDoNotTouch()) {
+    db_removed->setDoNotTouch(false);
+  }
+
   sta_->disconnectPin(input_pin);
   sta_->disconnectPin(output_pin);
   if (survivor_modnet != nullptr && removed_modnet != nullptr) {
@@ -3032,6 +3047,9 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   }
   if (survivor_modnet != nullptr && new_modnet_name.has_value()) {
     survivor_modnet->rename(new_modnet_name->c_str());
+  }
+  if (survivor_dont_touch) {
+    db_survivor->setDoNotTouch(true);
   }
 
   const bool removed_buffer = true;

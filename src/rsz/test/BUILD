@@ -516,6 +516,7 @@ cc_test(
         "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
+        "remove_buffers3.def",
     ],
     deps = [
         "//src/odb/src/db",
