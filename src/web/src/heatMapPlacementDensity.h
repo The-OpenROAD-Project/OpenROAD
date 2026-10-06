@@ -29,13 +29,10 @@ class PlacementDensityDataSource : public HeatMapDataSource,
     return "Only use selected instances";
   }
 
-  // The grid is fixed while it is being taken from global placement.
-  bool canAdjustGrid() const override { return !hasPlacementBinSize(); }
   // Global placement bins go below a micron on advanced nodes, so the size it
   // reports has to stay representable instead of being clamped.
   double getGridSizeMinimumValue() const override { return 0.1; }
-  double getGridXSize() const override;
-  double getGridYSize() const override;
+  void restoreSettings(const Renderer::Settings& settings) override;
 
   void onShow() override;
   void onHide() override;
@@ -61,12 +58,17 @@ class PlacementDensityDataSource : public HeatMapDataSource,
 
   bool destroyMapOnNotVisible() const override { return true; }
 
+  void populateXYGrid() override;
+
  private:
   // Bin size, in DBU, published by global placement under the given block
   // property. Empty until global placement runs.
   std::optional<int> getPlacementBinSize(const char* name) const;
-  // Whether global placement has published a bin size for this block.
-  bool hasPlacementBinSize() const;
+
+  // Grid last taken from global placement; while the grid still matches it
+  // the user has not picked their own size, so it may follow placement.
+  double placement_grid_x_;
+  double placement_grid_y_;
 
   bool include_taps_{true};
   bool include_filler_{false};
