@@ -47,6 +47,7 @@ COMPULSORY_TESTS = [
     "orientation_improve2",
     "orientation_improve3",
     "place_macro_right_angle_rotation",
+    "second_invocation",
     "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
     "write_macro_placement",
@@ -244,6 +245,10 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
+                "second_invocation": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
@@ -262,6 +267,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
+        check_log = False if test_name == "second_invocation" else True,
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
