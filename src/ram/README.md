@@ -121,6 +121,7 @@ One key per line, `#` comments:
 | `words n`, `bits n` | Depth and width. |
 | `clock port` | The clock port. |
 | `reset port` | A reset port the RTL has and the array ignores. |
+| `write_priority or\|last` | Two ports writing one word in one cycle: `or` (the default) ORs their data, for an RTL that never does it; `last`, the later write port in the spec wins, as an RTL's later assignment does. |
 | `unused port...` | One-bit inputs the RTL module has and the array ignores (ibex's `test_en_i`), so the block keeps the module's ports. |
 | `async_reset port low\|high` | The reset clears every stored word to zero asynchronously, active low or high; the storage flops are `cell flop_r` with their set tied off by `cell tie_hi`, one tie (and for an active-high reset one inverter) per word. Read-address registers are not reset. One of `reset` or `async_reset`. |
 | `read addr data` | A read port, by the module's port names. Repeat per port. |

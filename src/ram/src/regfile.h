@@ -141,6 +141,10 @@ struct Spec
   // data itself with one write port and a select mux of the writes with
   // more.
   std::string write_style = "mux";
+  // Two ports writing one word in one cycle: "or" (the default) ORs their
+  // data, for an RTL that never does it; "last", the later port in the
+  // spec wins, as an RTL's later assignment does (cva6's commit ports).
+  std::string write_priority = "or";
   // Instance names of the flops, as patterns, so a flop carries the name
   // of the RTL register bit it implements (an equivalence check matches
   // sequential instances by name). {word} {bit} for the storage,

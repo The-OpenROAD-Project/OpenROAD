@@ -616,6 +616,10 @@ dbBlock* Builder::Run()
   const int header_cells_w = static_cast<int>(
       (R + W) * A * and2_->getWidth() + (W - 1) * or2_->getWidth()
       + (gated ? icg_->getWidth() : inv_->getWidth())
+      + (s.write_priority == "last"
+             ? (W - 1)
+                   * (inv_->getWidth() + and2_->getWidth() + or2_->getWidth())
+             : 0)
       + (s.async_reset
              ? tie_hi_->getWidth() + (s.reset_active_low ? 0 : inv_->getWidth())
              : 0));
@@ -829,6 +833,37 @@ dbBlock* Builder::Run()
         }
         wsel[w][n] = Decode(hcur(), wn + "_wsel" + std::to_string(w), l);
         wsels.push_back(wsel[w][n]);
+      }
+      if (s.write_priority == "last" && W > 1) {
+        // A later port wins: each write select masked by the later ones'.
+        // The clock gate and hold still see every write (wsels).
+        dbNet* later = wsel[W - 1][n];
+        for (int w = W - 2; w >= 0; --w) {
+          const std::string k = wn + "_wp" + std::to_string(w);
+          dbNet* later_n = Net(k + "_ln");
+          Place(hcur(),
+                inv_,
+                later_n->getName(),
+                {{g_pins.inv[0], later}, {g_pins.inv[1], later_n}});
+          dbNet* masked = Net(k + "_sel");
+          Place(hcur(),
+                and2_,
+                masked->getName(),
+                {{g_pins.and2[0], wsel[w][n]},
+                 {g_pins.and2[1], later_n},
+                 {g_pins.and2[2], masked}});
+          if (w > 0) {
+            dbNet* any_later = Net(k + "_l");
+            Place(hcur(),
+                  or2_,
+                  any_later->getName(),
+                  {{g_pins.or2[0], later},
+                   {g_pins.or2[1], wsel[w][n]},
+                   {g_pins.or2[2], any_later}});
+            later = any_later;
+          }
+          wsel[w][n] = masked;
+        }
       }
       // hold = ~(wsel0 | wsel1 | ...): the word keeps its value.
       dbNet* any_write
@@ -1283,6 +1318,13 @@ Spec ReadSpec(const std::string& path)
                + ": one of `reset` or `async_reset`, once");
       }
       s.reset = v[0];
+    } else if (key == "write_priority") {
+      need(1);
+      if (v[0] != "or" && v[0] != "last") {
+        Refuse(path + ":" + std::to_string(lineno)
+               + ": `write_priority or|last`");
+      }
+      s.write_priority = v[0];
     } else if (key == "unused") {
       if (v.empty()) {
         Refuse(path + ":" + std::to_string(lineno)
