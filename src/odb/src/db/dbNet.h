@@ -45,7 +45,7 @@ struct _dbNetFlags
   uint32_t select : 1;
   uint32_t mark : 1;
   uint32_t mark_1 : 1;
-  uint32_t wire_altered : 1;
+  uint32_t unused3 : 1;
   uint32_t extracted : 1;
   uint32_t rc_graph : 1;
   uint32_t unused : 1;
