@@ -28,6 +28,16 @@
 
 namespace grt {
 
+namespace {
+
+// Per-layer NDR factor; layers beyond `net_costs` (or empty = no NDR) get 1.
+double layerFactor(const std::vector<double>& net_costs, const int layer)
+{
+  return std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
+}
+
+}  // namespace
+
 GridGraph::GridGraph(const Design* design,
                      const Constants& constants,
                      utl::Logger* logger)
@@ -293,34 +303,33 @@ GridGraph::GridGraph(const Design* design,
   }
 }
 
-CapacityT GridGraph::viaDemand(const int layer_index,
-                               const int l,
-                               const int edge_sum) const
+double GridGraph::stackPadLength(const int layer,
+                                 const int low,
+                                 const int high) const
 {
-  // Spread the layer's precomputed via demand length over its two edges.
-  const double via_num = viaPadLength(layer_index, l);
-  return edge_sum > 0 ? (CapacityT) via_num / edge_sum : (CapacityT) 0;
+  const double upper
+      = layer > low ? design_->getViaDemandLengthUpper(layer - 1) : 0.0;
+  const double lower
+      = layer < high ? design_->getViaDemandLengthLower(layer) : 0.0;
+  return std::max(upper, lower);
 }
 
-double GridGraph::viaPadLength(const int via_layer_index, const int l) const
+CostT GridGraph::getStackPadCost(const int layer,
+                                 const int low,
+                                 const int high,
+                                 const PointT loc,
+                                 const std::vector<double>& net_costs) const
 {
-  return (l == via_layer_index)
-             ? design_->getViaDemandLengthLower(via_layer_index)
-             : design_->getViaDemandLengthUpper(via_layer_index);
-}
-
-CostT GridGraph::getPadCost(const int layer,
-                            const PointT loc,
-                            const double pad_length,
-                            const std::vector<double>& net_costs) const
-{
-  const double layer_factor
-      = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
   CostT cost = 0;
-  forEachFlankEdge(layer, loc, [&](PointT edge_loc, int edge_sum) {
-    cost += getWireCost(
-        layer, edge_loc, (CapacityT) pad_length / edge_sum, layer_factor);
-  });
+  forEachPadFlankEdge(
+      layer,
+      low,
+      high,
+      loc,
+      net_costs,
+      [&](PointT edge_loc, CapacityT demand, double layer_factor) {
+        cost += getWireCost(layer, edge_loc, demand, layer_factor);
+      });
   return cost;
 }
 
@@ -501,9 +510,8 @@ CostT GridGraph::getWireCost(const int layer_index,
   return cost;
 }
 
-CostT GridGraph::getViaCost(const int layer_index,
-                            const PointT loc,
-                            const std::vector<double>& net_costs) const
+CostT GridGraph::getUnitViaCost(const int layer_index,
+                                const std::vector<double>& net_costs) const
 {
   if (layer_index + 1 >= num_layers_) {
     logger_->error(utl::GRT,
@@ -515,22 +523,9 @@ CostT GridGraph::getViaCost(const int layer_index,
   // Scale the unit via cost by the max NDR factor across the two
   // adjacent layers, approximating the wider NDR via without access
   // to the per-NDR via shapes.
-  const double lower_layer_cost = std::cmp_less(layer_index, net_costs.size())
-                                      ? net_costs[layer_index]
-                                      : 1.0;
-  const double upper_layer_cost
-      = std::cmp_less(layer_index + 1, net_costs.size())
-            ? net_costs[layer_index + 1]
-            : 1.0;
-  CostT cost = unit_via_cost_ * std::max(lower_layer_cost, upper_layer_cost);
-  forEachViaFlankEdgeImpl(
-      layer_index,
-      loc,
-      net_costs,
-      [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
-        cost += getWireCost(l, edge_loc, demand, layer_factor);
-      });
-  return cost;
+  return unit_via_cost_
+         * std::max(layerFactor(net_costs, layer_index),
+                    layerFactor(net_costs, layer_index + 1));
 }
 
 CostT GridGraph::getWireResistanceCost(const int layer_index,
@@ -890,28 +885,20 @@ void GridGraph::forEachFlankEdge(const int layer,
 }
 
 template <typename F>
-void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
-                                        const PointT loc,
-                                        const std::vector<double>& net_costs,
-                                        F&& fn) const
+void GridGraph::forEachPadFlankEdge(const int layer,
+                                    const int low,
+                                    const int high,
+                                    const PointT loc,
+                                    const std::vector<double>& net_costs,
+                                    F&& fn) const
 {
-  for (int l = layer_index; l <= layer_index + 1 && l < num_layers_; l++) {
-    // Use the per-layer NDR factor for `l`, not a net-wide value.
-    const double layer_factor
-        = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
-    forEachFlankEdge(l, loc, [&](PointT edge_loc, int edge_sum) {
-      fn(l, edge_loc, viaDemand(layer_index, l, edge_sum), layer_factor);
-    });
-  }
-}
-
-void GridGraph::forEachViaFlankEdge(
-    const int layer_index,
-    const PointT loc,
-    const std::vector<double>& net_costs,
-    const std::function<void(int, PointT, CapacityT, double)>& fn) const
-{
-  forEachViaFlankEdgeImpl(layer_index, loc, net_costs, fn);
+  // Spread the pad over the layer's two flanking edges, with the per-layer
+  // NDR factor for `layer`, not a net-wide value.
+  const double pad_length = stackPadLength(layer, low, high);
+  const double layer_factor = layerFactor(net_costs, layer);
+  forEachFlankEdge(layer, loc, [&](PointT edge_loc, int edge_sum) {
+    fn(edge_loc, (CapacityT) pad_length / edge_sum, layer_factor);
+  });
 }
 
 template <typename F>
@@ -921,24 +908,27 @@ void GridGraph::forEachStackFlankEdgeImpl(const int low,
                                           const std::vector<double>& net_costs,
                                           F&& fn) const
 {
-  // Stacked vias share one landing pad on each intermediate layer: the
-  // upper pad of the via below and the lower pad of the via above overlap.
-  // Charge each layer once, with the larger of the two.
   for (int l = low; l <= high && l < num_layers_; l++) {
-    double pad_length;
-    if (l == low) {
-      pad_length = viaPadLength(low, low);
-    } else if (l == high) {
-      pad_length = viaPadLength(high - 1, high);
-    } else {
-      pad_length = std::max(viaPadLength(l - 1, l), viaPadLength(l, l));
-    }
-    const double layer_factor
-        = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
-    forEachFlankEdge(l, loc, [&](PointT edge_loc, int edge_sum) {
-      fn(l, edge_loc, (CapacityT) pad_length / edge_sum, layer_factor);
-    });
+    forEachPadFlankEdge(
+        l,
+        low,
+        high,
+        loc,
+        net_costs,
+        [&](PointT edge_loc, CapacityT demand, double layer_factor) {
+          fn(l, edge_loc, demand, layer_factor);
+        });
   }
+}
+
+void GridGraph::forEachStackFlankEdge(
+    const int low,
+    const int high,
+    const PointT loc,
+    const std::vector<double>& net_costs,
+    const std::function<void(int, PointT, CapacityT, double)>& fn) const
+{
+  forEachStackFlankEdgeImpl(low, high, loc, net_costs, fn);
 }
 
 template <typename F>
@@ -1032,8 +1022,7 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
         }
         const int direction = layer_directions_[layer];
         const int perp = 1 - direction;
-        const double wire_factor
-            = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
+        const double wire_factor = layerFactor(net_costs, layer);
         if ((*node)[perp] != (*child)[perp]) {
           // Native trees are direction-legal by construction; only routes
           // adopted from detailed wires may carry wrong-way spans. Diagonal

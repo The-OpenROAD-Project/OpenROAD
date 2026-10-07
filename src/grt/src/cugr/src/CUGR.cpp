@@ -2110,17 +2110,22 @@ void CUGR::saveCongestion()
   // Walk every routed net's tree to gather per 3D edge (layer, x, y):
   //   - wire_count: number of same-layer wire segments crossing the edge
   //   - wire_nets:  the nets that own those wires
-  //   - via_nets:   the nets that own vias whose stub demand commitVia()
-  //                 attributes to this edge (the same neighbours commitVia
+  //   - via_nets:   the nets that own vias whose stub demand commitTree()
+  //                 attributes to this edge (the same neighbours commitTree
   //                 itself touches)
   std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> wire_nets;
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
-  auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
-    // Same edges commitVia() deposits stub demand on.
-    grid_graph_->forEachViaFlankEdge(
-        via_layer,
+  auto attribute_via = [&](int low,
+                           int high,
+                           int vx,
+                           int vy,
+                           odb::dbNet* db_net) {
+    // Same edges commitTree() deposits stub demand on.
+    grid_graph_->forEachStackFlankEdge(
+        low,
+        high,
         {vx, vy},
         {},
         [&](int l, PointT edge_loc, CapacityT /*demand*/, double /*factor*/) {
@@ -2158,13 +2163,9 @@ void CUGR::saveCongestion()
                 }
               }
             } else {
-              const int min_l
-                  = std::min(node->getLayerIdx(), child->getLayerIdx());
-              const int max_l
-                  = std::max(node->getLayerIdx(), child->getLayerIdx());
-              for (int via_l = min_l; via_l < max_l; via_l++) {
-                attribute_via(via_l, node->x(), node->y(), db_net);
-              }
+              const auto [min_l, max_l]
+                  = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+              attribute_via(min_l, max_l, node->x(), node->y(), db_net);
             }
           }
         });
@@ -2605,8 +2606,9 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   }
   for (const PointT& endpoint : endpoints) {
     for (int layer = layer_0 - 2; layer < layer_0; layer++) {
-      grid_graph_->forEachViaFlankEdge(
+      grid_graph_->forEachStackFlankEdge(
           layer,
+          layer + 1,
           endpoint,
           costs,
           [&](int l, PointT loc, CapacityT demand, double factor) {
