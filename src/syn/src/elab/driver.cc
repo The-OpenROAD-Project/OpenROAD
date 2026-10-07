@@ -149,7 +149,10 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
     return std::move(builder->graph_);
   } catch (slang_frontend::InternalError& exc) {
     if (exc.range.start().valid()) {
-      auto location = exc.range.start();
+      // On the off chance this is a macro location, go through
+      // getFullyOriginalLoc to resolve it to the original file
+      auto location
+          = driver.sourceManager.getFullyOriginalLoc(exc.range.start());
       reportError(
           logger,
           73,
