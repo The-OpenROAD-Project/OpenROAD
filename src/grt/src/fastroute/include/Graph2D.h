@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -12,6 +14,7 @@
 #include <vector>
 
 #include "DataType.h"
+#include "Overflow.h"
 #include "boost/multi_array.hpp"
 #include "utl/Logger.h"
 
@@ -85,6 +88,14 @@ class Graph2D
   void prepareForIncrementalRun();
   // Full-scan reference check, intended for tests and GRT usedgridcheck debug.
   bool usedGridsMatchUsage() const;
+  bool isUsedGrid(int x, int y, EdgeDirection direction) const;
+  std::array<OverflowStatistics, 2> overflowStatistics(bool estimated);
+  int maxUsage(EdgeDirection direction);
+  bool needsEstimatedUsageScan();
+  // Observers belong to this graph's owner; copying routing state retains them.
+  void setUsedGridCallbacks(
+      std::function<void(int, int, EdgeDirection, bool)> changed,
+      std::function<void()> reset);
   void addEstUsageToUsage();
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);
@@ -147,7 +158,53 @@ class Graph2D
   void resetNDRCap();
 
   void foreachEdge(const std::function<void(Edge&)>& func);
+  void checkDirtyLists() const;
+  void markEstUsageDirty(int x, int y, EdgeDirection direction);
   void markUsedGridDirty(int x, int y, EdgeDirection direction);
+  void insertUsedGrid(int x, int y, EdgeDirection direction);
+  void eraseUsedGrid(int x, int y, EdgeDirection direction);
+  static bool needsOrderedEstimateScan(double usage);
+  void invalidateOverflow2D();
+  void rebuildOverflow2D();
+  void updateEdgeStatistics(const Edge& edge,
+                            EdgeDirection direction,
+                            bool added);
+  // Keep each mutation's original arithmetic and conversion types.
+  template <typename Mutation>
+  void mutateEdge(int x, int y, EdgeDirection direction, Mutation mutate)
+  {
+    auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
+                                                        : v_edges_[x][y];
+    const auto old_usage = edge.usage;
+    const auto old_capacity = edge.cap;
+    const auto old_estimate = edge.est_usage;
+    mutate(edge);
+    if (overflow_2d_valid_ && isUsedGrid(x, y, direction)) {
+      auto& totals
+          = direction == EdgeDirection::Horizontal ? h_overflow_ : v_overflow_;
+      totals.usage.replace(old_usage, old_capacity, edge.usage, edge.cap);
+      totals.estimated.replace(static_cast<int>(old_estimate),
+                               old_capacity,
+                               static_cast<int>(edge.est_usage),
+                               edge.cap);
+      totals.usage_max.replace(old_usage, 0, edge.usage, 0);
+      totals.ordered_estimates += needsOrderedEstimateScan(edge.est_usage)
+                                  - needsOrderedEstimateScan(old_estimate);
+    }
+  }
+  std::array<OverflowStatistics, 2> scanOverflowStatistics(
+      bool estimated) const;
+
+  struct OverflowState
+  {
+    OverflowAccumulator usage;
+    OverflowAccumulator estimated;
+    OverflowAccumulator usage_max;
+    int ordered_estimates = 0;
+  };
+  bool overflow_2d_valid_ = false;
+  OverflowState h_overflow_;
+  OverflowState v_overflow_;
 
   // What an NDR net consumes on one edge. The layer and the amount debited
   // from it must be stored per net: the layer with free capacity at routing
@@ -188,6 +245,15 @@ class Graph2D
   // Deduplicate with Edge::used_grid_dirty and reconcile only at the next run.
   std::vector<std::pair<int, int>> h_dirty_used_grids_;
   std::vector<std::pair<int, int>> v_dirty_used_grids_;
+  // Independent of used-grid membership: removed edges can still need a reset.
+  // Deduplicate until InitEstUsage, including estimates canceled back to zero.
+  std::vector<std::pair<int, int>> h_dirty_est_edges_;
+  std::vector<std::pair<int, int>> v_dirty_est_edges_;
+  // Linear edge indices remain queued until both history fields are reset.
+  std::vector<size_t> h_dirty_history_edges_;
+  std::vector<size_t> v_dirty_history_edges_;
+  std::function<void(int, int, EdgeDirection, bool)> used_grid_changed_;
+  std::function<void()> used_grids_reset_;
 };
 
 }  // namespace grt

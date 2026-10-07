@@ -865,11 +865,11 @@ void TechChar::createDelayBufList()
     }
 
     if (!footprintClkDly.empty()) {
-      properDlyBuffers = footprintClkDly;
+      properDlyBuffers = std::move(footprintClkDly);
       debugPrint(
           logger_, CTS, "insertion delay", 1, "Using footprint for clkdly");
     } else if (!nameClkDly.empty()) {
-      properDlyBuffers = nameClkDly;
+      properDlyBuffers = std::move(nameClkDly);
       debugPrint(logger_, CTS, "insertion delay", 1, "Using name for clkdly");
     }
   }

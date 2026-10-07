@@ -69,7 +69,6 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
 {
   odb::dbWire* wire = odb::dbWire::create(db_net);
   if (wire) {
-    odb::dbTech* tech = db_->getTech();
     odb::dbWireEncoder wire_encoder;
     wire_encoder.begin(wire);
     GuidePtPinsMap route_pt_pins;
@@ -148,7 +147,7 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
           int x2 = seg.pt2.pos.getX();
           int y2 = seg.pt2.pos.getY();
           if (x1 != x2 || y1 != y2) {
-            odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l1);
+            odb::dbTechLayer* tech_layer = seg.pt1.layer;
             addWireTerms(db_net,
                          route,
                          x1,
@@ -202,7 +201,7 @@ void WireBuilder::addWireTerms(odb::dbNet* db_net,
   for (int l : layers) {
     GuidePoint guide_pt;
     guide_pt.pos = odb::Point(grid_x, grid_y);
-    guide_pt.layer = tech->findRoutingLayer(l);
+    guide_pt.layer = l == layers[0] ? tech_layer : tech->findRoutingLayer(l);
     auto itr = route_pt_pins.find(guide_pt);
     if (itr != route_pt_pins.end() && !itr->second.connected) {
       for (odb::dbBTerm* bterm : itr->second.bterms) {

@@ -277,8 +277,7 @@ cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
     deps = [
-        "//src/cts",
-        "//src/cts:private_hdrs",
+        "//src/cts:cts_impl",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -294,7 +293,7 @@ cc_test(
         "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
     ],
     deps = [
-        "//src/cts",
+        "//src/cts:cts_impl",
         "//src/dbSta:dbNetwork",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",

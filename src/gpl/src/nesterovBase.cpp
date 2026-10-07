@@ -5816,19 +5816,26 @@ static float fastExp(float exp)
 }
 
 // skip_indices holds the nb_gcells_ positions to leave out of the norm, in any
-// order. Subtracting them keeps the no-IO-pin path a plain loop over floats.
+// order (swapAndPop remaps them). With no IO pins the loop is a plain sum.
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
                          const std::vector<size_t>& skip_indices)
 {
+  // The skip list is short (the IO pins), so walk a sorted copy of it
+  // alongside the loop.
+  std::vector<size_t> skip = skip_indices;
+  std::ranges::sort(skip);
+  auto next_skip = skip.begin();
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
+    if (next_skip != skip.end() && *next_skip == i) {
+      while (next_skip != skip.end() && *next_skip == i) {
+        ++next_skip;
+      }
+      continue;
+    }
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
-  }
-  for (const size_t i : skip_indices) {
-    sumDistance -= (a[i].x - b[i].x) * (a[i].x - b[i].x);
-    sumDistance -= (a[i].y - b[i].y) * (a[i].y - b[i].y);
   }
 
   const size_t n = a.size() - skip_indices.size();

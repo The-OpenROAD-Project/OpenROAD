@@ -80,7 +80,6 @@ add_library(db
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp
-    tmg_conn_w.cpp
     wOrder.cpp
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
