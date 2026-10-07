@@ -171,7 +171,7 @@ WebViewerHook::~WebViewerHook()
   released_ = true;
   client_wait_interrupted_.store(true);
   paused_ = false;
-  sessions_.notifyClientWaiters();
+  sessions_->notifyClientWaiters();
   pause_cv_.notify_all();
   // Wait for pause() to fully exit (including any unlocked broadcasts).
   // done_cv_.wait releases the lock, allowing the pause thread to proceed.
@@ -184,12 +184,12 @@ void WebViewerHook::redraw()
   // up-to-date even on non-pause iterations.
   //
   // Lock ordering: drain_logs_ acquires the spdlog base_sink mutex,
-  // then sessions_.broadcast() acquires SessionRegistry::mutex_.
+  // then sessions_->broadcast() acquires SessionRegistry::mutex_.
   // No code path acquires these in the reverse order, so no deadlock.
   if (drain_logs_) {
     drain_logs_();
   }
-  sessions_.broadcast(R"({"type":"debug_refresh"})");
+  sessions_->broadcast(R"({"type":"debug_refresh"})");
 }
 
 void WebViewerHook::pause(int timeout_ms)
@@ -210,9 +210,9 @@ void WebViewerHook::pause(int timeout_ms)
   // This handles the common case where the placer starts before the
   // browser has finished connecting.  If nobody connects in time,
   // skip the pause — there's nobody to click Continue.
-  if (!sessions_.hasClients()) {
+  if (!sessions_->hasClients()) {
     lock.unlock();
-    if (!sessions_.waitForClient(kClientConnectTimeoutSeconds, [this]() {
+    if (!sessions_->waitForClient(kClientConnectTimeoutSeconds, [this]() {
           return client_wait_interrupted_.load();
         })) {
       lock.lock();
@@ -243,7 +243,7 @@ void WebViewerHook::pause(int timeout_ms)
   if (drain_logs_) {
     drain_logs_();
   }
-  sessions_.broadcast(R"({"type":"debug_paused"})");
+  sessions_->broadcast(R"({"type":"debug_paused"})");
   lock.lock();
 
   if (timeout_ms > 0) {
@@ -260,7 +260,7 @@ void WebViewerHook::pause(int timeout_ms)
   released_ = false;
   lock.unlock();
 
-  sessions_.broadcast(R"({"type":"debug_resumed"})");
+  sessions_->broadcast(R"({"type":"debug_resumed"})");
 
   lock.lock();
   in_pause_ = false;
@@ -327,7 +327,7 @@ void WebViewerHook::continueExecution()
     released_ = true;
     client_wait_interrupted_.store(true);
   }
-  sessions_.notifyClientWaiters();
+  sessions_->notifyClientWaiters();
   pause_cv_.notify_all();
 }
 
@@ -402,7 +402,7 @@ std::string WebViewerHook::registerCustom(std::vector<T>& vec,
   }
   // Broadcast outside the lock: it synchronously invokes session send
   // callbacks, which must not run under custom_ui_mutex_.
-  sessions_.broadcast(json);
+  sessions_->broadcast(json);
   return key;
 }
 
@@ -424,7 +424,7 @@ void WebViewerHook::removeCustom(std::vector<T>& vec, const std::string& name)
     }
   }
   if (changed) {
-    sessions_.broadcast(json);  // outside the lock (see registerCustom)
+    sessions_->broadcast(json);  // outside the lock (see registerCustom)
   }
 }
 

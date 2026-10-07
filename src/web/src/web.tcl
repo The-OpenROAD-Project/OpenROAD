@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2026, The OpenROAD Authors
 
-sta::define_cmd_args "web_server" { [-port port] [-bind address] [-dir dir] [-stop] }
+sta::define_cmd_args "web_server" \
+  { [-port port] [-bind address] [-dir dir] [-browser] [-no_browser] [-stop] }
 
 proc web_server { args } {
   sta::parse_key_args "web_server" args \
-    keys {-port -bind -dir} flags {-stop}
+    keys {-port -bind -dir} flags {-stop -browser -no_browser}
 
   if { [info exists flags(-stop)] } {
     web::web_server_stop_cmd
@@ -35,7 +36,20 @@ proc web_server { args } {
     set bind $keys(-bind)
   }
 
-  web::web_server_cmd $port $bind
+  # auto skips the launch where it cannot work (ssh session, no display);
+  # the two flags force it either way.
+  set browser "auto"
+  if { [info exists flags(-browser)] && [info exists flags(-no_browser)] } {
+    utl::error WEB 122 "-browser and -no_browser cannot be used together."
+  }
+  if { [info exists flags(-browser)] } {
+    set browser "always"
+  }
+  if { [info exists flags(-no_browser)] } {
+    set browser "never"
+  }
+
+  web::web_server_cmd $port $bind $browser
   web::web_server_wait_cmd
 }
 

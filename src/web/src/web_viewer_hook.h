@@ -81,8 +81,8 @@ class SessionRegistry
 // and redraw even when the Qt GUI is not present.  Also owns the
 // web::Chart factory so addChart() returns WebChart instances.
 //
-// Lifetime: constructed by WebServer before sessions start, destroyed
-// after all sessions are torn down.  The destructor signals any thread
+// Lifetime: constructed by WebServer before sessions start; stop() destroys
+// it, and a session may outlive that.  The destructor signals any thread
 // blocked in pause() so the placer doesn't hang on shutdown.
 class WebViewerHook : public web::GuiBackend
 {
@@ -90,7 +90,9 @@ class WebViewerHook : public web::GuiBackend
   WebViewerHook();
   ~WebViewerHook() override;
 
-  SessionRegistry& sessions() { return sessions_; }
+  SessionRegistry& sessions() { return *sessions_; }
+  // For a session to deregister from, even after this hook is gone.
+  std::shared_ptr<SessionRegistry> sessionsHandle() { return sessions_; }
 
   // Flush accumulated log output to all connected clients.
   void drainLogs();
@@ -243,7 +245,8 @@ class WebViewerHook : public web::GuiBackend
   template <class T>
   void removeCustom(std::vector<T>& vec, const std::string& name);
 
-  SessionRegistry sessions_;
+  std::shared_ptr<SessionRegistry> sessions_
+      = std::make_shared<SessionRegistry>();
 
   mutable std::mutex display_state_mutex_;
   std::string display_state_json_;

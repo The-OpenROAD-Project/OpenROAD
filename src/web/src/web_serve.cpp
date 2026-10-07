@@ -6,17 +6,25 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <thread>
@@ -25,6 +33,10 @@
 
 #include "boost/asio/error.hpp"
 #include "boost/asio/io_context.hpp"
+#include "boost/asio/ip/address.hpp"
+#include "boost/asio/ip/address_v4.hpp"
+#include "boost/asio/ip/address_v6.hpp"
+#include "boost/asio/ip/host_name.hpp"
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/post.hpp"
 #include "boost/asio/steady_timer.hpp"
@@ -44,6 +56,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "utl/env.h"
 #include "web/core.h"
 #include "web/web.h"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -59,6 +72,154 @@ using Tcp = net::ip::tcp;
 // Tcl command name used to stash the original `exit` while our override
 // is installed.  Mirrors web::TclCmdInputWidget's kCommandRenamePrefix.
 static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
+
+namespace {
+
+// getenv() as a string, empty when unset.
+std::string envOrEmptyString(const char* name)
+{
+  const char* value = std::getenv(name);
+  return value != nullptr ? std::string(value) : std::string();
+}
+
+#if !defined(__APPLE__) && !defined(_WIN32)
+// This machine's interface addresses; empty when they cannot be listed.
+std::vector<net::ip::address> localAddresses()
+{
+  std::vector<net::ip::address> addresses;
+  ifaddrs* list = nullptr;
+  if (getifaddrs(&list) != 0) {
+    return addresses;
+  }
+  for (const ifaddrs* it = list; it != nullptr; it = it->ifa_next) {
+    if (it->ifa_addr == nullptr) {
+      continue;
+    }
+    if (it->ifa_addr->sa_family == AF_INET) {
+      sockaddr_in in{};
+      std::memcpy(&in, it->ifa_addr, sizeof(in));
+      addresses.emplace_back(net::ip::address_v4(ntohl(in.sin_addr.s_addr)));
+    } else if (it->ifa_addr->sa_family == AF_INET6) {
+      sockaddr_in6 in6{};
+      std::memcpy(&in6, it->ifa_addr, sizeof(in6));
+      net::ip::address_v6::bytes_type bytes{};
+      std::memcpy(bytes.data(), &in6.sin6_addr, bytes.size());
+      addresses.emplace_back(net::ip::address_v6(bytes));
+    }
+  }
+  freeifaddrs(list);
+  return addresses;
+}
+#endif
+
+// The environment the launch policy judges, read here so the policy itself
+// stays free of globals.
+BrowserEnv currentBrowserEnv(utl::Logger* logger,
+                             std::string host_name,
+                             const BrowserLaunch mode)
+{
+  BrowserEnv env;
+  env.ssh_connection = envOrEmptyString("SSH_CONNECTION");
+  env.ssh_client = envOrEmptyString("SSH_CLIENT");
+  env.host_name = std::move(host_name);
+  env.vscode_ipc_hook = envOrEmptyString("VSCODE_IPC_HOOK_CLI");
+  env.browser = envOrEmptyString("BROWSER");
+  // LSF, Slurm, SGE and PBS in that order; any of them means a scheduler
+  // chose the host this runs on.
+  for (const char* var : {"LSB_JOBID", "SLURM_JOB_ID", "JOB_ID", "PBS_JOBID"}) {
+    env.batch_job = envOrEmptyString(var);
+    if (!env.batch_job.empty()) {
+      break;
+    }
+  }
+  // An explicit -browser or -no_browser has already decided.
+  if (mode == BrowserLaunch::kAuto) {
+    try {
+      env.no_browser = utl::readEnvarBool("OPENROAD_NO_BROWSER", false);
+    } catch (const std::exception& e) {
+      // A convenience variable must not keep the server from starting.
+      logger->warn(utl::WEB, 123, "Ignoring OPENROAD_NO_BROWSER: {}", e.what());
+    }
+  }
+#if !defined(__APPLE__) && !defined(_WIN32)
+  env.display = envOrEmptyString("DISPLAY");
+  env.has_display
+      = !env.display.empty() || !envOrEmptyString("WAYLAND_DISPLAY").empty();
+  const std::string socket = localDisplaySocket(env.display);
+  struct stat st
+  {
+  };
+  env.own_local_display = !socket.empty() && ::stat(socket.c_str(), &st) == 0
+                          && S_ISSOCK(st.st_mode) && st.st_uid == getuid();
+  env.local_addresses = localAddresses();
+  env.wsl = !envOrEmptyString("WSL_DISTRO_NAME").empty();
+#endif
+  return env;
+}
+
+// This machine's name, for the ssh line the user is told to run.  Falls back
+// to a placeholder rather than an empty word in the middle of a command.
+std::string thisHostName()
+{
+  boost::system::error_code ec;
+  std::string name = net::ip::host_name(ec);
+  return ec || name.empty() ? "<this-host>" : name;
+}
+
+// Hand `launch_url` to a browser; false when the launcher reports failure.
+bool launchBrowser(utl::Logger* logger,
+                   const std::string& launch_url,
+                   const std::string& errfile,
+                   const bool through_browser_env)
+{
+  std::string open_cmd;
+  if (through_browser_env) {
+    // The shell expands $BROWSER; its value never enters this string.
+    open_cmd = "\"$BROWSER\" '" + launch_url + "' < /dev/null > /dev/null 2> "
+               + errfile;
+  } else {
+#if defined(__APPLE__)
+    open_cmd = "open '" + launch_url + "' > /dev/null 2> " + errfile;
+#elif defined(_WIN32)
+    open_cmd = "start " + launch_url + " > nul 2> " + errfile;
+#else
+    // `setsid -f` forks the launcher into a new session, severing the
+    // SIGHUP cascade from openroad's controlling pty.  Without this,
+    // running openroad from inside an emacs shell-mode buffer kills
+    // the browser tab as soon as openroad exits, because emacs holds
+    // the pty master and SIGHUPs every process in the session.  Also
+    // redirect stdin from /dev/null so xdg-open never blocks on input
+    // inherited from the pty.
+    // `setsid -w` waits for xdg-open to finish end so the return code
+    // can be forwarded to setsid
+    open_cmd = "setsid -f -w xdg-open '" + launch_url
+               + "' < /dev/null > /dev/null 2> " + errfile;
+#endif
+  }
+  const int ret = std::system(open_cmd.c_str());
+  if (ret == 0) {
+    return true;
+  }
+  std::string errout;
+  std::ifstream err(errfile);
+  if (err) {
+    std::ostringstream ss;
+    ss << err.rdbuf();
+    errout = "\n" + ss.str();
+    while (!errout.empty() && errout.back() == '\n') {
+      errout.pop_back();
+    }
+  }
+  logger->warn(utl::WEB,
+               3,
+               "Could not launch default browser (shell error {}){}\n"
+               "Open the url above.",
+               ret,
+               errout);
+  return false;
+}
+
+}  // namespace
 
 // Logger sink that accumulates lines and sends them as a batch to
 // connected browser clients.  Flushing is explicit (via drainToClients)
@@ -153,7 +314,9 @@ void WebServer::initLogger()
   logger_initialized_ = true;
 }
 
-void WebServer::serve(int port, const std::string& bind_address)
+void WebServer::serve(int port,
+                      const std::string& bind_address,
+                      const BrowserLaunch launch)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
@@ -327,8 +490,10 @@ void WebServer::serve(int port, const std::string& bind_address)
       logger_->warn(utl::WEB,
                     80,
                     "Web server bound to {}, reachable beyond this machine. "
-                    "The viewer runs Tcl commands, so anyone who can reach "
-                    "this port can run commands as this user.",
+                    "The viewer runs Tcl commands as this user; the access "
+                    "token in the URL is all that stands in the way, and it "
+                    "travels in clear text over HTTP. Prefer the default "
+                    "loopback bind with an SSH tunnel.",
                     bind_to);
     }
     auto const address = net::ip::make_address(bind_to);  // validated above
@@ -344,6 +509,19 @@ void WebServer::serve(int port, const std::string& bind_address)
 
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
+    // No token, no server: without the gate, whoever reaches the port gets the
+    // interpreter.
+    std::string token = generateAuthToken();
+    std::string ticket = generateAuthToken();
+    if (token.empty() || ticket.empty()) {
+      // noreturn: the catch below tears the half-built server down.
+      logger_->error(utl::WEB,
+                     124,
+                     "Could not read /dev/urandom to mint an access token.");
+    }
+    auth_ = std::make_shared<SessionAuth>(
+        std::move(token), std::move(ticket), kTicketTtl);
+
     auto handle = createAndRunListener(*ioc_,
                                        Tcp::endpoint{address, u_port},
                                        generator_,
@@ -352,12 +530,17 @@ void WebServer::serve(int port, const std::string& bind_address)
                                        clock_report,
                                        logger_,
                                        viewer_hook_.get(),
-                                       max_in_flight);
+                                       max_in_flight,
+                                       auth_);
     shutdown_listener_ = std::move(handle.shutdown);
 
-    // Point the browser at something it can actually reach.
-    const std::string url = "http://" + browserHostForBind(address) + ":"
-                            + std::to_string(handle.port);
+    // Point the browser at something it can actually reach.  The launch uses
+    // the ticket url, so the token never reaches a command line.
+    const std::string origin = "http://" + browserHostForBind(address) + ":"
+                               + std::to_string(handle.port);
+    const std::string target = "/?token=" + auth_->token();
+    const std::string url = origin + target;
+    const std::string launch_url = origin + "/?ticket=" + auth_->ticket();
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without
@@ -385,43 +568,33 @@ void WebServer::serve(int port, const std::string& bind_address)
 
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
-      threads_.emplace_back([this] { ioc_->run(); });
+      threads_.emplace_back([this] { runIoContext(*ioc_, logger_); });
     }
 
-    logger_->info(utl::WEB, 1, "Server started on {}.", url);
+    const std::string host_name = thisHostName();
+    const std::string reach_hint
+        = reachabilityHint(bind_kind, address, host_name, handle.port, target);
+    logger_->info(utl::WEB, 1, "Server started on {}\n{}", url, reach_hint);
 
-    // Open the url with the default browser
-#if defined(__APPLE__)
-    std::string open_cmd = "open " + url + " > /dev/null 2> " + errfile;
-#elif defined(_WIN32)
-    std::string open_cmd = "start " + url + " > nul 2> " + errfile;
-#else
-    // `setsid -f` forks the launcher into a new session, severing the
-    // SIGHUP cascade from openroad's controlling pty.  Without this,
-    // running openroad from inside an emacs shell-mode buffer kills
-    // the browser tab as soon as openroad exits, because emacs holds
-    // the pty master and SIGHUPs every process in the session.  Also
-    // redirect stdin from /dev/null so xdg-open never blocks on input
-    // inherited from the pty.
-    // `setsid -w` waits for xdg-open to finish end so the return code
-    // can be forwarded to setsid
-    std::string open_cmd = "setsid -f -w xdg-open " + url
-                           + " < /dev/null > /dev/null 2> " + errfile;
-#endif
-    int ret = std::system(open_cmd.c_str());
-    if (ret != 0) {
-      std::ifstream err(errfile);
-      std::string errout = "";
-      if (err) {
-        std::ostringstream ss;
-        ss << err.rdbuf();
-        errout = "\n" + ss.str();
-      }
-      logger_->warn(utl::WEB,
-                    3,
-                    "Could not launch default browser (shell error {}){}",
-                    ret,
-                    errout);
+    const BrowserEnv env = currentBrowserEnv(logger_, host_name, launch);
+    const LaunchSkip skip = browserLaunchSkipReason(launch, env);
+    // A ticket stays live only while a browser we launched may redeem it.
+    if (skip != LaunchSkip::kNone) {
+      const bool overridable
+          = skip != LaunchSkip::kFlag && skip != LaunchSkip::kOptOut;
+      logger_->info(utl::WEB,
+                    120,
+                    "Not launching a browser here ({}); open the url above.{}",
+                    browserSkipReasonText(skip),
+                    overridable
+                        ? "\nPass -browser (-web_browser) to launch one anyway."
+                        : "");
+      auth_->revokeTicket();
+    } else if (!launchBrowser(logger_,
+                              launch_url,
+                              errfile,
+                              launchesThroughBrowserEnv(env))) {
+      auth_->revokeTicket();
     }
     if (fd != -1) {
       std::error_code err_ignored;
@@ -566,6 +739,9 @@ void WebServer::stop()
   viewer_hook_.reset();
   // Reset so a subsequent serve()/initLogger() re-registers the sink.
   logger_initialized_ = false;
+  // A restarted server mints new credentials, so links to the old ones stop
+  // working rather than outliving the session they were issued for.
+  auth_.reset();
   logger_->info(utl::WEB, 41, "Web session closed.");
 }
 

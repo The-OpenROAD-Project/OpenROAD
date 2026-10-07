@@ -15,15 +15,35 @@ binary framing with JSON or PNG payloads.
 - HTTP and WebSocket share one TCP port (default `8080`, configured via
   `web_server -port`). A single Boost.Beast listener serves both.
 - HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
-  asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
-  other than GET is supported.
+  asset at that path (`*.js`, `*.css`, etc.). No method other than GET is
+  supported. A path with no embedded asset needs the token (see below) and
+  answers 401 without one, 404 with it — the gate is deny-by-default, so a
+  route added later cannot be left open by accident.
+- Each session mints an access token and reports it in the url it logs
+  (`http://<host>:<port>/?token=<hex>`). Pass it as the `token` query
+  parameter on the WebSocket upgrade, on `GET /` and on
+  `GET /download/image`; without it those are answered with 401. The
+  other assets are not gated. A new `web_server` mints a new token.
+- The session also mints a single-use `ticket`, used only to launch the
+  browser without the token on a command line. `GET /?ticket=<hex>` answers
+  `302` with `Location: /?token=<hex>` (other query parameters are carried
+  over) and the ticket is spent; a second use, one after five minutes, or one
+  after the launch it was minted for failed or was skipped, gets 401. A
+  ticket is not accepted on the WebSocket or on the image download. An
+  alternate client has no reason to use one — it has the token. Because it
+  is handed over on the browser's command line, a ticket is readable by
+  other users of that machine until it is redeemed.
+- `GET /download/image` answers 404 when no design is loaded, 400 for a
+  malformed `bbox`, and 500 when the render fails.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
 ## Wire frame format
 
-Every WebSocket message — both client→server and server→client — is a
-binary frame with the following layout:
+The two directions are not symmetric. A **request** is a plain UTF-8 JSON
+document sent as-is (the reference frontend uses `JSON.stringify`); it carries
+no header. A **response**, and every server push, is a binary frame with the
+following layout:
 
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |

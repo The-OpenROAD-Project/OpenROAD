@@ -6,14 +6,25 @@ import assert from 'node:assert/strict';
 
 // Mock WebSocket before importing the module.
 class MockWebSocket {
+    // Off: new sockets close without opening, as a refused handshake does.
+    static autoOpen = true;
+    static constructed = 0;
     constructor() {
+        MockWebSocket.constructed++;
         this.readyState = 1;
         this.sent = [];
         this.binaryType = null;
         this.bufferedAmount = 0; // scheduler reads this for backpressure
         this.closeCount = 0;     // liveness tests assert force-close
-        // Auto-fire onopen so the manager considers itself connected.
-        queueMicrotask(() => { if (this.onopen) this.onopen(); });
+        const opens = MockWebSocket.autoOpen;
+        queueMicrotask(() => {
+            if (opens) {
+                if (this.onopen) this.onopen();
+            } else {
+                this.readyState = 3;
+                if (this.onclose) this.onclose();
+            }
+        });
     }
     send(data) { this.sent.push(data); }
     close() { this.closeCount++; this.readyState = 2; }
@@ -826,5 +837,137 @@ describe('WebSocketManager.fromCache', () => {
             await new Promise(r => setTimeout(r, 5));  // reconnect + onopen
             assert.equal(calls, 1, 'reconnect fires the hook');
         });
+    });
+
+    describe('session probe after a failed connect', () => {
+        const tick = (ms = 0) => new Promise(r => setTimeout(r, ms));
+        // Poll rather than wait a fixed time a loaded machine can overrun.
+        async function waitFor(cond, ms = 2000) {
+            const deadline = Date.now() + ms;
+            while (!cond() && Date.now() < deadline) {
+                await tick(1);
+            }
+        }
+        // Stub fetch for one test; always restore it and the mock's default.
+        async function withFetch(impl, body) {
+            const saved = globalThis.fetch;
+            globalThis.fetch = impl;
+            try {
+                await body();
+            } finally {
+                globalThis.fetch = saved;
+                MockWebSocket.autoOpen = true;
+            }
+        }
+
+        // Count this manager's own reconnects: the global socket count also
+        // picks up a late reconnect left over from another test.
+        function countRetries(mgr) {
+            mgr.retries = 0;
+            const connect = mgr.connect.bind(mgr);
+            mgr.connect = () => { mgr.retries++; return connect(); };
+            return mgr;
+        }
+        // A manager whose first connect is refused, as a stale tab's is.
+        function refusedManager(options = {}, onStatusChange = null) {
+            MockWebSocket.autoOpen = false;
+            const mgr = new WebSocketManager('ws://fake', onStatusChange,
+                options);
+            mgr.reconnectDelay = 0;
+            return countRetries(mgr);
+        }
+
+        it('ends the session on a 401 instead of retrying', async () => {
+            await withFetch(async () => ({ status: 401 }), async () => {
+                let statusCalls = 0;
+                const mgr = refusedManager({ probeUrl: 'http://h/?token=old' },
+                    () => { statusCalls++; });
+                await waitFor(() => mgr._sessionEnded);
+                assert.equal(mgr._sessionEnded, true);
+                assert.equal(mgr._shutdown, true);
+                assert.equal(mgr._livenessTimer, undefined);
+                assert.ok(statusCalls > 0, 'the page is told');
+                await tick(5);
+                assert.equal(mgr.retries, 0, 'no retry');
+            });
+        });
+
+        it('detects the 401 without AbortSignal.timeout', async () => {
+            // Safari before 16 has no AbortSignal.timeout.
+            const saved = AbortSignal.timeout;
+            AbortSignal.timeout = undefined;
+            try {
+                await withFetch(async () => ({ status: 401 }), async () => {
+                    const mgr = refusedManager({ probeUrl: 'http://h/?token=old' });
+                    await waitFor(() => mgr._sessionEnded);
+                    assert.equal(mgr._sessionEnded, true);
+                });
+            } finally {
+                AbortSignal.timeout = saved;
+            }
+        });
+
+        for (const [answer, fetchImpl] of [
+            ['any other answer', async () => ({ status: 200 })],
+            ['a probe that fails or times out',
+                async () => { throw new TypeError('down'); }],
+        ]) {
+            it(`retries on ${answer}`, async () => {
+                await withFetch(fetchImpl, async () => {
+                    const mgr = refusedManager({ probeUrl: 'http://h/' });
+                    MockWebSocket.autoOpen = true; // the retry succeeds
+                    await waitFor(() => mgr.retries > 0);
+                    assert.ok(mgr.retries > 0, 'retried');
+                    assert.equal(mgr._sessionEnded, false);
+                    mgr._stopLivenessMonitor();
+                });
+            });
+        }
+
+        it('does not probe after a connection that had opened', async () => {
+            let fetched = 0;
+            await withFetch(async () => { fetched++; return { status: 401 }; },
+                async () => {
+                    const mgr = countRetries(new WebSocketManager('ws://fake',
+                        null, { probeUrl: 'http://h/' }));
+                    mgr.reconnectDelay = 0;
+                    await tick(0); // first socket opened
+                    mgr.socket.onclose();
+                    await waitFor(() => mgr.retries > 0);
+                    assert.equal(fetched, 0);
+                    assert.equal(mgr._sessionEnded, false);
+                    mgr._stopLivenessMonitor();
+                });
+        });
+
+        it('keeps the old behaviour without a probeUrl', async () => {
+            let fetched = 0;
+            await withFetch(async () => { fetched++; return { status: 401 }; },
+                async () => {
+                    const mgr = refusedManager();
+                    MockWebSocket.autoOpen = true;
+                    await waitFor(() => mgr.retries > 0);
+                    assert.equal(fetched, 0);
+                    assert.ok(mgr.retries > 0, 'retried');
+                    mgr._stopLivenessMonitor();
+                });
+        });
+
+        it('neither ends nor retries when a shutdown lands mid-probe',
+            async () => {
+                let release;
+                const answer = new Promise(r => { release = r; });
+                await withFetch(async () => { await answer; return { status: 401 }; },
+                    async () => {
+                        const mgr = refusedManager({ probeUrl: 'http://h/' });
+                        await tick(0); // failed connect, probe in flight
+                        mgr._shutdown = true; // the server's shutdown push
+                        release();
+                        await tick(5);
+                        assert.equal(mgr._sessionEnded, false);
+                        assert.equal(mgr.retries, 0);
+                        mgr._stopLivenessMonitor();
+                    });
+            });
     });
 });

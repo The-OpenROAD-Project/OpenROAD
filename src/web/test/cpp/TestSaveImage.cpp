@@ -491,6 +491,41 @@ TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
   }
 }
 
+TEST_F(SaveImageTest, NothingToFrameRaisesAnError)
+{
+  // Neither a die area nor a shape to fall back on.
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "bare");
+  makeTileGen();
+
+  EXPECT_ANY_THROW(
+      tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, {}));
+}
+
+TEST_F(SaveImageTest, ThinRegionAtHighScaleIsClamped)
+{
+  // 1 DBU wide at the default 1024 px: the height alone would overflow an int.
+  int w = 0;
+  int h = 0;
+  const std::vector<unsigned char> rgba = tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 1, 3000000), 0, 0, {}, {}, &w, &h);
+  EXPECT_GE(w, 1);
+  EXPECT_LE(h, 16384);
+  EXPECT_EQ(rgba.size(), static_cast<std::size_t>(w) * h * 4);
+}
+
+TEST_F(SaveImageTest, UnwritablePathRaisesAnError)
+{
+  const std::string path
+      = (std::filesystem::temp_directory_path()
+         / ("web_test_no_dir_" + std::to_string(::getpid())) / "out.png")
+            .string();
+  EXPECT_ANY_THROW(
+      tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, {}));
+  EXPECT_FALSE(std::filesystem::exists(path));
+}
+
 TEST_F(SaveImageTest, LargeWidthClamped)
 {
   const std::string path = tempPng("clamped");

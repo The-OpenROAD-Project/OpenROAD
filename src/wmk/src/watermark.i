@@ -19,6 +19,7 @@
 #include "HmacSha256.h"
 #include "Keys.h"
 #include "Marks.h"
+#include "utl/random_bytes.h"
 
 namespace {
 
@@ -55,11 +56,11 @@ random_hex_cmd(int n_bytes)
 {
   static std::string result;
   std::vector<std::uint8_t> raw;
-  if (n_bytes <= 0 || !wmk::randomBytes(static_cast<std::size_t>(n_bytes), raw)) {
+  if (n_bytes <= 0 || !utl::randomBytes(static_cast<std::size_t>(n_bytes), raw)) {
     result.clear();
     return result.c_str();
   }
-  result = wmk::toHex(raw.data(), raw.size());
+  result = utl::toHex(raw.data(), raw.size());
   return result.c_str();
 }
 
@@ -81,7 +82,7 @@ derive_stage_key_cmd(const char* master_hex,
   }
   const std::array<std::uint8_t, 32> k = wmk::deriveStageKey(
       master, std::string(design_id), nonce, std::string(stage));
-  result = wmk::toHex(k.data(), k.size());
+  result = utl::toHex(k.data(), k.size());
   return result.c_str();
 }
 

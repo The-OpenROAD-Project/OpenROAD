@@ -50,6 +50,7 @@ test_suite(
         ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":session_lifetime_test",
         ":tile_generator_test",
     ],
 )
@@ -392,6 +393,20 @@ cc_test(
         "//src/web:core",
         "@boost.asio",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "session_lifetime_test",
+    srcs = ["cpp/TestSessionLifetime.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "//src/web",
+        "//src/web:core",
+        "@boost.asio",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
