@@ -201,6 +201,12 @@ class IOPlacer
                                IOPin& first_pin);
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
+  void placeFallbackGroupsFirstFit();
+  void placeFallbackGroupsNearInitial();
+  int findGroupSlotNearInitial(const std::vector<int>& group,
+                               int first_slot,
+                               int last_slot,
+                               bool check_mirrored);
   void findSlots(const std::set<int>& layers,
                  Edge edge,
                  odb::Line line,
