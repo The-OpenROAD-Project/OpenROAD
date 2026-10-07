@@ -29,6 +29,8 @@
 
 namespace web {
 
+class HeatMapDataSource;
+class HeatMapSourceRegistration;
 class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
@@ -604,6 +606,10 @@ class TileHandler
   }
 
   void initializeHeatMaps(SessionState& state);
+  // Add any sources registered since initializeHeatMaps ran, leaving the
+  // instances already present (and their session-local settings) untouched.
+  // Caller holds state.heatmap_mutex.
+  void syncHeatMapsLocked(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
@@ -641,6 +647,14 @@ class TileHandler
                                  SessionState& state);
 
  private:
+  // Build one session's instance of a registered source.  Defaults the chip
+  // to the root only when the factory left it unset, so a source bound to a
+  // specific chiplet keeps its binding.  Returns nullptr for an unbound
+  // (built-in) source when the root chip has no block: there is nothing for
+  // it to read, so it is left out rather than bound to an invalid chip.
+  std::shared_ptr<web::HeatMapDataSource> createHeatMapInstance(
+      const web::HeatMapSourceRegistration& registration) const;
+
   static WebSocketResponse serializeBounds(uint32_t id,
                                            const TileGenerator& gen);
   static WebSocketResponse serializeTech(uint32_t id, const TileGenerator& gen);

@@ -93,6 +93,15 @@ delete_label_cmd(const char* name)
   server->deleteLabel(name ? name : "");
 }
 
+const char*
+load_chiplet_heatmap_cmd(const char* file_path)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  static std::string result;
+  result = server->loadChipletHeatMap(file_path ? file_path : "");
+  return result.c_str();
+}
+
 void
 clear_labels_cmd()
 {

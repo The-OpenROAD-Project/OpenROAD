@@ -392,7 +392,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web:core",

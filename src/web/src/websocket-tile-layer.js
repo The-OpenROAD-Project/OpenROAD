@@ -134,25 +134,10 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 setTileSrc(tile, BLANK_TILE);
                 return tile;
             }
-            // Store the request ID so _removeTile() can cancel it
-            // when the tile is discarded (e.g. during zoom).
-            tile._websocketRequestId = this._websocketManager.nextId;
-
             if (!tileMayHaveContent(ctx, this._layerName, coords)) {
-                tile._websocketRequestId = undefined;
                 applyTilePayload(tile, null);
                 return tile;
             }
-
-            this._websocketManager.request(
-                buildTileRequest(coords, this._layerName, ctx)
-            ).then(data => {
-                applyTilePayload(tile, data);
-            }).catch(err => {
-                // Request was cancelled (e.g. by refreshTiles); ignore.  Note
-                // that `done` is never called and no retry is issued, so this
-                // tile stays blank until Leaflet evicts it.
-            });
 
             // The request id stored by _requestTile is what lets _removeTile()
             // cancel a tile discarded before it arrives (e.g. during zoom).
@@ -189,12 +174,9 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                     continue;
                 }
                 if (!tileMayHaveContent(ctx, this._layerName, coords)) {
-                    tile._websocketRequestId = undefined;
                     applyTilePayload(tile, null);
                     continue;
                 }
-
-                tile._websocketRequestId = this._websocketManager.nextId;
 
                 this._requestTile(tile, coords);
             }
