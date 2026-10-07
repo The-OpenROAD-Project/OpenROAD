@@ -22,6 +22,45 @@ namespace odb {
 
 using utl::ODB;
 
+void Terminal::addPoint(WirePoint* point)
+{
+  WirePoint* tpt = pt;
+  WirePoint* ptpt = nullptr;
+  while (tpt
+         && (point->x > tpt->x || (point->x == tpt->x && point->y > tpt->y))) {
+    ptpt = tpt;
+    tpt = tpt->next_terminal_point;
+  }
+  if (ptpt) {
+    ptpt->next_terminal_point = point;
+  } else {
+    pt = point;
+  }
+  point->next_terminal_point = tpt;
+}
+
+void Terminal::removePoint(WirePoint* point)
+{
+  if (pt == point) {
+    pt = point->next_terminal_point;
+    point->next_terminal_point = nullptr;
+    return;
+  }
+  WirePoint* ptpt = nullptr;
+  WirePoint* tpt;
+  for (tpt = pt; tpt; tpt = tpt->next_terminal_point) {
+    if (tpt == point) {
+      break;
+    }
+    ptpt = tpt;
+  }
+  if (!tpt) {
+    return;  // error, not found
+  }
+  ptpt->next_terminal_point = tpt->next_terminal_point;
+  point->next_terminal_point = nullptr;
+}
+
 tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
   wire_sections_.reserve(1024);
@@ -1227,44 +1266,6 @@ void tmg_conn::connectShapes(const int j, const int k)
   addShort(i0, i1);
 }
 
-static void addPointToTerm(WirePoint* pt, Terminal* x)
-{
-  WirePoint* tpt = x->pt;
-  WirePoint* ptpt = nullptr;
-  while (tpt && (pt->x > tpt->x || (pt->x == tpt->x && pt->y > tpt->y))) {
-    ptpt = tpt;
-    tpt = tpt->next_terminal_point;
-  }
-  if (ptpt) {
-    ptpt->next_terminal_point = pt;
-  } else {
-    x->pt = pt;
-  }
-  pt->next_terminal_point = tpt;
-}
-
-static void removePointFromTerm(WirePoint* pt, Terminal* x)
-{
-  if (x->pt == pt) {
-    x->pt = pt->next_terminal_point;
-    pt->next_terminal_point = nullptr;
-    return;
-  }
-  WirePoint* ptpt = nullptr;
-  WirePoint* tpt;
-  for (tpt = x->pt; tpt; tpt = tpt->next_terminal_point) {
-    if (tpt == pt) {
-      break;
-    }
-    ptpt = tpt;
-  }
-  if (!tpt) {
-    return;  // error, not found
-  }
-  ptpt->next_terminal_point = tpt->next_terminal_point;
-  pt->next_terminal_point = nullptr;
-}
-
 void tmg_conn::connectTerm(const int terminal_index, const bool soft)
 {
   const CandidateSections& candidate_sections
@@ -1386,15 +1387,15 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
       if (pt->terminal_index >= 0 && pt->terminal_alternative_point
           && pt->terminal_alternative_point->terminal_index < 0) {
         const int oldt = pt->terminal_index;
-        removePointFromTerm(pt, &terminals_[oldt]);
+        terminals_[oldt].removePoint(pt);
         pt->terminal_alternative_point->terminal_index = oldt;
-        addPointToTerm(pt->terminal_alternative_point, &terminals_[oldt]);
+        terminals_[oldt].addPoint(pt->terminal_alternative_point);
         pt->terminal_index = -1;
       }
       if (pt->terminal_index >= 0
           && pt->terminal_index == pother->terminal_index) {
         // override old connection if it is on the other
-        removePointFromTerm(pt, &terminals_[pt->terminal_index]);
+        terminals_[pt->terminal_index].removePoint(pt);
         pt->terminal_index = -1;
       }
       if (pt->terminal_index >= 0) {
@@ -1407,7 +1408,7 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
                        pt->y);
       }
       pt->terminal_index = terminal_index;
-      addPointToTerm(pt, x);
+      x->addPoint(pt);
 
     } else if (cto && !cfr) {
       WirePoint* pt = &wire_points_[bto];
@@ -1418,15 +1419,15 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
       if (pt->terminal_index >= 0 && pt->terminal_alternative_point
           && pt->terminal_alternative_point->terminal_index < 0) {
         const int oldt = pt->terminal_index;
-        removePointFromTerm(pt, &terminals_[oldt]);
+        terminals_[oldt].removePoint(pt);
         pt->terminal_alternative_point->terminal_index = oldt;
-        addPointToTerm(pt->terminal_alternative_point, &terminals_[oldt]);
+        terminals_[oldt].addPoint(pt->terminal_alternative_point);
         pt->terminal_index = -1;
       }
       if (pt->terminal_index >= 0
           && pt->terminal_index == pother->terminal_index) {
         // override old connection if it is on the other
-        removePointFromTerm(pt, &terminals_[pt->terminal_index]);
+        terminals_[pt->terminal_index].removePoint(pt);
         pt->terminal_index = -1;
       }
       if (pt->terminal_index >= 0) {
@@ -1439,7 +1440,7 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
                        pt->y);
       }
       pt->terminal_index = terminal_index;
-      addPointToTerm(pt, x);
+      x->addPoint(pt);
 
     } else if (cfr && cto) {
       if (wire_points_[bfr].terminal_index == terminal_index
@@ -1450,7 +1451,7 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
           && wire_points_[bto].terminal_index < 0) {
         WirePoint* pt = &wire_points_[bto];
         pt->terminal_index = terminal_index;
-        addPointToTerm(pt, x);
+        x->addPoint(pt);
         continue;
       }
       WirePoint* pt = &wire_points_[bfr];
@@ -1458,15 +1459,15 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
       if (pt->terminal_index >= 0 && pt->terminal_alternative_point
           && pt->terminal_alternative_point->terminal_index < 0) {
         const int oldt = pt->terminal_index;
-        removePointFromTerm(pt, &terminals_[oldt]);
+        terminals_[oldt].removePoint(pt);
         pt->terminal_alternative_point->terminal_index = oldt;
-        addPointToTerm(pt->terminal_alternative_point, &terminals_[oldt]);
+        terminals_[oldt].addPoint(pt->terminal_alternative_point);
         pt->terminal_index = -1;
       }
       if (pt->terminal_index >= 0
           && pt->terminal_index == pother->terminal_index) {
         // override old connection if it is on the other
-        removePointFromTerm(pt, &terminals_[pt->terminal_index]);
+        terminals_[pt->terminal_index].removePoint(pt);
         pt->terminal_index = -1;
       }
       if (pt->terminal_index >= 0) {
@@ -1479,7 +1480,7 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
                        pt->y);
       }
       pt->terminal_index = terminal_index;
-      addPointToTerm(pt, x);
+      x->addPoint(pt);
       pt->terminal_alternative_point = pother;
     }
   }
@@ -1546,7 +1547,7 @@ void tmg_conn::connectTermSoft(const int terminal_index,
 
   // override old connection if it is on the other
   if (pt->terminal_index >= 0 && pother->terminal_index == pt->terminal_index) {
-    removePointFromTerm(pt, &terminals_[pt->terminal_index]);
+    terminals_[pt->terminal_index].removePoint(pt);
     pt->terminal_index = -1;
   }
 
@@ -1564,7 +1565,7 @@ void tmg_conn::connectTermSoft(const int terminal_index,
   }
   pt->terminal_index = terminal_index;
   Terminal* x = &terminals_[terminal_index];
-  addPointToTerm(pt, x);
+  x->addPoint(pt);
   if (has_alt) {
     pt->terminal_alternative_point = pother;
   }
@@ -1679,8 +1680,8 @@ bool tmg_conn::checkConnected()
         Terminal* x = &terminals_[wire_points_[jto].terminal_index];
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
-          removePointFromTerm(&wire_points_[jto],
-                              &terminals_[wire_points_[jto].terminal_index]);
+          terminals_[wire_points_[jto].terminal_index].removePoint(
+              &wire_points_[jto]);
           wire_points_[jto].terminal_index = -1;
           wire_points_[jto].terminal_alternative_point = nullptr;
         } else if (x->pt && x->pt->next_terminal_point) {
@@ -1810,8 +1811,8 @@ void tmg_conn::treeReorder(const bool no_convert)
         x = &terminals_[wire_points_[jto].terminal_index];
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
-          removePointFromTerm(&wire_points_[jto],
-                              &terminals_[wire_points_[jto].terminal_index]);
+          terminals_[wire_points_[jto].terminal_index].removePoint(
+              &wire_points_[jto]);
           wire_points_[jto].terminal_index = -1;
           wire_points_[jto].terminal_alternative_point = nullptr;
         } else if (x->pt && x->pt->next_terminal_point) {
