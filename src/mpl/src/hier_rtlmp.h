@@ -45,6 +45,7 @@ class Snapper;
 using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
 using SoftMacroNameToIdMap = std::map<std::string, int>;
 using ClusterToMacroMap = std::map<int, int>;  // cluster_id -> macro_id
+using ClusterList = std::vector<Cluster*>;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
@@ -79,14 +80,9 @@ class HierRTLMP
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
-  void setBaseHalo(int left, int bottom, int right, int top);
+  void setMinChannelSize(int width, int height);
   void setGuidanceRegions(
       const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
-  void setMacroHalo(odb::dbInst* macro,
-                    int left,
-                    int bottom,
-                    int right,
-                    int top);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,
@@ -109,7 +105,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
   void setKeepClusteringData(bool keep_clustering_data);
-  void setUseFullHalo(bool use_full_halo);
+  void setPinAwareChannels(bool pin_aware_channels);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -232,9 +228,12 @@ class HierRTLMP
                                         bool& array_has_empty_space);
 
   // Orientation Improvement
-  void generateTemporaryStdCellsPlacement(Cluster* cluster);
-  void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
-  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
+  void generateTemporaryStdCellsPlacement();
+  void fetchLeafStdCellClusters(ClusterList& leaf_std_cell_clusters,
+                                Cluster* candidate) const;
+  void setClusterStdCellsLocation(Cluster* cluster);
+  void setTemporaryStdCellLocation(odb::dbInst* std_cell,
+                                   const odb::Point& cluster_center);
 
   void correctAllMacrosOrientation();
   void correctMacroOrientationSingle();
@@ -306,8 +305,7 @@ class HierRTLMP
   std::map<std::string, odb::Rect> fences_;     // macro_name, fence
   odb::PtrMap<odb::dbInst, odb::Rect> guides_;  // Macro -> Guidance Region
 
-  HardMacro::Halo base_halo_;
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
+  Channel min_channel_;
 
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;
@@ -329,7 +327,7 @@ class HierRTLMP
 
   bool skip_macro_placement_{false};
   bool keep_clustering_data_{false};
-  bool use_full_halo_{false};
+  bool pin_aware_channels_{false};
 
   std::unique_ptr<MplObserver> graphics_;
   bool is_debug_only_final_result_{false};

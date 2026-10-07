@@ -58,6 +58,7 @@ or_integration_tests(
     replace_hier_mod_report_checks
     rounding
     row_settings
+    set_halo
     sky130hd_multi_patterned
     smash_vias
     transform
@@ -68,6 +69,7 @@ or_integration_tests(
     write_def58
     write_def58_gzip
     write_lef_and_def
+    write_lef_obs_spacing
     write_lef_polygon
     write_macro_placement
   PASSFAIL_TESTS

@@ -105,6 +105,7 @@ void GraphicsImpl::debugForNesterovPlace(
         auto cell = nbc_->getGCellByIndex(idx);
         if (cell->contains(debug_inst)) {
           selected_ = idx;
+          selected_inst_ = debug_inst;
           break;
         }
       }
@@ -254,13 +255,15 @@ void GraphicsImpl::drawField(web::Painter& painter)
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
+    if (efMax == 0.0f) {
+      continue;
+    }
+    const double field_scale = static_cast<double>(max_len) / efMax;
     for (auto& bin : bins) {
-      float fx = bin.electroFieldX();
-      float fy = bin.electroFieldY();
-      float f = std::hypot(fx, fy);
-      float ratio = f / efMax;
-      float dx = fx / f * max_len * ratio;
-      float dy = fy / f * max_len * ratio;
+      const float fx = bin.electroFieldX();
+      const float fy = bin.electroFieldY();
+      const float dx = fx * field_scale;
+      const float dy = fy * field_scale;
 
       int cx = bin.cx();
       int cy = bin.cy();
@@ -567,6 +570,40 @@ void GraphicsImpl::drawObjects(web::Painter& painter)
   }
 }
 
+void GraphicsImpl::instDestroyed(odb::dbInst* db_inst)
+{
+  if (db_inst == selected_inst_) {
+    selected_ = kInvalidIndex;
+    nb_selected_index_ = kInvalidIndex;
+    selected_inst_ = nullptr;
+  }
+}
+
+// Timing-driven repairs swap-remove and append GCells, so selected_ can be
+// stale or past the end of storage; find the selected instance's GCell again.
+void GraphicsImpl::resyncSelection()
+{
+  if (selected_ == kInvalidIndex || !nbc_) {
+    return;
+  }
+  const size_t size = nbc_->getGCells().size();
+  if (selected_ < size
+      && (!selected_inst_
+          || nbc_->getGCellByIndex(selected_)->contains(selected_inst_))) {
+    return;
+  }
+  selected_ = kInvalidIndex;
+  if (!selected_inst_) {
+    return;
+  }
+  for (size_t idx = 0; idx < size; ++idx) {
+    if (nbc_->getGCellByIndex(idx)->contains(selected_inst_)) {
+      selected_ = idx;
+      return;
+    }
+  }
+}
+
 void GraphicsImpl::reportSelected()
 {
   if (selected_ == kInvalidIndex) {
@@ -611,6 +648,27 @@ void GraphicsImpl::reportSelected()
     logger_->report("  overall ({: .2e}, {: .2e})",
                     wlGrad.x + densityPenalty * densityGrad.x,
                     wlGrad.y + densityPenalty * densityGrad.y);
+
+    // Previous and current position with the stored gradient the Nesterov
+    // step uses (preconditioned, so on a different scale than "overall").
+    const auto state
+        = nbVec_[nb_index]->getSlpState(gcell->insts().front()->dbInst());
+    if (state) {
+      odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+      auto um = [block](float dbu) {
+        return block->dbuToMicrons(static_cast<double>(dbu));
+      };
+      logger_->report("  prev pos ({:.4f}, {:.4f}) um  grad ({:+.6e}, {:+.6e})",
+                      um(state->prev_pos.x),
+                      um(state->prev_pos.y),
+                      state->prev_grad.x,
+                      state->prev_grad.y);
+      logger_->report("  cur  pos ({:.4f}, {:.4f}) um  grad ({:+.6e}, {:+.6e})",
+                      um(state->cur_pos.x),
+                      um(state->cur_pos.y),
+                      state->cur_grad.x,
+                      state->cur_grad.y);
+    }
   }
 }
 
@@ -698,6 +756,7 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
 
 void GraphicsImpl::cellPlotImpl(bool pause)
 {
+  resyncSelection();
   web::Gui::get()->redraw();
   if (pause) {
     reportSelected();
@@ -748,6 +807,7 @@ web::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
     selected_ = idx;
     odb::dbInst* db_inst
         = cell->isInstance() ? cell->insts().front()->dbInst() : nullptr;
+    selected_inst_ = db_inst;
     if (db_inst != nullptr) {
       for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
         for (size_t gc_idx = 0; gc_idx < nbVec_[nb_idx]->getGCells().size();
