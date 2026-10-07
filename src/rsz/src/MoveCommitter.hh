@@ -8,6 +8,7 @@
 #include <memory>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -145,6 +146,7 @@ class MoveCommitter
   void recordAcceptedResult(const MoveResult& result);
   void unrecordAcceptedResult(const MoveResult& result);
   int pendingMoveCount() const;
+  void recordRebufferInteraction(const MoveResult& result);
 
   // === ECO journal internals ===============================================
   bool ecoHasPendingChanges() const;
@@ -176,6 +178,13 @@ class MoveCommitter
       pending_instances_by_type_{};
   std::array<std::unordered_set<sta::Instance*>, kTypeCount>
       committed_instances_by_type_{};
+  // Keeps buffer removal and rebuffering from undoing each other pass after
+  // pass: removal may take out one buffer that rebuffering inserted on a
+  // driver; after that, every buffer rebuffering inserted on that driver,
+  // earlier or later, is kept.  Like committed_instances_by_type_, this
+  // survives journal restores.
+  std::unordered_map<sta::Instance*, sta::Instance*> rebuffer_driver_of_;
+  std::unordered_set<sta::Instance*> unbuffered_rebuffer_drivers_;
 
   // === MoveTracker state ====================================================
   std::unique_ptr<MoveTracker> move_tracker_;

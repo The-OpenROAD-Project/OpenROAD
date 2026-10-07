@@ -3,7 +3,6 @@
 
 #include "BufferCandidate.hh"
 
-#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -47,17 +46,12 @@ MoveResult BufferCandidate::apply()
              "ACCEPT BufferMove {}: Inserted {} buffers",
              resizer_.network()->pathName(driver_pin_),
              rebuffer_count);
-  // Report the inserted buffers as touched too, so conflict guards such as
-  // MoveCommitter::hasBlockingBufferRemovalMove() recognize them.
-  std::vector<sta::Instance*> touched{drvr_inst};
-  const std::vector<sta::Instance*>& inserted
-      = resizer_.rebuffer().lastInsertedBuffers();
-  touched.insert(touched.end(), inserted.begin(), inserted.end());
   return {
       .accepted = true,
       .type = MoveType::kBuffer,
       .move_count = rebuffer_count,
-      .touched_instances = std::move(touched),
+      .touched_instances = {drvr_inst},
+      .inserted_buffers = resizer_.rebuffer().lastInsertedBuffers(),
   };
 }
 
