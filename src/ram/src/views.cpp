@@ -6,7 +6,9 @@
 #include "views.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <map>
 #include <regex>
@@ -37,6 +39,179 @@ int Log2Ceil(int n)
 int AddrWidth(int words)
 {
   return std::max(Log2Ceil(words), 1);
+}
+
+// An integer constant expression of a module header: decimal numbers,
+// parameters by name, + - * / and parentheses. Throws naming what it
+// cannot evaluate: a width the check cannot read is a refusal, not a
+// port to skip.
+class ConstExpr
+{
+ public:
+  ConstExpr(const std::string& text, const std::map<std::string, long>& params)
+      : text_(text), params_(params)
+  {
+  }
+  long Eval()
+  {
+    long v = Sum();
+    Space();
+    if (pos_ != text_.size()) {
+      Fail();
+    }
+    return v;
+  }
+
+ private:
+  void Space()
+  {
+    while (pos_ < text_.size()
+           && std::isspace(static_cast<unsigned char>(text_[pos_]))) {
+      ++pos_;
+    }
+  }
+  [[noreturn]] void Fail()
+  {
+    throw std::runtime_error("cannot evaluate `" + text_
+                             + "` in a module header");
+  }
+  long Sum()
+  {
+    long v = Product();
+    for (;;) {
+      Space();
+      if (pos_ < text_.size() && (text_[pos_] == '+' || text_[pos_] == '-')) {
+        const char op = text_[pos_++];
+        const long r = Product();
+        v = op == '+' ? v + r : v - r;
+      } else {
+        return v;
+      }
+    }
+  }
+  long Product()
+  {
+    long v = Atom();
+    for (;;) {
+      Space();
+      if (pos_ < text_.size() && (text_[pos_] == '*' || text_[pos_] == '/')) {
+        const char op = text_[pos_++];
+        const long r = Atom();
+        if (op == '/' && r == 0) {
+          Fail();
+        }
+        v = op == '*' ? v * r : v / r;
+      } else {
+        return v;
+      }
+    }
+  }
+  long Atom()
+  {
+    Space();
+    if (pos_ >= text_.size()) {
+      Fail();
+    }
+    if (text_[pos_] == '(') {
+      ++pos_;
+      const long v = Sum();
+      Space();
+      if (pos_ >= text_.size() || text_[pos_] != ')') {
+        Fail();
+      }
+      ++pos_;
+      return v;
+    }
+    if (text_[pos_] == '-') {
+      ++pos_;
+      return -Atom();
+    }
+    if (std::isdigit(static_cast<unsigned char>(text_[pos_]))) {
+      long v = 0;
+      while (pos_ < text_.size()
+             && std::isdigit(static_cast<unsigned char>(text_[pos_]))) {
+        v = v * 10 + (text_[pos_++] - '0');
+      }
+      return v;
+    }
+    size_t start = pos_;
+    while (pos_ < text_.size()
+           && (std::isalnum(static_cast<unsigned char>(text_[pos_]))
+               || text_[pos_] == '_')) {
+      ++pos_;
+    }
+    auto it = params_.find(text_.substr(start, pos_ - start));
+    if (start == pos_ || it == params_.end()) {
+      Fail();
+    }
+    return it->second;
+  }
+  std::string text_;
+  const std::map<std::string, long>& params_;
+  size_t pos_ = 0;
+};
+
+// `text` without its // and /* */ comments.
+std::string StripComments(const std::string& text)
+{
+  std::string out;
+  out.reserve(text.size());
+  for (size_t i = 0; i < text.size(); ++i) {
+    if (text.compare(i, 2, "//") == 0) {
+      i = text.find('\n', i);
+      if (i == std::string::npos) {
+        break;
+      }
+      out += '\n';
+    } else if (text.compare(i, 2, "/*") == 0) {
+      i = text.find("*/", i + 2);
+      if (i == std::string::npos) {
+        break;
+      }
+      ++i;
+    } else {
+      out += text[i];
+    }
+  }
+  return out;
+}
+
+// The text between the parenthesis at `open` and its match.
+std::string Balanced(const std::string& text, size_t open, size_t* end)
+{
+  int depth = 0;
+  for (size_t i = open; i < text.size(); ++i) {
+    if (text[i] == '(') {
+      ++depth;
+    } else if (text[i] == ')' && --depth == 0) {
+      *end = i;
+      return text.substr(open + 1, i - open - 1);
+    }
+  }
+  throw std::runtime_error("unbalanced parentheses in a module header");
+}
+
+// Splits at the commas outside brackets and parentheses.
+std::vector<std::string> TopLevelCommas(const std::string& text)
+{
+  std::vector<std::string> out;
+  int depth = 0;
+  std::string cur;
+  for (char c : text) {
+    if (c == '(' || c == '[' || c == '{') {
+      ++depth;
+    } else if (c == ')' || c == ']' || c == '}') {
+      --depth;
+    }
+    if (c == ',' && depth == 0) {
+      out.push_back(cur);
+      cur.clear();
+    } else {
+      cur += c;
+    }
+  }
+  out.push_back(cur);
+  return out;
 }
 
 std::string F(double v)
@@ -217,8 +392,12 @@ void WriteLiberty(odb::dbBlock* block,
     << "        capacitance : " << F(clk_pf) << ";\n"
     << "        clock : true;\n"
     << "    }\n";
+  std::vector<std::string> quiet = spec.unused;
   if (!spec.reset.empty()) {
-    o << "    pin(" << spec.reset << ")   {\n"
+    quiet.insert(quiet.begin(), spec.reset);
+  }
+  for (const auto& name : quiet) {
+    o << "    pin(" << name << ")   {\n"
       << "        direction : input;\n"
       << "        capacitance : 0.001000;\n"
       << "    }\n";
@@ -336,45 +515,84 @@ std::vector<RtlPort> ReadModulePorts(const std::string& verilog,
   }
   std::string text((std::istreambuf_iterator<char>(in)),
                    std::istreambuf_iterator<char>());
-  std::regex head("\\bmodule\\s+" + module + "\\s*\\(");
+  std::regex head("\\bmodule\\s+" + module + "\\s*(#\\s*)?\\(");
   std::smatch mh;
   if (!std::regex_search(text, mh, head)) {
     throw std::runtime_error("module " + module + " is not in " + verilog);
   }
-  size_t start = mh.position(0) + mh.length(0);
-  size_t end = text.find(");", start);
-  if (end == std::string::npos) {
-    throw std::runtime_error("module " + module + ": header never closes");
+  // From the header on, without comments, which may hold parentheses: a
+  // linear scan, as std::regex recurses per character and a generated
+  // core's Verilog runs to megabytes.
+  text = StripComments(text.substr(mh.position(0)));
+  if (!std::regex_search(text, mh, head) || mh.position(0) != 0) {
+    throw std::runtime_error("module " + module + ": cannot read its header");
   }
-  std::string header = text.substr(start, end - start);
-  // Strip comments.
-  header = std::regex_replace(header, std::regex("//[^\n]*"), "");
-  header = std::regex_replace(header, std::regex("/\\*[\\s\\S]*?\\*/"), "");
+  size_t open = mh.length(0) - 1;
+  size_t close = 0;
+  // A SystemVerilog parameter list, `#(parameter int W = 32, ...)`: its
+  // defaults size the ports.
+  std::map<std::string, long> params;
+  if (mh[1].matched) {
+    std::string plist = Balanced(text, open, &close);
+    std::regex param(
+        "^\\s*(?:parameter|localparam)?\\s*(?:[A-Za-z_][A-Za-z_0-9:]*\\s+)*"
+        "(?:\\[[^\\]]*\\]\\s*)?([A-Za-z_][A-Za-z_0-9]*)\\s*=\\s*([\\s\\S]+?)"
+        "\\s*$");
+    for (const auto& p : TopLevelCommas(plist)) {
+      std::smatch m;
+      if (std::regex_match(p, m, param)) {
+        try {
+          params[m[1].str()] = ConstExpr(m[2].str(), params).Eval();
+        } catch (const std::runtime_error&) {
+          // A type or string parameter: no port width can use it here,
+          // and one that does fails below, naming it.
+        }
+      }
+    }
+    open = text.find('(', close + 1);
+    if (open == std::string::npos) {
+      throw std::runtime_error("module " + module + ": header never closes");
+    }
+  }
+  std::string header = Balanced(text, open, &close);
   // ANSI ports, one entry per comma: `input [4:0] a, b` declares two, the
   // second inheriting the first's direction and width, whether it is on
-  // the same line or the next.
+  // the same line or the next. Packed dimensions multiply. An entry that
+  // is not a port declaration this can read is an error, never skipped.
   std::vector<RtlPort> ports;
   std::regex decl(
-      "^\\s*(input|output|inout)?\\s*(?:wire|reg|logic)?\\s*"
-      "(\\[\\s*(\\d+)\\s*:\\s*(\\d+)\\s*\\])?\\s*"
+      "^\\s*(input|output|inout)?\\s*(?:(?:wire|reg|logic|var|signed)\\s+)*"
+      "((?:\\[[^\\]]*\\]\\s*)*)"
       "([A-Za-z_][A-Za-z_0-9$]*)\\s*$");
+  std::regex dim("\\[([^:\\]]+):([^\\]]+)\\]");
   bool input = true;
   int width = 1;
-  std::istringstream entries(header);
-  std::string entry;
-  while (std::getline(entries, entry, ',')) {
+  for (const auto& entry : TopLevelCommas(header)) {
+    if (entry.find_first_not_of(" \t\r\n") == std::string::npos) {
+      continue;
+    }
     std::smatch m;
     if (!std::regex_match(entry, m, decl)) {
-      continue;
+      throw std::runtime_error("module " + module
+                               + ": cannot read the port declaration `" + entry
+                               + "`");
     }
     if (m[1].matched) {
       input = m[1].str() != "output";
       width = 1;
     }
-    if (m[2].matched) {
-      width = std::abs(std::stoi(m[3].str()) - std::stoi(m[4].str())) + 1;
+    const std::string dims = m[2].str();
+    if (!dims.empty() || m[1].matched) {
+      width = 1;
+      for (std::sregex_iterator it(dims.begin(), dims.end(), dim), done;
+           it != done;
+           ++it) {
+        const long hi = ConstExpr((*it)[1].str(), params).Eval();
+        const long lo = ConstExpr((*it)[2].str(), params).Eval();
+        width *= static_cast<int>(std::labs(hi - lo) + 1);
+      }
     }
-    ports.push_back(RtlPort{m[5].str(), width, input});
+    ports.push_back(RtlPort{m[3].str(), width, input});
   }
   return ports;
 }
@@ -387,6 +605,9 @@ std::vector<std::string> CheckPorts(const Spec& spec,
   want[spec.clock] = RtlPort{spec.clock, 1, true};
   if (!spec.reset.empty()) {
     want[spec.reset] = RtlPort{spec.reset, 1, true};
+  }
+  for (const auto& u : spec.unused) {
+    want[u] = RtlPort{u, 1, true};
   }
   const int banks = std::max(spec.banks, 1);
   const int A_bank = AddrWidth(spec.words / banks);

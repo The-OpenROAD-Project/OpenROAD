@@ -454,6 +454,9 @@ dbBlock* Builder::Run()
     // unless `async_reset` makes it the storage flops' reset.
     Input(s.reset);
   }
+  for (const auto& u : s.unused) {
+    Input(u);
+  }
   // Banks first: a banked read port has one address per bank, of the
   // bank-local width.
   const int banks = std::max(s.banks, 1);
@@ -1125,6 +1128,9 @@ dbBlock* Builder::Run()
   if (!s.reset.empty()) {
     left(s.reset);
   }
+  for (const auto& u : s.unused) {
+    left(u);
+  }
   for (int r = 0; r < R; ++r) {
     for (size_t k = 0; k < raddr[r].size(); ++k) {
       for (size_t i = 0; i < raddr[r][k].size(); ++i) {
@@ -1277,6 +1283,12 @@ Spec ReadSpec(const std::string& path)
                + ": one of `reset` or `async_reset`, once");
       }
       s.reset = v[0];
+    } else if (key == "unused") {
+      if (v.empty()) {
+        Refuse(path + ":" + std::to_string(lineno)
+               + ": `unused <port>...` names at least one port");
+      }
+      s.unused.insert(s.unused.end(), v.begin(), v.end());
     } else if (key == "async_reset") {
       need(2);
       if (!s.reset.empty()) {

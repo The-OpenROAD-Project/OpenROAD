@@ -10,4 +10,5 @@ or_integration_tests(
     generate_regfile_clock_gate_asap7
     generate_regfile_reset_asap7
     generate_regfile_reset_high_asap7
+    generate_regfile_sv_ports_asap7
 )

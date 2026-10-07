@@ -100,6 +100,9 @@ struct Spec
   // reset.
   bool async_reset = false;
   bool reset_active_low = true;
+  // `unused <port>`: one-bit inputs the RTL module has and the array
+  // ignores (ibex's test_en_i), so the block has the module's ports.
+  std::vector<std::string> unused;
   std::vector<Port> read;
   std::vector<Port> write;
   Cells cells;

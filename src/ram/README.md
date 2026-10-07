@@ -104,7 +104,7 @@ generate_regfile -spec file
 | Switch Name | Description |
 | ---------------------- | -------------------------------------- |
 | `-spec` | The spec file, below. |
-| `-check_ports` | A Verilog file declaring the spec's module. The command stops if the module's ports are not the ports the spec names, at the widths the spec implies. |
+| `-check_ports` | A Verilog file declaring the spec's module. The command stops if the module's ports are not the ports the spec names, at the widths the spec implies. It reads ANSI headers, a SystemVerilog `#(...)` parameter list and widths written in its parameters' defaults, packed dimensions multiplied; a port declaration it cannot read stops it too. |
 | `-verilog` | Write the cells as structural Verilog. |
 | `-def` | Write the placed block as DEF. |
 | `-lef` | Write an abstract LEF of the block. |
@@ -121,6 +121,7 @@ One key per line, `#` comments:
 | `words n`, `bits n` | Depth and width. |
 | `clock port` | The clock port. |
 | `reset port` | A reset port the RTL has and the array ignores. |
+| `unused port...` | One-bit inputs the RTL module has and the array ignores (ibex's `test_en_i`), so the block keeps the module's ports. |
 | `async_reset port low\|high` | The reset clears every stored word to zero asynchronously, active low or high; the storage flops are `cell flop_r` with their set tied off by `cell tie_hi`, one tie (and for an active-high reset one inverter) per word. Read-address registers are not reset. One of `reset` or `async_reset`. |
 | `read addr data` | A read port, by the module's port names. Repeat per port. |
 | `read_banked addr0 data0 addr1 data1 ...` | A read port with an address and a data port per bank. |
