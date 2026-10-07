@@ -71,13 +71,13 @@ add_subdirectory(stb_truetype)
 
 # --- slang frontend (for src/syn elaboration) ---
 
-# Disable slang extras we don't need; reuse slang-elab's bundled fmt.
+# Disable slang extras we don't need; reuse sv-elab's bundled fmt.
 set(SLANG_INCLUDE_TESTS OFF CACHE BOOL "" FORCE)
 set(SLANG_INCLUDE_TOOLS OFF CACHE BOOL "" FORCE)
 set(SLANG_INCLUDE_INSTALL OFF CACHE BOOL "" FORCE)
 set(SLANG_USE_MIMALLOC OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(slang-elab/third_party/slang EXCLUDE_FROM_ALL)
+add_subdirectory(sv-elab/third_party/slang EXCLUDE_FROM_ALL)
 
 # slang's gitversion.cmake defines a colliding get_git_head_revision() function
 # that later breaks STA's call (_gitversionmoddir is unset in STA's dir scope).
@@ -85,11 +85,11 @@ add_subdirectory(slang-elab/third_party/slang EXCLUDE_FROM_ALL)
 unset(__get_git_revision_description)
 include(GetGitRevisionDescription)
 
-# Build slang-elab's frontend-only library (slang_frontend); skip the Yosys
+# Build sv-elab's frontend-only library (slang_frontend); skip the Yosys
 # plugin, which we don't build in the OpenROAD tree.
 set(SLANG_ELAB_BUILD_YOSYS_PLUGIN OFF CACHE BOOL "" FORCE)
 
 find_package(fmt CONFIG REQUIRED)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/slang-elab/cmake")
-add_subdirectory(slang-elab/src EXCLUDE_FROM_ALL)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/sv-elab/cmake")
+add_subdirectory(sv-elab/src EXCLUDE_FROM_ALL)

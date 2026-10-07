@@ -448,7 +448,7 @@ use_repo(npm, "npm")
 bazel_dep(name = "sv-elab", version = "2026-09-08")
 local_path_override(
     module_name = "sv-elab",
-    path = "third-party/slang-elab",
+    path = "third-party/sv-elab",
 )
 
 # --- GPU build (opt-in, non-hermetic) ---

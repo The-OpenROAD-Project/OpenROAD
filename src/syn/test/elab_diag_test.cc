@@ -6,7 +6,7 @@
 // tests pin both halves: the SYN id the caller sees, and the message content
 // that locates the problem in the user's HDL.
 //
-// The messages also name the file:line inside third-party/slang-elab/ that
+// The messages also name the file:line inside third-party/sv-elab/ that
 // gave up. That part is deliberately not asserted on: it moves whenever the
 // submodule does, and it is not what these tests are about.
 
@@ -81,7 +81,7 @@ TEST_F(ElabDiagTest, InternalErrorOnStatementHasSourceLocation)
 
 // The vendored frontend calls log_error() directly. The stub in log_stubs.h
 // routes it to utl::Logger instead of stderr+abort, which is what lets
-// third-party/slang-elab/ stay unmodified.
+// third-party/sv-elab/ stay unmodified.
 TEST_F(ElabDiagTest, FrontendLogErrorReachesTheLogger)
 {
   const std::string log = elaborateExpectingError(
