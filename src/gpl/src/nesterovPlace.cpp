@@ -679,7 +679,8 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
     return false;
   }
 
-  // After routability, the min hpwl snapshot is the fresher fallback.
+  // Both snapshots share one buffer, so the first min hpwl save has already
+  // overwritten the routability snapshot.
   if (!is_routability_need_
       && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)) {
     return false;
@@ -716,7 +717,7 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
   for (auto& nb : nbVec_) {
-    nb->revertToSnapshot(NesterovBase::SnapshotSlot::Routability);
+    nb->revertToSnapshot();
     nb->resetMinSumOverflow();
   }
 
@@ -742,7 +743,7 @@ void NesterovPlace::revertToDivergeSnapshot()
   wireLengthCoefY_ = diverge_snapshot_wl_coef_y_;
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
   for (auto& nb : nbVec_) {
-    nb->revertToSnapshot(NesterovBase::SnapshotSlot::Diverge);
+    nb->revertToSnapshot();
     nb->resetMinSumOverflow();
   }
 }
@@ -761,7 +762,9 @@ NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
   }
 
   // While routability is active a divergence reverts to the routability
-  // snapshot, if we keep diverting we will turn off routability
+  // snapshot, if we keep diverting we will turn off routability. Saving only
+  // once routability is off keeps the routability snapshot intact while it
+  // is still needed, since both share one buffer.
   if (num_region_diverged_ == 0 && is_min_hpwl_
       && !npVars_.disableRevertIfDiverge
       && (!npVars_.routability_driven_mode || !is_routability_need_)) {
@@ -769,7 +772,7 @@ NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
     diverge_snapshot_wl_coef_y_ = wireLengthCoefY_;
     diverge_snapshot_hpwl_ = min_hpwl_;
     for (auto& nb : nbVec_) {
-      nb->saveSnapshot(NesterovBase::SnapshotSlot::Diverge);
+      nb->saveSnapshot();
     }
     is_diverge_snapshot_saved_ = true;
   }
@@ -843,7 +846,7 @@ void NesterovPlace::routabilitySnapshot(
     is_routability_snapshot_saved_ = true;
 
     for (auto& nb : nbVec_) {
-      nb->saveSnapshot(NesterovBase::SnapshotSlot::Routability);
+      nb->saveSnapshot();
     }
 
     log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter + 1);
@@ -1009,7 +1012,7 @@ void NesterovPlace::runRoutability(int iter,
       nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
       for (auto& nb : nbVec_) {
-        nb->revertToSnapshot(NesterovBase::SnapshotSlot::Routability);
+        nb->revertToSnapshot();
         nb->resetMinSumOverflow();
       }
     }
