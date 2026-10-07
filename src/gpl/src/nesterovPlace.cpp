@@ -1444,6 +1444,22 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
   }
 
+  // Unlike a divergence, running out of iterations says nothing about the
+  // final placement, so only take the min hpwl snapshot when its overflow is
+  // no worse as well.
+  if (nesterov_iter >= npVars_.maxNesterovIter
+      && !npVars_.disableRevertIfDiverge
+      && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)
+      && diverge_snapshot_average_overflow_unscaled_
+             <= average_overflow_unscaled_
+      && diverge_snapshot_hpwl_ < nbc_->getHpwl()) {
+    log_->warn(GPL,
+               121,
+               "Reached the maximum number of iterations, reverting to "
+               "snapshot with min hpwl.");
+    revertToDivergeSnapshot();
+  }
+
   // Remove virtual clock tree insertions before final timing analysis.
   if (cb_) {
     cb_->removeVirtualCts();
