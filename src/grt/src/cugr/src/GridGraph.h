@@ -408,6 +408,12 @@ class GridGraph
                                  PointT loc,
                                  const std::vector<double>& net_costs,
                                  F&& fn) const;
+  // Enumerates a tree's via columns: its via edges at each (x, y) merged
+  // into maximal stacks wherever their layer spans overlap or touch, so a
+  // stack split across tree edges still puts one pad on each layer:
+  // fn(loc, low, high).
+  template <typename F>
+  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree, F&& fn) const;
   template <typename F>
   void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 

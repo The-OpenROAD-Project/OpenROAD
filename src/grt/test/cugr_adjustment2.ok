@@ -47,25 +47,25 @@ metal10    Vertical         2142          1190          44.44%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           36832
-Total via count:       2677
+Total via count:       2676
 Total congestion:      0.00
-Min resource:          0.56
-Bottleneck:            (2, 16, 16)
+Min resource:          0.63
+Bottleneck:            (1, 15, 9)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V      7167.20      1037.00       148.53      1185.53      16.54
-metal3    H      9792.00      1244.00       115.04      1359.04      13.88
-metal4    V      4868.80       111.00        17.76       128.76       2.64
-metal5    H      4896.00        25.00         9.93        34.93       0.71
+metal2    V      7167.20      1035.00       141.56      1176.56      16.42
+metal3    H      9792.00      1244.00       111.11      1355.11      13.84
+metal4    V      4868.80       113.00        16.97       129.97       2.67
+metal5    H      4896.00        25.00         9.83        34.83       0.71
 metal6    V      4868.80        35.00         5.19        40.19       0.83
 metal7    H      1713.60         0.00         0.00         0.00       0.00
 metal8    V      1713.60         0.00         0.00         0.00       0.00
 metal9    H      1190.00         0.00         0.00         0.00       0.00
 metal10   V      1190.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           37400.00      2452.00       296.46      2748.46       7.35
+Total           37400.00      2452.00       284.67      2736.67       7.32
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

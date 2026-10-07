@@ -1,6 +1,7 @@
 #include "GridGraph.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
@@ -932,6 +933,35 @@ void GridGraph::forEachStackFlankEdge(
 }
 
 template <typename F>
+void GridGraph::forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
+                                 F&& fn) const
+{
+  // Pattern routing splits a stack wherever a child attaches, and adopted
+  // routes keep one tree edge per via; both must merge back into one stack.
+  std::vector<std::array<int, 4>> spans;  // x, y, low, high
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      if (node->getLayerIdx() != child->getLayerIdx()) {
+        const auto [low, high]
+            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+        spans.push_back({node->x(), node->y(), low, high});
+      }
+    }
+  });
+  std::ranges::sort(spans);
+  for (size_t i = 0; i < spans.size();) {
+    const auto [x, y, low, first_high] = spans[i];
+    int high = first_high;
+    for (i++; i < spans.size() && spans[i][0] == x && spans[i][1] == y
+              && spans[i][2] <= high;
+         i++) {
+      high = std::max(high, spans[i][3]);
+    }
+    fn(PointT(x, y), low, high);
+  }
+}
+
+template <typename F>
 void GridGraph::forEachWireEdgeImpl(const int layer_index,
                                     const PointT u,
                                     const PointT v,
@@ -1057,27 +1087,26 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
             commitWire(layer, lower, rip_up, wire_factor);
           });
         }
-      } else {
-        const auto [low, high]
-            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
-        if (high >= num_layers_) {
-          logger_->error(utl::GRT,
-                         1251,
-                         "Via layer index {} exceeds number of layers {}.",
-                         high - 1,
-                         num_layers_);
-        }
-        forEachStackFlankEdgeImpl(
-            low,
-            high,
-            {node->x(), node->y()},
-            net_costs,
-            [&](int l, PointT edge_loc, CapacityT demand, double factor) {
-              commit(l, edge_loc, (rip_up ? -demand : demand), factor);
-            });
-        total_num_vias_ += (rip_up ? -1 : 1) * (high - low);
       }
     }
+  });
+  forEachViaColumn(tree, [&](const PointT loc, const int low, const int high) {
+    if (high >= num_layers_) {
+      logger_->error(utl::GRT,
+                     1251,
+                     "Via layer index {} exceeds number of layers {}.",
+                     high - 1,
+                     num_layers_);
+    }
+    forEachStackFlankEdgeImpl(
+        low,
+        high,
+        loc,
+        net_costs,
+        [&](int l, PointT edge_loc, CapacityT demand, double factor) {
+          commit(l, edge_loc, (rip_up ? -demand : demand), factor);
+        });
+    total_num_vias_ += (rip_up ? -1 : 1) * (high - low);
   });
 }
 
@@ -1088,23 +1117,16 @@ void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
   if (!tree) {
     return;
   }
-  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->getChildren()) {
-      if (node->getLayerIdx() == child->getLayerIdx()) {
-        continue;
-      }
-      const auto [min_layer, max_layer]
-          = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
-      forEachStackFlankEdgeImpl(
-          min_layer,
-          max_layer,
-          {node->x(), node->y()},
-          net_costs,
-          [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
-            via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
-                += demand * layer_factor;
-          });
-    }
+  forEachViaColumn(tree, [&](const PointT loc, const int low, const int high) {
+    forEachStackFlankEdgeImpl(
+        low,
+        high,
+        loc,
+        net_costs,
+        [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
+          via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
+              += demand * layer_factor;
+        });
   });
 }
 

@@ -2341,25 +2341,32 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   auto& preserved_tree = preserved_gr->getRoutingTree();
   auto& removed_tree = removed_gr->getRoutingTree();
 
-  if (preserved_tree && removed_tree) {
+  const bool merge_trees = preserved_tree && removed_tree;
+  if (merge_trees) {
+    // The merged tree's via columns can join where the trees meet, sharing
+    // pads, so release both trees here and commit the merged tree as a whole.
+    grid_graph_->removeTreeUsage(*preserved_gr);
+    grid_graph_->removeTreeUsage(*removed_gr);
     if (connection.empty()) {
-      // Find intersection node
+      // Join the trees where they share a gcell, through the shortest via
+      // stack when they reach it on different layers.
       std::shared_ptr<GRTreeNode> node_a = nullptr;
       std::shared_ptr<GRTreeNode> node_b = nullptr;
+      int min_gap = std::numeric_limits<int>::max();
       GRTreeNode::preorder(
           preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n1) {
-            if (node_a) {
+            if (min_gap == 0) {
               return;
             }
             GRTreeNode::preorder(
                 removed_tree, [&](const std::shared_ptr<GRTreeNode>& n2) {
-                  if (node_a) {
-                    return;
-                  }
-                  if (n1->getLayerIdx() == n2->getLayerIdx()
-                      && n1->x() == n2->x() && n1->y() == n2->y()) {
+                  const int gap
+                      = std::abs(n1->getLayerIdx() - n2->getLayerIdx());
+                  if (n1->x() == n2->x() && n1->y() == n2->y()
+                      && gap < min_gap) {
                     node_a = n1;
                     node_b = n2;
+                    min_gap = gap;
                   }
                 });
           });
@@ -2468,9 +2475,8 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
         }
       }
 
-      // 5. DFS to build connection tree and commit demand
+      // 5. DFS to build the connection tree
       std::set<Coord> visited;
-      const auto& ndr = preserved_gr->getNdrCosts();
       std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
       build_tree = [&](Coord curr, std::shared_ptr<GRTreeNode> parent_node) {
         visited.insert(curr);
@@ -2493,16 +2499,6 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
                   std::get<0>(next), std::get<1>(next), std::get<2>(next));
             }
             parent_node->addChild(child_node);
-
-            // Commit grid usage if it's a wire (same layer)
-            if (std::get<0>(curr) == std::get<0>(next)) {
-              auto temp = std::make_shared<GRTreeNode>(
-                  std::get<0>(curr), std::get<1>(curr), std::get<2>(curr));
-              temp->addChild(std::make_shared<GRTreeNode>(
-                  std::get<0>(next), std::get<1>(next), std::get<2>(next)));
-              grid_graph_->addTreeUsage(temp, ndr);
-            }
-
             build_tree(next, std::move(child_node));
           }
         }
@@ -2517,6 +2513,9 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   // adopted mark, or the combined tree's release trips GRT-1252.
   preserved_gr->setAdopted(preserved_gr->isAdopted()
                            || removed_gr->isAdopted());
+  if (merge_trees) {
+    grid_graph_->addTreeUsage(*preserved_gr);
+  }
 
   merged_nets_.insert(removed_net);
 }
@@ -2604,17 +2603,16 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   if (gr_net != nullptr && gr_net->getRoutingTree() != nullptr) {
     accumulate_wire(layer_0 - 2, -1.0);
   }
+  // The adopted route commits each endpoint's two vias as one stack.
   for (const PointT& endpoint : endpoints) {
-    for (int layer = layer_0 - 2; layer < layer_0; layer++) {
-      grid_graph_->forEachStackFlankEdge(
-          layer,
-          layer + 1,
-          endpoint,
-          costs,
-          [&](int l, PointT loc, CapacityT demand, double factor) {
-            edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
-          });
-    }
+    grid_graph_->forEachStackFlankEdge(
+        layer_0 - 2,
+        layer_0,
+        endpoint,
+        costs,
+        [&](int l, PointT loc, CapacityT demand, double factor) {
+          edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
+        });
   }
   for (const auto& [edge, demand] : edge_demands) {
     const auto& [layer, x, y] = edge;
