@@ -49,9 +49,13 @@ struct Port
 struct Cells
 {
   std::string flop;  // D flip-flop, Q output (QN accepted, see below)
-  std::string and2;  // read select AND
-  std::string or2;   // bitline OR tree node
-  std::string ao22;  // write mux node: (sel & new) | (hold & old)
+  // the storage flop with `async_reset`: an asynchronous reset (RESETN)
+  // and set (SETN, tied off) flop
+  std::string flop_r;
+  std::string tie_hi;  // ties flop_r's set off, one per word
+  std::string and2;    // read select AND
+  std::string or2;     // bitline OR tree node
+  std::string ao22;    // write mux node: (sel & new) | (hold & old)
   // read bitline: AOI22 leaf per word pair, NAND2/NOR2 tree over them
   std::string aoi22 = "AOI22xp5_ASAP7_75t_R";
   std::string nand2 = "NAND2xp5_ASAP7_75t_R";
@@ -89,6 +93,13 @@ struct Spec
   int bits = 0;
   std::string clock = "clock";
   std::string reset;  // optional: a port the RTL has and the array ignores
+  // `async_reset <port> low|high`: the reset clears every stored word to
+  // zero asynchronously, as an RTL `always @(posedge clk or negedge
+  // rst_n)` register file does; the storage flops are `cell flop_r`. The
+  // port is `reset` above. Read-address registers (read_latency) are not
+  // reset.
+  bool async_reset = false;
+  bool reset_active_low = true;
   std::vector<Port> read;
   std::vector<Port> write;
   Cells cells;

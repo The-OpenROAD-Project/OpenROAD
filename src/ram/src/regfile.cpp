@@ -68,6 +68,9 @@ std::string Fmt(std::string pattern,
 struct Pins
 {
   std::vector<std::string> flop = {"D", "CLK", "QN"};  // data, clock, out
+  // data, clock, reset, set (both active low), out
+  std::vector<std::string> flop_r = {"D", "CLK", "RESETN", "SETN", "QN"};
+  std::vector<std::string> tie_hi = {"H"};
   std::vector<std::string> and2 = {"A", "B", "Y"};
   std::vector<std::string> or2 = {"A", "B", "Y"};
   std::vector<std::string> ao22 = {"A1", "A2", "B1", "B2", "Y"};
@@ -333,6 +336,8 @@ class Builder
   odb::dbTechLayer* layer_h_ = nullptr;  // left/right edge pins
   odb::dbTechLayer* layer_v_ = nullptr;  // top/bottom edge pins
   dbMaster* flop_ = nullptr;
+  dbMaster* store_ = nullptr;  // the storage flop: flop_, or flop_r
+  dbMaster* tie_hi_ = nullptr;
   dbMaster* and2_ = nullptr;
   dbMaster* or2_ = nullptr;
   dbMaster* ao22_ = nullptr;
@@ -396,6 +401,13 @@ dbBlock* Builder::Run()
     icg_ = Master(s.cells.icg, "icg");
     CheckPins(icg_, g_pins.icg);
   }
+  store_ = flop_;
+  if (s.async_reset) {
+    store_ = Master(s.cells.flop_r, "flop_r");
+    CheckPins(store_, g_pins.flop_r);
+    tie_hi_ = Master(s.cells.tie_hi, "tie_hi");
+    CheckPins(tie_hi_, g_pins.tie_hi);
+  }
 
   odb::dbTech* tech = db_->getTech();
   site_ = flop_->getSite();
@@ -438,7 +450,8 @@ dbBlock* Builder::Run()
   Input(s.clock);
   if (!s.reset.empty()) {
     // Chisel gives every module a reset; a register file without one
-    // still has the port. It exists on the macro, connected to nothing.
+    // still has the port. It exists on the macro, connected to nothing,
+    // unless `async_reset` makes it the storage flops' reset.
     Input(s.reset);
   }
   // Banks first: a banked read port has one address per bank, of the
@@ -555,7 +568,7 @@ dbBlock* Builder::Run()
                                                nor2_->getWidth(),
                                                or2_->getWidth()}))});
   const int tile_cells_w = static_cast<int>(
-      flop_->getWidth() + inv_->getWidth() + write_pairs * ao22_->getWidth()
+      store_->getWidth() + inv_->getWidth() + write_pairs * ao22_->getWidth()
       + std::max(write_pairs - 1, 0) * or2_->getWidth() + R * read_cell_w);
   int rows_per_word = 1;
   // Keep a tile near square-ish: at most ~40 sites wide.
@@ -564,7 +577,7 @@ dbBlock* Builder::Run()
   }
   // Rows are filled least-first, so a row is at most one widest cell over
   // the average; the header carries that slack.
-  const int widest = static_cast<int>(std::max({flop_->getWidth(),
+  const int widest = static_cast<int>(std::max({store_->getWidth(),
                                                 ao22_->getWidth(),
                                                 aoi22_->getWidth(),
                                                 or2_->getWidth(),
@@ -578,7 +591,7 @@ dbBlock* Builder::Run()
     std::vector<int> fill(rows_per_word, 0);
     auto drop
         = [&](int w) { *std::min_element(fill.begin(), fill.end()) += w; };
-    drop(static_cast<int>(flop_->getWidth()));
+    drop(static_cast<int>(store_->getWidth()));
     if (g_pins.flop_inverted) {
       drop(static_cast<int>(inv_->getWidth()));
     }
@@ -599,7 +612,10 @@ dbBlock* Builder::Run()
   // selects), or the word's clock gate enabled by that OR.
   const int header_cells_w = static_cast<int>(
       (R + W) * A * and2_->getWidth() + (W - 1) * or2_->getWidth()
-      + (gated ? icg_->getWidth() : inv_->getWidth()));
+      + (gated ? icg_->getWidth() : inv_->getWidth())
+      + (s.async_reset
+             ? tie_hi_->getWidth() + (s.reset_active_low ? 0 : inv_->getWidth())
+             : 0));
   const int header_w = ((header_cells_w + rows_per_word - 1) / rows_per_word
                         + widest + site_w_ - 1)
                        / site_w_ * site_w_;
@@ -836,6 +852,23 @@ dbBlock* Builder::Run()
               hold[n]->getName(),
               {{g_pins.inv[0], any_write}, {g_pins.inv[1], hold[n]}});
       }
+      // The word's reset and set, for `async_reset`: an active-high reset
+      // inverted here, and the set tied off, one of each per word so no
+      // net fans out past one word's bits.
+      dbNet* resetn = nullptr;
+      dbNet* setn = nullptr;
+      if (s.async_reset) {
+        resetn = Net(s.reset);
+        if (!s.reset_active_low) {
+          resetn = Net(wn + "_resetn");
+          Place(hcur(),
+                inv_,
+                resetn->getName(),
+                {{g_pins.inv[0], Net(s.reset)}, {g_pins.inv[1], resetn}});
+        }
+        setn = Net(wn + "_setn");
+        Place(hcur(), tie_hi_, setn->getName(), {{g_pins.tie_hi[0], setn}});
+      }
       periphery_ = false;
       for (auto& c : hc) {
         if (c.x > bank_x0 + header_w) {
@@ -874,14 +907,27 @@ dbBlock* Builder::Run()
         dbNet* d = gated && W == 1 ? wdata[0][b] : Net(tn + "_d");
         dbNet* qn = Net(tn + "_qn");
         dbNet* q = g_pins.flop_inverted ? Net(tn + "_q") : qn;
-        Place(tcur(),
-              flop_,
-              s.store_name.empty()
+        const std::string ff_name
+            = s.store_name.empty()
                   ? tn + "_ff"
-                  : Fmt(s.store_name, {{"word", n}, {"bit", b}}),
-              {{g_pins.flop[0], d},
-               {g_pins.flop[1], gated ? gclk[n] : clock},
-               {g_pins.flop[2], qn}});
+                  : Fmt(s.store_name, {{"word", n}, {"bit", b}});
+        if (s.async_reset) {
+          Place(tcur(),
+                store_,
+                ff_name,
+                {{g_pins.flop_r[0], d},
+                 {g_pins.flop_r[1], gated ? gclk[n] : clock},
+                 {g_pins.flop_r[2], resetn},
+                 {g_pins.flop_r[3], setn},
+                 {g_pins.flop_r[4], qn}});
+        } else {
+          Place(tcur(),
+                flop_,
+                ff_name,
+                {{g_pins.flop[0], d},
+                 {g_pins.flop[1], gated ? gclk[n] : clock},
+                 {g_pins.flop[2], qn}});
+        }
         if (g_pins.flop_inverted) {
           Place(tcur(),
                 inv_,
@@ -1226,7 +1272,24 @@ Spec ReadSpec(const std::string& path)
       s.clock = v[0];
     } else if (key == "reset") {
       need(1);
+      if (!s.reset.empty()) {
+        Refuse(path + ":" + std::to_string(lineno)
+               + ": one of `reset` or `async_reset`, once");
+      }
       s.reset = v[0];
+    } else if (key == "async_reset") {
+      need(2);
+      if (!s.reset.empty()) {
+        Refuse(path + ":" + std::to_string(lineno)
+               + ": one of `reset` or `async_reset`, once");
+      }
+      if (v[1] != "low" && v[1] != "high") {
+        Refuse(path + ":" + std::to_string(lineno)
+               + ": `async_reset <port> low|high`");
+      }
+      s.reset = v[0];
+      s.async_reset = true;
+      s.reset_active_low = v[1] == "low";
     } else if (key == "read") {
       need(2);
       s.read.push_back(Port{v[0], v[1], ""});
@@ -1252,6 +1315,10 @@ Spec ReadSpec(const std::string& path)
       const std::string& kind = v[0];
       if (kind == "flop") {
         s.cells.flop = v[1];
+      } else if (kind == "flop_r") {
+        s.cells.flop_r = v[1];
+      } else if (kind == "tie_hi") {
+        s.cells.tie_hi = v[1];
       } else if (kind == "and2") {
         s.cells.and2 = v[1];
       } else if (kind == "or2") {
@@ -1292,6 +1359,10 @@ Spec ReadSpec(const std::string& path)
       };
       if (kind == "flop") {
         set(g_pins.flop, 3);
+      } else if (kind == "flop_r") {
+        set(g_pins.flop_r, 5);
+      } else if (kind == "tie_hi") {
+        set(g_pins.tie_hi, 1);
       } else if (kind == "and2") {
         set(g_pins.and2, 3);
       } else if (kind == "or2") {
@@ -1410,6 +1481,9 @@ Spec ReadSpec(const std::string& path)
   if (s.cells.flop.empty() || s.cells.and2.empty() || s.cells.or2.empty()
       || s.cells.ao22.empty() || s.cells.inv.empty()) {
     Refuse(path + ": cells flop, and2, or2, ao22 and inv are all required");
+  }
+  if (s.async_reset && (s.cells.flop_r.empty() || s.cells.tie_hi.empty())) {
+    Refuse(path + ": `async_reset` needs `cell flop_r` and `cell tie_hi`");
   }
   return s;
 }

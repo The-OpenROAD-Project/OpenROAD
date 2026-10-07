@@ -121,11 +121,12 @@ One key per line, `#` comments:
 | `words n`, `bits n` | Depth and width. |
 | `clock port` | The clock port. |
 | `reset port` | A reset port the RTL has and the array ignores. |
+| `async_reset port low\|high` | The reset clears every stored word to zero asynchronously, active low or high; the storage flops are `cell flop_r` with their set tied off by `cell tie_hi`, one tie (and for an active-high reset one inverter) per word. Read-address registers are not reset. One of `reset` or `async_reset`. |
 | `read addr data` | A read port, by the module's port names. Repeat per port. |
 | `read_banked addr0 data0 addr1 data1 ...` | A read port with an address and a data port per bank. |
 | `write addr data [en]` | A write port. Repeat per port. |
-| `cell role master` | The cells: `flop`, `and2`, `or2`, `ao22`, `inv`, `tap`. |
-| `pins role pin...` | The pin names of a cell role (`flop`, `and2`, `or2`, `ao22`, `inv`), for a library whose names differ from the defaults. |
+| `cell role master` | The cells: `flop`, `and2`, `or2`, `ao22`, `inv`, `tap`; with `async_reset` also `flop_r` (pins D, CLK, RESETN, SETN, QN by default) and `tie_hi` (pin H). |
+| `pins role pin...` | The pin names of a cell role (`flop`, `flop_r`, `tie_hi`, `and2`, `or2`, `ao22`, `inv`), for a library whose names differ from the defaults. |
 | `flop_output Q\|QN` | Whether the flop's output is inverted. |
 | `pin_layer layer`, `pin_layer_v layer` | The layers of the pins on the left and right edges, and on the top and bottom. |
 | `pin_track offset pitch` | The track grid the pins are centred on, in microns. |
