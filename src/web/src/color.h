@@ -12,8 +12,12 @@ struct Color
   unsigned char b = 0;  // Blue (0-255)
   unsigned char a = 0;  // Alpha (0-255)
 
-  Color lighter(double factor = 1.5) const;
-  Color darken(double factor = 0.5) const;
+  // QColor::lighter and QColor::darker to the bit: factors in percent, HSV in
+  // Qt's 16-bit fixed point.
+  Color lighter(int factor = 150) const;
+  Color darker(int factor = 200) const;
+
+  bool operator==(const Color&) const = default;
 };
 
 // Per-layer brush pattern used when rasterizing layer shapes.  The integer

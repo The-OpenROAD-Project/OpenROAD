@@ -146,6 +146,21 @@ class SaveImageTest : public tst::Nangate45Fixture
     return count;
   }
 
+  // Only _instances and the tech layers stacked: the pins and every overlay
+  // off, including `regions` and the instance names, which default ON.
+  static TileVisibility noOverlaysVis()
+  {
+    TileVisibility vis;
+    vis.pins = false;
+    vis.regions = false;
+    vis.mfg_grid = false;
+    vis.access_points = false;
+    vis.gcell_grid = false;
+    vis.rudy = false;
+    vis.inst_names = false;
+    return vis;
+  }
+
   std::unique_ptr<TileGenerator> tile_gen_;
   std::vector<std::string> output_files_;
 };
@@ -639,9 +654,8 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
 }
 
-// The instance and pin names share one layer, stacked above every tech layer
-// (issue #11425), so it has to be composited whenever either kind of label is
-// on -- pin names only count while the pins themselves are shown.
+// _inst_labels is composited, above the tech layers, whenever either kind of
+// label is on; pin names only count while the pins are shown.
 TEST_F(SaveImageTest, InstLabelsLayerFollowsNamesAndPinNames)
 {
   const std::vector<std::string> tech_layers = {"metal1"};
@@ -670,16 +684,7 @@ TEST_F(SaveImageTest, InstLabelsLayerFollowsNamesAndPinNames)
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
 {
   const std::vector<std::string> tech_layers = {"metal1"};
-  TileVisibility vis;
-  vis.pins = false;
-  // `regions` and the instance names default ON (Qt parity), so turn the
-  // whole set off explicitly rather than relying on the defaults.
-  vis.regions = false;
-  vis.mfg_grid = false;
-  vis.access_points = false;
-  vis.gcell_grid = false;
-  vis.rudy = false;
-  vis.inst_names = false;
+  const TileVisibility vis = noOverlaysVis();
 
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
             (std::vector<std::string>{"_instances", "metal1"}))
@@ -766,16 +771,9 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
 {
   const std::vector<std::string> tech_layers = {"metal1", "metal2", "metal3"};
-  TileVisibility vis;
+  TileVisibility vis = noOverlaysVis();
   vis.has_visible_layers = true;
   vis.visible_layers = {"metal2"};
-  vis.pins = false;
-  vis.regions = false;
-  vis.mfg_grid = false;
-  vis.access_points = false;
-  vis.gcell_grid = false;
-  vis.rudy = false;
-  vis.inst_names = false;
 
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
             (std::vector<std::string>{"_instances", "metal2"}))

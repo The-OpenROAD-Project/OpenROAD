@@ -31,7 +31,7 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { instLabelsVisible, populateDisplayControls }
+import { anyGroupOn, populateDisplayControls }
     from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
@@ -155,11 +155,8 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
-    accessPointsLayer: null,
-    regionsLayer: null,
-    mfgGridLayer: null,
-    gcellGridLayer: null,
-    instLabelsLayer: null,
+    // [{ def, layer }] per overlay the tech response lists.
+    overlayLayers: [],
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -596,12 +593,8 @@ function redrawAllLayers() {
     const toggleableLayers = [
         [app.modulesLayer, visibility.module_view],   // Module view
         [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
-        // Misc > Instances > Names / Pin Names
-        [app.instLabelsLayer, instLabelsVisible(visibility)],
+        ...app.overlayLayers.map(
+            ({ def, layer }) => [layer, anyGroupOn(def.shown_by, visibility)]),
     ];
     for (const [layer, visible] of toggleableLayers) {
         if (!layer) continue;

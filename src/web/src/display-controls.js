@@ -36,12 +36,12 @@ export function nonSolidPatterns(patterns) {
     return out;
 }
 
-// Whether the _inst_labels layer has anything to show: instance names, or pin
-// names (which only show with the pins themselves).  Mirrors the server's
-// pseudoLayerDefs entry.
-export function instLabelsVisible(visibility) {
-    return !!visibility.inst_names
-        || (!!visibility.inst_pins && !!visibility.inst_pin_names);
+// Whether every visibility key of any one group is on: how the tech
+// response's overlays say when each shows (`shown_by`) and when it depends on
+// the visible layers (`layers_by`).  A key `visibility` lacks is off.
+export function anyGroupOn(groups, visibility) {
+    return (groups || []).some(
+        (group) => group.every((key) => !!visibility[key]));
 }
 
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
@@ -199,27 +199,15 @@ export function populateDisplayControls(app, visibility, selectability,
     addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
     // Module coloring overlay (Module view)
     addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
-    // Access-point markers overlay (Misc > Access Points)
-    addPseudoLayer(
-        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
-    // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
-    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
-    // GCell-grid lines overlay (topmost, GUI paint order)
-    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
-    // Instance and pin names: above every routing layer and below the access
-    // points, where Qt paints them (after the whole drawLayer loop).
-    addPseudoLayer('_inst_labels', 'instLabelsLayer', 999,
-                   instLabelsVisible(visibility));
-
-    // Region boundaries overlay (above access points, GUI paint order).
-    // Only created when the design has dbRegions — the layer is default-ON
-    // (Qt parity) and would otherwise issue per-viewport tile requests that
-    // always come back transparent.  (Regions created via Tcl mid-session
-    // need a page reload to appear.)
-    app.regionsLayer = null;
-    if (techData && techData.has_regions) {
-        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
-    }
+    // The self-painting overlays (access points, regions, grids, instance and
+    // pin names), as the server lists them: name, pane order and when each
+    // shows.  It leaves out those the design gives nothing to draw, such as
+    // regions in a design without any.
+    app.overlayLayers = ((techData && techData.overlays) || []).map((def) => ({
+        def,
+        layer: addPseudoLayer(def.name, null, def.z_index,
+                              anyGroupOn(def.shown_by, visibility)),
+    }));
 
     // --- Layers group (using CheckboxTreeModel) ---
 
@@ -486,7 +474,7 @@ export function populateDisplayControls(app, visibility, selectability,
             const tilesPerPane = estimateTilesPerPane(width, height, tile);
             const perTile = tileBytes(tile, app.tileDpr ? app.tileDpr() : 1);
             // The panes that are NOT merged still hold full tile grids, and
-            // they are not free: at dpr 3 each costs ~54 MB, so the three of
+            // they are not free: at dpr 3 each costs ~54 MB, so the four of
             // them would put the real total over the ceiling while the budget
             // reported it as fitting.  Charge them first.
             const count = app.mergeGroupCount || computeGroupCount({
@@ -674,9 +662,12 @@ export function populateDisplayControls(app, visibility, selectability,
         if (app.pinsLayer && app.map.hasLayer(app.pinsLayer)) {
             app.pinsLayer.refreshTiles();
         }
-        // Pin names are only drawn for pins on visible layers too.
-        if (app.instLabelsLayer && app.map.hasLayer(app.instLabelsLayer)) {
-            app.instLabelsLayer.refreshTiles();
+        // And the overlays that draw by them under the current visibility.
+        for (const { def, layer } of app.overlayLayers || []) {
+            if (anyGroupOn(def.layers_by, visibility)
+                && app.map.hasLayer(layer)) {
+                layer.refreshTiles();
+            }
         }
 
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));

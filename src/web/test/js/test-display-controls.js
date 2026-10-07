@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { dom } from './setup-dom.js';
 
 const {
-    instLabelsVisible, layerRangeSet, nonSolidPatterns, populateDisplayControls,
+    anyGroupOn, layerRangeSet, nonSolidPatterns, populateDisplayControls,
 } = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 
@@ -82,28 +82,25 @@ describe('nonSolidPatterns', () => {
     });
 });
 
-// The _inst_labels layer is mounted whenever it has something to draw, and
-// must agree with the server's pseudoLayerDefs entry on when that is.
-describe('instLabelsVisible', () => {
-    it('shows for instance names alone', () => {
-        assert.ok(instLabelsVisible(
-            { inst_names: true, inst_pins: false, inst_pin_names: false }));
+// The overlays' `shown_by` / `layers_by`, as the server's anyGroupOn reads
+// them.
+describe('anyGroupOn', () => {
+    const LABELS = [['inst_names'], ['inst_pins', 'inst_pin_names']];
+
+    it('is on when every key of one group is', () => {
+        assert.ok(anyGroupOn(LABELS, { inst_names: true }));
+        assert.ok(anyGroupOn(LABELS, { inst_pins: true, inst_pin_names: true }));
     });
 
-    it('shows for pin names when the pins are shown', () => {
-        assert.ok(instLabelsVisible(
-            { inst_names: false, inst_pins: true, inst_pin_names: true }));
+    it('is off when no group is complete', () => {
+        assert.ok(!anyGroupOn(LABELS, { inst_pins: false, inst_pin_names: true }));
+        assert.ok(!anyGroupOn(LABELS, {}), 'a missing key is off');
     });
 
-    it('stays off for pin names whose pins are hidden', () => {
-        assert.ok(!instLabelsVisible(
-            { inst_names: false, inst_pins: false, inst_pin_names: true }));
-    });
-
-    it('stays off with neither names nor pin names', () => {
-        assert.ok(!instLabelsVisible(
-            { inst_names: false, inst_pins: true, inst_pin_names: false }));
-        assert.ok(!instLabelsVisible({}));
+    it('takes an empty group as always on and no groups as never', () => {
+        assert.ok(anyGroupOn([[]], {}));
+        assert.ok(!anyGroupOn([], { inst_names: true }));
+        assert.ok(!anyGroupOn(undefined, {}));
     });
 });
 
@@ -122,7 +119,7 @@ describe('layer row selection', () => {
             this.options = opts || {};
         }
         addTo() { return this; }
-        refreshTiles() {}
+        refreshTiles() { this.refreshes = (this.refreshes || 0) + 1; }
     }
     class FakeHeatMapLayer {
         constructor() {}
@@ -267,6 +264,58 @@ describe('layer row selection', () => {
         assert.equal(requests.length, 1);
         assert.equal(requests[0].layer, 'metal1');
     });
+
+    // Overlays as the tech response lists them.
+    const OVERLAYS = [
+        { name: '_access_points', z_index: 1000,
+          shown_by: [['access_points']], layers_by: [[]] },
+        { name: '_gcell_grid', z_index: 1002,
+          shown_by: [['gcell_grid']], layers_by: [] },
+        { name: '_inst_labels', z_index: 999,
+          shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+          layers_by: [['inst_pins', 'inst_pin_names']] },
+    ];
+
+    it('builds a pane per listed overlay at its pane order', () => {
+        techData.overlays = OVERLAYS;
+        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
+                                () => {}, FakeHeatMapLayer);
+        assert.deepEqual(
+            app.overlayLayers.map(({ def, layer }) =>
+                [def.name, layer.name, layer.options.zIndex]),
+            [['_access_points', '_access_points', 1000],
+             ['_gcell_grid', '_gcell_grid', 1002],
+             ['_inst_labels', '_inst_labels', 999]]);
+    });
+
+    // A layer toggle refreshes the overlays that draw by the visible layers
+    // under the current visibility, and only those: always the access points,
+    // the names only while pin names are shown, never the gcell grid.
+    for (const [pinNames, want] of [
+        [false, { _access_points: 1, _gcell_grid: 0, _inst_labels: 0 }],
+        [true, { _access_points: 1, _gcell_grid: 0, _inst_labels: 1 }],
+    ]) {
+        it(`a layer toggle refreshes ${JSON.stringify(want)} `
+           + `with pin names ${pinNames ? 'on' : 'off'}`, () => {
+            techData.overlays = OVERLAYS;
+            populateDisplayControls(
+                app,
+                { inst_names: true, inst_pins: true, inst_pin_names: pinNames,
+                  access_points: true, gcell_grid: true },
+                {}, FakeTileLayer, techData, () => {}, FakeHeatMapLayer);
+            const overlays = app.overlayLayers.map(({ layer }) => layer);
+            app.map.hasLayer = (layer) => overlays.includes(layer);
+            const before = new Map(
+                overlays.map((layer) => [layer, layer.refreshes || 0]));
+            const cb = layerRow(app.displayControlsEl, 'metal1')
+                .querySelector('input.vis-cb');
+            cb.checked = false;
+            cb.dispatchEvent(new dom.window.Event('change'));
+            const got = Object.fromEntries(overlays.map((layer) =>
+                [layer.name, (layer.refreshes || 0) - before.get(layer)]));
+            assert.deepEqual(got, want);
+        });
+    }
 
     it('clicking the visibility checkbox still toggles', () => {
         const container = render();

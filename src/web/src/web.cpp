@@ -1804,15 +1804,11 @@ void WebServer::saveReport(const std::string& filename,
     return png.empty() || TileGenerator::isBlankTilePng(png);
   };
 
-  // All layers to cache tiles for.
-  std::vector<std::string> all_layers;
-  all_layers.emplace_back("_instances");
-  for (const auto& name : tech_layers) {
-    all_layers.push_back(name);
-  }
+  // Every pane the viewer mounts by default, the same stack save_image draws,
+  // plus the module coloring.
+  std::vector<std::string> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
   all_layers.emplace_back("_modules");
-  all_layers.emplace_back("_pins");
-  all_layers.emplace_back("_inst_labels");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
   std::vector<std::pair<std::string, std::string>> tile_entries;

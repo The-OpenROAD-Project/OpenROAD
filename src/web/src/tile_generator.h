@@ -261,6 +261,9 @@ enum class InstCategory
 
 InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta);
 
+// The pseudo layer instance and pin names are drawn on.
+inline constexpr char kInstLabelsLayer[] = "_inst_labels";
+
 struct TileVisibility
 {
   bool stdcells = true;
@@ -466,6 +469,10 @@ struct TileVisibility
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+  // Pin names show only together with the pins they name.
+  bool pinNamesShown() const { return inst_pins && inst_pin_names; }
+  // The boolean field a JSON key sets, or none for a key it does not know.
+  std::optional<bool> flag(std::string_view key) const;
   // Visibility for an already-classified instance.  Lets callers that already
   // computed the category (e.g. the tile render loop) avoid reclassifying.
   bool isCategoryVisible(InstCategory cat) const;
@@ -486,6 +493,7 @@ class TileGenerator
   bool shapesReady() const;
 
   bool hasSta() const { return sta_ != nullptr; }
+  bool hasRegions() const;
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
 
@@ -533,10 +541,7 @@ class TileGenerator
     std::vector<odb::Polygon> obs_polys;
     std::vector<odb::Rect> obs_boxes;
     std::vector<odb::Polygon> pin_polys;
-    // Pin boxes grouped by MTerm, preserving master MTerm order and geometry
-    // order within a pin: the fill pass draws them all, and the ITerm label
-    // pass walks each group for the first box big enough to label.
-    std::vector<std::pair<odb::dbMTerm*, std::vector<odb::Rect>>> pin_boxes;
+    std::vector<odb::Rect> pin_boxes;
   };
   using MasterGeomByLayer = odb::PtrMap<odb::dbMaster, MasterLayerGeom>;
 
@@ -551,10 +556,22 @@ class TileGenerator
   // shared_ptr copy once per tile and then read it without locking; a
   // concurrent invalidation swaps in a fresh snapshot and leaves the one
   // in-flight renders hold alive.
+  // One pin name of a master: its MTerm's name, the boxes Qt's drawITermLabels
+  // walks (getGeometry(), polygon pieces included) with their layers, in that
+  // order, and their bbox.
+  struct PinLabel
+  {
+    std::string name;
+    odb::Rect bbox;
+    std::vector<std::pair<odb::Rect, odb::dbTechLayer*>> boxes;
+  };
+
   struct GeomCache
   {
     odb::PtrMap<odb::dbTechLayer, MasterGeomByLayer> master_geom;
     odb::PtrMap<odb::dbTechLayer, ViaBoxesByMaster> via_boxes;
+    // Each master's pin names, in master MTerm order.
+    odb::PtrMap<odb::dbMaster, std::vector<PinLabel>> pin_labels;
   };
   std::shared_ptr<const GeomCache> geomCache() const;
 
@@ -596,6 +613,16 @@ class TileGenerator
       std::optional<odb::Rect> fills;                 // dbFill
     };
     std::map<std::string, Extent> layers;
+    // Where kInstLabelsLayer can draw: for each k, the bbox of the instances
+    // at least 2^k DBU at their longest side (World DBU), from the smallest
+    // instance's k to one past the largest, which is empty.  No instance takes
+    // a label until that side reaches `min_css_px` on screen.
+    struct SizedExtent
+    {
+      double min_css_px = 0;
+      std::vector<std::pair<int, std::optional<odb::Rect>>> by_size;
+    };
+    std::optional<SizedExtent> inst_labels;
   };
   std::shared_ptr<const LayerExtents> layerExtents() const;
 
@@ -793,8 +820,52 @@ class TileGenerator
                  const TileVisibility& vis,
                  const Color& bg = {}) const;
 
-  // The layers saveImage composites, bottom to top.  Public so a test can pin
-  // the order down: it has to match the zIndex the client gives each layer in
+  // Where a label goes, decided by the caller.  A chiplet rendered in its own
+  // frame cannot draw text into that frame — the reverse mapping that places
+  // the frame would mirror the glyphs — so the caller routes the label
+  // elsewhere and only the position travels.  Arguments mirror
+  // drawLabelText(): top-left pixel, the text, its font, its color, whether it
+  // reads top-to-bottom, and the width of a black outline (0 for none).
+  using TextSink = std::function<void(int px,
+                                      int py,
+                                      std::string_view text,
+                                      const GlyphCache::FontSize& font,
+                                      const Color& color,
+                                      bool rotated,
+                                      int ring)>;
+
+  // Registry of the self-painting pseudo layers: layer name -> when it shows
+  // -> painter -> paint order.  Single source of truth for the
+  // renderTileBuffer dispatch, the pseudo-layer guard, saveImage's
+  // layers_to_render and the overlays the tech response publishes, from which
+  // the client builds its panes.
+  //
+  // `shown_by` and `layers_by` are TileVisibility JSON keys in groups, read by
+  // anyGroupOn(): on when every key of any one group is.  `z_index` is the
+  // client's pane order, which saveImageLayerOrder() composites in.
+  struct PseudoLayerDef
+  {
+    const char* name;
+    // When the overlay draws anything.
+    std::vector<std::vector<const char*>> shown_by;
+    // When what it draws depends on visible_layers; an empty group is always.
+    std::vector<std::vector<const char*>> layers_by;
+    void (TileGenerator::*painter)(std::vector<unsigned char>&,
+                                   odb::dbBlock*,
+                                   const TileFrame&,
+                                   const TileVisibility&,
+                                   const TextSink&) const;
+    int z_index;
+    // Whether this design gives the overlay anything to draw; null is always.
+    bool (TileGenerator::*present)() const = nullptr;
+  };
+  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
+  static bool anyGroupOn(const std::vector<std::vector<const char*>>& groups,
+                         const TileVisibility& vis);
+
+  // The layers saveImage composites, bottom to top, from `tech_layers` in
+  // paintOrderLayers() order.  Public so a test can pin the order down:
+  // it has to match the zIndex the client gives each layer in
   // display-controls.js, or the saved PNG is not the view on screen.
   static std::vector<std::string> saveImageLayerOrder(
       const TileVisibility& vis,
@@ -1165,22 +1236,8 @@ class TileGenerator
   void dropOverlayCaches() const;
   void dropOverlayCachesIfStale(uint64_t rev) const;
 
-  // Where a label goes, decided by the caller.  A chiplet rendered in its own
-  // frame cannot draw text into that frame — the reverse mapping that places
-  // the frame would mirror the glyphs — so the caller routes the label
-  // elsewhere and only the position travels.  Arguments mirror
-  // drawLabelText(): top-left pixel, the text, its font, its color, whether it
-  // reads top-to-bottom, and the width of a black outline (0 for none).
-  using TextSink = std::function<void(int px,
-                                      int py,
-                                      std::string_view text,
-                                      const GlyphCache::FontSize& font,
-                                      const Color& color,
-                                      bool rotated,
-                                      int ring)>;
-
   // Pseudo-layer painters used by renderTileBuffer (one per overlay).
-  // Callers gate on the entry's `enabled`; painters handle the rest.  All
+  // Callers gate on the entry's `shown_by`; painters handle the rest.  All
   // share one signature so pseudoLayerDefs() can dispatch by table; text goes
   // through `emit`.
   void drawAccessPointsLayer(std::vector<unsigned char>& image,
@@ -1219,28 +1276,6 @@ class TileGenerator
   std::shared_ptr<web::HeatMapDataSource> getHeatMapSource(
       const std::string& name) const;
 
-  // Registry of the self-painting pseudo layers: layer name -> visibility
-  // test -> painter -> paint order.  Single source of truth for the
-  // renderTileBuffer dispatch, the pseudo-layer guard and saveImage's
-  // layers_to_render — adding an overlay means adding one entry (plus the
-  // client layer).
-  //
-  // `z_index` is only read by saveImageLayerOrder(); see that function for why
-  // the value has to mirror the client's.
-  struct PseudoLayerDef
-  {
-    const char* name;
-    // Whether the overlay is shown; a predicate rather than a single flag so
-    // an overlay can depend on more than one display control.
-    bool (*enabled)(const TileVisibility&);
-    void (TileGenerator::*painter)(std::vector<unsigned char>&,
-                                   odb::dbBlock*,
-                                   const TileFrame&,
-                                   const TileVisibility&,
-                                   const TextSink&) const;
-    int z_index;
-  };
-  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
   // Draw a rect's edges clamped to the tile (die/core/region outlines).
   void outlineRectInTile(std::vector<unsigned char>& image,
                          const odb::Rect& r,
@@ -1260,29 +1295,39 @@ class TileGenerator
                                  int dim,
                                  int stroke);
   // The instance's name, centred in its bbox and elided to fit, when the bbox
-  // is big enough to carry it.  Drawn on the _inst_labels layer, above every
-  // tech layer, as Qt paints drawInstanceNames after all of drawLayer.
+  // is big enough to carry it.
   static void drawInstanceName(const TextSink& emit,
                                odb::dbInst* inst,
                                const TileFrame& frame,
                                int dim,
                                const GlyphCache::FontSize& inst_font);
-  // The pin names of `inst`: one per pin, on its first box that sits on a
-  // shown layer and is big enough -- Qt's drawITermLabels rule.
+  // The pin names of `inst`, a master with `labels`: one per pin, on its first
+  // box that sits on a shown layer and can carry the name (Qt's
+  // drawITermLabels).
   static void drawItermLabels(const TextSink& emit,
                               odb::dbInst* inst,
+                              const std::vector<PinLabel>& labels,
                               const TileFrame& frame,
                               int dim,
                               const GlyphCache::FontSize& font,
                               const TileVisibility& vis);
-  // One pin name centred in `box`, turned 90° when a tall box cannot hold it
-  // level.
-  static void drawItermLabel(const TextSink& emit,
-                             const odb::Rect& box,
-                             const std::string& name,
-                             const TileFrame& frame,
-                             int dim,
-                             const GlyphCache::FontSize& font);
+  // `text` centred in `box` by Qt's drawTextInBBox rule: turned when a tall box
+  // cannot hold it level, elided to fit, outlined when `ring` > 0.  False when
+  // the box is too small for it.
+  static bool drawTextInBox(const TextSink& emit,
+                            const TileFrame& frame,
+                            int dim,
+                            const odb::Rect& box,
+                            const std::string& text,
+                            const GlyphCache::FontSize& font,
+                            int ring);
+  // `name`, whose width is `full_w`, elided from the left to fit `avail` px,
+  // down to "..." or nothing; `text_w` gets the result's width.
+  static std::string elideLeft(const std::string& name,
+                               int full_w,
+                               int avail,
+                               const GlyphCache::FontSize& font,
+                               int& text_w);
   mutable std::mutex heatmap_mutex_;
   mutable std::map<std::string, std::shared_ptr<web::HeatMapDataSource>>
       heatmaps_;
