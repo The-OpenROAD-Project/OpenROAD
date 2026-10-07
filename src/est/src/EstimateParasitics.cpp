@@ -21,6 +21,7 @@
 #include "AbstractSteinerRenderer.h"
 #include "MakeWireParasitics.h"
 #include "OdbCallBack.h"
+#include "StaParasiticsEntries.h"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -160,6 +161,7 @@ void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
   if (db_net == nullptr || route.empty()) {
     return;
   }
+  makeParasiticsEntries(db_network_->dbToSta(db_net));
   estimateGlobalRouteParasitics(db_net, route);
   // Annotating parasitics alone leaves stale cached delays in the timer.
   sta_->delaysInvalidFromFanin(db_network_->dbToSta(db_net));
@@ -653,6 +655,7 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin)
 void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
                                              const sta::Net* net)
 {
+  makeParasiticsEntries(net);
   // Sufficient to check for parasitic for one corner because
   // they are all made at the same time.
   const Scene* corner = sta_->scenes().front();
@@ -686,6 +689,7 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
   for (Scene* scene : scenes_) {
     Parasitics* parasitics = sta_->makeConcreteParasitics(scene->name(), "");
     scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
+    est::makeParasiticsEntries(parasitics);
   }
 
   auto& routes = global_router_->getRoutes();
@@ -715,6 +719,7 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
 
 void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 {
+  makeParasiticsEntries(db_network_->dbToSta(db_net));
   MakeWireParasitics builder(
       logger_, this, sta_, block_->getTech(), block_, global_router_);
   auto& routes = global_router_->getRoutes();
@@ -735,6 +740,7 @@ void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
     return;
   }
   initBlock();
+  makeParasiticsEntries(db_network_->dbToSta(net));
   MakeWireParasitics builder(
       logger_, this, sta_, block_->getTech(), block_, global_router_);
 
@@ -768,6 +774,7 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
     for (Scene* scene : scenes_) {
       Parasitics* parasitics = sta_->makeConcreteParasitics(scene->name(), "");
       scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
+      est::makeParasiticsEntries(parasitics);
     }
 
     sta::LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
@@ -829,6 +836,7 @@ void EstimateParasitics::estimateWireParasitic(const sta::Net* net,
 {
   PinSet* drivers = network_->drivers(net);
   if (drivers && !drivers->empty()) {
+    makeParasiticsEntries(net);
     const Pin* drvr_pin = *drivers->begin();
     estimateWireParasitic(drvr_pin, net, spef_writer);
   }
@@ -863,6 +871,7 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
                                            const Scene* corner)
 {
   sta::Parasitics* parasitics = corner->parasitics(max_);
+  est::makeParasiticsEntry(parasitics, drvr_pin);
   sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
   sta::ParasiticNode* n1
       = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
@@ -1354,6 +1363,19 @@ bool EstimateParasitics::isPad(const sta::Instance* inst) const
   return false;
 }
 
+void EstimateParasitics::makeParasiticsEntries(const sta::Net* net)
+{
+  PinSet* drivers = network_->drivers(net);
+  if (drivers == nullptr) {
+    return;
+  }
+  for (const sta::Scene* scene : sta_->scenes()) {
+    for (const sta::Pin* drvr_pin : *drivers) {
+      est::makeParasiticsEntry(scene->parasitics(max_), drvr_pin);
+    }
+  }
+}
+
 bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
 {
   // A pin can be skipped when its parasitics never affect timing in any mode.
@@ -1485,11 +1507,12 @@ void EstimateParasitics::eraseParasitics(const sta::Net* net)
   //
   // deleteParasiticNetwork() and not deleteParasitics(): the latter resolves
   // drivers(net), which by now has no driver and would cache an empty entry
-  // keyed on a dbNet about to be freed.
+  // keyed on a dbNet about to be freed. A net with no entry has nothing to
+  // delete, and OpenSTA's deleteParasiticNetwork needs the entry to exist.
   for (Scene* scene : scenes_) {
     for (const sta::MinMax* mm : sta::MinMax::range()) {
       Parasitics* parasitics = scene->parasitics(mm);
-      if (parasitics) {
+      if (parasitics && parasitics->findParasiticNetwork(net)) {
         parasitics->deleteParasiticNetwork(net);
       }
     }

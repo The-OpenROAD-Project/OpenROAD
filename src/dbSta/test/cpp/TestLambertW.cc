@@ -67,7 +67,15 @@ TEST_F(TestLambertW, ValidateRandomPImodels)
   std::uniform_real_distribution<float> dis_c1(1e-15f, 50e-15f);
   std::uniform_real_distribution<float> dis_slew(0.01e-9f, 0.5e-9f);
 
-  const Net* net = db_network_->net(drvr_pin);
+  // The net the parasitics store keys drvr_pin's network by.
+  const Net* net = db_network_->highestConnectedNet(db_network_->net(drvr_pin));
+  // OpenSTA's lock-free parasitics store needs an entry for the driver
+  // before a network is made; older OpenSTA has no such call.
+  [&]<typename P>(P* p) {
+    if constexpr (requires { p->ensureParasitics(drvr_pin); }) {
+      p->ensureParasitics(drvr_pin);
+    }
+  }(parasitics);
   ASSERT_NE(net, nullptr);
 
   static constexpr int kNumSamples = 10000;

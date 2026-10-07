@@ -35,6 +35,7 @@ cc_library(
         "src/AbstractSteinerRenderer.h",
         "src/MakeWireParasitics.h",
         "src/OdbCallBack.h",
+        "src/StaParasiticsEntries.h",
     ],
     copts = [
         "-fopenmp",
