@@ -119,6 +119,7 @@ regression_rule_test = rule(
             doc = "The OpenROAD executable.",
             executable = True,
             cfg = "target",
+            mandatory = True,
         ),
         "regression_test": attr.label(
             doc = "The regression test script.",
