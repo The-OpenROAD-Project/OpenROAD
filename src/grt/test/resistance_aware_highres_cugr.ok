@@ -41,7 +41,7 @@ Stage 1: Pattern routing.
 Stage 2: Resistance-aware re-route of critical nets.
 Routing statistics
 Wire length:           40613
-Total via count:       1807
+Total via count:       1809
 Total congestion:      0.00
 Min resource:          1.40
 Bottleneck:            (5, 0, 0)
@@ -49,13 +49,13 @@ Bottleneck:            (5, 0, 0)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
-met1      H     21443.48       797.00       135.25       932.25       4.35
-met2      V     17500.00       984.00        82.85      1066.85       6.10
-met3      H     11368.00       251.00        18.34       269.34       2.37
-met4      V      8736.00        47.00         0.78        47.78       0.55
+met1      H     21443.48       810.00        98.10       908.10       4.23
+met2      V     17500.00       985.00        75.93      1060.93       6.06
+met3      H     11368.00       238.00        17.59       255.59       2.25
+met4      V      8736.00        46.00         0.78        46.78       0.54
 met5      H      2520.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           61567.48      2079.00       237.22      2316.22       3.76
+Total           61567.48      2079.00       192.39      2271.39       3.69
 [INFO GRT-0018] Total wirelength: 20995 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.

@@ -171,6 +171,16 @@ class GridGraph
 
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
+  // Track length the pad of via `via_layer_index` (between that layer and
+  // the next) occupies on layer `l`, which must be one of the two.
+  double viaPadLength(int via_layer_index, int l) const;
+  // Congestion cost of one via pad of `pad_length` on `layer`'s flanking
+  // edges at `loc`, with the layer's NDR factor from `net_costs`.
+  CostT getPadCost(int layer,
+                   PointT loc,
+                   double pad_length,
+                   const std::vector<double>& net_costs) const;
+
   // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
   // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
   CostT getWireResistanceCost(int layer_index,
@@ -380,10 +390,6 @@ class GridGraph
                   PointT lower,
                   bool rip_up = false,
                   double net_factor = 1.0);
-  void commitVia(int layer_index,
-                 PointT loc,
-                 bool rip_up = false,
-                 const std::vector<double>& net_costs = {});
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {},
@@ -407,6 +413,16 @@ class GridGraph
                                PointT loc,
                                const std::vector<double>& net_costs,
                                F&& fn) const;
+  // Enumerates the flanking edges a via stack spanning layers [low, high] at
+  // `loc` deposits demand on: one pad per layer, the larger of the two
+  // overlapping pads on intermediate layers.
+  // fn(l, edge_lower_point, demand, layer_factor).
+  template <typename F>
+  void forEachStackFlankEdgeImpl(int low,
+                                 int high,
+                                 PointT loc,
+                                 const std::vector<double>& net_costs,
+                                 F&& fn) const;
   template <typename F>
   void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 

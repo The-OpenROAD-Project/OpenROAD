@@ -298,10 +298,30 @@ CapacityT GridGraph::viaDemand(const int layer_index,
                                const int edge_sum) const
 {
   // Spread the layer's precomputed via demand length over its two edges.
-  const double via_num = (l == layer_index)
-                             ? design_->getViaDemandLengthLower(layer_index)
-                             : design_->getViaDemandLengthUpper(layer_index);
+  const double via_num = viaPadLength(layer_index, l);
   return edge_sum > 0 ? (CapacityT) via_num / edge_sum : (CapacityT) 0;
+}
+
+double GridGraph::viaPadLength(const int via_layer_index, const int l) const
+{
+  return (l == via_layer_index)
+             ? design_->getViaDemandLengthLower(via_layer_index)
+             : design_->getViaDemandLengthUpper(via_layer_index);
+}
+
+CostT GridGraph::getPadCost(const int layer,
+                            const PointT loc,
+                            const double pad_length,
+                            const std::vector<double>& net_costs) const
+{
+  const double layer_factor
+      = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
+  CostT cost = 0;
+  forEachFlankEdge(layer, loc, [&](PointT edge_loc, int edge_sum) {
+    cost += getWireCost(
+        layer, edge_loc, (CapacityT) pad_length / edge_sum, layer_factor);
+  });
+  return cost;
 }
 
 void GridGraph::computeCongestionInformation()
@@ -895,6 +915,33 @@ void GridGraph::forEachViaFlankEdge(
 }
 
 template <typename F>
+void GridGraph::forEachStackFlankEdgeImpl(const int low,
+                                          const int high,
+                                          const PointT loc,
+                                          const std::vector<double>& net_costs,
+                                          F&& fn) const
+{
+  // Stacked vias share one landing pad on each intermediate layer: the
+  // upper pad of the via below and the lower pad of the via above overlap.
+  // Charge each layer once, with the larger of the two.
+  for (int l = low; l <= high && l < num_layers_; l++) {
+    double pad_length;
+    if (l == low) {
+      pad_length = viaPadLength(low, low);
+    } else if (l == high) {
+      pad_length = viaPadLength(high - 1, high);
+    } else {
+      pad_length = std::max(viaPadLength(l - 1, l), viaPadLength(l, l));
+    }
+    const double layer_factor
+        = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
+    forEachFlankEdge(l, loc, [&](PointT edge_loc, int edge_sum) {
+      fn(l, edge_loc, (CapacityT) pad_length / edge_sum, layer_factor);
+    });
+  }
+}
+
+template <typename F>
 void GridGraph::forEachWireEdgeImpl(const int layer_index,
                                     const PointT u,
                                     const PointT v,
@@ -916,32 +963,6 @@ void GridGraph::forEachWireEdge(const int layer_index,
                                 const std::function<void(PointT)>& fn) const
 {
   forEachWireEdgeImpl(layer_index, u, v, fn);
-}
-
-void GridGraph::commitVia(const int layer_index,
-                          const PointT loc,
-                          const bool rip_up,
-                          const std::vector<double>& net_costs)
-{
-  if (layer_index + 1 >= num_layers_) {
-    logger_->error(utl::GRT,
-                   1251,
-                   "Via layer index {} exceeds number of layers {}.",
-                   layer_index,
-                   num_layers_);
-  }
-  forEachViaFlankEdgeImpl(
-      layer_index,
-      loc,
-      net_costs,
-      [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
-        commit(l, edge_loc, (rip_up ? -demand : demand), layer_factor);
-      });
-  if (rip_up) {
-    total_num_vias_ -= 1;
-  } else {
-    total_num_vias_ += 1;
-  }
 }
 
 void GridGraph::commitWrongWayWire(const int layer_index,
@@ -1048,14 +1069,24 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
           });
         }
       } else {
-        const int max_layer_index
-            = std::max(node->getLayerIdx(), child->getLayerIdx());
-        for (int layer_idx
-             = std::min(node->getLayerIdx(), child->getLayerIdx());
-             layer_idx < max_layer_index;
-             layer_idx++) {
-          commitVia(layer_idx, {node->x(), node->y()}, rip_up, net_costs);
+        const auto [low, high]
+            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+        if (high >= num_layers_) {
+          logger_->error(utl::GRT,
+                         1251,
+                         "Via layer index {} exceeds number of layers {}.",
+                         high - 1,
+                         num_layers_);
         }
+        forEachStackFlankEdgeImpl(
+            low,
+            high,
+            {node->x(), node->y()},
+            net_costs,
+            [&](int l, PointT edge_loc, CapacityT demand, double factor) {
+              commit(l, edge_loc, (rip_up ? -demand : demand), factor);
+            });
+        total_num_vias_ += (rip_up ? -1 : 1) * (high - low);
       }
     }
   });
@@ -1075,16 +1106,15 @@ void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
       }
       const auto [min_layer, max_layer]
           = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
-      for (int layer_idx = min_layer; layer_idx < max_layer; layer_idx++) {
-        forEachViaFlankEdgeImpl(
-            layer_idx,
-            {node->x(), node->y()},
-            net_costs,
-            [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
-              via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
-                  += demand * layer_factor;
-            });
-      }
+      forEachStackFlankEdgeImpl(
+          min_layer,
+          max_layer,
+          {node->x(), node->y()},
+          net_costs,
+          [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
+            via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
+                += demand * layer_factor;
+          });
     }
   });
 }
