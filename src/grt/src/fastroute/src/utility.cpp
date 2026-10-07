@@ -519,10 +519,18 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
 // Optimize performance
 void FastRouteCore::preProcessTechLayers()
 {
+  dbu_per_micron_
+      = db_->getChip()->getBlock()->getTech()->getDbUnitsPerMicron();
+  layer_res_per_micron_.assign(num_layers_, 0.0f);
+
   for (int layer = 0; layer < num_layers_; layer++) {
     odb::dbTech* tech = db_->getTech();
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(layer + 1);
     db_layers_.emplace_back(db_layer);
+
+    // Keep layer_width as float: other rounding perturbs getWireCost() results
+    const float layer_width = dbuToMicrons(db_layer->getWidth());
+    layer_res_per_micron_[layer] = db_layer->getResistance() / layer_width;
 
     // Via
     db_layer = tech->findRoutingLayer(layer + 1)->getUpperLayer();
@@ -543,25 +551,25 @@ float FastRouteCore::getWireResistance(const int layer,
                                        const int length,
                                        FrNet* net)
 {
-  odb::dbTechLayer* db_layer = getTechLayer(layer, false);
+  if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
+    return BIG_INT;
+  }
 
-  int width = db_layer->getWidth();
-  double resistance = db_layer->getResistance();
+  // Default-width value cached by preProcessTechLayers()
+  float res_ohm_per_micron = layer_res_per_micron_[layer];
 
   // If net has NDR, get the correct width value
   odb::dbTechNonDefaultRule* ndr = net->getDbNet()->getNonDefaultRule();
   if (ndr != nullptr) {
+    odb::dbTechLayer* db_layer = getTechLayer(layer, false);
     odb::dbTechLayerRule* layerRule = ndr->getLayerRule(db_layer);
-    width = layerRule->getWidth();
+    if (layerRule != nullptr) {
+      const float layer_width = dbuToMicrons(layerRule->getWidth());
+      res_ohm_per_micron = db_layer->getResistance() / layer_width;
+    }
   }
 
-  const float layer_width = dbuToMicrons(width);
-  const float res_ohm_per_micron = resistance / layer_width;
-  float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
-
-  if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
-    return BIG_INT;
-  }
+  const float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
 
   return final_resistance;
 }
@@ -2808,7 +2816,7 @@ odb::Rect FastRouteCore::globalRoutingToBox(const GSegment& route)
 
 double FastRouteCore::dbuToMicrons(const int dbu)
 {
-  return db_->getChip()->getBlock()->dbuToMicrons(dbu);
+  return dbu / dbu_per_micron_;
 }
 
 void FastRouteCore::saveCongestion(const int iter)
