@@ -212,10 +212,10 @@ get_default_min_distance()
 }
 
 bool
-has_default_hor_and_ver_layers()
+has_default_layers(bool horizontal)
 {
   const ppl::PinPlacementSettings settings = getIOPlacer()->getSettings();
-  return !settings.hor_layers.empty() && !settings.ver_layers.empty();
+  return !(horizontal ? settings.hor_layers : settings.ver_layers).empty();
 }
 
 void set_pin_placement_file(const char* file_name)
