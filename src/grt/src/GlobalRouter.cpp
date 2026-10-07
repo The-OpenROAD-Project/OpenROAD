@@ -478,10 +478,6 @@ void GlobalRouter::rerouteDirtyNets()
     return;
   }
   updateDirtyRoutes(/*save_guides=*/false);
-  // The incremental path only refreshes ODB's congestion map on overflow, so
-  // without this a caller asking what its change did reads back the routing
-  // from before the reroute.  Rewrites the whole grid; if that ever matters,
-  // the answer is a narrower update, not stale data.
   updateDbCongestion();
 }
 

@@ -14,8 +14,8 @@ namespace grt {
 class GlobalRouter;
 
 // Shared routing congestion service owned by GlobalRouter, for consumers
-// choosing where to put something (a buffer, a clone, a decap) without making
-// routing worse.
+// choosing where to put something (e.g., a buffer) without making routing
+// worse.
 //
 // Answers from the post-GRT per-GCell usage/capacity map in ODB when it
 // exists, otherwise from RUDY's pre-GRT estimate.  Callers get the best
@@ -74,8 +74,7 @@ class RoutingCongestion
   // Which signal the last/next query uses.  Builds the map if needed.
   Source source();
 
-  // Drop the cached map; the next query rebuilds it.  Called by GlobalRouter
-  // when routing changes.
+  // Drop the cached map; the next query rebuilds it.
   void invalidate();
 
   // Tile size of the cached map in DBU, or 0 when there is no map.
