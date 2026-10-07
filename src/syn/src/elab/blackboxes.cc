@@ -2,13 +2,13 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 // Import Liberty cell definitions as blackbox modules into a slang
 // Compilation so that standard cell instantiations are recognized
 // during elaboration.
 //
-// The approach mirrors slang-elab's own blackboxes.cc:
+// The approach mirrors sv-elab's own blackboxes.cc:
 // We construct slang syntax trees for each Liberty cell, with port
 // declarations matching the Liberty port names, widths, and directions.
 //

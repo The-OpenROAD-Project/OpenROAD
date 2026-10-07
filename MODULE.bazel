@@ -478,7 +478,7 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 bazel_dep(name = "sv-elab", version = "2026-10-13")
 local_path_override(
     module_name = "sv-elab",
-    path = "third-party/slang-elab",
+    path = "third-party/sv-elab",
 )
 
 # --- GPU build (opt-in) ---

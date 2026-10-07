@@ -6,9 +6,9 @@ load("//test:regression.bzl", "message_srcs")
 
 package(features = ["layering_check"])
 
-# syn IR backend for slang-elab — full library with implementations.
+# syn IR backend for sv-elab — full library with implementations.
 #
-# The shared slang-elab frontend is pulled in as file lists (@sv-elab's
+# The shared sv-elab frontend is pulled in as file lists (@sv-elab's
 # common_srcs/frontend_hdrs) and compiled into this target together with the
 # backend. The frontend's sources include this package's ir.h/backend_builder.h
 # and this backend includes slang_frontend.h, so the two sides must share one

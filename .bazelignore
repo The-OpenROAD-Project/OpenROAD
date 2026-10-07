@@ -15,7 +15,7 @@ third-party/lemon/
 
 # Prevent //... from walking into sv-elab as its BUILD files expect
 # sv-elab is the root
-third-party/slang-elab/
+third-party/sv-elab/
 
 # Other things to ignore
 tmp/
