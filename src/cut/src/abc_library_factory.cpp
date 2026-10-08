@@ -609,7 +609,7 @@ void AbcLibrary::InitializeConstGates()
     for (int i = current_cell->n_inputs;
          i < current_cell->n_inputs + current_cell->n_outputs;
          i++) {
-      abc::SC_Pin* pin = abc::SC_CellPin(current_cell, 0);
+      abc::SC_Pin* pin = abc::SC_CellPin(current_cell, i);
       // In ABC land we store the right hand side of the truth
       // table in a bit vector sort of thing. Since the const
       // cell has less than 6 inputs its truth table should be
@@ -618,11 +618,11 @@ void AbcLibrary::InitializeConstGates()
       abc::word constant_1 = ~constant_0;
       abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
       if (truth_table == constant_0) {
-        const0_gates_.insert(current_cell->pName);
+        const0_gates_.insert({current_cell->pName, abc::SC_CellPinName(current_cell, i)});
       }
 
       if (truth_table == constant_1) {
-        const1_gates_.insert(current_cell->pName);
+        const1_gates_.insert({current_cell->pName, abc::SC_CellPinName(current_cell, i)});
       }
     }
   }
@@ -692,6 +692,27 @@ std::pair<abc::SC_Cell*, abc::SC_Pin*> AbcLibrary::ConstantOneCell()
   abc::word constant_1 = ~constant_0;
   const1_cell_ = FindConstantCell(abc_library_.get(), constant_1);
   return const1_cell_.value();
+}
+
+bool AbcLibrary::IsConst0Port(const std::string& cell_name, const std::string& port_name)
+{
+  if (!const_gates_initalized_) {
+    InitializeConstGates();
+  }
+  if (auto it = const0_gates_.find(cell_name); it != const0_gates_.end()) {
+    return it->second == port_name;
+  }
+  return false;
+}
+bool AbcLibrary::IsConst1Port(const std::string& cell_name, const std::string& port_name)
+{
+  if (!const_gates_initalized_) {
+    InitializeConstGates();
+  }
+  if (auto it = const1_gates_.find(cell_name); it != const1_gates_.end()) {
+    return it->second == port_name;
+  }
+  return false;
 }
 
 bool AbcLibrary::IsConst0Cell(const std::string& cell_name)
