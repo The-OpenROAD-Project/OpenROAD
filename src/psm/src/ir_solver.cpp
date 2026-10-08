@@ -417,6 +417,18 @@ std::vector<odb::Polygon> IRSolver::determineShortShapes(
       // intersect in a zero area rect and are not shorted
       continue;
     }
+    if (const odb::Polygon* polygon = shape->getPolygon()) {
+      // a shape with 45 degree edges does not fill its box
+      using boost::polygon::operators::operator&;
+      const odb::geom::BoostPolygonSet overlap_set
+          = odb::geom::toPolygonSet(*polygon) & rect;
+      std::vector<odb::Polygon> overlaps
+          = odb::geom::extractPolygons(overlap_set);
+      short_shapes.insert(short_shapes.end(),
+                          std::make_move_iterator(overlaps.begin()),
+                          std::make_move_iterator(overlaps.end()));
+      continue;
+    }
     short_shapes.emplace_back(check.intersect(rect));
   }
 
@@ -455,8 +467,13 @@ std::vector<odb::Polygon> IRSolver::determineShortShapes(
 
     // odb::Rect is a boost rectangle, so it intersects the set as-is rather
     // than being built into a polygon set of its own for every shape.
-    const odb::geom::BoostPolygonSet overlap_set
-        = check_polygon & shape->getShape();
+    odb::geom::BoostPolygonSet overlap_set;
+    if (const odb::Polygon* shape_polygon = shape->getPolygon()) {
+      // a shape with 45 degree edges does not fill its box
+      overlap_set = check_polygon & odb::geom::toPolygonSet(*shape_polygon);
+    } else {
+      overlap_set = check_polygon & shape->getShape();
+    }
     if (overlap_set.empty()) {
       continue;
     }

@@ -8,6 +8,7 @@ or_integration_tests(
     aes_test_multiple_bterms_skipped
     aes_test_vdd
     aes_test_vss
+    analyze_power_grid_45
     check_power_grid
     check_power_grid_backside
     check_power_grid_disconnected
@@ -19,6 +20,7 @@ or_integration_tests(
     check_power_grid_require_bterms_fail
     check_power_grid_require_bterms_pass
     check_power_grid_short
+    check_power_grid_short_45
     check_power_grid_short_iterms
     check_power_grid_short_obstructions
     corners

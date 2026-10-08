@@ -117,6 +117,12 @@ class IRNetwork
   void dumpNodes(const std::string& name = "nodes") const;
 
  private:
+  // Shapes with 45 degree edges, which the rectilinear (polygon_90) sets
+  // the network is built from cannot hold
+  using Polygon45 = boost::polygon::polygon_45_data<int>;
+  using Polygon45WithHoles = boost::polygon::polygon_45_with_holes_data<int>;
+  using Polygon45Set = boost::polygon::polygon_45_set_data<int>;
+
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
 
@@ -151,15 +157,28 @@ class IRNetwork
 
   std::set<Node*> getSharedShapeNodes() const;
 
+  // The shapes with 45 degree edges are added to shapes_45 instead of being
+  // returned with the others
   LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromSWire(
-      odb::dbSWire* wire);
+      odb::dbSWire* wire,
+      LayerMap<Polygon45Set>& shapes_45);
   LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromITerms(
-      std::vector<TerminalNode*>& terminals);
+      std::vector<TerminalNode*>& terminals,
+      LayerMap<Polygon45Set>& shapes_45);
   LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromBTerms(
       std::vector<TerminalNode*>& terminals);
   void processPolygonToRectangles(
       odb::dbTechLayer* layer,
       const odb::geom::BoostPolygon90WithHoles& polygon,
+      const TerminalTree& terminals,
+      std::vector<std::unique_ptr<Shape>>& new_shapes,
+      std::vector<std::unique_ptr<Node>>& new_nodes,
+      std::map<Shape*, std::set<Node*>>& terminal_connections);
+  // Slices a polygon with 45 degree edges into trapezoids, each of which
+  // becomes a shape
+  void processPolygonToTrapezoids(
+      odb::dbTechLayer* layer,
+      const Polygon45WithHoles& polygon,
       const TerminalTree& terminals,
       std::vector<std::unique_ptr<Shape>>& new_shapes,
       std::vector<std::unique_ptr<Node>>& new_nodes,

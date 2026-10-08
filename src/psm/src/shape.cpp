@@ -3,9 +3,12 @@
 
 #include "shape.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -22,6 +25,45 @@
 #include "odb/geom_boost.h"
 
 namespace psm {
+
+namespace {
+
+// The range of t over which pt + t * dir lies in the convex polygon, empty
+// (first above second) when the line misses it. odb polygons are clockwise
+// and close on their first point, so the inside of an edge is to its right.
+std::pair<double, double> clipLine(const std::vector<odb::Point>& points,
+                                   double pt_x,
+                                   double pt_y,
+                                   double dir_x,
+                                   double dir_y)
+{
+  double t_min = -std::numeric_limits<double>::infinity();
+  double t_max = std::numeric_limits<double>::infinity();
+  for (std::size_t i = 0; i + 1 < points.size(); i++) {
+    const double edge_x = points[i + 1].x() - points[i].x();
+    const double edge_y = points[i + 1].y() - points[i].y();
+    // the line is inside of the edge where offset + t * rate >= 0
+    const double offset
+        = edge_y * (pt_x - points[i].x()) - edge_x * (pt_y - points[i].y());
+    const double rate = edge_y * dir_x - edge_x * dir_y;
+    if (rate == 0) {
+      if (offset < 0) {
+        // runs alongside the edge, on the outside of it
+        return {1, 0};
+      }
+      continue;
+    }
+    const double t = -offset / rate;
+    if (rate > 0) {
+      t_min = std::max(t_min, t);
+    } else {
+      t_max = std::min(t_max, t);
+    }
+  }
+  return {t_min, t_max};
+}
+
+}  // namespace
 
 Shape::Shape(const odb::Rect& shape, odb::dbTechLayer* layer)
     : shape_(shape), layer_(layer)
@@ -55,23 +97,11 @@ Connections Shape::connectNodes(const IRNetwork::NodeTree& layer_nodes)
                std::back_inserter(ordered_neighbors));
 
     for (Node* other : ordered_neighbors) {
-      const int len_x
-          = std::abs(other->getPoint().getX() - node->getPoint().getX());
-      const int len_y
-          = std::abs(other->getPoint().getY() - node->getPoint().getY());
+      const ConnectionSize size
+          = getConnectionSize(node->getPoint(), other->getPoint());
 
-      int len;
-      int width;
-      if (len_x > len_y) {
-        len = len_x;
-        width = shape_.dy();
-      } else {
-        len = len_y;
-        width = shape_.dx();
-      }
-
-      shape_connections.push_back(
-          std::make_unique<LayerConnection>(node, other, len, width));
+      shape_connections.push_back(std::make_unique<LayerConnection>(
+          node, other, size.length, size.width));
     }
   }
 
@@ -111,7 +141,9 @@ std::vector<std::unique_ptr<Node>> Shape::createFillerNodes(
   const IRNetwork::NodeTree tree = getNodeTree(getNodes(layer_nodes));
 
   while (shape_.overlaps(start)) {
-    new_nodes.push_back(std::make_unique<Node>(start, layer_));
+    if (const auto pt = getFillerPoint(start, delta_x != 0)) {
+      new_nodes.push_back(std::make_unique<Node>(*pt, layer_));
+    }
 
     start.addX(delta_x);
     start.addY(delta_y);
@@ -122,9 +154,18 @@ std::vector<std::unique_ptr<Node>> Shape::createFillerNodes(
 
 Node::NodeSet Shape::getNodes(const IRNetwork::NodeTree& layer_nodes) const
 {
-  return Node::NodeSet(
-      layer_nodes.qbegin(boost::geometry::index::intersects(shape_)),
-      layer_nodes.qend());
+  // the bounding box of a PolygonShape holds nodes of the shapes next to it
+  // too
+  Node::NodeSet nodes;
+  for (auto itr
+       = layer_nodes.qbegin(boost::geometry::index::intersects(shape_));
+       itr != layer_nodes.qend();
+       itr++) {
+    if (contains((*itr)->getPoint())) {
+      nodes.insert(*itr);
+    }
+  }
+  return nodes;
 }
 
 IRNetwork::NodeTree Shape::getNodeTree(const Node::NodeSet& nodes) const
@@ -247,6 +288,91 @@ std::map<Node*, std::set<Node*>> Shape::mergeNodes(
     }
   }
   return node_cleanup;
+}
+
+///////////////////
+
+RectShape::RectShape(const odb::Rect& shape, odb::dbTechLayer* layer)
+    : Shape(shape, layer)
+{
+}
+
+bool RectShape::contains(const odb::Point& pt) const
+{
+  return getShape().intersects(pt);
+}
+
+Shape::ConnectionSize RectShape::getConnectionSize(const odb::Point& pt0,
+                                                   const odb::Point& pt1) const
+{
+  const int len_x = std::abs(pt1.getX() - pt0.getX());
+  const int len_y = std::abs(pt1.getY() - pt0.getY());
+
+  if (len_x > len_y) {
+    return {.length = len_x, .width = getShape().dy()};
+  }
+  return {.length = len_y, .width = getShape().dx()};
+}
+
+std::optional<odb::Point> RectShape::getFillerPoint(const odb::Point& pt,
+                                                    bool /* along_x */) const
+{
+  return pt;
+}
+
+///////////////////
+
+PolygonShape::PolygonShape(const odb::Polygon& shape, odb::dbTechLayer* layer)
+    : Shape(shape.getEnclosingRect(), layer), polygon_(shape)
+{
+}
+
+bool PolygonShape::contains(const odb::Point& pt) const
+{
+  return boost::geometry::covered_by(pt, polygon_.getPoints());
+}
+
+Shape::ConnectionSize PolygonShape::getConnectionSize(
+    const odb::Point& pt0,
+    const odb::Point& pt1) const
+{
+  const double dx = pt1.x() - pt0.x();
+  const double dy = pt1.y() - pt0.y();
+  const double length = std::hypot(dx, dy);
+  if (length == 0) {
+    // no direction to measure along or across
+    return {.length = 0, .width = getShape().dx()};
+  }
+
+  // the width is across the shape, square to the line between the points
+  // and through the middle of them
+  const auto [t_min, t_max] = clipLine(polygon_.getPoints(),
+                                       (pt0.x() + pt1.x()) / 2.0,
+                                       (pt0.y() + pt1.y()) / 2.0,
+                                       -dy / length,
+                                       dx / length);
+  return {.length = static_cast<int>(std::lround(length)),
+          .width = std::max(1, static_cast<int>(std::lround(t_max - t_min)))};
+}
+
+std::optional<odb::Point> PolygonShape::getFillerPoint(const odb::Point& pt,
+                                                       bool along_x) const
+{
+  // the middle of the line across the shape through pt
+  const auto [t_min, t_max] = clipLine(
+      polygon_.getPoints(), pt.x(), pt.y(), along_x ? 0 : 1, along_x ? 1 : 0);
+  if (t_min > t_max) {
+    return std::nullopt;
+  }
+
+  const int middle = static_cast<int>(std::lround((t_min + t_max) / 2));
+  odb::Point filler = pt;
+  if (along_x) {
+    filler.addY(middle);
+  } else {
+    filler.addX(middle);
+  }
+  return filler;
 }
 
 }  // namespace psm
