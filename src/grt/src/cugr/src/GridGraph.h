@@ -391,7 +391,8 @@ class GridGraph
   template <typename F>
   void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
   // Enumerates the flanking edges the stack pad on `layer` deposits demand
-  // on: fn(edge_lower_point, demand, layer_factor).
+  // on: fn(edge_lower_point, demand, layer_factor). No callbacks when via
+  // demand is disabled; via counts/costs stay separate.
   template <typename F>
   void forEachPadFlankEdge(int layer,
                            int low,

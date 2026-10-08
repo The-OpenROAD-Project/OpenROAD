@@ -893,6 +893,10 @@ void GridGraph::forEachPadFlankEdge(const int layer,
                                     const std::vector<double>& net_costs,
                                     F&& fn) const
 {
+  // Use the same model for via costs, commit/rip-up, and demand reporting.
+  if (!constants_.via_demand_enabled) {
+    return;
+  }
   // Spread the pad over the layer's two flanking edges, with the per-layer
   // NDR factor for `layer`, not a net-wide value.
   const double pad_length = stackPadLength(layer, low, high);

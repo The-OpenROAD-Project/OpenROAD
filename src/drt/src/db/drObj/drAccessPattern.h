@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "db/drObj/drBlockObject.h"
-#include "db/infra/frPoint.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "odb/geom.h"

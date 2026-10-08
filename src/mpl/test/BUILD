@@ -48,11 +48,17 @@ COMPULSORY_TESTS = [
     "orientation_improve3",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "rerun1",
     "unfixed_cells_dont_fit_in_core",
     "write_macro_placement",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
+
+# Self-checking: the script reports pass/fail, no golden log.
+PASSFAIL_TESTS = [
+    "rerun1",
+]
 
 filegroup(
     name = "regression_resources",
@@ -244,6 +250,10 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
+                "rerun1": [
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
@@ -261,6 +271,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],

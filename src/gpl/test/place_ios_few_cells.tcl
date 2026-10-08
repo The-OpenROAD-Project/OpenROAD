@@ -61,7 +61,7 @@ proc make_design { core_um { num_cells 8 } { num_unconnected 24 } } {
 for { set core_um 4 } { $core_um <= 14 } { incr core_um } {
   set block [make_design $core_um]
 
-  set failed [catch { global_placement -place_ios } msg]
+  set failed [catch { global_placement -place_ios -skip_initial_place } msg]
   check "$core_um um core: global_placement -place_ios completes" \
     { set failed } 0
   if { $failed } {
