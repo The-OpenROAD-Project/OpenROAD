@@ -180,7 +180,7 @@ void Straps::setExtend(ExtensionMode mode)
 {
   extend_mode_ = mode;
 
-  if (mode == kPadRing && !getGrid()->getPadRingInnerArea()) {
+  if (mode == kPadRing && !getDomain()->getPadRingInnerArea()) {
     getLogger()->error(utl::PDN,
                        242,
                        "Unable to find any placed pads to extend straps on {} "
