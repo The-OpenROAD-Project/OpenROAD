@@ -360,10 +360,8 @@ void ClusteringEngine::setBaseThresholds()
   if (tree_->base_max_macro <= 0 || tree_->base_min_macro <= 0
       || tree_->base_max_std_cell <= 0 || tree_->base_min_std_cell <= 0) {
     odb::PtrSet<odb::dbMaster> masters;
-    for (odb::dbInst* inst : block_->getInsts()) {
-      if (inst->isBlock()) {
-        masters.insert(inst->getMaster());
-      }
+    for (const auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+      masters.insert(inst->getMaster());
     }
 
     if (masters.size() < kMaxNumOfMasters) {
