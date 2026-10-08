@@ -134,6 +134,25 @@ class WebViewerHook : public web::GuiBackend
   using DrainLogsFn = std::function<void()>;
   void setDrainLogsFn(DrainLogsFn fn);
 
+  // Optional hooks around pause(), all run on the pausing thread.
+  // WebServer::serveOnFirstPause uses them to open the network at the first
+  // debug pause of a startup script and to lend the paused script's Tcl lock
+  // to the browser.
+  struct PauseHooks
+  {
+    // Runs first; returning false skips the pause.
+    std::function<bool()> enter;
+    // Runs as pause() returns, iff enter returned true.
+    std::function<void()> leave;
+    // Runs before leave when requestExit() ended the pause.
+    std::function<void()> exit;
+  };
+  void setPauseHooks(PauseHooks hooks);
+
+  // End the current pause and run PauseHooks::exit on the paused thread.
+  // Returns false, doing nothing, when not paused or there is no exit hook.
+  bool requestExit();
+
   // web::Chart factory.  The WebServer installs this on web::Gui via
   // setChartFactory.  The hook retains ownership of every chart it
   // creates so clients can query them later.
@@ -249,6 +268,8 @@ class WebViewerHook : public web::GuiBackend
   std::string display_state_json_;
 
   DrainLogsFn drain_logs_;
+  PauseHooks pause_hooks_;
+  bool exit_requested_ = false;  // guarded by pause_mutex_
 
   mutable std::mutex pause_mutex_;
   std::condition_variable pause_cv_;

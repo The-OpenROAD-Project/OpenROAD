@@ -2066,13 +2066,13 @@ body {
     text-align: center;
 }
 
-/* Debug-graphics Continue button (fixed top-right, hidden until paused) */
+/* Debug-graphics Continue button (right end of the menu bar, hidden until
+   paused).  Sized to fit the 24px menu bar. */
 .debug-continue-btn {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 10000;
-    padding: 8px 16px;
+    margin-left: auto;
+    margin-right: 6px;
+    padding: 1px 14px;
+    line-height: 18px;
     background: var(--sem-warn);
     color: var(--sem-warn-ink);
     border: 1px solid var(--sem-warn-ink);

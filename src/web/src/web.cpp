@@ -283,9 +283,33 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
 
 }  // namespace
 
+// Holds the script gate (see ScriptGate) for its lifetime; check entered().
+class ScriptGateScope
+{
+ public:
+  explicit ScriptGateScope(ScriptGate& gate)
+      : gate_(gate), entered_(gate.enter())
+  {
+  }
+  ~ScriptGateScope()
+  {
+    if (entered_) {
+      gate_.leave();
+    }
+  }
+  ScriptGateScope(const ScriptGateScope&) = delete;
+  ScriptGateScope& operator=(const ScriptGateScope&) = delete;
+  bool entered() const { return entered_; }
+
+ private:
+  ScriptGate& gate_;
+  const bool entered_;
+};
+
 static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
-    const std::shared_ptr<TileGenerator>& generator)
+    const std::shared_ptr<TileGenerator>& generator,
+    ScriptGate& script_gate)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -300,7 +324,13 @@ static http::response<http::string_body> handle_request(
     const std::string file_path = assetPathFromTarget(target);
 
     if (file_path == "/download/image") {
-      handleImageDownload(generator, target, res);
+      const ScriptGateScope gate(script_gate);
+      if (gate.entered()) {
+        handleImageDownload(generator, target, res);
+      } else {
+        res.result(http::status::service_unavailable);
+        res.body() = "server is shutting down";
+      }
     } else {
       const auto* asset = findEmbeddedAsset(file_path);
       if (asset) {
@@ -364,6 +394,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
 
   // Background search index initialization
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   std::thread init_thread_;
 
   // Debug-graphics hook (nullable).  When set, this session registers a
@@ -639,6 +670,7 @@ WebSocketSession::WebSocketSession(
       edit_handler_(generator, tcl_eval),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator)),
+      tcl_eval_(std::move(tcl_eval)),
       viewer_hook_(viewer_hook),
       max_in_flight_(max_in_flight)
 {
@@ -999,6 +1031,18 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Flush any log output that accumulated before this client
     // connected (splash screen, script output, etc.).
     viewer_hook_->drainLogs();
+
+    // A client joining mid-pause (typically the browser a debug pause just
+    // opened) missed the debug_paused broadcast; replay it so the client
+    // shows Continue and fetches the debug charts.
+    if (viewer_hook_->isPaused()) {
+      WebSocketResponse paused;
+      paused.id = 0;
+      paused.type = WebSocketResponse::kJson;
+      const std::string json = R"({"type":"debug_paused"})";
+      paused.payload.assign(json.begin(), json.end());
+      queue_response(paused);
+    }
   }
 
   // Tell the client how many requests to keep in flight at once. This bounds
@@ -1019,7 +1063,13 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // Build search indices in the background; tiles render without shapes
   // until ready, then a "refresh" push notification triggers a redraw.
   init_thread_ = std::thread([self = shared_from_this()]() {
-    self->generator_->eagerInit();
+    {
+      const ScriptGateScope gate(self->tcl_eval_->script_gate);
+      if (!gate.entered()) {
+        return;
+      }
+      self->generator_->eagerInit();
+    }
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
@@ -1127,6 +1177,10 @@ void WebSocketSession::on_read(beast::error_code ec)
           [self = std::move(self),
            req = std::move(req),
            handle = std::move(handle)]() {
+            const ScriptGateScope gate(self->tcl_eval_->script_gate);
+            if (!gate.entered()) {
+              return;  // the process is exiting
+            }
             self->queue_response(invoke_handler(handle, req, self->state_));
           });
     }
@@ -1231,11 +1285,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   utl::Logger* logger_;
 
  public:
   HttpSession(Tcp::socket&& socket,
               std::shared_ptr<TileGenerator> generator,
+              std::shared_ptr<TclEvaluator> tcl_eval,
               utl::Logger* logger);
 
   void run() { do_read(); }
@@ -1253,9 +1309,11 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 
 HttpSession::HttpSession(Tcp::socket&& socket,
                          std::shared_ptr<TileGenerator> generator,
+                         std::shared_ptr<TclEvaluator> tcl_eval,
                          utl::Logger* logger)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
+      tcl_eval_(std::move(tcl_eval)),
       logger_(logger)
 {
 }
@@ -1293,7 +1351,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), generator_));
+      handle_request(std::move(req_), generator_, tcl_eval_->script_gate));
   do_write();
 }
 
@@ -1458,7 +1516,7 @@ void DetectSession::on_read(beast::error_code ec)
   } else {
     // Regular HTTP - hand off to session with already-read request
     auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, logger_);
+        stream_.release_socket(), generator_, tcl_eval_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1592,7 +1650,12 @@ WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
                      Tcl_Interp* interp)
-    : db_(db), sta_(sta), logger_(logger), interp_(interp), num_threads_(1)
+    : db_(db),
+      sta_(sta),
+      logger_(logger),
+      interp_(interp),
+      num_threads_(1),
+      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger))
 {
 }
 

@@ -194,6 +194,21 @@ void WebViewerHook::redraw()
 
 void WebViewerHook::pause(int timeout_ms)
 {
+  if (pause_hooks_.enter && !pause_hooks_.enter()) {
+    return;
+  }
+  // Declared before `lock` so leave runs after the lock is released.
+  struct LeaveGuard
+  {
+    const std::function<void()>& leave;
+    ~LeaveGuard()
+    {
+      if (leave) {
+        leave();
+      }
+    }
+  } leave_guard{pause_hooks_.leave};
+
   std::unique_lock<std::mutex> lock(pause_mutex_);
   in_pause_ = true;
 
@@ -258,6 +273,7 @@ void WebViewerHook::pause(int timeout_ms)
 
   paused_ = false;
   released_ = false;
+  const bool exit_requested = std::exchange(exit_requested_, false);
   lock.unlock();
 
   sessions_.broadcast(R"({"type":"debug_resumed"})");
@@ -265,6 +281,11 @@ void WebViewerHook::pause(int timeout_ms)
   lock.lock();
   in_pause_ = false;
   done_cv_.notify_all();
+  lock.unlock();
+
+  if (exit_requested) {
+    pause_hooks_.exit();
+  }
 }
 
 bool WebViewerHook::isPaused() const
@@ -318,6 +339,25 @@ void WebViewerHook::drainLogs()
 void WebViewerHook::setDrainLogsFn(DrainLogsFn fn)
 {
   drain_logs_ = std::move(fn);
+}
+
+void WebViewerHook::setPauseHooks(PauseHooks hooks)
+{
+  pause_hooks_ = std::move(hooks);
+}
+
+bool WebViewerHook::requestExit()
+{
+  {
+    std::lock_guard<std::mutex> lock(pause_mutex_);
+    if (!paused_ || !pause_hooks_.exit) {
+      return false;
+    }
+    exit_requested_ = true;
+    released_ = true;
+  }
+  pause_cv_.notify_all();
+  return true;
 }
 
 void WebViewerHook::continueExecution()

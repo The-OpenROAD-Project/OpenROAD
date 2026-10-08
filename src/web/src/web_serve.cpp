@@ -135,11 +135,11 @@ void WebServer::initLogger()
 
   // Create the hook object now because WebLogSink holds a raw pointer to it
   // (for sessions()).  Do NOT install it as the Gui headless viewer here:
-  // that would make web::Gui::enabled() true during startup scripts, and
   // web::pause() would then block kClientConnectTimeoutSeconds (~30s)
   // waiting for a web client that cannot connect until serve() opens the
-  // network.  The headless viewer and chart factory are installed in
-  // serve() instead.
+  // network.  The headless viewer and chart factory are installed by
+  // serve(), or by serveOnFirstPause(), which also opens the network on
+  // the first pause.
   if (!viewer_hook_) {
     viewer_hook_ = std::make_unique<WebViewerHook>();
   }
@@ -151,6 +151,93 @@ void WebServer::initLogger()
       [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
 
   logger_initialized_ = true;
+}
+
+void WebServer::installViewer()
+{
+  web::Gui::get()->setHeadlessViewer(viewer_hook_.get());
+  web::Gui::get()->setChartFactory(
+      [hook = viewer_hook_.get()](const std::string& name,
+                                  const std::string& x_label,
+                                  const std::vector<std::string>& y_labels) {
+        return hook->createChart(name, x_label, y_labels);
+      });
+}
+
+bool WebServer::onScriptThread() const
+{
+  return std::this_thread::get_id() == script_thread_;
+}
+
+void WebServer::serveOnFirstPause(int port, const std::string& bind_address)
+{
+  initLogger();
+  installViewer();
+
+  script_thread_ = std::this_thread::get_id();
+  tcl_eval_->script_gate.close();
+  script_holds_gate_ = true;
+
+  WebViewerHook::PauseHooks hooks;
+  hooks.enter = [this, port, bind_address]() {
+    if (!onScriptThread() || !script_holds_gate_) {
+      // Only the script thread opens the network.  Elsewhere (e.g. an OpenMP
+      // worker of the running command) pause only if a client can connect.
+      return network_open_.load();
+    }
+    if (!isRunning()) {
+      serving_from_pause_ = true;
+      try {
+        serve(port, bind_address);
+      } catch (const std::exception&) {
+        // serve() reported the error; carry on without the viewer.
+      }
+      serving_from_pause_ = false;
+      if (!isRunning()) {
+        logger_->warn(utl::WEB,
+                      116,
+                      "Debug pauses are disabled: the web server did not "
+                      "start.");
+        return false;
+      }
+    }
+    // The script is blocked until Continue, so let browser requests in: a
+    // connecting client indexes a db nobody is mutating, and commands typed
+    // in the browser run while the script waits, as in the Qt GUI.
+    tcl_eval_->script_gate.open();
+    return true;
+  };
+  hooks.leave = [this]() {
+    if (onScriptThread() && script_holds_gate_) {
+      tcl_eval_->script_gate.close();
+    }
+  };
+  // `exit` typed in the browser while the script is paused: nothing is in
+  // waitForStop() to act on it, so exit from the paused script thread.
+  hooks.exit = [this]() {
+    if (!onScriptThread() || !script_holds_gate_) {
+      return;  // proceeds like Continue
+    }
+    // Wait out the browser's `exit` eval and any other request in flight,
+    // then turn the rest away so the io threads can be joined.
+    tcl_eval_->script_gate.close();
+    tcl_eval_->script_gate.setShutdown(true);
+    Tcl_Exit(EXIT_SUCCESS);
+  };
+  viewer_hook_->setPauseHooks(std::move(hooks));
+}
+
+void WebServer::endStartupScripts(const bool exiting)
+{
+  if (!script_holds_gate_ || !onScriptThread()) {
+    return;
+  }
+  script_holds_gate_ = false;
+  if (exiting) {
+    tcl_eval_->script_gate.setShutdown(true);
+  } else {
+    tcl_eval_->script_gate.open();
+  }
 }
 
 void WebServer::serve(int port, const std::string& bind_address)
@@ -178,8 +265,6 @@ void WebServer::serve(int port, const std::string& bind_address)
     auto timing_report = std::make_shared<TimingReport>(sta_);
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
-    auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
-
     // Override Tcl's `exit` so a user typing `exit` in the browser tcl
     // widget doesn't run Tcl_Exit on the worker thread (which triggers
     // ~WebServer's self-join → std::terminate).  Same pattern as
@@ -200,23 +285,16 @@ void WebServer::serve(int port, const std::string& bind_address)
 
     // viewer_hook_ and the WebLogSink were created by initLogger() above.
     // Install the hook as the Gui headless viewer and chart factory now
-    // that the network is about to open — deferred from initLogger() so
-    // startup scripts run with web::Gui::enabled() == false (see
-    // initLogger()).
-    web::Gui::get()->setHeadlessViewer(viewer_hook_.get());
-    web::Gui::get()->setChartFactory(
-        [hook = viewer_hook_.get()](const std::string& name,
-                                    const std::string& x_label,
-                                    const std::vector<std::string>& y_labels) {
-          return hook->createChart(name, x_label, y_labels);
-        });
+    // that the network is about to open (serveOnFirstPause() may already
+    // have done so).
+    installViewer();
 
     // Flush WebLogSink at the end of every Tcl eval so log output
     // emitted during a command reaches clients before the response
     // carrying the Tcl result.  viewer_hook_ outlives every io thread
     // that can run a request handler (stop() joins io threads before
     // resetting viewer_hook_), so the raw pointer capture is safe.
-    tcl_eval->drain_output
+    tcl_eval_->drain_output
         = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
 
     // The renderer bridge: one struct so both halves are installed and, in
@@ -347,7 +425,7 @@ void WebServer::serve(int port, const std::string& bind_address)
     auto handle = createAndRunListener(*ioc_,
                                        Tcp::endpoint{address, u_port},
                                        generator_,
-                                       tcl_eval,
+                                       tcl_eval_,
                                        timing_report,
                                        clock_report,
                                        logger_,
@@ -388,6 +466,7 @@ void WebServer::serve(int port, const std::string& bind_address)
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
+    network_open_ = true;
     logger_->info(utl::WEB, 1, "Server started on {}.", url);
 
     // Open the url with the default browser
@@ -435,6 +514,13 @@ void WebServer::serve(int port, const std::string& bind_address)
 
 void WebServer::waitForStop()
 {
+  // `web_server` run from a startup script: let browser requests in while
+  // this thread waits.
+  const bool lend_gate = script_holds_gate_ && onScriptThread();
+  if (lend_gate) {
+    tcl_eval_->script_gate.open();
+  }
+
   std::unique_lock<std::mutex> lock(stop_mutex_);
   stop_cv_.wait(lock, [this] { return stop_requested_; });
   stop_requested_ = false;
@@ -450,15 +536,49 @@ void WebServer::waitForStop()
   }
 
   stop();
+
+  if (lend_gate) {
+    tcl_eval_->script_gate.close();
+  }
 }
 
 int WebServer::tclExitHandler(ClientData clientData,
                               Tcl_Interp* interp,
-                              int /*argc*/,
-                              const char* /*argv*/[])
+                              int argc,
+                              const char* argv[])
 {
   auto* self = static_cast<WebServer*>(clientData);
+  // Off the io workers (a startup script still running after
+  // serveOnFirstPause() opened the network) the original `exit` is safe:
+  // ~WebServer joins the workers from this thread.
+  const auto self_id = std::this_thread::get_id();
+  if (std::ranges::none_of(self->threads_, [self_id](const std::thread& t) {
+        return t.get_id() == self_id;
+      })) {
+    // The script's own `exit`: turn away the requests waiting on the script
+    // gate, so the exit can join the io threads.
+    const bool held_gate = self->script_holds_gate_ && self->onScriptThread();
+    self->endStartupScripts(/*exiting=*/true);
+    Tcl_Obj* cmd = Tcl_NewStringObj(kRenamedExitCmd, -1);
+    cmd = Tcl_NewListObj(1, &cmd);
+    for (int i = 1; i < argc; ++i) {
+      Tcl_ListObjAppendElement(interp, cmd, Tcl_NewStringObj(argv[i], -1));
+    }
+    Tcl_IncrRefCount(cmd);
+    const int result = Tcl_EvalObjEx(interp, cmd, TCL_EVAL_DIRECT);
+    Tcl_DecrRefCount(cmd);
+    if (held_gate) {
+      // The exit failed (e.g. a bad status argument); the script goes on.
+      self->tcl_eval_->script_gate.setShutdown(false);
+      self->script_holds_gate_ = true;
+    }
+    return result;
+  }
   self->exit_requested_ = true;
+  // A startup script paused in the debugger exits from its own thread.
+  if (self->viewer_hook_) {
+    self->viewer_hook_->requestExit();
+  }
   // Wake waitForStop() on the main thread so it can join the worker
   // threads (including the one currently executing this handler) and
   // exit cleanly via std::exit() from the main thread.
@@ -508,6 +628,7 @@ void WebServer::requestStop()
 
 void WebServer::stop()
 {
+  network_open_ = false;
   // Restore the original Tcl `exit` command before tearing down — pairs
   // with the rename in serve().  Skip if not installed (stop() is safe
   // to call multiple times).
@@ -563,7 +684,12 @@ void WebServer::stop()
     logger_->removeSink(log_sink_);
     log_sink_.reset();
   }
-  viewer_hook_.reset();
+  if (serving_from_pause_) {
+    // serve() failed inside viewer_hook_->pause(); keep the hook alive.
+    retired_hook_ = std::move(viewer_hook_);
+  } else {
+    viewer_hook_.reset();
+  }
   // Reset so a subsequent serve()/initLogger() re-registers the sink.
   logger_initialized_ = false;
   logger_->info(utl::WEB, 41, "Web session closed.");

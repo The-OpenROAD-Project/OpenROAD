@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -41,6 +42,65 @@ class ClockTreeReport;
 // shutdown signal for the browser.
 inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
+// Keeps browser requests off the db while a -web startup script runs (see
+// WebServer::serveOnFirstPause).  Requests hold it shared and run
+// concurrently; the script thread closes it except inside debug pauses.
+// close() blocks new requests at once and waits out the in-flight ones, so a
+// stream of tile requests cannot starve the script.
+class ScriptGate
+{
+ public:
+  // Blocks while closed.  False once shut down: skip the request.
+  bool enter()
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return !closed_ || shutdown_; });
+    if (shutdown_) {
+      return false;
+    }
+    ++active_;
+    return true;
+  }
+
+  void leave()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (--active_ == 0) {
+      cv_.notify_all();
+    }
+  }
+
+  void close()
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    closed_ = true;
+    cv_.wait(lock, [this] { return active_ == 0; });
+  }
+
+  void open()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    closed_ = false;
+    cv_.notify_all();
+  }
+
+  // Refuse every waiting and future request, so the io threads can be
+  // joined when the process exits; undone by setShutdown(false).
+  void setShutdown(bool shutdown)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    shutdown_ = shutdown;
+    cv_.notify_all();
+  }
+
+ private:
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  int active_ = 0;
+  bool closed_ = false;
+  bool shutdown_ = false;
+};
+
 // Thread-safe Tcl command evaluation.  Log output emitted while the
 // command runs is captured by WebLogSink (registered on the logger via
 // addSink) and pushed to clients as {"type":"log",...} messages — do
@@ -54,6 +114,9 @@ struct TclEvaluator
   Tcl_Interp* interp;
   utl::Logger* logger;
   std::mutex mutex;
+  // Shared by every request path; lives here because the evaluator is the
+  // one server object that outlives each serve()/stop() cycle.
+  ScriptGate script_gate;
   std::function<void()> drain_output;
 
   struct Result

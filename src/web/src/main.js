@@ -1486,8 +1486,8 @@ createToolbar(app);
 // Canvas right-click context menu ("Select →" connected objects).
 app.contextMenu = new ContextMenu(app);
 
-// Debug-graphics pause affordance: appended lazily when the first
-// debug_paused push arrives.  Clicking "Continue" tells the server to
+// Debug-graphics pause affordance: appended to the menu bar lazily when the
+// first debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
 function ensureDebugContinueButton() {
     let btn = document.getElementById('debug-continue-btn');
@@ -1503,7 +1503,9 @@ function ensureDebugContinueButton() {
         app.websocketManager.request({ type: 'debug_continue' })
             .catch(() => {});
     });
-    document.body.appendChild(btn);
+    // In the menu bar rather than floating over the page, so no panel or
+    // menu can cover it.  Falls back to body if the menu bar is absent.
+    (document.getElementById('menu-bar') || document.body).appendChild(btn);
     return btn;
 }
 
