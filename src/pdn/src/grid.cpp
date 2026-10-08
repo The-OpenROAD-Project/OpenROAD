@@ -44,6 +44,9 @@ Grid::Grid(VoltageDomain* domain,
     : domain_(domain), name_(name), starts_with_power_(starts_with_power)
 {
   obstruction_layers_ = generate_obstructions;
+  if (domain_) {
+    populatePadRingInnerArea();
+  }
 }
 
 Grid::~Grid() = default;
@@ -537,7 +540,7 @@ odb::Rect Grid::getPadRingArea() const
   return boundary.intersect(*pads);
 }
 
-std::optional<odb::Rect> Grid::getPadRingInnerArea() const
+void Grid::populatePadRingInnerArea()
 {
   auto* block = getBlock();
   const odb::Rect core = block->getCoreArea();
@@ -587,10 +590,8 @@ std::optional<odb::Rect> Grid::getPadRingInnerArea() const
     found = true;
   }
 
-  if (!found) {
-    return std::nullopt;
-  }
-  return pads_inner;
+  pad_ring_inner_area_
+      = found ? std::optional<odb::Rect>(pads_inner) : std::nullopt;
 }
 
 Region Grid::getDomainRegion() const
