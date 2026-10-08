@@ -26,12 +26,14 @@ TESTS = [
     "cugr_adjustment1",
     "cugr_adjustment2",
     "cugr_adjustment3",
+    "cugr_colocated_pins",
     "cugr_detour_limit",
     "est_rc1",
     "est_rc2",
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
@@ -196,6 +198,13 @@ regression_test(
 
 regression_test(
     name = "snapshot_batched_single_thread_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "resistance_aware_asap7_fr_threads",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],

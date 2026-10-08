@@ -10,3 +10,4 @@ or_integration_tests(
     pd_gcd
 )
 
+add_subdirectory(cpp)

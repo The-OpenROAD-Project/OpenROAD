@@ -57,6 +57,7 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "incremental02",
+    "incremental03",
     "place_ios01",
     "place_ios_few_cells",
     "place_ios_top_layer",
@@ -303,6 +304,18 @@ cc_test(
 cc_test(
     name = "estimate_target_density_test",
     srcs = ["estimate_target_density_test.cpp"],
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "nesterov_divergence_test",
+    srcs = ["nesterov_divergence_test.cpp"],
     deps = [
         "//src/gpl:gpl_impl",
         "//src/odb/src/db",
