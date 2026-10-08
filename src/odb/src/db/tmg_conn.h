@@ -127,6 +127,9 @@ struct Terminal
   Terminal(dbITerm* iterm) : iterm(iterm) {}
   Terminal(dbBTerm* bterm) : bterm(bterm) {}
 
+  void addPoint(WirePoint* point);
+  void removePoint(WirePoint* point);
+
   dbITerm* const iterm{nullptr};
   dbBTerm* const bterm{nullptr};
 
