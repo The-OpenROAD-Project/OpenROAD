@@ -145,6 +145,7 @@ or_integration_tests(
     pads_black_parrot_no_connect
     pads_black_parrot_offset
     pads_black_parrot_straps
+    pads_connect_blanket_obstruction
     pads_connect_from_non_pref_edge
     pads_ihp_sg13g2_balance
     pads_placed_not_fixed
