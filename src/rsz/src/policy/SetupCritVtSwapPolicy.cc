@@ -70,8 +70,12 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   // deduplicated instance set in one committer batch.
   // The instances are kept in the order they are found: a swap can be
   // rejected for max capacitance depending on the swaps before it.
+  const size_t max_crit_insts
+      = violating_ends.size() * kMaxCritInstancesPerEndpoint;
   std::vector<std::pair<sta::Instance*, float>> crit_insts;
+  crit_insts.reserve(max_crit_insts);
   std::unordered_set<sta::Instance*> crit_inst_set;
+  crit_inst_set.reserve(max_crit_insts);
   std::unordered_set<sta::Vertex*> visited;
   std::unordered_set<sta::Instance*> notSwappable;
   for (const auto& [endpoint, slack] : violating_ends) {
@@ -207,8 +211,9 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
              endpoint->name(network_),
              endpoint_insts);
   if (logger_->debugCheck(RSZ, "swap_crit_vt", 1)) {
-    for (const auto& [inst, inst_slack] : crit_insts) {
-      logger_->report(" {}", network_->pathName(inst));
+    for (size_t i = crit_insts.size() - endpoint_insts; i < crit_insts.size();
+         ++i) {
+      logger_->report(" {}", network_->pathName(crit_insts[i].first));
     }
   }
 }
