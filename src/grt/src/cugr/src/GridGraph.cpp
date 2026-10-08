@@ -1044,6 +1044,10 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const std::vector<double>& net_costs,
                            const bool adopted)
 {
+  // A net occupies a wire edge or a wrong-way cell once even where its tree
+  // crosses it twice, as the union of two merged nets can (CUGR::mergeNet).
+  std::vector<std::array<int, 3>> wires;      // layer, lower cell x, y
+  std::vector<std::array<int, 3>> wrong_way;  // layer, crossed cell x, y
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
@@ -1056,7 +1060,6 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
         }
         const int direction = layer_directions_[layer];
         const int perp = 1 - direction;
-        const double wire_factor = layerFactor(net_costs, layer);
         if ((*node)[perp] != (*child)[perp]) {
           // Native trees are direction-legal by construction; only routes
           // adopted from detailed wires may carry wrong-way spans. Diagonal
@@ -1084,16 +1087,26 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
             PointT cell;
             cell[direction] = (*node)[direction];
             cell[perp] = c;
-            commitWrongWayWire(layer, cell, rip_up, wire_factor);
+            wrong_way.push_back({layer, cell.x(), cell.y()});
           }
         } else {
           forEachWireEdgeImpl(layer, *node, *child, [&](PointT lower) {
-            commitWire(layer, lower, rip_up, wire_factor);
+            wires.push_back({layer, lower.x(), lower.y()});
           });
         }
       }
     }
   });
+  for (auto* cells : {&wires, &wrong_way}) {
+    std::ranges::sort(*cells);
+    cells->erase(std::ranges::unique(*cells).begin(), cells->end());
+  }
+  for (const auto& [layer, x, y] : wires) {
+    commitWire(layer, {x, y}, rip_up, layerFactor(net_costs, layer));
+  }
+  for (const auto& [layer, x, y] : wrong_way) {
+    commitWrongWayWire(layer, {x, y}, rip_up, layerFactor(net_costs, layer));
+  }
   forEachViaColumn(tree, [&](const PointT loc, const int low, const int high) {
     if (high >= num_layers_) {
       logger_->error(utl::GRT,
