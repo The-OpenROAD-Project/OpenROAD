@@ -548,16 +548,13 @@ int WebServer::tclExitHandler(ClientData clientData,
                               const char* argv[])
 {
   auto* self = static_cast<WebServer*>(clientData);
-  // Off the io workers (a startup script still running after
-  // serveOnFirstPause() opened the network) the original `exit` is safe:
-  // ~WebServer joins the workers from this thread.
-  const auto self_id = std::this_thread::get_id();
-  if (std::ranges::none_of(self->threads_, [self_id](const std::thread& t) {
-        return t.get_id() == self_id;
-      })) {
-    // The script's own `exit`: turn away the requests waiting on the script
-    // gate, so the exit can join the io threads.
-    const bool held_gate = self->script_holds_gate_ && self->onScriptThread();
+  // A startup script still running after serveOnFirstPause() opened the
+  // network is the only Tcl caller off the io workers; the original `exit`
+  // is safe there, since ~WebServer joins the workers from this thread.
+  if (self->onScriptThread()) {
+    // Turn away the requests waiting on the script gate, so the exit can
+    // join the io threads.
+    const bool held_gate = self->script_holds_gate_;
     self->endStartupScripts(/*exiting=*/true);
     Tcl_Obj* cmd = Tcl_NewStringObj(kRenamedExitCmd, -1);
     cmd = Tcl_NewListObj(1, &cmd);
