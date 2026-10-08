@@ -149,46 +149,7 @@ void Rings::setPadOffset(const EdgeSpec& offset)
   odb::Rect die_area = getBlock()->getDieArea();
   odb::Rect core = getBlock()->getCoreArea();
 
-  odb::Rect pads_inner = die_area;
-
-  // look for placed pads
-  for (auto* inst : getBlock()->getInsts()) {
-    if (!inst->getPlacementStatus().isPlaced()) {
-      continue;
-    }
-
-    auto type = inst->getMaster()->getType();
-    // only looking for pads
-    if (!type.isPad()) {
-      continue;
-    }
-
-    if (type == odb::dbMasterType::PAD_AREAIO) {
-      continue;
-    }
-
-    odb::Rect box = inst->getBBox()->getBox();
-
-    const bool is_ns_with_core
-        = box.xMin() >= core.xMin() && box.xMax() <= core.xMax();
-    const bool is_ew_with_core
-        = box.yMin() >= core.yMin() && box.yMax() <= core.yMax();
-    const bool is_north = box.yMin() > core.yMax() && is_ns_with_core;
-    const bool is_south = box.yMax() < core.yMin() && is_ns_with_core;
-    const bool is_west = box.xMax() < core.xMin() && is_ew_with_core;
-    const bool is_east = box.xMin() > core.xMax() && is_ew_with_core;
-
-    // find the inner edge of the pad outline
-    if (is_north) {
-      pads_inner.set_yhi(std::min(pads_inner.yMax(), box.yMin()));
-    } else if (is_south) {
-      pads_inner.set_ylo(std::max(pads_inner.yMin(), box.yMax()));
-    } else if (is_west) {
-      pads_inner.set_xlo(std::max(pads_inner.xMin(), box.xMax()));
-    } else if (is_east) {
-      pads_inner.set_xhi(std::min(pads_inner.xMax(), box.xMin()));
-    }
-  }
+  odb::Rect pads_inner = getGrid()->getPadRingInnerArea().value_or(die_area);
 
   if (core == pads_inner) {
     getLogger()->warn(utl::PDN,

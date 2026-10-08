@@ -34,11 +34,17 @@ class Straps : public GridComponent
          int spacing = 0,
          int number_of_straps = 0);
 
-  void setOffset(int offset);
+  // the nets have to be set first, since every type but kFirst depends on how
+  // wide the group is
+  void setOffset(int offset, StrapOffsetType type = StrapOffsetType::kFirst);
   int getOffset() const { return offset_; }
   void setSnapToGrid(bool snap);
 
   void setExtend(ExtensionMode mode);
+  // how far past the extension target the straps run, never past the grid
+  // boundary
+  void setExtendDistance(int distance) { extend_distance_ = distance; }
+  int getExtendDistance() const { return extend_distance_; }
   void setStrapStartEnd(int start, int end);
   int getStrapStart() const { return strap_start_; }
   int getStrapEnd() const { return strap_end_; }
@@ -97,11 +103,14 @@ class Straps : public GridComponent
   int width_;
   int spacing_;
   int pitch_;
+  // where the center of the first strap sits, whatever point of the group the
+  // offset was given for
   int offset_ = 0;
   int number_of_straps_;
   odb::dbTechLayerDir direction_;
   bool snap_ = false;
   ExtensionMode extend_mode_ = ExtensionMode::kCore;
+  int extend_distance_ = 0;
   int strap_start_ = 0;
   int strap_end_ = 0;
   bool allow_out_of_core_ = false;

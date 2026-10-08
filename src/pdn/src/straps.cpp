@@ -149,8 +149,25 @@ bool Straps::checkLayerOffsetSpecification(bool error) const
   return true;
 }
 
-void Straps::setOffset(int offset)
+void Straps::setOffset(int offset, StrapOffsetType type)
 {
+  const int half_width = width_ / 2;
+  switch (type) {
+    case StrapOffsetType::kStart:
+      offset += half_width;
+      break;
+    case StrapOffsetType::kFirst:
+      break;
+    case StrapOffsetType::kCenter:
+      offset += half_width - getStrapGroupWidth() / 2;
+      break;
+    case StrapOffsetType::kLast:
+      offset += width_ - getStrapGroupWidth();
+      break;
+    case StrapOffsetType::kEnd:
+      offset += half_width - getStrapGroupWidth();
+      break;
+  }
   offset_ = offset;
 }
 
@@ -162,6 +179,14 @@ void Straps::setSnapToGrid(bool snap)
 void Straps::setExtend(ExtensionMode mode)
 {
   extend_mode_ = mode;
+
+  if (mode == kPadRing && !getGrid()->getPadRingInnerArea()) {
+    getLogger()->error(utl::PDN,
+                       242,
+                       "Unable to find any placed pads to extend straps on {} "
+                       "to.",
+                       layer_->getName());
+  }
 }
 
 void Straps::setStrapStartEnd(int start, int end)
@@ -205,10 +230,33 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       boundary = grid->getGridBoundary();
       extent = grid->getGridBoundaryRegion();
       break;
+    case kPadRing:
+      boundary = grid->getPadRingArea();
+      extent = grid->getGridBoundaryRegion().intersect(boundary);
+      break;
     case kFixed:
       boundary = odb::Rect(strap_start_, strap_start_, strap_end_, strap_end_);
       // an explicit extent is the user's to place, wherever it lands
       break;
+  }
+
+  if (extend_distance_ > 0 && extend_mode_ != kFixed) {
+    // Run on past the target along the strap's own length, up to where
+    // -extend_to_boundary would have stopped, but never short of the target.
+    const int dist = extend_distance_;
+    const bool horizontal = isHorizontal();
+    odb::Rect grown = boundary
+                          .bloat(dist,
+                                 horizontal ? odb::Orientation2D::Horizontal
+                                            : odb::Orientation2D::Vertical)
+                          .intersect(grid->getGridBoundary());
+    grown.merge(boundary);
+    boundary = grown;
+    const Region::Margin grow = horizontal ? Region::Margin{dist, 0, dist, 0}
+                                           : Region::Margin{0, dist, 0, dist};
+    extent = extent.bloat(grow)
+                 .intersect(grid->getGridBoundaryRegion())
+                 .unite(extent);
   }
 
   TechLayer layer(layer_);
@@ -585,22 +633,43 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   // edge and not the ones belonging to the wide leg.  On a rectangular core
   // there is only one of each, and this is the boundary it always was.
   const ExtensionMode mode = getExtendMode();
+  const int extend_distance = getExtendDistance();
+  const odb::Rect pad_ring
+      = mode == kPadRing ? grid->getPadRingArea() : odb::Rect();
+  const Region grid_boundary = grid->getGridBoundaryRegion();
   const auto reach = [&](const odb::Rect& band, const odb::Point& normal) {
     const bool high = normal.x() > 0;
+    // the boundary edge beside this band, which nothing may run past
+    const auto boundary = [&]() {
+      const int margin = grid_boundary.getMarginBeyond(band, normal);
+      return high ? band.xMax() + margin : band.xMin() - margin;
+    };
+    int target = high ? band.xMax() : band.xMin();
     switch (mode) {
       case kRings:
-        return grid->getRingReach(band, normal);
-      case kBoundary: {
-        const int margin
-            = grid->getGridBoundaryRegion().getMarginBeyond(band, normal);
-        return high ? band.xMax() + margin : band.xMin() - margin;
-      }
+        target = grid->getRingReach(band, normal);
+        break;
+      case kBoundary:
+        target = boundary();
+        break;
+      case kPadRing:
+        target = high ? std::min(pad_ring.xMax(), boundary())
+                      : std::max(pad_ring.xMin(), boundary());
+        break;
       case kCore:
       case kFixed:
         // the core is where the row already ends
         break;
     }
-    return high ? band.xMax() : band.xMin();
+    if (extend_distance > 0) {
+      // run on past the target, but not past the boundary unless the target
+      // already was
+      target = high ? std::max(target,
+                               std::min(target + extend_distance, boundary()))
+                    : std::min(target,
+                               std::max(target - extend_distance, boundary()));
+    }
+    return target;
   };
 
   odb::dbNet* power = getDomain()->getPower();
