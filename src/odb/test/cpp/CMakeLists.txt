@@ -10,6 +10,7 @@ set(GTEST_LIBS
 
 add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc TestOrderWires.cpp)
 add_executable(TestCallBacks TestCallBacks.cpp)
+add_executable(TestShapeDestroy TestShapeDestroy.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)
 add_executable(TestLef58Properties TestLef58Properties.cpp)
@@ -50,6 +51,11 @@ target_link_libraries(TestCallBacks
         odb_test_helper
         tst_base
         spdlog::spdlog
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestShapeDestroy
+        db
+        odb_test_helper
         ${GTEST_LIBS}
 )
 target_link_libraries(TestGeom
@@ -196,6 +202,7 @@ gtest_discover_tests(OdbGTests
 
 add_dependencies(build_and_test
         TestCallBacks
+        TestShapeDestroy
         TestGeom
         TestModule
         TestGroup

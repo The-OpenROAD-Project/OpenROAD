@@ -477,6 +477,7 @@ test_suite(
         "//src/odb/test/cpp:TestNetTrack",
         "//src/odb/test/cpp:TestObjectType",
         "//src/odb/test/cpp:TestPolygonalFloorplan",
+        "//src/odb/test/cpp:TestShapeDestroy",
         "//src/odb/test/cpp:TestSwapMaster",
         "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
