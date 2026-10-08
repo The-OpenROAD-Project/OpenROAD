@@ -1869,10 +1869,11 @@ void PadDirectConnectionStraps::cutShapes(
 
     std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
     for (const auto& [layer, layer_shapes] : getShapes()) {
-      if (!obstructions.contains(layer)) {
+      auto it = obstructions.find(layer);
+      if (it == obstructions.end()) {
         continue;
       }
-      const auto& obs = obstructions.at(layer);
+      const auto& obs = it->second;
       for (const auto& shape : layer_shapes) {
         std::vector<std::unique_ptr<Shape>> replacements;
         if (shape->cut(obs, replacements, obs_filter)) {
