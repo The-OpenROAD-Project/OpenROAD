@@ -210,11 +210,6 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
   void endIncremental(bool save_guides = false);
-  // True between startIncremental() and endIncremental().
-  bool isIncrementalSessionOpen() const { return grouter_cbk_ != nullptr; }
-  // Reroute dirty_nets_ without ending the incremental session, so a caller
-  // can evaluate a netlist change it may still roll back.
-  void rerouteDirtyNets();
   void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
   void saveCongestion();

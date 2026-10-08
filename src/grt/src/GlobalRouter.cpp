@@ -472,15 +472,6 @@ void GlobalRouter::endIncremental(bool save_guides)
   finishGlobalRouting(save_guides);
 }
 
-void GlobalRouter::rerouteDirtyNets()
-{
-  if (dirty_nets_.empty()) {
-    return;
-  }
-  updateDirtyRoutes(/*save_guides=*/false);
-  updateDbCongestion();
-}
-
 void GlobalRouter::reportIncrementalCongestion()
 {
   if (!incremental_congestion_report_pending_ || cugr_ == nullptr) {

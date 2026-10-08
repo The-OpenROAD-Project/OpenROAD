@@ -98,43 +98,6 @@ class RoutingCongestionTest : public tst::IntegratedFixture
   odb::Rect starvedRegion() const { return coreQuadrant(0, 0); }
   odb::Rect controlRegion() const { return coreQuadrant(1, 1); }
 
-  // A box of `tiles` GCells on a side centred on `at`, clipped to the core.
-  // Small enough that one instance's wire is a visible fraction of it.
-  odb::Rect regionAround(const odb::Point& at, const int tiles)
-  {
-    const int half = tiles * congestion_->tileSize() / 2;
-    odb::Rect region(
-        at.x() - half, at.y() - half, at.x() + half, at.y() + half);
-    region.intersection(core(), region);
-    return region;
-  }
-
-  // The instance driving the most nets outside `avoid`. Picked by net count
-  // because moving it drags the most routing across the die, which is what
-  // makes the effect on the destination measurable at all.
-  odb::dbInst* mostConnectedInstOutside(const odb::Rect& avoid) const
-  {
-    odb::dbInst* best = nullptr;
-    int best_nets = 0;
-    for (odb::dbInst* inst : block_->getInsts()) {
-      if (avoid.overlaps(inst->getBBox()->getBox())) {
-        continue;
-      }
-      int nets = 0;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (net != nullptr && !net->isSpecial()) {
-          nets++;
-        }
-      }
-      if (nets > best_nets) {
-        best_nets = nets;
-        best = inst;
-      }
-    }
-    return best;
-  }
-
   // Reduce the routing capacity of `region` on both routing layers.
   // addRegionAdjustment takes DBU; the Tcl command converts from microns
   // before calling it.
@@ -189,52 +152,6 @@ class RoutingCongestionTest : public tst::IntegratedFixture
   float meanCongestion(const odb::Rect& region)
   {
     return congestion_->congestion(region, RoutingCongestion::Aggregate::kMean);
-  }
-
-  // The incremental query the PNR-aware transforms need: having moved
-  // something, what did that do to the routing where it landed?
-  //
-  // rerouteDirtyNets() is the piece under test. It reroutes the nets the move
-  // dirtied without closing the incremental session, so a caller can read the
-  // consequences of a change it may still roll back. If it fails to refresh
-  // odb's congestion map, the "after" reading is bit-for-bit the "before"
-  // reading and the caller silently evaluates the move it did not make.
-  //
-  // Shared between the two engines: updateDirtyRoutes() forks on use_cugr_,
-  // so each side needs its own run of this.
-  void moveAnInstanceAndMeasure()
-  {
-    runGlobalRoute();
-
-    const odb::Rect destination = regionAround(controlRegion().center(), 6);
-    odb::dbInst* inst = mostConnectedInstOutside(destination);
-    ASSERT_NE(inst, nullptr);
-
-    const float before = meanCongestion(destination);
-
-    EXPECT_FALSE(grt_.isIncrementalSessionOpen());
-    grt_.startIncremental();
-    EXPECT_TRUE(grt_.isIncrementalSessionOpen());
-
-    // Moving the instance fires inDbPostMoveInst, which marks every net on its
-    // iterms dirty; rerouteDirtyNets() is what then pulls their wire over here.
-    inst->setLocation(destination.center().x(), destination.center().y());
-    grt_.rerouteDirtyNets();
-    const float after = meanCongestion(destination);
-
-    grt_.endIncremental();
-    EXPECT_FALSE(grt_.isIncrementalSessionOpen());
-
-    logger_.report("moved {} ({} nets) into a {} x {} dbu region, source {}:",
-                   inst->getName(),
-                   inst->getITerms().size(),
-                   destination.dx(),
-                   destination.dy(),
-                   source());
-    logger_.report("  congestion before {:.4f}", before);
-    logger_.report("  congestion after  {:.4f}", after);
-
-    EXPECT_GT(after, before);
   }
 
   void runGlobalRoute()
@@ -430,11 +347,6 @@ TEST_F(RoutingCongestionTest, IsCongestedFollowsTheThreshold)
   EXPECT_EQ(congestion_->isCongested(region), peak >= 1.0f);
 }
 
-TEST_F(RoutingCongestionTest, MovingAnInstanceRaisesCongestionWhereItLands)
-{
-  moveAnInstanceAndMeasure();
-}
-
 // The same service against the other routing engine. RoutingCongestion reads
 // odb's GCell grid rather than any engine's internals, so CUGR and FastRoute
 // reach it through the same path -- but only CUGR::updateDbCongestion()
@@ -456,13 +368,6 @@ class RoutingCongestionCugrTest : public RoutingCongestionTest
     ASSERT_TRUE(grt_.isUseCUGR());
   }
 };
-
-TEST_F(RoutingCongestionCugrTest, MovingAnInstanceRaisesCongestionWhereItLands)
-{
-  // Same scenario as the FastRoute case: updateDirtyRoutes() forks on the
-  // engine too, so the incremental path needs covering on both sides.
-  moveAnInstanceAndMeasure();
-}
 
 TEST_F(RoutingCongestionCugrTest, CugrProducesAUsableCongestionMap)
 {
