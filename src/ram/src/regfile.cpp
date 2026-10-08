@@ -1346,7 +1346,7 @@ Spec ReadSpec(const std::string& path)
       s.reset_active_low = v[1] == "low";
     } else if (key == "read") {
       need(2);
-      s.read.push_back(Port{v[0], v[1], ""});
+      s.read.push_back(Port{.addr = v[0], .data = v[1]});
     } else if (key == "read_banked") {
       if (v.size() < 2 || v.size() % 2 != 0) {
         Refuse(path + ":" + std::to_string(lineno)
@@ -1363,7 +1363,8 @@ Spec ReadSpec(const std::string& path)
         Refuse(path + ":" + std::to_string(lineno)
                + ": `write` takes addr data [en]");
       }
-      s.write.push_back(Port{v[0], v[1], v.size() == 3 ? v[2] : ""});
+      s.write.push_back(
+          Port{.addr = v[0], .data = v[1], .en = v.size() == 3 ? v[2] : ""});
     } else if (key == "cell") {
       need(2);
       const std::string& kind = v[0];
