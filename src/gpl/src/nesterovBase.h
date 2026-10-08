@@ -1524,6 +1524,7 @@ class NesterovBase
   // concurrent IO pin placement (-place_ios)
   std::vector<GCell> ioPinStor_;
   std::vector<odb::Point> io_last_written_pos_;
+  std::vector<odb::dbTechLayer*> io_last_written_layer_;
   // define_pin_shape_pattern grid, used by pins with a 2D up: region.
   odb::dbTechLayer* io_top_layer_ = nullptr;
   int io_top_pin_width_ = 0;
@@ -1553,7 +1554,7 @@ class NesterovBase
   {
     return edge == DieEdge::kBottom || edge == DieEdge::kTop;
   }
-  odb::dbTechLayer* ioPinLayer(DieEdge edge, float pos) const;
+  odb::dbTechLayer* ioPinLayer(DieEdge edge, float pos, int nth) const;
   static constexpr std::array<DieEdge, 4> kIoRingOrder
       = {DieEdge::kBottom, DieEdge::kRight, DieEdge::kTop, DieEdge::kLeft};
   static bool ringAscends(DieEdge edge)
@@ -1587,7 +1588,7 @@ class NesterovBase
   void separateIoPins(std::vector<FloatPoint>& coordi) const;
   void separateMirroredIoPins(std::vector<FloatPoint>& coordi) const;
   float ringIndexAt(DieEdge edge, float pos) const;
-  FloatPoint ringPointAt(float r) const;
+  FloatPoint ringPointAt(const std::vector<RingSlot>& ring, float r) const;
   void initIoSlots();
   void initIoPinGCells();
   void pickIoPinTopLayerGrid();
@@ -1610,13 +1611,18 @@ class NesterovBase
   const std::vector<PerimSegment>& ioLocus(size_t io_index) const;
   FloatPoint projectIoPin(size_t io_index, float x, float y) const;
   FloatPoint ioPinOptimum(size_t io_index, const FloatPoint& cur) const;
-  DieEdge ioEdgeOnLocus(size_t io_index, int cx, int cy) const;
+  DieEdge ioEdgeOnLocus(size_t io_index, float x, float y) const;
 
   FloatPoint mirrorOfIoPin(size_t master_io, const FloatPoint& p) const;
   void applyMirrorConstraints(std::vector<FloatPoint>& coordi) const;
   bool isMirrorFollower(size_t io_index) const
   {
     return io_index < io_is_follower_.size() && io_is_follower_[io_index];
+  }
+  bool isMirrorMaster(size_t io_index) const
+  {
+    return io_index < io_master_to_follower_.size()
+           && io_master_to_follower_[io_index] != kNoMirrorPartner;
   }
   bool isIoBoxConstrained(size_t io_index) const
   {
