@@ -10,7 +10,6 @@
 #include <map>
 #include <queue>
 #include <set>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -69,11 +68,15 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   }
   // Collect a bounded fanin cone across the worst endpoints, then VT-swap that
   // deduplicated instance set in one committer batch.
-  std::unordered_map<sta::Instance*, float> crit_insts;
+  // The instances are kept in the order they are found: a swap can be
+  // rejected for max capacitance depending on the swaps before it.
+  std::vector<std::pair<sta::Instance*, float>> crit_insts;
+  std::unordered_set<sta::Instance*> crit_inst_set;
   std::unordered_set<sta::Vertex*> visited;
   std::unordered_set<sta::Instance*> notSwappable;
   for (const auto& [endpoint, slack] : violating_ends) {
-    traverseFaninCone(endpoint, crit_insts, visited, notSwappable);
+    traverseFaninCone(
+        endpoint, crit_insts, crit_inst_set, visited, notSwappable);
   }
   debugPrint(logger_,
              RSZ,
@@ -82,9 +85,7 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
              "identified {} critical instances",
              crit_insts.size());
 
-  for (const std::pair<sta::Instance* const, float>& crit_inst_slack :
-       crit_insts) {
-    sta::Instance* inst = crit_inst_slack.first;
+  for (const auto& [inst, inst_slack] : crit_insts) {
     sta::LibertyCell* best_cell = nullptr;
     if (!resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_cell)) {
       continue;
@@ -99,7 +100,7 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
     Target target;
     target.views = kInstanceView;
     target.driver_pin = output_pin;
-    target.slack = crit_inst_slack.second;
+    target.slack = inst_slack;
 
     if (committer_.moveTrackerEnabled(2)) {
       committer_.setCurrentEndpoint(output_pin);
@@ -137,7 +138,8 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
 
 void SetupCritVtSwapPolicy::traverseFaninCone(
     sta::Vertex* endpoint,
-    std::unordered_map<sta::Instance*, float>& crit_insts,
+    std::vector<std::pair<sta::Instance*, float>>& crit_insts,
+    std::unordered_set<sta::Instance*>& crit_inst_set,
     std::unordered_set<sta::Vertex*>& visited,
     std::unordered_set<sta::Instance*>& notSwappable)
 {
@@ -164,9 +166,8 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
       if (resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_lib_cell)) {
         const sta::Slack inst_slack = getInstanceSlack(inst);
         if (sta::fuzzyLess(inst_slack, config_.setup_slack_margin)) {
-          auto it = crit_insts.find(inst);
-          if (it == crit_insts.end()) {
-            crit_insts[inst] = inst_slack;
+          if (crit_inst_set.insert(inst).second) {
+            crit_insts.emplace_back(inst, inst_slack);
             endpoint_insts++;
             debugPrint(logger_,
                        RSZ,
@@ -206,8 +207,8 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
              endpoint->name(network_),
              endpoint_insts);
   if (logger_->debugCheck(RSZ, "swap_crit_vt", 1)) {
-    for (auto crit_inst_slack : crit_insts) {
-      logger_->report(" {}", network_->pathName(crit_inst_slack.first));
+    for (const auto& [inst, inst_slack] : crit_insts) {
+      logger_->report(" {}", network_->pathName(inst));
     }
   }
 }
