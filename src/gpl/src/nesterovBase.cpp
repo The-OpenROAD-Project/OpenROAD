@@ -4598,14 +4598,6 @@ bool NesterovBase::isSettled() const
   return coordiDistance_ <= kSettleFraction * peak_coordi_distance_;
 }
 
-float NesterovBase::getSettleRatio() const
-{
-  if (peak_coordi_distance_ <= 0) {
-    return 1.0f;
-  }
-  return coordiDistance_ / peak_coordi_distance_;
-}
-
 bool NesterovBase::checkDivergence()
 {
   if (sum_overflow_unscaled_ < 0.2f
@@ -5123,10 +5115,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                block->dbuAreaToMicrons(totalFillerArea_));
   }
 
-  debugPrint(log_,
-             GPL,
-             "routability",
-             1,
+  log_->info(GPL,
+             76,
              "Removing fillers, count: Before: {}, After: {} ({:+.2f}%)",
              num_filler_before_removal,
              fillerStor_.size(),
@@ -5137,11 +5127,9 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                     / num_filler_before_removal * 100.0)
                  : 0.0);
 
-  debugPrint(
-      log_,
+  log_->info(
       GPL,
-      "routability",
-      1,
+      77,
       "Filler area (um^2)     : Before: {:.3f}, After: {:.3f} ({:+.2f}%)",
       block->dbuAreaToMicrons(filler_area_before_removal),
       block->dbuAreaToMicrons(totalFillerArea_),
@@ -5153,10 +5141,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t removedFillerArea = single_filler_area * removed_count;
   int64_t remainingInflationArea = originalInflationArea - removedFillerArea;
 
-  debugPrint(log_,
-             GPL,
-             "routability",
-             1,
+  log_->info(GPL,
+             78,
              "Removed fillers count: {}, area removed: {:.3f} um^2. Remaining "
              "area to be "
              "compensated by modifying density: {:.3f} um^2",
@@ -5170,8 +5156,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
     setTargetDensity(static_cast<float>(totalGCellArea)
                      / static_cast<float>(getWhiteSpaceArea()));
     movableArea_ = whiteSpaceArea_ * targetDensity_;
-    debugPrint(
-        log_, GPL, "routability", 1, "New target density: {}", targetDensity_);
+    log_->info(GPL, 79, "New target density: {}", targetDensity_);
   }
 
   // nb_gcells_ has shrunk; rebuild the GPU device context against the new
@@ -5237,10 +5222,8 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 void NesterovBase::restoreRemovedFillers()
 {
   pullCoordsFromDevice();
-  debugPrint(log_,
-             GPL,
-             "routability",
-             1,
+  log_->info(GPL,
+             80,
              "Restoring {} previously removed fillers.",
              removed_fillers_.size());
 
@@ -5308,20 +5291,16 @@ void NesterovBase::restoreRemovedFillers()
   double area_before_um = block->dbuAreaToMicrons(area_before);
   double area_after_um = block->dbuAreaToMicrons(area_after);
 
-  debugPrint(log_,
-             GPL,
-             "routability",
-             1,
+  log_->info(GPL,
+             81,
              "Number of fillers before restoration {} and after {} . Relative "
              "change: {:+.2f}%%",
              num_fill_before,
              num_fill_after,
              rel_count_change);
 
-  debugPrint(log_,
-             GPL,
-             "routability",
-             1,
+  log_->info(GPL,
+             82,
              "Total filler area before restoration {:.2f} and after {:.2f} "
              "(um^2). Relative change: {:+.2f}%%",
              area_before_um,
