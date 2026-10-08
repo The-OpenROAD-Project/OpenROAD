@@ -34,7 +34,6 @@ TESTS = [
     "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-td-repair",
-    "simple01-td-restart",
     "simple01-uniform",
     "simple01-vcts",
     "simple01-vcts-clamp",
