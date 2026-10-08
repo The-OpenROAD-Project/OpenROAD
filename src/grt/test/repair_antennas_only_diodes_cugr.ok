@@ -5,14 +5,12 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[INFO ANT-0002] Found 7 net violations.
-[INFO ANT-0001] Found 8 pin violations.
-[INFO GRT-0012] Found 7 antenna violations.
-[INFO DPL-0501] Legalized with 58 moves: displacement total 16.3 u, max 9.1 u; HPWL 19616.5 -> 19629.3 u (+0.1 %).
-[INFO GRT-0015] Inserted 8 diodes.
-[INFO GRT-0012] Found 1 antenna violations.
-[INFO DPL-0501] Legalized with 13 moves: displacement total 6.2 u, max 6.2 u; HPWL 19629.3 -> 19635.5 u (+0.0 %).
-[INFO GRT-0015] Inserted 1 diodes.
+[INFO ANT-0002] Found 9 net violations.
+[INFO ANT-0001] Found 12 pin violations.
+[INFO GRT-0012] Found 9 antenna violations.
+[INFO DPL-0501] Legalized with 20 moves: displacement total 5.8 u, max 2.9 u; HPWL 19616.5 -> 19623.9 u (+0.0 %).
+[INFO GRT-0015] Inserted 12 diodes.
+[INFO GRT-0012] Found 0 antenna violations.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
 No differences found.

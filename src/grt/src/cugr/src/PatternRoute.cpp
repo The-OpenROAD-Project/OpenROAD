@@ -601,21 +601,53 @@ void PatternRoute::calculateRoutingCosts(
                                                {-1, -1});
     }
   }
-  // Calculate the partial sum of the via costs
-  std::vector<CostT> via_costs(grid_graph_->getNumLayers());
-  via_costs[0] = 0;
-  for (int layer_index = 1; layer_index < grid_graph_->getNumLayers();
-       layer_index++) {
-    via_costs[layer_index] = via_costs[layer_index - 1]
-                             + grid_graph_->getViaCost(
-                                 layer_index - 1, *node, net_->getNdrCosts());
-    // Res-aware: charge via resistance so climbing only pays off when
-    // the upper-layer wire-R savings beat it.
-    if (net_->isResAware()) {
-      via_costs[layer_index]
-          += grid_graph_->getViaResistanceCost(layer_index - 1);
+  // Price a via stack from `low` to `high` as its per-via unit costs plus one
+  // pad per layer, matching GridGraph's stack demand. Per layer k, `unit`
+  // and `mid_pad` are prefix sums over the vias below k and the intermediate
+  // pads up to k; `bottom_pad`/`top_pad` are the end pads of a stack that
+  // starts/ends on k.
+  struct LayerViaCosts
+  {
+    CostT unit = 0.0;
+    CostT mid_pad = 0.0;
+    CostT bottom_pad = 0.0;
+    CostT top_pad = 0.0;
+  };
+  const int num_layers = grid_graph_->getNumLayers();
+  const std::vector<double>& ndr_costs = net_->getNdrCosts();
+  std::vector<LayerViaCosts> via_costs(num_layers);
+  for (int l = 0; l < num_layers; l++) {
+    LayerViaCosts& costs = via_costs[l];
+    if (l > 0) {
+      CostT unit = grid_graph_->getUnitViaCost(l - 1, ndr_costs);
+      // Res-aware: charge via resistance so climbing only pays off when
+      // the upper-layer wire-R savings beat it.
+      if (net_->isResAware()) {
+        unit += grid_graph_->getViaResistanceCost(l - 1);
+      }
+      costs.unit = via_costs[l - 1].unit + unit;
+      costs.mid_pad = via_costs[l - 1].mid_pad;
+      costs.top_pad
+          = grid_graph_->getStackPadCost(l, l - 1, l, *node, ndr_costs);
+    }
+    if (l + 1 < num_layers) {
+      costs.bottom_pad
+          = grid_graph_->getStackPadCost(l, l, l + 1, *node, ndr_costs);
+      if (l > 0) {
+        // Pad cost never decreases with pad length, so the larger of the
+        // two overlapping pads costs the larger of the two end-pad costs.
+        costs.mid_pad += std::max(costs.top_pad, costs.bottom_pad);
+      }
     }
   }
+  auto stack_cost = [&](const int low, const int high) -> CostT {
+    if (high == low) {
+      return 0.0;
+    }
+    return via_costs[high].unit - via_costs[low].unit
+           + (via_costs[high - 1].mid_pad - via_costs[low].mid_pad)
+           + via_costs[low].bottom_pad + via_costs[high].top_pad;
+  };
 
   const LayerRange& net_range = net_->getLayerRange();
   IntervalT fixed_layers(node->getFixedLayers());
@@ -652,7 +684,7 @@ void PatternRoute::calculateRoutingCosts(
         }
       }
       if (layer_index >= fixed_layers.high()) {
-        CostT cost = via_costs[layer_index] - via_costs[low_layer_index];
+        CostT cost = stack_cost(low_layer_index, layer_index);
         for (CostT child_cost : min_child_costs) {
           cost += child_cost;
         }
