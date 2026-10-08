@@ -362,6 +362,27 @@ TEST(WebViewerHookTest, SessionBroadcast)
   EXPECT_NE(seen[0].find("debug_refresh"), std::string::npos);
 }
 
+// A renderer turned on from Tcl never pauses, so registering it is the only
+// signal the clients get to pick up its controls.
+TEST(WebViewerHookTest, RendererRegistrationRefreshesControls)
+{
+  WebViewerHook hook;
+  std::vector<std::string> seen;
+  std::mutex m;
+  const auto token = hook.sessions().add([&](const std::string& s) {
+    std::lock_guard<std::mutex> lock(m);
+    seen.push_back(s);
+  });
+  hook.registerRenderer(nullptr);
+  hook.unregisterRenderer(nullptr);
+  hook.sessions().remove(token);
+
+  std::lock_guard<std::mutex> lock(m);
+  ASSERT_EQ(seen.size(), 2u);
+  EXPECT_NE(seen[0].find("renderer_controls_changed"), std::string::npos);
+  EXPECT_NE(seen[1].find("renderer_controls_changed"), std::string::npos);
+}
+
 TEST(WebViewerHookTest, CreatesChartAndTracksIt)
 {
   WebViewerHook hook;

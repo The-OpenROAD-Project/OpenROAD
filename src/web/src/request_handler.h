@@ -56,6 +56,17 @@ struct TclEvaluator
   std::mutex mutex;
   std::function<void()> drain_output;
 
+  // Debug renderers are also drawn between commands, when the tools' state is
+  // stable (see the renderer hook in web_serve.cpp).  `running` and
+  // `draw_skipped` are only touched under renderer_mutex, which such a draw
+  // holds, so a command cannot start while one is in progress.  When a draw
+  // was skipped because a command was running, redraw_renderers is called
+  // once the command is done so the clients pick the renderers up.
+  std::mutex renderer_mutex;
+  bool running = false;
+  bool draw_skipped = false;
+  std::function<void()> redraw_renderers;
+
   struct Result
   {
     std::string result;
@@ -70,7 +81,15 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
-    const int rc = Tcl_Eval(interp, cmd.c_str());
+    setRunning(true);
+    int rc;
+    try {
+      rc = Tcl_Eval(interp, cmd.c_str());
+    } catch (...) {
+      setRunning(false);
+      throw;
+    }
+    const bool redraw = setRunning(false);
     Result r;
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
@@ -87,7 +106,18 @@ struct TclEvaluator
     if (drain_output) {
       drain_output();
     }
+    if (redraw && redraw_renderers) {
+      redraw_renderers();
+    }
     return r;
+  }
+
+  // Returns whether a renderer draw was skipped since the last call.
+  bool setRunning(const bool value)
+  {
+    std::lock_guard<std::mutex> lock(renderer_mutex);
+    running = value;
+    return std::exchange(draw_skipped, false);
   }
 };
 

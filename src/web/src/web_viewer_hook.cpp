@@ -272,6 +272,16 @@ bool WebViewerHook::isPaused() const
   return paused_.load(std::memory_order_acquire);
 }
 
+void WebViewerHook::registerRenderer(Renderer* /* renderer */)
+{
+  sessions_.broadcast(R"({"type":"renderer_controls_changed"})");
+}
+
+void WebViewerHook::unregisterRenderer(Renderer* /* renderer */)
+{
+  sessions_.broadcast(R"({"type":"renderer_controls_changed"})");
+}
+
 // ─── Per-renderer display controls ───────────────────────────────────────────
 //
 // An unknown path answers `true`, the base class's behaviour: a renderer that

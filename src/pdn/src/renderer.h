@@ -79,6 +79,7 @@ class PDNRenderer : public web::Renderer
   static constexpr const char* kFollowpinsText = "Followpin";
   static constexpr const char* kViasText = "Vias";
   static constexpr const char* kRepairText = "Repair channels";
+  static constexpr const char* kLegendText = "Legend";
 };
 
 }  // namespace pdn
