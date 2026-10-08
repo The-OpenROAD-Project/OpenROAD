@@ -86,6 +86,7 @@ or_integration_tests(
     remove_buffers3_cugr
     remove_buffers4_cugr
     remove_buffers5_cugr
+    remove_buffers6_cugr
     remove_buffers3
     repair_antennas1
     repair_antennas2

@@ -6006,8 +6006,8 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
-    if (use_cugr_) {
-      cugr_->mergeNet(db_net1, db_net2, connection);
+    if (use_cugr_ && !cugr_->mergeNet(db_net1, db_net2, connection)) {
+      return false;
     }
   } else {
     // Both pins are in the same gcell, but the two routes may reach it on

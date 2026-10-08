@@ -3,6 +3,7 @@
 # via stack that passes b1/Z on metal3, where n2 starts. The merge must join
 # the trees inside that via stack; it used to link the two tree roots with a
 # wrong-way edge that failed with GRT-1252 when the merged net was rerouted.
+# verify_demand reports any leaked demand.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty buf_m3.lib
@@ -13,6 +14,7 @@ read_def remove_buffers4.def
 set_routing_layers -signal metal3-metal8 -clock metal3-metal8
 
 global_route -verbose -use_cugr
+set_debug_level GRT verify_demand 1
 
 global_route -start_incremental
 remove_buffers b1

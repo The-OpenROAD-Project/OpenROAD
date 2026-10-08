@@ -134,6 +134,36 @@ std::shared_ptr<GRTreeNode> splitEdgeAt(const std::shared_ptr<GRTreeNode>& tree,
   return middle;
 }
 
+// Returns the first node of tree on one of points or, failing that, the node
+// made by splitting an edge that passes through one of them; nullptr if the
+// tree reaches none of them.
+std::shared_ptr<GRTreeNode> findOrSplitAt(
+    const std::shared_ptr<GRTreeNode>& tree,
+    const std::vector<GRPoint>& points)
+{
+  std::shared_ptr<GRTreeNode> found;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    if (found) {
+      return;
+    }
+    for (const GRPoint& point : points) {
+      if (isSamePoint(*node, point)) {
+        found = node;
+        return;
+      }
+    }
+  });
+  if (found) {
+    return found;
+  }
+  for (const GRPoint& point : points) {
+    if (auto node = splitEdgeAt(tree, point)) {
+      return node;
+    }
+  }
+  return nullptr;
+}
+
 // Finds where the trees of two merged nets touch and returns one node of
 // each tree there, splitting an edge if the contact is inside it. Falls back
 // to the closest-layer pair of nodes at the same gcell, which the caller
@@ -2420,6 +2450,14 @@ void CUGR::verifyDemandConsistency(const char* tag)
       }
     }
   }
+  // Values within tol are rounding noise; print them as 0 so the report is
+  // stable across builds.
+  if (max_diff <= tol) {
+    max_diff = 0.0;
+  }
+  if (max_residual_base <= tol) {
+    max_residual_base = 0.0;
+  }
   debugPrint(logger_,
              GRT,
              "verify_demand",
@@ -2526,30 +2564,22 @@ bool CUGR::mergeNet(odb::dbNet* preserved_net,
         }
       }
 
-      // 2. Find intersection between preserved_tree and connection
-      std::shared_ptr<GRTreeNode> node_a = nullptr;
-      GRTreeNode::preorder(
-          preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-            if (!node_a
-                && adj.find({n->getLayerIdx(), n->x(), n->y()}) != adj.end()) {
-              node_a = n;
-            }
-          });
-      if (!node_a) {
-        node_a = preserved_tree;
+      // 2-3. Find where each tree touches the connection. A tree can pass a
+      // connection point inside an edge, such as the via stack down to the
+      // buffer pin, so split that edge to get a node there.
+      std::vector<GRPoint> points;
+      points.reserve(adj.size());
+      for (const auto& [coord, neighbors] : adj) {
+        points.emplace_back(
+            std::get<0>(coord), std::get<1>(coord), std::get<2>(coord));
       }
-
-      // 3. Find intersection between removed_tree and connection
-      std::shared_ptr<GRTreeNode> node_b = nullptr;
-      GRTreeNode::preorder(
-          removed_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-            if (!node_b
-                && adj.find({n->getLayerIdx(), n->x(), n->y()}) != adj.end()) {
-              node_b = n;
-            }
-          });
-      if (!node_b) {
-        node_b = removed_tree;
+      std::shared_ptr<GRTreeNode> node_a
+          = findOrSplitAt(preserved_tree, points);
+      std::shared_ptr<GRTreeNode> node_b = findOrSplitAt(removed_tree, points);
+      if (!node_a || !node_b) {
+        // The removed tree would be left detached with its demand still
+        // committed; let the caller reroute instead.
+        return false;
       }
 
       // 4. Reroot removed_tree at node_b
@@ -2604,14 +2634,13 @@ bool CUGR::mergeNet(odb::dbNet* preserved_net,
             }
             parent_node->addChild(child_node);
 
-            // Commit grid usage if it's a wire (same layer)
-            if (std::get<0>(curr) == std::get<0>(next)) {
-              auto temp = std::make_shared<GRTreeNode>(
-                  std::get<0>(curr), std::get<1>(curr), std::get<2>(curr));
-              temp->addChild(std::make_shared<GRTreeNode>(
-                  std::get<0>(next), std::get<1>(next), std::get<2>(next)));
-              grid_graph_->addTreeUsage(temp, ndr);
-            }
+            // Commit the wire or via demand of the new edge; releasing the
+            // merged tree removes both.
+            auto temp = std::make_shared<GRTreeNode>(
+                std::get<0>(curr), std::get<1>(curr), std::get<2>(curr));
+            temp->addChild(std::make_shared<GRTreeNode>(
+                std::get<0>(next), std::get<1>(next), std::get<2>(next)));
+            grid_graph_->addTreeUsage(temp, ndr);
 
             build_tree(next, std::move(child_node));
           }

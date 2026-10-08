@@ -64,4 +64,6 @@ Total           20460.05        26.00         1.24        27.24       0.13
 [INFO GRT-0018] Total wirelength: 176 um
 [INFO GRT-0014] Routed nets: 4
 [INFO RSZ-0026] Removed 1 buffers.
+[DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
+[DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
 No differences found.

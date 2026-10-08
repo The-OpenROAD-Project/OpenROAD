@@ -2,7 +2,7 @@
 # disjoint layer ranges. n1 arrives on metal2 to reach b1/A on metal1, and n2
 # starts at b1/Z on metal3. The merge must bridge the trees with a via, as
 # the guides do; it used to link the two tree roots with a via edge between
-# different gcells.
+# different gcells, which leaked demand. verify_demand reports any leak.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty buf_m3.lib
@@ -13,6 +13,7 @@ read_def remove_buffers4.def
 set_routing_layers -signal metal2-metal8 -clock metal2-metal8
 
 global_route -verbose -use_cugr
+set_debug_level GRT verify_demand 1
 
 global_route -start_incremental
 remove_buffers b1

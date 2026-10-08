@@ -136,8 +136,8 @@ class CUGR
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
   // Transfer removed net tree ownership to preserved net without removing
-  // its GridGraph usage. Called at inDbNetPostMerge time. Returns false,
-  // leaving both trees untouched, if they cannot be joined.
+  // its GridGraph usage. Called at inDbNetPostMerge time. Returns false if
+  // the trees cannot be joined; the caller then reroutes the preserved net.
   bool mergeNet(odb::dbNet* preserved_net,
                 odb::dbNet* removed_net,
                 const std::vector<GSegment>& connection);
