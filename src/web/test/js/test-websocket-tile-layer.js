@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -47,7 +48,8 @@ const { buildMapOptions } = await import('../../src/ui-utils.js');
 const { floorClampZoom, buildTileRequest, currentDpr,
         createWebSocketTileLayer, createOverlayTileLayer }
     = await import('../../src/websocket-tile-layer.js');
-const { BLANK_TILE, TILE_SIZE_CSS, buildTileRequestFor, watchDevicePixelRatio }
+const { BLANK_TILE, TILE_SIZE_CSS, buildTileRequestFor, setTileSrc,
+        watchDevicePixelRatio }
     = await import('../../src/tile-request.js');
 const { WebSocketManager } = await import('../../src/websocket-manager.js');
 
@@ -81,6 +83,25 @@ describe('BLANK_TILE', () => {
         assert.equal(b[block], 0x21, 'an extension block must come first');
         assert.equal(b[block + 1], 0xF9, 'and it must be the graphic control');
         assert.equal(b[block + 3] & 0x01, 1, 'with the transparency flag set');
+    });
+});
+
+// The one place any tile layer points a tile at an image, including the heat
+// map in main.js, which has no tests of its own.  Assigning `src` by hand is
+// how a path ends up stranding the blob the tile was holding.
+describe('setTileSrc', () => {
+    it('releases the blob the tile was holding', () => {
+        const revoked = [];
+        const saved = URL.revokeObjectURL;
+        URL.revokeObjectURL = (u) => revoked.push(u);
+        try {
+            const tile = { src: 'blob:fake-url' };
+            setTileSrc(tile, BLANK_TILE);
+            assert.equal(tile.src, BLANK_TILE);
+        } finally {
+            URL.revokeObjectURL = saved;
+        }
+        assert.deepEqual(revoked, ['blob:fake-url']);
     });
 });
 
@@ -136,6 +157,25 @@ describe('tile_px on the wire', () => {
         const req = buildTileRequestFor({ x: 0, y: 0, z: 0 }, 'metal1',
                                         { visibility: {} }, 2, 240);
         assert.equal(req.tile_px, 480);
+    });
+});
+
+// The server keys its tile cache on the request JSON minus the flags each
+// layer is known to ignore (request_handler.cpp).  A key it has never heard of
+// survives that filter, so shipping a client-only flag makes toggling it a
+// cache miss on every metal layer on screen.
+describe('client-only visibility flags', () => {
+    it('keeps ui_hierarchy_view off the wire', () => {
+        const req = buildTileRequestFor(
+            { x: 0, y: 0, z: 0 }, 'metal1',
+            { visibility: { ui_hierarchy_view: true, cluster_view: true },
+              selectability: { pins: true } },
+            1, 240);
+
+        assert.equal('ui_hierarchy_view' in req, false);
+        // The flags the server does read still travel, prefix and all.
+        assert.equal(req.cluster_view, true);
+        assert.equal(req.s_pins, true);
     });
 });
 
@@ -357,6 +397,21 @@ describe('buildTileRequest', () => {
         }
     });
 
+    // The color-by-owner overlays are switched by these flags travelling in
+    // the payload — the `_modules`/`_clusters` layers stay mounted, so if the
+    // flags stopped being sent the overlays would be stuck on.
+    it('carries the module/cluster overlay flags', () => {
+        const overlayCtx = {
+            ...ctx,
+            visibility: { module_view: false, cluster_view: true },
+        };
+        const req = buildTileRequest({ z: 0, x: 0, y: 0 }, '_clusters',
+                                     overlayCtx);
+        assert.equal(req.layer, '_clusters');
+        assert.equal(req.module_view, false);
+        assert.equal(req.cluster_view, true);
+    });
+
     it('omits pattern when the layer is solid or unset', () => {
         // No app → no pattern field.
         assert.equal('pattern' in buildTileRequest(
@@ -372,6 +427,87 @@ describe('buildTileRequest', () => {
         const patCtx = { ...ctx, app: { layerPatterns: { M1: 3 } } };
         const req = buildTileRequest({ z: 0, x: 0, y: 0 }, 'M1', patCtx);
         assert.equal(req.pattern, 3);
+    });
+});
+
+// A gated layer stays mounted while its flag is off (so the map's layer set is
+// never a second copy of the flag) but must not pay for it: no request, and a
+// 1x1 tile instead of a (256*dpr)² bitmap.
+describe('gated tile layers', () => {
+    function makeLayer(visibility, gate) {
+        const requests = [];
+        const manager = {
+            nextId: 1,
+            request(msg) { requests.push(msg); return Promise.resolve('data:,'); },
+            cancel() {},
+        };
+        const Layer = createWebSocketTileLayer(visibility, new Set(), {}, null,
+                                               null);
+        const layer = new Layer(manager, '_clusters', { gate });
+        return { layer, requests };
+    }
+
+    it('serves a transparent tile and skips the request while gated off', () => {
+        const { layer, requests } = makeLayer({ cluster_view: false },
+                                              'cluster_view');
+        const tile = layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
+        assert.equal(requests.length, 0);
+        assert.equal(tile.src, BLANK_TILE);
+    });
+
+    it('requests normally once the flag is on', () => {
+        const { layer, requests } = makeLayer({ cluster_view: true },
+                                              'cluster_view');
+        layer.createTile({ z: 1, x: 2, y: 3 }, () => {});
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].layer, '_clusters');
+        assert.equal(requests[0].cluster_view, true);
+    });
+
+    it('leaves an ungated layer alone', () => {
+        const { layer, requests } = makeLayer({}, undefined);
+        layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
+        assert.equal(requests.length, 1);
+    });
+
+    // A gate naming a flag that does not exist reads undefined, which would
+    // gate the layer off forever: nothing on screen, no error.  Fail open and
+    // warn, so the mistake is visible instead of looking like an empty design.
+    it('renders ungated and warns when the gate names no known flag', () => {
+        const { layer, requests } = makeLayer({ cluster_view: false },
+                                              'clsuter_view');
+        const warnings = [];
+        const realWarn = console.warn;
+        console.warn = msg => warnings.push(msg);
+        try {
+            layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
+            layer.createTile({ z: 0, x: 1, y: 0 }, () => {});
+        } finally {
+            console.warn = realWarn;
+        }
+        assert.equal(requests.length, 2);
+        assert.equal(warnings.length, 1, 'warns once, not per tile');
+        assert.match(warnings[0], /unknown gate 'clsuter_view'/);
+    });
+
+    // Turning the overlay off has to blank the tiles that are already up —
+    // leaving the last image would keep showing an overlay the user switched
+    // off.
+    it('blanks existing tiles in place when the flag goes off', () => {
+        const visibility = { cluster_view: true };
+        const { layer, requests } = makeLayer(visibility, 'cluster_view');
+        const el = { src: 'blob:old', _websocketRequestId: 7 };
+        layer._map = {};
+        layer._tiles = { '1:2:3': { el, coords: { z: 1, x: 2, y: 3 } } };
+
+        visibility.cluster_view = false;
+        layer.refreshTiles();
+        assert.equal(requests.length, 0);
+        assert.equal(el.src, BLANK_TILE);
+
+        visibility.cluster_view = true;
+        layer.refreshTiles();
+        assert.equal(requests.length, 1);
     });
 });
 

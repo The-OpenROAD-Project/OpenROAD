@@ -34,6 +34,7 @@ genrule(
         "src/coordinates.js",
         "src/ui-utils.js",
         "src/checkbox-tree-model.js",
+        "src/color-tree.js",
         "src/vis-tree.js",
         "src/websocket-manager.js",
         "src/tile-merge.js",
@@ -48,6 +49,8 @@ genrule(
         "src/label-manager.js",
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
+        "src/clusters-widget.js",
+        "src/hierarchy-panel.js",
         "src/menu-bar.js",
         "src/options-dialogs.js",
         "src/context-menu.js",
@@ -75,6 +78,7 @@ genrule(
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
           " $(location src/checkbox-tree-model.js)" +
+          " $(location src/color-tree.js)" +
           " $(location src/vis-tree.js)" +
           " $(location src/websocket-manager.js)" +
           " $(location src/tile-merge.js)" +
@@ -89,6 +93,8 @@ genrule(
           " $(location src/label-manager.js)" +
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
+          " $(location src/clusters-widget.js)" +
+          " $(location src/hierarchy-panel.js)" +
           " $(location src/menu-bar.js)" +
           " $(location src/options-dialogs.js)" +
           " $(location src/context-menu.js)" +
@@ -122,6 +128,7 @@ _WEB_ASSET_FILES = [
     "src/coordinates.js",
     "src/ui-utils.js",
     "src/checkbox-tree-model.js",
+    "src/color-tree.js",
     "src/vis-tree.js",
     "src/websocket-manager.js",
     "src/websocket-tile-layer.js",
@@ -131,6 +138,8 @@ _WEB_ASSET_FILES = [
     "src/label-manager.js",
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
+    "src/clusters-widget.js",
+    "src/hierarchy-panel.js",
     "src/menu-bar.js",
     "src/options-dialogs.js",
     "src/context-menu.js",
@@ -233,6 +242,8 @@ cc_library(
         "src/font_data.cpp",
         "src/font_data.h",
         "src/glyph_cache.cpp",
+        "src/group_report.cpp",
+        "src/group_report.h",
         "src/hierarchy_report.cpp",
         "src/module_color_palette.h",
         "src/request_dispatcher.h",
@@ -269,6 +280,7 @@ cc_library(
         "src/request_handler.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
+        "src/shape_collector.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",

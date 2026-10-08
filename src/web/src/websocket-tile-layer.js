@@ -4,8 +4,9 @@
 // Leaflet tile layer that fetches tiles via WebSocket.
 
 import {
-    BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
-    tileSizeFields, withDeviceExactTileSize,
+    BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr,
+    releaseTileBlob, setTileSrc, tileSizeCss, tileSizeFields,
+    withDeviceExactTileSize,
 } from './tile-request.js';
 import { tileMayHaveContent } from './layer-extents.js';
 
@@ -43,14 +44,12 @@ export function buildTileRequest(coords, layerName, ctx) {
 // a refresh too -- a tile that had content before an edit removed it must drop
 // the decode it is still holding.
 function applyTilePayload(tile, data) {
-    if (tile.src && tile.src.startsWith('blob:')) {
-        URL.revokeObjectURL(tile.src);
-    }
     if (data == null) {
-        tile.src = BLANK_TILE;
+        setTileSrc(tile, BLANK_TILE);
         return;
     }
-    tile.src = (typeof data === 'string') ? data : URL.createObjectURL(data);
+    setTileSrc(tile,
+               (typeof data === 'string') ? data : URL.createObjectURL(data));
 }
 
 export function createWebSocketTileLayer(visibility, visibleLayers,
@@ -74,6 +73,41 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 this, withDeviceExactTileSize(options));
         },
 
+        // A layer switched by one visibility flag stays mounted and simply
+        // skips the request while the flag is off.  `options.gate` names the
+        // flag; an unknown name would gate the layer off forever, so fail open
+        // and warn instead.
+        _gatedOff: function() {
+            const gate = this.options.gate;
+            if (gate == null) return false;
+            if (!(gate in ctx.visibility)) {
+                if (!this._gateWarned) {
+                    this._gateWarned = true;
+                    console.warn(`tile layer ${this._layerName}: unknown gate `
+                                 + `'${gate}', rendering ungated`);
+                }
+                return false;
+            }
+            return !ctx.visibility[gate];
+        },
+
+        // Ask the server for this tile and show whatever comes back.  Shared by
+        // createTile and refreshTiles: the request, the id bookkeeping that lets
+        // it be cancelled, and the cache's data-URI-vs-blob answer are the same
+        // in both.
+        _requestTile: function(tile, coords) {
+            tile._websocketRequestId = this._websocketManager.nextId;
+            this._websocketManager.request(
+                buildTileRequest(coords, this._layerName, ctx)
+            ).then(data => {
+                applyTilePayload(tile, data);
+            }).catch(err => {
+                // Cancelled (by refreshTiles) or failed.  `done` is never called
+                // and no retry is issued, so a tile that never loaded stays blank
+                // until Leaflet evicts it, and one that had an image keeps it.
+            });
+        },
+
         createTile: function(coords, done) {
             const tile = document.createElement('img');
             tile.alt = '';
@@ -83,9 +117,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             // refreshTiles() can set tile.src and still trigger done().
             tile._tileDone = false;
             tile.onload = () => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
+                releaseTileBlob(tile);
                 if (!tile._tileDone) {
                     tile._tileDone = true;
                     done(null, tile);
@@ -98,26 +130,18 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 }
             };
 
-            // Store the request ID so _removeTile() can cancel it
-            // when the tile is discarded (e.g. during zoom).
-            tile._websocketRequestId = this._websocketManager.nextId;
-
+            if (this._gatedOff()) {
+                setTileSrc(tile, BLANK_TILE);
+                return tile;
+            }
             if (!tileMayHaveContent(ctx, this._layerName, coords)) {
-                tile._websocketRequestId = undefined;
                 applyTilePayload(tile, null);
                 return tile;
             }
 
-            this._websocketManager.request(
-                buildTileRequest(coords, this._layerName, ctx)
-            ).then(data => {
-                applyTilePayload(tile, data);
-            }).catch(err => {
-                // Request was cancelled (e.g. by refreshTiles); ignore.  Note
-                // that `done` is never called and no retry is issued, so this
-                // tile stays blank until Leaflet evicts it.
-            });
-
+            // The request id stored by _requestTile is what lets _removeTile()
+            // cancel a tile discarded before it arrives (e.g. during zoom).
+            this._requestTile(tile, coords);
             return tile;
         },
 
@@ -126,7 +150,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         refreshTiles: function() {
             if (!this._map) return;
 
-
+            const gated = this._gatedOff();
             for (const key in this._tiles) {
                 const tileInfo = this._tiles[key];
                 if (!tileInfo || !tileInfo.el) continue;
@@ -137,23 +161,24 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 // Cancel any pending request for this tile
                 if (tile._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile._websocketRequestId);
+                    tile._websocketRequestId = undefined;
                 }
 
+                // Switched off: blank the tile in place rather than keep an
+                // overlay the user just turned off.  Only if not already blank —
+                // redrawAllLayers walks every layer on any visibility change.
+                if (gated) {
+                    if (tile.src !== BLANK_TILE) {
+                        setTileSrc(tile, BLANK_TILE);
+                    }
+                    continue;
+                }
                 if (!tileMayHaveContent(ctx, this._layerName, coords)) {
-                    tile._websocketRequestId = undefined;
                     applyTilePayload(tile, null);
                     continue;
                 }
 
-                tile._websocketRequestId = this._websocketManager.nextId;
-
-                this._websocketManager.request(
-                    buildTileRequest(coords, this._layerName, ctx)
-                ).then(data => {
-                    applyTilePayload(tile, data);
-                }).catch(err => {
-                    // Tile refresh failed; keep existing image
-                });
+                this._requestTile(tile, coords);
             }
         },
 
@@ -163,9 +188,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 if (tile.el._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile.el._websocketRequestId);
                 }
-                if (tile.el.src && tile.el.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.el.src);
-                }
+                releaseTileBlob(tile.el);
             }
             L.GridLayer.prototype._removeTile.call(this, key);
         }
@@ -223,9 +246,7 @@ export function createOverlayTileLayer(visibility, app) {
 
             tile._tileDone = false;
             tile.onload = () => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
+                releaseTileBlob(tile);
                 if (!tile._tileDone) {
                     tile._tileDone = true;
                     done(null, tile);
@@ -289,9 +310,7 @@ export function createOverlayTileLayer(visibility, app) {
                     this._websocketManager.cancel(tile.el._websocketRequestId);
                     tile.el._websocketRequestId = undefined;
                 }
-                if (tile.el.src && tile.el.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.el.src);
-                }
+                releaseTileBlob(tile.el);
             }
             L.GridLayer.prototype._removeTile.call(this, key);
         }
