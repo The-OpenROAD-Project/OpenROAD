@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -164,58 +163,59 @@ std::shared_ptr<GRTreeNode> findOrSplitAt(
   return nullptr;
 }
 
-// Finds where the trees of two merged nets touch and returns one node of
-// each tree there, splitting an edge if the contact is inside it. Falls back
-// to the closest-layer pair of nodes at the same gcell, which the caller
-// bridges with vias. Returns {nullptr, nullptr} if the trees share no gcell.
+std::vector<GRPoint> treePoints(const std::shared_ptr<GRTreeNode>& tree)
+{
+  std::vector<GRPoint> points;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    points.emplace_back(*node);
+  });
+  return points;
+}
+
+// Finds where two trees touch and returns one node of each there, splitting
+// an edge if the contact is inside it; {nullptr, nullptr} if they don't.
 std::pair<std::shared_ptr<GRTreeNode>, std::shared_ptr<GRTreeNode>>
 findTreeJoin(const std::shared_ptr<GRTreeNode>& tree_a,
              const std::shared_ptr<GRTreeNode>& tree_b)
 {
-  std::vector<std::shared_ptr<GRTreeNode>> nodes_a;
-  std::vector<std::shared_ptr<GRTreeNode>> nodes_b;
-  GRTreeNode::preorder(tree_a, [&](const std::shared_ptr<GRTreeNode>& node) {
-    nodes_a.push_back(node);
-  });
-  GRTreeNode::preorder(tree_b, [&](const std::shared_ptr<GRTreeNode>& node) {
-    nodes_b.push_back(node);
-  });
+  // Each search lands on a point where the other tree has a node.
+  if (auto node_a = findOrSplitAt(tree_a, treePoints(tree_b))) {
+    return {node_a, findOrSplitAt(tree_b, {GRPoint(*node_a)})};
+  }
+  if (auto node_b = findOrSplitAt(tree_b, treePoints(tree_a))) {
+    return {findOrSplitAt(tree_a, {GRPoint(*node_b)}), node_b};
+  }
+  return {nullptr, nullptr};
+}
 
-  for (const auto& node_a : nodes_a) {
-    for (const auto& node_b : nodes_b) {
-      if (isSamePoint(*node_a, *node_b)) {
-        return {node_a, node_b};
-      }
+bool findPath(const std::shared_ptr<GRTreeNode>& curr,
+              const std::shared_ptr<GRTreeNode>& target,
+              std::vector<std::shared_ptr<GRTreeNode>>& path)
+{
+  path.push_back(curr);
+  if (curr == target) {
+    return true;
+  }
+  for (const auto& child : curr->getChildren()) {
+    if (findPath(child, target, path)) {
+      return true;
     }
   }
-  for (const auto& node_b : nodes_b) {
-    if (auto node_a = splitEdgeAt(tree_a, *node_b)) {
-      return {node_a, node_b};
-    }
-  }
-  for (const auto& node_a : nodes_a) {
-    if (auto node_b = splitEdgeAt(tree_b, *node_a)) {
-      return {node_a, node_b};
-    }
-  }
+  path.pop_back();
+  return false;
+}
 
-  std::shared_ptr<GRTreeNode> best_a;
-  std::shared_ptr<GRTreeNode> best_b;
-  int best_gap = std::numeric_limits<int>::max();
-  for (const auto& node_a : nodes_a) {
-    for (const auto& node_b : nodes_b) {
-      if (node_a->x() != node_b->x() || node_a->y() != node_b->y()) {
-        continue;
-      }
-      const int gap = std::abs(node_a->getLayerIdx() - node_b->getLayerIdx());
-      if (gap < best_gap) {
-        best_gap = gap;
-        best_a = node_a;
-        best_b = node_b;
-      }
-    }
+// Makes node, which must belong to tree, its root by reversing the edges on
+// the path to it.
+void rerootAt(const std::shared_ptr<GRTreeNode>& tree,
+              const std::shared_ptr<GRTreeNode>& node)
+{
+  std::vector<std::shared_ptr<GRTreeNode>> path;
+  findPath(tree, node, path);
+  for (size_t i = 0; i + 1 < path.size(); ++i) {
+    path[i]->removeChild(path[i + 1]);
+    path[i + 1]->addChild(path[i]);
   }
-  return {best_a, best_b};
 }
 
 }  // namespace
@@ -2428,6 +2428,8 @@ void CUGR::verifyDemandConsistency(const char* tag)
   const auto recomputed = grid_graph_->snapshotDemand();
   grid_graph_->restoreDemand(live);  // leave the grid exactly as found
 
+  // Differences within tol are rounding noise; they are neither counted nor
+  // reported, so the report is stable across builds.
   constexpr double tol = 1e-6;
   double max_diff = 0.0;
   // With all trees removed, demand must be zero; any residual is a leak.
@@ -2438,25 +2440,17 @@ void CUGR::verifyDemandConsistency(const char* tag)
     for (size_t x = 0; x < live[l].size(); x++) {
       for (size_t y = 0; y < live[l][x].size(); y++) {
         const double diff = std::abs(recomputed[l][x][y] - live[l][x][y]);
-        max_diff = std::max(max_diff, diff);
-        const double residual = std::abs(base[l][x][y]);
-        max_residual_base = std::max(max_residual_base, residual);
         if (diff > tol) {
           mismatches++;
+          max_diff = std::max(max_diff, diff);
         }
+        const double residual = std::abs(base[l][x][y]);
         if (residual > tol) {
           leaked_edges++;
+          max_residual_base = std::max(max_residual_base, residual);
         }
       }
     }
-  }
-  // Values within tol are rounding noise; print them as 0 so the report is
-  // stable across builds.
-  if (max_diff <= tol) {
-    max_diff = 0.0;
-  }
-  if (max_residual_base <= tol) {
-    max_residual_base = 0.0;
   }
   debugPrint(logger_,
              GRT,
@@ -2497,51 +2491,17 @@ bool CUGR::mergeNet(odb::dbNet* preserved_net,
 
   if (preserved_tree && removed_tree) {
     if (connection.empty()) {
-      // The buffer pins share a gcell, so both trees reach it, but possibly
-      // only inside an edge or on disjoint layer ranges.
-      std::shared_ptr<GRTreeNode> node_a;
-      std::shared_ptr<GRTreeNode> node_b;
-      std::tie(node_a, node_b) = findTreeJoin(preserved_tree, removed_tree);
+      // The routes overlap in the buffer gcell (connectRouting passes the
+      // bridging vias otherwise), but the trees may touch only inside an edge,
+      // such as a via stack, which CUGR keeps as one edge.
+      auto [node_a, node_b] = findTreeJoin(preserved_tree, removed_tree);
       if (!node_a) {
         // Linking the roots would add a diagonal or wrong-way edge that
         // commitTree rejects (GRT-1252); let the caller reroute instead.
         return false;
       }
-      if (node_a->getLayerIdx() != node_b->getLayerIdx()) {
-        // Bridge disjoint layer ranges with vias, as connectRouting does for
-        // the guides, and commit their demand like the rest of the tree.
-        auto bridge = std::make_shared<GRTreeNode>(
-            node_a->getLayerIdx(), node_a->x(), node_a->y());
-        bridge->addChild(std::make_shared<GRTreeNode>(
-            node_b->getLayerIdx(), node_b->x(), node_b->y()));
-        grid_graph_->addTreeUsage(bridge, preserved_gr->getNdrCosts());
-      }
-      // Reroot removed_tree at node_b
-      std::function<bool(std::shared_ptr<GRTreeNode>,
-                         std::vector<std::shared_ptr<GRTreeNode>>&)>
-          find_path;
-      find_path = [&](std::shared_ptr<GRTreeNode> curr,
-                      std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
-        path.push_back(curr);
-        if (curr == node_b) {
-          return true;
-        }
-        for (auto& child : curr->getChildren()) {
-          if (find_path(child, path)) {
-            return true;
-          }
-        }
-        path.pop_back();
-        return false;
-      };
-      std::vector<std::shared_ptr<GRTreeNode>> path;
-      if (find_path(removed_tree, path)) {
-        for (size_t i = 0; i < path.size() - 1; ++i) {
-          path[i]->removeChild(path[i + 1]);
-          path[i + 1]->addChild(path[i]);
-        }
-      }
-      node_a->addChild(std::move(node_b));
+      rerootAt(removed_tree, node_b);
+      node_a->addChild(node_b);
     } else {
       auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
         const int min_coord = grid_graph_->getGridline(is_x ? 0 : 1, 0);
@@ -2564,14 +2524,13 @@ bool CUGR::mergeNet(odb::dbNet* preserved_net,
         }
       }
 
-      // 2-3. Find where each tree touches the connection. A tree can pass a
+      // 2. Find where each tree touches the connection. A tree can pass a
       // connection point inside an edge, such as the via stack down to the
       // buffer pin, so split that edge to get a node there.
       std::vector<GRPoint> points;
       points.reserve(adj.size());
       for (const auto& [coord, neighbors] : adj) {
-        points.emplace_back(
-            std::get<0>(coord), std::get<1>(coord), std::get<2>(coord));
+        points.push_back(std::make_from_tuple<GRPoint>(coord));
       }
       std::shared_ptr<GRTreeNode> node_a
           = findOrSplitAt(preserved_tree, points);
@@ -2582,33 +2541,10 @@ bool CUGR::mergeNet(odb::dbNet* preserved_net,
         return false;
       }
 
-      // 4. Reroot removed_tree at node_b
-      std::function<bool(std::shared_ptr<GRTreeNode>,
-                         std::vector<std::shared_ptr<GRTreeNode>>&)>
-          find_path;
-      find_path = [&](std::shared_ptr<GRTreeNode> curr,
-                      std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
-        path.push_back(curr);
-        if (curr == node_b) {
-          return true;
-        }
-        for (auto& child : curr->getChildren()) {
-          if (find_path(child, path)) {
-            return true;
-          }
-        }
-        path.pop_back();
-        return false;
-      };
-      std::vector<std::shared_ptr<GRTreeNode>> path;
-      if (find_path(removed_tree, path)) {
-        for (size_t i = 0; i < path.size() - 1; ++i) {
-          path[i]->removeChild(path[i + 1]);
-          path[i + 1]->addChild(path[i]);
-        }
-      }
+      // 3. Reroot removed_tree at node_b
+      rerootAt(removed_tree, node_b);
 
-      // 5. DFS to build connection tree and commit demand
+      // 4. DFS to build connection tree and commit demand
       std::set<Coord> visited;
       const auto& ndr = preserved_gr->getNdrCosts();
       std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
