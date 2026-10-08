@@ -2168,7 +2168,10 @@ TEST_F(TileGeneratorTest, TechResponseReportsTheFullOrientation)
       break;
     }
   }
-  ASSERT_NE(die_entry, nullptr);
+  if (die_entry == nullptr) {
+    ADD_FAILURE() << "tech response has no chiplet " << die0->getName();
+    return;
+  }
   EXPECT_EQ(die_entry->at("orient").as_string(), "MZ")
       << "the 3D orientation collapsed to its 2D half, losing the flip";
   EXPECT_TRUE(die_entry->at("mirror_z").as_bool());
@@ -4946,8 +4949,10 @@ TEST_F(TileGeneratorTest, LayerHierarchyBacksideCategory)
       break;
     }
   }
-  ASSERT_NE(backside_node, nullptr)
-      << "layer_hierarchy missing Backside category node";
+  if (backside_node == nullptr) {
+    ADD_FAILURE() << "layer_hierarchy missing Backside category node";
+    return;
+  }
   EXPECT_EQ(backside_node->at("type").as_string(), "category");
 
   // The backside node should contain exactly metal1 and via1.
