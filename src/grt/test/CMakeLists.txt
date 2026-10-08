@@ -22,6 +22,8 @@ or_integration_tests(
     cugr_adjustment1
     cugr_adjustment2
     cugr_adjustment3
+    cugr_colocated_pins
+    cugr_detour_limit
     est_rc1
     est_rc2
     est_rc3
@@ -84,6 +86,9 @@ or_integration_tests(
     remove_buffers1_cugr
     remove_buffers2_cugr
     remove_buffers3_cugr
+    remove_buffers4_cugr
+    remove_buffers5_cugr
+    remove_buffers6_cugr
     remove_buffers3
     repair_antennas1
     repair_antennas2

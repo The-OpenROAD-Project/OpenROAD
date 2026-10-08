@@ -52,6 +52,10 @@ class SteinerTreeBuilder
   explicit SteinerTreeBuilder(utl::Logger* logger);
   ~SteinerTreeBuilder();
 
+  // Completes the state that makeSteinerTree otherwise builds on first use,
+  // so that it may then be called from several threads.
+  void prepareForThreads();
+
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
                        int drvr_index,

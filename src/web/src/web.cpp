@@ -2339,7 +2339,12 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
       heat_map_name,
       short_name,
       "WebChipletHeatMap" + short_name,
-      [logger = logger_, heat_map_name, short_name, entries, chip, transform] {
+      [logger = logger_,
+       heat_map_name,
+       short_name,
+       entries = std::move(entries),
+       chip,
+       transform] {
         auto source = std::make_shared<web::ExternalHeatMapDataSource>(
             logger, heat_map_name, short_name, entries);
         source->setChip(chip);

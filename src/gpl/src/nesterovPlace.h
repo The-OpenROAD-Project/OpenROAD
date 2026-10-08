@@ -62,9 +62,30 @@ class NesterovPlace
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   NesterovPlaceVars& getNpVars() { return npVars_; }
+  float getAverageOverflow() const { return average_overflow_unscaled_; }
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
+  // Enables the incremental density-penalty guard for the next
+  // doNesterovPlace() call; consumed (cleared) at the start of that call.
+  void enableIncrementalDensityPenaltyGuard();
+  // Clears a divergence left over from a previous doNesterovPlace() call
+  // (e.g. one the caller intends to retry from). Without this, the leftover
+  // state trips the divergence check at the very start of the next
+  // doNesterovPlace() call before it does any work.
+  void clearDivergence();
+  // When true, a divergence is reported as a warning and doNesterovPlace()
+  // returns normally (check divergedLastRun()) instead of logging an ERROR
+  // and throwing. Defaults to false, so a plain (non-incremental) placement
+  // run still fails loudly and immediately on divergence, as before. The
+  // caller is responsible for toggling this back off once the recoverable
+  // window has passed (e.g. incremental placement's phase 2 has no further
+  // fallback, so it should not set this).
+  void setAllowDivergenceRecovery(bool allow)
+  {
+    allow_divergence_recovery_ = allow;
+  }
+  bool divergedLastRun() const { return num_region_diverged_ > 0; }
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -95,31 +116,51 @@ class NesterovPlace
                        int64_t& td_accumulated_delta_area,
                        bool is_routability_gpl_iter,
                        int& virtual_cts_count);
-  bool isDiverged(float& diverge_snapshot_WlCoefX,
-                  float& diverge_snapshot_WlCoefY,
-                  bool& is_diverge_snapshot_saved);
+  // Re-evaluate every GCell's current gradient at curSLP, so that the next
+  // step length estimate compares gradients of the same objective.
+  void refreshCurGradients();
+  enum class DivergeAction
+  {
+    kNone,
+    kResume,
+    kStop
+  };
+  DivergeAction isDiverged(float& curA);
+  void revertToDivergeSnapshot();
   void routabilitySnapshot(int iter,
                            float curA,
                            const std::string& routability_driven_dir,
                            int routability_driven_count,
-                           int timing_driven_count,
-                           bool& is_routability_snapshot_saved,
-                           float& route_snapshot_WlCoefX,
-                           float& route_snapshot_WlCoefY,
-                           float& route_snapshotA);
+                           int timing_driven_count);
   void runRoutability(int iter,
                       int timing_driven_count,
                       const std::string& routability_driven_dir,
-                      float route_snapshotA,
-                      float route_snapshot_WlCoefX,
-                      float route_snapshot_WlCoefY,
                       int& routability_driven_count,
                       float& curA);
+  // Recover from a divergence by rolling back to the routability snapshot with
+  // a different inflation in place. Returns false when no attempt is left or
+  // there is no routability snapshot to go to.
+  bool tryRoutabilityDivergeRecovery(float& curA);
   // True when the per-iteration cell displacement has come off its peak in
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
+  float getWorstSettleRatio() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  // Re-derives densityPenalty_ for every region via
+  // NesterovBase::updateDensityPenaltyFromRatio() - the same formula
+  // NesterovBase::initDensity2() uses at true init, just re-triggered
+  // mid-run. Leaves wireLengthCoefX_/Y_ untouched, unlike calling init()
+  // again.
+  void applyDensityPenaltyFactor(float factor);
+  // Checked once per outer iteration while the incremental density-penalty
+  // guard is enabled. On any regression past best_overflow, escalates
+  // current_factor in place (no revert - see the .cpp for why) and keeps
+  // running; otherwise a no-op. The escalation multiplier is fixed at the
+  // best value found by a guard-parameter sweep (see the .cpp).
+  void guardIncrementalDensityPenalty(float& current_factor,
+                                      float& best_overflow,
+                                      int& retries);
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
   std::string getReportsDir() const;
@@ -152,6 +193,29 @@ class NesterovPlace
   int64_t min_hpwl_ = INT64_MAX;
   int diverge_snapshot_iter_ = 0;
   bool is_min_hpwl_ = false;
+  bool is_diverge_snapshot_saved_ = false;
+  float diverge_snapshot_wl_coef_x_ = 0;
+  float diverge_snapshot_wl_coef_y_ = 0;
+  // min_hpwl_ at save time; a routability pass clears min_hpwl_ but keeps
+  // the snapshot.
+  int64_t diverge_snapshot_hpwl_ = 0;
+
+  // Repeats only help while the resumed descent keeps finding a better
+  // snapshot. Bounded so a diverging run stops on its min hpwl snapshot, not
+  // at max iterations.
+  static constexpr int kMaxDivergeReverts = 3;
+  int diverge_revert_count_ = 0;
+
+  // Snapshot saving for routability
+  bool is_routability_snapshot_saved_ = false;
+  float route_snapshot_a_ = 0;
+  float route_snapshot_wl_coef_x_ = 0;
+  float route_snapshot_wl_coef_y_ = 0;
+
+  // Two attempts because there are two inflation states to try: min
+  // congestion with routability on, then the same with it off.
+  static constexpr int kMaxRoutabilityDivergeAttempts = 2;
+  int routability_diverge_attempt_count_ = 0;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
@@ -171,6 +235,14 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
+  int routability_settle_wait_start_iter_ = -1;
+  bool allow_divergence_recovery_ = false;
+
+  // Request a FISTA momentum restart on the next Nesterov iteration. Set after
+  // a non-virtual timing-driven iteration replaces topology (repair_design),
+  // so the accelerated-gradient extrapolation does not carry the pre-repair
+  // trajectory into the changed objective and diverge the placement.
+  bool reset_nesterov_momentum_ = false;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
@@ -180,6 +252,8 @@ class NesterovPlace
 
   int placement_gif_key_ = -1;
   int routability_gif_key_ = -1;
+
+  bool incremental_penalty_guard_requested_ = false;
 
   void init();
   void reset();

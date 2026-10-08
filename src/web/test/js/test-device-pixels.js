@@ -191,6 +191,20 @@ describe('snapContainerToDeviceGrid', () => {
         assert.equal(holder.style.transform, '');
     });
 
+    // A drifted layer as found in the field: its correction had grown to
+    // whole pixels. Every step had left the tiles on the device grid, so a
+    // correction built on top of the old one never pulled the layer back.
+    it('never moves the layer more than half a device pixel', () => {
+        const { holder, container, tile } = fakeLayerDom(37, 813);
+        holder._orSnapDx = 3.83;
+        holder._orSnapDy = -2.74;
+        const { dx, dy } = snapContainerToDeviceGrid(container, 1.25,
+                                                     renderedRect);
+        assert.ok(Math.abs(dx) * 1.25 <= 0.5 + 1e-9, `dx ${dx}`);
+        assert.ok(Math.abs(dy) * 1.25 <= 0.5 + 1e-9, `dy ${dy}`);
+        assertOnDeviceGrid(renderedRect(tile).left * 1.25, 'tile');
+    });
+
     it('does nothing for a container with no parent', () => {
         assert.equal(snapContainerToDeviceGrid(null, 1.25, renderedRect), null);
         assert.equal(
@@ -227,6 +241,37 @@ describe('snapTileContainers', () => {
         for (const dpr of [1, 2, 3]) {
             assert.equal(snapTileContainers(map, dpr, renderedRect), 0);
             assert.equal(map.doms[0].holder.style.transform, undefined);
+        }
+    });
+
+    // While zooming, Leaflet keeps the level it is leaving (scaled) beside the
+    // level it is showing, both inside the same .leaflet-layer. Only the level
+    // at rest is on screen, and only it may set the layer's correction.
+    it('snaps only the level at rest when a layer holds several', () => {
+        const { holder, container, tile } = fakeLayerDom(37, 813);
+        container.style = { transform: 'translate3d(37px, 0px, 0px) scale(1)' };
+        const leaving = {
+            className: 'leaflet-tile-container',
+            parentElement: holder,
+            leafletLeft: 37,
+            leafletTop: 0,
+            origin: 401.3,
+            style: { transform: 'translate3d(37px, 0px, 0px) scale(0.5)' },
+            querySelector() {
+                return this.tile;
+            },
+        };
+        leaving.tile = { className: 'leaflet-tile', parentElement: leaving };
+        const map = {
+            getPane: () => ({ querySelectorAll: () => [leaving, container] }),
+        };
+        // Checked on every pass: the levels used to take turns, so the level
+        // at rest was off the grid on every other one.
+        for (let pass = 0; pass < 4; pass++) {
+            snapTileContainers(map, 1.25, renderedRect);
+            assertOnDeviceGrid(renderedRect(tile).left * 1.25, `pass ${pass}`);
+            assert.ok(Math.abs(holder._orSnapDx) * 1.25 <= 0.5 + 1e-9,
+                      `pass ${pass}: dx ${holder._orSnapDx}`);
         }
     });
 

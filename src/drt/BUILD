@@ -134,7 +134,6 @@ cc_library(
         "src/db/gcObj/gcShape.h",
         "src/db/infra/KDTree.hpp",
         "src/db/infra/frBox.h",
-        "src/db/infra/frPoint.h",
         "src/db/infra/frSegStyle.h",
         "src/db/infra/frTime.h",
         "src/db/obj/frAccess.h",

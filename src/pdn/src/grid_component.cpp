@@ -57,6 +57,8 @@ std::string GridComponent::typeToString(Type type)
       return "Followpin";
     case kPadConnect:
       return "Pad connect";
+    case kMacroEdgeConnect:
+      return "Macro edge connect";
     case kRepairChannel:
       return "Repair channel";
   }
@@ -336,10 +338,11 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
              getShapeCount());
 
   for (const auto& [layer, shapes] : shapes_) {
-    if (!obstructions.contains(layer)) {
+    auto it = obstructions.find(layer);
+    if (it == obstructions.end()) {
       continue;
     }
-    const auto& obs = obstructions.at(layer);
+    const auto& obs = it->second;
     std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
     for (const auto& shape : shapes) {
       std::vector<std::unique_ptr<Shape>> replacements;

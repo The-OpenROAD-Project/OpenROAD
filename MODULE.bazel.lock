@@ -447,6 +447,8 @@
     "https://bcr.bazel.build/modules/libpfm/4.11.0/MODULE.bazel": "45061ff025b301940f1e30d2c16bea596c25b176c8b6b3087e92615adbd52902",
     "https://bcr.bazel.build/modules/libpng/1.6.48/MODULE.bazel": "e024a26afea1991515eeca554ca517967d4825e6edf1114101d9a5f5fc5d20fd",
     "https://bcr.bazel.build/modules/libpng/1.6.48/source.json": "31489aa78e450e436afb06f2af7a970e126b115c5de3d2ce6d93052e3f360ade",
+    "https://bcr.bazel.build/modules/libwebp/1.6.0.bcr.1/MODULE.bazel": "788a55a3421655a2f8be630cbb2c75f57ec32d6765687282643deaff2d30d793",
+    "https://bcr.bazel.build/modules/libwebp/1.6.0.bcr.1/source.json": "88e730617b02178f4842fd4f3bf339c8d1746ce518448fa30ca6e51fc2ff9097",
     "https://bcr.bazel.build/modules/libxau/1.0.12.bcr.1/MODULE.bazel": "d26ca456fe3c3c6fb884d242c5497d8bda34319ce78bf84e397cd12482d78a48",
     "https://bcr.bazel.build/modules/libxau/1.0.12.bcr.1/source.json": "4076a85407185883f1563210abf36e80c9636d076d7197169bb431595b3f1151",
     "https://bcr.bazel.build/modules/libxcb/1.17.0.bcr.2/MODULE.bazel": "83d6740822a296210c0c60cd429a892934bdb237f7135eaf395b370c05af32a5",
