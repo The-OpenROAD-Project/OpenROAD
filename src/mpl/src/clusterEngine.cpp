@@ -33,6 +33,8 @@
 namespace mpl {
 using utl::MPL;
 
+inline constexpr int kMaxNumOfMasters = 15;
+
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
                                    utl::Logger* logger,
                                    par::PartitionMgr* triton_part,
@@ -357,19 +359,15 @@ void ClusteringEngine::setBaseThresholds()
 
   if (tree_->base_max_macro <= 0 || tree_->base_min_macro <= 0
       || tree_->base_max_std_cell <= 0 || tree_->base_min_std_cell <= 0) {
-    // From original implementation: Reset maximum level based on number
-    // of macros.
-    const int min_num_macros_for_multilevel = 150;
-    if (design_metrics_->getNumMacro() <= min_num_macros_for_multilevel) {
+    odb::PtrSet<odb::dbMaster> masters;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      if (inst->isBlock()) {
+        masters.insert(inst->getMaster());
+      }
+    }
+
+    if (masters.size() < kMaxNumOfMasters) {
       tree_->max_level = 1;
-      debugPrint(
-          logger_,
-          MPL,
-          "multilevel_autoclustering",
-          1,
-          "Number of macros is below {}. Resetting number of levels to {}",
-          min_num_macros_for_multilevel,
-          tree_->max_level);
     }
 
     // Set base values for std cell lower/upper thresholds
