@@ -2805,6 +2805,11 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
   cugr_->setResistanceAware(resistance_aware);
 }
 
+void GlobalRouter::setCUGRViaDemand(const bool enabled)
+{
+  cugr_->setViaDemandEnabled(enabled);
+}
+
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
 {
   if (!resistance_aware_) {

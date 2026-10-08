@@ -63,6 +63,8 @@ struct Constants
   int target_detour_count = 20;
 
   double via_multiplier = 2.0;
+  // Charge vias' flanking wire edges in the congestion model.
+  bool via_demand_enabled = true;
 
   double maze_logistic_slope = 0.5;
 
@@ -123,6 +125,12 @@ class CUGR
   void setResistanceAware(bool resistance_aware)
   {
     resistance_aware_ = resistance_aware;
+  }
+  // Developer debug switch. Applied at the next init(); an existing grid
+  // keeps its demand model.
+  void setViaDemandEnabled(bool enabled)
+  {
+    constants_.via_demand_enabled = enabled;
   }
   void setResAwareNetsPercentage(float percentage)
   {

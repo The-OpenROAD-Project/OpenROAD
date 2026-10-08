@@ -262,6 +262,12 @@ void CUGR::init(const int min_routing_layer,
                                      clock_nets,
                                      verbose_);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
+  debugPrint(logger_,
+             GRT,
+             "report",
+             1,
+             "CUGR via congestion demand: {}",
+             constants_.via_demand_enabled ? "enabled" : "disabled");
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& base_nets = design_->getAllNets();
   gr_nets_.reserve(base_nets.size());
