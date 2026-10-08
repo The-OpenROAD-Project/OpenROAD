@@ -43,6 +43,8 @@ catch { add_pdn_stripe -layer metal9 -width 1.4 -pitch 20.0 -extend_to_pad_ring 
 puts $err
 
 # the pad ring is one more place to extend to, so it excludes the others
-catch { add_pdn_stripe -layer metal4 -width 0.48 -pitch 20.0 \
-  -extend_to_boundary -extend_to_pad_ring } err
+catch {
+  add_pdn_stripe -layer metal4 -width 0.48 -pitch 20.0 \
+    -extend_to_boundary -extend_to_pad_ring
+} err
 puts $err
