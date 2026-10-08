@@ -6,7 +6,6 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -186,10 +185,6 @@ class Grid
   odb::Rect getPadRingArea() const;
   // returns the die pulled in to the inner edge of the placed pads on each
   // side that has them, or nothing when no pads are placed
-  std::optional<odb::Rect> getPadRingInnerArea() const
-  {
-    return pad_ring_inner_area_;
-  }
 
   // The same areas as outlines.  Each mirrors exactly one of the rectangles
   // above, including where a subclass redefines what that rectangle means: on
@@ -289,13 +284,10 @@ class Grid
 
   Via::ViaTree vias_;
 
-  std::optional<odb::Rect> pad_ring_inner_area_;
-
   std::vector<GridComponent*> getGridComponents() const;
   void removeGridComponent(GridComponent* component);
   bool repairVias(const Shape::ShapeTreeMap& global_shapes,
                   Shape::ObstructionTreeMap& obstructions);
-  void populatePadRingInnerArea();
 };
 
 class CoreGrid : public Grid

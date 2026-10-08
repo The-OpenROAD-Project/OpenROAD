@@ -149,7 +149,7 @@ void Rings::setPadOffset(const EdgeSpec& offset)
   odb::Rect die_area = getBlock()->getDieArea();
   odb::Rect core = getBlock()->getCoreArea();
 
-  odb::Rect pads_inner = getGrid()->getPadRingInnerArea().value_or(die_area);
+  odb::Rect pads_inner = getDomain()->getPadRingInnerArea().value_or(die_area);
 
   if (core == pads_inner) {
     getLogger()->warn(utl::PDN,
