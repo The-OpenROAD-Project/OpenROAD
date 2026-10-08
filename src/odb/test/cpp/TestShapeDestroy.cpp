@@ -46,6 +46,23 @@ class ShapeDestroyFixture : public SimpleDbFixture
     return sbox;
   }
 
+  dbObstruction* createFarObstruction()
+  {
+    return dbObstruction::create(
+        block_, layer_, far_.xMin(), far_.yMin(), far_.xMax(), far_.yMax());
+  }
+
+  static void tag(dbObject* object) { dbIntProperty::create(object, "tag", 1); }
+
+  // A table hands out its most recently freed slot first. So the replacement
+  // gets the old id back only if the destroy freed it, and it must not
+  // inherit the properties left on that slot.
+  static void expectFreshSlot(dbObject* replacement, uint32_t old_id)
+  {
+    EXPECT_EQ(replacement->getId(), old_id);
+    EXPECT_EQ(dbProperty::find(replacement, "tag"), nullptr);
+  }
+
   dbBlock* block_ = nullptr;
   dbTechLayer* layer_ = nullptr;
   dbNet* net_ = nullptr;
@@ -88,8 +105,7 @@ TEST_F(ShapeDestroyFixture, net_destroy_restores_bbox)
 
 TEST_F(ShapeDestroyFixture, obstruction_destroy_restores_bbox)
 {
-  dbObstruction* obs = dbObstruction::create(
-      block_, layer_, far_.xMin(), far_.yMin(), far_.xMax(), far_.yMax());
+  dbObstruction* obs = createFarObstruction();
   EXPECT_EQ(getBBox(), grown_);
   dbObstruction::destroy(obs);
   EXPECT_EQ(getBBox(), initial_);
@@ -97,15 +113,46 @@ TEST_F(ShapeDestroyFixture, obstruction_destroy_restores_bbox)
 
 TEST_F(ShapeDestroyFixture, obstruction_destroy_frees_box)
 {
-  dbObstruction* obs = dbObstruction::create(
-      block_, layer_, far_.xMin(), far_.yMin(), far_.xMax(), far_.yMax());
-  const uint32_t box_id = obs->getBBox()->getId();
+  dbObstruction* obs = createFarObstruction();
+  dbBox* box = obs->getBBox();
+  const uint32_t box_id = box->getId();
+  tag(box);
   dbObstruction::destroy(obs);
-  // The box table hands out the most recently freed slot first, so the new
-  // obstruction only gets box_id back if the destroy freed it.
-  obs = dbObstruction::create(
-      block_, layer_, far_.xMin(), far_.yMin(), far_.xMax(), far_.yMax());
-  EXPECT_EQ(obs->getBBox()->getId(), box_id);
+  expectFreshSlot(createFarObstruction()->getBBox(), box_id);
+}
+
+TEST_F(ShapeDestroyFixture, blockage_destroy_frees_box)
+{
+  dbBlockage* blockage = dbBlockage::create(block_, 0, 0, 100, 100);
+  dbBox* box = blockage->getBBox();
+  const uint32_t blockage_id = blockage->getId();
+  const uint32_t box_id = box->getId();
+  tag(blockage);
+  tag(box);
+  dbBlockage::destroy(blockage);
+  blockage = dbBlockage::create(block_, 0, 0, 100, 100);
+  expectFreshSlot(blockage, blockage_id);
+  expectFreshSlot(blockage->getBBox(), box_id);
+}
+
+TEST_F(ShapeDestroyFixture, box_destroy_frees_bpin_box)
+{
+  dbBPin* bpin = dbBPin::create(dbBTerm::create(net_, "p"));
+  dbBox* box = dbBox::create(bpin, layer_, 0, 0, 100, 100);
+  const uint32_t box_id = box->getId();
+  tag(box);
+  dbBox::destroy(box);
+  expectFreshSlot(dbBox::create(bpin, layer_, 0, 0, 100, 100), box_id);
+}
+
+TEST_F(ShapeDestroyFixture, box_destroy_frees_halo)
+{
+  dbInst* inst = block_->findInst("i2");
+  dbBox* halo = dbBox::create(inst, 10, 10, 10, 10);
+  const uint32_t halo_id = halo->getId();
+  tag(halo);
+  dbBox::destroy(halo);
+  expectFreshSlot(dbBox::create(inst, 10, 10, 10, 10), halo_id);
 }
 
 }  // namespace
