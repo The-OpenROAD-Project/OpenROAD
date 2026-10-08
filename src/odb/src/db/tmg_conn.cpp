@@ -78,7 +78,6 @@ void tmg_conn::analyzeNet()
   loadWire();
 
   if (wire_points_.empty()) {
-    net_->setDisconnected(false);
     net_->setWireOrdered(false);
   } else {
     loadTerminals();
@@ -93,7 +92,6 @@ void tmg_conn::analyzeNet()
     connection_graph_->relocateShorts(this);
     treeReorder(false);
 
-    net_->setDisconnected(!connected_);
     net_->setWireOrdered(true);
   }
 
@@ -231,8 +229,6 @@ void tmg_conn::clear()
   need_short_wire_id_ = false;
   first_segment_after_via_ = false;
   new_wire_ = nullptr;
-
-  connected_ = false;
 }
 
 void tmg_conn::loadTerminals()
@@ -1735,16 +1731,6 @@ bool tmg_conn::checkConnected()
   return con;  // all terms connected, may be floating pieces of wire
 }
 
-void tmg_conn::checkVisited()
-{
-  for (int j = 0; j < wire_points_.size(); j++) {
-    if (!connection_graph_->pt(j).visited) {
-      connected_ = false;
-      break;
-    }
-  }
-}
-
 // Note that when the wire walk exhausts the piece of metal it is on, it
 // may restart from a "restart terminal". These terminals may be:
 // 1) The driver.
@@ -1752,7 +1738,6 @@ void tmg_conn::checkVisited()
 // 3) A terminal that the walk never reached, if the net is disconnected.
 void tmg_conn::treeReorder(const bool no_convert)
 {
-  connected_ = true;
   if (wire_points_.empty()) {
     return;
   }
@@ -1768,9 +1753,6 @@ void tmg_conn::treeReorder(const bool no_convert)
   }
   for (Terminal& x : terminals_) {
     x.first_pt = nullptr;
-    if (x.pt == nullptr) {
-      connected_ = false;
-    }
   }
 
   if (terminals_.empty()) {
@@ -1865,7 +1847,6 @@ void tmg_conn::treeReorder(const bool no_convert)
       last_term_index = j;
       if (j < terminals_.size()) {
         // disconnected, start new path from another term
-        connected_ = false;
         last_id_ = -1;
         restart_terminals_.push_back(x);
         pt = x->pt;
@@ -1890,7 +1871,6 @@ void tmg_conn::treeReorder(const bool no_convert)
     }
   }
 
-  checkVisited();
   if (!no_convert) {
     encoder_.end();
   }

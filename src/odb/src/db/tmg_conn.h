@@ -195,7 +195,6 @@ class tmg_conn
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
-  void checkVisited();
   WirePoint* addWirePoint(int x, int y, dbTechLayer* layer);
   void addWireSection(const dbShape& s,
                       int from_idx,
@@ -259,9 +258,6 @@ class tmg_conn
   bool first_segment_after_via_{false};
   dbWireEncoder encoder_;
   dbWire* new_wire_{nullptr};
-
-  // Post-process connectivity check.
-  bool connected_{false};
 };
 
 }  // namespace odb
