@@ -149,6 +149,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
     "pads_black_parrot_straps",
+    "pads_connect_blanket_obstruction",
     "pads_connect_from_non_pref_edge",
     "pads_ihp_sg13g2_balance",
     "pads_placed_not_fixed",
@@ -398,6 +399,9 @@ filegroup(
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
+            ],
+            "pads_connect_blanket_obstruction": [
+                "nangate_bsg_black_parrot/dummy_pads_blanket_obs.lef",
             ],
             "pads_ihp_sg13g2_balance": [
                 "ihp_ethmac/tech.lef",

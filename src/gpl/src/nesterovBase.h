@@ -1235,6 +1235,9 @@ class NesterovBase
   // overflow can sit at very different displacements depending on how fast
   // the penalty schedule happens to be ramping.
   bool isSettled() const;
+  float getSettleRatio() const;
+  static constexpr float getSettleFraction() { return kSettleFraction; }
+
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,

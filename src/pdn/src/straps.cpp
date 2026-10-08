@@ -1829,14 +1829,69 @@ void PadDirectConnectionStraps::getConnectableShapes(
 void PadDirectConnectionStraps::cutShapes(
     const Shape::ObstructionTreeMap& obstructions)
 {
+  odb::dbInst* inst = iterm_->getInst();
+  const odb::Rect inst_shape = inst->getBBox()->getBox();
+
+  if (type_ == ConnectionType::kEdge) {
+    // An edge connection is its pin carried straight out of the pad and is no
+    // wider than the pin, so it comes no closer to anything behind the edge it
+    // leaves through than the pin already does.  The padframe there has
+    // nothing to say about it: its pins are drawn to be reached and its cells
+    // to abut.  It has to be left out rather than tolerated, since pads
+    // commonly draw one obstruction over the whole cell with the pins carved
+    // out of it, and the spacing owed to that, by the pad or by its
+    // neighbour, cuts the connection off its pin.
+    const auto is_behind_edge = [this, &inst_shape](const odb::Rect& rect) {
+      switch (pad_edge_) {
+        case odb::dbDirection::NORTH:
+          return rect.yMin() >= inst_shape.yMin();
+        case odb::dbDirection::SOUTH:
+          return rect.yMax() <= inst_shape.yMax();
+        case odb::dbDirection::EAST:
+          return rect.xMin() >= inst_shape.xMin();
+        case odb::dbDirection::WEST:
+          return rect.xMax() <= inst_shape.xMax();
+        default:
+          return false;
+      }
+    };
+    const Grid* grid = getGrid();
+    const auto obs_filter = [&is_behind_edge, grid](const ShapePtr& other) {
+      switch (other->shapeType()) {
+        case Shape::kPadObs:
+          return !is_behind_edge(other->getRect());
+        case Shape::kGridObs:
+          return !static_cast<GridObsShape*>(other.get())->belongsTo(grid);
+        default:
+          return true;
+      }
+    };
+
+    std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
+    for (const auto& [layer, layer_shapes] : getShapes()) {
+      auto it = obstructions.find(layer);
+      if (it == obstructions.end()) {
+        continue;
+      }
+      const auto& obs = it->second;
+      for (const auto& shape : layer_shapes) {
+        std::vector<std::unique_ptr<Shape>> replacements;
+        if (shape->cut(obs, replacements, obs_filter)) {
+          replacement_shapes[shape.get()] = std::move(replacements);
+        }
+      }
+    }
+    for (auto& [shape, replacements] : replacement_shapes) {
+      replaceShape(shape, replacements);
+    }
+    return;
+  }
+
   Straps::cutShapes(obstructions);
 
   if (type_ != ConnectionType::kOverPads) {
     return;
   }
-
-  odb::dbInst* inst = iterm_->getInst();
-  const odb::Rect inst_shape = inst->getBBox()->getBox();
 
   // filter out segments that are full enclosed by the pin shape (ie doesnt
   // connect to ring)

@@ -25,7 +25,6 @@
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "db/infra/frBox.h"
-#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
@@ -2711,9 +2710,9 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
                                      const FlexMazeIdx& ap_idx) const
 {
   frLayerNum layer_num = gridGraph_.getLayerNum(ap_idx.z());
-  Point3D real_point;
-  gridGraph_.getPoint(real_point, ap_idx.x(), ap_idx.y());
-  real_point.setZ(layer_num);
+  odb::Point real_point_xy;
+  gridGraph_.getPoint(real_point_xy, ap_idx.x(), ap_idx.y());
+  const odb::Point3D real_point(real_point_xy, layer_num);
   for (const auto& ext_obj : net->getExtConnFigs()) {
     if (ext_obj->typeId() == drcPathSeg) {
       const drPathSeg* path_seg = static_cast<const drPathSeg*>(ext_obj.get());
@@ -2722,12 +2721,12 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
         continue;
       }
       frSegStyle style = path_seg->getStyle();
-      if (bp == real_point) {
+      if (bp == real_point.xy()) {
         style.setBeginStyle(frcTruncateEndStyle, 0);
         net->updateExtFigStyle(real_point, style);
         return;
       }
-      if (ep == real_point) {
+      if (ep == real_point.xy()) {
         style.setEndStyle(frcTruncateEndStyle, 0);
         net->updateExtFigStyle(real_point, style);
         return;
@@ -2735,7 +2734,7 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
     } else if (ext_obj->typeId() == drcVia) {
       auto via = static_cast<const drVia*>(ext_obj.get());
       odb::Point via_point = via->getOrigin();
-      if (via_point != real_point) {
+      if (via_point != real_point.xy()) {
         continue;
       }
       auto via_def = via->getViaDef();
