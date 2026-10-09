@@ -2283,6 +2283,23 @@ NesterovBase::NesterovBase(
   // update binGrid info
   bg_.initBins();
 
+  // Publish the bin size so the GUI placement density heat map can default its
+  // grid to the one the placer optimized on. Region groups cover only part of
+  // the core, so only the top-level region is representative.
+  if (pb_->getGroup() == nullptr) {
+    odb::dbBlock* block = pb_->db()->getChip()->getBlock();
+    auto set_bin_size = [block](const char* name, int value) {
+      auto* prop = odb::dbIntProperty::find(block, name);
+      if (prop == nullptr) {
+        odb::dbIntProperty::create(block, name, value);
+      } else {
+        prop->setValue(value);
+      }
+    };
+    set_bin_size("gpl_bin_size_x", std::lround(bg_.getBinSizeX()));
+    set_bin_size("gpl_bin_size_y", std::lround(bg_.getBinSizeY()));
+  }
+
 #ifdef ENABLE_GPU
   // Per-region FFT field Views. One per placement region so concurrent
   // regions in the Nesterov loop never clobber each other's bin buffers.
