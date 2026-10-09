@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -169,6 +170,9 @@ class RepairTargetCollector
 
   // Public endpoint collection for TNS Phase
   void collectViolatingEndpoints();
+  // Re-run the one group query behind the WNS/TNS numbers. Cheap enough to
+  // call per reported row, and keeps them live as repair edits the netlist.
+  void refreshGroupSlacks();
   sta::Slack getPathSlackByIndex(const sta::Pin* endpoint_pin, int path_index);
   const vector<std::pair<const sta::Pin*, sta::Slack>>& getViolatingEndpoints()
       const
@@ -289,6 +293,15 @@ class RepairTargetCollector
   // against the cache. Debug-gated because the walk is the cost the cache
   // exists to avoid; enable with -debug_level RSZ violator_collector 2.
   void checkStartpointCache() const;
+
+  // True while repair is restricted to a `repair_timing -path_group` group,
+  // where design wide STA slack covers more than what is being repaired and
+  // the group's own endpoints must supply WNS/TNS instead.
+  bool restrictedToPathGroup() const { return !resizer_->pathGroup().empty(); }
+
+  // Endpoints violating within the selected path group, with their group
+  // slack. Source of the group aware WNS/TNS; empty when unrestricted.
+  PathGroupFilter::GroupSlacks group_slacks_;
 
   // === Pin data maintenance =================================================
   void updatePinData(const sta::Pin* pin, pinData& pd);

@@ -98,7 +98,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   }
 
   const sta::Slack end_slack = sta_->slack(end_vertex, max_);
-  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, max_);
+  sta::Path* end_path = target_collector_->findWorstSlackPath(end_vertex);
   if (end_path == nullptr) {
     return false;
   }
@@ -862,6 +862,9 @@ void SetupLegacyBase::printProgress(const int iteration,
     target_collector_->collectViolatingStartpoints();
   }
 
+  // Re-run the group query so the reported numbers reflect the edits made
+  // since the endpoints were collected.
+  target_collector_->refreshGroupSlacks();
   const sta::Slack wns = target_collector_->getWns();
   const sta::Slack en_tns = target_collector_->getTns(false);
   const sta::Pin* worst_pin

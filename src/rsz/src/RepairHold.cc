@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "PathGroupFilter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -77,9 +79,23 @@ bool RepairHold::repairHold(
 
   sta_->findRequireds();
   sta::VertexSet& ends = sta_->search()->endpoints();
+  const PathGroupFilter path_group_filter(resizer_);
   sta::VertexSeq ends1;
-  for (sta::Vertex* end : ends) {
-    ends1.push_back(end);
+  if (path_group_filter.enabled()) {
+    // Hold paths are min delay paths, so ask the group against min_. One
+    // query returns every endpoint whose own hold slack in the group needs
+    // repairing; merely hosting an in-group path would let nearly every
+    // register through.
+    for (const auto& [pin, slack] :
+         path_group_filter.groupEndpointSlacks(min_, hold_margin)) {
+      // slack_max is inclusive; the margin test here is strict.
+      sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+      if (vertex != nullptr && sta::fuzzyLess(slack, hold_margin)) {
+        ends1.push_back(vertex);
+      }
+    }
+  } else {
+    ends1.assign(ends.begin(), ends.end());
   }
   sta::sort(ends1, sta::VertexIdLess(graph_));
 
@@ -539,7 +555,14 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  // The endpoint is here because the group's hold slack violates, which its
+  // worst hold path need not belong to. Repair the group's own path so the
+  // buffers land on what was asked for.
+  const PathGroupFilter path_group_filter(resizer_);
+  sta::Path* end_path = path_group_filter.groupPath(end_vertex, min_);
+  if (end_path == nullptr) {
+    end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  }
   if (end_path) {
     sta::Mode* mode = end_path->mode(sta_);
     debugPrint(logger_,
