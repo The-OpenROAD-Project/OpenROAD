@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "odb/db.h"
@@ -39,6 +40,8 @@ class RoutingCongestion
   RoutingCongestion(GlobalRouter* grouter,
                     odb::dbBlock* block,
                     utl::Logger* logger);
+
+  ~RoutingCongestion();
 
   // Congestion score in [0,1] at a point (0 = free, 1 = saturated).
   // Uses GRT data if routed, otherwise the RUDY estimate.
@@ -81,6 +84,9 @@ class RoutingCongestion
   int tileSize();
 
  private:
+  // Drops the cached map when the netlist changes under it.
+  class NetlistObserver;
+
   void ensureBuilt();
   bool buildFromGlobalRoutes();
   bool buildFromRudy();
@@ -92,6 +98,7 @@ class RoutingCongestion
   GlobalRouter* grouter_;
   odb::dbBlock* block_;
   utl::Logger* logger_;
+  std::unique_ptr<NetlistObserver> observer_;
 
   bool built_ = false;
   Source source_ = Source::kNone;

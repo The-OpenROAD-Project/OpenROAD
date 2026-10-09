@@ -154,6 +154,29 @@ class RoutingCongestionTest : public tst::IntegratedFixture
     return congestion_->congestion(region, RoutingCongestion::Aggregate::kMean);
   }
 
+  // Stack one quadrant's cells on a single point, stretching every net they
+  // sit on.  Far too large a change for RUDY to report the same number
+  // afterwards, so a test that still sees the old value saw a stale cache
+  // rather than a small numeric coincidence.  Returns how many moved.
+  int pileQuadrantOntoAPoint()
+  {
+    const odb::Point target = controlRegion().center();
+    const odb::Rect source = starvedRegion();
+    int moved = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      // Physical-only cells (well taps, fill) are FIRM; odb rejects moving
+      // them.
+      if (inst->getPlacementStatus().isFixed()) {
+        continue;
+      }
+      if (source.overlaps(inst->getBBox()->getBox())) {
+        inst->setLocation(target.x(), target.y());
+        moved++;
+      }
+    }
+    return moved;
+  }
+
   void runGlobalRoute()
   {
     grt_.globalRoute();
@@ -345,6 +368,43 @@ TEST_F(RoutingCongestionTest, IsCongestedFollowsTheThreshold)
 
   congestion_->setCongestionThreshold(1.0f);
   EXPECT_EQ(congestion_->isCongested(region), peak >= 1.0f);
+}
+
+TEST_F(RoutingCongestionTest, RudyEstimateFollowsTheNetlist)
+{
+  // Pre-GRT the answer comes from RUDY, which is derived from the netlist, so
+  // an edit has to show up without the caller asking for a refresh.  Nothing
+  // else invalidates here -- GlobalRouter only does so on routing events --
+  // so without the netlist observer a consumer resizing the design would keep
+  // reading the map from before any of its own changes.
+  ASSERT_EQ(congestion_->source(), RoutingCongestion::Source::kRudy);
+  const float before = meanCongestion(core());
+  ASSERT_GT(before, 0.0f);
+
+  const int moved = pileQuadrantOntoAPoint();
+  ASSERT_GT(moved, 0);
+
+  const float after = meanCongestion(core());
+  logger_.report("rudy over the core: {:.6f} before, {:.6f} after moving {}",
+                 before,
+                 after,
+                 moved);
+  EXPECT_NE(before, after);
+}
+
+TEST_F(RoutingCongestionTest, NetlistChangeLeavesTheRoutedMapAlone)
+{
+  // The other half of that contract, pinned so it is not "fixed" by accident.
+  // A routed map describes odb's GCell grid, which a netlist edit does not
+  // touch, so invalidating here would spend a full grid rebuild to produce
+  // the same numbers.  Refreshing it needs the affected nets rerouted.
+  runGlobalRoute();
+  ASSERT_EQ(congestion_->source(), RoutingCongestion::Source::kGlobalRoute);
+  const float before = meanCongestion(core());
+
+  ASSERT_GT(pileQuadrantOntoAPoint(), 0);
+
+  EXPECT_FLOAT_EQ(meanCongestion(core()), before);
 }
 
 // The same service against the other routing engine. RoutingCongestion reads

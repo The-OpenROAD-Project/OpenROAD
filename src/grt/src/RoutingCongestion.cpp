@@ -5,23 +5,75 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
+
+// RUDY sums net bounding boxes over placed instances, so a netlist edit --
+// a buffer inserted by repair_timing, a cell moved -- makes a cached RUDY map
+// wrong.  Nothing else notices: GlobalRouter only invalidates on routing
+// events, so without this a consumer querying during resizing would keep
+// reading the map as it was before any of its own changes.
+//
+// A global-route map is deliberately left alone.  It describes odb's GCell
+// grid, which a netlist edit does not touch, so dropping it would cost a full
+// grid rebuild to arrive at the same numbers.  Refreshing that one needs the
+// affected nets rerouted, which is a separate problem.
+class RoutingCongestion::NetlistObserver : public odb::dbBlockCallBackObj
+{
+ public:
+  explicit NetlistObserver(RoutingCongestion* congestion)
+      : congestion_(congestion)
+  {
+  }
+
+  void inDbInstCreate(odb::dbInst*) override { netlistChanged(); }
+  void inDbInstDestroy(odb::dbInst*) override { netlistChanged(); }
+  void inDbInstSwapMasterAfter(odb::dbInst*) override { netlistChanged(); }
+  void inDbPostMoveInst(odb::dbInst*) override { netlistChanged(); }
+  void inDbNetCreate(odb::dbNet*) override { netlistChanged(); }
+  void inDbNetDestroy(odb::dbNet*) override { netlistChanged(); }
+  void inDbITermPostConnect(odb::dbITerm*) override { netlistChanged(); }
+  void inDbITermPostDisconnect(odb::dbITerm*, odb::dbNet*) override
+  {
+    netlistChanged();
+  }
+
+ private:
+  void netlistChanged()
+  {
+    // Only a built RUDY map is at stake, so this is one comparison on the
+    // thousands of callbacks a resizing pass fires.
+    if (congestion_->source_ == Source::kRudy) {
+      congestion_->invalidate();
+    }
+  }
+
+  RoutingCongestion* congestion_;
+};
 
 RoutingCongestion::RoutingCongestion(GlobalRouter* grouter,
                                      odb::dbBlock* block,
                                      utl::Logger* logger)
     : grouter_(grouter), block_(block), logger_(logger)
 {
+  if (block_ != nullptr) {
+    observer_ = std::make_unique<NetlistObserver>(this);
+    observer_->addOwner(block_);
+  }
 }
+
+// ~dbBlockCallBackObj removes the observer from the block.
+RoutingCongestion::~RoutingCongestion() = default;
 
 void RoutingCongestion::invalidate()
 {
