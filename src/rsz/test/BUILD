@@ -53,6 +53,8 @@ TESTS = [
     "remove_buffers1",
     "remove_buffers2",
     "remove_buffers3",
+    "remove_buffers_dont_touch_rejected",
+    "remove_buffers_disconnected_input_rejected",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
@@ -517,6 +519,7 @@ cc_test(
         "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
+        "remove_buffers3.def",
     ],
     deps = [
         "//src/odb/src/db",
