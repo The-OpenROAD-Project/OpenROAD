@@ -594,6 +594,9 @@ void IRNetwork::processPolygonToTrapezoids(
     for (const auto& pt : trapezoid) {
       points.emplace_back(pt.x(), pt.y());
     }
+    if (!points.empty() && points.front() != points.back()) {
+      points.push_back(points.front());
+    }
     const odb::Polygon piece(points);
     if (piece.isRect()) {
       shapes.push_back(
