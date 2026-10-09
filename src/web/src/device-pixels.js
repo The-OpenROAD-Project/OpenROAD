@@ -69,8 +69,12 @@ export function deviceResidualCss(css_pos, dpr) {
 // device pixels at every real ratio (TILE_SIZE_CSS in tile-request.js).
 //
 // The measured rect already includes whatever correction is on the parent now,
-// so the new correction is the old one minus what is still left over. That
-// converges in one step and never accumulates drift.
+// so the new correction is the old one minus what is still left over, with any
+// whole device pixels dropped. That converges in one step. The dropping is what
+// keeps it from drifting: a whole device pixel is never part of a correction --
+// the grid is the same one pixel further on -- but once one got in, every later
+// step found the tiles on the grid and left it there, so a layer could wander
+// off its neighbours by several pixels and stay.
 //
 // `rectOf` is injected so this is testable without a layout engine, and
 // defaults to the real measurement for every other caller.
@@ -90,8 +94,10 @@ export function snapContainerToDeviceGrid(container, dpr,
         return null;
     }
     const rect = rectOf(tile);
-    const dx = (holder._orSnapDx || 0) - deviceResidualCss(rect.left, dpr);
-    const dy = (holder._orSnapDy || 0) - deviceResidualCss(rect.top, dpr);
+    const dx = withinOneDevicePixel(
+        (holder._orSnapDx || 0) - deviceResidualCss(rect.left, dpr), dpr);
+    const dy = withinOneDevicePixel(
+        (holder._orSnapDy || 0) - deviceResidualCss(rect.top, dpr), dpr);
     holder._orSnapDx = dx;
     holder._orSnapDy = dy;
     // Written on the PARENT: the container's own transform belongs to Leaflet,
@@ -121,8 +127,14 @@ export function snapTileContainers(map, dpr, rectOf = defaultRectOf) {
     let snapped = 0;
     // Read every rect before writing any style: interleaving them forces a
     // layout flush per container, and this runs on every frame of a drag.
-    const measured = [...pane.querySelectorAll(TILE_CONTAINER)].map(
-        (container) => {
+    //
+    // Only the level at rest: a layer keeps one container per zoom level that
+    // Leaflet has not pruned yet, and they all share the .leaflet-layer the
+    // correction goes on. Snapping each of them into it made the levels take
+    // turns, leaving the one on screen off the grid on every other pass.
+    const measured = [...pane.querySelectorAll(TILE_CONTAINER)]
+        .filter(isLevelAtRest)
+        .map((container) => {
             const tile = container.querySelector(TILE);
             return { container, rect: tile ? rectOf(tile) : null };
         });
@@ -136,6 +148,23 @@ export function snapTileContainers(map, dpr, rectOf = defaultRectOf) {
 
 function defaultRectOf(el) {
     return el.getBoundingClientRect();
+}
+
+// `css` less the whole device pixels in it, leaving less than half a device
+// pixel either way. A value already that small comes back bit for bit, so a
+// correction that has converged is written out unchanged.
+function withinOneDevicePixel(css, dpr) {
+    return css - Math.round(css * dpr) / dpr;
+}
+
+// Whether `container` is the zoom level Leaflet shows at rest. Leaflet writes
+// `translate3d(...) scale(s)` on every level, and s is 1 only for the current
+// one; the levels it is zooming away from, and every level mid-animation, are
+// scaled. A container with no scale written yet counts as at rest.
+function isLevelAtRest(container) {
+    const transform = (container.style && container.style.transform) || '';
+    const scale = /scale\(([^)]*)\)/.exec(transform);
+    return !scale || Number(scale[1]) === 1;
 }
 
 // Re-snap whenever Leaflet has moved the tiles.

@@ -149,8 +149,25 @@ bool Straps::checkLayerOffsetSpecification(bool error) const
   return true;
 }
 
-void Straps::setOffset(int offset)
+void Straps::setOffset(int offset, StrapOffsetType type)
 {
+  const int half_width = width_ / 2;
+  switch (type) {
+    case StrapOffsetType::kStart:
+      offset += half_width;
+      break;
+    case StrapOffsetType::kFirst:
+      break;
+    case StrapOffsetType::kCenter:
+      offset += half_width - getStrapGroupWidth() / 2;
+      break;
+    case StrapOffsetType::kLast:
+      offset += width_ - getStrapGroupWidth();
+      break;
+    case StrapOffsetType::kEnd:
+      offset += half_width - getStrapGroupWidth();
+      break;
+  }
   offset_ = offset;
 }
 
@@ -162,6 +179,14 @@ void Straps::setSnapToGrid(bool snap)
 void Straps::setExtend(ExtensionMode mode)
 {
   extend_mode_ = mode;
+
+  if (mode == kPadRing && !getDomain()->getPadRingInnerArea()) {
+    getLogger()->error(utl::PDN,
+                       242,
+                       "Unable to find any placed pads to extend straps on {} "
+                       "to.",
+                       layer_->getName());
+  }
 }
 
 void Straps::setStrapStartEnd(int start, int end)
@@ -205,10 +230,33 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       boundary = grid->getGridBoundary();
       extent = grid->getGridBoundaryRegion();
       break;
+    case kPadRing:
+      boundary = grid->getPadRingArea();
+      extent = grid->getGridBoundaryRegion().intersect(boundary);
+      break;
     case kFixed:
       boundary = odb::Rect(strap_start_, strap_start_, strap_end_, strap_end_);
       // an explicit extent is the user's to place, wherever it lands
       break;
+  }
+
+  if (extend_distance_ > 0 && extend_mode_ != kFixed) {
+    // Run on past the target along the strap's own length, up to where
+    // -extend_to_boundary would have stopped, but never short of the target.
+    const int dist = extend_distance_;
+    const bool horizontal = isHorizontal();
+    odb::Rect grown = boundary
+                          .bloat(dist,
+                                 horizontal ? odb::Orientation2D::Horizontal
+                                            : odb::Orientation2D::Vertical)
+                          .intersect(grid->getGridBoundary());
+    grown.merge(boundary);
+    boundary = grown;
+    const Region::Margin grow = horizontal ? Region::Margin{dist, 0, dist, 0}
+                                           : Region::Margin{0, dist, 0, dist};
+    extent = extent.bloat(grow)
+                 .intersect(grid->getGridBoundaryRegion())
+                 .unite(extent);
   }
 
   TechLayer layer(layer_);
@@ -585,22 +633,43 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   // edge and not the ones belonging to the wide leg.  On a rectangular core
   // there is only one of each, and this is the boundary it always was.
   const ExtensionMode mode = getExtendMode();
+  const int extend_distance = getExtendDistance();
+  const odb::Rect pad_ring
+      = mode == kPadRing ? grid->getPadRingArea() : odb::Rect();
+  const Region grid_boundary = grid->getGridBoundaryRegion();
   const auto reach = [&](const odb::Rect& band, const odb::Point& normal) {
     const bool high = normal.x() > 0;
+    // the boundary edge beside this band, which nothing may run past
+    const auto boundary = [&]() {
+      const int margin = grid_boundary.getMarginBeyond(band, normal);
+      return high ? band.xMax() + margin : band.xMin() - margin;
+    };
+    int target = high ? band.xMax() : band.xMin();
     switch (mode) {
       case kRings:
-        return grid->getRingReach(band, normal);
-      case kBoundary: {
-        const int margin
-            = grid->getGridBoundaryRegion().getMarginBeyond(band, normal);
-        return high ? band.xMax() + margin : band.xMin() - margin;
-      }
+        target = grid->getRingReach(band, normal);
+        break;
+      case kBoundary:
+        target = boundary();
+        break;
+      case kPadRing:
+        target = high ? std::min(pad_ring.xMax(), boundary())
+                      : std::max(pad_ring.xMin(), boundary());
+        break;
       case kCore:
       case kFixed:
         // the core is where the row already ends
         break;
     }
-    return high ? band.xMax() : band.xMin();
+    if (extend_distance > 0) {
+      // run on past the target, but not past the boundary unless the target
+      // already was
+      target = high ? std::max(target,
+                               std::min(target + extend_distance, boundary()))
+                    : std::min(target,
+                               std::max(target - extend_distance, boundary()));
+    }
+    return target;
   };
 
   odb::dbNet* power = getDomain()->getPower();
@@ -1829,14 +1898,69 @@ void PadDirectConnectionStraps::getConnectableShapes(
 void PadDirectConnectionStraps::cutShapes(
     const Shape::ObstructionTreeMap& obstructions)
 {
+  odb::dbInst* inst = iterm_->getInst();
+  const odb::Rect inst_shape = inst->getBBox()->getBox();
+
+  if (type_ == ConnectionType::kEdge) {
+    // An edge connection is its pin carried straight out of the pad and is no
+    // wider than the pin, so it comes no closer to anything behind the edge it
+    // leaves through than the pin already does.  The padframe there has
+    // nothing to say about it: its pins are drawn to be reached and its cells
+    // to abut.  It has to be left out rather than tolerated, since pads
+    // commonly draw one obstruction over the whole cell with the pins carved
+    // out of it, and the spacing owed to that, by the pad or by its
+    // neighbour, cuts the connection off its pin.
+    const auto is_behind_edge = [this, &inst_shape](const odb::Rect& rect) {
+      switch (pad_edge_) {
+        case odb::dbDirection::NORTH:
+          return rect.yMin() >= inst_shape.yMin();
+        case odb::dbDirection::SOUTH:
+          return rect.yMax() <= inst_shape.yMax();
+        case odb::dbDirection::EAST:
+          return rect.xMin() >= inst_shape.xMin();
+        case odb::dbDirection::WEST:
+          return rect.xMax() <= inst_shape.xMax();
+        default:
+          return false;
+      }
+    };
+    const Grid* grid = getGrid();
+    const auto obs_filter = [&is_behind_edge, grid](const ShapePtr& other) {
+      switch (other->shapeType()) {
+        case Shape::kPadObs:
+          return !is_behind_edge(other->getRect());
+        case Shape::kGridObs:
+          return !static_cast<GridObsShape*>(other.get())->belongsTo(grid);
+        default:
+          return true;
+      }
+    };
+
+    std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
+    for (const auto& [layer, layer_shapes] : getShapes()) {
+      auto it = obstructions.find(layer);
+      if (it == obstructions.end()) {
+        continue;
+      }
+      const auto& obs = it->second;
+      for (const auto& shape : layer_shapes) {
+        std::vector<std::unique_ptr<Shape>> replacements;
+        if (shape->cut(obs, replacements, obs_filter)) {
+          replacement_shapes[shape.get()] = std::move(replacements);
+        }
+      }
+    }
+    for (auto& [shape, replacements] : replacement_shapes) {
+      replaceShape(shape, replacements);
+    }
+    return;
+  }
+
   Straps::cutShapes(obstructions);
 
   if (type_ != ConnectionType::kOverPads) {
     return;
   }
-
-  odb::dbInst* inst = iterm_->getInst();
-  const odb::Rect inst_shape = inst->getBBox()->getBox();
 
   // filter out segments that are full enclosed by the pin shape (ie doesnt
   // connect to ring)

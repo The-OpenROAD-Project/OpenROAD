@@ -181,6 +181,10 @@ class Grid
   virtual odb::Rect getDomainBoundary() const;
   // returns the  largest boundary to use for extending straps
   virtual odb::Rect getGridBoundary() const;
+  // returns the grid boundary pulled in to the inner edge of the pad ring
+  odb::Rect getPadRingArea() const;
+  // returns the die pulled in to the inner edge of the placed pads on each
+  // side that has them, or nothing when no pads are placed
 
   // The same areas as outlines.  Each mirrors exactly one of the rectangles
   // above, including where a subclass redefines what that rectangle means: on

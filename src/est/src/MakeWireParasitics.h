@@ -13,6 +13,7 @@
 #include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
@@ -121,6 +122,8 @@ class MakeWireParasitics
                        sta::Scene* corner,
                        int num_cuts = 1) const;
   double dbuToMeters(int dbu) const;
+  void findPinCenters(const std::vector<grt::PinGridLocation>& pin_grid_locs);
+  odb::Point routePoint(const odb::Point& grid_pt) const;
 
   // Variables common to all nets.
   grt::GlobalRouter* global_router_;
@@ -133,6 +136,8 @@ class MakeWireParasitics
   sta::ArcDelayCalc* arc_delay_calc_;  // the timer's, or a thread's copy
   const sta::MinMax* min_max_;
   size_t resistor_id_;
+  // Per net: gcell center -> median of the net's pins in the gcell.
+  std::map<odb::Point, odb::Point> pin_centers_;
 };
 
 }  // namespace est

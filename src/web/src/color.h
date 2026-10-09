@@ -12,8 +12,12 @@ struct Color
   unsigned char b = 0;  // Blue (0-255)
   unsigned char a = 0;  // Alpha (0-255)
 
-  Color lighter(double factor = 1.5) const;
-  Color darken(double factor = 0.5) const;
+  // QColor::lighter and QColor::darker to the bit: factors in percent, HSV in
+  // Qt's 16-bit fixed point.
+  Color lighter(int factor = 150) const;
+  Color darker(int factor = 200) const;
+
+  bool operator==(const Color&) const = default;
 };
 
 // Per-layer brush pattern used when rasterizing layer shapes.  The integer
@@ -36,6 +40,14 @@ inline constexpr Color kSelectionYellow{.r = 255, .g = 255, .b = 0, .a = 255};
 // Instance names and instance-pin labels.  Slightly translucent so a label
 // over dense geometry still lets the shapes read through, as Qt's does.
 inline constexpr Color kLabelYellow{.r = 255, .g = 255, .b = 0, .a = 220};
+
+// Block and pad names: Qt strokes the text path black and fills it opaque
+// (drawTextInBBox), so only the outer half of the outline shows.
+inline constexpr Color kOutlinedLabelYellow{.r = 255,
+                                            .g = 255,
+                                            .b = 0,
+                                            .a = 255};
+inline constexpr Color kLabelOutline{.r = 0, .g = 0, .b = 0, .a = 255};
 
 // Die, core, region and instance outlines, plus the instance orientation tag.
 // Qt paints all of them with QPen(Qt::gray, 0) — drawChip, drawRegions and

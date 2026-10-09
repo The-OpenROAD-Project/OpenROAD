@@ -40,6 +40,7 @@ or_integration_tests(
     core_grid_dual_followpins
     core_grid_dual_followpins_error
     core_grid_existing_ports
+    core_grid_extend_by
     core_grid_extend_to_boundary
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
@@ -51,6 +52,7 @@ or_integration_tests(
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
+    core_grid_offset_type
     core_grid_ring_on_pin_layer
     core_grid_single_pin
     core_grid_snap
@@ -114,6 +116,7 @@ or_integration_tests(
     macros_flipped_halo_rings
     macros_flipped_narrow_channel
     macros_flipped_number_of_straps
+    macros_flipped_offset_type
     macros_flipped_right_angle
     macros_flipped_right_angle_180
     macros_flipped_right_angle_halo
@@ -135,6 +138,7 @@ or_integration_tests(
     names
     offgrid
     pads_black_parrot
+    pads_black_parrot_extend_to_pad_ring
     pads_black_parrot_flipchip
     pads_black_parrot_flipchip_connect_bumps
     pads_black_parrot_flipchip_connect_overpads
@@ -145,6 +149,7 @@ or_integration_tests(
     pads_black_parrot_no_connect
     pads_black_parrot_offset
     pads_black_parrot_straps
+    pads_connect_blanket_obstruction
     pads_connect_from_non_pref_edge
     pads_ihp_sg13g2_balance
     pads_placed_not_fixed

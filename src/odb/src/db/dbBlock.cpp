@@ -3045,27 +3045,6 @@ dbBlockSearch* dbBlock::getSearchDb()
   return block->search_db_;
 }
 
-void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
-{
-  int tot = 0;
-  int upd = 0;
-  int enc = 0;
-  for (dbNet* net : getNets()) {
-    tot++;
-    _dbNet* n = (_dbNet*) net;
-
-    if (n->flags_.wire_altered != 1) {
-      continue;
-    }
-    upd++;
-    enc++;
-
-    result.push_back(net);
-  }
-  getImpl()->getLogger()->info(
-      utl::ODB, 10, "tot = {}, upd = {}, enc = {}", tot, upd, enc);
-}
-
 void dbBlock::destroyCCs(std::vector<dbNet*>& nets)
 {
   for (dbNet* net : nets) {
