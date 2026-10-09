@@ -2818,7 +2818,7 @@ bool Resizer::removeBufferIfPossible(sta::Instance* buffer,
                                      const bool honor_dont_touch_fixed)
 {
   if (canRemoveBuffer(buffer, honor_dont_touch_fixed)) {
-    return removeBuffer(buffer);
+    return removeBuffer(buffer, honor_dont_touch_fixed);
   }
   return false;
 }
@@ -3003,7 +3003,8 @@ odb::dbModNet* mergeBufferModNets(odb::dbModNet* survivor_modnet,
 
 }  // namespace
 
-bool Resizer::removeBuffer(sta::Instance* buffer)
+bool Resizer::removeBuffer(sta::Instance* buffer,
+                           const bool honor_dont_touch_fixed)
 {
   if (buffer == nullptr) {
     return false;
@@ -3038,7 +3039,10 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
   if (output_db_net == nullptr) {
-    BufferRemovalProtection protection(db_inst, input_db_net, nullptr);
+    std::optional<BufferRemovalProtection> protection;
+    if (!honor_dont_touch_fixed) {
+      protection.emplace(db_inst, input_db_net, nullptr);
+    }
     odb::dbInst::destroy(db_inst);
     return true;
   }
@@ -3077,7 +3081,10 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbNet* db_removed = db_network_->staToDb(removed_net);
   BufferRemovalNames names = chooseBufferRemovalNames(
       db_survivor, db_removed, survivor_modnet, removed_modnet);
-  BufferRemovalProtection protection(db_inst, db_survivor, db_removed);
+  std::optional<BufferRemovalProtection> protection;
+  if (!honor_dont_touch_fixed) {
+    protection.emplace(db_inst, db_survivor, db_removed);
+  }
 
   sta_->disconnectPin(input_pin);
   sta_->disconnectPin(output_pin);

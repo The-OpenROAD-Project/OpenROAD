@@ -362,7 +362,7 @@ TEST_F(TestResizer, BufferRemovalPreservesCandidateAndSurvivorFlags)
 
   // Given an eligible candidate, when removed, then the survivor stays
   // protected.
-  ASSERT_TRUE(resizer_.removeBuffer(buffer));
+  ASSERT_TRUE(resizer_.removeBuffer(buffer, /*honor_dont_touch_fixed=*/false));
   EXPECT_EQ(block_->findInst("b2"), nullptr);
   EXPECT_EQ(block_->findNet("n2"), nullptr);
   EXPECT_TRUE(db_survivor->isDoNotTouch());
@@ -389,7 +389,7 @@ TEST_F(TestResizer, BufferRemovalWithDisconnectedOutputPreservesInputNet)
   db_buffer->setDoNotTouch(true);
   db_buffer->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   db_input->setDoNotTouch(true);
-  ASSERT_TRUE(resizer_.removeBuffer(buffer));
+  ASSERT_TRUE(resizer_.removeBuffer(buffer, /*honor_dont_touch_fixed=*/false));
   EXPECT_EQ(block_->findInst("b2"), nullptr);
   EXPECT_TRUE(db_input->isDoNotTouch());
 }
