@@ -50,9 +50,9 @@ module leaf1 (clk,
  wire n2;
  wire n3;
 
- BUF_X2 buf1 (.A(n1),
+ BUF_X4 buf1 (.A(n1),
     .Z(n2));
- BUF_X2 buf2 (.A(n2),
+ BUF_X4 buf2 (.A(n2),
     .Z(n3));
  DFF_X1 dff1 (.D(in1),
     .CK(clk),
@@ -74,9 +74,9 @@ module leaf2 (clk,
  wire n2;
  wire n3;
 
- BUF_X2 buf1 (.A(n1),
+ BUF_X4 buf1 (.A(n1),
     .Z(n2));
- BUF_X2 buf2 (.A(n1),
+ BUF_X4 buf2 (.A(n1),
     .Z(n3));
  DFF_X1 dff1 (.D(in1),
     .CK(clk),
@@ -101,13 +101,13 @@ module leaf3 (clk,
  wire n4;
  wire n5;
 
- BUF_X2 buf1 (.A(n1),
+ BUF_X4 buf1 (.A(n1),
     .Z(n2));
- BUF_X2 buf2 (.A(n2),
+ BUF_X8 buf2 (.A(n2),
     .Z(n3));
- BUF_X2 buf3 (.A(n3),
+ BUF_X8 buf3 (.A(n3),
     .Z(n4));
- BUF_X2 buf4 (.A(n4),
+ BUF_X4 buf4 (.A(n4),
     .Z(n5));
  DFF_X1 dff1 (.D(in1),
     .CK(clk),
@@ -143,7 +143,6 @@ module mid1 (clk,
  wire l2_out1;
  wire l1_out;
  wire net1;
- wire net;
 
  DFF_X1 dff_load1 (.D(net1),
     .CK(clk));
@@ -151,30 +150,28 @@ module mid1 (clk,
     .CK(clk));
  DFF_X1 dff_load2 (.D(net1),
     .CK(clk));
- DFF_X1 dff_load3 (.D(net),
+ DFF_X1 dff_load3 (.D(net1),
     .CK(clk));
  DFF_X1 dff_load4 (.D(net1),
     .CK(clk));
- DFF_X1 dff_load5 (.D(net),
+ DFF_X1 dff_load5 (.D(net1),
     .CK(clk));
  DFF_X1 dff_load6 (.D(net1),
     .CK(clk));
- DFF_X1 dff_load7 (.D(net),
+ DFF_X1 dff_load7 (.D(net1),
     .CK(clk));
- DFF_X1 dff_load8 (.D(net),
+ DFF_X1 dff_load8 (.D(net1),
     .CK(clk));
  DFF_X1 dff_load9 (.D(net1),
     .CK(clk));
  DFF_X1 dff_out1 (.D(l1_out),
     .CK(clk),
     .Q(out1));
- DFF_X1 dff_out2 (.D(net),
+ DFF_X1 dff_out2 (.D(net1),
     .CK(clk),
     .Q(out2));
  BUF_X4 rebuffer1 (.A(l2_out1),
     .Z(net1));
- BUF_X4 split (.A(net1),
-    .Z(net));
  leaf1 u_leaf1 (.clk(clk),
     .in1(in1),
     .out1(l1_out));
@@ -196,7 +193,7 @@ module mid2 (clk,
  wire l3_out;
  wire n1;
 
- BUF_X2 buf1 (.A(l3_out),
+ BUF_X4 buf1 (.A(l3_out),
     .Z(n1));
  DFF_X1 dff_out1 (.D(n1),
     .CK(clk),
