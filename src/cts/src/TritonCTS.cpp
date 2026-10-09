@@ -353,6 +353,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
+          logger_->report("Checking net: {}", outputNet->getName());
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()) {
             bool isLeafPin = false;
             sta::Pin* staPin = network_->dbToSta(outputPin);
@@ -1545,7 +1546,7 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       // Cells with insertion delay, macros, clock gaters and inverters that
-      // drive macros are put in the macro sinks.
+      // do not drive a single register are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
 
       bool nonSinkMacro = !isSink(iterm);
@@ -1555,11 +1556,24 @@ bool TritonCTS::separateMacroRegSinks(
         odb::dbITerm* invertedOutput = inst->getFirstOutput();
         odb::dbNet* invertedNet
             = invertedOutput ? invertedOutput->getNet() : nullptr;
-        odb::dbITerm* invertedTerm
-            = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
-        if (invertedTerm) {
-          nonSinkMacro &= invertedTerm->getInst()->isBlock();
-        } else {
+        odb::dbITerm* invertedTerm = nullptr;
+        int invertedLoads = 0;
+        if (invertedNet) {
+          for (odb::dbITerm* loadTerm : invertedNet->getITerms()) {
+            if (loadTerm->isInputSignal()) {
+              ++invertedLoads;
+              if (invertedTerm == nullptr) {
+                invertedTerm = loadTerm;
+              }
+            }
+          }
+        }
+        if (invertedLoads == 1) {
+          // Register sink only when the lone load is a register; a macro or a
+          // clock gater keeps the inverter on the macro side.
+          nonSinkMacro
+              &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
+        } else if (invertedLoads == 0) {
           logger_->warn(CTS,
                         136,
                         "Inverter {} output net has no signal input; "
