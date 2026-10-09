@@ -91,6 +91,17 @@ class TestOrderWires : public tst::Fixture
     net_ = block_->findNet("net");
   }
 
+  void createSimpleHorizontalWire()
+  {
+    dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
+    dbWireEncoder encoder;
+    encoder.begin(wire_);
+    encoder.newPath(metal1, dbWireType::ROUTED);
+    encoder.addPoint(0, 0);
+    encoder.addPoint(1000, 0);
+    encoder.end();
+  }
+
   //   (driver_x, above_y)                        (receiver_x, above_y)
   //         +--------------- path 1 ----------------+
   //         |                                       |
@@ -277,6 +288,19 @@ TEST_F(TestOrderWires, ThreePathsMeetingAtOnePoint)
 
   orderWires(&logger_, block_);
   testNormalizedConnectivity();
+}
+
+TEST_F(TestOrderWires, ReencodedWireIsNotOrdered)
+{
+  buildDriverReceiverNet();
+  wire_ = dbWire::create(net_);
+
+  createSimpleHorizontalWire();
+  orderWires(&logger_, block_);
+  ASSERT_TRUE(wire_->isOrdered());
+
+  createSimpleHorizontalWire();
+  EXPECT_FALSE(wire_->isOrdered());
 }
 
 }  // namespace odb
