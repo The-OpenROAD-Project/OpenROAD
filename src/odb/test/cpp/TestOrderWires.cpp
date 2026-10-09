@@ -195,7 +195,7 @@ class TestOrderWires : public tst::Fixture
 
   void testNormalizedConnectivity()
   {
-    EXPECT_TRUE(net_->isWireOrdered());
+    EXPECT_TRUE(wire_->isOrdered());
 
     const PtrMap<dbITerm, int> markers = itermMarkersInWire(wire_);
     for (dbITerm* iterm : net_->getITerms()) {
@@ -229,7 +229,7 @@ TEST_F(TestOrderWires, InputBumpNetWithPatchAtTheBeginning)
   encoder.end();
 
   orderWires(&logger_, block_);
-  EXPECT_TRUE(bump_net.net->isWireOrdered());
+  EXPECT_TRUE(wire->isOrdered());
 
   dbWireDecoder decoder;
   decoder.begin(bump_net.net->getWire());
