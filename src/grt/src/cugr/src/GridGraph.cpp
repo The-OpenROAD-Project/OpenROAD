@@ -875,6 +875,10 @@ void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
                                         const std::vector<double>& net_costs,
                                         F&& fn) const
 {
+  // Use the same model for via costs, commit/rip-up, and demand reporting.
+  if (!constants_.via_demand_enabled) {
+    return;
+  }
   for (int l = layer_index; l <= layer_index + 1 && l < num_layers_; l++) {
     // Use the per-layer NDR factor for `l`, not a net-wide value.
     const double layer_factor

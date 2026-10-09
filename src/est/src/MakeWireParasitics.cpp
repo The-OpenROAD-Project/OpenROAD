@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"
@@ -36,7 +37,6 @@ using sta::Scene;
 
 using utl::EST;
 
-using std::abs;
 using std::min;
 
 MakeWireParasitics::MakeWireParasitics(
@@ -45,7 +45,8 @@ MakeWireParasitics::MakeWireParasitics(
     sta::dbSta* sta,
     odb::dbTech* tech,
     odb::dbBlock* block,
-    grt::GlobalRouter* grouter)
+    grt::GlobalRouter* grouter,
+    sta::ArcDelayCalc* arc_delay_calc)
     : global_router_(grouter),
       estimate_parasitics_(estimate_parasitics),
       tech_(tech),
@@ -53,7 +54,7 @@ MakeWireParasitics::MakeWireParasitics(
       logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
-      arc_delay_calc_(sta_->arcDelayCalc()),
+      arc_delay_calc_(arc_delay_calc ? arc_delay_calc : sta_->arcDelayCalc()),
       min_max_(sta::MinMax::max()),
       resistor_id_(1)
 {
@@ -81,6 +82,7 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
   Net* sta_net = network_->dbToSta(net);
   std::vector<grt::PinGridLocation> pin_grid_locs
       = global_router_->getPinGridPositions(net);
+  findPinCenters(pin_grid_locs);
 
   for (Scene* corner : sta_->scenes()) {
     NodeRoutePtMap node_map;
@@ -125,6 +127,7 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
   sta::Net* sta_net = network_->dbToSta(net);
   std::vector<grt::PinGridLocation> pin_grid_locs
       = global_router_->getPinGridPositions(net);
+  findPinCenters(pin_grid_locs);
 
   for (Scene* corner : sta_->scenes()) {
     NodeRoutePtMap node_map;
@@ -176,8 +179,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
   const int min_routing_layer = global_router_->getMinRoutingLayer();
 
   for (grt::GSegment& segment : route) {
-    const int wire_length_dbu = segment.length();
-
     const int init_layer = segment.init_layer;
     bool is_valid_layer = init_layer >= min_routing_layer || segment.isVia();
     sta::ParasiticNode* n1 = is_valid_layer
@@ -208,8 +209,7 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
     sta::Units* units = sta_->units();
     float res = 0.0;
     float cap = 0.0;
-    if (wire_length_dbu == 0) {
-      // via
+    if (segment.isVia()) {
       int lower_layer = min(segment.init_layer, segment.final_layer);
       odb::dbTechLayer* cut_layer
           = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
@@ -225,7 +225,13 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
                  segment.final_layer,
                  units->resistanceUnit()->asString(res));
     } else if (segment.init_layer == segment.final_layer) {
-      layerRC(wire_length_dbu, segment.init_layer, corner, net, res, cap);
+      const int length_dbu = odb::Point::manhattanDistance(
+          routePoint({segment.init_x, segment.init_y}),
+          routePoint({segment.final_x, segment.final_y}));
+      layerRC(length_dbu, segment.init_layer, corner, net, res, cap);
+      // Floor the resistance as for pins: the ends can meet when they
+      // are moved to their pins.
+      res = std::max(res, 1.0e-3f);
       debugPrint(logger_,
                  EST,
                  "est_rc",
@@ -233,7 +239,7 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
                  "{} -> {} {:.2f}u layer={} r={} c={}",
                  parasitics->name(n1),
                  parasitics->name(n2),
-                 dbuToMeters(wire_length_dbu) * 1e+6,
+                 dbuToMeters(length_dbu) * 1e+6,
                  segment.init_layer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
@@ -301,9 +307,9 @@ void MakeWireParasitics::makeParasiticsToPin(sta::Parasitics* parasitics,
                                    ? pin_loc.bterm->getName()
                                    : pin_loc.iterm->getName();
   if (grid_node) {
-    // Make wire from pin to gcell center on pin layer.
-    int wire_length_dbu
-        = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
+    // Make wire from pin to its route point on pin layer.
+    const int wire_length_dbu
+        = odb::Point::manhattanDistance(pt, routePoint(grid_pt));
     float res, cap;
     layerRC(wire_length_dbu, layer, corner, net, res, cap);
     sta::Units* units = sta_->units();
@@ -411,9 +417,9 @@ void MakeWireParasitics::makePartialParasiticsToPin(
                                    ? pin_loc.bterm->getName()
                                    : pin_loc.iterm->getName();
   if (grid_node) {
-    // Make wire from pin to gcell center on pin layer.
-    int wire_length_dbu
-        = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
+    // Make wire from pin to its route point on pin layer.
+    const int wire_length_dbu
+        = odb::Point::manhattanDistance(pt, routePoint(grid_pt));
     float res, cap;
     layerRC(wire_length_dbu, layer, corner, net, res, cap);
     sta::Units* units = sta_->units();
@@ -525,6 +531,38 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
   const float wire_length = dbuToMeters(wire_length_dbu);
   res = r_per_meter * wire_length;
   cap = cap_per_meter * wire_length;
+}
+
+// Global routes run between gcell centers and each pin connects to the
+// center of its gcell. For short nets that overestimates the wire many
+// times over: e.g. two adjacent pins in one gcell are joined by a star
+// through its center. Instead the route point of a gcell with pins is the
+// median of the net's pins in it, which minimizes the wire to the pins.
+void MakeWireParasitics::findPinCenters(
+    const std::vector<grt::PinGridLocation>& pin_grid_locs)
+{
+  std::map<odb::Point, std::pair<std::vector<int>, std::vector<int>>> pins;
+  for (const grt::PinGridLocation& pin_loc : pin_grid_locs) {
+    auto& [xs, ys] = pins[pin_loc.grid_pt];
+    xs.push_back(pin_loc.pt.getX());
+    ys.push_back(pin_loc.pt.getY());
+  }
+  auto median = [](std::vector<int>& values) {
+    auto mid = values.begin() + values.size() / 2;
+    std::nth_element(values.begin(), mid, values.end());
+    return *mid;
+  };
+  pin_centers_.clear();
+  for (auto& [grid_pt, xys] : pins) {
+    auto& [xs, ys] = xys;
+    pin_centers_[grid_pt] = odb::Point(median(xs), median(ys));
+  }
+}
+
+odb::Point MakeWireParasitics::routePoint(const odb::Point& grid_pt) const
+{
+  auto it = pin_centers_.find(grid_pt);
+  return it == pin_centers_.end() ? grid_pt : it->second;
 }
 
 double MakeWireParasitics::dbuToMeters(int dbu) const

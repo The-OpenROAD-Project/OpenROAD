@@ -203,13 +203,16 @@ add_pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -
 ```tcl
 add_pdn_stripe
     -layer layer_name
+    [-extend_by distance]
     [-extend_to_boundary]
     [-extend_to_core_ring]
+    [-extend_to_pad_ring]
     [-followpins]
     [-grid grid_name]
     [-nets list_of_nets]
     [-number_of_straps count]
     [-offset offset_value]
+    [-offset_type START|FIRST|CENTER|LAST|END]
     [-pitch pitch_value]
     [-snap_to_grid]
     [-spacing spacing_value]
@@ -223,13 +226,16 @@ add_pdn_stripe
 | Switch Name | Description |
 | ----- | ----- |
 | `-layer` | Specifies the name of the layer for these stripes. |
+| `[-extend_by]` | Extend the stripes this much further past where they would otherwise stop, but never past the boundary of the grid. As with the rest of a stripe, any part of the extension past its last connection is removed when the grid is trimmed. |
 | `[-extend_to_boundary]` | Extend the stripes to the boundary of the grid. |
 | `[-extend_to_core_ring]` | Extend the stripes to the core PG ring. |
+| `[-extend_to_pad_ring]` | Extend the stripes to the inner edge of the placed pads. It is an error if no pads are placed. |
 | `[-followpins]` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows, the `-width` is not needed if it can be determined from the cells. |
 | `[-grid]` | Specifies the grid to which this stripe definition will be added. (Default: Last grid defined by `define_pdn_grid`). |
 | `[-nets]` | Limit straps to just this list of nets. |
 | `[-number_of_straps]` | Number of power/ground pairs to add. |
-| `[-offset]` | Value for the offset of the stripe from the lower left corner of the design core area. On an instance grid the offset is measured from the corresponding corner of the macro as it is drawn, so for an instance flipped on the stripe's axis it is measured from the opposite edge and the stripes, including the net order within a group, mirror with it. |
+| `[-offset]` | Value for the offset of the stripe from the lower left corner of the design core area. By default the offset places the center of the first stripe in each group; see `-offset_type`. On an instance grid the offset is measured from the corresponding corner of the macro as it is drawn, so for an instance flipped on the stripe's axis it is measured from the opposite edge and the stripes, including the net order within a group, mirror with it. |
+| `[-offset_type]` | Which point of each group of stripes the offset places: `START`, the lower edge of the first stripe; `FIRST`, the center of the first stripe; `CENTER`, the center of the whole group; `LAST`, the center of the last stripe; or `END`, the upper edge of the last stripe (Default: `FIRST`). With `-snap_to_grid` each stripe is still snapped on its own, so the group can end up as much as a track away from the point the offset names. |
 | `[-pitch]` | Value for the distance between each power/ground pair. |
 | `[-snap_to_grid]` | Snap the stripes to the defined routing grid. |
 | `[-spacing]` | Optional specification of the spacing between power/ground pairs within a single pitch (Default: pitch / 2). |

@@ -37,6 +37,10 @@ void Graph2D::init(const int x_grid,
   v_used_ggrid_.clear();
   h_dirty_used_grids_.clear();
   v_dirty_used_grids_.clear();
+  h_dirty_est_edges_.clear();
+  v_dirty_est_edges_.clear();
+  h_dirty_history_edges_.clear();
+  v_dirty_history_edges_.clear();
 
   h_edges_.resize(boost::extents[x_grid - 1][y_grid]);
   v_edges_.resize(boost::extents[x_grid][y_grid - 1]);
@@ -49,8 +53,11 @@ void Graph2D::init(const int x_grid,
       h_edges_[x][y].est_usage = 0;
       h_edges_[x][y].red = 0;
       h_edges_[x][y].last_usage = 0;
+      h_edges_[x][y].congCNT = 0;
       h_edges_[x][y].ndr_overflow = 0;
       h_edges_[x][y].used_grid_dirty = false;
+      h_edges_[x][y].est_usage_dirty = false;
+      h_edges_[x][y].history_dirty = false;
     }
   }
   for (int x = 0; x < x_grid; x++) {
@@ -61,31 +68,119 @@ void Graph2D::init(const int x_grid,
       v_edges_[x][y].est_usage = 0;
       v_edges_[x][y].red = 0;
       v_edges_[x][y].last_usage = 0;
+      v_edges_[x][y].congCNT = 0;
       v_edges_[x][y].ndr_overflow = 0;
       v_edges_[x][y].used_grid_dirty = false;
+      v_edges_[x][y].est_usage_dirty = false;
+      v_edges_[x][y].history_dirty = false;
     }
   }
 }
 
-// Initializes the estimated usage of all edges to 0.
+// Resets queued estimates; unqueued estimates are already zero.
 void Graph2D::InitEstUsage()
 {
-  foreachEdge([](Edge& edge) { edge.est_usage = 0; });
+  checkDirtyLists();
+  const auto reset = [](auto& edges, auto& dirty) {
+    for (const auto& [x, y] : dirty) {
+      auto& edge = edges[x][y];
+      edge.est_usage = 0;
+      edge.est_usage_dirty = false;
+    }
+    dirty.clear();
+  };
+  reset(h_edges_, h_dirty_est_edges_);
+  reset(v_edges_, v_dirty_est_edges_);
   h_overflow_.estimated.resetUsage();
   v_overflow_.estimated.resetUsage();
   h_overflow_.ordered_estimates = 0;
   v_overflow_.ordered_estimates = 0;
 }
 
-// Initializes the last usage of all edges based on the update type.
+// Resets queued history; type 1 also clears congestion counts and the queue.
 void Graph2D::InitLastUsage(const int upType)
 {
-  foreachEdge([](Edge& edge) { edge.last_usage = 0; });
-
   if (upType == 1) {
-    foreachEdge([](Edge& edge) { edge.congCNT = 0; });
-  } else if (upType == 2) {
-    foreachEdge([](Edge& edge) { edge.last_usage = edge.last_usage * 0.2; });
+    checkDirtyLists();
+  }
+  const auto reset = [upType](auto& edges, auto& dirty) {
+    for (const size_t index : dirty) {
+      auto& edge = edges.data()[index];
+      edge.last_usage = 0;
+      if (upType == 1) {
+        edge.congCNT = 0;
+        edge.history_dirty = false;
+      }
+    }
+    // Other update types retain congCNT, which a later type-1 reset must clear.
+    // Type 2 previously scaled last_usage only after setting it to zero.
+    if (upType == 1) {
+      dirty.clear();
+    }
+  };
+  reset(h_edges_, h_dirty_history_edges_);
+  reset(v_edges_, v_dirty_history_edges_);
+}
+
+void Graph2D::checkDirtyLists() const
+{
+  if (!logger_->debugCheck(utl::GRT, "dirtylistcheck", 1)) {
+    return;
+  }
+  const auto validate = [](const auto& edges,
+                           const auto& estimates,
+                           const auto& history) -> const char* {
+    const size_t count = edges.num_elements();
+    std::vector<bool> estimated(count, false);
+    std::vector<bool> historical(count, false);
+    for (const auto& [x, y] : estimates) {
+      if (x < 0 || y < 0 || x >= static_cast<int>(edges.shape()[0])
+          || y >= static_cast<int>(edges.shape()[1])) {
+        return "estimate coordinate out of bounds";
+      }
+      const size_t index
+          = static_cast<size_t>(x) * edges.shape()[1] + static_cast<size_t>(y);
+      if (estimated[index]) {
+        return "duplicate estimate entry";
+      }
+      estimated[index] = true;
+    }
+    for (const size_t index : history) {
+      if (index >= count) {
+        return "history index out of bounds";
+      }
+      if (historical[index]) {
+        return "duplicate history entry";
+      }
+      historical[index] = true;
+    }
+    for (size_t i = 0; i < count; ++i) {
+      const auto& edge = edges.data()[i];
+      if (edge.est_usage_dirty != estimated[i]
+          || (edge.est_usage != 0 && !estimated[i])) {
+        return "estimate flags or values disagree with the list";
+      }
+      if (edge.history_dirty != historical[i]
+          || ((edge.last_usage != 0 || edge.congCNT != 0) && !historical[i])) {
+        return "history flags or values disagree with the list";
+      }
+    }
+    return nullptr;
+  };
+  for (const auto direction :
+       {EdgeDirection::Horizontal, EdgeDirection::Vertical}) {
+    const bool horizontal = direction == EdgeDirection::Horizontal;
+    const char* error = validate(
+        horizontal ? h_edges_ : v_edges_,
+        horizontal ? h_dirty_est_edges_ : v_dirty_est_edges_,
+        horizontal ? h_dirty_history_edges_ : v_dirty_history_edges_);
+    if (error != nullptr) {
+      logger_->error(utl::GRT,
+                     906,
+                     "Invalid {} dirty routing edge lists: {}.",
+                     horizontal ? "horizontal" : "vertical",
+                     error);
+    }
   }
 }
 
@@ -110,6 +205,10 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
   }
   h_dirty_used_grids_ = other.h_dirty_used_grids_;
   v_dirty_used_grids_ = other.v_dirty_used_grids_;
+  h_dirty_est_edges_ = other.h_dirty_est_edges_;
+  v_dirty_est_edges_ = other.v_dirty_est_edges_;
+  h_dirty_history_edges_ = other.h_dirty_history_edges_;
+  v_dirty_history_edges_ = other.v_dirty_history_edges_;
   overflow_2d_valid_ = other.overflow_2d_valid_;
   h_overflow_ = other.h_overflow_;
   v_overflow_ = other.v_overflow_;
@@ -146,6 +245,10 @@ void Graph2D::clear()
   v_dirty_used_grids_.clear();
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
+  h_dirty_est_edges_.clear();
+  v_dirty_est_edges_.clear();
+  h_dirty_history_edges_.clear();
+  v_dirty_history_edges_.clear();
 }
 
 // Clears the sets of used horizontal and vertical grid cells.
@@ -387,8 +490,10 @@ bool Graph2D::usedGridsMatchUsage() const
   // population and ordering. This also detects missing positive-usage edges.
   const auto matches = [](const auto& edges, const auto& used) {
     std::set<std::pair<int, int>> reference;
-    for (int x = 0; x < edges.shape()[0]; x++) {
-      for (int y = 0; y < edges.shape()[1]; y++) {
+    const int x_count = static_cast<int>(edges.shape()[0]);
+    const int y_count = static_cast<int>(edges.shape()[1]);
+    for (int x = 0; x < x_count; x++) {
+      for (int y = 0; y < y_count; y++) {
         if (edges[x][y].usage > 0) {
           reference.insert({x, y});
         }
@@ -516,6 +621,20 @@ void Graph2D::addCapV(const int x, const int y, const int cap)
       x, y, EdgeDirection::Vertical, [cap](Edge& edge) { edge.cap += cap; });
 }
 
+// Remember estimates even when an edge leaves the used-grid sets.
+void Graph2D::markEstUsageDirty(const int x,
+                                const int y,
+                                const EdgeDirection direction)
+{
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  auto& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
+  if (!edge.est_usage_dirty && edge.est_usage != 0) {
+    auto& dirty = horizontal ? h_dirty_est_edges_ : v_dirty_est_edges_;
+    dirty.emplace_back(x, y);
+    edge.est_usage_dirty = true;
+  }
+}
+
 // Updates estimated usage for a horizontal edge segment, considering NDRs.
 void Graph2D::updateEstUsageH(const Interval& xi,
                               const int y,
@@ -538,6 +657,7 @@ void Graph2D::updateEstUsageH(const int x,
   mutateEdge(x, y, EdgeDirection::Horizontal, [cost](Edge& edge) {
     edge.est_usage += cost;
   });
+  markEstUsageDirty(x, y, EdgeDirection::Horizontal);
   markUsedGridDirty(x, y, EdgeDirection::Horizontal);
 
   if (usage > 0) {
@@ -545,24 +665,22 @@ void Graph2D::updateEstUsageH(const int x,
   }
 }
 
-// Adds the estimated usage to the actual usage for all edges.
+// Adds queued nonzero estimates to usage without clearing the estimates.
 void Graph2D::addEstUsageToUsage()
 {
-  const auto add = [this](auto& edges, const EdgeDirection direction) {
-    for (int x = 0; x < edges.shape()[0]; x++) {
-      for (int y = 0; y < edges.shape()[1]; y++) {
-        auto& edge = edges[x][y];
-        if (edge.est_usage != 0) {
-          mutateEdge(x, y, direction, [](Edge& edge) {
-            edge.usage += edge.est_usage;
-          });
-          markUsedGridDirty(x, y, direction);
-        }
-      }
-    }
-  };
-  add(h_edges_, EdgeDirection::Horizontal);
-  add(v_edges_, EdgeDirection::Vertical);
+  const auto add
+      = [this](auto& edges, const auto& dirty, const EdgeDirection direction) {
+          for (const auto& [x, y] : dirty) {
+            if (edges[x][y].est_usage != 0) {
+              mutateEdge(x, y, direction, [](Edge& edge) {
+                edge.usage += edge.est_usage;
+              });
+              markUsedGridDirty(x, y, direction);
+            }
+          }
+        };
+  add(h_edges_, h_dirty_est_edges_, EdgeDirection::Horizontal);
+  add(v_edges_, v_dirty_est_edges_, EdgeDirection::Vertical);
 }
 
 // Updates estimated usage for a vertical edge segment, considering NDRs.
@@ -587,6 +705,7 @@ void Graph2D::updateEstUsageV(const int x,
   mutateEdge(x, y, EdgeDirection::Vertical, [cost](Edge& edge) {
     edge.est_usage += cost;
   });
+  markEstUsageDirty(x, y, EdgeDirection::Vertical);
   markUsedGridDirty(x, y, EdgeDirection::Vertical);
 
   if (usage > 0) {
@@ -753,7 +872,7 @@ void Graph2D::updateCongestionHistory(const int up_type,
     stop_decreasing = max_adj < ahth;
   }
 
-  auto updateEdges = [&](const auto& grid, auto& edges) {
+  auto updateEdges = [&](const auto& grid, auto& edges, auto& dirty) {
     for (const auto& [x, y] : grid) {
       const int overflow = edges[x][y].usage - edges[x][y].cap;
       if (overflow > 0) {
@@ -770,12 +889,17 @@ void Graph2D::updateCongestionHistory(const int up_type,
               = std::max<int>(edges[x][y].last_usage + overflow, 0);
         }
       }
+      auto& edge = edges[x][y];
+      if (!edge.history_dirty && (edge.last_usage != 0 || edge.congCNT != 0)) {
+        dirty.push_back(static_cast<size_t>(&edge - edges.data()));
+        edge.history_dirty = true;
+      }
       maxlimit = std::max<int>(maxlimit, edges[x][y].last_usage);
     }
   };
 
-  updateEdges(h_used_ggrid_, h_edges_);
-  updateEdges(v_used_ggrid_, v_edges_);
+  updateEdges(h_used_ggrid_, h_edges_, h_dirty_history_edges_);
+  updateEdges(v_used_ggrid_, v_edges_, v_dirty_history_edges_);
 
   max_adj = maxlimit;
 }
@@ -783,12 +907,18 @@ void Graph2D::updateCongestionHistory(const int up_type,
 // Accumulates stress on edges based on congestion.
 void Graph2D::str_accu(const int rnd)
 {
-  foreachEdge([rnd](Edge& edge) {
-    const int overflow = edge.usage - edge.cap;
-    if (overflow > 0 || edge.congCNT > rnd) {
-      edge.last_usage += edge.congCNT * overflow / 2;
+  const auto accumulate = [rnd](auto& edges, const auto& dirty) {
+    // Every edge with nonzero congCNT is already queued.
+    for (const size_t i : dirty) {
+      auto& edge = edges.data()[i];
+      const int overflow = edge.usage - edge.cap;
+      if (overflow > 0 || edge.congCNT > rnd) {
+        edge.last_usage += edge.congCNT * overflow / 2;
+      }
     }
-  });
+  };
+  accumulate(h_edges_, h_dirty_history_edges_);
+  accumulate(v_edges_, v_dirty_history_edges_);
 }
 
 // Applies a function to each edge in the graph.

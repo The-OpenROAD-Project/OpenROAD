@@ -52,6 +52,7 @@
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
+#include "utl/CsvParser.h"
 #include "utl/Logger.h"
 #include "web/core.h"
 #include "web/heatMap.h"
@@ -652,9 +653,10 @@ WebSocketSession::WebSocketSession(
     }
   }
 
-  if (generator_->getBlock()) {
-    tile_handler_.initializeHeatMaps(state_);
-  }
+  // createHeatMapInstance() already leaves out built-ins the root chip has
+  // no block for, so this can run unconditionally -- a chiplet heat map
+  // registered before this session connects still needs to be picked up.
+  tile_handler_.initializeHeatMaps(state_);
 
   // DB-mutating requests (set_property) notify every connected client so
   // all views re-render.  Fire-and-forget; safe from any thread.
@@ -1802,14 +1804,11 @@ void WebServer::saveReport(const std::string& filename,
     return png.empty() || TileGenerator::isBlankTilePng(png);
   };
 
-  // All layers to cache tiles for.
-  std::vector<std::string> all_layers;
-  all_layers.emplace_back("_instances");
-  for (const auto& name : tech_layers) {
-    all_layers.push_back(name);
-  }
+  // Every pane the viewer mounts by default, the same stack save_image draws,
+  // plus the module coloring.
+  std::vector<std::string> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
   all_layers.emplace_back("_modules");
-  all_layers.emplace_back("_pins");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
   std::vector<std::pair<std::string, std::string>> tile_entries;
@@ -2228,6 +2227,130 @@ void WebServer::clearLabels()
     generator_->clearLabels();
     broadcastLabels();
   }
+}
+
+// A session builds its heat-map instances once, in its constructor, from
+// web::getRegisteredHeatMapSources().  Registering a source afterwards is
+// therefore invisible to the clients already connected, so tell them to
+// re-request the set.  The push carries no payload: the instance still has
+// to be created per session, which handleHeatMaps does on the round-trip.
+void WebServer::broadcastHeatMapsChanged()
+{
+  if (!viewer_hook_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "heatmaps_changed";
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+}
+
+std::string WebServer::loadChipletHeatMap(const std::string& file_path)
+{
+  TileGenerator& gen = ensureGenerator();
+
+  // Row 0 = (chiplet_name, heatmap_name); rows 1+ = x0,y0,x1,y1,value.
+  const auto csv_rows = utl::readCsv(file_path, logger_);
+  if (csv_rows.empty()) {
+    logger_->error(utl::WEB, 111, "No data in CSV file: {}", file_path);
+  }
+  if (csv_rows[0].size() != 2) {
+    logger_->error(utl::WEB,
+                   112,
+                   "Invalid CSV file: {} - expected 2 columns in first row; "
+                   "(chiplet_name, heatmap_name), got {}",
+                   file_path,
+                   csv_rows[0].size());
+  }
+  const std::string chiplet_name = csv_rows[0][0];
+  const std::string heat_map_name = csv_rows[0][1];
+  const auto parse_cell = [&](const std::string& cell, const size_t row) {
+    const char* begin = cell.c_str();
+    char* end = nullptr;
+    const double value = std::strtod(begin, &end);
+    if (end == begin || end != begin + cell.size() || !std::isfinite(value)) {
+      logger_->error(utl::WEB,
+                     114,
+                     "Invalid CSV file: {} - row {} has an invalid number {}",
+                     file_path,
+                     row,
+                     cell);
+    }
+    return value;
+  };
+
+  std::vector<web::ExternalHeatMapDataSource::Entry> data;
+  data.reserve(csv_rows.size() - 1);
+  for (size_t i = 1; i < csv_rows.size(); ++i) {
+    const auto& row = csv_rows[i];
+    if (row.size() != 5) {
+      logger_->error(
+          utl::WEB,
+          113,
+          "Invalid CSV file: {} - expected 5 columns in row {}, got {}",
+          file_path,
+          i,
+          row.size());
+    }
+    data.push_back({parse_cell(row[0], i),
+                    parse_cell(row[1], i),
+                    parse_cell(row[2], i),
+                    parse_cell(row[3], i),
+                    parse_cell(row[4], i)});
+  }
+
+  // collectChiplets() is what the renderer itself places chiplets with, so
+  // resolving here means the heat map lands exactly where the chiplet is
+  // drawn.  Match on the hierarchical path only: it is the one identifier
+  // guaranteed unique when a master is placed more than once.
+  const ChipletNode* node = nullptr;
+  std::string known;
+  for (const ChipletNode& candidate : gen.chiplets()) {
+    if (!known.empty()) {
+      known += ", ";
+    }
+    known += candidate.path;
+    if (candidate.path == chiplet_name) {
+      node = &candidate;
+      break;
+    }
+  }
+  if (node == nullptr) {
+    logger_->error(utl::WEB,
+                   115,
+                   "Chiplet {} not found in the loaded design. Known: [{}]",
+                   chiplet_name,
+                   known);
+  }
+
+  const std::string short_name
+      = "Chiplet_" + std::to_string(++chiplet_heat_map_count_);
+  // The factory runs once per viewer session, so the parsed rows have to
+  // outlive this call and cannot be moved out of the capture.  Hand every
+  // instance the same immutable list instead of copying it per session.
+  auto entries = std::make_shared<
+      const std::vector<web::ExternalHeatMapDataSource::Entry>>(
+      std::move(data));
+  odb::dbChip* const chip = node->chip;
+  const odb::dbTransform transform = node->world_xfm;
+  web::registerHeatMapSource(
+      heat_map_name,
+      short_name,
+      "WebChipletHeatMap" + short_name,
+      [logger = logger_,
+       heat_map_name,
+       short_name,
+       entries = std::move(entries),
+       chip,
+       transform] {
+        auto source = std::make_shared<web::ExternalHeatMapDataSource>(
+            logger, heat_map_name, short_name, entries);
+        source->setChip(chip);
+        source->setTransform(transform);
+        return source;
+      });
+
+  broadcastHeatMapsChanged();
+  return short_name;
 }
 
 void WebServer::saveDisplayControls(const std::string& filename)

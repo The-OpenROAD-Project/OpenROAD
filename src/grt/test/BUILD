@@ -26,11 +26,15 @@ TESTS = [
     "cugr_adjustment1",
     "cugr_adjustment2",
     "cugr_adjustment3",
+    "cugr_colocated_pins",
+    "cugr_detour_limit",
+    "cugr_via_demand_disabled",
     "est_rc1",
     "est_rc2",
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
@@ -87,6 +91,9 @@ TESTS = [
     "remove_buffers1_cugr",
     "remove_buffers2_cugr",
     "remove_buffers3_cugr",
+    "remove_buffers4_cugr",
+    "remove_buffers5_cugr",
+    "remove_buffers6_cugr",
     "remove_buffers3",
     "repair_antennas1",
     "repair_antennas2",
@@ -195,6 +202,13 @@ regression_test(
 
 regression_test(
     name = "snapshot_batched_single_thread_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "resistance_aware_asap7_fr_threads",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],

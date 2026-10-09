@@ -1412,6 +1412,16 @@ WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
   return resp;
 }
 
+WebSocketResponse TileHandler::serializeLayerExtents(const uint32_t id,
+                                                     const TileGenerator& gen)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kJson;
+  writePayload(resp, serializeLayerExtentsResponse(gen));
+  return resp;
+}
+
 WebSocketResponse TileHandler::serializeTech(const uint32_t id,
                                              const TileGenerator& gen)
 {
@@ -4144,66 +4154,56 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     boost::json::object root;
     boost::json::array chiplets;
 
-    auto processInst = [&](auto& self,
-                           odb::dbChipInst* inst,
-                           int offset_x,
-                           int offset_y,
-                           int offset_z,
-                           const std::string& parent_name) -> void {
-      odb::dbChip* master_chip = inst->getMasterChip();
-      if (master_chip && !master_chip->getChipInsts().empty()) {
-        for (odb::dbChipInst* child : master_chip->getChipInsts()) {
-          odb::Point3D loc = inst->getLoc();
-          self(self,
-               child,
-               offset_x + loc.x(),
-               offset_y + loc.y(),
-               offset_z + loc.z(),
-               parent_name + std::string(inst->getName()) + "/");
-        }
-      } else {
-        boost::json::object obj;
-        obj["name"] = parent_name + std::string(inst->getName());
+    // One box per leaf chiplet, placed by the same traversal the 2D viewer
+    // uses.  chiplets() carries each node's composed world transform (from
+    // ODB's unfolded model), so a rotated or flipped die lands where it
+    // belongs instead of at the sum of its ancestors' raw offsets.
+    constexpr int kDefaultChipWidth = 100000;
+    constexpr int kDefaultChipHeight = 100000;
+    constexpr int kDefaultChipThickness = 10000;
 
-        odb::Point3D loc = inst->getLoc();
-        obj["x"] = offset_x + loc.x();
-        obj["y"] = offset_y + loc.y();
-        obj["z"] = offset_z + loc.z();
+    for (const ChipletNode& node : gen_->chiplets()) {
+      // Leaves only: a chip that holds chip insts is a grouping node with no
+      // geometry of its own, and the root has no dbChipInst at all.
+      if (node.inst == nullptr || node.chip == nullptr
+          || !node.chip->getChipInsts().empty()) {
+        continue;
+      }
 
-        int w = 0;
-        int h = 0;
-        int thickness = 0;
-        if (master_chip) {
-          w = master_chip->getWidth();
-          h = master_chip->getHeight();
-          thickness = master_chip->getThickness();
-          // Fallback: use block bbox if chip has no explicit dimensions
-          if (w == 0 || h == 0) {
-            if (odb::dbBlock* block = master_chip->getBlock()) {
-              if (odb::dbBox* block_bbox = block->getBBox()) {
-                const odb::Rect bbox = block_bbox->getBox();
-                if (w == 0) {
-                  w = bbox.dx();
-                }
-                if (h == 0) {
-                  h = bbox.dy();
-                }
-              }
+      int w = node.chip->getWidth();
+      int h = node.chip->getHeight();
+      const int thickness = node.chip->getThickness();
+      // Fallback: use block bbox if chip has no explicit dimensions
+      if (w == 0 || h == 0) {
+        if (odb::dbBlock* block = node.chip->getBlock()) {
+          if (odb::dbBox* block_bbox = block->getBBox()) {
+            const odb::Rect bbox = block_bbox->getBox();
+            if (w == 0) {
+              w = bbox.dx();
+            }
+            if (h == 0) {
+              h = bbox.dy();
             }
           }
         }
-        constexpr int kDefaultChipWidth = 100000;
-        constexpr int kDefaultChipHeight = 100000;
-        constexpr int kDefaultChipThickness = 10000;
-        obj["width"] = w > 0 ? w : kDefaultChipWidth;
-        obj["height"] = h > 0 ? h : kDefaultChipHeight;
-        obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
-        chiplets.emplace_back(std::move(obj));
       }
-    };
+      w = w > 0 ? w : kDefaultChipWidth;
+      h = h > 0 ? h : kDefaultChipHeight;
 
-    for (odb::dbChipInst* inst : chip->getChipInsts()) {
-      processInst(processInst, inst, 0, 0, 0, "");
+      // The extent in world space: a 90° rotation swaps the die's width and
+      // height, which taking them straight off the master chip would miss.
+      odb::Rect extent(0, 0, w, h);
+      node.world_xfm.apply(extent);
+
+      boost::json::object obj;
+      obj["name"] = node.path;
+      obj["x"] = extent.xMin();
+      obj["y"] = extent.yMin();
+      obj["z"] = node.global_z;
+      obj["width"] = extent.dx();
+      obj["height"] = extent.dy();
+      obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
+      chiplets.emplace_back(std::move(obj));
     }
     root["chiplets"] = std::move(chiplets);
     writePayload(resp, root);
@@ -4917,6 +4917,11 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  d.add("layer_extents",
+        WebSocketRequest::kLayerExtents,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
   d.add("tech",
         WebSocketRequest::kTech,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -4998,9 +5003,45 @@ void TileHandler::initializeHeatMaps(SessionState& state)
   std::lock_guard<std::mutex> lock(state.heatmap_mutex);
   state.heatmaps.clear();
   for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
-    auto source = source_handle->createInstance();
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[source_handle->getShortName()] = std::move(source);
+    }
+  }
+}
+
+std::shared_ptr<web::HeatMapDataSource> TileHandler::createHeatMapInstance(
+    const web::HeatMapSourceRegistration& registration) const
+{
+  auto source = registration.createInstance();
+  // A chiplet heat map (web_load_chiplet_heatmap) binds itself to the one
+  // chiplet its data describes, so only default the un-bound built-ins to
+  // the root chip -- overriding here would drag the data back to the top.
+  if (source->getChip() == nullptr) {
+    // Built-ins read off dbBlock; a block-less root (3DBlox stack) has
+    // nothing for them to show, so leave them out instead of binding them
+    // to an invalid chip, where they'd show no data and log WEB-0098.
+    if (gen_->getBlock() == nullptr) {
+      return nullptr;
+    }
     source->setChip(gen_->getChip());
-    state.heatmaps[source_handle->getShortName()] = std::move(source);
+  }
+  return source;
+}
+
+// Sources can be registered after a session is built (web_load_chiplet_heatmap
+// from Tcl), so pick up anything missing before answering.  Existing entries
+// are left alone: their settings and the active selection are session state
+// the client expects to survive.
+void TileHandler::syncHeatMapsLocked(SessionState& state)
+{
+  for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
+    const std::string& name = source_handle->getShortName();
+    if (state.heatmaps.find(name) != state.heatmaps.end()) {
+      continue;
+    }
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[name] = std::move(source);
+    }
   }
 }
 
@@ -5012,6 +5053,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       return serializeBounds(req.id, *gen_);
     case WebSocketRequest::kTech:
       return serializeTech(req.id, *gen_);
+    case WebSocketRequest::kLayerExtents:
+      return serializeLayerExtents(req.id, *gen_);
     case WebSocketRequest::kTile:
       break;
     default: {
@@ -5734,6 +5777,8 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+    syncHeatMapsLocked(state);
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -5762,16 +5807,20 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
     }
 
     state.active_heatmap.clear();
+    web::HeatMapDataSource* shown = nullptr;
     if (!name.empty()) {
       auto next = state.heatmaps.find(name);
       if (next == state.heatmaps.end()) {
         throw std::runtime_error("invalid heat map");
       }
       state.active_heatmap = name;
-      next->second->onShow();
+      shown = next->second.get();
     }
 
     const std::string json = buildHeatMapsPayloadLocked(state);
+    if (shown != nullptr) {
+      shown->onShow();
+    }
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;

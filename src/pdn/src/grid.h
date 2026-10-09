@@ -30,6 +30,7 @@ class Connect;
 class GridComponent;
 class GridSwitchedPower;
 class PadDirectConnectionStraps;
+class MacroEdgeConnectionStraps;
 
 class PdnGen;
 
@@ -180,6 +181,10 @@ class Grid
   virtual odb::Rect getDomainBoundary() const;
   // returns the  largest boundary to use for extending straps
   virtual odb::Rect getGridBoundary() const;
+  // returns the grid boundary pulled in to the inner edge of the pad ring
+  odb::Rect getPadRingArea() const;
+  // returns the die pulled in to the inner edge of the placed pads on each
+  // side that has them, or nothing when no pads are placed
 
   // The same areas as outlines.  Each mirrors exactly one of the rectangles
   // above, including where a subclass redefines what that rectangle means: on
@@ -250,6 +255,14 @@ class Grid
   // find all intersections in the shapes which may become vias
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
                                 const Shape::ShapeTreeMap& shapes) const;
+
+  // Connect anything this grid owns that no via reached.  Called after the
+  // vias are made, so whatever the ordinary top-down flow already connected
+  // is left exactly as it was.
+  virtual void connectUnreachedPins(const Shape::ShapeTreeMap& global_shapes,
+                                    Shape::ObstructionTreeMap& obstructions)
+  {
+  }
 
   virtual void cleanupShapes() {}
 
@@ -370,6 +383,11 @@ class InstanceGrid : public Grid
   // on connectivity
   void getIntersections(std::vector<ViaPtr>& vias,
                         const Shape::ShapeTreeMap& shapes) const override;
+
+  // grow the macro's supply pins sideways to the grid beside it when no via
+  // landed on them
+  void connectUnreachedPins(const Shape::ShapeTreeMap& global_shapes,
+                            Shape::ObstructionTreeMap& obstructions) override;
 
  private:
   odb::dbInst* inst_;

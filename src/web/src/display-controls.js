@@ -36,6 +36,14 @@ export function nonSolidPatterns(patterns) {
     return out;
 }
 
+// Whether every visibility key of any one group is on: how the tech
+// response's overlays say when each shows (`shown_by`) and when it depends on
+// the visible layers (`layers_by`).  A key `visibility` lacks is off.
+export function anyGroupOn(groups, visibility) {
+    return (groups || []).some(
+        (group) => group.every((key) => !!visibility[key]));
+}
+
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
 // `chipletData` entry comes from the backend serializeTechResponse and
 // has shape { path, name, parent, master, depth }.  `savedHidden` is the
@@ -191,23 +199,15 @@ export function populateDisplayControls(app, visibility, selectability,
     addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
     // Module coloring overlay (Module view)
     addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
-    // Access-point markers overlay (Misc > Access Points)
-    addPseudoLayer(
-        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
-    // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
-    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
-    // GCell-grid lines overlay (topmost, GUI paint order)
-    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
-
-    // Region boundaries overlay (above access points, GUI paint order).
-    // Only created when the design has dbRegions — the layer is default-ON
-    // (Qt parity) and would otherwise issue per-viewport tile requests that
-    // always come back transparent.  (Regions created via Tcl mid-session
-    // need a page reload to appear.)
-    app.regionsLayer = null;
-    if (techData && techData.has_regions) {
-        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
-    }
+    // The self-painting overlays (access points, regions, grids, instance and
+    // pin names), as the server lists them: name, pane order and when each
+    // shows.  It leaves out those the design gives nothing to draw, such as
+    // regions in a design without any.
+    app.overlayLayers = ((techData && techData.overlays) || []).map((def) => ({
+        def,
+        layer: addPseudoLayer(def.name, null, def.z_index,
+                              anyGroupOn(def.shown_by, visibility)),
+    }));
 
     // --- Layers group (using CheckboxTreeModel) ---
 
@@ -281,8 +281,15 @@ export function populateDisplayControls(app, visibility, selectability,
     ];
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
-    // z-index and palette slot regardless of which chiplet it belongs to.
+    // palette slot regardless of which chiplet it belongs to.  It advances in
+    // the tech's own layer order, so a flipped chiplet keeps the colors an
+    // upright one would get.
     let nextLayerSlot = 0;
+    // Draw order, which is what a flip reverses: the stack of a face-down
+    // chiplet reaches the viewer backside-first.  Kept apart from the palette
+    // slot so reversing the stack cannot recolor it.  Starts at 3, above the
+    // _instances/_pins/_modules pseudo-layers.
+    let nextZIndex = 3;
 
     // `ownerPath` is the chiplet whose dbTech owns the layers rendered at this
     // level.  Category nodes (Backside/Implant/Other) are pure UI folders with
@@ -294,19 +301,55 @@ export function populateDisplayControls(app, visibility, selectability,
         const children = [];
         const chipletPath = hierarchyNode.type === 'category'
             ? ownerPath : hierarchyNode.path;
+        // A face-down chiplet's stack reaches the viewer in reverse: the
+        // backside is on top and M1 sits above Mtop.  `flipped` is the
+        // accumulated mirror_z of the chiplet's world transform, so a node
+        // already knows its absolute state — nesting needs no bookkeeping
+        // here.
+        //
+        // What turns over is only what belongs to THIS die: its own layers
+        // and its Backside/Implant/Other folders, which hold its layers too.
+        // Child chiplets do not — the backend already emits them ordered by
+        // world z (collectChiplets sorts on global_z, which has the mirror
+        // applied), so reversing them here would count the flip twice and
+        // paint the lower die of a flipped wrapper on top.
+        const flipped = hierarchyNode.flipped === true;
 
-        if (hierarchyNode.instances && hierarchyNode.instances.length > 0) {
-            hierarchyNode.instances.forEach((inst, idx) => {
-                const instId = parentId + "/" + (inst.name || idx);
-                children.push(buildLayerSpec(inst, instId, chipletPath));
+        // `instances` carries two different things: real child chiplets and
+        // the pure-UI category folders.  Only the latter belong to this die.
+        const allInstances = hierarchyNode.instances || [];
+        const childChiplets = allInstances.filter(n => n.type !== 'category');
+        const categories = allInstances.filter(n => n.type === 'category');
+        const layers = hierarchyNode.layers || [];
+        // Palette slots are handed out in the tech's own order, before any
+        // reversal, so a flipped chiplet is colored like an upright one.
+        const paletteBase = nextLayerSlot;
+        nextLayerSlot += layers.length;
+
+        // Emit a list of child nodes, `reversed` when they turn over with
+        // this die.  Each carries its own `flipped`, so the recursion below
+        // decides again for the subtree it enters.
+        function emitNodes(nodes, reversed) {
+            const order = nodes.map((_, i) => i);
+            if (reversed) {
+                order.reverse();
+            }
+            order.forEach((idx) => {
+                const node = nodes[idx];
+                const nodeId = parentId + "/" + (node.name || idx);
+                children.push(buildLayerSpec(node, nodeId, chipletPath));
             });
         }
 
-        if (hierarchyNode.layers && hierarchyNode.layers.length > 0) {
-            hierarchyNode.layers.forEach((layerObj) => {
+        function emitLayers() {
+            const order = flipped
+                ? layers.map((_, i) => i).reverse()
+                : layers.map((_, i) => i);
+            order.forEach((idx) => {
+                const layerObj = layers[idx];
                 const name = layerObj.name || layerObj;
-                const slot = nextLayerSlot++;
-                const zIndex = slot + 3;
+                const slot = paletteBase + idx;
+                const zIndex = nextZIndex++;
                 const layer = makeRoutingLayer(name, zIndex);
 
                 const id = `${parentId}/${name}`;
@@ -340,6 +383,21 @@ export function populateDisplayControls(app, visibility, selectability,
             });
         }
 
+        // Upright: child chiplets and the category folders paint below this
+        // node's own layers.  Flipped: this die's own content turns over, so
+        // its layers come first and the category folders land on top of them.
+        // Child chiplets keep the backend's world-z order either way.  The
+        // visit order IS the draw order — nextZIndex and leafletLayers (the
+        // merged-pane draw list) both advance with it.
+        emitNodes(childChiplets, /*reversed=*/false);
+        if (flipped) {
+            emitLayers();
+        }
+        emitNodes(categories, /*reversed=*/flipped);
+        if (!flipped) {
+            emitLayers();
+        }
+
         const nodeData = { name: hierarchyNode.name, isInstance: true };
         // Review feedback on #10795: the Implant and Other categories
         // start collapsed (they are rarely-used layer groups).
@@ -348,7 +406,7 @@ export function populateDisplayControls(app, visibility, selectability,
                 || hierarchyNode.name === 'Other')) {
             nodeData.startCollapsed = true;
         }
-        // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
+        // chipletPath is the canonical "top/wrapper_1/MEM_2" string the
         // backend emits in layer_hierarchy; it matches ChipletNode::path
         // exactly so toggling this node can drive app.visibleChiplets.
         // Category nodes (e.g. "Backside") are pure UI folders — they have
@@ -416,7 +474,7 @@ export function populateDisplayControls(app, visibility, selectability,
             const tilesPerPane = estimateTilesPerPane(width, height, tile);
             const perTile = tileBytes(tile, app.tileDpr ? app.tileDpr() : 1);
             // The panes that are NOT merged still hold full tile grids, and
-            // they are not free: at dpr 3 each costs ~54 MB, so the three of
+            // they are not free: at dpr 3 each costs ~54 MB, so the four of
             // them would put the real total over the ceiling while the budget
             // reported it as fitting.  Charge them first.
             const count = app.mergeGroupCount || computeGroupCount({
@@ -603,6 +661,13 @@ export function populateDisplayControls(app, visibility, selectability,
         // Refresh pins layer so it filters by the updated visible_layers.
         if (app.pinsLayer && app.map.hasLayer(app.pinsLayer)) {
             app.pinsLayer.refreshTiles();
+        }
+        // And the overlays that draw by them under the current visibility.
+        for (const { def, layer } of app.overlayLayers || []) {
+            if (anyGroupOn(def.layers_by, visibility)
+                && app.map.hasLayer(layer)) {
+                layer.refreshTiles();
+            }
         }
 
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));
@@ -978,16 +1043,16 @@ export function populateDisplayControls(app, visibility, selectability,
     // `gui::DisplayControls::setCurrentChip` only switches the active
     // chip, it does not toggle per-chiplet visibility.  Backend sends
     // one entry per dbChip / dbChipInst node with a unique `path`
-    // ("top", "top.soc_inst", "top.soc_inst.sub_ip", …).  Toggling a
+    // ("top", "top/soc_inst", "top/soc_inst/sub_ip", …).  Toggling a
     // node refreshes every Leaflet tile so the server's chiplet
     // filter (`visible_chiplets`) takes effect on the next render.
     const chipletData = (techData && Array.isArray(techData.chiplets))
         ? techData.chiplets : [];
     if (chipletData.length > 1) {
-        // Cookie schema: { "<block_name>": ["hidden.path1", "hidden.path2"] }.
+        // Cookie schema: { "<block_name>": ["hidden/path1", "hidden/path2"] }.
         // Keying by top-block name keeps hidden state isolated per design —
         // opening design B no longer inherits design A's hides just because
-        // both happen to expose a chiplet path like "top.soc_inst".
+        // both happen to expose a chiplet path like "top/soc_inst".
         // When block_name is empty (anonymous design) we skip persistence
         // entirely rather than collapse every nameless design into the
         // shared "" bucket.

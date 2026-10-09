@@ -31,7 +31,8 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { populateDisplayControls } from './display-controls.js';
+import { anyGroupOn, populateDisplayControls }
+    from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
 import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
@@ -47,6 +48,7 @@ import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { ContextMenu } from './context-menu.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { captureLayout } from './capture.js';
+import { LayerExtents } from './layer-extents.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -153,10 +155,8 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
-    accessPointsLayer: null,
-    regionsLayer: null,
-    mfgGridLayer: null,
-    gcellGridLayer: null,
+    // [{ def, layer }] per overlay the tech response lists.
+    overlayLayers: [],
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -593,10 +593,8 @@ function redrawAllLayers() {
     const toggleableLayers = [
         [app.modulesLayer, visibility.module_view],   // Module view
         [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
+        ...app.overlayLayers.map(
+            ({ def, layer }) => [layer, anyGroupOn(def.shown_by, visibility)]),
     ];
     for (const [layer, visible] of toggleableLayers) {
         if (!layer) continue;
@@ -1223,10 +1221,15 @@ if (staticCache) {
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    // Where each tech layer has shapes, so tiles that would come back empty
+    // are never requested (see layer-extents.js).  Static reports have no
+    // server to ask and keep requesting everything.
+    app.layerExtents = new LayerExtents();
     // On reconnect the server may have been restarted (possibly with a
     // different design) — resync the coordinate transforms; a bounds
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
+        refetchLayerExtents();
         resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
     };
 }
@@ -1608,10 +1611,22 @@ function showLoadingOverlayUntilReady() {
     setTimeout(poll, 1000);
 }
 
+// Discard the layer extents and fetch them again.  Until the reply lands every
+// tile is requested, so a caller that redraws right after this cannot skip a
+// layer on the strength of extents that predate an edit.
+function refetchLayerExtents() {
+    if (!app.layerExtents) return;
+    app.layerExtents.refetch((req) => app.websocketManager.request(req));
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
+        // The design changed: drop the extents BEFORE the redraw below, so it
+        // cannot skip a layer on extents from before the edit.  It requests
+        // every layer until the fresh extents arrive.
+        refetchLayerExtents();
         // An edit may have changed the design bounds (and with them the
         // tile georeference); resync transforms before/along the redraw.
         // resyncBounds already redraws when the bounds changed, so only
@@ -1640,6 +1655,14 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'heatmaps_changed') {
+        // A heat map was registered server-side after this client connected
+        // (web_load_chiplet_heatmap from Tcl).  The instance is per-session,
+        // so the push carries no data: re-request the set to have the server
+        // build ours and to redraw the control panel with the new entry.
+        app.websocketManager.request({ type: 'heatmaps' })
+            .then(updateHeatMaps)
+            .catch(err => console.error('Heat map refresh failed', err));
     } else if (msg.type === 'labels_changed') {
         // Labels live server-side and are shared, so another client's edit
         // (or a Tcl add_label) changes what this one should be drawing.
@@ -1722,6 +1745,9 @@ app.websocketManager.readyPromise.then(async () => {
             app.websocketManager.request({ type: 'bounds' }),
             app.websocketManager.request({ type: 'heatmaps' }),
         ]);
+        // Not awaited: tiles requested before the extents arrive are simply
+        // not skipped.
+        refetchLayerExtents();
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
         updateDocumentTitle(techData.block_name);
