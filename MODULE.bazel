@@ -223,10 +223,11 @@ bazel_dep(name = "qt-bazel")
 # not gather those, so moc lost Qt's own header search paths and failed under
 # --config=lint (qtextimagehandler_p.h "Undefined interface", qfilesystemmodel.h
 # "Parse error at QT7_ONLY"). 541ebf6d teaches the moc rule to also collect
-# external_includes.
+# external_includes. 5587ebca adds the qwebp imageformat plugin so save_image
+# can write .webp (without it the path is rewritten to *.webp.png).
 git_override(
     module_name = "qt-bazel",
-    commit = "541ebf6df76eef96c4de6343316b1c9d63e296f6",
+    commit = "5587ebcaf61bab7abe8e69c4db6d068b35562245",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 

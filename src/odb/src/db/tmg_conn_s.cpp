@@ -34,12 +34,12 @@ void ShapeSearch::Bin::addShape(ShapeSearch::Shape* shape, bool update_bounds)
   if (first_shape == nullptr) {
     first_shape = shape;
     if (update_bounds) {
-      bounds = *shape;
+      bounds = shape->rect;
     }
   } else {
     last_shape->next = shape;
     if (update_bounds) {
-      bounds.merge(*shape);
+      bounds.merge(shape->rect);
     }
   }
   last_shape = shape;
@@ -98,7 +98,7 @@ bool ShapeSearch::searchNext(int* id)
   if (search_type_ == Type::kVia && !search_bin_->parent && !search_bin_->left
       && !search_bin_->right) {
     while (search_shape_) {
-      if (search_shape_->overlaps(search_box_)) {
+      if (search_shape_->rect.overlaps(search_box_)) {
         *id = search_shape_->id;
         search_shape_ = search_shape_->next;
         return true;
@@ -112,12 +112,12 @@ bool ShapeSearch::searchNext(int* id)
     if (search_bin_->bounds.intersects(search_box_)) {
       while (search_shape_) {
         if (search_type_ == Type::kVia || search_shape_->type == Type::kVia) {
-          if (!search_shape_->overlaps(search_box_)) {
+          if (!search_shape_->rect.overlaps(search_box_)) {
             search_shape_ = search_shape_->next;
             continue;
           }
         } else {
-          if (!search_shape_->intersects(search_box_)) {
+          if (!search_shape_->rect.intersects(search_box_)) {
             search_shape_ = search_shape_->next;
             continue;
           }
