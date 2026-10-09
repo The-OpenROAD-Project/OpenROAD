@@ -19,10 +19,10 @@ tns max -132779.297
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3589.864 |  -132779.3 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
       55* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2201.298 |   -91880.6 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-    final |       0 |     116 |        0 |      0 |     0 |    +0.0% | -2194.058 |   -88771.7 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+    final |       0 |     115 |        0 |      0 |     0 |    +0.0% | -2194.058 |   -88770.6 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 116 instances: 0 up, 0 up match, 0 down, 116 VT
+[INFO RSZ-0051] Resized 115 instances: 0 up, 0 up match, 0 down, 115 VT
 [INFO RSZ-0053] Rerouted 50 nets resistance-aware.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack max -2194.06
-tns max -88771.719
+tns max -88770.594
