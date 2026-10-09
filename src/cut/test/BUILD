@@ -31,6 +31,7 @@ cc_test(
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
         "sky130_const_cell.v",
+        "sky130_tie_cells_extract.v",
     ],
     deps = [
         "//src/cut",
@@ -70,6 +71,7 @@ cc_test(
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
         "sky130_const_cell.v",
+        "sky130_tie_cells_extract.v",
     ],
     deps = [
         "//src/cut",
