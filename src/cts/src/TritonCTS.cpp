@@ -151,12 +151,14 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   float tempFanout;
   bool existMaxFanout;
 
-  // Check if top instance has fanout limit
+  // Get the tightest limit for the design across all modes.
   sta::Cell* top_cell = network_->cell(network_->topInstance());
-  openSta_->cmdMode()->sdc()->fanoutLimit(
-      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+  for (sta::Mode* mode : openSta_->modes()) {
+    mode->sdc()->fanoutLimit(
+        top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
@@ -175,28 +177,34 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return (existMaxFanout) ? fanout : 0;
+    return fanout == std::numeric_limits<int>::max() ? 0 : fanout;
   }
 
-  auto sdc = openSta_->cmdMode()->sdc();
+  // Get the tightest limit for the buffer across all modes.
+  for (sta::Mode* mode : openSta_->modes()) {
+    sta::Sdc* sdc = mode->sdc();
 
-  sdc->fanoutLimit(buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+    sdc->fanoutLimit(
+        buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
+
+    sdc->fanoutLimit(
+        bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
-  sdc->fanoutLimit(bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
-  }
-
+  // Get the tightest limit from liberty, falling back to the library default.
   sta::LibertyPort* port = network_->libertyPort(buffer_port);
   port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
   if (existMaxFanout) {
     fanout = std::min(fanout, (int) tempFanout);
   } else {
     port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
-    if ((existMaxFanout)) {
+    if (existMaxFanout) {
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
