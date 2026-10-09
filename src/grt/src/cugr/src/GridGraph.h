@@ -402,6 +402,7 @@ class GridGraph
   // Defined in GridGraph.cpp; all instantiations live there.
   template <typename F>
   void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
+  // No callbacks when via demand is disabled; via counts/costs stay separate.
   template <typename F>
   void forEachViaFlankEdgeImpl(int layer_index,
                                PointT loc,

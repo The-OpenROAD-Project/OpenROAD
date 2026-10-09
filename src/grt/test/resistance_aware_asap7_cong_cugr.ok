@@ -75,8 +75,8 @@ Stage 2: Resistance-aware re-route of critical nets.
 Stage 3: Pattern routing with detours.
 Stage 4: Maze routing on sparsified graph.
 Routing statistics
-Wire length:           34606
-Total via count:       2498
+Wire length:           34504
+Total via count:       2503
 Total congestion:      0.00
 Min resource:          0.05
 Bottleneck:            (4, 85, 150)
@@ -84,16 +84,16 @@ Bottleneck:            (4, 85, 150)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 M1        V         0.00         0.00         0.00         0.00       0.00
-M2        H    178346.57       388.00       177.82       565.82       0.32
-M3        V    193348.79      1003.00       125.83      1128.83       0.58
-M4        H    144976.79       235.00        89.93       324.93       0.22
-M5        V    144976.79       593.00        50.25       643.25       0.44
+M2        H    178346.57       382.00       178.02       560.02       0.31
+M3        V    193348.79      1003.00       126.15      1129.15       0.58
+M4        H    144976.79       233.00        90.39       323.39       0.22
+M5        V    144976.79       594.00        50.57       644.57       0.44
 M6        H    108784.79       137.00        13.07       150.07       0.14
 --------------------------------------------------------------------------
-Total          770433.74      2356.00       456.91      2812.91       0.37
-[INFO GRT-0018] Total wirelength: 1840 um
+Total          770433.74      2349.00       458.20      2807.20       0.36
+[INFO GRT-0018] Total wirelength: 1835 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
-resistance-aware               WNS: -121.4 ps  TNS: -2850.5 ps
+resistance-aware               WNS: -115.0 ps  TNS: -2592.5 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.

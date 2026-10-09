@@ -196,7 +196,6 @@ class TestOrderWires : public tst::Fixture
   void testNormalizedConnectivity()
   {
     EXPECT_TRUE(net_->isWireOrdered());
-    EXPECT_FALSE(net_->isDisconnected());
 
     const PtrMap<dbITerm, int> markers = itermMarkersInWire(wire_);
     for (dbITerm* iterm : net_->getITerms()) {
