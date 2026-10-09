@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -61,6 +62,10 @@ class PlacementDensityDataSource : public HeatMapDataSource,
   void populateXYGrid() override;
 
  private:
+  // Upper bound on the bins per side of the grid defaulted from global
+  // placement; users can still pick a finer grid.
+  static constexpr int64_t kMaxDefaultBinsPerSide = 1024;
+
   // Bin size, in DBU, published by global placement under the given block
   // property. Empty until global placement runs.
   std::optional<int> getPlacementBinSize(const char* name) const;

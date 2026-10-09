@@ -1807,6 +1807,28 @@ TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
   EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
 }
 
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
+}
+
 // Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
 // that name one.  It is not one of getSettings()' entries, so the handler has
 // to special-case it the way Qt's dialog wires the setter directly.

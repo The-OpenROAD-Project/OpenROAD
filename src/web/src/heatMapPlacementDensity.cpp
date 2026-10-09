@@ -3,6 +3,7 @@
 
 #include "heatMapPlacementDensity.h"
 
+#include <cstdint>
 #include <set>
 #include <utility>
 #include <vector>
@@ -75,8 +76,17 @@ void PlacementDensityDataSource::populateXYGrid()
   const auto bin_y = getPlacementBinSize("gpl_bin_size_y");
   if (bin_x && bin_y && getGridXSize() == placement_grid_x_
       && getGridYSize() == placement_grid_y_) {
+    // Upper limit
+    const odb::Rect bounds = getBounds();
+    int64_t size_x = *bin_x;
+    int64_t size_y = *bin_y;
+    while (bounds.dx() > kMaxDefaultBinsPerSide * size_x
+           || bounds.dy() > kMaxDefaultBinsPerSide * size_y) {
+      size_x *= 2;
+      size_y *= 2;
+    }
     odb::dbBlock* block = getBlock();
-    updateGridSizes(block->dbuToMicrons(*bin_x), block->dbuToMicrons(*bin_y));
+    updateGridSizes(block->dbuToMicrons(size_x), block->dbuToMicrons(size_y));
     placement_grid_x_ = getGridXSize();
     placement_grid_y_ = getGridYSize();
   }
