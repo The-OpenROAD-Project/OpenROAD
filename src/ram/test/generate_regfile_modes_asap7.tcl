@@ -23,6 +23,6 @@ check "mode macro places every instance" \
 check "mode macro fixes every storage flop" \
   { dict get $placement flops_not_fixed } 0
 check "mode macro reports nothing left unplaced" \
-  { string match "*RAM-0051*" $gen_log } 0
+  { string match "*RAM-0052*" $gen_log } 0
 
 exit_summary

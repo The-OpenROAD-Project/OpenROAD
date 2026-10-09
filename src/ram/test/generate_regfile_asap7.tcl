@@ -40,7 +40,7 @@ check "mode netlist fixes every storage flop" \
   { dict get $placement flops_not_fixed } 0
 check "mode netlist leaves the periphery unplaced" \
   { expr { [dict get $placement unplaced] > 0 } } 1
-check "and says so" { string match "*RAM-0051*mode netlist*" $gen_log } 1
+check "and says so" { string match "*RAM-0052*mode netlist*" $gen_log } 1
 
 set words 8
 set bits 4

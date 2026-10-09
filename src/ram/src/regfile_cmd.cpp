@@ -55,7 +55,7 @@ void generateRegfile(odb::dbDatabase* db,
     }
     if (unplaced > 0) {
       logger->info(utl::RAM,
-                   51,
+                   52,
                    "mode {}: {} periphery instances left unplaced for the "
                    "parent to place, size and buffer; {} fixed.",
                    spec.mode,
