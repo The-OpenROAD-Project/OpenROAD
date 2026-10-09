@@ -94,6 +94,6 @@ Total          770433.74      2349.00       458.20      2807.20       0.36
 [INFO GRT-0018] Total wirelength: 1835 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
-resistance-aware               WNS: -121.4 ps  TNS: -2850.7 ps
+resistance-aware               WNS: -115.0 ps  TNS: -2592.5 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.
