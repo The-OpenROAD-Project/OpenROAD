@@ -111,3 +111,26 @@ proc rf_ports_missing_from { file kind } {
   }
   return $missing
 }
+
+# The block's instances by placement: fixed, placed (movable) and
+# unplaced, and how many of the storage flops (DFF*) are not fixed.
+proc rf_placement { } {
+  set n [dict create fixed 0 placed 0 unplaced 0 flops_not_fixed 0]
+  foreach inst [[ord::get_db_block] getInsts] {
+    set status [$inst getPlacementStatus]
+    if { $status == "FIRM" || $status == "LOCKED" || $status == "COVER" } {
+      dict incr n fixed
+    } elseif { $status == "PLACED" || $status == "SUGGESTED" } {
+      dict incr n placed
+    } else {
+      dict incr n unplaced
+    }
+    if {
+      [string match "DFF*" [[$inst getMaster] getName]]
+      && $status != "FIRM"
+    } {
+      dict incr n flops_not_fixed
+    }
+  }
+  return $n
+}

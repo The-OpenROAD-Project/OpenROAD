@@ -27,9 +27,20 @@ check "the refusal names the port" \
 
 set lef_file [make_result_file generate_regfile_asap7.lef]
 set lib_file [make_result_file generate_regfile_asap7.lib]
-generate_regfile -spec generate_regfile_asap7.regfile \
+tee -quiet -variable gen_log [list generate_regfile \
+  -spec generate_regfile_asap7.regfile \
   -check_ports generate_regfile_asap7_rtl.v \
-  -lef $lef_file -liberty $lib_file
+  -lef $lef_file -liberty $lib_file]
+
+# mode netlist: the generator fixes the core and leaves the periphery
+# (address inverters, decode, hold) to the parent, which places, sizes
+# and buffers it with the drivers and loads outside the array.
+set placement [rf_placement]
+check "mode netlist fixes every storage flop" \
+  { dict get $placement flops_not_fixed } 0
+check "mode netlist leaves the periphery unplaced" \
+  { expr { [dict get $placement unplaced] > 0 } } 1
+check "and says so" { string match "*RAM-0051*mode netlist*" $gen_log } 1
 
 set words 8
 set bits 4

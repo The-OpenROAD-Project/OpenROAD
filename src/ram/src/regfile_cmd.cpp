@@ -41,6 +41,27 @@ void generateRegfile(odb::dbDatabase* db,
       }
     }
     odb::dbBlock* block = regfile::Generate(db, logger, spec);
+    // In mode netlist the generator fixes the core and leaves the
+    // periphery to the parent, which alone knows the drivers and loads
+    // outside the array; the block on its own shows those cells unplaced.
+    int fixed = 0;
+    int unplaced = 0;
+    for (odb::dbInst* inst : block->getInsts()) {
+      if (!inst->getPlacementStatus().isPlaced()) {
+        ++unplaced;
+      } else if (inst->getPlacementStatus().isFixed()) {
+        ++fixed;
+      }
+    }
+    if (unplaced > 0) {
+      logger->info(utl::RAM,
+                   51,
+                   "mode {}: {} periphery instances left unplaced for the "
+                   "parent to place, size and buffer; {} fixed.",
+                   spec.mode,
+                   unplaced,
+                   fixed);
+    }
     if (!verilog_path.empty()) {
       regfile::WriteVerilog(block, verilog_path);
     }

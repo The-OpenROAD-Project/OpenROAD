@@ -15,6 +15,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     "generate_regfile_asap7",
     "generate_regfile_clock_gate_asap7",
+    "generate_regfile_modes_asap7",
     "generate_regfile_reset_asap7",
     "generate_regfile_reset_high_asap7",
     "generate_regfile_sv_ports_asap7",
@@ -76,6 +77,9 @@ filegroup(
                 "generate_regfile_asap7_rtl_extra.v",
             ],
             "generate_regfile_clock_gate_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+            ],
+            "generate_regfile_modes_asap7": REGFILE_TEST_DATA + [
                 "generate_regfile_asap7.regfile",
             ],
             "generate_regfile_reset_asap7": REGFILE_TEST_DATA + [

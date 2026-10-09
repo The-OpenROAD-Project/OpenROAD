@@ -117,7 +117,7 @@ One key per line, `#` comments:
 | Key | Description |
 | ---------------------- | -------------------------------------- |
 | `module name` | The module and block name. |
-| `mode macro\|netlist` | `macro` (default): the block is a macro to its parent. `netlist`: the parent places the cells; the address decode is left unplaced for the parent's placer and resizer, and the abstract's pins sit where their connections land in the array. |
+| `mode macro\|netlist` | `macro` (default): the block is a macro to its parent; every cell is placed, the address inverters placed but movable so the macro's own repair can size them. `netlist`: the block is placed as a macro and then dissolves into its parent's cells: the core (storage flops and read bitlines) is fixed where it lies, and the periphery (address inverters, decode, hold) is left unplaced, RAM-0051 says how much, for the parent's placer and resizer, which alone know the drivers and loads outside the array; the abstract's pins sit where their connections land in the array. Which shape is better, and whether the periphery should be unplaced or placed but movable, is still being measured. |
 | `words n`, `bits n` | Depth and width. |
 | `clock port` | The clock port. |
 | `reset port` | A reset port the RTL has and the array ignores. |
