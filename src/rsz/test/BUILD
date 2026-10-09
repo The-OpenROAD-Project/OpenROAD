@@ -519,6 +519,7 @@ cc_test(
         "latch_borrow_chain.def",
     ],
     deps = [
+        "//src/est",
         "//src/odb/src/db",
         "//src/odb/src/defin",
         "//src/rsz:rsz_impl",
