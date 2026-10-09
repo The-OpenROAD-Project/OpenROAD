@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <string>
 
 #include "odb/dbBlockCallBackObj.h"
@@ -28,6 +30,11 @@ class PlacementDensityDataSource : public HeatMapDataSource,
     return "Only use selected instances";
   }
 
+  // Global placement bins go below a micron on advanced nodes, so the size it
+  // reports has to stay representable instead of being clamped.
+  double getGridSizeMinimumValue() const override { return 0.1; }
+  void restoreSettings(const Renderer::Settings& settings) override;
+
   void onShow() override;
   void onHide() override;
 
@@ -52,7 +59,22 @@ class PlacementDensityDataSource : public HeatMapDataSource,
 
   bool destroyMapOnNotVisible() const override { return true; }
 
+  void populateXYGrid() override;
+
  private:
+  // Upper bound on the bins per side of the grid defaulted from global
+  // placement; users can still pick a finer grid.
+  static constexpr int64_t kMaxDefaultBinsPerSide = 1024;
+
+  // Bin size, in DBU, published by global placement under the given block
+  // property. Empty until global placement runs.
+  std::optional<int> getPlacementBinSize(const char* name) const;
+
+  // Grid last taken from global placement; while the grid still matches it
+  // the user has not picked their own size, so it may follow placement.
+  double placement_grid_x_;
+  double placement_grid_y_;
+
   bool include_taps_{true};
   bool include_filler_{false};
   bool include_io_{false};
