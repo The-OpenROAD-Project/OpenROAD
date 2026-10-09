@@ -18,19 +18,21 @@
 #   test_name  One or more test stems. Targets are derived as
 #              //<package>:<name>-tcl_test then //<package>:<name>-py_test.
 #   --no-run   Harvest whatever is already in bazel-testlogs; skip `bazel test`.
+#              It cannot tell whether those outputs are current. When a test
+#              has both variants, the tcl output wins over the py one.
 #
-# The colon form saves several goldens from a single test run, e.g.
-#   bazel_save.sh ok:log defok:def large01 macro01
+# Exits nonzero if any requested golden could not be saved.
 #
 # All tests are passed to ONE `bazel test` invocation, because bazel only
 # parallelizes within an invocation -- a loop of single-target runs is serial.
 #
-# NOTE: a .ok log embeds the result of the test's own DEF comparison
-# ("No differences found." vs "Differences found at line N."), so a .defok
-# must already be correct at the time of the run that produces the .ok.
-# When placement output shifts, updating both takes two passes:
-#   bazel_save.sh defok:def <tests>   # run 1, fix the DEF golden
-#   bazel_save.sh ok:log <tests>      # run 2, log now reports a clean compare
+# The colon form saves several goldens from one run, e.g.
+#   bazel_save.sh ok:log defok:def large01 macro01
+# A .ok log embeds the test's own DEF comparison ("No differences found."
+# vs "Differences found at line N."), so when the .defok changes, the .ok
+# saved alongside it records a mismatch against the old one. Run the same
+# command a second time: the new .defok invalidates the cached result and
+# the re-run log reports a clean compare.
 
 set -e
 
@@ -88,22 +90,26 @@ if [ -z "$pkg" ]; then
 fi
 
 # Resolve each stem to its language variant up front, with one query for the
-# whole package, so the run below can be a single batched invocation.
+# whole package, so the run below can be a single batched invocation. A run
+# uses the first variant found; --no-run keeps both, since either may hold the
+# outputs.
 existing=$(bazel query "kind('.*_test', //${pkg}:all)" 2>/dev/null || true)
 
-declare -A test_lang=()
+missing=0
 targets=()
 for test_name in "$@"; do
+    found=0
     for lang_ext in tcl py; do
         target="//${pkg}:${test_name}-${lang_ext}_test"
         if printf '%s\n' "$existing" | grep -qxF "$target"; then
-            test_lang["$test_name"]=$lang_ext
             targets+=("$target")
-            break
+            found=1
+            [ "$run_tests" -eq 0 ] || break
         fi
     done
-    if [ -z "${test_lang[$test_name]:-}" ]; then
+    if [ "$found" -eq 0 ]; then
         echo "\"${test_name}\" has no -tcl_test or -py_test target in //${pkg}" >&2
+        missing=1
     fi
 done
 
@@ -113,16 +119,21 @@ if [ ${#targets[@]} -eq 0 ]; then
 fi
 
 if [ "$run_tests" -eq 1 ]; then
-    # One invocation so bazel runs them in parallel. Failure is expected --
-    # a mismatched golden is why we are here -- but build errors and
-    # target-not-found stay visible on stderr.
+    # One invocation so bazel runs them in parallel. Exit 3 (build ok, tests
+    # failed) is expected -- a mismatched golden is why we are here. Any other
+    # failure means some targets may not have run, leaving stale testlogs.
     #
     # cache_test_results=yes because bazel's `auto` default re-runs any test
     # that failed last time, which is precisely every test being saved here;
     # without it the harvest pays for a second full run.
+    rc=0
     bazel test "${targets[@]}" \
         --cache_test_results=yes \
-        --test_summary=terse >/dev/null || true
+        --test_summary=terse >/dev/null || rc=$?
+    if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then
+        echo "bazel test failed (exit ${rc}); no goldens saved" >&2
+        exit "$rc"
+    fi
 fi
 
 # Preserve the golden's current permissions: bazel-testlogs artifacts are
@@ -137,16 +148,10 @@ restore_mode() {
     fi
 }
 
-saved_count=0
 for test_name in "$@"; do
-    lang_ext=${test_lang[$test_name]:-}
-    [ -n "$lang_ext" ] || continue
-    out_dir="${testlogs}/${pkg}/${test_name}-${lang_ext}_test/test.outputs"
-
     for pair in "${pairs[@]}"; do
         dest_ext=${pair%%:*}
         src_ext=${pair##*:}
-        artifact="results/${test_name}-${lang_ext}.${src_ext}"
         dst="${test_name}.${dest_ext}"
 
         mode=""
@@ -156,32 +161,43 @@ for test_name in "$@"; do
                 || echo "")
         fi
 
-        if [ -f "${out_dir}/${artifact}" ]; then
-            rm -f "$dst"
-            cp "${out_dir}/${artifact}" "$dst"
-            restore_mode "$dst" "$mode"
-            echo "${test_name}.${dest_ext}"
-            saved_count=$((saved_count + 1))
-            continue
-        fi
+        saved=0
+        for lang_ext in tcl py; do
+            target="//${pkg}:${test_name}-${lang_ext}_test"
+            printf '%s\n' "${targets[@]}" | grep -qxF "$target" || continue
+            out_dir="${testlogs}/${pkg}/${test_name}-${lang_ext}_test/test.outputs"
+            artifact="results/${test_name}-${lang_ext}.${src_ext}"
 
-        zip="${out_dir}/outputs.zip"
-        if [ -f "$zip" ]; then
-            tmp="${dst}.tmp"
-            if unzip -p "$zip" "$artifact" > "$tmp" 2>/dev/null \
-                    && [ -s "$tmp" ]; then
+            if [ -f "${out_dir}/${artifact}" ]; then
                 rm -f "$dst"
-                mv "$tmp" "$dst"
+                cp "${out_dir}/${artifact}" "$dst"
                 restore_mode "$dst" "$mode"
-                echo "${test_name}.${dest_ext}"
-                saved_count=$((saved_count + 1))
-                continue
+                saved=1
+                break
             fi
-            rm -f "$tmp"
-        fi
 
-        echo "\"${test_name}\" ${src_ext} file not found in bazel-testlogs" >&2
+            zip="${out_dir}/outputs.zip"
+            if [ -f "$zip" ]; then
+                tmp="${dst}.tmp"
+                if unzip -p "$zip" "$artifact" > "$tmp" 2>/dev/null \
+                        && [ -s "$tmp" ]; then
+                    rm -f "$dst"
+                    mv "$tmp" "$dst"
+                    restore_mode "$dst" "$mode"
+                    saved=1
+                    break
+                fi
+                rm -f "$tmp"
+            fi
+        done
+
+        if [ "$saved" -eq 1 ]; then
+            echo "$dst"
+        else
+            echo "\"${test_name}\" ${src_ext} file not found in bazel-testlogs" >&2
+            missing=1
+        fi
     done
 done
 
-[ "$saved_count" -gt 0 ] || exit 1
+exit "$missing"
