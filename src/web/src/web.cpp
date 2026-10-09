@@ -284,11 +284,12 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
 }  // namespace
 
 // Holds the script gate (see ScriptGate) for its lifetime; check entered().
+// Only `wait` blocks while the gate is closed, which the io threads must not.
 class ScriptGateScope
 {
  public:
-  explicit ScriptGateScope(ScriptGate& gate)
-      : gate_(gate), entered_(gate.enter())
+  explicit ScriptGateScope(ScriptGate& gate, bool wait = false)
+      : gate_(gate), entered_(wait ? gate.enter() : gate.tryEnter())
   {
   }
   ~ScriptGateScope()
@@ -329,7 +330,7 @@ static http::response<http::string_body> handle_request(
         handleImageDownload(generator, target, res);
       } else {
         res.result(http::status::service_unavailable);
-        res.body() = "server is shutting down";
+        res.body() = kScriptBusyMsg;
       }
     } else {
       const auto* asset = findEmbeddedAsset(file_path);
@@ -1043,6 +1044,20 @@ void WebSocketSession::on_accept(beast::error_code ec)
       paused.payload.assign(json.begin(), json.end());
       queue_response(paused);
     }
+
+    // Tell a client joining while the script runs, so it waits for the
+    // script_running push that ends the run rather than retrying.  Under the
+    // gate's lock, so no change can be broadcast ahead of this message.
+    tcl_eval_->script_gate.withState([this](bool closed) {
+      if (closed) {
+        WebSocketResponse running;
+        running.id = 0;
+        running.type = WebSocketResponse::kJson;
+        const std::string json = scriptRunningJson(/*running=*/true);
+        running.payload.assign(json.begin(), json.end());
+        queue_response(running);
+      }
+    });
   }
 
   // Tell the client how many requests to keep in flight at once. This bounds
@@ -1064,7 +1079,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // until ready, then a "refresh" push notification triggers a redraw.
   init_thread_ = std::thread([self = shared_from_this()]() {
     {
-      const ScriptGateScope gate(self->tcl_eval_->script_gate);
+      const ScriptGateScope gate(self->tcl_eval_->script_gate, /*wait=*/true);
       if (!gate.entered()) {
         return;
       }
@@ -1179,7 +1194,14 @@ void WebSocketSession::on_read(beast::error_code ec)
            handle = std::move(handle)]() {
             const ScriptGateScope gate(self->tcl_eval_->script_gate);
             if (!gate.entered()) {
-              return;  // the process is exiting
+              WebSocketResponse busy;
+              busy.id = req.id;
+              busy.type = WebSocketResponse::kError;
+              busy.request_type = req.raw_type;
+              const std::string_view msg = kScriptBusyMsg;
+              busy.payload.assign(msg.begin(), msg.end());
+              self->queue_response(busy);
+              return;
             }
             self->queue_response(invoke_handler(handle, req, self->state_));
           });
@@ -1212,10 +1234,11 @@ void WebSocketSession::queue_response(const WebSocketResponse& resp,
   // Surface every error response in the server log so contract violations
   // (malformed payloads, missing fields, wrong field types) are visible to
   // the operator/developer and not silently swallowed by the client.
-  if (resp.type == WebSocketResponse::kError) {
-    const std::string_view err(
-        reinterpret_cast<const char*>(resp.payload.data()),
-        resp.payload.size());
+  // A busy reply (see ScriptGate) is not one, and goes out per tile while a
+  // script runs, so it is not logged.
+  const std::string_view err(reinterpret_cast<const char*>(resp.payload.data()),
+                             resp.payload.size());
+  if (resp.type == WebSocketResponse::kError && err != kScriptBusyMsg) {
     const std::string type_label
         = resp.request_type.empty() ? "unknown" : resp.request_type;
     logger_->warn(utl::WEB,

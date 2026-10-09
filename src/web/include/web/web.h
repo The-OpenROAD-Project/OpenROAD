@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -130,13 +129,12 @@ class WebServer
   void serve(int port, const std::string& bind_address);
 
   // For -web startup scripts, called on the main thread before they run.
-  // Installs the viewer now, so the scripts see web::Gui::enabled() (e.g.
-  // global_placement_debug engages, as under -gui), but opens the network
-  // only when a script first reaches a debug pause, by calling
-  // serve(port, bind_address) from pause().  Until endStartupScripts(),
-  // browser requests (Tcl, tiles, selection, search indexing) run only while
-  // a script is paused; see ScriptGate.
-  void serveOnFirstPause(int port, const std::string& bind_address);
+  // Calls serve(port, bind_address), so the browser follows the scripts'
+  // log and the scripts see web::Gui::enabled() (e.g. global_placement_debug
+  // engages, as under -gui).  Until endStartupScripts(), browser requests
+  // (Tcl, tiles, selection, search indexing) run only while a script is
+  // paused, and are answered "busy" otherwise; see ScriptGate.
+  void serveDuringStartupScripts(int port, const std::string& bind_address);
 
   // Call on the main thread once the startup scripts are done: lets browser
   // requests in, or, when `exiting`, turns them away so the exit can join
@@ -251,9 +249,6 @@ class WebServer
   void stop();
 
  private:
-  // Install viewer_hook_ as the Gui headless viewer and chart factory.
-  void installViewer();
-
   // Stops ioc_, joins every worker thread except the current one, and
   // clears threads_. Detaches the current thread if it happens to be a
   // worker (would otherwise raise EDEADLK on self-join).
@@ -282,17 +277,14 @@ class WebServer
   int num_threads_ = 0;
   std::shared_ptr<TclEvaluator> tcl_eval_;
 
-  // Set by serveOnFirstPause(): the thread running the startup scripts, and
-  // whether they still hold the script gate (read on that thread only).
+  // Set by serveDuringStartupScripts(): the thread running the startup
+  // scripts, and whether they still hold the script gate (read on that thread
+  // only).
   std::thread::id script_thread_;
   bool script_holds_gate_ = false;
-  // Mirrors isRunning() for threads other than the one calling serve().
-  std::atomic<bool> network_open_{false};
-  // Set while serve() runs from a debug pause, so a failure's stop() keeps
-  // viewer_hook_, whose pause() is on the stack, alive in retired_hook_.
-  bool serving_from_pause_ = false;
-  std::unique_ptr<WebViewerHook> retired_hook_;
   bool onScriptThread() const;
+  // Lets browser requests in while a startup script is paused.
+  void installPauseHooks();
   // Creates the tile generator on first use (the server need not be running)
   // and hands it the configured thread count.
   TileGenerator& ensureGenerator();

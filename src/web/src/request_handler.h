@@ -42,15 +42,45 @@ class ClockTreeReport;
 // shutdown signal for the browser.
 inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
+// Error text for a request turned away while a script runs (see ScriptGate).
+inline constexpr const char* kScriptBusyMsg
+    = "The script is running; try again when it pauses or finishes.";
+
+// Server push announcing that the script started or stopped running, i.e.
+// that the ScriptGate closed or opened.
+inline std::string scriptRunningJson(bool running)
+{
+  return std::string(R"({"type":"script_running","running":)")
+         + (running ? "true" : "false") + "}";
+}
+
 // Keeps browser requests off the db while a -web startup script runs (see
-// WebServer::serveOnFirstPause).  Requests hold it shared and run
+// WebServer::serveDuringStartupScripts).  Requests hold it shared and run
 // concurrently; the script thread closes it except inside debug pauses.
-// close() blocks new requests at once and waits out the in-flight ones, so a
-// stream of tile requests cannot starve the script.
+// Requests on the io threads use tryEnter() and are answered with
+// kScriptBusyMsg while it is closed, so those threads stay free to stream logs
+// and pushes.  close() refuses new requests at once and waits out the
+// in-flight ones.
 class ScriptGate
 {
  public:
-  // Blocks while closed.  False once shut down: skip the request.
+  // Gets the new state, under the gate's lock, whenever open()/close()
+  // change it.
+  using ChangeFn = std::function<void(bool closed)>;
+
+  // False, without waiting, while closed or shut down: skip the request.
+  bool tryEnter()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (closed_ || shutdown_) {
+      return false;
+    }
+    ++active_;
+    return true;
+  }
+
+  // Blocks while closed.  False once shut down: skip the work.  Only for
+  // threads of their own, never the io threads.
   bool enter()
   {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -73,14 +103,14 @@ class ScriptGate
   void close()
   {
     std::unique_lock<std::mutex> lock(mutex_);
-    closed_ = true;
+    setClosed(true);
     cv_.wait(lock, [this] { return active_ == 0; });
   }
 
   void open()
   {
     const std::lock_guard<std::mutex> lock(mutex_);
-    closed_ = false;
+    setClosed(false);
     cv_.notify_all();
   }
 
@@ -93,12 +123,38 @@ class ScriptGate
     cv_.notify_all();
   }
 
+  void setOnChange(ChangeFn on_change)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    on_change_ = std::move(on_change);
+  }
+
+  // Calls fn with the current state under the gate's lock, so every later
+  // change reaches the on-change callback after fn has run.
+  void withState(const ChangeFn& fn)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    fn(closed_);
+  }
+
  private:
+  void setClosed(bool closed)
+  {
+    if (closed_ == closed) {
+      return;
+    }
+    closed_ = closed;
+    if (on_change_) {
+      on_change_(closed);
+    }
+  }
+
   std::mutex mutex_;
   std::condition_variable cv_;
   int active_ = 0;
   bool closed_ = false;
   bool shutdown_ = false;
+  ChangeFn on_change_;
 };
 
 // Thread-safe Tcl command evaluation.  Log output emitted while the

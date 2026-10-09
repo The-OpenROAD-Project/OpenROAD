@@ -295,8 +295,8 @@ export function createMenuBar(app) {
     }
 
     function render() {
-        // Replace only the menus: other children (the debug Continue button)
-        // stay, after the menus.
+        // Replace only the menus: other children (the debug Continue button,
+        // the script-running badge) stay, after the menus.
         for (const el of bar.querySelectorAll(':scope > .menu-label')) {
             el.remove();
         }

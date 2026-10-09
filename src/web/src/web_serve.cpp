@@ -135,11 +135,10 @@ void WebServer::initLogger()
 
   // Create the hook object now because WebLogSink holds a raw pointer to it
   // (for sessions()).  Do NOT install it as the Gui headless viewer here:
+  // that would make web::Gui::enabled() true before the network opens, and
   // web::pause() would then block kClientConnectTimeoutSeconds (~30s)
-  // waiting for a web client that cannot connect until serve() opens the
-  // network.  The headless viewer and chart factory are installed by
-  // serve(), or by serveOnFirstPause(), which also opens the network on
-  // the first pause.
+  // waiting for a web client that cannot connect.  The headless viewer and
+  // chart factory are installed in serve() instead.
   if (!viewer_hook_) {
     viewer_hook_ = std::make_unique<WebViewerHook>();
   }
@@ -153,59 +152,32 @@ void WebServer::initLogger()
   logger_initialized_ = true;
 }
 
-void WebServer::installViewer()
-{
-  web::Gui::get()->setHeadlessViewer(viewer_hook_.get());
-  web::Gui::get()->setChartFactory(
-      [hook = viewer_hook_.get()](const std::string& name,
-                                  const std::string& x_label,
-                                  const std::vector<std::string>& y_labels) {
-        return hook->createChart(name, x_label, y_labels);
-      });
-}
-
 bool WebServer::onScriptThread() const
 {
   return std::this_thread::get_id() == script_thread_;
 }
 
-void WebServer::serveOnFirstPause(int port, const std::string& bind_address)
+void WebServer::serveDuringStartupScripts(int port,
+                                          const std::string& bind_address)
 {
-  initLogger();
-  installViewer();
-
+  // Close the gate before the network opens, so no client can index or draw
+  // the db while the scripts change it.
   script_thread_ = std::this_thread::get_id();
   tcl_eval_->script_gate.close();
   script_holds_gate_ = true;
+  serve(port, bind_address);
+}
 
+void WebServer::installPauseHooks()
+{
   WebViewerHook::PauseHooks hooks;
-  hooks.enter = [this, port, bind_address]() {
-    if (!onScriptThread() || !script_holds_gate_) {
-      // Only the script thread opens the network.  Elsewhere (e.g. an OpenMP
-      // worker of the running command) pause only if a client can connect.
-      return network_open_.load();
+  // The script is blocked until Continue, so let browser requests in: tiles
+  // show the paused state, and commands typed in the browser run while the
+  // script waits, as in the Qt GUI.
+  hooks.enter = [this]() {
+    if (onScriptThread() && script_holds_gate_) {
+      tcl_eval_->script_gate.open();
     }
-    if (!isRunning()) {
-      serving_from_pause_ = true;
-      try {
-        serve(port, bind_address);
-      } catch (const std::exception&) {
-        // serve() reported the error; carry on without the viewer.
-      }
-      serving_from_pause_ = false;
-      if (!isRunning()) {
-        logger_->warn(utl::WEB,
-                      116,
-                      "Debug pauses are disabled: the web server did not "
-                      "start.");
-        return false;
-      }
-    }
-    // The script is blocked until Continue, so let browser requests in: a
-    // connecting client indexes a db nobody is mutating, and commands typed
-    // in the browser run while the script waits, as in the Qt GUI.
-    tcl_eval_->script_gate.open();
-    return true;
   };
   hooks.leave = [this]() {
     if (onScriptThread() && script_holds_gate_) {
@@ -285,9 +257,25 @@ void WebServer::serve(int port, const std::string& bind_address)
 
     // viewer_hook_ and the WebLogSink were created by initLogger() above.
     // Install the hook as the Gui headless viewer and chart factory now
-    // that the network is about to open (serveOnFirstPause() may already
-    // have done so).
-    installViewer();
+    // that the network is about to open — deferred from initLogger() so
+    // web::pause() cannot wait on a client that has no way to connect (see
+    // initLogger()).
+    web::Gui::get()->setHeadlessViewer(viewer_hook_.get());
+    web::Gui::get()->setChartFactory(
+        [hook = viewer_hook_.get()](const std::string& name,
+                                    const std::string& x_label,
+                                    const std::vector<std::string>& y_labels) {
+          return hook->createChart(name, x_label, y_labels);
+        });
+    if (script_holds_gate_) {
+      installPauseHooks();
+    }
+    // Tell clients when a startup script starts or stops running, so they
+    // hold their redraws while every request would be turned away.
+    tcl_eval_->script_gate.setOnChange(
+        [hook = viewer_hook_.get()](bool closed) {
+          hook->sessions().broadcast(scriptRunningJson(/*running=*/closed));
+        });
 
     // Flush WebLogSink at the end of every Tcl eval so log output
     // emitted during a command reaches clients before the response
@@ -466,7 +454,6 @@ void WebServer::serve(int port, const std::string& bind_address)
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
-    network_open_ = true;
     logger_->info(utl::WEB, 1, "Server started on {}.", url);
 
     // Open the url with the default browser
@@ -548,9 +535,9 @@ int WebServer::tclExitHandler(ClientData clientData,
                               const char* argv[])
 {
   auto* self = static_cast<WebServer*>(clientData);
-  // A startup script still running after serveOnFirstPause() opened the
-  // network is the only Tcl caller off the io workers; the original `exit`
-  // is safe there, since ~WebServer joins the workers from this thread.
+  // A startup script running under serveDuringStartupScripts() is the only
+  // Tcl caller off the io workers; the original `exit` is safe there, since
+  // ~WebServer joins the workers from this thread.
   if (self->onScriptThread()) {
     // Turn away the requests waiting on the script gate, so the exit can
     // join the io threads.
@@ -625,7 +612,6 @@ void WebServer::requestStop()
 
 void WebServer::stop()
 {
-  network_open_ = false;
   // Restore the original Tcl `exit` command before tearing down — pairs
   // with the rename in serve().  Skip if not installed (stop() is safe
   // to call multiple times).
@@ -636,6 +622,7 @@ void WebServer::stop()
     Tcl_Eval(interp_, restore.c_str());
   }
 
+  tcl_eval_->script_gate.setOnChange({});
   if (viewer_hook_) {
     TileGenerator::setRendererHooks({});
     if (generator_) {
@@ -681,12 +668,7 @@ void WebServer::stop()
     logger_->removeSink(log_sink_);
     log_sink_.reset();
   }
-  if (serving_from_pause_) {
-    // serve() failed inside viewer_hook_->pause(); keep the hook alive.
-    retired_hook_ = std::move(viewer_hook_);
-  } else {
-    viewer_hook_.reset();
-  }
+  viewer_hook_.reset();
   // Reset so a subsequent serve()/initLogger() re-registers the sink.
   logger_initialized_ = false;
   logger_->info(utl::WEB, 41, "Web session closed.");

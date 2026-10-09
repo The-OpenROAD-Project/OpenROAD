@@ -135,14 +135,13 @@ class WebViewerHook : public web::GuiBackend
   void setDrainLogsFn(DrainLogsFn fn);
 
   // Optional hooks around pause(), all run on the pausing thread.
-  // WebServer::serveOnFirstPause uses them to open the network at the first
-  // debug pause of a startup script and to lend the paused script's Tcl lock
-  // to the browser.
+  // WebServer::serveDuringStartupScripts uses them to let browser requests
+  // in while a startup script is paused.
   struct PauseHooks
   {
-    // Runs first; returning false skips the pause.
-    std::function<bool()> enter;
-    // Runs as pause() returns, iff enter returned true.
+    // Runs first.
+    std::function<void()> enter;
+    // Runs as pause() returns.
     std::function<void()> leave;
     // Runs before leave when requestExit() ended the pause.
     std::function<void()> exit;

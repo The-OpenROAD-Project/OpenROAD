@@ -194,8 +194,8 @@ void WebViewerHook::redraw()
 
 void WebViewerHook::pause(int timeout_ms)
 {
-  if (pause_hooks_.enter && !pause_hooks_.enter()) {
-    return;
+  if (pause_hooks_.enter) {
+    pause_hooks_.enter();
   }
   // Declared before `lock` so leave runs after the lock is released.
   struct LeaveGuard

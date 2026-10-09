@@ -2081,6 +2081,19 @@ body {
     cursor: pointer;
 }
 
+/* Script-running badge (right end of the menu bar, shown while a startup
+   script runs and the server answers requests "busy"). */
+.script-running-badge {
+    margin-left: auto;
+    margin-right: 6px;
+    padding: 1px 14px;
+    line-height: 18px;
+    color: var(--fg-secondary);
+    border: 1px solid var(--border-strong);
+    font-style: italic;
+    display: none;
+}
+
 /* Hover highlight pulse animation */
 .hover-highlight {
     stroke: #ffe85c;
