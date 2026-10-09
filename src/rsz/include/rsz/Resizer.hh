@@ -925,6 +925,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   bool okToBufferNet(const sta::Pin* driver_pin) const;
   sta::LibertyCell* lowestDriveBufferCell() const;
+  sta::LibertyCell* selectBestEquivCell(sta::LibertyCell* curr_cell);
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,
                                sta::LibertyCell*& best_lib_cell);

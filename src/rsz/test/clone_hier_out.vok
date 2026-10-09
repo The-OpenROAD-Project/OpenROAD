@@ -333,8 +333,8 @@ module hi_fanout (clk1,
  NAND2_X4 clone3 (.A1(net9),
     .A2(net11),
     .ZN(net3));
- NAND2_X4 clone4 (.A1(net13),
-    .A2(net8),
+ NAND2_X4 clone4 (.A1(net8),
+    .A2(net13),
     .ZN(net4));
  NAND2_X4 clone5 (.A1(net11),
     .A2(net9),

@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "MoveCommitter.hh"
@@ -13,7 +14,10 @@
 #include "RepairTargetCollector.hh"
 #include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
+#include "move/MoveCandidate.hh"
 #include "move/MoveGenerator.hh"
+#include "move/SizeUpGenerator.hh"
+#include "move/VtSwapGenerator.hh"
 #include "odb/db.h"
 #include "odb/defin.h"
 #include "policy/SetupLegacyPolicy.hh"
@@ -23,9 +27,12 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
@@ -87,6 +94,13 @@ class TestSetupLegacyPolicy : public SetupLegacyPolicy
   std::vector<bool> recorded_force_single_repair_;
 };
 
+class TestSizeUpGenerator : public SizeUpGenerator
+{
+ public:
+  using MoveGenerator::weakerCellFirst;
+  using SizeUpGenerator::SizeUpGenerator;
+  using SizeUpGenerator::upsizeCell;
+};
 class TestResizer : public tst::IntegratedFixture
 {
  public:
@@ -262,6 +276,66 @@ class TestResizer : public tst::IntegratedFixture
       }
     }
     return nullptr;
+  }
+
+  void createSkewBufMaster(odb::dbLib* db_lib,
+                           const char* name,
+                           const int width_scale,
+                           odb::dbTechLayer* implant_layer)
+  {
+    odb::dbMaster* template_master = db_->findMaster("BUF_X1");
+    ASSERT_NE(template_master, nullptr);
+
+    odb::dbMaster* master = odb::dbMaster::create(db_lib, name);
+    ASSERT_NE(master, nullptr);
+    master->setType(odb::dbMasterType::CORE);
+    master->setSite(template_master->getSite());
+    master->setWidth(width_scale * template_master->getWidth());
+    master->setHeight(template_master->getHeight());
+
+    for (odb::dbMTerm* template_mterm : template_master->getMTerms()) {
+      odb::dbMTerm::create(master,
+                           template_mterm->getConstName(),
+                           template_mterm->getIoType(),
+                           template_mterm->getSigType());
+    }
+    odb::dbBox::create(master,
+                       implant_layer,
+                       0,
+                       0,
+                       width_scale * template_master->getWidth(),
+                       template_master->getHeight());
+    master->setFrozen();
+  }
+
+  sta::LibertyLibrary* loadSkewVtLibraryAndSetup()
+  {
+    odb::dbTech* tech = db_->getTech();
+    EXPECT_NE(tech, nullptr);
+    odb::dbTechLayer* vtr_layer
+        = odb::dbTechLayer::create(tech, "VTR", odb::dbTechLayerType::IMPLANT);
+    odb::dbTechLayer* vtl_layer
+        = odb::dbTechLayer::create(tech, "VTL", odb::dbTechLayerType::IMPLANT);
+    odb::dbTechLayer* vtsl_layer
+        = odb::dbTechLayer::create(tech, "VTSL", odb::dbTechLayerType::IMPLANT);
+
+    odb::dbLib* skew_db_lib
+        = odb::dbLib::create(db_.get(), "TestResizerSkewVt", tech);
+    EXPECT_NE(skew_db_lib, nullptr);
+    createSkewBufMaster(skew_db_lib, "SKEW_BUF_D1_RVT", 2, vtr_layer);
+    createSkewBufMaster(skew_db_lib, "SKEW_BUF_SKRD2_RVT", 3, vtr_layer);
+    createSkewBufMaster(skew_db_lib, "SKEW_BUF_D2_RVT", 4, vtr_layer);
+    createSkewBufMaster(skew_db_lib, "SKEW_BUF_D2_LVT", 4, vtl_layer);
+    createSkewBufMaster(skew_db_lib, "SKEW_BUF_SKFD2_SLVT", 4, vtsl_layer);
+    createSkewBufMaster(skew_db_lib, "SKEW_BUF_D3_RVT", 6, vtr_layer);
+    db_network_->readLefAfter(skew_db_lib);
+
+    sta::LibertyLibrary* skew_lib
+        = readLiberty(test_root_path_ + "cpp/TestResizerSkewVt.lib");
+    EXPECT_NE(skew_lib, nullptr);
+
+    setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def", 0.98);
+    return skew_lib;
   }
 };
 
@@ -726,4 +800,236 @@ TEST_F(TestResizer, SetupLegacyPolicyResetsForceSingleRepairAfterImprovingPass)
   EXPECT_FALSE(endpoint_state.force_single_repair);
 }
 
+TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
+{
+  sta::LibertyLibrary* skew_lib = loadSkewVtLibraryAndSetup();
+  ASSERT_NE(skew_lib, nullptr);
+
+  sta::LibertyCell* d1_rvt = skew_lib->findLibertyCell("SKEW_BUF_D1_RVT");
+  sta::LibertyCell* skrd2_rvt = skew_lib->findLibertyCell("SKEW_BUF_SKRD2_RVT");
+  sta::LibertyCell* d2_rvt = skew_lib->findLibertyCell("SKEW_BUF_D2_RVT");
+  ASSERT_NE(d1_rvt, nullptr);
+  ASSERT_NE(skrd2_rvt, nullptr);
+  ASSERT_NE(d2_rvt, nullptr);
+
+  sta::LibertyPort* in_port = d1_rvt->findLibertyPort("A");
+  sta::LibertyPort* drvr_port = d1_rvt->findLibertyPort("Z");
+  ASSERT_NE(in_port, nullptr);
+  ASSERT_NE(drvr_port, nullptr);
+
+  MoveCommitter committer(resizer_);
+  const OptimizerRunConfig run_config;
+  const OptimizationPolicyConfig policy_config;
+  const GeneratorContext context{.resizer = resizer_,
+                                 .committer = committer,
+                                 .run_config = run_config,
+                                 .policy_config = policy_config};
+  const TestSizeUpGenerator generator(context);
+
+  const sta::Scene* scene = sta_->cmdScene();
+  const sta::MinMax* max = sta::MinMax::max();
+  const float load_cap = sta_->units()->capacitanceUnit()->userToSta(0.01f);
+
+  // SKEW_BUF_SKRD2_RVT has a faster rise delay than SKEW_BUF_D1_RVT, but its
+  // fall delay exceeds SKEW_BUF_D1_RVT's worst-case delay. On a rising edge,
+  // transition-aware sizing should pick SKEW_BUF_SKRD2_RVT; on a falling edge,
+  // it should skip SKEW_BUF_SKRD2_RVT and pick SKEW_BUF_D2_RVT.
+  sta::LibertyCell* rise_replacement = generator.upsizeCell(
+      in_port,
+      sta::RiseFall::rise(),
+      drvr_port,
+      sta::RiseFall::rise(),
+      load_cap,
+      /*prev_drive=*/0.0f,
+      scene,
+      max);
+  ASSERT_NE(rise_replacement, nullptr);
+  EXPECT_EQ(rise_replacement, skrd2_rvt);
+
+  sta::LibertyCell* fall_replacement = generator.upsizeCell(
+      in_port,
+      sta::RiseFall::fall(),
+      drvr_port,
+      sta::RiseFall::fall(),
+      load_cap,
+      /*prev_drive=*/0.0f,
+      scene,
+      max);
+  ASSERT_NE(fall_replacement, nullptr);
+  EXPECT_EQ(fall_replacement, d2_rvt);
+
+  odb::dbInst* db_inst = block_->findInst("enable_buf0");
+  ASSERT_NE(db_inst, nullptr);
+  sta::Instance* inst = db_network_->dbToSta(db_inst);
+  ASSERT_NE(inst, nullptr);
+  ASSERT_TRUE(resizer_.replaceCell(inst, d1_rvt));
+  sta_->updateTiming(true);
+
+  RepairTargetCollector collector(&resizer_);
+  collector.init(0.0f);
+  sta::Vertex* endpoint = loadVertex("enable_latch/D");
+  ASSERT_NE(endpoint, nullptr);
+  sta::Path* path = sta_->vertexWorstSlackPath(endpoint, max);
+  ASSERT_NE(path, nullptr);
+  const std::vector<Target> targets
+      = collector.collectPathDriverTargets(path, path->slack(sta_.get()));
+
+  const Target* buf0_target = nullptr;
+  for (const Target& target : targets) {
+    if (target.driver_pin != nullptr
+        && std::string(db_network_->pathName(target.driver_pin))
+               == "enable_buf0/Z") {
+      buf0_target = &target;
+      break;
+    }
+  }
+  ASSERT_NE(buf0_target, nullptr);
+
+  SizeUpGenerator live_generator(context);
+  std::vector<std::unique_ptr<MoveCandidate>> candidates
+      = live_generator.generate(*buf0_target);
+  ASSERT_EQ(candidates.size(), 1u);
+  EXPECT_TRUE(candidates[0]->apply().accepted);
+  EXPECT_EQ(db_network_->libertyCell(inst), skrd2_rvt);
+}
+
+TEST_F(TestResizer, SizeUpRejectsCandidateThatWeakensNonCriticalEdge)
+{
+  sta::LibertyLibrary* skew_lib = loadSkewVtLibraryAndSetup();
+  ASSERT_NE(skew_lib, nullptr);
+
+  sta::LibertyCell* d2_rvt = skew_lib->findLibertyCell("SKEW_BUF_D2_RVT");
+  sta::LibertyCell* skrd2_rvt = skew_lib->findLibertyCell("SKEW_BUF_SKRD2_RVT");
+  sta::LibertyCell* d2_lvt = skew_lib->findLibertyCell("SKEW_BUF_D2_LVT");
+  sta::LibertyCell* skfd2_slvt
+      = skew_lib->findLibertyCell("SKEW_BUF_SKFD2_SLVT");
+  sta::LibertyCell* d3_rvt = skew_lib->findLibertyCell("SKEW_BUF_D3_RVT");
+  ASSERT_NE(d2_rvt, nullptr);
+  ASSERT_NE(skrd2_rvt, nullptr);
+  ASSERT_NE(d2_lvt, nullptr);
+  ASSERT_NE(skfd2_slvt, nullptr);
+  ASSERT_NE(d3_rvt, nullptr);
+
+  sta::LibertyPort* in_port = d2_rvt->findLibertyPort("A");
+  sta::LibertyPort* drvr_port = d2_rvt->findLibertyPort("Z");
+  ASSERT_NE(in_port, nullptr);
+  ASSERT_NE(drvr_port, nullptr);
+
+  MoveCommitter committer(resizer_);
+  const OptimizerRunConfig run_config;
+  const OptimizationPolicyConfig policy_config;
+  const GeneratorContext context{.resizer = resizer_,
+                                 .committer = committer,
+                                 .run_config = run_config,
+                                 .policy_config = policy_config};
+  const TestSizeUpGenerator generator(context);
+
+  const sta::Scene* scene = sta_->cmdScene();
+  const sta::MinMax* max = sta::MinMax::max();
+  const int lib_ap = scene->libertyIndex(max);
+  const float load_cap = sta_->units()->capacitanceUnit()->userToSta(0.01f);
+
+  // Transition-blind weakerCellFirst orders SKEW_BUF_SKFD2_SLVT before
+  // SKEW_BUF_D2_LVT (worst R 2.40 > 1.25), whereas transition-aware
+  // weakerCellFirst on a falling edge orders SKEW_BUF_D2_LVT before
+  // SKEW_BUF_SKFD2_SLVT (fall R 0.95 > 0.90).
+  EXPECT_TRUE(generator.weakerCellFirst(skfd2_slvt, d2_lvt, "Z", lib_ap));
+  EXPECT_TRUE(generator.weakerCellFirst(
+      skfd2_slvt, d2_lvt, "Z", lib_ap, sta::RiseFall::rise(), max));
+  EXPECT_TRUE(generator.weakerCellFirst(
+      d2_lvt, skfd2_slvt, "Z", lib_ap, sta::RiseFall::fall(), max));
+
+  // Within the same RVT class, SKEW_BUF_SKRD2_RVT improves rise drive
+  // resistance (2.00 < 2.50) and rise delay relative to SKEW_BUF_D2_RVT, but
+  // weakens fall drive resistance (2.05 > 2.00). SizeUp must reject it and
+  // choose SKEW_BUF_D3_RVT instead.
+  resizer_.setDontUse(skfd2_slvt, true);
+  resizer_.setDontUse(d2_lvt, true);
+  sta::LibertyCell* replacement = generator.upsizeCell(
+      in_port,
+      sta::RiseFall::rise(),
+      drvr_port,
+      sta::RiseFall::rise(),
+      load_cap,
+      /*prev_drive=*/0.0f,
+      scene,
+      max);
+  ASSERT_NE(replacement, nullptr);
+  EXPECT_EQ(replacement, d3_rvt);
+
+  // When SKEW_BUF_D3_RVT is marked dont_use, no legal non-weakening upsize
+  // candidate in RVT remains.
+  resizer_.setDontUse(d3_rvt, true);
+  EXPECT_EQ(generator.upsizeCell(in_port,
+                                 sta::RiseFall::rise(),
+                                 drvr_port,
+                                 sta::RiseFall::rise(),
+                                 load_cap,
+                                 /*prev_drive=*/0.0f,
+                                 scene,
+                                 max),
+            nullptr);
+}
+
+TEST_F(TestResizer, VtSwapAdvancesOnlyToNonWeakeningEquivCells)
+{
+  sta::LibertyLibrary* skew_lib = loadSkewVtLibraryAndSetup();
+  ASSERT_NE(skew_lib, nullptr);
+
+  sta::LibertyCell* d2_rvt = skew_lib->findLibertyCell("SKEW_BUF_D2_RVT");
+  sta::LibertyCell* d2_lvt = skew_lib->findLibertyCell("SKEW_BUF_D2_LVT");
+  sta::LibertyCell* skfd2_slvt
+      = skew_lib->findLibertyCell("SKEW_BUF_SKFD2_SLVT");
+  ASSERT_NE(d2_rvt, nullptr);
+  ASSERT_NE(d2_lvt, nullptr);
+  ASSERT_NE(skfd2_slvt, nullptr);
+
+  const sta::LibertyCellSeq equiv_cells = resizer_.getVTEquivCells(d2_rvt);
+  ASSERT_EQ(equiv_cells.size(), 3u);
+  EXPECT_EQ(equiv_cells[0], d2_rvt);
+  EXPECT_EQ(equiv_cells[1], d2_lvt);
+  EXPECT_EQ(equiv_cells[2], skfd2_slvt);
+
+  odb::dbInst* db_inst = block_->findInst("enable_buf0");
+  ASSERT_NE(db_inst, nullptr);
+  sta::Instance* inst = db_network_->dbToSta(db_inst);
+  ASSERT_NE(inst, nullptr);
+  ASSERT_TRUE(resizer_.replaceCell(inst, d2_rvt));
+
+  // Stepping from SKEW_BUF_D2_RVT (R_rise=2.50, R_fall=2.00) to
+  // SKEW_BUF_D2_LVT (R_rise=1.25, R_fall=0.95) strengthens both edges, whereas
+  // stepping further to SKEW_BUF_SKFD2_SLVT (R_rise=2.40, R_fall=0.90) would
+  // weaken R_rise relative to SKEW_BUF_D2_LVT. Both checkAndMarkVTSwappable
+  // and VtSwapGenerator must stop at SKEW_BUF_D2_LVT.
+  std::unordered_set<sta::Instance*> not_swappable;
+  sta::LibertyCell* best_cell = nullptr;
+  EXPECT_TRUE(resizer_.checkAndMarkVTSwappable(inst, not_swappable, best_cell));
+  EXPECT_EQ(best_cell, d2_lvt);
+
+  MoveCommitter committer(resizer_);
+  const OptimizerRunConfig run_config;
+  const OptimizationPolicyConfig policy_config;
+  const GeneratorContext context{.resizer = resizer_,
+                                 .committer = committer,
+                                 .run_config = run_config,
+                                 .policy_config = policy_config};
+  VtSwapGenerator vt_generator(context, &not_swappable);
+
+  sta::Pin* drvr_pin = db_network_->findPin("enable_buf0/Z");
+  ASSERT_NE(drvr_pin, nullptr);
+  Target target;
+  target.driver_pin = drvr_pin;
+
+  std::vector<std::unique_ptr<MoveCandidate>> candidates
+      = vt_generator.generate(target);
+  ASSERT_EQ(candidates.size(), 1u);
+  EXPECT_TRUE(candidates[0]->apply().accepted);
+  EXPECT_EQ(db_network_->libertyCell(inst), d2_lvt);
+
+  // Once at SKEW_BUF_D2_LVT, no further VT swap should be proposed because
+  // SKEW_BUF_SKFD2_SLVT weakens R_rise.
+  EXPECT_FALSE(
+      resizer_.checkAndMarkVTSwappable(inst, not_swappable, best_cell));
+  EXPECT_TRUE(vt_generator.generate(target).empty());
+}
 }  // namespace rsz

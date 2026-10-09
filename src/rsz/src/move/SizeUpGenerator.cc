@@ -12,7 +12,9 @@
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SizeUpCandidate.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -21,7 +23,9 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -47,13 +51,22 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(
   float load_cap = 0.0f;
   float prev_drive = 0.0f;
   sta::LibertyPort* in_port = nullptr;
-  if (!loadStageContext(
-          target, drvr_pin, scene, min_max, load_cap, in_port, prev_drive)) {
+  const sta::RiseFall* in_rf = nullptr;
+  const sta::RiseFall* drvr_rf = nullptr;
+  if (!loadStageContext(target,
+                        drvr_pin,
+                        scene,
+                        min_max,
+                        load_cap,
+                        in_port,
+                        in_rf,
+                        drvr_rf,
+                        prev_drive)) {
     return candidates;
   }
 
   sta::LibertyCell* replacement = selectReplacement(
-      in_port, drvr_port, load_cap, prev_drive, scene, min_max);
+      in_port, in_rf, drvr_port, drvr_rf, load_cap, prev_drive, scene, min_max);
   if (replacement == nullptr
       || !resizer_.replacementPreservesMaxCap(inst, replacement)) {
     return candidates;
@@ -93,6 +106,8 @@ bool SizeUpGenerator::loadStageContext(const Target& target,
                                        const sta::MinMax*& min_max,
                                        float& load_cap,
                                        sta::LibertyPort*& in_port,
+                                       const sta::RiseFall*& in_rf,
+                                       const sta::RiseFall*& drvr_rf,
                                        float& prev_drive) const
 {
   // Use the current path stage and the upstream driver to estimate delay gain.
@@ -110,6 +125,8 @@ bool SizeUpGenerator::loadStageContext(const Target& target,
   if (in_port == nullptr) {
     return false;
   }
+  in_rf = in_arc->fromEdge()->asRiseFall();
+  drvr_rf = in_arc->toEdge()->asRiseFall();
 
   prev_drive = 0.0f;
   if (prev_drvr_path != nullptr) {
@@ -119,7 +136,15 @@ bool SizeUpGenerator::loadStageContext(const Target& target,
               ? resizer_.network()->libertyPort(prev_drvr_pin)
               : nullptr;
     if (prev_drvr_port != nullptr) {
-      prev_drive = prev_drvr_port->driveResistance();
+      const int lib_ap = scene->libertyIndex(min_max);
+      const sta::LibertyPort* scene_prev_drvr_port
+          = static_cast<const sta::LibertyPort*>(prev_drvr_port)
+                ->scenePort(lib_ap);
+      if (scene_prev_drvr_port != nullptr) {
+        prev_drive = scene_prev_drvr_port->driveResistance(in_rf, min_max);
+      } else {
+        prev_drive = prev_drvr_port->driveResistance(in_rf, min_max);
+      }
     }
   }
   return true;
@@ -127,17 +152,22 @@ bool SizeUpGenerator::loadStageContext(const Target& target,
 
 sta::LibertyCell* SizeUpGenerator::selectReplacement(
     sta::LibertyPort* in_port,
+    const sta::RiseFall* in_rf,
     sta::LibertyPort* drvr_port,
+    const sta::RiseFall* drvr_rf,
     const float load_cap,
     const float prev_drive,
     const sta::Scene* scene,
     const sta::MinMax* min_max) const
 {
-  return upsizeCell(in_port, drvr_port, load_cap, prev_drive, scene, min_max);
+  return upsizeCell(
+      in_port, in_rf, drvr_port, drvr_rf, load_cap, prev_drive, scene, min_max);
 }
 
 sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
+                                              const sta::RiseFall* in_rf,
                                               sta::LibertyPort* drvr_port,
+                                              const sta::RiseFall* drvr_rf,
                                               const float load_cap,
                                               const float prev_drive,
                                               const sta::Scene* scene,
@@ -159,13 +189,13 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   // local size-up step.
   const std::string& in_port_name = in_port->name();
   const std::string& drvr_port_name = drvr_port->name();
-  std::ranges::sort(
-      swappable_cells.begin(),
-      swappable_cells.end(),
-      [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
-                                      const sta::LibertyCell* cell2) {
-        return weakerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
-      });
+  std::ranges::sort(swappable_cells,
+                    [this, &drvr_port_name, drvr_rf, min_max, lib_ap](
+                        const sta::LibertyCell* cell1,
+                        const sta::LibertyCell* cell2) {
+                      return weakerCellFirst(
+                          cell1, cell2, drvr_port_name, lib_ap, drvr_rf, min_max);
+                    });
 
   const sta::LibertyPort* scene_drvr_port
       = static_cast<const sta::LibertyPort*>(drvr_port)->scenePort(lib_ap);
@@ -175,13 +205,26 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return nullptr;
   }
 
-  const float drive_r = scene_drvr_port->driveResistance();
-  const float delay = resizer_.gateDelay(drvr_port, load_cap, scene, min_max)
-                      + prev_drive * scene_input_port->capacitance();
+  const float drive_r_rise
+      = scene_drvr_port->driveResistance(sta::RiseFall::rise(), min_max);
+  const float drive_r_fall
+      = scene_drvr_port->driveResistance(sta::RiseFall::fall(), min_max);
+  const float in_cap = in_rf != nullptr
+                           ? scene_input_port->capacitance(in_rf, min_max)
+                           : scene_input_port->capacitance();
+  const float delay = (drvr_rf != nullptr
+                           ? resizer_.gateDelay(
+                                 drvr_port, drvr_rf, load_cap, scene, min_max)
+                           : resizer_.gateDelay(
+                                 drvr_port, load_cap, scene, min_max))
+                      + prev_drive * in_cap;
 
-  // Accept the first cell that does not weaken drive resistance and improves
-  // estimated stage delay.
+  // Accept the first cell that does not weaken drive resistance on either edge
+  // and improves estimated stage delay.
   for (sta::LibertyCell* swappable : swappable_cells) {
+    if (swappable == cell) {
+      continue;
+    }
     sta::LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
     if (swappable_corner == nullptr) {
       continue;
@@ -193,11 +236,21 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     if (swappable_drvr == nullptr || swappable_input == nullptr) {
       continue;
     }
-    const float swappable_drive_r = swappable_drvr->driveResistance();
+    const float swappable_drive_r_rise
+        = swappable_drvr->driveResistance(sta::RiseFall::rise(), min_max);
+    const float swappable_drive_r_fall
+        = swappable_drvr->driveResistance(sta::RiseFall::fall(), min_max);
+    const float swappable_in_cap
+        = in_rf != nullptr ? swappable_input->capacitance(in_rf, min_max)
+                           : swappable_input->capacitance();
     const float swappable_delay
-        = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
-          + prev_drive * swappable_input->capacitance();
-    if (swappable_drive_r <= drive_r && swappable_delay < delay) {
+        = (drvr_rf != nullptr
+               ? resizer_.gateDelay(
+                     swappable_drvr, drvr_rf, load_cap, scene, min_max)
+               : resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max))
+          + prev_drive * swappable_in_cap;
+    if (swappable_drive_r_rise <= drive_r_rise
+        && swappable_drive_r_fall <= drive_r_fall && swappable_delay < delay) {
       return swappable;
     }
   }
