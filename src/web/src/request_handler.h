@@ -129,6 +129,7 @@ struct WebSocketRequest
     kSnap,
     kSchematicCone,
     kSchematicFull,
+    kSchematicPath,
     kSchematicInspect,
     kDrcCategories,
     kDrcMarkers,
@@ -469,6 +470,7 @@ class SelectHandler
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicPath(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);

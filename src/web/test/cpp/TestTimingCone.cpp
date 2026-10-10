@@ -2,9 +2,13 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
+#include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
 #include "color.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -71,6 +75,57 @@ TEST_F(TimingConeTest, EmptyDirectionsReturnEmptyCone)
   EXPECT_TRUE(result.ok);
   EXPECT_TRUE(result.nodes.empty());
   EXPECT_FALSE(result.constrained);
+}
+
+class UnconstrainedTimingReportTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+
+    odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+    ASSERT_NE(buffer, nullptr);
+    tst::InstOptions options;
+    options.iterms = {{"in", "A"}, {"out", "Z"}};
+    makeInst(block_, buffer, "buffer", options);
+    makeBTerm(block_, "in", {});
+    tst::BTermOptions output_options;
+    output_options.io_type = odb::dbIoType::OUTPUT;
+    makeBTerm(block_, "out", output_options);
+
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+  }
+};
+
+TEST_F(UnconstrainedTimingReportTest, IncludesAndSerializesPathsWithoutSdc)
+{
+  TimingReport report(getSta());
+  EXPECT_TRUE(report
+                  .getReport(/*is_setup=*/true,
+                             /*max_paths=*/10,
+                             -std::numeric_limits<float>::max(),
+                             std::numeric_limits<float>::max(),
+                             /*include_unconstrained=*/false)
+                  .empty());
+
+  const std::vector<TimingPathSummary> paths
+      = report.getReport(/*is_setup=*/true,
+                         /*max_paths=*/10,
+                         -std::numeric_limits<float>::max(),
+                         std::numeric_limits<float>::max(),
+                         /*include_unconstrained=*/true);
+  ASSERT_FALSE(paths.empty());
+  EXPECT_TRUE(std::isinf(paths.front().slack));
+  EXPECT_TRUE(std::isinf(paths.front().required));
+
+  const std::string json = boost::json::serialize(serializeTimingPaths(paths));
+  const boost::json::value serialized = boost::json::parse(json);
+  const boost::json::object& serialized_path
+      = serialized.as_object().at("paths").as_array().front().as_object();
+  EXPECT_TRUE(std::isinf(serialized_path.at("slack").to_number<double>()));
+  EXPECT_TRUE(std::isinf(serialized_path.at("required").to_number<double>()));
 }
 
 //------------------------------------------------------------------------------
