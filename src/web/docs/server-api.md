@@ -6,17 +6,24 @@ to be stable enough that an alternate client (custom browser app,
 headless test driver, third-party visualization) can be implemented
 against it without reading the JavaScript reference frontend.
 
-The server exposes one HTTP route for static assets and one WebSocket
-endpoint for all dynamic operations. The WebSocket carries a small
-binary framing with JSON or PNG payloads.
+The server exposes HTTP routes for its embedded assets and a layout
+image, and one WebSocket endpoint for all dynamic operations. The
+WebSocket carries a small binary framing with JSON or PNG payloads.
 
 ## Connecting
 
 - HTTP and WebSocket share one TCP port (default `8080`, configured via
   `web_server -port`). A single Boost.Beast listener serves both.
-- HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
-  asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
-  other than GET is supported.
+- HTTP `GET` serves the three assets embedded in the binary: `/` (or
+  `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
+  string or fragment is ignored. `GET /download/image` renders a PNG of
+  the layout from its query parameters. Anything else is 404, and no
+  method other than GET is supported.
+- The assets are stored gzipped. When `Accept-Encoding` allows gzip
+  (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry wins
+  over `*`), the stored bytes go out with `Content-Encoding: gzip`;
+  otherwise the server inflates them first. Every asset response carries
+  `Vary: Accept-Encoding` and `Cache-Control: no-store`.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 

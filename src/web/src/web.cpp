@@ -312,7 +312,23 @@ static http::response<http::string_body> handle_request(
         // to have done nothing until someone thinks to hard-reload.  They
         // are served from memory, so re-fetching them costs nothing.
         res.set(http::field::cache_control, "no-store");
-        res.body() = std::string(asset->content());
+        // Stored gzipped: browsers get those bytes as they are, and curl
+        // without --compressed and the tests get them inflated.
+        res.set(http::field::vary, "Accept-Encoding");
+        if (asset->gzipped && acceptsGzip(req[http::field::accept_encoding])) {
+          res.set(http::field::content_encoding, "gzip");
+          res.body() = std::string(asset->content());
+        } else {
+          // assetText() throws if a blob and its recorded size disagree; an
+          // exception escaping this asio handler would stop the server.
+          try {
+            res.body() = assetText(*asset);
+          } catch (const std::exception& e) {
+            res.result(http::status::internal_server_error);
+            res.set(http::field::content_type, "text/plain");
+            res.body() = e.what();
+          }
+        }
       } else {
         res.result(http::status::not_found);
         res.body() = "Resource not found.";
@@ -1679,10 +1695,36 @@ WebServer::~WebServer()
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
 }
 
-// Embedded JS/CSS for standalone timing report (generated at build time
-// by embed_report_assets.py → report_assets.cpp).
-extern const std::string_view kReportCSS;
-extern const std::string_view kReportJS;
+// Every <style> block of the served page and the line picking its starting
+// theme, so a saved report keeps the viewer's cascade.
+static std::string servedPageStyles(utl::Logger* logger)
+{
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  const std::string html = page ? assetText(*page) : std::string();
+  const size_t begin = html.find("<style");
+  const size_t end = html.find("</head>");
+  if (begin == std::string::npos || end == std::string::npos || end < begin) {
+    logger->error(
+        utl::WEB, 111, "The embedded viewer page has no stylesheets to copy.");
+  }
+  return html.substr(begin, end - begin);
+}
+
+// Text for the inside of an HTML comment: splits the sequences that would
+// open or close one early.
+static std::string htmlCommentSafe(std::string text)
+{
+  using Replacement = std::pair<std::string_view, std::string_view>;
+  for (const auto& [from, to] : {Replacement{"<!--", "<! --"},
+                                 Replacement{"--!>", "--! >"},
+                                 Replacement{"-->", "-- >"}}) {
+    for (size_t pos = text.find(from); pos != std::string::npos;
+         pos = text.find(from, pos + to.size())) {
+      text.replace(pos, from.size(), to);
+    }
+  }
+  return text;
+}
 
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
@@ -1716,6 +1758,20 @@ void WebServer::saveReport(const std::string& filename,
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
+
+  // Inflated before the file is opened, so a blob that fails to inflate
+  // leaves no half-written report behind.
+  const std::string report_styles = servedPageStyles(logger_);
+  const std::string report_js = assetText(kReportJS);
+  // The report carries the bundled libraries' code, so their licences too.
+  const EmbeddedAsset* licenses_asset
+      = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
+  if (!licenses_asset) {
+    logger_->error(
+        utl::WEB, 112, "The embedded third-party licences are missing.");
+    return;
+  }
+  const std::string licenses = htmlCommentSafe(assetText(*licenses_asset));
 
   std::ofstream out(filename);
   if (!out) {
@@ -1871,22 +1927,20 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head: the served page's stylesheets, icons inlined as data: URIs, so
+  // the file opens with no server and no network.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
-<style>
-)" << kReportCSS
+<!--
+)" << licenses
       << R"(
-</style>
+-->
+)" << report_styles
+      << R"(
 </head>
 <body>
 <div id="menu-bar"></div>
@@ -1966,10 +2020,10 @@ window.__STATIC_CACHE__ = {
   }
 };
 </script>
-<script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
-)" << kReportJS
+)" <<  // Deferred like the served page's app.min.js: golden-layout will not
+       // lay out a page that is still being parsed.
+      R"(<script type="module">
+)" << report_js
       << R"(
 </script>
 </body>

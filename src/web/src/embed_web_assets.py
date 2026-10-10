@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Embed web asset files (HTML, JS, CSS) as C++ raw string literals
-# so the web server can serve them without a -dir argument.
-#
-# Generates a .cpp file with a lookup function: path -> (content, MIME type).
+# Embed the web assets as a .cpp: a table of served paths, plus each --extern
+# asset as its own EmbeddedAsset; contents are gzipped wherever that pays.
 
 import argparse
+import gzip
+import io
 import os
 
 MIME_TYPES = {
@@ -16,55 +16,139 @@ MIME_TYPES = {
     ".css": "text/css",
     ".json": "application/json",
     ".svg": "image/svg+xml",
+    ".txt": "text/plain; charset=utf-8",
 }
 
+# One escape per byte value, so the loop below is a table lookup.
+_OCTAL_ESCAPES = [f"\\{b:03o}" for b in range(256)]
 
-def c_identifier(filename):
-    """Convert a filename to a valid C identifier."""
-    return "k_" + filename.replace(".", "_").replace("-", "_")
+# Octal escapes are 4 chars each; 20 bytes keeps the emitted line at 80 columns.
+_BYTES_PER_LINE = 20
+
+
+def gzip_bytes(data):
+    """gzip with mtime=0, so the same input and zlib give the same bytes."""
+    # GzipFile, not gzip.compress(): the latter takes mtime only from 3.8.
+    buffer = io.BytesIO()
+    with gzip.GzipFile(fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as f:
+        f.write(data)
+    return buffer.getvalue()
+
+
+def write_char_array(out, ident, data):
+    """Write data as `static const char <ident>_data[]`, in octal escapes.
+
+    Its length has to be passed along separately: a gzip stream may contain a
+    NUL, so sizeof - 1 is only right by accident.
+    """
+    escaped = "".join(map(_OCTAL_ESCAPES.__getitem__, data))
+    width = _BYTES_PER_LINE * 4
+    lines = (escaped[i : i + width] for i in range(0, len(escaped), width))
+    out.write(f'static const char {ident}_data[] =\n    "')
+    out.write('"\n    "'.join(lines))
+    out.write('";\n\n')
+
+
+def c_identifier(served_path):
+    """Convert a served path to a valid C identifier."""
+    stem = served_path.strip("/")
+    return "k_" + "".join(c if c.isalnum() else "_" for c in stem)
+
+
+def split_pair(arg):
+    """Split "<name>=<file path>"."""
+    name, sep, path = arg.partition("=")
+    if not sep:
+        raise SystemExit(f"expected <name>=<file path>, got: {arg}")
+    return name, path
+
+
+def load(path):
+    """The file's bytes, gzipped when that makes them smaller."""
+    with open(path, "rb") as f:
+        data = f.read()
+    packed = gzip_bytes(data)
+    if len(packed) < len(data):
+        return packed, True, len(data)
+    return data, False, len(data)
+
+
+def initializer(ident, path, data, gzipped, original_size):
+    mime = MIME_TYPES.get(os.path.splitext(path)[1], "application/octet-stream")
+    flag = "true" if gzipped else "false"
+    return f'{{{ident}_data, {len(data)}, "{mime}", {flag}, {original_size}}}'
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
-    parser.add_argument("files", nargs="+", help="Asset files to embed")
+    parser.add_argument(
+        "--extern",
+        action="append",
+        default=[],
+        metavar="NAME=FILE",
+        help="an asset kept out of the table, as `extern const EmbeddedAsset NAME`",
+    )
+    parser.add_argument(
+        "assets",
+        nargs="+",
+        help="Assets to embed, as <served path>=<file path>",
+    )
     args = parser.parse_args()
 
-    assets = []
-    for path in args.files:
-        filename = os.path.basename(path)
-        ext = os.path.splitext(filename)[1]
-        mime = MIME_TYPES.get(ext, "application/octet-stream")
-        with open(path, encoding="utf-8") as f:
-            content = f.read()
-        assets.append((filename, c_identifier(filename), mime, content))
+    identifiers = {}
 
-    # Use a delimiter unlikely to appear in JS/CSS/HTML content.
-    delim = "__WEB_ASSET__"
+    def claim(ident, name):
+        # c_identifier() folds every non-alphanumeric to _, so two served paths
+        # can collide into one name.
+        if ident in identifiers:
+            raise SystemExit(f"{name} and {identifiers[ident]} both generate {ident}")
+        identifiers[ident] = name
+
+    served = []
+    for arg in args.assets:
+        path_served, path = split_pair(arg)
+        if not path_served.startswith("/"):
+            raise SystemExit(f"served path must be absolute: {path_served}")
+        ident = c_identifier(path_served)
+        claim(ident, path_served)
+        served.append((path_served, ident, path) + load(path))
+
+    externs = []
+    for arg in args.extern:
+        name, path = split_pair(arg)
+        if not name.isidentifier():
+            raise SystemExit(f"--extern needs a C identifier, got: {name}")
+        claim(name, name)
+        externs.append((name, path) + load(path))
 
     with open(args.output, "w", encoding="utf-8") as out:
         out.write("// Auto-generated by embed_web_assets.py — do not edit.\n")
         out.write('#include "web_assets.h"\n\n')
+        out.write("#include <cstddef>\n")
         out.write("#include <string_view>\n\n")
         out.write("namespace web {\n\n")
 
-        # Write each asset as a raw string literal.
-        for filename, ident, mime, content in assets:
-            out.write(f"// {filename}\n")
-            out.write(f'static const char {ident}_data[] = R"{delim}(')
-            out.write(content)
-            out.write(f'){delim}";\n\n')
+        for path_served, ident, _, data, _, _ in served:
+            out.write(f"// {path_served}\n")
+            write_char_array(out, ident, data)
 
-        # Write the lookup table.
+        for name, path, data, gzipped, original_size in externs:
+            write_char_array(out, name, data)
+            out.write(
+                f"extern const EmbeddedAsset {name} = "
+                f"{initializer(name, path, data, gzipped, original_size)};\n\n"
+            )
+
+        # Sizes are byte counts, not sizeof - 1: every literal above is octal
+        # escapes, and a gzip stream may contain a NUL.
         out.write("static const struct {\n")
         out.write("  const char* path;\n")
         out.write("  EmbeddedAsset asset;\n")
-        out.write(f"}} kAssetTable[] = {{\n")
-        for filename, ident, mime, _ in assets:
-            out.write(
-                f'    {{"/{filename}", '
-                f'{{{ident}_data, sizeof({ident}_data) - 1, "{mime}"}}}},\n'
-            )
+        out.write("} kAssetTable[] = {\n")
+        for path_served, ident, _, data, gzipped, original_size in served:
+            entry = initializer(ident, path_served, data, gzipped, original_size)
+            out.write(f'    {{"{path_served}", {entry}}},\n')
         out.write("};\n\n")
 
         out.write("const EmbeddedAsset* findEmbeddedAsset(std::string_view path)\n")

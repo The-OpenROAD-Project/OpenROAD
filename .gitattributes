@@ -1,0 +1,4 @@
+# The generated web bundles (src/web/dist/README.md), kept out of diffs and
+# language stats; dist/BUILD and dist/README.md are hand-written, so not them.
+src/web/dist/*.js -diff linguist-generated
+src/web/dist/*.html -diff linguist-generated

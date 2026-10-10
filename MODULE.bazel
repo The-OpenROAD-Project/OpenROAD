@@ -211,6 +211,13 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
 
+# JavaScript / web UI: the npm libraries are bundled into the assets embedded in
+# the binary, so //:openroad needs these, not only the JS tests.
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
+bazel_dep(name = "aspect_rules_js", version = "3.0.2")
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
+
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
 # of this project generate stubs .ifso for things like X11 that will
@@ -319,10 +326,6 @@ archive_override(
     urls = ["https://github.com/keplertech/kepler-formal/archive/5eced47bf5d4330b60dcaadc7babdfdc092b0c3b.tar.gz"],
 )
 
-# JavaScript / web UI — only used for JS unit tests in src/web/test
-bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
-bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
-
 # --- Extensions ---
 
 register_toolchains(
@@ -421,12 +424,39 @@ use_repo(pip, "openroad-black-pip")
 pycross = use_extension("@rules_pycross//pycross/extensions:pycross.bzl", "pycross")
 pycross.configure_environments(python_versions = ["3.13"])
 
+# Not a dev dependency: //:openroad's web assets are built on it.
 node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
-    dev_dependency = True,
 )
 node.toolchain(node_version = "22.14.0")
+
+# The viewer's browser libraries, bundled into the assets embedded in the
+# binary.  Not a dev dependency: //:openroad does not build without it.
+npm_web = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm_web.npm_translate_lock(
+    name = "npm_web",
+    # Only the lock is read; //src/web/test:npm_lock_test keeps it in step
+    # with src/web/package.json.
+    pnpm_lock = "//src/web:pnpm-lock.yaml",
+)
+
+# elkjs ships its EPL-2.0 licence as LICENSE.md, which the default "basic"
+# preset strips with every other *.md; //src/web:third_party_licenses needs it.
+npm_web.npm_exclude_package_contents(
+    package = "elkjs@0.9.3",
+    presets = [],
+)
+use_repo(npm_web, "npm_web")
+
+# Regenerate //src/web:pnpm-lock.yaml after editing //src/web:package.json:
+#   bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+pnpm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "pnpm",
+    dev_dependency = True,
+)
+use_repo(pnpm, "pnpm")
 
 npm = use_extension(
     "@aspect_rules_js//npm:extensions.bzl",

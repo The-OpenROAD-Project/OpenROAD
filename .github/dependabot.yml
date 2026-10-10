@@ -33,8 +33,9 @@ updates:
           - "*"
 
   - package-ecosystem: "npm"
+    # Not /src/web: its bumps also need src/web/dist rebuilt, the steps in
+    # src/web/README.md.
     directories:
-      - "/src/web"
       - "/src/web/test"
     schedule:
       interval: "daily"

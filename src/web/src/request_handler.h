@@ -337,6 +337,10 @@ struct SessionState
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
+// True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
+// q=0, an explicit gzip deciding over *; an empty header does not count.
+bool acceptsGzip(std::string_view accept_encoding);
+
 // True if a WebSocket handshake carrying this Origin/Host may be accepted.
 // Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
 // Origin header and JavaScript cannot forge it, so a cross-site page opening
