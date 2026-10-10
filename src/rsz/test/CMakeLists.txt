@@ -107,6 +107,7 @@ or_integration_tests(
     repair_setup_size_down_fanout_only
     repair_setup_sizeup_match_only
     repair_setup_split_load_hier_only
+    repair_setup_startpoint_fanout_input_port
     repair_setup_startpoint_fanout_only
     repair_setup_swap_pins_dont_touch_sequence
     repair_setup_max_iter
