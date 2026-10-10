@@ -244,6 +244,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   template <typename T>
   const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
   void ensureParasitics();
+  // Give each driver of net an entry in every scene's parasitics.
+  void makeParasiticsEntries(const sta::Net* net);
   bool isSkipPin(const sta::Pin* pin) const;
   bool hasIdealClocks(const sta::Mode* mode) const;
   bool hasIdealClocks() const;

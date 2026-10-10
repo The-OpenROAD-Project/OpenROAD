@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "StaParasiticsEntries.h"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -155,6 +156,7 @@ void MakeWireParasitics::clearParasitics()
   for (Scene* scene : sta_->scenes()) {
     Parasitics* parasitics = sta_->makeConcreteParasitics(scene->name(), "");
     scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
+    makeParasiticsEntries(parasitics);
   }
 }
 
