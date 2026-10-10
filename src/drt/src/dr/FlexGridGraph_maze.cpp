@@ -325,28 +325,9 @@ void FlexGridGraph::getNextGrid(frMIdx& gridX,
                                 frMIdx& gridZ,
                                 const frDirEnum dir) const
 {
-  switch (dir) {
-    case frDirEnum::E:
-      ++gridX;
-      break;
-    case frDirEnum::S:
-      --gridY;
-      break;
-    case frDirEnum::W:
-      --gridX;
-      break;
-    case frDirEnum::N:
-      ++gridY;
-      break;
-    case frDirEnum::U:
-      ++gridZ;
-      break;
-    case frDirEnum::D:
-      --gridZ;
-      break;
-    case frDirEnum::UNKNOWN:
-      break;
-  }
+  gridX += (dir == frDirEnum::E) - (dir == frDirEnum::W);
+  gridY += (dir == frDirEnum::N) - (dir == frDirEnum::S);
+  gridZ += (dir == frDirEnum::U) - (dir == frDirEnum::D);
 }
 
 void FlexGridGraph::getPrevGrid(frMIdx& gridX,
@@ -354,28 +335,9 @@ void FlexGridGraph::getPrevGrid(frMIdx& gridX,
                                 frMIdx& gridZ,
                                 const frDirEnum dir) const
 {
-  switch (dir) {
-    case frDirEnum::E:
-      --gridX;
-      break;
-    case frDirEnum::S:
-      ++gridY;
-      break;
-    case frDirEnum::W:
-      ++gridX;
-      break;
-    case frDirEnum::N:
-      --gridY;
-      break;
-    case frDirEnum::U:
-      --gridZ;
-      break;
-    case frDirEnum::D:
-      ++gridZ;
-      break;
-    case frDirEnum::UNKNOWN:
-      break;
-  }
+  gridX -= (dir == frDirEnum::E) - (dir == frDirEnum::W);
+  gridY -= (dir == frDirEnum::N) - (dir == frDirEnum::S);
+  gridZ -= (dir == frDirEnum::U) - (dir == frDirEnum::D);
 }
 
 frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
