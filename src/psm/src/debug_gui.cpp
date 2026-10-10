@@ -381,6 +381,7 @@ DebugGui::DebugGui(IRNetwork* network)
   addDisplayControl(kConnectivityText, true);
   addDisplayControl(kSourceText, true);
   addDisplayControl(kSourceShapeText, true);
+  addDisplayControl(kLegendText, true);
 
   web::Gui::get()->registerRenderer(this);
 }
@@ -611,6 +612,13 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
          node_itr++) {
       drawSource(*node_itr, painter);
     }
+  }
+}
+
+void DebugGui::drawObjects(web::Painter& painter)
+{
+  if (!checkDisplayControl(kLegendText)) {
+    return;
   }
 
   web::DiscreteLegend legend;

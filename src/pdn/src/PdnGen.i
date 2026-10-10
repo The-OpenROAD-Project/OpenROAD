@@ -72,7 +72,10 @@ void run_pdngen(bool trim, bool add_pins, const char* report_file)
   pdngen->checkSetup();
   pdngen->buildGrids(trim);
   pdngen->writeToDb(add_pins, report_file);
-  pdngen->resetShapes();
+  if (pdngen->getDebugRenderer() == nullptr) {
+    // keep the shapes while debugging so the renderer still shows them
+    pdngen->resetShapes();
+  }
   ord::getLogger()->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 

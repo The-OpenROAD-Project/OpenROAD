@@ -138,6 +138,7 @@ class DebugGui : public web::Renderer
   void reset();
 
   void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   const char* getDisplayControlGroupName() override
   {
@@ -224,6 +225,7 @@ class DebugGui : public web::Renderer
   static constexpr const char* kConnectivityText = "Node connectivity";
   static constexpr const char* kSourceText = "Source nodes";
   static constexpr const char* kSourceShapeText = "Source shapes";
+  static constexpr const char* kLegendText = "Legend";
 
   static constexpr int kBoldMultiplier = 2;
   static constexpr int kNodePenWidth = 2;

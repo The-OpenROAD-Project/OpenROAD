@@ -218,16 +218,22 @@ void WebServer::serve(int port, const std::string& bind_address)
     // resetting viewer_hook_), so the raw pointer capture is safe.
     tcl_eval->drain_output
         = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
+    // Tiles drawn while a command ran left the renderers out; redraw them
+    // now that it is done.
+    tcl_eval->redraw_renderers = [hook = viewer_hook_.get()]() {
+      hook->sessions().broadcast(R"({"type":"debug_refresh"})");
+    };
 
     // The renderer bridge: one struct so both halves are installed and, in
     // stop(), cleared together.
     TileGenerator::RendererHooks hooks;
 
     hooks.draw = [weak_gen = std::weak_ptr<TileGenerator>(generator_),
-                  hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                             const TileFrame& frame,
-                                             bool debug_live,
-                                             odb::dbTechLayer* layer) {
+                  hook = viewer_hook_.get(),
+                  tcl = tcl_eval](std::vector<unsigned char>& image,
+                                  const TileFrame& frame,
+                                  bool debug_live,
+                                  odb::dbTechLayer* layer) {
       if (hook == nullptr) {
         return;
       }
@@ -235,8 +241,17 @@ void WebServer::serve(int port, const std::string& bind_address)
       if (!gen) {
         return;
       }
+      // Paused, or between commands as the Qt GUI draws them, the tools'
+      // state is stable.  While a command runs only "Live" draws, at the
+      // user's risk; holding renderer_mutex keeps a command from starting
+      // mid-draw.
+      std::unique_lock<std::mutex> idle;
       if (!debug_live && !hook->isPaused()) {
-        return;
+        idle = std::unique_lock<std::mutex>(tcl->renderer_mutex);
+        if (tcl->running) {
+          tcl->draw_skipped = true;
+          return;
+        }
       }
       seedRendererControls(hook);
       for (web::Renderer* renderer : web::Gui::get()->renderers()) {

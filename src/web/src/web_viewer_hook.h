@@ -100,6 +100,12 @@ class WebViewerHook : public web::GuiBackend
   void pause(int timeout_ms) override;
   bool isPaused() const override;
 
+  // A renderer turned on from Tcl (pdn::set_debug_renderer, say) never
+  // pauses, so tell the clients to re-read the control list when one comes
+  // or goes.
+  void registerRenderer(Renderer* renderer) override;
+  void unregisterRenderer(Renderer* renderer) override;
+
   // Per-renderer display controls (issue #10619, the Qt DisplayControls rows
   // built by registerRenderer from Renderer::getDisplayControls()).
   //

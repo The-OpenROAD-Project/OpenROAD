@@ -1638,9 +1638,10 @@ app.websocketManager.onPush = (msg) => {
         // set_property; refresh the inspected object's properties.
         if (app.refreshInspector) app.refreshInspector();
     } else if (msg.type === 'renderer_controls_changed') {
-        // A control was toggled — by this client or another one.  This is the
-        // single trigger for both halves, so the sender does not also
-        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // A control was toggled — by this client or another one — or a
+        // renderer came or went.  This is the single trigger for both
+        // halves, so the sender does not also re-read.
+        // scheduleRedrawAllLayers, not redrawAllLayers: a group
         // toggle sends one message per row and the echoes must coalesce.
         if (app.refreshRendererControls) app.refreshRendererControls();
         scheduleRedrawAllLayers();
