@@ -13,10 +13,9 @@ test/downstream/
 third-party/abc/
 third-party/lemon/
 
-# fmt ships its own BUILD.bazel assuming it is the workspace root; we overlay
-# fmt via new_local_repository(name="fmt"), so hide this nested package from
-# //... discovery (its glob(["include/fmt/*.h"]) matches nothing here).
-third-party/slang-elab/third_party/fmt/support/bazel/
+# Prevent //... from walking into sv-elab as its BUILD files expect
+# sv-elab is the root
+third-party/sv-elab/
 
 # Other things to ignore
 tmp/

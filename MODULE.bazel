@@ -48,6 +48,7 @@ bazel_dep(name = "rules_go", version = "0.61.1")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
 bazel_dep(name = "rules_pycross", version = "0.8.1")
 bazel_dep(name = "rules_python", version = "2.3.2")
+bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
@@ -205,7 +206,6 @@ single_version_override(
 # Bazel 9 removed; loading the package fails. 1.16.0.bcr.2+ loads cc_test
 # from @rules_cc.
 bazel_dep(name = "spdlog", version = "1.17.0")
-bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -414,7 +414,7 @@ pip.parse(
 )
 use_repo(pip, "openroad-black-pip")
 
-# sv-lang pulls in rules_pycross, whose toolchain extension fails on Python
+# rules_pycross's toolchain extension fails on Python
 # 3.8 (transitively registered via or-tools -> pybind11_abseil, dropped
 # from rules_python 2.0.0's MINOR_MAPPING). pycross.configure_environments
 # is root-honored only, so the workaround lives here.
@@ -441,21 +441,10 @@ use_repo(npm, "npm")
 
 # --- External archives ---
 
-# Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
-# reference @slang resolve without modification. OpenROAD source uses
-# @sv-lang directly; this alias only exists for the slang-elab submodule.
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-
-new_local_repository(
-    name = "slang",
-    build_file_content = """\
-alias(
-    name = "slang",
-    actual = "@sv-lang//:libsvlang",
-    visibility = ["//visibility:public"],
-)
-""",
-    path = "bazel/slang-compat",
+bazel_dep(name = "sv-elab", version = "2026-09-08")
+local_path_override(
+    module_name = "sv-elab",
+    path = "third-party/sv-elab",
 )
 
 # --- GPU build (opt-in, non-hermetic) ---
