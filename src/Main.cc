@@ -429,12 +429,8 @@ static int tclAppInit(int& argc,
 
     // Register the web server's log sink early (before splash/thread output
     // and read_db) so the WebLogSink captures all startup messages for the
-    // browser console.  The network and browser are NOT opened here — that
-    // happens later in serve(), just before waitForStop(), once the database
-    // is fully loaded.  Opening them here would let a connecting client run
-    // Search::eagerInit on the I/O worker threads while read_db is still
-    // mutating the db on this thread — a coredump in
-    // odb::dbBPinItr::getObject().  See issue #10576.
+    // browser console.  The network and browser open later, in
+    // serveDuringStartupScripts(), once the thread count is known.
     int web_port = 0;
     if (web_enabled) {
       if (web_port_arg) {
@@ -474,12 +470,23 @@ static int tclAppInit(int& argc,
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
     }
 
-    // The web server now installs its HeadlessViewer late, in serve() (just
-    // before waitForStop), so web::Gui::enabled() is still false here in the
-    // web path.  The `&& !web_enabled` is kept defensively: even with a
-    // viewer installed, the web server executes scripts directly on the main
-    // thread (like the non-GUI path), and addRestoreStateCommand() only
-    // works with the Qt event loop.
+    // Open the network and browser before read_db and the startup scripts,
+    // after the thread count that sizes the server's io pool.  Until
+    // endStartupScripts(), browser requests touch the db only while a script
+    // is paused (see ScriptGate): a connecting client's Search::eagerInit
+    // must not race read_db (the issue #10576 coredump).  The headless viewer
+    // is installed now too, so debug commands (global_placement_debug, ...)
+    // engage as they do under -gui.
+    if (web_enabled) {
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      ord::OpenRoad::openRoad()->getWebServer()->serveDuringStartupScripts(
+          web_port, web_bind_arg ? web_bind_arg : "");
+    }
+
+    // web::Gui::enabled() is true here in the web path (serve() installed
+    // the headless viewer), but the web server executes scripts
+    // directly on the main thread (like the non-GUI path), and
+    // addRestoreStateCommand() only works with the Qt event loop.
     const bool gui_enabled = web::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
@@ -522,6 +529,10 @@ static int tclAppInit(int& argc,
         if (cmd_file) {
           if (!gui_enabled) {
             int result = evalTclFile(interp, cmd_file);
+            if (web_enabled) {
+              ord::OpenRoad::openRoad()->getWebServer()->endStartupScripts(
+                  /*exiting=*/exit_after_cmd_file);
+            }
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
               Tcl_Exit(exit_code);
@@ -540,15 +551,17 @@ static int tclAppInit(int& argc,
     }
 
     // read_db and any startup scripts have now run to completion on this
-    // thread, so the database is fully loaded and stable.  Open the network
-    // and browser now: a connecting client's Search::eagerInit will index a
-    // settled db instead of racing read_db (the issue #10576 coredump).
-    // Then block until the web server is stopped (like QApplication::exec()
-    // for the GUI).  After this returns, fall through to readline.
+    // thread, so the database is fully loaded and stable: let browser
+    // requests in.  Reopen the network if a script stopped it (web_server
+    // -stop).  Then block until the web server is stopped (like
+    // QApplication::exec() for the GUI).  After this returns, fall through
+    // to readline.
     if (web_enabled) {
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      // Empty means web::kDefaultBindAddress; see BindAddressKind.
-      server->serve(web_port, web_bind_arg ? web_bind_arg : "");
+      server->endStartupScripts();
+      if (!server->isRunning()) {
+        server->serve(web_port, web_bind_arg ? web_bind_arg : "");
+      }
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are

@@ -128,6 +128,19 @@ class WebServer
   // a no-op if the server is already running.
   void serve(int port, const std::string& bind_address);
 
+  // For -web startup scripts, called on the main thread before they run.
+  // Calls serve(port, bind_address), so the browser follows the scripts'
+  // log and the scripts see web::Gui::enabled() (e.g. global_placement_debug
+  // engages, as under -gui).  Until endStartupScripts(), browser requests
+  // (Tcl, tiles, selection, search indexing) run only while a script is
+  // paused, and are answered "busy" otherwise; see ScriptGate.
+  void serveDuringStartupScripts(int port, const std::string& bind_address);
+
+  // Call on the main thread once the startup scripts are done: lets browser
+  // requests in, or, when `exiting`, turns them away so the exit can join
+  // the io threads.  Idempotent.
+  void endStartupScripts(bool exiting = false);
+
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }
 
@@ -262,6 +275,16 @@ class WebServer
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
   int num_threads_ = 0;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+
+  // Set by serveDuringStartupScripts(): the thread running the startup
+  // scripts, and whether they still hold the script gate (read on that thread
+  // only).
+  std::thread::id script_thread_;
+  bool script_holds_gate_ = false;
+  bool onScriptThread() const;
+  // Lets browser requests in while a startup script is paused.
+  void installPauseHooks();
   // Creates the tile generator on first use (the server need not be running)
   // and hands it the configured thread count.
   TileGenerator& ensureGenerator();
