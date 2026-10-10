@@ -27,5 +27,6 @@ expect_check_ip_pass lef_lib_pins_match
 expect_check_ip_fail lef_lib_pin_missing
 expect_check_ip_fail lef_lib_cell_missing
 expect_check_ip_fail lef_lib_direction_mismatch
+expect_check_ip_fail lef_lib_area_mismatch
 
 puts "pass"
