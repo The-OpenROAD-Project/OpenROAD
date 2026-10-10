@@ -1,7 +1,9 @@
+load("@bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
 load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF", "GPU_ONLY")
+load("//test:golden.bzl", "golden_regression_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -62,7 +64,7 @@ PASSFAIL_TESTS = [
     "place_ios_top_layer",
 ]
 
-# Longer-running regression tests (see regression_tests_large.tcl). These are
+# Longer-running regression tests (formerly run by regression-large). These are
 # tagged "manual" so they are excluded from the default `bazel test //...`
 # wildcard and must be requested explicitly, e.g. via the :large_tests suite.
 LARGE_TESTS = [
@@ -132,18 +134,52 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in ALL_TESTS]
 
-[regression_test(
+# Macro LEFs read by the large tests in addition to nangate45.lef.
+LARGE_TEST_LEFS = {
+    "macro01": ["bp_be_top_macro.lef"],
+    "macro02": ["bp_fe_top_macro.lef"],
+    "macro03": ["swerv_wrapper_macro.lef"],
+    "medium05": ["RocketTile_macro.lef"],
+}
+
+# openroad runs at build time and is cached; the -tcl_test only compares.
+# Accept new output for one test with `bazel run :large01_update`, or for
+# all of them with `bazel run :update_large_tests`.
+[golden_regression_test(
     name = test_name,
-    size = "enormous",
-    data = [":test_resources"],
+    data = [
+        "helpers.tcl",
+        "nangate45.lef",
+        "report_hpwl.tcl",
+        test_name + ".def",
+    ] + LARGE_TEST_LEFS.get(test_name, []),
+    goldens = {test_name + ".defok": test_name + "-tcl.def"},
+    # These DEFs are 4-70 MB; nobody reads their diffs, so keep only a
+    # digest. The .ok carries the HPWL for review.
+    hash_goldens = True,
     tags = ["manual"],
 ) for test_name in LARGE_TESTS]
+
+write_source_files(
+    name = "update_large_tests",
+    testonly = True,
+    additional_update_targets = [
+        ":" + test_name + "_update"
+        for test_name in LARGE_TESTS
+    ],
+    tags = ["manual"],
+)
 
 # Convenience suite to run all long-running tests explicitly:
 #   bazel test //src/gpl/test:large_tests
 test_suite(
     name = "large_tests",
-    tags = ["manual"],
+    # build tag filters apply to the suite, not the tests it expands to, so
+    # without this tag `bazel build :large_tests` would run openroad.
+    tags = [
+        "golden_regression",
+        "manual",
+    ],
     tests = [":" + test_name + "-tcl_test" for test_name in LARGE_TESTS],
 )
 
