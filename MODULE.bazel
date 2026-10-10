@@ -33,6 +33,19 @@ bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
 bazel_dep(name = "fftw", version = "3.3.10")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_bison", version = "0.4")
+
+# rules_bison's generated src/bazel_runfiles.cc calls getenv() without
+# including <cstdlib>; libc++ 23 (hermetic-llvm >= 0.8.20) no longer pulls it
+# in through <string>. Fixed on master (5e21413f) but unreleased; drop once a
+# newer release is in BCR (jmillikin/rules_bison#26).
+single_version_override(
+    module_name = "rules_bison",
+    patch_strip = 1,
+    patches = [
+        "//bazel/rules_bison-patches:0001-runfiles-include-cstdlib-for-getenv.patch",
+    ],
+)
+
 bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "rules_flex", version = "0.4")
 
@@ -51,18 +64,21 @@ bazel_dep(name = "rules_python", version = "2.3.2")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
-# bison is transitive (rules_bison -> bison). Same gnulib libc-header
-# shadowing class as sed/gawk/m4 under hermetic-llvm (BCR #7642).
-# 3.8.2.bcr.7 fixes lib/ but src/ still picks up raw libc headers; the
-# patch restores gnulib wrapper-header precedence via -I (to be proposed
-# upstream as 3.8.2.bcr.8, then drop).
+# bison is transitive (rules_bison -> bison). 3.8.2.bcr.10 lets gnulib's
+# wrapper headers shadow hermetic-llvm's libc -isystem entries (same class
+# as sed/gawk/m4, BCR #7642) and includes <cstdlib> for getenv() under
+# libc++ 23.
 single_version_override(
     module_name = "bison",
-    patch_strip = 1,
-    patches = [
-        "//bazel/bison-patches:0001-gnulib-wrapper-headers-use-I-not-isystem.patch",
-    ],
-    version = "3.8.2.bcr.7",
+    version = "3.8.2.bcr.10",
+)
+
+# rules_cc_autoconf is transitive (bison, flex, m4, gawk, readline). Its
+# checker uses std::back_inserter without <iterator>, which libc++ 23 no
+# longer pulls in transitively; 0.23.0 adds the include.
+single_version_override(
+    module_name = "rules_cc_autoconf",
+    version = "0.23.0",
 )
 
 BOOST_VERSION = "1.89.0.bcr.2"
@@ -240,21 +256,7 @@ git_override(
 ## without FHS paths (e.g. NixOS).
 ## Keep >= 0.8.14: earlier releases silently produce empty `bazel coverage`
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
-bazel_dep(name = "llvm", version = "0.8.18", dev_dependency = True)
-
-# Declare Bazel's built-in ThinLTO scoping features
-# (thin_lto_linkstatic_tests_use_shared_nonlto_backends and the all-linkstatic
-# variant) in the hermetic-llvm toolchain so --features=... can enable them;
-# Bazel silently ignores requested features the toolchain does not know.
-# --config=opt uses the tests variant to keep cc_test binaries off per-binary LTO.
-# Drop this override once hermetic-llvm declares them upstream.
-single_version_override(
-    module_name = "llvm",
-    patch_strip = 1,
-    patches = [
-        "//bazel/llvm-patches:0001-declare-thin-lto-shared-nonlto-backend-features.patch",
-    ],
-)
+bazel_dep(name = "llvm", version = "0.8.24", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
