@@ -206,6 +206,11 @@ void FlexGCWorker::setDrcBox(const odb::Rect& in)
   impl_->drcBox_ = in;
 }
 
+const odb::Rect& FlexGCWorker::getDrcBox() const
+{
+  return impl_->drcBox_;
+}
+
 const std::vector<std::unique_ptr<frMarker>>& FlexGCWorker::getMarkers() const
 {
   return impl_->markers_;
