@@ -523,6 +523,7 @@ cc_test(
         "remove_buffers3.def",
     ],
     deps = [
+        "//src/est",
         "//src/odb/src/db",
         "//src/odb/src/defin",
         "//src/rsz:rsz_impl",
