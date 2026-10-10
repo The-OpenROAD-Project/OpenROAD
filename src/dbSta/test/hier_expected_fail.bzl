@@ -310,18 +310,6 @@ CONFORMANCE_EXPECTED_FAIL = [
             "wb_sta_reader_module_shadows_cell_after.v",
         ],
     ),
-    # The flat writer drops sub_module's `assign out_bus = in_bus[3:2];`
-    # entirely, leaving sub_out_bus undriven and taking top_out_bus[1] and
-    # top_out_single with it (SEC coverage 4/6). The hier path emits the assigns
-    # correctly.
-    xfail(
-        path = "flat",
-        mode = "partial",
-        symptom = "flat write drops a submodule bus-slice feedthrough assign, leaving two top outputs undriven",
-        netlists = [
-            "get_ports1.v",
-        ],
-    ),
     # The flat writer builds an instance name by joining the hierarchy path with
     # '/' and escapes the result, so the path instance `x` -> instance `y` is
     # emitted as `\x/y ` -- colliding with an instance whose name is literally
@@ -335,18 +323,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         symptom = "flat write emits a duplicate instance name when an escaped identifier collides with a synthesized hierarchy path",
         netlists = [
             "escaped_name_path_collision.v",
-        ],
-    ),
-    # The hier writer hoists MOD0's internal feedthrough (`assign Z_b = Z_a;`)
-    # into the parent as `assign port_a = net1;`. port_a is already driven by
-    # mod0.Z_a, so the emitted netlist has two drivers on it. The flat path is
-    # clean.
-    xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "hier write adds a duplicate driver on an already-driven output port",
-        netlists = [
-            "TestInsertBuffer_BeforeLoads_Case33_post.v",
         ],
     ),
     # Not an OpenROAD defect. Under dual_rail_steady the oracle refuses any pair
@@ -658,41 +634,12 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         mode = "partial",
-        symptom = "SEC coverage 25.00%",
-        netlists = [
-            "getports_wholein.v",
-            "gp_bitassign_top.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "partial",
-        symptom = "SEC coverage 33.33%",
-        netlists = [
-            "gp_no_bus_ft.v",
-            "gp_no_scalar_ft.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "partial",
-        symptom = "SEC coverage 33.33%",
-        netlists = [
-            "sub_three_outs_one_driver.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "partial",
         symptom = "SEC coverage 50.00%",
         netlists = [
             "bx_bus_geometry_concat_const_mix.v",
             "bx_bus_geometry_const_gatepin_top.v",
             "bx_bus_geometry_const_scalar_port.v",
             "bx_constants_mixed_cell_literal.v",
-            "getports_nocell.v",
-            "min_ft_one_read_only.v",
-            "nameorder_wire_before.v",
             "wb_dbsta_link_supply_net_hier_boundary.v",
         ],
     ),
@@ -710,17 +657,7 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_constants_esc_subzero_net_buf.v",
             "bx_constants_mixed_cell_literal.v",
             "bx_constants_sub_tiehi_sibling.v",
-            "sub_two_outs_one_driver.v",
-            "sub_two_outs_one_to_gate.v",
             "wb_dbsta_link_supply_net_hier_boundary.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "partial",
-        symptom = "SEC coverage 60.00%",
-        netlists = [
-            "busslice_same_in_two_outs.v",
         ],
     ),
     xfail(
@@ -729,8 +666,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         symptom = "SEC coverage 66.67%",
         netlists = [
             "bx_constants_assign_out_bitsel.v",
-            "getports_bitassign.v",
-            "getports_replica.v",
         ],
     ),
     xfail(
@@ -739,17 +674,7 @@ CONFORMANCE_EXPECTED_FAIL = [
         symptom = "SEC coverage 66.67%",
         netlists = [
             "bx_constants_assign_out_bitsel.v",
-            "fanout_two_subs.v",
-            "sub_in_to_two_outs.v",
             "wb_writer_nc_drift_captures_user_net.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "partial",
-        symptom = "SEC coverage 80.00%",
-        netlists = [
-            "overlap_rhs_sub.v",
         ],
     ),
     xfail(
@@ -1064,24 +989,10 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         mode = "tool-error",
-        symptom = "SEC cannot run on this design pair - Missing observed output expression for `197.0.`",
-        netlists = [
-            "nameorder_out_before_in.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "tool-error",
         symptom = "SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
         netlists = [
             "bx_dangling_positional_inv_live.v",
             "bx_dangling_positional_leaf_live.v",
-            "gp_full_inbus.v",
-            "gp_no_topin_in_concat.v",
-            "nameorder_busslice.v",
-            "nameorder_deep_chain.v",
-            "nameorder_h_before_i.v",
-            "nameorder_minimal_repro.v",
             "wb_sta_reader_supply_tie.v",
         ],
     ),
@@ -1090,9 +1001,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         mode = "tool-error",
         symptom = "SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
         netlists = [
-            "sub_out_from_out.v",
-            "sub_out_from_out_bus.v",
-            "sub_out_from_out_deep3.v",
             "wb_dbnetwork_overlay_depth0_escslash_rename_port.v",
             "wb_dbnetwork_overlay_netname_erase_overshoot_port.v",
             "wb_sta_reader_supply_tie.v",
@@ -2868,24 +2776,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "wb_dbsta_link_alias_name_after_port.v",
             "wb_dbsta_link_alias_name_before_port.v",
             "wb_writer_hier_input_alias_orphan.v",
-        ],
-    ),
-    structural_xfail(
-        path = "hier",
-        check = "assigns",
-        symptom = "an extra continuous assign is added",
-        netlists = [
-            "busslice_same_in_two_outs.v",
-            "fanout_two_subs.v",
-            "inherited/TestInsertBuffer_BeforeLoads_Case33_post.v",
-            "overlap_rhs_sub.v",
-            "sub_in_to_two_outs.v",
-            "sub_out_from_out.v",
-            "sub_out_from_out_bus.v",
-            "sub_out_from_out_deep3.v",
-            "sub_three_outs_one_driver.v",
-            "sub_two_outs_one_driver.v",
-            "sub_two_outs_one_to_gate.v",
         ],
     ),
     structural_xfail(

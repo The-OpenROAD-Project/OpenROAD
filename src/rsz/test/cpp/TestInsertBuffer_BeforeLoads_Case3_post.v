@@ -10,6 +10,7 @@ module top (in,
     .in(n1));
  BUF_X4 new_buf22 (.A(n2),
     .Z(out));
+ assign n1 = in;
 endmodule
 module MOD0 (out,
     in);
@@ -25,4 +26,5 @@ module MOD0 (out,
  BUF_X4 new_buf11 (.A(n1),
     .Z(net1));
  assign out = n2;
+ assign n1 = in;
 endmodule
