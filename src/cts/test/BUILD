@@ -45,6 +45,7 @@ COMPULSORY_TESTS = [
     "lvt_lib",
     "max_cap",
     "max_wl_two_sinks",
+    "multi_mode",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",

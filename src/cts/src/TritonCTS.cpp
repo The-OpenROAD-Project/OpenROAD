@@ -151,12 +151,14 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   float tempFanout;
   bool existMaxFanout;
 
-  // Check if top instance has fanout limit
+  // Get the tightest limit for the design across all modes.
   sta::Cell* top_cell = network_->cell(network_->topInstance());
-  openSta_->cmdMode()->sdc()->fanoutLimit(
-      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+  for (sta::Mode* mode : openSta_->modes()) {
+    mode->sdc()->fanoutLimit(
+        top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
@@ -175,28 +177,34 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return (existMaxFanout) ? fanout : 0;
+    return fanout == std::numeric_limits<int>::max() ? 0 : fanout;
   }
 
-  auto sdc = openSta_->cmdMode()->sdc();
+  // Get the tightest limit for the buffer across all modes.
+  for (sta::Mode* mode : openSta_->modes()) {
+    sta::Sdc* sdc = mode->sdc();
 
-  sdc->fanoutLimit(buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+    sdc->fanoutLimit(
+        buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
+
+    sdc->fanoutLimit(
+        bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
-  sdc->fanoutLimit(bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
-  }
-
+  // Get the tightest limit from liberty, falling back to the library default.
   sta::LibertyPort* port = network_->libertyPort(buffer_port);
   port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
   if (existMaxFanout) {
     fanout = std::min(fanout, (int) tempFanout);
   } else {
     port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
-    if ((existMaxFanout)) {
+    if (existMaxFanout) {
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
@@ -339,15 +347,24 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
-  auto sdc = openSta_->cmdMode()->sdc();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
       if (!isSink(iterm)) {
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
-          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
-              && !sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
+          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()) {
+            bool isLeafPin = false;
+            sta::Pin* staPin = network_->dbToSta(outputPin);
+            for (sta::Mode* mode : openSta_->modes()) {
+              if (mode->sdc()->isLeafPinClock(staPin)) {
+                isLeafPin = true;
+                break;
+              }
+            }
+            if (isLeafPin) {
+              continue;
+            }
             if (clockBuilder == nullptr
                 && net2builder_[clkInputNet] != nullptr) {
               initOneClockTree(outputNet,
@@ -1248,20 +1265,36 @@ void TritonCTS::populateTritonCTS()
     allClkNets.insert(clockNets.begin(), clockNets.end());
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
-    staClockNets_ = openSta_->findClkNets();
-    sta::Sdc* sdc = openSta_->cmdMode()->sdc();
-    for (auto clk : sdc->clocks()) {
-      std::string clkName = clk->name();
-      odb::PtrSet<odb::dbNet> clkNets;
-      findClockRoots(clk, clkNets);
-      for (auto net : clkNets) {
-        if (allClkNets.find(net) != allClkNets.end()) {
-          logger_->error(
-              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+    staClockNets_.clear();
+    for (sta::Mode* mode : openSta_->modes()) {
+      odb::PtrSet<odb::dbNet> modeStaClkNets = openSta_->findClkNets(mode);
+      staClockNets_.insert(modeStaClkNets.begin(), modeStaClkNets.end());
+    }
+    for (sta::Mode* mode : openSta_->modes()) {
+      sta::Sdc* sdc = mode->sdc();
+      // Modes share clock roots, so overlap is an error only within a mode.
+      odb::PtrSet<odb::dbNet> modeClkNets;
+      for (auto clk : sdc->clocks()) {
+        std::string clkName = clk->name();
+        odb::PtrSet<odb::dbNet> clkNets;
+        findClockRoots(clk, clkNets);
+        odb::PtrSet<odb::dbNet> newClkNets;
+        for (auto net : clkNets) {
+          if (modeClkNets.find(net) != modeClkNets.end()) {
+            logger_->error(
+                CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+          }
+          if (allClkNets.find(net) == allClkNets.end()) {
+            newClkNets.insert(net);
+          }
         }
+        modeClkNets.insert(clkNets.begin(), clkNets.end());
+        if (newClkNets.empty()) {
+          continue;
+        }
+        clockNetsInfo.emplace_back(newClkNets, clkName);
+        allClkNets.insert(newClkNets.begin(), newClkNets.end());
       }
-      clockNetsInfo.emplace_back(clkNets, clkName);
-      allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
   // Seed with all existing instance positions to prevent clones from
