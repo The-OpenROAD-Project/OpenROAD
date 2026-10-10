@@ -1061,6 +1061,7 @@ void dbBox::destroy(dbBox* box)
       pin->removeBox(db_box);
       _dbBlock* block = (_dbBlock*) pin->getOwner();
       block->remove_rect(db_box->shape_.rect);
+      dbProperty::destroyProperties(db_box);
       block->box_tbl_->destroy(db_box);
       break;
     }
@@ -1070,6 +1071,7 @@ void dbBox::destroy(dbBox* box)
         // Only remove if this box is the halo box
         inst->halo_ = 0;
         _dbBlock* block = (_dbBlock*) inst->getOwner();
+        dbProperty::destroyProperties(db_box);
         block->box_tbl_->destroy(db_box);
       }
       return;

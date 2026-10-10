@@ -395,7 +395,11 @@ void dbObstruction::destroy(dbObstruction* obstruction)
     callback->inDbObstructionDestroy(obstruction);
   }
   dbProperty::destroyProperties(obs);
+  _dbBox* box = block->box_tbl_->getPtr(obs->bbox_);
+  dbProperty::destroyProperties(box);
+  block->box_tbl_->destroy(box);
   block->obstruction_tbl_->destroy(obs);
+  block->flags_.valid_bbox = 0;
 }
 
 dbSet<dbObstruction>::iterator dbObstruction::destroy(
