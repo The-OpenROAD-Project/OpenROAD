@@ -85,6 +85,7 @@ or_integration_tests(
     simple09
     simple10
     edge_spacing
+    eco_legalize
     # optimization
     aes-opt
     blockage1-opt
