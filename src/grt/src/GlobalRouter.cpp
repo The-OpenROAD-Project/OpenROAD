@@ -529,6 +529,7 @@ void GlobalRouter::globalRoute(bool save_guides)
 
       routes_ = findRouting(nets, min_layer, max_layer);
     }
+    routeSecondaryPowerNets();
   } catch (...) {
     updateDbCongestion();
     saveCongestion();
@@ -840,6 +841,130 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   }
 
   return routes;
+}
+
+void GlobalRouter::routeSecondaryPowerNets()
+{
+  for (odb::dbNet* db_net : block_->getNets()) {
+    if (!isSecondaryPowerNet(db_net)) {
+      continue;
+    }
+
+    logger_->info(utl::GRT,
+                  999,
+                  "Routing secondary power net {} to nearest strap.",
+                  db_net->getName());
+
+    GRoute& route = routes_[db_net];
+    route.clear();
+
+    Net* net = db_net_map_[db_net];
+    if (!net) {
+      continue;
+    }
+
+    for (Pin& pin : net->getPins()) {
+      odb::Point pin_pt = pin.getPosition();
+      int pin_level = pin.getConnectionLayer();
+      if (pin_level < 1) {
+        continue;
+      }
+
+      // Find the closest point on any SWire box
+      odb::Point closest_pt;
+      int closest_swire_level = -1;
+      int64_t min_dist = std::numeric_limits<int64_t>::max();
+
+      for (auto swire : db_net->getSWires()) {
+        for (auto box : swire->getWires()) {
+          if (box->isVia()) {
+            continue;
+          }
+          odb::dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer->isBackside()) {
+            continue;
+          }
+          int swire_level = tech_layer->getRoutingLevel();
+          odb::Rect rect = box->getBox();
+
+          int closest_x = std::clamp(pin_pt.x(), rect.xMin(), rect.xMax());
+          int closest_y = std::clamp(pin_pt.y(), rect.yMin(), rect.yMax());
+          odb::Point pt(closest_x, closest_y);
+
+          int64_t dist = std::abs(pin_pt.x() - closest_x)
+                         + std::abs(pin_pt.y() - closest_y);
+          // Prefer straps closer in routing layers
+          const int64_t kLayerPenalty = db_->getTech()->getDbUnitsPerMicron();
+          dist += kLayerPenalty * std::abs(pin_level - swire_level);
+
+          if (dist < min_dist) {
+            min_dist = dist;
+            closest_pt = pt;
+            closest_swire_level = swire_level;
+          }
+        }
+      }
+
+      if (closest_swire_level == -1) {
+        logger_->warn(
+            utl::GRT,
+            998,
+            "No matching strap found for pin {} of secondary power net {}.",
+            pin.getName(),
+            db_net->getName());
+        continue;
+      }
+
+      odb::Point pin_grid_pt = getPositionOnGrid(pin_pt);
+      odb::Point closest_grid_pt = getPositionOnGrid(closest_pt);
+
+      // Add via stack from pin layer to strap layer at pin position
+      int min_l = std::min(pin_level, closest_swire_level);
+      int max_l = std::max(pin_level, closest_swire_level);
+      for (int l = min_l; l < max_l; ++l) {
+        route.emplace_back(pin_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           l,
+                           pin_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           l + 1);
+      }
+
+      // Add planar routing on strap layer to closest_pt on strap
+      if (pin_grid_pt.x() != closest_grid_pt.x()) {
+        route.emplace_back(pin_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           closest_swire_level,
+                           closest_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           closest_swire_level);
+      }
+      if (pin_grid_pt.y() != closest_grid_pt.y()) {
+        route.emplace_back(closest_grid_pt.x(),
+                           pin_grid_pt.y(),
+                           closest_swire_level,
+                           closest_grid_pt.x(),
+                           closest_grid_pt.y(),
+                           closest_swire_level);
+      }
+
+      // Also add via stack at closest_grid_pt
+      for (int l = min_l; l < max_l; ++l) {
+        route.emplace_back(closest_grid_pt.x(),
+                           closest_grid_pt.y(),
+                           l,
+                           closest_grid_pt.x(),
+                           closest_grid_pt.y(),
+                           l + 1);
+      }
+      route.emplace_back(closest_grid_pt.x(),
+                         closest_grid_pt.y(),
+                         closest_swire_level,
+                         closest_grid_pt.x(),
+                         closest_grid_pt.y(),
+                         closest_swire_level);
+    }
+  }
 }
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
@@ -3493,7 +3618,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
                            db_net->getConstName());
           }
 
-          if (net->isLocal() || (isCoveringPin(net, segment))) {
+          if (net->isLocal() || (isCoveringPin(net, segment))
+              || isSecondaryPowerNet(db_net)) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
@@ -5096,6 +5222,9 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 
   std::vector<Net*> non_clk_nets;
   for (auto [ignored, net] : db_net_map_) {
+    if (isSecondaryPowerNet(net->getDbNet())) {
+      continue;
+    }
     bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
     if (!is_non_leaf_clock) {
       non_clk_nets.push_back(net);
@@ -5123,10 +5252,22 @@ void GlobalRouter::findClockNets(const std::vector<Net*>& nets,
   }
 }
 
+bool GlobalRouter::isSecondaryPowerNet(odb::dbNet* db_net) const
+{
+  // A secondary power net is a supply net with pre-routed power straps (SWires)
+  // and specific cell ITerms/BTerms (e.g. level shifter secondary power pin).
+  // We check !isWildConnected() to exclude main power grid nets (VDD/VSS) which
+  // use wildcard connections (e.g. '* VDD') or global_connect.
+  return db_net->getSigType().isSupply() && !db_net->getSWires().empty()
+         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty())
+         && !db_net->isWildConnected();
+}
+
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
-  if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
-      && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
+  if ((!db_net->getSigType().isSupply() && !db_net->isSpecial()
+       && db_net->getSWires().empty() && !db_net->isConnectedByAbutment())
+      || isSecondaryPowerNet(db_net)) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
     if (db_net_map_.contains(db_net)) {
       delete db_net_map_[db_net];
