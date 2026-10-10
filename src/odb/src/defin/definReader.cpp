@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -93,6 +94,28 @@ int calculateBitsForCellInScandef(const int bits, dbInst* inst)
   }
   // the default number of bits for combinational logic is 0
   return 0;
+}
+
+// DEF requires an integer for value; a malformed file still converts as
+// before, by truncation, but the user is told.
+void warnIfNotInteger(utl::Logger* logger,
+                      const char* statement,
+                      const char* name,
+                      const char* field,
+                      const double value)
+{
+  if (value != std::trunc(value)) {
+    logger->warn(utl::ODB,
+                 1221,
+                 "{} {}: {} ({}) is not an integer and is truncated to {} "
+                 "(line {}).",
+                 statement,
+                 name,
+                 field,
+                 value,
+                 static_cast<int>(value),
+                 DefParser::defrLineNumber());
+  }
 }
 
 dbITerm* findScanITerm(definReader* reader,
@@ -665,6 +688,8 @@ int definReader::gcellGridCallback(
   definReader* reader = (definReader*) data;
   defDirection dir = (grid->macro()[0] == 'X') ? DEF_X : DEF_Y;
 
+  warnIfNotInteger(
+      reader->_logger, "GCELLGRID", grid->macro(), "space", grid->xStep());
   reader->_gcellR->gcell(dir, grid->x(), grid->xNum(), grid->xStep());
 
   return PARSE_OK;
@@ -1299,17 +1324,23 @@ int definReader::rowCallback(DefParser::defrCallbackType_e /* unused: type */,
       dir = DEF_HORIZONTAL;
       num_sites = row->xNum();
       if (row->hasDoStep()) {
+        warnIfNotInteger(
+            reader->_logger, "ROW", row->name(), "stepX", row->xStep());
         spacing = row->xStep();
       }
     } else {
       dir = DEF_VERTICAL;
       num_sites = row->yNum();
       if (row->hasDoStep()) {
+        warnIfNotInteger(
+            reader->_logger, "ROW", row->name(), "stepY", row->yStep());
         spacing = row->yStep();
       }
     }
   }
 
+  warnIfNotInteger(reader->_logger, "ROW", row->name(), "origX", row->x());
+  warnIfNotInteger(reader->_logger, "ROW", row->name(), "origY", row->y());
   rowR->begin(row->name(),
               row->macro(),
               row->x(),
@@ -1482,6 +1513,8 @@ int definReader::trackCallback(DefParser::defrCallbackType_e /* unused: type */,
   CHECKBLOCK
 
   defDirection dir = track->macro()[0] == 'X' ? DEF_X : DEF_Y;
+  warnIfNotInteger(
+      reader->_logger, "TRACKS", track->macro(), "space", track->xStep());
   reader->_tracksR->tracksBegin(dir,
                                 track->x(),
                                 track->xNum(),
@@ -1509,6 +1542,13 @@ int definReader::unitsCallback(DefParser::defrCallbackType_e type,
     UNSUPPORTED(
         fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) is "
                     "greater than the database units per micron ({}) value.",
+                    d,
+                    reader->_tech->getDbUnitsPerMicron()));
+  } else if (std::fmod(reader->_tech->getDbUnitsPerMicron(), d) != 0) {
+    UNSUPPORTED(
+        fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) does "
+                    "not evenly divide the database units per micron ({}) "
+                    "value.",
                     d,
                     reader->_tech->getDbUnitsPerMicron()));
   }
