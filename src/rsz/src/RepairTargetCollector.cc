@@ -380,6 +380,10 @@ void RepairTargetCollector::updatePinData(const sta::Pin* pin, pinData& pd)
 
 int RepairTargetCollector::repairsPerPass(int max_repairs_per_pass)
 {
+  if (max_repairs_per_pass <= 0) {
+    return 0;
+  }
+
   sta::Slack min_viol_ = -sta::INF;
   sta::Slack max_viol_ = 0;
   if (!violating_endpoints_.empty()) {
@@ -393,6 +397,7 @@ int RepairTargetCollector::repairsPerPass(int max_repairs_per_pass)
     repairs_per_pass
         += std::round((max_repairs_per_pass - 1) * (-path_slack - min_viol_)
                       / (max_viol_ - min_viol_));
+    repairs_per_pass = std::clamp(repairs_per_pass, 1, max_repairs_per_pass);
   }
 
   return repairs_per_pass;

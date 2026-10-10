@@ -9,6 +9,8 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -30,6 +32,17 @@ bool MoveGenerator::weakerCellFirst(const sta::LibertyCell* lhs,
                                     const std::string& drvr_port_name,
                                     const int lib_ap_index) const
 {
+  return weakerCellFirst(
+      lhs, rhs, drvr_port_name, lib_ap_index, nullptr, sta::MinMax::max());
+}
+
+bool MoveGenerator::weakerCellFirst(const sta::LibertyCell* lhs,
+                                    const sta::LibertyCell* rhs,
+                                    const std::string& drvr_port_name,
+                                    const int lib_ap_index,
+                                    const sta::RiseFall* drvr_rf,
+                                    const sta::MinMax* min_max) const
+{
   const sta::LibertyPort* lhs_port
       = findScenePort(lhs, drvr_port_name, lib_ap_index);
   const sta::LibertyPort* rhs_port
@@ -41,14 +54,18 @@ bool MoveGenerator::weakerCellFirst(const sta::LibertyCell* lhs,
     return lhs->name() < rhs->name();
   }
 
-  const float lhs_drive_resistance = lhs_port->driveResistance();
-  const float rhs_drive_resistance = rhs_port->driveResistance();
+  const float lhs_drive_resistance = lhs_port->driveResistance(drvr_rf, min_max);
+  const float rhs_drive_resistance = rhs_port->driveResistance(drvr_rf, min_max);
+  const float lhs_max_drive_resistance = lhs_port->driveResistance();
+  const float rhs_max_drive_resistance = rhs_port->driveResistance();
   const sta::ArcDelay lhs_intrinsic
-      = lhs_port->intrinsicDelay(resizer_.staState());
+      = lhs_port->intrinsicDelay(drvr_rf, min_max, resizer_.staState());
   const sta::ArcDelay rhs_intrinsic
-      = rhs_port->intrinsicDelay(resizer_.staState());
-  return std::tie(lhs_drive_resistance, lhs_intrinsic)
-         > std::tie(rhs_drive_resistance, rhs_intrinsic);
+      = rhs_port->intrinsicDelay(drvr_rf, min_max, resizer_.staState());
+  return std::tie(
+             lhs_drive_resistance, lhs_max_drive_resistance, lhs_intrinsic)
+         > std::tie(
+             rhs_drive_resistance, rhs_max_drive_resistance, rhs_intrinsic);
 }
 
 }  // namespace rsz

@@ -13,16 +13,16 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.162 |       -4.1 |     32 | _869_/D
-     783* |      28 |      56 |       33 |      1 |    17 |    +8.2% |   -0.079 |       -2.0 |     32 | _880_/D
-    final |      28 |      56 |       33 |      1 |    17 |    +8.2% |   -0.079 |       -2.0 |     32 | _880_/D
+     365* |      30 |      65 |       40 |      2 |    25 |   +11.5% |   -0.074 |       -2.2 |     32 | _874_/D
+    final |      30 |      66 |       40 |      2 |    25 |   +11.6% |   -0.074 |       -2.2 |     32 | _874_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 28 buffers.
-[INFO RSZ-0040] Inserted 33 buffers.
-[INFO RSZ-0051] Resized 56 instances: 56 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 17 instances.
-[INFO RSZ-0049] Cloned 1 instances.
+[INFO RSZ-0059] Removed 30 buffers.
+[INFO RSZ-0040] Inserted 40 buffers.
+[INFO RSZ-0051] Resized 66 instances: 66 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 25 instances.
+[INFO RSZ-0049] Cloned 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 2.784951e-03 W
-Post-ECO: WNS=  -0.079   TNS=  -2.001   Area=     740 um^2   Power= 3.192202e-03 W
-Delta:    WNS=   0.083   TNS=   2.060   Area=     +56 um^2   Power=+4.072513e-04 W
+Post-ECO: WNS=  -0.074   TNS=  -2.202   Area=     763 um^2   Power= 3.268382e-03 W
+Delta:    WNS=   0.088   TNS=   1.859   Area=     +79 um^2   Power=+4.834312e-04 W
 pass

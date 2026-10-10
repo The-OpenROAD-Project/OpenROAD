@@ -1,0 +1,233 @@
+library (TestResizerSkewVt) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  leakage_power_unit : "1nW";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit (1, pf);
+
+  input_threshold_pct_rise : 50.0;
+  input_threshold_pct_fall : 50.0;
+  output_threshold_pct_rise : 50.0;
+  output_threshold_pct_fall : 50.0;
+  slew_lower_threshold_pct_rise : 20.0;
+  slew_lower_threshold_pct_fall : 20.0;
+  slew_upper_threshold_pct_rise : 80.0;
+  slew_upper_threshold_pct_fall : 80.0;
+
+  lu_table_template (cap_table) {
+    variable_1 : total_output_net_capacitance;
+    index_1 ("0.0, 1.0");
+  }
+
+  cell (SKEW_BUF_D1_RVT) {
+    area : 1.0;
+    cell_footprint : skew_buf;
+    user_function_class : skew_buf;
+    cell_leakage_power : 10.0;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.01;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 10.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (cap_table) {
+          values ("0.10, 0.37");
+        }
+        cell_fall (cap_table) {
+          values ("0.08, 0.29");
+        }
+        rise_transition (cap_table) {
+          values ("0.0, 2.70");
+        }
+        fall_transition (cap_table) {
+          values ("0.0, 2.10");
+        }
+      }
+    }
+  }
+
+  cell (SKEW_BUF_SKRD2_RVT) {
+    area : 1.5;
+    cell_footprint : skew_buf;
+    user_function_class : skew_buf;
+    cell_leakage_power : 15.0;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.01;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 10.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (cap_table) {
+          values ("0.05, 0.16");
+        }
+        cell_fall (cap_table) {
+          values ("0.20, 0.405");
+        }
+        rise_transition (cap_table) {
+          values ("0.0, 2.00");
+        }
+        fall_transition (cap_table) {
+          values ("0.0, 2.05");
+        }
+      }
+    }
+  }
+
+  cell (SKEW_BUF_D2_RVT) {
+    area : 2.0;
+    cell_footprint : skew_buf;
+    user_function_class : skew_buf;
+    cell_leakage_power : 20.0;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.01;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 10.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (cap_table) {
+          values ("0.11, 0.38");
+        }
+        cell_fall (cap_table) {
+          values ("0.07, 0.27");
+        }
+        rise_transition (cap_table) {
+          values ("0.0, 2.50");
+        }
+        fall_transition (cap_table) {
+          values ("0.0, 2.00");
+        }
+      }
+    }
+  }
+
+  cell (SKEW_BUF_D2_LVT) {
+    area : 2.0;
+    cell_footprint : skew_buf;
+    user_function_class : skew_buf;
+    cell_leakage_power : 40.0;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.01;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 10.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (cap_table) {
+          values ("0.06, 0.185");
+        }
+        cell_fall (cap_table) {
+          values ("0.05, 0.145");
+        }
+        rise_transition (cap_table) {
+          values ("0.0, 1.25");
+        }
+        fall_transition (cap_table) {
+          values ("0.0, 0.95");
+        }
+      }
+    }
+  }
+
+  cell (SKEW_BUF_SKFD2_SLVT) {
+    area : 2.0;
+    cell_footprint : skew_buf;
+    user_function_class : skew_buf;
+    cell_leakage_power : 80.0;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.01;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 10.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (cap_table) {
+          values ("0.09, 0.33");
+        }
+        cell_fall (cap_table) {
+          values ("0.04, 0.13");
+        }
+        rise_transition (cap_table) {
+          values ("0.0, 2.40");
+        }
+        fall_transition (cap_table) {
+          values ("0.0, 0.90");
+        }
+      }
+    }
+  }
+
+  cell (SKEW_BUF_D3_RVT) {
+    area : 3.0;
+    cell_footprint : skew_buf;
+    user_function_class : skew_buf;
+    cell_leakage_power : 30.0;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.01;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 10.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (cap_table) {
+          values ("0.04, 0.13");
+        }
+        cell_fall (cap_table) {
+          values ("0.04, 0.11");
+        }
+        rise_transition (cap_table) {
+          values ("0.0, 0.90");
+        }
+        fall_transition (cap_table) {
+          values ("0.0, 0.70");
+        }
+      }
+    }
+  }
+}

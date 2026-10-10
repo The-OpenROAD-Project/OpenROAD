@@ -433,12 +433,18 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
 int SetupLegacyBase::repairBudget(const sta::Slack path_slack,
                                   const bool force_single_repair) const
 {
+  if (setup_context_.max_repairs_per_pass <= 0) {
+    return 0;
+  }
+
   int repairs_per_pass = 1;
   if (setup_context_.max_viol - setup_context_.min_viol != 0.0) {
     repairs_per_pass
         += std::round((setup_context_.max_repairs_per_pass - 1)
                       * (-path_slack - setup_context_.min_viol)
                       / (setup_context_.max_viol - setup_context_.min_viol));
+    repairs_per_pass
+        = std::clamp(repairs_per_pass, 1, setup_context_.max_repairs_per_pass);
   }
   return force_single_repair ? 1 : repairs_per_pass;
 }

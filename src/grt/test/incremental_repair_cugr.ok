@@ -126,19 +126,19 @@ delta HPWL                    0 %
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.311 |       -8.4 |     32 | _884_/D
-     361* |      55 |     131 |       47 |      0 |    20 |   +17.2% |   -0.142 |       -3.8 |     32 | _863_/D
-    final |      55 |     135 |       47 |      0 |    20 |   +17.5% |   -0.142 |       -3.8 |     32 | _863_/D
+     383* |      55 |     142 |       39 |      0 |    22 |   +18.4% |   -0.145 |       -3.8 |     32 | _864_/D
+    final |      55 |     143 |       39 |      0 |    22 |   +19.3% |   -0.143 |       -3.8 |     32 | _864_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 55 buffers.
-[INFO RSZ-0040] Inserted 47 buffers.
-[INFO RSZ-0051] Resized 135 instances: 135 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 20 instances.
+[INFO RSZ-0040] Inserted 39 buffers.
+[INFO RSZ-0051] Resized 143 instances: 143 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 22 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 845.35 um^2
+[INFO DPL-0007] Movable instances area: 858.38 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
-[INFO DPL-0009] Utilization: 14.2%
+[INFO DPL-0009] Utilization: 14.4%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 [INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
@@ -146,7 +146,7 @@ delta HPWL                    0 %
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 678 cells
+[INFO DPL-0393]   height 1 row(s): 670 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -156,12 +156,12 @@ Negotiation phase 1 converged at iteration 1.
 Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
-total moves                 374
-total displacement         79.2 u
+total moves                 358
+total displacement         76.5 u
 average displacement        0.1 u
-max displacement            2.8 u
-original HPWL            7035.0 u
-legalized HPWL           7045.2 u
+max displacement            3.4 u
+original HPWL            7015.5 u
+legalized HPWL           7026.9 u
 delta HPWL                    0 %
 
 [INFO ANT-0002] Found 0 net violations.

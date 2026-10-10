@@ -14,6 +14,8 @@
 namespace sta {
 class LibertyCell;
 class LibertyPort;
+class MinMax;
+class RiseFall;
 }  // namespace sta
 
 namespace rsz {
@@ -109,6 +111,12 @@ class MoveGenerator
                        const sta::LibertyCell* rhs,
                        const std::string& drvr_port_name,
                        int lib_ap_index) const;
+  bool weakerCellFirst(const sta::LibertyCell* lhs,
+                       const sta::LibertyCell* rhs,
+                       const std::string& drvr_port_name,
+                       int lib_ap_index,
+                       const sta::RiseFall* drvr_rf,
+                       const sta::MinMax* min_max) const;
 
   // === Shared generator dependencies =======================================
   Resizer& resizer_;
