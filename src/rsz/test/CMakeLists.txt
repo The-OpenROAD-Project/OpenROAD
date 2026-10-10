@@ -39,6 +39,7 @@ or_integration_tests(
     swap_pins_dont_touch
     rebuffer1
     rebuffer1_hier
+    rebuffer_size_driver
     recover_power_verbose
     remove_buffers_hier1
     remove_buffers1

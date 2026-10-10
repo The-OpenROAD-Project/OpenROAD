@@ -48,6 +48,7 @@ TESTS = [
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
+    "rebuffer_size_driver",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",

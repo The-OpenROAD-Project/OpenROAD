@@ -65,6 +65,31 @@ class Rebuffer : public sta::dbStaState
   std::tuple<sta::Delay, sta::Delay, sta::Slew> drvrPinTiming(
       const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
+  // Slack at the driver pin if the driver were resized to `cell`, including
+  // the extra delay a larger input capacitance adds to the previous stage.
+  // Empty when `cell` has no equivalent arc or violates slew limits.
+  std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
+                                                sta::LibertyCell* cell);
+  // False when resizing the driver to `cell` would slow the previous stage
+  // enough to push one of its other loads below both its current slack and
+  // `slack_limit`.
+  bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
+  // Pick the smallest (tree + driver) area among the candidate trees and the
+  // driver's swappable cells whose slack meets `slack_target`, the target the
+  // tree search used with the current driver.  Returns the chosen tree and
+  // sets `chosen_cell`; returns nullptr when no combination meets the target.
+  BufferedNetPtr chooseTreeAndDriver(const std::vector<BufferedNetPtr>& trees,
+                                     sta::LibertyCell* current_cell,
+                                     FixedDelay slack_target,
+                                     sta::LibertyCell*& chosen_cell);
+  // With -rebuffer_size_driver, choose between `area_tree` and alternative
+  // trees derived from `timing_tree`, each with every size of the driver of
+  // `drvr_pin`, and resize the driver when that wins.  Returns the tree to
+  // export.
+  BufferedNetPtr sizeDriverWithTree(const sta::Pin* drvr_pin,
+                                    const BufferedNetPtr& timing_tree,
+                                    const BufferedNetPtr& area_tree,
+                                    FixedDelay slack_target);
   std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
                                            // Only used for debug print.
                                            int index);
@@ -185,6 +210,13 @@ class Rebuffer : public sta::dbStaState
   static constexpr float relaxation_factor_ = 0.01;
 
   double long_wire_stepping_runtime_ = 0;
+
+  // Choose the driver size together with the buffer tree in fullyRebuffer
+  // (set_opt_config -rebuffer_size_driver).
+  bool size_driver_ = false;
+  int driver_resize_count_ = 0;
+  double size_ra_runtime_ = 0;
+  double size_eval_runtime_ = 0;
 
   friend class rsz::BufferCandidate;
   friend class rsz::SetupLegacyBase;
