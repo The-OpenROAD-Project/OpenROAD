@@ -10,4 +10,4 @@
 # .github/workflows/github-actions-on-master-push.yml, otherwise //:fix_lint
 # and CI disagree on how the same file should be formatted. Update them
 # together.
-black==26.5.1
+black==26.10.1
