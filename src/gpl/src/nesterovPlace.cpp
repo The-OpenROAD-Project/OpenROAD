@@ -1402,15 +1402,7 @@ void NesterovPlace::updateNextIter(int iter)
 
 void NesterovPlace::updateDb()
 {
-  // The GPU device-resident density pipeline leaves host GCell coords
-  // stale during the hot loop; refresh them before writing to the DB.
-  for (auto& nb : nbVec_) {
-    nb->pullCoordsFromDevice();
-  }
-  nbc_->updateDbGCells();
-  for (auto& nb : nbVec_) {
-    nb->updateDbIoPins();
-  }
+  updateDbGCellsAndIoPins(*nbc_, nbVec_);
 }
 
 // divergence detection on

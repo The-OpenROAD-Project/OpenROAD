@@ -102,12 +102,6 @@ proc global_placement { args } {
     if { [info exists flags(-skip_nesterov_place)] } {
       utl::error GPL 182 "-place_ios cannot be used with -skip_nesterov_place placement."
     }
-    if { [info exists flags(-timing_driven)] } {
-      utl::error GPL 179 "-place_ios cannot be used with -timing_driven placement."
-    }
-    if { [info exists flags(-routability_driven)] } {
-      utl::error GPL 181 "-place_ios cannot be used with -routability_driven placement."
-    }
   }
 
   if { [info exists flags(-incremental)] } {
@@ -120,6 +114,111 @@ proc global_placement { args } {
     }
   }
   gpl::replace_reset_cmd
+}
+
+# The settings live in block properties, so they persist with the design.
+# place_pins and global_placement -place_ios read the IO pin settings.
+sta::define_cmd_args "set_place_config" {[-io_pin_hor_layers h_layers]\
+                                         [-io_pin_ver_layers v_layers]\
+                                         [-io_pin_corner_avoidance distance]\
+                                         [-io_pin_min_distance min_dist]\
+                                         [-io_pin_min_distance_in_tracks]}
+
+proc set_place_config { args } {
+  sta::parse_key_args "set_place_config" args \
+    keys {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance -io_pin_min_distance} \
+    flags {-io_pin_min_distance_in_tracks}
+  sta::check_argc_eq0 "set_place_config" $args
+
+  set block [gpl::place_config_block]
+  set in_tracks [info exists flags(-io_pin_min_distance_in_tracks)]
+  if { $in_tracks && ![info exists keys(-io_pin_min_distance)] } {
+    utl::error GPL 192 \
+      "-io_pin_min_distance_in_tracks requires -io_pin_min_distance."
+  }
+
+  set hor_layers {}
+  set ver_layers {}
+  if { [info exists keys(-io_pin_hor_layers)] } {
+    set hor_layers $keys(-io_pin_hor_layers)
+  }
+  if { [info exists keys(-io_pin_ver_layers)] } {
+    set ver_layers $keys(-io_pin_ver_layers)
+  }
+  ppl::check_io_pin_layers $hor_layers $ver_layers
+  if { [info exists keys(-io_pin_hor_layers)] } {
+    gpl::set_place_prop $block String io_pin_hor_layers $hor_layers
+  }
+  if { [info exists keys(-io_pin_ver_layers)] } {
+    gpl::set_place_prop $block String io_pin_ver_layers $ver_layers
+  }
+  if { [info exists keys(-io_pin_corner_avoidance)] } {
+    gpl::set_place_prop $block Int io_pin_corner_avoidance \
+      [ord::microns_to_dbu $keys(-io_pin_corner_avoidance)]
+  }
+  if { [info exists keys(-io_pin_min_distance)] } {
+    set min_dist $keys(-io_pin_min_distance)
+    if { !$in_tracks } {
+      set min_dist [ord::microns_to_dbu $min_dist]
+    }
+    gpl::set_place_prop $block Int io_pin_min_distance $min_dist
+    gpl::set_place_prop $block Bool io_pin_min_distance_in_tracks $in_tracks
+  }
+}
+
+sta::define_cmd_args "reset_place_config" {[-io_pin_hor_layers]\
+                                           [-io_pin_ver_layers]\
+                                           [-io_pin_corner_avoidance]\
+                                           [-io_pin_min_distance]}
+
+proc reset_place_config { args } {
+  sta::parse_key_args "reset_place_config" args \
+    keys {} \
+    flags {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance \
+      -io_pin_min_distance}
+  sta::check_argc_eq0 "reset_place_config" $args
+
+  set block [gpl::place_config_block]
+  set reset_all [expr { [array size flags] == 0 }]
+  foreach { flag props } {
+    -io_pin_hor_layers {String io_pin_hor_layers}
+    -io_pin_ver_layers {String io_pin_ver_layers}
+    -io_pin_corner_avoidance {Int io_pin_corner_avoidance}
+    -io_pin_min_distance {Int io_pin_min_distance Bool io_pin_min_distance_in_tracks}
+  } {
+    if { $reset_all || [info exists flags($flag)] } {
+      foreach { type name } $props {
+        gpl::clear_place_prop $block $type $name
+      }
+    }
+  }
+}
+
+sta::define_cmd_args "report_place_config" {}
+
+proc report_place_config { args } {
+  sta::parse_key_args "report_place_config" args keys {} flags {}
+  sta::check_argc_eq0 "report_place_config" $args
+
+  set block [gpl::place_config_block]
+  foreach name {io_pin_hor_layers io_pin_ver_layers} {
+    set value [gpl::get_place_prop $block String $name]
+    utl::report "$name: [expr { $value eq {} ? {unset} : $value }]"
+  }
+  set corner [gpl::get_place_prop $block Int io_pin_corner_avoidance]
+  if { $corner eq {} } {
+    utl::report "io_pin_corner_avoidance: unset"
+  } else {
+    utl::report "io_pin_corner_avoidance: [ord::dbu_to_microns $corner] um"
+  }
+  set min_dist [gpl::get_place_prop $block Int io_pin_min_distance]
+  if { $min_dist eq {} } {
+    utl::report "io_pin_min_distance: unset"
+  } elseif { [gpl::get_place_prop $block Bool io_pin_min_distance_in_tracks] } {
+    utl::report "io_pin_min_distance: $min_dist tracks"
+  } else {
+    utl::report "io_pin_min_distance: [ord::dbu_to_microns $min_dist] um"
+  }
 }
 
 sta::define_cmd_args "cluster_flops" {\
@@ -293,6 +392,39 @@ proc estimate_target_density { args } {
 }
 
 namespace eval gpl {
+proc place_config_block { } {
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GPL 192 "No design block found."
+  }
+  return $block
+}
+
+# type is String, Int or Bool. The property names are read by ppl.
+proc set_place_prop { block type name value } {
+  set prop [odb::db${type}Property_find $block "place_config_$name"]
+  if { $prop eq "NULL" } {
+    odb::db${type}Property_create $block "place_config_$name" $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc get_place_prop { block type name } {
+  set prop [odb::db${type}Property_find $block "place_config_$name"]
+  if { $prop eq "NULL" } {
+    return {}
+  }
+  return [$prop getValue]
+}
+
+proc clear_place_prop { block type name } {
+  set prop [odb::db${type}Property_find $block "place_config_$name"]
+  if { $prop ne "NULL" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 114 "No design block found."

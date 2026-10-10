@@ -313,7 +313,7 @@ void RouteBase::init()
 void RouteBase::getGrtResult()
 {
   // update gCells' location to DB for GR
-  nbc_->updateDbGCells();
+  updateDbGCellsAndIoPins(*nbc_, nbVec_);
 
   // these two options must be on
   grouter_->setAllowCongestion(true);
@@ -638,7 +638,7 @@ void RouteBase::updateTileInflationRatio(Tile* tile, float ratio) const
 
 void RouteBase::calculateRudyTiles()
 {
-  nbc_->updateDbGCells();
+  updateDbGCellsAndIoPins(*nbc_, nbVec_);
   grt::Rudy* rudy = grouter_->getRudy();
   rudy->calculateRudy();
   tg_->setNumRoutingLayers(0);

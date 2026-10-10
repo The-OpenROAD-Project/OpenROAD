@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -78,6 +79,63 @@ void IOPlacer::clear()
   pin_size_cache_.clear();
   spacing_cache_.clear();
   *parms_ = Parameters();
+}
+
+PinPlacementSettings IOPlacer::getSettings() const
+{
+  PinPlacementSettings settings;
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return settings;
+  }
+  auto read_layers = [&](const char* name, std::set<int>& layers) {
+    odb::dbStringProperty* prop = odb::dbStringProperty::find(block, name);
+    if (prop == nullptr) {
+      return;
+    }
+    std::istringstream names(prop->getValue());
+    std::string layer_name;
+    while (names >> layer_name) {
+      odb::dbTechLayer* layer = getTech()->findLayer(layer_name.c_str());
+      if (layer != nullptr) {
+        layers.insert(layer->getRoutingLevel());
+      }
+    }
+  };
+  read_layers("place_config_io_pin_hor_layers", settings.hor_layers);
+  read_layers("place_config_io_pin_ver_layers", settings.ver_layers);
+  if (auto prop = odb::dbIntProperty::find(
+          block, "place_config_io_pin_corner_avoidance")) {
+    settings.corner_avoidance = prop->getValue();
+  }
+  if (auto prop
+      = odb::dbIntProperty::find(block, "place_config_io_pin_min_distance")) {
+    settings.min_distance = prop->getValue();
+  }
+  if (auto prop = odb::dbBoolProperty::find(
+          block, "place_config_io_pin_min_distance_in_tracks")) {
+    settings.min_distance_in_tracks = prop->getValue();
+  }
+  return settings;
+}
+
+// Fill the working values the caller did not set from set_place_config.
+void IOPlacer::applySettings()
+{
+  const PinPlacementSettings settings = getSettings();
+  if (hor_layers_.empty()) {
+    hor_layers_ = settings.hor_layers;
+  }
+  if (ver_layers_.empty()) {
+    ver_layers_ = settings.ver_layers;
+  }
+  if (parms_->getCornerAvoidance() < 0) {
+    parms_->setCornerAvoidance(settings.corner_avoidance);
+  }
+  if (parms_->getMinDistance() == 0) {
+    parms_->setMinDistance(settings.min_distance);
+    parms_->setMinDistanceInTracks(settings.min_distance_in_tracks);
+  }
 }
 
 void IOPlacer::clearConstraints()
@@ -180,9 +238,8 @@ std::string IOPlacer::getSlotsLocation(Edge edge, bool top_layer)
   return slots_location;
 }
 
-int IOPlacer::placeFallbackPins()
+void IOPlacer::placeFallbackGroupsFirstFit()
 {
-  int placed_pins_cnt = 0;
   // place groups in fallback mode
   for (const auto& group : fallback_pins_.groups) {
     bool constrained_group = false;
@@ -268,7 +325,17 @@ int IOPlacer::placeFallbackPins()
       placeFallbackGroup(group, place_slot);
     }
   }
+}
 
+int IOPlacer::placeFallbackPins()
+{
+  if (netlist_->getMinimizeDisplacement()) {
+    placeFallbackGroupsNearInitial();
+  } else {
+    placeFallbackGroupsFirstFit();
+  }
+
+  int placed_pins_cnt = 0;
   for (const auto& group : fallback_pins_.groups) {
     placed_pins_cnt += group.first.size();
   }
@@ -387,6 +454,97 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
   }
 
   return place_slot;
+}
+
+// Place each group where it moves least. If that leaves no room for a later
+// group, undo and fall back to first-fit.
+void IOPlacer::placeFallbackGroupsNearInitial()
+{
+  const std::vector<Slot> slots = slots_;
+  const size_t assigned = assignment_.size();
+  for (const auto& group : fallback_pins_.groups) {
+    const bool have_mirrored
+        = std::ranges::any_of(group.first, [&](const int pin_idx) {
+            return netlist_->getIoPin(pin_idx).isMirrored();
+          });
+    odb::dbBTerm* bterm = netlist_->getIoPin(group.first[0]).getBTerm();
+    int first_slot = 0;
+    int last_slot = slots_.size() - 1;
+    for (const Constraint& constraint : constraints_) {
+      if (constraint.pin_list.contains(bterm)) {
+        first_slot = constraint.first_slot;
+        last_slot = constraint.last_slot;
+        break;
+      }
+    }
+    const int place_slot = findGroupSlotNearInitial(
+        group.first, first_slot, last_slot, have_mirrored);
+    if (place_slot == -1) {
+      slots_ = slots;
+      assignment_.erase(assignment_.begin() + assigned, assignment_.end());
+      placeFallbackGroupsFirstFit();
+      return;
+    }
+    placeFallbackGroup(group, place_slot);
+  }
+}
+
+// Start of the free run where the group, mirrored pins included, moves least
+int IOPlacer::findGroupSlotNearInitial(const std::vector<int>& group,
+                                       const int first_slot,
+                                       const int last_slot,
+                                       const bool check_mirrored)
+{
+  // Not getSlotIdxByPosition: it scans linearly and errors on a missing slot.
+  std::map<std::tuple<int, int, int>, int> slot_at;
+  if (check_mirrored) {
+    for (int i = 0; i < slots_.size(); ++i) {
+      slot_at.try_emplace(
+          {slots_[i].layer, slots_[i].pos.x(), slots_[i].pos.y()}, i);
+    }
+  }
+  auto available = [&](const int s) {
+    if (!slots_[s].isAvailable()) {
+      return false;
+    }
+    if (!check_mirrored) {
+      return true;
+    }
+    const odb::Point mirrored = core_->getMirroredPosition(slots_[s].pos);
+    const auto it = slot_at.find({slots_[s].layer, mirrored.x(), mirrored.y()});
+    return it != slot_at.end() && slots_[it->second].isAvailable();
+  };
+
+  const int size = group.size();
+  int best = -1;
+  int64_t best_cost = std::numeric_limits<int64_t>::max();
+  int free_run = 0;
+  for (int s = first_slot; s <= last_slot; ++s) {
+    free_run = available(s) ? free_run + 1 : 0;
+    if (free_run < size) {
+      continue;
+    }
+    const int start = s - size + 1;
+    // Same pin order as placeFallbackGroup.
+    const Edge edge = slots_[start].edge;
+    const bool reverse = edge == Edge::top || edge == Edge::left;
+    int64_t cost = 0;
+    for (int i = 0; i < size && cost < best_cost; ++i) {
+      const IOPin& pin = netlist_->getIoPin(group[reverse ? size - 1 - i : i]);
+      const odb::Point& to = slots_[start + i].pos;
+      cost += odb::Point::manhattanDistance(to, pin.getInitialPosition());
+      if (pin.getBTerm()->hasMirroredBTerm()) {
+        cost += odb::Point::manhattanDistance(
+            core_->getMirroredPosition(to),
+            netlist_->getIoPin(pin.getMirrorPinIdx()).getInitialPosition());
+      }
+    }
+    if (cost < best_cost) {
+      best_cost = cost;
+      best = start;
+    }
+  }
+  return best;
 }
 
 void IOPlacer::placeFallbackGroup(
@@ -906,7 +1064,7 @@ int64_t IOPlacer::computeIncrease(int min_dist,
 {
   const bool dist_in_tracks = parms_->getMinDistanceInTracks();
   const int user_min_dist = parms_->getMinDistance();
-  if (dist_in_tracks) {
+  if (dist_in_tracks && user_min_dist != 0) {
     min_dist *= user_min_dist;
   } else if (user_min_dist != 0) {
     min_dist
@@ -943,7 +1101,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
     for (auto it = slots.begin(); it != slots.end();) {
       odb::Point pos = *it;
       bool valid_slot;
-      if (!min_dist_in_tracks) {
+      if (!min_dist_in_tracks || min_dst_pins == 0) {
         // If user-defined min distance is not in tracks, use this value to
         // determine if slots are valid between each other.
         valid_slot = pos == last
@@ -1518,7 +1676,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
       for (int pin_idx : io_group) {
         IOPin& pin = net->getIoPin(pin_idx);
         bool has_mirrored_pin = pin.getBTerm()->hasMirroredBTerm();
-        int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
+        int pin_hpwl = net->computeIOCost(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
@@ -1678,8 +1836,12 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
     std::vector<int> used_slots(sections.size());
 
     for (int i = 0; i < sections.size(); i++) {
-      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, sections[i].pos);
-      const int mirrored_pin_cost = getMirroredPinCost(io_pin, sections[i].pos);
+      const odb::Point pos
+          = netlist_->getMinimizeDisplacement()
+                ? nearestFreeSlot(sections[i], io_pin.getInitialPosition())
+                : sections[i].pos;
+      const int io_net_hpwl = netlist_->computeIOCost(idx, pos);
+      const int mirrored_pin_cost = getMirroredPinCost(io_pin, pos);
       dst[i] = io_net_hpwl + mirrored_pin_cost;
 
       if (has_mirrored_pin) {
@@ -1705,6 +1867,30 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
   return pin_assigned;
 }
 
+// Sections of several layers overlap along an edge, so a section's middle slot
+// says little about how far it is from a pin that is already placed.
+odb::Point IOPlacer::nearestFreeSlot(const Section& section,
+                                     const odb::Point& p) const
+{
+  if (section.edge == Edge::invalid) {
+    return section.pos;  // top-layer sections index top_layer_slots_
+  }
+  odb::Point best = section.pos;
+  int64_t best_dist = std::numeric_limits<int64_t>::max();
+  for (int i = section.begin_slot; i <= section.end_slot; ++i) {
+    const Slot& slot = slots_[i];
+    if (!slot.isAvailable()) {
+      continue;
+    }
+    const int64_t d = odb::Point::manhattanDistance(slot.pos, p);
+    if (d < best_dist) {
+      best_dist = d;
+      best = slot.pos;
+    }
+  }
+  return best;
+}
+
 void IOPlacer::assignMirroredPinToSection(IOPin& io_pin)
 {
   odb::dbBTerm* mirrored_term = io_pin.getBTerm()->getMirroredBTerm();
@@ -1719,7 +1905,7 @@ int IOPlacer::getMirroredPinCost(IOPin& io_pin, const odb::Point& position)
 {
   if (io_pin.getBTerm()->hasMirroredBTerm()) {
     odb::Point mirrored_pos = core_->getMirroredPosition(position);
-    return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
+    return netlist_->computeIOCost(io_pin.getMirrorPinIdx(), mirrored_pos);
   }
   return 0;
 }
@@ -1750,6 +1936,9 @@ void IOPlacer::printConfig(bool annealing)
   }
   if (!annealing) {
     logger_->info(PPL, 5, "Slots per section         {}", slots_per_section_);
+  }
+  if (netlist_->getMinimizeDisplacement()) {
+    logger_->info(PPL, 7, "Displacement minimization enabled");
   }
 }
 
@@ -2454,11 +2643,44 @@ void IOPlacer::updateSlots()
   }
 }
 
-void IOPlacer::runHungarianMatching()
+// The free slots the next run would use, for gpl -place_ios.
+std::vector<SlotPosition> IOPlacer::buildSlotGrid()
+{
+  slots_.clear();
+  top_layer_slots_.clear();
+  excluded_intervals_.clear();
+
+  // Not a run: leave the caller's state as it was for the run that follows.
+  const Parameters parms = *parms_;
+  const std::set<int> hor_layers = hor_layers_;
+  const std::set<int> ver_layers = ver_layers_;
+  applySettings();
+
+  slots_per_section_ = parms_->getSlotsPerSection();
+  initExcludedIntervals();
+  initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegions();
+  defineSlots();
+
+  std::vector<SlotPosition> out;
+  out.reserve(slots_.size());
+  for (const Slot& slot : slots_) {
+    out.push_back({slot.pos, slot.layer, slot.edge, slot.blocked});
+  }
+  clear();
+  *parms_ = parms;
+  hor_layers_ = hor_layers;
+  ver_layers_ = ver_layers;
+  return out;
+}
+
+void IOPlacer::runHungarianMatching(bool minimize_displacement)
 {
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
 
+  applySettings();
   slots_per_section_ = parms_->getSlotsPerSection();
+  netlist_->setMinimizeDisplacement(minimize_displacement);
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegions();
@@ -2547,6 +2769,31 @@ void IOPlacer::runHungarianMatching()
                    netlist_->numIOPins());
   }
 
+  if (netlist_->getMinimizeDisplacement()
+      && logger_->debugCheck(PPL, "displacement", 1)) {
+    int moved = 0;
+    int64_t total = 0;
+    int64_t worst = 0;
+    for (const IOPin& pin : assignment_) {
+      const odb::Point& from = pin.getInitialPosition();
+      const int64_t d = odb::Point::manhattanDistance(pin.getPosition(), from);
+      if (d > 0) {
+        ++moved;
+        total += d;
+        worst = std::max(worst, d);
+      }
+    }
+    debugPrint(logger_,
+               PPL,
+               "displacement",
+               1,
+               "Moved {} of {} pins, mean {:.2f} um, max {:.2f} um.",
+               moved,
+               assignment_.size(),
+               moved ? getBlock()->dbuToMicrons(total / moved) : 0.0,
+               getBlock()->dbuToMicrons(worst));
+  }
+
   reportHPWL();
 
   checkPinPlacement();
@@ -2597,10 +2844,12 @@ void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
   ioplacer_renderer_->setIsNoPauseMode(no_pause_mode);
 }
 
-void IOPlacer::runAnnealing()
+void IOPlacer::runAnnealing(bool minimize_displacement)
 {
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
+  applySettings();
   slots_per_section_ = parms_->getSlotsPerSection();
+  netlist_->setMinimizeDisplacement(minimize_displacement);
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegions();

@@ -158,6 +158,7 @@ target_link_libraries(gpl_lib
     dbSta_lib
     rsz_lib
     grt_lib
+    ppl
     ortools::ortools
     Threads::Threads
     OpenMP::OpenMP_CXX

@@ -216,6 +216,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-exclude region]\
                                   [-group_pins pin_list]\
                                   [-annealing] \
+                                  [-minimize_displacement] \
                                   [-write_pin_placement file_name]
 }
 
@@ -224,7 +225,7 @@ proc place_pins { args } {
   sta::parse_key_args "place_pins" args \
     keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
           -min_distance -write_pin_placement} \
-    flags {-random -min_distance_in_tracks -annealing}
+    flags {-random -min_distance_in_tracks -annealing -minimize_displacement}
 
   sta::check_argc_eq0 "place_pins" $args
 
@@ -260,18 +261,6 @@ proc place_pins { args } {
 
     utl::report "Found [llength $blockages] macro blocks."
 
-    if { [info exists keys(-hor_layers)] } {
-      set hor_layers $keys(-hor_layers)
-    } else {
-      utl::error PPL 17 "-hor_layers is required."
-    }
-
-    if { [info exists keys(-ver_layers)] } {
-      set ver_layers $keys(-ver_layers)
-    } else {
-      utl::error PPL 18 "-ver_layers is required."
-    }
-
     # set default interval_length from boundaries as 1u
     set distance 1
     if { [info exists keys(-corner_avoidance)] } {
@@ -281,6 +270,8 @@ proc place_pins { args } {
 
     set min_dist 2
     set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
+    ppl::check_min_distance_in_tracks $dist_in_tracks \
+      [info exists keys(-min_distance)]
     if { [info exists keys(-min_distance)] } {
       set min_dist $keys(-min_distance)
       if { $dist_in_tracks } {
@@ -289,8 +280,10 @@ proc place_pins { args } {
         ppl::set_min_distance [ord::microns_to_dbu $min_dist]
       }
     } else {
-      utl::report "Using $min_dist tracks default min distance between IO pins."
-      # setting min distance as 0u leads to the default min distance
+      if { [ppl::get_default_min_distance] == 0 } {
+        utl::report "Using $min_dist tracks default min distance between IO pins."
+      }
+      # 0 means unset: the run uses set_place_config's value or the default
       ppl::set_min_distance 0
     }
     ppl::set_min_distance_in_tracks $dist_in_tracks
@@ -301,44 +294,31 @@ proc place_pins { args } {
       utl::error PPL 19 "Design without pins."
     }
 
-
-    set num_tracks_y 0
-    foreach hor_layer_name $hor_layers {
-      set hor_layer [ppl::parse_layer_name $hor_layer_name]
-      if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-        utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer_name."
-      }
-
-      if { [$hor_layer getDirection] != "HORIZONTAL" } {
-        utl::error PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
-      }
-
-      set hor_track_grid [$dbBlock findTrackGrid $hor_layer]
-
-      set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
-
-      ppl::add_hor_layer $hor_layer
+    # Switches override set_place_config for this run only.
+    set hor_layers {}
+    set ver_layers {}
+    if { [info exists keys(-hor_layers)] } {
+      set hor_layers $keys(-hor_layers)
     }
-
-    set num_tracks_x 0
-    foreach ver_layer_name $ver_layers {
-      set ver_layer [ppl::parse_layer_name $ver_layer_name]
-      if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-        utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer_name."
-      }
-
-      if { [$ver_layer getDirection] != "VERTICAL" } {
-        utl::error PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
-      }
-
-      set ver_track_grid [$dbBlock findTrackGrid $ver_layer]
-
-      set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
-
-      ppl::add_ver_layer $ver_layer
+    if { [info exists keys(-ver_layers)] } {
+      set ver_layers $keys(-ver_layers)
     }
-
-    set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
+    set has_hor [expr { $hor_layers != {} || [ppl::has_default_layers true] }]
+    set has_ver [expr { $ver_layers != {} || [ppl::has_default_layers false] }]
+    if { !$has_hor && !$has_ver } {
+      utl::error PPL 26 "Both horizontal and vertical pin layers are required.\
+        Pass -hor_layers and -ver_layers, or set_place_config\
+        -io_pin_hor_layers and -io_pin_ver_layers."
+    }
+    if { !$has_hor } {
+      utl::error PPL 17 "-hor_layers or set_place_config -io_pin_hor_layers\
+        is required."
+    }
+    if { !$has_ver } {
+      utl::error PPL 18 "-ver_layers or set_place_config -io_pin_ver_layers\
+        is required."
+    }
+    ppl::set_io_pin_layers $hor_layers $ver_layers
 
     if { [llength $regions] != 0 } {
       set lef_units [$dbTech getLefUnits]
@@ -361,15 +341,54 @@ proc place_pins { args } {
       ppl::set_pin_placement_file $keys(-write_pin_placement)
     }
 
+    set minimize_displacement [info exists flags(-minimize_displacement)]
     if { [info exists flags(-annealing)] } {
-      ppl::run_annealing
+      ppl::run_annealing $minimize_displacement
     } else {
-      ppl::run_hungarian_matching
+      ppl::run_hungarian_matching $minimize_displacement
     }
   }
 }
 
 namespace eval ppl {
+proc check_min_distance_in_tracks { in_tracks has_min_distance } {
+  if { $in_tracks && !$has_min_distance } {
+    utl::error PPL 37 "-min_distance_in_tracks requires -min_distance."
+  }
+}
+
+# Checks every layer before adding any, so an error leaves no partial set.
+proc set_io_pin_layers { hor_layers ver_layers } {
+  foreach { dir layer } [check_io_pin_layers $hor_layers $ver_layers] {
+    ppl::add_${dir}_layer $layer
+  }
+}
+
+proc check_io_pin_layers { hor_layers ver_layers } {
+  set layers {}
+  foreach name $hor_layers {
+    set layer [ppl::parse_layer_name $name]
+    if { ![ord::db_layer_has_hor_tracks $layer] } {
+      utl::error PPL 21 "Horizontal routing tracks not found for layer $name."
+    }
+    if { [$layer getDirection] != "HORIZONTAL" } {
+      utl::error PPL 45 "Layer $name preferred direction is not horizontal."
+    }
+    lappend layers hor $layer
+  }
+  foreach name $ver_layers {
+    set layer [ppl::parse_layer_name $name]
+    if { ![ord::db_layer_has_ver_tracks $layer] } {
+      utl::error PPL 23 "Vertical routing tracks not found for layer $name."
+    }
+    if { [$layer getDirection] != "VERTICAL" } {
+      utl::error PPL 46 "Layer $name preferred direction is not vertical."
+    }
+    lappend layers ver $layer
+  }
+  return $layers
+}
+
 proc parse_edge { cmd edge } {
   if {
     $edge != "top" && $edge != "bottom" &&

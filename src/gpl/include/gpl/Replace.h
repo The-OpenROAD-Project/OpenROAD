@@ -16,6 +16,11 @@ namespace sta {
 class dbSta;
 }
 
+namespace ppl {
+class IOPlacer;
+struct SlotPosition;
+}  // namespace ppl
+
 namespace grt {
 class GlobalRouter;
 }
@@ -29,6 +34,8 @@ class Logger;
 }
 
 namespace gpl {
+
+struct NesterovBaseVars;
 
 class AbstractGraphics;
 class PlacerBaseCommon;
@@ -143,6 +150,7 @@ class Replace
           sta::dbSta* sta,
           rsz::Resizer* resizer,
           grt::GlobalRouter* router,
+          ppl::IOPlacer* pin_placer,
           utl::Logger* logger);
 
   ~Replace();
@@ -195,11 +203,14 @@ class Replace
   void reportHpwlMetric();
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
+  void initIoPinPlace(NesterovBaseVars& nbVars);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
   grt::GlobalRouter* fr_ = nullptr;
+  ppl::IOPlacer* pin_placer_ = nullptr;
+  std::vector<ppl::SlotPosition> io_slots_;
   utl::Logger* log_ = nullptr;
 
   std::unique_ptr<AbstractGraphics> graphics_;

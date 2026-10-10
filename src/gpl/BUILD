@@ -179,6 +179,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/odb/src/db",
+        "//src/ppl",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
