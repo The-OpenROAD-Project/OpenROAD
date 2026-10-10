@@ -785,10 +785,10 @@ class TileGenerator
   // defaults to die + 5% margin.  Each pixel starts at `bg` and the
   // (possibly semi-transparent) tiles are composited on top.  This is the
   // shared core of renderImagePng (which then PNG-encodes) and animated-GIF
-  // frame capture (which feeds the buffer to the GIF encoder).  Returns an
-  // empty buffer on error (no design / invalid dimensions).
-  // `out_width`/`out_height` receive the buffer's pixel dimensions, which
-  // the caller cannot predict: they follow from the region and the 16k
+  // frame capture (which feeds the buffer to the GIF encoder).  Raises
+  // (utl::Logger::error) with no design or nothing to frame; never returns
+  // empty.  `out_width`/`out_height` receive the buffer's pixel dimensions,
+  // which the caller cannot predict: they follow from the region and the 16k
   // clamp, not from `width_px` alone.
   std::vector<unsigned char> renderImageBuffer(const odb::Rect& region,
                                                int width_px,
@@ -799,7 +799,7 @@ class TileGenerator
                                                int* out_height = nullptr) const;
 
   // Render full design (or region) to PNG bytes, as renderImageBuffer does
-  // to raw pixels.  Returns an empty vector on error.
+  // to raw pixels.  Raises as it does, and on a failed encode.
   std::vector<unsigned char> renderImagePng(const odb::Rect& region,
                                             int width_px,
                                             double dbu_per_pixel,
@@ -812,7 +812,8 @@ class TileGenerator
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
   // `bg` fills the pixels the layers do not cover; it defaults to transparent,
   // so a caller that saves what a viewer shows passes that viewer's background
-  // (WebServer::saveImage does, for Qt save_image parity).
+  // (WebServer::saveImage does, for Qt save_image parity).  Raises as
+  // renderImagePng does, and when the file cannot be written.
   void saveImage(const std::string& filename,
                  const odb::Rect& region,
                  int width_px,

@@ -12,6 +12,16 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// The WebSocket for the page at `loc`, carrying the page's access token: the
+// server refuses the upgrade without it.
+export function websocketUrlFrom(loc) {
+    const scheme = loc?.protocol === 'https:' ? 'wss' : 'ws';
+    const host = loc?.host || 'localhost:8080';
+    const token = new URLSearchParams(loc?.search || '').get('token');
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${scheme}://${host}/ws${query}`;
+}
+
 // Serialize the layer/selectability visibility flags the way the server
 // parses them: each visibility key as a boolean, each selectability key with
 // an `s_` prefix.  Callers add request-specific fields (visible_layers,

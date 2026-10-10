@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -68,6 +71,134 @@ BindAddressKind classifyBindAddress(std::string_view address);
 // nobody is bound to.  IPv6 literals come back bracketed, ready for a URL.
 std::string browserHostForBind(const boost::asio::ip::address& address);
 
+// Whether serve() launches a browser on the machine it runs on.  kAuto skips it
+// where that browser would not be the user's (issue #11389).
+enum class BrowserLaunch
+{
+  kAuto,
+  kAlways,
+  kNever
+};
+
+// What the launch policy looks at, read by serve() and passed in so the policy
+// stays testable.  Owned strings: a later getenv() may invalidate earlier ones.
+struct BrowserEnv
+{
+  std::string ssh_connection;   // $SSH_CONNECTION
+  std::string ssh_client;       // $SSH_CLIENT
+  std::string display;          // $DISPLAY, X11 platforms only
+  std::string host_name;        // this machine, to read $DISPLAY against
+  std::string batch_job;        // first of $LSB_JOBID, $SLURM_JOB_ID, ...
+  std::string vscode_ipc_hook;  // $VSCODE_IPC_HOOK_CLI
+  std::string browser;          // $BROWSER
+  bool no_browser = false;      // $OPENROAD_NO_BROWSER
+  // $DISPLAY is a bare ":N" whose X socket this user owns (VNC, x2go).
+  bool own_local_display = false;
+  // $DISPLAY or $WAYLAND_DISPLAY set; always true off X11 platforms.
+  bool has_display = true;
+  // This machine's interface addresses, to read an IP in $DISPLAY against.
+  std::vector<boost::asio::ip::address> local_addresses;
+  bool wsl = false;  // $WSL_DISTRO_NAME: the X server is the Windows desktop
+};
+
+// True when $DISPLAY names an X server on another machine.  Socket paths,
+// loopback, this machine's name or addresses, and a container's host are local.
+bool displayIsRemote(
+    std::string_view display,
+    std::string_view host_name,
+    const std::vector<boost::asio::ip::address>& local_addresses = {});
+
+// The X socket of a bare ":N" or "unix:N" display, or "" for any other form.
+std::string localDisplaySocket(std::string_view display);
+
+// True when $BROWSER is VS Code's helpers/browser.sh, which opens a URL where
+// the editor runs.
+bool launchesThroughBrowserEnv(const BrowserEnv& env);
+
+// Why serve() is not launching a browser, so the message can say it without
+// restating the policy.
+enum class LaunchSkip
+{
+  kNone,
+  kFlag,           // -no_browser / -web_no_browser
+  kOptOut,         // OPENROAD_NO_BROWSER
+  kSshSession,     // driven from another machine over ssh
+  kBatchJob,       // a scheduler put this process on a farm host
+  kRemoteDisplay,  // $DISPLAY belongs to another machine (issue #11389)
+  kNoDisplay       // nowhere to draw at all
+};
+
+// Apply the kAuto policy, and say which clause decided.  kNone means launch.
+LaunchSkip browserLaunchSkipReason(BrowserLaunch mode, const BrowserEnv& env);
+
+// The reason, as a clause that reads inside "Not launching a browser here
+// (...)".  Empty for kNone.
+std::string_view browserSkipReasonText(LaunchSkip reason);
+
+// Parse the mode name web_server_cmd passes.  Anything unrecognized is kAuto:
+// the mode never keeps the server from starting.
+BrowserLaunch browserLaunchFromString(std::string_view mode);
+
+// How to reach the viewer from another machine, printed with WEB-0001: a tunnel
+// for a loopback bind, this host's url (`target` appended) for a wildcard one.
+std::string reachabilityHint(BindAddressKind kind,
+                             const boost::asio::ip::address& address,
+                             std::string_view host,
+                             uint16_t port,
+                             std::string_view target);
+
+// A fresh 128-bit hex token, gating every request that can reach the Tcl
+// interpreter (issue #11389).  Empty when the entropy source cannot be read.
+std::string generateAuthToken();
+
+// True if the `token` of a parsed query matches `expected`, compared in
+// constant time.  An empty `expected` matches nothing.
+bool tokenAllowed(const std::map<std::string, std::string>& params,
+                  std::string_view expected);
+
+// The same check straight off a request target, for the callers that have no
+// parsed query of their own (the WebSocket upgrade).
+bool requestTokenAllowed(std::string_view target, std::string_view expected);
+
+// The redirect for a redeemed ticket: the request's raw query with `ticket`
+// swapped for `token`, so viewer options like ?mergetiles=0 survive.
+std::string authRedirectTarget(std::string_view target, std::string_view token);
+
+// One server session's credentials: the token every gated request carries, and
+// a one-shot ticket that keeps the token off the browser's command line.
+class SessionAuth
+{
+ public:
+  SessionAuth(std::string token,
+              std::string ticket,
+              std::chrono::seconds ticket_ttl);
+
+  const std::string& token() const { return token_; }
+  const std::string& ticket() const { return ticket_; }
+
+  // True for the first caller that presents the live ticket, and only then:
+  // redeeming spends it, and an expired ticket is already spent.
+  bool redeemTicket(std::string_view candidate);
+
+  // Spend the ticket unredeemed: once its launch failed or was skipped, no
+  // browser of ours will ever present it.
+  void revokeTicket();
+
+  // True for the first refused WebSocket upgrade of this session only.
+  bool firstRejection() { return !rejected_.exchange(true); }
+
+ private:
+  const std::string token_;
+  const std::string ticket_;
+  std::atomic<bool> spent_{false};
+  std::atomic<bool> rejected_{false};
+  const std::chrono::steady_clock::time_point expiry_;
+};
+
+// How long a launch ticket stays redeemable.  Long enough for a cold browser
+// start, short enough that what `ps` saw stops working soon after.
+inline constexpr std::chrono::seconds kTicketTtl{300};
+
 // What serve() binds to when the caller passes no address.  Owned here so the
 // Tcl and command-line front ends cannot drift apart on the security default.
 inline constexpr const char* kDefaultBindAddress = "127.0.0.1";
@@ -95,7 +226,8 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight);
+    int max_in_flight,
+    std::shared_ptr<SessionAuth> auth);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
@@ -125,8 +257,11 @@ class WebServer
   // Start the web server on the given port, listening on `bind_address` — an
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
-  // a no-op if the server is already running.
-  void serve(int port, const std::string& bind_address);
+  // a no-op if the server is already running.  Logs the reason and throws if
+  // the server cannot start.
+  void serve(int port,
+             const std::string& bind_address,
+             BrowserLaunch launch = BrowserLaunch::kAuto);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }
@@ -302,6 +437,10 @@ class WebServer
 
   // Set by tclExitHandler when `exit` is run on a worker thread.
   bool exit_requested_ = false;
+
+  // Minted per serve() and cleared in stop(), so a restarted server does not
+  // honour the previous session's links.
+  std::shared_ptr<SessionAuth> auth_;
 
   // True once initLogger() registered the WebLogSink.  Lets serve() and
   // initLogger() be idempotent and lets stop() know the sink needs removing.

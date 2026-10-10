@@ -16,10 +16,10 @@
 namespace web {
 
 void
-web_server_cmd(int port, const char *bind_address)
+web_server_cmd(int port, const char *bind_address, const char *browser_mode)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
-  server->serve(port, bind_address);
+  server->serve(port, bind_address, web::browserLaunchFromString(browser_mode));
 }
 
 void

@@ -44,10 +44,17 @@ const STUCK_BYTES = 256 * 1024;
 const STUCK_MS = 12000;
 const DEAD_MS = 30000;
 const LIVENESS_INTERVAL_MS = 3000;
+// How long the session probe after a failed connect may take.
+const PROBE_TIMEOUT_MS = 5000;
 
 export class WebSocketManager {
-    constructor(url, onStatusChange) {
+    // `probeUrl`, when given, is fetched after a connect that never opened: a
+    // 401 there means the server minted a new token and retrying is futile.
+    constructor(url, onStatusChange, { probeUrl } = {}) {
         this.url = url;
+        this._probeUrl = probeUrl || null;
+        this._opened = false; // did the current connect() attempt open?
+        this._sessionEnded = false; // set when the probe got a 401
         this.socket = null;
         this.nextId = 1;
         this.pending = new Map(); // id -> {resolve, reject} — sent, still tracked
@@ -121,11 +128,13 @@ export class WebSocketManager {
             this.readyResolve = resolve;
         });
 
+        this._opened = false;
         this.socket = new WebSocket(this.url);
         this.socket.binaryType = 'arraybuffer';
 
         this.socket.onopen = () => {
             console.log('WebSocket connected');
+            this._opened = true;
             const isReconnect = this._everConnected === true;
             this._everConnected = true;
             this._isConnected = true;
@@ -178,9 +187,48 @@ export class WebSocketManager {
             this._stopLivenessMonitor(); // no socket will reopen
             return; // don't reconnect after intentional shutdown
         }
+        // The browser hides a refused handshake's status; the page shows it.
+        if (!this._opened && this._probeUrl) {
+            return this._probeSession();
+        }
+        this._scheduleReconnect();
+    }
+
+    _scheduleReconnect() {
         console.log('WebSocket closed, reconnecting...');
         setTimeout(() => this.connect(), this.reconnectDelay);
         this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
+    }
+
+    // A 401 on the page means this server now expects another token, so no
+    // reconnect can succeed; down, unreachable or anything else is retried.
+    async _probeSession() {
+        let status = 0;
+        // Not AbortSignal.timeout(): Safari before 16 lacks it.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+        try {
+            const resp = await fetch(this._probeUrl, {
+                cache: 'no-store',
+                signal: controller.signal,
+            });
+            status = resp.status;
+        } catch {
+            // down, unreachable or timed out: retried below
+        } finally {
+            clearTimeout(timer);
+        }
+        if (this._shutdown) {
+            return; // an intentional shutdown arrived while we waited
+        }
+        if (status === 401) {
+            this._sessionEnded = true;
+            this._shutdown = true;
+            this._stopLivenessMonitor();
+            this.onStatusChange();
+            return;
+        }
+        this._scheduleReconnect();
     }
 
     // Abandon a wedged socket and reconnect now, without waiting for close()

@@ -111,6 +111,37 @@ TEST_F(GifTest, EndWithoutFramesWritesNoFile)
   EXPECT_FALSE(std::filesystem::exists(path));
 }
 
+// A stream whose file cannot be opened is closed, not left half-open.
+TEST_F(GifTest, UnopenableFileClosesTheStream)
+{
+  WebServer server = makeServer();
+  const std::string path
+      = (std::filesystem::temp_directory_path()
+         / ("web_gif_no_dir_" + std::to_string(::getpid())) / "out.gif")
+            .string();
+
+  const int key = server.gifStart(path);
+  const odb::Rect area(0, 0, 0, 0);
+  EXPECT_ANY_THROW(server.gifAddFrame(key, area, 200, 0, 5, ""));
+  EXPECT_ANY_THROW(server.gifEnd(key));  // no active GIF for that key
+}
+
+// A full disk must not end in "Saved"; the frame may still sit in the stdio
+// buffer, so the failure has to surface by the end at the latest.
+TEST_F(GifTest, WriteFailureIsReportedNotSaved)
+{
+  if (!std::filesystem::exists("/dev/full")) {
+    GTEST_SKIP() << "needs /dev/full";
+  }
+  WebServer server = makeServer();
+  const int key = server.gifStart("/dev/full");
+  const odb::Rect area(0, 0, 0, 0);
+  EXPECT_ANY_THROW({
+    server.gifAddFrame(key, area, 200, 0, 5, "");
+    server.gifEnd(key);
+  });
+}
+
 TEST_F(GifTest, MultipleConcurrentStreamsGetDistinctKeys)
 {
   WebServer server = makeServer();

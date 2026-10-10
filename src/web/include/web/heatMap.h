@@ -458,6 +458,8 @@ HeatMapSourceHandle registerHeatMapSource(
     const HeatMapSourceRegistration::Factory& factory);
 std::vector<HeatMapSourceHandle> getRegisteredHeatMapSources();
 HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name);
+// The first registration of a short name wins for the process, so `sta` and
+// `logger` must outlive it.
 void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger);
 
 }  // namespace web

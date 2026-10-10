@@ -31,6 +31,7 @@ set(WEB_TESTS
   TestSaveDisplayControls
   TestGif
   TestHeatMap
+  TestSessionLifetime
 )
 
 foreach(test IN LISTS WEB_TESTS)
