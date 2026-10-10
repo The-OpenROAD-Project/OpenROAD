@@ -469,7 +469,11 @@ void DebugGui::drawShape(const Shape* shape, web::Painter& painter) const
     painter.saveState();
     painter.setPen(shape_color_, /* cosmetic */ true, kBoldMultiplier);
   }
-  painter.drawRect(shape->getShape());
+  if (const odb::Polygon* polygon = shape->getPolygon()) {
+    painter.drawPolygon(*polygon);
+  } else {
+    painter.drawRect(shape->getShape());
+  }
   if (bold) {
     painter.restoreState();
   }
