@@ -169,6 +169,15 @@ proc run_equivalence_test { test args } {
 #==============================================================================
 
 proc diff_files { file1 file2 { ignore "" } } {
+  # Under golden_regression_test (test/golden.bzl) the comparison happens
+  # in the test after the run; only record the pair so the log does not
+  # depend on the golden.
+  if { [info exists ::env(GOLDEN_MANIFEST)] } {
+    set stream [open $::env(GOLDEN_MANIFEST) a]
+    puts $stream [join [list [file tail $file1] [file tail $file2] $ignore] "\t"]
+    close $stream
+    return 0
+  }
   set stream1 [open $file1 r]
   set stream2 [open $file2 r]
 
