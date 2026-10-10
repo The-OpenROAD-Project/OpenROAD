@@ -472,6 +472,7 @@ test_suite(
         "//src/odb/test/cpp:TestGuide",
         "//src/odb/test/cpp:TestJournal",
         "//src/odb/test/cpp:TestLef58Properties",
+        "//src/odb/test/cpp:TestLefIn",
         "//src/odb/test/cpp:TestMaster",
         "//src/odb/test/cpp:TestModule",
         "//src/odb/test/cpp:TestNetTrack",

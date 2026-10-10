@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -44,6 +45,7 @@ using LefParser::lefrSetRelaxMode;
 ABSL_CONST_INIT absl::Mutex lefin::lef_mutex_(absl::kConstInit);
 
 extern bool lefin_parse(lefinReader*, utl::Logger*, const char*);
+extern int lefin_get_current_line();
 
 lefinReader::lefinReader(dbDatabase* db,
                          utl::Logger* logger,
@@ -67,6 +69,7 @@ lefinReader::lefinReader(dbDatabase* db,
       lib_name_(nullptr),
       dist_factor_(1000.0),
       area_factor_(1000000.0),
+      rounded_cnt_(0),
       dbu_per_micron_(1000),
       override_lef_dbu_(false),
       master_modified_(false),
@@ -88,6 +91,9 @@ void lefinReader::init()
   master_cnt_ = 0;
   via_cnt_ = 0;
   errors_ = 0;
+  rounded_cnt_ = 0;
+  rounding_example_.clear();
+  rounding_dbu_candidates_.clear();
 
   if (!override_lef_dbu_) {
     lef_units_ = 0;
@@ -1974,19 +1980,12 @@ void lefinReader::units(LefParser::lefiUnits* unit)
 }
 
 namespace {
+constexpr int kValidDBUPerMicron[] = {1000, 2000, 4000, 8000, 10000, 20000};
+
 bool isValidDBUPerMicron(int dbu)
 {
-  switch (dbu) {
-    case 1000:
-    case 2000:
-    case 4000:
-    case 8000:
-    case 10000:
-    case 20000:
-      return true;
-    default:
-      return false;
-  }
+  return std::ranges::find(kValidDBUPerMicron, dbu)
+         != std::end(kValidDBUPerMicron);
 }
 }  // namespace
 
@@ -2028,6 +2027,57 @@ void lefinReader::setDBUPerMicron(int dbu)
   dist_factor_ = dbu;
   dbu_per_micron_ = dbu;
   area_factor_ = dbu_per_micron_ * dbu_per_micron_;
+}
+
+int lefinReader::dbdist(double value)
+{
+  const double scaled = value * dist_factor_;
+  const int rounded = lround(scaled);
+  if (std::abs(scaled - rounded) > kWarnDistError) {
+    recordRounding(value, rounded, false);
+  }
+  return rounded;
+}
+
+int64_t lefinReader::dbarea(const double value)
+{
+  const double scaled = value * area_factor_;
+  const int64_t rounded = llround(scaled);
+  if (std::abs(scaled - rounded) > kWarnAreaError) {
+    recordRounding(value, rounded, true);
+  }
+  return rounded;
+}
+
+void lefinReader::recordRounding(double value, int64_t rounded, bool is_area)
+{
+  const char* power = is_area ? "^2" : "";
+  // Only formatted when needed, as debugPrint skips its arguments when off.
+  const auto describe = [&] {
+    return fmt::format("{} um{} -> {} DBU{} near line {}",
+                       value,
+                       power,
+                       rounded,
+                       power,
+                       lefin_get_current_line());
+  };
+  debugPrint(logger_, utl::ODB, "lef_rounding", 1, "Rounded {}", describe());
+
+  if (rounded_cnt_++ == 0) {
+    rounding_example_ = describe();
+    // Only multiples of the current grid keep the already exact values exact.
+    for (const int dbu : kValidDBUPerMicron) {
+      if (dbu > dbu_per_micron_ && dbu % dbu_per_micron_ == 0) {
+        rounding_dbu_candidates_.push_back(dbu);
+      }
+    }
+  }
+
+  std::erase_if(rounding_dbu_candidates_, [&](const int dbu) {
+    const double scaled = is_area ? value * dbu * dbu : value * dbu;
+    const double tolerance = is_area ? kWarnAreaError : kWarnDistError;
+    return std::abs(scaled - std::round(scaled)) > tolerance;
+  });
 }
 
 void lefinReader::useMinSpacing(LefParser::lefiUseMinSpacing* spacing)
@@ -2474,6 +2524,23 @@ bool lefinReader::readLefInner(const char* lef_file)
   }
 
   logger_->info(utl::ODB, 227, message);
+
+  if (rounded_cnt_ > 0) {
+    std::string hint = "No supported DBU/micron represents them exactly.";
+    if (!rounding_dbu_candidates_.empty()) {
+      hint = fmt::format("{} DBU/micron would represent them exactly.",
+                         rounding_dbu_candidates_.front());
+    }
+    logger_->warn(utl::ODB,
+                  1220,
+                  "LEF file: {}, rounded {} conversions that are not on the {} "
+                  "DBU/micron grid (first: {}). {}",
+                  lef_file,
+                  rounded_cnt_,
+                  dbu_per_micron_,
+                  rounding_example_,
+                  hint);
+  }
   return r;
 }
 
