@@ -32,8 +32,7 @@ build -c opt
 # Test binaries do not need cross-module inlining: with the two extra lines they
 # link shared non-LTO native objects (one backend per object, shared by every test)
 # instead of each getting its own LTO index and shard set. The feature only applies
-# to statically linked tests, hence --dynamic_mode=off. Declared in the toolchain by
-# bazel/llvm-patches.
+# to statically linked tests, hence --dynamic_mode=off.
 build:opt --copt=-O3
 build:opt --features=thin_lto
 build:opt --features=thin_lto_linkstatic_tests_use_shared_nonlto_backends
