@@ -1,0 +1,22 @@
+# An 8 x 4 register file, two read and two write ports, in two banks,
+# with word 0 reading zero, laid out for a parent that places its decode
+# (mode netlist).
+module rf8x4
+mode netlist
+words 8
+bits 4
+banks 2
+clock clock
+read r0_addr r0_data
+read r1_addr r1_data
+write w0_addr w0_data w0_en
+write w1_addr w1_data w1_en
+zero_word 0
+cell flop DFFHQNx1_ASAP7_75t_R
+cell and2 AND2x2_ASAP7_75t_R
+cell or2 OR2x2_ASAP7_75t_R
+cell ao22 AO22x2_ASAP7_75t_R
+cell inv INVx1_ASAP7_75t_R
+cell tap TAPCELL_ASAP7_75t_R
+pin_layer M4
+tap_columns 2

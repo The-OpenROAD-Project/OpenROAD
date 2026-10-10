@@ -13,9 +13,31 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "generate_regfile_asap7",
+    "generate_regfile_clock_gate_asap7",
+    "generate_regfile_modes_asap7",
+    "generate_regfile_reset_asap7",
+    "generate_regfile_reset_high_asap7",
+    "generate_regfile_sv_ports_asap7",
+    "generate_regfile_write_priority_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+# What every generate_regfile test reads: the asap7 cells, their
+# liberty for constant propagation, the base spec's module. Every test
+# but generate_regfile_asap7 (whose own glob has it) adds the spec.
+REGFILE_TEST_DATA = [
+    "asap7/asap7_tech_1x_201209.lef",
+    "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+    "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+    "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+    "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+    "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+    "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+    "generate_regfile_asap7_rtl.v",
+    "regfile_checks.tcl",
+]
 
 filegroup(
     name = "regression_resources",
@@ -51,6 +73,28 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "generate_regfile_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7_rtl_extra.v",
+            ],
+            "generate_regfile_clock_gate_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+            ],
+            "generate_regfile_modes_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+            ],
+            "generate_regfile_reset_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+            ],
+            "generate_regfile_reset_high_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+            ],
+            "generate_regfile_sv_ports_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+                "generate_regfile_sv_ports_asap7_rtl.sv",
+            ],
+            "generate_regfile_write_priority_asap7": REGFILE_TEST_DATA + [
+                "generate_regfile_asap7.regfile",
+            ],
             "make_7x7_2r1w_nangate45": [
                 "make_7x7_2r1w_nangate45_behavioral.vok",
                 "Nangate45/Nangate45.lef",
