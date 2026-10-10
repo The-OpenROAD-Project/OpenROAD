@@ -4,8 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbUnfoldedChipBumpInst.h"
 
-#include "dbChipBump.h"
-#include "dbChipBumpInst.h"
+#include "dbChipBTerm.h"
+#include "dbChipITerm.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
@@ -21,7 +21,7 @@ bool _dbUnfoldedChipBumpInst::operator==(
     const _dbUnfoldedChipBumpInst& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  if (chip_bump_inst_ != rhs.chip_bump_inst_) {
+  if (chip_iterm_ != rhs.chip_iterm_) {
     return false;
   }
   if (parent_region_ != rhs.parent_region_) {
@@ -48,7 +48,7 @@ _dbUnfoldedChipBumpInst::_dbUnfoldedChipBumpInst(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipBumpInst& obj)
 {
-  stream >> obj.chip_bump_inst_;
+  stream >> obj.chip_iterm_;
   stream >> obj.parent_region_;
   stream >> obj.region_next_;
   return stream;
@@ -56,7 +56,7 @@ dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipBumpInst& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipBumpInst& obj)
 {
-  stream << obj.chip_bump_inst_;
+  stream << obj.chip_iterm_;
   stream << obj.parent_region_;
   stream << obj.region_next_;
   return stream;
@@ -74,15 +74,14 @@ void _dbUnfoldedChipBumpInst::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-dbChipBumpInst* dbUnfoldedChipBumpInst::getChipBumpInst() const
+dbChipITerm* dbUnfoldedChipBumpInst::getChipITerm() const
 {
   _dbUnfoldedChipBumpInst* obj = (_dbUnfoldedChipBumpInst*) this;
-  if (obj->chip_bump_inst_ == 0) {
+  if (obj->chip_iterm_ == 0) {
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChipBumpInst*) par->chip_bump_inst_tbl_->getPtr(
-      obj->chip_bump_inst_);
+  return (dbChipITerm*) par->chip_iterm_tbl_->getPtr(obj->chip_iterm_);
 }
 
 dbUnfoldedChipRegionInst* dbUnfoldedChipBumpInst::getParentRegion() const
@@ -101,9 +100,9 @@ Point3D dbUnfoldedChipBumpInst::getGlobalPosition() const
 {
   _dbUnfoldedChipBumpInst* obj = (_dbUnfoldedChipBumpInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  dbChipBumpInst* bump_inst
-      = (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(obj->chip_bump_inst_);
-  dbInst* inst = bump_inst->getChipBump()->getInst();
+  dbChipITerm* bump_inst
+      = (dbChipITerm*) db->chip_iterm_tbl_->getPtr(obj->chip_iterm_);
+  dbInst* inst = bump_inst->getChipBTerm()->getInst();
   if (inst == nullptr) {
     return Point3D();
   }

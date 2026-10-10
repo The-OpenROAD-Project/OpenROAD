@@ -154,7 +154,7 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
       if (!bterm) {
         continue;
       }
-      dbChipBump* bump = bterm->getChipBump();
+      dbChipBTerm* bump = bterm->getChipBTerm();
       if (!bump) {
         continue;
       }
@@ -163,9 +163,9 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
         continue;
       }
 
-      for (auto bump_inst : region_inst->getChipBumpInsts()) {
-        if (bump_inst->getChipBump() == bump) {
-          chip_net->addBumpInst(bump_inst, {chip_inst});
+      for (auto bump_inst : region_inst->getChipITerms()) {
+        if (bump_inst->getChipBTerm() == bump) {
+          chip_net->addChipITerm(bump_inst, {chip_inst});
           break;
         }
       }
@@ -612,7 +612,7 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     }
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
-  auto bump = dbChipBump::create(chip_region, inst);
+  auto bump = dbChipBTerm::create(chip_region, inst);
   const int dbu_per_micron = db_->getDbuPerMicron();
 
   Rect bbox;

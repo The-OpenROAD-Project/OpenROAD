@@ -1341,7 +1341,7 @@ proc report_3dic_summary { args } {
   # every placement (spare/reserved pads included -- often the majority).
   set connected_bump_count 0
   foreach n $chip_nets {
-    incr connected_bump_count [$n getNumBumpInsts]
+    incr connected_bump_count [$n getNumChipITerms]
   }
   set bump_pad_count 0
   foreach ci $chip_insts {
@@ -1350,7 +1350,7 @@ proc report_3dic_summary { args } {
       continue
     }
     foreach region [$master getChipRegions] {
-      incr bump_pad_count [llength [$region getChipBumps]]
+      incr bump_pad_count [llength [$region getChipBTerms]]
     }
   }
   utl::report "3DIC summary for chip [$chip getName]:"
