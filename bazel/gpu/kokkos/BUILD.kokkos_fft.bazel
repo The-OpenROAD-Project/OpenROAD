@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@openroad//bazel/gpu/kokkos:configure.bzl", "kokkos_fft_config")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# KokkosFFT_config.hpp, written at build time from the backend list in
+# configure.bzl. It matches a KokkosFFT CMake configure with
+# KokkosFFT_ENABLE_FFTW=ON (gpl runs its FFTs on the host).
+#
+# Unlike KokkosFFT's CMake, this does not link FFTW's OpenMP/threads library:
+# @fftw does not build one. A plan on Kokkos::DefaultHostExecutionSpace
+# (Kokkos::OpenMP here) calls fftw_init_threads and would fail to link, so
+# host FFTs must use Kokkos::Serial (see src/gpl/src/gpu/dct.cpp).
+kokkos_fft_config(name = "config")
+
+cc_library(
+    name = "kokkos_fft",
+    hdrs = glob([
+        "common/src/**/*.hpp",
+        "fft/src/**/*.hpp",
+    ]),
+    includes = [
+        "common/src",
+        "fft/src",
+    ],
+    deps = [
+        ":config",
+        "@cuda_local//:cufft",
+        "@fftw",
+        "@kokkos",
+    ],
+)
