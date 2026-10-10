@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
+[WARNING ODB-1220] LEF file: array_tile_ins_delay.lef, rounded 11 conversions that are not on the 2000 DBU/micron grid (first: 0.000467 um -> 1 DBU near line 15). No supported DBU/micron represents them exactly.
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 281 components and 1681 component-terminals.

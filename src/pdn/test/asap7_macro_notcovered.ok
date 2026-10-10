@@ -1,4 +1,5 @@
 [INFO ODB-0227] LEF file: asap7_vias/asap7_tech_1x.lef, created 25 layers, 9 vias
+[WARNING ODB-1220] LEF file: asap7_vias/asap7_tech_1x.lef, rounded 32 conversions that are not on the 1000 DBU/micron grid (first: 0.01825 um -> 18 DBU near line 100). 4000 DBU/micron would represent them exactly.
 [INFO ODB-0227] LEF file: asap7_vias/asap7sc7p5t_27_R_1x.lef, created 212 library cells
 [INFO ODB-0227] LEF file: asap7_data/fakeram7_256x32_notcovered.lef, created 1 library cells
 [INFO ODB-0128] Design: riscv_top
