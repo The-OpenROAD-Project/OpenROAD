@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -437,17 +438,9 @@ TEST(geom, test_boost_merge_polygons_rects)
   ASSERT_EQ(overlapping.size(), 1);
   EXPECT_TRUE(overlapping[0].isRect());
   EXPECT_EQ(overlapping[0].getEnclosingRect(), Rect(0, 0, 100, 100));
-  // the seams where the inputs met survive as collinear vertices, so a
-  // merged rect carries more than four points
   EXPECT_EQ(corners(overlapping[0]),
-            (std::vector<Point>{Point(0, 0),
-                                Point(0, 100),
-                                Point(40, 0),
-                                Point(40, 100),
-                                Point(60, 0),
-                                Point(60, 100),
-                                Point(100, 0),
-                                Point(100, 100)}));
+            (std::vector<Point>{
+                Point(0, 0), Point(0, 100), Point(100, 0), Point(100, 100)}));
 
   // a union that is not itself a rect keeps its outline rather than
   // collapsing to the bounding box
@@ -458,7 +451,6 @@ TEST(geom, test_boost_merge_polygons_rects)
   EXPECT_EQ(l_shape[0].getEnclosingRect(), Rect(0, 0, 100, 100));
   EXPECT_EQ(corners(l_shape[0]),
             (std::vector<Point>{Point(0, 0),
-                                Point(0, 50),
                                 Point(0, 100),
                                 Point(50, 50),
                                 Point(50, 100),
@@ -563,12 +555,33 @@ TEST(geom, test_boost_merge_polygons_polygons)
                 Polygon(Rect(90, 90, 100, 100)), l_shape})),
             (std::vector<Rect>{Rect(0, 0, 100, 100), Rect(90, 90, 100, 100)}));
 
-  // the same shapes merge the same way whether they arrive as Rects or as
-  // Polygons
+  // Merging rectangles does not keep co-linear points around while merging
+  // Polygons do.
   const std::vector<Rect> rects{Rect(0, 0, 100, 50), Rect(0, 50, 50, 100)};
-  EXPECT_EQ(geom::mergePolygons(rects),
-            geom::mergePolygons(
-                std::vector<Polygon>{Polygon(rects[0]), Polygon(rects[1])}));
+  const std::vector<Polygon> polys_from_rects = geom::mergePolygons(rects);
+  ASSERT_EQ(polys_from_rects.size(), 1);
+  EXPECT_EQ(corners(polys_from_rects[0]),
+            (std::vector<Point>{Point(0, 0),
+                                Point(0, 100),
+                                Point(50, 50),
+                                Point(50, 100),
+                                Point(100, 0),
+                                Point(100, 50)}));
+
+  const std::vector<Polygon> polys_from_polys = geom::mergePolygons(
+      std::vector<Polygon>{Polygon(rects[0]), Polygon(rects[1])});
+  ASSERT_EQ(polys_from_polys.size(), 1);
+  EXPECT_EQ(corners(polys_from_polys[0]),
+            (std::vector<Point>{Point(0, 0),
+                                Point(0, 50),
+                                Point(0, 100),
+                                Point(50, 50),
+                                Point(50, 100),
+                                Point(100, 0),
+                                Point(100, 50)}));
+
+  EXPECT_THAT(corners(polys_from_polys[0]),
+              testing::IsSupersetOf(corners(polys_from_rects[0])));
 
   EXPECT_TRUE(geom::mergePolygons(std::vector<Polygon>{}).empty());
 }

@@ -450,12 +450,15 @@ BoostPolygonSet toPolygonSet(const T& shape)
 template <AreaShape T>
 BoostPolygonSet toPolygonSet(const std::vector<T>& shapes)
 {
-  BoostPolygonSet polygon_set;
+  std::vector<BoostPolygon> boost_polys;
+  boost_polys.reserve(shapes.size());
   for (const T& shape : shapes) {
     const std::vector<Point> points = shape.getPoints();
-    polygon_set.insert(BoostPolygon(points.begin(), points.end()));
+    boost_polys.emplace_back(points.begin(), points.end());
   }
 
+  BoostPolygonSet polygon_set;
+  polygon_set.insert(boost_polys.begin(), boost_polys.end());
   return polygon_set;
 }
 
@@ -476,13 +479,14 @@ BoostPolygon90Set toPolygonSet90(const T& shape)
 template <ManhattanShape T>
 BoostPolygon90Set toPolygonSet90(const std::vector<T>& shapes)
 {
-  using boost::polygon::operators::operator+=;
-
-  BoostPolygon90Set polygon_set;
+  std::vector<BoostPolygon90> boost_polys;
+  boost_polys.reserve(shapes.size());
   for (const T& shape : shapes) {
-    polygon_set += toPolygon90(shape);
+    boost_polys.push_back(toPolygon90(shape));
   }
 
+  BoostPolygon90Set polygon_set;
+  polygon_set.insert(boost_polys.begin(), boost_polys.end());
   return polygon_set;
 }
 
@@ -550,6 +554,11 @@ template <AreaShape T>
 std::vector<Polygon> mergePolygons(const std::vector<T>& shapes)
 {
   return extractPolygons(toPolygonSet(shapes));
+}
+
+inline std::vector<Polygon> mergePolygons(const std::vector<Rect>& shapes)
+{
+  return extractPolygons(toPolygonSet90(shapes));
 }
 
 }  // namespace odb::geom
