@@ -1229,8 +1229,8 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
         odb::Rect bbox = marker->getBBox();
         // Context shapes outside this worker's check region may be incomplete.
         // Match the ownership filter used when routing workers commit markers.
-        if (!bbox.intersects(worker->getDrcBox())
-            || !bbox.intersects(requiredDrcBox)) {
+        if (!bbox.intersects(requiredDrcBox)
+            || !bbox.intersects(worker->getDrcBox())) {
           continue;
         }
         auto layerNum = marker->getLayerNum();
