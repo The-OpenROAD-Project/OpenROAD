@@ -254,15 +254,18 @@ proc read_db { args } {
   if { ![file readable $filename] } {
     utl::error "ORD" 8 "$filename is not readable."
   }
+  # The timing constraints the .odb carries (write_db -sdc) are restored
+  # when the design is linked with liberty; ord::sdc_in_db_kind tells a
+  # flow whether it still has to read an .sdc.
   ord::read_db_cmd $filename $hierarchy
 }
 
-sta::define_cmd_args "write_db" {[-compression level] filename}
+sta::define_cmd_args "write_db" {[-sdc] [-compression level] filename}
 
 proc write_db { args } {
   sta::parse_key_args "write_db" args \
     keys {-compression} \
-    flags {}
+    flags {-sdc}
 
   sta::check_argc_eq1 "write_db" $args
   set filename [file nativename [lindex $args 0]]
@@ -279,7 +282,10 @@ proc write_db { args } {
     }
   }
 
-  ord::write_db_cmd $filename $compression_level
+  # -sdc stores the timing constraints in the .odb, so it does not have to
+  # be paired with a .sdc by name; read_db restores them.
+  set store_sdc [info exists flags(-sdc)]
+  ord::write_db_cmd $filename $compression_level $store_sdc
 }
 
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
