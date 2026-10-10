@@ -327,6 +327,25 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestRoutingCongestion",
+    size = "small",
+    srcs = ["cpp/TestRoutingCongestion.cpp"],
+    data = [":test_resources"],
+    features = ["-layering_check"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],

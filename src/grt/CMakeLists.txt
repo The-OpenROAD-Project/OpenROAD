@@ -21,6 +21,7 @@ add_library(grt_lib
   src/Net.cpp
   src/Pin.cpp
   src/RepairAntennas.cpp
+  src/RoutingCongestion.cpp
   src/Rudy.cpp
   src/GlobalRouter.cpp
 )

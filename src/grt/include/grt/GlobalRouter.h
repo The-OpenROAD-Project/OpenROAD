@@ -74,6 +74,7 @@ struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
+class RoutingCongestion;
 class Rudy;
 
 struct RegionAdjustment
@@ -384,6 +385,9 @@ class GlobalRouter
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
 
+  // Shared routing congestion service; see grt/RoutingCongestion.h.
+  RoutingCongestion* getRoutingCongestion();
+
   void writePinLocations(const char* file_name);
 
  private:
@@ -650,6 +654,7 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
+  std::unique_ptr<RoutingCongestion> routing_congestion_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 

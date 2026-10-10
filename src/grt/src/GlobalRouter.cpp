@@ -43,6 +43,7 @@
 #include "drt/PinAccessService.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
+#include "grt/RoutingCongestion.h"
 #include "grt/Rudy.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -633,6 +634,9 @@ void GlobalRouter::updateDbCongestion()
   }
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
   }
 }
 
@@ -1546,6 +1550,16 @@ Rudy* GlobalRouter::getRudy()
   }
 
   return rudy_;
+}
+
+RoutingCongestion* GlobalRouter::getRoutingCongestion()
+{
+  odb::dbBlock* block = block_ != nullptr ? block_ : db_->getChip()->getBlock();
+  if (routing_congestion_ == nullptr) {
+    routing_congestion_
+        = std::make_unique<RoutingCongestion>(this, block, logger_);
+  }
+  return routing_congestion_.get();
 }
 
 bool GlobalRouter::findPinAccessPointPositions(
@@ -3039,6 +3053,9 @@ void GlobalRouter::readGuides(const char* file_name)
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
   }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
+  }
   saveGuidesFromFile(guides);
 }
 
@@ -3090,6 +3107,9 @@ void GlobalRouter::loadGuidesFromDB()
   }
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
   }
 }
 
