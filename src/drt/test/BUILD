@@ -31,6 +31,11 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "check_drc_worker_boundary_closed",
+    "check_drc_worker_boundary_legal_gap",
+    "check_drc_worker_boundary_real_gap",
+    "check_drc_worker_boundary_shifted_grid",
+    "check_drc_worker_boundary_straddle",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -108,6 +113,9 @@ filegroup(
                 test_name + ".*",
             ],
         ) + ([
+            "check_drc_worker_boundary_helpers.tcl",
+            "check_drc_worker_boundary_synthetic.lef",
+        ] if test_name.startswith("check_drc_worker_boundary_") else []) + ([
             "ispd18_sample.defok",
         ] if test_name in [
             "ispd18_sample_incr",

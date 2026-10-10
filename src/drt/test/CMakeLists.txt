@@ -18,6 +18,11 @@ or_integration_tests(
     top_level_term2
     via_access_layer
   PASSFAIL_TESTS
+    check_drc_worker_boundary_closed
+    check_drc_worker_boundary_legal_gap
+    check_drc_worker_boundary_real_gap
+    check_drc_worker_boundary_shifted_grid
+    check_drc_worker_boundary_straddle
     cpp_tests
 )
 

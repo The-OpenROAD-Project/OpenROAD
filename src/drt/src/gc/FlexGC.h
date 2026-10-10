@@ -51,6 +51,7 @@ class FlexGCWorker
   std::vector<std::unique_ptr<gcNet>>& getNets();
   gcNet* getNet(frNet* net);
   frDesign* getDesign() const;
+  const odb::Rect& getDrcBox() const;
   const std::vector<std::unique_ptr<frMarker>>& getMarkers() const;
   const std::vector<std::unique_ptr<drPatchWire>>& getPWires() const;
   // others
