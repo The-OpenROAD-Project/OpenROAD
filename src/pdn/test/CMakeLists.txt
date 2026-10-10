@@ -88,6 +88,9 @@ or_integration_tests(
     core_grid_with_single_layer_rings
     design_width
     existing
+    generated_via_default_edge
+    generated_via_default_positive
+    generated_via_default_valid
     gf180_hybrid_followpins
     gf180_hybrid_followpins_pitch
     gf180_hybrid_followpins_rowpattern
