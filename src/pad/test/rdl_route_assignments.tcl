@@ -570,8 +570,10 @@ assign_io_bump -net VDD BUMP_11_11 -dont_route
 assign_io_bump -net DVDD BUMP_15_10 -terminal u_v18_16/DVDD
 assign_io_bump -net DVDD BUMP_14_12 -terminal u_v18_14/DVDD
 
-rdl_route -layer metal10 -width 4 -spacing 4 "DVDD"
+write_db [make_result_file "rdl_route_assignments.odb"]
 
-set def_file [make_result_file "rdl_route_assignments.def"]
-write_def $def_file
-diff_files $def_file "rdl_route_assignments.defok"
+# Reload in a separate process to verify explicit -terminal/-dont_route bump
+# assignments survive a database checkpoint.
+puts [exec [info nameofexecutable] -no_splash -no_init -exit \
+  -threads [thread_count] \
+  [file join [file dirname [info script]] "rdl_route_assignments.reload.tcl"] 2>@1]

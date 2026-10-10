@@ -240,6 +240,18 @@ void RDLRouter::buildIntialRouteSet()
         if (assigned_route->second != nullptr) {
           iterm_pairs.push_back(assigned_route->second);
         }
+      } else if (auto* dont_route
+                 = odb::dbBoolProperty::find(iterm, kRdlDontRouteProperty);
+                 dont_route != nullptr && dont_route->getValue()) {
+        // Explicit -dont_route intent is persisted on the bump terminal so it
+        // survives write_db/read_db.
+        continue;
+      } else if (auto* target
+                 = odb::dbStringProperty::find(iterm, kRdlRouteTargetProperty);
+                 target != nullptr) {
+        if (auto* target_iterm = block_->findITerm(target->getValue().c_str())) {
+          iterm_pairs.push_back(target_iterm);
+        }
       } else {
         for (const auto& [piterm, targets] : iterm_targets) {
           if (iterm->getInst() != piterm->getInst()) {
