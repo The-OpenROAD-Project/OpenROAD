@@ -255,6 +255,11 @@ common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 test --build_tests_only
 
+# golden_regression_test (test/golden.bzl) runs openroad while building the
+# test, so keep those tests out of `bazel build` (e.g. //... or lint).
+# `bazel test` still runs them: build tag filters don't select tests.
+build --build_tag_filters=-golden_regression
+
 # --- Performance Optimizations ---
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200

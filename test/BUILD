@@ -52,6 +52,8 @@ py_test(
 exports_files(
     [
         "bazel_test.sh",
+        "golden_test.sh.tpl",
+        "regression_run.sh",
         "regression_test.sh",
     ],
     visibility = ["//visibility:public"],
