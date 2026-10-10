@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[WARNING ODB-1221] ROW ROW_0: stepX (380.5) is not an integer and is truncated to 380 (line 7).
+[WARNING ODB-1221] ROW ROW_0: origX (100.5) is not an integer and is truncated to 100 (line 7).
+[WARNING ODB-1221] ROW ROW_1: origY (5600.5) is not an integer and is truncated to 5600 (line 8).
+[WARNING ODB-1221] ROW ROW_2: stepY (2800.5) is not an integer and is truncated to 2800 (line 9).
+[WARNING ODB-1221] TRACKS X: space (380.5) is not an integer and is truncated to 380 (line 11).
+[WARNING ODB-1221] GCELLGRID X: space (4000.5) is not an integer and is truncated to 4000 (line 13).
+ROW_0 origin 100 2800 sites 10 spacing 380
+ROW_1 origin 100 5600 sites 10 spacing 380
+ROW_2 origin 100 8400 sites 10 spacing 2800
+ROW_3 origin 100 11200 sites 10 spacing 380
+tracks x 190 570 950 ... count 50
+tracks y 140 420 700 ... count 50
