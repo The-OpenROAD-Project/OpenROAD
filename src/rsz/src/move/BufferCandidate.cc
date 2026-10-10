@@ -51,6 +51,7 @@ MoveResult BufferCandidate::apply()
       .type = MoveType::kBuffer,
       .move_count = rebuffer_count,
       .touched_instances = {drvr_inst},
+      .inserted_buffers = resizer_.rebuffer().lastInsertedBuffers(),
   };
 }
 

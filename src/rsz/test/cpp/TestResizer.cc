@@ -4,12 +4,16 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
 #include "RepairTargetCollector.hh"
 #include "gtest/gtest.h"
+#include "move/BufferCandidate.hh"
+#include "move/MoveCandidate.hh"
 #include "move/MoveGenerator.hh"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -47,6 +51,36 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+// Returns a preset MoveResult, to drive MoveCommitter's bookkeeping without
+// editing the netlist.
+class FixedResultCandidate : public MoveCandidate
+{
+ public:
+  FixedResultCandidate(Resizer& resizer,
+                       const Target& target,
+                       MoveResult result)
+      : MoveCandidate(resizer, target), result_(std::move(result))
+  {
+  }
+
+  MoveResult apply() override { return result_; }
+  MoveType type() const override { return result_.type; }
+
+ private:
+  MoveResult result_;
+};
+
+class RebufferTestPeer
+{
+ public:
+  // Mirror the setup SetupLegacyBase does before running BufferMove.
+  static void init(Rebuffer& rebuffer, sta::Scene* scene)
+  {
+    rebuffer.init();
+    rebuffer.initOnCorner(scene);
+  }
 };
 
 class TestResizer : public tst::IntegratedFixture
@@ -563,6 +597,128 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "mid_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "deep_buf0/Z"));
+}
+
+// BufferMove must report the buffers it inserts, so the committer can tell
+// rebuffering output apart from pre-existing buffers.
+TEST_F(TestResizer, BufferMoveReportsInsertedBuffers)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  // Buffering needs wire RC; use metal3 as the Tcl tests do.
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* layer = tech->findLayer("metal3");
+  ASSERT_NE(layer, nullptr);
+  const double width_um
+      = static_cast<double>(layer->getWidth()) / tech->getDbUnitsPerMicron();
+  const double res_per_m = layer->getResistance() / width_um * 1e6;
+  const double cap_per_m
+      = (width_um * layer->getCapacitance() + 2 * layer->getEdgeCapacitance())
+        * 1e-12 * 1e6;
+  ep_.setHWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.setVWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  RebufferTestPeer::init(resizer_.rebuffer(), sta_->cmdScene());
+
+  std::vector<sta::Pin*> driver_pins;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() != nullptr
+          && iterm->getIoType() == odb::dbIoType::OUTPUT
+          && iterm->getSigType() == odb::dbSigType::SIGNAL) {
+        driver_pins.push_back(db_network_->dbToSta(iterm));
+      }
+    }
+  }
+
+  MoveCommitter committer(resizer_);
+  const Target target;
+  MoveResult result;
+  for (sta::Pin* driver_pin : driver_pins) {
+    BufferCandidate candidate(resizer_, target, driver_pin);
+    result = committer.commit(candidate);
+    if (result.accepted) {
+      break;
+    }
+  }
+  ASSERT_TRUE(result.accepted) << "no BufferMove inserted a buffer";
+  ASSERT_EQ(result.touched_instances.size(), 1);
+  ASSERT_FALSE(result.inserted_buffers.empty());
+
+  for (sta::Instance* buffer : result.inserted_buffers) {
+    const sta::LibertyCell* cell = db_network_->libertyCell(buffer);
+    ASSERT_NE(cell, nullptr);
+    EXPECT_TRUE(cell->isBuffer());
+    // A first removal of a rebuffered buffer is allowed.
+    std::string reason;
+    EXPECT_FALSE(committer.hasBlockingBufferRemovalMove(buffer, reason))
+        << reason;
+  }
+}
+
+// Buffer removal may undo a driver's rebuffering once.  After that, every
+// buffer rebuffering inserted on that driver is kept, which stops removal and
+// rebuffering from undoing each other pass after pass.
+TEST_F(TestResizer, BufferRemovalUndoesRebufferingOnce)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  auto inst = [this](const char* name) {
+    odb::dbInst* db_inst = block_->findInst(name);
+    EXPECT_NE(db_inst, nullptr) << name;
+    return db_network_->dbToSta(db_inst);
+  };
+  sta::Instance* driver = inst("deep_buf0");
+  sta::Instance* first_buffer = inst("deep_buf1");
+  sta::Instance* sibling_buffer = inst("enable_latch");
+  sta::Instance* reinserted_buffer = inst("mid_buf0");
+  sta::Instance* other_driver = inst("mid_buf1");
+  sta::Instance* other_buffer = inst("sibling_branch");
+
+  MoveCommitter committer(resizer_);
+  const Target target;
+  auto commit = [&](MoveResult result) {
+    FixedResultCandidate candidate(resizer_, target, std::move(result));
+    ASSERT_TRUE(committer.commit(candidate).accepted);
+  };
+  std::string reason;
+
+  commit({.accepted = true,
+          .type = MoveType::kBuffer,
+          .move_count = 1,
+          .touched_instances = {driver},
+          .inserted_buffers = {first_buffer, sibling_buffer}});
+  EXPECT_FALSE(committer.hasBlockingBufferRemovalMove(first_buffer, reason))
+      << reason;
+  EXPECT_FALSE(committer.hasBlockingBufferRemovalMove(sibling_buffer, reason))
+      << reason;
+
+  commit({.accepted = true,
+          .type = MoveType::kUnbuffer,
+          .move_count = 1,
+          .touched_instances = {first_buffer}});
+  EXPECT_TRUE(committer.hasBlockingBufferRemovalMove(sibling_buffer, reason));
+  EXPECT_EQ(reason, "removal already undid rebuffering of its driver");
+
+  commit({.accepted = true,
+          .type = MoveType::kBuffer,
+          .move_count = 1,
+          .touched_instances = {driver},
+          .inserted_buffers = {reinserted_buffer}});
+  EXPECT_TRUE(
+      committer.hasBlockingBufferRemovalMove(reinserted_buffer, reason));
+  EXPECT_EQ(reason, "removal already undid rebuffering of its driver");
+
+  // Rebuffering another driver is unaffected.
+  commit({.accepted = true,
+          .type = MoveType::kBuffer,
+          .move_count = 1,
+          .touched_instances = {other_driver},
+          .inserted_buffers = {other_buffer}});
+  EXPECT_FALSE(committer.hasBlockingBufferRemovalMove(other_buffer, reason))
+      << reason;
 }
 
 }  // namespace rsz
