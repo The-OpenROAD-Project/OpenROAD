@@ -2052,16 +2052,19 @@ int64_t lefinReader::dbarea(const double value)
 void lefinReader::recordRounding(double value, int64_t rounded, bool is_area)
 {
   const char* power = is_area ? "^2" : "";
-  const std::string rounding = fmt::format("{} um{} -> {} DBU{} near line {}",
-                                           value,
-                                           power,
-                                           rounded,
-                                           power,
-                                           lefin_get_current_line());
-  debugPrint(logger_, utl::ODB, "lef_rounding", 1, "Rounded {}", rounding);
+  // Only formatted when needed, as debugPrint skips its arguments when off.
+  const auto describe = [&] {
+    return fmt::format("{} um{} -> {} DBU{} near line {}",
+                       value,
+                       power,
+                       rounded,
+                       power,
+                       lefin_get_current_line());
+  };
+  debugPrint(logger_, utl::ODB, "lef_rounding", 1, "Rounded {}", describe());
 
   if (rounded_cnt_++ == 0) {
-    rounding_example_ = rounding;
+    rounding_example_ = describe();
     // Only multiples of the current grid keep the already exact values exact.
     for (const int dbu : kValidDBUPerMicron) {
       if (dbu > dbu_per_micron_ && dbu % dbu_per_micron_ == 0) {
