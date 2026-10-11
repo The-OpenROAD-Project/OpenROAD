@@ -439,8 +439,8 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/gpl:gpl_py",
         "//src/odb:odb_py",
+        "//src/rmp:rmp_py",
         "//src/utl:utl_py",
     ],
 )

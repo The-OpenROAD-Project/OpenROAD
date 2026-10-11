@@ -19,10 +19,6 @@ py_library(
     deps = [
         "//:openroad_py",
         "//python/modules",
-        "//src/odb:odb_py",
-        "//src/rmp:rmp_py",
-        "//src/utl:utl_py",
-        "//src/wmk:wmk_py",
     ],
 )
 

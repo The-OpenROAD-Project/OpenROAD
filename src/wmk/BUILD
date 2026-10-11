@@ -2,7 +2,6 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -224,12 +223,3 @@ messages_txt(
 # Keep timing-dependent bindings in _openroadpy.so. A separate WMK extension
 # would link another copy of OpenSTA's singleton state (such as port directions)
 # and interpret the Design's Liberty objects using that uninitialized copy.
-py_library(
-    name = "wmk_py",
-    srcs = ["wmk.py"],
-    # Imported as src.wmk.wmk; //python/modules provides the top-level
-    # name, so this directory stays off sys.path and the module is loaded
-    # once.
-    visibility = ["//visibility:public"],
-    deps = ["//:openroad_py"],
-)
