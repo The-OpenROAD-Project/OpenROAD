@@ -201,8 +201,12 @@ void WebViewerHook::pause(int timeout_ms)
   struct LeaveGuard
   {
     WebViewerHook& hook;
-    ~LeaveGuard()
+    bool finished = false;
+    void finish()
     {
+      if (finished) {
+        return;
+      }
       if (hook.pause_hooks_.leave) {
         hook.pause_hooks_.leave();
       }
@@ -210,7 +214,9 @@ void WebViewerHook::pause(int timeout_ms)
       std::lock_guard<std::mutex> lock(hook.pause_mutex_);
       hook.in_pause_ = false;
       hook.done_cv_.notify_all();
+      finished = true;
     }
+    ~LeaveGuard() { finish(); }
   } leave_guard{*this};
 
   std::unique_lock<std::mutex> lock(pause_mutex_);
@@ -278,8 +284,11 @@ void WebViewerHook::pause(int timeout_ms)
 
   lock.lock();
   if (exit_requested) {
+    // Complete the pause before a hook that may destroy this viewer runs.
+    const std::function<void()> exit_hook = pause_hooks_.exit;
     lock.unlock();
-    pause_hooks_.exit();
+    leave_guard.finish();
+    exit_hook();
   }
 }
 

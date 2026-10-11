@@ -354,6 +354,7 @@ TEST(WebViewerHookTest, DestructorWaitsForPauseLeaveHook)
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   if (!hook->isPaused()) {
+    release_leave.store(true);
     hook->continueExecution();
     pauser.join();
     FAIL() << "Pause did not start";
@@ -376,6 +377,35 @@ TEST(WebViewerHookTest, DestructorWaitsForPauseLeaveHook)
   EXPECT_TRUE(saw_leave);
   EXPECT_FALSE(destroyed_before_leave);
   EXPECT_TRUE(destroyed.load());
+}
+
+TEST(WebViewerHookTest, ExitHookCanDestroyPausedHook)
+{
+  std::unique_ptr<WebViewerHook> hook = std::make_unique<WebViewerHook>();
+  registerDummyClient(*hook);
+  WebViewerHook::PauseHooks hooks;
+  hooks.exit = [&]() { hook.reset(); };
+  hook->setPauseHooks(std::move(hooks));
+
+  WebViewerHook* hook_ptr = hook.get();
+  std::thread pauser([hook_ptr]() { hook_ptr->pause(/*timeout_ms=*/0); });
+  for (int i = 0; i < 200 && !hook->isPaused(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  if (!hook->isPaused()) {
+    hook->continueExecution();
+    pauser.join();
+    FAIL() << "Pause did not start";
+  }
+
+  // The exit hook may synchronously destroy the paused viewer.
+  const bool exit_requested = hook->requestExit();
+  if (!exit_requested) {
+    hook->continueExecution();
+  }
+  pauser.join();
+  EXPECT_TRUE(exit_requested);
+  EXPECT_EQ(hook, nullptr);
 }
 
 TEST(WebViewerHookTest, PauseTimeoutReturns)
