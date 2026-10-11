@@ -90,7 +90,8 @@ unit actually needs.**
 | Dependency of the unit under test | Fixture / approach | Cost |
 | --- | --- | --- |
 | None -- pure algorithm/geometry/graph kernel | No fixture; plain structs + `odb` geom primitives | trivial |
-| An `odb` database (cells, nets, placement) | `tst::Fixture` / `odb::SimpleDbFixture` + `makeInst`/`makeBTerm`/`makeNets` | sub-ms |
+| An `odb` database (cells, nets, placement) | `tst::DbFixture` / `odb::SimpleDbFixture` + `makeInst`/`makeBTerm`/`makeNets` | sub-ms |
+| Layers, antenna rules, pin shapes, routed wires or guides | `tst::DbFixture` + `tst/physical_builder.h` | sub-ms |
 | STA timing | `tst::IntegratedFixture` (kNangate45 / kSky130hd) | ms (libs loaded once) |
 | Genuine cross-tool composition | Keep as a Tier-3 flow test | full process |
 
@@ -103,6 +104,17 @@ The existing fixture stack already supports this:
   test case by hand."
 - **`odb::SimpleDbFixture`** (`src/odb/test/cpp/helper/helper.h`) -- pre-builds a
   minimal tech/lib/chip/block and `createMaster*` helpers.
+- **`tst/physical_builder.h`** (Bazel `//src/tst:physical_builder`, CMake
+  `tst_physical`) -- odb-only builders for physical test cases: `makeTech`,
+  `makeLib`, `makeBlock`, `makeLayerStack` (M1..Mn with cuts and vias),
+  `applyAntennaRule` (an `AntennaRuleSpec` over the layer's default antenna
+  rule), `makeMaster` (pins with shapes and antenna gate/diffusion areas),
+  `RoutePath` (a fluent `dbWireEncoder` wrapper for routed wires) and
+  `addGuide`. Use these instead of a checked-in LEF/DEF when a test needs a
+  few routed nets or antenna rules.
+- **`tst::DbFixture`** also has odb-only `loadLibLef`, `loadTechAndLibLef`
+  and `readDef` for tests that must start from existing LEF/DEF data without
+  STA.
 - **`tst::IntegratedFixture`** (`src/tst/include/tst/IntegratedFixture.h`) -- wires
   `sta_`, `resizer_`, `dp_`, `grt_`, `ant_`, `stt_`, `ep_` against real libs and
   offers `readVerilogAndSetup`. This is how `rsz` and `dbSta` already test; use
@@ -132,7 +144,10 @@ The existing fixture stack already supports this:
 
 - One smoke test per public Tcl command and per Python command, on a trivial
   design, asserting invocation + basic return marshaling. Convert to
-  `PASSFAIL_TESTS` where possible.
+  `PASSFAIL_TESTS` where possible. `test/helpers.tcl` provides `check`,
+  `check_error {description script ANT-0012}` and `exit_summary`;
+  `test/helpers.py` provides the same three as Python functions. A test built
+  from them prints `pass` as its last line and needs no `.ok` file.
 - Treat the C++ test as the source of truth for correctness; bindings prove
   plumbing only. Do **not** duplicate algorithm assertions across Tcl + Python.
 - A future linter (not yet implemented) could enumerate public commands from the
