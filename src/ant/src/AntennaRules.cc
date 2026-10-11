@@ -3,6 +3,7 @@
 
 #include "AntennaRules.hh"
 
+#include <cstddef>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -104,7 +105,7 @@ double getPwlFactor(const odb::dbTechLayerAntennaRule::pwl_pair& pwl_info,
     double pwl_info_index1 = pwl_info.indices[0];
     double pwl_info_ratio1 = pwl_info.ratios[0];
     double slope = 1.0;
-    for (int i = 0; i < pwl_info.indices.size(); i++) {
+    for (size_t i = 1; i < pwl_info.indices.size(); i++) {
       double pwl_info_index2 = pwl_info.indices[i];
       double pwl_info_ratio2 = pwl_info.ratios[i];
       slope = (pwl_info_ratio2 - pwl_info_ratio1)
