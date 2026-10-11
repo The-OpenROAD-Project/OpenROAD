@@ -20,6 +20,15 @@ class OpenRoadApiTest(unittest.TestCase):
         set_thread_count(1)
         self.assertEqual(thread_count(), 1)
 
+    def test_thread_count_without_tech(self):
+        # A Tech that has been garbage collected no longer owns an
+        # OpenRoad instance.
+        Tech()
+        with self.assertRaisesRegex(RuntimeError, "ORD-0105"):
+            set_thread_count(2)
+        with self.assertRaisesRegex(RuntimeError, "ORD-0105"):
+            thread_count()
+
     def test_tech_has_database(self):
         tech = Tech()
         self.assertIsInstance(tech.getDB(), odb.dbDatabase)

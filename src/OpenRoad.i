@@ -591,25 +591,35 @@ units_initialized()
 
 namespace ord {
 
+// The thread count belongs to the current OpenRoad instance.  From Python
+// that is the one owned by the most recent live Tech, and there may be none.
+static OpenRoad *
+threadCountOwner()
+{
+  OpenRoad *ord = getOpenRoad();
+  if (ord == nullptr) {
+    utl::Logger::defaultLogger()->error(
+        utl::ORD, 105, "No OpenROAD instance exists; create a Tech first.");
+  }
+  return ord;
+}
+
 void
 set_thread_count(int threads)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->setThreadCount(threads);
+  threadCountOwner()->setThreadCount(threads);
 }
 
 void
 set_thread_count(const char* threads)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->setThreadCount(threads);
+  threadCountOwner()->setThreadCount(threads);
 }
 
 int
 thread_count()
 {
-  OpenRoad *ord = getOpenRoad();
-  return ord->getThreadCount();
+  return threadCountOwner()->getThreadCount();
 }
 
 int
