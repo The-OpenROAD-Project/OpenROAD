@@ -25,7 +25,7 @@ class dbIStream;
 class dbOStream;
 class Rect;
 
-class Point
+class Point final
 {
  public:
   Point() = default;
@@ -70,7 +70,7 @@ class Point
 
 std::ostream& operator<<(std::ostream& os, const Point& pIn);
 
-class Point3D
+class Point3D final
 {
  public:
   Point3D() = default;
@@ -96,6 +96,8 @@ class Point3D
     setZ(z);
   }
 
+  Point xy() const { return {x_, y_}; }
+
   friend dbIStream& operator>>(dbIStream& stream, Point3D& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point3D& p);
 
@@ -107,7 +109,7 @@ class Point3D
 
 std::ostream& operator<<(std::ostream& os, const Point3D& pIn);
 
-class Cuboid
+class Cuboid final
 {
  public:
   Cuboid() = default;
@@ -280,7 +282,7 @@ A = W/2
 B = [ceiling(W/(sqrt(2) * M) ) * M] - A
 where W is wire width and M is the manufacturing grid
 */
-class Oct
+class Oct final
 {
  public:
   enum OCT_DIR  // The direction of the higher octagon relative to the lower
@@ -326,7 +328,7 @@ class Oct
   int A_ = 0;
 };
 
-class Rect
+class Rect final
 {
  public:
   Rect() = default;
@@ -460,7 +462,7 @@ class Rect
   int yhi_ = 0;
 };
 
-class Polygon
+class Polygon final
 {
  public:
   Polygon() = default;
@@ -489,7 +491,7 @@ class Polygon
   std::vector<Point> points_;
 };
 
-class Line
+class Line final
 {
  public:
   Line() = default;

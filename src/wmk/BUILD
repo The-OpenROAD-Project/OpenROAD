@@ -75,22 +75,7 @@ cc_library(
 )
 
 cc_library(
-    name = "wmk_private_hdrs",
-    hdrs = [
-        "src/Keys.h",
-        "src/Options.h",
-        "src/RoutingStat.h",
-        "src/Wirelength.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//src/wmk:__subpackages__"],
-    deps = ["//src/odb/src/db"],
-)
-
-cc_library(
-    name = "wmk",
+    name = "wmk_impl",
     srcs = [
         "src/CtsWatermark.cpp",
         "src/Keys.cpp",
@@ -103,12 +88,19 @@ cc_library(
     ],
     hdrs = [
         "include/wmk/Watermark.h",
+        "src/Keys.h",
+        "src/Options.h",
+        "src/RoutingStat.h",
+        "src/Wirelength.h",
     ],
     includes = [
         "include",
+        "src",
+    ],
+    visibility = [
+        "//src/wmk:__subpackages__",
     ],
     deps = [
-        ":wmk_private_hdrs",
         ":hmac_sha256",
         ":marks",
         ":claims",
@@ -130,6 +122,22 @@ cc_library(
 )
 
 cc_library(
+    name = "wmk",
+    hdrs = [
+        "include/wmk/Watermark.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":verify_result",
+        ":wmk_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+    ],
+)
+
+cc_library(
     name = "ui",
     srcs = [
         "src/MakeWatermark.cpp",
@@ -146,8 +154,7 @@ cc_library(
     deps = [
         ":hmac_sha256",
         ":marks",
-        ":wmk",
-        ":wmk_private_hdrs",
+        ":wmk_impl",
         "//:ord",
         "//src/odb/src/db",
         "//src/utl",

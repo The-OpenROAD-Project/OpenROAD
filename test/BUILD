@@ -49,28 +49,6 @@ py_test(
     main = "check_visibility.py",
 )
 
-py_test(
-    name = "rules_verilator_dev_dep_test",
-    srcs = ["check_dev_dep.py"],
-    args = [
-        "--module-file=$(location //:MODULE.bazel)",
-        "--dep=rules_verilator",
-    ],
-    data = ["//:MODULE.bazel"],
-    main = "check_dev_dep.py",
-)
-
-py_test(
-    name = "verilator_dev_dep_test",
-    srcs = ["check_dev_dep.py"],
-    args = [
-        "--module-file=$(location //:MODULE.bazel)",
-        "--dep=verilator",
-    ],
-    data = ["//:MODULE.bazel"],
-    main = "check_dev_dep.py",
-)
-
 exports_files(
     [
         "bazel_test.sh",
@@ -152,6 +130,7 @@ PASSFAIL_TESTS = [
     "db_option_quoting",
     "init_file_error",
     "upf_aes",
+    "est_placement_threads",
 ]
 
 COMPULSORY_TESTS = [

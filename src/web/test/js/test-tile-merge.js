@@ -856,10 +856,11 @@ describe('measureViewport: a zero-sized container silently disables merging', ()
 });
 
 describe('reserveForUnmergedPanes: the panes outside the grouping are not free', () => {
-    // _instances, _pins and the always-on highlight overlay each hold a full
-    // tile grid and are never merged. At dpr 1 they are ~6 MB each and hardly
-    // matter; at dpr 3 a pane is ~54 MB, so ignoring them let the budget report
-    // a comfortable fit while the real total sat above the ceiling.
+    // _instances, _pins, _inst_labels and the always-on highlight overlay each
+    // hold a full tile grid and are never merged. At dpr 1 they are ~6 MB each
+    // and hardly matter; at dpr 3 a pane is ~54 MB, so ignoring them let the
+    // budget report a comfortable fit while the real total sat above the
+    // ceiling.
     const TILES = 24;
 
     it('charges the unmerged panes before the merged ones', () => {

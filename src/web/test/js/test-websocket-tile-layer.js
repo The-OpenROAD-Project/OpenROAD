@@ -496,6 +496,30 @@ describe('the layer body must resolve every name it references', () => {
         assert.equal(done_with.t, tile);
     });
 
+    it('does not request a layer the extents rule out', async () => {
+        const { LayerExtents } = await import('../../src/layer-extents.js');
+        const layerExtents = new LayerExtents();
+        layerExtents.apply(layerExtents.invalidate(),
+                           { supported: true, layers: { metal1: null } });
+        const sent = [];
+        const { tile, done_with, done_calls } = await emptyTile(() => {
+            const Layer = createWebSocketTileLayer(
+                { stdcells: true }, new Set(['metal1']), null, null,
+                { layerExtents });
+            return new Layer({ nextId: 1,
+                               request: (msg) => {
+                                   sent.push(msg);
+                                   return Promise.resolve(null);
+                               },
+                               cancel() {} }, 'metal1', {});
+        });
+        assert.deepEqual(sent, []);
+        // Completed exactly like a tile the server answered as empty.
+        assert.equal(tile.src, BLANK_TILE);
+        assert.equal(done_calls, 1);
+        assert.equal(done_with.err, null);
+    });
+
     it('gives an empty overlay tile the blank image too', async () => {
         const { tile, done_with, done_calls } = await emptyTile(() => {
             const Overlay = createOverlayTileLayer({}, null);

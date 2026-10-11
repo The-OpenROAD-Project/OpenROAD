@@ -84,14 +84,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-void ClusteringEngine::setHalos(
-    const HardMacro::Halo& base_halo,
-    const bool use_full_halo,
-    const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
+void ClusteringEngine::setChannel(const Channel min_channel,
+                                  const bool pin_aware_channels)
 {
-  base_halo_ = base_halo;
-  use_full_halo_ = use_full_halo;
-  macro_to_halo_ = macro_to_halo;
+  min_channel_ = min_channel;
+  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -103,19 +100,22 @@ void ClusteringEngine::init()
   setFloorplanShape();
   createHardMacros();
 
-  if (!movableCellsFitInMacroPlacementArea()) {
-    logger_->error(
-        MPL, 65, "The movable cells do not fit in the macro placement area.");
-  }
-
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
-
+  // With no macro to place there is nothing to cluster or check: the
+  // checks below guard the placement, and a design whose macros are all
+  // fixed may legitimately hold fixed standard cells in the core.
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
     return;
   }
+
+  if (!movableCellsFitInMacroPlacementArea()) {
+    logger_->error(
+        MPL, 65, "The movable cells do not fit in the macro placement area.");
+  }
+
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
   const float inst_area_with_halos
@@ -311,7 +311,7 @@ void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
       "\tNumber of macros: {}\n"
       "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
+      "\tMinimum channel (Width, Height): ({:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -323,10 +323,8 @@ void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
       design_metrics_->getNumMacro(),
       num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(base_halo_.left),
-      block_->dbuToMicrons(base_halo_.bottom),
-      block_->dbuToMicrons(base_halo_.right),
-      block_->dbuToMicrons(base_halo_.top),
+      block_->dbuToMicrons(min_channel_.width),
+      block_->dbuToMicrons(min_channel_.height),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2158,35 +2156,43 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
 HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
                                                  int minimum_spacing) const
 {
-  if (macro_to_halo_.contains(inst)) {
-    return macro_to_halo_.at(inst);
-  }
-
-  HardMacro::Halo full_halo;
-  if (inst->getHalo() != nullptr) {
-    odb::Rect inst_halo = inst->getHalo()->getBox();
-    if (inst->getHalo()->isSoft()) {
-      full_halo = HardMacro::Halo(inst->getHalo());
-    } else {
-      full_halo = {std::max(inst_halo.xMin(), base_halo_.left),
-                   std::max(inst_halo.yMin(), base_halo_.bottom),
-                   std::max(inst_halo.xMax(), base_halo_.right),
-                   std::max(inst_halo.yMax(), base_halo_.top)};
-    }
-  } else {
-    full_halo = base_halo_;
-  }
-
-  if (use_full_halo_) {
-    return full_halo;
-  }
-
   HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  if (inst->getHalo() != nullptr) {
+    const HardMacro::Halo inst_halo(inst->getHalo());
+    halo = halo.flooredToHalo(inst_halo);
+  } else if (pin_aware_channels_) {
+    halo = buildPinAwareHalo(inst, minimum_spacing);
+  }
+
+  // Adjust halo orientation for fixed macros here, since those
+  // are skipped during orientation improve and thus never properly adjusted
+  if (inst->getPlacementStatus().isFixed()) {
+    auto orient = inst->getOrient();
+    if (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180) {
+      std::swap(halo.bottom, halo.top);
+    }
+    if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
+      std::swap(halo.left, halo.right);
+    }
+  }
+
+  return halo;
+}
+
+HardMacro::Halo ClusteringEngine::buildPinAwareHalo(odb::dbInst* inst,
+                                                    int minimum_spacing) const
+{
+  HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  HardMacro::Halo min_halo(minimum_spacing);
 
   odb::dbMaster* master = inst->getMaster();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+    if (mterm->getSigType().isSupply()) {
       continue;
     }
 
@@ -2224,35 +2230,23 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
 
         switch (closest) {
           case Boundary::B:
-            halo.bottom = full_halo.bottom;
+            min_halo.bottom = halo.bottom;
             break;
           case Boundary::L:
-            halo.left = full_halo.left;
+            min_halo.left = halo.left;
             break;
           case Boundary::T:
-            halo.top = full_halo.top;
+            min_halo.top = halo.top;
             break;
           case Boundary::R:
-            halo.right = full_halo.right;
+            min_halo.right = halo.right;
             break;
         }
       }
     }
   }
 
-  // Adjust halo orientation for fixed macros here, since those
-  // are skipped during orientation improve and thus never properly adjusted
-  if (inst->getPlacementStatus().isFixed()) {
-    auto orient = inst->getOrient();
-    if (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180) {
-      std::swap(halo.bottom, halo.top);
-    }
-    if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
-      std::swap(halo.left, halo.right);
-    }
-  }
-
-  return halo;
+  return min_halo;
 }
 
 int ClusteringEngine::getMinimumSpacing() const

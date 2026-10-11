@@ -48,7 +48,9 @@ or_integration_tests(
     region01
   PASSFAIL_TESTS
     incremental02
+    incremental03
     place_ios01
+    place_ios_few_cells
     place_ios_top_layer
 )
 
@@ -217,8 +219,32 @@ if(ENABLE_GPU)
            COMMAND $<TARGET_FILE:estimate_target_density_test> --gtest_list_tests)
 endif()
 
+add_executable(nesterov_divergence_test
+  nesterov_divergence_test.cpp
+)
+
+target_include_directories(nesterov_divergence_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(nesterov_divergence_test PUBLIC
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+)
+
+gtest_discover_tests(nesterov_divergence_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME nesterov_divergence_test_load_sentinel
+           COMMAND $<TARGET_FILE:nesterov_divergence_test> --gtest_list_tests)
+endif()
+
 add_dependencies(build_and_test fft_test mbff_test placer_base_test
-  estimate_target_density_test)
+  estimate_target_density_test nesterov_divergence_test)
 
 # GPU FFT correctness test. Built only on ENABLE_GPU=ON: it links the GPU FFT
 # backend (src/gpl/src/gpu/gpuFftBackend.cpp) via gpl_lib and, with the default

@@ -16,6 +16,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -226,6 +227,80 @@ class TestResizer : public tst::IntegratedFixture
   }
 };
 
+// Exclude non-timing drivers from GPL's slack ranking.
+TEST_F(TestResizer, ResizeSlacksExcludeNonTimingDrivers)
+{
+  readVerilogAndSetup("TestResizerResizeSlacks.v",
+                      /*init_default_sdc=*/false);
+  makeClock("vclk", nullptr);
+  setInputDelay("a", "vclk", 0.028);
+  setInputDelay("unused", "vclk", 0.270);
+  setInputDelay("loose_in", "vclk", 0.270);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clock = sdc->findClock("vclk");
+  sta::Pin* output = findTopPin("y");
+  ASSERT_NE(output, nullptr);
+  sta_->setOutputDelay(output,
+                       sta::RiseFallBoth::riseFall(),
+                       clock,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       true,
+                       staTime(1.0),
+                       sdc);
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const auto* max = sta::MinMax::max();
+  const float tolerance = staTime(1e-6);
+  sta::Vertex* constrained = loadVertex("a");
+  sta::Vertex* isolated = loadVertex("unused");
+  sta::Vertex* unconstrained = loadVertex("loose_in");
+  ASSERT_NE(constrained, nullptr);
+  ASSERT_NE(isolated, nullptr);
+  ASSERT_NE(unconstrained, nullptr);
+  ASSERT_TRUE(constrained->hasFanout());
+  ASSERT_FALSE(isolated->hasFanout());
+  ASSERT_TRUE(unconstrained->hasFanout());
+  const sta::Slack wns = sta_->worstSlack(max);
+  EXPECT_NEAR(wns, staTime(-0.028), tolerance);
+  EXPECT_NEAR(sta_->slack(isolated, max), staTime(-0.270), tolerance);
+  EXPECT_TRUE(sta::fuzzyInf(sta_->slack(unconstrained, max)));
+
+  const odb::dbNet* timed_net = db_network_->flatNet(constrained->pin());
+  const odb::dbNet* isolated_net = db_network_->flatNet(isolated->pin());
+  const odb::dbNet* unconstrained_net
+      = db_network_->flatNet(unconstrained->pin());
+  resizer_.findResizeSlacks1();
+  const auto timed_slack = resizer_.resizeNetSlack(timed_net);
+  ASSERT_TRUE(timed_slack.has_value());
+  EXPECT_NEAR(*timed_slack, wns, tolerance);
+  EXPECT_FALSE(resizer_.resizeNetSlack(isolated_net).has_value());
+  EXPECT_FALSE(resizer_.resizeNetSlack(unconstrained_net).has_value());
+
+  // Preserve constrained slack on nets with mixed fanout.
+  resizer_.setWorstSlackNetsPercent(100);
+  EXPECT_EQ(resizer_.resizeWorstSlackNets().size(), 1);
+
+  // Clear cached slack when the last output constraint is removed.
+  sta_->removeOutputDelay(output,
+                          sta::RiseFallBoth::riseFall(),
+                          clock,
+                          sta::RiseFall::rise(),
+                          sta::MinMaxAll::all(),
+                          sdc);
+  sta_->updateTiming(true);
+  resizer_.findResizeSlacks1();
+  EXPECT_FALSE(resizer_.resizeNetSlack(timed_net).has_value());
+  EXPECT_TRUE(resizer_.resizeWorstSlackNets().empty());
+}
+
 // Verify dont_touch preserves a hierarchical name and protects its flat net.
 TEST_F(TestResizer, HierarchicalNetDontTouch)
 {
@@ -257,6 +332,66 @@ TEST_F(TestResizer, HierarchicalNetDontTouch)
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(mod_net->getConstName()),
             name_address);
   EXPECT_FALSE(flat_net->isDoNotTouch());
+}
+
+TEST_F(TestResizer, BufferRemovalPreservesCandidateAndSurvivorFlags)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* db_buffer = block_->findInst("b2");
+  odb::dbNet* db_survivor = block_->findNet("n1");
+  odb::dbNet* db_removed = block_->findNet("n2");
+  ASSERT_NE(db_buffer, nullptr);
+  ASSERT_NE(db_survivor, nullptr);
+  ASSERT_NE(db_removed, nullptr);
+  sta::Instance* buffer = db_network_->dbToSta(db_buffer);
+  ASSERT_NE(buffer, nullptr);
+
+  // Given a protected candidate, when queried, then all flags stay unchanged.
+  db_buffer->setDoNotTouch(true);
+  db_buffer->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  db_survivor->setDoNotTouch(true);
+  db_removed->setDoNotTouch(true);
+  EXPECT_FALSE(resizer_.canRemoveBuffer(buffer, true));
+  ASSERT_TRUE(resizer_.canRemoveBuffer(buffer, false));
+  EXPECT_TRUE(db_buffer->isDoNotTouch());
+  EXPECT_TRUE(db_buffer->isFixed());
+  EXPECT_TRUE(db_survivor->isDoNotTouch());
+  EXPECT_TRUE(db_removed->isDoNotTouch());
+
+  // Given an eligible candidate, when removed, then the survivor stays
+  // protected.
+  ASSERT_TRUE(resizer_.removeBuffer(buffer, /*honor_dont_touch_fixed=*/false));
+  EXPECT_EQ(block_->findInst("b2"), nullptr);
+  EXPECT_EQ(block_->findNet("n2"), nullptr);
+  EXPECT_TRUE(db_survivor->isDoNotTouch());
+  EXPECT_EQ(block_->findInst("b3")->findITerm("A")->getNet(), db_survivor);
+}
+
+TEST_F(TestResizer, BufferRemovalWithDisconnectedOutputPreservesInputNet)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* db_buffer = block_->findInst("b2");
+  odb::dbNet* db_input = block_->findNet("n1");
+  ASSERT_NE(db_buffer, nullptr);
+  ASSERT_NE(db_input, nullptr);
+  sta::Instance* buffer = db_network_->dbToSta(db_buffer);
+  ASSERT_NE(buffer, nullptr);
+  sta::Pin* output_pin = db_network_->dbToSta(db_buffer->findITerm("Z"));
+  ASSERT_NE(output_pin, nullptr);
+  sta_->disconnectPin(output_pin);
+
+  // Given an unconnected output, when removed, then the input net stays
+  // protected.
+  db_buffer->setDoNotTouch(true);
+  db_buffer->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  db_input->setDoNotTouch(true);
+  ASSERT_TRUE(resizer_.removeBuffer(buffer, /*honor_dont_touch_fixed=*/false));
+  EXPECT_EQ(block_->findInst("b2"), nullptr);
+  EXPECT_TRUE(db_input->isDoNotTouch());
 }
 
 TEST_F(TestResizer, WeakerCellFirstOrdersHigherDriveResistanceFirst)

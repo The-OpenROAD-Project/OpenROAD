@@ -372,6 +372,8 @@ class FastRouteCore
   void convertToMazeroute();
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
+  int scanOverflow2D(int* maxOverflow);
+  int scanOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
   std::array<OverflowStatistics, 2> scanOverflow3D() const;
   void invalidateOverflow3D();
@@ -757,6 +759,8 @@ class FastRouteCore
   std::string congestion_file_name_;
   std::vector<odb::dbTechLayerDir> layer_directions_;
   std::vector<odb::dbTechLayer*> db_layers_;
+  double dbu_per_micron_ = 0.0;
+  std::vector<float> layer_res_per_micron_;
   int num_threads_;
   // When false, nets_ contains borrowed pointers from a parent
   // FastRouteCore (snapshot-batch workers).  Workers must not outlive
