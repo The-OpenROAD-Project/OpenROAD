@@ -17,6 +17,10 @@ cc_library(
     srcs = [
         "src/AntennaChecker.cc",
         "src/AntennaCheckerImpl.hh",
+        "src/AntennaReport.cc",
+        "src/AntennaReport.hh",
+        "src/AntennaRules.cc",
+        "src/AntennaRules.hh",
         "src/PinType.hh",
         "src/Polygon.cc",
         "src/Polygon.hh",
