@@ -1297,15 +1297,18 @@ class FlexGridGraph
     return dir == frDirEnum::UNKNOWN ? dir
                                      : static_cast<frDirEnum>(7 - int(dir));
   }
+
   void correct(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
   {
-    x -= (dir == frDirEnum::W);
-    y -= (dir == frDirEnum::S);
-    z -= (dir == frDirEnum::D);
-    if (dir == frDirEnum::W || dir == frDirEnum::S || dir == frDirEnum::D) {
-      dir = oppositeDir(dir);
-    }
+    bool is_w = (dir == frDirEnum::W);
+    bool is_s = (dir == frDirEnum::S);
+    bool is_d = (dir == frDirEnum::D);
+    x -= is_w;
+    y -= is_s;
+    z -= is_d;
+    dir = (is_w | is_s | is_d) ? oppositeDir(dir) : dir;
   }
+
   void reverse(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
   {
     x += (dir == frDirEnum::E) - (dir == frDirEnum::W);
