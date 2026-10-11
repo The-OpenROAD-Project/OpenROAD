@@ -7,6 +7,7 @@ test, each on its own Tech."""
 import unittest
 
 import odb
+import openroad
 from openroad import Design, Tech, set_thread_count, thread_count
 
 
@@ -28,6 +29,8 @@ class OpenRoadApiTest(unittest.TestCase):
             set_thread_count(2)
         with self.assertRaisesRegex(RuntimeError, "ORD-0105"):
             thread_count()
+        with self.assertRaisesRegex(RuntimeError, "ORD-0105"):
+            openroad.get_db()
 
     def test_tech_has_database(self):
         tech = Tech()

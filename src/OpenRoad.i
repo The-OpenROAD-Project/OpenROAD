@@ -39,13 +39,20 @@ using odb::dbDatabase;
 OpenRoad *
 getOpenRoad()
 {
-  return OpenRoad::openRoad();
+  // From Python the current instance is the one owned by the most recent
+  // live Tech, and there may be none.
+  OpenRoad *openroad = OpenRoad::openRoad();
+  if (openroad == nullptr) {
+    utl::Logger::defaultLogger()->error(
+        utl::ORD, 105, "No OpenROAD instance exists; create a Tech first.");
+  }
+  return openroad;
 }
 
 utl::Logger *
 getLogger()
 {
-  return OpenRoad::openRoad()->getLogger();
+  return getOpenRoad()->getLogger();
 }
 
 dbDatabase *
@@ -591,35 +598,22 @@ units_initialized()
 
 namespace ord {
 
-// The thread count belongs to the current OpenRoad instance.  From Python
-// that is the one owned by the most recent live Tech, and there may be none.
-static OpenRoad *
-threadCountOwner()
-{
-  OpenRoad *ord = getOpenRoad();
-  if (ord == nullptr) {
-    utl::Logger::defaultLogger()->error(
-        utl::ORD, 105, "No OpenROAD instance exists; create a Tech first.");
-  }
-  return ord;
-}
-
 void
 set_thread_count(int threads)
 {
-  threadCountOwner()->setThreadCount(threads);
+  getOpenRoad()->setThreadCount(threads);
 }
 
 void
 set_thread_count(const char* threads)
 {
-  threadCountOwner()->setThreadCount(threads);
+  getOpenRoad()->setThreadCount(threads);
 }
 
 int
 thread_count()
 {
-  return threadCountOwner()->getThreadCount();
+  return getOpenRoad()->getThreadCount();
 }
 
 int
