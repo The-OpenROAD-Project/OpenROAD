@@ -22,12 +22,6 @@ if [ -n "${TEST_SRCDIR:-}" ]; then
 	if [ -d "${workspace_root}/python" ]; then
 		python_paths="${python_paths}:${workspace_root}/python"
 	fi
-	for src_dir in "${workspace_root}"/src/*; do
-		if [ -d "${src_dir}" ]; then
-			python_paths="${python_paths}:${src_dir}"
-		fi
-	done
-
 	export PYTHONPATH="${python_paths}${PYTHONPATH:+:$PYTHONPATH}"
 	if [ -n "${TEST_GOLDEN_FILE:-}" ]; then
 		export TEST_GOLDEN_FILE="${workspace_root}/${TEST_GOLDEN_FILE}"

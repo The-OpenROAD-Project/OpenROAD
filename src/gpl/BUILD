@@ -242,8 +242,6 @@ cc_library(
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
 tcl_encode(
     name = "tcl",
     srcs = [

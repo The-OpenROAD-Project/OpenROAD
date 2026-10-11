@@ -4,6 +4,7 @@
 """Python binding unit tests for the openroad package: one behavior per
 test, each on its own Tech."""
 
+import gc
 import unittest
 
 import odb
@@ -22,9 +23,10 @@ class OpenRoadApiTest(unittest.TestCase):
         self.assertEqual(thread_count(), 1)
 
     def test_thread_count_without_tech(self):
-        # A Tech that has been garbage collected no longer owns an
-        # OpenRoad instance.
-        Tech()
+        # Destroying the current Tech leaves no OpenRoad instance.
+        tech = Tech()
+        del tech
+        gc.collect()
         with self.assertRaisesRegex(RuntimeError, "ORD-0105"):
             set_thread_count(2)
         with self.assertRaisesRegex(RuntimeError, "ORD-0105"):

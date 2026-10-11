@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""Installs the openroad wheel into an empty directory and imports it in a
-fresh interpreter, as a user who ran `pip install` would."""
+"""Installs the openroad wheel with pip into an empty directory and imports
+it in a fresh interpreter."""
 
 import glob
 import os
@@ -10,7 +10,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-import zipfile
 
 # Run in a child interpreter with -I, so neither PYTHONPATH nor this test's
 # runfiles can supply a module the wheel is missing.
@@ -37,9 +36,21 @@ class WheelTest(unittest.TestCase):
         wheels = glob.glob(os.path.join(os.path.dirname(__file__), "*.whl"))
         self.assertEqual(len(wheels), 1, wheels)
         with tempfile.TemporaryDirectory() as site:
-            # A wheel's payload is its install layout.
-            with zipfile.ZipFile(wheels[0]) as wheel:
-                wheel.extractall(site)
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--quiet",
+                    "--no-index",
+                    "--no-deps",
+                    "--target",
+                    site,
+                    wheels[0],
+                ],
+                check=True,
+            )
             result = subprocess.run(
                 [sys.executable, "-I", "-c", IMPORT_CHECK, site],
                 capture_output=True,

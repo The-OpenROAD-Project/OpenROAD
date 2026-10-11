@@ -439,6 +439,7 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
+        "//python/modules",
         "//src/odb:odb_py",
         "//src/rmp:rmp_py",
         "//src/utl:utl_py",

@@ -39,12 +39,13 @@ using odb::dbDatabase;
 OpenRoad *
 getOpenRoad()
 {
-  // From Python the current instance is the one owned by the most recent
-  // live Tech, and there may be none.
+  // From Python the current instance is the one set by the most recently
+  // created Tech, and destroying that Tech clears it even if older ones
+  // are still alive.
   OpenRoad *openroad = OpenRoad::openRoad();
   if (openroad == nullptr) {
     utl::Logger::defaultLogger()->error(
-        utl::ORD, 105, "No OpenROAD instance exists; create a Tech first.");
+        utl::ORD, 105, "No current OpenROAD instance; create a Tech and keep it alive.");
   }
   return openroad;
 }

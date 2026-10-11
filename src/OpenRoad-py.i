@@ -120,10 +120,12 @@ namespace ord {
 
 %}
 
+#ifdef BAZEL
 // odb, utl and rmp are separate extension modules that other extensions
 // import, so they cannot be compiled in here.  Re-export them so
 // `from openroadpy import *` is the whole API.  Each module defines its own
-// SwigPyIterator; keep this one.
+// SwigPyIterator; keep this one.  (CMake registers odb, utl and rmp as
+// their own top-level modules instead.)
 %pythoncode %{
 _openroadpy_iterator = SwigPyIterator
 from src.odb.odb import *
@@ -132,3 +134,4 @@ from src.rmp.rmp_py import *
 SwigPyIterator = _openroadpy_iterator
 del _openroadpy_iterator
 %}
+#endif
