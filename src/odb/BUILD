@@ -77,7 +77,9 @@ py_library(
     name = "odb_py",
     srcs = [":swig-py"],
     data = [":_odb.so"],
-    imports = ["."],
+    # Imported as src.odb.odb; //python/modules provides the
+    # top-level name, so this directory stays off sys.path and the module
+    # is loaded once.
     visibility = ["//visibility:public"],
 )
 

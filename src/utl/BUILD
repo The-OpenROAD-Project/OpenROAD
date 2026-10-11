@@ -133,8 +133,9 @@ py_library(
     srcs = [":swig-py"],  # Use the .py output from the swig-py rule
     # The data attribute makes the .so file available at runtime.
     data = [":_utl.so"],
-    # This allows imports relative to the workspace root.
-    imports = ["."],
+    # Imported as src.utl.utl; //python/modules provides the
+    # top-level name, so this directory stays off sys.path and the module
+    # is loaded once.
     visibility = ["//visibility:public"],
 )
 
