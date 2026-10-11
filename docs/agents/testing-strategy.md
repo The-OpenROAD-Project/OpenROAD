@@ -144,10 +144,7 @@ The existing fixture stack already supports this:
 
 - One smoke test per public Tcl command and per Python command, on a trivial
   design, asserting invocation + basic return marshaling. Convert to
-  `PASSFAIL_TESTS` where possible. `test/helpers.tcl` provides `check`,
-  `check_error {description script ANT-0012}` and `exit_summary`;
-  `test/helpers.py` provides the same three as Python functions. A test built
-  from them prints `pass` as its last line and needs no `.ok` file.
+  `PASSFAIL_TESTS` where possible.
 - Treat the C++ test as the source of truth for correctness; bindings prove
   plumbing only. Do **not** duplicate algorithm assertions across Tcl + Python.
 - A future linter (not yet implemented) could enumerate public commands from the
