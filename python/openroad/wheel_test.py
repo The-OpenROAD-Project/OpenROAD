@@ -25,6 +25,8 @@ tech = Tech()
 assert odb.dbDatabase is not None
 assert hasattr(ant, "AntennaChecker")
 assert hasattr(wmk, "Watermark")
+import rmp
+assert hasattr(rmp, "Blif")
 assert isinstance(utl.ANT, int)
 print("imported", openroad.__file__)
 """

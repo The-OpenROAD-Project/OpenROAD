@@ -151,7 +151,9 @@ py_library(
     name = "rmp_py",
     srcs = [":swig-py"],
     data = [":_rmp_py.so"],
-    imports = ["."],
+    # Imported as src.rmp.rmp_py; //python/modules provides the top-level
+    # name, so this directory stays off sys.path and the module is loaded
+    # once.
     visibility = ["//visibility:public"],
 )
 
