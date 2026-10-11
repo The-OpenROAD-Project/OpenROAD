@@ -2493,7 +2493,7 @@ TEST_F(TileGeneratorTest, CollectChipletsAgreesWithTheUnfoldedModel)
       << "the unfolded and fallback traversals disagree on chiplet paths, "
          "which are persisted in user cookies";
   EXPECT_EQ(paths(unfolded),
-            (std::set<std::string>{"top", "top/die0", "top/die1"}));
+            (std::set<std::string>{"root", "root/die0", "root/die1"}));
 }
 
 // A face-down chiplet is MZ: {orient_2d=R0, mirror_z=true}.  Reading only the
@@ -2508,8 +2508,8 @@ TEST_F(TileGeneratorTest, ChipletReportsMirrorZAsFlipped)
   getDb()->constructUnfoldedModel();
 
   const std::vector<ChipletNode> chiplets = collectChiplets(root);
-  const ChipletNode* up = findChiplet(chiplets, "top/" + die0->getName());
-  const ChipletNode* down = findChiplet(chiplets, "top/" + die1->getName());
+  const ChipletNode* up = findChiplet(chiplets, "root/" + die0->getName());
+  const ChipletNode* down = findChiplet(chiplets, "root/" + die1->getName());
   ASSERT_NE(up, nullptr);
   ASSERT_NE(down, nullptr);
   EXPECT_FALSE(up->isFlipped());
@@ -2538,7 +2538,7 @@ TEST_F(TileGeneratorTest, ChipletFlipCancelsWhenNested)
   getDb()->constructUnfoldedModel();
 
   const std::vector<ChipletNode> chiplets = collectChiplets(root);
-  const ChipletNode* leaf = findChiplet(chiplets, "top/outer/inner");
+  const ChipletNode* leaf = findChiplet(chiplets, "root/outer/inner");
   ASSERT_NE(leaf, nullptr) << "the HIER ancestor's leaf is missing: the "
                               "unfolded model skips HIER chips, so its "
                               "descendants have to be rebuilt from the path";
@@ -2546,7 +2546,7 @@ TEST_F(TileGeneratorTest, ChipletFlipCancelsWhenNested)
       << "MZ inside MZ is face-up again, but the chiplet reports face-down";
 
   // The HIER node itself owns no block but still groups the UI trees.
-  const ChipletNode* group = findChiplet(chiplets, "top/outer");
+  const ChipletNode* group = findChiplet(chiplets, "root/outer");
   ASSERT_NE(group, nullptr) << "HIER grouping node dropped from the tree";
   EXPECT_TRUE(group->isFlipped());
 }
@@ -2561,14 +2561,14 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
   makeTileGen();
 
   const ChipletNode* before
-      = findChiplet(tile_gen_->chiplets(), "top/" + die0->getName());
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
   ASSERT_NE(before, nullptr);
   ASSERT_FALSE(before->isFlipped());
 
   die0->setOrient(odb::dbOrientType3D("MZ"));
 
   const ChipletNode* after
-      = findChiplet(tile_gen_->chiplets(), "top/" + die0->getName());
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
   ASSERT_NE(after, nullptr);
   EXPECT_TRUE(after->isFlipped())
       << "the chiplet cache did not notice setOrient, so the viewer keeps "
@@ -2579,7 +2579,7 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
   // the edit has to stay visible on later calls too — not just the one that
   // detected it.
   const ChipletNode* later
-      = findChiplet(tile_gen_->chiplets(), "top/" + die0->getName());
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
   ASSERT_NE(later, nullptr);
   EXPECT_TRUE(later->isFlipped())
       << "the reorient was reported once and then lost, which means a stale "
