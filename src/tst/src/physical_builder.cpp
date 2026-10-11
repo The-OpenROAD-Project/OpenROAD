@@ -3,6 +3,7 @@
 
 #include "tst/physical_builder.h"
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -13,6 +14,16 @@
 #include "odb/geom.h"
 
 namespace tst {
+
+namespace {
+
+std::string pointText(const odb::Point& point)
+{
+  return "(" + std::to_string(point.x()) + ", " + std::to_string(point.y())
+         + ")";
+}
+
+}  // namespace
 
 odb::dbTech* makeTech(odb::dbDatabase* db,
                       const char* name,
@@ -129,6 +140,26 @@ odb::dbTechLayerAntennaRule* applyAntennaRule(odb::dbTechLayer* layer,
                                           ? layer->getDefaultAntennaRule()
                                           : layer->createDefaultAntennaRule();
 
+  // odb asserts that a table is empty before setting it.
+  auto check_unset = [layer](const std::optional<Pwl>& spec_table,
+                             const odb::dbTechLayerAntennaRule::pwl_pair& table,
+                             const char* field) {
+    if (spec_table && !table.indices.empty()) {
+      throw std::invalid_argument(std::string("Antenna rule ") + field
+                                  + " is already set on layer "
+                                  + layer->getName());
+    }
+  };
+  check_unset(spec.diff_par, rule->getDiffPAR(), "diff_par");
+  check_unset(spec.diff_car, rule->getDiffCAR(), "diff_car");
+  check_unset(spec.diff_psr, rule->getDiffPSR(), "diff_psr");
+  check_unset(spec.diff_csr, rule->getDiffCSR(), "diff_csr");
+  check_unset(spec.gate_plus_diff_pwl,
+              rule->getGatePlusDiffPWL(),
+              "gate_plus_diff_pwl");
+  check_unset(
+      spec.area_diff_reduce, rule->getAreaDiffReduce(), "area_diff_reduce");
+
   if (spec.par) {
     rule->setPAR(*spec.par);
   }
@@ -244,6 +275,7 @@ RoutePath::~RoutePath()
 RoutePath& RoutePath::on(odb::dbTechLayer* layer, const odb::Point& start)
 {
   layer_ = layer;
+  point_ = start;
   encoder_.newPath(layer, odb::dbWireType::ROUTED);
   encoder_.addPoint(start.x(), start.y());
   return *this;
@@ -254,6 +286,12 @@ RoutePath& RoutePath::to(const odb::Point& point)
   if (layer_ == nullptr) {
     throw std::logic_error("RoutePath::to called before on");
   }
+  if (point.x() != point_.x() && point.y() != point_.y()) {
+    throw std::invalid_argument("RoutePath::to: diagonal step from "
+                                + pointText(point_) + " to "
+                                + pointText(point));
+  }
+  point_ = point;
   encoder_.addPoint(point.x(), point.y());
   return *this;
 }
@@ -262,6 +300,11 @@ RoutePath& RoutePath::via(odb::dbTechVia* via)
 {
   if (layer_ == nullptr) {
     throw std::logic_error("RoutePath::via called before on");
+  }
+  if (layer_ != via->getBottomLayer() && layer_ != via->getTopLayer()) {
+    throw std::invalid_argument("RoutePath::via: via " + via->getName()
+                                + " does not connect to layer "
+                                + layer_->getName());
   }
   encoder_.addTechVia(via);
   layer_ = (layer_ == via->getBottomLayer()) ? via->getTopLayer()

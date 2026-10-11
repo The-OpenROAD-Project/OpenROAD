@@ -102,6 +102,9 @@ inline Pwl constantPwl(double ratio)
 
 // The default (OXIDE1) antenna rule of a layer.  Unset fields keep the
 // rule's current value, so a spec can be applied on top of a LEF rule.
+// The Pwl fields are the exception: odb cannot replace a table once it is
+// set, so applyAntennaRule throws std::invalid_argument if one of them is
+// already set on the layer.
 struct AntennaRuleSpec
 {
   std::optional<double> par{};  // ANTENNAAREARATIO
@@ -158,7 +161,9 @@ odb::dbMaster* makeMaster(odb::dbLib* lib,
 //       .build();
 //
 // Each path runs along one layer until a via moves it to the via's other
-// layer.  Consecutive points on a layer must share an x or y coordinate.
+// layer.  Consecutive points on a layer must share an x or y coordinate,
+// and a via must connect to the current layer; either mistake throws
+// std::invalid_argument rather than encoding a wire odb would mangle.
 // build() finishes the wire and marks the net ROUTED; the destructor calls
 // it if the test did not.  Any wire already on the net is replaced.
 class RoutePath
@@ -184,6 +189,7 @@ class RoutePath
   odb::dbWire* wire_;
   odb::dbWireEncoder encoder_;
   odb::dbTechLayer* layer_{nullptr};
+  odb::Point point_;
   bool built_{false};
 };
 

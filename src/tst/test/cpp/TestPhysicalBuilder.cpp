@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <fstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -139,6 +140,24 @@ TEST_F(PhysicalBuilderTest, AntennaRuleUpdatesExistingRule)
   EXPECT_DOUBLE_EQ(rule->getPSR(), 50);
 }
 
+TEST_F(PhysicalBuilderTest, AntennaRuleKeepsExistingTables)
+{
+  applyAntennaRule(stack_.metal(1), {.diff_psr = Pwl{{0, 1}, {10, 20}}});
+  applyAntennaRule(stack_.metal(1), {.psr = 50});
+  const auto diff_psr = stack_.metal(1)->getDefaultAntennaRule()->getDiffPSR();
+  EXPECT_EQ(diff_psr.ratios, (std::vector<double>{10, 20}));
+}
+
+TEST_F(PhysicalBuilderTest, AntennaRuleRejectsReplacingTable)
+{
+  applyAntennaRule(stack_.metal(1), {.diff_psr = constantPwl(10)});
+  EXPECT_THROW(applyAntennaRule(stack_.metal(1), {.diff_psr = constantPwl(20)}),
+               std::invalid_argument);
+  // A different table that is still unset can be added.
+  EXPECT_NO_THROW(applyAntennaRule(
+      stack_.metal(1), {.area_diff_reduce = Pwl{{0, 1}, {1, 0.5}}}));
+}
+
 TEST_F(PhysicalBuilderTest, MasterPinsAndAntennaAreas)
 {
   odb::dbMaster* buf = makeMaster(lib_,
@@ -261,6 +280,22 @@ TEST_F(PhysicalBuilderTest, RoutePathReplacesExistingWire)
   const std::vector<WireShape> shapes = wireShapes(net->getWire());
   ASSERT_EQ(shapes.size(), 1);
   EXPECT_EQ(shapes[0].layer, stack_.metal(3));
+}
+
+TEST_F(PhysicalBuilderTest, RoutePathRejectsDiagonalStep)
+{
+  odb::dbNet* net = odb::dbNet::create(block_, "n1");
+  RoutePath path(net);
+  path.on(stack_.metal(1), {0, 0});
+  EXPECT_THROW(path.to({100, 100}), std::invalid_argument);
+}
+
+TEST_F(PhysicalBuilderTest, RoutePathRejectsUnconnectedVia)
+{
+  odb::dbNet* net = odb::dbNet::create(block_, "n1");
+  RoutePath path(net);
+  path.on(stack_.metal(1), {0, 0});
+  EXPECT_THROW(path.via(stack_.via(2)), std::invalid_argument);
 }
 
 TEST_F(PhysicalBuilderTest, Guide)
