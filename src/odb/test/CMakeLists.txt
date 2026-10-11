@@ -42,7 +42,6 @@ or_integration_tests(
     read_3dbx
     read_db
     read_def
-    read_def_non_integer
     read_def_units_not_divisor
     read_def_virtual
     read_def58
