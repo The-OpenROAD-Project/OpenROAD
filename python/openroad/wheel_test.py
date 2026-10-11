@@ -18,11 +18,13 @@ IMPORT_CHECK = """
 import sys
 sys.path.insert(0, sys.argv[1])
 import openroad
-import odb, utl, gpl, ant, cts, drt, grt, ifp, pdn, rcx, stt, tap
+import odb, utl, gpl, ant, cgt, cts, dpl, drt, exa, fin, grt, ifp
+import par, pdn, ppl, psm, rcx, rsz, stt, tap, wmk
 from openroad import Design, Tech
 tech = Tech()
 assert odb.dbDatabase is not None
 assert hasattr(ant, "AntennaChecker")
+assert hasattr(wmk, "Watermark")
 assert isinstance(utl.ANT, int)
 print("imported", openroad.__file__)
 """

@@ -227,7 +227,9 @@ messages_txt(
 py_library(
     name = "wmk_py",
     srcs = ["wmk.py"],
-    imports = ["."],
+    # Imported as src.wmk.wmk; //python/modules provides the top-level
+    # name, so this directory stays off sys.path and the module is loaded
+    # once.
     visibility = ["//visibility:public"],
     deps = ["//:openroad_py"],
 )
