@@ -286,7 +286,7 @@ void WebServer::serve(int port, const std::string& bind_address)
         = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
     // Tiles drawn while a command ran left the renderers out; redraw them
     // now that it is done.
-    tcl_eval->redraw_renderers = [hook = viewer_hook_.get()]() {
+    tcl_eval_->redraw_renderers = [hook = viewer_hook_.get()]() {
       hook->sessions().broadcast(R"({"type":"debug_refresh"})");
     };
 
@@ -296,10 +296,10 @@ void WebServer::serve(int port, const std::string& bind_address)
 
     hooks.draw = [weak_gen = std::weak_ptr<TileGenerator>(generator_),
                   hook = viewer_hook_.get(),
-                  tcl = tcl_eval](std::vector<unsigned char>& image,
-                                  const TileFrame& frame,
-                                  bool debug_live,
-                                  odb::dbTechLayer* layer) {
+                  tcl = tcl_eval_.get()](std::vector<unsigned char>& image,
+                                         const TileFrame& frame,
+                                         bool debug_live,
+                                         odb::dbTechLayer* layer) {
       if (hook == nullptr) {
         return;
       }
