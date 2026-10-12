@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -1509,6 +1510,13 @@ int definReader::unitsCallback(DefParser::defrCallbackType_e type,
     UNSUPPORTED(
         fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) is "
                     "greater than the database units per micron ({}) value.",
+                    d,
+                    reader->_tech->getDbUnitsPerMicron()));
+  } else if (std::fmod(reader->_tech->getDbUnitsPerMicron(), d) != 0) {
+    UNSUPPORTED(
+        fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) does "
+                    "not evenly divide the database units per micron ({}) "
+                    "value.",
                     d,
                     reader->_tech->getDbUnitsPerMicron()));
   }

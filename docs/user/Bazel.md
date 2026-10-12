@@ -223,7 +223,9 @@ build) carry the real version.
 
 https://bazel.build/extending/platforms
 
-Note that this builds a different configuration than is used during tests. Tests run with the `cfg=exec` configuraiton, whereas the above builds the `cfg=target` configuration. The TL;DR is that you are probably better of running a single test to test building so that you don't have to rebuild if you want to run tests after testing build.
+`bazelisk build :openroad` and the tests use the same `cfg=target` binary, so
+building first and testing afterwards does not rebuild OpenROAD. See
+[Bazel targets](Bazel-targets.md).
 
 ## Can I force a rebuild?
 
@@ -417,13 +419,12 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 tests, which run the instrumented `openroad` binary. They do **not** work for
 the `py`-tagged tests, which import OpenROAD as a Python extension module:
 
-    ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
+    ImportError: _openroad.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
 
 Clang links a sanitizer runtime into executables but not into shared
 libraries, assuming whoever loads the library provides the symbols. That holds
 for `openroad`, which statically links the runtime; it fails for
-`_openroadpy.so` / `_odb.so` / `_utl.so`, which the *uninstrumented* system
-`python3` dlopens.
+`_openroad.so`, which the *uninstrumented* system `python3` dlopens.
 
 `-shared-libsan` is the mechanism for this case, but three things in
 hermetic-llvm block it today:
@@ -441,14 +442,9 @@ Fixing this belongs upstream in hermetic-llvm. Until then, skip them with
 `--test_tag_filters=-py`; the Tcl tests cover the same C++ code paths as their
 Python counterparts.
 
-The Tcl tests do get instrumented. `test/regression.bzl` normally takes the
-`openroad` binary from the exec configuration, to avoid building it twice when
-it is also used as a build tool. The sanitizer configs only
-instrument the target configuration, so under `//bazel:sanitizer_build` the
-rule takes the binary from there instead. Only the binary under test moves;
-swig, bison and the other exec-configuration tools stay uninstrumented, and
-because exactly one of the two attributes is ever set `openroad` is still
-built once.
+The Tcl tests do get instrumented: they run the `cfg=target` `openroad`, which
+is what the sanitizer configs instrument. swig, bison and the other
+exec-configuration build tools stay uninstrumented.
 
 ## GPU build (`--config=gpu`)
 

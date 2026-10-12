@@ -40,6 +40,14 @@ export function nonSolidPatterns(patterns) {
     return out;
 }
 
+// Whether every visibility key of any one group is on: how the tech
+// response's overlays say when each shows (`shown_by`) and when it depends on
+// the visible layers (`layers_by`).  A key `visibility` lacks is off.
+export function anyGroupOn(groups, visibility) {
+    return (groups || []).some(
+        (group) => group.every((key) => !!visibility[key]));
+}
+
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
 // `chipletData` entry comes from the backend serializeTechResponse and
 // has shape { path, name, parent, master, depth }.  `savedHidden` is the
@@ -61,6 +69,10 @@ export function buildChipletFlatNodes(chipletData, savedHidden) {
         };
     });
 }
+
+// The server's paint order puts the routing layers from here up
+// (TileGenerator::saveImageLayerOrder); an overlay below it goes under them.
+const kTechLayerZBase = 3;
 
 // Fallback color used when the server didn't supply a layer color.
 const fallbackLayerPalette = [
@@ -155,28 +167,29 @@ export function populateDisplayControls(app, visibility, selectability,
         return item;
     }
 
-    // Under the routing layers: instance borders (no toggle), IO pins, module
-    // colouring and the manufacturing grid.
+    // Under the routing layers: instance borders (no toggle), IO pins and
+    // module colouring.
     const underItems = [
         pseudoItem('_instances', null, true),
         pseudoItem('_pins', 'pinsLayer', visibility.pins),
         pseudoItem('_modules', 'modulesLayer', visibility.module_view),
-        pseudoItem('_mfg_grid', 'mfgGridLayer', visibility.mfg_grid),
     ];
-    // Over the highlight overlay and the heat map, in the GUI paint order.
-    const topItems = [
-        pseudoItem('_access_points', 'accessPointsLayer',
-                   visibility.access_points),
-    ];
-    // Region boundaries only exist when the design has dbRegions: the layer
-    // is default-ON (Qt parity) and would otherwise always come back empty.
-    // (Regions created via Tcl mid-session need a page reload to appear.)
-    app.regionsLayer = null;
-    if (techData && techData.has_regions) {
-        topItems.push(pseudoItem('_regions', 'regionsLayer', visibility.regions));
+    // The self-painting overlays (access points, regions, grids, instance and
+    // pin names), as the server lists them: name, paint order and when each
+    // shows.  It leaves out those the design gives nothing to draw, such as
+    // regions in a design without any.  Those the server orders below the
+    // routing layers (the manufacturing grid) go under them; the rest go over
+    // the highlight overlay and the heat map, in the GUI paint order.
+    const topItems = [];
+    app.overlayLayers = ((techData && techData.overlays) || []).map((def) => ({
+        def,
+        layer: pseudoItem(def.name, null, anyGroupOn(def.shown_by, visibility)),
+        under: def.z_index < kTechLayerZBase,
+    }));
+    for (const { layer, under } of [...app.overlayLayers].sort(
+        (a, b) => a.def.z_index - b.def.z_index)) {
+        (under ? underItems : topItems).push(layer);
     }
-    topItems.push(pseudoItem('_gcell_grid', 'gcellGridLayer',
-                             visibility.gcell_grid));
 
     // --- Layers group (using CheckboxTreeModel) ---
 
@@ -509,7 +522,16 @@ export function populateDisplayControls(app, visibility, selectability,
         });
         // One refresh per affected slot, after the whole walk: a group
         // toggle touches many nodes that share a slot.  Pins filter by
-        // visible_layers, which only changes when some routing entry flips.
+        // visible_layers, which only changes when some routing entry flips,
+        // and so do the overlays that draw by them under the current
+        // visibility.
+        if (app.baseSlot && dirtySlots.has(app.baseSlot)) {
+            for (const { def, under } of app.overlayLayers) {
+                if (anyGroupOn(def.layers_by, visibility)) {
+                    dirtySlots.add(under ? app.baseSlot : app.topSlot);
+                }
+            }
+        }
         flushDirtySlots();
         // Visibility off ⇒ selectability disabled — refresh selectability DOM.
         syncLayerSelDom();

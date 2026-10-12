@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { tileSizeCss } from './tile-request.js';
+
 // Which layer tiles are worth requesting.
 //
 // Most of a technology's layers hold nothing in any given view: implant and
@@ -23,6 +25,9 @@
 //     the server's default, and those are all on but fills.
 //   - Tracks and the debug overlays draw on layer tiles without being design
 //     geometry, so skipping stops while any of them is on.
+//   - A layer in `sized` (the instance and pin names) only draws on features
+//     at least min_css_px long on screen, so a tile is requested only where
+//     the features that large at its zoom are.
 
 // Visibility flags under which a layer tile can carry content that is not in
 // the extents.
@@ -57,11 +62,34 @@ function tileOverlaps(extent, coords) {
     return ex0 <= x1 && ex1 >= x0 && ey0 <= y1 && ey1 >= y0;
 }
 
+// Whether tile `coords` can show anything of `sized` ({ min_css_px, by_size }),
+// whose `by_size` lists [size, extent] in ascending size, sizes as fractions of
+// the zoom-0 tile: the extent of every feature at least that large.  A feature
+// needs min_css_px on screen, which at zoom z on `tileSize` CSS px tiles is
+// `need` of the zoom-0 tile; the last class no larger than that holds every
+// feature that big.
+function sizedOverlaps(sized, coords, tileSize) {
+    const classes = sized && Array.isArray(sized.by_size) ? sized.by_size : [];
+    if (classes.length === 0 || !coords || !(tileSize > 0)) {
+        return true;
+    }
+    const need = sized.min_css_px / (tileSize * Math.pow(2, coords.z));
+    let pick = classes[0];
+    for (const entry of classes) {
+        if (entry[0] <= need) {
+            pick = entry;
+        }
+    }
+    return tileOverlaps(pick[1], coords);
+}
+
 export class LayerExtents {
     constructor() {
         this._layers = null;
         // flag -> Map(layer -> extent), for the sources that flag gates.
         this._gated = new Map();
+        // layer -> { min_css_px, by_size }, for the layers drawn by size.
+        this._sized = new Map();
         this._generation = 0;
     }
 
@@ -71,6 +99,7 @@ export class LayerExtents {
         this._generation++;
         this._layers = null;
         this._gated = new Map();
+        this._sized = new Map();
         return this._generation;
     }
 
@@ -95,6 +124,9 @@ export class LayerExtents {
         }
         this._layers = new Map(Object.entries(resp.layers));
         this._gated = gated;
+        this._sized = new Map(
+            resp.sized && typeof resp.sized === 'object'
+                ? Object.entries(resp.sized) : []);
         return true;
     }
 
@@ -109,13 +141,19 @@ export class LayerExtents {
     }
 
     // False only when tile `coords` ({x, y, z}) of `layer` provably has
-    // nothing to draw under `visibility`.
-    mayHaveContent(layer, coords, visibility) {
-        if (!this._layers || !this._layers.has(layer)) {
+    // nothing to draw under `visibility`, on tiles `tileSize` CSS px wide.
+    mayHaveContent(layer, coords, visibility, tileSize = 256) {
+        if (!this._layers) {
             return true;
         }
         if (visibility
             && NON_GEOMETRY_FLAGS.some((flag) => visibility[flag])) {
+            return true;
+        }
+        if (this._sized.has(layer)) {
+            return sizedOverlaps(this._sized.get(layer), coords, tileSize);
+        }
+        if (!this._layers.has(layer)) {
             return true;
         }
         if (tileOverlaps(this._layers.get(layer), coords)) {
@@ -141,5 +179,6 @@ export function tileMayHaveContent(ctx, layer, coords) {
     if (!extents) {
         return true;
     }
-    return extents.mayHaveContent(layer, coords, ctx.visibility);
+    return extents.mayHaveContent(layer, coords, ctx.visibility,
+                                  tileSizeCss());
 }

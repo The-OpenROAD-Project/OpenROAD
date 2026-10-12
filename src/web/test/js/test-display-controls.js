@@ -5,8 +5,10 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { dom } from './setup-dom.js';
 
-const { layerRangeSet, nonSolidPatterns, populateDisplayControls,
-        serverGroupLayers } = await import('../../src/display-controls.js');
+const {
+    anyGroupOn, layerRangeSet, nonSolidPatterns, populateDisplayControls,
+    serverGroupLayers,
+} = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 const { makeFakeView } = await import('./fake-view.js');
 
@@ -79,6 +81,28 @@ describe('nonSolidPatterns', () => {
     it('tolerates null/undefined input', () => {
         assert.deepEqual(nonSolidPatterns(null), {});
         assert.deepEqual(nonSolidPatterns(undefined), {});
+    });
+});
+
+// The overlays' `shown_by` / `layers_by`, as the server's anyGroupOn reads
+// them.
+describe('anyGroupOn', () => {
+    const LABELS = [['inst_names'], ['inst_pins', 'inst_pin_names']];
+
+    it('is on when every key of one group is', () => {
+        assert.ok(anyGroupOn(LABELS, { inst_names: true }));
+        assert.ok(anyGroupOn(LABELS, { inst_pins: true, inst_pin_names: true }));
+    });
+
+    it('is off when no group is complete', () => {
+        assert.ok(!anyGroupOn(LABELS, { inst_pins: false, inst_pin_names: true }));
+        assert.ok(!anyGroupOn(LABELS, {}), 'a missing key is off');
+    });
+
+    it('takes an empty group as always on and no groups as never', () => {
+        assert.ok(anyGroupOn([[]], {}));
+        assert.ok(!anyGroupOn([], { inst_names: true }));
+        assert.ok(!anyGroupOn(undefined, {}));
     });
 });
 
@@ -228,6 +252,57 @@ describe('layer row selection', () => {
         assert.equal(requests.length, 1);
         assert.equal(requests[0].layer, 'metal1');
     });
+
+    // Overlays as the tech response lists them.
+    const OVERLAYS = [
+        { name: '_access_points', z_index: 1000,
+          shown_by: [['access_points']], layers_by: [[]] },
+        { name: '_gcell_grid', z_index: 1002,
+          shown_by: [['gcell_grid']], layers_by: [] },
+        { name: '_inst_labels', z_index: 999,
+          shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+          layers_by: [['inst_pins', 'inst_pin_names']] },
+    ];
+
+    it('puts each listed overlay in the slot its paint order picks', () => {
+        techData.overlays = [
+            ...OVERLAYS,
+            { name: '_mfg_grid', z_index: 2,
+              shown_by: [['mfg_grid']], layers_by: [] },
+        ];
+        render();
+        // Under every routing layer, which follow it.
+        assert.deepEqual(app.baseSlot.items.slice(0, 4).map((i) => i.layer),
+                         ['_instances', '_pins', '_modules', '_mfg_grid']);
+        assert.deepEqual(app.topSlot.items.map((i) => i.layer),
+                         ['_inst_labels', '_access_points', '_gcell_grid']);
+    });
+
+    // A layer toggle refreshes the top slot when an overlay in it draws by the
+    // visible layers under the current visibility: always the access points,
+    // the names only while pin names are shown, never the gcell grid.
+    for (const [overlays, pinNames, want] of [
+        [OVERLAYS, false, 1],
+        [OVERLAYS.slice(1), false, 0],
+        [OVERLAYS.slice(1), true, 1],
+    ]) {
+        it(`a layer toggle refreshes the top slot ${want} time(s) with `
+           + `${overlays.map((o) => o.name).join(', ')} and pin names `
+           + `${pinNames ? 'on' : 'off'}`, () => {
+            techData.overlays = overlays;
+            populateDisplayControls(
+                app,
+                { inst_names: true, inst_pins: true, inst_pin_names: pinNames,
+                  access_points: true, gcell_grid: true },
+                {}, techData, () => {}, null);
+            const before = app.topSlot.refreshes;
+            const cb = layerRow(app.displayControlsEl, 'metal1')
+                .querySelector('input.vis-cb');
+            cb.checked = false;
+            cb.dispatchEvent(new dom.window.Event('change'));
+            assert.equal(app.topSlot.refreshes - before, want);
+        });
+    }
 
     it('clicking the visibility checkbox still toggles', () => {
         const container = render();
@@ -449,6 +524,18 @@ describe('routing layer opacity', () => {
                 ],
                 instances: [],
             },
+            // As the tech response lists them, in its order.
+            overlays: [
+                { name: '_access_points', z_index: 1000,
+                  shown_by: [['access_points']], layers_by: [[]] },
+                { name: '_mfg_grid', z_index: 2,
+                  shown_by: [['mfg_grid']], layers_by: [] },
+                { name: '_gcell_grid', z_index: 1002,
+                  shown_by: [['gcell_grid']], layers_by: [] },
+                { name: '_inst_labels', z_index: 999,
+                  shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+                  layers_by: [['inst_pins', 'inst_pin_names']] },
+            ],
         };
     });
 
@@ -471,7 +558,7 @@ describe('routing layer opacity', () => {
                          ['_instances', '_pins', '_modules', '_mfg_grid',
                           'metal1', 'metal2']);
         assert.deepEqual(app.topSlot.items.map((i) => i.layer),
-                         ['_access_points', '_gcell_grid']);
+                         ['_inst_labels', '_access_points', '_gcell_grid']);
         assert.ok(app.baseSlot.opts.order < app.topSlot.opts.order);
         assert.deepEqual(app.allLayers, [app.baseSlot, app.topSlot]);
     });
@@ -480,7 +567,10 @@ describe('routing layer opacity', () => {
         render({ pins: true, module_view: false, gcell_grid: true });
         assert.equal(app.pinsLayer.visible, true);
         assert.equal(app.modulesLayer.visible, false);
-        assert.equal(app.gcellGridLayer.visible, true);
+        const overlay = (name) => app.overlayLayers.find(
+            ({ def }) => def.name === name).layer;
+        assert.equal(overlay('_gcell_grid').visible, true);
+        assert.equal(overlay('_access_points').visible, false);
     });
 
     it('replaces its slots when the panel is rebuilt', () => {

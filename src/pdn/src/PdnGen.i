@@ -39,8 +39,25 @@ using utl::PDN;
     $1 = pdn::ExtensionMode::kRings;
   } else if (strcasecmp(str, "Boundary") == 0) {
     $1 = pdn::ExtensionMode::kBoundary;
+  } else if (strcasecmp(str, "PadRing") == 0) {
+    $1 = pdn::ExtensionMode::kPadRing;
   } else {
     $1 = pdn::ExtensionMode::kCore;
+  }
+}
+
+%typemap(in) pdn::StrapOffsetType {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "START") == 0) {
+    $1 = pdn::StrapOffsetType::kStart;
+  } else if (strcasecmp(str, "CENTER") == 0) {
+    $1 = pdn::StrapOffsetType::kCenter;
+  } else if (strcasecmp(str, "LAST") == 0) {
+    $1 = pdn::StrapOffsetType::kLast;
+  } else if (strcasecmp(str, "END") == 0) {
+    $1 = pdn::StrapOffsetType::kEnd;
+  } else {
+    $1 = pdn::StrapOffsetType::kFirst;
   }
 }
 
@@ -234,11 +251,12 @@ void createSrouteWires(
 void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 
                     int width, 
-                    pdn::ExtensionMode extend)
+                    pdn::ExtensionMode extend,
+                    int extend_distance)
 {
   PdnGen* pdngen = ord::getPdnGen();
   for (auto* grid : pdngen->findGrid(grid_name, true)) {
-    pdngen->makeFollowpin(grid, layer, width, extend);
+    pdngen->makeFollowpin(grid, layer, width, extend, extend_distance);
   }
 }
 
@@ -254,7 +272,9 @@ void make_strap(const char* grid_name,
                 bool starts_with_power,
                 pdn::ExtensionMode extend,
                 const std::vector<odb::dbNet*>& nets,
-                bool allow_out_of_core)
+                bool allow_out_of_core,
+                pdn::StrapOffsetType offset_type,
+                int extend_distance)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = kGrid;
@@ -277,7 +297,9 @@ void make_strap(const char* grid_name,
                       starts_with,
                       extend,
                       nets,
-                      allow_out_of_core);
+                      allow_out_of_core,
+                      offset_type,
+                      extend_distance);
   }
 }
 
