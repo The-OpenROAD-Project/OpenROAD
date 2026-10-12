@@ -8,6 +8,7 @@ or_integration_tests(
   TESTS
     acd_resynth
     comb_loop
+    def_units
 )
 
 set(_syn_test_libs

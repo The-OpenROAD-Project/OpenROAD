@@ -2,17 +2,21 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
+#include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
 #include "move/MoveGenerator.hh"
 #include "odb/db.h"
 #include "odb/defin.h"
+#include "policy/SetupLegacyPolicy.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -47,6 +51,40 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+class TestSetupLegacyPolicy : public SetupLegacyPolicy
+{
+ public:
+  using SetupLegacyBase::EndpointRepairState;
+  using SetupLegacyBase::refreshEndpointSlacks;
+  using SetupLegacyBase::repairBudget;
+  using SetupLegacyPolicy::MainRepairState;
+  using SetupLegacyPolicy::repairEndpoint;
+  using SetupLegacyPolicy::SetupLegacyPolicy;
+
+  void setRepairPathStep(std::function<bool()> step)
+  {
+    repair_path_step_ = std::move(step);
+  }
+
+  const std::vector<bool>& recordedForceSingleRepair() const
+  {
+    return recorded_force_single_repair_;
+  }
+
+ protected:
+  bool repairPath(sta::Path* /*path*/,
+                  sta::Slack /*path_slack*/,
+                  bool force_single_repair) override
+  {
+    recorded_force_single_repair_.push_back(force_single_repair);
+    return repair_path_step_ ? repair_path_step_() : false;
+  }
+
+ private:
+  std::function<bool()> repair_path_step_;
+  std::vector<bool> recorded_force_single_repair_;
 };
 
 class TestResizer : public tst::IntegratedFixture
@@ -563,6 +601,189 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "mid_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "deep_buf0/Z"));
+}
+
+TEST_F(TestResizer, RepairBudgetClampsToAtLeastOneWhenSlackImprovesPastMinViol)
+{
+  readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
+                      /*init_default_sdc=*/true,
+                      /*hierarchy=*/false);
+
+  sta::Pin* out1_pin = findTopPin("out1");
+  sta::Pin* out2_pin = findTopPin("out2");
+  ASSERT_NE(out1_pin, nullptr);
+  ASSERT_NE(out2_pin, nullptr);
+
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const sta::MinMax* max = sta::MinMax::max();
+  const sta::Slack out1_base_slack
+      = sta_->slack(sta_->graph()->pinLoadVertex(out1_pin), max);
+  const sta::Slack out2_base_slack
+      = sta_->slack(sta_->graph()->pinLoadVertex(out2_pin), max);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+
+  // Give out1 an initial violation of 0.20 ns (max_viol) and out2 an initial
+  // violation of 0.10 ns (min_viol).
+  sta_->setOutputDelay(out1_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out1_base_slack + staTime(0.20f),
+                       sdc);
+  sta_->setOutputDelay(out2_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out2_base_slack + staTime(0.10f),
+                       sdc);
+  sta_->updateTiming(true);
+
+  RepairTargetCollector collector(&resizer_);
+  collector.init(0.0f);
+  ASSERT_EQ(collector.getMaxEndpointCount(), 2);
+  collector.setToEndpoint(0);
+
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  setup_context.min_viol = 0.067f;
+  setup_context.max_viol = 0.256f;
+  setup_context.max_repairs_per_pass = 10;
+  const OptimizerRunConfig run_config;
+  const TestSetupLegacyPolicy policy(
+      resizer_, committer, setup_context, run_config);
+
+  // Once a path's violation (-path_slack) shrinks below the initial min_viol,
+  // repairBudget must still allow at least 1 repair per pass rather than
+  // returning 0 or a negative budget.
+  EXPECT_EQ(policy.repairBudget(-0.044f, /*force_single_repair=*/false), 1);
+  EXPECT_EQ(policy.repairBudget(-0.005f, /*force_single_repair=*/false), 1);
+
+  // Improve out1's violation to 0.05 ns (below the initial min_viol of 0.10 ns
+  // recorded in collector, while remaining negative-slack).
+  sta_->setOutputDelay(out1_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out1_base_slack + staTime(0.05f),
+                       sdc);
+  sta_->updateTiming(true);
+  ASSERT_LT(collector.getCurrentEndpointSlack(), 0.0f);
+  ASSERT_GT(collector.getCurrentEndpointSlack(),
+            collector.getViolatingEndpoints().back().second);
+  EXPECT_EQ(collector.repairsPerPass(10), 1);
+}
+
+TEST_F(TestResizer, SetupLegacyPolicyResetsForceSingleRepairAfterImprovingPass)
+{
+  readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
+                      /*init_default_sdc=*/true,
+                      /*hierarchy=*/false);
+
+  odb::dbInst* target_db = block_->findInst("target");
+  ASSERT_NE(target_db, nullptr);
+  sta::Instance* target_inst = db_network_->dbToSta(target_db);
+  ASSERT_NE(target_inst, nullptr);
+  sta::LibertyCell* or2_x1 = sta_->network()->findLibertyCell("OR2_X1");
+  sta::LibertyCell* or2_x4 = sta_->network()->findLibertyCell("OR2_X4");
+  ASSERT_NE(or2_x1, nullptr);
+  ASSERT_NE(or2_x4, nullptr);
+  ASSERT_TRUE(resizer_.replaceCell(target_inst, or2_x1));
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  sta::Pin* out1_pin = findTopPin("out1");
+  ASSERT_NE(out1_pin, nullptr);
+  sta::Port* out1_port = db_network_->port(out1_pin);
+  ASSERT_NE(out1_port, nullptr);
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+  const float ext_cap = sta_->units()->capacitanceUnit()->userToSta(50.0f);
+  sta_->setPortExtPinCap(out1_port,
+                         sta::RiseFallBoth::riseFall(),
+                         sta::MinMaxAll::all(),
+                         ext_cap,
+                         sdc);
+  sta_->updateTiming(true);
+
+  sta::Vertex* endpoint = sta_->graph()->pinLoadVertex(out1_pin);
+  ASSERT_NE(endpoint, nullptr);
+  const sta::Slack out1_base_slack = sta_->slack(endpoint, sta::MinMax::max());
+
+  sta_->setOutputDelay(out1_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out1_base_slack + staTime(0.10f),
+                       sdc);
+  sta_->updateTiming(true);
+
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig run_config;
+  run_config.setup_slack_margin = 0.0f;
+  TestSetupLegacyPolicy policy(resizer_, committer, setup_context, run_config);
+  ASSERT_TRUE(policy.start());
+
+  TestSetupLegacyPolicy::EndpointRepairState endpoint_state;
+  endpoint_state.end = endpoint;
+  policy.refreshEndpointSlacks(endpoint_state);
+  ASSERT_LT(endpoint_state.end_slack, 0.0f);
+  endpoint_state.prev_end_slack = endpoint_state.end_slack;
+  endpoint_state.prev_worst_slack = endpoint_state.worst_slack;
+  // Simulate a prior non-improving pass that latched force_single_repair=true.
+  endpoint_state.force_single_repair = true;
+  endpoint_state.decreasing_slack_passes = 1;
+
+  TestSetupLegacyPolicy::MainRepairState main_state;
+  main_state.end_index = 2;
+  main_state.max_end_count = 2;
+  main_state.num_viols = 2;
+
+  int call_count = 0;
+  policy.setRepairPathStep([&]() {
+    ++call_count;
+    if (call_count == 1) {
+      // Pass 1 improves slack by upsizing target from OR2_X1 to OR2_X4.
+      return resizer_.replaceCell(target_inst, or2_x4);
+    }
+    return false;
+  });
+
+  {
+    est::IncrementalParasiticsGuard guard(&ep_);
+    policy.repairEndpoint(endpoint_state, main_state);
+  }
+
+  ASSERT_EQ(policy.recordedForceSingleRepair().size(), 2u);
+  EXPECT_TRUE(policy.recordedForceSingleRepair()[0]);
+  EXPECT_FALSE(policy.recordedForceSingleRepair()[1]);
+  EXPECT_FALSE(endpoint_state.force_single_repair);
 }
 
 }  // namespace rsz
