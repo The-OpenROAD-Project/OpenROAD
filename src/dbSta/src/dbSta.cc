@@ -460,7 +460,7 @@ void dbSta::postReadDb(odb::dbDatabase* db)
             return PropertyValue(prop->getValue());
           }
         }
-        return PropertyValue(std::string());
+        return PropertyValue();
       });
   props->defineProperty<Pin>("pin", "src", "string");
   props->defineProperty(
@@ -470,7 +470,7 @@ void dbSta::postReadDb(odb::dbDatabase* db)
             return PropertyValue(prop->getValue());
           }
         }
-        return PropertyValue(std::string());
+        return PropertyValue();
       });
   odb::dbChip* chip = db_->getChip();
   if (chip) {
