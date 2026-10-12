@@ -45,6 +45,7 @@ class Snapper;
 using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
 using SoftMacroNameToIdMap = std::map<std::string, int>;
 using ClusterToMacroMap = std::map<int, int>;  // cluster_id -> macro_id
+using ClusterList = std::vector<Cluster*>;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
@@ -227,9 +228,12 @@ class HierRTLMP
                                         bool& array_has_empty_space);
 
   // Orientation Improvement
-  void generateTemporaryStdCellsPlacement(Cluster* cluster);
-  void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
-  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
+  void generateTemporaryStdCellsPlacement();
+  void fetchLeafStdCellClusters(ClusterList& leaf_std_cell_clusters,
+                                Cluster* candidate) const;
+  void setClusterStdCellsLocation(Cluster* cluster);
+  void setTemporaryStdCellLocation(odb::dbInst* std_cell,
+                                   const odb::Point& cluster_center);
 
   void correctAllMacrosOrientation();
   void correctMacroOrientationSingle();

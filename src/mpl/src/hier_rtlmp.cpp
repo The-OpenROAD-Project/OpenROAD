@@ -237,7 +237,7 @@ void HierRTLMP::run()
 
   updateMacrosOnDb();
 
-  generateTemporaryStdCellsPlacement(tree_->root.get());
+  generateTemporaryStdCellsPlacement();
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
@@ -2246,59 +2246,59 @@ void HierRTLMP::updateChildrenRealLocation(Cluster* parent,
   }
 }
 
-void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
-                                            odb::dbInst* std_cell)
-{
-  const SoftMacro* soft_macro = cluster->getSoftMacro();
-
-  if (!soft_macro) {
-    return;
-  }
-
-  const int soft_macro_center_x_dbu = soft_macro->getPinX();
-  const int soft_macro_center_y_dbu = soft_macro->getPinY();
-
-  // Std cells are placed in the center of the cluster they belong to
-  std_cell->setLocation(
-      (soft_macro_center_x_dbu - std_cell->getBBox()->getDX() / 2),
-      (soft_macro_center_y_dbu - std_cell->getBBox()->getDY() / 2));
-
-  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-}
-
-void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
-                                          odb::dbModule* module)
-{
-  for (odb::dbInst* inst : module->getInsts()) {
-    if (!inst->isCore()) {
-      continue;
-    }
-    setTemporaryStdCellLocation(cluster, inst);
-  }
-
-  for (odb::dbModInst* mod_insts : module->getChildren()) {
-    setModuleStdCellsLocation(cluster, mod_insts->getMaster());
-  }
-}
-
 // Update the locations of std cells in odb using the locations that
 // HierRTLMP estimates for the leaf standard clusters. This is needed
 // for the orientation improvement step.
-void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
+void HierRTLMP::generateTemporaryStdCellsPlacement()
 {
-  if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
-    for (odb::dbModule* module : cluster->getDbModules()) {
-      setModuleStdCellsLocation(cluster, module);
-    }
+  ClusterList leaf_std_cell_clusters;
+  fetchLeafStdCellClusters(leaf_std_cell_clusters, tree_->root.get());
 
-    for (odb::dbInst* leaf_std_cell : cluster->getLeafStdCells()) {
-      setTemporaryStdCellLocation(cluster, leaf_std_cell);
-    }
+  for (Cluster* cluster : leaf_std_cell_clusters) {
+    setClusterStdCellsLocation(cluster);
+  }
+}
+
+void HierRTLMP::fetchLeafStdCellClusters(ClusterList& leaf_std_cell_clusters,
+                                         Cluster* candidate) const
+{
+  // IO clusters are excluded, because the check the number of std cells.
+  if (candidate->isLeaf() && candidate->getNumStdCell() != 0) {
+    leaf_std_cell_clusters.push_back(candidate);
   } else {
-    for (const auto& child : cluster->getChildren()) {
-      generateTemporaryStdCellsPlacement(child.get());
+    for (const auto& child : candidate->getChildren()) {
+      fetchLeafStdCellClusters(leaf_std_cell_clusters, child.get());
     }
   }
+}
+
+void HierRTLMP::setClusterStdCellsLocation(Cluster* cluster)
+{
+  const SoftMacro* soft_macro = cluster->getSoftMacro();
+  const odb::Point cluster_center(soft_macro->getPinX(), soft_macro->getPinY());
+
+  for (odb::dbModule* module : cluster->getDbModules()) {
+    for (odb::dbInst* inst : module->getLeafInsts()) {
+      if (inst->isCore()) {
+        setTemporaryStdCellLocation(inst, cluster_center);
+      }
+    }
+  }
+
+  for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
+    setTemporaryStdCellLocation(std_cell, cluster_center);
+  }
+}
+
+void HierRTLMP::setTemporaryStdCellLocation(odb::dbInst* std_cell,
+                                            const odb::Point& cluster_center)
+{
+  odb::dbBox* bbox = std_cell->getBBox();
+
+  // Std cells are placed in the center of the cluster they belong to
+  std_cell->setLocation(cluster_center.x() - bbox->getDX() / 2,
+                        cluster_center.y() - bbox->getDY() / 2);
+  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
