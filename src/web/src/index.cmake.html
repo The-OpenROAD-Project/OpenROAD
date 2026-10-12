@@ -41,12 +41,13 @@
             <span>Loading shapes…</span>
         </div>
     </div>
-    <!-- Runs first: the 3D viewer reads window.THREE when main.js loads it. -->
+    <!-- The globals the bundle's vendor-globals.js sets, then the viewer. -->
     <script type="module">
         import * as THREE from 'https://esm.sh/three@0.160.0';
         window.THREE = THREE;
+        window.openroadSkin = await (await fetch('openroad_skin.svg')).text();
+        await import('./main.js');
     </script>
-    <script type="module" src="main.js"></script>
 
 </body>
 </html>
