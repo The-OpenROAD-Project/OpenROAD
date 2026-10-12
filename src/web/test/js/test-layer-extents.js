@@ -211,3 +211,60 @@ describe('tileMayHaveContent', () => {
                      true);
     });
 });
+
+// _inst_labels draws only on instances at least 14 CSS px long: those 1/1000
+// of the zoom-0 tile and up are everywhere, those 1/100 and up in the top-left
+// quarter, and none reaches 2/100.
+const SIZED = {
+    ...RESPONSE,
+    sized: {
+        _inst_labels: {
+            min_css_px: 14,
+            by_size: [[0.001, [0, 0, 1, 1]], [0.01, [0, 0, 0.25, 0.25]],
+                      [0.02, null]],
+        },
+    },
+};
+
+describe('LayerExtents.mayHaveContent for a sized layer', () => {
+    const at = (extents, coords, tileSize = 256, visibility = {}) =>
+        extents.mayHaveContent('_inst_labels', coords, visibility, tileSize);
+
+    it('skips every tile while no instance is large enough', () => {
+        // z=0 on 256 px tiles needs 14/256 of the tile, past every class.
+        assert.equal(at(adopted(SIZED), { x: 0, y: 0, z: 0 }), false);
+    });
+
+    it('requests only where the large enough instances are', () => {
+        // z=2 needs 14/1024 of the tile: the 1/100 class.
+        const extents = adopted(SIZED);
+        assert.equal(at(extents, { x: 0, y: 0, z: 2 }), true);
+        assert.equal(at(extents, { x: 3, y: 3, z: 2 }), false);
+    });
+
+    it('uses the smallest class once every instance is large enough', () => {
+        const extents = adopted(SIZED);
+        assert.equal(at(extents, { x: 3, y: 3, z: 5 }), true);
+        assert.equal(at(extents, { x: 200, y: 100, z: 8 }), true);
+    });
+
+    it('measures on the tile size the client uses', () => {
+        // 512 px tiles at z=1 are the 256 px ones at z=2.
+        const extents = adopted(SIZED);
+        assert.equal(at(extents, { x: 0, y: 0, z: 1 }, 512), true);
+        assert.equal(at(extents, { x: 1, y: 1, z: 1 }, 512), false);
+    });
+
+    it('requests everything while a debug overlay is on', () => {
+        assert.equal(at(adopted(SIZED), { x: 0, y: 0, z: 0 }, 256,
+                        { debug: true }), true);
+    });
+
+    it('requests everything without supported extents', () => {
+        const extents = new LayerExtents();
+        assert.equal(at(extents, { x: 0, y: 0, z: 0 }), true);
+        assert.equal(extents.apply(extents.invalidate(),
+                                   { ...SIZED, supported: false }), false);
+        assert.equal(at(extents, { x: 0, y: 0, z: 0 }), true);
+    });
+});

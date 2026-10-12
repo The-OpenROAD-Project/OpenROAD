@@ -264,18 +264,7 @@ void NesterovPlace::reset()
   wireLengthCoefX_ = wireLengthCoefY_ = 0;
   prevHpwl_ = 0;
   num_region_diverged_ = 0;
-  diverge_revert_count_ = 0;
-  routability_diverge_attempt_count_ = 0;
-  is_routability_snapshot_saved_ = false;
-  route_snapshot_a_ = 0;
-  route_snapshot_wl_coef_x_ = 0;
-  route_snapshot_wl_coef_y_ = 0;
-  is_diverge_snapshot_saved_ = false;
-  diverge_snapshot_wl_coef_x_ = 0;
-  diverge_snapshot_wl_coef_y_ = 0;
-  diverge_snapshot_hpwl_ = 0;
   is_routability_need_ = true;
-  routability_settle_wait_start_iter_ = -1;
 
   divergeMsg_ = "";
   divergeCode_ = 0;
@@ -516,7 +505,7 @@ void NesterovPlace::runTimingDriven(int iter,
 
     if (!virtual_td_iter) {
       for (auto& nesterov : nbVec_) {
-        nesterov->updateGCellState();
+        nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
         // updates order in routability:
         // 1. change areas
         // 2. set target density with delta area
@@ -575,8 +564,6 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      refreshCurGradients();
-
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_unscaled_ <= 0.25) {
@@ -586,8 +573,6 @@ void NesterovPlace::runTimingDriven(int iter,
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       }
-
-      reset_nesterov_momentum_ = true;
     }
 
     // problem occured
@@ -595,22 +580,6 @@ void NesterovPlace::runTimingDriven(int iter,
     if (!shouldTdProceed) {
       npVars_.timingDrivenMode = false;
     }
-  }
-}
-
-// Evaluate every gradient at curSLP on the repaired
-// netlist, in the same order as init().
-void NesterovPlace::refreshCurGradients()
-{
-  for (auto& nb : nbVec_) {
-    nb->updateDensityCenterCurSLP();
-    nb->updateDensityFieldBin();
-  }
-
-  nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
-  for (auto& nb : nbVec_) {
-    npUpdateCurGradient(nb);
   }
 }
 
@@ -672,83 +641,9 @@ void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
              retries);
 }
 
-bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
-{
-  if (!is_routability_snapshot_saved_
-      || routability_diverge_attempt_count_ >= kMaxRoutabilityDivergeAttempts) {
-    return false;
-  }
-
-  // Both snapshots share one buffer, so the first min hpwl save has already
-  // overwritten the routability snapshot.
-  if (!is_routability_need_
-      && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)) {
-    return false;
-  }
-
-  ++routability_diverge_attempt_count_;
-  // With routability already off, a second attempt would replay this one.
-  if (!is_routability_need_) {
-    routability_diverge_attempt_count_ = kMaxRoutabilityDivergeAttempts;
-  }
-  const bool is_last_attempt
-      = routability_diverge_attempt_count_ == kMaxRoutabilityDivergeAttempts;
-
-  // Once routability is off the sizes are final: already reverted to the
-  // minimum congestion pass, or the set that met the target.
-  if (is_routability_need_) {
-    rb_->revertToMinCongestion();
-  }
-
-  if (is_last_attempt) {
-    is_routability_need_ = false;
-  }
-
-  log_->warn(GPL,
-             112,
-             "Divergence detected, reverting to the routability snapshot "
-             "(attempt {} of {}), further inflation {}.",
-             routability_diverge_attempt_count_,
-             kMaxRoutabilityDivergeAttempts,
-             is_last_attempt ? "disabled" : "still allowed");
-
-  wireLengthCoefX_ = route_snapshot_wl_coef_x_;
-  wireLengthCoefY_ = route_snapshot_wl_coef_y_;
-  nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
-  for (auto& nb : nbVec_) {
-    nb->revertToSnapshot();
-    nb->resetMinSumOverflow();
-  }
-
-  // Momentum reset due to divergence.
-  curA = 1.0;
-  routability_settle_wait_start_iter_ = -1;
-  // The placement min_hpwl_ was measured on has just been discarded.
-  min_hpwl_ = std::numeric_limits<int64_t>::max();
-  is_min_hpwl_ = false;
-
-  return true;
-}
-
-void NesterovPlace::revertToDivergeSnapshot()
-{
-  log_->warn(GPL,
-             999,
-             "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
-             diverge_snapshot_iter_,
-             diverge_snapshot_average_overflow_unscaled_,
-             diverge_snapshot_hpwl_);
-  wireLengthCoefX_ = diverge_snapshot_wl_coef_x_;
-  wireLengthCoefY_ = diverge_snapshot_wl_coef_y_;
-  nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-  for (auto& nb : nbVec_) {
-    nb->revertToSnapshot();
-    nb->resetMinSumOverflow();
-  }
-}
-
-NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
+bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
+                               float& diverge_snapshot_WlCoefY,
+                               bool& is_diverge_snapshot_saved)
 {
   // diverge detection on
   // large max_phi_cof value + large design
@@ -761,74 +656,79 @@ NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
     num_region_diverged_ += nb->checkDivergence();
   }
 
-  // While routability is active a divergence reverts to the routability
-  // snapshot, if we keep diverting we will turn off routability. Saving only
-  // once routability is off keeps the routability snapshot intact while it
-  // is still needed, since both share one buffer.
-  if (num_region_diverged_ == 0 && is_min_hpwl_
-      && !npVars_.disableRevertIfDiverge
+  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0
       && (!npVars_.routability_driven_mode || !is_routability_need_)) {
-    diverge_snapshot_wl_coef_x_ = wireLengthCoefX_;
-    diverge_snapshot_wl_coef_y_ = wireLengthCoefY_;
-    diverge_snapshot_hpwl_ = min_hpwl_;
-    for (auto& nb : nbVec_) {
-      nb->saveSnapshot();
+    if (is_min_hpwl_) {
+      diverge_snapshot_WlCoefX = wireLengthCoefX_;
+      diverge_snapshot_WlCoefY = wireLengthCoefY_;
+      for (auto& nb : nbVec_) {
+        nb->saveSnapshot();
+      }
+      is_diverge_snapshot_saved = true;
     }
-    is_diverge_snapshot_saved_ = true;
   }
 
-  if (num_region_diverged_ == 0) {
-    return DivergeAction::kNone;
+  if (num_region_diverged_ > 0) {
+    log_->report("Divergence occured in {} regions.", num_region_diverged_);
+
+    // TODO: this divergence treatment uses the non-deterministic aspect of
+    // routability inflation to try one more time if a divergence is detected.
+    // This feature lost its consistency since we allow for non-virtual timing
+    // driven iterations. Meaning we would go back to a snapshot without newly
+    // added instances. A way to maintain this feature is to store two
+    // snapshots one for routability revert if diverge and try again, and
+    // another for simply revert if diverge and finish without hitting 0.10
+    // overflow.
+    // // revert back to the original rb solutions
+    // // one more opportunity
+    // if (!isDivergeTriedRevert && rb_->getRevertCount() >= 1) {
+    //   // get back to the working rc size
+    //   rb_->revertGCellSizeToMinRc();
+    //   curA = route_snapshotA;
+    //   wireLengthCoefX_ = route_snapshot_WlCoefX;
+    //   wireLengthCoefY_ = route_snapshot_WlCoefY;
+    //   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+    //   for (auto& nb : nbVec_) {
+    //     nb->revertToSnapshot();
+    //   }
+
+    //   isDiverged_ = false;
+    //   divergeCode_ = 0;
+    //   divergeMsg_ = "";
+    //   isDivergeTriedRevert = true;
+    //   // turn off the RD forcely
+    //   is_routability_need_ = false;
+    // } else
+    if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved) {
+      // In case diverged and not in routability mode, finish with min hpwl
+      // stored since overflow below 0.25
+      log_->warn(GPL,
+                 998,
+                 "Divergence detected, reverting to snapshot with min hpwl.");
+      log_->warn(GPL,
+                 999,
+                 "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
+                 diverge_snapshot_iter_,
+                 diverge_snapshot_average_overflow_unscaled_,
+                 min_hpwl_);
+      wireLengthCoefX_ = diverge_snapshot_WlCoefX;
+      wireLengthCoefY_ = diverge_snapshot_WlCoefY;
+      nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+      for (auto& nb : nbVec_) {
+        nb->revertToSnapshot();
+      }
+      num_region_diverged_ = 0;
+    } else {
+      divergeMsg_
+          = "RePlAce divergence detected: "
+            "Current overflow is low and increasing relative to minimum,"
+            "and the HPWL has significantly worsened. "
+            "Consider re-running with a smaller max_phi_cof value.";
+      divergeCode_ = 307;
+    }
+    return true;
   }
-
-  log_->report("Divergence occured in {} regions.", num_region_diverged_);
-
-  if (!npVars_.disableRevertIfDiverge && tryRoutabilityDivergeRecovery(curA)) {
-    num_region_diverged_ = 0;
-    return DivergeAction::kResume;
-  }
-
-  if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved_
-      && diverge_revert_count_ < kMaxDivergeReverts) {
-    // Go back to the min hpwl placement stored since overflow below 0.25 and
-    // descend from there again.
-    ++diverge_revert_count_;
-    log_->warn(GPL,
-               998,
-               "Divergence detected, reverting to snapshot with min hpwl "
-               "and resuming ({} of {} reverts allowed).",
-               diverge_revert_count_,
-               kMaxDivergeReverts);
-    revertToDivergeSnapshot();
-    // Reset momentum due to divergence.
-    curA = 1.0;
-    // Resuming from the same snapshot replays the same descent, so another
-    // revert is only allowed once a new min hpwl snapshot has been saved.
-    is_diverge_snapshot_saved_ = false;
-
-    num_region_diverged_ = 0;
-    return DivergeAction::kResume;
-  }
-
-  // A previous revert means the Diverge slot still holds a min hpwl
-  // placement, even when resuming from it again is not allowed.
-  if (!npVars_.disableRevertIfDiverge && diverge_revert_count_ > 0) {
-    log_->warn(GPL,
-               997,
-               "Divergence detected again, reverting to snapshot with min "
-               "hpwl and stopping.");
-    revertToDivergeSnapshot();
-    num_region_diverged_ = 0;
-    return DivergeAction::kStop;
-  }
-
-  divergeMsg_
-      = "RePlAce divergence detected: "
-        "Current overflow is low and increasing relative to minimum,"
-        "and the HPWL has significantly worsened. "
-        "Consider re-running with a smaller max_phi_cof value.";
-  divergeCode_ = 307;
-  return DivergeAction::kStop;
+  return false;
 }
 
 void NesterovPlace::routabilitySnapshot(
@@ -836,14 +736,18 @@ void NesterovPlace::routabilitySnapshot(
     float curA,
     const std::string& routability_driven_dir,
     int routability_driven_revert_count,
-    int timing_driven_count)
+    int timing_driven_count,
+    bool& is_routability_snapshot_saved,
+    float& route_snapshot_WlCoefX,
+    float& route_snapshot_WlCoefY,
+    float& route_snapshotA)
 {
-  if (!is_routability_snapshot_saved_ && npVars_.routability_driven_mode
+  if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
       && npVars_.routability_snapshot_overflow >= average_overflow_unscaled_) {
-    route_snapshot_wl_coef_x_ = wireLengthCoefX_;
-    route_snapshot_wl_coef_y_ = wireLengthCoefY_;
-    route_snapshot_a_ = curA;
-    is_routability_snapshot_saved_ = true;
+    route_snapshot_WlCoefX = wireLengthCoefX_;
+    route_snapshot_WlCoefY = wireLengthCoefY_;
+    route_snapshotA = curA;
+    is_routability_snapshot_saved = true;
 
     for (auto& nb : nbVec_) {
       nb->saveSnapshot();
@@ -880,6 +784,9 @@ void NesterovPlace::routabilitySnapshot(
 void NesterovPlace::runRoutability(int iter,
                                    int timing_driven_count,
                                    const std::string& routability_driven_dir,
+                                   const float route_snapshotA,
+                                   const float route_snapshot_WlCoefX,
+                                   const float route_snapshot_WlCoefY,
                                    int& routability_driven_revert_count,
                                    float& curA)
 {
@@ -896,41 +803,9 @@ void NesterovPlace::runRoutability(int iter,
   //
   // This can only ever delay the trigger, so a design already settled at its
   // overflow gate is unaffected.
-  const bool is_routability_active
-      = npVars_.routability_driven_mode && is_routability_need_
-        && average_overflow_unscaled_ <= npVars_.routability_end_overflow;
-  const bool is_routability_settled
-      = is_routability_active && isPlacementSettled();
-
-  if (is_routability_active && !is_routability_settled
-      && routability_settle_wait_start_iter_ == -1) {
-    routability_settle_wait_start_iter_ = iter;
-    log_->info(GPL,
-               99,
-               "Routability end extended at iter = {}: overflow {:.4f} "
-               "reached {:.4f}, but cells are still moving at {:.0f}% of "
-               "peak displacement (waiting for {:.0f}%).",
-               iter + 1,
-               average_overflow_unscaled_,
-               npVars_.routability_end_overflow,
-               getWorstSettleRatio() * 100.0f,
-               NesterovBase::getSettleFraction() * 100.0f);
-  }
-
-  if (is_routability_settled) {
-    if (routability_settle_wait_start_iter_ != -1) {
-      log_->info(GPL,
-                 103,
-                 "Routability end extension finished at iter = {} after {} "
-                 "extra iterations: overflow {:.4f}, cells moving at {:.0f}% "
-                 "of peak displacement.",
-                 iter + 1,
-                 iter - routability_settle_wait_start_iter_,
-                 average_overflow_unscaled_,
-                 getWorstSettleRatio() * 100.0f);
-      routability_settle_wait_start_iter_ = -1;
-    }
-
+  if (npVars_.routability_driven_mode && is_routability_need_
+      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+      && isPlacementSettled()) {
     getTopLevelNB()->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
@@ -1005,9 +880,9 @@ void NesterovPlace::runRoutability(int iter,
     // if routability is needed
     if (is_routability_need_ || isRevertInitNeeded) {
       // revert back the current density penality
-      curA = route_snapshot_a_;
-      wireLengthCoefX_ = route_snapshot_wl_coef_x_;
-      wireLengthCoefY_ = route_snapshot_wl_coef_y_;
+      curA = route_snapshotA;
+      wireLengthCoefX_ = route_snapshot_WlCoefX;
+      wireLengthCoefY_ = route_snapshot_WlCoefY;
 
       nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
@@ -1060,15 +935,6 @@ bool NesterovPlace::isPlacementSettled() const
   return true;
 }
 
-float NesterovPlace::getWorstSettleRatio() const
-{
-  float worst = 0;
-  for (const auto& nb : nbVec_) {
-    worst = std::max(worst, nb->getSettleRatio());
-  }
-  return worst;
-}
-
 bool NesterovPlace::isConverged(int gpl_iter_count,
                                 int routability_gpl_iter_count)
 {
@@ -1092,7 +958,7 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
 NesterovBase* NesterovPlace::getTopLevelNB() const
 {
   if (nbVec_.empty()) {
-    log_->error(GPL, 116, "Top-level NesterovBase is not initialized.");
+    log_->error(GPL, 103, "Top-level NesterovBase is not initialized.");
   }
   return nbVec_[0].get();
 }
@@ -1279,18 +1145,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   // routability snapshot info
-  is_routability_snapshot_saved_ = false;
-  route_snapshot_a_ = 0;
-  route_snapshot_wl_coef_x_ = 0;
-  route_snapshot_wl_coef_y_ = 0;
-  routability_diverge_attempt_count_ = 0;
+  bool is_routability_snapshot_saved = false;
+  float route_snapshotA = 0;
+  float route_snapshot_WlCoefX = 0;
+  float route_snapshot_WlCoefY = 0;
 
   // divergence snapshot info
-  is_diverge_snapshot_saved_ = false;
-  diverge_snapshot_wl_coef_x_ = 0;
-  diverge_snapshot_wl_coef_y_ = 0;
-  diverge_snapshot_hpwl_ = 0;
-  diverge_revert_count_ = 0;
+  bool is_diverge_snapshot_saved = false;
+  float diverge_snapshot_WlCoefX = 0;
+  float diverge_snapshot_WlCoefY = 0;
 
   // backTracking variable.
   float curA = 1.0;
@@ -1361,12 +1224,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
-    if (reset_nesterov_momentum_) {
-      curA = 1.0;
-      reset_nesterov_momentum_ = false;
-      log_->info(GPL, 111, "Timing-driven: restarting Nesterov momentum.");
-    }
-
     const float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
@@ -1403,7 +1260,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                        final_routability_image_saved);
 
     bool is_routability_gpl_iter
-        = is_routability_snapshot_saved_
+        = is_routability_snapshot_saved
           && average_overflow_unscaled_ > npVars_.routability_end_overflow;
     if (is_routability_gpl_iter) {
       ++routability_gpl_iter_count_;
@@ -1418,46 +1275,34 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                     is_routability_gpl_iter,
                     virtual_cts_count);
 
-    const DivergeAction diverge_action = isDiverged(curA);
-    if (diverge_action == DivergeAction::kStop) {
+    if (isDiverged(diverge_snapshot_WlCoefX,
+                   diverge_snapshot_WlCoefY,
+                   is_diverge_snapshot_saved)) {
       break;
-    }
-    if (diverge_action == DivergeAction::kResume) {
-      // Skip due to snapshot revert.
-      continue;
     }
 
     routabilitySnapshot(nesterov_iter,
                         curA,
                         routability_driven_dir,
                         routability_driven_revert_count,
-                        timing_driven_count);
+                        timing_driven_count,
+                        is_routability_snapshot_saved,
+                        route_snapshot_WlCoefX,
+                        route_snapshot_WlCoefY,
+                        route_snapshotA);
 
     runRoutability(nesterov_iter,
                    timing_driven_count,
                    routability_driven_dir,
+                   route_snapshotA,
+                   route_snapshot_WlCoefX,
+                   route_snapshot_WlCoefY,
                    routability_driven_revert_count,
                    curA);
 
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
       break;
     }
-  }
-
-  // Unlike a divergence, running out of iterations says nothing about the
-  // final placement, so only take the min hpwl snapshot when its overflow is
-  // no worse as well.
-  if (nesterov_iter >= npVars_.maxNesterovIter
-      && !npVars_.disableRevertIfDiverge
-      && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)
-      && diverge_snapshot_average_overflow_unscaled_
-             <= average_overflow_unscaled_
-      && diverge_snapshot_hpwl_ < nbc_->getHpwl()) {
-    log_->warn(GPL,
-               121,
-               "Reached the maximum number of iterations, reverting to "
-               "snapshot with min hpwl.");
-    revertToDivergeSnapshot();
   }
 
   // Remove virtual clock tree insertions before final timing analysis.
@@ -1623,9 +1468,6 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
   if (db_inst == nullptr) {
     log_->warn(GPL, 328, "Trying to destroy odb::dbInst* nullptr");
     return;
-  }
-  if (graphics_) {
-    graphics_->instDestroyed(db_inst);
   }
 
   bool destroyed = false;
