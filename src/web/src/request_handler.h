@@ -12,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -175,6 +176,20 @@ struct TclEvaluator
   ScriptGate script_gate;
   std::function<void()> drain_output;
 
+  // Debug renderers are drawn between commands and while one is paused, when
+  // the tools' state is stable (see the renderer hooks in web_serve.cpp).
+  // Such a draw holds renderer_mutex shared, so draws run side by side, and
+  // `running` and `paused_command` only change under it held exclusively, so
+  // a command cannot start, or resume from a pause, while one is in progress.
+  // After every command, command_done is told whether a draw was skipped
+  // because it was running, so the clients can be sent to pick the renderers
+  // up.
+  std::shared_mutex renderer_mutex;
+  bool running = false;
+  bool paused_command = false;
+  std::atomic<bool> draw_skipped{false};
+  std::function<void(bool draw_skipped)> command_done;
+
   struct Result
   {
     std::string result;
@@ -189,7 +204,15 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
-    const int rc = Tcl_Eval(interp, cmd.c_str());
+    setRunning(true);
+    int rc;
+    try {
+      rc = Tcl_Eval(interp, cmd.c_str());
+    } catch (...) {
+      setRunning(false);
+      throw;
+    }
+    const bool skipped = setRunning(false);
     Result r;
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
@@ -206,7 +229,44 @@ struct TclEvaluator
     if (drain_output) {
       drain_output();
     }
+    if (command_done) {
+      command_done(skipped);
+    }
     return r;
+  }
+
+  // Returns whether a renderer draw was skipped since the last call.
+  bool setRunning(const bool value)
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    running = value;
+    return draw_skipped.exchange(false);
+  }
+
+  // Run on the pausing thread as a debugger pause begins and ends.  A paused
+  // command is stopped where its state is stable, so it does not count as
+  // running until it resumes.  Whatever is running when a pause begins is
+  // the command pausing: a startup script does not run through eval(), and
+  // the script gate keeps every eval out until the script pauses.  A command
+  // typed in the browser during a script's pause does count, so the paused
+  // draws stand aside until it is done.
+  void pauseBegin()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (running) {
+      running = false;
+      paused_command = true;
+    }
+  }
+
+  // Taking the lock also waits out a draw in progress, so the command does
+  // not resume under it.
+  void pauseEnd()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (std::exchange(paused_command, false)) {
+      running = true;
+    }
   }
 };
 

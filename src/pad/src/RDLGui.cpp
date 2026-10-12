@@ -28,6 +28,7 @@ RDLGui::RDLGui(utl::Logger* logger) : logger_(logger)
   addDisplayControl(kDrawFlyWires, true);
   addDisplayControl(kDrawRoutes, true);
   addDisplayControl(kDrawRouteObstructions, true);
+  addDisplayControl(kDrawLegend, true);
 }
 
 RDLGui::~RDLGui()
@@ -220,6 +221,10 @@ void RDLGui::drawObjects(web::Painter& painter)
   painter.setPenAndBrush(snap_color_, true, web::Painter::Brush::kSolid, 2);
   for (const auto& [pt0, pt1] : snap_) {
     painter.drawLine(pt0, pt1);
+  }
+
+  if (!checkDisplayControl(kDrawLegend)) {
+    return;
   }
 
   web::DiscreteLegend legend;
