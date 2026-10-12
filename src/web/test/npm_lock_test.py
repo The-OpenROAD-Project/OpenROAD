@@ -32,6 +32,11 @@ class LockMatchesManifest(unittest.TestCase):
         }
         self.assertEqual(locked, wanted, f"regenerate the lock: {_FIX}")
 
+    def test_overrides(self):
+        wanted = self.manifest.get("pnpm", {}).get("overrides", {})
+        locked = self.lock.get("overrides") or {}
+        self.assertEqual(locked, wanted, f"regenerate the lock: {_FIX}")
+
 
 if __name__ == "__main__":
     unittest.main()
