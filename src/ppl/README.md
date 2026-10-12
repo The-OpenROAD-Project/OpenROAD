@@ -259,10 +259,6 @@ place_pin
 
 The `place_pins` command places all pins together. Use the following command to perform pin placement:
 
-The layers and the spacing of the slots can be kept with `set_place_config`
-(see the gpl documentation). `place_pins` uses those settings for any switch it
-is not given; the switches given to `place_pins` apply only to that call.
-
 
 ```tcl
 place_pins 
@@ -292,6 +288,10 @@ place_pins
 | `-annealing` | Flag to enable simulated annealing pin placement. |
 | `-minimize_displacement` | Rank slots by how far they are from where each pin already is, rather than by the wirelength of its net. Use it to legalize a pin placement that is already placed. |
 | `-write_pin_placement` | A file with the pin placement generated in the format of multiple calls for the `place_pin` command. |
+
+The layers and the spacing of the slots can be kept with `set_place_config`
+(see the gpl documentation). `place_pins` uses those settings for any switch it
+is not given; the switches given to `place_pins` apply only to that call.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*`

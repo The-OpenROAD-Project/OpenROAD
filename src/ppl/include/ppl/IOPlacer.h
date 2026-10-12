@@ -242,6 +242,7 @@ class IOPlacer
   void createSections();
   void createSectionsPolygon();
   void addGroupToFallback(const std::vector<int>& pin_group, bool order);
+  int placeMirroredPins();
   bool assignPinsToSections(int assigned_pins_count);
   bool assignPinsToSectionsPolygon(int assigned_pins_count);
   bool assignPinToSection(IOPin& io_pin,

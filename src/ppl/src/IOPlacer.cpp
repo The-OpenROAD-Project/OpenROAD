@@ -1676,7 +1676,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
       for (int pin_idx : io_group) {
         IOPin& pin = net->getIoPin(pin_idx);
         bool has_mirrored_pin = pin.getBTerm()->hasMirroredBTerm();
-        int pin_hpwl = net->computeIOCost(pin_idx, sections[i].pos);
+        int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
@@ -1768,6 +1768,45 @@ void IOPlacer::addGroupToFallback(const std::vector<int>& pin_group, bool order)
   }
 }
 
+// Place the mirrored pairs before the other pins, so no other pin is matched
+// to a follower's slot. One edge at a time, so a master does not take the
+// follower slot of a master on the opposite edge.
+int IOPlacer::placeMirroredPins()
+{
+  const bool has_mirrored = std::ranges::any_of(
+      netlist_->getIOPins(),
+      [](const IOPin& pin) { return pin.getBTerm()->hasMirroredBTerm(); });
+  if (!has_mirrored) {
+    return 0;
+  }
+  const bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
+  isPolygon ? createSectionsPolygon() : createSections();
+
+  int placed_pins_cnt = 0;
+  int idx = 0;
+  for (IOPin& io_pin : netlist_->getIOPins()) {
+    if (io_pin.getBTerm()->hasMirroredBTerm()
+        && assignPinToSection(io_pin, idx, sections_)) {
+      placed_pins_cnt += 2;
+    }
+    idx++;
+  }
+  for (auto first = sections_.begin(); first != sections_.end();) {
+    const auto last
+        = std::find_if(first, sections_.end(), [&](const Section& s) {
+            return s.edge != first->edge;
+          });
+    std::vector<Section> edge_sections(first, last);
+    for (Section& section : edge_sections) {
+      updateSection(section, slots_);
+    }
+    findPinAssignment(edge_sections, false);
+    updateSlots();
+    first = last;
+  }
+  return placed_pins_cnt;
+}
+
 bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 {
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
@@ -1779,19 +1818,7 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   int mirrored_pins_cnt = 0;
   int total_pins_assigned = assignGroupsToSections(mirrored_pins_cnt);
 
-  // Mirrored pins first
   int idx = 0;
-  for (IOPin& io_pin : net->getIOPins()) {
-    if (io_pin.getBTerm()->hasMirroredBTerm()) {
-      if (assignPinToSection(io_pin, idx, sections)) {
-        total_pins_assigned += 2;
-      }
-    }
-    idx++;
-  }
-
-  // Remaining pins
-  idx = 0;
   for (IOPin& io_pin : net->getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
       total_pins_assigned++;
@@ -1840,7 +1867,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
           = netlist_->getMinimizeDisplacement()
                 ? nearestFreeSlot(sections[i], io_pin.getInitialPosition())
                 : sections[i].pos;
-      const int io_net_hpwl = netlist_->computeIOCost(idx, pos);
+      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, pos);
       const int mirrored_pin_cost = getMirroredPinCost(io_pin, pos);
       dst[i] = io_net_hpwl + mirrored_pin_cost;
 
@@ -1905,7 +1932,7 @@ int IOPlacer::getMirroredPinCost(IOPin& io_pin, const odb::Point& position)
 {
   if (io_pin.getBTerm()->hasMirroredBTerm()) {
     odb::Point mirrored_pos = core_->getMirroredPosition(position);
-    return netlist_->computeIOCost(io_pin.getMirrorPinIdx(), mirrored_pos);
+    return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
   }
   return 0;
 }
@@ -2149,7 +2176,8 @@ int64 IOPlacer::computeIONetsHPWL(Netlist* netlist)
   int64 hpwl = 0;
   int idx = 0;
   for (IOPin& io_pin : netlist->getIOPins()) {
-    hpwl += netlist->computeIONetHPWL(idx, io_pin.getPosition());
+    const odb::Rect box = netlist->getBB(idx, io_pin.getPosition());
+    hpwl += box.dx() + box.dy();
     idx++;
   }
 
@@ -2748,6 +2776,7 @@ void IOPlacer::runHungarianMatching(bool minimize_displacement)
     }
   }
   constrained_pins_cnt += placeFallbackPins();
+  constrained_pins_cnt += placeMirroredPins();
 
   assignPinsToSections(constrained_pins_cnt);
   findPinAssignment(sections_, false);

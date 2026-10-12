@@ -172,7 +172,6 @@ class Netlist
   void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int idx, const odb::Point& slot_pos);
-  int computeIOCost(int idx, const odb::Point& slot_pos);
   int computeDstIOtoPins(int idx, const odb::Point& slot_pos);
   void setMinimizeDisplacement(bool minimize)
   {

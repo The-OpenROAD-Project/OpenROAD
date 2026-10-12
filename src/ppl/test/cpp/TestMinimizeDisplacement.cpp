@@ -3,7 +3,9 @@
 
 #include <algorithm>
 #include <map>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -301,6 +303,57 @@ TEST_F(MinimizeDisplacement, CountsTheMirroredPinsOfAGroup)
     EXPECT_LT(group[i]->getBBox().yCenter(), mid_y);
     EXPECT_EQ(mirrored[i]->getBBox().xCenter(), top[i].pos.x());
     EXPECT_GT(mirrored[i]->getBBox().yCenter(), mid_y);
+  }
+}
+
+// A follower lands at the reflection of its master, so a pin that also wants
+// that slot has to make way rather than be stacked on the follower.
+TEST_F(MinimizeDisplacement, MovesAPinOffItsFollowersSlot)
+{
+  const std::vector<SlotPosition> grid = slotGrid();
+  const int b = middleOfFreeBottomRun(grid, 1);
+  ASSERT_GE(b, 0);
+  const auto t = std::ranges::find_if(grid, [&](const SlotPosition& slot) {
+    return slot.edge == Edge::top && slot.layer == grid[b].layer
+           && slot.pos.x() == grid[b].pos.x() && !slot.blocked;
+  });
+  ASSERT_NE(t, grid.end());
+
+  const std::vector<odb::dbBTerm*> pins = bterms(0, 3);
+  odb::dbBTerm* master = pins[0];
+  odb::dbBTerm* follower = pins[1];
+  odb::dbBTerm* other = pins[2];
+  master->setMirroredBTerm(follower);
+  putPinAt(master, grid[b]);
+  putPinAt(follower, *t);
+  putPinAt(other, *t);
+
+  placePins(true);
+  EXPECT_EQ(master->getBBox().xCenter(), grid[b].pos.x());
+  EXPECT_EQ(follower->getBBox().xCenter(), t->pos.x());
+  EXPECT_GT(follower->getBBox().yCenter(), block_->getDieArea().yCenter());
+  const odb::Rect at = other->getBBox();
+  EXPECT_NE(
+      odb::Point(at.xCenter(), at.yCenter()),
+      odb::Point(follower->getBBox().xCenter(), follower->getBBox().yCenter()));
+}
+
+// Masters on opposite edges can want each other's follower slots, so every
+// pin, follower or not, must end on a slot of its own.
+TEST_F(MinimizeDisplacement, MirroredPairsOnOppositeEdgesDoNotOverlap)
+{
+  placePins(false);
+  const std::vector<odb::dbBTerm*> pins = bterms(0, block_->getBTerms().size());
+  for (size_t i = 0; i + 1 < pins.size(); i += 2) {
+    pins[i]->setMirroredBTerm(pins[i + 1]);
+  }
+
+  EXPECT_NO_THROW(placePins(true));
+  std::set<std::pair<int, int>> taken;
+  for (odb::dbBTerm* bterm : pins) {
+    const odb::Rect box = bterm->getBBox();
+    EXPECT_TRUE(taken.insert({box.xCenter(), box.yCenter()}).second)
+        << bterm->getName();
   }
 }
 

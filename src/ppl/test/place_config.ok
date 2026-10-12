@@ -67,5 +67,5 @@ io_pin_corner_avoidance: unset
 io_pin_min_distance: unset
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[ERROR PPL-0026] Both horizontal and vertical pin layers are required. Pass -hor_layers and -ver_layers, or set_place_config -io_pin_hor_layers and -io_pin_ver_layers.
-PPL-0026
+[ERROR PPL-0017] -hor_layers or set_place_config -io_pin_hor_layers is required.
+PPL-0017

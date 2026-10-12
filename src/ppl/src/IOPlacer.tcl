@@ -270,8 +270,9 @@ proc place_pins { args } {
 
     set min_dist 2
     set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
-    ppl::check_min_distance_in_tracks $dist_in_tracks \
-      [info exists keys(-min_distance)]
+    if { $dist_in_tracks && ![info exists keys(-min_distance)] } {
+      utl::error PPL 37 "-min_distance_in_tracks requires -min_distance."
+    }
     if { [info exists keys(-min_distance)] } {
       set min_dist $keys(-min_distance)
       if { $dist_in_tracks } {
@@ -305,11 +306,6 @@ proc place_pins { args } {
     }
     set has_hor [expr { $hor_layers != {} || [ppl::has_default_layers true] }]
     set has_ver [expr { $ver_layers != {} || [ppl::has_default_layers false] }]
-    if { !$has_hor && !$has_ver } {
-      utl::error PPL 26 "Both horizontal and vertical pin layers are required.\
-        Pass -hor_layers and -ver_layers, or set_place_config\
-        -io_pin_hor_layers and -io_pin_ver_layers."
-    }
     if { !$has_hor } {
       utl::error PPL 17 "-hor_layers or set_place_config -io_pin_hor_layers\
         is required."
@@ -318,7 +314,10 @@ proc place_pins { args } {
       utl::error PPL 18 "-ver_layers or set_place_config -io_pin_ver_layers\
         is required."
     }
-    ppl::set_io_pin_layers $hor_layers $ver_layers
+    # Checks every layer before adding any, so an error leaves no partial set.
+    foreach { dir layer } [ppl::check_io_pin_layers $hor_layers $ver_layers] {
+      ppl::add_${dir}_layer $layer
+    }
 
     if { [llength $regions] != 0 } {
       set lef_units [$dbTech getLefUnits]
@@ -351,19 +350,6 @@ proc place_pins { args } {
 }
 
 namespace eval ppl {
-proc check_min_distance_in_tracks { in_tracks has_min_distance } {
-  if { $in_tracks && !$has_min_distance } {
-    utl::error PPL 37 "-min_distance_in_tracks requires -min_distance."
-  }
-}
-
-# Checks every layer before adding any, so an error leaves no partial set.
-proc set_io_pin_layers { hor_layers ver_layers } {
-  foreach { dir layer } [check_io_pin_layers $hor_layers $ver_layers] {
-    ppl::add_${dir}_layer $layer
-  }
-}
-
 proc check_io_pin_layers { hor_layers ver_layers } {
   set layers {}
   foreach name $hor_layers {
