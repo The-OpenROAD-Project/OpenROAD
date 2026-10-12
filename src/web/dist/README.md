@@ -12,6 +12,7 @@ which the OpenROAD binary embeds and serves itself.
 | `index.html` | served as `/index.html`; carries all four stylesheets inline |
 | `app.min.js` | served as `/app.min.js`; the app plus every library it uses |
 | `THIRD_PARTY_LICENSES.txt` | served as `/THIRD_PARTY_LICENSES.txt` |
+| `report.min.js` | inlined into a saved timing report; leaves out netlistsvg and three |
 
 ## Why they are checked in
 
