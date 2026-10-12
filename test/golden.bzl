@@ -26,6 +26,18 @@ openroad and keeps it, for investigating a mismatch.
 load("@bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF")
 
+RegressionRunInfo = provider(
+    doc = "Outputs of a regression_run, for golden_test to check.",
+    fields = {
+        "exit_code": "File holding openroad's exit code.",
+        "log": "openroad log, compared against <name>.ok.",
+        "manifest": "File of (result, golden, ignore) triples recorded " +
+                    "by diff_files.",
+        "results": "Side-output Files, in the order they were declared.",
+        "timeout": "Seconds before openroad is killed.",
+    },
+)
+
 def _regression_run_impl(ctx):
     openroad = ctx.attr.openroad[DefaultInfo].files_to_run
     coreutils = ctx.toolchains["@bazel_lib//lib:coreutils_toolchain_type"].coreutils_info.bin
@@ -52,10 +64,19 @@ def _regression_run_impl(ctx):
         mnemonic = "OpenRoadRegression",
         progress_message = "Running OpenROAD regression %{label}",
     )
-    return [DefaultInfo(files = depset(
-        [ctx.outputs.log, ctx.outputs.exit_code, ctx.outputs.manifest] +
-        ctx.outputs.results,
-    ))]
+    return [
+        DefaultInfo(files = depset(
+            [ctx.outputs.log, ctx.outputs.exit_code, ctx.outputs.manifest] +
+            ctx.outputs.results,
+        )),
+        RegressionRunInfo(
+            exit_code = ctx.outputs.exit_code,
+            log = ctx.outputs.log,
+            manifest = ctx.outputs.manifest,
+            results = ctx.outputs.results,
+            timeout = ctx.attr.timeout,
+        ),
+    ]
 
 regression_run = rule(
     implementation = _regression_run_impl,
@@ -106,11 +127,12 @@ regression_run = rule(
 )
 
 def _golden_test_impl(ctx):
-    if len(ctx.files.goldens) != len(ctx.files.results):
-        fail("goldens and results must be parallel lists")
+    run = ctx.attr.run[RegressionRunInfo]
+    if len(ctx.files.goldens) != len(run.results):
+        fail("goldens must parallel the run's results")
     pairs = " ".join([
         "{}:{}".format(g.short_path, r.short_path)
-        for g, r in zip(ctx.files.goldens, ctx.files.results)
+        for g, r in zip(ctx.files.goldens, run.results)
     ])
     script = ctx.actions.declare_file(ctx.label.name + ".sh")
     ctx.actions.expand_template(
@@ -119,14 +141,14 @@ def _golden_test_impl(ctx):
         substitutions = {
             "@DEBUG_DIR@": ctx.attr.debug_dir,
             "@DEBUG_TARGET@": ctx.attr.debug_target,
-            "@EXIT_CODE@": ctx.file.exit_code.short_path,
+            "@EXIT_CODE@": run.exit_code.short_path,
             "@EXPECTED_EXIT_CODE@": str(ctx.attr.expected_exit_code),
             "@GOLDEN_LOG@": ctx.file.golden_log.short_path,
-            "@LOG@": ctx.file.log.short_path,
-            "@MANIFEST@": ctx.file.manifest.short_path,
+            "@LOG@": run.log.short_path,
+            "@MANIFEST@": run.manifest.short_path,
             "@PAIRS@": pairs,
             "@RECORDED@": " ".join(ctx.attr.recorded),
-            "@RUN_TIMEOUT@": str(ctx.attr.run_timeout),
+            "@RUN_TIMEOUT@": str(run.timeout),
             "@UPDATE_TARGET@": ctx.attr.update_target,
         },
         is_executable = True,
@@ -135,11 +157,11 @@ def _golden_test_impl(ctx):
         executable = script,
         runfiles = ctx.runfiles(
             files = [
-                ctx.file.exit_code,
+                run.exit_code,
                 ctx.file.golden_log,
-                ctx.file.log,
-                ctx.file.manifest,
-            ] + ctx.files.goldens + ctx.files.results,
+                run.log,
+                run.manifest,
+            ] + ctx.files.goldens + run.results,
         ),
     )]
 
@@ -149,17 +171,20 @@ golden_test = rule(
     attrs = {
         "debug_dir": attr.string(),
         "debug_target": attr.string(),
-        "exit_code": attr.label(allow_single_file = True, mandatory = True),
         "expected_exit_code": attr.int(default = 0),
         "golden_log": attr.label(allow_single_file = True, mandatory = True),
-        "goldens": attr.label_list(allow_files = True),
-        "log": attr.label(allow_single_file = True, mandatory = True),
-        "manifest": attr.label(allow_single_file = True, mandatory = True),
+        "goldens": attr.label_list(
+            doc = "Side-output goldens, parallel to the run's results.",
+            allow_files = True,
+        ),
         "recorded": attr.string_list(
             doc = "result:golden basenames expected from diff_files calls.",
         ),
-        "results": attr.label_list(allow_files = True),
-        "run_timeout": attr.int(mandatory = True),
+        "run": attr.label(
+            doc = "The regression_run to check.",
+            providers = [RegressionRunInfo],
+            mandatory = True,
+        ),
         "update_target": attr.string(mandatory = True),
         "_golden_test_sh": attr.label(
             default = "//test:golden_test.sh.tpl",
@@ -254,14 +279,10 @@ def golden_regression_test(
 
     golden_test(
         name = name + "-tcl_test",
-        log = log,
-        exit_code = results_dir + "exit_code",
-        manifest = results_dir + "goldens.manifest",
+        run = run,
         expected_exit_code = expected_exit_code,
-        run_timeout = run_timeout,
         golden_log = name + ".ok",
         goldens = list(checked.keys())[1:],
-        results = list(checked.values())[1:],
         recorded = [r + ":" + g for g, r in goldens.items()],
         debug_dir = "bazel-bin/{}/{}".format(native.package_name(), debug_dir),
         debug_target = "//{}:{}".format(native.package_name(), debug) if debug else "",
