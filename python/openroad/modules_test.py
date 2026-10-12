@@ -25,7 +25,7 @@ class ModulesTest(unittest.TestCase):
         extensions = [
             module
             for name, module in list(sys.modules.items())
-            if name.rpartition(".")[2] in _openroad_loader._EXTENSIONS
+            if name in _openroad_loader.EXTENSIONS
         ]
         self.assertGreaterEqual(len(extensions), 6)
         self.assertEqual(
@@ -38,6 +38,15 @@ class ModulesTest(unittest.TestCase):
                 if line.rstrip().endswith(".so") and "openroad" in line.lower()
             }
         self.assertEqual(libraries, {"_openroad.so"})
+
+    def test_finder_only_claims_openroad_modules(self):
+        finder = next(f for f in sys.meta_path if type(f).__name__ == "_OpenRoadFinder")
+        self.assertIsNotNone(finder.find_spec("src.ant._ant_py", None))
+        self.assertIsNotNone(finder.find_spec("_ord_py", None))
+        # Same final name in another package, or at the top level.
+        self.assertIsNone(finder.find_spec("other._ant_py", None))
+        self.assertIsNone(finder.find_spec("_ant_py", None))
+        self.assertIsNone(finder.find_spec("other._ord_py", None))
 
     def test_tools_have_their_own_namespaces(self):
         self.assertTrue(hasattr(ant, "AntennaChecker"))

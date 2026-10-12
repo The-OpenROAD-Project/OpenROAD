@@ -16,12 +16,15 @@ import importlib.util
 import os
 import sys
 
-# The modules in _openroad.so. Each one's extension is named _<module>_py.
-_MODULES = """
-    ord ant cgt cts dpl drt exa fin gpl grt ifp odb
-    par pdn ppl psm rcx rmp rsz stt tap utl wmk
+# The tool modules in _openroad.so. Each SWIG wrapper src/<tool>/<tool>_py.py
+# imports its extension as src.<tool>._<tool>_py; ord_py.py, at the top
+# level, imports _ord_py. Only these exact names are loaded from the library,
+# so a module of the same name in another package is left alone.
+_TOOLS = """
+    ant cgt cts dpl drt exa fin gpl grt ifp odb par
+    pdn ppl psm rcx rmp rsz stt tap utl wmk
 """.split()
-_EXTENSIONS = frozenset(f"_{module}_py" for module in _MODULES)
+EXTENSIONS = frozenset(["_ord_py"] + [f"src.{tool}._{tool}_py" for tool in _TOOLS])
 
 
 def _find_library():
@@ -39,7 +42,7 @@ LIBRARY = _find_library()
 
 class _OpenRoadFinder(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path, target=None):
-        if fullname.rpartition(".")[2] not in _EXTENSIONS:
+        if fullname not in EXTENSIONS:
             return None
         loader = importlib.machinery.ExtensionFileLoader(fullname, LIBRARY)
         return importlib.util.spec_from_file_location(fullname, LIBRARY, loader=loader)
