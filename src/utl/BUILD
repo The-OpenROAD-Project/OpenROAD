@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -192,25 +192,10 @@ messages_txt(
     ],
 )
 
-# Compiled into //:_openroad.so, the one library every OpenROAD Python
-# module is loaded from.
-cc_library(
+# LoggerCommon.cpp comes with the Tcl bindings that ord links.
+python_wrap_library(
     name = "py_wrap",
-    # LoggerCommon.cpp comes with the Tcl bindings that ord links.
-    srcs = [
-        "src/LoggerCommon.h",
-        ":swig-py",
-    ],
+    srcs = ["src/LoggerCommon.h"],
     includes = ["src"],
-    local_defines = [
-        "BAZEL=1",
-        PYTHON_STABLE_API_DEFINE,
-    ],
-    visibility = ["//:__pkg__"],
-    deps = [
-        ":utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-    alwayslink = True,
+    deps = [":utl"],
 )

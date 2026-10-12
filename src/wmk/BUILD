@@ -2,7 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -224,26 +224,14 @@ messages_txt(
 # separate extension: that would link another copy of OpenSTA's singleton
 # state (such as port directions) and interpret the Design's Liberty objects
 # using that uninitialized copy.
-cc_library(
+python_wrap_library(
     name = "py_wrap",
-    srcs = [":swig-py"],
     includes = [
         "include",
         "src",
     ],
-    local_defines = [
-        "BAZEL=1",
-        PYTHON_STABLE_API_DEFINE,
-    ],
-    visibility = ["//:__pkg__"],
     deps = [
         ":hmac_sha256",
         ":wmk",
-        "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
     ],
-    alwayslink = True,
 )

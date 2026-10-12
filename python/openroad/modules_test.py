@@ -21,7 +21,7 @@ TEST_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "src", "ant", "te
 
 
 class ModulesTest(unittest.TestCase):
-    def test_one_library_mapped_once(self):
+    def test_every_module_loads_from_one_library(self):
         extensions = [
             module
             for name, module in list(sys.modules.items())
@@ -31,6 +31,9 @@ class ModulesTest(unittest.TestCase):
         self.assertEqual(
             {module.__file__ for module in extensions}, {_openroad_loader.LIBRARY}
         )
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "reads /proc/self/maps")
+    def test_library_mapped_once(self):
         with open("/proc/self/maps") as maps:
             libraries = {
                 os.path.basename(line.split()[-1])
