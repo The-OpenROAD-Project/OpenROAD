@@ -196,7 +196,7 @@ python_wrap_cc(
         "src/watermark-py.i",
         "//:error_swig-py",
     ],
-    module = "wmk",
+    module = "wmk_py",
     root_swig_src = "src/watermark-py.i",
     swig_includes = [
         "include",

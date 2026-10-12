@@ -31,10 +31,10 @@ filegroup(
 
 # ---- SWIG / Python bindings ----
 #
-# The Python targets (swig-py, _odb.so, odb_py) stay in this package
-# because the generated odb.py import path encodes the Bazel package
-# path (src.odb.odb); moving them would break every downstream Python
-# consumer. The TCL SWIG, tcl_encode, swig_common, and ui targets
+# The Python targets (swig-py, py_wrap, odb_py) stay in this package
+# because the generated odb_py.py import path encodes the Bazel package
+# path (src.odb.odb_py), which other generated wrappers import; moving
+# them would break every downstream Python consumer. The TCL SWIG, tcl_encode, swig_common, and ui targets
 # live in //src/odb/src/swig.
 
 python_wrap_cc(
@@ -46,7 +46,7 @@ python_wrap_cc(
         "//:src/Exception.i",
         "//src/odb/src/swig:swig_imports_py",
     ],
-    module = "odb",
+    module = "odb_py",
     root_swig_src = "//src/odb/src/swig:common/odb.i",
     swig_includes = [
         "include",

@@ -3,7 +3,7 @@
 
 """Loads every OpenROAD Python extension module from one shared library.
 
-Each SWIG module has its own init function (PyInit__ord_py, PyInit__odb,
+Each SWIG module has its own init function (PyInit__ord_py, PyInit__odb_py,
 PyInit__ant_py, ...), and all of them are linked into _openroad.so. The
 dynamic loader maps that file once, so the modules keep separate
 namespaces while sharing one copy of the C++ state, as the modules linked
@@ -16,16 +16,12 @@ import importlib.util
 import os
 import sys
 
-# The extension modules in _openroad.so, without any package prefix.
-_EXTENSIONS = frozenset(
-    ["_ord_py", "_odb", "_utl", "_gpl", "_wmk"]
-    + [
-        f"_{tool}_py"
-        for tool in (
-            "ant cgt cts dpl drt exa fin grt ifp par pdn ppl psm rcx rmp rsz" " stt tap"
-        ).split()
-    ]
-)
+# The modules in _openroad.so. Each one's extension is named _<module>_py.
+_MODULES = """
+    ord ant cgt cts dpl drt exa fin gpl grt ifp odb
+    par pdn ppl psm rcx rmp rsz stt tap utl wmk
+""".split()
+_EXTENSIONS = frozenset(f"_{module}_py" for module in _MODULES)
 
 
 def _find_library():

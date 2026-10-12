@@ -278,7 +278,7 @@ python_wrap_cc(
         "src/replace-py.i",
         "//:error_swig-py",
     ],
-    module = "gpl",
+    module = "gpl_py",
     root_swig_src = "src/replace-py.i",
     swig_includes = [
         "include",

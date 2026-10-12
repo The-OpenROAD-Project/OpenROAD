@@ -2,4 +2,4 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 import _openroad_loader  # noqa: F401  (must precede the wrapper import)
-from src.gpl.gpl import *
+from src.gpl.gpl_py import *

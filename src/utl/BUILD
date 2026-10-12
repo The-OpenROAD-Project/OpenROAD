@@ -101,10 +101,6 @@ cc_library(
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
-# This packages the SWIG-generated Python wrapper (odb.py) and the
-# compiled C++ extension (_odb.so) together.
 # The utl module is part of //:openroad_py.
 alias(
     name = "utl_py",
@@ -171,7 +167,7 @@ python_wrap_cc(
         "src/LoggerCommon.h",
         "//:error_swig-py",
     ],
-    module = "utl",
+    module = "utl_py",
     root_swig_src = "src/Logger-py.i",
     swig_includes = [
         "include",
