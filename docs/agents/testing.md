@@ -94,7 +94,7 @@ Python binding tests can be plain `unittest` modules run as Bazel `py_test`
 targets on the hermetic interpreter, one test method per behavior. The
 example is `python/openroad/openroad_test.py`:
 
-```python
+```starlark
 load("@rules_python//python:defs.bzl", "py_test")
 
 py_test(
