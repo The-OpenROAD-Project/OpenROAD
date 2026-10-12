@@ -1,9 +1,11 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@openroad-pip//:requirements.bzl", "requirement")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -42,6 +44,26 @@ DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
 ] + JS_FILES
+
+py_test(
+    name = "npm_lock_test",
+    srcs = ["npm_lock_test.py"],
+    data = [
+        "//src/web:package.json",
+        "//src/web:pnpm-lock.yaml",
+    ],
+    deps = [requirement("pyyaml")],
+)
+
+py_test(
+    name = "bundle_test",
+    srcs = ["bundle_test.py"],
+    data = [
+        "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
+        "//src/web:bundle/app.min.js",
+        "//src/web:bundle/index.html",
+    ],
+)
 
 test_suite(
     name = "cpp_tests",

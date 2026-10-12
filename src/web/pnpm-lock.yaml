@@ -1,0 +1,30 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      golden-layout:
+        specifier: 2.6.0
+        version: 2.6.0
+      leaflet:
+        specifier: 1.9.4
+        version: 1.9.4
+
+packages:
+
+  golden-layout@2.6.0:
+    resolution: {integrity: sha512-sIVQCiRWOymHbVD1Aw/T9/ijbPYAVGBlgGYd1N9MRKfcyBNSpjr87Vg9nSHm+RCT8ELrvK8IJYJV0QRJuVUkCQ==}
+
+  leaflet@1.9.4:
+    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
+
+snapshots:
+
+  golden-layout@2.6.0: {}
+
+  leaflet@1.9.4: {}

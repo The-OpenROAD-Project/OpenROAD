@@ -320,6 +320,13 @@ The rule of thumb: if Bazel can get it from BCR or directly from the
 upstream repo, do not add a submodule just for Bazel. Submodules are
 the CMake-side compromise, not the source of truth for Bazel builds.
 
+There is a third source, for browser code only: the web viewer's
+JavaScript libraries come from **npm**, pinned in `src/web/package.json`
+and `src/web/pnpm-lock.yaml`, and are bundled by esbuild into the assets
+embedded in the binary (see `src/web/README.md`). Do not add a submodule
+or a BCR module for one of these, and do not add an npm dependency for
+anything that is not browser code.
+
 ## Regression Tests
 
 There are a set of executable regression test scripts in `./test/`.

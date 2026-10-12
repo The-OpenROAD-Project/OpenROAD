@@ -546,6 +546,36 @@ The module has two parts:
   resizable panels. Communicates with the server over a binary WebSocket
   protocol.
 
+## Browser libraries
+
+The viewer's JavaScript libraries come from npm, pinned in `package.json` and
+`pnpm-lock.yaml`, instead of from CDNs
+([#11065](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065)).
+`bazel build //:openroad` bundles them with the viewer's sources using esbuild
+(`//src/web:app_bundle`), inlines the stylesheets into `index.html`, and embeds
+the result, so the browser only talks to the OpenROAD process.
+
+| Package | Used for | Source today |
+| --- | --- | --- |
+| `leaflet` | the tiled layout view | bundle |
+| `golden-layout` | the dockable panel layout | bundle |
+| `netlistsvg`, `elkjs` | the schematic | CDN |
+| `three` | the 3D viewer | CDN |
+
+The bundled packages' licences are gathered into `THIRD_PARTY_LICENSES.txt`,
+which the server serves at `/THIRD_PARTY_LICENSES.txt`.
+
+The CMake build cannot run the bundler: it serves the sources as they are,
+with `src/index.cmake.html` loading the libraries from CDNs.
+
+To add or upgrade a library:
+
+```sh
+# edit the version in src/web/package.json, then
+bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+bazel mod deps --lockfile_mode=update      # refresh MODULE.bazel.lock
+```
+
 ## Server API
 
 The browser↔server protocol (WebSocket message types, request fields,
