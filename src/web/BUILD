@@ -135,6 +135,7 @@ _BUNDLED_PACKAGES = [":node_modules/" + p for p in [
     "golden-layout",
     "leaflet",
     "netlistsvg",
+    "three",
 ]]
 
 js_library(

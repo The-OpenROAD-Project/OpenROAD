@@ -560,7 +560,7 @@ the result, so the browser only talks to the OpenROAD process.
 | `leaflet` | the tiled layout view | bundle |
 | `golden-layout` | the dockable panel layout | bundle |
 | `netlistsvg` | the schematic, laid out by its own `elkjs` | bundle |
-| `three` | the 3D viewer | CDN |
+| `three` | the 3D viewer, through `three-subset.js` | bundle |
 
 The bundled packages' licences, with those of their dependencies, are gathered
 into `THIRD_PARTY_LICENSES.txt`, which the server serves at
