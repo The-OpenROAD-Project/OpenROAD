@@ -295,19 +295,30 @@ proc place_pins { args } {
     }
 
     # Switches override set_place_config for this run only.
-    if { [info exists keys(-hor_layers)] || [info exists keys(-ver_layers)] } {
-      if { ![info exists keys(-hor_layers)] } {
-        utl::error PPL 17 "-hor_layers is required."
-      }
-      if { ![info exists keys(-ver_layers)] } {
-        utl::error PPL 18 "-ver_layers is required."
-      }
-      ppl::set_io_pin_layers $keys(-hor_layers) $keys(-ver_layers)
-    } elseif { ![ppl::has_default_hor_and_ver_layers] } {
+    set hor_layers {}
+    set ver_layers {}
+    if { [info exists keys(-hor_layers)] } {
+      set hor_layers $keys(-hor_layers)
+    }
+    if { [info exists keys(-ver_layers)] } {
+      set ver_layers $keys(-ver_layers)
+    }
+    set has_hor [expr { $hor_layers != {} || [ppl::has_default_layers true] }]
+    set has_ver [expr { $ver_layers != {} || [ppl::has_default_layers false] }]
+    if { !$has_hor && !$has_ver } {
       utl::error PPL 26 "Both horizontal and vertical pin layers are required.\
         Pass -hor_layers and -ver_layers, or set_place_config\
         -io_pin_hor_layers and -io_pin_ver_layers."
     }
+    if { !$has_hor } {
+      utl::error PPL 17 "-hor_layers or set_place_config -io_pin_hor_layers\
+        is required."
+    }
+    if { !$has_ver } {
+      utl::error PPL 18 "-ver_layers or set_place_config -io_pin_ver_layers\
+        is required."
+    }
+    ppl::set_io_pin_layers $hor_layers $ver_layers
 
     if { [llength $regions] != 0 } {
       set lef_units [$dbTech getLefUnits]

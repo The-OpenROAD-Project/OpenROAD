@@ -20,6 +20,8 @@ place_pins
 
 place_pins -min_distance 5 -min_distance_in_tracks
 place_pins
+# The omitted direction keeps its saved layers.
+place_pins -hor_layers metal5
 
 # Without the min distance setting the default spacing applies again.
 reset_place_config -io_pin_min_distance
