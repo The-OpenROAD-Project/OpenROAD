@@ -39,13 +39,21 @@ using odb::dbDatabase;
 OpenRoad *
 getOpenRoad()
 {
-  return OpenRoad::openRoad();
+  // From Python the current instance is the one set by the most recently
+  // created Tech, and destroying that Tech clears it even if older ones
+  // are still alive.
+  OpenRoad *openroad = OpenRoad::openRoad();
+  if (openroad == nullptr) {
+    utl::Logger::defaultLogger()->error(
+        utl::ORD, 105, "No current OpenROAD instance; create a Tech and keep it alive.");
+  }
+  return openroad;
 }
 
 utl::Logger *
 getLogger()
 {
-  return OpenRoad::openRoad()->getLogger();
+  return getOpenRoad()->getLogger();
 }
 
 dbDatabase *
@@ -594,22 +602,19 @@ namespace ord {
 void
 set_thread_count(int threads)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->setThreadCount(threads);
+  getOpenRoad()->setThreadCount(threads);
 }
 
 void
 set_thread_count(const char* threads)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->setThreadCount(threads);
+  getOpenRoad()->setThreadCount(threads);
 }
 
 int
 thread_count()
 {
-  OpenRoad *ord = getOpenRoad();
-  return ord->getThreadCount();
+  return getOpenRoad()->getThreadCount();
 }
 
 int
