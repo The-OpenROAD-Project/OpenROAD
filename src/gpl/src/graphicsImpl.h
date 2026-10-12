@@ -83,7 +83,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
   void gifEnd(int key) override;
-  void instDestroyed(odb::dbInst* db_inst) override;
 
  protected:
   void cellPlotImpl(bool pause) override;
@@ -179,9 +178,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   static constexpr const char* kDrawIoPins = "Draw IO Pins";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
-  // Selected instance by identity; selected_ indexes GCell storage, which
-  // timing-driven repairs reorder.
-  odb::dbInst* selected_inst_ = nullptr;
   odb::dbBTerm* selected_pin_ = nullptr;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
@@ -203,7 +199,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void drawInitial(web::Painter& painter);
   void drawMBFF(web::Painter& painter);
   void drawBounds(web::Painter& painter);
-  void resyncSelection();
   void reportSelected();
 };
 

@@ -204,6 +204,10 @@ class Shape
   virtual bool cut(const ObstructionTree& obstructions,
                    const Grid* ignore_grid,
                    std::vector<std::unique_ptr<Shape>>& replacements) const;
+  // cut against only the obstructions obs_filter accepts
+  bool cut(const ObstructionTree& obstructions,
+           std::vector<std::unique_ptr<Shape>>& replacements,
+           const std::function<bool(const ShapePtr&)>& obs_filter) const;
 
   // return a copy of the shape
   virtual std::unique_ptr<Shape> copy() const;
@@ -240,11 +244,6 @@ class Shape
 
   static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
   static ObstructionTreeMap convertVectorToObstructionTree(ShapeVectorMap& vec);
-
- protected:
-  bool cut(const ObstructionTree& obstructions,
-           std::vector<std::unique_ptr<Shape>>& replacements,
-           const std::function<bool(const ShapePtr&)>& obs_filter) const;
 
  private:
   odb::dbTechLayer* layer_;

@@ -549,11 +549,29 @@ bool SetupLegacyBase::repairPins(
     prewarmTargets(prewarm_targets);
   }
 
+  // A target holds raw STA paths. Every accepted move invalidates the paths
+  // through the logic it touched, so a pass that repairs many pins has to
+  // bring timing up to date before it builds the next target from them.
+  // The update invalidates focus_path as well, so it is looked up again
+  // from its endpoint.
+  sta::Vertex* focus_vertex
+      = focus_path != nullptr ? focus_path->vertex(sta_) : nullptr;
+  bool timing_stale = false;
   for (const sta::Pin* driver_pin : pins) {
     if (changed >= repairs_per_pass) {
       break;
     }
 
+    if (timing_stale) {
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+      timing_stale = false;
+      if (focus_vertex != nullptr) {
+        focus_path = sta_->vertexWorstSlackPath(focus_vertex, max_);
+      }
+    }
+
+    const int changed_before = changed;
     Target target;
     const bool has_target
         = focus_path != nullptr
@@ -581,6 +599,7 @@ bool SetupLegacyBase::repairPins(
         && accepted_type.has_value()) {
       chosen_moves->emplace_back(driver_pin, *accepted_type);
     }
+    timing_stale = changed != changed_before;
   }
 
   return changed > 0;
