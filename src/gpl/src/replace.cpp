@@ -21,6 +21,7 @@
 #include "odb/db.h"
 #include "odb/util.h"
 #include "placerBase.h"
+#include "ppl/IOPlacer.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
@@ -40,8 +41,14 @@ Replace::Replace(odb::dbDatabase* odb,
                  sta::dbSta* sta,
                  rsz::Resizer* resizer,
                  grt::GlobalRouter* router,
+                 ppl::IOPlacer* pin_placer,
                  utl::Logger* logger)
-    : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
+    : db_(odb),
+      sta_(sta),
+      rs_(resizer),
+      fr_(router),
+      pin_placer_(pin_placer),
+      log_(logger)
 {
   graphics_ = std::make_unique<GraphicsNone>();
 
@@ -284,6 +291,20 @@ void Replace::runMBFF(const int max_sz,
   pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
+void Replace::initIoPinPlace(NesterovBaseVars& nbVars)
+{
+  const ppl::PinPlacementSettings settings = pin_placer_->getSettings();
+  if (settings.hor_layers.empty() || settings.ver_layers.empty()) {
+    log_->error(GPL,
+                174,
+                "-place_ios: pin layers are not set. Set both "
+                "-io_pin_hor_layers and -io_pin_ver_layers with "
+                "set_place_config.");
+  }
+  io_slots_ = pin_placer_->buildSlotGrid();
+  nbVars.placeIosSlots = &io_slots_;
+}
+
 bool Replace::initNesterovPlace(const PlaceOptions& options,
                                 const int threads,
                                 bool check_density)
@@ -313,7 +334,10 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   }
 
   if (!nbc_) {
-    const NesterovBaseVars nbVars(options);
+    NesterovBaseVars nbVars(options);
+    if (options.placeIosMode) {
+      initIoPinPlace(nbVars);
+    }
 
     nbc_ = std::make_shared<NesterovBaseCommon>(
         nbVars, pbc_, log_, threads, clusters_);
@@ -414,6 +438,12 @@ int Replace::doNesterovPlace(const int threads,
   auto start = std::chrono::high_resolution_clock::now();
 
   int return_do_nesterov = np_->doNesterovPlace(start_iter);
+
+  // Legalize the solved pins with the pin placer, moving each as little as
+  // possible.
+  if (options.placeIosMode) {
+    pin_placer_->runHungarianMatching(true);
+  }
 
   reportHpwlMetric();
 

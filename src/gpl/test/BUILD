@@ -56,9 +56,8 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "incremental02",
-    "place_ios01",
-    "place_ios_few_cells",
-    "place_ios_top_layer",
+    "place_ios_rd",
+    "place_ios_td",
 ]
 
 # Longer-running regression tests (see regression_tests_large.tcl). These are
@@ -253,6 +252,28 @@ cc_test(
     target_compatible_with = GPU_ONLY,
     deps = [
         "//src/gpl:gpl_kokkos",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "place_ios_test",
+    srcs = ["place_ios_test.cc"],
+    data = [
+        "nangate45.lef",
+        "simple01.def",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/ifp",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/ppl",
+        "//src/tst",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

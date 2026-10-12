@@ -158,9 +158,9 @@ add_ver_layer(odb::dbTechLayer* layer)
 }
 
 void
-run_hungarian_matching()
+run_hungarian_matching(bool minimize_displacement)
 {
-  getIOPlacer()->runHungarianMatching();
+  getIOPlacer()->runHungarianMatching(minimize_displacement);
 }
 
 void
@@ -203,6 +203,19 @@ void
 set_min_distance_in_tracks(bool in_tracks)
 {
   getIOPlacer()->getParameters()->setMinDistanceInTracks(in_tracks);
+}
+
+int
+get_default_min_distance()
+{
+  return getIOPlacer()->getSettings().min_distance;
+}
+
+bool
+has_default_hor_and_ver_layers()
+{
+  const ppl::PinPlacementSettings settings = getIOPlacer()->getSettings();
+  return !settings.hor_layers.empty() && !settings.ver_layers.empty();
 }
 
 void set_pin_placement_file(const char* file_name)
@@ -258,9 +271,9 @@ simulated_annealing_debug(int iters_between_paintings,
 }
 
 void
-run_annealing()
+run_annealing(bool minimize_displacement)
 {
-  getIOPlacer()->runAnnealing();
+  getIOPlacer()->runAnnealing(minimize_displacement);
 }
 
 void

@@ -122,6 +122,15 @@ int Netlist::computeIONetHPWL(int idx, const odb::Point& slot_pos)
   return (x + y);
 }
 
+int Netlist::computeIOCost(int idx, const odb::Point& slot_pos)
+{
+  if (!minimize_displacement_) {
+    return computeIONetHPWL(idx, slot_pos);
+  }
+  const odb::Point& from = io_pins_[idx].getInitialPosition();
+  return std::abs(slot_pos.x() - from.x()) + std::abs(slot_pos.y() - from.y());
+}
+
 int Netlist::computeDstIOtoPins(int idx, const odb::Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
