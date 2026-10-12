@@ -362,9 +362,12 @@ TEST(WebViewerHookTest, SessionBroadcast)
   EXPECT_NE(seen[0].find("debug_refresh"), std::string::npos);
 }
 
-// A renderer turned on from Tcl never pauses, so registering it is the only
-// signal the clients get to pick up its controls.
-TEST(WebViewerHookTest, RendererRegistrationRefreshesControls)
+// A renderer turned on from Tcl never pauses, so its registration is the only
+// signal the clients get to pick up its controls.  Gui tells the hook before
+// it changes its renderer set, so the hook notes the change for the server
+// to send once the command is done, rather than sending the clients to read
+// the set now.
+TEST(WebViewerHookTest, RendererRegistrationIsNotedForLater)
 {
   WebViewerHook hook;
   std::vector<std::string> seen;
@@ -373,14 +376,16 @@ TEST(WebViewerHookTest, RendererRegistrationRefreshesControls)
     std::lock_guard<std::mutex> lock(m);
     seen.push_back(s);
   });
+  EXPECT_FALSE(hook.takeRenderersChanged());
   hook.registerRenderer(nullptr);
+  EXPECT_TRUE(hook.takeRenderersChanged());
+  EXPECT_FALSE(hook.takeRenderersChanged());
   hook.unregisterRenderer(nullptr);
+  EXPECT_TRUE(hook.takeRenderersChanged());
   hook.sessions().remove(token);
 
   std::lock_guard<std::mutex> lock(m);
-  ASSERT_EQ(seen.size(), 2u);
-  EXPECT_NE(seen[0].find("renderer_controls_changed"), std::string::npos);
-  EXPECT_NE(seen[1].find("renderer_controls_changed"), std::string::npos);
+  EXPECT_TRUE(seen.empty());
 }
 
 TEST(WebViewerHookTest, CreatesChartAndTracksIt)

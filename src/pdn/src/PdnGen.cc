@@ -748,8 +748,10 @@ void PdnGen::setDebugRenderer(bool on)
       debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
-  } else {
+  } else if (debug_renderer_ != nullptr) {
     debug_renderer_ = nullptr;
+    // The shapes were only kept for the renderer (see run_pdngen)
+    resetShapes();
   }
 }
 

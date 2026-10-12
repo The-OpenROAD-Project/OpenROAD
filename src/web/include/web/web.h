@@ -283,7 +283,8 @@ class WebServer
   std::thread::id script_thread_;
   bool script_holds_gate_ = false;
   bool onScriptThread() const;
-  // Lets browser requests in while a startup script is paused.
+  // Stops a paused command counting as running, so the renderers draw, and
+  // lets browser requests in while a startup script is paused.
   void installPauseHooks();
   // Creates the tile generator on first use (the server need not be running)
   // and hands it the configured thread count.

@@ -295,12 +295,17 @@ bool WebViewerHook::isPaused() const
 
 void WebViewerHook::registerRenderer(Renderer* /* renderer */)
 {
-  sessions_.broadcast(R"({"type":"renderer_controls_changed"})");
+  renderers_changed_.store(true, std::memory_order_release);
 }
 
 void WebViewerHook::unregisterRenderer(Renderer* /* renderer */)
 {
-  sessions_.broadcast(R"({"type":"renderer_controls_changed"})");
+  renderers_changed_.store(true, std::memory_order_release);
+}
+
+bool WebViewerHook::takeRenderersChanged()
+{
+  return renderers_changed_.exchange(false, std::memory_order_acq_rel);
 }
 
 // ─── Per-renderer display controls ───────────────────────────────────────────
