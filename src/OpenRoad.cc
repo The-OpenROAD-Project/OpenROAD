@@ -712,9 +712,18 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;  // -1 is max cores
   } else {
+    bool valid = false;
     try {
-      max_threads = std::stoi(threads);
-    } catch (const std::invalid_argument&) {
+      size_t pos = 0;
+      const int parsed = std::stoi(threads, &pos);
+      // Reject trailing characters such as "4abc" or "8.5".
+      if (threads[pos] == '\0') {
+        max_threads = parsed;
+        valid = true;
+      }
+    } catch (const std::logic_error&) {  // invalid_argument or out_of_range
+    }
+    if (!valid) {
       logger_->warn(
           ORD, 32, "Invalid thread number specification: {}.", threads);
     }

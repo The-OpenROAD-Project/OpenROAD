@@ -22,43 +22,6 @@ namespace odb {
 
 using utl::ODB;
 
-static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
-{
-  *iterm = nullptr;
-  *bterm = nullptr;
-  dbSet<dbITerm> iterms = net->getITerms();
-  dbITerm* it_inout = nullptr;
-  for (dbITerm* it : iterms) {
-    if (it->getIoType() == dbIoType::OUTPUT) {
-      *iterm = it;
-      return;
-    }
-    if (it->getIoType() == dbIoType::INOUT && !it_inout) {
-      it_inout = it;
-    }
-  }
-  dbSet<dbBTerm> bterms = net->getBTerms();
-  dbBTerm* bt_inout = nullptr;
-  for (dbBTerm* bt : bterms) {
-    if (bt->getIoType() == dbIoType::INPUT) {
-      *bterm = bt;
-      return;
-    }
-    if (bt->getIoType() == dbIoType::INOUT && !bt_inout) {
-      bt_inout = bt;
-    }
-  }
-  if (bt_inout) {
-    *bterm = bt_inout;
-  } else if (it_inout) {
-    *iterm = it_inout;
-  } else if (!bterms.empty()) {
-    *bterm = *bterms.begin();
-  } else if (!iterms.empty()) {
-    *iterm = *iterms.begin();
-  }
-}
-
 tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
   wire_sections_.reserve(1024);
@@ -71,10 +34,52 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 
 tmg_conn::~tmg_conn() = default;
 
+void tmg_conn::analyzeNet()
+{
+  loadWire();
+
+  if (wire_points_.empty()) {
+    net_->setDisconnected(false);
+    net_->setWireOrdered(false);
+  } else {
+    loadTerminals();
+    identifyShorts();
+    removeWireLoops();
+    identifyTerminalWirePoints();
+
+    if (has_special_wires_) {
+      net_->destroySWires();
+    }
+
+    connection_graph_->relocateShorts(this);
+    treeReorder(false);
+
+    net_->setDisconnected(!connected_);
+    net_->setWireOrdered(true);
+  }
+
+  clear();
+}
+
+void tmg_conn::setNet(dbNet* net)
+{
+  net_ = net;
+}
+
+const WirePoint& tmg_conn::wirePoint(const int point_index) const
+{
+  return wire_points_[point_index];
+}
+
 int tmg_conn::distance(const int fr, const int to) const
 {
   return abs(wire_points_[fr].x - wire_points_[to].x)
          + abs(wire_points_[fr].y - wire_points_[to].y);
+}
+
+WirePoint& tmg_conn::wirePoint(const int point_index)
+{
+  return wire_points_[point_index];
 }
 
 WirePoint* tmg_conn::addWirePoint(int x, int y, dbTechLayer* layer)
@@ -166,29 +171,44 @@ void tmg_conn::addShort(const int i0, const int i1)
   shorts_.emplace_back(i0, i1);
 }
 
-void tmg_conn::loadNet(dbNet* net)
+void tmg_conn::clear()
 {
-  net_ = net;
+  net_ = nullptr;
+  has_special_wires_ = false;
+
   wire_sections_.clear();
   wire_points_.clear();
   terminals_.clear();
+  shorts_.clear();
+
   candidate_sections_.clear();
   candidate_section_count_.clear();
-  shorts_.clear();
   first_for_clear_ = nullptr;
 
-  for (dbITerm* iterm : net->getITerms()) {
+  restart_terminals_.clear();
+  last_id_ = -1;
+  net_rule_ = nullptr;
+  path_rule_ = nullptr;
+  need_short_wire_id_ = false;
+  first_segment_after_via_ = false;
+  new_wire_ = nullptr;
+
+  connected_ = false;
+}
+
+void tmg_conn::loadTerminals()
+{
+  for (dbITerm* iterm : net_->getITerms()) {
     addITerm(iterm);
   }
 
-  for (dbBTerm* bterm : net->getBTerms()) {
+  for (dbBTerm* bterm : net_->getBTerms()) {
     addBTerm(bterm);
   }
 }
 
 void tmg_conn::loadSWire(dbNet* net)
 {
-  has_special_wires_ = false;
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.empty()) {
     return;
@@ -245,9 +265,14 @@ void tmg_conn::loadSWire(dbNet* net)
   }
 }
 
-void tmg_conn::loadWire(dbWire* wire)
+void tmg_conn::loadWire()
 {
-  wire_points_.clear();
+  odb::dbWire* wire = net_->getWire();
+
+  if (!wire) {
+    return;
+  }
+
   dbWirePathItr pitr;
   dbWirePath path;
   pitr.begin(wire);
@@ -694,6 +719,230 @@ void tmg_conn::identifyShorts()
           klast = k;
           connectShapes(j, k);
         }
+      }
+    }
+  }
+}
+
+void tmg_conn::removeShortLoops()
+{
+  if (!connection_graph_) {
+    connection_graph_ = std::make_unique<ConnectionGraph>();
+  }
+  connection_graph_->init(wire_points_.size(), shorts_.size());
+
+  // setup paths
+  int npath = -1;
+  for (size_t j = 0; j < wire_sections_.size(); j++) {
+    if (j == 0 || wire_sections_[j].from_idx != wire_sections_[j - 1].to_idx) {
+      ++npath;
+    }
+    connection_graph_->pt(wire_sections_[j].from_idx).path_index = npath;
+    connection_graph_->pt(wire_sections_[j].to_idx).path_index = npath;
+  }
+  npath++;
+
+  // remove shorts to same path
+  for (Short& s : shorts_) {
+    if (s.skip) {
+      continue;
+    }
+    if (connection_graph_->pt(s.i0).path_index
+        == connection_graph_->pt(s.i1).path_index) {
+      s.skip = true;
+    }
+  }
+
+  for (Short& s : shorts_) {
+    if (s.skip) {
+      continue;
+    }
+    ConnectionGraph::Edge* e;
+    for (e = connection_graph_->pt(s.i0).first_edge; e; e = e->next) {
+      if (e->to == s.i1) {
+        break;
+      }
+    }
+    if (e) {
+      s.skip = true;
+      continue;
+    }
+    e = connection_graph_->newShortEdge(this, s.i0, s.i1);
+    ConnectionGraph::Edge* e2
+        = connection_graph_->newShortEdge(this, s.i1, s.i0);
+    e->wire_short = &s;
+    e2->wire_short = &s;
+    e->reverse = e2;
+    e2->reverse = e;
+    e->from = s.i0;
+    e->to = s.i1;
+    e2->from = s.i1;
+    e2->to = s.i0;
+    e->visited = false;
+    e2->visited = false;
+  }
+
+  // remove all short loops
+  connection_graph_->clearVisited();
+
+  for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
+    ConnectionGraph::Edge* e = connection_graph_->getFirstEdge(jstart);
+    if (!e) {
+      continue;
+    }
+    connection_graph_->pt(jstart).visited = true;
+    connection_graph_->pt(jstart).descent_edge_index = 0;
+    while (e) {
+      e->visited = true;
+      e->reverse->visited = true;
+      ConnectionGraph::Point* pg = &connection_graph_->pt(e->to);
+      if (pg->visited) {
+        e->skip = true;
+        e->reverse->skip = true;
+        e->wire_short->skip = true;
+        e = connection_graph_->getNextEdge(false);
+      } else {
+        pg->visited = true;
+        pg->descent_edge_index = connection_graph_->descentDepth();
+        e = connection_graph_->getNextEdge(true);
+      }
+    }
+  }
+
+  // count components, and remaining loops
+  connection_graph_->clearVisited();
+  for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
+    ConnectionGraph::Edge* e = connection_graph_->getFirstEdge(jstart);
+    if (!e) {
+      continue;
+    }
+    connection_graph_->pt(jstart).visited = true;
+    connection_graph_->pt(jstart).descent_edge_index = 0;
+    while (e) {
+      e->visited = true;
+      e->reverse->visited = true;
+      ConnectionGraph::Point* pg = &connection_graph_->pt(e->to);
+      if (pg->visited) {
+        e = connection_graph_->getNextEdge(false);
+      } else {
+        pg->visited = true;
+        pg->descent_edge_index = connection_graph_->descentDepth();
+        e = connection_graph_->getNextEdge(true);
+      }
+    }
+  }
+}
+
+// Here we also build the connection graph.
+void tmg_conn::removeWireLoops()
+{
+  removeShortLoops();
+
+  // loops involving only shorts have already been handled
+  if (wire_sections_.empty()) {
+    return;
+  }
+  // add all path edges
+  for (size_t j = 0; j < wire_sections_.size(); j++) {
+    connection_graph_->addEdges(
+        this, wire_sections_[j].from_idx, wire_sections_[j].to_idx, j);
+  }
+
+  // remove loops that have shorts by removing
+  // the short with max distance
+  // if no shorts, allow the loop to stay;
+  // we do not expect any router to have a pure path loop
+
+  bool done = false;
+  while (!done) {
+    int loop_removed = 0;
+    done = true;
+    connection_graph_->clearVisited();
+    for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
+      ConnectionGraph::Edge* e = connection_graph_->getFirstEdge(jstart);
+      if (!e) {
+        continue;
+      }
+      connection_graph_->pt(jstart).visited = true;
+      connection_graph_->pt(jstart).descent_edge_index = 0;
+      while (e) {
+        e->visited = true;
+        e->reverse->visited = true;
+        ConnectionGraph::Point* pg = &connection_graph_->pt(e->to);
+        if (pg->visited && pg->descent_edge_index < 0) {
+          done = false;
+        } else if (pg->visited) {
+          int k = pg->descent_edge_index;
+          int max_dist = 0;
+          int max_k = 0;
+          ConnectionGraph::Edge* emax = nullptr;
+          for (; k < connection_graph_->descentDepth(); k++) {
+            ConnectionGraph::Edge* eloop = connection_graph_->descentEdge(k);
+            if (!eloop->wire_short) {
+              continue;
+            }
+            const int dist
+                = abs(wirePoint(eloop->from).x - wirePoint(eloop->to).x)
+                  + abs(wirePoint(eloop->from).y - wirePoint(eloop->to).y);
+            if (dist >= max_dist) {
+              max_dist = dist;
+              max_k = k;
+              emax = eloop;
+            }
+          }
+          if (!emax) {
+            done = false;
+          } else {
+            emax->skip = true;
+            emax->reverse->skip = true;
+            emax->wire_short->skip = true;
+            loop_removed++;
+            done = false;
+            if (max_k + 1 < connection_graph_->descentDepth()) {
+              int k2;
+              for (k2 = max_k + 1; k2 < connection_graph_->descentDepth() - 1;
+                   k2++) {
+                connection_graph_->pt(connection_graph_->descentEdge(k2)->to)
+                    .descent_edge_index
+                    = -1;
+              }
+              connection_graph_->setDescentDepth(max_k + 1);
+            }
+          }
+        }
+        if (pg->visited) {
+          e = connection_graph_->getNextEdge(false);
+        } else {
+          pg->visited = true;
+          pg->descent_edge_index = connection_graph_->descentDepth();
+          e = connection_graph_->getNextEdge(true);
+        }
+      }
+    }
+    if (!loop_removed) {
+      break;
+    }
+  }
+
+  // report all remaining loops, and count components
+  connection_graph_->clearVisited();
+  for (int jstart = 0; jstart < wire_points_.size(); jstart++) {
+    ConnectionGraph::Edge* e = connection_graph_->getFirstEdge(jstart);
+    if (!e) {
+      continue;
+    }
+    connection_graph_->pt(jstart).visited = true;
+    connection_graph_->pt(jstart).descent_edge_index = 0;
+    while (e) {
+      e->visited = true;
+      e->reverse->visited = true;
+      ConnectionGraph::Point* pg = &connection_graph_->pt(e->to);
+      if (pg->visited) {
+        e = connection_graph_->getNextEdge(false);
+      } else {
+        pg->visited = true;
+        pg->descent_edge_index = connection_graph_->descentDepth();
+        e = connection_graph_->getNextEdge(true);
       }
     }
   }
@@ -1327,7 +1576,7 @@ int tmg_conn::getStartNode()
 {
   dbITerm* it_drv;
   dbBTerm* bt_drv;
-  tmg_getDriveTerm(net_, &it_drv, &bt_drv);
+  findDriver(&it_drv, &bt_drv);
   for (const Terminal& x : terminals_) {
     if (x.iterm == it_drv && x.bterm == bt_drv) {
       if (!x.pt) {
@@ -1362,38 +1611,41 @@ int tmg_conn::getStartNode()
   return 0;
 }
 
-void tmg_conn::analyzeNet(dbNet* net)
+void tmg_conn::findDriver(dbITerm** iterm, dbBTerm** bterm)
 {
-  if (net->isWireOrdered()) {
-    net_ = net;
-    checkConnOrdered();
-  } else {
-    loadNet(net);
-
-    if (net->getWire()) {
-      loadWire(net->getWire());
-    }
-
-    if (wire_points_.empty()) {
-      net->setDisconnected(false);
-      net->setWireOrdered(false);
+  *iterm = nullptr;
+  *bterm = nullptr;
+  dbSet<dbITerm> iterms = net_->getITerms();
+  dbITerm* it_inout = nullptr;
+  for (dbITerm* it : iterms) {
+    if (it->getIoType() == dbIoType::OUTPUT) {
+      *iterm = it;
       return;
     }
-
-    identifyShorts();
-    removeWireLoops();
-    identifyTerminalWirePoints();
-
-    if (has_special_wires_) {
-      net->destroySWires();
+    if (it->getIoType() == dbIoType::INOUT && !it_inout) {
+      it_inout = it;
     }
-
-    relocateShorts();
-    treeReorder(false);
   }
-
-  net->setDisconnected(!connected_);
-  net->setWireOrdered(true);
+  dbSet<dbBTerm> bterms = net_->getBTerms();
+  dbBTerm* bt_inout = nullptr;
+  for (dbBTerm* bt : bterms) {
+    if (bt->getIoType() == dbIoType::INPUT) {
+      *bterm = bt;
+      return;
+    }
+    if (bt->getIoType() == dbIoType::INOUT && !bt_inout) {
+      bt_inout = bt;
+    }
+  }
+  if (bt_inout) {
+    *bterm = bt_inout;
+  } else if (it_inout) {
+    *iterm = it_inout;
+  } else if (!bterms.empty()) {
+    *bterm = *bterms.begin();
+  } else if (!iterms.empty()) {
+    *iterm = *iterms.begin();
+  }
 }
 
 bool tmg_conn::checkConnected()
@@ -1406,7 +1658,6 @@ bool tmg_conn::checkConnected()
   if (terminals_.empty()) {
     return true;
   }
-  restart_terminals_.clear();
   int jstart = getStartNode();
   Terminal* xstart = nullptr;
   if (wire_points_[jstart].terminal_index >= 0) {
@@ -1414,8 +1665,8 @@ bool tmg_conn::checkConnected()
     xstart = x;
     restart_terminals_.push_back(x);
   }
-  dfsClear();
-  if (!dfsStart(jstart)) {
+  connection_graph_->clearVisited();
+  if (!connection_graph_->dfsStart(jstart)) {
     return false;
   }
   int tstack0 = 0;
@@ -1423,7 +1674,7 @@ bool tmg_conn::checkConnected()
     // do a physically-connected subtree
     int jfr, jto, k;
     bool is_short, is_loop;
-    while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
+    while (connection_graph_->dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
       if (wire_points_[jto].terminal_index >= 0) {
         Terminal* x = &terminals_[wire_points_[jto].terminal_index];
         if (x == xstart && !is_short) {
@@ -1457,7 +1708,7 @@ bool tmg_conn::checkConnected()
     while (tstack0 < restart_terminals_.size() && !pt) {
       Terminal* x = restart_terminals_[tstack0++];
       for (pt = x->pt; pt; pt = pt->next_terminal_point) {
-        if (!isVisited(pt - wire_points_.data())) {
+        if (!connection_graph_->isVisited(pt - wire_points_.data())) {
           break;
         }
       }
@@ -1469,7 +1720,7 @@ bool tmg_conn::checkConnected()
       break;
     }
     jstart = pt - wire_points_.data();
-    if (!dfsStart(jstart)) {
+    if (!connection_graph_->dfsStart(jstart)) {
       return false;
     }
   }
@@ -1483,6 +1734,16 @@ bool tmg_conn::checkConnected()
   return con;  // all terms connected, may be floating pieces of wire
 }
 
+void tmg_conn::checkVisited()
+{
+  for (int j = 0; j < wire_points_.size(); j++) {
+    if (!connection_graph_->pt(j).visited) {
+      connected_ = false;
+      break;
+    }
+  }
+}
+
 // Note that when the wire walk exhausts the piece of metal it is on, it
 // may restart from a "restart terminal". These terminals may be:
 // 1) The driver.
@@ -1491,12 +1752,9 @@ bool tmg_conn::checkConnected()
 void tmg_conn::treeReorder(const bool no_convert)
 {
   connected_ = true;
-  need_short_wire_id_ = false;
   if (wire_points_.empty()) {
     return;
   }
-  new_wire_ = nullptr;
-  last_id_ = -1;
   if (!no_convert) {
     new_wire_ = net_->getWire();
     if (!new_wire_) {
@@ -1530,8 +1788,8 @@ void tmg_conn::treeReorder(const bool no_convert)
     xstart = x;
     restart_terminals_.push_back(x);
   }
-  dfsClear();
-  if (!dfsStart(jstart)) {
+  connection_graph_->clearVisited();
+  if (!connection_graph_->dfsStart(jstart)) {
     logger_->error(ODB,
                    395,
                    "Could not order wires of net {}. No wire segment is "
@@ -1546,7 +1804,7 @@ void tmg_conn::treeReorder(const bool no_convert)
     Terminal* x = nullptr;
     int jfr, jto, k;
     bool is_short, is_loop;
-    while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
+    while (connection_graph_->dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
       x = nullptr;
       if (wire_points_[jto].terminal_index >= 0) {
         x = &terminals_[wire_points_[jto].terminal_index];
@@ -1585,7 +1843,7 @@ void tmg_conn::treeReorder(const bool no_convert)
     while (tstack0 < restart_terminals_.size() && !pt) {
       x = restart_terminals_[tstack0++];
       for (pt = x->pt; pt; pt = pt->next_terminal_point) {
-        if (!isVisited(pt - wire_points_.data())) {
+        if (!connection_graph_->isVisited(pt - wire_points_.data())) {
           break;
         }
       }
@@ -1598,7 +1856,8 @@ void tmg_conn::treeReorder(const bool no_convert)
       int j;
       for (j = last_term_index; j < terminals_.size(); j++) {
         x = &terminals_[j];
-        if (x->pt && !isVisited(x->pt - wire_points_.data())) {
+        if (x->pt
+            && !connection_graph_->isVisited(x->pt - wire_points_.data())) {
           break;
         }
       }
@@ -1619,7 +1878,7 @@ void tmg_conn::treeReorder(const bool no_convert)
       }
     }
     jstart = pt - wire_points_.data();
-    if (!dfsStart(jstart)) {
+    if (!connection_graph_->dfsStart(jstart)) {
       logger_->error(ODB,
                      396,
                      "Could not order wires of net {}. No wire segment is "
@@ -1699,6 +1958,40 @@ int tmg_conn::addPointIfExt(const int ipt, const WireSection* wire_section)
     wire_id = encoder_.addPoint(p->x, p->y, ext);
   }
   return wire_id;
+}
+
+int tmg_conn::getDisconnectedStart()
+{
+  for (int j = 0; j < wire_points_.size(); j++) {
+    if (!connection_graph_->pt(j).visited) {
+      if (connection_graph_->pt(j).first_edge
+          && !connection_graph_->pt(j).first_edge->next) {
+        return j;
+      }
+    }
+  }
+  for (int j = 0; j < wire_points_.size(); j++) {
+    if (!connection_graph_->pt(j).visited) {
+      if (connection_graph_->pt(j).first_edge) {
+        return j;
+      }
+    }
+  }
+  return -1;
+}
+
+void tmg_conn::copyWireIdToVisitedShorts(const int j)
+{
+  // copy wirePoint(j).id_on_new_encoding to visited points shorted to j
+  const int wire_id = wirePoint(j).id_on_new_encoding;
+  WirePoint* x0 = &wirePoint(j);
+  for (WirePoint* x = x0->next_in_short_ring; x && x != x0;
+       x = x->next_in_short_ring) {
+    if (x->id_on_new_encoding < 0
+        && connection_graph_->pt(x - wire_points_.data()).visited) {
+      x->id_on_new_encoding = wire_id;
+    }
+  }
 }
 
 void tmg_conn::addToWire(const int fr,
@@ -1879,8 +2172,8 @@ void tmg_conn::addToWire(const int fr,
       && wire_points_[to].terminal_index != wire_points_[fr].terminal_index
       && wire_points_[to].terminal_alternative_point
       && wire_points_[to].terminal_alternative_point->terminal_index < 0
-      && !isVisited(wire_points_[to].terminal_alternative_point
-                    - wire_points_.data())) {
+      && !connection_graph_->isVisited(
+          wire_points_[to].terminal_alternative_point - wire_points_.data())) {
     // move an ambiguous connection to the later point
     // this is for receiver; we should not get here for driver
     WirePoint* pother = wire_points_[to].terminal_alternative_point;

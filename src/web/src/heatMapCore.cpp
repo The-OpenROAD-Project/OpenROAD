@@ -29,6 +29,7 @@
 #include "heatMapRenderer.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "sta/PowerClass.hh"
@@ -1224,10 +1225,10 @@ bool PowerDensityDataSource::populateMap()
         pwr += power.internal();
       }
       if (include_leakage_) {
-        pwr += power.switching();
+        pwr += power.leakage();
       }
       if (include_switching_) {
-        pwr += power.leakage();
+        pwr += power.switching();
       }
     }
 
@@ -1264,6 +1265,65 @@ sta::Scene* PowerDensityDataSource::getScene() const
   // or the named scene no longer exists (e.g. before timing analysis runs).
   const auto& scenes = sta_->scenes();
   return scenes.empty() ? nullptr : scenes[0];
+}
+
+ExternalHeatMapDataSource::ExternalHeatMapDataSource(
+    utl::Logger* logger,
+    const std::string& name,
+    const std::string& short_name,
+    EntryList data)
+    : HeatMapDataSource(logger, name, short_name, "ExternalHeatMap"),
+      data_entries_(std::move(data))
+{
+}
+
+bool ExternalHeatMapDataSource::populateMap()
+{
+  if (getChip() == nullptr || data_entries_ == nullptr
+      || data_entries_->empty()) {
+    return false;
+  }
+  const double dbu_per_micron = getDbuPerMicron();
+  // CSV coordinates are user-supplied and can be finite but far larger than
+  // DBU space allows, so clamp before the cast -- converting an
+  // out-of-range double to int is undefined behavior.
+  const auto toDbu = [&](const double microns) {
+    constexpr double kMax = std::numeric_limits<int>::max();
+    constexpr double kMin = std::numeric_limits<int>::min();
+    const double dbu = std::round(microns * dbu_per_micron);
+    return static_cast<int>(std::clamp(dbu, kMin, kMax));
+  };
+  for (const auto& entry : *data_entries_) {
+    const int x0 = toDbu(entry.x0);
+    const int y0 = toDbu(entry.y0);
+    const int x1 = toDbu(entry.x1);
+    const int y1 = toDbu(entry.y1);
+    odb::Rect rect(
+        std::min(x0, x1), std::min(y0, y1), std::max(x0, x1), std::max(y0, y1));
+    transform_.apply(rect);
+    addToMap(rect, entry.value);
+  }
+  return true;
+}
+
+odb::Rect ExternalHeatMapDataSource::getBounds() const
+{
+  odb::Rect bounds = HeatMapDataSource::getBounds();
+  transform_.apply(bounds);
+  return bounds;
+}
+
+void ExternalHeatMapDataSource::combineMapData(bool base_has_value,
+                                               double& base,
+                                               const double new_data,
+                                               const double /* data_area */,
+                                               const double intersection_area,
+                                               const double /* rect_area */)
+{
+  if (intersection_area <= 0) {
+    return;
+  }
+  base = base_has_value ? std::max(base, new_data) : new_data;
 }
 
 HeatMapSourceRegistration::HeatMapSourceRegistration(std::string name,
@@ -1325,8 +1385,9 @@ HeatMapSourceHandle registerHeatMapSource(
   return source;
 }
 
-const std::vector<HeatMapSourceHandle>& getRegisteredHeatMapSources()
+std::vector<HeatMapSourceHandle> getRegisteredHeatMapSources()
 {
+  std::lock_guard<std::mutex> lock(heatMapSourceMutex());
   return heatMapSources();
 }
 

@@ -157,15 +157,10 @@ single_version_override(
 
 # gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
 # libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
-# hermetic-llvm's explicit libc -isystem entries (BCR #7642). 5.3.2.bcr.7
-# carries the upstream fix (BCR #7989).
+# hermetic-llvm's explicit libc -isystem entries.
 single_version_override(
     module_name = "gawk",
-    patch_strip = 1,
-    patches = [
-        "//bazel/gawk-patches:0001-load-environ-no-mutation.patch",
-    ],
-    version = "5.4.0.bcr.1",
+    version = "5.4.0.bcr.2",
 )
 
 bazel_dep(name = "git", version = "2.54.0")

@@ -16,6 +16,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -225,6 +226,80 @@ class TestResizer : public tst::IntegratedFixture
     return nullptr;
   }
 };
+
+// Exclude non-timing drivers from GPL's slack ranking.
+TEST_F(TestResizer, ResizeSlacksExcludeNonTimingDrivers)
+{
+  readVerilogAndSetup("TestResizerResizeSlacks.v",
+                      /*init_default_sdc=*/false);
+  makeClock("vclk", nullptr);
+  setInputDelay("a", "vclk", 0.028);
+  setInputDelay("unused", "vclk", 0.270);
+  setInputDelay("loose_in", "vclk", 0.270);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clock = sdc->findClock("vclk");
+  sta::Pin* output = findTopPin("y");
+  ASSERT_NE(output, nullptr);
+  sta_->setOutputDelay(output,
+                       sta::RiseFallBoth::riseFall(),
+                       clock,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       true,
+                       staTime(1.0),
+                       sdc);
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const auto* max = sta::MinMax::max();
+  const float tolerance = staTime(1e-6);
+  sta::Vertex* constrained = loadVertex("a");
+  sta::Vertex* isolated = loadVertex("unused");
+  sta::Vertex* unconstrained = loadVertex("loose_in");
+  ASSERT_NE(constrained, nullptr);
+  ASSERT_NE(isolated, nullptr);
+  ASSERT_NE(unconstrained, nullptr);
+  ASSERT_TRUE(constrained->hasFanout());
+  ASSERT_FALSE(isolated->hasFanout());
+  ASSERT_TRUE(unconstrained->hasFanout());
+  const sta::Slack wns = sta_->worstSlack(max);
+  EXPECT_NEAR(wns, staTime(-0.028), tolerance);
+  EXPECT_NEAR(sta_->slack(isolated, max), staTime(-0.270), tolerance);
+  EXPECT_TRUE(sta::fuzzyInf(sta_->slack(unconstrained, max)));
+
+  const odb::dbNet* timed_net = db_network_->flatNet(constrained->pin());
+  const odb::dbNet* isolated_net = db_network_->flatNet(isolated->pin());
+  const odb::dbNet* unconstrained_net
+      = db_network_->flatNet(unconstrained->pin());
+  resizer_.findResizeSlacks1();
+  const auto timed_slack = resizer_.resizeNetSlack(timed_net);
+  ASSERT_TRUE(timed_slack.has_value());
+  EXPECT_NEAR(*timed_slack, wns, tolerance);
+  EXPECT_FALSE(resizer_.resizeNetSlack(isolated_net).has_value());
+  EXPECT_FALSE(resizer_.resizeNetSlack(unconstrained_net).has_value());
+
+  // Preserve constrained slack on nets with mixed fanout.
+  resizer_.setWorstSlackNetsPercent(100);
+  EXPECT_EQ(resizer_.resizeWorstSlackNets().size(), 1);
+
+  // Clear cached slack when the last output constraint is removed.
+  sta_->removeOutputDelay(output,
+                          sta::RiseFallBoth::riseFall(),
+                          clock,
+                          sta::RiseFall::rise(),
+                          sta::MinMaxAll::all(),
+                          sdc);
+  sta_->updateTiming(true);
+  resizer_.findResizeSlacks1();
+  EXPECT_FALSE(resizer_.resizeNetSlack(timed_net).has_value());
+  EXPECT_TRUE(resizer_.resizeWorstSlackNets().empty());
+}
 
 // Verify dont_touch preserves a hierarchical name and protects its flat net.
 TEST_F(TestResizer, HierarchicalNetDontTouch)

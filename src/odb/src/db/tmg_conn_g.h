@@ -64,6 +64,7 @@ class ConnectionGraph
   void relocateShorts(tmg_conn* conn);
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
+  bool isVisited(int point_index) const;
   Point& pt(const int index) { return points_[index]; }
   const Point& pt(const int index) const { return points_[index]; }
   int descentDepth() const { return descent_edges_.size(); }

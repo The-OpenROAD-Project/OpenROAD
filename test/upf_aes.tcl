@@ -30,7 +30,7 @@ set_routing_layers -signal li1-met5
 place_pins \
   -hor_layers met3 \
   -ver_layers met2
-global_placement -skip_initial_place -density uniform -routability_driven -timing_driven
+global_placement -skip_initial_place -density uniform -routability_driven
 
 detailed_placement -max_displacement 650
 improve_placement
