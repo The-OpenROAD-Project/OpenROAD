@@ -60,7 +60,6 @@ class IRSolver3D
   bool solve();
   bool checkSolution() const;
   void writeInstanceVoltageFile(const std::string& voltage_file) const;
-  void reportEM(const std::string& em_file) const;
   bool hasValidSources() const;
 
   IRNetwork3D* getNetwork() const { return network_.get(); }

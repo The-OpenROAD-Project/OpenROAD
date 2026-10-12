@@ -37,9 +37,3 @@
 [INFO RCX-0533] Extracted 4 inter-chip bonds.
 [INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
 [INFO PSM-0104] Built 3D power grid VSS: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
-[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 1.09937 to 1.1 V.
-VDD bond drop: expected 4.667e-07 V, calculated 4.667e-07 V
-[INFO PSM-0129] Solved combined 3D power grid VSS: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0 to 0.000240709 V.
-VSS bond drop: expected 4.667e-07 V, calculated 4.667e-07 V
-Summary 4 / 4 (100% pass)
-pass

@@ -123,9 +123,7 @@ class PDNSim : public odb::dbBlockCallBackObj
                           sta::Scene* corner,
                           bool use_sta = true,
                           const std::string& error_file = "",
-                          const std::string& voltage_file = "",
-                          bool enable_em = false,
-                          const std::string& em_file = "");
+                          const std::string& voltage_file = "");
   double get3DPDNVoltage(const std::string& chip_net_name,
                          const std::string& chip_name,
                          const std::string& port_name);
@@ -166,7 +164,6 @@ class PDNSim : public odb::dbBlockCallBackObj
   void observe3DBlock(odb::dbBlock* block);
   std::vector<std::unique_ptr<BlockObserver3D>> block_observers_3d_;
 
-  // Keep input values with the 3D result, without changing the legacy setters.
   struct Solution3D
   {
     std::unique_ptr<IRSolver3D> solver;

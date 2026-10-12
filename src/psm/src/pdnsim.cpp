@@ -584,9 +584,7 @@ bool PDNSim::analyze3DPowerGrid(const std::string& chip_net_name,
                                 sta::Scene* corner,
                                 bool use_sta,
                                 const std::string& error_file,
-                                const std::string& voltage_file,
-                                bool enable_em,
-                                const std::string& em_file)
+                                const std::string& voltage_file)
 {
   auto* net = findChipNet(chip_net_name);
   // A failed re-solve must not leave an earlier result available.
@@ -603,7 +601,7 @@ bool PDNSim::analyze3DPowerGrid(const std::string& chip_net_name,
     logger_->error(
         utl::PSM,
         139,
-        "The 3D grid for {} has missing or conflicting voltage sources.",
+        "The 3D grid for {} requires valid sources with identical voltages.",
         chip_net_name);
   }
   if (!solver->solve()) {
@@ -626,9 +624,6 @@ bool PDNSim::analyze3DPowerGrid(const std::string& chip_net_name,
       voltages.maxCoeff());
   if (!voltage_file.empty()) {
     solver->writeInstanceVoltageFile(voltage_file);
-  }
-  if (enable_em) {
-    solver->reportEM(em_file);
   }
   solvers_3d_[net] = {std::move(solver), user_powers_, user_voltages_};
   return true;

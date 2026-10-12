@@ -211,10 +211,10 @@ bool IRSolver3D::checkCurrentVector() const
 
 bool IRSolver3D::buildSourceMap(std::map<std::size_t, Voltage>& sources) const
 {
-  constexpr double kTolerance = 1.0e-12;
   sources.clear();
   for (const VoltageSource& source : voltage_sources_) {
-    if (!std::isfinite(source.voltage)) {
+    if (!std::isfinite(source.voltage)
+        || source.voltage != voltage_sources_.front().voltage) {
       return false;
     }
     Node* node = network_->findTerminalNode(source.chip_inst, source.terminal);
@@ -222,10 +222,7 @@ bool IRSolver3D::buildSourceMap(std::map<std::size_t, Voltage>& sources) const
       return false;
     }
     const std::size_t index = node_index_.at(node);
-    const auto [existing, inserted] = sources.emplace(index, source.voltage);
-    if (!inserted && std::abs(existing->second - source.voltage) > kTolerance) {
-      return false;
-    }
+    sources.emplace(index, source.voltage);
   }
   return !sources.empty();
 }
@@ -401,59 +398,6 @@ void IRSolver3D::writeInstanceVoltageFile(const std::string& voltage_file) const
                     voltage_vector_[node_index_.at(node)],
                     std::string(chiplet->getName()) + "/");
   }
-}
-
-void IRSolver3D::reportEM(const std::string& em_file) const
-{
-  std::ofstream report;
-  if (!em_file.empty()) {
-    report.open(em_file);
-    if (!report) {
-      logger_->error(utl::PSM, 156, "Unable to open 3D EM file: {}", em_file);
-    }
-    writeEMHeader(report);
-  }
-  const auto resistance = getResistanceMap();
-  const auto owners = network_->getNodeChiplets();
-  Current maximum = 0.0;
-  Current sum = 0.0;
-  std::size_t count = 0;
-  for (Connection* connection : network_->getConnections()) {
-    Node* node0 = connection->getNode0();
-    Node* node1 = connection->getNode1();
-    auto* chip0 = owners.at(node0);
-    auto* chip1 = owners.at(node1);
-    // Like 2D EM, omit artificial links attaching terminals to the routing.
-    // Keep bonds: their endpoints are bump terminals on different chiplets.
-    if (chip0 == chip1
-        && (dynamic_cast<TerminalNode*>(node0) != nullptr
-            || dynamic_cast<TerminalNode*>(node1) != nullptr)) {
-      continue;
-    }
-    const Current current = std::abs(voltage_vector_[node_index_.at(node0)]
-                                     - voltage_vector_[node_index_.at(node1)])
-                            * connection->getConductance(resistance);
-    maximum = std::max(maximum, current);
-    sum += current;
-    ++count;
-    if (report.is_open()) {
-      writeEMRow(report,
-                 connection,
-                 current,
-                 chip0->getMasterChip()->getBlock()->getDbUnitsPerMicron(),
-                 chip1->getMasterChip()->getBlock()->getDbUnitsPerMicron(),
-                 std::string(chip0->getName()) + "/",
-                 std::string(chip1->getName()) + "/");
-    }
-  }
-  logger_->report("########## 3D EM analysis ############");
-  logger_->report("Net                : {}", network_->getChipNet()->getName());
-  logger_->report("Corner             : {}", corner_->name());
-  logger_->report("Maximum current    : {:3.2e} A", maximum);
-  logger_->report("Average current    : {:3.2e} A",
-                  count == 0 ? 0.0 : sum / count);
-  logger_->report("Number of resistors: {}", count);
-  logger_->report("######################################");
 }
 
 }  // namespace psm

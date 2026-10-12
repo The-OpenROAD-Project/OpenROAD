@@ -146,13 +146,11 @@ analyze_3d_power_grid_cmd(const char* chip_net_name,
                           Scene* corner,
                           bool use_sta = true,
                           const char* error_file = "",
-                          const char* voltage_file = "",
-                          bool enable_em = false,
-                          const char* em_file = "")
+                          const char* voltage_file = "")
 {
   PDNSim* pdnsim = getPDNSim();
   return pdnsim->analyze3DPowerGrid(chip_net_name, corner, use_sta,
-                                  error_file, voltage_file, enable_em, em_file);
+                                  error_file, voltage_file);
 }
 
 double

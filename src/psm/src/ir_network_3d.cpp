@@ -220,8 +220,7 @@ Node* IRNetwork3D::findEndpoint(odb::dbChipCapNode* cap_node)
   }
 
   ChipletNetwork* chiplet = findNetwork(cap_node->getChipBumpInst());
-  // The bond lands on the bump's PAD, not the chip's BTerm. The BTerm
-  // can be on another layer (M6 in the frontside test, versus an M5 PAD).
+  // The bond lands on the bump's PAD, not the chip's BTerm.
   odb::dbInst* bump = cap_node->getChipBumpInst()->getChipBump()->getInst();
   Node* node = nullptr;
   for (const auto& candidate : chiplet->network->getITermNodes()) {

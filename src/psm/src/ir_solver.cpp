@@ -2191,33 +2191,6 @@ void writeVoltageRow(std::ostream& report,
                         voltage);
 }
 
-void writeEMHeader(std::ostream& report)
-{
-  report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
-            "location,Node1 Y location,Current\n";
-}
-
-void writeEMRow(std::ostream& report,
-                const Connection* connection,
-                double current,
-                double dbu0,
-                double dbu1,
-                const std::string& prefix0,
-                const std::string& prefix1)
-{
-  const auto* node0 = connection->getNode0();
-  const auto* node1 = connection->getNode1();
-  report << prefix0 << node0->getLayer()->getName() << ","
-         << fmt::format("{:.4f},{:.4f},",
-                        node0->getPoint().getX() / dbu0,
-                        node0->getPoint().getY() / dbu0)
-         << prefix1 << node1->getLayer()->getName() << ","
-         << fmt::format("{:.4f},{:.4f},{:.3e}\n",
-                        node1->getPoint().getX() / dbu1,
-                        node1->getPoint().getY() / dbu1,
-                        current);
-}
-
 void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
                                         sta::Scene* corner) const
 {
@@ -2261,10 +2234,24 @@ void IRSolver::writeEMFile(const std::string& em_file, sta::Scene* corner) const
     logger_->error(utl::PSM, 91, "Unable to open {} to write EM file", em_file);
   }
 
-  writeEMHeader(report);
+  report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
+            "location,Node1 Y location,Current\n";
+
   const double dbus = getBlock()->getDbUnitsPerMicron();
   for (const auto& [connection, current] : generateCurrentMap(corner)) {
-    writeEMRow(report, connection, current, dbus, dbus);
+    const Node* node0 = connection->getNode0();
+    const Node* node1 = connection->getNode1();
+
+    const odb::Point& node0_pt = node0->getPoint();
+    const odb::Point& node1_pt = node1->getPoint();
+
+    report << node0->getLayer()->getName() << ",";
+    report << fmt::format("{:.4f}", node0_pt.getX() / dbus) << ",";
+    report << fmt::format("{:.4f}", node0_pt.getY() / dbus) << ",";
+    report << node1->getLayer()->getName() << ",";
+    report << fmt::format("{:.4f}", node1_pt.getX() / dbus) << ",";
+    report << fmt::format("{:.4f}", node1_pt.getY() / dbus) << ",";
+    report << fmt::format("{:.3e}", current) << '\n';
   }
 }
 

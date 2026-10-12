@@ -79,6 +79,18 @@ proc analyze_power_grid { args } {
     set source_type $keys(-source_type)
   }
 
+  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
+    sta::check_argc_eq0 "analyze_power_grid" $args
+    foreach key {-vsrc -source_type -allow_reuse -enable_em -em_outfile} {
+      if { [info exists keys($key)] || [info exists flags($key)] } {
+        utl::error PSM 157 "$key is not supported for a 3D assembly."
+      }
+    }
+    return [psm::analyze_3d_power_grid_cmd \
+      $keys(-net) [sta::parse_scene_or_default keys] true \
+      $error_file $voltage_file]
+  }
+
   set enable_em [info exists flags(-enable_em)]
   set em_file ""
   if { [info exists keys(-em_outfile)] } {
@@ -86,18 +98,6 @@ proc analyze_power_grid { args } {
     if { !$enable_em } {
       utl::error PSM 55 "EM file cannot be specified without enabling em analysis."
     }
-  }
-
-  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
-    sta::check_argc_eq0 "analyze_power_grid" $args
-    foreach key {-vsrc -source_type -allow_reuse} {
-      if { [info exists keys($key)] || [info exists flags($key)] } {
-        utl::error PSM 157 "$key is not supported for a 3D assembly."
-      }
-    }
-    return [psm::analyze_3d_power_grid_cmd \
-      $keys(-net) [sta::parse_scene_or_default keys] true \
-      $error_file $voltage_file $enable_em $em_file]
   }
 
   psm::analyze_power_grid_cmd \

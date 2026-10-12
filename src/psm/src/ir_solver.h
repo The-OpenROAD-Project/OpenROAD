@@ -39,28 +39,19 @@ namespace psm {
 class IRNetwork;
 class IRShort;
 
-// Both single-chip and assembly analysis use the same layer resistance values.
+// Reuse function to read layer resistances for 2D analysis
+// and for each chiplet in 3D analysis.
 Connection::ResistanceMap getLayerResistanceMap(
     odb::dbNet* net,
     sta::Scene* corner,
     est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger);
 
-// Shared report formatting. Prefixes identify chiplets in assembly reports;
-// coordinates remain local to each chiplet and are written in microns.
 void writeVoltageHeader(std::ostream& report);
 void writeVoltageRow(std::ostream& report,
                      const ITermNode* node,
                      double voltage,
                      const std::string& prefix = "");
-void writeEMHeader(std::ostream& report);
-void writeEMRow(std::ostream& report,
-                const Connection* connection,
-                double current,
-                double dbu0,
-                double dbu1,
-                const std::string& prefix0 = "",
-                const std::string& prefix1 = "");
 
 class IRSolver
 {
@@ -160,8 +151,6 @@ class IRSolver
   template <typename T>
   using ValueNodeMap = std::map<const Node*, T>;
 
-  // Keep connections with coincident coordinates on different chiplets
-  // distinct.
   using NodeConductances
       = std::map<Node*,
                  std::vector<std::pair<Connection*, Connection::Conductance>>>;
@@ -172,7 +161,6 @@ class IRSolver
     Voltage voltage;
   };
 
-  // Numerical operations shared by single-chip and assembly analysis.
   static odb::PtrMap<odb::dbInst, Power> buildNodeCurrentMap(
       const odb::PtrMap<odb::dbInst, Node::NodeSet>& inst_nodes,
       const odb::PtrMap<odb::dbInst, Power>& powers,
@@ -313,14 +301,12 @@ class IRSolver
   static constexpr const char* kMarkerCategory = "PSM";
 };
 
-// Read the nominal supply voltage without constructing a solver or network.
 double getNominalVoltage(odb::dbNet* net,
                          sta::Scene* corner,
                          sta::dbSta* sta,
                          const IRSolver::UserVoltages& user_voltages,
                          utl::Logger* logger);
 
-// OpenSTA power estimates for the leaf cells in the active timing design.
 odb::PtrMap<odb::dbInst, float> getInstancePower(sta::dbSta* sta,
                                                  sta::Scene* corner,
                                                  utl::Logger* logger);

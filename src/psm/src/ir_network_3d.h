@@ -28,8 +28,6 @@ class IRNetwork;
 class IRNetwork3D
 {
  public:
-  // Pointer identity keeps nodes from overlapping chiplet-local coordinates
-  // distinct in the combined network.
   using Nodes = std::set<Node*>;
 
   IRNetwork3D(odb::dbChipNet* chip_net,
