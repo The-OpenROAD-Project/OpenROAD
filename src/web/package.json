@@ -5,9 +5,20 @@
   "description": "Browser libraries for the web viewer, bundled by esbuild into the assets embedded in the OpenROAD binary (issue #11065).",
   "dependencies": {
     "golden-layout": "2.6.0",
-    "leaflet": "1.9.4"
+    "leaflet": "1.9.4",
+    "netlistsvg": "1.0.2"
   },
   "pnpm": {
-    "onlyBuiltDependencies": []
+    "onlyBuiltDependencies": [],
+    "overrides": {
+      "netlistsvg>@types/clone": "-",
+      "netlistsvg>@types/json5": "-",
+      "netlistsvg>@types/lodash": "-",
+      "netlistsvg>ajv": "-",
+      "netlistsvg>ajv-errors": "-",
+      "netlistsvg>fs-extra": "-",
+      "netlistsvg>json5": "-",
+      "netlistsvg>yargs": "-"
+    }
   }
 }

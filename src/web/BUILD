@@ -129,16 +129,21 @@ py_binary(
 
 npm_link_all_packages(name = "node_modules")
 
-# What the bundle carries, and so whose licences ship with it.
-_BUNDLED_PACKAGES = [
+# What the bundle carries, with their dependencies, and so whose licences ship
+# with it.
+_BUNDLED_PACKAGES = [":node_modules/" + p for p in [
     "golden-layout",
     "leaflet",
-]
+    "netlistsvg",
+]]
 
 js_library(
     name = "app_js",
-    srcs = glob(["src/*.js"]) + ["esbuild.config.mjs"],
-    deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
+    srcs = glob(["src/*.js"]) + [
+        "esbuild.config.mjs",
+        "src/openroad_skin.svg",
+    ],
+    deps = _BUNDLED_PACKAGES,
 )
 
 # The stylesheets import only these two libraries' CSS.
@@ -151,12 +156,12 @@ js_library(
     ],
 )
 
+# $(SRCS) expands to every package directory, dependencies included.
 genrule(
     name = "third_party_licenses",
-    srcs = [":node_modules/%s/dir" % p for p in _BUNDLED_PACKAGES],
+    srcs = _BUNDLED_PACKAGES,
     outs = ["bundle/THIRD_PARTY_LICENSES.txt"],
-    cmd = "$(execpath :collect_licenses) --output $@ " +
-          " ".join(["$(execpath :node_modules/%s/dir)" % p for p in _BUNDLED_PACKAGES]),
+    cmd = "$(execpath :collect_licenses) --output $@ $(SRCS)",
     tools = [":collect_licenses"],
 )
 
@@ -164,6 +169,8 @@ genrule(
     name = name,
     config = "esbuild.config.mjs",
     entry_point = "src/%s" % entry,
+    # sax requires Node's stream inside a try, and falls back without it.
+    external = ["stream"],
     minify = True,
     output = output,
     # No .map is served; esbuild.config.mjs cannot set this key.
@@ -194,12 +201,11 @@ genrule(
     tools = [":inline_styles"],
 )
 
-# Served by file name.  The schematic still fetches its skin.
+# Served by file name.
 _WEB_ASSET_FILES = [
     "bundle/THIRD_PARTY_LICENSES.txt",
     "bundle/app.min.js",
     "bundle/index.html",
-    "src/openroad_skin.svg",
 ]
 
 genrule(
@@ -412,8 +418,10 @@ exports_files(["README.md"])
 
 exports_files(
     [
+        "esbuild.config.mjs",
         "package.json",
         "pnpm-lock.yaml",
+        "src/openroad_skin.svg",
     ],
     visibility = ["//src/web/test:__pkg__"],
 )

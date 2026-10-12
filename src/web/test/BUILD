@@ -58,7 +58,7 @@ py_test(
 py_test(
     name = "bundle_test",
     srcs = ["bundle_test.py"],
-    data = [
+    data = JS_FILES + [
         "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
         "//src/web:bundle/app.min.js",
         "//src/web:bundle/index.html",
@@ -102,6 +102,20 @@ js_test(
     data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
     no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "schematic_pins_test",
+    data = [
+        "//src/web:esbuild.config.mjs",
+        "//src/web:node_modules/netlistsvg",
+        "//src/web:src/openroad_skin.svg",
+    ],
+    entry_point = "js/test-schematic-pins.js",
+    no_copy_to_bin = [
+        "//src/web:esbuild.config.mjs",
+        "//src/web:src/openroad_skin.svg",
+    ],
 )
 
 js_test(

@@ -559,11 +559,16 @@ the result, so the browser only talks to the OpenROAD process.
 | --- | --- | --- |
 | `leaflet` | the tiled layout view | bundle |
 | `golden-layout` | the dockable panel layout | bundle |
-| `netlistsvg`, `elkjs` | the schematic | CDN |
+| `netlistsvg` | the schematic, laid out by its own `elkjs` | bundle |
 | `three` | the 3D viewer | CDN |
 
-The bundled packages' licences are gathered into `THIRD_PARTY_LICENSES.txt`,
-which the server serves at `/THIRD_PARTY_LICENSES.txt`.
+The bundled packages' licences, with those of their dependencies, are gathered
+into `THIRD_PARTY_LICENSES.txt`, which the server serves at
+`/THIRD_PARTY_LICENSES.txt`.
+
+`netlistsvg` is bundled from its compiled sources rather than its prebuilt
+browser bundle. `package.json` drops its command-line dependencies through
+`pnpm.overrides`, and `esbuild.config.mjs` hands it `elkjs`'s browser build.
 
 The CMake build cannot run the bundler: it serves the sources as they are,
 with `src/index.cmake.html` loading the libraries from CDNs.
