@@ -1318,7 +1318,8 @@ int definReader::rowCallback(DefParser::defrCallbackType_e /* unused: type */,
               odb::definReader::translate_orientation(row->orient()),
               dir,
               num_sites,
-              spacing);
+              spacing,
+              row->hasDo() && !row->hasDoStep());
 
   handle_props(row, rowR);
 

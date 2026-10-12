@@ -1,0 +1,15 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN row_step_implicit ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 100000 100000 ) ;
+
+# CoreSite is 0.38 x 2.47 um (760 x 4940 DBU).
+ROW h_implicit CoreSite 10000 10000 N DO 10 BY 1 ;
+ROW h_explicit CoreSite 10000 20000 N DO 10 BY 1 STEP 900 0 ;
+ROW v_implicit CoreSite 40000 10000 N DO 1 BY 10 ;
+ROW v_explicit CoreSite 50000 10000 N DO 1 BY 10 STEP 0 6000 ;
+ROW single_explicit CoreSite 60000 10000 N DO 1 BY 1 STEP 0 0 ;
+
+END DESIGN

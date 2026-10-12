@@ -16,7 +16,9 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -71,7 +73,8 @@ void definRow::begin(const char* name,
                      dbOrientType orient,
                      defRow direction,
                      int num_sites,
-                     int spacing)
+                     int spacing,
+                     bool implicit_step)
 {
   dbSite* site = getSite(site_name);
 
@@ -86,6 +89,15 @@ void definRow::begin(const char* name,
     return;
   }
 
+  int db_spacing = dbdist(spacing);
+  if (implicit_step) {
+    // Without STEP, DEF sites abut along the oriented row direction.
+    Rect site_rect(0, 0, site->getWidth(), site->getHeight());
+    dbTransform transform(orient);
+    transform.apply(site_rect);
+    db_spacing = direction == DEF_VERTICAL ? site_rect.dy() : site_rect.dx();
+  }
+
   if (direction == DEF_VERTICAL) {
     _cur_row = dbRow::create(_block,
                              name,
@@ -95,7 +107,7 @@ void definRow::begin(const char* name,
                              orient,
                              dbRowDir::VERTICAL,
                              num_sites,
-                             dbdist(spacing));
+                             db_spacing);
   } else {
     _cur_row = dbRow::create(_block,
                              name,
@@ -105,7 +117,7 @@ void definRow::begin(const char* name,
                              orient,
                              dbRowDir::HORIZONTAL,
                              num_sites,
-                             dbdist(spacing));
+                             db_spacing);
   }
 }
 void definRow::property(const char* name, const char* value)
