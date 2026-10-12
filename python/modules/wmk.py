@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-from openroadpy import *
-
-# openroadpy is one namespace, where CtsOptions is the cts class; the
-# watermark options are renamed there.
-from openroadpy import WatermarkCtsOptions as CtsOptions
+import _openroad_loader  # noqa: F401  (must precede the wrapper import)
+from src.wmk.wmk_py import *

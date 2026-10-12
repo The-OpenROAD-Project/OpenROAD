@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-from openroadpy import *
+import _openroad_loader  # noqa: F401  (must precede the wrapper import)
+from src.drt.drt_py import *

@@ -107,8 +107,11 @@ py_test(
 
 `//python/openroad:openroadpy` provides `import openroad` and the per-tool
 modules (`import odb`, `import ant`, ...) from `python/modules`, the same
-names the wheel installs. Keep each `Tech` alive while its `Design` or the
-module-level functions (`set_thread_count`, ...) are in use.
+names the wheel installs and `openroad -python` provides. Each tool module
+has only its own API, as under CMake; all of them load from one library,
+`_openroad.so`, so they share one copy of the C++ state. Keep each `Tech`
+alive while its `Design` or the module-level functions (`set_thread_count`,
+...) are in use.
 
 ### The openroad wheel
 

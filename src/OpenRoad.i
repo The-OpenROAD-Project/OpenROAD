@@ -53,7 +53,10 @@ getOpenRoad()
 utl::Logger *
 getLogger()
 {
-  return getOpenRoad()->getLogger();
+  // Python can log before any Tech exists; use the default logger then.
+  OpenRoad *openroad = OpenRoad::openRoad();
+  return openroad != nullptr ? openroad->getLogger()
+                             : utl::Logger::defaultLogger();
 }
 
 dbDatabase *

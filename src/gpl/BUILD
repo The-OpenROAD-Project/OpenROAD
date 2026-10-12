@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
@@ -278,7 +278,7 @@ python_wrap_cc(
         "src/replace-py.i",
         "//:error_swig-py",
     ],
-    module = "gpl",
+    module = "gpl_py",
     root_swig_src = "src/replace-py.i",
     swig_includes = [
         "include",
@@ -301,4 +301,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/gpl/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":gpl"],
 )
