@@ -6,7 +6,8 @@
   "dependencies": {
     "golden-layout": "2.6.0",
     "leaflet": "1.9.4",
-    "netlistsvg": "1.0.2"
+    "netlistsvg": "1.0.2",
+    "three": "0.160.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [],

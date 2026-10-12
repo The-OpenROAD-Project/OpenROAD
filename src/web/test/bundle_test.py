@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# The page the Bazel build embeds: its libraries come from the bundle, and these
+# The page the Bazel build embeds: everything it loads is in the bundle, and these
 # tests catch a reintroduced remote reference before any browser meets it.
 
 import re
@@ -34,12 +34,10 @@ _IDENTIFIER_URLS = {
     "https://openjsf.org/",
     "https://npms.io/search?q=ponyfill",
     "https://leafletjs.com",
+    "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
 }
-
-# Libraries the page still loads from CDNs, until the bundle takes them over.
-_STILL_REMOTE = ("https://esm.sh/three@0.160.0",)
 
 _URL = r"[^\"'`) >,;\n]*"
 # Schemes and hosts are case-insensitive, so the scan is too.
@@ -108,15 +106,10 @@ class Page(unittest.TestCase):
         # The icons the third-party stylesheets reach through url(), inlined.
         self.assertIn("data:image/png;base64,", html)
 
-    def test_reaches_no_other_remote_resource(self):
+    def test_reaches_no_remote_resource(self):
         for name, path in _PAGE.items():
             text = _read(path)
-            remote = [
-                url
-                for url in external_urls(text) + scheme_relative_urls(text)
-                if not url.startswith(_STILL_REMOTE)
-            ]
-            self.assertEqual(remote, [], name)
+            self.assertEqual(external_urls(text) + scheme_relative_urls(text), [], name)
 
     def test_ships_the_bundled_licences(self):
         text = _read(_LICENSES)
@@ -130,6 +123,7 @@ class Page(unittest.TestCase):
             "netlistsvg",
             "onml",
             "sax",
+            "three",
         ):
             self.assertIn(f"\n{package} ", text)
         # EPL-1.0 asks where elkjs's source can be obtained; every entry says.
