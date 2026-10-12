@@ -167,7 +167,7 @@ std::string ITermNodeDescriptor::getName(const std::any& object) const
 bool ITermNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<ITermNode*>(object);
-  bbox = node->getShape();
+  bbox = node->getBBox();
   return true;
 }
 
@@ -223,7 +223,7 @@ std::string BPinNodeDescriptor::getName(const std::any& object) const
 bool BPinNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<BPinNode*>(object);
-  bbox = node->getShape();
+  bbox = node->getBBox();
   return true;
 }
 
@@ -469,7 +469,11 @@ void DebugGui::drawShape(const Shape* shape, web::Painter& painter) const
     painter.saveState();
     painter.setPen(shape_color_, /* cosmetic */ true, kBoldMultiplier);
   }
-  painter.drawRect(shape->getShape());
+  if (const odb::Polygon* polygon = shape->getPolygon()) {
+    painter.drawPolygon(*polygon);
+  } else {
+    painter.drawRect(shape->getShape());
+  }
   if (bold) {
     painter.restoreState();
   }
