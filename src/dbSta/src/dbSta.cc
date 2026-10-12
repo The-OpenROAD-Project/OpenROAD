@@ -58,6 +58,7 @@
 #include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Property.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -449,6 +450,28 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
 void dbSta::postReadDb(odb::dbDatabase* db)
 {
   db_network_->readDbAfter(db);
+  Properties* props = properties();
+  dbNetwork* network = db_network_;
+  props->defineProperty<Instance>("instance", "src", "string");
+  props->defineProperty(
+      "src", [network](const Instance* inst, Sta*) -> PropertyValue {
+        if (odb::dbInst* db_inst = network->staToDb(inst)) {
+          if (auto* prop = odb::dbStringProperty::find(db_inst, "src")) {
+            return PropertyValue(prop->getValue());
+          }
+        }
+        return PropertyValue(std::string());
+      });
+  props->defineProperty<Pin>("pin", "src", "string");
+  props->defineProperty(
+      "src", [network](const Pin* pin, Sta*) -> PropertyValue {
+        if (odb::dbObject* obj = network->staToDb(pin)) {
+          if (auto* prop = odb::dbStringProperty::find(obj, "src")) {
+            return PropertyValue(prop->getValue());
+          }
+        }
+        return PropertyValue(std::string());
+      });
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     odb::dbBlock* block = chip->getBlock();

@@ -90,6 +90,15 @@ odb::dbInst* ReplaceCell(
     group->addInst(new_instance);
   }
 
+  // Carry the src attribute over to the scan cell so that paths through it
+  // can still be traced back to the source.
+  odb::dbStringProperty* src_prop
+      = odb::dbStringProperty::find(old_instance, "src");
+  if (src_prop) {
+    odb::dbStringProperty::create(
+        new_instance, "src", src_prop->getValue().c_str());
+  }
+
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
 

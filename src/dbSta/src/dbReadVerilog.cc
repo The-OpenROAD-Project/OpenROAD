@@ -317,6 +317,8 @@ void Verilog2db::storeLineInfo(const std::string& attribute, dbInst* db_inst)
     return;
   }
 
+  odb::dbStringProperty::create(db_inst, "src", attribute.c_str());
+
   std::smatch match;
 
   if (std::regex_match(attribute, match, kLineInfoRe)) {
