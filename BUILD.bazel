@@ -394,58 +394,11 @@ tcl_wrap_cc(
     ],
 )
 
-cc_binary(
-    name = "_openroadpy.so",
-    srcs = [":openroad_swig-py"],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        ":openroad_lib",
-        ":ord",
-        "//src/ant",
-        "//src/cgt",
-        "//src/cts",
-        "//src/dpl",
-        "//src/drt",
-        "//src/exa",
-        "//src/fin",
-        "//src/gpl",
-        "//src/grt",
-        "//src/gui",
-        "//src/ifp",
-        "//src/odb/src/db",
-        "//src/par",
-        "//src/pdn",
-        "//src/ppl",
-        "//src/psm",
-        "//src/rcx",
-        "//src/rsz",
-        "//src/stt",
-        "//src/tap",
-        "//src/utl",
-        "//src/web:core",
-        "//src/wmk",
-        "//src/wmk:hmac_sha256",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-py_library(
-    name = "openroad_py",
-    srcs = [":openroad_swig-py"],
-    data = [":_openroadpy.so"],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//python/modules",
-        "//src/odb:odb_py",
-        "//src/rmp:rmp_py",
-        "//src/utl:utl_py",
-    ],
-)
-
+# The Python bindings: every module (ord_py, odb, utl, ant_py, cts_py, ...)
+# keeps its own namespace, as in the CMake build, and all of them are linked
+# into one library, _openroad.so, so they share a single copy of the C++
+# state. python/modules/_openroad_loader.py loads each module's init
+# function from that library.
 python_wrap_cc(
     name = "openroad_swig-py",
     srcs = [
@@ -455,13 +408,68 @@ python_wrap_cc(
         "src/OpenRoad-py.i",
         ":error_swig-py",
     ],
-    module = "openroadpy",
+    module = "ord_py",
     root_swig_src = "src/OpenRoad-py.i",
     swig_includes = [
         "include",
         "src",
     ],
     deps = [
+        "//src/odb:swig-py",
+        "//src/utl:swig-py",
+    ],
+)
+
+cc_library(
+    name = "ord_py_wrap",
+    srcs = [":openroad_swig-py"],
+    local_defines = [PYTHON_STABLE_API_DEFINE],
+    deps = [
+        ":openroad_lib",
+        ":ord",
+        "//src/ifp",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+    alwayslink = True,
+)
+
+cc_binary(
+    name = "_openroad.so",
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
+    linkshared = True,
+    deps = [
+        ":ord_py_wrap",
+        "//src/ant:py_wrap",
+        "//src/cgt:py_wrap",
+        "//src/cts:py_wrap",
+        "//src/dpl:py_wrap",
+        "//src/drt:py_wrap",
+        "//src/exa:py_wrap",
+        "//src/fin:py_wrap",
+        "//src/gpl:py_wrap",
+        "//src/grt:py_wrap",
+        "//src/ifp:py_wrap",
+        "//src/odb:py_wrap",
+        "//src/par:py_wrap",
+        "//src/pdn:py_wrap",
+        "//src/ppl:py_wrap",
+        "//src/psm:py_wrap",
+        "//src/rcx:py_wrap",
+        "//src/rmp:py_wrap",
+        "//src/rsz:py_wrap",
+        "//src/stt:py_wrap",
+        "//src/tap:py_wrap",
+        "//src/utl:py_wrap",
+        "//src/wmk:py_wrap",
+    ],
+)
+
+py_library(
+    name = "openroad_py",
+    srcs = [":openroad_swig-py"] + [
         "//src/ant:swig-py",
         "//src/cgt:swig-py",
         "//src/cts:swig-py",
@@ -478,12 +486,17 @@ python_wrap_cc(
         "//src/ppl:swig-py",
         "//src/psm:swig-py",
         "//src/rcx:swig-py",
+        "//src/rmp:swig-py",
         "//src/rsz:swig-py",
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
         "//src/wmk:swig-py",
     ],
+    data = [":_openroad.so"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = ["//python/modules"],
 )
 
 filegroup(

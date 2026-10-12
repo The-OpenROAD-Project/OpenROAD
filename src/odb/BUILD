@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -59,27 +58,10 @@ python_wrap_cc(
     ],
 )
 
-cc_binary(
-    name = "_odb.so",
-    srcs = [":swig-py"],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    includes = ["src/swig/common"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/swig:swig_common",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-py_library(
+# The odb module is part of //:openroad_py.
+alias(
     name = "odb_py",
-    srcs = [":swig-py"],
-    data = [":_odb.so"],
-    # Imported as src.odb.odb; //python/modules provides the
-    # top-level name, so this directory stays off sys.path and the module
-    # is loaded once.
+    actual = "//:openroad_py",
     visibility = ["//visibility:public"],
 )
 
@@ -131,4 +113,20 @@ messages_txt(
         "//docs:__pkg__",
         "//src/odb/test:__pkg__",
     ],
+)
+
+# Compiled into //:_openroad.so, the one library every OpenROAD Python
+# module is loaded from.
+cc_library(
+    name = "py_wrap",
+    srcs = [":swig-py"],
+    includes = ["src/swig/common"],
+    local_defines = [PYTHON_STABLE_API_DEFINE],
+    visibility = ["//:__pkg__"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/swig:swig_common",
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+    alwayslink = True,
 )

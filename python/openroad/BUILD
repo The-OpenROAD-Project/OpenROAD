@@ -16,10 +16,7 @@ py_library(
     ],
     imports = [".."],
     visibility = ["//visibility:public"],
-    deps = [
-        "//:openroad_py",
-        "//python/modules",
-    ],
+    deps = ["//:openroad_py"],
 )
 
 regression_test(
@@ -69,4 +66,16 @@ py_test(
     size = "small",
     srcs = ["wheel_test.py"],
     data = [":openroad_wheel"],
+)
+
+# The per-tool modules: separate namespaces, one shared library.
+py_test(
+    name = "modules_test",
+    size = "small",
+    srcs = ["modules_test.py"],
+    data = [
+        "//src/ant/test:ant_check.def",
+        "//src/ant/test:ant_check.lef",
+    ],
+    deps = [":openroadpy"],
 )

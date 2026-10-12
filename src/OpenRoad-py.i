@@ -66,27 +66,6 @@ get_db_block();
 %template(TimingPathInfos) std::vector<ord::TimingPathInfo>;
 
 #ifdef BAZEL
-%include "src/gpl/src/replace-py.i"
-%include "src/ifp/src/InitFloorplan-py.i"
-%include "src/ant/src/AntennaChecker-py.i"
-%include "src/cgt/src/cgt-py.i"
-%include "src/cts/src/TritonCTS-py.i"
-%include "src/dpl/src/Opendp-py.i"
-%include "src/drt/src/TritonRoute-py.i"
-%include "src/exa/src/example-py.i"
-%include "src/fin/src/finale-py.i"
-%include "src/grt/src/GlobalRouter-py.i"
-%include "src/par/src/partitionmgr-py.i"
-%include "src/pdn/src/PdnGen-py.i"
-%include "src/ppl/src/IOPlacer-py.i"
-%include "src/psm/src/pdnsim-py.i"
-%include "src/rcx/src/ext-py.i"
-%include "src/rsz/src/Resizer-py.i"
-%include "src/stt/src/SteinerTreeBuilder-py.i"
-%include "src/tap/src/tapcell-py.i"
-// CTS also exposes CtsOptions; give WMK's options a distinct binding name.
-%rename(WatermarkCtsOptions) wmk::CtsOptions;
-%include "src/wmk/src/watermark-py.i"
 %import "src/odb/src/swig/common/odb.i"
 %import "src/utl/src/Logger-py.i"
 #endif
@@ -119,19 +98,3 @@ namespace ord {
 }
 
 %}
-
-#ifdef BAZEL
-// odb, utl and rmp are separate extension modules that other extensions
-// import, so they cannot be compiled in here.  Re-export them so
-// `from openroadpy import *` is the whole API.  Each module defines its own
-// SwigPyIterator; keep this one.  (CMake registers odb, utl and rmp as
-// their own top-level modules instead.)
-%pythoncode %{
-_openroadpy_iterator = SwigPyIterator
-from src.odb.odb import *
-from src.utl.utl import *
-from src.rmp.rmp_py import *
-SwigPyIterator = _openroadpy_iterator
-del _openroadpy_iterator
-%}
-#endif
