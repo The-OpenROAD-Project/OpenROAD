@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Top level design units:
+    false_loop
+
+Build succeeded: 0 errors, 0 warnings
+[INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
+[INFO SYN-0017] mapCombinationals: done
+[INFO SYN-0040] gatefusion: 0 fusions applied, area delta 0.0000
+  input: 1 cells, 4 bits
+  name (tentative): 2 cells, 0 bits
+  output: 1 cells, 0 bits
+  target: NAND2_X1: 1 cells, 1 bits, area 0.798
+  target: OAI21_X1: 1 cells, 1 bits, area 1.064
+  target: XNOR2_X1: 2 cells, 2 bits, area 3.192
+  target: XOR2_X1: 3 cells, 3 bits, area 4.788
+  total: 11 cells, 11 bits, area 9.842
+[INFO SYN-0031] Export to ODB: created 7 instances, 4 nets, 8 ports
+LEF units 2000, DEF units 2000

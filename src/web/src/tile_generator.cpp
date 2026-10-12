@@ -3178,11 +3178,7 @@ void collectChipletsRec(odb::dbChip* chip,
     node.global_z = cuboid.lll().z();
   } else {
     node.world_xfm = parent_world_xfm;
-    if (node.block) {
-      node.name = node.block->getName();
-    } else {
-      node.name = "top";
-    }
+    node.name = node.chip->getName();
     node.path = node.name;
     node.global_z = 0;
   }
@@ -3258,7 +3254,7 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
     ChipletNode root_node;
     root_node.chip = root;
     root_node.block = root->getBlock();
-    root_node.name = root_node.block ? root_node.block->getName() : "top";
+    root_node.name = root_node.chip->getName();
     root_node.path = root_node.name;
     out.push_back(root_node);
 

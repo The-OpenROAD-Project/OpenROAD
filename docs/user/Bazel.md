@@ -419,13 +419,12 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 tests, which run the instrumented `openroad` binary. They do **not** work for
 the `py`-tagged tests, which import OpenROAD as a Python extension module:
 
-    ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
+    ImportError: _openroad.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
 
 Clang links a sanitizer runtime into executables but not into shared
 libraries, assuming whoever loads the library provides the symbols. That holds
 for `openroad`, which statically links the runtime; it fails for
-`_openroadpy.so` / `_odb.so` / `_utl.so`, which the *uninstrumented* system
-`python3` dlopens.
+`_openroad.so`, which the *uninstrumented* system `python3` dlopens.
 
 `-shared-libsan` is the mechanism for this case, but three things in
 hermetic-llvm block it today:
