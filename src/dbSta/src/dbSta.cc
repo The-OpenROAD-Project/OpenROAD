@@ -380,11 +380,37 @@ void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)
   }
 }
 
+static void registerSrcAttributeProperties(Properties* props,
+                                           dbNetwork* network)
+{
+  props->defineProperty<Instance>("instance", "src", "string");
+  props->defineProperty(
+      "src", [network](const Instance* inst, Sta*) -> PropertyValue {
+        if (odb::dbInst* db_inst = network->staToDb(inst)) {
+          if (auto* prop = odb::dbStringProperty::find(db_inst, "src")) {
+            return PropertyValue(prop->getValue());
+          }
+        }
+        return PropertyValue();
+      });
+  props->defineProperty<Pin>("pin", "src", "string");
+  props->defineProperty(
+      "src", [network](const Pin* pin, Sta*) -> PropertyValue {
+        if (odb::dbObject* obj = network->staToDb(pin)) {
+          if (auto* prop = odb::dbStringProperty::find(obj, "src")) {
+            return PropertyValue(prop->getValue());
+          }
+        }
+        return PropertyValue();
+      });
+}
+
 void dbSta::postReadDef(odb::dbBlock* block)
 {
   // If this is the top block of the main chip:
   if (!block->getParent() && block->getChip() == block->getDb()->getChip()) {
     db_network_->readDefAfter(block);
+    registerSrcAttributeProperties(properties(), db_network_);
     db_cbk_->addOwner(block);
     db_cbk_->setNetwork(db_network_);
   }
@@ -450,28 +476,7 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
 void dbSta::postReadDb(odb::dbDatabase* db)
 {
   db_network_->readDbAfter(db);
-  Properties* props = properties();
-  dbNetwork* network = db_network_;
-  props->defineProperty<Instance>("instance", "src", "string");
-  props->defineProperty(
-      "src", [network](const Instance* inst, Sta*) -> PropertyValue {
-        if (odb::dbInst* db_inst = network->staToDb(inst)) {
-          if (auto* prop = odb::dbStringProperty::find(db_inst, "src")) {
-            return PropertyValue(prop->getValue());
-          }
-        }
-        return PropertyValue();
-      });
-  props->defineProperty<Pin>("pin", "src", "string");
-  props->defineProperty(
-      "src", [network](const Pin* pin, Sta*) -> PropertyValue {
-        if (odb::dbObject* obj = network->staToDb(pin)) {
-          if (auto* prop = odb::dbStringProperty::find(obj, "src")) {
-            return PropertyValue(prop->getValue());
-          }
-        }
-        return PropertyValue();
-      });
+  registerSrcAttributeProperties(properties(), db_network_);
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     odb::dbBlock* block = chip->getBlock();
