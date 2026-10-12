@@ -180,7 +180,7 @@ void Straps::setExtend(ExtensionMode mode)
 {
   extend_mode_ = mode;
 
-  if (mode == kPadRing && !getGrid()->getPadRingInnerArea()) {
+  if (mode == kPadRing && !getDomain()->getPadRingInnerArea()) {
     getLogger()->error(utl::PDN,
                        242,
                        "Unable to find any placed pads to extend straps on {} "
@@ -2812,7 +2812,8 @@ void MacroEdgeConnectionStraps::connectUnreachedPins(
           continue;
         }
 
-        candidates.push_back({direction, best_distance, best_target});
+        candidates.push_back(
+            {direction, best_distance, std::move(best_target)});
       }
 
       std::ranges::sort(candidates, [](const auto& lhs, const auto& rhs) {
