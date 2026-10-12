@@ -1529,7 +1529,7 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
   odb::PtrMap<odb::dbTechLayer, std::set<odb::Rect>> nodes;
   for (const auto& bpin : bpin_nodes_) {
     if (bpin->shouldConnect()) {
-      nodes[bpin->getLayer()].insert(bpin->getShape());
+      nodes[bpin->getLayer()].insert(bpin->getBBox());
     }
   }
 

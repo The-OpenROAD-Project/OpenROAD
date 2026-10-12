@@ -167,7 +167,7 @@ std::string ITermNodeDescriptor::getName(const std::any& object) const
 bool ITermNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<ITermNode*>(object);
-  bbox = node->getShape();
+  bbox = node->getBBox();
   return true;
 }
 
@@ -223,7 +223,7 @@ std::string BPinNodeDescriptor::getName(const std::any& object) const
 bool BPinNodeDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto node = std::any_cast<BPinNode*>(object);
-  bbox = node->getShape();
+  bbox = node->getBBox();
   return true;
 }
 

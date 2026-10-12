@@ -30,6 +30,13 @@ struct RectIndexableGetter
   odb::Rect operator()(const T* t) const { return t->getShape(); }
 };
 
+template <>
+struct RectIndexableGetter<TerminalNode>
+{
+  using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
+  odb::Rect operator()(const TerminalNode* t) const { return t->getBBox(); }
+};
+
 template <typename T>
 struct PointIndexableGetter
 {
