@@ -24,8 +24,12 @@ jobs:
 
       - name: Install Python tools
         run: |
-          python3 -m venv venv
-          venv/bin/pip install tclint==0.7.0 black==26.10.1
+          # Separate venvs: tclint pins pathspec==0.11.2 and black >= 26
+          # requires pathspec >= 1.0.0, so they cannot resolve together.
+          python3 -m venv venv-tclint
+          venv-tclint/bin/pip install tclint==0.7.0
+          python3 -m venv venv-black
+          venv-black/bin/pip install black==26.10.1
 
       - name: Cache buildifier
         id: cache-buildifier
@@ -58,10 +62,11 @@ jobs:
             | xargs --no-run-if-empty clang-format -i
 
           # Run black on changed Python files
-          source venv/bin/activate
+          source venv-black/bin/activate
           echo "$changed" \
             | grep -E '\.py$' \
             | xargs --no-run-if-empty black
+          deactivate
 
           # Run buildifier on changed Bazel files
           echo "$changed" \
@@ -69,10 +74,12 @@ jobs:
             | xargs --no-run-if-empty ./buildifier -lint=fix
 
           # Run tclfmt on changed Tcl files
+          source venv-tclint/bin/activate
           echo "$changed" \
             | grep -E '\.tcl$' \
             | grep -v '^src/sta/' \
             | xargs --no-run-if-empty tclfmt --in-place
+          deactivate
 
           # Commit if any diffs were created
           if [ -n "$(git diff --name-only)" ]; then
