@@ -8,6 +8,7 @@
 #include <vector>
 
 namespace odb {
+class dbBTerm;
 class dbDatabase;
 class dbInst;
 
@@ -18,8 +19,7 @@ class dbSta;
 
 namespace ppl {
 class IOPlacer;
-struct SlotPosition;
-}  // namespace ppl
+}
 
 namespace grt {
 class GlobalRouter;
@@ -34,8 +34,6 @@ class Logger;
 }
 
 namespace gpl {
-
-struct NesterovBaseVars;
 
 class AbstractGraphics;
 class PlacerBaseCommon;
@@ -188,6 +186,7 @@ class Replace
                 bool draw_bins,
                 bool initial,
                 odb::dbInst* inst,
+                odb::dbBTerm* pin,
                 int start_iter,
                 int start_rudy,
                 int rudy_stride,
@@ -203,14 +202,13 @@ class Replace
   void reportHpwlMetric();
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
-  void initIoPinPlace(NesterovBaseVars& nbVars);
+  void initIoPinPlace();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
   grt::GlobalRouter* fr_ = nullptr;
   ppl::IOPlacer* pin_placer_ = nullptr;
-  std::vector<ppl::SlotPosition> io_slots_;
   utl::Logger* log_ = nullptr;
 
   std::unique_ptr<AbstractGraphics> graphics_;
@@ -236,6 +234,7 @@ class Replace
   int gui_debug_draw_bins_ = false;
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
+  odb::dbBTerm* gui_debug_pin_ = nullptr;
   int gui_debug_start_iter_ = 0;
   int gui_debug_rudy_start_ = 0;
   int gui_debug_rudy_stride_ = 0;

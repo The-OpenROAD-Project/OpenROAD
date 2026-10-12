@@ -275,6 +275,7 @@ sta::define_cmd_args "global_placement_debug" {
   [-pause pause]
   [-update update]
   [-inst inst]
+  [-pin pin]
   [-start_iter start_iter]
   [-start_rudy start_rudy]
   [-rudy_stride rudy_stride]
@@ -286,7 +287,7 @@ sta::define_cmd_args "global_placement_debug" {
 
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
-    keys {-pause -update -inst -start_iter -images_path \
+    keys {-pause -update -inst -pin -start_iter -images_path \
       -start_rudy -rudy_stride} \
     flags {-draw_bins -initial -generate_images}
 
@@ -309,6 +310,11 @@ proc global_placement_debug { args } {
   set inst ""
   if { [info exists keys(-inst)] } {
     set inst $keys(-inst)
+  }
+
+  set pin ""
+  if { [info exists keys(-pin)] } {
+    set pin $keys(-pin)
   }
 
   set start_iter 0
@@ -339,7 +345,7 @@ proc global_placement_debug { args } {
   }
 
   gpl::set_debug_cmd $pause $update $draw_bins $initial \
-    $inst $start_iter $start_rudy $rudy_stride $generate_images $images_path
+    $inst $pin $start_iter $start_rudy $rudy_stride $generate_images $images_path
 }
 
 sta::define_cmd_args "placement_cluster" {}
@@ -395,7 +401,7 @@ namespace eval gpl {
 proc place_config_block { } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GPL 192 "No design block found."
+    utl::error GPL 194 "No design block found."
   }
   return $block
 }

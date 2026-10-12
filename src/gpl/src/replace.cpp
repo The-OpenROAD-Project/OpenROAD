@@ -15,6 +15,7 @@
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"
+#include "ioPinBase.h"
 #include "mbff.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
@@ -139,6 +140,14 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
                 173,
                 "Concurrent IO placement does not support non-rectangular die. "
                 "Please drop -place_ios or use a rectangular die.");
+  }
+  const ppl::PinPlacementSettings settings = pin_placer_->getSettings();
+  if (settings.hor_layers.empty() || settings.ver_layers.empty()) {
+    log_->error(GPL,
+                174,
+                "-place_ios: pin layers are not set. Set both "
+                "-io_pin_hor_layers and -io_pin_ver_layers with "
+                "set_place_config.");
   }
 }
 
@@ -323,18 +332,14 @@ void Replace::runMBFF(const int max_sz,
   pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
-void Replace::initIoPinPlace(NesterovBaseVars& nbVars)
+void Replace::initIoPinPlace()
 {
-  const ppl::PinPlacementSettings settings = pin_placer_->getSettings();
-  if (settings.hor_layers.empty() || settings.ver_layers.empty()) {
-    log_->error(GPL,
-                174,
-                "-place_ios: pin layers are not set. Set both "
-                "-io_pin_hor_layers and -io_pin_ver_layers with "
-                "set_place_config.");
+  // IO pins are only created for top-level placement, not for subregions.
+  NesterovBase* nb = getTopLevelNB();
+  if (nb->getGroup() == nullptr) {
+    nb->setIoPins(std::make_unique<IoPinBase>(
+        pin_placer_->buildSlotGrid(), nb->getPb().get(), nbc_.get(), log_));
   }
-  io_slots_ = pin_placer_->buildSlotGrid();
-  nbVars.placeIosSlots = &io_slots_;
 }
 
 bool Replace::initNesterovPlace(const PlaceOptions& options,
@@ -366,16 +371,16 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   }
 
   if (!nbc_) {
-    NesterovBaseVars nbVars(options);
-    if (options.placeIosMode) {
-      initIoPinPlace(nbVars);
-    }
+    const NesterovBaseVars nbVars(options);
 
     nbc_ = std::make_shared<NesterovBaseCommon>(
         nbVars, pbc_, log_, threads, clusters_);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
+    }
+    if (options.placeIosMode) {
+      initIoPinPlace();
     }
   }
 
@@ -420,6 +425,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     npVars.debug_update_iterations = gui_debug_update_iterations_;
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
+    npVars.debug_pin = gui_debug_pin_;
     npVars.debug_start_iter = gui_debug_start_iter_;
     npVars.debug_rudy_start = gui_debug_rudy_start_;
     npVars.debug_rudy_stride = gui_debug_rudy_stride_;
@@ -471,8 +477,7 @@ int Replace::doNesterovPlace(const int threads,
 
   int return_do_nesterov = np_->doNesterovPlace(start_iter);
 
-  // Legalize the solved pins with the pin placer, moving each as little as
-  // possible.
+  // Legalize the solved pins, moving each as little as possible.
   if (options.placeIosMode) {
     pin_placer_->runHungarianMatching(true);
   }
@@ -538,6 +543,7 @@ void Replace::setDebug(const int pause_iterations,
                        const bool draw_bins,
                        const bool initial,
                        odb::dbInst* inst,
+                       odb::dbBTerm* pin,
                        const int start_iter,
                        const int start_rudy,
                        const int rudy_stride,
@@ -550,6 +556,7 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_draw_bins_ = draw_bins;
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
+  gui_debug_pin_ = pin;
   gui_debug_start_iter_ = start_iter;
   gui_debug_rudy_start_ = start_rudy;
   gui_debug_rudy_stride_ = rudy_stride;

@@ -13,7 +13,6 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -30,6 +29,7 @@
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
+#include "ioPinBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "omp.h"
@@ -67,8 +67,7 @@ static int64_t getOverlapArea(const Bin* bin,
                               int dbu_per_micron);
 
 static float getDistance(const std::vector<FloatPoint>& a,
-                         const std::vector<FloatPoint>& b,
-                         const std::vector<size_t>& skip_indices);
+                         const std::vector<FloatPoint>& b);
 
 static float getSecondNorm(const std::vector<FloatPoint>& a);
 
@@ -102,16 +101,6 @@ GCell::GCell(const int cx, const int cy, const int dx, const int dy)
   dUy_ = uy_ = cy + dy / 2;
 }
 
-GCell::GCell(odb::dbBTerm* bterm,
-             const int cx,
-             const int cy,
-             const int dx,
-             const int dy)
-    : GCell(cx, cy, dx, dy)
-{
-  bterm_ = bterm;
-}
-
 bool GCell::isLocked() const
 {
   return std::any_of(insts_.begin(), insts_.end(), [](Instance* inst) {
@@ -128,9 +117,6 @@ void GCell::lock()
 
 std::string GCell::getName() const
 {
-  if (bterm_ != nullptr) {
-    return bterm_->getConstName();
-  }
   if (insts_.empty()) {
     return "fill";
   }
@@ -286,7 +272,7 @@ bool GCell::isInstance() const
 
 bool GCell::isFiller() const
 {
-  return insts_.empty() && bterm_ == nullptr;
+  return insts_.empty();
 }
 
 bool GCell::isMacroInstance() const
@@ -1900,13 +1886,6 @@ void NesterovBaseCommon::fixPointers()
           // slots, so the pin's old pointer may now reference a different
           // net (or a popped slot).
           gPinStor_[gpin_index].setGNet(&gNet);
-          // An IO pin GCell (-place_ios) carries exactly this one GPin, whose
-          // address moved with gPinStor_; rebuild instead of appending, or the
-          // GCell keeps dereferencing the pre-reallocation pointer.
-          if (GCell* io_gcell = gPinStor_[gpin_index].getGCell()) {
-            io_gcell->clearGPins();
-            io_gcell->addGPin(&gPinStor_[gpin_index]);
-          }
         } else {
           debugPrint(log_,
                      GPL,
@@ -2241,8 +2220,6 @@ NesterovBase::NesterovBase(
     filler_stor_index_to_nb_index_[i] = nb_gcells_.size() - 1;
   }
 
-  initIoPinGCells();
-
   debugPrint(log_,
              GPL,
              "FillerInit",
@@ -2550,909 +2527,22 @@ void NesterovBase::initFillerGCells()
   initial_filler_area_ = totalFillerArea_;
 }
 
-// A 2D up: region names a position on the define_pin_shape_pattern grid, so
-// the pin must be written on that grid's layer with that grid's pin size.
-void NesterovBase::pickIoPinTopLayerGrid()
+void NesterovBase::setIoPins(std::unique_ptr<IoPinBase> io_pins)
 {
-  odb::dbBlock* block = pb_->db()->getChip()->getBlock();
-  const std::optional<odb::dbBlock::dbBTermTopLayerGrid> grid
-      = block->getBTermTopLayerGrid();
-  if (!grid.has_value() || grid->layer == nullptr) {
-    log_->error(GPL,
-                183,
-                "Concurrent IO placement: IO pins have a top-layer (up:) "
-                "constraint region but no pin placement grid exists. Call "
-                "define_pin_shape_pattern first, or drop -place_ios.");
-  }
-  io_top_layer_ = grid->layer;
-  io_top_pin_width_ = grid->pin_width;
-  io_top_pin_height_ = grid->pin_height;
-}
-
-void NesterovBase::initIoPinGCells()
-{
-  if (!nbVars_.placeIosMode) {
-    return;
-  }
-  // IO pins belong to the top-level region only, not power-domain groups.
-  if (pb_->getGroup() != nullptr) {
-    return;
-  }
-
-  odb::dbBlock* block = pb_->db()->getChip()->getBlock();
-  const int dbu_per_micron = block->getDbUnitsPerMicron();
-  const Die& die = pb_->getDie();
-
-  // Keep fixed ports as anchors, as in the sequential flow.
-  std::vector<odb::dbBTerm*> movable_bterms;
-  int already_placed = 0;
-  for (odb::dbBTerm* bterm : block->getBTerms()) {
-    const odb::dbPlacementStatus status = bterm->getFirstPinPlacementStatus();
-    if (status.isFixed() || bterm->getNet() == nullptr) {
-      continue;
-    }
-    if (status.isPlaced()) {
-      ++already_placed;
-    }
-    movable_bterms.push_back(bterm);
-  }
-  if (already_placed > 0) {
-    log_->warn(GPL,
-               184,
-               "Concurrent IO placement moves {} already placed IO pins. Set "
-               "them FIXED to keep their positions.",
-               already_placed);
-  }
-
-  ioPinStor_.reserve(movable_bterms.size());
-  for (odb::dbBTerm* bterm : movable_bterms) {
-    odb::Rect bbox = bterm->getBBox();
-    const int dx
-        = bbox.isInverted() ? dbu_per_micron : std::max<int>(bbox.dx(), 1);
-    const int dy
-        = bbox.isInverted() ? dbu_per_micron : std::max<int>(bbox.dy(), 1);
-    ioPinStor_.emplace_back(bterm, die.dieCx(), die.dieCy(), dx, dy);
-  }
-
-  io_master_to_follower_.assign(ioPinStor_.size(), kNoMirrorPartner);
-  io_is_follower_.assign(ioPinStor_.size(), 0);
-  io_last_written_pos_.assign(ioPinStor_.size(), odb::Point(INT_MIN, INT_MIN));
-
-  io_box_constraints_.assign(ioPinStor_.size(), std::nullopt);
-  int box_constrained = 0;
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    const std::optional<odb::Rect> cr
-        = ioPinStor_[i].getBTerm()->getConstraintRegion();
-    if (cr.has_value() && cr->xMin() != cr->xMax()
-        && cr->yMin() != cr->yMax()) {
-      io_box_constraints_[i] = cr;
-      ++box_constrained;
-    }
-  }
-  if (box_constrained > 0) {
-    pickIoPinTopLayerGrid();
-  }
-
-  std::unordered_map<odb::dbBTerm*, size_t> bterm_to_io_index;
-  bterm_to_io_index.reserve(ioPinStor_.size());
-
-  // Create virtual GCells
-  io_stor_index_to_nb_index_.resize(ioPinStor_.size());
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    GCell* io_gcell = &ioPinStor_[i];
-    if (GPin* gpin = nbc_->dbToNb(io_gcell->getBTerm())) {
-      gpin->setGCell(io_gcell);
-      io_gcell->addGPin(gpin);
-    }
-    nb_gcells_.emplace_back(GCellHandle::IoPinStorage{this}, i);
-    io_stor_index_to_nb_index_[i] = nb_gcells_.size() - 1;
-    bterm_to_io_index[io_gcell->getBTerm()] = i;
-  }
-
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    odb::dbBTerm* bterm = ioPinStor_[i].getBTerm();
-    if (!bterm->hasMirroredBTerm()) {
-      continue;
-    }
-    auto partner_it = bterm_to_io_index.find(bterm->getMirroredBTerm());
-    if (partner_it == bterm_to_io_index.end()) {
-      continue;
-    }
-    const size_t partner = partner_it->second;
-    // Mirroring reflects across a die edge, which a box locus does not have.
-    if (isIoBoxConstrained(i) || isIoBoxConstrained(partner)) {
-      continue;
-    }
-    // Build mirror pairs so followers are derived from their masters.
-    if (io_master_to_follower_[i] != kNoMirrorPartner || io_is_follower_[i]
-        || io_master_to_follower_[partner] != kNoMirrorPartner
-        || io_is_follower_[partner]) {
-      continue;
-    }
-    io_master_to_follower_[i] = partner;
-    io_is_follower_[partner] = 1;
-    io_mirror_pairs_.emplace_back(static_cast<uint32_t>(i),
-                                  static_cast<uint32_t>(partner));
-  }
-
-  // Initialize constraints before seeding.
-  initIoSlots();
-  initIoConstraints();
-
-  // Followers are derived after their masters are placed.
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    if (!isMirrorFollower(i)) {
-      seedIoPinGCell(i);
-    }
-  }
-  for (const auto& [master_io, follower_io] : io_mirror_pairs_) {
-    GCell* follower = &ioPinStor_[follower_io];
-    const GCell* master = &ioPinStor_[master_io];
-    const FloatPoint m
-        = mirrorOfIoPin(master_io, FloatPoint(master->cx(), master->cy()));
-    const FloatPoint fpos = m;
-    follower->setCenterLocation(fpos.x, fpos.y);
-    follower->setDensityCenterLocation(fpos.x, fpos.y);
-  }
-
-  log_->info(GPL,
-             171,
-             "Concurrent IO placement: {} movable IO pins seeded "
-             "({} mirror pairs).",
-             ioPinStor_.size(),
-             io_mirror_pairs_.size());
-}
-
-void NesterovBase::seedIoPinGCell(size_t io_index)
-{
-  GCell* io_gcell = &ioPinStor_[io_index];
-
-  // A position already in the db is a better seed than the net centroid.
-  const odb::Rect bbox = io_gcell->getBTerm()->getBBox();
-  if (!bbox.isInverted()) {
-    const FloatPoint p = projectIoPin(io_index, bbox.xCenter(), bbox.yCenter());
-    io_gcell->setCenterLocation(p.x, p.y);
-    io_gcell->setDensityCenterLocation(p.x, p.y);
-    return;
-  }
-
-  const GPin* own = nbc_->dbToNb(io_gcell->getBTerm());
-  const GNet* gnet = own != nullptr ? own->getGNet() : nullptr;
-
-  int64_t sum_x = 0, sum_y = 0;
-  int64_t cnt = 0;
-  if (gnet != nullptr) {
-    for (GPin* gpin : gnet->getGPins()) {
-      const GCell* gc = gpin->getGCell();
-      if (gc != nullptr && gc->isInstance()) {
-        sum_x += gc->cx();
-        sum_y += gc->cy();
-        ++cnt;
-      }
-    }
-  }
-  const Die& die = pb_->getDie();
-  const float cx = (cnt == 0) ? die.dieCx() : static_cast<float>(sum_x) / cnt;
-  const float cy = (cnt == 0) ? die.dieCy() : static_cast<float>(sum_y) / cnt;
-
-  const FloatPoint proj = projectIoPin(io_index, cx, cy);
-  io_gcell->setCenterLocation(proj.x, proj.y);
-  io_gcell->setDensityCenterLocation(proj.x, proj.y);
-}
-
-bool NesterovBase::rectToPerimSegment(const odb::Rect& r,
-                                      PerimSegment& seg) const
-{
-  const Die& die = pb_->getDie();
-  const float lx = die.dieLx();
-  const float ux = die.dieUx();
-  const float ly = die.dieLy();
-  const float uy = die.dieUy();
-
-  // Pick the edge by proximity, not equality, so rounding cannot flip
-  // left<->right or bottom<->top.
-  if (r.xMin() == r.xMax()) {
-    const float x = r.xMin();
-    seg.edge = (std::abs(x - lx) <= std::abs(x - ux)) ? DieEdge::kLeft
-                                                      : DieEdge::kRight;
-    seg.lo = std::min<float>(r.yMin(), r.yMax());
-    seg.hi = std::max<float>(r.yMin(), r.yMax());
-    return true;
-  }
-  if (r.yMin() == r.yMax()) {
-    const float y = r.yMin();
-    seg.edge = (std::abs(y - ly) <= std::abs(y - uy)) ? DieEdge::kBottom
-                                                      : DieEdge::kTop;
-    seg.lo = std::min<float>(r.xMin(), r.xMax());
-    seg.hi = std::max<float>(r.xMin(), r.xMax());
-    return true;
-  }
-  return false;
-}
-
-// Reflect perimeter segments onto the opposite die edges.
-std::vector<NesterovBase::PerimSegment> NesterovBase::mirrorSegments(
-    const std::vector<PerimSegment>& segs)
-{
-  std::vector<PerimSegment> out;
-  out.reserve(segs.size());
-  for (const PerimSegment& s : segs) {
-    switch (s.edge) {
-      case DieEdge::kLeft:
-        out.push_back({DieEdge::kRight, s.lo, s.hi});
-        break;
-      case DieEdge::kRight:
-        out.push_back({DieEdge::kLeft, s.lo, s.hi});
-        break;
-      case DieEdge::kBottom:
-        out.push_back({DieEdge::kTop, s.lo, s.hi});
-        break;
-      case DieEdge::kTop:
-        out.push_back({DieEdge::kBottom, s.lo, s.hi});
-        break;
-    }
-  }
-  return out;
-}
-
-std::vector<NesterovBase::PerimSegment> NesterovBase::intersectSegments(
-    const std::vector<PerimSegment>& a,
-    const std::vector<PerimSegment>& b)
-{
-  std::vector<PerimSegment> out;
-  for (const PerimSegment& sa : a) {
-    for (const PerimSegment& sb : b) {
-      if (sa.edge != sb.edge) {
-        continue;
-      }
-      const float lo = std::max(sa.lo, sb.lo);
-      const float hi = std::min(sa.hi, sb.hi);
-      // <= keeps a zero-length overlap: a -region of one point is a legal
-      // constraint, and two loci can touch at exactly one legal position.
-      // projectOntoSegment() just clamps, so a point segment is harmless.
-      if (lo <= hi) {
-        out.push_back({sa.edge, lo, hi});
-      }
-    }
-  }
-  return out;
-}
-
-void NesterovBase::initIoConstraints()
-{
-  io_free_segments_.clear();
-  io_constraint_segments_.assign(ioPinStor_.size(), {});
-  if (ioPinStor_.empty()) {
-    return;
-  }
-
-  odb::dbBlock* block = pb_->db()->getChip()->getBlock();
-  const Die& die = pb_->getDie();
-
-  const bool has_blocked = !block->getBlockedRegionsForPins().empty();
-  std::vector<std::vector<std::pair<float, float>>> blocked(4);
-  for (const odb::Rect& r : block->getBlockedRegionsForPins()) {
-    PerimSegment seg;
-    if (rectToPerimSegment(r, seg)) {
-      blocked[static_cast<int>(seg.edge)].emplace_back(seg.lo, seg.hi);
-    }
-  }
-
-  auto addFreeEdge = [&](DieEdge edge, float span_lo, float span_hi) {
-    if (io_edge_slots_[static_cast<size_t>(edge)].empty()) {
-      return;
-    }
-    auto& blk = blocked[static_cast<int>(edge)];
-    std::sort(blk.begin(), blk.end());
-    float cursor = span_lo;
-    for (const auto& [b_lo, b_hi] : blk) {
-      const float lo = std::max(span_lo, b_lo);
-      const float hi = std::min(span_hi, b_hi);
-      if (lo >= hi || hi <= cursor) {
-        continue;
-      }
-      if (lo > cursor) {
-        io_free_segments_.push_back({edge, cursor, lo});
-      }
-      cursor = std::max(cursor, hi);
-    }
-    if (cursor < span_hi) {
-      io_free_segments_.push_back({edge, cursor, span_hi});
-    }
-  };
-  addFreeEdge(DieEdge::kLeft, die.dieLy(), die.dieUy());
-  addFreeEdge(DieEdge::kRight, die.dieLy(), die.dieUy());
-  addFreeEdge(DieEdge::kBottom, die.dieLx(), die.dieUx());
-  addFreeEdge(DieEdge::kTop, die.dieLx(), die.dieUx());
-
-  bool any_perimeter_pin = false;
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    any_perimeter_pin |= !isIoBoxConstrained(i);
-  }
-  if (io_free_segments_.empty() && any_perimeter_pin) {
-    log_->error(GPL,
-                180,
-                "Concurrent IO placement: the excluded IO pin regions cover "
-                "the whole die perimeter, so no perimeter IO pin has a legal "
-                "position.");
-  }
-
-  int constrained = 0;
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    // Box-constrained pins are clamped in projectIoPin, not projected here.
-    if (isIoBoxConstrained(i)) {
-      continue;
-    }
-    const std::optional<odb::Rect> cr
-        = ioPinStor_[i].getBTerm()->getConstraintRegion();
-    if (!cr.has_value()) {
-      continue;
-    }
-    PerimSegment seg;
-    if (rectToPerimSegment(cr.value(), seg)) {
-      // Intersect the pin region with the free perimeter to honor exclusions.
-      io_constraint_segments_[i] = intersectSegments({seg}, io_free_segments_);
-      if (io_constraint_segments_[i].empty()) {
-        log_->error(GPL,
-                    175,
-                    "Concurrent IO placement: the constraint region of pin {} "
-                    "is entirely excluded from IO pin placement, so the pin "
-                    "has no legal position.",
-                    ioPinStor_[i].getBTerm()->getConstName());
-      }
-      ++constrained;
-    }
-  }
-
-  // ppl treats mirroring as a hard constraint, so restrict the master locus
-  // to positions whose reflection is legal for the follower.
-  for (const auto& [master_io, follower_io] : io_mirror_pairs_) {
-    const std::vector<PerimSegment> both = intersectSegments(
-        ioLocus(master_io), mirrorSegments(ioLocus(follower_io)));
-    if (both.empty()) {
-      log_->error(
-          GPL,
-          178,
-          "Concurrent IO placement: mirrored pins {} and {} cannot both "
-          "be placed legally - no position on {}'s locus reflects onto "
-          "{}'s.",
-          ioPinStor_[master_io].getBTerm()->getConstName(),
-          ioPinStor_[follower_io].getBTerm()->getConstName(),
-          ioPinStor_[master_io].getBTerm()->getConstName(),
-          ioPinStor_[follower_io].getBTerm()->getConstName());
-    }
-    io_constraint_segments_[follower_io] = mirrorSegments(both);
-    io_constraint_segments_[master_io] = both;
-  }
-
-  if (constrained > 0 || has_blocked) {
-    log_->info(GPL,
-               177,
-               "Concurrent IO placement: {} pins region-constrained, {} free "
-               "perimeter segments after blocked-region removal.",
-               constrained,
-               io_free_segments_.size());
-  }
-}
-
-FloatPoint NesterovBase::projectOntoSegment(const PerimSegment& seg,
-                                            float x,
-                                            float y) const
-{
-  const Die& die = pb_->getDie();
-  switch (seg.edge) {
-    case DieEdge::kLeft:
-      return FloatPoint(die.dieLx(), std::min(std::max(y, seg.lo), seg.hi));
-    case DieEdge::kRight:
-      return FloatPoint(die.dieUx(), std::min(std::max(y, seg.lo), seg.hi));
-    case DieEdge::kBottom:
-      return FloatPoint(std::min(std::max(x, seg.lo), seg.hi), die.dieLy());
-    case DieEdge::kTop:
-      return FloatPoint(std::min(std::max(x, seg.lo), seg.hi), die.dieUy());
-  }
-  return FloatPoint(x, y);
-}
-
-size_t NesterovBase::ioIndexOf(const GCellHandle& handle) const
-{
-  return handle.getStorageIndex();
-}
-
-const NesterovBase::PerimSegment* NesterovBase::nearestSegment(
-    const std::vector<PerimSegment>& segs,
-    float x,
-    float y,
-    FloatPoint* projection) const
-{
-  const PerimSegment* best = nullptr;
-  FloatPoint best_point;
-  float best_dist = std::numeric_limits<float>::max();
-  for (const PerimSegment& seg : segs) {
-    const FloatPoint p = projectOntoSegment(seg, x, y);
-    const float dx = p.x - x;
-    const float dy = p.y - y;
-    const float dist = dx * dx + dy * dy;
-    if (dist < best_dist) {
-      best_dist = dist;
-      best = &seg;
-      best_point = p;
-    }
-  }
-  if (best != nullptr && projection != nullptr) {
-    *projection = best_point;
-  }
-  return best;
-}
-
-const std::vector<NesterovBase::PerimSegment>& NesterovBase::ioLocus(
-    size_t io_index) const
-{
-  if (io_index < io_constraint_segments_.size()
-      && !io_constraint_segments_[io_index].empty()) {
-    return io_constraint_segments_[io_index];
-  }
-  return io_free_segments_;
-}
-
-FloatPoint NesterovBase::projectIoPin(size_t io_index, float x, float y) const
-{
-  if (isIoBoxConstrained(io_index)) {
-    // A box is convex, so clamping is the projection the Nesterov step needs.
-    const odb::Rect& box = *io_box_constraints_[io_index];
-    return FloatPoint(
-        std::clamp(
-            x, static_cast<float>(box.xMin()), static_cast<float>(box.xMax())),
-        std::clamp(
-            y, static_cast<float>(box.yMin()), static_cast<float>(box.yMax())));
-  }
-  FloatPoint projection;
-  nearestSegment(ioLocus(io_index), x, y, &projection);
-  return projection;
-}
-
-// Find a weighted-HPWL-minimizing point along the IO pin's locus.
-FloatPoint NesterovBase::ioPinOptimum(size_t io_index,
-                                      const FloatPoint& cur) const
-{
-  struct Box
-  {
-    float lx, ly, ux, uy, w;
-    bool mirrored;
-  };
-  // Reused per thread: this runs for every pin inside the OpenMP update loop.
-  thread_local std::vector<Box> boxes;
-  boxes.clear();
-  auto collect = [&](const GCell& io, const bool mirrored) {
-    for (const GPin* self : io.gPins()) {
-      const GNet* net = self->getGNet();
-      if (net == nullptr || net->isDontCare()) {
-        continue;
-      }
-      Box b{std::numeric_limits<float>::max(),
-            std::numeric_limits<float>::max(),
-            std::numeric_limits<float>::lowest(),
-            std::numeric_limits<float>::lowest(),
-            net->getTotalWeight(),
-            mirrored};
-      for (const GPin* p : net->getGPins()) {
-        if (p == self) {
-          continue;
-        }
-        b.lx = std::min(b.lx, float(p->cx()));
-        b.ly = std::min(b.ly, float(p->cy()));
-        b.ux = std::max(b.ux, float(p->cx()));
-        b.uy = std::max(b.uy, float(p->cy()));
-      }
-      if (b.lx <= b.ux) {
-        boxes.push_back(b);
-      }
-    }
-  };
-  collect(ioPinStor_[io_index], false);
-  // A follower moves with its master, so its nets count too, measured at the
-  // reflected position.
-  const size_t follower = io_master_to_follower_[io_index];
-  if (follower != kNoMirrorPartner) {
-    collect(ioPinStor_[follower], true);
-  }
-  if (boxes.empty()) {
-    return cur;
-  }
-
-  FloatPoint best = cur;
-  double best_cost = std::numeric_limits<double>::max();
-  double best_dist = std::numeric_limits<double>::max();
-  auto consider = [&](const FloatPoint& q) {
-    const FloatPoint m
-        = follower != kNoMirrorPartner ? mirrorOfIoPin(io_index, q) : q;
-    double c = 0;
-    for (const Box& b : boxes) {
-      const FloatPoint& p = b.mirrored ? m : q;
-      c += b.w
-           * (std::max(b.ux, p.x) - std::min(b.lx, p.x) + std::max(b.uy, p.y)
-              - std::min(b.ly, p.y));
-    }
-    const double d = std::abs(q.x - cur.x) + std::abs(q.y - cur.y);
-    const double tol = 1e-6 * std::max(1.0, std::abs(best_cost));
-    if (c < best_cost - tol || (c <= best_cost + tol && d < best_dist)) {
-      best_cost = c;
-      best_dist = d;
-      best = q;
-    }
-  };
-
-  constexpr float kFar = 1e30f;
-  thread_local std::vector<float> xs;
-  thread_local std::vector<float> ys;
-  xs.assign({cur.x, -kFar, kFar});
-  ys.assign({cur.y, -kFar, kFar});
-  for (const Box& b : boxes) {
-    xs.insert(xs.end(), {b.lx, b.ux});
-    ys.insert(ys.end(), {b.ly, b.uy});
-  }
-  if (isIoBoxConstrained(io_index)) {
-    for (const float x : xs) {
-      for (const float y : ys) {
-        consider(projectIoPin(io_index, x, y));
-      }
-    }
-    return best;
-  }
-  for (const PerimSegment& seg : ioLocus(io_index)) {
-    for (size_t i = 0; i < xs.size(); ++i) {
-      consider(projectOntoSegment(seg, xs[i], ys[i]));
-    }
-  }
-  return best;
-}
-
-NesterovBase::DieEdge NesterovBase::ioEdgeOnLocus(size_t io_index,
-                                                  int cx,
-                                                  int cy) const
-{
-  return nearestSegment(ioLocus(io_index),
-                        static_cast<float>(cx),
-                        static_cast<float>(cy),
-                        nullptr)
-      ->edge;
-}
-
-// Matches ppl Core::getMirroredPosition. The edge comes from the master's own
-// locus, not nearest-edge distance: at a corner the two disagree.
-FloatPoint NesterovBase::mirrorOfIoPin(size_t master_io,
-                                       const FloatPoint& p) const
-{
-  const Die& die = pb_->getDie();
-  FloatPoint r = p;
-  switch (
-      ioEdgeOnLocus(master_io, static_cast<int>(p.x), static_cast<int>(p.y))) {
-    case DieEdge::kLeft:
-      r.x = die.dieUx();
-      break;
-    case DieEdge::kRight:
-      r.x = die.dieLx();
-      break;
-    case DieEdge::kBottom:
-      r.y = die.dieUy();
-      break;
-    case DieEdge::kTop:
-      r.y = die.dieLy();
-      break;
-  }
-  return r;
-}
-
-// Serial: masters must already be positioned.
-void NesterovBase::applyMirrorConstraints(std::vector<FloatPoint>& coordi) const
-{
-  for (const auto& [master_io, follower_io] : io_mirror_pairs_) {
-    // The master locus was restricted to mirror-compatible positions,
-    // so the follower is always the exact reflection.
-    coordi[ioNbPos(follower_io)]
-        = mirrorOfIoPin(master_io, coordi[ioNbPos(master_io)]);
-  }
-}
-
-float slotIndexAt(const std::vector<float>& slots, const float q)
-{
-  if (q <= slots.front()) {
-    return 0;
-  }
-  if (q >= slots.back()) {
-    return slots.size() - 1;
-  }
-  const size_t hi = std::ranges::upper_bound(slots, q) - slots.begin();
-  const size_t lo = hi - 1;
-  return lo + (q - slots[lo]) / (slots[hi] - slots[lo]);
-}
-
-float slotCoordinateAt(const std::vector<float>& slots, const float g)
-{
-  const float c = std::clamp(g, 0.0f, static_cast<float>(slots.size() - 1));
-  const size_t i = static_cast<size_t>(c);
-  if (i + 1 >= slots.size()) {
-    return slots.back();
-  }
-  return slots[i] + (c - i) * (slots[i + 1] - slots[i]);
-}
-
-// Cut the ring open in the middle of the widest gap between pins, so pins
-// close together never end up at the two ends of the line, and the pins on
-// both sides of the gap can spread into it. Pins before the cut move one lap
-// on. Returns the slot index the line starts at, which can be negative.
-float unrollRingAtWidestGap(std::vector<std::pair<float, size_t>>& pins,
-                            const int n)
-{
-  float widest = n - pins.back().first + pins.front().first;
-  size_t cut = 0;
-  for (size_t r = 1; r < pins.size(); ++r) {
-    const float gap = pins[r].first - pins[r - 1].first;
-    if (gap > widest) {
-      widest = gap;
-      cut = r;
-    }
-  }
-  const float gap_from = cut == 0 ? pins.back().first - n : pins[cut - 1].first;
-  const float at = pins[cut].first;
-  std::ranges::rotate(pins, pins.begin() + cut);
-  for (auto& [slot, io_i] : pins) {
-    if (slot < at) {
-      slot += n;
-    }
-  }
-  return std::floor((gap_from + at) / 2);
-}
-
-// Replace z with the closest non-decreasing sequence within [lo, hi].
-void poolAdjacentViolators(std::vector<float>& z,
-                           const float lo,
-                           const float hi)
-{
-  std::vector<std::pair<double, int>> blocks;
-  blocks.reserve(z.size());
-  for (const float v : z) {
-    blocks.emplace_back(v, 1);
-    while (blocks.size() > 1) {
-      auto& last = blocks[blocks.size() - 1];
-      auto& prev = blocks[blocks.size() - 2];
-      if (prev.first <= last.first) {
-        break;
-      }
-      const int count = prev.second + last.second;
-      prev = {(prev.first * prev.second + last.first * last.second) / count,
-              count};
-      blocks.pop_back();
-    }
-  }
-  size_t r = 0;
-  for (const auto& [mean, count] : blocks) {
-    const float fit = std::clamp(static_cast<float>(mean), lo, hi);
-    for (int k = 0; k < count; ++k) {
-      z[r++] = fit;
-    }
-  }
-}
-
-// Move the sorted pins as little as possible so they sit one slot apart. With
-// more pins than slots, they share the slots evenly.
-std::vector<float> fitSpacing(const std::vector<std::pair<float, size_t>>& pins,
-                              const float lo,
-                              const int total)
-{
-  const int n = pins.size();
-  const bool fits = n <= total;
-  const float step = fits ? 1.0f : (total - 1) / static_cast<float>(n - 1);
-  std::vector<float> z(n);
-  for (int r = 0; r < n; ++r) {
-    z[r] = pins[r].first - r * step;
-  }
-  poolAdjacentViolators(z, lo, lo + (fits ? total - n : 0));
-  for (int r = 0; r < n; ++r) {
-    z[r] = (fits ? std::round(z[r]) : z[r]) + r * step;
-  }
-  return z;
-}
-
-void NesterovBase::initIoSlots()
-{
-  odb::dbTech* tech = pb_->db()->getTech();
-  std::array<std::vector<std::pair<float, odb::dbTechLayer*>>, 4> edge_slots;
-  // Maps ppl::Edge, in its order top, bottom, left, right, to DieEdge.
-  constexpr std::array<DieEdge, 4> kFromPpl
-      = {DieEdge::kTop, DieEdge::kBottom, DieEdge::kLeft, DieEdge::kRight};
-  for (const ppl::SlotPosition& slot : *nbVars_.placeIosSlots) {
-    // Skip blocked slots, and top-layer and polygon slots, which are not on a
-    // die edge.
-    if (slot.blocked || slot.edge == ppl::Edge::invalid
-        || slot.edge == ppl::Edge::polygonEdge) {
-      continue;
-    }
-    const DieEdge edge = kFromPpl[static_cast<size_t>(slot.edge)];
-    edge_slots[static_cast<size_t>(edge)].emplace_back(
-        isHorizontalEdge(edge) ? slot.pos.x() : slot.pos.y(),
-        tech->findRoutingLayer(slot.layer));
-  }
-
-  io_slot_ring_.clear();
-  for (const DieEdge edge : kIoRingOrder) {
-    const size_t e = static_cast<size_t>(edge);
-    std::ranges::sort(edge_slots[e]);
-    std::vector<float>& slots = io_edge_slots_[e];
-    slots.clear();
-    io_edge_slot_layers_[e].clear();
-    for (const auto& [pos, layer] : edge_slots[e]) {
-      slots.push_back(pos);
-      io_edge_slot_layers_[e].push_back(layer);
-    }
-    io_ring_begin_[e] = io_slot_ring_.size();
-    for (size_t k = 0; k < slots.size(); ++k) {
-      io_slot_ring_.push_back(
-          {edge, slots[ringAscends(edge) ? k : slots.size() - 1 - k]});
-    }
-  }
-
-  // Slots free on both opposite edges, the only ones a mirrored pair can use.
-  for (const bool horizontal : {false, true}) {
-    const auto& a = io_edge_slots_[static_cast<size_t>(
-        horizontal ? DieEdge::kBottom : DieEdge::kLeft)];
-    const auto& b = io_edge_slots_[static_cast<size_t>(
-        horizontal ? DieEdge::kTop : DieEdge::kRight)];
-    io_axis_slots_[horizontal].clear();
-    std::ranges::set_intersection(
-        a, b, std::back_inserter(io_axis_slots_[horizontal]));
-  }
-}
-
-odb::dbTechLayer* NesterovBase::ioPinLayer(const DieEdge edge,
-                                           const float pos) const
-{
-  const size_t e = static_cast<size_t>(edge);
-  const size_t k = std::lround(slotIndexAt(io_edge_slots_[e], pos));
-  return io_edge_slot_layers_[e][k];
-}
-
-float NesterovBase::ringIndexAt(const DieEdge edge, const float pos) const
-{
-  const size_t e = static_cast<size_t>(edge);
-  const std::vector<float>& slots = io_edge_slots_[e];
-  const float k = slotIndexAt(slots, pos);
-  return io_ring_begin_[e] + (ringAscends(edge) ? k : slots.size() - 1 - k);
-}
-
-FloatPoint NesterovBase::ringPointAt(float r) const
-{
-  const int n = io_slot_ring_.size();
-  // Indices from an unrolled ring can run up to one lap off either end.
-  if (r < 0) {
-    r += n;
-  } else if (r >= n) {
-    r -= n;
-  }
-  const float g = std::clamp(r, 0.0f, static_cast<float>(n - 1));
-  int i = static_cast<int>(g);
-  float pos = io_slot_ring_[i].pos;
-  if (i + 1 < n) {
-    if (io_slot_ring_[i + 1].edge == io_slot_ring_[i].edge) {
-      pos += (g - i) * (io_slot_ring_[i + 1].pos - pos);
-    } else if (g - i >= 0.5f) {
-      // Between two edges: take the nearer corner slot.
-      pos = io_slot_ring_[++i].pos;
-    }
-  }
-  return projectOntoSegment({io_slot_ring_[i].edge, pos, pos}, pos, pos);
-}
-
-// Spread the pins one slot apart around the ring. In slot index space a
-// blocked stretch takes no room.
-void NesterovBase::separateIoPins(std::vector<FloatPoint>& coordi) const
-{
-  std::vector<std::pair<float, size_t>> pins;
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    // Skip followers, which reflect their master, and box pins, which are off
-    // the perimeter.
-    if (isMirrorFollower(i) || isIoBoxConstrained(i)) {
-      continue;
-    }
-    const FloatPoint& p = coordi[ioNbPos(i)];
-    const DieEdge edge = ioEdgeOnLocus(i, p.x, p.y);
-    if (io_edge_slots_[static_cast<size_t>(edge)].empty()) {
-      continue;
-    }
-    pins.emplace_back(ringIndexAt(edge, isHorizontalEdge(edge) ? p.x : p.y), i);
-  }
-  if (pins.size() < 2) {
-    return;
-  }
-  const int total = io_slot_ring_.size();
-  std::ranges::sort(pins);
-  const float origin = unrollRingAtWidestGap(pins, total);
-  const std::vector<float> fit = fitSpacing(pins, origin, total);
-  for (size_t r = 0; r < pins.size(); ++r) {
-    const size_t io_i = pins[r].second;
-    const FloatPoint p = ringPointAt(fit[r]);
-    coordi[ioNbPos(io_i)] = projectIoPin(io_i, p.x, p.y);
-  }
-}
-
-// Spread the pins of opposite edges together, on the slots free on both, so
-// no pin lands on another pin's reflection.
-void NesterovBase::separateMirroredIoPins(std::vector<FloatPoint>& coordi) const
-{
-  std::array<std::vector<std::pair<float, size_t>>, 2> axis_pins;
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    if (isMirrorFollower(i) || isIoBoxConstrained(i)) {
-      continue;
-    }
-    const FloatPoint& p = coordi[ioNbPos(i)];
-    const bool horizontal = isHorizontalEdge(ioEdgeOnLocus(i, p.x, p.y));
-    const std::vector<float>& slots = io_axis_slots_[horizontal];
-    if (!slots.empty()) {
-      axis_pins[horizontal].emplace_back(
-          slotIndexAt(slots, horizontal ? p.x : p.y), i);
-    }
-  }
-  for (const bool horizontal : {false, true}) {
-    std::vector<std::pair<float, size_t>>& pins = axis_pins[horizontal];
-    if (pins.size() < 2) {
-      continue;
-    }
-    const std::vector<float>& slots = io_axis_slots_[horizontal];
-    std::ranges::sort(pins);
-    const std::vector<float> fit = fitSpacing(pins, 0, slots.size());
-    for (size_t r = 0; r < pins.size(); ++r) {
-      const size_t io_i = pins[r].second;
-      const float pos = slotCoordinateAt(slots, fit[r]);
-      const FloatPoint& at = coordi[ioNbPos(io_i)];
-      coordi[ioNbPos(io_i)] = projectIoPin(
-          io_i, horizontal ? pos : at.x, horizontal ? at.y : pos);
-    }
-  }
+  io_ = std::move(io_pins);
 }
 
 void NesterovBase::updateDbIoPins()
 {
-  if (ioPinStor_.empty()) {
-    return;
+  if (io_) {
+    io_->updateDb();
   }
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    const GCell& io = ioPinStor_[i];
-    odb::dbBTerm* bterm = io.getBTerm();
-    // Round, not truncate, so a pin a hair below its slot stays on the track.
-    const FloatPoint& at = curCoordi_[ioNbPos(i)];
-    const int cx = static_cast<int>(std::lround(at.x));
-    const int cy = static_cast<int>(std::lround(at.y));
-    // Avoid rebuilding the BPin when the position has not changed.
-    if (io_last_written_pos_[i].x() == cx
-        && io_last_written_pos_[i].y() == cy) {
-      continue;
-    }
+}
 
-    odb::dbTechLayer* layer;
-    int half_w, half_h;
-    if (isIoBoxConstrained(i)) {
-      layer = io_top_layer_;
-      half_w = io_top_pin_width_ / 2;
-      half_h = io_top_pin_height_ / 2;
-    } else {
-      const DieEdge edge = ioEdgeOnLocus(i, cx, cy);
-      layer = ioPinLayer(edge, isHorizontalEdge(edge) ? at.x : at.y);
-      half_w = io.dx() / 2;
-      half_h = io.dy() / 2;
-    }
-    const int min_half = static_cast<int>(layer->getWidth()) / 2;
-    half_w = std::max(half_w, min_half);
-    half_h = std::max(half_h, min_half);
-
-    odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
-    for (auto it = bpins.begin(); it != bpins.end();) {
-      it = odb::dbBPin::destroy(it);
-    }
-
-    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-    odb::dbBox::create(
-        bpin, layer, cx - half_w, cy - half_h, cx + half_w, cy + half_h);
-    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    io_last_written_pos_[i] = odb::Point(cx, cy);
+void NesterovBase::refreshIoPins()
+{
+  if (io_) {
+    io_->refreshGPins();
   }
 }
 
@@ -3477,6 +2567,11 @@ void NesterovBase::updateGCellDensityCenterLocation(
 {
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
+  }
+  if (io_) {
+    io_->placeGPins(&coordis == &prevSLPCoordi_   ? IoPinBase::Iterate::kPrev
+                    : &coordis == &nextSLPCoordi_ ? IoPinBase::Iterate::kNext
+                                                  : IoPinBase::Iterate::kCur);
   }
 #ifdef ENABLE_GPU
   int scatter_threads = 1;
@@ -3634,19 +2729,6 @@ GCell& NesterovBase::getFillerGCell(size_t index)
         fillerStor_.size());
   }
   return fillerStor_[index];
-}
-
-GCell& NesterovBase::getIoPinGCell(size_t index)
-{
-  if (index >= ioPinStor_.size()) {
-    log_->error(
-        utl::GPL,
-        185,
-        "getIoPinGCell: index {} out of bounds (ioPinStor_.size() = {}).",
-        index,
-        ioPinStor_.size());
-  }
-  return ioPinStor_[index];
 }
 
 int64_t NesterovBase::getWhiteSpaceArea() const
@@ -4006,10 +3088,7 @@ void NesterovBase::initDensity1()
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     GCell* gCell = *it;  // old-style loop for old OpenMP
-    // IO pins have their own locus and contribute no density.
-    if (!gCell->isIOPin()) {
-      updateDensityCoordiLayoutInside(gCell);
-    }
+    updateDensityCoordiLayoutInside(gCell);
     int idx = it - nb_gcells_.begin();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
@@ -4042,9 +3121,9 @@ void NesterovBase::rebuildNbDeviceCtx()
   if (!nbc_->getDeviceState()) {
     return;
   }
-  // The GPU context does not model IO pin GCells, so the per-iteration
-  // projection and mirror constraints would be lost. Stay host-resident.
-  if (!ioPinStor_.empty()) {
+  // The IO pin step reads the host pin positions every iteration. Stay
+  // host-resident.
+  if (io_) {
     log_->warn(GPL,
                176,
                "Concurrent IO placement is not supported on the GPU "
@@ -4200,12 +3279,8 @@ float NesterovBase::getStepLength(
   }
 #endif
 
-  // IO pin GCells only slide along the perimeter, so letting them into the
-  // norm would distort the step length.
-  coordiDistance_
-      = getDistance(prevSLPCoordi_, curSLPCoordi_, io_stor_index_to_nb_index_);
-  gradDistance_ = getDistance(
-      prevSLPSumGrads_, curSLPSumGrads_, io_stor_index_to_nb_index_);
+  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
+  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
   debugPrint(log_,
              GPL,
              "getStepLength",
@@ -4309,14 +3384,6 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   for (size_t i = 0; i < numGCells; i++) {
     GCell* gCell = nb_gcells_[i];
 
-    // IO pins take no gradient step; they jump to their optimum instead.
-    if (gCell->isIOPin()) {
-      wireLengthGrads[i] = FloatPoint(0, 0);
-      densityGrads[i] = FloatPoint(0, 0);
-      sumGrads[i] = FloatPoint(0, 0);
-      continue;
-    }
-
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
 
@@ -4403,8 +3470,7 @@ void NesterovBase::updateInitialPrevSLPCoordi()
   for (size_t i = 0; i < nb_gcells_.size(); i++) {
     GCell* curGCell = nb_gcells_[i];
 
-    // IO pins take no Nesterov step, so their previous point is the current.
-    if (curGCell->isLocked() || curGCell->isIOPin()) {
+    if (curGCell->isLocked()) {
       prevSLPCoordi_[i] = curSLPCoordi_[i];
       continue;
     }
@@ -4492,6 +3558,9 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(curSLPSumGrads_, nextSLPSumGrads_);
 
   std::swap(curCoordi_, nextCoordi_);
+  if (io_) {
+    io_->commitNext(iter);
+  }
 
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
@@ -4668,15 +3737,6 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
       continue;
     }
 
-    // IO pins jump to their optimum; followers are reflected below.
-    if (curGCell->isIOPin()) {
-      const size_t io_i = ioIndexOf(nb_gcells_[k]);
-      nextCoordi_[k] = isMirrorFollower(io_i)
-                           ? curCoordi_[k]
-                           : ioPinOptimum(io_i, curCoordi_[k]);
-      continue;
-    }
-
     FloatPoint nextCoordi(
         curSLPCoordi_[k].x + stepLength_ * curSLPSumGrads_[k].x,
         curSLPCoordi_[k].y + stepLength_ * curSLPSumGrads_[k].y);
@@ -4694,15 +3754,8 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
                      getDensityCoordiLayoutInsideY(curGCell, nextSLPCoordi.y));
   }
 
-  // Spread the pins one slot apart: mirrored edges together, then the ring.
-  if (!io_mirror_pairs_.empty()) {
-    separateMirroredIoPins(nextCoordi_);
-  }
-  separateIoPins(nextCoordi_);
-  applyMirrorConstraints(nextCoordi_);
-  // IO pins take no Nesterov step, so their lookahead is the iterate.
-  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
-    nextSLPCoordi_[ioNbPos(i)] = nextCoordi_[ioNbPos(i)];
+  if (io_) {
+    io_->computeNext();
   }
 
   // Update Density
@@ -4746,6 +3799,9 @@ void NesterovBase::saveSnapshot()
   snapshotPrevSLPSumGrads_ = prevSLPSumGrads_;
   snapshotDensityPenalty_ = densityPenalty_;
   snapshotStepLength_ = stepLength_;
+  if (io_) {
+    io_->saveSnapshot();
+  }
 }
 
 bool NesterovBase::checkConvergence(int gpl_iter_count,
@@ -4792,6 +3848,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     }
 
     if (npVars_->routability_driven_mode) {
+      updateDbIoPins();
       rb->calculateRudyTiles();
       rb->updateRudyAverage(false);
       log_->info(GPL,
@@ -4940,6 +3997,9 @@ bool NesterovBase::revertToSnapshot()
   prevSLPSumGrads_ = snapshotPrevSLPSumGrads_;
   densityPenalty_ = snapshotDensityPenalty_;
   stepLength_ = snapshotStepLength_;
+  if (io_) {
+    io_->revertToSnapshot();
+  }
 
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityFieldBin();
@@ -5901,12 +4961,6 @@ void NesterovBase::rebindHandleIndex(size_t nb_index)
   GCellHandle& handle = nb_gcells_[nb_index];
   const size_t stor_index = handle.getStorageIndex();
 
-  if (handle.isIoPinStorage()) {
-    // Dense and never resized after init, so every IO pin has a slot.
-    io_stor_index_to_nb_index_[stor_index] = nb_index;
-    return;
-  }
-
   if (handle.isNesterovBaseCommon()) {
     odb::dbInst* db_inst = handle->insts()[0]->dbInst();
     auto it = db_inst_to_nb_index_.find(db_inst);
@@ -6203,35 +5257,16 @@ static float fastExp(float exp)
   return exp;
 }
 
-// skip_indices holds the nb_gcells_ positions to leave out of the norm, in any
-// order (swapAndPop remaps them). With no IO pins the loop is a plain sum.
 static float getDistance(const std::vector<FloatPoint>& a,
-                         const std::vector<FloatPoint>& b,
-                         const std::vector<size_t>& skip_indices)
+                         const std::vector<FloatPoint>& b)
 {
-  // The skip list is short (the IO pins), so walk a sorted copy of it
-  // alongside the loop.
-  std::vector<size_t> skip = skip_indices;
-  std::ranges::sort(skip);
-  auto next_skip = skip.begin();
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
-    if (next_skip != skip.end() && *next_skip == i) {
-      while (next_skip != skip.end() && *next_skip == i) {
-        ++next_skip;
-      }
-      continue;
-    }
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
   }
 
-  const size_t n = a.size() - skip_indices.size();
-  if (n == 0) {
-    return 0.0f;
-  }
-
-  return std::sqrt(sumDistance / (2.0 * n));
+  return std::sqrt(sumDistance / (2.0 * a.size()));
 }
 
 static float getSecondNorm(const std::vector<FloatPoint>& a)
@@ -6242,20 +5277,4 @@ static float getSecondNorm(const std::vector<FloatPoint>& a)
   }
   return std::sqrt(norm / (2.0 * a.size()));
 }
-
-void updateDbGCellsAndIoPins(
-    NesterovBaseCommon& nbc,
-    const std::vector<std::shared_ptr<NesterovBase>>& nbVec)
-{
-  // The GPU device-resident density pipeline leaves host GCell coords stale
-  // during the hot loop; refresh them before writing to the DB.
-  for (const auto& nb : nbVec) {
-    nb->pullCoordsFromDevice();
-  }
-  nbc.updateDbGCells();
-  for (const auto& nb : nbVec) {
-    nb->updateDbIoPins();
-  }
-}
-
 }  // namespace gpl

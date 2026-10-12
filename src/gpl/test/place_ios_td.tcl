@@ -1,7 +1,7 @@
 # -place_ios with -timing_driven. repair_design creates and destroys
 # instances mid-solve, which permutes gCellStor_ and reallocates gPinStor_,
-# while the IO pin GCells live in their own storage: every pin must still own
-# its GPin afterwards and end up on the die perimeter.
+# while the IO pins hold their GPins by address: every pin must still own its
+# GPin afterwards and end up on the die perimeter.
 
 source helpers.tcl
 read_liberty ./library/nangate45/NangateOpenCellLibrary_typical.lib

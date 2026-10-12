@@ -275,6 +275,7 @@ global_placement_debug
     [-pause pause]
     [-update update]
     [-inst inst]
+    [-pin pin]
     [-start_iter start_iter]
     [-start_rudy start_rudy]
     [-rudy_stride rudy_stride]
@@ -291,6 +292,7 @@ global_placement_debug
 | `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Allowed values are integers, default is `10`. |
 | `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is `10`. |
 | `-inst` | Targets a specific instance name for debugging focus. The default behavior focuses on no specific instance. |
+| `-pin` | Targets a specific IO pin name for debugging focus under `-place_ios`. The default behavior focuses on no specific pin. |
 | `-start_iter` | Start debug mode from this iteration. |
 | `-start_rudy` | Start RUDY debug from this iteration. |
 | `-rudy_stride` | Stride for RUDY debug iterations. Allowed values are integers, default is `1`. |
