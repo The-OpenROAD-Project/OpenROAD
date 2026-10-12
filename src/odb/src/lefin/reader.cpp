@@ -513,6 +513,12 @@ bool lefin_parse(lefinReader* lef, utl::Logger* logger, const char* file_name)
 
   LefParser::lefrSetDeltaNumberLines(1000000);
   LefParser::lefrInit();
+  // Release parser globals on every return, including file-open and parse
+  // errors.
+  struct ParserCleanup
+  {
+    ~ParserCleanup() { LefParser::lefrClear(); }
+  } cleanup;
   int res;
   if (boost::algorithm::ends_with(file_name, ".gz")) {
     auto zfile = lefGZipOpen(file_name, "r");
@@ -532,8 +538,6 @@ bool lefin_parse(lefinReader* lef, utl::Logger* logger, const char* file_name)
     res = LefParser::lefrRead(file, file_name, (void*) lef);
     fclose(file);
   }
-  LefParser::lefrClear();
-
   return res == 0;
 }
 
