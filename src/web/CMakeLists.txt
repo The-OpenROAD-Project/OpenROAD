@@ -69,6 +69,7 @@ swig_lib(NAME         web
                        ${ODB_HOME}/include
 )
 
+# The sources the saved report concatenates.
 set(WEB_ASSET_FILES
     src/style.css
     src/theme.js
@@ -101,7 +102,6 @@ set(WEB_ASSET_FILES
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
-    src/openroad_skin.svg
     src/charts-widget.js
     src/timing-widget.js
     src/drc-widget.js
@@ -109,17 +109,6 @@ set(WEB_ASSET_FILES
     src/selection-browser.js
     src/main.js
 )
-
-# Only the Bazel build bundles the browser libraries into index.html; this one
-# serves the sources, with index.cmake.html as the page.
-set(WEB_INDEX_HTML ${CMAKE_CURRENT_BINARY_DIR}/web/index.html)
-configure_file(src/index.cmake.html ${WEB_INDEX_HTML} COPYONLY)
-
-# Prepend CMAKE_CURRENT_SOURCE_DIR to each asset file.
-set(WEB_ASSET_PATHS ${WEB_INDEX_HTML})
-foreach(f ${WEB_ASSET_FILES})
-  list(APPEND WEB_ASSET_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
-endforeach()
 
 set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
 add_custom_command(
@@ -169,15 +158,23 @@ add_custom_command(
   COMMENT "Generating report_assets.cpp"
 )
 
+# The esbuild output only the Bazel build can produce, embedded from the copy
+# in dist/ (dist/README.md says how to regenerate it).
+set(WEB_BUNDLE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/dist/index.html
+    ${CMAKE_CURRENT_SOURCE_DIR}/dist/app.min.js
+    ${CMAKE_CURRENT_SOURCE_DIR}/dist/THIRD_PARTY_LICENSES.txt
+)
+
 set(WEB_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/web_assets.cpp)
 add_custom_command(
   OUTPUT ${WEB_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
     --output ${WEB_ASSETS_CPP}
-    ${WEB_ASSET_PATHS}
+    ${WEB_BUNDLE_FILES}
   DEPENDS
     src/embed_web_assets.py
-    ${WEB_ASSET_PATHS}
+    ${WEB_BUNDLE_FILES}
   COMMENT "Generating web_assets.cpp"
 )
 

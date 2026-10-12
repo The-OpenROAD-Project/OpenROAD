@@ -327,6 +327,10 @@ bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
 bazel_dep(name = "aspect_rules_js", version = "3.0.2")
 bazel_dep(name = "rules_nodejs", version = "6.7.3")
 
+# write_source_files keeps src/web/dist, the CMake build's copy of the bundle,
+# in step with the bundler's output.
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5", dev_dependency = True)
+
 # --- Extensions ---
 
 register_toolchains(

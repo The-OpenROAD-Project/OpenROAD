@@ -327,6 +327,9 @@ embedded in the binary (see `src/web/README.md`). Do not add a submodule
 or a BCR module for one of these, and do not add an npm dependency for
 anything that is not browser code.
 
+That bundling runs only under Bazel; the CMake build embeds a copy checked
+in under `src/web/dist/`, whose README says how to regenerate it.
+
 ## Regression Tests
 
 There are a set of executable regression test scripts in `./test/`.
