@@ -21,5 +21,6 @@ record_tests {
   write_priority_or_asap7
   service_columns_asap7
   bank_column_layout_asap7
+  option_errors_asap7
   make_8x8_latch_sky130
 }

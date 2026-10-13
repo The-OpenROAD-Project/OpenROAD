@@ -1954,14 +1954,27 @@ void RamGen::generate(const int mask_size,
                       const int service_sites,
                       const std::string& bank_column_layout)
 {
+  if (banks < 1 || bank_columns < 1) {
+    logger_->error(RAM,
+                   92,
+                   "-banks {} and -bank_columns {} must be at least 1.",
+                   banks,
+                   bank_columns);
+  }
+  if (bit_folds < 1) {
+    logger_->error(RAM, 93, "-bit_folds {} must be at least 1.", bit_folds);
+  }
+  if (rb_ports < 0) {
+    logger_->error(RAM, 94, "-rb_ports {} must not be negative.", rb_ports);
+  }
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
   // without banks, the column mux as it was.
   // -decoder word: each port decodes every word's whole address through
   // a balanced AND2 tree per word, the banks' decoders, banks or none
   banked_ = banks > 1 || bank_columns > 1 || decoder == "word";
-  banks_ = std::max(banks, 1);
-  bank_columns_ = std::max(bank_columns, 1);
+  banks_ = banks;
+  bank_columns_ = bank_columns;
   bank_interleaved_ = bank_order == "interleaved";
   if (banked_) {
     if (column_mux_ratio_arg != 1) {
@@ -2001,10 +2014,10 @@ void RamGen::generate(const int mask_size,
     logger_->error(
         RAM, 73, "-write_style mux is not supported with -use_latch.");
   }
+  if (read_latency_ != 0 && read_latency_ != 1) {
+    logger_->error(RAM, 71, "-read_latency is 0 or 1.");
+  }
   if (read_latency_ > 0) {
-    if (read_latency_ != 1) {
-      logger_->error(RAM, 71, "-read_latency is 0 or 1.");
-    }
     if (column_mux_ratio_arg > 1 || rw_ports > 0) {
       logger_->error(RAM,
                      72,
@@ -2032,7 +2045,7 @@ void RamGen::generate(const int mask_size,
                    "or -decoder word: the column mux reads a row's words "
                    "interleaved.");
   }
-  bit_folds_ = std::max(bit_folds, 1);
+  bit_folds_ = bit_folds;
   slice_width_ = mask_size * column_mux_ratio + column_mux_ratio;
   // the word's own bits; with -bit_folds the last fold may be short, its
   // missing bits pads: columns with no port, flop or read tree

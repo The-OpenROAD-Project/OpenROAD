@@ -119,7 +119,12 @@ proc generate_ram_netlist { args } {
     utl::error RAM 53 "A read/write port is the only write port."
   }
 
-  if { $rw_ports + $r_ports < 1 && ![info exists keys(-rb_ports)] } {
+  # banked read ports count as read ports
+  set rb_given 0
+  if { [info exists keys(-rb_ports)] } {
+    set rb_given $keys(-rb_ports)
+  }
+  if { $rw_ports + $r_ports + max($rb_given, 0) < 1 } {
     utl::error RAM 36 "Must specify at least one read output port"
   }
 
@@ -171,6 +176,9 @@ proc generate_ram_netlist { args } {
   set zero_word -1
   if { [info exists keys(-zero_word)] } {
     set zero_word $keys(-zero_word)
+    if { $zero_word < 0 } {
+      utl::error RAM 96 "-zero_word $zero_word is not a word."
+    }
   }
 
   # An asynchronous reset of every word to this value.
@@ -232,6 +240,10 @@ proc generate_ram_netlist { args } {
       utl::error RAM 89 "-service_columns is {every sites}."
     }
     lassign $keys(-service_columns) service_every service_sites
+    if { $service_every < 1 || $service_sites < 1 } {
+      utl::error RAM 95 "-service_columns {$service_every $service_sites} needs\
+        two counts of at least 1."
+    }
   }
 
   # A row's words interleaved bit by bit (the column mux's order) or each
