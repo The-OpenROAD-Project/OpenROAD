@@ -584,7 +584,8 @@ bool PDNSim::analyze3DPowerGrid(const std::string& chip_net_name,
                                 sta::Scene* corner,
                                 bool use_sta,
                                 const std::string& error_file,
-                                const std::string& voltage_file)
+                                const std::string& voltage_file,
+                                bool enable_em)
 {
   auto* net = findChipNet(chip_net_name);
   // A failed re-solve must not leave an earlier result available.
@@ -622,6 +623,10 @@ bool PDNSim::analyze3DPowerGrid(const std::string& chip_net_name,
       solver->getVoltageSourceCount(),
       voltages.minCoeff(),
       voltages.maxCoeff());
+  solver->report();
+  if (enable_em) {
+    solver->reportEM();
+  }
   if (!voltage_file.empty()) {
     solver->writeInstanceVoltageFile(voltage_file);
   }

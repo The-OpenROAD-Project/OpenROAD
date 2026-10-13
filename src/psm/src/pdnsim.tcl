@@ -81,14 +81,14 @@ proc analyze_power_grid { args } {
 
   if { [psm::is_3d_design [[ord::get_db] getChip]] } {
     sta::check_argc_eq0 "analyze_power_grid" $args
-    foreach key {-vsrc -source_type -allow_reuse -enable_em -em_outfile} {
+    foreach key {-vsrc -source_type -allow_reuse -em_outfile} {
       if { [info exists keys($key)] || [info exists flags($key)] } {
         utl::error PSM 157 "$key is not supported for a 3D assembly."
       }
     }
     return [psm::analyze_3d_power_grid_cmd \
       $keys(-net) [sta::parse_scene_or_default keys] true \
-      $error_file $voltage_file]
+      $error_file $voltage_file [info exists flags(-enable_em)]]
   }
 
   set enable_em [info exists flags(-enable_em)]

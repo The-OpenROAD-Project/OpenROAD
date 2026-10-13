@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <utility>
 #include <vector>
@@ -158,10 +159,12 @@ void IRSolver3D::addStaLoads(odb::dbNet* net,
                      net->getBlock()->getName(),
                      inst->getName());
     }
+    total_power_ += power;
     for (Node* node : inst_nodes.at(inst)) {
       sta_currents_[node] = sign * currents.at(node);
     }
   }
+  nominal_voltages_[net] = power_voltage;
   if (instance_powers.empty()) {
     logger_->error(utl::PSM,
                    149,
@@ -382,6 +385,86 @@ bool IRSolver3D::check() const
 
   return !node_index_.empty() && !interdie_conductance.empty()
          && network_->isConnected();
+}
+
+void IRSolver3D::report() const
+{
+  IRSolver::Results results;
+  results.net_voltage = voltage_sources_.front().voltage;
+  results.total_power = total_power_;
+  results.worst_voltage = results.net_voltage;
+  const bool is_ground
+      = network_->getNets().front()->getSigType() == odb::dbSigType::GROUND;
+
+  odb::PtrMap<odb::dbChipInst, Voltage> reference_voltages;
+  for (const auto& [chiplet, net] : network_->getChipletNets()) {
+    const auto nominal = nominal_voltages_.find(net);
+    reference_voltages[chiplet]
+        = is_ground && nominal != nominal_voltages_.end() ? nominal->second
+                                                          : results.net_voltage;
+  }
+
+  double total_voltage = 0.0;
+  std::size_t count = 0;
+  // Match 2D statistics: use routing nodes, excluding terminal attachment
+  // nodes.
+  for (const auto& [node, chiplet] : network_->getNodeChiplets()) {
+    if (dynamic_cast<TerminalNode*>(node) != nullptr) {
+      continue;
+    }
+    const Voltage voltage = voltage_vector_[node_index_.at(node)];
+    total_voltage += voltage;
+    ++count;
+    results.worst_voltage = is_ground
+                                ? std::max(results.worst_voltage, voltage)
+                                : std::min(results.worst_voltage, voltage);
+    const Voltage drop = is_ground ? voltage - results.net_voltage
+                                   : results.net_voltage - voltage;
+    const Voltage reference = reference_voltages.at(chiplet);
+    if (reference > 0.0) {
+      results.max_percent = std::max(
+          results.max_percent, static_cast<float>(100.0 * drop / reference));
+    } else {
+      results.max_percent = std::numeric_limits<float>::quiet_NaN();
+    }
+  }
+  results.avg_voltage = total_voltage / count;
+  results.worst_ir_drop = is_ground
+                              ? results.worst_voltage - results.net_voltage
+                              : results.net_voltage - results.worst_voltage;
+  results.avg_ir_drop = is_ground ? results.avg_voltage - results.net_voltage
+                                  : results.net_voltage - results.avg_voltage;
+  IRSolver::report(
+      results, network_->getChipNet()->getName(), corner_, logger_);
+}
+
+void IRSolver3D::reportEM() const
+{
+  IRSolver::EMResults results;
+  const auto resistance_map = getResistanceMap();
+  Current total_current = 0.0;
+  for (Connection* connection : network_->getConnections()) {
+    // Exclude local terminal attachments as in 2D, but retain the bond
+    // resistors.
+    if ((connection->hasITermNode() || connection->hasBPinNode())
+        && dynamic_cast<FixedResistanceConnection*>(connection) == nullptr) {
+      continue;
+    }
+    const Voltage voltage0
+        = voltage_vector_[node_index_.at(connection->getNode0())];
+    const Voltage voltage1
+        = voltage_vector_[node_index_.at(connection->getNode1())];
+    const Current current = std::abs(voltage0 - voltage1)
+                            / connection->getResistance(resistance_map);
+    results.max_current = std::max(results.max_current, current);
+    total_current += current;
+    ++results.resistors;
+  }
+  if (results.resistors > 0) {
+    results.avg_current = total_current / results.resistors;
+  }
+  IRSolver::reportEM(
+      results, network_->getChipNet()->getName(), corner_, logger_);
 }
 
 void IRSolver3D::writeInstanceVoltageFile(const std::string& voltage_file) const

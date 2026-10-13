@@ -2114,17 +2114,7 @@ void IRSolver::report(sta::Scene* corner) const
 {
   const auto results = getSolution(corner);
 
-  logger_->report("########## IR report #################");
-  logger_->report("Net              : {}", net_->getName());
-  logger_->report("Corner           : {}", corner->name());
-  logger_->report("Total power      : {:3.2e} W", results.total_power);
-  logger_->report("Supply voltage   : {:3.2e} V", results.net_voltage);
-  logger_->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
-  logger_->report("Average voltage  : {:3.2e} V", results.avg_voltage);
-  logger_->report("Average IR drop  : {:3.2e} V", results.avg_ir_drop);
-  logger_->report("Worstcase IR drop: {:3.2e} V", results.worst_ir_drop);
-  logger_->report("Percentage drop  : {:3.2f} %", results.max_percent);
-  logger_->report("######################################");
+  report(results, net_->getName(), corner, logger_);
 
   logger_->metric(getMetricKey("design_powergrid__voltage__worst", corner),
                   results.worst_voltage);
@@ -2136,22 +2126,50 @@ void IRSolver::report(sta::Scene* corner) const
                   results.worst_ir_drop);
 }
 
+// Shared function used by both 2D and 3D for reporting IR results.
+void IRSolver::report(const Results& results,
+                      const std::string& net_name,
+                      sta::Scene* corner,
+                      utl::Logger* logger)
+{
+  logger->report("########## IR report #################");
+  logger->report("Net              : {}", net_name);
+  logger->report("Corner           : {}", corner->name());
+  logger->report("Total power      : {:3.2e} W", results.total_power);
+  logger->report("Supply voltage   : {:3.2e} V", results.net_voltage);
+  logger->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
+  logger->report("Average voltage  : {:3.2e} V", results.avg_voltage);
+  logger->report("Average IR drop  : {:3.2e} V", results.avg_ir_drop);
+  logger->report("Worstcase IR drop: {:3.2e} V", results.worst_ir_drop);
+  logger->report("Percentage drop  : {:3.2f} %", results.max_percent);
+  logger->report("######################################");
+}
+
 void IRSolver::reportEM(sta::Scene* corner) const
 {
   const auto results = getEMSolution(corner);
 
-  logger_->report("########## EM analysis ###############");
-  logger_->report("Net                : {}", net_->getName());
-  logger_->report("Corner             : {}", corner->name());
-  logger_->report("Maximum current    : {:3.2e} A", results.max_current);
-  logger_->report("Average current    : {:3.2e} A", results.avg_current);
-  logger_->report("Number of resistors: {}", results.resistors);
-  logger_->report("######################################");
+  reportEM(results, net_->getName(), corner, logger_);
 
   logger_->metric(getMetricKey("design_powergrid__current__max", corner),
                   results.max_current);
   logger_->metric(getMetricKey("design_powergrid__current__average", corner),
                   results.avg_current);
+}
+
+// Shared function used by both 2D and 3D for reporting EM results.
+void IRSolver::reportEM(const EMResults& results,
+                        const std::string& net_name,
+                        sta::Scene* corner,
+                        utl::Logger* logger)
+{
+  logger->report("########## EM analysis ###############");
+  logger->report("Net                : {}", net_name);
+  logger->report("Corner             : {}", corner->name());
+  logger->report("Maximum current    : {:3.2e} A", results.max_current);
+  logger->report("Average current    : {:3.2e} A", results.avg_current);
+  logger->report("Number of resistors: {}", results.resistors);
+  logger->report("######################################");
 }
 
 void IRSolver::writeErrorFile(const std::string& error_file) const

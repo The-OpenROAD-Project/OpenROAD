@@ -59,6 +59,8 @@ class IRSolver3D
                         Voltage voltage);
   bool solve();
   bool checkSolution() const;
+  void report() const;
+  void reportEM() const;
   void writeInstanceVoltageFile(const std::string& voltage_file) const;
   bool hasValidSources() const;
 
@@ -111,6 +113,8 @@ class IRSolver3D
   ConductanceMatrix g_matrix_;
   std::vector<CurrentLoad> current_loads_;
   std::map<Node*, Current> sta_currents_;
+  double total_power_ = 0.0;
+  odb::PtrMap<odb::dbNet, Voltage> nominal_voltages_;
   CurrentVector j_vector_;
   std::vector<VoltageSource> voltage_sources_;
   VoltageVector voltage_vector_;

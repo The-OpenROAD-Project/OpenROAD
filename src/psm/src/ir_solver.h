@@ -106,6 +106,15 @@ class IRSolver
 
   void report(sta::Scene* corner) const;
   void reportEM(sta::Scene* corner) const;
+  // Print the same IR and EM summaries for single-chip and assembly results.
+  static void report(const Results& results,
+                     const std::string& net_name,
+                     sta::Scene* corner,
+                     utl::Logger* logger);
+  static void reportEM(const EMResults& results,
+                       const std::string& net_name,
+                       sta::Scene* corner,
+                       utl::Logger* logger);
 
   Results getSolution(sta::Scene* corner) const;
   EMResults getEMSolution(sta::Scene* corner) const;

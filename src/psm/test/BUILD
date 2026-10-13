@@ -8,7 +8,11 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "3dic_check_power_grid_bump_pad_disconnected_pdn_net",
     "3dic_check_power_grid_frontside",
+    "3dic_check_power_grid_missing_bump_mapping",
+    "3dic_check_power_grid_require_bterms_fail",
+    "3dic_test_vdd",
     "aes_asap7_vdd",
     "aes_test_bterms_source_resistance",
     "aes_test_bterms",
@@ -67,6 +71,16 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
+        "3dic_check_power_grid_bump_pad_disconnected_pdn_net.3dbv",
+        "3dic_check_power_grid_bump_pad_disconnected_pdn_net.3dbx",
+        "3dic_check_power_grid_bump_pad_disconnected_pdn_net_b.def",
+        "3dic_check_power_grid_missing_bump_mapping.3dbv",
+        "3dic_check_power_grid_missing_bump_mapping.3dbx",
+        "3dic_check_power_grid_missing_bump_mapping.bmap",
+        "3dic_check_power_grid_require_bterms_fail.3dbv",
+        "3dic_check_power_grid_require_bterms_fail.3dbx",
+        "3dic_check_power_grid_require_bterms_fail_b.def",
+        "3dic_fake.sdc",
         "3dic_frontside.3dbv",
         "3dic_frontside.3dbx",
         "3dic_frontside_a.bmap",

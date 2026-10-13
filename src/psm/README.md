@@ -46,14 +46,17 @@ corner, matching 2D.
 VDD and VSS are solved separately. Before solving, PSM checks connectivity
 across the assembly and shorts inside each chiplet. Missing sources and invalid
 resistances are rejected. Each 3D call builds a fresh solution. The current
-3D output includes the node-voltage range and per-instance voltage files.
+3D output includes the node-voltage range, an IR summary, and per-instance
+voltage files. `-enable_em` also prints maximum and average resistor currents
+for chiplet wiring and inter-chip bonds. IR statistics use routing nodes, as in
+2D. Percentage drop is relative to the source voltage for power nets; for ground
+nets, it is the largest percentage rise relative to each chiplet's nominal
+supply voltage.
 
 The following 3D extensions are planned and are not included yet:
 
-- The full 2D-style IR summary: total power, average/worst voltage and IR drop,
-  and percentage drop.
 - The 2D `design_powergrid__...` IR and EM metrics.
-- EM current reports and CSV export through `-enable_em` and `-em_outfile`.
+- EM CSV export through `-em_outfile`.
 - GUI IR-drop heatmaps.
 - Source generation through `-vsrc` and `-source_type FULL|BUMPS|STRAPS`.
 - Solution reuse through `-allow_reuse`.
@@ -83,7 +86,7 @@ analyze_power_grid
 | `-corner` | Corner to use for analysis. |
 | `-error_file` | File to write power grid errors to. For 3D, errors are grouped by chiplet, with coordinates in local microns. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
-| `-enable_em` | Report current per power grid segment. Supported only for 2D designs. This reports currents, not a check against manufacturing EM limits. |
+| `-enable_em` | Print maximum and average power-grid segment currents. For 3D, includes chiplet wiring and inter-chip bonds. This reports currents, not a check against manufacturing EM limits. |
 | `-em_outfile` | Write the per-segment current values into a file. Requires `-enable_em`. Supported only for 2D designs. |
 | `-voltage_file` | Write per-instance voltage into the file. For 3D, instance names include the chiplet, such as `chipA/ff`; coordinates are local to each chiplet. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
