@@ -106,6 +106,7 @@ static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
 static const char* web_bind_arg = nullptr;
+static web::BrowserLaunch web_launch = web::BrowserLaunch::kAuto;
 
 static const char* init_filename = ".openroad";
 
@@ -284,6 +285,27 @@ int main(int argc, char* argv[])
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
   web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
+  const bool web_browser_flag = findCmdLineFlag(argc, argv, "-web_browser");
+  const bool web_no_browser_flag
+      = findCmdLineFlag(argc, argv, "-web_no_browser");
+  if (web_browser_flag && web_no_browser_flag) {
+    fprintf(stderr,
+            "Error: -web_browser and -web_no_browser cannot be used "
+            "together\n");
+    exit(EXIT_FAILURE);
+  }
+  if (web_browser_flag) {
+    web_launch = web::BrowserLaunch::kAlways;
+  } else if (web_no_browser_flag) {
+    web_launch = web::BrowserLaunch::kNever;
+  }
+  if (!web_enabled
+      && (web_port_arg || web_bind_arg
+          || web_launch != web::BrowserLaunch::kAuto)) {
+    fprintf(stderr,
+            "Warning: the -web_* options only apply with -web; a script's "
+            "web_server takes -port, -bind, -browser and -no_browser\n");
+  }
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -482,7 +504,7 @@ static int tclAppInit(int& argc,
       try {
         // Empty means web::kDefaultBindAddress; see BindAddressKind.
         ord::OpenRoad::openRoad()->getWebServer()->serveDuringStartupScripts(
-            web_port, web_bind_arg ? web_bind_arg : "");
+            web_port, web_bind_arg ? web_bind_arg : "", web_launch);
       } catch (const std::exception&) {
         Tcl_Exit(EXIT_FAILURE);  // serve() has logged why
       }
@@ -566,7 +588,7 @@ static int tclAppInit(int& argc,
       server->endStartupScripts();
       if (!server->isRunning()) {
         try {
-          server->serve(web_port, web_bind_arg ? web_bind_arg : "");
+          server->serve(web_port, web_bind_arg ? web_bind_arg : "", web_launch);
         } catch (const std::exception&) {
           Tcl_Exit(EXIT_FAILURE);  // serve() has logged why
         }
@@ -641,6 +663,10 @@ static void showUsage(const char* prog, const char* init_filename)
       "  -web_bind address     web server bind address (default 127.0.0.1;\n"
       "                        a wider bind exposes a Tcl shell to the "
       "network)\n");
+  printf(
+      "  -web_no_browser       do not launch a browser; print the viewer "
+      "url\n");
+  printf("  -web_browser          launch a browser even in an ssh session\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3
