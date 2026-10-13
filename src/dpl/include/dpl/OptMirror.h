@@ -70,6 +70,10 @@ class OptimizeMirroring
   // spacing rules have to be rechecked for the mirrored orientation.
   bool isEdgeSpacingLegal(const Node* cell,
                           const odb::dbOrientType& orient) const;
+  // Mirroring moves the pin shapes, which can then short to power via
+  // metal.
+  bool isBlockedLayersLegal(const Node* cell,
+                            const odb::dbOrientType& orient) const;
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -83,6 +87,9 @@ class OptimizeMirroring
   // Candidates rejected because mirroring would violate the cell edge
   // spacing rules.
   int edge_spacing_reject_count_ = 0;
+  // Candidates rejected because mirroring would short a pin to power
+  // via metal.
+  int blocked_layers_reject_count_ = 0;
 
   // Net bounding box size on nets with more instance terminals
   // than this are ignored.

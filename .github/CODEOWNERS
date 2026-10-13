@@ -10,7 +10,7 @@
 # Per-module owners
 /src/ant/       @The-OpenROAD-Project/openroad-ant
 /src/cgt/       @The-OpenROAD-Project/openroad-cgt
-#/src/cmake/
+/src/cmake/     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /src/cts/       @The-OpenROAD-Project/openroad-cts
 /src/cut/       @The-OpenROAD-Project/openroad-cut
 /src/dbSta/     @The-OpenROAD-Project/openroad-dbsta
@@ -44,3 +44,57 @@
 /src/upf/       @The-OpenROAD-Project/openroad-upf
 /src/utl/       @The-OpenROAD-Project/openroad-utl
 /src/web/       @The-OpenROAD-Project/openroad-web
+
+# GitHub automation
+/.github/                         @The-OpenROAD-Project/openroad-devops
+# Issue and pull request templates are community text, not automation
+/.github/ISSUE_TEMPLATE/          @The-OpenROAD-Project/openroad-maintainers
+/.github/PULL_REQUEST_TEMPLATE.md @The-OpenROAD-Project/openroad-maintainers
+/.github/CODEOWNERS               @The-OpenROAD-Project/openroad-devops
+
+# Jenkins CI
+/Jenkinsfile                      @The-OpenROAD-Project/openroad-devops
+/jenkins/                         @The-OpenROAD-Project/openroad-devops
+
+# Bazel build system, shared with the build maintainers
+/BUILD.bazel                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/MODULE.bazel                     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/MODULE.bazel.lock                @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/.bazelrc                         @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/.bazelversion                    @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/.bazelignore                     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/.bant-macros                     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/.buildifier.json                 @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/bazel/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/tools/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+
+# CMake build system, shared with the build maintainers
+/CMakeLists.txt                   @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/CMakeGraphVizOptions.cmake       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/cmake/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/src/CMakeLists.txt               @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+
+# Dependency pins and vendored code
+/.gitmodules                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/third-party/                     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/flake.nix                        @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/flake.lock                       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/default.nix                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/pyproject.toml                   @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+
+# Documentation build
+/.readthedocs.yaml                @The-OpenROAD-Project/openroad-devops
+/docs/requirements.in             @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/docs/requirements.txt            @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+
+# Build, CI, and container scripts
+/etc/                             @The-OpenROAD-Project/openroad-devops
+# Developer tools that the build maintainers drive
+/etc/run-clang-tidy*              @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+/etc/*whittle*                    @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
+
+# Container images and packaging
+/Dockerfile                       @The-OpenROAD-Project/openroad-devops
+/.dockerignore                    @The-OpenROAD-Project/openroad-devops
+/bazel/Dockerfile                 @The-OpenROAD-Project/openroad-devops
+/packaging/                       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers

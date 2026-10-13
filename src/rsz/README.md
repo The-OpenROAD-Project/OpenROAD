@@ -232,9 +232,11 @@ repair_timing
     [-skip_size_down_fanout]
     [-skip_buffering]
     [-skip_buffer_removal]
+    [-skip_buffer_to_inverters]
     [-skip_last_gasp]
     [-skip_vt_swap]
     [-skip_crit_vt_swap]
+    [-skip_crpr]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_iterations iterations]
@@ -262,9 +264,11 @@ repair_timing
 | `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
+| `-skip_buffer_to_inverters` | Flag to skip buffer-inverters swap.  The default is to perform buffer-to-double inverter replacement transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
+| `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |

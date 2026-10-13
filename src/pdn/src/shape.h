@@ -113,6 +113,10 @@ class Shape
 
   // check if shape is valid for the given layer
   bool isValid() const;
+  virtual bool isFloating() const
+  {
+    return getNumberOfConnections() == 0 || !hasInternalConnections();
+  }
 
   const odb::Rect& getObstruction() const { return obs_; }
   // generates the obstruction box needed to avoid DRC violations with
@@ -122,6 +126,16 @@ class Shape
   ObstructionHalo getObstructionHalo() const;
   odb::Rect getRectWithLargestObstructionHalo(
       const ObstructionHalo& halo) const;
+
+  // True when this obstruction stands for an absence of die rather than for
+  // metal.  odb creates one over every part of its bounding box that a polygon
+  // die does not cover, and marks it system-reserved.
+  //
+  // Nothing keeps a spacing from one: there is no neighbouring metal to be
+  // clear of, and metal may abut a die edge -- on a rectangular die it does,
+  // because no obstruction is created there at all.  Applying a spacing here
+  // would stop a shape short of the wall of a notch, which is the same edge.
+  void setIsDieAbsence() { die_absence_ = true; }
 
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
   bool isSquare() const { return rect_.dx() == rect_.dy(); }
@@ -190,6 +204,10 @@ class Shape
   virtual bool cut(const ObstructionTree& obstructions,
                    const Grid* ignore_grid,
                    std::vector<std::unique_ptr<Shape>>& replacements) const;
+  // cut against only the obstructions obs_filter accepts
+  bool cut(const ObstructionTree& obstructions,
+           std::vector<std::unique_ptr<Shape>>& replacements,
+           const std::function<bool(const ShapePtr&)>& obs_filter) const;
 
   // return a copy of the shape
   virtual std::unique_ptr<Shape> copy() const;
@@ -227,11 +245,6 @@ class Shape
   static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
   static ObstructionTreeMap convertVectorToObstructionTree(ShapeVectorMap& vec);
 
- protected:
-  bool cut(const ObstructionTree& obstructions,
-           std::vector<std::unique_ptr<Shape>>& replacements,
-           const std::function<bool(const ShapePtr&)>& obs_filter) const;
-
  private:
   odb::dbTechLayer* layer_;
   odb::dbNet* net_;
@@ -240,6 +253,7 @@ class Shape
   ShapeType shape_type_;
   bool allow_non_preferred_change_;
   bool is_locked_;
+  bool die_absence_{false};
 
   odb::Rect obs_;
 
@@ -277,6 +291,7 @@ class FollowPinShape : public Shape
 
   // followpins cannot be removed
   bool isRemovable(bool assume_bterm) const override { return false; }
+  bool isFloating() const override { return false; }
 
   void setAllowsNonPreferredDirectionChange() override {}
 

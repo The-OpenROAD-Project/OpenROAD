@@ -60,6 +60,14 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-routability_min_congestion_for_inflation",
            options.routabilityMinCongestionForInflation);
+  checkKey(keys,
+           "-routability_max_inflation_total",
+           options.routabilityMaxInflationTotal);
+  checkKey(
+      keys, "-routability_net_weight_max", options.routabilityNetWeightMax);
+  checkKey(keys,
+           "-routability_congested_nets_percentage",
+           options.routabilityCongestedNetsPercentage);
   checkKey(keys, "-pad_left", options.padLeft);
   checkKey(keys, "-pad_right", options.padRight);
   checkKey(keys,
@@ -242,6 +250,18 @@ set_debug_cmd(int pause_iterations,
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
                     initial, inst, start_iter, start_rudy, rudy_stride,
                     generate_images, resolved_path);
+}
+
+float
+estimate_target_density_cmd(
+  const std::map<std::string, std::string>& keys,
+  const std::map<std::string, std::string>& flags)
+{
+  gpl::PlaceOptions options = getOptions(keys, flags);
+  Replace* replace = getReplace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+
+  return replace->estimateTargetDensity(options, threads);
 }
 
 %} // inline

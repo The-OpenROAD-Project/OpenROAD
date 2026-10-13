@@ -47,6 +47,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":gif_test",
+        ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
         ":tile_generator_test",
@@ -85,6 +86,13 @@ js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "hierarchy_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-hierarchy-browser.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -264,6 +272,13 @@ js_test(
 )
 
 js_test(
+    name = "layer_extents_test",
+    data = JS_FILES,
+    entry_point = "js/test-layer-extents.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "dpr_test",
     data = JS_FILES,
     entry_point = "js/test-dpr.js",
@@ -298,10 +313,30 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "hierarchy_report_test",
+    srcs = ["cpp/TestHierarchyReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -315,10 +350,29 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "heat_map_test",
+    srcs = ["cpp/TestHeatMap.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -331,13 +385,11 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui",
-        "//src/gui:core",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
+        "//src/web:core",
         "@boost.asio",
         "@boost.json",
         "@googletest//:gtest",
@@ -352,13 +404,11 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui",
-        "//src/gui:core",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
+        "//src/web:core",
         "//third-party/lodepng",
         "@boost.json",
         "@googletest//:gtest",
@@ -373,13 +423,11 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui",
-        "//src/gui:core",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
+        "//src/web:core",
         "//third-party/lodepng",
         "@boost.json",
         "@googletest//:gtest",
@@ -394,10 +442,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -413,12 +461,12 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -431,10 +479,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -447,11 +495,11 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -462,8 +510,8 @@ cc_test(
     name = "glyph_cache_test",
     srcs = ["cpp/TestGlyphCache.cpp"],
     deps = [
-        "//src/gui:gui_stub",
         "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -473,11 +521,9 @@ cc_test(
     name = "debug_graphics_test",
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
-        "//src/gui",
-        "//src/gui:core",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -490,10 +536,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -507,12 +553,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui",
-        "//src/gui:core",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

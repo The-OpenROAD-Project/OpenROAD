@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "BufferGenerator.hh"
+#include "BufferToInvertersGenerator.hh"
 #include "CloneGenerator.hh"
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
@@ -94,6 +95,9 @@ void SetupLegacyMtPolicy::buildMoveGenerators(
         break;
       case MoveType::kReroute:
         generator = std::make_unique<RerouteGenerator>(context);
+        break;
+      case MoveType::kBufferToInverters:
+        generator = std::make_unique<BufferToInvertersGenerator>(context);
         break;
       case MoveType::kCount:
         break;

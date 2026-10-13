@@ -45,6 +45,11 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
   slang::driver::Driver driver;
   driver.addStandardArgs();
 
+  // Diagnostics raised deep inside the shared frontend reach the logger, and
+  // the source manager they need to place an AST node in the user's HDL,
+  // through slang_frontend::elabLogger()/elabSourceManager().
+  ElabDiagnosticScope diagnostic_scope(logger, &driver.sourceManager);
+
   SynthesisSettings settings;
   settings.addOptions(driver.cmdLine);
 
@@ -110,8 +115,10 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
   }
 
   if (tops.size() != 1) {
-    log_error("Expected exactly one top-level module, got %d\n",
-              (int) tops.size());
+    reportError(logger,
+                78,
+                "Expected exactly one top-level module, got "
+                    + std::to_string(tops.size()));
   }
 
   auto* instance = tops[0];

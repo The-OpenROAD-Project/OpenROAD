@@ -93,6 +93,7 @@ ALL_TESTS = [
     "sta5",
     "sta_to_db1",
     "sta_to_db1_hier",
+    "tcl_unknown_handler",
     "write_sdc1",
     "write_verilog1",
     "write_verilog2",
@@ -158,6 +159,7 @@ filegroup(
                 "3dic_cross_flop_b.bmap",
                 "3dic_cross_flop_b.def",
                 "3dic_cross_top.v",
+                "3dic_read_db_reload.tcl",
             ],
             "block_sta1": [
                 "example1_typ.lib",
@@ -317,6 +319,9 @@ filegroup(
                 "example1_typ.lib",
                 "example1.lef",
                 "hier3.v",
+            ],
+            "tcl_unknown_handler": [
+                "hier1.def",
             ],
             "write_sdc1": [
                 "hier1.sdc",
@@ -602,7 +607,7 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
-        "cpp/TestDbSta_StalePrevPath.v",
+        "cpp/TestDbSta_DriverInputPortAcrossNetlistEdits.v",
     ],
     deps = [
         "//src/dbSta:dbNetwork",

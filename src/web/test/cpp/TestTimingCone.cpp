@@ -19,7 +19,7 @@ namespace web {
 namespace {
 
 //------------------------------------------------------------------------------
-// spectrumColor — the Turbo colormap ported from gui::SpectrumGenerator.
+// spectrumColor — the Turbo colormap ported from web::SpectrumGenerator.
 // These lock the endpoints/clamping so the cone colors keep matching the Qt
 // GUI even if the table is edited.
 //------------------------------------------------------------------------------

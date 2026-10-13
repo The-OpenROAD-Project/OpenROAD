@@ -7,6 +7,7 @@ import {
     BLANK_TILE, buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
     tileSizeFields, withDeviceExactTileSize,
 } from './tile-request.js';
+import { tileMayHaveContent } from './layer-extents.js';
 
 // Imported AND re-exported: `export { x } from '...'` alone re-exports without
 // creating a local binding, so _clampZoom below would reference an undefined
@@ -101,6 +102,12 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             // when the tile is discarded (e.g. during zoom).
             tile._websocketRequestId = this._websocketManager.nextId;
 
+            if (!tileMayHaveContent(ctx, this._layerName, coords)) {
+                tile._websocketRequestId = undefined;
+                applyTilePayload(tile, null);
+                return tile;
+            }
+
             this._websocketManager.request(
                 buildTileRequest(coords, this._layerName, ctx)
             ).then(data => {
@@ -130,6 +137,12 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 // Cancel any pending request for this tile
                 if (tile._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile._websocketRequestId);
+                }
+
+                if (!tileMayHaveContent(ctx, this._layerName, coords)) {
+                    tile._websocketRequestId = undefined;
+                    applyTilePayload(tile, null);
+                    continue;
                 }
 
                 tile._websocketRequestId = this._websocketManager.nextId;

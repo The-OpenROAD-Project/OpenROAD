@@ -175,8 +175,8 @@ export function nativeDpr() {
         return 1;
     }
     // Clamped, not rounded.  The clamp is a memory guard — a tile is rendered
-    // at (tileSize*dpr*supersample)^2, so an absurd ratio from a deeply zoomed
-    // browser would allocate hundreds of megabytes for one tile.  Rounding, on
+    // at (tileSize*dpr)^2 pixels, so an absurd ratio from a deeply zoomed
+    // browser would allocate an oversized buffer for every tile.  Rounding, on
     // the other hand, is exactly what stops the image fitting its box.
     return Math.min(raw, 3);
 }

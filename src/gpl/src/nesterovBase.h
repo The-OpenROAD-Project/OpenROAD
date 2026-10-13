@@ -826,7 +826,8 @@ struct NesterovBaseVars
 
 struct NesterovPlaceVars
 {
-  NesterovPlaceVars(const PlaceOptions& options);
+  // design_hpwl resolves referenceHpwl when the option is left at 0.
+  NesterovPlaceVars(const PlaceOptions& options, int64_t design_hpwl = 0);
 
   int maxNesterovIter;
   static constexpr int maxBackTrack = 10;
@@ -836,6 +837,16 @@ struct NesterovPlaceVars
   static constexpr float minPreconditioner = 1.0;  // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
   const float referenceHpwl;                       // refDeltaHpwl
+
+  // Floor for a derived referenceHpwl, the value this was hard-coded to
+  // before it was derived at all. Designs at or below this scale keep exactly
+  // the controller they had.
+  static constexpr float kReferenceHpwlFloor = 446000000.0f;
+
+  // Fraction of the design's HPWL a derived referenceHpwl spans. A wirelength
+  // change of this size is what pulls the penalty ramp from its maximum to its
+  // minimum, so it sets the controller's headroom before it saturates.
+  static constexpr float kReferenceHpwlFraction = 0.01f;
   const float routability_end_overflow;
   const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
@@ -1085,6 +1096,9 @@ class NesterovBase
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
+  // Sets densityPenalty_ from the wirelength/density gradient ratio times
+  // factor
+  void updateDensityPenaltyFromRatio(float factor);
 
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
@@ -1139,6 +1153,9 @@ class NesterovBase
   // LB of target density is required for massive runs.
   //
   float getUniformTargetDensity() const;
+
+  // estimate target density based on the current placement
+  float estimateTargetDensity(float overflow);
 
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and
@@ -1227,6 +1244,16 @@ class NesterovBase
   float getStoredPhiCoef() const { return phiCoef_; }
   float getStoredStepLength() const { return stepLength_; }
   float getStoredCoordiDistance() const { return coordiDistance_; }
+
+  // True once the cells have stopped moving as fast as they were: the
+  // per-iteration displacement has come down from its peak.
+  //
+  // Routability measures where wire will be from where the cells are, so it
+  // needs a placement close to where it is going. That is a statement about
+  // motion, not about density, and overflow does not capture it: the same
+  // overflow can sit at very different displacements depending on how fast
+  // the penalty schedule happens to be ramping.
+  bool isSettled() const;
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
@@ -1258,6 +1285,9 @@ class NesterovBase
   void resetMinSumOverflow();
 
   bool isDiverged() const { return isDiverged_; }
+  // Resets isDiverged_ when no snapshot exists to revert to instead (the only
+  // other place that clears it is revertToSnapshot()).
+  void clearDivergence() { isDiverged_ = false; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
@@ -1271,6 +1301,9 @@ class NesterovBase
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
   void clearRemovedFillers() { removed_fillers_.clear(); }
+
+  // Directly redistributes the existing filler into the free space.
+  void redistributeFillerCells();
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
@@ -1400,6 +1433,16 @@ class NesterovBase
   float stepLength_ = 0;
   float coordiDistance_ = 0;
   float gradDistance_ = 0;
+
+  // Largest per-iteration displacement seen so far, the yardstick isSettled()
+  // measures the current one against.
+  float peak_coordi_distance_ = 0;
+
+  // Fraction of its own peak the per-iteration displacement must fall to for
+  // the placement to count as settled. A ratio rather than a length, so it
+  // carries no bin size, no DBU constant, and no dependence on the penalty
+  // schedule's rate.
+  static constexpr float kSettleFraction = 0.6f;
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.

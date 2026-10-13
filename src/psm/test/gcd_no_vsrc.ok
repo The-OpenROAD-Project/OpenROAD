@@ -5,7 +5,7 @@
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
 [INFO PSM-0040] All shapes on net VDD are connected.
-[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+[INFO PSM-0073] Using bump pattern on metal7 with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with a reduction factor of 3x.
 ########## IR report #################
 Net              : VDD
 Corner           : default
@@ -18,7 +18,7 @@ Worstcase IR drop: 3.28e-04 V
 Percentage drop  : 0.02 %
 ######################################
 [INFO PSM-0040] All shapes on net VSS are connected.
-[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+[INFO PSM-0073] Using bump pattern on metal7 with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with a reduction factor of 3x.
 ########## IR report #################
 Net              : VSS
 Corner           : default
