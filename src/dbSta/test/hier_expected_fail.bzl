@@ -1350,6 +1350,23 @@ CONFORMANCE_EXPECTED_FAIL = [
 # symptom.
 STRUCTURAL_EXPECTED_FAIL = [
 
+    # The reader loses wor resolution and merges distinct primary inputs.
+    # The writer rejects that network with STA-2749 instead of serializing it.
+    # Keep the fixture active until the reader supports resolved nets.
+    # Upstream: https://github.com/parallaxsw/OpenSTA/issues/537
+    structural_xfail(
+        path = "flat",
+        check = "round_trip",
+        symptom = "write_verilog rejects inputs merged by the wor reader (STA-2749)",
+        netlists = ["structural/wb_sta_reader_wor_resolution.v"],
+    ),
+    structural_xfail(
+        path = "hier",
+        check = "round_trip",
+        symptom = "write_verilog rejects inputs merged by the wor reader (STA-2749)",
+        netlists = ["structural/wb_sta_reader_wor_resolution.v"],
+    ),
+
     # ----------------------------------------------------------------------
     # round_trip
     #
