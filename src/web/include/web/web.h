@@ -81,11 +81,10 @@ enum class BrowserLaunch
 // stays testable.  Owned strings: a later getenv() may invalidate earlier ones.
 struct BrowserEnv
 {
-  std::string ssh_connection;   // $SSH_CONNECTION
-  std::string ssh_client;       // $SSH_CLIENT
+  bool ssh_session = false;     // $SSH_CONNECTION or $SSH_CLIENT set
+  bool batch_job = false;       // a scheduler's job id ($LSB_JOBID, ...) set
   std::string display;          // $DISPLAY, X11 platforms only
   std::string host_name;        // this machine, to read $DISPLAY against
-  std::string batch_job;        // first of $LSB_JOBID, $SLURM_JOB_ID, ...
   std::string vscode_ipc_hook;  // $VSCODE_IPC_HOOK_CLI
   std::string browser;          // $BROWSER
   bool no_browser = false;      // $OPENROAD_NO_BROWSER
@@ -95,11 +94,12 @@ struct BrowserEnv
   bool has_display = true;
   // This machine's interface addresses, to read an IP in $DISPLAY against.
   std::vector<boost::asio::ip::address> local_addresses;
-  bool wsl = false;  // $WSL_DISTRO_NAME: the X server is the Windows desktop
+  bool wsl = false;  // $WSL_DISTRO_NAME: the browser is the Windows one
 };
 
-// True when $DISPLAY names an X server on another machine.  Socket paths,
-// loopback, this machine's name or addresses, and a container's host are local.
+// True when $DISPLAY names an X server on another machine, or one ssh -X
+// forwards here (TCP, numbered from 10).  Otherwise socket paths, loopback,
+// this machine's name or addresses, and a container's host are local.
 bool displayIsRemote(
     std::string_view display,
     std::string_view host_name,
@@ -201,9 +201,7 @@ class WebServer
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
   // a no-op if the server is already running.
-  void serve(int port,
-             const std::string& bind_address,
-             BrowserLaunch launch = BrowserLaunch::kAuto);
+  void serve(int port, const std::string& bind_address, BrowserLaunch launch);
 
   // For -web startup scripts, called on the main thread before they run.
   // Calls serve(port, bind_address, launch), so the browser follows the

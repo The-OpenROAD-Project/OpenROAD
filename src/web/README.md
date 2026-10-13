@@ -71,7 +71,9 @@ back on.
 This includes `ssh -X`: a forwarded display is not enough, because the browser
 started on the remote host still wants the profile in `$HOME` that the browser
 on the workstation already holds — with a shared home it refuses to start at
-all. Pass `-browser` to try anyway.
+all. Pass `-browser` to try anyway. The forwarded display is recognised even
+where the ssh variables did not follow, as inside `docker_shell` or under
+`sudo`: sshd numbers it from `localhost:10`.
 
 Two kinds of ssh session do launch, because the browser they reach is the
 user's own:
@@ -88,14 +90,15 @@ A batch job is skipped before either: `LSB_JOBID`, `SLURM_JOB_ID`, `JOB_ID` or
 `PBS_JOBID` means a scheduler picked the host this runs on, and schedulers copy
 the submitting shell's environment — `$DISPLAY` and the VS Code variables
 included. So is any session whose `$DISPLAY` names another machine, which is
-the same situation reached without a scheduler. The Windows X server of a WSL
-session and the host of a container (`host.docker.internal`) are the user's
-own, not another machine. `WEB-0120` says which of these decided.
+the same situation reached without a scheduler. The Windows side of a WSL
+session, which launches with or without an X server, and the host of a
+container (`host.docker.internal`) are the user's own, not another machine.
+`WEB-0120` says which of these decided.
 
 Inside a `tmux` or `screen` session that outlived the connection that started
 it, `SSH_CONNECTION` and `SSH_CLIENT` can be missing or point at the old
-connection. With no display the launch is still skipped, and with a stale one
-it is attempted and usually fails: `WEB-0003` reports that, and the url and the
+connection. With no display, or a forwarded one, the launch is still skipped;
+with a stale local one it is attempted and usually fails: `WEB-0003` reports that, and the url and the
 tunnel are in `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
 the shell profile used on those hosts, or pass `-no_browser`.
 

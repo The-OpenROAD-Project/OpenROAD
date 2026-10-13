@@ -403,6 +403,19 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   return address.is_v6() ? "[" + literal + "]" : literal;
 }
 
+namespace {
+
+// sshd's X11DisplayOffset: the displays it forwards are numbered from here.
+constexpr unsigned kSshDisplayOffset = 10;
+
+// The display number of "N" or "N.S", screen dropped; false when there is none.
+bool parseDisplayNumber(const std::string_view rest, unsigned& number)
+{
+  return parseIntExact(rest.substr(0, rest.find('.')), number);
+}
+
+}  // namespace
+
 bool displayIsRemote(
     const std::string_view display,
     const std::string_view host_name,
@@ -418,26 +431,35 @@ bool displayIsRemote(
   }
   // A leading '/' is a socket path on this machine; XQuartz sets one.  The
   // container names are the machine the container runs on.
-  if (host.empty() || host.front() == '/'
-      || boost::beast::iequals(host, "localhost")
-      || boost::beast::iequals(host, "unix")
+  if (host.empty() || host.front() == '/' || boost::beast::iequals(host, "unix")
       || boost::beast::iequals(host, "host.docker.internal")
       || boost::beast::iequals(host, "host.containers.internal")) {
     return false;
   }
+  // A local X server is reached through its socket; a TCP display on this
+  // machine numbered like sshd's is one ssh -X forwards from elsewhere.
+  unsigned number = 0;
+  const bool forwarded = parseDisplayNumber(display.substr(colon + 1), number)
+                         && number >= kSshDisplayOffset;
+  if (boost::beast::iequals(host, "localhost")) {
+    return forwarded;
+  }
   boost::system::error_code ec;
   const boost::asio::ip::address ip = boost::asio::ip::make_address(host, ec);
   if (!ec) {
-    return !ip.is_loopback()
-           && std::find(local_addresses.begin(), local_addresses.end(), ip)
-                  == local_addresses.end();
+    const bool here
+        = ip.is_loopback()
+          || std::find(local_addresses.begin(), local_addresses.end(), ip)
+                 != local_addresses.end();
+    return !here || forwarded;
   }
   // $DISPLAY and gethostname() need not agree on short vs fully qualified.
   const auto short_name = [](const std::string_view name) {
     const std::size_t dot = name.find('.');
     return dot == std::string_view::npos ? name : name.substr(0, dot);
   };
-  return !boost::beast::iequals(short_name(host), short_name(host_name));
+  return !boost::beast::iequals(short_name(host), short_name(host_name))
+         || forwarded;
 }
 
 std::string localDisplaySocket(const std::string_view display)
@@ -450,9 +472,8 @@ std::string localDisplaySocket(const std::string_view display)
     return {};
   }
   rest.remove_prefix(1);
-  rest = rest.substr(0, rest.find('.'));  // drop the screen number
   unsigned number = 0;
-  if (rest.empty() || !parseIntExact(rest, number)) {
+  if (!parseDisplayNumber(rest, number)) {
     return {};
   }
   return "/tmp/.X11-unix/X" + std::to_string(number);
@@ -479,7 +500,7 @@ LaunchSkip browserLaunchSkipReason(const BrowserLaunch mode,
   }
   // A scheduler chose this host and copied the submitting shell's
   // environment, $DISPLAY and the VS Code variables included.
-  if (!env.batch_job.empty()) {
+  if (env.batch_job) {
     return LaunchSkip::kBatchJob;
   }
   if (launchesThroughBrowserEnv(env)) {
@@ -487,11 +508,14 @@ LaunchSkip browserLaunchSkipReason(const BrowserLaunch mode,
   }
   // Over ssh the user looks at another machine, unless it is their own X
   // server here (a VNC or x2go desktop).
-  if (!env.ssh_connection.empty() || !env.ssh_client.empty()) {
+  if (env.ssh_session) {
     return env.own_local_display ? LaunchSkip::kNone : LaunchSkip::kSshSession;
   }
-  if (!env.wsl
-      && displayIsRemote(env.display, env.host_name, env.local_addresses)) {
+  // WSL's browser is the Windows one, which needs no X server here.
+  if (env.wsl) {
+    return LaunchSkip::kNone;
+  }
+  if (displayIsRemote(env.display, env.host_name, env.local_addresses)) {
     return LaunchSkip::kRemoteDisplay;
   }
   return env.has_display ? LaunchSkip::kNone : LaunchSkip::kNoDisplay;

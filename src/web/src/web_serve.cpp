@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -124,19 +125,15 @@ BrowserEnv currentBrowserEnv(utl::Logger* logger,
                              const BrowserLaunch mode)
 {
   BrowserEnv env;
-  env.ssh_connection = envOrEmptyString("SSH_CONNECTION");
-  env.ssh_client = envOrEmptyString("SSH_CLIENT");
+  const auto is_set
+      = [](const char* var) { return !envOrEmptyString(var).empty(); };
+  env.ssh_session = is_set("SSH_CONNECTION") || is_set("SSH_CLIENT");
   env.host_name = std::move(host_name);
   env.vscode_ipc_hook = envOrEmptyString("VSCODE_IPC_HOOK_CLI");
   env.browser = envOrEmptyString("BROWSER");
-  // LSF, Slurm, SGE and PBS in that order; any of them means a scheduler
-  // chose the host this runs on.
-  for (const char* var : {"LSB_JOBID", "SLURM_JOB_ID", "JOB_ID", "PBS_JOBID"}) {
-    env.batch_job = envOrEmptyString(var);
-    if (!env.batch_job.empty()) {
-      break;
-    }
-  }
+  // LSF, Slurm, SGE or PBS: a scheduler chose the host this runs on.
+  env.batch_job = std::ranges::any_of(
+      std::array{"LSB_JOBID", "SLURM_JOB_ID", "JOB_ID", "PBS_JOBID"}, is_set);
   // An explicit -browser or -no_browser has already decided.
   if (mode == BrowserLaunch::kAuto) {
     try {

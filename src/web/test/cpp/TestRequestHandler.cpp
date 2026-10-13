@@ -768,10 +768,18 @@ TEST(DisplayIsRemote, LocalSpellingsStayLocal)
   EXPECT_FALSE(displayIsRemote(":0", "workstation"));
   EXPECT_FALSE(displayIsRemote(":10.0", "workstation"));
   EXPECT_FALSE(displayIsRemote("unix:0", "workstation"));
-  // ssh -X forwards to localhost; the ssh clause catches that session.
-  EXPECT_FALSE(displayIsRemote("localhost:10.0", "workstation"));
-  EXPECT_FALSE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("localhost:0", "workstation"));
   EXPECT_FALSE(displayIsRemote("", "workstation"));
+}
+
+TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
+{
+  // sshd numbers forwarded displays from 10, over TCP to this machine.
+  EXPECT_TRUE(displayIsRemote("localhost:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
+  // X11UseLocalhost no: this host's own name.
+  EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
 }
 
 TEST(DisplayIsRemote, ThisMachineByEitherName)
@@ -799,7 +807,7 @@ TEST(DisplayIsRemote, SocketPathIsLocal)
 
 TEST(DisplayIsRemote, HostNamesIgnoreCase)
 {
-  EXPECT_FALSE(displayIsRemote("LOCALHOST:10.0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
   EXPECT_FALSE(displayIsRemote("Workstation:0", "workstation.example.com"));
 }
 
@@ -842,7 +850,7 @@ TEST(LocalDisplaySocket, ParsesBareDisplaysOnly)
 static BrowserEnv sshEnv()
 {
   BrowserEnv env;
-  env.ssh_connection = "10.0.0.1 51000 10.0.0.2 22";
+  env.ssh_session = true;
   env.host_name = "farm-42";
   env.has_display = false;
   return env;
@@ -898,10 +906,20 @@ TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
   EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
 }
 
+TEST(BrowserLaunchSkipReason, WslLaunchesWithoutAnXServer)
+{
+  // The Windows browser needs no display on the Linux side.
+  BrowserEnv env = localEnv();
+  env.display = "";
+  env.has_display = false;
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
 TEST(BrowserLaunchSkipReason, BatchJobBeatsEveryException)
 {
   BrowserEnv env = vsCodeEnv();
-  env.batch_job = "12345";
+  env.batch_job = true;
   env.display = ":1";
   env.own_local_display = true;
   env.has_display = true;
@@ -920,7 +938,7 @@ TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
 
 TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
 {
-  // Another user's X server would get our browser and the live ticket.
+  // Another user's X server would get our browser.
   BrowserEnv foreign = sshEnv();
   foreign.display = ":0";
   foreign.has_display = true;
@@ -932,6 +950,15 @@ TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
   EXPECT_EQ(autoSkip(forwarded), LaunchSkip::kSshSession);
 }
 
+TEST(BrowserLaunchSkipReason, ForwardedDisplayWithoutSshVariablesSkips)
+{
+  // docker_shell and sudo pass $DISPLAY on, but not SSH_CONNECTION.
+  BrowserEnv env = localEnv();
+  env.display = "localhost:10.0";
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kRemoteDisplay);
+}
+
 TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
 {
   EXPECT_EQ(autoSkip(localEnv()), LaunchSkip::kNone);
@@ -940,17 +967,13 @@ TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
 TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
 {
   BrowserEnv ssh = localEnv();
-  ssh.ssh_connection = "10.0.0.1 51000 10.0.0.2 22";
+  ssh.ssh_session = true;
   EXPECT_EQ(autoSkip(ssh), LaunchSkip::kSshSession);
-
-  BrowserEnv client_only = localEnv();
-  client_only.ssh_client = "10.0.0.1 51000 22";
-  EXPECT_EQ(autoSkip(client_only), LaunchSkip::kSshSession);
 
   // A batch job runs wherever the scheduler put it, and inherits the
   // submitting shell's $DISPLAY.
   BrowserEnv batch = localEnv();
-  batch.batch_job = "12345";
+  batch.batch_job = true;
   EXPECT_EQ(autoSkip(batch), LaunchSkip::kBatchJob);
 
   BrowserEnv remote_display = localEnv();
@@ -974,8 +997,8 @@ TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
 TEST(BrowserLaunchSkipReason, AlwaysBeatsEveryClause)
 {
   BrowserEnv hostile = localEnv();
-  hostile.ssh_connection = "10.0.0.1 51000 10.0.0.2 22";
-  hostile.batch_job = "12345";
+  hostile.ssh_session = true;
+  hostile.batch_job = true;
   hostile.display = "workstation:0";
   hostile.host_name = "farm-42";
   hostile.no_browser = true;
