@@ -27,13 +27,13 @@ void GotoLocationDialog::updateLocation()
   if (!viewer) {
     return;
   }
-  x_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+  x_edit->setText(QString::fromStdString(web::Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().x(), false)));
-  y_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+  y_edit->setText(QString::fromStdString(web::Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().y(), false)));
   int box_size = viewer->getVisibleDiameter();
   s_edit->setText(QString::fromStdString(
-      Descriptor::Property::convert_dbu(box_size, false)));
+      web::Descriptor::Property::convert_dbu(box_size, false)));
 }
 
 void GotoLocationDialog::showInit()
@@ -44,15 +44,15 @@ void GotoLocationDialog::showInit()
 
 void GotoLocationDialog::goTo()
 {
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   bool convert_x_ok;
   bool convert_y_ok;
   bool convert_s_ok;
-  int x_coord = Descriptor::Property::convert_string(
+  int x_coord = web::Descriptor::Property::convert_string(
       x_edit->text().toStdString(), &convert_x_ok);
-  int y_coord = Descriptor::Property::convert_string(
+  int y_coord = web::Descriptor::Property::convert_string(
       y_edit->text().toStdString(), &convert_y_ok);
-  int diameter = Descriptor::Property::convert_string(
+  int diameter = web::Descriptor::Property::convert_string(
       s_edit->text().toStdString(), &convert_s_ok);
   if (convert_x_ok && convert_y_ok && convert_s_ok) {
     gui->zoomTo(odb::Point(x_coord, y_coord), diameter);

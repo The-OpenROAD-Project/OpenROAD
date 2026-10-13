@@ -28,7 +28,7 @@ binary frame with the following layout:
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |
 | 0..3  | `id`     | `uint32` big-endian | Request correlator (see *Correlation*). |
-| 4     | `type`   | `uint8`             | Payload type: `0=JSON`, `1=PNG`, `2=Error`. |
+| 4     | `type`   | `uint8`             | Payload type: `0=JSON`, `1=PNG`, `2=Error`, `3=Empty`. |
 | 5..7  | reserved | `uint8 × 3`         | Must be zero.                         |
 | 8..   | `payload`| bytes               | UTF-8 JSON, PNG-encoded image, or UTF-8 error string. |
 
@@ -46,6 +46,13 @@ binary frame with the following layout:
 - `1 = PNG` — body is a raw PNG file. Used by `tile` and `heatmap_tile`.
 - `2 = Error` — body is a UTF-8 plain-text error message. Surfaces in
   the server log as `WEB-0043` (see *Error contract* below).
+- `3 = Empty` — the tile is blank: the renderer drew nothing in it. The
+  body is zero-length. Returned by `tile`, `overlay_tile` and
+  `heatmap_tile` in place of a fully transparent PNG, which would still
+  cost the client a decode and a full-size bitmap. Most tiles in a
+  viewport are this: every layer with no geometry where the user is
+  looking. A client must treat it as "draw nothing here" and, on a
+  refresh, must release any image the tile was previously holding.
 
 ## Request envelope
 
@@ -104,6 +111,22 @@ simply listening on the WebSocket; there's no opt-in.
 
 ## Tile rendering
 
+### Tile sizing
+
+`tile`, `overlay_tile` and `heatmap_tile` all accept the same two optional
+sizing fields, and a client that draws them on top of one another must send
+the same values to all three — a highlight rendered at a different pixel
+count is rescaled by the browser and no longer sits on the shape it
+highlights.
+
+| Field     | Type    | Default | Description |
+| --------- | ------- | :-----: | ----------- |
+| `dpr`     | `float` |   `1`   | The display's device pixel ratio. Clamped to `[1, 3]` and rounded to two decimals; the server and `tile-request.js` must quantize identically. |
+| `tile_px` | `int`   |    —    | The exact device-pixel side the client will display the tile in. Clamped to `[32, 2048]`. Absent or unusable means "not specified", and the server renders `256 × dpr`. |
+
+Sent explicitly rather than derived from `dpr`, because a tile's CSS box is
+only a whole number of device pixels when `tileSize × dpr` is an integer.
+
 ### `tile`
 
 Render a single 256×256 PNG tile of the layout.
@@ -118,7 +141,32 @@ Render a single 256×256 PNG tile of the layout.
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
 
-**Response:** PNG image (frame type `1`).
+**Response:** PNG image (frame type `1`), or frame type `3` with no body
+when the layer has nothing to draw in this tile.
+
+### `overlay_tile`
+
+Render one tile of the highlight overlay — selection, hover, timing paths,
+DRC markers, route guides, flight lines and user labels — on a transparent
+background, on the same tile grid as `tile`. Kept separate from the layer
+tiles so a selection change repaints one pane instead of re-rendering every
+layer's geometry.
+
+| Field                 | Type       | Required | Description |
+| --------------------- | ---------- | :------: | ----------- |
+| `z`                   | `int`      |    ✓     | Leaflet tile zoom level, as for `tile`. |
+| `x`                   | `int`      |    ✓     | Tile column at zoom `z`. |
+| `y`                   | `int`      |    ✓     | Tile row at zoom `z`. |
+| `visible_layers`      | `string[]` |    —     | Tech layers currently visible. Consulted so route guides respect layer visibility; omitted means draw guides on every layer. |
+| `highlight_selected`  | `bool`     |    —     | Default `true`. Draws the current selection's rects, polygons *and* flywires. Turning it off draws none of the three; hover and the timing shapes are separate states and are unaffected. |
+| `flywires_only`       | `bool`     |    —     | Default `false`. Reduce a selection's highlight to its flight lines. Latched in the session: flipping it re-derives the highlights in place, so the change takes effect without re-selecting — but never resurrects highlights an explicit clear removed. |
+| `focused_nets_guides` | `bool`     |    —     | Default `false`. Draw route guides for the focused nets. |
+| `draw_labels`         | `bool`     |    —     | Default `true`. Draw user labels (`add_label`). |
+| `debug_renderers`     | `bool`     |    —     | Default `false`. Debug renderers are active, so the highlight must be re-derived every frame to track instances that move between them. |
+
+**Response:** PNG image (frame type `1`), or frame type `3` with no body
+when nothing is highlighted in this tile — which is the usual case, since
+the overlay holds nothing at all until something is selected.
 
 ### `bounds`
 
@@ -140,6 +188,66 @@ finished building (the `refresh` push fires when this flips to true).
 `pin_max_size` is the largest BPin dimension in DBU, used by the client
 to size the pin-marker overlay.
 
+### `layer_extents`
+
+Return where each tech layer's `tile`s can have content, so the client
+can skip requesting tiles that would come back empty.
+
+No request fields beyond the envelope.
+
+**Response (JSON):**
+```json
+{
+  "supported": true,
+  "layers": {
+    "metal1": [x0, y0, x1, y1],
+    "metal9": null
+  },
+  "gated": {
+    "inst_pins": {"metal1": [x0, y0, x1, y1]},
+    "blockages": {"metal1": [x0, y0, x1, y1]},
+    "routing_obstructions": {},
+    "fills": {}
+  }
+}
+```
+
+Each rect is a conservative bounding box, as fractions of the zoom-0 tile
+with `y` running down, so tile `(z, x, y)` covers `[x, x+1] × [y, y+1] / 2^z`.
+`layers` holds each tech layer's routing, special-net and BTerm shapes
+(`null`: none anywhere). `gated` holds, per `tile` visibility flag, the
+extent of what that flag alone draws on each layer it reaches — master pins,
+master obstructions, routing obstructions and fills; a layer that source
+does not reach is absent. A tile can be skipped when it misses the layer's
+`layers` rect and every `gated` rect whose flag is not off. A layer missing
+from `layers` (the `_`-prefixed pseudo layers) must always be requested,
+unless it is in `sized` below.
+Only design geometry is covered: tracks and the debug overlays also draw on
+layer tiles, so tiles are requested regardless while those are on.
+`supported` is false for multi-chiplet designs, and the client then
+requests every tile.
+
+A layer in `sized` draws only on features long enough on screen — the
+instance and pin names of `_inst_labels` need an instance at least
+`min_css_px` CSS pixels at its longest side:
+```json
+"sized": {
+  "_inst_labels": {
+    "min_css_px": 14,
+    "by_size": [[0.0001, [x0, y0, x1, y1]], [0.0002, [x0, y0, x1, y1]],
+                [0.0004, null]]
+  }
+}
+```
+Each `by_size` entry is a size, as a fraction of the zoom-0 tile, and the
+extent of every feature at least that large, in ascending size; the last is
+past the largest feature and `null`. At zoom `z` on tiles `T` CSS pixels wide
+a feature needs `min_css_px / (T · 2^z)`; the tile can be skipped when it
+misses the extent of the last entry no larger than that (or of the first).
+
+The extents describe the design when the request was served; after a
+`refresh` push they must be discarded and fetched again.
+
 ### `tech`
 
 Return tech-layer metadata, sites, and block info.
@@ -153,6 +261,11 @@ No request fields.
   "layer_colors": [[r, g, b], ...],
   "sites": ["FreePDK45_38x28_10R_NP_162NW_34O", "..."],
   "has_liberty": true,
+  "overlays": [
+    {"name": "_inst_labels", "z_index": 999,
+     "shown_by": [["inst_names"], ["inst_pins", "inst_pin_names"]],
+     "layers_by": [["inst_pins", "inst_pin_names"]]}
+  ],
   "dbu_per_micron": 1000,
   "block_name": "top"
 }
@@ -160,6 +273,15 @@ No request fields.
 
 `layer_colors` is parallel to `layers`; each entry is RGB in `0..255`.
 `block_name` is the empty string when no block is loaded.
+
+`overlays` lists the self-painting pseudo layers this design can draw (an
+overlay with nothing to draw, such as `_regions` in a design without regions,
+is left out), each a `tile` layer of its own: `z_index` is its pane order
+against the tech layers (`3` upwards), `_instances` (`0`) and `_pins` (`1`).
+`shown_by` and `layers_by` are groups of `tile` visibility keys, on when every
+key of any one group is on: the overlay draws anything when `shown_by` is on,
+and what it draws depends on `visible_layers` when `layers_by` is on (an
+empty group always is), so its tiles must be fetched again when those change.
 
 ---
 
@@ -643,7 +765,8 @@ Render one tile for the active heat map (or a specified one).
 | `x`    | `int`    |    ✓     | Tile column. |
 | `y`    | `int`    |    ✓     | Tile row. |
 
-**Response:** PNG (frame type `1`).
+**Response:** PNG (frame type `1`), or frame type `3` with no body when
+the heat map has no populated bin in this tile.
 
 ---
 
@@ -733,14 +856,24 @@ Toggle one marker's `visited` or `visible` flag.
 
 ### `drc_update_category_visibility`
 
-Bulk-set every marker in a category to a single `visible` value.
+Bulk-set every marker in a category — and in its subcategories — to a
+single `visible` value.
 
-| Field      | Type     | Required | Description           |
-| ---------- | -------- | :------: | --------------------- |
-| `category` | `string` |    ✓     | Top-level name.       |
-| `visible`  | `bool`   |    ✓     | New visibility.       |
+| Field      | Type       | Required | Description                                                                                     |
+| ---------- | ---------- | :------: | ----------------------------------------------------------------------------------------------- |
+| `path`     | `string[]` |          | Category names from the top-level category down to the target, e.g. `["PSM","VDD","Unconnected shape"]`. |
+| `category` | `string`   |          | Top-level name. Used only when `path` is absent or empty.                                       |
+| `visible`  | `bool`     |    ✓     | New visibility.                                                                                 |
 
-**Response (JSON):** `{"ok": 1, "category": "...", "visible": <bool>, "count": <updated>}`.
+One of `path` or `category` must name a category. Subcategory names are
+unique only among siblings — `check_power_grid` builds both
+`PSM/VDD/Unconnected shape` and `PSM/VSS/Unconnected shape` — so a
+subcategory can be addressed only by its full `path`.
+
+**Response (JSON):** `{"ok": 1, "category": "<leaf name>", "path": [...], "visible": <bool>, "count": <updated>}`.
+
+When no category matches, the response is an error with
+`Category not found: <path joined by "/">`.
 
 ### `drc_highlight`
 
@@ -838,7 +971,8 @@ always sends the full set.
 | `net_signal`, `net_power`, `net_ground`, `net_clock`, `net_reset`, `net_tieoff`, `net_scan`, `net_analog` | `true` | By `dbSigType`. |
 | `routing`, `routing_segments`, `routing_vias`, `special_nets`, `srouting_segments`, `srouting_vias` | `true` | Wires & vias. |
 | `pins`, `pin_markers`, `pin_names` | `true` | BTerm shapes & labels. |
-| `inst_names`, `inst_pins`, `inst_pin_names` | `true` | ITerm shapes & labels. |
+| `inst_names`, `inst_pins` | `true` | Instance labels & ITerm shapes. |
+| `inst_pin_names`       | `false` | ITerm labels, off as in the Qt GUI. |
 | `blockages`, `placement_blockages`, `routing_obstructions` | `true` | dbBlockage / dbObstruction. |
 | `rows`                 | `false` | Enables the row-outline overlay; gates `site_<name>` lookup. |
 | `tracks_pref`, `tracks_non_pref` | `false` | Routing-track overlay. |

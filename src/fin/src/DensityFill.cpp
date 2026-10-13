@@ -248,7 +248,7 @@ static void insertShape(const dbShape& shape,
 }
 
 // Build a polygon set out of all the non-fill shape on the given layer
-// including wires, special wires, and instances' pins & OBS
+// including wires, special wires, fill obstructions, and instances' pins & OBS
 static Polygon90Set orNonFills(dbBlock* block, dbTechLayer* layer)
 {
   Polygon90Set non_fill;  // The result
@@ -292,6 +292,15 @@ static Polygon90Set orNonFills(dbBlock* block, dbTechLayer* layer)
   for (auto inst : block->getInsts()) {
     for (insts.begin(inst, dbInstShapeItr::ALL); insts.next(shape);) {
       insertShape(shape, non_fill, layer);
+    }
+  }
+
+  // Get shapes from fill obstructions
+  for (auto obstruction : block->getObstructions()) {
+    auto* box = obstruction->getBBox();
+    if (obstruction->isFillObstruction() && box->getTechLayer() == layer) {
+      non_fill.insert(
+          makeRect(box->xMin(), box->yMin(), box->xMax(), box->yMax()));
     }
   }
 

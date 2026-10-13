@@ -7,13 +7,13 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
 #include "polygon.h"
+#include "web/core.h"
 
 namespace fin {
 
 // This class draws debugging graphics on the layout
-class Graphics : public gui::Renderer
+class Graphics : public web::Renderer
 {
  public:
   Graphics();
@@ -21,7 +21,7 @@ class Graphics : public gui::Renderer
   void drawPolygon90Set(const Polygon90Set& set);
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   // Show a message in the status bar
   void status(const std::string& message);

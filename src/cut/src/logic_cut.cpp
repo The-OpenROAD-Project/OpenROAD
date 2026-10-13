@@ -212,7 +212,7 @@ void ConnectPinToDriver(
   abc::Abc_Obj_t* abc_net = abc::Abc_NtkCreateNet(&abc_network);
 
   if (network->isTopInstance(driver_instance)
-      || network->libertyCell(driver_instance)->hasSequentials()) {
+      || network->libertyCell(driver_instance)->isSequential()) {
     abc::Abc_Obj_t* abc_input = abc::Abc_NtkCreatePi(&abc_network);
     abc::Abc_ObjAddFanin(abc_net, abc_input);
     std::string driver_name = network->name(driver);

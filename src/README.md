@@ -150,13 +150,14 @@ read_db reg1.db
 To write a database to disk.
 
 ``` tcl
-write_db filename
+write_db [-compression level] filename
 ```
 ### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `filename` | Path to the file to be written, if the filename ends with `.gz` the file will be compressed using gzip. |
+| `-compression` | Gzip compression level. Must be between 0 (no compression) and 9 (best compression). Default is 6. Only applicable if the filename ends with `.gz`. |
+| `filename` | Path to the file to be written. If the filename ends with `.gz`, the file will be compressed. |
 
 ### Examples
 ```
@@ -388,11 +389,6 @@ place_inst -name inst_name \
 | `-cell` | Required if a new instance is to be created. |
 | `-status` | The placement status of the instance. Default is PLACED |
 
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+openroad+in%3Atitle)
-about this tool.
 
 ## License
 

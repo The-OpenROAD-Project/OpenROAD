@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: short_pads.lef, created 2 library cells
+[INFO ODB-0128] Design: short_objects
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 9 components and 33 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 16 connections.
+[INFO ODB-0133]     Created 3 nets and 4 connections.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal in1 (net in1) at (2.500um, 2.715um) - (2.700um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to net in2 at (3.665um, 2.765um) - (4.135um, 2.835um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to net in2 at (4.230um, 2.730um) - (4.370um, 2.870um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to net VSS at (3.115um, 2.715um) - (3.285um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to net VSS at (3.115um, 2.715um) - (3.285um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to terminal pad1/PAD (net out1) at (4.500um, 2.715um) - (5.500um, 2.885um), layer: metal1.
+[WARNING PSM-0043] Shorted shape on net VDD to fill at (2.000um, 2.750um) - (2.300um, 2.885um), layer: metal1.
+[ERROR PSM-0069] Check connectivity failed on VDD.
+PSM-0069

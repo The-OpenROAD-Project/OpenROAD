@@ -47,7 +47,7 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
@@ -59,6 +59,17 @@ cc_test(
     srcs = [
         "TestChips.cpp",
     ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDbSet",
+    srcs = ["TestDbSet.cpp"],
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
@@ -95,6 +106,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGCellTileSize",
+    srcs = ["TestGCellTileSize.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGDSIn",
     srcs = ["TestGDSIn.cpp"],
     data = ["//src/odb/test:regression_resources"],
@@ -102,7 +124,7 @@ cc_test(
         "//src/odb/src/db",
         "//src/odb/src/gdsin",
         "//src/odb/src/gdsout",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -114,6 +136,7 @@ cc_test(
     srcs = ["TestGeom.cpp"],
     deps = [
         "//src/odb/src/db",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -147,6 +170,20 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestLefIn",
+    srcs = ["TestLefIn.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -207,6 +244,8 @@ cc_test(
         "TestAbstractLef.cc",
         "TestDbNet.cpp",
         "TestDbWire.cc",
+        "TestDesignIsRouted.cpp",
+        "TestOrderWires.cpp",
         "TestPolygonalFloorplan.cc",
     ],
     args = [],
@@ -234,7 +273,7 @@ cc_test(
     srcs = ["TestObjectType.cpp"],
     deps = [
         "//src/odb/src/db",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -259,6 +298,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestShapeDestroy",
+    srcs = ["TestShapeDestroy.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "Test3DBloxParser",
     srcs = [
         "Test3DBloxParser.cpp",
@@ -270,7 +320,7 @@ cc_test(
         "//src/odb/src/3dblox",
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -291,7 +341,7 @@ cc_test(
     deps = [
         "//src/odb/src/3dblox",
         "//src/odb/src/db",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -308,7 +358,7 @@ cc_test(
     deps = [
         "//src/odb/src/3dblox",
         "//src/odb/src/db",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -349,6 +399,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestSwapMasterLeaf",
+    srcs = [
+        "TestSwapMasterLeaf.cpp",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestSwapMasterUnusedPort",
     srcs = [
         "TestSwapMasterUnusedPort.cpp",
@@ -362,6 +425,17 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDbStream",
+    srcs = ["TestDbStream.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

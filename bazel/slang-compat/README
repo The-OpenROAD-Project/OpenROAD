@@ -1,0 +1,3 @@
+Placeholder directory for the @slang alias build
+file to internally manifest.
+(see MODULE.bazel, new_local_repository(name="slang"))

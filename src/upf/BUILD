@@ -36,7 +36,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/upf/upf.h",
         "src/MakeUpf.cpp",
         ":swig",
         ":tcl",
@@ -48,6 +47,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":upf",
         "//:ord",
         "//src/odb/src/db",
         "//src/utl",

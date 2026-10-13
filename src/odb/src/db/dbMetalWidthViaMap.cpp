@@ -209,6 +209,9 @@ bool dbMetalWidthViaMap::isPgVia() const
 dbTechLayer* dbMetalWidthViaMap::getCutLayer() const
 {
   _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  if (!obj->cut_layer_.isValid()) {
+    return nullptr;
+  }
   dbTech* tech = (dbTech*) obj->getOwner();
   return dbTechLayer::getTechLayer(tech, obj->cut_layer_);
 }

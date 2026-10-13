@@ -9,4 +9,4 @@ tapcell -distance 120 -tapcell_master "TAPCELL" -endcap_master "TAPCELL"
 
 write_def $def_file
 
-diff_file symmetry.defok $def_file
+diff_files symmetry.defok $def_file

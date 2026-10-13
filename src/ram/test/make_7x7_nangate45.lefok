@@ -8,21 +8,21 @@ END UNITS
 MACRO RAM7x7
   FOREIGN RAM7x7 0 0 ;
   CLASS BLOCK ;
-  SIZE 39.52 BY 11.2 ;
+  SIZE 40.28 BY 11.2 ;
   PIN clk
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER metal3 ;
-        RECT  39.45 0.875 39.52 0.945 ;
+      LAYER metal4 ;
+        RECT  35.305 11.06 35.445 11.2 ;
     END
   END clk
   PIN we[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER metal3 ;
-        RECT  39.45 1.155 39.52 1.225 ;
+      LAYER metal4 ;
+        RECT  36.985 11.06 37.125 11.2 ;
     END
   END we[0]
   PIN addr_rw[0]
@@ -30,7 +30,7 @@ MACRO RAM7x7
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-        RECT  39.45 2.275 39.52 2.345 ;
+        RECT  40.21 2.275 40.28 2.345 ;
     END
   END addr_rw[0]
   PIN addr_rw[1]
@@ -38,7 +38,7 @@ MACRO RAM7x7
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-        RECT  39.45 3.395 39.52 3.465 ;
+        RECT  40.21 3.395 40.28 3.465 ;
     END
   END addr_rw[1]
   PIN addr_rw[2]
@@ -46,7 +46,7 @@ MACRO RAM7x7
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-        RECT  39.45 0.595 39.52 0.665 ;
+        RECT  40.21 0.595 40.28 0.665 ;
     END
   END addr_rw[2]
   PIN D[0]
@@ -175,13 +175,13 @@ MACRO RAM7x7
         RECT  4.43 11.06 4.57 11.2 ;
         RECT  4.43 0 4.57 0.14 ;
       LAYER metal1 ;
-        RECT  39.45 9.76 39.52 9.84 ;
+        RECT  40.21 9.76 40.28 9.84 ;
         RECT  0 9.76 0.07 9.84 ;
-        RECT  39.45 6.96 39.52 7.04 ;
+        RECT  40.21 6.96 40.28 7.04 ;
         RECT  0 6.96 0.07 7.04 ;
-        RECT  39.45 4.16 39.52 4.24 ;
+        RECT  40.21 4.16 40.28 4.24 ;
         RECT  0 4.16 0.07 4.24 ;
-        RECT  39.45 1.36 39.52 1.44 ;
+        RECT  40.21 1.36 40.28 1.44 ;
         RECT  0 1.36 0.07 1.44 ;
     END
   END VDD
@@ -199,27 +199,27 @@ MACRO RAM7x7
         RECT  8.93 11.06 9.07 11.2 ;
         RECT  8.93 0 9.07 0.14 ;
       LAYER metal1 ;
-        RECT  39.45 11.16 39.52 11.24 ;
+        RECT  40.21 11.16 40.28 11.24 ;
         RECT  0 11.16 0.07 11.24 ;
-        RECT  39.45 8.36 39.52 8.44 ;
+        RECT  40.21 8.36 40.28 8.44 ;
         RECT  0 8.36 0.07 8.44 ;
-        RECT  39.45 5.56 39.52 5.64 ;
+        RECT  40.21 5.56 40.28 5.64 ;
         RECT  0 5.56 0.07 5.64 ;
-        RECT  39.45 2.76 39.52 2.84 ;
+        RECT  40.21 2.76 40.28 2.84 ;
         RECT  0 2.76 0.07 2.84 ;
-        RECT  39.45 -0.04 39.52 0.04 ;
+        RECT  40.21 -0.04 40.28 0.04 ;
         RECT  0 -0.04 0.07 0.04 ;
     END
   END VSS
   OBS
     LAYER metal1 ;
-     RECT  0 -0.07 39.52 11.27 ;
+     RECT  0 -0.07 40.28 11.27 ;
     LAYER metal2 ;
-     RECT  0 -0.07 39.52 11.27 ;
+     RECT  0 -0.07 40.28 11.27 ;
     LAYER metal3 ;
-     RECT  0 -0.07 39.52 11.27 ;
+     RECT  0 -0.07 40.28 11.27 ;
     LAYER metal4 ;
-     RECT  0 -0.07 39.52 11.27 ;
+     RECT  0 -0.07 40.28 11.27 ;
   END
 END RAM7x7
 END LIBRARY

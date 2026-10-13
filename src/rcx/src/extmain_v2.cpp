@@ -72,7 +72,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   // Model file is required if not option _lefRC is used.
   // _lefRC option requires Resistance and Capacitance values per Layer and
   // Technology to be taken from LEF file.
-  if (!_lefRC && !modelExists(extRules)) {
+  if (!_lefRC && !modelExists()) {
     return;
   }
 
@@ -119,8 +119,11 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   getPeakMemory("End RC_Network: ");
 
   if (_lefRC) {
-    // update dbNet object flags
-    update_wireAltered_v2(inets);
+    if (!_allNet) {
+      for (dbNet* net : inets) {
+        net->setMark(false);
+      }
+    }
     return;
   }
   if (_couplingFlag > 1) {
@@ -221,23 +224,6 @@ bool extMain::couplingExtEnd_v2()
   logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
   return false;
 }
-void extMain::update_wireAltered_v2(std::vector<dbNet*>& inets)
-{
-  if (_allNet) {
-    for (dbNet* net : _block->getNets()) {
-      if (net->getSigType().isSupply()) {
-        continue;
-      }
-      net->setWireAltered(false);
-    }
-  } else {
-    for (dbNet* net : inets) {
-      net->setMark(false);
-      net->setWireAltered(false);
-    }
-  }
-}
-
 void extMain::setExtractionOptions_v2(ExtractOptions options)
 {
   skip_via_wires(
@@ -986,10 +972,6 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
 
   // uint32_t cornerTable[10];
   uint32_t extCornerDbCnt = 0;
-
-  _minModelIndex = 0;
-  _maxModelIndex = 0;
-  _typModelIndex = 0;
 
   if (_processCornerTable != nullptr) {
     // User define process corners using <ext define_process_corner>

@@ -24,7 +24,7 @@ fi
 
 # Use either CLANG_TIDY provided by the user as environment variable or use
 # our own from the toolchain we configured in the MODULE.bazel
-export CLANG_TIDY="${CLANG_TIDY:-$("${BAZEL}" run -c opt --run_under='echo' @llvm_toolchain//:clang-tidy 2>/dev/null)}"
+export CLANG_TIDY="${CLANG_TIDY:-$("${BAZEL}" run -c opt --run_under='echo' @llvm//tools:clang-tidy 2>/dev/null)}"
 
 # The user should keep the compilation DB fresh, but refresh here
 # if substantial things changed or it is not there in the first place.

@@ -17,6 +17,7 @@
 
 #include "DataType.h"
 #include "Graph2D.h"
+#include "Overflow.h"
 #include "boost/functional/hash.hpp"
 #include "boost/icl/interval.hpp"
 #include "boost/icl/interval_set.hpp"
@@ -41,7 +42,7 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
-namespace gui {
+namespace web {
 class Gui;
 }
 
@@ -242,6 +243,8 @@ class FastRouteCore
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
+  void setResAwareNetsPercentage(float percentage);
+  float getResAwareNetsPercentage() { return res_aware_nets_percentage_; };
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
@@ -318,6 +321,9 @@ class FastRouteCore
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
 
  private:
+  friend class Maze3DTestPeer;
+  friend class OverflowTestPeer;
+
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
       int grid_count,
@@ -329,7 +335,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.15);
+  void updateSlacks();
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -366,11 +372,23 @@ class FastRouteCore
   void convertToMazeroute();
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
+  int scanOverflow2D(int* maxOverflow);
+  int scanOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void findNetsNearPosition(odb::PtrSet<odb::dbNet>& congestion_nets,
-                            const odb::Point& position,
-                            bool is_horizontal,
-                            int& radius);
+  std::array<OverflowStatistics, 2> scanOverflow3D() const;
+  void invalidateOverflow3D();
+  void rebuildOverflow3D();
+  void updateUsedGrid3D(int x, int y, EdgeDirection direction, bool added);
+  void updateEdge3DUsage(int x,
+                         int y,
+                         int layer,
+                         EdgeDirection direction,
+                         int delta);
+  void setEdge3DCapacity(int x,
+                         int y,
+                         int layer,
+                         EdgeDirection direction,
+                         int cap);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(int net_id);
   bool areEdgesOverlapping(int net_id,
@@ -741,6 +759,8 @@ class FastRouteCore
   std::string congestion_file_name_;
   std::vector<odb::dbTechLayerDir> layer_directions_;
   std::vector<odb::dbTechLayer*> db_layers_;
+  double dbu_per_micron_ = 0.0;
+  std::vector<float> layer_res_per_micron_;
   int num_threads_;
   // When false, nets_ contains borrowed pointers from a parent
   // FastRouteCore (snapshot-batch workers).  Workers must not outlive
@@ -753,6 +773,8 @@ class FastRouteCore
   bool en_estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
+  // Dump the res-aware priority list (debug GRT resAware) only once per run.
+  bool res_aware_logged_ = false;
   bool is_3d_step_ = false;
   bool is_incremental_grt_ = false;
   float worst_slack_ = std::numeric_limits<float>::max();
@@ -778,6 +800,11 @@ class FastRouteCore
   int grid_hv_;
   bool verbose_;
   float critical_nets_percentage_;
+  float res_aware_nets_percentage_ = 15;
+  bool is_fixed_nets_percentage_ = false;
+  static constexpr float kInitialResAwareNetsPercentage = 15.0f;
+  static constexpr float kMidResAwareNetsPercentage = 30.0f;
+  static constexpr float kFinalResAwareNetsPercentage = 100.0f;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
@@ -803,6 +830,11 @@ class FastRouteCore
   std::vector<int> xcor_;
   std::vector<int> ycor_;
   std::vector<int> dcor_;
+  // Scratch map for setTreeNodesVariables() coordinate deduplication.
+  // Maps a packed (x,y) grid position to the dcor index of the first node
+  // inserted at that position, replacing an O(numpoints^2) linear scan with
+  // O(1) average lookups. Reused across calls to avoid per-call allocation.
+  std::unordered_map<uint32_t, int> tree_node_coord_dedup_;
 
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
@@ -819,6 +851,9 @@ class FastRouteCore
   Graph2D graph2d_;
   multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
+  bool overflow_3d_valid_ = false;
+  OverflowAccumulator h_overflow_3d_;
+  OverflowAccumulator v_overflow_3d_;
   multi_array<int, 2> corr_edge_;
   multi_array<int16_t, 2> parent_x1_;
   multi_array<int16_t, 2> parent_y1_;
@@ -865,6 +900,11 @@ class FastRouteCore
   multi_array<int, 3> d1_3D_;
   multi_array<int, 3> d2_3D_;
   multi_array<int, 3> path_len_3D_;
+  // Reusable BFS scratch for addNeighborPoints (3D). Mirrors the maze2D
+  // visited_2D_/queue_2D_ reuse pattern: allocate once, reset the used region
+  // each call instead of reallocating per call.
+  std::vector<bool> visited_3D_;
+  std::vector<int> queue_3D_;
   double snapshot_batch_sync_time_ = 0.0;
   double snapshot_batch_route_time_ = 0.0;
   double snapshot_batch_apply_time_ = 0.0;

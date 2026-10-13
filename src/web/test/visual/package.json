@@ -1,0 +1,6 @@
+{
+  "name": "schematic-render-preview",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only headless render preview for the web schematic widget. Run: npm install puppeteer-core"
+}

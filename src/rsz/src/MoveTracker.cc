@@ -2020,7 +2020,7 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
       sta::Instance* inst = sta_->network()->instance(pin);
       if (inst) {
         sta::LibertyCell* cell = sta_->network()->libertyCell(inst);
-        if (cell && cell->hasSequentials()) {
+        if (cell && cell->isSequential()) {
           // This is a sequential cell - check if pin is an output
           if (sta_->network()->direction(pin)->isOutput()) {
             startpoint_pin = pin;

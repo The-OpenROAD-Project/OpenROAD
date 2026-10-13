@@ -22,4 +22,4 @@ global_route -verbose -use_cugr
 
 write_guides $guide_file
 
-diff_file clock_route_cugr2.guideok $guide_file
+diff_files clock_route_cugr2.guideok $guide_file
