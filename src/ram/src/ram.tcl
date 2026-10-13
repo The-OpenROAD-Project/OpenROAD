@@ -14,6 +14,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-bank_columns count]
                                              [-bank_order contiguous|interleaved]
                                              [-rb_ports count]
+                                             [-read_latency 0|1]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -27,7 +28,7 @@ proc generate_ram_netlist { args } {
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
-      -banks -bank_columns -bank_order -rb_ports } flags {}
+      -banks -bank_columns -bank_order -rb_ports -read_latency } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -173,6 +174,12 @@ proc generate_ram_netlist { args } {
   if { [info exists keys(-bank_columns)] } {
     set bank_columns $keys(-bank_columns)
   }
+  # A read latency of 1: the read addresses registered.
+  set read_latency 0
+  if { [info exists keys(-read_latency)] } {
+    set read_latency $keys(-read_latency)
+  }
+
   # Banked read ports: an address and a data output per bank.
   set rb_ports 0
   if { [info exists keys(-rb_ports)] } {
@@ -189,7 +196,7 @@ proc generate_ram_netlist { args } {
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
-    $rb_ports
+    $rb_ports $read_latency
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -224,7 +231,7 @@ proc generate_ram { args } {
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog -read_style -zero_word -reset_value
-           -banks -bank_columns -bank_order -rb_ports } flags {}
+           -banks -bank_columns -bank_order -rb_ports -read_latency } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -273,7 +280,7 @@ proc generate_ram { args } {
     lappend ram_netlist_args -reset_value $keys(-reset_value)
   }
 
-  foreach key {-banks -bank_columns -bank_order -rb_ports} {
+  foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }

@@ -11,5 +11,6 @@ record_tests {
   reset_asap7
   banks_asap7
   banked_read_ports_asap7
+  read_latency_asap7
   make_8x8_latch_sky130
 }

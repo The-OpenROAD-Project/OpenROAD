@@ -116,7 +116,8 @@ class RamGen
                 int banks = 1,
                 int bank_columns = 1,
                 const std::string& bank_order = "contiguous",
-                int rb_ports = 0);
+                int rb_ports = 0,
+                int read_latency = 0);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -362,6 +363,18 @@ class RamGen
   // the bank of the word at (row, word in the row), and its index there
   int bankAt(int row, int word_idx) const;
   int indexInBank(int row) const;
+  // -read_latency 1: each read port's address through a flop (a plain
+  // positive-edge one) in the address inverter's cell. The decoders read
+  // addr_true_ (the address, or the flop's output) and its complement;
+  // where the flop's output is inverted the complement is the flop's and
+  // the inverter makes the true one.
+  int read_latency_{0};
+  odb::dbMaster* addr_flop_cell_{nullptr};
+  std::string addr_flop_d_, addr_flop_clk_, addr_flop_q_;
+  bool addr_flop_inverted_{false};
+  odb::dbNet* clock_net_{nullptr};
+  std::vector<std::vector<odb::dbNet*>> addr_true_;
+  std::vector<std::vector<odb::dbNet*>> addr_flop_out_;  // or nullptr
   // An asynchronous reset to reset_value_ (a word's value, every word):
   // each bit's flop is cleared or preset by the reset port, the other
   // pin held off. The pins come from the flop's ff group; clear_reads_

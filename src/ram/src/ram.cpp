@@ -821,14 +821,29 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
         continue;
       }
       auto inv_grid_cell = std::make_unique<Cell>();
+      const int a = num_word_bits + bit;
+      dbNet* flop_out = addr_flop_out_[p][a];
+      if (flop_out) {
+        // -read_latency 1: the address through a flop, beside its inverter
+        makeInst(inv_grid_cell.get(),
+                 fmt::format("decoder_p{}", p),
+                 fmt::format("addr_reg_p{}_a{}", p, bit),
+                 addr_flop_cell_,
+                 {{addr_flop_d_, addr_inputs_[p][a]->getNet()},
+                  {addr_flop_clk_, clock_net_},
+                  {addr_flop_q_, flop_out}});
+      }
+      // the inverter: the address (or the flop's) in, its complement out;
+      // from a flop holding the complement, the address out
+      const bool from_complement = flop_out && addr_flop_inverted_;
       makeInst(inv_grid_cell.get(),
                fmt::format("decoder_p{}", p),
                fmt::format("inv_p{}_a{}", p, bit),
                inv_cell_,
                {{inv_ports_[{PortRoleType::DataIn, 0}],
-                 addr_inputs_[p][num_word_bits + bit]->getNet()},
+                 from_complement ? inv_addr_nets[p][a] : addr_true_[p][a]},
                 {inv_ports_[{PortRoleType::DataOut, 0}],
-                 inv_addr_nets[p][num_word_bits + bit]}});
+                 from_complement ? addr_true_[p][a] : inv_addr_nets[p][a]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
     }
     // add fillers between bit groups
@@ -1781,7 +1796,8 @@ void RamGen::generate(const int mask_size,
                       const int banks,
                       const int bank_columns,
                       const std::string& bank_order,
-                      const int rb_ports)
+                      const int rb_ports,
+                      const int read_latency)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -1810,6 +1826,18 @@ void RamGen::generate(const int mask_size,
   }
   words_per_bank_ = num_words / banks_;
   rb_ports_ = rb_ports;
+  read_latency_ = read_latency;
+  if (read_latency_ > 0) {
+    if (read_latency_ != 1) {
+      logger_->error(RAM, 71, "-read_latency is 0 or 1.");
+    }
+    if (column_mux_ratio_arg > 1 || rw_ports > 0) {
+      logger_->error(RAM,
+                     72,
+                     "-read_latency 1 is not supported with -column_mux_ratio "
+                     "above 1 or with read/write ports.");
+    }
+  }
   r_plain_ = rw_ports + r_ports;
   if (rb_ports_ > 0 && !banked_) {
     logger_->error(RAM, 70, "-rb_ports needs -banks.");
@@ -1918,6 +1946,47 @@ void RamGen::generate(const int mask_size,
 
   findMasters();
 
+  // -read_latency 1: a plain positive-edge flop for the read addresses
+  if (read_latency_ > 0) {
+    // a plain flop: positive-edge, no clear or preset
+    auto plain = [](const sta::LibertyCell* cell) {
+      for (const auto& seq : cell->sequentials()) {
+        if (seq.isRegister() && !seq.clear() && !seq.preset() && seq.clock()
+            && seq.clock()->op() == sta::FuncExpr::Op::port) {
+          return true;
+        }
+      }
+      return false;
+    };
+    // the storage cell where it is one (findMaster passes over cells with
+    // two outputs, as Nangate45's flops all are), else the smallest
+    if (storage_cell_
+        && plain(network_->libertyCell(network_->dbToSta(storage_cell_)))) {
+      addr_flop_cell_ = storage_cell_;
+    } else {
+      addr_flop_cell_ = findMaster(
+          [plain](sta::LibertyPort* port) {
+            return port->isRegOutput() && plain(port->libertyCell());
+          },
+          "address flop");
+    }
+    auto ports = buildPortMap(addr_flop_cell_, &addr_flop_inverted_);
+    auto liberty = network_->libertyCell(network_->dbToSta(addr_flop_cell_));
+    for (const auto& seq : liberty->sequentials()) {
+      if (seq.isRegister()) {
+        // the D pin (buildPortMap's polarity already counts a "!D")
+        const sta::FuncExpr* d = seq.data();
+        if (d->op() == sta::FuncExpr::Op::not_) {
+          d = d->left();
+        }
+        addr_flop_d_ = d->port()->name();
+        break;
+      }
+    }
+    addr_flop_clk_ = ports[{PortRoleType::Clock, 0}];
+    addr_flop_q_ = ports[{PortRoleType::DataOut, 0}];
+  }
+
   // A zero word reads 0 and drops its writes, as a RISC-V x0: its row
   // has no flops, and the read trees leave it out.
   if (zero_word_ >= 0) {
@@ -1967,6 +2036,7 @@ void RamGen::generate(const int mask_size,
   ram_grid_.setNumLayouts(col_cell_count);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
+  clock_net_ = clock->getNet();
 
   // -reset_value: an asynchronous reset at the storage flop's own
   // polarity, rst_n or rst; a parent adapts any other reset to it
@@ -2010,7 +2080,10 @@ void RamGen::generate(const int mask_size,
   int r_sel_idx = 0;
   int w_sel_idx = 0;
 
+  addr_inputs_.clear();
   addr_inputs_.resize(total_ports);
+  addr_true_.assign(total_ports, {});
+  addr_flop_out_.assign(total_ports, {});
   vector<vector<dbNet*>> inv_addr_nets(total_ports);
   // for column muxing, deocder input nets uses only the upper address bits
   // (num_row_bits) to determine row
@@ -2044,12 +2117,27 @@ void RamGen::generate(const int mask_size,
 
     addr_inputs_[p].resize(port_inputs);
     inv_addr_nets[p].resize(port_inputs);
+    addr_true_[p].resize(port_inputs);
+    addr_flop_out_[p].assign(port_inputs, nullptr);
+    const bool registered = read_latency_ > 0 && p >= rw_ports + w_ports;
 
     for (int i = 0; i < port_inputs; ++i) {
       addr_inputs_[p][i]
           = makeBTerm(fmt::format("{}[{}]", port_prefix, i), dbIoType::INPUT);
-      inv_addr_nets[p][i]
-          = makeNet(port_prefix, fmt::format("inv_addr[{}]", i));
+      if (registered && addr_flop_inverted_) {
+        // the flop holds the complement; the inverter makes the address
+        addr_flop_out_[p][i] = inv_addr_nets[p][i]
+            = makeNet(port_prefix, fmt::format("inv_addr[{}]", i));
+        addr_true_[p][i] = makeNet(port_prefix, fmt::format("addr_q[{}]", i));
+      } else {
+        inv_addr_nets[p][i]
+            = makeNet(port_prefix, fmt::format("inv_addr[{}]", i));
+        addr_true_[p][i] = addr_inputs_[p][i]->getNet();
+        if (registered) {
+          addr_flop_out_[p][i] = addr_true_[p][i]
+              = makeNet(port_prefix, fmt::format("addr_q[{}]", i));
+        }
+      }
     }
 
     // inputs to decoders: with banks, every word's whole address, one
@@ -2068,9 +2156,8 @@ void RamGen::generate(const int mask_size,
           const int word = port_bank >= 0 ? indexInBank(row) : wordAt(row, w);
           literals.resize(port_inputs);
           for (int input = 0; input < port_inputs; ++input) {
-            literals[input] = ((word >> input) & 1)
-                                  ? addr_inputs_[p][input]->getNet()
-                                  : inv_addr_nets[p][input];
+            literals[input] = ((word >> input) & 1) ? addr_true_[p][input]
+                                                    : inv_addr_nets[p][input];
           }
         }
       }
@@ -2088,7 +2175,7 @@ void RamGen::generate(const int mask_size,
               = inv_addr_nets[p][num_word_bits + input];
         } else {  // puts original input in invert nets
           decoder_input_nets[p][row][input]
-              = addr_inputs_[p][num_word_bits + input]->getNet();
+              = addr_true_[p][num_word_bits + input];
         }
         row_num /= 2;
       }
@@ -2941,6 +3028,51 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
                                      port_name,
                                      addr_name);
     }
+  }
+
+  // -read_latency 1: every read address registered, the reads from the
+  // registered ones (addr_r0 -> addr_r0_q)
+  if (read_latency_ > 0) {
+    std::string registers;
+    auto registered = [&](const std::string& name, int width) {
+      registers += fmt::format(
+          "  reg [{}:0] {}_q;\n  always @(posedge clk) {}_q <= {};\n",
+          width - 1,
+          name,
+          name,
+          name);
+      // whole words only: addr_r1 is not part of addr_r10
+      std::string out;
+      size_t at = 0;
+      while (true) {
+        size_t hit = read_port_logic.find(name, at);
+        if (hit == std::string::npos) {
+          out += read_port_logic.substr(at);
+          break;
+        }
+        const size_t end = hit + name.size();
+        const bool whole
+            = end >= read_port_logic.size()
+              || !(
+                  std::isalnum(static_cast<unsigned char>(read_port_logic[end]))
+                  || read_port_logic[end] == '_');
+        out += read_port_logic.substr(at, end - at);
+        if (whole) {
+          out += "_q";
+        }
+        at = end;
+      }
+      read_port_logic = out;
+    };
+    for (int i = 0; i < r_ports; ++i) {
+      registered(fmt::format("addr_r{}", i), address_width);
+    }
+    for (int k = 0; k < rb_ports_; ++k) {
+      for (int b = 0; b < banks_; ++b) {
+        registered(fmt::format("addr_rb{}_b{}", k, b), bank_bits);
+      }
+    }
+    read_port_logic = registers + "\n" + read_port_logic;
   }
 
   // Write logic, the ports in order: where two write the same word in a
