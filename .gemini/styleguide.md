@@ -1,17 +1,32 @@
 # OpenROAD code-review guidance
 
-Follow [CONTRIBUTING.md](../CONTRIBUTING.md): prioritize correctness, physical-design quality of results (QoR), and tests over style.
+Follow [CONTRIBUTING.md](../CONTRIBUTING.md): correctness, quality of results
+(QoR), testing, architecture, style, then process. This guide supplements those
+priorities; it does not replace module-specific conventions or maintainer decisions.
 
-## Check a concrete execution path before reporting a bug
+## Ground findings in the current code
 
-- For every correctness finding, identify the triggering input or state, the reachable code path, and the user-visible consequence. Cite the relevant lines; do not turn a hypothetical risk into a high-severity finding without evidence.
-- Before claiming a null dereference, trace surrounding guards, early returns, and any called functions. A null value can be an intentional no-merge or no-op case; a new rejection may itself be a regression.
-- When an operation has a read-only eligibility check and a separate mutation (for example, `canRemoveBuffer` and `removeBuffer`), verify they use the same semantics. Include exceptional paths such as hierarchy and disconnected terminals.
-- Check language and build assumptions against the repository. OpenROAD's root `CMakeLists.txt` requires C++20; do not flag valid C++20 as unsupported.
+- Read the complete affected function and relevant callers, not only the diff.
+  Identify a triggering input, reachable failure path, and consequence; cite the
+  current revision and relevant lines. A hypothetical risk is not an established bug.
+- Before reporting a null dereference, trace guards, early returns, and callees.
+  A null value can represent an intentionally supported no-merge or no-op case.
+  Rejecting it unconditionally can remove useful behavior.
+- Compare eligibility checks with their mutations. For buffer removal, distinguish
+  flat nets from hierarchical ModNets and preserve protection and feedthrough semantics.
+- Verify language assumptions against the active target's build configuration,
+  including [.bazelrc](../.bazelrc) and its BUILD file. OpenROAD uses C++20;
+  do not apply a generic prohibition against valid C++20 features.
 
-## Keep reviews actionable
+## Check evidence and keep comments useful
 
-- Focus on correctness, placement/routing/timing QoR impact, missing regression tests, and unsafe database changes. Do not duplicate `clang-format` or `clang-tidy` style checks.
-- For QoR claims, request evidence from representative designs and technologies, not a single favorable case. This does not apply to documentation-only changes.
-- If a suspected problem depends on unknown caller behavior or unspecified input, ask one precise question or suggest a targeted test instead of asserting a crash.
-- Keep comments concise and specific; skip automatic PR summaries, which are disabled in this repository.
+- Distinguish test registration, static lint, executed regressions, and full-flow
+  validation. A committed golden file or a passing static check does not prove the
+  test ran. Follow the module's test conventions and current maintainer feedback.
+- For changes affecting placement, routing, or timing, inspect downstream QoR and
+  runtime evidence across representative designs and technologies. A local unit
+  test or one favorable design does not establish an overall improvement.
+- Do not repeat resolved findings or style checks already handled by clang-format
+  and clang-tidy. Check the current discussion before adding a comment.
+- When relevant caller behavior is unknown, ask one precise question rather than
+  asserting a crash. Keep comments concise and omit unsolicited PR summaries.
