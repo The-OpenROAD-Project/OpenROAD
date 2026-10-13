@@ -256,7 +256,8 @@ odb::Rect TechLayer::adjustToMinArea(
     return rect;
   }
 
-  int64_t min_area = 0;
+  // the LEF58 rules add to the layer's own AREA, they do not replace it
+  int64_t min_area = layer_->hasArea() ? layer_->getArea() : 0;
   if (has_rules) {
     for (auto* rule : layer_->getTechLayerAreaRules()) {
       const int64_t layer_min_area = rule->getArea();
@@ -268,8 +269,6 @@ odb::Rect TechLayer::adjustToMinArea(
       // TODO: Check except rules
       min_area = std::max(min_area, layer_min_area);
     }
-  } else {
-    min_area = layer_->getArea();
   }
 
   if (min_area == 0) {
