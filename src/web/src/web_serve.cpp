@@ -17,6 +17,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <system_error>
 #include <thread>
@@ -59,6 +60,10 @@ using Tcp = net::ip::tcp;
 // Tcl command name used to stash the original `exit` while our override
 // is installed.  Mirrors web::TclCmdInputWidget's kCommandRenamePrefix.
 static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
+
+// Sends the clients to re-read the renderer control list, and to redraw.
+static constexpr const char* kRendererControlsChangedJson
+    = R"({"type":"renderer_controls_changed"})";
 
 // Logger sink that accumulates lines and sends them as a batch to
 // connected browser clients.  Flushing is explicit (via drainToClients)
@@ -171,10 +176,12 @@ void WebServer::serveDuringStartupScripts(int port,
 void WebServer::installPauseHooks()
 {
   WebViewerHook::PauseHooks hooks;
-  // The script is blocked until Continue, so let browser requests in: tiles
-  // show the paused state, and commands typed in the browser run while the
-  // script waits, as in the Qt GUI.
+  // A paused command stops counting as running, so the renderers draw.  A
+  // paused script is blocked until Continue, so let browser requests in:
+  // tiles show the paused state, and commands typed in the browser run while
+  // the script waits, as in the Qt GUI.
   hooks.enter = [this]() {
+    tcl_eval_->pauseBegin();
     if (onScriptThread() && script_holds_gate_) {
       tcl_eval_->script_gate.open();
     }
@@ -183,6 +190,7 @@ void WebServer::installPauseHooks()
     if (onScriptThread() && script_holds_gate_) {
       tcl_eval_->script_gate.close();
     }
+    tcl_eval_->pauseEnd();
   };
   // `exit` typed in the browser while the script is paused: nothing is in
   // waitForStop() to act on it, so exit from the paused script thread.
@@ -267,14 +275,16 @@ void WebServer::serve(int port, const std::string& bind_address)
                                     const std::vector<std::string>& y_labels) {
           return hook->createChart(name, x_label, y_labels);
         });
-    if (script_holds_gate_) {
-      installPauseHooks();
-    }
+    installPauseHooks();
     // Tell clients when a startup script starts or stops running, so they
-    // hold their redraws while every request would be turned away.
+    // hold their redraws while every request would be turned away.  Once it
+    // stops, the renderers it turned on or off are settled.
     tcl_eval_->script_gate.setOnChange(
         [hook = viewer_hook_.get()](bool closed) {
           hook->sessions().broadcast(scriptRunningJson(/*running=*/closed));
+          if (!closed && hook->takeRenderersChanged()) {
+            hook->sessions().broadcast(kRendererControlsChangedJson);
+          }
         });
 
     // Flush WebLogSink at the end of every Tcl eval so log output
@@ -284,16 +294,27 @@ void WebServer::serve(int port, const std::string& bind_address)
     // resetting viewer_hook_), so the raw pointer capture is safe.
     tcl_eval_->drain_output
         = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
+    // Once a command is done its renderers are settled: send the clients to
+    // re-read the control list if one came or went (that push also redraws),
+    // or just to redraw if tiles drawn while it ran left the renderers out.
+    tcl_eval_->command_done = [hook = viewer_hook_.get()](bool draw_skipped) {
+      if (hook->takeRenderersChanged()) {
+        hook->sessions().broadcast(kRendererControlsChangedJson);
+      } else if (draw_skipped) {
+        hook->sessions().broadcast(R"({"type":"debug_refresh"})");
+      }
+    };
 
     // The renderer bridge: one struct so both halves are installed and, in
     // stop(), cleared together.
     TileGenerator::RendererHooks hooks;
 
     hooks.draw = [weak_gen = std::weak_ptr<TileGenerator>(generator_),
-                  hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                             const TileFrame& frame,
-                                             bool debug_live,
-                                             odb::dbTechLayer* layer) {
+                  hook = viewer_hook_.get(),
+                  tcl = tcl_eval_.get()](std::vector<unsigned char>& image,
+                                         const TileFrame& frame,
+                                         bool debug_live,
+                                         odb::dbTechLayer* layer) {
       if (hook == nullptr) {
         return;
       }
@@ -301,8 +322,18 @@ void WebServer::serve(int port, const std::string& bind_address)
       if (!gen) {
         return;
       }
-      if (!debug_live && !hook->isPaused()) {
-        return;
+      // Between commands, as the Qt GUI draws them, and while one is paused,
+      // the tools' state is stable.  While a command runs -- including one
+      // typed in the browser during a script's pause -- only "Live" draws, at
+      // the user's risk.  Holding renderer_mutex keeps a command from
+      // starting, or resuming from its pause, mid-draw.
+      std::shared_lock<std::shared_mutex> idle;
+      if (!debug_live) {
+        idle = std::shared_lock<std::shared_mutex>(tcl->renderer_mutex);
+        if (tcl->running) {
+          tcl->draw_skipped = true;
+          return;
+        }
       }
       seedRendererControls(hook);
       for (web::Renderer* renderer : web::Gui::get()->renderers()) {
@@ -337,11 +368,17 @@ void WebServer::serve(int port, const std::string& bind_address)
     // loop while the algorithm is blocked.  Reading a torn frame is a garbled
     // overlay; indexing a vector mid-reallocation is a crash, and clicking a
     // gcell that is still moving buys nothing — so Live does not extend here.
-    hooks.select = [hook = viewer_hook_.get()](
+    hooks.select = [hook = viewer_hook_.get(), tcl = tcl_eval_.get()](
                        odb::dbTechLayer* layer,
                        const odb::Rect& region,
                        std::vector<SelectionResult>& out) {
       if (hook == nullptr || !hook->isPaused()) {
+        return;
+      }
+      // Not while a command typed in the browser during the pause runs: it
+      // can change the renderers too.
+      const std::shared_lock<std::shared_mutex> idle(tcl->renderer_mutex);
+      if (tcl->running) {
         return;
       }
       for (web::Renderer* renderer : web::Gui::get()->renderers()) {
