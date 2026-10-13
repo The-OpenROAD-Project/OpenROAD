@@ -285,6 +285,17 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
          && output_modnet->isConnectedToOutputPort();
 }
 
+// The check and removal must agree about which net mergeNet() destroys.
+// Feedthroughs keep the input ModNet for the required Verilog assign.
+bool bufferRemovalKeepsOutputNet(bool input_has_port,
+                                 bool output_has_port,
+                                 odb::dbModNet* input_modnet,
+                                 odb::dbModNet* output_modnet)
+{
+  return !input_has_port && output_has_port
+         && !bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
+}
+
 float inputPinCapacitance(sta::Network* network,
                           sta::Pin* pin,
                           const sta::LibertyCell* cell,
@@ -2851,27 +2862,30 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
   sta::Net* input_net = db_network_->net(input_pin);
   sta::Net* output_net = db_network_->net(output_pin);
-  odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
-  odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
+  // Inspect the same flat nets that removeBuffer() will merge.
+  odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
+  odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
+  if (input_db_net == nullptr) {
+    return false;
+  }
   if (honor_dont_touch_fixed
       && (db_inst->isDoNotTouch() || db_inst->isFixed()
           || (input_db_net != nullptr && input_db_net->isDoNotTouch())
           || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
     return false;
   }
-  const bool out_net_ports = db_network_->hasPort(output_net);
-  sta::Net* removed = nullptr;
-  odb::dbNet* db_net_survivor = nullptr;
-  odb::dbNet* db_net_removed = nullptr;
-  if (out_net_ports) {
-    removed = input_net;
-    db_net_survivor = output_db_net;
-    db_net_removed = input_db_net;
-  } else {
-    removed = output_net;
-    db_net_survivor = input_db_net;
-    db_net_removed = output_db_net;
-  }
+  const bool keep_output_net
+      = output_db_net != nullptr
+        && bufferRemovalKeepsOutputNet(
+            db_network_->hasPort(db_network_->dbToSta(input_db_net)),
+            db_network_->hasPort(db_network_->dbToSta(output_db_net)),
+            db_network_->hierNet(input_pin),
+            db_network_->hierNet(output_pin));
+  sta::Net* removed = keep_output_net ? input_net : output_net;
+  odb::dbNet* db_net_survivor
+      = keep_output_net ? output_db_net : input_db_net;
+  odb::dbNet* db_net_removed
+      = keep_output_net ? input_db_net : output_db_net;
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
   if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
@@ -3055,12 +3069,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer,
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
-  const bool creates_feedthrough
-      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!creates_feedthrough && !db_network_->hasPort(input_net)
-      && db_network_->hasPort(output_net)) {
+  if (bufferRemovalKeepsOutputNet(db_network_->hasPort(input_net),
+                                  db_network_->hasPort(output_net),
+                                  input_modnet,
+                                  output_modnet)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;

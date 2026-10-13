@@ -261,6 +261,9 @@ or_integration_tests(
     repair_setup_mt1
     repair_design_fixed_driver
     gain_buffering_top_port_hier
+    remove_buffers_survivor_protected
+    remove_buffers_survivor_unprotected
+    remove_buffers_survivor_feedthrough
     cpp_tests
 )
 
