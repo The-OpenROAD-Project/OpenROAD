@@ -69,24 +69,11 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "write_ports_nangate45": [
-                "Nangate45/Nangate45.lef",
-                "Nangate45/Nangate45_tech.lef",
-                "Nangate45/Nangate45_typ.lib",
-            ],
             "and_or_read_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],
-            "zero_word_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "reset_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "banks_asap7": [
+            "bank_column_layout_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],
@@ -94,15 +81,11 @@ filegroup(
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],
-            "read_latency_asap7": [
+            "banks_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],
-            "write_mux_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "periphery_unplaced_asap7": [
+            "bit_folds_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],
@@ -111,30 +94,6 @@ filegroup(
                 "//test:asap7_nldm_data",
             ],
             "decoder_word_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "bit_folds_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "periphery_verilog_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "write_priority_or_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "service_columns_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "bank_column_layout_asap7": [
-                "//test:asap7_data",
-                "//test:asap7_nldm_data",
-            ],
-            "option_errors_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],
@@ -152,6 +111,47 @@ filegroup(
             ],
             "make_8x8_2r1w_sky130": ["make_8x8_2r1w_sky130_behavioral.vok"],
             "make_8x8_sky130": ["make_8x8_sky130_behavioral.vok"],
+            "option_errors_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "periphery_unplaced_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "periphery_verilog_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "read_latency_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "reset_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "service_columns_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "write_mux_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "write_ports_nangate45": [
+                "Nangate45/Nangate45.lef",
+                "Nangate45/Nangate45_tech.lef",
+                "Nangate45/Nangate45_typ.lib",
+            ],
+            "write_priority_or_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "zero_word_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
