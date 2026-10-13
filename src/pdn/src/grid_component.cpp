@@ -126,7 +126,8 @@ ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
        it != shapes.qend();
        it++) {
     auto& intersecting_shape = *it;
-    if (!shape_ptr->getRect().overlaps(intersecting_shape->getRect())) {
+    if (intersecting_shape->getNet() == shape_ptr->getNet()
+        && !shape_ptr->getRect().overlaps(intersecting_shape->getRect())) {
       continue;
     }
     if (intersecting_shape->getNet() != shape_ptr->getNet()) {
