@@ -34,7 +34,6 @@ The following 3D extensions are planned and are not included yet:
 - SPICE export of the connected chiplet network through `write_pg_spice`.
 - Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
 
-PSM rejects recorded bonds connecting POWER to GROUND. It does not detect unintended connections caused by physical contact between bumps on different chiplets.
 
 ```tcl
 analyze_power_grid
@@ -57,7 +56,7 @@ analyze_power_grid
 | `-corner` | Corner to use for analysis. |
 | `-error_file` | File to write power grid errors to. For 3D ICs, errors are grouped by chiplet. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
-| `-enable_em` | Report current per power grid segment. |
+| `-enable_em` | Reports maximum and average power-grid segment currents. |
 | `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. Currently not supported for 3D ICs. |
 | `-voltage_file` | Write per-instance voltage into the file. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
