@@ -63,6 +63,9 @@ void Terminal::removePoint(WirePoint* point)
 
 tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
+  shape_search_ = std::make_unique<ShapeSearch>();
+  connection_graph_ = std::make_unique<ConnectionGraph>();
+
   wire_sections_.reserve(1024);
   terminals_.reserve(1024);
   restart_terminals_.reserve(1024);
@@ -209,6 +212,8 @@ void tmg_conn::addShort(const int i0, const int i1)
 
 void tmg_conn::clear()
 {
+  shape_search_->clear();
+
   net_ = nullptr;
   has_special_wires_ = false;
 
@@ -628,10 +633,6 @@ void tmg_conn::identifyShorts()
   if (wire_points_.empty()) {
     return;
   }
-  if (!shape_search_) {
-    shape_search_ = std::make_unique<ShapeSearch>();
-  }
-  shape_search_->clear();
 
   // put wires in search
   for (size_t j = 0; j < wire_sections_.size(); j++) {
@@ -760,9 +761,6 @@ void tmg_conn::identifyShorts()
 
 void tmg_conn::removeShortLoops()
 {
-  if (!connection_graph_) {
-    connection_graph_ = std::make_unique<ConnectionGraph>();
-  }
   connection_graph_->init(wire_points_.size(), shorts_.size());
 
   // setup paths
@@ -876,6 +874,7 @@ void tmg_conn::removeWireLoops()
   if (wire_sections_.empty()) {
     return;
   }
+
   // add all path edges
   for (size_t j = 0; j < wire_sections_.size(); j++) {
     connection_graph_->addEdges(
