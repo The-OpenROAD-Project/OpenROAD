@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <any>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -23,12 +22,10 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <thread>
 #include <utility>
 #include <variant>
 #include <vector>
 
-#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/beast/core/string.hpp"
 #include "boost/json/array.hpp"
@@ -54,7 +51,6 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
-#include "utl/random_bytes.h"
 #include "web/core.h"
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
@@ -329,33 +325,17 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
-namespace {
-
-// Constant time in the length of `expected`: stopping at the first mismatch
-// would tell a guesser how much of it was right.
-bool constantTimeEquals(const std::string_view got,
-                        const std::string_view expected)
-{
-  unsigned char diff = got.size() == expected.size() ? 0 : 1;
-  for (std::size_t i = 0; i < expected.size(); ++i) {
-    const unsigned char a = i < got.size() ? got[i] : 0;
-    diff |= a ^ static_cast<unsigned char>(expected[i]);
-  }
-  return diff == 0;
-}
-
-}  // namespace
-
 bool webSocketOriginAllowed(const std::string_view origin,
                             const std::string_view host)
 {
   // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
   // forge its Origin, so a foreign page is rejected below.  A non-browser
   // client controls every header (it can omit Origin or spoof any value), so
-  // this check cannot authenticate one — the access token does.
+  // this check cannot authenticate one — that requires binding to loopback
+  // (issue #11167, F-02), on which this guard depends.
   //
   // Absent Origin: browsers always send it on a WS handshake, so its absence
-  // is a non-browser client; allow it here and let the token decide.
+  // is a non-browser client; allow it (F-02 is what keeps such a client local).
   if (origin.empty()) {
     return true;
   }
@@ -421,90 +401,6 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
-}
-
-std::string urlDecode(const std::string_view s)
-{
-  std::string out;
-  out.reserve(s.size());
-  for (std::size_t i = 0; i < s.size(); ++i) {
-    if (s[i] == '%' && i + 2 < s.size()) {
-      unsigned value = 0;
-      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
-        out.push_back(static_cast<char>(value));
-        i += 2;
-        continue;
-      }
-      // Not valid hex: keep the literal '%'.
-    }
-    out.push_back(s[i] == '+' ? ' ' : s[i]);
-  }
-  return out;
-}
-
-namespace {
-
-// The query of a request target, without the '?'.  Empty when there is none.
-std::string_view queryOf(const std::string_view target)
-{
-  const auto pos = target.find('?');
-  return pos == std::string_view::npos ? std::string_view()
-                                       : target.substr(pos + 1);
-}
-
-// Call `fn` with each "k=v" of a query.  One definition so the parsing side
-// and the redirect side cannot disagree on what separates a pair.
-template <typename Fn>
-void forEachQueryPair(const std::string_view query, Fn fn)
-{
-  std::size_t start = 0;
-  while (start < query.size()) {
-    std::size_t amp = query.find('&', start);
-    if (amp == std::string_view::npos) {
-      amp = query.size();
-    }
-    fn(query.substr(start, amp - start));
-    start = amp + 1;
-  }
-}
-
-}  // namespace
-
-std::map<std::string, std::string> parseQuery(const std::string_view target)
-{
-  std::map<std::string, std::string> params;
-  forEachQueryPair(queryOf(target), [&params](const std::string_view kv) {
-    const std::size_t eq = kv.find('=');
-    if (eq != std::string_view::npos) {
-      params.emplace(std::string(kv.substr(0, eq)),
-                     urlDecode(kv.substr(eq + 1)));
-    }
-  });
-  return params;
-}
-
-void joinUnlessSelf(std::thread& t)
-{
-  if (!t.joinable()) {
-    return;
-  }
-  if (t.get_id() == std::this_thread::get_id()) {
-    t.detach();
-    return;
-  }
-  t.join();
-}
-
-void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger)
-{
-  for (;;) {
-    try {
-      ioc.run();
-      return;
-    } catch (const std::exception& e) {
-      logger->warn(utl::WEB, 119, "Web server thread error: {}", e.what());
-    }
-  }
 }
 
 bool displayIsRemote(
@@ -636,8 +532,7 @@ BrowserLaunch browserLaunchFromString(const std::string_view mode)
 std::string reachabilityHint(const BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              const std::string_view host,
-                             const uint16_t port,
-                             const std::string_view target)
+                             const uint16_t port)
 {
   const std::string port_str = std::to_string(port);
   if (kind == BindAddressKind::kLoopback) {
@@ -651,88 +546,10 @@ std::string reachabilityHint(const BindAddressKind kind,
     // Bound to every interface, but browserHostForBind() had no address to
     // name and said "localhost", which is this machine only.
     return "From another machine, reach it at http://" + std::string(host) + ":"
-           + port_str + std::string(target);
+           + port_str;
   }
   // The URL already carries the address it is listening on.
   return "That url is reachable from other machines.";
-}
-
-std::string generateAuthToken()
-{
-  std::vector<std::uint8_t> bytes;
-  if (!utl::randomBytes(16, bytes)) {  // 128 bits
-    return {};
-  }
-  return utl::toHex(bytes.data(), bytes.size());
-}
-
-bool tokenAllowed(const std::map<std::string, std::string>& params,
-                  const std::string_view expected)
-{
-  if (expected.empty()) {
-    return false;
-  }
-  const auto it = params.find("token");
-  return it != params.end() && constantTimeEquals(it->second, expected);
-}
-
-bool requestTokenAllowed(const std::string_view target,
-                         const std::string_view expected)
-{
-  return tokenAllowed(parseQuery(target), expected);
-}
-
-std::string authRedirectTarget(const std::string_view target,
-                               const std::string_view token)
-{
-  const auto query_pos = target.find('?');
-  const std::string_view path = query_pos == std::string_view::npos
-                                    ? target
-                                    : target.substr(0, query_pos);
-
-  // Everything but the ticket is copied byte for byte, still percent-encoded.
-  std::string kept;
-  forEachQueryPair(queryOf(target), [&kept](const std::string_view pair) {
-    if (pair.empty() || pair == "ticket" || pair.starts_with("ticket=")) {
-      return;
-    }
-    if (!kept.empty()) {
-      kept += '&';
-    }
-    kept.append(pair);
-  });
-
-  std::string redirect(path.empty() ? std::string_view("/") : path);
-  redirect += "?token=";
-  redirect.append(token);
-  if (!kept.empty()) {
-    redirect += '&';
-    redirect += kept;
-  }
-  return redirect;
-}
-
-SessionAuth::SessionAuth(std::string token,
-                         std::string ticket,
-                         const std::chrono::seconds ticket_ttl)
-    : token_(std::move(token)),
-      ticket_(std::move(ticket)),
-      expiry_(std::chrono::steady_clock::now() + ticket_ttl)
-{
-}
-
-bool SessionAuth::redeemTicket(const std::string_view candidate)
-{
-  if (candidate.empty() || std::chrono::steady_clock::now() >= expiry_
-      || !constantTimeEquals(candidate, ticket_)) {
-    return false;
-  }
-  return !spent_.exchange(true);
-}
-
-void SessionAuth::revokeTicket()
-{
-  spent_ = true;
 }
 
 WebSocketResponse errorResponse(const uint32_t id,

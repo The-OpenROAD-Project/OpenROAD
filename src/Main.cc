@@ -13,7 +13,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <exception>
 #include <filesystem>
 #include <initializer_list>
 #include <iostream>
@@ -466,8 +465,8 @@ static int tclAppInit(int& argc,
           exit(EXIT_FAILURE);
         }
       }
-      // Check the address before the design loads; serve() would only reject
-      // it after.
+      // Check the address here, not in serve(): serve() reports a bad one with
+      // utl::error, which throws, and nothing on this path catches it.
       if (web_bind_arg
           && web::classifyBindAddress(web_bind_arg)
                  == web::BindAddressKind::kInvalid) {
@@ -501,13 +500,9 @@ static int tclAppInit(int& argc,
     // is installed now too, so debug commands (global_placement_debug, ...)
     // engage as they do under -gui.
     if (web_enabled) {
-      try {
-        // Empty means web::kDefaultBindAddress; see BindAddressKind.
-        ord::OpenRoad::openRoad()->getWebServer()->serveDuringStartupScripts(
-            web_port, web_bind_arg ? web_bind_arg : "", web_launch);
-      } catch (const std::exception&) {
-        Tcl_Exit(EXIT_FAILURE);  // serve() has logged why
-      }
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      ord::OpenRoad::openRoad()->getWebServer()->serveDuringStartupScripts(
+          web_port, web_bind_arg ? web_bind_arg : "", web_launch);
     }
 
     // web::Gui::enabled() is true here in the web path (serve() installed
@@ -587,11 +582,7 @@ static int tclAppInit(int& argc,
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
       server->endStartupScripts();
       if (!server->isRunning()) {
-        try {
-          server->serve(web_port, web_bind_arg ? web_bind_arg : "", web_launch);
-        } catch (const std::exception&) {
-          Tcl_Exit(EXIT_FAILURE);  // serve() has logged why
-        }
+        server->serve(web_port, web_bind_arg ? web_bind_arg : "", web_launch);
       }
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the

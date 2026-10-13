@@ -4,26 +4,20 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <functional>
-#include <future>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
-#include <stdexcept>
 #include <string>
 #include <string_view>
-#include <thread>
 #include <utility>
 #include <vector>
 
-#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
-#include "boost/asio/post.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -1018,8 +1012,7 @@ TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.1"),
                              "farm-42",
-                             8080,
-                             "/?token=abc"),
+                             8080),
             "To reach it from another machine, forward the port: ssh -L "
             "8080:localhost:8080 farm-42");
 }
@@ -1031,8 +1024,7 @@ TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.2"),
                              "farm-42",
-                             8080,
-                             "/?token=abc"),
+                             8080),
             "To reach it from another machine, forward the port: ssh -L "
             "8080:127.0.0.2:8080 farm-42");
 }
@@ -1045,11 +1037,8 @@ TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
       = reachabilityHint(BindAddressKind::kExposed,
                          boost::asio::ip::make_address("0.0.0.0"),
                          "farm-42",
-                         8080,
-                         "/?token=abc");
-  // The url the user is told to open elsewhere has to carry the token, or it
-  // is refused on arrival.
-  EXPECT_NE(hint.find("http://farm-42:8080/?token=abc"), std::string::npos);
+                         8080);
+  EXPECT_NE(hint.find("http://farm-42:8080"), std::string::npos);
   EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
 }
 
@@ -1060,196 +1049,9 @@ TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
       = reachabilityHint(BindAddressKind::kExposed,
                          boost::asio::ip::make_address("10.0.0.5"),
                          "farm-42",
-                         8080,
-                         "/?token=abc");
+                         8080);
   EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
   EXPECT_EQ(hint.find("farm-42"), std::string::npos);
-}
-
-TEST(GenerateAuthToken, IsHexAndUnpredictable)
-{
-  const std::string token = generateAuthToken();
-  EXPECT_EQ(token.size(), 32u);  // 128 bits
-  EXPECT_TRUE(std::all_of(token.begin(), token.end(), [](const char c) {
-    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
-  }));
-  // Not proof of entropy, but a token minted from a clock-free source must
-  // not repeat between two calls in the same process.
-  EXPECT_NE(token, generateAuthToken());
-}
-
-TEST(RequestTokenAllowed, AcceptsTheExactToken)
-{
-  EXPECT_TRUE(requestTokenAllowed("/ws?token=abc123", "abc123"));
-  EXPECT_TRUE(requestTokenAllowed("/?token=abc123", "abc123"));
-  // Other parameters may sit on either side of it.
-  EXPECT_TRUE(requestTokenAllowed("/?mergetiles=0&token=abc123&x=1", "abc123"));
-}
-
-TEST(RequestTokenAllowed, RejectsAnythingElse)
-{
-  EXPECT_FALSE(requestTokenAllowed("/ws", "abc123"));
-  EXPECT_FALSE(requestTokenAllowed("/ws?token=", "abc123"));
-  EXPECT_FALSE(requestTokenAllowed("/ws?token=wrong", "abc123"));
-  // A prefix and an extension of the real token are both wrong: a length
-  // check is part of the comparison, not an optimization skipped for it.
-  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc12", "abc123"));
-  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc1234", "abc123"));
-  // The parameter name is exact; "tokens" is not "token".
-  EXPECT_FALSE(requestTokenAllowed("/ws?tokens=abc123", "abc123"));
-}
-
-TEST(RequestTokenAllowed, DecodesThePercentEncodedValue)
-{
-  EXPECT_TRUE(requestTokenAllowed("/ws?token=a%2Bb", "a+b"));
-}
-
-TEST(RequestTokenAllowed, AnEmptyExpectedTokenMatchesNothing)
-{
-  // Fail closed: with no token minted there is nothing to present.
-  EXPECT_FALSE(requestTokenAllowed("/ws", ""));
-  EXPECT_FALSE(requestTokenAllowed("/ws?token=", ""));
-}
-
-TEST(AuthRedirectTarget, SwapsTheTicketForTheToken)
-{
-  EXPECT_EQ(authRedirectTarget("/?ticket=abc", "tok"), "/?token=tok");
-  EXPECT_EQ(authRedirectTarget("/index.html?ticket=abc", "tok"),
-            "/index.html?token=tok");
-}
-
-TEST(AuthRedirectTarget, KeepsTheViewerOptionsAroundIt)
-{
-  // ?mergetiles=0 and friends are how the viewer is A/B tested; losing them
-  // in the redirect would silently ignore what the user asked for.
-  EXPECT_EQ(authRedirectTarget("/?ticket=abc&mergetiles=0", "tok"),
-            "/?token=tok&mergetiles=0");
-  EXPECT_EQ(
-      authRedirectTarget("/?mergetiles=0&ticket=abc&tilebudget=500", "tok"),
-      "/?token=tok&mergetiles=0&tilebudget=500");
-}
-
-TEST(AuthRedirectTarget, PassesEncodedValuesThroughUntouched)
-{
-  // The query is copied byte for byte; decoding and re-encoding here would
-  // be a chance to mangle a value for no gain.
-  EXPECT_EQ(authRedirectTarget("/?ticket=abc&vis=%7B%22a%22%3A1%7D", "tok"),
-            "/?token=tok&vis=%7B%22a%22%3A1%7D");
-}
-
-TEST(AuthRedirectTarget, HandlesATargetWithNoQueryAtAll)
-{
-  EXPECT_EQ(authRedirectTarget("/", "tok"), "/?token=tok");
-}
-
-TEST(SessionAuth, RedeemsTheTicketExactlyOnce)
-{
-  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
-  EXPECT_EQ(auth.token(), "tok");
-  EXPECT_EQ(auth.ticket(), "tik");
-
-  EXPECT_TRUE(auth.redeemTicket("tik"));
-  // The whole point: what `ps` saw on the browser's command line stops
-  // working as soon as the browser has used it.
-  EXPECT_FALSE(auth.redeemTicket("tik"));
-  EXPECT_EQ(auth.token(), "tok");
-}
-
-TEST(SessionAuth, RejectsAWrongOrEmptyTicket)
-{
-  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
-  EXPECT_FALSE(auth.redeemTicket("nope"));
-  EXPECT_FALSE(auth.redeemTicket(""));
-  EXPECT_FALSE(auth.redeemTicket("ti"));
-  EXPECT_FALSE(auth.redeemTicket("tikk"));
-  // None of those consumed it.
-  EXPECT_TRUE(auth.redeemTicket("tik"));
-}
-
-TEST(SessionAuth, RejectsAnExpiredTicket)
-{
-  SessionAuth auth("tok", "tik", std::chrono::seconds(0));
-  EXPECT_FALSE(auth.redeemTicket("tik"));
-}
-
-TEST(SessionAuth, RevokedTicketIsRefused)
-{
-  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
-  auth.revokeTicket();
-  EXPECT_FALSE(auth.redeemTicket("tik"));
-}
-
-TEST(SessionAuth, ReportsOnlyTheFirstRejection)
-{
-  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
-  EXPECT_TRUE(auth.firstRejection());
-  EXPECT_FALSE(auth.firstRejection());
-  EXPECT_FALSE(auth.firstRejection());
-}
-
-TEST(JoinUnlessSelf, JoinsFromAnotherThread)
-{
-  std::thread t([] {});
-  joinUnlessSelf(t);
-  EXPECT_FALSE(t.joinable());
-}
-
-TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
-{
-  std::thread t;
-  joinUnlessSelf(t);
-  EXPECT_FALSE(t.joinable());
-}
-
-TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
-{
-  // A session's init thread can drop the last reference, and so run the
-  // destructor, and this call, on itself.
-  std::thread t;
-  std::promise<void> assigned;
-  // Shared: the thread may still be inside set_value() when the test returns.
-  auto detached = std::make_shared<std::promise<void>>();
-  auto assigned_done = assigned.get_future();
-  auto detached_done = detached->get_future();
-
-  t = std::thread([&t, &assigned_done, detached] {
-    // Touching `t` before the assignment completes would race the constructor.
-    assigned_done.wait();
-    joinUnlessSelf(t);
-    detached->set_value();
-  });
-  assigned.set_value();
-
-  detached_done.wait();
-  EXPECT_FALSE(t.joinable());
-}
-
-TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
-{
-  boost::asio::io_context ioc;
-  utl::Logger logger;
-  bool ran_after = false;
-  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
-  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
-  runIoContext(ioc, &logger);
-  EXPECT_TRUE(ran_after);
-}
-
-TEST(ParseQuery, DecodesValuesAndIgnoresValuelessKeys)
-{
-  const auto params = parseQuery("/download/image?type=entire&filename=a%20b");
-  EXPECT_EQ(params.at("type"), "entire");
-  EXPECT_EQ(params.at("filename"), "a b");
-
-  EXPECT_TRUE(parseQuery("/index.html").empty());
-  EXPECT_TRUE(parseQuery("/ws?flag").empty());
-}
-
-TEST(UrlDecode, ASignIsNotAHexDigit)
-{
-  // Read as signed hex these would turn into a NUL byte and 0xff.
-  EXPECT_EQ(urlDecode("%-0"), "%-0");
-  EXPECT_EQ(urlDecode("%-1x"), "%-1x");
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
@@ -2285,17 +2087,9 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
       << "hover highlight is independent of the Highlight selected toggle";
 }
 
-// The heat map registry keeps the first registration for the whole process,
-// so the logger its factories capture has to live as long.
-utl::Logger* processLogger()
-{
-  static utl::Logger logger;
-  return &logger;
-}
-
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -2312,7 +2106,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -2348,7 +2142,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2418,7 +2212,7 @@ TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
 // to special-case it the way Qt's dialog wires the setter directly.
 TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest meta_req;
@@ -2454,7 +2248,7 @@ TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2477,7 +2271,7 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 // types 90.  The handler must accept it rather than failing as_double().
 TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2500,8 +2294,8 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   populate_calls = 0;
 
   web::registerHeatMapSource(
-      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", []() {
-        return std::make_shared<LazyMetadataHeatMap>(processLogger(),
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
+        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
                                                      &populate_calls);
       });
 

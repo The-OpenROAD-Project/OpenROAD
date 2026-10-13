@@ -12,14 +12,11 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
-// The WebSocket for the page at `loc`, carrying the page's access token: the
-// server refuses the upgrade without it.
+// The WebSocket for the page at `loc`: wss when the page came over https.
 export function websocketUrlFrom(loc) {
     const scheme = loc?.protocol === 'https:' ? 'wss' : 'ws';
     const host = loc?.host || 'localhost:8080';
-    const token = new URLSearchParams(loc?.search || '').get('token');
-    const query = token ? `?token=${encodeURIComponent(token)}` : '';
-    return `${scheme}://${host}/ws${query}`;
+    return `${scheme}://${host}/ws`;
 }
 
 // Serialize the layer/selectability visibility flags the way the server

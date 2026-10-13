@@ -3,12 +3,9 @@
 
 #pragma once
 
-#include <atomic>
-#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -140,64 +137,11 @@ std::string_view browserSkipReasonText(LaunchSkip reason);
 BrowserLaunch browserLaunchFromString(std::string_view mode);
 
 // How to reach the viewer from another machine, printed with WEB-0001: a tunnel
-// for a loopback bind, this host's url (`target` appended) for a wildcard one.
+// for a loopback bind, this host's url for a wildcard one.
 std::string reachabilityHint(BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              std::string_view host,
-                             uint16_t port,
-                             std::string_view target);
-
-// A fresh 128-bit hex token, gating every request that can reach the Tcl
-// interpreter (issue #11389).  Empty when the entropy source cannot be read.
-std::string generateAuthToken();
-
-// True if the `token` of a parsed query matches `expected`, compared in
-// constant time.  An empty `expected` matches nothing.
-bool tokenAllowed(const std::map<std::string, std::string>& params,
-                  std::string_view expected);
-
-// The same check straight off a request target, for the callers that have no
-// parsed query of their own (the WebSocket upgrade).
-bool requestTokenAllowed(std::string_view target, std::string_view expected);
-
-// The redirect for a redeemed ticket: the request's raw query with `ticket`
-// swapped for `token`, so viewer options like ?mergetiles=0 survive.
-std::string authRedirectTarget(std::string_view target, std::string_view token);
-
-// One server session's credentials: the token every gated request carries, and
-// a one-shot ticket that keeps the token off the browser's command line.
-class SessionAuth
-{
- public:
-  SessionAuth(std::string token,
-              std::string ticket,
-              std::chrono::seconds ticket_ttl);
-
-  const std::string& token() const { return token_; }
-  const std::string& ticket() const { return ticket_; }
-
-  // True for the first caller that presents the live ticket, and only then:
-  // redeeming spends it, and an expired ticket is already spent.
-  bool redeemTicket(std::string_view candidate);
-
-  // Spend the ticket unredeemed: once its launch failed or was skipped, no
-  // browser of ours will ever present it.
-  void revokeTicket();
-
-  // True for the first refused WebSocket upgrade of this session only.
-  bool firstRejection() { return !rejected_.exchange(true); }
-
- private:
-  const std::string token_;
-  const std::string ticket_;
-  std::atomic<bool> spent_{false};
-  std::atomic<bool> rejected_{false};
-  const std::chrono::steady_clock::time_point expiry_;
-};
-
-// How long a launch ticket stays redeemable.  Long enough for a cold browser
-// start, short enough that what `ps` saw stops working soon after.
-inline constexpr std::chrono::seconds kTicketTtl{300};
+                             uint16_t port);
 
 // What serve() binds to when the caller passes no address.  Owned here so the
 // Tcl and command-line front ends cannot drift apart on the security default.
@@ -226,8 +170,7 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight,
-    std::shared_ptr<SessionAuth> auth);
+    int max_in_flight);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
@@ -257,8 +200,7 @@ class WebServer
   // Start the web server on the given port, listening on `bind_address` — an
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
-  // a no-op if the server is already running.  Logs the reason and throws if
-  // the server cannot start.
+  // a no-op if the server is already running.
   void serve(int port,
              const std::string& bind_address,
              BrowserLaunch launch = BrowserLaunch::kAuto);
@@ -463,10 +405,6 @@ class WebServer
 
   // Set by tclExitHandler when `exit` is run on a worker thread.
   bool exit_requested_ = false;
-
-  // Minted per serve() and cleared in stop(), so a restarted server does not
-  // honour the previous session's links.
-  std::shared_ptr<SessionAuth> auth_;
 
   // True once initLogger() registered the WebLogSink.  Lets serve() and
   // initLogger() be idempotent and lets stop() know the sink needs removing.

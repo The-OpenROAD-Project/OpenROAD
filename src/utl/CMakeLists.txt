@@ -49,7 +49,6 @@ add_library(utl_lib
   src/timer.cpp
   src/mem_stats.cpp
   src/cpu_topology.cpp
-  src/random_bytes.cpp
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp
