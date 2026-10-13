@@ -503,3 +503,24 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "pdn_domain_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNDomain.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # domain.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
