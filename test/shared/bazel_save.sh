@@ -136,9 +136,8 @@ if [ "$run_tests" -eq 1 ]; then
     fi
 fi
 
-# Preserve the golden's current permissions: bazel-testlogs artifacts are
-# read-only and `cp` carries that mode over, which would both break the next
-# save and churn the executable bit git tracks on .ok files.
+# Preserve the golden's current permissions so a save doesn't churn the
+# executable bit git tracks on .ok files; a new golden just gets u+w.
 restore_mode() {
     local dst=$1 mode=$2
     if [ -n "$mode" ]; then
@@ -154,10 +153,15 @@ for test_name in "$@"; do
         src_ext=${pair##*:}
         dst="${test_name}.${dest_ext}"
 
+        # A symlinked golden is shared by tests that must produce identical
+        # output, so write through the link rather than replacing it, as the
+        # CMake path's plain `cp` does. `cat >` rather than `cp` because
+        # busybox cp replaces the link. -L reads the target's mode, not the
+        # link's 777.
         mode=""
         if [ -f "$dst" ]; then
-            mode=$(stat -c%a "$dst" 2>/dev/null \
-                || stat -f%Lp "$dst" 2>/dev/null \
+            mode=$(stat -L -c%a "$dst" 2>/dev/null \
+                || stat -L -f%Lp "$dst" 2>/dev/null \
                 || echo "")
         fi
 
@@ -169,8 +173,8 @@ for test_name in "$@"; do
             artifact="results/${test_name}-${lang_ext}.${src_ext}"
 
             if [ -f "${out_dir}/${artifact}" ]; then
-                rm -f "$dst"
-                cp "${out_dir}/${artifact}" "$dst"
+                [ -L "$dst" ] || rm -f "$dst"
+                cat "${out_dir}/${artifact}" > "$dst"
                 restore_mode "$dst" "$mode"
                 saved=1
                 break
@@ -181,8 +185,9 @@ for test_name in "$@"; do
                 tmp="${dst}.tmp"
                 if unzip -p "$zip" "$artifact" > "$tmp" 2>/dev/null \
                         && [ -s "$tmp" ]; then
-                    rm -f "$dst"
-                    mv "$tmp" "$dst"
+                    [ -L "$dst" ] || rm -f "$dst"
+                    cat "$tmp" > "$dst"
+                    rm -f "$tmp"
                     restore_mode "$dst" "$mode"
                     saved=1
                     break
