@@ -2192,7 +2192,7 @@ HardMacro::Halo ClusteringEngine::buildPinAwareHalo(odb::dbInst* inst,
   odb::dbMaster* master = inst->getMaster();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+    if (mterm->getSigType().isSupply()) {
       continue;
     }
 

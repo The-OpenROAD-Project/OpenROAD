@@ -1,5 +1,5 @@
-# repair_antennas -diode_only with CUGR routing: the first iteration's 11
-# diodes leave one violation, so -iterations 2 exercises the repair loop
+# repair_antennas -diode_only with CUGR routing: the first iteration
+# leaves one violation, so -iterations 2 exercises the repair loop
 # re-checking and inserting again after the incremental reroute.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"

@@ -86,9 +86,6 @@ class AbstractGraphics
   // #2 and #3 of enabled() above.
   virtual void setDebugOn(bool set_on) = 0;
 
-  // Called before db_inst is destroyed so a selection can be dropped.
-  virtual void instDestroyed(odb::dbInst* db_inst) {}
-
   void addFrameLabel(const odb::Rect& bbox,
                      std::string_view label,
                      std::string_view label_name,

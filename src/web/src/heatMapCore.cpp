@@ -295,6 +295,13 @@ void HeatMapDataSource::setDrawAboveRangeMax(bool show)
 
 void HeatMapDataSource::setGridSizes(double x, double y)
 {
+  if (updateGridSizes(x, y)) {
+    destroyMap();
+  }
+}
+
+bool HeatMapDataSource::updateGridSizes(double x, double y)
+{
   bool changed = false;
   if (grid_x_size_ != x) {
     grid_x_size_ = boundValue<double>(
@@ -306,10 +313,7 @@ void HeatMapDataSource::setGridSizes(double x, double y)
         y, getGridSizeMinimumValue(), getGridSizeMaximumValue());
     changed = true;
   }
-
-  if (changed) {
-    destroyMap();
-  }
+  return changed;
 }
 
 void HeatMapDataSource::setLogScale(bool scale)
@@ -1510,7 +1514,7 @@ class HeatMapRenderer : public Renderer
         data_settings[name.substr(strlen(kDatasourcePrefix))] = value;
       }
     }
-    datasource_.setSettings(data_settings);
+    datasource_.restoreSettings(data_settings);
   }
 
  private:
