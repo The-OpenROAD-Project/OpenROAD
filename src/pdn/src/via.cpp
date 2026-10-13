@@ -72,7 +72,7 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
       break;
     case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
       if (cut.dx() < cut.dy()) {
-        // SIDE is first overhang, END is second
+        // END is first overhang, SIDE is second
         x_ = rule->getSecondOverhang();
         y_ = rule->getFirstOverhang();
       } else {
