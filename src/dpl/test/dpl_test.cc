@@ -102,8 +102,10 @@ class CheckPlacementTest : public tst::Nangate45Fixture
       ADD_FAILURE() << "Master " << master_name << " not found";
       return nullptr;
     }
-    return makeInst(
-        block_, master, inst_name, {.location = location, .status = status});
+    return makeInst(block_,
+                    master,
+                    inst_name,
+                    {.location = location, .status = status, .iterms = {}});
   }
 
   // Run the check and return the logger error id it raised, or "" if none.
