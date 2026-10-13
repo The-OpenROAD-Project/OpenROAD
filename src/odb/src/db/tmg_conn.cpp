@@ -22,6 +22,10 @@ namespace odb {
 
 using utl::ODB;
 
+namespace {
+constexpr int kMaxNumOfWireSections = 10000;
+}  // namespace
+
 void Terminal::addPoint(WirePoint* point)
 {
   WirePoint* tpt = pt;
@@ -82,6 +86,13 @@ void tmg_conn::analyzeNet()
 
   if (!wire_points_.empty()) {
     loadTerminals();
+    populateShapeSearch();
+
+    // Apparent performance trick from the original implementation.
+    if (wire_sections_.size() < kMaxNumOfWireSections) {
+      splitTtop();
+    }
+
     identifyShorts();
     removeWireLoops();
     identifyTerminalWirePoints();
@@ -441,7 +452,8 @@ void tmg_conn::splitBySj(const int j,
   }
 }
 
-// split top of T shapes
+// Split the top of every T so that the junction becomes a wire point.
+// Without the split, the junction stays a short.
 void tmg_conn::splitTtop()
 {
   for (size_t j = 0; j < wire_sections_.size(); j++) {
@@ -628,9 +640,8 @@ void tmg_conn::sliceBPinsOverlappingITerms()
   }
 }
 
-void tmg_conn::identifyShorts()
+void tmg_conn::populateShapeSearch()
 {
-  // put wires in search
   for (size_t j = 0; j < wire_sections_.size(); j++) {
     WireSection::Shape* s = &(wire_sections_[j].shape);
     if (s->isVia()) {
@@ -677,12 +688,10 @@ void tmg_conn::identifyShorts()
       shape_search_->addShape(rt, s->rect(), ShapeSearch::Type::kWire, j);
     }
   }
+}
 
-  if (wire_sections_.size() < 10000) {
-    splitTtop();
-  }
-
-  // find self-intersections of wires
+void tmg_conn::identifyShorts()
+{
   for (int j = 0; j < (int) wire_sections_.size() - 1; j++) {
     const WireSection::Shape* s = &(wire_sections_[j].shape);
     const int conn_next
@@ -971,11 +980,8 @@ void tmg_conn::removeWireLoops()
   }
 }
 
-void tmg_conn::identifyTerminalWirePoints()
+void tmg_conn::identifyCandidateSections()
 {
-  sliceBPinsOverlappingITerms();
-
-  // connect pins
   for (int terminal_index = 0; terminal_index < terminals_.size();
        terminal_index++) {
     CandidateSections& candidate_sections = candidate_sections_[terminal_index];
@@ -1134,6 +1140,12 @@ void tmg_conn::identifyTerminalWirePoints()
     }
     candidate_section_count_[terminal_index] = candidate_section_count;
   }
+}
+
+void tmg_conn::identifyTerminalWirePoints()
+{
+  sliceBPinsOverlappingITerms();
+  identifyCandidateSections();
 
   for (auto& pc : wire_points_) {
     pc.is_pin_point = false;
@@ -1141,6 +1153,8 @@ void tmg_conn::identifyTerminalWirePoints()
     pc.next_for_clear = nullptr;
     pc.next_in_short_ring = nullptr;
   }
+
+  // Build circular linked lists for shorts.
   setSring();
 
   for (int terminal_index = 0; terminal_index < terminals_.size();
