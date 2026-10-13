@@ -80,6 +80,11 @@ class lefout
                                 dbBlock* block,
                                 dbSet<GenericBox>& boxes,
                                 const char* indent);
+  void writeGeomLayer(std::ostream& out,
+                      const char* indent,
+                      const std::string& layer_name,
+                      int min_spacing,
+                      int design_rule_width);
 
   void writeTechBody(std::ostream& out, dbTech* tech);
   void writeLayer(std::ostream& out, dbTechLayer* layer);
@@ -121,9 +126,12 @@ class lefout
   void writeObstructions(std::ostream& out, dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(std::ostream& out, const std::string& indent, dbBox* box);
+  void writeBox(std::ostream& out,
+                const std::string& indent,
+                dbPolygon* polygon);
   void writePolygon(std::ostream& out,
                     const std::string& indent,
-                    dbPolygon* polygon);
+                    const Polygon& polygon);
   void writeRect(std::ostream& out,
                  const std::string& indent,
                  const Rect& rect);

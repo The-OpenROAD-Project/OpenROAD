@@ -231,7 +231,7 @@ export class LabelManager {
             // Avoid stacking duplicate delete buttons across re-selections.
             if (toolbar.querySelector('.delete-label-btn')) return;
             const btn = document.createElement('button');
-            btn.className = 'inspector-btn delete-label-btn';
+            btn.className = 'or-btn or-btn-icon delete-label-btn';
             btn.title = 'Delete label';
             btn.innerHTML =
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">'

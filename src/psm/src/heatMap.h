@@ -5,8 +5,8 @@
 
 #include <string>
 
-#include "gui/heatMap.h"
 #include "odb/db.h"
+#include "web/heatMap.h"
 
 namespace sta {
 class Sta;
@@ -16,7 +16,7 @@ class Scene;
 namespace psm {
 class PDNSim;
 
-class IRDropDataSource : public gui::RealValueHeatMapDataSource
+class IRDropDataSource : public web::RealValueHeatMapDataSource
 {
  public:
   IRDropDataSource(PDNSim* psm, sta::Sta* sta, utl::Logger* logger);
@@ -35,7 +35,7 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
                       double intersection_area,
                       double rect_area) override;
 
-  void determineMinMax(const gui::HeatMapDataSource::Map& map) override;
+  void determineMinMax(const web::HeatMapDataSource::Map& map) override;
 
  private:
   void ensureLayer();

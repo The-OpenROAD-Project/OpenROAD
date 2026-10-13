@@ -148,13 +148,13 @@ proc report_erc_metrics { } {
   set hold_violation [sta::endpoint_violation_count min]
 
   utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
-  utl::metric_int "timing__drv__max_slew" $max_slew_violation
+  utl::metric_integer "timing__drv__max_slew" $max_slew_violation
   utl::metric_float "timing__drv__max_cap_limit" $max_cap_limit
-  utl::metric_int "timing__drv__max_cap" $max_cap_violation
+  utl::metric_integer "timing__drv__max_cap" $max_cap_violation
   utl::metric_float "timing__drv__max_fanout_limit" $max_fanout_limit
-  utl::metric_int "timing__drv__max_fanout" $max_fanout_violation
-  utl::metric_int "timing__drv__setup_violation_count" $setup_violation
-  utl::metric_int "timing__drv__hold_violation_count" $hold_violation
+  utl::metric_integer "timing__drv__max_fanout" $max_fanout_violation
+  utl::metric_integer "timing__drv__setup_violation_count" $setup_violation
+  utl::metric_integer "timing__drv__hold_violation_count" $hold_violation
 }
 
 

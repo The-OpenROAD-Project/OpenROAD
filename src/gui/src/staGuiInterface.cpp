@@ -999,7 +999,8 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
       one_path_per_endpoint_(true),
       max_path_count_(50),
       include_unconstrained_(false),
-      include_capture_path_(false)
+      include_capture_path_(false),
+      include_clk_gating_checks_(true)
 {
 }
 
@@ -1227,8 +1228,8 @@ TimingPathList STAGuiInterface::getTimingPaths(
           false,
           false,
           // clk_gating_setup, clk_gating_hold
-          false,
-          false);
+          include_clk_gating_checks_ && use_max_,
+          include_clk_gating_checks_ && !use_max_);
 
   for (auto& path_end : path_ends) {
     TimingPath* timing_path = new TimingPath();
