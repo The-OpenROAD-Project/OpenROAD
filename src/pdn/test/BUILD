@@ -462,6 +462,27 @@ doc_check_test(
 )
 
 cc_test(
+    name = "pdn_via_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNVia.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # via.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "pdn_techlayer_unittest",
     srcs = [
         "cpp/PdnTest.h",
