@@ -43,7 +43,7 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0088] Layer M1      Track-Pitch = 0.0360  line-2-Via Pitch: 0.0360
-[INFO GRT-0088] Layer M2      Track-Pitch = 0.0390  line-2-Via Pitch: 0.0360
+[INFO GRT-0088] Layer M2      Track-Pitch = 0.0387  line-2-Via Pitch: 0.0360
 [INFO GRT-0088] Layer M3      Track-Pitch = 0.0360  line-2-Via Pitch: 0.0360
 [INFO GRT-0088] Layer M4      Track-Pitch = 0.0480  line-2-Via Pitch: 0.0480
 [INFO GRT-0088] Layer M5      Track-Pitch = 0.0480  line-2-Via Pitch: 0.0480
@@ -63,37 +63,35 @@ Routing layers:      6
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 M1         Vertical            0             0          0.00%
-M2         Horizontal     445866        178347          60.00%
-M3         Vertical       483372        193349          60.00%
-M4         Horizontal     362442        144977          60.00%
-M5         Vertical       362442        144977          60.00%
-M6         Horizontal     271962        108785          60.00%
+M2         Horizontal     443672        177469          60.00%
+M3         Vertical       477816        191126          60.00%
+M4         Horizontal     358276        143310          60.00%
+M5         Vertical       358276        143310          60.00%
+M6         Horizontal     268836        107534          60.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
 Stage 2: Resistance-aware re-route of critical nets.
-Stage 3: Pattern routing with detours.
-Stage 4: Maze routing on sparsified graph.
 Routing statistics
-Wire length:           34504
-Total via count:       2503
+Wire length:           34595
+Total via count:       2509
 Total congestion:      0.00
-Min resource:          0.05
-Bottleneck:            (4, 85, 150)
+Min resource:          0.32
+Bottleneck:            (4, 90, 152)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 M1        V         0.00         0.00         0.00         0.00       0.00
-M2        H    178346.57       382.00       178.02       560.02       0.31
-M3        V    193348.79      1003.00       126.15      1129.15       0.58
-M4        H    144976.79       233.00        90.39       323.39       0.22
-M5        V    144976.79       594.00        50.57       644.57       0.44
-M6        H    108784.79       137.00        13.07       150.07       0.14
+M2        H    177468.85       377.00       175.22       552.22       0.31
+M3        V    191126.39       956.00       126.08      1082.08       0.57
+M4        H    143310.39       248.00        93.21       341.21       0.24
+M5        V    143310.39       626.00        49.69       675.69       0.47
+M6        H    107534.39       110.00        10.35       120.35       0.11
 --------------------------------------------------------------------------
-Total          770433.74      2349.00       458.20      2807.20       0.36
-[INFO GRT-0018] Total wirelength: 1835 um
+Total          762750.41      2317.00       454.56      2771.56       0.36
+[INFO GRT-0018] Total wirelength: 7364 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
-resistance-aware               WNS: -115.0 ps  TNS: -2592.5 ps
+resistance-aware               WNS: -115.3 ps  TNS: -2615.1 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.

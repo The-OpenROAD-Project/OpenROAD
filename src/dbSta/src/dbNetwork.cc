@@ -4247,11 +4247,11 @@ LibertyPort* dbNetwork::libertyPort(const Port* port) const
 
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
-  const Instance* cur_instance = instance(pin);
-  dbInst* db_inst = nullptr;
-  odb::dbModInst* mod_inst = nullptr;
-  staToDb(cur_instance, db_inst, mod_inst);
-  if (db_inst) {
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+  if (iterm) {
     LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
     return ret;
   }

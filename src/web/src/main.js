@@ -1730,9 +1730,10 @@ app.websocketManager.onPush = (msg) => {
     } else if (msg.type === 'script_running') {
         applyScriptRunning(!!msg.running);
     } else if (msg.type === 'renderer_controls_changed') {
-        // A control was toggled — by this client or another one.  This is the
-        // single trigger for both halves, so the sender does not also
-        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // A control was toggled — by this client or another one — or a
+        // renderer came or went.  This is the single trigger for both
+        // halves, so the sender does not also re-read.
+        // scheduleRedrawAllLayers, not redrawAllLayers: a group
         // toggle sends one message per row and the echoes must coalesce.
         if (app.refreshRendererControls) app.refreshRendererControls();
         scheduleRedrawAllLayers();

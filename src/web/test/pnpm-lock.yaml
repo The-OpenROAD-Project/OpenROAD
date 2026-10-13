@@ -12,6 +12,8 @@ importers:
         specifier: ^30.1.1
         version: 30.1.1
 
+  visual: {}
+
 packages:
 
   '@asamuzakjp/css-color@7.1.2':
@@ -131,8 +133,8 @@ packages:
     resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
     engines: {node: '>=v12.22.7'}
 
-  source-map-js@1.2.1:
-    resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
+  source-map-js@1.2.2:
+    resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
 
   tldts-core@7.4.12:
@@ -235,7 +237,7 @@ snapshots:
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   data-urls@7.0.0:
     dependencies:
@@ -299,7 +301,7 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
 
-  source-map-js@1.2.1: {}
+  source-map-js@1.2.2: {}
 
   tldts-core@7.4.12: {}
 

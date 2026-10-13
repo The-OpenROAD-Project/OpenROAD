@@ -293,6 +293,21 @@ bool WebViewerHook::isPaused() const
   return paused_.load(std::memory_order_acquire);
 }
 
+void WebViewerHook::registerRenderer(Renderer* /* renderer */)
+{
+  renderers_changed_.store(true, std::memory_order_release);
+}
+
+void WebViewerHook::unregisterRenderer(Renderer* /* renderer */)
+{
+  renderers_changed_.store(true, std::memory_order_release);
+}
+
+bool WebViewerHook::takeRenderersChanged()
+{
+  return renderers_changed_.exchange(false, std::memory_order_acq_rel);
+}
+
 // ─── Per-renderer display controls ───────────────────────────────────────────
 //
 // An unknown path answers `true`, the base class's behaviour: a renderer that
