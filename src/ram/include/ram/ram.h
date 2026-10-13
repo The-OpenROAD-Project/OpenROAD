@@ -128,7 +128,8 @@ class RamGen
                 int bit_folds = 1,
                 const std::string& wrapper_verilog = "",
                 int service_every = 0,
-                int service_sites = 0);
+                int service_sites = 0,
+                const std::string& bank_column_layout = "interleaved");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -415,6 +416,24 @@ class RamGen
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
+  }
+  // -bank_column_layout: a row's words interleaved bit by bit, as the
+  // column mux lays them out (bit b of every word, then bit b+1), or
+  // contiguous, each word's bits side by side and its select column
+  // after them, so a word's selects and write enables span its own bits
+  // and not the row
+  bool words_contiguous_{false};
+  int bitColumn(int slice, int bit, int word, int mask_size) const
+  {
+    return sliceOffset(slice)
+           + (words_contiguous_ ? word * (mask_size + 1) + bit
+                                : bit * words_per_row_ + word);
+  }
+  int selColumn(int slice, int word, int mask_size) const
+  {
+    return sliceOffset(slice)
+           + (words_contiguous_ ? word * (mask_size + 1) + mask_size
+                                : mask_size * words_per_row_ + word);
   }
   std::string pin_layer_;
   bool marking_periphery_{false};

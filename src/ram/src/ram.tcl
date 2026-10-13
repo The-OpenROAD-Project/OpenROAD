@@ -25,6 +25,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-wrapper_verilog file]
                                              [-pin_layer layer]
                                              [-service_columns {every sites}]
+                                             [-bank_column_layout interleaved|contiguous]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -39,7 +40,8 @@ proc generate_ram_netlist { args } {
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
-      -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns } flags {}
+      -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns
+      -bank_column_layout } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -232,6 +234,16 @@ proc generate_ram_netlist { args } {
     lassign $keys(-service_columns) service_every service_sites
   }
 
+  # A row's words interleaved bit by bit (the column mux's order) or each
+  # word's bits side by side.
+  set bank_column_layout interleaved
+  if { [info exists keys(-bank_column_layout)] } {
+    set bank_column_layout $keys(-bank_column_layout)
+    if { $bank_column_layout ni {interleaved contiguous} } {
+      utl::error RAM 91 "-bank_column_layout is interleaved or contiguous, not $bank_column_layout."
+    }
+  }
+
   set bit_folds 1
   if { [info exists keys(-bit_folds)] } {
     set bit_folds $keys(-bit_folds)
@@ -287,7 +299,8 @@ proc generate_ram_netlist { args } {
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
     $rb_ports $read_latency $write_style $write_priority $periphery $pin_layer $cells $name \
-    $decoder $bit_folds $wrapper_verilog $service_every $service_sites
+    $decoder $bit_folds $wrapper_verilog $service_every $service_sites \
+    $bank_column_layout
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -323,7 +336,8 @@ proc generate_ram { args } {
            -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog -read_style -zero_word -reset_value
            -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
-           -cells -name -decoder -bit_folds -service_columns } flags {}
+           -cells -name -decoder -bit_folds -service_columns
+           -bank_column_layout } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -373,7 +387,8 @@ proc generate_ram { args } {
   }
 
   foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
-               -cells -name -decoder -bit_folds -service_columns} {
+               -cells -name -decoder -bit_folds -service_columns
+               -bank_column_layout} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }

@@ -349,13 +349,10 @@ void RamGen::makeSlice(const int slice_idx,
           makeInst(cell.get(), node.prefix, node.name, node.master, node.conns);
         }
       }
-      ram_grid_.addCell(
-          std::move(cell),
-          sliceOffset(slice_idx) + local_bit * column_mux_ratio + word_idx);
+      ram_grid_.addCell(std::move(cell),
+                        bitColumn(slice_idx, local_bit, word_idx, mask_size));
     }
-    ram_grid_.addCell(
-        nullptr,
-        sliceOffset(slice_idx) + mask_size * column_mux_ratio + word_idx);
+    ram_grid_.addCell(nullptr, selColumn(slice_idx, word_idx, mask_size));
     return;
   }
 
@@ -514,9 +511,8 @@ void RamGen::makeSlice(const int slice_idx,
   for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
     if (start_bit_idx + local_bit >= word_bits_) {
       // a short fold's pad: its column empty in this row
-      ram_grid_.addCell(
-          nullptr,
-          sliceOffset(slice_idx) + local_bit * column_mux_ratio + word_idx);
+      ram_grid_.addCell(nullptr,
+                        bitColumn(slice_idx, local_bit, word_idx, mask_size));
       continue;
     }
     auto name = fmt::format("{}.bit{}", prefix, start_bit_idx + local_bit);
@@ -634,8 +630,7 @@ void RamGen::makeSlice(const int slice_idx,
       }
     }
 
-    int bit_col
-        = sliceOffset(slice_idx) + local_bit * column_mux_ratio + word_idx;
+    int bit_col = bitColumn(slice_idx, local_bit, word_idx, mask_size);
     ram_grid_.addCell(std::move(bit_cell), bit_col);
   }
 
@@ -693,8 +688,7 @@ void RamGen::makeSlice(const int slice_idx,
     }
   }
 
-  int sel_col
-      = sliceOffset(slice_idx) + mask_size * column_mux_ratio + word_idx;
+  int sel_col = selColumn(slice_idx, word_idx, mask_size);
   // a fold sharing its word's logic has an empty select cell
   ram_grid_.addCell(shared ? nullptr : std::move(sel_cell), sel_col);
 }
@@ -1957,7 +1951,8 @@ void RamGen::generate(const int mask_size,
                       const int bit_folds,
                       const std::string& wrapper_verilog,
                       const int service_every,
-                      const int service_sites)
+                      const int service_sites,
+                      const std::string& bank_column_layout)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -2029,6 +2024,14 @@ void RamGen::generate(const int mask_size,
   // the words in a row: the column mux's, or the banks side by side
   const int column_mux_ratio = banked_ ? bank_columns_ : column_mux_ratio_arg;
   words_per_row_ = column_mux_ratio;
+  words_contiguous_ = bank_column_layout == "contiguous";
+  if (words_contiguous_ && !banked_) {
+    logger_->error(RAM,
+                   90,
+                   "-bank_column_layout contiguous needs -banks, -bank_columns "
+                   "or -decoder word: the column mux reads a row's words "
+                   "interleaved.");
+  }
   bit_folds_ = std::max(bit_folds, 1);
   slice_width_ = mask_size * column_mux_ratio + column_mux_ratio;
   // the word's own bits; with -bit_folds the last fold may be short, its
@@ -2863,7 +2866,7 @@ void RamGen::generate(const int mask_size,
   for (int slice = 0; slice < slices_per_word; ++slice) {
     for (int bit = 0; bit < mask_size; ++bit) {
       int bit_idx = bit + slice * mask_size;
-      int buf_col = sliceOffset(slice) + bit * column_mux_ratio;
+      int buf_col = bitColumn(slice, bit, 0, mask_size);
       auto& buffer_grid_cell
           = buffer_cells[{buf_col, bit_folds_ > 1 ? slice : 0}];
       if (bit_idx >= word_bits_) {
