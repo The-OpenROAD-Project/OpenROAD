@@ -120,7 +120,9 @@ class RamGen
                 int read_latency = 0,
                 const std::string& write_style = "clock_gate",
                 const std::string& periphery = "placed",
-                const std::string& pin_layer = "");
+                const std::string& pin_layer = "",
+                const std::string& cells = "",
+                const std::string& name = "");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -201,7 +203,8 @@ class RamGen
                              const char* name,
                              std::array<std::string, 4>& inputs,
                              std::string& output,
-                             bool required = true);
+                             bool required = true,
+                             odb::dbMaster* given = nullptr);
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
   odb::dbInst* makeInst(
       Cell* cell,
@@ -380,6 +383,7 @@ class RamGen
   // buffers) left for a parent to place; the outline the placed core and
   // a row; each pin where its connections land, on pin_layer_'s tracks
   bool periphery_unplaced_{false};
+  std::string ram_name_;  // the block's and the behavioral model's name
   std::string pin_layer_;
   bool marking_periphery_{false};
   Cell* periphery_cell_{nullptr};

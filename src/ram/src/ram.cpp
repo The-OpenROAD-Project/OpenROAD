@@ -13,6 +13,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1312,15 +1313,17 @@ void RamGen::findResetPins()
 
   // the unused pin of each flop held at its inactive level
   const bool off_high = reset_active_low_;
-  tie_off_cell_ = findMaster(
-      [off_high](sta::LibertyPort* port) {
-        auto f = port->function();
-        return f && port->direction()->isOutput()
-               && f->op()
-                      == (off_high ? sta::FuncExpr::Op::one
-                                   : sta::FuncExpr::Op::zero);
-      },
-      off_high ? "tie high" : "tie low");
+  if (!tie_off_cell_) {
+    tie_off_cell_ = findMaster(
+        [off_high](sta::LibertyPort* port) {
+          auto f = port->function();
+          return f && port->direction()->isOutput()
+                 && f->op()
+                        == (off_high ? sta::FuncExpr::Op::one
+                                     : sta::FuncExpr::Op::zero);
+        },
+        off_high ? "tie high" : "tie low");
+  }
   tie_off_pin_ = buildPortMap(tie_off_cell_)[{PortRoleType::DataOut, 0}];
 
   try {
@@ -1490,10 +1493,12 @@ void RamGen::findMasters()
   // aoi cells used for column mux functionality when column_mux_ratio > 1
   // uses truth table simulation to identify AOI22 and discover port names
   // to work for all PDKs, avoiding hardcoding PDK-specific expression parsing
-  if (!aoi22_cell_) {
-    // AOI22 truth table: Y = !(A1&A2 | B1&B2)
+  {
+    // AOI22 truth table: Y = !(A1&A2 | B1&B2); a given cell's pins read
+    // the same way
     std::array<std::string, 4> in;
-    aoi22_cell_ = findMaster4(0x0777, "aoi22", in, aoi22_out_);
+    aoi22_cell_ = findMaster4(
+        0x0777, "aoi22", in, aoi22_out_, /*required=*/true, aoi22_cell_);
     aoi22_in_a1_ = in[0];
     aoi22_in_a2_ = in[1];
     aoi22_in_b1_ = in[2];
@@ -1519,10 +1524,10 @@ void RamGen::findMasters()
 
   // More than one write port: the write data mux, an AO22 per pair of
   // ports, and an OR2 for the write enables and across pairs.
-  if ((num_write_ > 1 || write_mux_) && !ao22_cell_) {
+  if (num_write_ > 1 || write_mux_) {
     // AO22 truth table: Y = A1&A2 | B1&B2
-    ao22_cell_
-        = findMaster4(0xF888, "ao22", ao22_in_, ao22_out_, /*required=*/false);
+    ao22_cell_ = findMaster4(
+        0xF888, "ao22", ao22_in_, ao22_out_, /*required=*/false, ao22_cell_);
   }
   if (num_write_ > 1) {
     if (!or2_cell_) {
@@ -1546,7 +1551,8 @@ dbMaster* RamGen::findMaster4(const uint16_t table,
                               const char* name,
                               std::array<std::string, 4>& inputs_out,
                               std::string& output,
-                              const bool required)
+                              const bool required,
+                              dbMaster* given)
 {
   // for 4 inputs ordered (A1,A2,B1,B2) mapped to bits (0,1,2,3),
   // bit k of the table = output when inputs = k in binary.
@@ -1581,60 +1587,77 @@ dbMaster* RamGen::findMaster4(const uint16_t table,
       {0, 3, 1, 2},  // group A=(p0,p3), group B=(p1,p2)
   };
 
-  return findMaster(
-      [&](sta::LibertyPort* out_port) -> bool {
-        if (!out_port->direction()->isOutput()) {
-          return false;
-        }
-        auto func = out_port->function();
-        if (!func) {
-          return false;
-        }
-        auto cell = out_port->libertyCell();
+  auto match = [&](sta::LibertyPort* out_port) -> bool {
+    if (!out_port->direction()->isOutput()) {
+      return false;
+    }
+    auto func = out_port->function();
+    if (!func) {
+      return false;
+    }
+    auto cell = out_port->libertyCell();
 
-        // collect all input ports for this cell
-        std::vector<sta::LibertyPort*> inputs;
-        std::unique_ptr<sta::ConcreteCellPortIterator> port_iter(
-            cell->portIterator());
-        while (port_iter->hasNext()) {
-          auto p = static_cast<sta::ConcretePort*>(port_iter->next());
-          if (p->direction()->isInput()) {
-            inputs.push_back(p->libertyPort());
-          }
-        }
+    // collect all input ports for this cell
+    std::vector<sta::LibertyPort*> inputs;
+    std::unique_ptr<sta::ConcreteCellPortIterator> port_iter(
+        cell->portIterator());
+    while (port_iter->hasNext()) {
+      auto p = static_cast<sta::ConcretePort*>(port_iter->next());
+      if (p->direction()->isInput()) {
+        inputs.push_back(p->libertyPort());
+      }
+    }
 
-        // aoi22 must have exactly 4 inputs
-        if (inputs.size() != 4) {
-          return false;
-        }
+    // aoi22 must have exactly 4 inputs
+    if (inputs.size() != 4) {
+      return false;
+    }
 
-        // sort ports by name for deterministic ordering across builds
-        std::ranges::sort(inputs, [](sta::LibertyPort* a, sta::LibertyPort* b) {
-          return std::string(a->name()) < std::string(b->name());
-        });
+    // sort ports by name for deterministic ordering across builds
+    std::ranges::sort(inputs, [](sta::LibertyPort* a, sta::LibertyPort* b) {
+      return std::string(a->name()) < std::string(b->name());
+    });
 
-        // try each pairing, if truth table matches, record port names
-        for (auto& pairing : kPairings) {
-          std::vector<sta::LibertyPort*> ordered = {inputs[pairing[0]],
-                                                    inputs[pairing[1]],
-                                                    inputs[pairing[2]],
-                                                    inputs[pairing[3]]};
-          if (computeTable(func, ordered) == table) {
-            // found matching pairing so this is the correct port mapping,
-            // store port names for later use
-            // ordered[0] = A1, ordered[1] = A2, ordered[2] = B1, ordered[3] =
-            // B2
-            for (int i = 0; i < 4; ++i) {
-              inputs_out[i] = ordered[i]->name();
-            }
-            output = out_port->name();
-            return true;
-          }
+    // try each pairing, if truth table matches, record port names
+    for (auto& pairing : kPairings) {
+      std::vector<sta::LibertyPort*> ordered = {inputs[pairing[0]],
+                                                inputs[pairing[1]],
+                                                inputs[pairing[2]],
+                                                inputs[pairing[3]]};
+      if (computeTable(func, ordered) == table) {
+        // found matching pairing so this is the correct port mapping,
+        // store port names for later use
+        // ordered[0] = A1, ordered[1] = A2, ordered[2] = B1, ordered[3] =
+        // B2
+        for (int i = 0; i < 4; ++i) {
+          inputs_out[i] = ordered[i]->name();
         }
-        return false;
-      },
-      name,
-      required);
+        output = out_port->name();
+        return true;
+      }
+    }
+    return false;
+  };
+  // the cell given, or the smallest that matches; its pins are read from
+  // it, whichever matched last in the search
+  dbMaster* best = given ? given : findMaster(match, name, required);
+  if (best) {
+    bool matched = false;
+    auto liberty = network_->libertyCell(network_->dbToSta(best));
+    std::unique_ptr<sta::ConcreteCellPortIterator> ports(
+        liberty->portIterator());
+    while (ports->hasNext() && !matched) {
+      auto port = ports->next()->libertyPort();
+      if (port && port->direction()->isOutput()) {
+        matched = match(port);
+      }
+    }
+    if (!matched) {
+      logger_->error(
+          RAM, 79, "Cell {} is not a {} cell.", best->getName(), name);
+    }
+  }
+  return best;
 }
 
 void RamGen::ramPdngen(const char* power_net_name,
@@ -1889,7 +1912,9 @@ void RamGen::generate(const int mask_size,
                       const int read_latency,
                       const std::string& write_style,
                       const std::string& periphery,
-                      const std::string& pin_layer)
+                      const std::string& pin_layer,
+                      const std::string& cells,
+                      const std::string& name)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -1956,7 +1981,10 @@ void RamGen::generate(const int mask_size,
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
   }
   const int slices_per_word = word_size / mask_size;
-  const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
+  // the block's name: -name, or RAM<words>x<bits>
+  const std::string ram_name
+      = name.empty() ? fmt::format("RAM{}x{}", num_words, word_size) : name;
+  ram_name_ = ram_name;
 
   // error checking for column_mux_ratio
   if (!banked_ && column_mux_ratio != 1 && column_mux_ratio != 2
@@ -2021,6 +2049,44 @@ void RamGen::generate(const int mask_size,
   nand2_cell_ = nullptr;
   nor2_cell_ = nullptr;
   latch_cell_ = nullptr;
+  addr_flop_cell_ = nullptr;
+  tie_off_cell_ = nullptr;
+
+  // -cells {role master ...}: the cell for a role, instead of the
+  // smallest the libraries have of its function
+  {
+    std::istringstream in(cells);
+    std::string role;
+    std::string master_name;
+    const std::map<std::string, dbMaster**> roles
+        = {{"inv", &inv_cell_},
+           {"and2", &and2_cell_},
+           {"buffer", &buffer_cell_},
+           {"clock_gate", &clock_gate_cell_},
+           {"aoi22", &aoi22_cell_},
+           {"ao22", &ao22_cell_},
+           {"or2", &or2_cell_},
+           {"nand2", &nand2_cell_},
+           {"nor2", &nor2_cell_},
+           {"tie", &tie_off_cell_},
+           {"addr_flop", &addr_flop_cell_}};
+    while (in >> role >> master_name) {
+      auto slot = roles.find(role);
+      if (slot == roles.end()) {
+        logger_->error(RAM,
+                       80,
+                       "-cells: no role {}; the roles are inv, and2, buffer, "
+                       "clock_gate, aoi22, ao22, or2, nand2, nor2, tie and "
+                       "addr_flop.",
+                       role);
+      }
+      dbMaster* master = db_->findMaster(master_name.c_str());
+      if (master == nullptr) {
+        logger_->error(RAM, 81, "-cells: {} can't be found.", master_name);
+      }
+      *slot->second = master;
+    }
+  }
 
   if (use_latch_ && storage_cell_) {
     auto sta_cell = network_->dbToSta(storage_cell_);
@@ -2062,8 +2128,11 @@ void RamGen::generate(const int mask_size,
     };
     // the storage cell where it is one (findMaster passes over cells with
     // two outputs, as Nangate45's flops all are), else the smallest
-    if (storage_cell_
-        && plain(network_->libertyCell(network_->dbToSta(storage_cell_)))) {
+    if (addr_flop_cell_) {
+      // given by -cells
+    } else if (storage_cell_
+               && plain(
+                   network_->libertyCell(network_->dbToSta(storage_cell_)))) {
       addr_flop_cell_ = storage_cell_;
     } else {
       addr_flop_cell_ = findMaster(
@@ -3115,7 +3184,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   const int address_width
       = (num_words <= 1) ? 1 : std::ceil(std::log2(num_words));
 
-  std::string module_name = fmt::format("RAM{}x{}", num_words, word_size_bit);
+  std::string module_name = ram_name_;
 
   int r_total = rw_ports + r_ports;
   const int num_write = rw_ports + w_ports;

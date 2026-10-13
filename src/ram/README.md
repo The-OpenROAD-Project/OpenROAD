@@ -52,6 +52,8 @@ generate_ram [-mask_size bits]
              [-rb_ports count]
              [-read_latency 0|1]
              [-write_style clock_gate|mux]
+             [-cells {role master ...}]
+             [-name name]
              [-inv_cell name]
              [-power_net_name name]
              [-ground_net_name name]
@@ -85,6 +87,8 @@ generate_ram [-mask_size bits]
 | `-read_latency` | `1` registers every read port's address, a plain positive-edge flop per address bit, so the data follows a cycle after the address. Not with `-column_mux_ratio` above 1 or read/write ports. Default: 0. |
 | `-write_style` | How a word holds its value between writes: `clock_gate`, a clock gate per word; or `mux`, every flop on the clock and a mux per bit taking the new data or the flop's own value. A clock gate saves a mux per bit; a mux keeps every flop on the plain clock. Not with `-use_latch`. Default: `clock_gate`. |
 | `-periphery`, `-pin_layer` | `generate_ram_netlist` only. `unplaced` leaves the periphery (address inverters and registers, decoders, select buffers, each word's select cell, the input buffers) for a parent to place, size and buffer; the outline is the placed core and a row, and each pin sits where its connections land, on `-pin_layer`'s tracks, for a macro placer before the parent dissolves the core into its rows. Default: `placed`. |
+| `-cells` | The cell for a role (`inv`, `and2`, `buffer`, `clock_gate`, `aoi22`, `ao22`, `or2`, `nand2`, `nor2`, `tie`, `addr_flop`), instead of the smallest the libraries have of its function. An AOI22 or AO22 given is checked by its truth table. Default: the smallest of each. |
+| `-name` | The block's and the behavioral model's name. Default: `RAM<words>x<bits>`. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |
