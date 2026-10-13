@@ -2880,10 +2880,8 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   const bool keep_output_net
       = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
   sta::Net* removed = keep_output_net ? input_net : output_net;
-  odb::dbNet* db_net_survivor
-      = keep_output_net ? output_db_net : input_db_net;
-  odb::dbNet* db_net_removed
-      = keep_output_net ? input_db_net : output_db_net;
+  odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
+  odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
   if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
