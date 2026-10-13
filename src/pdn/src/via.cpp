@@ -2647,19 +2647,6 @@ bool GenerateViaGenerator::isLayerValidForWidth(odb::dbTechViaLayerRule* rule,
   return min <= width && width <= max;
 }
 
-bool GenerateViaGenerator::getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,
-                                                 int& dx,
-                                                 int& dy) const
-{
-  if (rule->hasEnclosure()) {
-    rule->getEnclosure(dx, dy);
-  } else {
-    return false;
-  }
-
-  return true;
-}
-
 DbBaseVia* GenerateViaGenerator::makeBaseVia(int rows,
                                              int row_pitch,
                                              int cols,
