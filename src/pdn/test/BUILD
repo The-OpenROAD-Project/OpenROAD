@@ -483,6 +483,28 @@ cc_test(
 )
 
 cc_test(
+    name = "pdn_connect_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNConnect.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # connect.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
     name = "pdn_techlayer_unittest",
     srcs = [
         "cpp/PdnTest.h",
