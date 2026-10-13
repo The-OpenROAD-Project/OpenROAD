@@ -199,26 +199,39 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
     rules.push_back(MinCutRule{nullptr,
-                               min_cut_rule->isAboveOnly(),
-                               min_cut_rule->isBelowOnly(),
+                               min_cut_rule->isBelowOnly(),  // same as ABOVE
+                               min_cut_rule->isAboveOnly(),  // same as BELOW
                                static_cast<int>(rule_width),
                                static_cast<int>(numcuts)});
   }
 
   for (auto* rule : layer_->getTechLayerMinCutRules()) {
-    for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
-      auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(
-          cut_class_name.c_str());
-      if (cut_class == nullptr) {
-        cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(
-            cut_class_name.c_str());
-      }
-
-      rules.push_back(MinCutRule{cut_class,
+    if (rule->getCutClassCutsMap().empty()) {
+      rules.push_back(MinCutRule{nullptr,
                                  rule->isFromBelow(),  // same as ABOVE
                                  rule->isFromAbove(),  // same as BELOW
                                  rule->getWidth(),
-                                 cuts});
+                                 rule->getNumCuts()});
+    }
+    for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
+      // a class name can be defined on the cut layers both below and above
+      for (auto* cut_layer :
+           {layer_->getLowerLayer(), layer_->getUpperLayer()}) {
+        if (cut_layer == nullptr) {
+          continue;
+        }
+        auto* cut_class
+            = cut_layer->findTechLayerCutClassRule(cut_class_name.c_str());
+        if (cut_class == nullptr) {
+          continue;
+        }
+
+        rules.push_back(MinCutRule{cut_class,
+                                   rule->isFromBelow(),  // same as ABOVE
+                                   rule->isFromAbove(),  // same as BELOW
+                                   rule->getWidth(),
+                                   cuts});
+      }
     }
   }
 
