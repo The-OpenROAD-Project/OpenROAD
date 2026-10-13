@@ -17,5 +17,6 @@ or_integration_tests(
     periphery_unplaced_asap7
     cells_name_asap7
     decoder_word_asap7
+    bit_folds_asap7
 )
 

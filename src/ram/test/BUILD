@@ -24,6 +24,7 @@ PASSFAIL_TESTS = [
     "periphery_unplaced_asap7",
     "cells_name_asap7",
     "decoder_word_asap7",
+    "bit_folds_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -105,6 +106,10 @@ filegroup(
                 "//test:asap7_nldm_data",
             ],
             "decoder_word_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "bit_folds_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],

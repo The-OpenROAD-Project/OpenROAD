@@ -123,7 +123,8 @@ class RamGen
                 const std::string& pin_layer = "",
                 const std::string& cells = "",
                 const std::string& name = "",
-                const std::string& decoder = "row");
+                const std::string& decoder = "row",
+                int bit_folds = 1);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -385,6 +386,29 @@ class RamGen
   // a row; each pin where its connections land, on pin_layer_'s tracks
   bool periphery_unplaced_{false};
   std::string ram_name_;  // the block's and the behavioral model's name
+  // -bit_folds k: a word's mask slices in k rows instead of side by side,
+  // so a wide word with many ports is as tall as it is wide; every
+  // column is k rows a word
+  int bit_folds_{1};
+  int word_bits_{0};    // the word's bits, short of the folds' pads
+  int slice_width_{0};  // a slice's columns: its bits, and its select
+  // with -bit_folds a word is written whole: its write logic (enables,
+  // priority, hold, clock gate, reset tie, select inverters) built in its
+  // first fold and shared by the others, keyed (row, word in the row)
+  struct WordWrite
+  {
+    odb::dbNet* we{nullptr};
+    odb::dbNet* hold{nullptr};
+    odb::dbNet* gclock{nullptr};
+    odb::dbNet* reset_off{nullptr};
+    std::vector<odb::dbNet*> take;
+    std::vector<odb::dbNet*> select_b;
+  };
+  std::map<std::pair<int, int>, WordWrite> word_write_;
+  int sliceOffset(int slice) const
+  {
+    return bit_folds_ > 1 ? 0 : slice * slice_width_;
+  }
   std::string pin_layer_;
   bool marking_periphery_{false};
   Cell* periphery_cell_{nullptr};

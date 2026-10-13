@@ -55,6 +55,7 @@ generate_ram [-mask_size bits]
              [-cells {role master ...}]
              [-name name]
              [-decoder row|word]
+             [-bit_folds count]
              [-inv_cell name]
              [-power_net_name name]
              [-ground_net_name name]
@@ -91,6 +92,7 @@ generate_ram [-mask_size bits]
 | `-cells` | The cell for a role (`inv`, `and2`, `buffer`, `clock_gate`, `aoi22`, `ao22`, `or2`, `nand2`, `nor2`, `tie`, `addr_flop`), instead of the smallest the libraries have of its function. An AOI22 or AO22 given is checked by its truth table. Default: the smallest of each. |
 | `-name` | The block's and the behavioral model's name. Default: `RAM<words>x<bits>`. |
 | `-decoder` | `row`: a decoder per row, an AND2 chain over the row address, the column mux selecting within the row. `word`: a balanced AND2 tree over each word's whole address, as with banks; shallower for the read path. Default: `row`. |
+| `-bit_folds` | A word in `count` rows: its bits in slices of `-mask_size` (the word divided by `count`, rounded up; the last slice may be short), one slice a row, so a wide word with many ports is not a long thin strip. A folded word is written whole, one write enable a port, its write logic built once and shared by its rows. Not with `-use_latch` or the row decoder's `-column_mux_ratio` above 1. Default: 1. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |
