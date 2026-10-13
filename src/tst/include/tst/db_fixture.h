@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,11 +14,13 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-#ifdef BAZEL_BUILD
-#include "tools/cpp/runfiles/runfiles.h"
-#endif
-
 namespace tst {
+
+// Resolves a test data path. Under bazel this goes through the runfiles
+// machinery; under cmake it strips leading directories until the path exists.
+// Free function rather than a fixture method so non-fixture helpers
+// (LoadedDesign, and anything that has to locate a tool binary) can use it.
+std::string getRunfilePath(const std::string& file_path);
 
 struct InstOptions
 {
@@ -69,6 +70,21 @@ class DbFixture : public ::testing::Test
   // Load a tech LEF file
   odb::dbTech* loadTechLef(const char* name, const std::string& lef_file);
 
+  // Load a library LEF file without notifying STA.  tst::Fixture's
+  // loadLibaryLef/loadTechAndLib also update its dbSta.
+  odb::dbLib* loadLibLef(odb::dbTech* tech,
+                         const char* name,
+                         const std::string& lef_file);
+  // Load a tech + library LEF file without notifying STA.
+  odb::dbLib* loadTechAndLibLef(const char* tech_name,
+                                const char* lib_name,
+                                const std::string& lef_file);
+
+  // Read a DEF file onto a new chip using the technology of the first
+  // library in libs (all libraries if empty).  Returns the top block.
+  odb::dbBlock* readDef(const std::string& def_file,
+                        std::vector<odb::dbLib*> libs = {});
+
   // Netlist editing helpers.
   //
   // These APIs are designed for maximum convenience rather than
@@ -101,9 +117,6 @@ class DbFixture : public ::testing::Test
 
   utl::Logger logger_;
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
-#ifdef BAZEL_BUILD
-  std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> runfiles_;
-#endif
 };
 
 }  // namespace tst

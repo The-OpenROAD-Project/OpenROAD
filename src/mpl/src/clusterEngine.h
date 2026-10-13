@@ -105,8 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(const HardMacro::Halo& base_halo,
-                const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
+  void setChannel(Channel min_channel, bool pin_aware_channels);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -227,6 +226,14 @@ class ClusteringEngine
 
   bool isValidNet(odb::dbNet* net);
 
+  HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
+  HardMacro::Halo buildPinAwareHalo(odb::dbInst* inst,
+                                    int minimum_spacing) const;
+  int getMinimumSpacing() const;
+  bool isEquidistantDifferentDirections(
+      std::pair<int, Boundary> candidate,
+      std::pair<int, Boundary> second_candidate) const;
+
   odb::dbBlock* block_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
@@ -254,8 +261,8 @@ class ClusteringEngine
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
-  HardMacro::Halo base_halo_;
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
+  Channel min_channel_;
+  bool pin_aware_channels_{false};
 };
 
 }  // namespace mpl

@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2026, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -124,34 +122,10 @@ cc_library(
     ],
 )
 
-cc_binary(
-    name = "_rmp_py.so",
-    srcs = [":swig-py"],
-    defines = [
-        "BAZEL=1",
-        PYTHON_STABLE_API_DEFINE,
-    ],
-    includes = ["src"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        ":rmp",
-        "//:ord",
-        "//src/cut",
-        "//src/dbSta",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-py_library(
+# The rmp module is part of //:openroad_py.
+alias(
     name = "rmp_py",
-    srcs = [":swig-py"],
-    data = [":_rmp_py.so"],
-    imports = ["."],
+    actual = "//:openroad_py",
     visibility = ["//visibility:public"],
 )
 
@@ -217,5 +191,16 @@ messages_txt(
     visibility = [
         "//docs:__pkg__",
         "//src/rmp/test:__pkg__",
+    ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [
+        ":rmp",
+        "//src/cut",
+        "//src/dbSta",
+        "//src/sta:opensta_lib",
     ],
 )

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -53,16 +54,18 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
+#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Hash.hh"
 #include "sta/InputDrive.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
@@ -278,17 +281,8 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
     return false;
   }
 
-  const bool input_modnet_has_input_port = std::ranges::any_of(
-      input_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::INPUT;
-      });
-
-  const bool output_modnet_has_output_port = std::ranges::any_of(
-      output_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::OUTPUT;
-      });
-
-  return input_modnet_has_input_port && output_modnet_has_output_port;
+  return input_modnet->isConnectedToInputPort()
+         && output_modnet->isConnectedToOutputPort();
 }
 
 float inputPinCapacitance(sta::Network* network,
@@ -2199,8 +2193,16 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     return {};
   }
 
+  // An instance of a dont_use cell is left alone rather than sized.  Its
+  // target load is not in target_load_map_, which findTargetLoads builds
+  // without dont_use cells, so it has no usable baseline to size against.
+  if (dontUse(source_cell)) {
+    swappable_cells_cache_[source_cell] = {source_cell};
+    return {source_cell};
+  }
+
   sta::LibertyCellSeq swappable_cells;
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
 
   if (equiv_cells) {
     int64_t source_cell_area = master->getArea();
@@ -2313,7 +2315,7 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
@@ -2440,26 +2442,102 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
+// Bucket key, same shape as the port term of sta::hashCell.  Equivalent cells
+// always share a key because sta::equivCellPorts requires matching port names
+// and directions.  Unrelated cells may too; sta::equivCells separates them.
+static unsigned equivCellKey(const sta::LibertyCell* cell)
+{
+  unsigned key = 0;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    key += sta::hashString(port->name()) * 3 + port->direction()->index() * 5;
+  }
+  return key;
+}
+
+// Group the link cells into equivalence classes.
+//
+// Not sta::Sta::makeEquivCells, which skips cells with the liberty dont_use
+// attribute.  Liberty dont_use only seeds dont_use_ (copyDontUseFromLiberty);
+// unset_dont_use clears dont_use_ but not liberty, and those cells must stay
+// sizing candidates.  So nothing is filtered here; callers apply dont_use_.
 void Resizer::makeEquivCells()
 {
-  if (!equiv_cells_made_) {
-    sta::LibertyLibrarySeq libs;
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      // massive kludge until makeEquivCells is fixed to only incldue link cells
-      sta::LibertyCellIterator cell_iter(lib);
-      if (cell_iter.hasNext()) {
-        sta::LibertyCell* cell = cell_iter.next();
-        if (isLinkCell(cell)) {
-          libs.emplace_back(lib);
-        }
+  if (equiv_cells_made_) {
+    return;
+  }
+  clearEquivCells();
+
+  std::unordered_map<unsigned, sta::LibertyCellSeq> buckets;
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network_->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      // Only link cells can be swapped in; the other corners' copies would
+      // multiply every class by the corner count.
+      if (isLinkCell(cell)) {
+        buckets[equivCellKey(cell)].emplace_back(cell);
       }
     }
-    delete lib_iter;
-    sta_->makeEquivCells(&libs, nullptr);
-    equiv_cells_made_ = true;
   }
+
+  for (sta::LibertyCellSeq& cells : std::views::values(buckets)) {
+    // One member per class is enough to compare against, sta::equivCells
+    // being transitive.
+    std::vector<sta::LibertyCellSeq> classes;
+    for (sta::LibertyCell* cell : cells) {
+      auto equivs = std::ranges::find_if(
+          classes, [cell](const sta::LibertyCellSeq& members) {
+            return sta::equivCells(members.front(), cell);
+          });
+      if (equivs == classes.end()) {
+        classes.emplace_back(1, cell);
+      } else {
+        equivs->emplace_back(cell);
+      }
+    }
+
+    for (sta::LibertyCellSeq& members : classes) {
+      // Cells with no equivalents stay out of equiv_cells_.
+      if (members.size() < 2) {
+        continue;
+      }
+      // Callers rely on decreasing drive resistance.
+      std::ranges::stable_sort(
+          members,
+          [this](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+            return cellDriveResistance(cell1) > cellDriveResistance(cell2);
+          });
+      sta::LibertyCellSeq& equivs
+          = equiv_cell_groups_.emplace_back(std::move(members));
+      for (sta::LibertyCell* cell : equivs) {
+        equiv_cells_[cell] = &equivs;
+      }
+    }
+  }
+
+  equiv_cells_made_ = true;
+}
+
+// Cells equivalent to cell, sorted in decreasing drive resistance, or nullptr
+// if the cell has no equivalents.  The build is lazy, so the first call must
+// be on the main thread; that is why resizePreamble and balanceRowUsage call
+// makeEquivCells up front.
+sta::LibertyCellSeq* Resizer::equivCells(sta::LibertyCell* cell)
+{
+  makeEquivCells();
+  return sta::findKey(equiv_cells_, cell);
+}
+
+void Resizer::clearEquivCells()
+{
+  equiv_cells_.clear();
+  equiv_cell_groups_.clear();
+  equiv_cells_made_ = false;
 }
 
 // When there are multiple VT layers, create a composite name
@@ -2597,8 +2675,8 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
-  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && !isFixed(inst)
+      && cell && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
     if (hasMultipleOutputs(inst)) {
       revisiting_inst = resized_multi_output_insts_.contains(inst);
@@ -2667,8 +2745,8 @@ int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
-  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst)
+      && !isFixed(inst) && cell && isLogicStdCell(inst)) {
     float cin, load_cap;
     estimate_parasitics_->ensureWireParasitic(drvr_pin);
 
@@ -2740,7 +2818,7 @@ bool Resizer::removeBufferIfPossible(sta::Instance* buffer,
                                      const bool honor_dont_touch_fixed)
 {
   if (canRemoveBuffer(buffer, honor_dont_touch_fixed)) {
-    return removeBuffer(buffer);
+    return removeBuffer(buffer, honor_dont_touch_fixed);
   }
   return false;
 }
@@ -2762,17 +2840,8 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
-  if (db_inst->isDoNotTouch()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setDoNotTouch(false);
-  }
-  if (db_inst->isFixed()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  if (db_inst == nullptr) {
+    return false;
   }
 
   sta::LibertyPort* input_port = nullptr;
@@ -2784,19 +2853,12 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Net* output_net = db_network_->net(output_pin);
   odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
   odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
-  if ((input_db_net != nullptr && input_db_net->isDoNotTouch())
-      || (output_db_net != nullptr && output_db_net->isDoNotTouch())) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    if (input_db_net != nullptr) {
-      input_db_net->setDoNotTouch(false);
-    }
-    if (output_db_net != nullptr) {
-      output_db_net->setDoNotTouch(false);
-    }
+  if (honor_dont_touch_fixed
+      && (db_inst->isDoNotTouch() || db_inst->isFixed()
+          || (input_db_net != nullptr && input_db_net->isDoNotTouch())
+          || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
+    return false;
   }
-
   const bool out_net_ports = db_network_->hasPort(output_net);
   sta::Net* removed = nullptr;
   odb::dbNet* db_net_survivor = nullptr;
@@ -2812,18 +2874,137 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   }
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
-  if (!sdc->isConstrained(input_pin) && !sdc->isConstrained(output_pin)
-      && (removed == nullptr || !sdc->isConstrained(removed))
-      && !sdc->isConstrained(buffer)) {
-    return db_net_removed == nullptr
-           || (db_net_survivor != nullptr
-               && db_net_survivor->canMergeNet(db_net_removed));
+  if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
+      || (removed != nullptr && sdc->isConstrained(removed))
+      || sdc->isConstrained(buffer)) {
+    return false;
   }
 
-  return false;
+  if (db_net_removed == nullptr) {
+    return true;
+  }
+  if (db_net_survivor == nullptr) {
+    return false;
+  }
+  if (honor_dont_touch_fixed) {
+    return db_net_survivor->canMergeNet(db_net_removed);
+  }
+  // Explicit removal (remove_buffers <insts>) overrides protection on the
+  // buffer and its two nets only. mergeNet() still reconnects every other
+  // sink of the removed net, which OpenDB refuses for dont_touch instances,
+  // so those must keep rejecting the removal.
+  for (odb::dbITerm* iterm : db_net_removed->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (inst != db_inst && inst->isDoNotTouch()) {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool Resizer::removeBuffer(sta::Instance* buffer)
+namespace {
+
+// Temporarily unprotects a buffer and its nets, then restores the survivor.
+class BufferRemovalProtection
+{
+ public:
+  BufferRemovalProtection(odb::dbInst* db_inst,
+                          odb::dbNet* survivor,
+                          odb::dbNet* removed)
+      : survivor_(survivor), restore_survivor_(survivor->isDoNotTouch())
+  {
+    // Release the buffer's dont_touch for pin disconnect and deletion.
+    // OpenDB does not enforce a fixed placement status on either operation,
+    // so the placement status is left untouched.
+    if (db_inst->isDoNotTouch()) {
+      db_inst->setDoNotTouch(false);
+    }
+    // Restore the survivor on scope exit; the removed net, when present,
+    // stays unprotected because mergeNet() destroys it.
+    if (restore_survivor_) {
+      survivor_->setDoNotTouch(false);
+    }
+    if (removed != nullptr && removed->isDoNotTouch()) {
+      removed->setDoNotTouch(false);
+    }
+  }
+
+  BufferRemovalProtection(const BufferRemovalProtection&) = delete;
+  BufferRemovalProtection& operator=(const BufferRemovalProtection&) = delete;
+
+  ~BufferRemovalProtection()
+  {
+    if (restore_survivor_) {
+      survivor_->setDoNotTouch(true);
+    }
+  }
+
+ private:
+  odb::dbNet* survivor_;
+  const bool restore_survivor_;
+};
+
+struct BufferRemovalNames
+{
+  std::optional<std::string> net_name;
+  std::optional<std::string> modnet_name;
+};
+
+BufferRemovalNames chooseBufferRemovalNames(odb::dbNet* survivor,
+                                            odb::dbNet* removed,
+                                            odb::dbModNet* survivor_modnet,
+                                            odb::dbModNet* removed_modnet)
+{
+  BufferRemovalNames names;
+  if (!survivor->isDeeperThan(removed)) {
+    return names;
+  }
+
+  const bool preserve_port_name
+      = survivor_modnet != nullptr && survivor_modnet->isConnectedToInputPort();
+  if (!preserve_port_name) {
+    // Normally both names follow the shallower removed net.
+    names.net_name = removed->getName();
+    if (removed_modnet != nullptr) {
+      names.modnet_name = removed_modnet->getName();
+    }
+  } else {
+    // Keep input/inout port names so write_verilog retains required
+    // feedthrough assigns. Use the shallower flat name only if it remains
+    // represented after the ModNet merge.
+    const bool shallower_name_survives
+        = removed_modnet == nullptr
+          || removed_modnet->getHierarchicalName() != removed->getName();
+    if (shallower_name_survives) {
+      names.net_name = removed->getName();
+    }
+  }
+  return names;
+}
+
+odb::dbModNet* mergeBufferModNets(odb::dbModNet* survivor_modnet,
+                                  odb::dbModNet* removed_modnet,
+                                  odb::dbNet* db_survivor,
+                                  odb::dbNet* db_removed,
+                                  BufferRemovalNames& names)
+{
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    survivor_modnet->connectTermsOf(db_removed);
+  } else if (removed_modnet != nullptr) {
+    survivor_modnet = removed_modnet;
+    survivor_modnet->connectTermsOf(db_survivor);
+    names.modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
+  }
+  return survivor_modnet;
+}
+
+}  // namespace
+
+bool Resizer::removeBuffer(sta::Instance* buffer,
+                           const bool honor_dont_touch_fixed)
 {
   if (buffer == nullptr) {
     return false;
@@ -2856,8 +3037,13 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
     return false;
   }
 
+  odb::dbInst* db_inst = db_network_->staToDb(buffer);
   if (output_db_net == nullptr) {
-    odb::dbInst::destroy(db_network_->staToDb(buffer));
+    std::optional<BufferRemovalProtection> protection;
+    if (!honor_dont_touch_fixed) {
+      protection.emplace(db_inst, input_db_net, nullptr);
+    }
+    odb::dbInst::destroy(db_inst);
     return true;
   }
 
@@ -2869,10 +3055,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
+  const bool creates_feedthrough
+      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!bufferRemovalCreatesFeedthrough(input_modnet, output_modnet)
-      && !db_network_->hasPort(input_net) && db_network_->hasPort(output_net)) {
+  if (!creates_feedthrough && !db_network_->hasPort(input_net)
+      && db_network_->hasPort(output_net)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -2891,44 +3079,30 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed_net);
-  std::optional<std::string> new_net_name;
-  std::optional<std::string> new_modnet_name;
-  if (db_survivor->isDeeperThan(db_removed)) {
-    new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
-      new_modnet_name = removed_modnet->getName();
-    }
+  BufferRemovalNames names = chooseBufferRemovalNames(
+      db_survivor, db_removed, survivor_modnet, removed_modnet);
+  std::optional<BufferRemovalProtection> protection;
+  if (!honor_dont_touch_fixed) {
+    protection.emplace(db_inst, db_survivor, db_removed);
   }
 
   sta_->disconnectPin(input_pin);
   sta_->disconnectPin(output_pin);
-  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
-    survivor_modnet->mergeModNet(removed_modnet);
-  } else if (survivor_modnet != nullptr) {
-    survivor_modnet->connectTermsOf(db_removed);
-  } else if (removed_modnet != nullptr) {
-    survivor_modnet = removed_modnet;
-    removed_modnet = nullptr;
-    survivor_modnet->connectTermsOf(db_survivor);
-    new_modnet_name
-        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
-  }
+  survivor_modnet = mergeBufferModNets(
+      survivor_modnet, removed_modnet, db_survivor, db_removed, names);
 
   db_survivor->mergeNet(db_removed);
   sta_->deleteInstance(buffer);
 
-  if (new_net_name.has_value()) {
-    db_survivor->rename(new_net_name->c_str());
+  if (names.net_name.has_value()) {
+    db_survivor->rename(names.net_name->c_str());
   }
-  if (survivor_modnet != nullptr && new_modnet_name.has_value()) {
-    survivor_modnet->rename(new_modnet_name->c_str());
+  if (survivor_modnet != nullptr && names.modnet_name.has_value()) {
+    survivor_modnet->rename(names.modnet_name->c_str());
   }
 
-  const bool removed_buffer = true;
-  if (removed_buffer) {
-    invalidateVertexOrdering();
-  }
-  return removed_buffer;
+  invalidateVertexOrdering();
+  return true;
 }
 
 sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
@@ -3118,6 +3292,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*skip_size_down=*/false,
         /*skip_buffering=*/false,
         /*skip_buffer_removal=*/false,
+        /*skip_buffer_to_inverters=*/false,
         /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
         /*skip_vt_swap=*/true,    // post-placement optimization
         /*skip_crit_vt_swap=*/true);
@@ -3142,6 +3317,10 @@ void Resizer::findResizeSlacks1()
   const sta::VertexSeq& drvrs = sta_->levelizedDrvrVertices();
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
+    // Skip loadless drivers, whose required times may be unset.
+    if (!drvr->hasFanout()) {
+      continue;
+    }
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
@@ -3149,7 +3328,11 @@ void Resizer::findResizeSlacks1()
         // Hands off special nets.
         && !db_network_->isSpecial(net)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())) {
-      net_slack_map_[net] = sta_->slack(drvr, max_);
+      const sta::Slack slack = sta_->slack(drvr, max_);
+      // Exclude unconstrained nets from ranking and weighting.
+      if (!sta::fuzzyInf(slack)) {
+        net_slack_map_[net] = slack;
+      }
     }
   }
 }
@@ -3246,6 +3429,81 @@ class SearchPredCombLogic : public sta::SearchPred1
   }
 };
 
+// Iterative DFS over the timing graph, replacing pull-style
+// sta::BfsFwdIterator/BfsBkwdIterator usage.
+// Adjacency matches Bfs{Fwd,Bkwd}Iterator::enqueueAdjacentVertices:
+// fanout: searchFrom(vertex) gates expansion; each out-edge requires
+//         searchThru(edge) && searchTo(to_vertex);
+// fanin:  searchTo(vertex) gates expansion; each in-edge requires
+//         searchFrom(from_vertex) && searchThru(edge).
+// The mode-less SearchPred methods are used, which OR across all modes.
+// visit_seeds=false starts from the pred-filtered adjacency of each seed
+// (BfsIterator::enqueueAdjacentVertices seeding); visit_seeds=true visits
+// the seeds themselves first (BfsIterator::enqueue seeding).
+// visit(vertex) returns true if the search should expand through vertex.
+enum class DfsDirection
+{
+  kFanin,
+  kFanout
+};
+
+static void dfsSearch(sta::Graph* graph,
+                      const sta::SearchPred& pred,
+                      DfsDirection dir,
+                      const std::vector<sta::Vertex*>& seeds,
+                      bool visit_seeds,
+                      const std::function<bool(sta::Vertex*)>& visit)
+{
+  std::vector<sta::Vertex*> stack;
+  sta::VertexSet visited(graph);
+
+  auto expand = [&](sta::Vertex* vertex) {
+    if (dir == DfsDirection::kFanout) {
+      if (pred.searchFrom(vertex)) {
+        sta::VertexOutEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* to_vertex = edge->to(graph);
+          if (pred.searchThru(edge) && pred.searchTo(to_vertex)
+              && visited.insert(to_vertex).second) {
+            stack.push_back(to_vertex);
+          }
+        }
+      }
+    } else {
+      if (pred.searchTo(vertex)) {
+        sta::VertexInEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* from_vertex = edge->from(graph);
+          if (pred.searchFrom(from_vertex) && pred.searchThru(edge)
+              && visited.insert(from_vertex).second) {
+            stack.push_back(from_vertex);
+          }
+        }
+      }
+    }
+  };
+
+  for (sta::Vertex* seed : seeds) {
+    if (visit_seeds) {
+      if (visited.insert(seed).second) {
+        stack.push_back(seed);
+      }
+    } else {
+      expand(seed);
+    }
+  }
+
+  while (!stack.empty()) {
+    sta::Vertex* vertex = stack.back();
+    stack.pop_back();
+    if (visit(vertex)) {
+      expand(vertex);
+    }
+  }
+}
+
 // Find source pins for logic fanin of ends.
 sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 {
@@ -3260,20 +3518,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   }
 
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::PinSet fanins(db_network_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      continue;
-    }
-    iter.enqueueAdjacentVertices(vertex);
-    fanins.insert(vertex->pin());
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          return false;
+        }
+        fanins.insert(vertex->pin());
+        return true;
+      });
   return fanins;
 }
 
@@ -3281,20 +3540,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
 {
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::VertexSet roots(graph_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      roots.insert(vertex);
-    } else {
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          roots.insert(vertex);
+          return false;
+        }
+        return true;
+      });
   return roots;
 }
 
@@ -3316,18 +3576,19 @@ sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
 {
   sta::VertexSet fanouts(graph_);
   SearchPredCombLogic pred(sta_);
-  sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* reg_out : reg_outs) {
-    iter.enqueueAdjacentVertices(reg_out);
-  }
-
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (!isRegister(vertex)) {
-      fanouts.insert(vertex);
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(reg_outs.begin(), reg_outs.end());
+  dfsSearch(graph_,
+            pred,
+            DfsDirection::kFanout,
+            seeds,
+            /*visit_seeds=*/false,
+            [&](sta::Vertex* vertex) {
+              if (isRegister(vertex)) {
+                return false;
+              }
+              fanouts.insert(vertex);
+              return true;
+            });
   return fanouts;
 }
 
@@ -3397,6 +3658,10 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  // findTargetLoads skips dont_use cells, so a cell re-enabled with
+  // unset_dont_use would otherwise keep a target load of zero and be ranked
+  // worst by findTargetCell.
+  target_load_map_ = nullptr;
 }
 
 void Resizer::resetDontUse()
@@ -3408,6 +3673,7 @@ void Resizer::resetDontUse()
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();
@@ -3454,17 +3720,27 @@ bool Resizer::dontTouch(const sta::Instance* inst) const
   return db_inst->isDoNotTouch();
 }
 
+bool Resizer::isFixed(const sta::Instance* inst) const
+{
+  dbInst* db_inst = db_network_->staToDb(inst);
+  return db_inst && db_inst->isFixed();
+}
+
 void Resizer::setDontTouch(const sta::Net* net, bool dont_touch)
 {
-  odb::dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
+  if (db_net == nullptr) {
+    logger_->error(RSZ,
+                   224,
+                   "Cannot find the flat net associated with {}.",
+                   db_network_->pathName(net));
+  }
   db_net->setDoNotTouch(dont_touch);
 }
 
 bool Resizer::dontTouch(const sta::Net* net) const
 {
-  odb::dbNet* db_net = nullptr;
-  odb::dbModNet* db_mod_net = nullptr;
-  db_network_->staToDb(net, db_net, db_mod_net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
   if (db_net == nullptr) {
     return false;
   }
@@ -4351,6 +4627,51 @@ float Resizer::portFanoutLoad(sta::LibertyPort* port) const
   return 0.0;
 }
 
+bool Resizer::checkFanout(const sta::Pin* drvr_pin,
+                          const sta::Mode* mode,
+                          const sta::MinMax* min_max,
+                          // Return values.
+                          float& fanout,
+                          float& max_fanout,
+                          float& fanout_slack) const
+{
+  sta_->checkFanout(drvr_pin, mode, min_max, fanout, max_fanout, fanout_slack);
+
+  // Preserve the library and SDC fanout-load semantics when a constraint
+  // exists. The default is an RSZ-only load-pin backstop.
+  if (min_max != sta::MinMax::max() || max_fanout < sta::INF) {
+    return false;
+  }
+
+  // Match the pins OpenSTA excludes from fanout checking.
+  if (!network_->isDriver(drvr_pin) || sta_->isConstant(drvr_pin, mode)
+      || mode->sdc()->isDisabledConstraint(drvr_pin)
+      || mode->clkNetwork()->isIdealClock(drvr_pin)) {
+    return false;
+  }
+
+  const int load_count = fanoutLoadCount(drvr_pin);
+  if (load_count == 0) {
+    return false;
+  }
+
+  fanout = load_count;
+  max_fanout = kDefaultMaxFanout;
+  fanout_slack = max_fanout - fanout;
+  return true;
+}
+
+int Resizer::fanoutLoadCount(const sta::Pin* drvr_pin) const
+{
+  sta::PinSeq loads;
+  sta::PinSeq drvrs;
+  sta::PinSet visited_drvrs(db_network_);
+  sta::FindNetDrvrLoads visitor(
+      drvr_pin, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin, visitor);
+  return static_cast<int>(loads.size());
+}
+
 float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            const sta::RiseFall* rf,
                            float load_cap,
@@ -4973,32 +5294,47 @@ class ClkArrivalSearchPred : public sta::EvalPred
 
 sta::InstanceSeq Resizer::findClkInverters()
 {
-  sta::InstanceSeq clk_inverters;
+  std::vector<std::pair<sta::Level, sta::Instance*>> inverters;
   ClkArrivalSearchPred srch_pred(this);
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, this);
+  std::vector<sta::Vertex*> seeds;
   for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
     for (const sta::Pin* pin : clk->leafPins()) {
-      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-      bfs.enqueue(vertex);
+      seeds.push_back(graph_->pinDrvrVertex(pin));
     }
   }
-  while (bfs.hasNext()) {
-    sta::Vertex* vertex = bfs.next();
-    const sta::Pin* pin = vertex->pin();
-    sta::Instance* inst = network_->instance(pin);
-    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
-    if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
-      clk_inverters.emplace_back(inst);
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_clk_inverters",
-                 2,
-                 "inverter {}",
-                 network_->pathName(inst));
-    }
-    if (!vertex->isRegClk()) {
-      bfs.enqueueAdjacentVertices(vertex);
-    }
+  dfsSearch(
+      graph_,
+      srch_pred,
+      DfsDirection::kFanout,
+      seeds,
+      /*visit_seeds=*/true,
+      [&](sta::Vertex* vertex) {
+        const sta::Pin* pin = vertex->pin();
+        sta::Instance* inst = network_->instance(pin);
+        sta::LibertyCell* lib_cell = network_->libertyCell(inst);
+        if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
+          inverters.emplace_back(vertex->level(), inst);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_clk_inverters",
+                     2,
+                     "inverter {}",
+                     network_->pathName(inst));
+        }
+        return !vertex->isRegClk();
+      });
+  // cloneClkInverter moves an inverter's loads onto its input net, so an
+  // upstream inverter must be cloned before the inverters it drives or it
+  // gets cloned once per downstream clone instead of once per load.
+  std::stable_sort(inverters.begin(),
+                   inverters.end(),
+                   [](const std::pair<sta::Level, sta::Instance*>& lhs,
+                      const std::pair<sta::Level, sta::Instance*>& rhs) {
+                     return lhs.first < rhs.first;
+                   });
+  sta::InstanceSeq clk_inverters;
+  for (const auto& [level, inst] : inverters) {
+    clk_inverters.emplace_back(inst);
   }
   return clk_inverters;
 }
@@ -5082,6 +5418,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
+                          bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
@@ -5103,6 +5440,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
+  config.skip_buffer_to_inverters = skip_buffer_to_inverters;
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
@@ -6216,7 +6554,8 @@ void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
   swappable_cells_cache_.clear();
-  equiv_cells_made_ = false;
+  target_load_map_ = nullptr;
+  clearEquivCells();
 }
 
 void Resizer::copyDontUseFromLiberty()
@@ -6289,6 +6628,9 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   }
   if (lower == "reroute") {
     return MoveType::kReroute;
+  }
+  if (lower == "buffer_to_inverters") {
+    return MoveType::kBufferToInverters;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }

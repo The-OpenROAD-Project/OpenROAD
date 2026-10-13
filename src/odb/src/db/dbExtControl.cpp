@@ -3,6 +3,9 @@
 
 #include "odb/dbExtControl.h"
 
+#include <cstdint>
+#include <string>
+
 #include "dbDatabase.h"
 #include "odb/db.h"
 

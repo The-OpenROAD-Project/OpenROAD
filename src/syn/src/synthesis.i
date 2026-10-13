@@ -130,10 +130,10 @@ map_combinationals_cmd()
 }
 
 void
-abc_roundtrip_cmd(const char* commands)
+abc_roundtrip_cmd(const char* commands, int naming_threshold = -1)
 {
   syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
-  synthesis->abcRoundtrip(commands);
+  synthesis->abcRoundtrip(commands, naming_threshold);
 }
 
 void
@@ -159,6 +159,13 @@ liveness_opt_cmd(bool replace_combinational = false)
 {
   syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
   synthesis->livenessOpt(replace_combinational);
+}
+
+void
+check_combinational_loops_cmd()
+{
+  syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
+  synthesis->checkCombinationalLoops();
 }
 
 void

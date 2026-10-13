@@ -90,7 +90,7 @@ class Synthesis : public sta::dbStaState
   void mapCombinationals();
 
   // Export AIG to ABC, run commands, reimport.
-  void abcRoundtrip(const std::string& commands);
+  void abcRoundtrip(const std::string& commands, int naming_threshold = -1);
 
   // Post-mapping cell fusion optimization.
   void gateFuseOpt();
@@ -109,6 +109,10 @@ class Synthesis : public sta::dbStaState
   // 4-valued liveness propagation: replace registers (and optionally any
   // combinational driver) whose value is provably never A with a constant.
   void livenessOpt(bool replace_combinational = false);
+
+  // Fail if the graph contains a combinational loop (e.g. an inferred
+  // latch), which the flow cannot implement faithfully.
+  void checkCombinationalLoops();
 
   // Export the mapped netlist to ODB.
   void exportToOdb();
@@ -142,9 +146,13 @@ void mapCombinationals(Graph& g,
                        sta::Network* network,
                        utl::Logger* logger,
                        const Synthesis& syn);
-void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger);
+void abcRoundtrip(Graph& g,
+                  const std::string& commands,
+                  utl::Logger* logger,
+                  int naming_threshold = -1);
 void livenessOpt(Graph& g,
                  utl::Logger* logger,
                  bool replace_combinational = false);
+void checkCombinationalLoops(Graph& g, utl::Logger* logger);
 
 }  // namespace syn

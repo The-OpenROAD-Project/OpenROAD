@@ -19,6 +19,7 @@ The `synthesize` command synthesizes a previously elaborated design, i.e. it imp
 ```tcl
 synthesize
     [-reduce_name_loss]
+    [-naming_threshold fanout_size]
 ```
 
 #### Options
@@ -26,10 +27,13 @@ synthesize
 | Switch Name | Description |
 | --------------- | --------------------------------------------- |
 | `-reduce_name_loss` | Disable any optimization steps which would cause mass loss of intermediate signal names. This option trades away quality of results for interpretability. |
+| `-naming_threshold fanout_size` | When using optimization steps which would cause mass loss of intermediate signal names, try to preserve names on nets the fanout of which meets the given threshold. Like `-reduce_name_loss`, this option trades away quality of result for interpretability but to a less extent. The higher the given threshold, the fewer names will be preserved and the less degree to which quality is affected. This option is without effect when combined with `-reduce_name_loss` |
 
 ## Limitations
 
 The integrated synthesis tool does not support mapping to latches, always flattens the design, and loses the names of instantiated macros.
+
+`synthesize` fails with an error if the design contains a combinational loop. This includes latches inferred from incomplete assignments in `always` blocks (e.g. a latch-based clock gate), since combinational optimization does not preserve the state such a loop holds. A loop is only reported where each step is combinational: it is broken by a flip-flop, and by a cell output that neither has a liberty `function` using the input nor a combinational timing arc from it (such as a RAM read port).
 
 ## Authors
 

@@ -17,6 +17,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -87,9 +88,9 @@ bool resolveDriverContext(UnbufferSelectionContext& ctx)
   ctx.drvr_port = ctx.resizer.network()->libertyPort(ctx.drvr_pin);
   ctx.drvr_cell
       = ctx.drvr_port != nullptr ? ctx.drvr_port->libertyCell() : nullptr;
-  ctx.scene = ctx.target.endpoint_path->scene(ctx.resizer.sta());
+  ctx.scene = ctx.target.activeScene(ctx.resizer);
   ctx.slack_scene = ctx.scene;
-  ctx.min_max = ctx.target.endpoint_path->minMax(ctx.resizer.sta());
+  ctx.min_max = ctx.target.minMax(ctx.resizer);
   return ctx.drvr != nullptr && ctx.drvr_cell != nullptr
          && ctx.drvr_cell->isBuffer() && ctx.scene != nullptr
          && ctx.min_max != nullptr;
@@ -149,7 +150,7 @@ bool passesFanoutGuard(const UnbufferSelectionContext& ctx)
                                  slack);
 
   const float new_fanout = fanout + ctx.target.fanout - 1;
-  if (limit > 0.0) {
+  if (limit > 0.0 && limit < sta::INF) {
     if (new_fanout <= limit) {
       return true;
     }

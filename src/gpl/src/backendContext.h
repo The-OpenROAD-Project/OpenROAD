@@ -33,6 +33,7 @@ struct BackendContext
   NesterovBase* nb = nullptr;
   DeviceState* device_state = nullptr;
   RegionDensityField* region_field = nullptr;
+  bool place_ios_mode = false;
 
   // OpenMP fan-out for the CPU backends.
   int num_threads = 1;

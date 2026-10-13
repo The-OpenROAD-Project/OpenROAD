@@ -462,6 +462,40 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
+### Set Halo
+
+This command provides a unified interface for setting halos for instances. Supports hard and soft halos.
+
+```tcl
+set_halo
+    -halo size|{width height}|{left bottom right top}
+    [-instance instance]
+    [-apply_to_all_macros]
+    [-soft]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `halo` | (required) Halo values for each side. Left and bottom are used for right and top if the latter are omitted. |
+| `instance` | (optional): Instance associated with the halo. This or `apply_to_all_macros` is required.  |
+| `apply_to_all_macros` | (optional): Apply to all macros in the design. This or `instance` is required. |
+| `soft` | (optional): Mark the halo as soft, hard otherwise.
+
+
+### Report 3DIC Summary
+
+Prints a structural summary of a 3DIC (3DBlox) design loaded via `read_3dbx`:
+the chiplet, top-level chip-net, 3D bond-region and bump-pad counts, plus each
+chip instance and the chiplet master it references. Useful as a post-read
+sanity check before cross-chiplet timing. Takes no arguments.
+
+```tcl
+report_3dic_summary
+```
+
+
 ## Example scripts
 
 After building successfully, run OpenDB Tcl shell using
@@ -510,25 +544,6 @@ add_3dblox_alignment_marker_rule
 | `-master_b` | Cell master used as side B of the alignment pair. |
 | `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
 | `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
-
-### Set Extraction Rules File
-
-Sets the path to the parasitics extraction rules file. For a design in which
-multiple technologies are used, the user must specify the technology for which
-they want to set the rules path.
-
-```tcl
-set_extraction_rules_file
-    [-tech tech_name]
-    rules_file
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-tech` | Technology for which to set the extraction rules path. |
-| `rules_file` | Path to the extraction rules file. |
 
 ## Regression tests
 

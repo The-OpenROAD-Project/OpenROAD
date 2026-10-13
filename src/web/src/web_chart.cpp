@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
+#include "web/core.h"
 
 namespace web {
 
@@ -83,7 +83,7 @@ void WebChart::clearPoints()
   markers_.clear();
 }
 
-void WebChart::addVerticalMarker(double x, const gui::Painter::Color& color)
+void WebChart::addVerticalMarker(double x, const web::Painter::Color& color)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   markers_.push_back({x, color});

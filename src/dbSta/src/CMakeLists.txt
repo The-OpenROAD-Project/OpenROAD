@@ -11,12 +11,15 @@ add_library(dbSta_lib
   dbReadVerilog.cc
   SpefWriter.cc
   IpChecker.cc
+  DmpCeffLambertWDelayCalc.cc
 )
 
 target_include_directories(dbSta_lib
   PUBLIC
     ../include
     ${PROJECT_SOURCE_DIR}/include
+    ${OPENSTA_HOME}
+    ${OPENSTA_HOME}/include/sta
 )
 
 
@@ -27,6 +30,15 @@ target_link_libraries(dbSta_lib
   PRIVATE
     utl_lib
 )
+
+# Enable fork-only OpenSTA extensions (analysis_corner, ...) when the
+# submodule provides them, so stock (parallaxsw) OpenSTA still builds.
+if(EXISTS ${OPENSTA_HOME}/search/AnalysisCorner.i)
+  list(APPEND CMAKE_SWIG_FLAGS -DSTA_OPENROAD_FORK)
+  set(STA_ANALYSIS_CORNER_TCL ${OPENSTA_HOME}/tcl/AnalysisCorner.tcl)
+else()
+  set(STA_ANALYSIS_CORNER_TCL "")
+endif()
 
 swig_lib(NAME          dbSta
          NAMESPACE     sta
@@ -53,6 +65,8 @@ swig_lib(NAME          dbSta
                        ${OPENSTA_HOME}/sdf/Sdf.tcl
                        ${OPENSTA_HOME}/search/Search.tcl
                        ${OPENSTA_HOME}/tcl/Util.tcl
+                       # Empty for stock OpenSTA; must follow Sta.tcl.
+                       ${STA_ANALYSIS_CORNER_TCL}
                        ${DBSTA_HOME}/src/dbReadVerilog.tcl
                        ${DBSTA_HOME}/src/dbSta.tcl
 )

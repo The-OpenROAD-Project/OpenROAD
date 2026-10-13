@@ -621,6 +621,24 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(layer->getMinWidth(), 280);
   EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
 }
+
+TEST_F(Fixture, lef58_mustjoinallports)
+{
+  const char* libname = "gscl45nm.lef";
+  loadTechAndLib("tech", libname, prefix + "data/gscl45nm.lef");
+
+  odb::dbLib* dbLib = db_->findLib(libname);
+
+  updateLib(dbLib, prefix + "data/lef58_mustjoinallports.lef");
+
+  odb::dbMaster* master = db_->findMaster("my_cell");
+  EXPECT_TRUE(master);
+  odb::dbMTerm* mterm = master->findMTerm("A");
+  EXPECT_TRUE(mterm);
+
+  EXPECT_TRUE(mterm->isMustJoinAllPorts());
+}
+
 TEST_F(Fixture, TestLef58AntennaGatePlusDiff)
 {
   const char* libname = "lef58_antennagateplusdiff.lef";
@@ -675,6 +693,60 @@ TEST_F(Fixture, TestLef58CellEdgeSpacingNumericEdgeType)
   EXPECT_EQ(edge_spc->getFirstEdgeType(), "G1");
   EXPECT_EQ(edge_spc->getSecondEdgeType(), "G1");
   EXPECT_EQ(edge_spc->getSpacing(), 0.1 * 1000);
+}
+
+// Regression test for LEF58_EDGETYPE on macros: an edge type name that is
+// numeric (e.g. "2") must parse correctly and must not trigger ODB-0299
+// (parse mismatch).
+TEST_F(Fixture, TestLef58MacroNumericEdgeType)
+{
+  const char* libname = "lef58_macro_edgetype_numeric.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_macro_edgetype_numeric.lef");
+
+  odb::dbMaster* master = db_->findMaster("CELL_NUMERIC_EDGE");
+  ASSERT_NE(master, nullptr);
+  ASSERT_EQ(master->getEdgeTypes().size(), 4);
+
+  auto it = master->getEdgeTypes().begin();
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::LEFT);
+  EXPECT_EQ((*it)->getEdgeType(), "2");
+
+  ++it;
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::RIGHT);
+  EXPECT_EQ((*it)->getEdgeType(), "2");
+
+  // Alpha names and trailing options must still work after the numeric fix.
+  ++it;
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::TOP);
+  EXPECT_EQ((*it)->getEdgeType(), "G2");
+  EXPECT_EQ((*it)->getRangeBegin(), 500);
+  EXPECT_EQ((*it)->getRangeEnd(), 1500);
+
+  ++it;
+  EXPECT_EQ((*it)->getEdgeDir(), odb::dbMasterEdgeType::EdgeDir::BOTTOM);
+  EXPECT_EQ((*it)->getEdgeType(), "TYPE1");
+}
+
+// Regression test for issue #4252: LEF58_MINWIDTH with WRONGDIRECTION and
+// trailing whitespace after the terminating semicolon must parse without
+// warnings.
+TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
+{
+  const char* libname = "lef58_minwidth_wrongdirection.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_minwidth_wrongdirection.lef");
+
+  dbTech* tech = db_->getTech();
+  auto layer = tech->findLayer("M4");
+  ASSERT_NE(layer, nullptr);
+
+  auto* str_prop = dbStringProperty::find(layer, "LEF58_MINWIDTH");
+  ASSERT_NE(str_prop, nullptr);
+  EXPECT_EQ(str_prop->getValue(), "\n    MINWIDTH 1.0 WRONGDIRECTION ; ");
+
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 1000);
+  EXPECT_EQ(logger_.getWarningCount(), 0);
 }
 
 }  // namespace odb

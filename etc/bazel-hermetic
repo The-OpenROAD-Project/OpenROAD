@@ -18,8 +18,8 @@
 # auto-invokes a tools/bazel wrapper for every command, which would force
 # the pruned environment on everyone — but repository rules of some
 # dependencies legitimately expect host tools this wrapper prunes (e.g.
-# GNU Make's configure probing for ld in bazel-orfs's gnumake rule), so
-# forcing it would break ordinary builds. Keeping it opt-in and
+# configure scripts probing for ld), so forcing it would break ordinary
+# builds. Keeping it opt-in and
 # out-of-the-way is intentional.
 #
 # The allowlist below is the contract for what the build may use from the

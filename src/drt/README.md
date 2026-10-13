@@ -217,6 +217,39 @@ Additional setup is required. Please refer to this [guide](./doc/Distributed.md)
 | `-shared_volume` | The mount path of the nfs shared folder. |
 | `-cloud_size` | The number of workers. |
 
+### Set Routing Watermark Strength
+
+This command sets the cost multiplier the detailed router applies to wiring
+against a layer's preferred direction on nets tagged by `set_routing_watermark`.
+A larger value suppresses wrong-way wiring more strongly on those nets, which is
+what carries the routing watermark. Preferred-direction wiring, pin access and
+untagged nets are unaffected. This is router configuration and does not
+persist in the database, so call it in the same process as `detailed_route`,
+before it.
+
+```tcl
+set_routing_watermark_strength
+    strength
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `strength` | Finite cost multiplier from `0` to `10000` inclusive. `1` tags nets without biasing them. Defaults to `100`. |
+
+Scaled edge costs and the path costs built from them saturate at the router's
+maximum cost rather than wrapping. Very large strengths make distinct expensive
+paths indistinguishable, which is why the range is bounded.
+
+### Get Routing Watermark Strength
+
+This command returns the cost multiplier currently in effect.
+
+```tcl
+get_routing_watermark_strength
+```
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonRoute.cpp) or the [swig file](./src/TritonRoute.i).
