@@ -125,14 +125,15 @@ void EstimateParasitics::estimateRoutesInParallel(
   threads = std::min(threads, static_cast<int>(work.size()));
   // Each net is estimated and reduced on its own and stored by net and
   // driver pin, so the result does not depend on the thread count or the
-  // order the threads run in. The parasitics store locks its own writes;
-  // the reduction goes through one arc delay calculator per thread, as
-  // sta::GraphDelayCalc does for its threads.
+  // order the threads run in. The parasitics store is not locked, so its
+  // entries are made before the threads; the reduction goes through one arc
+  // delay calculator per thread, as sta::GraphDelayCalc does for its threads.
   std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
   calcs.reserve(threads);
   for (int i = 0; i < threads; ++i) {
     calcs.emplace_back(sta_->arcDelayCalc()->copy());
   }
+  ensureParasiticsForThreads();
   odb::dbTech* tech = block_->getTech();
 #pragma omp parallel for num_threads(threads) schedule(dynamic, 64)
   for (int i = 0; i < static_cast<int>(work.size()); ++i) {
@@ -150,6 +151,19 @@ void EstimateParasitics::estimateRoutesInParallel(
       builder.estimateParasitics(db_net, *route, nullptr);
     } else {
       builder.estimateParasitics(db_net, *route);
+    }
+  }
+}
+
+void EstimateParasitics::ensureParasiticsForThreads()
+{
+  std::set<sta::Parasitics*> done;
+  for (Scene* scene : sta_->scenes()) {
+    for (const sta::MinMax* min_max : sta::MinMax::range()) {
+      sta::Parasitics* parasitics = scene->parasitics(min_max);
+      if (parasitics && done.insert(parasitics).second) {
+        parasitics->ensureParasitics();
+      }
     }
   }
 }
@@ -812,6 +826,7 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
     for (int i = 0; i < threads; ++i) {
       calcs.emplace_back(arc_delay_calc_->copy());
     }
+    ensureParasiticsForThreads();
 #pragma omp parallel for num_threads(threads) \
     schedule(dynamic, 64) if (threads > 1)
     for (int i = 0; i < static_cast<int>(work.size()); ++i) {

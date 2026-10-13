@@ -128,7 +128,7 @@ std::shared_ptr<GRTreeNode> splitEdgeAt(const std::shared_ptr<GRTreeNode>& tree,
   }
   auto middle = std::make_shared<GRTreeNode>(point);
   parent->removeChild(child);
-  middle->addChild(child);
+  middle->addChild(std::move(child));
   parent->addChild(middle);
   return middle;
 }

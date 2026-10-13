@@ -58,11 +58,24 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/odb/src/db",
+        "//src/odb/src/defin",
         "//src/odb/src/lefin",
         "//src/utl",
         "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
     ],
+)
+
+# Builders for technology layers, antenna rules, masters with pin geometry,
+# routed wires and guides. odb-only, for use with DbFixture.
+cc_library(
+    name = "physical_builder",
+    testonly = 1,
+    srcs = ["src/physical_builder.cpp"],
+    hdrs = ["include/tst/physical_builder.h"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = ["//src/odb/src/db"],
 )
 
 cc_library(
@@ -217,6 +230,19 @@ cc_test(
         ":db_fixture",
         ":lec",
         ":loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPhysicalBuilder",
+    size = "small",
+    srcs = ["test/cpp/TestPhysicalBuilder.cpp"],
+    deps = [
+        ":db_fixture",
+        ":physical_builder",
+        "//src/odb/src/db",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

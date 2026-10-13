@@ -171,10 +171,7 @@ class RouteBase
   // TODO: understand why this function is breaking RUDY.
   // Allow for grt heatmap during gpl execution.
   void loadGrt();
-  // Not const: fills the same overflow/tile counters updateRudyAverage() sets,
-  // so the routability pass header reads the same on either congestion
-  // backend.
-  float getGrtRC();
+  float getGrtRC() const;
 
   void calculateRudyTiles();
   void updateRudyAverage(bool verbose = true);
@@ -194,11 +191,6 @@ class RouteBase
   std::vector<int64_t> inflatedAreaDelta() const;
   int64_t getTotalInflation() const;
   int getRevertCount() const;
-
-  // Roll cell sizes, target density, fillers, accumulated inflation and net
-  // weights back to the pass that saw the least congestion. Does nothing before
-  // the first pass.
-  void revertToMinCongestion();
 
   void printGCellInflation() const;
 
@@ -250,6 +242,7 @@ class RouteBase
 
   void init();
   void resetRoutabilityResources();
+  void revertToMinCongestion();
 
   // The tile holding the given point, or nullptr if it falls outside the grid.
   Tile* getTile(int x, int y) const;

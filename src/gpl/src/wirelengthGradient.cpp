@@ -117,4 +117,9 @@ void NesterovBaseCommon::prepareDeviceWlGradients()
   wl_grad_backend_->prepareDeviceGradients();
 }
 
+FloatPoint NesterovBaseCommon::getSingleWireLengthGradientWA(const GCell* gCell)
+{
+  return wl_grad_backend_->getCellGradient(gCell);
+}
+
 }  // namespace gpl
