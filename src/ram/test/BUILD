@@ -13,6 +13,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "write_ports_nangate45",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -24,6 +25,7 @@ filegroup(
     # per test glob patterns below.
     srcs = [
         "helpers.tcl",
+        "ram_sim.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
@@ -51,6 +53,11 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "write_ports_nangate45": [
+                "Nangate45/Nangate45.lef",
+                "Nangate45/Nangate45_tech.lef",
+                "Nangate45/Nangate45_typ.lib",
+            ],
             "make_7x7_2r1w_nangate45": [
                 "make_7x7_2r1w_nangate45_behavioral.vok",
                 "Nangate45/Nangate45.lef",

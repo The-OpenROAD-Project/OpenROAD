@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -135,8 +136,19 @@ class RamGen
  private:
   void findMasters();
   std::map<PortRole, std::string> buildPortMap(odb::dbMaster*);
+  // The smallest cell `match` accepts; none is an error unless not
+  // `required`, then nullptr.
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
-                            const char* name);
+                            const char* name,
+                            bool required = true);
+  // The smallest four-input cell whose function is `table` (bit k the
+  // output for inputs k in binary, in the order of `inputs`): `inputs`
+  // gets its input pins in that order, `output` its output pin.
+  odb::dbMaster* findMaster4(uint16_t table,
+                             const char* name,
+                             std::array<std::string, 4>& inputs,
+                             std::string& output,
+                             bool required = true);
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
   odb::dbInst* makeInst(
       Cell* cell,
@@ -159,12 +171,12 @@ class RamGen
                  int word_idx,
                  int column_mux_ratio,
                  odb::dbNet* clock,
-                 odb::dbNet* write_enable,
+                 const std::vector<odb::dbNet*>& write_enable,
                  odb::dbNet* word_select,
                  const std::vector<odb::dbNet*>& selects,
                  const std::vector<odb::dbNet*>& shared_select_b_nets,
                  bool create_select_inv,
-                 const std::vector<odb::dbNet*>& data_input,
+                 const std::vector<std::vector<odb::dbNet*>>& data_input,
                  const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   void makeWord(int slices_per_word,
@@ -177,11 +189,11 @@ class RamGen
                 int column_mux_ratio,
                 odb::dbNet* clock,
                 odb::dbNet* word_select,
-                std::vector<odb::dbBTerm*>& write_enable,
+                std::vector<std::vector<odb::dbBTerm*>>& write_enable,
                 const std::vector<odb::dbNet*>& selects,
                 const std::vector<odb::dbNet*>& shared_select_b_nets,
                 bool create_select_inv,
-                const std::vector<odb::dbNet*>& data_input,
+                const std::vector<std::vector<odb::dbNet*>>& data_input,
                 const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
@@ -229,6 +241,11 @@ class RamGen
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* aoi22_cell_{nullptr};
+  // with more than one write port: the write data mux (an AO22, or where
+  // the library has none the AOI22 and an inverter) and the write
+  // enables' OR
+  odb::dbMaster* ao22_cell_{nullptr};
+  odb::dbMaster* or2_cell_{nullptr};
   odb::dbMaster* latch_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
@@ -242,15 +259,19 @@ class RamGen
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
   std::map<PortRole, std::string> latch_ports_;
+  std::map<PortRole, std::string> or2_ports_;
 
   std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
-  std::vector<odb::dbBTerm*> data_inputs_;
+  std::vector<odb::dbBTerm*> data_inputs_;  // every write port's data
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
       aoi22_out_;
+  std::array<std::string, 4> ao22_in_;
+  std::string ao22_out_;
   Grid ram_grid_;
   bool use_latch_{false};
+  int num_write_{1};  // write and read/write ports
 };
 
 }  // namespace ram

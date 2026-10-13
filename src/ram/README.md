@@ -62,9 +62,9 @@ generate_ram [-mask_size bits]
 | `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. Default: equal to `-word_size`. |
 | `-word_size` | Size of each word in bits. |
 | `-num_words` | Number of words in the array. |
-| `-rw_ports` | Number of read-write ports for the array. Sum of read-write ports and write ports must equal 1. Default: 1. |
+| `-rw_ports` | Number of read-write ports for the array: 0 or 1, and a read-write port is the only write port. Default: 1. |
 | `-r_ports` | Number of read ports for the array. Default: 0. |
-| `-w_ports` | Number of write ports for the array. Sum of read-write ports and write ports must equal 1. Default: 0. |
+| `-w_ports` | Number of write ports for the array. With more than one, each has its own address decoder, data (`D0`, `D1`, ...), write enables (`we0`, ...) and address (`addr_w0`, ...); a word two ports write in the same cycle keeps the last port's data. Not yet with `-use_latch` or `-column_mux_ratio` above 1. Default: 0. |
 | `-column_mux_ratio` | Number of words sharing a physical column. Must be `1`, `2`, or `4`. The number of words must be divisible by the column mux ratio. Default: `1` (no column muxing). |
 | `-storage_cell` | Name of the master to use for the storage device (i.e. a flip-flop). Must be positive-edge triggered. Default: auto-select from the loaded cell library. |
 | `-tristate_cell` | Name of the master to use for the tristate device (i.e. a tristate inverter). It is currently assumed that the device is inverting. Default: auto-select from the loaded cell library. |

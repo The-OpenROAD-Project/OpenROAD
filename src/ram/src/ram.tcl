@@ -87,8 +87,12 @@ proc generate_ram_netlist { args } {
     set rw_ports 1
   }
 
-  if { $rw_ports + $w_ports != 1 } {
-    utl::error RAM 30 "Must have exactly one read/write port or one write port."
+  if { $rw_ports + $w_ports < 1 } {
+    utl::error RAM 30 "Must have a read/write port or a write port."
+  }
+
+  if { $rw_ports > 1 || ($rw_ports > 0 && $w_ports > 0) } {
+    utl::error RAM 53 "A read/write port is the only write port."
   }
 
   if { $rw_ports + $r_ports < 1 } {
@@ -98,6 +102,16 @@ proc generate_ram_netlist { args } {
   set use_latch 0
   if { [info exists keys(-use_latch)] } {
     set use_latch $keys(-use_latch)
+  }
+
+  # More than one write port: each has its own address decoder and its
+  # own data, a word written by two in a cycle keeps the last one's.
+  if { $w_ports > 1 && $use_latch } {
+    utl::error RAM 54 "More than one write port is not supported with -use_latch."
+  }
+  if { $w_ports > 1 && $column_mux_ratio > 1 } {
+    utl::error RAM 55 "More than one write port is not supported with\
+      -column_mux_ratio above 1."
   }
 
   set tapcell ""

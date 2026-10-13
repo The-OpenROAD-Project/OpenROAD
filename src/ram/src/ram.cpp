@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -169,14 +170,16 @@ void RamGen::makeSlice(const int slice_idx,
                        const int word_idx,
                        const int column_mux_ratio,
                        dbNet* clock,
-                       dbNet* write_enable,
+                       const vector<dbNet*>& write_enable,
                        dbNet* word_select,
                        const vector<dbNet*>& selects,
                        const vector<dbNet*>& shared_select_b_nets,
                        const bool create_select_inv,
-                       const vector<dbNet*>& data_input,
+                       const vector<vector<dbNet*>>& data_input,
                        const vector<vector<dbNet*>>& data_output)
 {
+  // selects: the write ports' row selects, then the read ports'
+  const int num_write = rw_ports + w_ports;
   const int start_bit_idx = slice_idx * mask_size;
   std::string prefix
       = fmt::format("storage_{}_{}_{}", row_idx, word_idx, start_bit_idx);
@@ -193,6 +196,57 @@ void RamGen::makeSlice(const int slice_idx,
 
   auto gclock_net = makeNet(prefix, "gclock");
   auto we_net = makeNet(prefix, "we");
+  auto sel_cell = std::make_unique<Cell>();
+
+  // More than one write port: port w writes this word when its row select
+  // and its write enable are both high (we{w}), and its data is taken
+  // unless a later port writes the word in the same cycle (take{w}): the
+  // last port wins, as in the behavioral model. The clock gate opens for
+  // any of them.
+  vector<dbNet*> take(num_write);
+  if (num_write > 1) {
+    vector<dbNet*> we(num_write);
+    for (int w = 0; w < num_write; ++w) {
+      we[w] = makeNet(prefix, fmt::format("we{}", w));
+      makeInst(sel_cell.get(),
+               prefix,
+               fmt::format("gcand{}", w),
+               and2_cell_,
+               {{and2_ports_[{PortRoleType::DataIn, 0}], selects[w]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], write_enable[w]},
+                {and2_ports_[{PortRoleType::DataOut, 0}], we[w]}});
+    }
+    take[num_write - 1] = we[num_write - 1];
+    dbNet* later = we[num_write - 1];
+    for (int w = num_write - 2; w >= 0; --w) {
+      auto later_b = makeNet(prefix, fmt::format("later{}_b", w));
+      makeInst(sel_cell.get(),
+               prefix,
+               fmt::format("later_inv{}", w),
+               inv_cell_,
+               {{inv_ports_[{PortRoleType::DataIn, 0}], later},
+                {inv_ports_[{PortRoleType::DataOut, 0}], later_b}});
+      take[w] = makeNet(prefix, fmt::format("take{}", w));
+      makeInst(sel_cell.get(),
+               prefix,
+               fmt::format("take_and{}", w),
+               and2_cell_,
+               {{and2_ports_[{PortRoleType::DataIn, 0}], we[w]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], later_b},
+                {and2_ports_[{PortRoleType::DataOut, 0}], take[w]}});
+      // any port from w on writes: the next earlier port's later, and at
+      // port 0 the clock gate's enable
+      auto any = w == 0 ? we_net : makeNet(prefix, fmt::format("later{}", w));
+      makeInst(sel_cell.get(),
+               prefix,
+               fmt::format("any_or{}", w),
+               or2_cell_,
+               {{or2_ports_[{PortRoleType::DataIn, 0}], later},
+                {or2_ports_[{PortRoleType::DataIn, 1}], we[w]},
+                {or2_ports_[{PortRoleType::DataOut, 0}], any}});
+      later = any;
+    }
+  }
 
   for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
     auto name = fmt::format("{}.bit{}", prefix, start_bit_idx + local_bit);
@@ -201,18 +255,76 @@ void RamGen::makeSlice(const int slice_idx,
       outs[r_port] = data_output[r_port][local_bit];
     }
 
+    dbNet* d = data_input[0][local_bit];
+    if (num_write > 1) {
+      d = makeNet(name, "d");
+    }
+    auto bit_cell = makeBit(name, r_total, gclock_net, select_b_nets, d, outs);
+    if (num_write > 1) {
+      // the taken port's data: AO22 over pairs of ports, OR2 across pairs
+      dbNet* acc = nullptr;
+      for (int w = 0; w < num_write; w += 2) {
+        const bool last = w + 2 >= num_write;
+        dbNet* out = last && acc == nullptr
+                         ? d
+                         : makeNet(name, fmt::format("d_pair{}", w / 2));
+        if (w + 1 < num_write && !ao22_cell_) {
+          // no AO22 in the library: the AOI22 and an inverter
+          auto out_b = makeNet(name, fmt::format("d_pair{}_b", w / 2));
+          makeInst(bit_cell.get(),
+                   name,
+                   fmt::format("dmux{}", w / 2),
+                   aoi22_cell_,
+                   {{aoi22_in_a1_, take[w]},
+                    {aoi22_in_a2_, data_input[w][local_bit]},
+                    {aoi22_in_b1_, take[w + 1]},
+                    {aoi22_in_b2_, data_input[w + 1][local_bit]},
+                    {aoi22_out_, out_b}});
+          makeInst(bit_cell.get(),
+                   name,
+                   fmt::format("dmux{}_inv", w / 2),
+                   inv_cell_,
+                   {{inv_ports_[{PortRoleType::DataIn, 0}], out_b},
+                    {inv_ports_[{PortRoleType::DataOut, 0}], out}});
+        } else if (w + 1 < num_write) {
+          makeInst(bit_cell.get(),
+                   name,
+                   fmt::format("dmux{}", w / 2),
+                   ao22_cell_,
+                   {{ao22_in_[0], take[w]},
+                    {ao22_in_[1], data_input[w][local_bit]},
+                    {ao22_in_[2], take[w + 1]},
+                    {ao22_in_[3], data_input[w + 1][local_bit]},
+                    {ao22_out_, out}});
+        } else {
+          makeInst(bit_cell.get(),
+                   name,
+                   fmt::format("dmux{}", w / 2),
+                   and2_cell_,
+                   {{and2_ports_[{PortRoleType::DataIn, 0}], take[w]},
+                    {and2_ports_[{PortRoleType::DataIn, 1}],
+                     data_input[w][local_bit]},
+                    {and2_ports_[{PortRoleType::DataOut, 0}], out}});
+        }
+        if (acc != nullptr) {
+          dbNet* sum = last ? d : makeNet(name, fmt::format("d_or{}", w / 2));
+          makeInst(bit_cell.get(),
+                   name,
+                   fmt::format("dor{}", w / 2),
+                   or2_cell_,
+                   {{or2_ports_[{PortRoleType::DataIn, 0}], acc},
+                    {or2_ports_[{PortRoleType::DataIn, 1}], out},
+                    {or2_ports_[{PortRoleType::DataOut, 0}], sum}});
+          out = sum;
+        }
+        acc = out;
+      }
+    }
+
     int bit_col = slice_idx * (mask_size * column_mux_ratio + column_mux_ratio)
                   + local_bit * column_mux_ratio + word_idx;
-    ram_grid_.addCell(makeBit(name,
-                              r_total,
-                              gclock_net,
-                              select_b_nets,
-                              data_input[local_bit],
-                              outs),
-                      bit_col);
+    ram_grid_.addCell(std::move(bit_cell), bit_col);
   }
-
-  auto sel_cell = std::make_unique<Cell>();
 
   // Make clock gate
   makeInst(sel_cell.get(),
@@ -226,8 +338,8 @@ void RamGen::makeSlice(const int slice_idx,
   // Write path: this net is row_select AND with word_select so clock gate only
   // fires for the addressed word within the row. Read path handled by AOI mux.
   // word_select is nullptr when column_mux_ratio=1 (no mux needed).
-  dbNet* write_sel = selects[0];
-  if (word_select) {
+  dbNet* write_sel = num_write > 1 ? nullptr : selects[0];
+  if (word_select && num_write == 1) {
     write_sel = makeNet(prefix, "write_sel");
     makeInst(sel_cell.get(),
              prefix,
@@ -241,13 +353,15 @@ void RamGen::makeSlice(const int slice_idx,
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
   // adding any net will automatically connect with any port
-  makeInst(sel_cell.get(),
-           prefix,
-           "gcand",
-           and2_cell_,
-           {{and2_ports_[{PortRoleType::DataIn, 0}], write_sel},
-            {and2_ports_[{PortRoleType::DataIn, 1}], write_enable},
-            {and2_ports_[{PortRoleType::DataOut, 0}], we_net}});
+  if (num_write == 1) {
+    makeInst(sel_cell.get(),
+             prefix,
+             "gcand",
+             and2_cell_,
+             {{and2_ports_[{PortRoleType::DataIn, 0}], write_sel},
+              {and2_ports_[{PortRoleType::DataIn, 1}], write_enable[0]},
+              {and2_ports_[{PortRoleType::DataOut, 0}], we_net}});
+  }
 
   // Make select inverters
   if (create_select_inv) {
@@ -256,7 +370,7 @@ void RamGen::makeSlice(const int slice_idx,
                prefix,
                fmt::format("select_inv_{}", i),
                inv_cell_,
-               {{inv_ports_[{PortRoleType::DataIn, 0}], selects[i + 1]},
+               {{inv_ports_[{PortRoleType::DataIn, 0}], selects[num_write + i]},
                 {inv_ports_[{PortRoleType::DataOut, 0}], select_b_nets[i]}});
     }
   }
@@ -283,18 +397,24 @@ void RamGen::makeWord(const int slices_per_word,
                       const int column_mux_ratio,
                       dbNet* clock,
                       dbNet* word_select,
-                      vector<dbBTerm*>& write_enable,
+                      vector<vector<dbBTerm*>>& write_enable,
                       const vector<dbNet*>& selects,
                       const vector<dbNet*>& shared_select_b_nets,
                       const bool create_select_inv,
-                      const vector<dbNet*>& data_input,
+                      const vector<vector<dbNet*>>& data_input,
                       const vector<vector<dbNet*>>& data_output)
 {
   int r_total = rw_ports + r_ports;
   for (int slice = 0; slice < slices_per_word; ++slice) {
     int start_idx = slice * mask_size;
-    vector<dbNet*> slice_inputs(data_input.begin() + start_idx,
-                                data_input.begin() + start_idx + mask_size);
+    // per write port: its data bits and its write enable for this slice
+    vector<vector<dbNet*>> slice_inputs;
+    vector<dbNet*> slice_enables;
+    for (size_t w = 0; w < data_input.size(); ++w) {
+      slice_inputs.emplace_back(data_input[w].begin() + start_idx,
+                                data_input[w].begin() + start_idx + mask_size);
+      slice_enables.push_back(write_enable[w][slice]->getNet());
+    }
     std::vector<std::vector<odb::dbNet*>> slice_outputs;
     slice_outputs.reserve(r_total);
     for (int port = 0; port < r_total; ++port) {
@@ -311,7 +431,7 @@ void RamGen::makeWord(const int slices_per_word,
               word_idx,
               column_mux_ratio,
               clock,
-              write_enable[slice]->getNet(),
+              slice_enables,
               word_select,
               selects,
               shared_select_b_nets,
@@ -478,7 +598,8 @@ std::vector<dbNet*> RamGen::makeSelectNets(const std::string& prefix,
 
 dbMaster* RamGen::findMaster(
     const std::function<bool(sta::LibertyPort*)>& match,
-    const char* name)
+    const char* name,
+    const bool required)
 {
   dbMaster* best = nullptr;
   float best_area = std::numeric_limits<float>::max();
@@ -531,6 +652,9 @@ dbMaster* RamGen::findMaster(
   }
 
   if (!best) {
+    if (!required) {
+      return nullptr;
+    }
     logger_->error(RAM, 10, "Can't find {} cell", name);
   }
   logger_->info(RAM, 16, "Selected {} cell {}", name, best->getName());
@@ -780,141 +904,176 @@ void RamGen::findMasters()
   // to work for all PDKs, avoiding hardcoding PDK-specific expression parsing
   if (!aoi22_cell_) {
     // AOI22 truth table: Y = !(A1&A2 | B1&B2)
-    // for 4 inputs ordered (A1,A2,B1,B2) mapped to bits (0,1,2,3),
-    // bit k of the table = output when inputs = k in binary.
-    // kAoi22Table holds the expected output values column for aoi22 truth table
-    static const uint16_t kAoi22Table = 0x0777;
+    std::array<std::string, 4> in;
+    aoi22_cell_ = findMaster4(0x0777, "aoi22", in, aoi22_out_);
+    aoi22_in_a1_ = in[0];
+    aoi22_in_a2_ = in[1];
+    aoi22_in_b1_ = in[2];
+    aoi22_in_b2_ = in[3];
+  }
 
-    // recursively evaluate a liberty function expression given input port
-    // values
-    std::function<bool(const sta::FuncExpr*,
-                       const std::vector<sta::LibertyPort*>&,
-                       const std::vector<bool>&)>
-        evalFunc;
+  // More than one write port: the write data mux, an AO22 per pair of
+  // ports, and an OR2 for the write enables and across pairs.
+  if (num_write_ > 1) {
+    if (!ao22_cell_) {
+      // AO22 truth table: Y = A1&A2 | B1&B2
+      ao22_cell_ = findMaster4(
+          0xF888, "ao22", ao22_in_, ao22_out_, /*required=*/false);
+    }
+    if (!or2_cell_) {
+      or2_cell_ = findMaster(
+          [](sta::LibertyPort* port) {
+            if (!port->direction()->isOutput()) {
+              return false;
+            }
+            auto function = port->function();
+            return function && function->op() == sta::FuncExpr::Op::or_
+                   && function->left()->op() == sta::FuncExpr::Op::port
+                   && function->right()->op() == sta::FuncExpr::Op::port;
+          },
+          "or2");
+    }
+    or2_ports_ = buildPortMap(or2_cell_);
+  }
+}
 
-    evalFunc = [&evalFunc](const sta::FuncExpr* expr,
-                           const std::vector<sta::LibertyPort*>& ports,
-                           const std::vector<bool>& vals) -> bool {
-      if (!expr) {
+dbMaster* RamGen::findMaster4(const uint16_t table,
+                              const char* name,
+                              std::array<std::string, 4>& inputs_out,
+                              std::string& output,
+                              const bool required)
+{
+  // for 4 inputs ordered (A1,A2,B1,B2) mapped to bits (0,1,2,3),
+  // bit k of the table = output when inputs = k in binary.
+
+  // recursively evaluate a liberty function expression given input port
+  // values
+  std::function<bool(const sta::FuncExpr*,
+                     const std::vector<sta::LibertyPort*>&,
+                     const std::vector<bool>&)>
+      evalFunc;
+
+  evalFunc = [&evalFunc](const sta::FuncExpr* expr,
+                         const std::vector<sta::LibertyPort*>& ports,
+                         const std::vector<bool>& vals) -> bool {
+    if (!expr) {
+      return false;
+    }
+    switch (expr->op()) {
+      case sta::FuncExpr::Op::port: {
+        // look up this port's value in the input vector
+        auto p = expr->port();
+        for (int i = 0; i < (int) ports.size(); ++i) {
+          if (ports[i] == p) {
+            return vals[i];
+          }
+        }
         return false;
       }
-      switch (expr->op()) {
-        case sta::FuncExpr::Op::port: {
-          // look up this port's value in the input vector
-          auto p = expr->port();
-          for (int i = 0; i < (int) ports.size(); ++i) {
-            if (ports[i] == p) {
-              return vals[i];
-            }
-          }
-          return false;
-        }
-        case sta::FuncExpr::Op::not_:
-          return !evalFunc(expr->left(), ports, vals);
-        case sta::FuncExpr::Op::and_:
-          return evalFunc(expr->left(), ports, vals)
-                 && evalFunc(expr->right(), ports, vals);
-        case sta::FuncExpr::Op::or_:
-          return evalFunc(expr->left(), ports, vals)
-                 || evalFunc(expr->right(), ports, vals);
-        case sta::FuncExpr::Op::xor_:
-          return evalFunc(expr->left(), ports, vals)
-                 != evalFunc(expr->right(), ports, vals);
-        case sta::FuncExpr::Op::one:
-          return true;
-        case sta::FuncExpr::Op::zero:
-          return false;
-        default:
-          return false;
-      }
-    };
+      case sta::FuncExpr::Op::not_:
+        return !evalFunc(expr->left(), ports, vals);
+      case sta::FuncExpr::Op::and_:
+        return evalFunc(expr->left(), ports, vals)
+               && evalFunc(expr->right(), ports, vals);
+      case sta::FuncExpr::Op::or_:
+        return evalFunc(expr->left(), ports, vals)
+               || evalFunc(expr->right(), ports, vals);
+      case sta::FuncExpr::Op::xor_:
+        return evalFunc(expr->left(), ports, vals)
+               != evalFunc(expr->right(), ports, vals);
+      case sta::FuncExpr::Op::one:
+        return true;
+      case sta::FuncExpr::Op::zero:
+        return false;
+      default:
+        return false;
+    }
+  };
 
-    // compute 16-entry truth table for a function given 4 ordered input ports.
-    // each bit k of the result = output when inputs = k in binary. (i.e. k= 2 =
-    // 10)
-    auto computeTable =
-        [&evalFunc](const sta::FuncExpr* func,
+  // compute 16-entry truth table for a function given 4 ordered input ports.
+  // each bit k of the result = output when inputs = k in binary. (i.e. k= 2 =
+  // 10)
+  auto computeTable
+      = [&evalFunc](const sta::FuncExpr* func,
                     const std::vector<sta::LibertyPort*>& inputs) -> uint16_t {
-      uint16_t table = 0;
-      for (int k = 0; k < 16; ++k) {
-        std::vector<bool> vals(4);
-        for (int i = 0; i < 4; ++i) {
-          vals[i] = (k >> i) & 1;
-        }
-        if (evalFunc(func, inputs, vals)) {
-          table |= (1 << k);
-        }
+    uint16_t table = 0;
+    for (int k = 0; k < 16; ++k) {
+      std::vector<bool> vals(4);
+      for (int i = 0; i < 4; ++i) {
+        vals[i] = (k >> i) & 1;
       }
-      return table;
-    };
+      if (evalFunc(func, inputs, vals)) {
+        table |= (1 << k);
+      }
+    }
+    return table;
+  };
 
-    // there are exactly 3 unique ways to split 4 ports into 2 pairs for AOI22,
-    // each pairing assigns (inputs[0],inputs[1]) to group A and
-    // (inputs[2],inputs[3]) to group B. Try all 3 and check which pattern
-    // pairing produces the correct AOI22 truth table, which is the correct port
-    // mapping
-    static const int kPairings[3][4] = {
-        {0, 1, 2, 3},  // group A=(p0,p1), group B=(p2,p3)
-        {0, 2, 1, 3},  // group A=(p0,p2), group B=(p1,p3)
-        {0, 3, 1, 2},  // group A=(p0,p3), group B=(p1,p2)
-    };
+  // there are exactly 3 unique ways to split 4 ports into 2 pairs for AOI22,
+  // each pairing assigns (inputs[0],inputs[1]) to group A and
+  // (inputs[2],inputs[3]) to group B. Try all 3 and check which pattern
+  // pairing produces the correct AOI22 truth table, which is the correct port
+  // mapping
+  static const int kPairings[3][4] = {
+      {0, 1, 2, 3},  // group A=(p0,p1), group B=(p2,p3)
+      {0, 2, 1, 3},  // group A=(p0,p2), group B=(p1,p3)
+      {0, 3, 1, 2},  // group A=(p0,p3), group B=(p1,p2)
+  };
 
-    aoi22_cell_ = findMaster(
-        [&](sta::LibertyPort* out_port) -> bool {
-          if (!out_port->direction()->isOutput()) {
-            return false;
-          }
-          auto func = out_port->function();
-          if (!func) {
-            return false;
-          }
-          auto cell = out_port->libertyCell();
-
-          // collect all input ports for this cell
-          std::vector<sta::LibertyPort*> inputs;
-          std::unique_ptr<sta::ConcreteCellPortIterator> port_iter(
-              cell->portIterator());
-          while (port_iter->hasNext()) {
-            auto p = static_cast<sta::ConcretePort*>(port_iter->next());
-            if (p->direction()->isInput()) {
-              inputs.push_back(p->libertyPort());
-            }
-          }
-
-          // aoi22 must have exactly 4 inputs
-          if (inputs.size() != 4) {
-            return false;
-          }
-
-          // sort ports by name for deterministic ordering across builds
-          std::ranges::sort(
-              inputs, [](sta::LibertyPort* a, sta::LibertyPort* b) {
-                return std::string(a->name()) < std::string(b->name());
-              });
-
-          // try each pairing, if truth table matches, record port names
-          for (auto& pairing : kPairings) {
-            std::vector<sta::LibertyPort*> ordered = {inputs[pairing[0]],
-                                                      inputs[pairing[1]],
-                                                      inputs[pairing[2]],
-                                                      inputs[pairing[3]]};
-            if (computeTable(func, ordered) == kAoi22Table) {
-              // found matching pairing so this is the correct port mapping,
-              // store port names for later use
-              // ordered[0] = A1, ordered[1] = A2, ordered[2] = B1, ordered[3] =
-              // B2
-              aoi22_in_a1_ = ordered[0]->name();
-              aoi22_in_a2_ = ordered[1]->name();
-              aoi22_in_b1_ = ordered[2]->name();
-              aoi22_in_b2_ = ordered[3]->name();
-              aoi22_out_ = out_port->name();
-              return true;
-            }
-          }
+  return findMaster(
+      [&](sta::LibertyPort* out_port) -> bool {
+        if (!out_port->direction()->isOutput()) {
           return false;
-        },
-        "aoi22");
-  }
+        }
+        auto func = out_port->function();
+        if (!func) {
+          return false;
+        }
+        auto cell = out_port->libertyCell();
+
+        // collect all input ports for this cell
+        std::vector<sta::LibertyPort*> inputs;
+        std::unique_ptr<sta::ConcreteCellPortIterator> port_iter(
+            cell->portIterator());
+        while (port_iter->hasNext()) {
+          auto p = static_cast<sta::ConcretePort*>(port_iter->next());
+          if (p->direction()->isInput()) {
+            inputs.push_back(p->libertyPort());
+          }
+        }
+
+        // aoi22 must have exactly 4 inputs
+        if (inputs.size() != 4) {
+          return false;
+        }
+
+        // sort ports by name for deterministic ordering across builds
+        std::ranges::sort(inputs, [](sta::LibertyPort* a, sta::LibertyPort* b) {
+          return std::string(a->name()) < std::string(b->name());
+        });
+
+        // try each pairing, if truth table matches, record port names
+        for (auto& pairing : kPairings) {
+          std::vector<sta::LibertyPort*> ordered = {inputs[pairing[0]],
+                                                    inputs[pairing[1]],
+                                                    inputs[pairing[2]],
+                                                    inputs[pairing[3]]};
+          if (computeTable(func, ordered) == table) {
+            // found matching pairing so this is the correct port mapping,
+            // store port names for later use
+            // ordered[0] = A1, ordered[1] = A2, ordered[2] = B1, ordered[3] =
+            // B2
+            for (int i = 0; i < 4; ++i) {
+              inputs_out[i] = ordered[i]->name();
+            }
+            output = out_port->name();
+            return true;
+          }
+        }
+        return false;
+      },
+      name,
+      required);
 }
 
 void RamGen::ramPdngen(const char* power_net_name,
@@ -1095,7 +1254,10 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
     std::string name = bterm->getName();
     if (name == "clk") {
       clk_pins.push_back(bterm);
-    } else if (name.starts_with("we[")) {
+    } else if (name.starts_with("we") && name.find('[') != std::string::npos
+               && std::all_of(name.begin() + 2,
+                              name.begin() + name.find('['),
+                              [](char c) { return std::isdigit(c); })) {
       we_pins.push_back(bterm);
     }
   }
@@ -1201,6 +1363,7 @@ void RamGen::generate(const int mask_size,
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
   use_latch_ = use_latch;
+  num_write_ = rw_ports + w_ports;
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;
@@ -1209,6 +1372,8 @@ void RamGen::generate(const int mask_size,
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
   aoi22_cell_ = nullptr;
+  ao22_cell_ = nullptr;
+  or2_cell_ = nullptr;
   latch_cell_ = nullptr;
 
   if (use_latch_ && storage_cell_) {
@@ -1270,10 +1435,17 @@ void RamGen::generate(const int mask_size,
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
 
-  vector<dbBTerm*> write_enable(slices_per_word, nullptr);
-  for (int slice = 0; slice < slices_per_word; ++slice) {
-    auto in_name = fmt::format("we[{}]", slice);
-    write_enable[slice] = makeBTerm(in_name, dbIoType::INPUT);
+  // One write enable bus per write port: we, or with more than one write
+  // port we0, we1, ...
+  const int num_write = num_write_;
+  vector<vector<dbBTerm*>> write_enable(
+      num_write, vector<dbBTerm*>(slices_per_word, nullptr));
+  for (int w = 0; w < num_write; ++w) {
+    const std::string we = num_write == 1 ? "we" : fmt::format("we{}", w);
+    for (int slice = 0; slice < slices_per_word; ++slice) {
+      write_enable[w][slice]
+          = makeBTerm(fmt::format("{}[{}]", we, slice), dbIoType::INPUT);
+    }
   }
 
   // When column_mux_ratio > 1:  word_sel_nets[word_idx] is high/active when
@@ -1311,7 +1483,7 @@ void RamGen::generate(const int mask_size,
       port_prefix = "addr_rw";
       rw_idx++;
     } else if (p < rw_ports + w_ports) {
-      port_prefix = "addr_w";
+      port_prefix = num_write == 1 ? "addr_w" : fmt::format("addr_w{}", w_idx);
       w_idx++;
     } else {
       port_prefix = fmt::format("addr_r{}", r_idx++);
@@ -1370,11 +1542,18 @@ void RamGen::generate(const int mask_size,
   // start of input/output net creation
   int r_total = rw_ports + r_ports;
   q_outputs_.resize(r_total);
-  vector<dbNet*> D_nets(word_size);
+  // One data bus per write port: D, or with more than one D0, D1, ...
+  vector<vector<dbBTerm*>> data_inputs(num_write);
+  vector<vector<dbNet*>> D_nets(num_write, vector<dbNet*>(word_size));
   for (int bit = 0; bit < word_size; ++bit) {
-    data_inputs_.push_back(
-        makeBTerm(fmt::format("D[{}]", bit), dbIoType::INPUT));
-    D_nets[bit] = makeNet("D_nets", fmt::format("b{}", bit));
+    for (int w = 0; w < num_write; ++w) {
+      const std::string d = num_write == 1 ? "D" : fmt::format("D{}", w);
+      data_inputs[w].push_back(
+          makeBTerm(fmt::format("{}[{}]", d, bit), dbIoType::INPUT));
+      data_inputs_.push_back(data_inputs[w].back());
+      D_nets[w][bit] = makeNet(num_write == 1 ? "D_nets" : d + "_nets",
+                               fmt::format("b{}", bit));
+    }
 
     // if total read ports == 1, only have Q outputs
     if (r_total == 1) {
@@ -1451,14 +1630,13 @@ void RamGen::generate(const int mask_size,
     }
 
     for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
-      // size of row_selects is write port and total num read ports
-      vector<dbNet*> row_selects(r_total + 1);
-      for (int p = 0; p < rw_ports + w_ports; ++p) {
+      // the write ports' row selects, then the read ports'
+      vector<dbNet*> row_selects(num_write + r_total);
+      for (int p = 0; p < num_write; ++p) {
         row_selects[p] = write_select_nets[p][row];
       }
-      // read selects start at index 1 (always have one write port)
       for (int p = 0; p < r_total; ++p) {
-        row_selects[p + 1] = read_select_nets[p][row];
+        row_selects[num_write + p] = read_select_nets[p][row];
       }
       vector<vector<dbNet*>> word_output_nets(r_total);
       for (int port = 0; port < r_total; ++port) {
@@ -1481,7 +1659,7 @@ void RamGen::generate(const int mask_size,
                row_selects,
                shared_select_b_nets,
                (word_idx == 0 || column_mux_ratio == 1),
-               use_latch_ ? mid_nets : D_nets,
+               use_latch_ ? vector<vector<dbNet*>>{mid_nets} : D_nets,
                word_output_nets);
     }
   }
@@ -1618,16 +1796,16 @@ void RamGen::generate(const int mask_size,
         for (int c = group_start; c < group_start + column_mux_ratio; ++c) {
           if (c == nl_col) {
             auto nl_cell = std::make_unique<Cell>();
-            makeInst(
-                nl_cell.get(),
-                // NOLINTNEXTLINE(misc-include-cleaner)
-                fmt::format("neg_lat_b{}", global_bit),
-                "nlat",
-                latch_cell_,
-                {{latch_ports_[{PortRoleType::Clock, 0}], clk_b_net},
-                 {latch_ports_[{PortRoleType::DataIn, 0}], D_nets[global_bit]},
-                 {latch_ports_[{PortRoleType::DataOut, 0}],
-                  mid_nets[global_bit]}});
+            makeInst(nl_cell.get(),
+                     // NOLINTNEXTLINE(misc-include-cleaner)
+                     fmt::format("neg_lat_b{}", global_bit),
+                     "nlat",
+                     latch_cell_,
+                     {{latch_ports_[{PortRoleType::Clock, 0}], clk_b_net},
+                      {latch_ports_[{PortRoleType::DataIn, 0}],
+                       D_nets[0][global_bit]},
+                      {latch_ports_[{PortRoleType::DataOut, 0}],
+                       mid_nets[global_bit]}});
             ram_grid_.addCell(std::move(nl_cell), c);
           } else {
             ram_grid_.addCell(nullptr, c);
@@ -1648,13 +1826,16 @@ void RamGen::generate(const int mask_size,
     for (int bit = 0; bit < mask_size; ++bit) {
       int bit_idx = bit + slice * mask_size;
       auto buffer_grid_cell = std::make_unique<Cell>();
-      makeInst(buffer_grid_cell.get(),
-               "buffer",
-               fmt::format("in[{}]", bit_idx),
-               buffer_cell_,
-               {{buffer_ports_[{PortRoleType::DataIn, 0}],
-                 data_inputs_[bit_idx]->getNet()},
-                {buffer_ports_[{PortRoleType::DataOut, 0}], D_nets[bit_idx]}});
+      for (int w = 0; w < num_write; ++w) {
+        makeInst(
+            buffer_grid_cell.get(),
+            num_write == 1 ? "buffer" : fmt::format("buffer{}", w),
+            fmt::format("in[{}]", bit_idx),
+            buffer_cell_,
+            {{buffer_ports_[{PortRoleType::DataIn, 0}],
+              data_inputs[w][bit_idx]->getNet()},
+             {buffer_ports_[{PortRoleType::DataOut, 0}], D_nets[w][bit_idx]}});
+      }
       int buf_col = slice * (mask_size * column_mux_ratio + column_mux_ratio)
                     + bit * column_mux_ratio;
       ram_grid_.addCell(std::move(buffer_grid_cell), buf_col);
@@ -1936,8 +2117,16 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   std::string module_name = fmt::format("RAM{}x{}", num_words, word_size_bit);
 
   int r_total = rw_ports + r_ports;
+  const int num_write = rw_ports + w_ports;
+  // a write port's bus: D, we, addr_w, or with more than one D0, we0, ...
+  auto wbus = [num_write](const char* base, int w) {
+    return num_write == 1 ? std::string(base) : fmt::format("{}{}", base, w);
+  };
   // Build port list
-  std::string port_list = "\n  clk,\n  D";
+  std::string port_list = "\n  clk";
+  for (int w = 0; w < num_write; ++w) {
+    port_list += ",\n  " + wbus("D", w);
+  }
   for (int i = 0; i < r_total; i++) {
     if (r_total == 1) {
       port_list += ",\n  Q";
@@ -1948,13 +2137,17 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   // address ports
   if (rw_ports > 0) {
     port_list += ",\n  addr_rw";
-  } else if (w_ports > 0) {
-    port_list += ",\n  addr_w";
+  } else {
+    for (int w = 0; w < w_ports; ++w) {
+      port_list += ",\n  " + wbus("addr_w", w);
+    }
   }
   for (int i = 0; i < r_ports; i++) {
     port_list += fmt::format(",\n  addr_r{}", i);
   }
-  port_list += ",\n  we";
+  for (int w = 0; w < num_write; ++w) {
+    port_list += ",\n  " + wbus("we", w);
+  }
 
   // Build output declarations
   std::string output_declaration;
@@ -1973,9 +2166,11 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   if (rw_ports > 0) {
     addr_declarations
         += fmt::format("  input [{}:0] addr_rw;\n", address_width - 1);
-  } else if (w_ports > 0) {
-    addr_declarations
-        += fmt::format("  input [{}:0] addr_w;\n", address_width - 1);
+  } else {
+    for (int w = 0; w < w_ports; ++w) {
+      addr_declarations += fmt::format(
+          "  input [{}:0] {};\n", address_width - 1, wbus("addr_w", w));
+    }
   }
   for (int i = 0; i < r_ports; i++) {
     addr_declarations
@@ -2005,26 +2200,45 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
                                    addr_name);
   }
 
-  std::string write_addr = (rw_ports > 0) ? "addr_rw" : "addr_w";
+  // Write logic, the ports in order: where two write the same word in a
+  // cycle, the last one's data is kept.
+  std::string data_declarations;
+  std::string enable_declarations;
+  std::string write_logic;
+  for (int w = 0; w < num_write; ++w) {
+    const std::string write_addr
+        = rw_ports > 0 ? std::string("addr_rw") : wbus("addr_w", w);
+    data_declarations
+        += fmt::format("  input [{}:0] {};\n", word_size_bit - 1, wbus("D", w));
+    enable_declarations += fmt::format(
+        "  input [{}:0] {};\n", slices_per_word - 1, wbus("we", w));
+    write_logic += fmt::format(R"(    for (i = 0; i < {}; i = i + 1) begin
+      if ({}[i]) begin
+        mem[{}][i*{} +:{}] <= {}[i*{} +:{}];
+      end
+    end
+)",
+                               slices_per_word,
+                               wbus("we", w),
+                               write_addr,
+                               mask_size,
+                               mask_size,
+                               wbus("D", w),
+                               mask_size,
+                               mask_size);
+  }
 
   std::string verilog_code = fmt::format(R"(module {} ({}
 );
   input clk;
-  input [{}:0] D;
-{}{}  input [{}:0] we;
-
+{}{}{}{}
   // memory array declaration
   reg [{}:0] mem[0:{}];
 
   // write logic
   integer i;
   always @(posedge clk) begin
-    for (i = 0; i < {}; i = i + 1) begin
-      if (we[i]) begin
-        mem[{}][i*{} +:{}] <= D[i*{} +:{}];
-      end
-    end
-  end
+{}  end
 
   // read logic
 {}
@@ -2032,18 +2246,13 @@ endmodule
 )",
                                          module_name,
                                          port_list,
-                                         word_size_bit - 1,
+                                         data_declarations,
                                          output_declaration,
                                          addr_declarations,
-                                         slices_per_word - 1,
+                                         enable_declarations,
                                          word_size_bit - 1,
                                          num_words - 1,
-                                         slices_per_word,
-                                         write_addr,
-                                         mask_size,
-                                         mask_size,
-                                         mask_size,
-                                         mask_size,
+                                         write_logic,
                                          read_port_logic);
 
   std::ofstream vf(filename);
