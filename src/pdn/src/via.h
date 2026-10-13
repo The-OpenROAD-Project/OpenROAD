@@ -129,7 +129,7 @@ class DbVia
   bool hasGenerator() const { return generator_ != nullptr; }
   ViaGenerator* getGenerator() const { return generator_.get(); }
 
-  bool canCache() const;
+  virtual bool canCache() const;
 
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
@@ -383,6 +383,8 @@ class DbGenerateStackedVia : public DbVia
                          utl::Logger* logger) override;
 
   ViaReport getViaReport() const override;
+
+  bool canCache() const override;
 
  private:
   std::vector<std::unique_ptr<DbVia>> vias_;

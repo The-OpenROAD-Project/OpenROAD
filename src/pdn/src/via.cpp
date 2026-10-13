@@ -1089,6 +1089,12 @@ ViaReport DbGenerateStackedVia::getViaReport() const
   return report;
 }
 
+bool DbGenerateStackedVia::canCache() const
+{
+  return std::ranges::all_of(vias_,
+                             [](const auto& via) { return via->canCache(); });
+}
+
 /////////////
 
 DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
