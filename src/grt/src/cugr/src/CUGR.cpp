@@ -2263,17 +2263,22 @@ void CUGR::saveCongestion()
   // Walk every routed net's tree to gather per 3D edge (layer, x, y):
   //   - wire_count: number of same-layer wire segments crossing the edge
   //   - wire_nets:  the nets that own those wires
-  //   - via_nets:   the nets that own vias whose stub demand commitVia()
-  //                 attributes to this edge (the same neighbours commitVia
+  //   - via_nets:   the nets that own vias whose stub demand commitTree()
+  //                 attributes to this edge (the same neighbours commitTree
   //                 itself touches)
   std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> wire_nets;
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
-  auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
-    // Same edges commitVia() deposits stub demand on.
-    grid_graph_->forEachViaFlankEdge(
-        via_layer,
+  auto attribute_via = [&](int low,
+                           int high,
+                           int vx,
+                           int vy,
+                           odb::dbNet* db_net) {
+    // Same edges commitTree() deposits stub demand on.
+    grid_graph_->forEachStackFlankEdge(
+        low,
+        high,
         {vx, vy},
         {},
         [&](int l, PointT edge_loc, CapacityT /*demand*/, double /*factor*/) {
@@ -2311,13 +2316,9 @@ void CUGR::saveCongestion()
                 }
               }
             } else {
-              const int min_l
-                  = std::min(node->getLayerIdx(), child->getLayerIdx());
-              const int max_l
-                  = std::max(node->getLayerIdx(), child->getLayerIdx());
-              for (int via_l = min_l; via_l < max_l; via_l++) {
-                attribute_via(via_l, node->x(), node->y(), db_net);
-              }
+              const auto [min_l, max_l]
+                  = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+              attribute_via(min_l, max_l, node->x(), node->y(), db_net);
             }
           }
         });
@@ -2495,109 +2496,110 @@ bool CUGR::mergeNet(odb::dbNet* preserved_net,
   auto& preserved_tree = preserved_gr->getRoutingTree();
   auto& removed_tree = removed_gr->getRoutingTree();
 
-  if (preserved_tree && removed_tree) {
-    if (connection.empty()) {
-      // The routes overlap in the buffer gcell (connectRouting passes the
-      // bridging vias otherwise), but the trees may touch only inside an edge,
-      // such as a via stack, which CUGR keeps as one edge.
-      auto [node_a, node_b] = findTreeJoin(preserved_tree, removed_tree);
-      if (!node_a) {
-        // Linking the roots would add a diagonal or wrong-way edge that
-        // commitTree rejects (GRT-1252); let the caller reroute instead.
-        return false;
-      }
-      rerootAt(removed_tree, node_b);
-      node_a->addChild(node_b);
-    } else {
-      auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
-        const int min_coord = grid_graph_->getGridline(is_x ? 0 : 1, 0);
-        return (dbu_coord - min_coord) / design_->getGridlineSize();
-      };
-
-      // 1. Build adjacency list of connection segments
-      using Coord = std::tuple<int, int, int>;  // layer, x, y
-      std::map<Coord, std::vector<Coord>> adj;
-      for (const auto& seg : connection) {
-        Coord u(seg.init_layer - 1,
-                dbu_to_tile(seg.init_x, true),
-                dbu_to_tile(seg.init_y, false));
-        Coord v(seg.final_layer - 1,
-                dbu_to_tile(seg.final_x, true),
-                dbu_to_tile(seg.final_y, false));
-        if (u != v) {
-          adj[u].push_back(v);
-          adj[v].push_back(u);
-        }
-      }
-
-      // 2. Find where each tree touches the connection. A tree can pass a
-      // connection point inside an edge, such as the via stack down to the
-      // buffer pin, so split that edge to get a node there.
-      std::vector<GRPoint> points;
-      points.reserve(adj.size());
-      for (const auto& [coord, neighbors] : adj) {
-        points.push_back(std::make_from_tuple<GRPoint>(coord));
-      }
-      std::shared_ptr<GRTreeNode> node_a
-          = findOrSplitAt(preserved_tree, points);
-      std::shared_ptr<GRTreeNode> node_b = findOrSplitAt(removed_tree, points);
-      if (!node_a || !node_b) {
-        // The removed tree would be left detached with its demand still
-        // committed; let the caller reroute instead.
-        return false;
-      }
-
-      // 3. Reroot removed_tree at node_b
-      rerootAt(removed_tree, node_b);
-
-      // 4. DFS to build connection tree and commit demand
-      std::set<Coord> visited;
-      const auto& ndr = preserved_gr->getNdrCosts();
-      std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
-      build_tree = [&](Coord curr, std::shared_ptr<GRTreeNode> parent_node) {
-        visited.insert(curr);
-        if (curr
-            == std::make_tuple(
-                node_b->getLayerIdx(), node_b->x(), node_b->y())) {
-          if (parent_node != node_b) {
-            parent_node->addChild(node_b);
-          }
-        }
-        for (const auto& next : adj[curr]) {
-          if (visited.find(next) == visited.end()) {
-            std::shared_ptr<GRTreeNode> child_node;
-            if (next
-                == std::make_tuple(
-                    node_b->getLayerIdx(), node_b->x(), node_b->y())) {
-              child_node = node_b;
-            } else {
-              child_node = std::make_shared<GRTreeNode>(
-                  std::get<0>(next), std::get<1>(next), std::get<2>(next));
-            }
-            parent_node->addChild(child_node);
-
-            // Commit the wire or via demand of the new edge; releasing the
-            // merged tree removes both.
-            auto temp = std::make_shared<GRTreeNode>(
-                std::get<0>(curr), std::get<1>(curr), std::get<2>(curr));
-            temp->addChild(std::make_shared<GRTreeNode>(
-                std::get<0>(next), std::get<1>(next), std::get<2>(next)));
-            grid_graph_->addTreeUsage(temp, ndr);
-
-            build_tree(next, std::move(child_node));
-          }
-        }
-      };
-
-      Coord start_coord(node_a->getLayerIdx(), node_a->x(), node_a->y());
-      build_tree(start_coord, std::move(node_a));
+  if (!preserved_tree || !removed_tree) {
+    // Nothing to graft; let the caller reroute the survivor. The removed net
+    // keeps its tree, so removeNet still releases that tree's demand.
+    return false;
+  }
+  // The trees can overlap where they meet, in wires as well as via columns,
+  // and a net pays for each edge once. So once the join is found, release
+  // both trees and commit the merged tree as a whole.
+  auto release_trees = [&] {
+    grid_graph_->removeTreeUsage(*preserved_gr);
+    grid_graph_->removeTreeUsage(*removed_gr);
+  };
+  if (connection.empty()) {
+    // The routes overlap in the buffer gcell (connectRouting passes the
+    // bridging vias otherwise), but the trees may touch only inside an edge,
+    // such as a via stack, which CUGR keeps as one edge.
+    auto [node_a, node_b] = findTreeJoin(preserved_tree, removed_tree);
+    if (!node_a) {
+      // Linking the roots would add a diagonal or wrong-way edge that
+      // commitTree rejects (GRT-1252); let the caller reroute instead.
+      return false;
     }
+    release_trees();
+    rerootAt(removed_tree, node_b);
+    node_a->addChild(node_b);
+  } else {
+    auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
+      const int min_coord = grid_graph_->getGridline(is_x ? 0 : 1, 0);
+      return (dbu_coord - min_coord) / design_->getGridlineSize();
+    };
+
+    // 1. Build adjacency list of connection segments
+    using Coord = std::tuple<int, int, int>;  // layer, x, y
+    std::map<Coord, std::vector<Coord>> adj;
+    for (const auto& seg : connection) {
+      Coord u(seg.init_layer - 1,
+              dbu_to_tile(seg.init_x, true),
+              dbu_to_tile(seg.init_y, false));
+      Coord v(seg.final_layer - 1,
+              dbu_to_tile(seg.final_x, true),
+              dbu_to_tile(seg.final_y, false));
+      if (u != v) {
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+      }
+    }
+
+    // 2. Find where each tree touches the connection. A tree can pass a
+    // connection point inside an edge, such as the via stack down to the
+    // buffer pin, so split that edge to get a node there.
+    std::vector<GRPoint> points;
+    points.reserve(adj.size());
+    for (const auto& [coord, neighbors] : adj) {
+      points.push_back(std::make_from_tuple<GRPoint>(coord));
+    }
+    std::shared_ptr<GRTreeNode> node_a = findOrSplitAt(preserved_tree, points);
+    std::shared_ptr<GRTreeNode> node_b = findOrSplitAt(removed_tree, points);
+    if (!node_a || !node_b) {
+      // The removed tree would be left detached with its demand still
+      // committed; let the caller reroute instead.
+      return false;
+    }
+    release_trees();
+
+    // 3. Reroot removed_tree at node_b
+    rerootAt(removed_tree, node_b);
+
+    // 4. DFS to build the connection tree
+    std::set<Coord> visited;
+    std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
+    build_tree = [&](Coord curr, std::shared_ptr<GRTreeNode> parent_node) {
+      visited.insert(curr);
+      if (curr
+          == std::make_tuple(node_b->getLayerIdx(), node_b->x(), node_b->y())) {
+        if (parent_node != node_b) {
+          parent_node->addChild(node_b);
+        }
+      }
+      for (const auto& next : adj[curr]) {
+        if (visited.find(next) == visited.end()) {
+          std::shared_ptr<GRTreeNode> child_node;
+          if (next
+              == std::make_tuple(
+                  node_b->getLayerIdx(), node_b->x(), node_b->y())) {
+            child_node = node_b;
+          } else {
+            child_node = std::make_shared<GRTreeNode>(
+                std::get<0>(next), std::get<1>(next), std::get<2>(next));
+          }
+          parent_node->addChild(child_node);
+          build_tree(next, std::move(child_node));
+        }
+      }
+    };
+
+    Coord start_coord(node_a->getLayerIdx(), node_a->x(), node_a->y());
+    build_tree(start_coord, std::move(node_a));
   }
 
   // Grafting an adopted tree into a native survivor must carry the
   // adopted mark, or the combined tree's release trips GRT-1252.
   preserved_gr->setAdopted(preserved_gr->isAdopted()
                            || removed_gr->isAdopted());
+  grid_graph_->addTreeUsage(*preserved_gr);
 
   merged_nets_.insert(removed_net);
   return true;
@@ -2686,16 +2688,16 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   if (gr_net != nullptr && gr_net->getRoutingTree() != nullptr) {
     accumulate_wire(layer_0 - 2, -1.0);
   }
+  // The adopted route commits each endpoint's two vias as one stack.
   for (const PointT& endpoint : endpoints) {
-    for (int layer = layer_0 - 2; layer < layer_0; layer++) {
-      grid_graph_->forEachViaFlankEdge(
-          layer,
-          endpoint,
-          costs,
-          [&](int l, PointT loc, CapacityT demand, double factor) {
-            edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
-          });
-    }
+    grid_graph_->forEachStackFlankEdge(
+        layer_0 - 2,
+        layer_0,
+        endpoint,
+        costs,
+        [&](int l, PointT loc, CapacityT demand, double factor) {
+          edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
+        });
   }
   for (const auto& [edge, demand] : edge_demands) {
     const auto& [layer, x, y] = edge;
