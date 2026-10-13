@@ -1147,13 +1147,6 @@ void tmg_conn::identifyTerminalWirePoints()
   sliceBPinsOverlappingITerms();
   identifyCandidateSections();
 
-  for (auto& pc : wire_points_) {
-    pc.is_pin_point = false;
-    pc.is_connected_to_a_pin_point = false;
-    pc.next_for_clear = nullptr;
-    pc.next_in_short_ring = nullptr;
-  }
-
   // Build circular linked lists for shorts.
   setSring();
 
@@ -1161,8 +1154,14 @@ void tmg_conn::identifyTerminalWirePoints()
        terminal_index++) {
     connectTerm(terminal_index, false);
   }
-  const bool ok = checkConnected();
-  if (!ok) {
+
+  // This is not just a check: as the walk goes, it marks the first point it
+  // reaches on each terminal as first_pt and clears them again at the end,
+  // restarts from terminals that own several points, and drops extra
+  // connections of the driver.
+  const bool terminals_connected = checkConnected();
+
+  if (!terminals_connected) {
     for (int terminal_index = 0; terminal_index < terminals_.size();
          terminal_index++) {
       connectTerm(terminal_index, true);
