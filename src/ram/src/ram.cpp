@@ -115,11 +115,15 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
                                       dbNet* clock,
                                       vector<odb::dbNet*>& select,
                                       dbNet* data_input,
-                                      vector<odb::dbNet*>& data_output)
+                                      vector<odb::dbNet*>& data_output,
+                                      dbNet* storage_net)
 {
   auto bit_cell = std::make_unique<Cell>();
 
-  auto storage_net = makeNet(prefix, "storage");
+  // the AND-OR read path names the storage net ahead, for its trees
+  if (storage_net == nullptr) {
+    storage_net = makeNet(prefix, "storage");
+  }
 
   if (!use_latch_) {
     makeInst(bit_cell.get(),
@@ -154,6 +158,105 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   return bit_cell;
 }
 
+// The AND-OR read path: one read port's bitline of one bit column, rows
+// [lo, hi), as a tree: an AOI22 over each pair of rows (a NAND2 over a
+// lone row), then NAND2 and NOR2 levels by turns, each node in the last
+// row of its left half, beside its inputs. Planned before the rows are
+// built; each row's bit cell takes its nodes from tree_nodes_.
+bool RamGen::treeInverted(const int lo, const int hi) const
+{
+  const int n = hi - lo;
+  if (n <= 2) {
+    return true;  // AOI22 or NAND2: the complement of the terms' OR
+  }
+  int half = 1;
+  while (half * 2 < n) {
+    half *= 2;
+  }
+  // the right half is brought to the left's polarity, and the node
+  // (NAND2 of complements, NOR2 of trues) flips it
+  return !treeInverted(lo, lo + half);
+}
+
+RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
+                                     const int word_idx,
+                                     const int bit,
+                                     const int lo,
+                                     const int hi,
+                                     const vector<dbNet*>& selects,
+                                     dbNet* out)
+{
+  auto add = [&](const int row,
+                 dbMaster* master,
+                 const std::string& name,
+                 const vector<std::pair<std::string, dbNet*>>& conns) {
+    tree_nodes_[{row, word_idx, bit}].push_back({master, prefix, name, conns});
+  };
+  auto q
+      = [&](const int row) { return storage_nets_.at({row, word_idx, bit}); };
+  auto net = [&](dbNet* given) {
+    return given ? given : makeNet(prefix, fmt::format("t{}_{}", lo, hi));
+  };
+  const int n = hi - lo;
+  if (n == 1) {
+    dbNet* y = net(out);
+    add(lo,
+        nand2_cell_,
+        fmt::format("nand_r{}", lo),
+        {{nand2_ports_[{PortRoleType::DataIn, 0}], selects[lo]},
+         {nand2_ports_[{PortRoleType::DataIn, 1}], q(lo)},
+         {nand2_ports_[{PortRoleType::DataOut, 0}], y}});
+    return {y, true};
+  }
+  if (n == 2) {
+    dbNet* y = net(out);
+    add(lo,
+        aoi22_cell_,
+        fmt::format("aoi_r{}", lo),
+        {{aoi22_in_a1_, selects[lo]},
+         {aoi22_in_a2_, q(lo)},
+         {aoi22_in_b1_, selects[lo + 1]},
+         {aoi22_in_b2_, q(lo + 1)},
+         {aoi22_out_, y}});
+    return {y, true};
+  }
+  int half = 1;
+  while (half * 2 < n) {
+    half *= 2;
+  }
+  const int mid = lo + half;
+  const int host = mid - 1;
+  const TreeEnd a
+      = planReadTree(prefix, word_idx, bit, lo, mid, selects, nullptr);
+  TreeEnd b = planReadTree(prefix, word_idx, bit, mid, hi, selects, nullptr);
+  if (b.inverted != a.inverted) {
+    dbNet* nb = makeNet(prefix, fmt::format("t{}_{}_inv", mid, hi));
+    add(mid,
+        inv_cell_,
+        fmt::format("inv_r{}_{}", mid, hi),
+        {{inv_ports_[{PortRoleType::DataIn, 0}], b.net},
+         {inv_ports_[{PortRoleType::DataOut, 0}], nb}});
+    b = {nb, a.inverted};
+  }
+  dbNet* y = net(out);
+  if (a.inverted) {
+    add(host,
+        nand2_cell_,
+        fmt::format("nand_r{}_{}", lo, hi),
+        {{nand2_ports_[{PortRoleType::DataIn, 0}], a.net},
+         {nand2_ports_[{PortRoleType::DataIn, 1}], b.net},
+         {nand2_ports_[{PortRoleType::DataOut, 0}], y}});
+    return {y, false};
+  }
+  add(host,
+      nor2_cell_,
+      fmt::format("nor_r{}_{}", lo, hi),
+      {{nor2_ports_[{PortRoleType::DataIn, 0}], a.net},
+       {nor2_ports_[{PortRoleType::DataIn, 1}], b.net},
+       {nor2_ports_[{PortRoleType::DataOut, 0}], y}});
+  return {y, true};
+}
+
 // Note: For column_mux_ratio > 1, a single shared select_b net and select_inv
 // gate are reused across all words in the same physical row (passed via
 // shared_select_b_nets). This avoids creating redundant nets and gates per
@@ -186,7 +289,9 @@ void RamGen::makeSlice(const int slice_idx,
 
   int r_total = rw_ports + r_ports;
   vector<dbNet*> select_b_nets(r_total);
-  if (column_mux_ratio == 1) {
+  if (and_or_read_) {
+    // the AND-OR trees read the true selects
+  } else if (column_mux_ratio == 1) {
     for (int i = 0; i < r_total; ++i) {
       select_b_nets[i] = makeNet(prefix, fmt::format("select{}_b", i));
     }
@@ -259,7 +364,23 @@ void RamGen::makeSlice(const int slice_idx,
     if (num_write > 1) {
       d = makeNet(name, "d");
     }
-    auto bit_cell = makeBit(name, r_total, gclock_net, select_b_nets, d, outs);
+    const int bit = start_bit_idx + local_bit;
+    auto bit_cell
+        = and_or_read_
+              ? makeBit(name,
+                        0,
+                        gclock_net,
+                        select_b_nets,
+                        d,
+                        outs,
+                        storage_nets_.at({row_idx, word_idx, bit}))
+              : makeBit(name, r_total, gclock_net, select_b_nets, d, outs);
+    if (and_or_read_) {
+      for (const auto& node : tree_nodes_[{row_idx, word_idx, bit}]) {
+        makeInst(
+            bit_cell.get(), node.prefix, node.name, node.master, node.conns);
+      }
+    }
     if (num_write > 1) {
       // the taken port's data: AO22 over pairs of ports, OR2 across pairs
       dbNet* acc = nullptr;
@@ -364,7 +485,7 @@ void RamGen::makeSlice(const int slice_idx,
   }
 
   // Make select inverters
-  if (create_select_inv) {
+  if (create_select_inv && !and_or_read_) {
     for (int i = 0; i < r_total; ++i) {
       makeInst(sel_cell.get(),
                prefix,
@@ -661,8 +782,13 @@ dbMaster* RamGen::findMaster(
   return best;
 }
 
-std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
+std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master,
+                                                     bool* inverted)
 {
+  if (inverted) {
+    *inverted = false;
+  }
+  std::string inverted_out;  // a flop's inverted output (QN)
   auto sta_cell = network_->dbToSta(master);
   auto liberty = network_->libertyCell(sta_cell);
   std::map<PortRole, std::string> pin_map;
@@ -710,8 +836,13 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
           auto seq = lib_cell->outputPortSequential(internal_port);
           if (seq) {
             is_seq_output = true;
-            // outputInv() is the negative state variable (IQN)
-            is_seq_inverted = (seq->outputInv() == internal_port);
+            // outputInv() is the negative state variable (IQN); a state
+            // that stores the data inverted (next_state "!D", asap7's
+            // DFFHQNx1) inverts it again
+            const bool stores_inverted
+                = seq->data() && seq->data()->op() == sta::FuncExpr::Op::not_;
+            is_seq_inverted
+                = (seq->outputInv() == internal_port) != stores_inverted;
           }
         }
       }
@@ -720,6 +851,8 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
         // only assign if this is the non-inverted output (Q and not Qn)
         if (!is_seq_inverted) {
           pin_map[{PortRoleType::DataOut, 0}] = lib_port->name();
+        } else {
+          inverted_out = lib_port->name();
         }
       } else {
         // non-sequential cell (AND2, INV etc) assign as DataOut
@@ -728,6 +861,14 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
     } else if (dir->isInput()) {
       pin_map[{PortRoleType::DataIn, in_idx++}] = lib_port->name();
     }
+  }
+
+  // A flop whose only data output is QN: QN stands as DataOut, for a
+  // caller that says it can take the inversion.
+  if (inverted && !inverted_out.empty()
+      && pin_map.find({PortRoleType::DataOut, 0}) == pin_map.end()) {
+    pin_map[{PortRoleType::DataOut, 0}] = inverted_out;
+    *inverted = true;
   }
 
   // second pass for to assign tristate enable correct role
@@ -780,6 +921,75 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
   return pin_map;
 }
 
+// Evaluates a liberty function expression given its input ports' values.
+static bool evalFunc(const sta::FuncExpr* expr,
+                     const std::vector<sta::LibertyPort*>& ports,
+                     const std::vector<bool>& vals)
+{
+  if (!expr) {
+    return false;
+  }
+  switch (expr->op()) {
+    case sta::FuncExpr::Op::port: {
+      // look up this port's value in the input vector
+      auto p = expr->port();
+      for (int i = 0; i < (int) ports.size(); ++i) {
+        if (ports[i] == p) {
+          return vals[i];
+        }
+      }
+      return false;
+    }
+    case sta::FuncExpr::Op::not_:
+      return !evalFunc(expr->left(), ports, vals);
+    case sta::FuncExpr::Op::and_:
+      return evalFunc(expr->left(), ports, vals)
+             && evalFunc(expr->right(), ports, vals);
+    case sta::FuncExpr::Op::or_:
+      return evalFunc(expr->left(), ports, vals)
+             || evalFunc(expr->right(), ports, vals);
+    case sta::FuncExpr::Op::xor_:
+      return evalFunc(expr->left(), ports, vals)
+             != evalFunc(expr->right(), ports, vals);
+    case sta::FuncExpr::Op::one:
+      return true;
+    case sta::FuncExpr::Op::zero:
+      return false;
+    default:
+      return false;
+  }
+}
+
+// The truth table of a two-input single-output cell's output, bit k its
+// value for inputs k in binary; -1 for any other cell. Symmetric
+// functions only (AND, OR, NAND, NOR), so the inputs' order is moot.
+static int twoInputTable(sta::LibertyPort* out)
+{
+  auto func = out->function();
+  if (!func || !out->direction()->isOutput()) {
+    return -1;
+  }
+  std::vector<sta::LibertyPort*> inputs;
+  std::unique_ptr<sta::ConcreteCellPortIterator> port_iter(
+      out->libertyCell()->portIterator());
+  while (port_iter->hasNext()) {
+    auto p = static_cast<sta::ConcretePort*>(port_iter->next());
+    if (p->direction()->isInput()) {
+      inputs.push_back(p->libertyPort());
+    }
+  }
+  if (inputs.size() != 2) {
+    return -1;
+  }
+  int table = 0;
+  for (int k = 0; k < 4; ++k) {
+    if (evalFunc(func, inputs, {(k & 1) != 0, (k & 2) != 0})) {
+      table |= 1 << k;
+    }
+  }
+  return table;
+}
+
 void RamGen::findMasters()
 {
   if (!inv_cell_) {
@@ -791,18 +1001,30 @@ void RamGen::findMasters()
   }
   inv_ports_ = buildPortMap(inv_cell_);
 
-  if (!tristate_cell_) {
-    tristate_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          if (!port->direction()->isTristate()) {
-            return false;
-          }
-          auto function = port->function();
-          return function->op() != sta::FuncExpr::Op::not_;
-        },
-        "tristate");
+  // The read path: tristate bitlines where the library has a tristate
+  // cell, AND-OR trees where it has none, or as -read_style says.
+  if (read_style_ == "and_or") {
+    and_or_read_ = true;
+  } else {
+    if (!tristate_cell_) {
+      tristate_cell_ = findMaster(
+          [](sta::LibertyPort* port) {
+            if (!port->direction()->isTristate()) {
+              return false;
+            }
+            auto function = port->function();
+            return function->op() != sta::FuncExpr::Op::not_;
+          },
+          "tristate",
+          /*required=*/read_style_ == "tristate");
+    }
+    if (tristate_cell_) {
+      tristate_ports_ = buildPortMap(tristate_cell_);
+    } else {
+      and_or_read_ = true;
+      logger_->info(RAM, 57, "No tristate cell: reads through AND-OR trees.");
+    }
   }
-  tristate_ports_ = buildPortMap(tristate_cell_);
 
   if (!and2_cell_) {
     and2_cell_ = findMaster(
@@ -844,7 +1066,18 @@ void RamGen::findMasters()
           },
           "storage");
     }
-    storage_ports_ = buildPortMap(storage_cell_);
+    // the AND-OR read path takes a flop whose only output is QN; its
+    // trees undo the inversion
+    storage_ports_ = buildPortMap(storage_cell_,
+                                  and_or_read_ ? &storage_inverted_ : nullptr);
+    if (storage_ports_.find({PortRoleType::DataOut, 0})
+        == storage_ports_.end()) {
+      logger_->error(RAM,
+                     58,
+                     "Storage cell {} has no non-inverted output; use "
+                     "-read_style and_or.",
+                     storage_cell_->getName());
+    }
   }
 
   if (!clock_gate_cell_) {
@@ -912,6 +1145,23 @@ void RamGen::findMasters()
     aoi22_in_b2_ = in[3];
   }
 
+  // The AND-OR read path's tree: NAND2 and NOR2 levels over AOI22 leaves.
+  if (and_or_read_) {
+    // by truth table: asap7 writes its NAND2 as (!A) + (!B)
+    if (!nand2_cell_) {
+      nand2_cell_ = findMaster(
+          [](sta::LibertyPort* port) { return twoInputTable(port) == 0x7; },
+          "nand2");
+    }
+    nand2_ports_ = buildPortMap(nand2_cell_);
+    if (!nor2_cell_) {
+      nor2_cell_ = findMaster(
+          [](sta::LibertyPort* port) { return twoInputTable(port) == 0x1; },
+          "nor2");
+    }
+    nor2_ports_ = buildPortMap(nor2_cell_);
+  }
+
   // More than one write port: the write data mux, an AO22 per pair of
   // ports, and an OR2 for the write enables and across pairs.
   if (num_write_ > 1) {
@@ -946,56 +1196,12 @@ dbMaster* RamGen::findMaster4(const uint16_t table,
   // for 4 inputs ordered (A1,A2,B1,B2) mapped to bits (0,1,2,3),
   // bit k of the table = output when inputs = k in binary.
 
-  // recursively evaluate a liberty function expression given input port
-  // values
-  std::function<bool(const sta::FuncExpr*,
-                     const std::vector<sta::LibertyPort*>&,
-                     const std::vector<bool>&)>
-      evalFunc;
-
-  evalFunc = [&evalFunc](const sta::FuncExpr* expr,
-                         const std::vector<sta::LibertyPort*>& ports,
-                         const std::vector<bool>& vals) -> bool {
-    if (!expr) {
-      return false;
-    }
-    switch (expr->op()) {
-      case sta::FuncExpr::Op::port: {
-        // look up this port's value in the input vector
-        auto p = expr->port();
-        for (int i = 0; i < (int) ports.size(); ++i) {
-          if (ports[i] == p) {
-            return vals[i];
-          }
-        }
-        return false;
-      }
-      case sta::FuncExpr::Op::not_:
-        return !evalFunc(expr->left(), ports, vals);
-      case sta::FuncExpr::Op::and_:
-        return evalFunc(expr->left(), ports, vals)
-               && evalFunc(expr->right(), ports, vals);
-      case sta::FuncExpr::Op::or_:
-        return evalFunc(expr->left(), ports, vals)
-               || evalFunc(expr->right(), ports, vals);
-      case sta::FuncExpr::Op::xor_:
-        return evalFunc(expr->left(), ports, vals)
-               != evalFunc(expr->right(), ports, vals);
-      case sta::FuncExpr::Op::one:
-        return true;
-      case sta::FuncExpr::Op::zero:
-        return false;
-      default:
-        return false;
-    }
-  };
-
   // compute 16-entry truth table for a function given 4 ordered input ports.
   // each bit k of the result = output when inputs = k in binary. (i.e. k= 2 =
   // 10)
   auto computeTable
-      = [&evalFunc](const sta::FuncExpr* func,
-                    const std::vector<sta::LibertyPort*>& inputs) -> uint16_t {
+      = [](const sta::FuncExpr* func,
+           const std::vector<sta::LibertyPort*>& inputs) -> uint16_t {
     uint16_t table = 0;
     for (int k = 0; k < 16; ++k) {
       std::vector<bool> vals(4);
@@ -1317,7 +1523,8 @@ void RamGen::generate(const int mask_size,
                       dbMaster* tristate_cell,
                       dbMaster* inv_cell,
                       dbMaster* tapcell,
-                      int max_tap_dist)
+                      int max_tap_dist,
+                      const std::string& read_style)
 {
   if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
@@ -1364,6 +1571,11 @@ void RamGen::generate(const int mask_size,
 
   use_latch_ = use_latch;
   num_write_ = rw_ports + w_ports;
+  read_style_ = read_style;
+  and_or_read_ = false;
+  storage_inverted_ = false;
+  storage_nets_.clear();
+  tree_nodes_.clear();
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;
@@ -1374,6 +1586,8 @@ void RamGen::generate(const int mask_size,
   aoi22_cell_ = nullptr;
   ao22_cell_ = nullptr;
   or2_cell_ = nullptr;
+  nand2_cell_ = nullptr;
+  nor2_cell_ = nullptr;
   latch_cell_ = nullptr;
 
   if (use_latch_ && storage_cell_) {
@@ -1618,6 +1832,48 @@ void RamGen::generate(const int mask_size,
   // tristate TE_B enable signal. Only word_idx=0 instantiates the select_inv
   // gate — all other word_idx reuse the existing net, reducing cell count
   // and horizontal routing congestion in storage rows.
+
+  // The AND-OR read path: every storage net named ahead, and every
+  // bitline's tree planned, so each row's bit cells take their nodes.
+  // Where the storage flop's output is QN, or the tree's root is
+  // inverted, but not both, an inverter at the bottom row puts it right.
+  if (and_or_read_) {
+    for (int row = 0; row < num_rows; ++row) {
+      for (int w = 0; w < column_mux_ratio; ++w) {
+        for (int bit = 0; bit < word_size; ++bit) {
+          const std::string prefix = fmt::format(
+              "storage_{}_{}_{}", row, w, (bit / mask_size) * mask_size);
+          storage_nets_[{row, w, bit}]
+              = makeNet(fmt::format("{}.bit{}", prefix, bit), "storage");
+        }
+      }
+    }
+    const bool flip = treeInverted(0, num_rows) != storage_inverted_;
+    for (int w = 0; w < column_mux_ratio; ++w) {
+      for (int port = 0; port < r_total; ++port) {
+        for (int bit = 0; bit < word_size; ++bit) {
+          const std::string prefix
+              = fmt::format("read_w{}_p{}_b{}", w, port, bit);
+          dbNet* out = word_q_nets[w][port][bit];
+          const TreeEnd root = planReadTree(prefix,
+                                            w,
+                                            bit,
+                                            0,
+                                            num_rows,
+                                            read_select_nets[port],
+                                            flip ? nullptr : out);
+          if (flip) {
+            tree_nodes_[{num_rows - 1, w, bit}].push_back(
+                {inv_cell_,
+                 prefix,
+                 "out_inv",
+                 {{inv_ports_[{PortRoleType::DataIn, 0}], root.net},
+                  {inv_ports_[{PortRoleType::DataOut, 0}], out}}});
+          }
+        }
+      }
+    }
+  }
 
   for (int row = 0; row < num_rows; ++row) {
     // one select_b_net per row for column_mux_ratio > 1

@@ -43,6 +43,7 @@ generate_ram [-mask_size bits]
              [-column_mux_ratio ratio]
              [-storage_cell name]
              [-tristate_cell name]
+             [-read_style tristate|and_or]
              [-inv_cell name]
              [-power_net_name name]
              [-ground_net_name name]
@@ -68,6 +69,7 @@ generate_ram [-mask_size bits]
 | `-column_mux_ratio` | Number of words sharing a physical column. Must be `1`, `2`, or `4`. The number of words must be divisible by the column mux ratio. Default: `1` (no column muxing). |
 | `-storage_cell` | Name of the master to use for the storage device (i.e. a flip-flop). Must be positive-edge triggered. Default: auto-select from the loaded cell library. |
 | `-tristate_cell` | Name of the master to use for the tristate device (i.e. a tristate inverter). It is currently assumed that the device is inverting. Default: auto-select from the loaded cell library. |
+| `-read_style` | The read path: `tristate`, a tristate bitline per bit, or `and_or`, a tree per bit column of an AOI22 over each pair of rows and NAND2 and NOR2 levels above, for a library without a tristate cell. `and_or` also takes a storage flop whose only output is inverted (QN). Default: `tristate` where the library has a tristate cell, `and_or` where it has none. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |

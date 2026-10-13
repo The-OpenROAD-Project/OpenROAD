@@ -7,6 +7,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-column_mux_ratio ratio]
                                              [-storage_cell name]
                                              [-tristate_cell name]
+                                             [-read_style tristate|and_or]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -19,7 +20,7 @@ proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
-      -write_behavioral_verilog } flags {}
+      -write_behavioral_verilog -read_style } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -133,8 +134,19 @@ proc generate_ram_netlist { args } {
     ram::set_behavioral_verilog_filename $keys(-write_behavioral_verilog)
   }
 
+  # The read path: tristate bitlines, or AND-OR trees (and_or). By default
+  # tristate where the library has a tristate cell, and_or where not.
+  set read_style ""
+  if { [info exists keys(-read_style)] } {
+    set read_style $keys(-read_style)
+    if { $read_style ni {tristate and_or} } {
+      utl::error RAM 56 "-read_style is tristate or and_or, not $read_style."
+    }
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
-    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist
+    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
+    $read_style
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -146,6 +158,7 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-column_mux_ratio ratio]
                                      [-storage_cell name]
                                      [-tristate_cell name]
+                                     [-read_style tristate|and_or]
                                      [-inv_cell name]
                                      [-power_net_name name]
                                      [-ground_net_name name]
@@ -167,7 +180,7 @@ proc generate_ram { args } {
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
-           -write_behavioral_verilog } flags {}
+           -write_behavioral_verilog -read_style } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -202,6 +215,10 @@ proc generate_ram { args } {
 
   if { [info exists keys(-tristate_cell)] } {
     lappend ram_netlist_args -tristate_cell $keys(-tristate_cell)
+  }
+
+  if { [info exists keys(-read_style)] } {
+    lappend ram_netlist_args -read_style $keys(-read_style)
   }
 
   if { [info exists keys(-inv_cell)] } {

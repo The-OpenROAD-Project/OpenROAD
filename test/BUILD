@@ -103,6 +103,20 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# asap7's NLDM liberty, for the cells' functions: the ram module's asap7
+# tests find their cells by them.
+filegroup(
+    name = "asap7_nldm_data",
+    srcs = [
+        "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+        "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # CCS (current source model) liberty. Required by delay calculators that need
 # output current waveforms, e.g. prima; the asap7 libs above are NLDM only.
 # Holds four cells: AND2x2, BUFx2, DFFHQx4, INVx2.

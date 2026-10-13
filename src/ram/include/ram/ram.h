@@ -10,6 +10,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -108,7 +109,8 @@ class RamGen
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
                 odb::dbMaster* tapcell,
-                int max_tap_dist);
+                int max_tap_dist,
+                const std::string& read_style = "");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -135,7 +137,33 @@ class RamGen
 
  private:
   void findMasters();
-  std::map<PortRole, std::string> buildPortMap(odb::dbMaster*);
+  // `inverted`, if given, is set when a flop's only data output is its
+  // inverted one (QN), which then stands as DataOut.
+  std::map<PortRole, std::string> buildPortMap(odb::dbMaster*,
+                                               bool* inverted = nullptr);
+  // The AND-OR read path: each read port's bitline a tree over the rows
+  // of a bit column, planned before the rows are built (planReadTree) and
+  // placed row by row with the bits (treeNodes_).
+  struct TreeNode
+  {
+    odb::dbMaster* master;
+    std::string prefix;
+    std::string name;
+    std::vector<std::pair<std::string, odb::dbNet*>> conns;
+  };
+  struct TreeEnd
+  {
+    odb::dbNet* net;
+    bool inverted;  // the net is the complement of the OR of the terms
+  };
+  TreeEnd planReadTree(const std::string& prefix,
+                       int word_idx,
+                       int bit,
+                       int lo,
+                       int hi,
+                       const std::vector<odb::dbNet*>& selects,
+                       odb::dbNet* out);
+  bool treeInverted(int lo, int hi) const;
   // The smallest cell `match` accepts; none is an error unless not
   // `required`, then nullptr.
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
@@ -161,7 +189,8 @@ class RamGen
                                 odb::dbNet* clock,
                                 std::vector<odb::dbNet*>& select,
                                 odb::dbNet* data_input,
-                                std::vector<odb::dbNet*>& data_output);
+                                std::vector<odb::dbNet*>& data_output,
+                                odb::dbNet* storage_net = nullptr);
   void makeSlice(int slice_idx,
                  int mask_size,
                  int row_idx,
@@ -246,6 +275,9 @@ class RamGen
   // enables' OR
   odb::dbMaster* ao22_cell_{nullptr};
   odb::dbMaster* or2_cell_{nullptr};
+  // the AND-OR read path's tree
+  odb::dbMaster* nand2_cell_{nullptr};
+  odb::dbMaster* nor2_cell_{nullptr};
   odb::dbMaster* latch_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
@@ -260,6 +292,8 @@ class RamGen
   std::map<PortRole, std::string> buffer_ports_;
   std::map<PortRole, std::string> latch_ports_;
   std::map<PortRole, std::string> or2_ports_;
+  std::map<PortRole, std::string> nand2_ports_;
+  std::map<PortRole, std::string> nor2_ports_;
 
   std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;  // every write port's data
@@ -272,6 +306,15 @@ class RamGen
   Grid ram_grid_;
   bool use_latch_{false};
   int num_write_{1};  // write and read/write ports
+  // Reads through AND-OR trees instead of tristate bitlines: asked for,
+  // or the library has no tristate cell.
+  bool and_or_read_{false};
+  std::string read_style_;
+  bool storage_inverted_{false};  // the storage flop's output is QN
+  // per (row, word in the row, bit): the storage net, and the tree
+  // cells placed in that bit's cell
+  std::map<std::tuple<int, int, int>, odb::dbNet*> storage_nets_;
+  std::map<std::tuple<int, int, int>, std::vector<TreeNode>> tree_nodes_;
 };
 
 }  // namespace ram
