@@ -52,7 +52,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
-#include "odb/wOrder.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
@@ -163,6 +162,7 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  congestion_accepted_ = false;
 }
 
 GlobalRouter::~GlobalRouter()
@@ -374,7 +374,7 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  bool congested_routes = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool congested_routes = is_congested_ && !congestion_accepted_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -550,6 +550,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
 {
   updateDbCongestion();
   saveCongestion();
+  congestion_accepted_ = allow_congestion_ || use_cugr_;
 
   if (verbose_) {
     if (use_cugr_) {
@@ -2804,6 +2805,11 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
   cugr_->setResistanceAware(resistance_aware);
 }
 
+void GlobalRouter::setCUGRViaDemand(const bool enabled)
+{
+  cugr_->setViaDemandEnabled(enabled);
+}
+
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
 {
   if (!resistance_aware_) {
@@ -3456,7 +3462,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 
   // CUGR can produce congested guides that DRT can handle, resulting in
   // DRC-free final routing.
-  bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool guide_is_congested
+      = is_congested_ && !congestion_accepted_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;
@@ -5934,10 +5941,11 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     return false;
   }
 
+  std::vector<GSegment> connection;
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
-    std::vector<GSegment> connection
+    connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
     for (const GSegment& seg : connection) {
@@ -6004,9 +6012,6 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
-    if (use_cugr_) {
-      cugr_->mergeNet(db_net1, db_net2, connection);
-    }
   } else {
     // Both pins are in the same gcell, but the two routes may reach it on
     // disjoint layer ranges. Bridge any layer gap with vias.
@@ -6014,18 +6019,20 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     const auto [min2, max2] = findLayerRangeOverPosition(pin_pos1, net2_route);
     if (max1 != -1 && max2 != -1) {
       if (max1 < min2) {
-        insertViasForConnection(net1_route, pin_pos1, max1, min2);
+        insertViasForConnection(connection, pin_pos1, max1, min2);
       } else if (max2 < min1) {
-        insertViasForConnection(net1_route, pin_pos1, max2, min1);
+        insertViasForConnection(connection, pin_pos1, max2, min1);
       }
     }
+    net1_route.insert(net1_route.end(), connection.begin(), connection.end());
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-    // For CUGR: transfer tree ownership and mark removed_net in merged_nets_
-    // so that the net-destroy callback does not subtract the removed net's
-    // tree usage from GridGraph (the wires were folded into net1_route above).
-    if (use_cugr_) {
-      cugr_->mergeNet(db_net1, db_net2, /*connection=*/{});
-    }
+  }
+  // For CUGR: graft the removed net's tree into net1's along the connection
+  // and mark removed_net in merged_nets_ so that the net-destroy callback does
+  // not subtract its tree usage from GridGraph (the wires were folded into
+  // net1_route above). Trees that cannot be joined are rerouted instead.
+  if (use_cugr_ && !cugr_->mergeNet(db_net1, db_net2, connection)) {
+    return false;
   }
 
   updateNetPins(net1);
@@ -6920,7 +6927,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
-          opendp_->detailedPlacement(0, 0, "");
+          opendp_->detailedPlacementQuiet();
           updateDirtyNets(dirty_nets);
           for (auto& it : dirty_nets) {
             congestion_nets.insert(it->getDbNet());

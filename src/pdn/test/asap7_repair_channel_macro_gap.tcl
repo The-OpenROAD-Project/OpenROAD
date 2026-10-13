@@ -16,6 +16,10 @@
 # The gaps are only found as channels after earlier repairs give their M5 a via
 # down to the followpins, so the design needs enough macro rows for that
 # cascade to play out; a couple of rows on their own repair in a single pass.
+#
+# The DEF golden pins the repair straps themselves: a run of unconnected straps
+# is repaired with one strap across the whole run, not with a strap per piece
+# of it, which used to leave holes in the M6 repairs.
 source "helpers.tcl"
 
 read_lef asap7_data/asap7_tech_1x_201209.lef
@@ -46,7 +50,8 @@ define_pdn_grid -macro -cells {Element} -halo {0.5 0.5 0.5 0.5} \
   -voltage_domains {CORE} -name {ElementGrid}
 add_pdn_connect -grid {ElementGrid} -layers {M5 M6}
 
-# must complete: refusing the gap channels errors with PDN-0179
 pdngen
 
-report_design_area
+set def_file [make_result_file asap7_repair_channel_macro_gap.def]
+write_def $def_file
+diff_files asap7_repair_channel_macro_gap.defok $def_file

@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -330,6 +331,83 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 }
 
 //------------------------------------------------------------------------------
+// TclEvaluator: when the debug renderers may draw
+//------------------------------------------------------------------------------
+
+// A command paused in the debugger stops where its state is stable, so the
+// renderers draw while it waits; it counts as running again once it resumes.
+TEST(TclEvaluatorTest, PausedCommandIsNotRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  EXPECT_FALSE(tcl.running);
+}
+
+// A startup script pauses with no command running.  One typed in the browser
+// during that pause can change the renderers, so it counts as running.
+TEST(TclEvaluatorTest, CommandDuringScriptPauseIsRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.setRunning(true);
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// That command can pause in turn; the script's pause ending after it does not
+// leave it counted as running.
+TEST(TclEvaluatorTest, CommandPausedDuringScriptPause)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// Two threads of one command paused at once: the command counts as running
+// again from the first resume.  That holds the draws back early, but never
+// lets one run under the command.
+TEST(TclEvaluatorTest, OverlappingPausesNeverDropTheCommand)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+}
+
+// A draw skipped while a command ran is reported once, when it is done.
+TEST(TclEvaluatorTest, SkippedDrawIsReportedOnce)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  {
+    const std::shared_lock<std::shared_mutex> draw(tcl.renderer_mutex);
+    tcl.draw_skipped = true;
+  }
+  EXPECT_TRUE(tcl.setRunning(false));
+  EXPECT_FALSE(tcl.setRunning(false));
+}
+
+//------------------------------------------------------------------------------
 // TileHandler tests
 //------------------------------------------------------------------------------
 
@@ -406,6 +484,22 @@ TEST_F(TileHandlerTest, BoundsReturnsJson)
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
+}
+
+TEST_F(TileHandlerTest, LayerExtentsReturnsJson)
+{
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kLayerExtents;
+
+  auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object json
+      = boost::json::parse(payloadStr(resp)).as_object();
+  EXPECT_EQ(boost::json::serialize(json),
+            boost::json::serialize(serializeLayerExtentsResponse(*gen_)));
 }
 
 TEST_F(TileHandlerTest, TechReturnsJson)
@@ -765,7 +859,7 @@ TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
 
 TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
 {
-  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // A render allocates about tile_px^2 * 4 bytes, so a malformed or
   // hostile count must not be taken at face value.  0 and negatives mean "not
   // specified" and fall back to 256*dpr.
   const std::vector<std::pair<std::string, uint32_t>> cases = {
@@ -1766,6 +1860,53 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
   }
 }
 
+// The placement density grid defaults to the bin size global placement
+// publishes, but stays adjustable: a grid the user picked is kept.
+TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  const int dbu = block_->getDbUnitsPerMicron();
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 4 * dbu);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 5 * dbu);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  EXPECT_TRUE(source.canAdjustGrid());
+  // A grid saved by an earlier session does not override the default.
+  source.restoreSettings({{"GridX", 31.0}, {"GridY", 25.0}});
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 4.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 5.0);
+
+  source.setGridSizes(20.0, 20.0);
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 20.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
+}
+
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
+}
+
 // Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
 // that name one.  It is not one of getSettings()' entries, so the handler has
 // to special-case it the way Qt's dialog wires the setter directly.
@@ -1822,6 +1963,28 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     // 150.5 rounds to 151 (std::round half-away-from-zero).
     EXPECT_EQ(state_.heatmaps.at("Pin")->getColorAlpha(), 151);
+  }
+}
+
+// The converse: JS serializes whole numbers without a decimal point, so a
+// double-typed setting like DisplayMin arrives as a JSON integer when the user
+// types 90.  The handler must accept it rather than failing as_double().
+TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 10;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"DisplayMin","value":90})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_DOUBLE_EQ(state_.heatmaps.at("Pin")->getDisplayRangeMin(), 90.0);
   }
 }
 
@@ -2857,7 +3020,7 @@ TEST_F(SelectHandlerTest, SelectLayerUnknownChipletFallsBackToDefaultTech)
   WebSocketRequest req;
   req.id = 53;
   req.type = WebSocketRequest::kSelectLayer;
-  req.json = parseObj(R"({"layer":"metal1","chiplet":"top.nonexistent"})");
+  req.json = parseObj(R"({"layer":"metal1","chiplet":"top/nonexistent"})");
 
   auto resp = handler_->handleSelectLayer(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);

@@ -13,7 +13,7 @@ First [install Baselisk](https://bazel.build/install/bazelisk), then you're read
 - `...` means everything below this folder, so use `src/gpl/...` to run a smaller set of tests.
 - `--jobs=4` limits parallel builds to 4 cores, default is use all cores.
 
-For more comprehensive testing locally, includes longer OpenROAD integration tests and some ORFS smoke tests, install either [podman](https://podman.io/), which works without root permissions or Docker, then run:
+For more comprehensive testing locally, including longer OpenROAD integration tests, run:
 
     bazelisk test ...
 
@@ -75,6 +75,61 @@ shipped to end users; keep the default for the local edit-rebuild loop.
 The CMake build has LTO on by default in Release mode -- see the
 [CMake LTO option](Build.md#lto-options).
 
+## Is it compiling, or hitting the cache?
+
+The console counter advances for cache hits and real compiles alike:
+
+    [7,203 / 18,048] Compiling src/dpl/src/objective/detailed_abu.cxx; 20s disk-cache, remote-cache, processwrapper-sandbox ... (16 actions, 12 running)
+
+The strategy list after the elapsed time is the sequence of stages the action
+has passed through, so the **last entry is what is happening right now**. Above,
+the disk cache missed, the remote cache missed, and the compiler has been
+running for 20s under the process-wrapper sandbox. An action served from a
+cache never reaches a local strategy (`processwrapper-sandbox`, `linux-sandbox`,
+`local`) and disappears within a fraction of a second.
+
+The end-of-build line gives the breakdown for the whole build, with no flags
+needed:
+
+    INFO: 2 processes: 1229 action cache hit, 1 disk cache hit, 1 internal.        # nothing compiled
+    INFO: 2 processes: 1229 action cache hit, 1 internal, 1 processwrapper-sandbox. # one real compile
+
+Three different mechanisms are summarized there:
+
+| Runner | Meaning |
+|--------|---------|
+| `action cache hit` | Bazel's local action cache; the spawn never ran and never appears in the progress display |
+| `disk cache hit`, `remote cache hit` | the action ran, but its outputs were fetched from `--disk_cache`/`--remote_cache` instead of being built |
+| `processwrapper-sandbox`, `linux-sandbox`, `local`, `worker` | actually compiled here |
+
+For which actions those were, and why they were not up to date:
+
+```shell
+bazelisk build --config=cachelog //src/dpl:dpl
+etc/bazel-cache-summary.py
+```
+
+```
+bazel-cachelog.json: 3 spawns
+
+  ran for real: 3 spawns, 16.6s of wall time
+    processwrapper-sandbox              3       16.6s
+
+Slowest of the 3 spawns that ran for real:
+       5.8s  CppCompile     src/dpl/src/objective/detailed_abu.cxx
+       ...
+
+bazel-cachelog-explain.txt: why actions were not up to date
+         3  action changed since cached execution
+            e.g. Compiling src/dpl/src/objective/detailed_hpwl.cxx
+```
+
+`--config=cachelog` writes an execution log recording the runner that served
+every spawn. Each record carries the spawn's full input list -- a few MB per
+executed action -- so use it on incremental builds rather than on a build of
+everything. `--config=explain` is the cheap half on its own: it writes only the
+per-action reason, a few bytes per action.
+
 ## Using OpenROAD as a dependency from another project
 
 OpenROAD can be consumed as a Bazel module (`bazel_dep`) from another
@@ -134,7 +189,6 @@ The following are `dev_dependency` in OpenROAD and will not be forced
 on downstream projects via MVS:
 
 - rules_pkg — only needed for //:install
-- `rules_verilator`, `verilator` — only needed for test/orfs simulation
 - `llvm` (hermetic-llvm) toolchain registration
 
 The downstream test at `test/downstream/` verifies these invariants.
@@ -169,7 +223,9 @@ build) carry the real version.
 
 https://bazel.build/extending/platforms
 
-Note that this builds a different configuration than is used during tests. Tests run with the `cfg=exec` configuraiton, whereas the above builds the `cfg=target` configuration. The TL;DR is that you are probably better of running a single test to test building so that you don't have to rebuild if you want to run tests after testing build.
+`bazelisk build :openroad` and the tests use the same `cfg=target` binary, so
+building first and testing afterwards does not rebuild OpenROAD. See
+[Bazel targets](Bazel-targets.md).
 
 ## Can I force a rebuild?
 
@@ -363,13 +419,12 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 tests, which run the instrumented `openroad` binary. They do **not** work for
 the `py`-tagged tests, which import OpenROAD as a Python extension module:
 
-    ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
+    ImportError: _openroad.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
 
 Clang links a sanitizer runtime into executables but not into shared
 libraries, assuming whoever loads the library provides the symbols. That holds
 for `openroad`, which statically links the runtime; it fails for
-`_openroadpy.so` / `_odb.so` / `_utl.so`, which the *uninstrumented* system
-`python3` dlopens.
+`_openroad.so`, which the *uninstrumented* system `python3` dlopens.
 
 `-shared-libsan` is the mechanism for this case, but three things in
 hermetic-llvm block it today:
@@ -387,141 +442,58 @@ Fixing this belongs upstream in hermetic-llvm. Until then, skip them with
 `--test_tag_filters=-py`; the Tcl tests cover the same C++ code paths as their
 Python counterparts.
 
-The Tcl tests do get instrumented. `test/regression.bzl` normally takes the
-`openroad` binary from the exec configuration, to avoid building it twice when
-it is also used as a build tool by bazel-orfs. The sanitizer configs only
-instrument the target configuration, so under `//bazel:sanitizer_build` the
-rule takes the binary from there instead. Only the binary under test moves;
-swig, bison and the other exec-configuration tools stay uninstrumented, and
-because exactly one of the two attributes is ever set `openroad` is still
-built once.
+The Tcl tests do get instrumented: they run the `cfg=target` `openroad`, which
+is what the sanitizer configs instrument. swig, bison and the other
+exec-configuration build tools stay uninstrumented.
 
 ## GPU build (`--config=gpu`)
 
 `--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
-and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. It is opt-in and
-non-hermetic: the CUDA toolkit, Kokkos and KokkosFFT come from the host, wrapped
-as external repositories by `bazel/gpu/system_gpu.bzl`. Nothing in the default
-build or in CI depends on them.
+and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. Kokkos 5.2.2 and
+KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
+hermetic LLVM toolchain, with the OpenMP, Serial, and CUDA backends enabled
+(`bazel/gpu/kokkos/configure.bzl`). Only the CUDA toolkit remains
+host-provided. Default CPU targets neither download nor compile Kokkos and do
+not compile or link against CUDA. Because the CUDA repository definition is loaded by shared Bazel
+configuration, CPU invocations still probe the configured toolkit path.
 
-    bazelisk test --config=gpu //src/gpl/test/...
+Choose the configuration matching the device compute capability:
 
-Install prefixes are read from the shell environment:
-
-| Variable             | Default                        | Meaning                                              |
-|----------------------|--------------------------------|------------------------------------------------------|
-| `KOKKOS_ROOT`        | `/usr/local/kokkos-libcxx`     | Kokkos install (static, CUDA backend, see recipe)    |
-| `KOKKOS_FFT_ROOT`    | `/usr/local/kokkos-fft-libcxx` | KokkosFFT install built against that Kokkos          |
-| `OPENROAD_CUDA_PATH` | `/usr/local/cuda-12.8`         | Full CUDA toolkit (`bin/ptxas`, `nvvm/libdevice`)    |
-| `OPENROAD_CUDA_ARCH` | unset                          | Only needed if it cannot be read from the Kokkos install |
-
-A missing or unusable install never breaks the CPU build: the wrapped
-repository becomes a stub, and only a `--config=gpu` build fails, at analysis
-time, with a message that names the variable and the problem (prefix missing,
-incomplete install, Kokkos built without CUDA, architecture mismatch).
-
-### Why the CMake-flow Kokkos does not work here
-
-The hermetic LLVM toolchain compiles against its bundled libc++ and links
-against its own glibc-2.28 sysroot. A Kokkos built the usual way (nvcc or g++,
-libstdc++, the host's glibc headers) fails to link: either with libstdc++/libc++
-ABI mismatches (undefined `std::__1::...` symbols) or, on newer distributions,
-with `undefined symbol: __isoc23_strtol` because the host headers redirect
-`strtol` to symbols the sysroot's glibc stub does not export. Kokkos and
-KokkosFFT therefore have to be built with the toolchain's own clang and header
-set.
-
-### Kokkos recipe
-
-Run from an OpenROAD checkout after any `bazelisk build`, so the toolchain has
-been fetched. The header directories below are the ones the Bazel
-`cc_toolchain` uses.
-
-```bash
-OB=$(bazelisk info output_base)
-EX=$OB/execroot/_main
-case "$(uname -m)" in
-  x86_64)  OUT=k8-opt;      TC=llvm-toolchain-minimal-linux-amd64 ;;
-  aarch64) OUT=aarch64-opt; TC=llvm-toolchain-minimal-linux-arm64 ;;
-esac
-CLANGXX=$(ls -d $OB/external/*${TC}/bin/clang++)
-GLIBC_H=$(ls -d $OB/external/llvm++glibc+glibc_headers_*/include)
-KERNEL_H=$(ls -d $OB/external/llvm++kernel_headers+*/include)
-LIBCXX_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxx/libcxx_headers_include_search_directory
-LIBCXXABI_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxxabi/libcxxabi_headers_include_search_directory
-
-CUDA_HOME=/usr/local/cuda-12.8          # match OPENROAD_CUDA_PATH
-KOKKOS_ARCH=BLACKWELL120                # match your device, see below
-
-HFLAGS="--sysroot=/dev/null -isystem $LIBCXX_H -isystem $LIBCXXABI_H -isystem $KERNEL_H -isystem $GLIBC_H"
-CUFLAGS="--cuda-path=$CUDA_HOME -Wno-unknown-cuda-version -D_ALLOW_UNSUPPORTED_LIBCPP"
-
-git clone https://github.com/kokkos/kokkos.git && cd kokkos   # 4.7 or newer
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-libcxx \
-  -DCMAKE_CXX_COMPILER="$CLANGXX" \
-  -DCMAKE_CXX_STANDARD=20 \
-  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
-  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-  -DCMAKE_CXX_ARCHIVE_CREATE="<CMAKE_AR> qc <TARGET> <OBJECTS>" \
-  -DCMAKE_CXX_ARCHIVE_APPEND="<CMAKE_AR> q <TARGET> <OBJECTS>" \
-  -DCMAKE_CXX_ARCHIVE_FINISH="<CMAKE_RANLIB> <TARGET>" \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DKokkos_ENABLE_SERIAL=ON \
-  -DKokkos_ENABLE_CUDA=ON \
-  -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
-  -DKokkos_ENABLE_DEPRECATED_CODE_4=ON \
-  -DKokkos_ARCH_${KOKKOS_ARCH}=ON \
-  -DKokkos_ENABLE_TESTS=OFF -DKokkos_ENABLE_EXAMPLES=OFF -DKokkos_ENABLE_BENCHMARKS=OFF
-cmake --build build -j && sudo cmake --install build
-```
-
-Each option that is easy to drop matters:
-
-- `--sysroot=/dev/null` plus the four `-isystem` directories: the toolchain's
-  header set, not the host's (the `__isoc23_*` failure above).
-- `-D_ALLOW_UNSUPPORTED_LIBCPP`: CUDA's `host_defines.h` refuses libc++ on
-  x86_64 otherwise.
-- `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`: the static archives end up inside
-  OpenROAD's Python extension (`_gpl.so`); without PIC the final link fails
-  with relocation errors.
-- `-DKokkos_ENABLE_DEPRECATED_CODE_4=ON`: `gpl` uses `View::HostMirror`, which
-  Kokkos 5 only provides behind this flag.
-- `-DCMAKE_CXX_STANDARD=20`: must match `.bazelrc` (`-std=c++20`).
-- `-DKokkos_ARCH_...`: exactly one NVIDIA architecture, and it must be the
-  compute capability of the device the tests run on. `--config=gpu` reads it
-  back from the install's `KokkosCore_config.h` and compiles `gpl`'s kernels for
-  the same target. This is not a cosmetic choice: `sm_120` kernels on an
-  `sm_121` device (`BLACKWELL120` vs `BLACKWELL121`, e.g. an RTX 5090 vs a GB10)
-  run without any error and produce NaN placements.
+    bazelisk test --config=gpu-sm120 //src/gpl/test/...
+    bazelisk test --config=gpu-sm121 //src/gpl/test/...
 
 `nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
-capability (`12.0` -> `BLACKWELL120`, `12.1` -> `BLACKWELL121`). `sm_121`
-needs CUDA 12.9 or newer; with CUDA 13 also set `OPENROAD_CUDA_PATH` to that
-toolkit (its libcu++ headers live in `include/cccl/`, which `--config=gpu`
-already adds to the search path).
+capability. Remove the decimal point to form the Bazel value (`12.0` ->
+`sm_120`, `12.1` -> `sm_121`). `sm_121` needs CUDA 12.9 or newer; with CUDA 13
+also set `OPENROAD_CUDA_PATH` to that toolkit (its libcu++ headers live in
+`include/cccl/`, which `--config=gpu` already adds to the search path).
 
-### KokkosFFT recipe
+For another supported architecture, use `--config=gpu` together with
+`--//:cuda_arch=sm_XX`. The accepted values are `sm_60`, `sm_61`, `sm_70`,
+`sm_72`, `sm_75`, `sm_80`, `sm_86`, `sm_87`, `sm_89`, `sm_90`, `sm_100`,
+`sm_103`, `sm_120`, and `sm_121`. Plain `--config=gpu` intentionally requires
+this extra flag so Kokkos and OpenROAD's kernels use one explicit target. If the
+compiled target differs from the selected device, Kokkos prints a runtime
+warning; compatible code may still run, usually with reduced portability or
+performance.
 
-KokkosFFT is header-only but must be configured against the Kokkos above with
-the FFTW host backend enabled (`gpl` creates host-space plans). FFTW itself is
-built from source by Bazel (the `fftw` module in `MODULE.bazel`), so no system
-FFTW is needed at build time.
+`OPENROAD_CUDA_PATH` selects the full CUDA toolkit and defaults to
+`/usr/local/cuda-12.8`. The toolkit must contain `bin/ptxas`, `nvvm/libdevice`,
+`libcudart`, and `libcufft`. A missing or incomplete toolkit never breaks the
+CPU build: its repository becomes a stub, and only a GPU build fails during
+analysis with an actionable message. The installed NVIDIA driver must support
+the CUDA toolkit used for the build.
 
-```bash
-git clone https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
-cmake -S . -B build \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-fft-libcxx \
-  -DCMAKE_CXX_COMPILER="$CLANGXX" \
-  -DCMAKE_CXX_STANDARD=20 \
-  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
-  -DKokkos_ROOT=/usr/local/kokkos-libcxx \
-  -DKokkosFFT_ENABLE_FFTW=ON \
-  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARKS=OFF
-sudo cmake --install build
-```
+### Dependency model
+
+The Bazel build does not use `KOKKOS_ROOT` or `KOKKOS_FFT_ROOT`. Its BUILD
+overlays compile Kokkos with the same clang, libc++, glibc headers, CUDA target,
+and C++ standard as OpenROAD. This avoids the C++ ABI and libc symbol mismatches
+caused by linking a host-built Kokkos into a hermetic OpenROAD binary. The
+configuration headers that Kokkos's and KokkosFFT's CMake builds generate
+(`KokkosCore_config.h`, the backend include lists, `desul/atomics/Config.hpp`,
+`KokkosFFT_config.hpp`) are written at build time from one backend list in
+`bazel/gpu/kokkos/configure.bzl`; none is checked in.
 
 ### Notes
 
@@ -531,16 +503,27 @@ sudo cmake --install build
   golden logs (`test/regression.bzl`); the GPU-only tests
   (`region01_gpu`, `region01_gpu_asym`, `fft_gpu_test`, `wl_gpu_test`) pin it
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
+- When the GPU path first initializes Kokkos, its OpenMP backend prints
+  `Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not
+  set` on stderr unless `OMP_PROC_BIND` is set (for example to `false`). It
+  never reaches the golden logs: those tests pin `ENABLE_GPU=0`, so Kokkos is
+  not initialized, and the GPU-only tests are pass/fail. A Kokkos warning about
+  a CUDA architecture mismatch, by contrast, is worth acting on.
+- Host-side FFTs on the GPU path run on `Kokkos::Serial`. The Bazel `@fftw`
+  has no threads library, so FFTW's threaded planner is unavailable.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
-- The ORFS flow targets under `test/orfs` run their stages as build actions,
-  which carry no `ENABLE_GPU` pin, so under `--config=gpu` they place on the
-  GPU. The GPU placer is not bit-identical to the CPU one and the gcd/asap7
-  metadata rules are tuned for the CPU result, so `//test/orfs/...` is not
-  expected to pass under `--config=gpu`; run it on the default build.
-- After upgrading Kokkos, KokkosFFT or CUDA in place, run `bazelisk shutdown`
-  (or change the corresponding environment variable) so the wrapped repository
-  is refetched with the new file list.
+- The first GPU build downloads the two pinned source archives and compiles
+  Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
+  OpenROAD GPU sources for the new target.
+- The CMake `ENABLE_GPU` flow continues to use the Kokkos and KokkosFFT
+  installations selected by its CMake configuration. That Kokkos must include
+  the Serial backend (`-DKokkos_ENABLE_SERIAL=ON`), which Kokkos's CMake turns
+  off by default once OpenMP is enabled; configuration stops with a message
+  otherwise.
+- After upgrading CUDA in place, run `bazelisk shutdown` (or change
+  `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
+  file list.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
@@ -594,80 +577,13 @@ Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, em
     708	      if (pt.x() == x && pt.y() == y) {
     709	        return true;
 
-## Creating an ORFS issue with bazel-orfs targets using `//:deps`
+## Debugging ORFS flow failures
 
-Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can find if carefully searching the logs for `ERROR:` and looking for `target`:
-
-    $ bazelisk test //test/orfs/mock-array:MockArray_test
-    [deleted]
-    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
-    [deleted]
-    [ERROR MPL-0040] Failed on cluster root
-    Error: macro_place.tcl, 5 MPL-0040
-    [deleted]
-    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
-
-To create an ORFS `make issue`, follow these steps:
-
-    bazelisk run //:deps -- //test/orfs/mock-array:MockArray_floorplan
-
-- In Bazel `//test/orfs/mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
-- bazel-orfs provides a `//:deps` wrapper that builds only the `deps` output group (cheap config/template operations) and deploys the dependencies for running `make do-floorplan`. The same works for any stage: synth, place, cts, grt, route or final.
-- Files are placed in `tmp/test/orfs/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
-
-First run `do-floorplan` until the failure, notice that the `do-` prefix is used to disable the dependency checking in ORFS as bazel-orfs handles dependencies:
-
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make do-floorplan
-
-Now create an issue for e.g. `macro_place.tcl`:
-
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make macro_place_issue
-
-The generated file is placed into the `_main` subfolder:
-
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/_main/macro_place_MockArray_asap7_base_2025-06-19_21-50.tar.gz
-
-## Creating an ORFS issue with bazel-orfs targets using `--sandbox_debug`
-
-Hermeticity in Bazel requires some extra steps when debugging failures. If the action fails, then `--sandbox_debug` can be used. If the action succeeds or it is cached, `--sandbox_debug` does nothing.
-
-If you have a failure in `//test/orfs/mock-array:MockArray_floorplan`, look for `ERROR:` and looking for `target`, find the error:
-
-    $ bazelisk test //test/orfs/mock-array:MockArray_test
-    [deleted]
-    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
-    [deleted]
-    [ERROR MPL-0040] Failed on cluster root
-    Error: macro_place.tcl, 5 MPL-0040
-    [deleted]
-    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
-
-Use `--sandbox_debug` to keep the files around after failure:
-
-    bazelisk build //test/orfs/mock-array:MockArray_floorplan --sandbox_debug
-
-Scan the log for setting up the shell and enviornment variables without linux-sandbox.
-
-    (cd /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/sandbox/linux-sandbox/8901/execroot/_main && \
-    exec env - \
-        DESIGN_CONFIG=bazel-out/k8-fastbuild/bin/test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.mk \
-        [deleted]
-    /home/oyvind/.cache/bazel/_bazel_oyvind/install/772f324362dbeab9bc869b8fb3248094/linux-sandbox -t 15 -w /dev/shm -w /home/oyvind/.cache/bazel/_bazel_oyvind/
-    [deleted]
-    /mock-array/reports/asap7/MockArray/base/2_floorplan_final.rpt && external/bazel-orfs++orfs_repositories+docker_orfs/usr/bin/make $@' '' --file external/bazel-orfs++orfs_repositories+docker_orfs/OpenROAD-flow-scripts/flow/Makefile do-floorplan)
-
-Do a bit of suregery to remove the `linux-sandbox` and `exec env -` part, which can be a bit tempremental, to launch a bash shell. This leaves you with a) changing directory b) setting up environment variables c) launching bash shell:
-
-    (cd /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/sandbox/linux-sandbox/8901/execroot/_main && \
-        DESIGN_CONFIG=bazel-out/k8-fastbuild/bin/test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.mk \
-        [deleted]
-    bash)
-
-Now run `make issue` as usual:
-
-    $ make --file external/bazel-orfs++orfs_repositories+docker_orfs/OpenROAD-flow-scripts/flow/Makefile macro_place_issue
-    Archiving issue to macro_place_MockArray_asap7_base_2025-06-20_12-57.tar.gz
-    Using pigz to compress tar file
+OpenROAD CI does not run ORFS flows; flow-level integration is tested in
+[ORFS](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) and
+[bazel-orfs](https://github.com/The-OpenROAD-Project/bazel-orfs). Run the ORFS
+flow with your OpenROAD build as shown above, and use ORFS `make <stage>_issue`
+(or bazel-orfs' `//:deps` workflow) to create a standalone test case.
 
 ## Some OpenROAD and OpenSTA Bazel Specifics
 
@@ -676,7 +592,7 @@ Bazel distinguishes between *host* (`cfg=exec`) and *target* (`cfg=target`) conf
 In the OpenROAD Bazel build:
 
 - `bazelisk build ...` builds all targets in the **target configuration** (`cfg=target`), assuming you're building for deployment or installation.
-- `bazelisk test ...`, on the other hand, uses OpenROAD and OpenSTA **as host tools**, meaning they are built and run in the **execution configuration** (`cfg=exec`), often to run tests or launch `bazel-orfs` builds.
+- `bazelisk test ...`, on the other hand, uses OpenROAD and OpenSTA **as host tools**, meaning they are built and run in the **execution configuration** (`cfg=exec`), to run tests.
 
 ### ⚠️ Avoiding Redundant Builds
 
@@ -777,33 +693,15 @@ OpenSTA has an additional challenge in that only the https://github.com/The-Open
 
 ## Testing the GUI with gcd on a pull request by number
 
-To test a PR with the GUI on gcd, run:
+To test a PR with the GUI on gcd, build the PR and run ORFS with it:
 
 ```
     $ git fetch origin pull/7856/head
     $ git checkout FETCH_HEAD
-    $ bazelisk run test/orfs/gcd:gcd_final gui_final
+    $ bazelisk build //:openroad
+    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk
+    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk gui_final
 ```
-
-This will:
-
-- fetch and checkout pull request 7856
-- build OpenROAD
-- run bazel-orfs flow on gcd
-- set up ORFS project in `tmp/test/orfs/gcd/gcd_final/`
-- launch the GUI opening gui_final gcd
-
-`bazelisk run test/orfs/gcd:gcd_final` run alone would set up the project. Additional arguments are forwarded to the `tmp/test/orfs/gcd/gcd_final/make` script.
-
-## Hacking ORFS with `//test/orfs/gcd:gcd_test` test case
-
-First set up a local work folder with all dependencies for the step that you want to work on:
-
-    bazelisk run //:deps -- //test/orfs/gcd:gcd_floorplan
-
-Now run make directly with the work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
-
-    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir tmp/test/orfs/gcd/gcd_floorplan_deps/_main DESIGN_CONFIG=config.mk do-floorplan
 
 ## Whittling down .odb files
 
@@ -813,29 +711,22 @@ Consider an error such as:
 
     [ERROR GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
 
-First set up a folder with all the dependencies to run global placement:
+Run the following from the `flow/` directory of an ORFS checkout, with
+`OPENROAD_EXE` pointing at your build. First run up to the failing stage and
+stop with ctrl-c on the step that you want to run the whittling down on:
 
-    bazelisk run //:deps -- //test/orfs/gcd:gcd_place
-
-Drop into a shell that has the build environment set up:
-
-    $ tmp/test/orfs/gcd/gcd_place_deps/make bash
-    Makefile Environment  tmp/test/orfs/gcd/gcd_place_deps/_main
-
-Run up to the failing stage and stop with ctrl-c on the step that you want to run the whittling down on:
-
-    make --file=$FLOW_HOME/Makefile do-place
+    make DESIGN_CONFIG=designs/asap7/gcd/config.mk place
 
 Now run the whittler with stock `python3` — no extra packages needed beyond
 the standard library. You are responsible for having `openroad` on your
 `PATH` first (e.g. after `bazelisk run //:install` and `source env.sh` in
-an ORFS checkout):
+the ORFS checkout). `$OPENROAD` below is your OpenROAD checkout:
 
-    python3 etc/whittle.py --error_string GPL-0305 --base_db_path 3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
+    python3 $OPENROAD/etc/whittle.py --error_string GPL-0305 --base_db_path results/asap7/gcd/base/3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make DESIGN_CONFIG=designs/asap7/gcd/config.mk do-3_3_place_gp"
 
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
-    tmp/test/orfs/gcd/gcd_place_deps/make global_place_issue
+    make DESIGN_CONFIG=designs/asap7/gcd/config.mk global_place_issue
 
 ### Monitoring progress
 

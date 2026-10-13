@@ -22,6 +22,7 @@ set(WEB_TESTS
   TestDebugGraphics
   TestGlyphCache
   TestClockTreeReport
+  TestHierarchyReport
   TestSaveImage
   TestSnap
   TestTimingCone
@@ -29,6 +30,7 @@ set(WEB_TESTS
   TestLabels
   TestSaveDisplayControls
   TestGif
+  TestHeatMap
 )
 
 foreach(test IN LISTS WEB_TESTS)

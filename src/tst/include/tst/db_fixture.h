@@ -70,6 +70,21 @@ class DbFixture : public ::testing::Test
   // Load a tech LEF file
   odb::dbTech* loadTechLef(const char* name, const std::string& lef_file);
 
+  // Load a library LEF file without notifying STA.  tst::Fixture's
+  // loadLibaryLef/loadTechAndLib also update its dbSta.
+  odb::dbLib* loadLibLef(odb::dbTech* tech,
+                         const char* name,
+                         const std::string& lef_file);
+  // Load a tech + library LEF file without notifying STA.
+  odb::dbLib* loadTechAndLibLef(const char* tech_name,
+                                const char* lib_name,
+                                const std::string& lef_file);
+
+  // Read a DEF file onto a new chip using the technology of the first
+  // library in libs (all libraries if empty).  Returns the top block.
+  odb::dbBlock* readDef(const std::string& def_file,
+                        std::vector<odb::dbLib*> libs = {});
+
   // Netlist editing helpers.
   //
   // These APIs are designed for maximum convenience rather than

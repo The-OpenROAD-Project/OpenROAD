@@ -112,6 +112,7 @@ enum class MoveType : uint8_t
   kUnbuffer,
   kSplitLoad,
   kReroute,
+  kBufferToInverters,
   kCount
 };
 
@@ -234,6 +235,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
+  // A FIRM, LOCKED or COVER instance: its master must not change size.
+  bool isFixed(const sta::Instance* inst) const;
   void setDontTouch(const sta::Net* net, bool dont_touch);
   bool dontTouch(const sta::Net* net) const;
 
@@ -356,6 +359,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
+                   bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
@@ -876,7 +880,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                    float load_cap,
                                    bool revisiting_inst);
   bool removeBufferIfPossible(sta::Instance* buffer,
-                              bool honor_dont_touch_fixed);
+                              bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
@@ -889,8 +893,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       float delay_adjust,
       const rsz::SlackEstimatorParams& params,
       bool accept_if_slack_improves);
-  bool canRemoveBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed);
-  bool removeBuffer(sta::Instance* buffer);
+  bool canRemoveBuffer(sta::Instance* buffer,
+                       bool honor_dont_touch_fixed = true);
+  bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
   bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);

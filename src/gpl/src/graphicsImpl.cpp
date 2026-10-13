@@ -254,13 +254,15 @@ void GraphicsImpl::drawField(web::Painter& painter)
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
+    if (efMax == 0.0f) {
+      continue;
+    }
+    const double field_scale = static_cast<double>(max_len) / efMax;
     for (auto& bin : bins) {
-      float fx = bin.electroFieldX();
-      float fy = bin.electroFieldY();
-      float f = std::hypot(fx, fy);
-      float ratio = f / efMax;
-      float dx = fx / f * max_len * ratio;
-      float dy = fy / f * max_len * ratio;
+      const float fx = bin.electroFieldX();
+      const float fy = bin.electroFieldY();
+      const float dx = fx * field_scale;
+      const float dy = fy * field_scale;
 
       int cx = bin.cx();
       int cy = bin.cy();

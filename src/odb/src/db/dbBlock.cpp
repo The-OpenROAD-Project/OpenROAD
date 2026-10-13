@@ -26,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -3044,27 +3045,6 @@ dbBlockSearch* dbBlock::getSearchDb()
   return block->search_db_;
 }
 
-void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
-{
-  int tot = 0;
-  int upd = 0;
-  int enc = 0;
-  for (dbNet* net : getNets()) {
-    tot++;
-    _dbNet* n = (_dbNet*) net;
-
-    if (n->flags_.wire_altered != 1) {
-      continue;
-    }
-    upd++;
-    enc++;
-
-    result.push_back(net);
-  }
-  getImpl()->getLogger()->info(
-      utl::ODB, 10, "tot = {}, upd = {}, enc = {}", tot, upd, enc);
-}
-
 void dbBlock::destroyCCs(std::vector<dbNet*>& nets)
 {
   for (dbNet* net : nets) {
@@ -3992,6 +3972,32 @@ const char* dbBlock::getBaseName(const char* full_name) const
     backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
   }
   return base_name;
+}
+
+void dbBlock::getPathSegments(const char* full_name,
+                              std::vector<std::string_view>& segments) const
+{
+  segments.clear();
+  if (full_name == nullptr) {
+    return;
+  }
+
+  const char hierarchy_delimiter = getHierarchyDelimiter();
+  const char* segment_begin = full_name;
+  size_t backslash_run = 0;
+  const char* cursor = full_name;
+  for (; *cursor != '\0'; cursor++) {
+    // Escaped delimiters belong to the local Verilog identifier.  Same rule
+    // as getBaseName(), which keeps the last segment here equal to it.
+    if (*cursor == hierarchy_delimiter && backslash_run % 2 == 0) {
+      segments.emplace_back(segment_begin, cursor - segment_begin);
+      segment_begin = cursor + 1;
+    }
+    backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
+  }
+  // cursor is at the terminator, so the last segment's length is already
+  // known -- no second pass over it.
+  segments.emplace_back(segment_begin, cursor - segment_begin);
 }
 
 dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)

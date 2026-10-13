@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QGuiApplication>
 #include <QImage>
 #include <QPushButton>
 #include <QString>
@@ -441,8 +442,17 @@ class QtGuiBackend : public GuiBackend
 
   bool isOffscreen() const override
   {
-    // Set when the gui was started non-interactively.
-    return main_window->testAttribute(Qt::WA_DontShowOnScreen);
+    if (main_window->testAttribute(Qt::WA_DontShowOnScreen)) {
+      // Set when the gui was started non-interactively.
+      return true;
+    }
+    // The platform plugin decides this too: "offscreen" and "minimal" never
+    // map a window, so the layout viewer is never laid out and its viewport
+    // is meaningless even when the window was asked for interactively
+    // (openroad -gui under QT_QPA_PLATFORM=offscreen).
+    const QString platform = QGuiApplication::platformName();
+    return platform == QLatin1String("offscreen")
+           || platform == QLatin1String("minimal");
   }
 
   RenderedImage renderImage(

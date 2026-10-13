@@ -26,11 +26,15 @@ TESTS = [
     "cugr_adjustment1",
     "cugr_adjustment2",
     "cugr_adjustment3",
+    "cugr_colocated_pins",
+    "cugr_detour_limit",
+    "cugr_via_demand_disabled",
     "est_rc1",
     "est_rc2",
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
@@ -87,6 +91,9 @@ TESTS = [
     "remove_buffers1_cugr",
     "remove_buffers2_cugr",
     "remove_buffers3_cugr",
+    "remove_buffers4_cugr",
+    "remove_buffers5_cugr",
+    "remove_buffers6_cugr",
     "remove_buffers3",
     "repair_antennas1",
     "repair_antennas2",
@@ -201,7 +208,21 @@ regression_test(
 )
 
 regression_test(
+    name = "resistance_aware_asap7_fr_threads",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_acceptance_is_recorded",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
@@ -219,6 +240,35 @@ regression_test(
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
+)
+
+cc_test(
+    name = "TestOverflow",
+    size = "small",
+    srcs = ["cpp/TestOverflow.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGraph2D",
+    size = "small",
+    srcs = ["cpp/TestGraph2D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
 
 cc_test(

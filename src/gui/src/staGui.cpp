@@ -935,7 +935,10 @@ void TimingConeRenderer::drawObjects(web::Painter& painter)
     // draw legend, dont draw if cone is unonstrained
     const int legend_keys = 5;
     const int color_count = color_generator_.getColorCount();
-    auto* units = sta_->units()->timeUnit();
+    const sta::Unit* units = sta_->units()->timeUnit();
+    if (units->scale() == 0.0f) {
+      return;
+    }
     const std::string text_units
         = std::string(units->scaleAbbreviation()) + units->suffix();
     std::vector<std::pair<int, std::string>> legend;

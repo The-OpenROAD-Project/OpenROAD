@@ -95,6 +95,11 @@ using odb::Point;
 using odb::Rect;
 using utl::GUI;
 
+// Width a saved image falls back to when neither the caller nor the viewport
+// gives a resolution.  Matches the web renderer's own default so the two
+// produce the same image (TileGenerator::renderImageBuffer).
+constexpr int kDefaultImageWidth = 1024;
+
 LayoutViewer::LayoutViewer(
     QtOptions* options,
     ScriptWidget* output_widget,
@@ -2223,6 +2228,18 @@ QImage LayoutViewer::createImage(const Rect& region,
     // default to just that is currently visible
     save_area = screenToDBU(visibleRegion().boundingRect());
   }
+  if (save_area.dx() == 0 || save_area.dy() == 0) {
+    // A window the platform plugin never maps (QT_QPA_PLATFORM=offscreen) has
+    // no visible region to read, so fall back to the design rather than render
+    // a null image.  The margin follows the SMALLER dimension, as
+    // Gui::saveImage's own fallback does -- getPaddedRect() takes the larger
+    // one, which would frame this path differently from every other way of
+    // asking for the whole design.
+    save_area = getBounds();
+    const int bloat
+        = defaultZoomMargin * std::min(save_area.dx(), save_area.dy());
+    save_area.bloat(bloat, save_area);
+  }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
 
@@ -2233,6 +2250,17 @@ QImage LayoutViewer::createImage(const Rect& region,
 
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
+  }
+
+  if (pixels_per_dbu_ <= 0) {
+    // Same story one step on: the fit resolution comes from the viewport size,
+    // which stays zero until the window is mapped.  Caller asked for neither a
+    // width nor a resolution, so pick the one the web renderer defaults to.
+    // save_area cannot be empty here, so neither this nor the width_px
+    // division above can divide by zero: hasDesign() -- which this function
+    // returns on -- is false unless getBounds() has a non-zero dx and dy, and
+    // the fallback above takes save_area from getBounds().
+    pixels_per_dbu_ = kDefaultImageWidth / static_cast<double>(save_area.dx());
   }
 
   // convert back to pixels based on new resolution
