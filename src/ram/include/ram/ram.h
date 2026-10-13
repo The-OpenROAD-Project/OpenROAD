@@ -115,7 +115,8 @@ class RamGen
                 const std::string& reset_value = "",
                 int banks = 1,
                 int bank_columns = 1,
-                const std::string& bank_order = "contiguous");
+                const std::string& bank_order = "contiguous",
+                int rb_ports = 0);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -354,6 +355,13 @@ class RamGen
   bool bank_interleaved_{false};
   int words_per_bank_{0};
   int words_per_row_{1};
+  // Banked read ports: each an address and a data output per bank, read
+  // independently (rb_ports_ of them, after the plain read ports)
+  int rb_ports_{0};
+  int r_plain_{0};  // the plain read ports, read/write ones included
+  // the bank of the word at (row, word in the row), and its index there
+  int bankAt(int row, int word_idx) const;
+  int indexInBank(int row) const;
   // An asynchronous reset to reset_value_ (a word's value, every word):
   // each bit's flop is cleared or preset by the reset port, the other
   // pin held off. The pins come from the flop's ff group; clear_reads_

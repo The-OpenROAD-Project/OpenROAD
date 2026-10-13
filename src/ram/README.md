@@ -49,6 +49,7 @@ generate_ram [-mask_size bits]
              [-banks count]
              [-bank_columns count]
              [-bank_order contiguous|interleaved]
+             [-rb_ports count]
              [-inv_cell name]
              [-power_net_name name]
              [-ground_net_name name]
@@ -78,6 +79,7 @@ generate_ram [-mask_size bits]
 | `-zero_word` | A word that reads 0 and drops its writes, as a RISC-V register file's x0: its row has no flops or clock gate, and the read trees leave it out. Needs `-read_style and_or` and `-column_mux_ratio 1`. Default: none. |
 | `-reset_value` | Resets every word to `value` asynchronously, through a reset port at the storage flop's own polarity (`rst_n` or `rst`); each bit's flop is cleared or preset, the other pin held off. The storage cell has both an asynchronous clear and preset. A parent adapts a reset of another polarity, or a synchronous one, to it. Not with `-use_latch`. Default: no reset. |
 | `-banks`, `-bank_columns`, `-bank_order` | The words in `banks` banks, contiguous or interleaved in the address, `bank_columns` of them side by side and the rest stacked. With banks each port decodes every word's whole address, so a bank need not be a power of two words. Not with `-column_mux_ratio` above 1 or `-use_latch`. Default: one bank. |
+| `-rb_ports` | Banked read ports, with `-banks`: each an address and a data output per bank (`addr_rb<k>_b<b>`, `Qrb<k>_b<b>`), the address the word's index in its bank, every bank read independently. Default: 0. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |

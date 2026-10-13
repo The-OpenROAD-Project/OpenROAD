@@ -11,5 +11,6 @@ or_integration_tests(
     zero_word_asap7
     reset_asap7
     banks_asap7
+    banked_read_ports_asap7
 )
 

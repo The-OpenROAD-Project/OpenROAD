@@ -47,7 +47,8 @@ generate_ram_netlist_cmd(int mask_size,
                          const char* reset_value,
                          const int banks,
                          const int bank_columns,
-                         const char* bank_order)
+                         const char* bank_order,
+                         const int rb_ports)
 {
   RamGen* ram_gen = ord::getRamGen();
   odb::dbDatabase* db = ord::getDb();
@@ -100,7 +101,7 @@ generate_ram_netlist_cmd(int mask_size,
   ram_gen->generate(mask_size, word_size, num_words, rw_ports, r_ports, w_ports,
                     column_mux_ratio, use_latch, storage_cell, tristate_cell, inv_cell, 
                     tapcell, max_tap_dist, read_style, zero_word,
-                    reset_value, banks, bank_columns, bank_order);
+                    reset_value, banks, bank_columns, bank_order, rb_ports);
 }
 
 void ram_pdngen(const char* power_net_name, const char* ground_net_name,
