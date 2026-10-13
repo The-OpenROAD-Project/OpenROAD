@@ -817,7 +817,7 @@ ViaReport DbArrayVia::getViaReport() const
   addToViaReport(core_via_.get(), report);
   addToViaReport(end_of_row_column_.get(), report);
   addToViaReport(end_of_row_.get(), report);
-  addToViaReport(end_of_row_column_.get(), report);
+  addToViaReport(end_of_column_.get(), report);
 
   return report;
 }
