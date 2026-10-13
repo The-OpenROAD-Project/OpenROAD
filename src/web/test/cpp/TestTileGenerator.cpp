@@ -523,22 +523,21 @@ class TileGeneratorTest : public tst::Nangate45Fixture
                            const unsigned h,
                            const odb::Rect& rect)
   {
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
     // A tile must have its fixed dimensions before indexing its RGBA pixels.
-    if (w != static_cast<unsigned>(kTileSize)
-        || h != static_cast<unsigned>(kTileSize)
-        || rgba.size() != 4UL * kTileSize * kTileSize) {
+    if (w != kSize || h != kSize || rgba.size() != 4UL * kSize * kSize) {
       ADD_FAILURE() << "invalid decoded tile dimensions";
       return 0;
     }
-    const int left = colOf(bounds, w, rect.xMin()) - 1;
-    const int right = colOf(bounds, w, rect.xMax()) + 1;
-    const int top = rowOf(bounds, w, h, rect.yMax()) - 1;
-    const int bottom = rowOf(bounds, w, h, rect.yMin()) + 1;
+    const int left = colOf(bounds, kSize, rect.xMin()) - 1;
+    const int right = colOf(bounds, kSize, rect.xMax()) + 1;
+    const int top = rowOf(bounds, kSize, kSize, rect.yMax()) - 1;
+    const int bottom = rowOf(bounds, kSize, kSize, rect.yMin()) + 1;
     int outside = 0;
-    for (int y = 0; y < static_cast<int>(h); ++y) {
-      for (int x = 0; x < static_cast<int>(w); ++x) {
+    for (int y = 0; y < kTileSize; ++y) {
+      for (int x = 0; x < kTileSize; ++x) {
         const bool inside = x >= left && x <= right && y >= top && y <= bottom;
-        if (!inside && rgba[4UL * (y * w + x) + 3] > 0) {
+        if (!inside && rgba[4UL * (y * kSize + x) + 3] > 0) {
           ++outside;
         }
       }
