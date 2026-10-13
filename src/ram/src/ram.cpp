@@ -13,6 +13,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -1947,7 +1948,8 @@ void RamGen::generate(const int mask_size,
                       const std::string& cells,
                       const std::string& name,
                       const std::string& decoder,
-                      const int bit_folds)
+                      const int bit_folds,
+                      const std::string& wrapper_verilog)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -1980,7 +1982,13 @@ void RamGen::generate(const int mask_size,
   rb_ports_ = rb_ports;
   read_latency_ = read_latency;
   write_mux_ = write_style == "mux";
-  periphery_unplaced_ = periphery == "unplaced";
+  periphery_verilog_ = periphery == "verilog";
+  periphery_unplaced_ = periphery == "unplaced" || periphery_verilog_;
+  wrapper_verilog_ = wrapper_verilog;
+  if (periphery_verilog_ && wrapper_verilog_.empty()) {
+    logger_->error(
+        RAM, 85, "-periphery verilog needs -wrapper_verilog, its file.");
+  }
   pin_layer_ = pin_layer;
   periphery_insts_.clear();
   marking_periphery_ = false;
@@ -2246,7 +2254,10 @@ void RamGen::generate(const int mask_size,
 
   block_ = chip->getBlock();
   if (!block_) {
-    block_ = odb::dbBlock::create(chip, ram_name.c_str());
+    // -periphery verilog: the block is the core, the wrapper the name
+    const std::string block_name
+        = periphery_verilog_ ? ram_name + "_core" : ram_name;
+    block_ = odb::dbBlock::create(chip, block_name.c_str());
   }
 
   // One column per bit plus one select/control column per slice,
@@ -3146,8 +3157,233 @@ void RamGen::generate(const int mask_size,
 // (those of the periphery too, while they are still placed), on the pin
 // layer's track grid inside the outline: these pins are for a macro
 // placer to orient the core by, never routed.
+// A liberty function as a Verilog expression, its pins by their nets.
+static std::string verilogExpr(const sta::FuncExpr* f,
+                               const std::map<std::string, std::string>& nets)
+{
+  if (f == nullptr) {
+    return "1'b0";
+  }
+  switch (f->op()) {
+    case sta::FuncExpr::Op::port: {
+      auto it = nets.find(f->port()->name());
+      return it == nets.end() ? "1'b0" : it->second;
+    }
+    case sta::FuncExpr::Op::not_:
+      return "~(" + verilogExpr(f->left(), nets) + ")";
+    case sta::FuncExpr::Op::and_:
+      return "(" + verilogExpr(f->left(), nets) + " & "
+             + verilogExpr(f->right(), nets) + ")";
+    case sta::FuncExpr::Op::or_:
+      return "(" + verilogExpr(f->left(), nets) + " | "
+             + verilogExpr(f->right(), nets) + ")";
+    case sta::FuncExpr::Op::xor_:
+      return "(" + verilogExpr(f->left(), nets) + " ^ "
+             + verilogExpr(f->right(), nets) + ")";
+    case sta::FuncExpr::Op::one:
+      return "1'b1";
+    default:
+      return "1'b0";
+  }
+}
+
+// Ports as Verilog declarations, `name[i]` grouped into buses.
+static std::vector<std::pair<std::string, std::string>> verilogPorts(
+    const std::vector<std::pair<std::string, odb::dbIoType>>& ports)
+{
+  std::map<std::string, std::pair<std::string, int>> buses;
+  std::vector<std::string> order;
+  for (const auto& [name, io] : ports) {
+    std::string base = name;
+    int index = -1;
+    const auto lb = name.rfind('[');
+    if (lb != std::string::npos && name.back() == ']') {
+      base = name.substr(0, lb);
+      index = std::stoi(name.substr(lb + 1, name.size() - lb - 2));
+    }
+    if (buses.find(base) == buses.end()) {
+      order.push_back(base);
+      buses[base] = {io == odb::dbIoType::INPUT ? "input" : "output", -1};
+    }
+    buses[base].second = std::max(buses[base].second, index);
+  }
+  std::vector<std::pair<std::string, std::string>> decls;
+  for (const auto& base : order) {
+    const auto& [dir, hi] = buses[base];
+    decls.emplace_back(
+        base,
+        hi < 0 ? dir + " " + base : fmt::format("{} [{}:0] {}", dir, hi, base));
+  }
+  return decls;
+}
+
+void RamGen::splitPeriphery()
+{
+  std::set<uint> periphery;  // by id: odb objects have no order
+  for (dbInst* inst : periphery_insts_) {
+    periphery.insert(inst->getId());
+  }
+  auto ref = [](dbNet* n) {
+    return n->getBTerms().begin() != n->getBTerms().end()
+               ? std::string((*n->getBTerms().begin())->getName())
+               : "\\" + n->getName() + " ";
+  };
+  std::vector<std::pair<std::string, odb::dbIoType>> ports;
+  for (dbBTerm* t : block_->getBTerms()) {
+    ports.emplace_back(t->getName(), t->getIoType());
+  }
+  std::vector<std::string> wires;
+  std::vector<dbBTerm*> dropped;
+  std::vector<std::pair<dbNet*, odb::dbIoType>> shared;
+  for (dbNet* n : block_->getNets()) {
+    if (n->getSigType() == odb::dbSigType::POWER
+        || n->getSigType() == odb::dbSigType::GROUND) {
+      continue;
+    }
+    bool in_periphery = false;
+    bool in_core = false;
+    bool periphery_drives = false;
+    for (odb::dbITerm* it : n->getITerms()) {
+      const bool p = periphery.count(it->getInst()->getId()) > 0;
+      in_periphery |= p;
+      in_core |= !p;
+      periphery_drives |= p && it->getIoType() == odb::dbIoType::OUTPUT;
+    }
+    if (n->getBTerms().begin() != n->getBTerms().end()) {
+      if (!in_core) {
+        for (dbBTerm* t : n->getBTerms()) {
+          dropped.push_back(t);
+        }
+      }
+      continue;
+    }
+    if (in_periphery) {
+      wires.push_back(ref(n));
+    }
+    if (in_periphery && in_core) {
+      shared.emplace_back(
+          n, periphery_drives ? odb::dbIoType::INPUT : odb::dbIoType::OUTPUT);
+    }
+  }
+  // the wrapper: the periphery's cells, before they go
+  std::ostringstream body;
+  for (dbInst* inst : periphery_insts_) {
+    std::map<std::string, std::string> nets;
+    std::vector<std::pair<std::string, std::string>> conns;
+    for (odb::dbITerm* it : inst->getITerms()) {
+      dbNet* n = it->getNet();
+      if (n == nullptr || n->getSigType() == odb::dbSigType::POWER
+          || n->getSigType() == odb::dbSigType::GROUND) {
+        continue;
+      }
+      nets[it->getMTerm()->getName()] = ref(n);
+      conns.emplace_back(it->getMTerm()->getName(), ref(n));
+    }
+    // a logic cell, one output with a function, as an assign
+    auto liberty = network_->libertyCell(network_->dbToSta(inst->getMaster()));
+    sta::LibertyPort* out = nullptr;
+    int outputs = 0;
+    if (liberty && !liberty->hasSequentials() && !liberty->isClockGate()) {
+      std::unique_ptr<sta::ConcreteCellPortIterator> it(
+          liberty->portIterator());
+      while (it->hasNext()) {
+        auto port = it->next()->libertyPort();
+        if (port && port->direction()->isAnyOutput()) {
+          ++outputs;
+          out = port;
+        }
+      }
+    }
+    if (outputs == 1 && out->function() && !out->direction()->isTristate()
+        && nets.count(out->name())) {
+      body << "  assign " << nets[out->name()] << " = "
+           << verilogExpr(out->function(), nets) << ";  // " << inst->getName()
+           << "\n";
+      continue;
+    }
+    body << "  " << inst->getMaster()->getName() << " \\" << inst->getName()
+         << " (";
+    for (size_t i = 0; i < conns.size(); ++i) {
+      body << (i ? ", " : "") << "." << conns[i].first << "(" << conns[i].second
+           << ")";
+    }
+    body << ");\n";
+  }
+  // the core: its own ports kept, the shared nets new ones, named as a
+  // Verilog and liberty identifier (a net's name has dots and brackets)
+  std::map<std::string, std::string> shared_ref;  // core port -> wrapper net
+  for (auto& [n, io] : shared) {
+    std::string name = n->getName();
+    for (char& c : name) {
+      if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_') {
+        c = '_';
+      }
+    }
+    while (
+        block_->findBTerm(name.c_str()) != nullptr
+        || (name != n->getName() && block_->findNet(name.c_str()) != nullptr)) {
+      name += "_";
+    }
+    shared_ref[name] = ref(n);
+    // a port's net goes by the port's name, as the netlist writes it
+    n->rename(name.c_str());
+    dbBTerm* t = dbBTerm::create(n, name.c_str());
+    t->setIoType(io);
+    t->setSigType(odb::dbSigType::SIGNAL);
+  }
+  for (dbBTerm* t : dropped) {
+    odb::dbBTerm::destroy(t);
+  }
+  for (dbInst* inst : periphery_insts_) {
+    dbInst::destroy(inst);
+  }
+  periphery_insts_.clear();
+  std::vector<dbNet*> empty;
+  for (dbNet* n : block_->getNets()) {
+    if (n->getITerms().empty() && n->getBTerms().empty()) {
+      empty.push_back(n);
+    }
+  }
+  for (dbNet* n : empty) {
+    dbNet::destroy(n);
+  }
+  std::vector<std::pair<std::string, odb::dbIoType>> core_ports;
+  for (dbBTerm* t : block_->getBTerms()) {
+    core_ports.emplace_back(t->getName(), t->getIoType());
+  }
+  std::ofstream out(wrapper_verilog_);
+  if (!out) {
+    logger_->error(RAM, 86, "Unable to open file {}", wrapper_verilog_);
+  }
+  const auto decls = verilogPorts(ports);
+  out << "// generate_ram's periphery around " << block_->getName()
+      << ", as Verilog\nmodule " << ram_name_ << " (\n";
+  for (size_t i = 0; i < decls.size(); ++i) {
+    out << "  " << decls[i].second << (i + 1 < decls.size() ? ",\n" : "\n");
+  }
+  out << ");\n";
+  for (const auto& w : wires) {
+    out << "  wire " << w << ";\n";
+  }
+  out << body.str();
+  // the core by its ports: a bus of the module's own, a shared net bit by
+  // bit, by its name
+  const auto core_decls = verilogPorts(core_ports);
+  out << "  " << block_->getName() << " core (";
+  for (size_t i = 0; i < core_decls.size(); ++i) {
+    const std::string& p = core_decls[i].first;
+    auto net = shared_ref.find(p);
+    out << (i ? ", " : "") << "." << p << "("
+        << (net == shared_ref.end() ? p : net->second) << ")";
+  }
+  out << ");\nendmodule\n";
+}
+
 void RamGen::unplacePeriphery()
 {
+  if (periphery_verilog_) {
+    splitPeriphery();
+  }
   odb::dbTechLayer* layer = db_->getTech()->findLayer(pin_layer_.c_str());
   if (layer == nullptr) {
     logger_->error(RAM,

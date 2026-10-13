@@ -20,7 +20,8 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-name name]
                                              [-decoder row|word]
                                              [-bit_folds count]
-                                             [-periphery placed|unplaced]
+                                             [-periphery placed|unplaced|verilog]
+                                             [-wrapper_verilog file]
                                              [-pin_layer layer]
                                              [-inv_cell name]
                                              [-rw_ports count]
@@ -36,7 +37,7 @@ proc generate_ram_netlist { args } {
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -read_latency -write_style
-      -periphery -pin_layer -cells -name -decoder -bit_folds } flags {}
+      -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -190,9 +191,13 @@ proc generate_ram_netlist { args } {
   set periphery placed
   if { [info exists keys(-periphery)] } {
     set periphery $keys(-periphery)
-    if { $periphery ni {placed unplaced} } {
-      utl::error RAM 77 "-periphery is placed or unplaced, not $periphery."
+    if { $periphery ni {placed unplaced verilog} } {
+      utl::error RAM 77 "-periphery is placed, unplaced or verilog, not $periphery."
     }
+  }
+  set wrapper_verilog ""
+  if { [info exists keys(-wrapper_verilog)] } {
+    set wrapper_verilog $keys(-wrapper_verilog)
   }
   set pin_layer ""
   if { [info exists keys(-pin_layer)] } {
@@ -259,7 +264,7 @@ proc generate_ram_netlist { args } {
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
     $rb_ports $read_latency $write_style $periphery $pin_layer $cells $name \
-    $decoder $bit_folds
+    $decoder $bit_folds $wrapper_verilog
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]

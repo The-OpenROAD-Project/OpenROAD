@@ -124,7 +124,8 @@ class RamGen
                 const std::string& cells = "",
                 const std::string& name = "",
                 const std::string& decoder = "row",
-                int bit_folds = 1);
+                int bit_folds = 1,
+                const std::string& wrapper_verilog = "");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -414,6 +415,15 @@ class RamGen
   Cell* periphery_cell_{nullptr};
   std::vector<odb::dbInst*> periphery_insts_;
   void unplacePeriphery();
+  // -periphery verilog: the periphery leaves the block, which becomes the
+  // core alone (<name>_core), for a wrapper module in Verilog written to
+  // wrapper_verilog_: the periphery's logic cells as assigns of their
+  // liberty functions, its other cells (clock gates, flops, ties) as
+  // instances, around an instance of the core. A net the core shares
+  // with the periphery becomes a core port.
+  bool periphery_verilog_{false};
+  std::string wrapper_verilog_;
+  void splitPeriphery();
   odb::dbMaster* addr_flop_cell_{nullptr};
   std::string addr_flop_d_, addr_flop_clk_, addr_flop_q_;
   bool addr_flop_inverted_{false};
