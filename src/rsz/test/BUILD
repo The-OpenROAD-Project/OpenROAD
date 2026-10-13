@@ -60,6 +60,8 @@ TESTS = [
     "remove_buffers5",
     "remove_buffers5_hier",
     "remove_buffers6",
+    "remove_buffers_survivor_hier",
+    "remove_buffers_survivor_port_nets",
     "repair_cap1",
     "repair_cap2",
     "repair_cap3",
@@ -279,10 +281,6 @@ PASSFAIL_TESTS = [
     "repair_setup_mt1",
     "repair_design_fixed_driver",
     "gain_buffering_top_port_hier",
-    "remove_buffers_survivor_protected",
-    "remove_buffers_survivor_unprotected",
-    "remove_buffers_survivor_feedthrough",
-    "remove_buffers_survivor_unconnected_output",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -292,10 +290,6 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
     "gain_buffering_top_port_hier",
-    "remove_buffers_survivor_protected",
-    "remove_buffers_survivor_unprotected",
-    "remove_buffers_survivor_feedthrough",
-    "remove_buffers_survivor_unconnected_output",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
