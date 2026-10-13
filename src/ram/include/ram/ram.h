@@ -111,7 +111,8 @@ class RamGen
                 odb::dbMaster* tapcell,
                 int max_tap_dist,
                 const std::string& read_style = "",
-                int zero_word = -1);
+                int zero_word = -1,
+                const std::string& reset_value = "");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -167,6 +168,10 @@ class RamGen
                        const std::vector<odb::dbNet*>& selects,
                        odb::dbNet* out);
   bool treeInverted(int lo, int hi) const;
+  // -reset_value: the storage flop's data, clear and preset pins, the
+  // reset's polarity, what a cleared flop reads, and the tie cell that
+  // holds the unused pin off
+  void findResetPins();
   // The smallest cell `match` accepts; none is an error unless not
   // `required`, then nullptr.
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
@@ -193,7 +198,9 @@ class RamGen
                                 std::vector<odb::dbNet*>& select,
                                 odb::dbNet* data_input,
                                 std::vector<odb::dbNet*>& data_output,
-                                odb::dbNet* storage_net = nullptr);
+                                odb::dbNet* storage_net = nullptr,
+                                int reset_bit = -1,
+                                odb::dbNet* reset_off = nullptr);
   void makeSlice(int slice_idx,
                  int mask_size,
                  int row_idx,
@@ -315,6 +322,20 @@ class RamGen
   std::string read_style_;
   bool storage_inverted_{false};  // the storage flop's output is QN
   int zero_word_{-1};  // the word that reads 0 and is not stored, or -1
+  // An asynchronous reset to reset_value_ (a word's value, every word):
+  // each bit's flop is cleared or preset by the reset port, the other
+  // pin held off. The pins come from the flop's ff group; clear_reads_
+  // is the data a cleared flop reads back, after any inversion.
+  std::string reset_value_;
+  uint64_t reset_bits_{0};
+  odb::dbBTerm* reset_port_{nullptr};
+  odb::dbMaster* tie_off_cell_{nullptr};  // drives the inactive level
+  std::string tie_off_pin_;
+  std::string storage_data_pin_;
+  std::string storage_clear_pin_;
+  std::string storage_preset_pin_;
+  bool reset_active_low_{true};
+  int clear_reads_{0};
   // per (row, word in the row, bit): the storage net, and the tree
   // cells placed in that bit's cell
   std::map<std::tuple<int, int, int>, odb::dbNet*> storage_nets_;

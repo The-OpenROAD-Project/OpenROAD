@@ -9,6 +9,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-tristate_cell name]
                                              [-read_style tristate|and_or]
                                              [-zero_word word]
+                                             [-reset_value value]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -21,7 +22,7 @@ proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
-      -write_behavioral_verilog -read_style -zero_word } flags {}
+      -write_behavioral_verilog -read_style -zero_word -reset_value } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -151,9 +152,15 @@ proc generate_ram_netlist { args } {
     set zero_word $keys(-zero_word)
   }
 
+  # An asynchronous reset of every word to this value.
+  set reset_value ""
+  if { [info exists keys(-reset_value)] } {
+    set reset_value $keys(-reset_value)
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
-    $read_style $zero_word
+    $read_style $zero_word $reset_value
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -187,7 +194,7 @@ proc generate_ram { args } {
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
-           -write_behavioral_verilog -read_style -zero_word } flags {}
+           -write_behavioral_verilog -read_style -zero_word -reset_value } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -230,6 +237,10 @@ proc generate_ram { args } {
 
   if { [info exists keys(-zero_word)] } {
     lappend ram_netlist_args -zero_word $keys(-zero_word)
+  }
+
+  if { [info exists keys(-reset_value)] } {
+    lappend ram_netlist_args -reset_value $keys(-reset_value)
   }
 
   if { [info exists keys(-inv_cell)] } {

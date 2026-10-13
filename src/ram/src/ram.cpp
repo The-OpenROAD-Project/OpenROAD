@@ -116,7 +116,9 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
                                       vector<odb::dbNet*>& select,
                                       dbNet* data_input,
                                       vector<odb::dbNet*>& data_output,
-                                      dbNet* storage_net)
+                                      dbNet* storage_net,
+                                      const int reset_bit,
+                                      dbNet* reset_off)
 {
   auto bit_cell = std::make_unique<Cell>();
 
@@ -126,13 +128,19 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   }
 
   if (!use_latch_) {
-    makeInst(bit_cell.get(),
-             prefix,
-             "bit",
-             storage_cell_,
-             {{storage_ports_[{PortRoleType::Clock, 0}], clock},
-              {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
-              {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+    vector<std::pair<std::string, dbNet*>> conns
+        = {{storage_ports_[{PortRoleType::Clock, 0}], clock},
+           {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
+           {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}};
+    if (reset_bit >= 0) {
+      // the reset clears the flop where a cleared flop reads the bit's
+      // value, else presets it; the other pin held off
+      dbNet* reset = reset_port_->getNet();
+      const bool clear = reset_bit == clear_reads_;
+      conns.emplace_back(storage_clear_pin_, clear ? reset : reset_off);
+      conns.emplace_back(storage_preset_pin_, clear ? reset_off : reset);
+    }
+    makeInst(bit_cell.get(), prefix, "bit", storage_cell_, conns);
   } else {
     makeInst(bit_cell.get(),
              prefix,
@@ -338,6 +346,17 @@ void RamGen::makeSlice(const int slice_idx,
   auto we_net = makeNet(prefix, "we");
   auto sel_cell = std::make_unique<Cell>();
 
+  // -reset_value: one tie per word slice holds the flops' unused pins off
+  dbNet* reset_off = nullptr;
+  if (reset_port_) {
+    reset_off = makeNet(prefix, "reset_off");
+    makeInst(sel_cell.get(),
+             prefix,
+             "reset_tie",
+             tie_off_cell_,
+             {{tie_off_pin_, reset_off}});
+  }
+
   // More than one write port: port w writes this word when its row select
   // and its write enable are both high (we{w}), and its data is taken
   // unless a later port writes the word in the same cycle (take{w}): the
@@ -400,16 +419,20 @@ void RamGen::makeSlice(const int slice_idx,
       d = makeNet(name, "d");
     }
     const int bit = start_bit_idx + local_bit;
-    auto bit_cell
-        = and_or_read_
-              ? makeBit(name,
-                        0,
-                        gclock_net,
-                        select_b_nets,
-                        d,
-                        outs,
-                        storage_nets_.at({row_idx, word_idx, bit}))
-              : makeBit(name, r_total, gclock_net, select_b_nets, d, outs);
+    const int reset_bit
+        = reset_port_
+              ? (bit < 64 ? static_cast<int>((reset_bits_ >> bit) & 1) : 0)
+              : -1;
+    auto bit_cell = makeBit(
+        name,
+        and_or_read_ ? 0 : r_total,
+        gclock_net,
+        select_b_nets,
+        d,
+        outs,
+        and_or_read_ ? storage_nets_.at({row_idx, word_idx, bit}) : nullptr,
+        reset_bit,
+        reset_off);
     if (and_or_read_) {
       for (const auto& node : tree_nodes_[{row_idx, word_idx, bit}]) {
         makeInst(
@@ -1025,6 +1048,84 @@ static int twoInputTable(sta::LibertyPort* out)
   return table;
 }
 
+void RamGen::findResetPins()
+{
+  auto liberty = network_->libertyCell(network_->dbToSta(storage_cell_));
+  const sta::Sequential* seq = nullptr;
+  for (const auto& s : liberty->sequentials()) {
+    if (s.isRegister() && s.clear() && s.preset()) {
+      seq = &s;
+      break;
+    }
+  }
+  if (!seq) {
+    logger_->error(RAM,
+                   61,
+                   "Storage cell {} has no asynchronous clear and preset for "
+                   "-reset_value.",
+                   storage_cell_->getName());
+  }
+  // a pin of the ff group, and whether it acts low: "!RN" or "RN"
+  auto pin = [&](const sta::FuncExpr* e, bool& low) -> std::string {
+    low = e->op() == sta::FuncExpr::Op::not_;
+    const sta::FuncExpr* p = low ? e->left() : e;
+    if (p->op() != sta::FuncExpr::Op::port) {
+      logger_->error(RAM,
+                     62,
+                     "Storage cell {}: a clear, preset or data that is not "
+                     "one pin is not supported.",
+                     storage_cell_->getName());
+    }
+    return p->port()->name();
+  };
+  bool clear_low = false;
+  bool preset_low = false;
+  bool data_inverted = false;
+  storage_clear_pin_ = pin(seq->clear(), clear_low);
+  storage_preset_pin_ = pin(seq->preset(), preset_low);
+  storage_data_pin_ = pin(seq->data(), data_inverted);
+  if (clear_low != preset_low) {
+    logger_->error(RAM,
+                   63,
+                   "Storage cell {}: clear and preset act on opposite levels.",
+                   storage_cell_->getName());
+  }
+  reset_active_low_ = clear_low;
+  storage_ports_[{PortRoleType::DataIn, 0}] = storage_data_pin_;
+
+  // A clear sets the ff group's first state variable to 0; the output
+  // pin reads it or its complement, and the data read back is that,
+  // inverted again where the storage output is (asap7's DFFASRHQNx1
+  // stores !D: its `clear` sets the data to 1).
+  auto out = liberty->findLibertyPort(
+      storage_ports_[{PortRoleType::DataOut, 0}].c_str());
+  bool reads_complement = false;
+  if (out && out->function()
+      && out->function()->op() == sta::FuncExpr::Op::port) {
+    reads_complement = seq->outputInv() == out->function()->port();
+  }
+  clear_reads_ = (reads_complement ? 1 : 0) ^ (storage_inverted_ ? 1 : 0);
+
+  // the unused pin of each flop held at its inactive level
+  const bool off_high = reset_active_low_;
+  tie_off_cell_ = findMaster(
+      [off_high](sta::LibertyPort* port) {
+        auto f = port->function();
+        return f && port->direction()->isOutput()
+               && f->op()
+                      == (off_high ? sta::FuncExpr::Op::one
+                                   : sta::FuncExpr::Op::zero);
+      },
+      off_high ? "tie high" : "tie low");
+  tie_off_pin_ = buildPortMap(tie_off_cell_)[{PortRoleType::DataOut, 0}];
+
+  try {
+    reset_bits_ = std::stoull(reset_value_, nullptr, 0);
+  } catch (const std::exception&) {
+    logger_->error(RAM, 64, "-reset_value {} is not a number.", reset_value_);
+  }
+}
+
 void RamGen::findMasters()
 {
   if (!inv_cell_) {
@@ -1080,10 +1181,22 @@ void RamGen::findMasters()
     if (!storage_cell_) {
       // FIXME
       // Still needs changes to get right type of flip-flop
+      const bool reset = !reset_value_.empty();
       storage_cell_ = findMaster(
-          [](sta::LibertyPort* port) {
+          [reset](sta::LibertyPort* port) {
             if (!port->isRegOutput()) {
               return false;
+            }
+            // with a reset, a flop with both an asynchronous clear and
+            // preset, so any bit can take either value
+            if (reset) {
+              bool clear_preset = false;
+              for (const auto& seq : port->libertyCell()->sequentials()) {
+                clear_preset |= seq.isRegister() && seq.clear() && seq.preset();
+              }
+              if (!clear_preset) {
+                return false;
+              }
             }
             // looking for DFF specifically
             auto cell = port->libertyCell();
@@ -1112,6 +1225,9 @@ void RamGen::findMasters()
                      "Storage cell {} has no non-inverted output; use "
                      "-read_style and_or.",
                      storage_cell_->getName());
+    }
+    if (!reset_value_.empty()) {
+      findResetPins();
     }
   }
 
@@ -1560,7 +1676,8 @@ void RamGen::generate(const int mask_size,
                       dbMaster* tapcell,
                       int max_tap_dist,
                       const std::string& read_style,
-                      const int zero_word)
+                      const int zero_word,
+                      const std::string& reset_value)
 {
   if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
@@ -1609,6 +1726,9 @@ void RamGen::generate(const int mask_size,
   num_write_ = rw_ports + w_ports;
   read_style_ = read_style;
   zero_word_ = zero_word;
+  reset_value_ = reset_value;
+  reset_port_ = nullptr;
+  tie_off_cell_ = nullptr;
   and_or_read_ = false;
   storage_inverted_ = false;
   storage_nets_.clear();
@@ -1700,6 +1820,16 @@ void RamGen::generate(const int mask_size,
   ram_grid_.setNumLayouts(col_cell_count);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
+
+  // -reset_value: an asynchronous reset at the storage flop's own
+  // polarity, rst_n or rst; a parent adapts any other reset to it
+  if (!reset_value_.empty()) {
+    if (use_latch_) {
+      logger_->error(RAM, 65, "-reset_value is not supported with -use_latch.");
+    }
+    reset_port_
+        = makeBTerm(reset_active_low_ ? "rst_n" : "rst", dbIoType::INPUT);
+  }
 
   // One write enable bus per write port: we, or with more than one write
   // port we0, we1, ...
@@ -2446,6 +2576,12 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   };
   // Build port list
   std::string port_list = "\n  clk";
+  // -reset_value: the reset port, at the storage flop's polarity
+  const std::string reset_name
+      = reset_value_.empty() ? "" : (reset_active_low_ ? "rst_n" : "rst");
+  if (!reset_name.empty()) {
+    port_list += ",\n  " + reset_name;
+  }
   for (int w = 0; w < num_write; ++w) {
     port_list += ",\n  " + wbus("D", w);
   }
@@ -2565,17 +2701,37 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         mask_size);
   }
 
+  std::string reset_declaration;
+  std::string always_head = "  always @(posedge clk) begin\n";
+  if (!reset_name.empty()) {
+    reset_declaration = fmt::format("  input {};\n", reset_name);
+    always_head = fmt::format(
+        "  always @(posedge clk or {}edge {}) begin\n"
+        "    if ({}{}) begin\n"
+        "      for (i = 0; i < {}; i = i + 1) begin\n"
+        "        mem[i] <= {}'d{};\n"
+        "      end\n"
+        "    end else begin\n",
+        reset_active_low_ ? "neg" : "pos",
+        reset_name,
+        reset_active_low_ ? "!" : "",
+        reset_name,
+        num_words,
+        word_size_bit,
+        reset_bits_);
+    write_logic += "    end\n";
+  }
+
   std::string verilog_code = fmt::format(R"(module {} ({}
 );
   input clk;
-{}{}{}{}
+{}{}{}{}{}
   // memory array declaration
   reg [{}:0] mem[0:{}];
 
   // write logic
   integer i;
-  always @(posedge clk) begin
-{}  end
+{}{}  end
 
   // read logic
 {}
@@ -2583,12 +2739,14 @@ endmodule
 )",
                                          module_name,
                                          port_list,
+                                         reset_declaration,
                                          data_declarations,
                                          output_declaration,
                                          addr_declarations,
                                          enable_declarations,
                                          word_size_bit - 1,
                                          num_words - 1,
+                                         always_head,
                                          write_logic,
                                          read_port_logic);
 
