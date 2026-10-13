@@ -208,6 +208,10 @@ bool dbLinkDesign(const char* top_cell_name,
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
+    if (verilog_network->properties()->isUserProperty("instance", "src")) {
+      verilog_network->properties()->defineProperty<Instance>(
+          "instance", "src", "string");
+    }
     Verilog2db v2db(verilog_network, db, logger, hierarchy, omit_filename_prop);
     v2db.makeBlock();
     v2db.makeDbNetlist();
