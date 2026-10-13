@@ -1,0 +1,48 @@
+diff --git a/bazel/naja_repositories.bzl b/bazel/naja_repositories.bzl
+index 6fba75a..b4b065c 100644
+--- a/bazel/naja_repositories.bzl
++++ b/bazel/naja_repositories.bzl
+@@ -87,7 +87,42 @@ def _python_repository_impl(repository_ctx):
+                 platform_include_roots.append(root)
+ 
+     ldflags = run(["--ldflags", "--embed"])
+-    linkopts = [arg for arg in ldflags if arg]
++
++    # python3-config reports a bare `-L/usr/lib/<multiarch>`. Exported as a
++    # linkopt it lands ahead of Bazel's own -L entries in every link of a
++    # target that embeds Python, so @onetbb's `-l:libtbb.so.12` and
++    # `-l:libtbbmalloc.so.2` resolve against the host's system TBB instead of
++    # the CMake-built one -- silently on a host whose TBB is ABI-compatible,
++    # and as an undefined-symbol link failure under the hermetic toolchain.
++    # Link libpython by absolute path and drop the search directories; -ldl
++    # and -lm keep coming from the toolchain.
++    search_dirs = [arg[2:] for arg in ldflags if arg.startswith("-L")]
++    linkopts = []
++    for arg in ldflags:
++        if not arg or arg.startswith("-L"):
++            continue
++        if arg.startswith("-lpython"):
++            resolved = None
++            for search_dir in search_dirs:
++                for extension in [".so", ".a"]:
++                    candidate = repository_ctx.path("{}/lib{}{}".format(
++                        search_dir,
++                        arg[2:],
++                        extension,
++                    ))
++                    if candidate.exists:
++                        resolved = str(candidate)
++                        break
++                if resolved:
++                    break
++            if not resolved:
++                fail("{} not found in {}; required to build Naja".format(
++                    arg,
++                    search_dirs,
++                ))
++            linkopts.append(resolved)
++            continue
++        linkopts.append(arg)
+     includes = [
+         "include{}".format(index)
+         for index in range(len(include_dirs))

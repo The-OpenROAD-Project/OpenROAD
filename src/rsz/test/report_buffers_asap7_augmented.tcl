@@ -12,7 +12,7 @@ read_lef asap7_augmented/asap7sc7p5t_28_UL_1x_220121a.lef
 read_lef asap7_augmented/asap7sc7p5t_28_EL_1x_220121a.lef
 
 read_verilog gcd_asap7.v
-link gcd
+link_design gcd
 
 set_opt_config -disable_buffer_pruning true
 

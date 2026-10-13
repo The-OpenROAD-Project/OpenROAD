@@ -269,6 +269,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       endpoint_state.prev_end_slack = endpoint_state.end_slack;
       endpoint_state.prev_worst_slack = endpoint_state.worst_slack;
       endpoint_state.decreasing_slack_passes = 0;
+      endpoint_state.force_single_repair = false;
       saveImprovedCheckpoint(endpoint_state);
     } else {
       endpoint_state.force_single_repair = true;
@@ -352,6 +353,12 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
           "{}{} Phase Time: {{}}", phaseName(), main_state.phase_marker));
   for (const pair<sta::Vertex*, sta::Slack>& end_original_slack :
        violating_ends) {
+    // Stop before starting a new endpoint after reaching the global limit.
+    if (reachedIterationLimit(main_state.opto_iteration,
+                              config_.max_iterations)) {
+      break;
+    }
+
     EndpointRepairState endpoint_state;
     if (!beginEndpointRepair(end_original_slack, main_state, endpoint_state)) {
       break;

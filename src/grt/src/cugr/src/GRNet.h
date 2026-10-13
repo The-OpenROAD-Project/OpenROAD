@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,7 +13,6 @@
 #include "GridGraph.h"
 #include "Netlist.h"
 #include "geo.h"
-#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -41,6 +41,9 @@ class GRNet
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
   {
     routing_tree_ = std::move(tree);
+    // A newly installed tree is native (direction-legal) unless the
+    // caller marks it adopted afterwards.
+    adopted_ = false;
   }
   void setSlack(float slack) { slack_ = slack; }
   float getSlack() const { return slack_; }
@@ -131,33 +134,48 @@ class GRNet
 
   bool isSoftNdr() const { return soft_ndr_; }
 
-  void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
-  void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
-  void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);
-  const odb::PtrMap<odb::dbBTerm, AccessPoint>& getBTermAccessPoints() const
+  void addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
   {
-    return bterm_to_ap_;
+    preferred_aps_[pin_index] = ap;
   }
-  const odb::PtrMap<odb::dbITerm, AccessPoint>& getITermAccessPoints() const
+  // Selected AP per pin, keyed like getPinAccessPoints(); pins that have no
+  // AP yet are absent.
+  const std::map<int, AccessPoint>& getPreferredAccessPoints() const
   {
-    return iterm_to_ap_;
+    return preferred_aps_;
   }
+  // Terminals keyed by the pin index that also keys getPinAccessPoints().
+  const std::map<int, odb::dbBTerm*>& getBTermsByPinIndex() const
+  {
+    return pin_index_to_bterm_;
+  }
+  const std::map<int, odb::dbITerm*>& getITermsByPinIndex() const
+  {
+    return pin_index_to_iterm_;
+  }
+  // Grid point of the driver pin's selected access point, if any.
+  std::optional<PointT> getDriverAccessPoint() const;
   bool isLocal() const;
+  // Set when the routing tree was adopted from detailed routes, which may
+  // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
+  bool isAdopted() const { return adopted_; }
+  void setAdopted(bool adopted) { adopted_ = adopted; }
 
  private:
   int index_;
   odb::dbNet* db_net_;
+  int driver_pin_index_ = -1;
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
-  odb::PtrMap<odb::dbBTerm, AccessPoint> bterm_to_ap_;
-  odb::PtrMap<odb::dbITerm, AccessPoint> iterm_to_ap_;
+  std::map<int, AccessPoint> preferred_aps_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;
   float slack_;
   bool is_critical_;
   bool is_res_aware_ = false;
+  bool adopted_ = false;
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;

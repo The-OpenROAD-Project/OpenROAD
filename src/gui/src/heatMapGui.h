@@ -3,14 +3,11 @@
 
 #pragma once
 
-#include <memory>
-
 #include "gui/gui.h"
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 
-std::unique_ptr<Renderer> makeHeatMapRenderer(HeatMapDataSource& datasource);
-void showHeatMapSetupDialog(HeatMapDataSource* source);
+void showHeatMapSetupDialog(web::HeatMapDataSource* source);
 
 }  // namespace gui

@@ -2,6 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "message_srcs")
 
 package(features = ["layering_check"])
 
@@ -36,4 +37,8 @@ cc_library(
         "//src/utl",
         "@abc",
     ],
+)
+
+message_srcs(
+    visibility = ["//src/syn:__pkg__"],
 )

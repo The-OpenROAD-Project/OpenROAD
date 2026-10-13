@@ -95,18 +95,23 @@ using odb::Point;
 using odb::Rect;
 using utl::GUI;
 
+// Width a saved image falls back to when neither the caller nor the viewport
+// gives a resolution.  Matches the web renderer's own default so the two
+// produce the same image (TileGenerator::renderImageBuffer).
+constexpr int kDefaultImageWidth = 1024;
+
 LayoutViewer::LayoutViewer(
-    Options* options,
+    QtOptions* options,
     ScriptWidget* output_widget,
-    const SelectionSet& selected,
-    const HighlightSet& highlighted,
+    const web::SelectionSet& selected,
+    const web::HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     const std::vector<std::unique_ptr<Label>>& labels,
     const odb::PtrMap<odb::dbModule, ModuleSettings>& module_settings,
     const odb::PtrSet<odb::dbNet>& focus_nets,
     const odb::PtrSet<odb::dbNet>& route_guides,
     const odb::PtrSet<odb::dbNet>& net_tracks,
-    Gui* gui,
+    web::Gui* gui,
     const std::function<bool()>& using_dbu,
     const std::function<bool()>& show_ruler_as_euclidian,
     const std::function<bool()>& show_db_view,
@@ -880,7 +885,7 @@ void LayoutViewer::selectViaShapesAt(dbBlock* block,
                                      dbTechLayer* select_layer,
                                      const Rect& region,
                                      const int shape_limit,
-                                     std::vector<Selected>& selections)
+                                     std::vector<web::Selected>& selections)
 {
   auto via_shapes = search_.searchSNetViaShapes(block,
                                                 cut_layer,
@@ -903,14 +908,15 @@ void LayoutViewer::selectViaShapesAt(dbBlock* block,
   }
 }
 
-void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
+void LayoutViewer::selectAt(odb::Rect region,
+                            std::vector<web::Selected>& selections)
 {
   if (!hasDesign()) {
     return;
   }
 
   // Look for the selected object in reverse layer order
-  auto& renderers = Gui::get()->renderers();
+  auto& renderers = web::Gui::get()->renderers();
   dbTech* tech = getChip()->getTech();
 
   const int shape_limit = shapeSizeLimit();
@@ -1142,7 +1148,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
             gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
       } else {
         selections.push_back(gui_->makeSelected(
-            DbSiteDescriptor::SpecificSite{site, rect, index}));
+            web::DbSiteDescriptor::SpecificSite{site, rect, index}));
       }
     }
   }
@@ -1151,7 +1157,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 int LayoutViewer::selectArea(const odb::Rect& area, bool append)
 {
   if (!append) {
-    emit selected(Selected());  // remove previous selections
+    emit selected(web::Selected());  // remove previous selections
   }
 
   auto selection_set = selectAt(area);
@@ -1159,21 +1165,21 @@ int LayoutViewer::selectArea(const odb::Rect& area, bool append)
   return selection_set.size();
 }
 
-SelectionSet LayoutViewer::selectAt(odb::Rect region)
+web::SelectionSet LayoutViewer::selectAt(odb::Rect region)
 {
-  std::vector<Selected> selections;
+  std::vector<web::Selected> selections;
   selectAt(region, selections);
 
-  SelectionSet selected;
+  web::SelectionSet selected;
   for (auto& select : selections) {
     selected.insert(select);
   }
   return selected;
 }
 
-Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
+web::Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
 {
-  std::vector<Selected> selections;
+  std::vector<web::Selected> selections;
   selectAt({pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y()}, selections);
 
   if (!selections.empty()) {
@@ -1217,7 +1223,7 @@ Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
 
     return selections[next_selection_idx];
   }
-  return Selected();
+  return web::Selected();
 }
 
 odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
@@ -1392,7 +1398,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton) {
       auto selection = selectAt(rubber_band_dbu);
       if (!(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
-        emit selected(Selected());  // remove previous selections
+        emit selected(web::Selected());  // remove previous selections
       }
       emit addSelected(selection);
     } else if (event->button() == Qt::RightButton) {
@@ -1402,7 +1408,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton) {
       if (!building_ruler_) {
         Point pt_dbu = screenToDBU(mouse_pos);
-        Selected selection = selectAtPoint(pt_dbu);
+        web::Selected selection = selectAtPoint(pt_dbu);
         if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
           emit addSelected(selection);
         } else {
@@ -1634,27 +1640,27 @@ LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
   return rects;
 }
 
-void LayoutViewer::selection(const Selected& selection)
+void LayoutViewer::selection(const web::Selected& selection)
 {
   inspector_selection_ = selection;
   if (selected_.size() > 1) {
     selectionAnimation(selection);
   } else {
     // stop animation
-    selectionAnimation(Selected());
+    selectionAnimation(web::Selected());
   }
-  focus_ = Selected();  // reset focus
+  focus_ = web::Selected();  // reset focus
   update();
 }
 
-void LayoutViewer::selectionFocus(const Selected& focus)
+void LayoutViewer::selectionFocus(const web::Selected& focus)
 {
   focus_ = focus;
   selectionAnimation(focus_);
   update();
 }
 
-void LayoutViewer::selectionAnimation(const Selected& selection,
+void LayoutViewer::selectionAnimation(const web::Selected& selection,
                                       int repeats,
                                       int update_interval)
 {
@@ -1993,14 +1999,14 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   if (animate_selection_ != nullptr) {
-    auto brush = Painter::kTransparent;
+    auto brush = web::Painter::kTransparent;
 
     const int pen_width
         = animate_selection_->state_count % animate_selection_->state_modulo
           + 1;
     if (pen_width == 1) {
       // flash with brush, since pen width is the same as normal
-      brush = Painter::kHighlight;
+      brush = web::Painter::kHighlight;
       brush.a = 100;
     }
 
@@ -2019,8 +2025,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
         odb::Rect draw_rect;
         bbox.bloat(bloat_by, draw_rect);
-        gui_painter.setPen(Painter::kHighlight, true, pen_width);
-        gui_painter.setBrush(brush, Painter::Brush::kSolid);
+        gui_painter.setPen(web::Painter::kHighlight, true, pen_width);
+        gui_painter.setBrush(brush, web::Painter::Brush::kSolid);
 
         gui_painter.drawRect(draw_rect, 0, 0);
       }
@@ -2028,7 +2034,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
     if (draw_hightlight) {
       animate_selection_->selection.highlight(
-          gui_painter, Painter::kHighlight, pen_width, brush);
+          gui_painter, web::Painter::kHighlight, pen_width, brush);
     }
   }
 
@@ -2100,7 +2106,7 @@ void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
     dlg.exec();
     highlight_group = dlg.getSelectedHighlightGroup();
   }
-  Gui::get()->selectHighlightConnectedInsts(select_flag, highlight_group);
+  web::Gui::get()->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 
 void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
@@ -2113,19 +2119,21 @@ void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
     dlg.exec();
     highlight_group = dlg.getSelectedHighlightGroup();
   }
-  Gui::get()->selectHighlightConnectedNets(
+  web::Gui::get()->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
 }
 
 void LayoutViewer::selectHighlightConnectedBufferTrees(bool select_flag,
                                                        int highlight_group)
 {
-  Gui::get()->selectHighlightConnectedBufferTrees(select_flag, highlight_group);
+  web::Gui::get()->selectHighlightConnectedBufferTrees(select_flag,
+                                                       highlight_group);
 }
 
 void LayoutViewer::updateContextMenuItems()
 {
-  if (!Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)) {
+  if (!web::Gui::get()->anyObjectInSet(true /*selection set*/,
+                                       odb::dbInstObj)) {
     menu_actions_[kSelectOutputNetsAct]->setDisabled(true);
     menu_actions_[kSelectInputNetsAct]->setDisabled(true);
     menu_actions_[kSelectAllNetsAct]->setDisabled(true);
@@ -2147,7 +2155,7 @@ void LayoutViewer::updateContextMenuItems()
     highlight_color_menu_->setDisabled(false);
   }
 
-  if (!Gui::get()->anyObjectInSet(true, odb::dbNetObj)) {
+  if (!web::Gui::get()->anyObjectInSet(true, odb::dbNetObj)) {
     menu_actions_[kSelectConnectedInstAct]->setDisabled(true);
     menu_actions_[kHighlightConnectedInstAct]->setDisabled(true);
   } else {
@@ -2220,6 +2228,18 @@ QImage LayoutViewer::createImage(const Rect& region,
     // default to just that is currently visible
     save_area = screenToDBU(visibleRegion().boundingRect());
   }
+  if (save_area.dx() == 0 || save_area.dy() == 0) {
+    // A window the platform plugin never maps (QT_QPA_PLATFORM=offscreen) has
+    // no visible region to read, so fall back to the design rather than render
+    // a null image.  The margin follows the SMALLER dimension, as
+    // Gui::saveImage's own fallback does -- getPaddedRect() takes the larger
+    // one, which would frame this path differently from every other way of
+    // asking for the whole design.
+    save_area = getBounds();
+    const int bloat
+        = defaultZoomMargin * std::min(save_area.dx(), save_area.dy());
+    save_area.bloat(bloat, save_area);
+  }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
 
@@ -2230,6 +2250,17 @@ QImage LayoutViewer::createImage(const Rect& region,
 
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
+  }
+
+  if (pixels_per_dbu_ <= 0) {
+    // Same story one step on: the fit resolution comes from the viewport size,
+    // which stays zero until the window is mapped.  Caller asked for neither a
+    // width nor a resolution, so pick the one the web renderer defaults to.
+    // save_area cannot be empty here, so neither this nor the width_px
+    // division above can divide by zero: hasDesign() -- which this function
+    // returns on -- is false unless getBounds() has a non-zero dx and dy, and
+    // the fallback above takes save_area from getBounds().
+    pixels_per_dbu_ = kDefaultImageWidth / static_cast<double>(save_area.dx());
   }
 
   // convert back to pixels based on new resolution
@@ -2365,7 +2396,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[kHighlightAllBufferTreesAct7]
       = highlight_color_menu_->addAction(tr("blue"));
 
-  // for { highlightColor : Painter::highlightColors[highlight_group]} {
+  // for { highlightColor : web::Painter::highlightColors[highlight_group]} {
   //   menu_actions_[kHighlightAllBufferTreesAct7]
   //       = highlight_color_menu_->addAction(tr("blue"));
   // }
@@ -2451,25 +2482,25 @@ void LayoutViewer::addMenuAndActions()
   });
 
   connect(menu_actions_[kClearSelectionsAct], &QAction::triggered, this, []() {
-    Gui::get()->clearSelections();
+    web::Gui::get()->clearSelections();
   });
   connect(menu_actions_[kClearHighlightsAct], &QAction::triggered, this, []() {
-    Gui::get()->clearHighlights(-1);
+    web::Gui::get()->clearHighlights(-1);
   });
   connect(menu_actions_[kClearRulersAct], &QAction::triggered, this, []() {
-    Gui::get()->clearRulers();
+    web::Gui::get()->clearRulers();
   });
   connect(menu_actions_[kClearLabelsAct], &QAction::triggered, this, []() {
-    Gui::get()->clearLabels();
+    web::Gui::get()->clearLabels();
   });
   connect(menu_actions_[kClearFocusAct], &QAction::triggered, this, []() {
-    Gui::get()->clearFocusNets();
+    web::Gui::get()->clearFocusNets();
   });
   connect(menu_actions_[kClearGuidesAct], &QAction::triggered, this, []() {
-    Gui::get()->clearRouteGuides();
+    web::Gui::get()->clearRouteGuides();
   });
   connect(menu_actions_[kClearNetTracksAct], &QAction::triggered, this, []() {
-    Gui::get()->clearNetTracks();
+    web::Gui::get()->clearNetTracks();
   });
   connect(menu_actions_[kClearAllAct], &QAction::triggered, [this]() {
     menu_actions_[kClearSelectionsAct]->trigger();

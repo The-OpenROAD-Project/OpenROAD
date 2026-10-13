@@ -4,7 +4,6 @@
 %{
 #include "cts/TritonCTS.h"
 #include "CtsOptions.h"
-#include "TechChar.h"
 #include "ord/OpenRoad.hh"
 
 using namespace cts;

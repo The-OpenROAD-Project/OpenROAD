@@ -1,18 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
-namespace eval est {
-proc get_db_tech_checked { } {
-  set tech [ord::get_db_tech]
-  if { $tech == "NULL" } {
-    utl::error EST 210 "No technology loaded."
-  }
-  return $tech
-}
-
-# namespace eval est
-}
-
 sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
                                             [-spef_file filename]}
 
@@ -194,15 +182,27 @@ sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-v_capacitance v_cap]\
                                       [-resistance res]\
                                       [-capacitance cap]\
-                                      [-corner corner]}
+                                      [-corner corner]\
+                                      [-tech tech]\
+                                      [-redistribution_layer]}
 
 proc set_wire_rc { args } {
   sta::parse_key_args "set_wire_rc" args \
     keys {-layer -layers -resistance -capacitance -corner \
-          -h_resistance -h_capacitance -v_resistance -v_capacitance} \
-    flags {-clock -signal -data}
+          -h_resistance -h_capacitance -v_resistance -v_capacitance \
+          -tech} \
+    flags {-clock -signal -data -redistribution_layer}
 
   set corner [sta::parse_scene_or_null keys]
+
+  set target_techs [est::parse_wire_rc_techs keys flags has_selector]
+  if { $has_selector && [llength $target_techs] == 0 } {
+    return
+  }
+  set tech_args $target_techs
+  if { [llength $tech_args] == 0 } {
+    set tech_args {NULL}
+  }
 
   set h_wire_res 0.0
   set h_wire_cap 0.0
@@ -230,9 +230,10 @@ proc set_wire_rc { args } {
     set v_layers 0
 
     set layers $keys(-layers)
+    set tech [est::wire_rc_tech $target_techs]
 
     foreach layer_name $layers {
-      set tec_layer [[est::get_db_tech_checked] findLayer $layer_name]
+      set tec_layer [$tech findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error EST 2 "layer $layer_name not found."
       }
@@ -260,18 +261,8 @@ proc set_wire_rc { args } {
         incr v_layers
       }
 
-      if { [info exists flags(-clock)] } {
-        est::add_clk_layer_cmd $tec_layer
-      }
-
-      if { [info exists flags(-signal)] } {
-        est::add_signal_layer_cmd $tec_layer
-      }
-
-      if { ![info exists flags(-clock)] && ![info exists flags(-signal)] } {
-        est::add_clk_layer_cmd $tec_layer
-        est::add_signal_layer_cmd $tec_layer
-      }
+      est::add_wire_rc_layers $tech_args [info exists flags(-clock)] \
+        [info exists flags(-signal)] $tec_layer
     }
     if { $h_layers == 0 } {
       utl::error EST 16 "No horizontal layer specified."
@@ -286,7 +277,7 @@ proc set_wire_rc { args } {
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
-    set tec_layer [[est::get_db_tech_checked] findLayer $layer_name]
+    set tec_layer [[est::wire_rc_tech $target_techs] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
       utl::error EST 15 "layer $tec_layer not found."
     }
@@ -301,18 +292,8 @@ proc set_wire_rc { args } {
       set v_wire_cap [est::layer_capacitance $tec_layer $corner]
     }
 
-    if { [info exists flags(-clock)] } {
-      est::add_clk_layer_cmd $tec_layer
-    }
-
-    if { [info exists flags(-signal)] } {
-      est::add_signal_layer_cmd $tec_layer
-    }
-
-    if { ![info exists flags(-clock)] && ![info exists flags(-signal)] } {
-      est::add_clk_layer_cmd $tec_layer
-      est::add_signal_layer_cmd $tec_layer
-    }
+    est::add_wire_rc_layers $tech_args [info exists flags(-clock)] \
+      [info exists flags(-signal)] $tec_layer
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
@@ -389,18 +370,28 @@ proc set_wire_rc { args } {
     set corners [sta::scenes]
   }
   foreach corner $corners {
-    if { $signal } {
-      est::set_h_wire_signal_rc_cmd $corner $h_wire_res $h_wire_cap
-      est::set_v_wire_signal_rc_cmd $corner $v_wire_res $v_wire_cap
-    }
-    if { $clk } {
-      est::set_h_wire_clk_rc_cmd $corner $h_wire_res $h_wire_cap
-      est::set_v_wire_clk_rc_cmd $corner $v_wire_res $v_wire_cap
+    foreach tech $tech_args {
+      if { $signal } {
+        est::set_h_wire_signal_rc_cmd $tech $corner $h_wire_res $h_wire_cap
+        est::set_v_wire_signal_rc_cmd $tech $corner $v_wire_res $v_wire_cap
+      }
+      if { $clk } {
+        est::set_h_wire_clk_rc_cmd $tech $corner $h_wire_res $h_wire_cap
+        est::set_v_wire_clk_rc_cmd $tech $corner $v_wire_res $v_wire_cap
+      }
     }
   }
 }
 
 namespace eval est {
+proc get_db_tech_checked { } {
+  set tech [ord::get_db_tech]
+  if { $tech == "NULL" } {
+    utl::error EST 210 "No technology loaded."
+  }
+  return $tech
+}
+
 proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::scenes] {
@@ -421,7 +412,8 @@ proc check_parasitics { } {
 
 proc dblayer_wire_rc { layer } {
   set layer_width_dbu [$layer getWidth]
-  set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
+  set dbu_per_micron [[$layer getTech] getDbUnitsPerMicron]
+  set layer_width_micron [expr { double($layer_width_dbu) / $dbu_per_micron }]
   set res_ohm_per_sq [$layer getResistance]
   set res_ohm_per_micron [expr $res_ohm_per_sq / $layer_width_micron]
   set cap_area_pf_per_sq_micron [$layer getCapacitance]
@@ -439,7 +431,8 @@ proc dblayer_wire_rc { layer } {
 proc set_dblayer_wire_rc { layer res cap } {
   # Zero the edge cap and just use the user given value
   $layer setEdgeCapacitance 0
-  set wire_width [ord::dbu_to_microns [$layer getWidth]]
+  set dbu_per_micron [[$layer getTech] getDbUnitsPerMicron]
+  set wire_width [expr { double([$layer getWidth]) / $dbu_per_micron }]
   # Convert wire capacitance/wire_length to capacitance/area (pF/um)
   set cap_per_square [expr $cap * 1e+6 / $wire_width]
   $layer setCapacitance $cap_per_square
@@ -451,6 +444,71 @@ proc set_dblayer_wire_rc { layer res cap } {
 
 proc set_dbvia_wire_r { layer res } {
   $layer setResistance $res
+}
+
+# Return the technologies selected by -tech/-redistribution_layer, setting
+# has_selector in the caller. An empty result means "set the shared defaults"
+# when no selector was given and "nothing to do" when one was.
+proc parse_wire_rc_techs { keys_var flags_var selector_var } {
+  upvar 1 $keys_var keys
+  upvar 1 $flags_var flags
+  upvar 1 $selector_var has_selector
+
+  set selector_count [expr {
+    [info exists keys(-tech)] + [info exists flags(-redistribution_layer)]
+  }]
+  if { $selector_count > 1 } {
+    utl::error EST 28 "Use only one of -tech or -redistribution_layer."
+  }
+  set has_selector [expr { $selector_count > 0 }]
+
+  set db [ord::get_db]
+  set target_techs {}
+  if { [info exists keys(-tech)] } {
+    set tech [$db findTech $keys(-tech)]
+    if { $tech == "NULL" } {
+      utl::error EST 30 "technology $keys(-tech) not found."
+    }
+    lappend target_techs $tech
+  } elseif { [info exists flags(-redistribution_layer)] } {
+    foreach chip [$db getChips] {
+      if { [$chip getChipType] != "RDL" } {
+        continue
+      }
+      set tech [$chip getTech]
+      if { $tech != "NULL" && [lsearch -exact $target_techs $tech] < 0 } {
+        lappend target_techs $tech
+      }
+    }
+    if { [llength $target_techs] == 0 } {
+      utl::warn EST 31 "design has no RDL chip; values ignored."
+    }
+  }
+  return $target_techs
+}
+
+# Layer lookups use the targeted technology when one is selected; a layer
+# cannot be resolved when the selection spans more than one technology.
+proc wire_rc_tech { techs } {
+  if { [llength $techs] > 1 } {
+    utl::error EST 32 "-layer and -layers require a single technology; set\
+      each technology separately with -tech."
+  }
+  if { [llength $techs] == 1 } {
+    return [lindex $techs 0]
+  }
+  return [est::get_db_tech_checked]
+}
+
+proc add_wire_rc_layers { techs clk signal layer } {
+  foreach tech $techs {
+    if { $clk || !$signal } {
+      est::add_clk_layer_cmd $tech $layer
+    }
+    if { $signal || !$clk } {
+      est::add_signal_layer_cmd $tech $layer
+    }
+  }
 }
 
 # namespace

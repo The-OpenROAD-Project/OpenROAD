@@ -9,4 +9,4 @@ tapcell -distance 15 -tapcell_master "sky130_fd_sc_hs__tap_1"
 
 write_def $def_file
 
-diff_file no_endcap.defok $def_file
+diff_files no_endcap.defok $def_file
