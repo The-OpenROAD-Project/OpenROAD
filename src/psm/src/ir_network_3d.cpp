@@ -80,6 +80,20 @@ void IRNetwork3D::construct()
                      "dbChipRSeg on {} does not cross between chiplets.",
                      chip_net_->getName());
     }
+    odb::dbNet* source_net = source_bump->getChipBump()->getNet();
+    odb::dbNet* target_net = target_bump->getChipBump()->getNet();
+    if (source_net->getSigType() != target_net->getSigType()) {
+      logger_->error(utl::PSM,
+                     166,
+                     "Inter-chip bond on {} shorts {}/{} ({}) to {}/{} ({}).",
+                     chip_net_->getName(),
+                     source_chip->getName(),
+                     source_net->getName(),
+                     source_net->getSigType().getString(),
+                     target_chip->getName(),
+                     target_net->getName(),
+                     target_net->getSigType().getString());
+    }
     if (!std::isfinite(rseg->getResistance()) || rseg->getResistance() <= 0.0) {
       logger_->error(utl::PSM,
                      96,

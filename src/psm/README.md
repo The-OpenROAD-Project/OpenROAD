@@ -22,40 +22,11 @@ Features:
 
 ### Analyze Power Grid
 
-Analyze the selected power or ground net. The loaded design determines whether
-PSM analyzes a single-chip PDN or the connected PDNs of a 3D assembly.
-Both use the same current calculation, matrix construction, and numerical
-solver. For an assembly, PSM prepares each chiplet's PDN and loads, joins the
-PDNs through the bond resistors, and solves the connected network together.
-
-For a 3D assembly, load the chiplets and bond resistors first, then set the
-external supply with `set_pdnsim_net_voltage`. OpenSTA supplies the cell
-loads from the Liberty power models and the design's clock and switching
-activity. Saved PSM instance-power settings replace the corresponding STA
-estimates. A value for the selected corner takes precedence over a default value.
-
-The selected corner supplies the cell power, nominal supply voltage, layer
-resistance, and source settings. Cell current is calculated as `I = P / V`;
-setting a 3D source voltage does not change the nominal voltage used in this
-calculation.
-
-All sources on the analyzed net must have the same voltage for the selected
-corner, matching 2D.
-
-3D analysis requires a flat assembly with a supported OpenSTA timing network.
-VDD and VSS are solved separately. Before solving, PSM checks connectivity
-across the assembly and shorts inside each chiplet. Missing sources and invalid
-resistances are rejected. Each 3D call builds a fresh solution. The current
-3D output includes the node-voltage range, an IR summary, and per-instance
-voltage files. `-enable_em` also prints maximum and average resistor currents
-for chiplet wiring and inter-chip bonds. IR statistics use routing nodes, as in
-2D. Percentage drop is relative to the source voltage for power nets; for ground
-nets, it is the largest percentage rise relative to each chiplet's nominal
-supply voltage.
+This command analyzes power grid for 2D and 3D chips.
 
 The following 3D extensions are planned and are not included yet:
 
-- The 2D `design_powergrid__...` IR and EM metrics.
+- Export 3D IR and EM results in the JSON file.
 - EM CSV export through `-em_outfile`.
 - GUI IR-drop heatmaps.
 - Source generation through `-vsrc` and `-source_type FULL|BUMPS|STRAPS`.
@@ -63,7 +34,7 @@ The following 3D extensions are planned and are not included yet:
 - SPICE export of the connected chiplet network through `write_pg_spice`.
 - Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
 
-Checks for shorts between different chiplets are also not supported.
+PSM rejects recorded bonds connecting POWER to GROUND. It does not detect unintended connections caused by physical contact between bumps on different chiplets.
 
 ```tcl
 analyze_power_grid
@@ -82,29 +53,19 @@ analyze_power_grid
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | Power or ground net name. For a 3D assembly, use the assembly net name. |
+| `-net` | Name of the net to analyze, power or ground net name. |
 | `-corner` | Corner to use for analysis. |
-| `-error_file` | File to write power grid errors to. For 3D, errors are grouped by chiplet, with coordinates in local microns. |
+| `-error_file` | File to write power grid errors to. For 3D ICs, errors are grouped by chiplet. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
-| `-enable_em` | Print maximum and average power-grid segment currents. For 3D, includes chiplet wiring and inter-chip bonds. This reports currents, not a check against manufacturing EM limits. |
-| `-em_outfile` | Write the per-segment current values into a file. Requires `-enable_em`. Supported only for 2D designs. |
-| `-voltage_file` | Write per-instance voltage into the file. For 3D, instance names include the chiplet, such as `chipA/ff`; coordinates are local to each chiplet. |
+| `-enable_em` | Report current per power grid segment. |
+| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. Currently not supported for 3D ICs. |
+| `-voltage_file` | Write per-instance voltage into the file. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
 | `-allow_reuse` | Allow the analysis to reuse a previous solution, if one exists. |
 
 ### Check Power Grid
 
-Check connectivity of the selected power or ground net. The loaded design
-determines whether PSM checks a single-chip PDN or a 3D assembly.
-
-For a 3D assembly, PSM joins the chiplets' power grids at the bump contacts using
-the bond resistors already stored in OpenDB. RCX extraction with technology
-and assembly rules can create those resistors. The selected assembly net must
-include at least two chiplet PDNs and an inter-chip resistor.
-
-The assembly check runs the existing 2D checks for opens, shorts, and boundary
-terminals inside each chiplet, then checks connectivity between chiplets.
-Each chiplet's supply grid must be connected internally.
+This command checks power grid.
 
 ```tcl
 check_power_grid
@@ -118,10 +79,10 @@ check_power_grid
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | Power or ground net name. For a 3D assembly, use the assembly net name. |
-| `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. For 3D assemblies, bond bump instances must be fixed. |
+| `-net` | Name of the net to analyze. Must be a power or ground net name. |
+| `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
 | `-error_file` | File to write power grid errors to. For 3D, errors are grouped by chiplet, with coordinates in local microns. |
-| `-dont_require_terminals` | Skip requiring placed boundary pins. For 3D, this applies to each chiplet; disconnected cells, wires, and bumps are still checked. |
+| `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. For 3D, this applies to each chiplet. |
 
 ### Write Spice Power Grid
 
@@ -148,44 +109,26 @@ write_pg_spice
 
 ### Set PDNSim Net voltage
 
-Set the voltage for a power or ground net. The loaded design determines whether
-PSM sets a single-chip net voltage or a chiplet's voltage in a 3D assembly.
-For a 2D design, provide `-net` and `-voltage` as before.
-
-For a 3D assembly, also provide `-chiplet`. Use `-port` with `-voltage` to hold
-that chiplet's port at a fixed source voltage. The source port must have a
-single modeled pin shape. Setting the same source and corner again replaces
-that voltage.
-
-Use `-nominal_voltage` on the assembly power net to set the voltage used in
-`I = P / V` for that chiplet. The assembly's bump mapping identifies the local
-power net, so its name does not have to match the assembly net name. A call
-with only `-nominal_voltage` does not create or change an external source.
-A chiplet receiving power from another chiplet can therefore have its own
-nominal voltage without becoming a source itself. Source and nominal voltages
-can also be set in the same call. All voltages are in **volts**, independently
-of display units.
+This command sets PDNSim net voltage.
 
 ```tcl
 set_pdnsim_net_voltage
     -net net_name
-    [-voltage volt]
+    -voltage volt
     [-corner corner]
     [-chiplet chipA]
     [-port port]
-    [-nominal_voltage voltage]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | Power or ground net name. For a 3D assembly, use the assembly net name; `-nominal_voltage` requires a power net such as VDD. |
-| `-voltage` | Required for 2D: sets the net voltage. For 3D: sets the fixed source voltage and requires `-port`. |
-| `-corner` | Corner to use these settings. Defaults to the current corner. For 3D sources, set a source for each corner that will be analyzed. |
-| `-chiplet` | Required for 3D: placed chiplet name from the `.3dbx` whose source or nominal voltage is being set. |
+| `-net` | Name of the net to analyze. It must be a power or ground net name. |
+| `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
+| `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
+| `-chiplet` | Required for 3D: placed chiplet name from the `.3dbx` whose source voltage is being set. |
 | `-port` | 3D chiplet boundary port receiving the external supply. Requires `-voltage`. |
-| `-nominal_voltage` | Positive voltage used to convert the chiplet's cell power into current for both power and ground analysis. Does not change the Liberty power model. Available only for 3D assemblies. |
 
 ### Set PDNSim Instance power
 
