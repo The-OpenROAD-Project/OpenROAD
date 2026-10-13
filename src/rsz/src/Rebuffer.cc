@@ -1679,8 +1679,8 @@ static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst)
   if (network->libertyCell(inst) && network->libertyCell(inst)->isBuffer()) {
     odb::dbInst* db_inst = network->staToDb(inst);
     for (odb::dbITerm* iterm : db_inst->getITerms()) {
-      if (iterm->getNet() && iterm->getNet()->getITerms().size() == 1
-          && !iterm->getNet()->getBTerms().empty()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net && net->getITerms().hasExactly(1) && !net->getBTerms().empty()) {
         return true;
       }
     }
@@ -2090,7 +2090,7 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
 
   {
     float fanout, max_fanout, fanout_slack;
-    sta_->checkFanout(
+    resizer_->checkFanout(
         drvr_pin, corner_->mode(), max_, fanout, max_fanout, fanout_slack);
     if (max_fanout > 0.0) {
       fanout_limit_ = max_fanout;

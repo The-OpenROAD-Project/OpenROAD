@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <map>
 #include <memory>
@@ -33,6 +34,7 @@
 #include "odb/geom.h"
 #include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -110,6 +112,7 @@ enum class MoveType : uint8_t
   kUnbuffer,
   kSplitLoad,
   kReroute,
+  kBufferToInverters,
   kCount
 };
 
@@ -232,6 +235,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
+  // A FIRM, LOCKED or COVER instance: its master must not change size.
+  bool isFixed(const sta::Instance* inst) const;
   void setDontTouch(const sta::Net* net, bool dont_touch);
   bool dontTouch(const sta::Net* net) const;
 
@@ -354,6 +359,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
+                   bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
@@ -520,6 +526,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  sta::LibertyCellSeq* equivCells(sta::LibertyCell* cell);
   VTCategory cellVTType(odb::dbMaster* master);
   double computeDesignArea();
 
@@ -604,6 +611,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isTristateDriver(const sta::Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
+  void clearEquivCells();
   bool bufferSizeOutmatched(sta::LibertyCell* worse,
                             sta::LibertyCell* better,
                             float max_drive_resist);
@@ -682,6 +690,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
+  // Returns true when there's no liberty or SDC fanout-load limit.
+  bool checkFanout(const sta::Pin* drvr_pin,
+                   const sta::Mode* mode,
+                   const sta::MinMax* min_max,
+                   // Return values.
+                   float& fanout,
+                   float& max_fanout,
+                   float& fanout_slack) const;
+  // Backstop for high-fanout nets with no liberty or SDC fanout constraint.
+  // This is a count of load pins, not a liberty fanout-load value.
+  static constexpr int kDefaultMaxFanout = 50;
+  int fanoutLoadCount(const sta::Pin* drvr_pin) const;
   float portCapacitance(sta::LibertyPort* input, const sta::Scene* scene) const;
   bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
@@ -860,7 +880,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                    float load_cap,
                                    bool revisiting_inst);
   bool removeBufferIfPossible(sta::Instance* buffer,
-                              bool honor_dont_touch_fixed);
+                              bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
@@ -873,8 +893,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       float delay_adjust,
       const rsz::SlackEstimatorParams& params,
       bool accept_if_slack_improves);
-  bool canRemoveBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed);
-  bool removeBuffer(sta::Instance* buffer);
+  bool canRemoveBuffer(sta::Instance* buffer,
+                       bool honor_dont_touch_fixed = true);
+  bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
   bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
@@ -1000,7 +1021,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
+
+  // Equivalence classes over the link cells, owned by equiv_cell_groups_ (a
+  // deque so the classes keep stable addresses).  No dont_use filtering;
+  // callers of equivCells apply dont_use_.  Cells with no equivalents are not
+  // in equiv_cells_.  Belongs in dbSta, but cannot move there until the two
+  // dont_use fields are unified.
   bool equiv_cells_made_ = false;
+  std::unordered_map<sta::LibertyCell*, sta::LibertyCellSeq*> equiv_cells_;
+  std::deque<sta::LibertyCellSeq> equiv_cell_groups_;
 
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and

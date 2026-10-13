@@ -10,7 +10,7 @@ MACRO array_tile
     USE SIGNAL ;
     PORT
       LAYER metal4 ;
-      RECT 0.000 9.9995 0.000467 10.00 ;
+      RECT 0.000 9.9995 0.0005 10.00 ;
     END
   END clk
   PIN e_in
@@ -18,7 +18,7 @@ MACRO array_tile
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-      RECT 9.9977 3.3333 10.00 3.33567 ;
+      RECT 9.9975 3.3335 10.00 3.3355 ;
     END
   END e_in
   PIN e_out
@@ -26,7 +26,7 @@ MACRO array_tile
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-      RECT 9.9977 3.338 10.00 3.3403 ;
+      RECT 9.9975 3.338 10.00 3.3405 ;
     END
   END e_out
   PIN w_in
@@ -34,7 +34,7 @@ MACRO array_tile
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-      RECT 0.000 3.338 0.00233 3.3403 ;
+      RECT 0.000 3.338 0.0025 3.3405 ;
     END
   END w_in
   PIN w_out
@@ -42,7 +42,7 @@ MACRO array_tile
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
-      RECT 0.000 3.3333 0.00233 3.33567 ;
+      RECT 0.000 3.3335 0.0025 3.3355 ;
     END
   END w_out
   OBS

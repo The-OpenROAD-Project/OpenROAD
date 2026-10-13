@@ -69,41 +69,17 @@ using odb::dbMTerm;
 using odb::dbNet;
 using utl::GPL;
 
-struct Point
-{
-  float x;
-  float y;
-};
-
-struct Tray
-{
-  Point pt;
-  std::vector<Point> slots;
-  std::vector<int> cand;
-};
-
-struct Flop
-{
-  Point pt;
-  int idx;
-  float prob;
-
-  bool operator<(const Flop& a) const
-  {
-    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
-  }
-};
-
 std::string MBFF::Mask::to_string() const
 {
-  return fmt::format("{}{}{}{}{}{}{}",
+  return fmt::format("{}{}{}{}{}{}{}{}",
                      (int) clock_polarity,
                      (int) has_clear,
                      (int) has_preset,
                      (int) pos_output,
                      (int) inv_output,
                      func_idx,
-                     (int) is_scan_cell);
+                     (int) is_scan_cell,
+                     (int) is_register);
 }
 
 bool MBFF::Mask::operator<(const Mask& rhs) const
@@ -114,14 +90,16 @@ bool MBFF::Mask::operator<(const Mask& rhs) const
                   pos_output,
                   inv_output,
                   func_idx,
-                  is_scan_cell)
+                  is_scan_cell,
+                  is_register)
          < std::tie(rhs.clock_polarity,
                     rhs.has_clear,
                     rhs.has_preset,
                     rhs.pos_output,
                     rhs.inv_output,
                     rhs.func_idx,
-                    rhs.is_scan_cell);
+                    rhs.is_scan_cell,
+                    rhs.is_register);
 }
 
 namespace {
@@ -283,6 +261,7 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
   const sta::LibertyCell* lib_cell = network_->testCell(cell);
   const auto& seqs = lib_cell->sequentials();
   if (!seqs.empty()) {
+    ret.is_register = seqs.front().isRegister();
     ret.func_idx = GetMatchingFunc(seqs.front().data(), inst, isTray);
   }
 
@@ -1283,26 +1262,56 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     float tot_sum = 0;
 
     for (int i = 0; i < num_flops; i++) {
-      if (!chosen.count(i)) {
+      if (!chosen.contains(i)) {
         for (int j : chosen) {
           d[i] = std::min(d[i], GetDist(flops[i].pt, flops[j].pt));
         }
-        tot_sum += (float(d[i]) * float(d[i]));
+        tot_sum += d[i] * d[i];
       }
     }
 
-    const int rnd = rand_nums[rand_ind++] % (int(tot_sum * 100));
-    const float prob = rnd / 100.0;
+    // Preserve exact modulo arithmetic for normal tot_sum values so existing
+    // K-Means cluster center choices remain unchanged, while avoiding
+    // modulo-by-zero when tot_sum * 100 < 1.0f (e.g., when flops overlap at
+    // identical (x, y) coordinates prior to legalization, or when fewer than
+    // knn unique coordinates exist) and UBSan float-cast-overflow when
+    // tot_sum * 100 >= INT_MAX.
+    float prob = 0.0f;
+    const float scaled_sum = tot_sum * 100.0f;
+    const int rand_val = rand_nums[rand_ind++ % rand_nums.size()];
+    if (scaled_sum >= 1.0f
+        && scaled_sum < static_cast<float>(std::numeric_limits<int>::max())) {
+      const int rnd = rand_val % static_cast<int>(scaled_sum);
+      prob = static_cast<float>(rnd / 100.0);
+    } else if (tot_sum > 0.0f) {
+      constexpr int kMaxDivisor = 1000000;
+      const int rnd
+          = static_cast<int>(static_cast<unsigned int>(rand_val) % kMaxDivisor);
+      prob = (static_cast<float>(rnd) / static_cast<float>(kMaxDivisor))
+             * tot_sum;
+    }
 
     float cum_sum = 0;
+    int last_unchosen = -1;
+    bool inserted = false;
     for (int i = 0; i < num_flops; i++) {
-      if (!chosen.count(i)) {
-        cum_sum += (float(d[i]) * float(d[i]));
+      if (!chosen.contains(i)) {
+        last_unchosen = i;
+        cum_sum += d[i] * d[i];
         if (cum_sum >= prob) {
           chosen.insert(i);
           centers.push_back(flops[i]);
+          inserted = true;
           break;
         }
+      }
+    }
+    if (!inserted) {
+      if (last_unchosen >= 0) {
+        chosen.insert(last_unchosen);
+        centers.push_back(flops[last_unchosen]);
+      } else {
+        break;
       }
     }
   }

@@ -13,4 +13,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file set_nets_to_route1.guideok $guide_file
+diff_files set_nets_to_route1.guideok $guide_file

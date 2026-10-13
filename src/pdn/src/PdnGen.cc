@@ -19,7 +19,6 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -74,7 +73,7 @@ void PdnGen::buildGrids(bool trim)
   // connect instances already assigned to grids
   odb::PtrSet<odb::dbInst> insts_in_grids;
   for (auto* grid : grids) {
-    auto insts_in_grid = grid->getInstances();
+    auto insts_in_grid = grid->getObstructionExemptInstances();
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
@@ -218,7 +217,8 @@ void PdnGen::trimShapes()
         // if pin layer, do not modify the shapes, but allow them to be
         // removed if they are not connected to anything
         const bool is_pin_layer
-            = pin_layers.find(shape->getLayer()) != pin_layers.end();
+            = shape->getGridComponent()->allowDbPins()
+              && pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
         const odb::Rect min_rect = shape->getMinimumRect();
@@ -583,8 +583,9 @@ void PdnGen::makeInstanceGrid(
     grid = std::make_unique<InstanceGrid>(
         domain, name, starts_with == kPower, inst, generate_obstructions);
   }
-  if (!std::ranges::all_of(halo, [](int v) { return v == 0; })) {
-    grid->addHalo(halo);
+  const EdgeSpec halo_spec = EdgeSpec::fromArray(halo);
+  if (!halo_spec.isZero()) {
+    grid->addHalo(halo_spec);
   }
   grid->setGridToBoundary(pg_pins_to_boundary);
 
@@ -626,9 +627,10 @@ void PdnGen::makeRing(Grid* grid,
   auto ring = std::make_unique<Rings>(grid,
                                       Rings::Layer{layer0, width0, spacing0},
                                       Rings::Layer{layer1, width1, spacing1});
-  ring->setOffset(offset);
-  if (std::ranges::any_of(pad_offset, [](int o) { return o != 0; })) {
-    ring->setPadOffset(pad_offset);
+  ring->setOffset(EdgeSpec::fromArray(offset));
+  const EdgeSpec pad_offset_spec = EdgeSpec::fromArray(pad_offset);
+  if (!pad_offset_spec.isZero()) {
+    ring->setPadOffset(pad_offset_spec);
   }
   ring->setExtendToBoundary(extend);
   if (starts_with != kGrid) {
@@ -655,10 +657,12 @@ void PdnGen::makeRing(Grid* grid,
 void PdnGen::makeFollowpin(Grid* grid,
                            odb::dbTechLayer* layer,
                            int width,
-                           ExtensionMode extend)
+                           ExtensionMode extend,
+                           int extend_distance)
 {
   auto strap = std::make_unique<FollowPins>(grid, layer, width);
   strap->setExtend(extend);
+  strap->setExtendDistance(extend_distance);
 
   grid->addStrap(std::move(strap));
 }
@@ -674,17 +678,20 @@ void PdnGen::makeStrap(Grid* grid,
                        StartsWith starts_with,
                        ExtensionMode extend,
                        const std::vector<odb::dbNet*>& nets,
-                       bool allow_out_of_core)
+                       bool allow_out_of_core,
+                       StrapOffsetType offset_type,
+                       int extend_distance)
 {
   auto strap = std::make_unique<Straps>(
       grid, layer, width, pitch, spacing, number_of_straps);
   strap->setExtend(extend);
-  strap->setOffset(offset);
+  strap->setExtendDistance(extend_distance);
   strap->setSnapToGrid(snap);
   if (starts_with != kGrid) {
     strap->setStartWithPower(starts_with == kPower);
   }
   strap->setNets(nets);
+  strap->setOffset(offset, offset_type);
   strap->setAllowOutsideCoreArea(allow_out_of_core);
   grid->addStrap(std::move(strap));
 }
@@ -736,25 +743,33 @@ void PdnGen::makeConnect(
 
 void PdnGen::setDebugRenderer(bool on)
 {
-  if (on && gui::Gui::enabled()) {
+  if (on) {
     if (debug_renderer_ == nullptr) {
-      debug_renderer_ = std::make_unique<PDNRenderer>(this);
+      debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
-  } else {
+  } else if (debug_renderer_ != nullptr) {
     debug_renderer_ = nullptr;
+    // The shapes were only kept for the renderer (see run_pdngen)
+    resetShapes();
   }
 }
 
 void PdnGen::rendererRedraw()
 {
-  if (debug_renderer_ != nullptr) {
-    try {
-      buildGrids(false);
-    } catch (const std::runtime_error& /* e */) {
-      // do nothing, dont want grid error to prevent debug renderer
-      debug_renderer_->update();
-    }
+  if (debug_renderer_ == nullptr) {
+    return;
+  }
+  // The renderer can be enabled before a design is loaded
+  odb::dbChip* chip = db_->getChip();
+  if (chip == nullptr || chip->getBlock() == nullptr) {
+    return;
+  }
+  try {
+    buildGrids(false);
+  } catch (const std::runtime_error& /* e */) {
+    // do nothing, dont want grid error to prevent debug renderer
+    debug_renderer_->update();
   }
 }
 

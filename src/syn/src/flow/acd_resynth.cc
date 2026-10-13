@@ -15,14 +15,20 @@
 #include <utility>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "flow/acd.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Transition.hh"
 #include "syn/synthesis.h"
+#include "utl/Logger.h"
 #include "utl/timer.h"
 
 namespace syn::acd {

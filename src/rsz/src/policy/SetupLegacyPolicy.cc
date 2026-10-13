@@ -269,6 +269,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       endpoint_state.prev_end_slack = endpoint_state.end_slack;
       endpoint_state.prev_worst_slack = endpoint_state.worst_slack;
       endpoint_state.decreasing_slack_passes = 0;
+      endpoint_state.force_single_repair = false;
       saveImprovedCheckpoint(endpoint_state);
     } else {
       endpoint_state.force_single_repair = true;

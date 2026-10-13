@@ -11,4 +11,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file region_adjustment.guideok $guide_file
+diff_files region_adjustment.guideok $guide_file

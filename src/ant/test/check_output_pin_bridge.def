@@ -1,0 +1,20 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN output_pin_bridge ;
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 250000 100000 ) ;
+
+COMPONENTS 3 ;
+- u1 sky130_fd_sc_ms__buf_1 + PLACED ( 10000 10000 ) N ;
+- u2 sky130_fd_sc_ms__buf_1 + PLACED ( 2000 10000 ) N ;
+- u3 sky130_fd_sc_ms__buf_1 + PLACED ( 200000 10000 ) N ;
+END COMPONENTS
+
+NETS 1 ;
+- n1 ( u1 X ) ( u2 A ) ( u3 A )
+  + ROUTED li1 ( 2500 11615 ) ( 11700 11615 )
+    NEW li1 ( 11790 11615 ) ( 200500 11615 ) ;
+END NETS
+END DESIGN

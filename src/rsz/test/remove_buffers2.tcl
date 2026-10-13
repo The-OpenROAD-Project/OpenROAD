@@ -12,4 +12,4 @@ report_checks -unconstrained
 
 set repaired_filename [make_result_file "remove_buffers2.def"]
 write_def $repaired_filename
-diff_file remove_buffers2.defok $repaired_filename
+diff_files remove_buffers2.defok $repaired_filename

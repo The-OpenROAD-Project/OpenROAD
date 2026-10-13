@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2026, The OpenROAD Authors
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>

@@ -863,8 +863,7 @@ float maxTargetInputCapDelta(Resizer& resizer,
 
   // Cover the full equivalent-cell envelope beyond today's policy filters, so
   // future composed size/VT moves stay inside the sampled cap range.
-  sta::LibertyCellSeq* equiv_cells
-      = resizer.sta()->equivCells(current_link_cell);
+  sta::LibertyCellSeq* equiv_cells = resizer.equivCells(current_link_cell);
   if (equiv_cells != nullptr) {
     for (sta::LibertyCell* cell : *equiv_cells) {
       if (resizer.dontUse(cell) || !resizer.isLinkCell(cell)) {
