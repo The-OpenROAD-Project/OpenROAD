@@ -78,7 +78,6 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
@@ -90,7 +89,6 @@ cc_test(
 cc_test(
     name = "TestScanArchitect",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
@@ -106,7 +104,6 @@ cc_test(
         "cpp/ScanCellMock.hh",
         "cpp/TestScanArchitectHeuristic.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/cells",
@@ -127,7 +124,6 @@ cc_test(
         "cpp/ScanCellMock.hh",
         "cpp/TestScanArchitectHeuristic.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/cells",
@@ -145,7 +141,10 @@ py_test(
     name = "dft_man_tcl_check",
     srcs = ["dft_man_tcl_check.py"],
     data = ["//src/dft:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

@@ -7,9 +7,9 @@
 [ERROR GPL-0115] -clock_power_weight must be non-negative.
 GPL-0115
 Alpha = 8.0, Beta = 0.0, #paths = 0, max size = -1
-Total ILP Cost: 56.907
+Total ILP Cost: 56.908
 Total Timing Critical Path Displacement: 0.0
 Average slot-to-flop displacement: 1.135
-Final Objective Value: 56.907
+Final Objective Value: 56.908
 Sizes used
   2-bit: 4

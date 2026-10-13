@@ -21,7 +21,24 @@ target_link_libraries(tst_base
     utl_lib
     GTest::gtest
   PRIVATE
+    defin
     lefin
+)
+
+# Builders for technology layers, antenna rules, masters with pin geometry,
+# routed wires and guides. odb-only, for use with DbFixture.
+add_library(tst_physical
+    src/physical_builder.cpp
+)
+
+target_include_directories(tst_physical
+  PUBLIC
+    include
+)
+
+target_link_libraries(tst_physical
+  PUBLIC
+    db
 )
 
 # Fixture: adds a dbSta/OpenSTA instance on top of DbFixture. Tests that need
@@ -100,6 +117,17 @@ target_link_libraries(tst_integrated_fixture
     db
     OpenSTA
 )
+
+add_executable(TestPhysicalBuilder test/cpp/TestPhysicalBuilder.cpp)
+target_link_libraries(TestPhysicalBuilder
+    GTest::gtest
+    GTest::gtest_main
+    tst_base
+    tst_physical
+    db
+)
+gtest_discover_tests(TestPhysicalBuilder)
+add_dependencies(build_and_test TestPhysicalBuilder)
 
 # The fixtures log through utl, so they contribute man3 message pages like any
 # other module. SOURCE_DIR confines the scan to the library sources, matching

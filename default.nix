@@ -60,6 +60,10 @@ let
     url = "https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip";
     sha256 = "sha256-t0RchAHTJbuI5YW4uyBPykTvcjy90JW9AOPNjIhwh6U=";
   };
+  fetchedFmt = fetchzip {
+    url = "https://github.com/fmtlib/fmt/archive/refs/tags/12.1.0.zip";
+    sha256 = "sha256-ZmI1Dv0ZabPlxa02OpERI47jp7zFfjpeWCy1WyuPYZ0=";
+  };
   lemon-graph' = lemon-graph.overrideAttrs (
     finalAttrs: previousAttrs: {
       src = fetchFromGitHub {
@@ -81,6 +85,7 @@ let
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
       "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${fetchedGtest}"
+      "-DFETCHCONTENT_SOURCE_DIR_FMT=${fetchedFmt}"
     ];
 
     postPatch = ''

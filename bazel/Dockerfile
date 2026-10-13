@@ -19,17 +19,14 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 
 RUN apt-get -y update \
     && apt-get -y install --no-install-recommends \
-      bsdextrautils \
       build-essential \
       clang \
       containerd.io \
       docker-buildx-plugin \
       docker-ce \
       docker-ce-cli \
-      groff \
       lcov \
       openjdk-21-jre-headless \
-      pandoc \
       parallel \
       python3 \
       python3-yaml \

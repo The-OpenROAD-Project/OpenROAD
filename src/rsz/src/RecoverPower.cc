@@ -356,6 +356,14 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                                                     drvr_path->minMax(sta_),
                                                     only_same_size_swap,
                                                     path_slack);
+    // A fixed driver keeps its footprint, so it only takes a VT swap.
+    if (downsize != nullptr && resizer_->isFixed(drvr)) {
+      const sta::LibertyCellSeq vt_equiv_cells
+          = resizer_->getVTEquivCells(network_->libertyCell(drvr));
+      if (std::ranges::find(vt_equiv_cells, downsize) == vt_equiv_cells.end()) {
+        downsize = nullptr;
+      }
+    }
     if (downsize != nullptr) {
       debugPrint(logger_,
                  RSZ,

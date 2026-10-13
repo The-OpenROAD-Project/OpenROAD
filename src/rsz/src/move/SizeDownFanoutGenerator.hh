@@ -13,10 +13,15 @@
 
 namespace rsz {
 
-// Builds downsizing candidates for non-critical loads on the current driver.
-// Iterates loads on the target net, finds smaller same-family cells, computes
-// worst delay degradation, and produces a SizeDownFanoutCandidate if the
-// degradation fits the available slack.  Single-threaded only.
+// Builds downsizing candidates for the non-critical loads of the current
+// driver.  For each load it takes a single drive step down -- the next-smaller
+// same-family cell, mirroring how SizeUp takes the next-stronger cell rather
+// than the family maximum -- and accepts it only if it stays within the load's
+// delay budget and the max-cap/slew output limits.  High-fanout drivers are
+// considered too: the driver speedup from a downsize is
+// R_drvr * (shed load capacitance), so those drivers hold the most sheddable
+// capacitance.  The checks are deliberately cheap and local; the full timing
+// assessment is left to STA and the repair loop.  Single-threaded only.
 class SizeDownFanoutGenerator : public MoveGenerator
 {
  public:

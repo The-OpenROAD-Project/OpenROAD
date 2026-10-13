@@ -1,0 +1,17 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO poly_obs
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 2 BY 2 ;
+  OBS
+    LAYER met1 SPACING 0.2 ;
+      POLYGON 0 0 1 0 1 0.5 0.5 0.5 0.5 1 0 1 ;
+    LAYER met2 ;
+      POLYGON 0 0 1 0 1 0.5 0.5 0.5 0.5 1 0 1 ;
+  END
+END poly_obs
+
+END LIBRARY

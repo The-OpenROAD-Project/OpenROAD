@@ -104,6 +104,8 @@ entries:
       title: Calibration
   - file: main/src/ram/README
     title: RAM Generator
+  - file: main/src/wmk/README
+    title: Watermarking
   - file: user/MessagesFinal.md
     title: Messages Glossary
 

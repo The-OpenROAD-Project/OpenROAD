@@ -402,7 +402,10 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
   // candidate now, on the main thread - leakageOrArea/getSwappableCells mutate
   // lazy caches and must not be touched from workers.
   snap.cur_leakage = leakageOrArea(cur_cell);
-  sta::LibertyCellSeq candidates = resizer_->getSwappableCells(cur_cell);
+  // A fixed instance keeps its footprint, so it only takes a VT swap.
+  sta::LibertyCellSeq candidates = resizer_->isFixed(inst)
+                                       ? resizer_->getVTEquivCells(cur_cell)
+                                       : resizer_->getSwappableCells(cur_cell);
   snap.candidates.reserve(candidates.size());
   for (sta::LibertyCell* cand : candidates) {
     if (cand == cur_cell) {

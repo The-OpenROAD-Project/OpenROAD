@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     macro_only
     no_unfixed_macros
+    no_unfixed_macros_and_fixed_cells
     guides1
     guides2
     fixed_ios1
@@ -32,13 +33,14 @@ or_integration_tests(
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
     place_macro_right_angle_rotation
-    second_invocation
     placement_blockages1
     halos1
     halos2
     halos3
     halos4
-    halos5
+    write_macro_placement
+  PASSFAIL_TESTS
+    rerun1
 )
 
 

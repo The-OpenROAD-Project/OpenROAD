@@ -24,7 +24,6 @@ depsPrefixesFile=""
 compiler=gcc
 compilerSet=no
 useBazel=yes
-bazelLto=no
 noGui=no
 installPrefix=""
 
@@ -58,13 +57,11 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
-  -cmake-build                                  Use CMake instead of Bazel to build.
-                                                 By default OpenROAD is built with Bazel.
-  -lto                                          Bazel only: build with --config=opt to
-                                                 enable link-time optimization (LTO).
-                                                 Off by default because LTO incurs a large
-                                                 link-time penalty; the default build is
-                                                 still compiled with -c opt (from .bazelrc).
+  -cmake-build                                  DEPRECATED: Force the CMake build instead
+                                                 of Bazel. Bazel is the supported build
+                                                 system and is used by default; CMake
+                                                 support will be removed in a future
+                                                 release.
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
@@ -174,10 +171,8 @@ while [ "$#" -gt 0 ]; do
             cmakeOptions+=("-DGPU=ON")
             ;;
         -cmake-build)
+            echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed in a future release." >&2
             useBazel=no
-            ;;
-        -lto)
-            bazelLto=yes
             ;;
         -bazel)
             echo "[WARNING] -bazel is deprecated: Bazel is now the default build system." >&2
@@ -392,10 +387,14 @@ if [[ "$useBazel" == "yes" ]]; then
     if command -v bazelisk &> /dev/null; then
         bazel_cmd="bazelisk"
     fi
-    bazelArgs=("--jobs=${numThreads}")
-    if [[ "$bazelLto" == "yes" ]]; then
-        bazelArgs+=("--config=opt")
-    fi
+    # Build.sh is the install path (ORFS, Docker, packaging). Plain
+    # `bazel build` embeds the "bazel-nostamp" placeholder so dev builds stay
+    # cacheable; --config=release turns on --stamp so `openroad -version`
+    # reports the same `git describe` string the CMake build always did.
+    # --config=release already includes --config=opt. Adding --config=opt
+    # again repeats its flags (-O3 twice), which changes every compile
+    # action key so no action hits the remote cache that CI fills.
+    bazelArgs=("--jobs=${numThreads}" "--config=release")
     if [[ "$noGui" == "yes" ]]; then
         bazelArgs+=("--//:platform=cli")
     else
