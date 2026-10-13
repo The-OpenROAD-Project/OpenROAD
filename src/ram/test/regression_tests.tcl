@@ -13,5 +13,6 @@ record_tests {
   banked_read_ports_asap7
   read_latency_asap7
   write_mux_asap7
+  periphery_unplaced_asap7
   make_8x8_latch_sky130
 }

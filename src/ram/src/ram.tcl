@@ -16,6 +16,8 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-rb_ports count]
                                              [-read_latency 0|1]
                                              [-write_style clock_gate|mux]
+                                             [-periphery placed|unplaced]
+                                             [-pin_layer layer]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -29,7 +31,8 @@ proc generate_ram_netlist { args } {
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
-      -banks -bank_columns -bank_order -rb_ports -read_latency -write_style } flags {}
+      -banks -bank_columns -bank_order -rb_ports -read_latency -write_style
+      -periphery -pin_layer } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -175,6 +178,21 @@ proc generate_ram_netlist { args } {
   if { [info exists keys(-bank_columns)] } {
     set bank_columns $keys(-bank_columns)
   }
+  # The periphery placed with the array (placed), or left for a parent to
+  # place, the outline then the core alone and the pins on -pin_layer
+  # where their connections land (unplaced).
+  set periphery placed
+  if { [info exists keys(-periphery)] } {
+    set periphery $keys(-periphery)
+    if { $periphery ni {placed unplaced} } {
+      utl::error RAM 77 "-periphery is placed or unplaced, not $periphery."
+    }
+  }
+  set pin_layer ""
+  if { [info exists keys(-pin_layer)] } {
+    set pin_layer $keys(-pin_layer)
+  }
+
   # How a word holds its value between writes: a clock gate per word
   # (clock_gate), or a mux per bit (mux).
   set write_style clock_gate
@@ -207,7 +225,7 @@ proc generate_ram_netlist { args } {
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
-    $rb_ports $read_latency $write_style
+    $rb_ports $read_latency $write_style $periphery $pin_layer
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]

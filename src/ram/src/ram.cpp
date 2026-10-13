@@ -81,6 +81,9 @@ dbInst* RamGen::makeInst(
 {
   const auto inst_name = fmt::format("{}.{}", prefix, name);
   auto inst = dbInst::create(block_, master, inst_name.c_str());
+  if (marking_periphery_ || (cell && cell == periphery_cell_)) {
+    periphery_insts_.push_back(inst);
+  }
   for (auto& [mterm_name, net] : connections) {
     auto mterm = master->findMTerm(mterm_name.c_str());
     if (!mterm) {
@@ -375,6 +378,7 @@ void RamGen::makeSlice(const int slice_idx,
   auto gclock_net = write_mux_ ? clock : makeNet(prefix, "gclock");
   auto we_net = makeNet(prefix, "we");
   auto sel_cell = std::make_unique<Cell>();
+  periphery_cell_ = sel_cell.get();  // each word's select cell
   // -write_style mux: the word's hold, where it is not written
   dbNet* hold = nullptr;
   if (write_mux_) {
@@ -751,6 +755,7 @@ void RamGen::makeDecoderColumn(
     const std::vector<dbNet*>& decoder_output_nets)
 {
   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
+  marking_periphery_ = true;
 
   const int layers = std::ceil(std::log2(num_rows)) - 1;
 
@@ -786,6 +791,7 @@ void RamGen::makeDecoderColumn(
     }
     decoder_layout->addCell(std::move(word_cell));
   }
+  marking_periphery_ = false;
   ram_grid_.addLayout(std::move(decoder_layout));
 }
 
@@ -796,6 +802,7 @@ void RamGen::makeBufferColumn(const std::string& prefix,
                               const int words_per_row)
 {
   auto buffer_layout = std::make_unique<Layout>(odb::vertical);
+  marking_periphery_ = true;
   for (int row = 0; row < num_rows; ++row) {
     auto buf_cell = std::make_unique<Cell>();
     // a buffer per select: one per row, or with banks one per word
@@ -815,6 +822,7 @@ void RamGen::makeBufferColumn(const std::string& prefix,
     }
     buffer_layout->addCell(std::move(buf_cell));
   }
+  marking_periphery_ = false;
   ram_grid_.addLayout(std::move(buffer_layout));
 }
 
@@ -826,6 +834,7 @@ void RamGen::makeWordDecoderColumn(
     const std::vector<dbNet*>& decoder_output_nets)
 {
   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
+  marking_periphery_ = true;
   for (int row = 0; row < num_rows; ++row) {
     auto row_cell = std::make_unique<Cell>();
     for (int k = 0; k < words_per_row; ++k) {
@@ -870,6 +879,7 @@ void RamGen::makeWordDecoderColumn(
     }
     decoder_layout->addCell(std::move(row_cell));
   }
+  marking_periphery_ = false;
   ram_grid_.addLayout(std::move(decoder_layout));
 }
 
@@ -883,6 +893,7 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
 {
   auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
   int ports_in_col = end_port - start_port;
+  marking_periphery_ = true;
 
   // number of inverters per bit group (one per port in this column)
   // fillers evenly space each bit group within the column
@@ -929,6 +940,7 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
     }
   }
 
+  marking_periphery_ = false;
   // pad any remaining rows
   int total_placed = (ports_in_col + fillers_per_group) * num_row_bits;
   for (int f = total_placed; f < num_rows; ++f) {
@@ -1875,7 +1887,9 @@ void RamGen::generate(const int mask_size,
                       const std::string& bank_order,
                       const int rb_ports,
                       const int read_latency,
-                      const std::string& write_style)
+                      const std::string& write_style,
+                      const std::string& periphery,
+                      const std::string& pin_layer)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -1906,6 +1920,11 @@ void RamGen::generate(const int mask_size,
   rb_ports_ = rb_ports;
   read_latency_ = read_latency;
   write_mux_ = write_style == "mux";
+  periphery_unplaced_ = periphery == "unplaced";
+  pin_layer_ = pin_layer;
+  periphery_insts_.clear();
+  marking_periphery_ = false;
+  periphery_cell_ = nullptr;
   if (write_mux_ && use_latch) {
     logger_->error(
         RAM, 73, "-write_style mux is not supported with -use_latch.");
@@ -2673,6 +2692,7 @@ void RamGen::generate(const int mask_size,
     for (int bit = 0; bit < mask_size; ++bit) {
       int bit_idx = bit + slice * mask_size;
       auto buffer_grid_cell = std::make_unique<Cell>();
+      marking_periphery_ = true;  // the input buffers
       for (int w = 0; w < num_write; ++w) {
         makeInst(
             buffer_grid_cell.get(),
@@ -2683,6 +2703,7 @@ void RamGen::generate(const int mask_size,
               data_inputs[w][bit_idx]->getNet()},
              {buffer_ports_[{PortRoleType::DataOut, 0}], D_nets[w][bit_idx]}});
       }
+      marking_periphery_ = false;
       int buf_col = slice * (mask_size * column_mux_ratio + column_mux_ratio)
                     + bit * column_mux_ratio;
       ram_grid_.addCell(std::move(buffer_grid_cell), buf_col);
@@ -2941,6 +2962,10 @@ void RamGen::generate(const int mask_size,
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
+  periphery_cell_ = nullptr;
+  if (periphery_unplaced_) {
+    unplacePeriphery();
+  }
 
   writeBehavioralVerilog(behavioral_verilog_filename_,
                          slices_per_word,
@@ -2949,6 +2974,124 @@ void RamGen::generate(const int mask_size,
                          rw_ports,
                          r_ports,
                          w_ports);
+}
+
+// -periphery unplaced: the periphery left for a parent to place and the
+// outline cut to what stays, the placed core, so a parent sizing its
+// floorplan by utilization charges the core and nothing else. Each pin
+// goes where its connections land, the centroid of the cells on its net
+// (those of the periphery too, while they are still placed), on the pin
+// layer's track grid inside the outline: these pins are for a macro
+// placer to orient the core by, never routed.
+void RamGen::unplacePeriphery()
+{
+  odb::dbTechLayer* layer = db_->getTech()->findLayer(pin_layer_.c_str());
+  if (layer == nullptr) {
+    logger_->error(RAM,
+                   75,
+                   "-periphery unplaced needs -pin_layer, a routing layer; "
+                   "{} is not one.",
+                   pin_layer_);
+  }
+  // the pins' centres, before anything moves
+  std::vector<std::pair<dbBTerm*, odb::Point>> pins;
+  for (dbBTerm* term : block_->getBTerms()) {
+    dbNet* net = term->getNet();
+    if (net == nullptr) {
+      continue;
+    }
+    int64_t sx = 0;
+    int64_t sy = 0;
+    int n = 0;
+    for (odb::dbITerm* it : net->getITerms()) {
+      const odb::Rect b = it->getInst()->getBBox()->getBox();
+      sx += b.xCenter();
+      sy += b.yCenter();
+      ++n;
+    }
+    if (n > 0) {
+      pins.emplace_back(term, odb::Point(sx / n, sy / n));
+    }
+  }
+  for (odb::dbInst* inst : periphery_insts_) {
+    inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
+  }
+  // the placed core's bounding box, and a row above it: a parent whose
+  // rows are of the other parity there moves the core up a row
+  odb::Rect core;
+  core.mergeInit();
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getPlacementStatus().isPlaced()) {
+      core.merge(inst->getBBox()->getBox());
+    }
+  }
+  odb::dbRow* first = *block_->getRows().begin();
+  const int row_h = first->getBBox().dy();
+  odb::dbSite* site = first->getSite();
+  const int site_w = site->getWidth();
+  const int dx = core.xMin();
+  const int dy = core.yMin();
+  const int first_row = dy / row_h;
+  const int num_rows = core.dy() / row_h + 1;
+  const int width = core.dx();
+  const int height = num_rows * row_h;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getPlacementStatus().isPlaced()) {
+      const odb::Point at = inst->getLocation();
+      const odb::dbPlacementStatus status = inst->getPlacementStatus();
+      // a FIRM cell's origin is fixed (ODB-0359)
+      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      inst->setLocation(at.x() - dx, at.y() - dy);
+      inst->setPlacementStatus(status);
+    }
+  }
+  std::vector<odb::dbRow*> rows(block_->getRows().begin(),
+                                block_->getRows().end());
+  for (odb::dbRow* row : rows) {
+    odb::dbRow::destroy(row);
+  }
+  for (int r = 0; r < num_rows; ++r) {
+    dbRow::create(block_,
+                  fmt::format("RAM_ROW{}", r).c_str(),
+                  site,
+                  0,
+                  r * row_h,
+                  (first_row + r) % 2 == 0 ? odb::dbOrientType::R0
+                                           : odb::dbOrientType::MX,
+                  odb::dbRowDir::HORIZONTAL,
+                  width / site_w,
+                  site_w);
+  }
+  block_->setDieArea(odb::Rect(0, 0, width, height));
+  block_->setCoreArea(block_->computeCoreArea());
+  // each pin on the layer's track grid, inside the outline
+  const int pitch = std::max(1, static_cast<int>(layer->getPitch()));
+  const int offset = layer->getOffset();
+  const int half = std::max(1, static_cast<int>(layer->getWidth()) / 2);
+  auto on_track = [&](int v, int hi) {
+    int t = offset + std::max(0, (v - offset + pitch / 2) / pitch) * pitch;
+    while (t > hi - half && t - pitch >= half) {
+      t -= pitch;
+    }
+    while (t < half) {
+      t += pitch;
+    }
+    return t;
+  };
+  for (auto& [term, at] : pins) {
+    const int x = on_track(at.x() - dx, width);
+    const int y = on_track(at.y() - dy, height);
+    odb::dbBPin* pin = odb::dbBPin::create(term);
+    odb::dbBox::create(pin, layer, x - half, y - half, x + half, y + half);
+    pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  }
+  logger_->info(RAM,
+                76,
+                "-periphery unplaced: {} periphery instances left unplaced; "
+                "the core is {:.3f} x {:.3f} um.",
+                periphery_insts_.size(),
+                block_->dbuToMicrons(width),
+                block_->dbuToMicrons(height));
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)

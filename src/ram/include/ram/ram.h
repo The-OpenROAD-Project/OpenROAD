@@ -118,7 +118,9 @@ class RamGen
                 const std::string& bank_order = "contiguous",
                 int rb_ports = 0,
                 int read_latency = 0,
-                const std::string& write_style = "clock_gate");
+                const std::string& write_style = "clock_gate",
+                const std::string& periphery = "placed",
+                const std::string& pin_layer = "");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -373,6 +375,16 @@ class RamGen
   // -write_style mux: no clock gate; each bit's flop on the clock, its D
   // the new data where the word is written and its own value elsewhere
   bool write_mux_{false};
+  // -periphery unplaced: the periphery (address inverters and registers,
+  // decoders, select buffers, each word's select cell, the input
+  // buffers) left for a parent to place; the outline the placed core and
+  // a row; each pin where its connections land, on pin_layer_'s tracks
+  bool periphery_unplaced_{false};
+  std::string pin_layer_;
+  bool marking_periphery_{false};
+  Cell* periphery_cell_{nullptr};
+  std::vector<odb::dbInst*> periphery_insts_;
+  void unplacePeriphery();
   odb::dbMaster* addr_flop_cell_{nullptr};
   std::string addr_flop_d_, addr_flop_clk_, addr_flop_q_;
   bool addr_flop_inverted_{false};
