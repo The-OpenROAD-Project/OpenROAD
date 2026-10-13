@@ -132,7 +132,6 @@ cc_library(
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
-        "src/timingBase.h",
         "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ] + select({
@@ -163,6 +162,7 @@ cc_library(
         "src/placerBase.h",
         "src/point.h",
         "src/routeBase.h",
+        "src/timingBase.h",
     ],
     copts = [
         "-fopenmp",
