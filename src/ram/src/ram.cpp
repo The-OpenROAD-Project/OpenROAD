@@ -186,54 +186,69 @@ bool RamGen::treeInverted(const int lo, const int hi) const
   return !treeInverted(lo, lo + half);
 }
 
+int RamGen::wordAt(const int row, const int word_idx) const
+{
+  if (!banked_) {
+    return row * words_per_row_ + word_idx;
+  }
+  const int bank = (row / words_per_bank_) * bank_columns_ + word_idx;
+  const int i = row % words_per_bank_;
+  return bank_interleaved_ ? i * banks_ + bank : bank * words_per_bank_ + i;
+}
+
 RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
-                                     const int word_idx,
                                      const int bit,
-                                     const vector<int>& rows,
+                                     const vector<Term>& terms,
                                      const int lo,
                                      const int hi,
-                                     const vector<dbNet*>& selects,
                                      dbNet* out)
 {
-  auto add = [&](const int row,
+  auto add = [&](const Term& at,
                  dbMaster* master,
                  const std::string& name,
                  const vector<std::pair<std::string, dbNet*>>& conns) {
-    tree_nodes_[{row, word_idx, bit}].push_back({master, prefix, name, conns});
+    tree_nodes_[{at.row, at.word_idx, bit}].push_back(
+        {master, prefix, name, conns});
   };
   // the zero word's term, where the trees read inverted data: its own
   // select, the inverted form of a stored 0 (the zero word is in the
   // tree only then)
-  auto q = [&](const int row) {
-    return row == zero_word_ ? selects[row]
-                             : storage_nets_.at({row, word_idx, bit});
+  auto q = [&](const Term& t) {
+    return wordAt(t.row, t.word_idx) == zero_word_
+               ? t.select
+               : storage_nets_.at({t.row, t.word_idx, bit});
+  };
+  // a leaf's name: its row, and with banks its word in the row too
+  auto leaf = [&](const char* kind, const Term& t) {
+    return banked_ ? fmt::format("{}_r{}_w{}", kind, t.row, t.word_idx)
+                   : fmt::format("{}_r{}", kind, t.row);
   };
   auto net = [&](dbNet* given) {
     return given ? given : makeNet(prefix, fmt::format("t{}_{}", lo, hi));
   };
   const int n = hi - lo;
   if (n == 1) {
-    const int r = rows[lo];
+    const Term& t = terms[lo];
     dbNet* y = net(out);
-    add(r,
+    add(t,
         nand2_cell_,
-        fmt::format("nand_r{}", r),
-        {{nand2_ports_[{PortRoleType::DataIn, 0}], selects[r]},
-         {nand2_ports_[{PortRoleType::DataIn, 1}], q(r)},
+        leaf("nand", t),
+        {{nand2_ports_[{PortRoleType::DataIn, 0}], t.select},
+         {nand2_ports_[{PortRoleType::DataIn, 1}], q(t)},
          {nand2_ports_[{PortRoleType::DataOut, 0}], y}});
     return {y, true};
   }
   if (n == 2) {
-    const int r0 = rows[lo];
-    const int r1 = rows[lo + 1];
+    const Term& t0 = terms[lo];
+    const Term& t1 = terms[lo + 1];
     dbNet* y = net(out);
-    add(r0,
+    add(t0,
         aoi22_cell_,
-        fmt::format("aoi_r{}", r0),
-        {{aoi22_in_a1_, selects[r0]},
-         {aoi22_in_a2_, q(r0)},
-         {aoi22_in_b1_, selects[r1]},
-         {aoi22_in_b2_, q(r1)},
+        leaf("aoi", t0),
+        {{aoi22_in_a1_, t0.select},
+         {aoi22_in_a2_, q(t0)},
+         {aoi22_in_b1_, t1.select},
+         {aoi22_in_b2_, q(t1)},
          {aoi22_out_, y}});
     return {y, true};
   }
@@ -242,14 +257,12 @@ RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
     half *= 2;
   }
   const int mid = lo + half;
-  const int host = rows[mid - 1];
-  const TreeEnd a
-      = planReadTree(prefix, word_idx, bit, rows, lo, mid, selects, nullptr);
-  TreeEnd b
-      = planReadTree(prefix, word_idx, bit, rows, mid, hi, selects, nullptr);
+  const Term& host = terms[mid - 1];
+  const TreeEnd a = planReadTree(prefix, bit, terms, lo, mid, nullptr);
+  TreeEnd b = planReadTree(prefix, bit, terms, mid, hi, nullptr);
   if (b.inverted != a.inverted) {
     dbNet* nb = makeNet(prefix, fmt::format("t{}_{}_inv", mid, hi));
-    add(rows[mid],
+    add(terms[mid],
         inv_cell_,
         fmt::format("inv_r{}_{}", mid, hi),
         {{inv_ports_[{PortRoleType::DataIn, 0}], b.net},
@@ -307,7 +320,7 @@ void RamGen::makeSlice(const int slice_idx,
 
   // The zero word: no flops, no clock gate; its row's cells hold only
   // the read trees' nodes planned there.
-  if (row_idx == zero_word_) {
+  if (wordAt(row_idx, word_idx) == zero_word_) {
     for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
       const int bit = start_bit_idx + local_bit;
       std::unique_ptr<Cell> cell;
@@ -334,7 +347,7 @@ void RamGen::makeSlice(const int slice_idx,
   vector<dbNet*> select_b_nets(r_total);
   if (and_or_read_) {
     // the AND-OR trees read the true selects
-  } else if (column_mux_ratio == 1) {
+  } else if (column_mux_ratio == 1 || banked_) {
     for (int i = 0; i < r_total; ++i) {
       select_b_nets[i] = makeNet(prefix, fmt::format("select{}_b", i));
     }
@@ -684,21 +697,79 @@ void RamGen::makeDecoderColumn(
 void RamGen::makeBufferColumn(const std::string& prefix,
                               const int num_rows,
                               const std::vector<dbNet*>& decoder_output_nets,
-                              const std::vector<dbNet*>& select_nets)
+                              const std::vector<dbNet*>& select_nets,
+                              const int words_per_row)
 {
   auto buffer_layout = std::make_unique<Layout>(odb::vertical);
-  for (int word = 0; word < num_rows; ++word) {
+  for (int row = 0; row < num_rows; ++row) {
     auto buf_cell = std::make_unique<Cell>();
-    makeInst(
-        buf_cell.get(),
-        prefix,
-        fmt::format("sel_buf_{}", word),
-        buffer_cell_,
-        {{buffer_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
-         {buffer_ports_[{PortRoleType::DataOut, 0}], select_nets[word]}});
+    // a buffer per select: one per row, or with banks one per word
+    for (int k = 0; k < words_per_row; ++k) {
+      const int word = row * words_per_row + k;
+      makeInst(
+          buf_cell.get(),
+          prefix,
+          fmt::format("sel_buf_{}", word),
+          buffer_cell_,
+          {{buffer_ports_[{PortRoleType::DataIn, 0}],
+            decoder_output_nets[word]},
+           {buffer_ports_[{PortRoleType::DataOut, 0}], select_nets[word]}});
+    }
     buffer_layout->addCell(std::move(buf_cell));
   }
   ram_grid_.addLayout(std::move(buffer_layout));
+}
+
+void RamGen::makeWordDecoderColumn(
+    const std::string& prefix,
+    const int num_rows,
+    const int words_per_row,
+    const std::vector<std::vector<dbNet*>>& literals,
+    const std::vector<dbNet*>& decoder_output_nets)
+{
+  auto decoder_layout = std::make_unique<Layout>(odb::vertical);
+  for (int row = 0; row < num_rows; ++row) {
+    auto row_cell = std::make_unique<Cell>();
+    for (int k = 0; k < words_per_row; ++k) {
+      const int word = row * words_per_row + k;
+      // a balanced AND2 tree over the word's address literals
+      vector<dbNet*> level = literals[word];
+      int node = 0;
+      while (level.size() > 1) {
+        vector<dbNet*> next;
+        for (size_t i = 0; i + 1 < level.size(); i += 2) {
+          dbNet* y
+              = level.size() == 2
+                    ? decoder_output_nets[word]
+                    : makeNet(prefix, fmt::format("y{}_word{}", node, word));
+          makeInst(row_cell.get(),
+                   prefix,
+                   fmt::format("and{}_word{}", node++, word),
+                   and2_cell_,
+                   {{and2_ports_[{PortRoleType::DataIn, 0}], level[i]},
+                    {and2_ports_[{PortRoleType::DataIn, 1}], level[i + 1]},
+                    {and2_ports_[{PortRoleType::DataOut, 0}], y}});
+          next.push_back(y);
+        }
+        if (level.size() % 2 == 1) {
+          next.push_back(level.back());
+        }
+        level = std::move(next);
+      }
+      if (literals[word].size() == 1) {
+        // a single literal: buffered to the decoder's output
+        makeInst(row_cell.get(),
+                 prefix,
+                 fmt::format("buf_word{}", word),
+                 buffer_cell_,
+                 {{buffer_ports_[{PortRoleType::DataIn, 0}], level[0]},
+                  {buffer_ports_[{PortRoleType::DataOut, 0}],
+                   decoder_output_nets[word]}});
+      }
+    }
+    decoder_layout->addCell(std::move(row_cell));
+  }
+  ram_grid_.addLayout(std::move(decoder_layout));
 }
 
 std::unique_ptr<Layout> RamGen::makeInverterColumn(
@@ -1668,7 +1739,7 @@ void RamGen::generate(const int mask_size,
                       const int rw_ports,
                       const int r_ports,
                       const int w_ports,
-                      const int column_mux_ratio,
+                      const int column_mux_ratio_arg,
                       const bool use_latch,
                       dbMaster* storage_cell,
                       dbMaster* tristate_cell,
@@ -1677,8 +1748,40 @@ void RamGen::generate(const int mask_size,
                       int max_tap_dist,
                       const std::string& read_style,
                       const int zero_word,
-                      const std::string& reset_value)
+                      const std::string& reset_value,
+                      const int banks,
+                      const int bank_columns,
+                      const std::string& bank_order)
 {
+  // Banks: every port decodes every word's whole address, and a row holds
+  // bank_columns words, laid out as the column mux lays out its words;
+  // without banks, the column mux as it was.
+  banked_ = banks > 1 || bank_columns > 1;
+  banks_ = std::max(banks, 1);
+  bank_columns_ = std::max(bank_columns, 1);
+  bank_interleaved_ = bank_order == "interleaved";
+  if (banked_) {
+    if (column_mux_ratio_arg != 1) {
+      logger_->error(
+          RAM, 66, "-banks is not supported with -column_mux_ratio above 1.");
+    }
+    if (num_words % banks_ != 0 || banks_ % bank_columns_ != 0) {
+      logger_->error(RAM,
+                     67,
+                     "-num_words {} must divide into -banks {}, and the banks "
+                     "into -bank_columns {}.",
+                     num_words,
+                     banks_,
+                     bank_columns_);
+    }
+    if (use_latch) {
+      logger_->error(RAM, 68, "-banks is not supported with -use_latch.");
+    }
+  }
+  words_per_bank_ = num_words / banks_;
+  // the words in a row: the column mux's, or the banks side by side
+  const int column_mux_ratio = banked_ ? bank_columns_ : column_mux_ratio_arg;
+  words_per_row_ = column_mux_ratio;
   if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
   }
@@ -1686,7 +1789,8 @@ void RamGen::generate(const int mask_size,
   const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
 
   // error checking for column_mux_ratio
-  if (column_mux_ratio != 1 && column_mux_ratio != 2 && column_mux_ratio != 4) {
+  if (!banked_ && column_mux_ratio != 1 && column_mux_ratio != 2
+      && column_mux_ratio != 4) {
     logger_->error(RAM,
                    33,
                    "The ram generator currently only supports column_mux_ratio "
@@ -1714,7 +1818,8 @@ void RamGen::generate(const int mask_size,
   const int num_rows = num_words / column_mux_ratio;
   // if column mux ratio > 1, then the lower log2(column_mux_ratio) bits are
   // used to select the word within a row
-  const int num_word_bits = (column_mux_ratio > 1)
+  // (with banks, none: each port decodes every word's whole address)
+  const int num_word_bits = (column_mux_ratio > 1 && !banked_)
                                 ? static_cast<int>(std::log2(column_mux_ratio))
                                 : 0;
   // the remaining upper bits are used to select the row
@@ -1780,7 +1885,7 @@ void RamGen::generate(const int mask_size,
       logger_->error(
           RAM, 59, "-zero_word {} is not a word of {}.", zero_word_, num_words);
     }
-    if (!and_or_read_ || column_mux_ratio != 1) {
+    if (!and_or_read_ || (column_mux_ratio != 1 && !banked_)) {
       logger_->error(RAM,
                      60,
                      "-zero_word needs -read_style and_or and "
@@ -1803,8 +1908,10 @@ void RamGen::generate(const int mask_size,
   // Each read/write port gets a buffer col and decoder col,
   // plus inverter columns shared across ports
   const int total_ports = rw_ports + r_ports + w_ports;
+  // at least one port's inverters a column: an array with fewer rows than
+  // address bits (four banks side by side, say) otherwise got none
   const int ports_per_col
-      = (num_row_bits > 0) ? (num_rows / num_row_bits) : total_ports;
+      = (num_row_bits > 0) ? std::max(1, num_rows / num_row_bits) : total_ports;
   const int inv_col_count
       = std::ceil(static_cast<float>(total_ports) / ports_per_col);
 
@@ -1896,9 +2003,26 @@ void RamGen::generate(const int mask_size,
           = makeNet(port_prefix, fmt::format("inv_addr[{}]", i));
     }
 
-    // inputs to decoders
-    decoder_input_nets[p].assign(num_rows, vector<dbNet*>(num_row_bits));
-    for (int row = 0; row < num_rows; ++row) {
+    // inputs to decoders: with banks, every word's whole address, one
+    // decoder per word (slot row * words per row + word in the row)
+    if (banked_) {
+      decoder_input_nets[p].assign(num_rows * column_mux_ratio,
+                                   vector<dbNet*>(num_inputs));
+      for (int row = 0; row < num_rows; ++row) {
+        for (int w = 0; w < column_mux_ratio; ++w) {
+          const int word = wordAt(row, w);
+          for (int input = 0; input < num_inputs; ++input) {
+            decoder_input_nets[p][row * column_mux_ratio + w][input]
+                = ((word >> input) & 1) ? addr_inputs_[p][input]->getNet()
+                                        : inv_addr_nets[p][input];
+          }
+        }
+      }
+    }
+    if (!banked_) {
+      decoder_input_nets[p].assign(num_rows, vector<dbNet*>(num_row_bits));
+    }
+    for (int row = 0; row < num_rows && !banked_; ++row) {
       int row_num = row;
       // start at right most bit
       for (int input = 0; input < num_row_bits; ++input) {
@@ -1915,23 +2039,24 @@ void RamGen::generate(const int mask_size,
     }
 
     // output nets of each port decoder
+    const int num_selects = banked_ ? num_rows * column_mux_ratio : num_rows;
     decoder_output_nets[p]
-        = makeDecoderOutputNets(fmt::format("decoder_p{}", p), num_rows);
+        = makeDecoderOutputNets(fmt::format("decoder_p{}", p), num_selects);
     // output nets of each decoder buffers
     // write-capable ports to index 0 since there can only be 1
     if (p < rw_ports) {
       write_select_nets[w_sel_idx] = makeSelectNets(
-          fmt::format("rw_sel_p{}", p), num_rows, RamPortType::ReadWrite);
+          fmt::format("rw_sel_p{}", p), num_selects, RamPortType::ReadWrite);
       read_select_nets[r_sel_idx++] = write_select_nets[w_sel_idx];
       ++w_sel_idx;
     } else if (p < rw_ports + w_ports) {
       write_select_nets[w_sel_idx] = makeSelectNets(
-          fmt::format("w_sel_p{}", p), num_rows, RamPortType::Write);
+          fmt::format("w_sel_p{}", p), num_selects, RamPortType::Write);
       ++w_sel_idx;
     }
     if (p >= rw_ports + w_ports) {
       read_select_nets[r_sel_idx++] = makeSelectNets(
-          fmt::format("r_sel_p{}", p), num_rows, RamPortType::Read);
+          fmt::format("r_sel_p{}", p), num_selects, RamPortType::Read);
     }
   }
 
@@ -1971,10 +2096,14 @@ void RamGen::generate(const int mask_size,
   vector<vector<vector<dbNet*>>> word_q_nets(
       column_mux_ratio,
       vector<vector<dbNet*>>(r_total, vector<dbNet*>(word_size)));
-  if (column_mux_ratio == 1) {
-    for (int port = 0; port < r_total; ++port) {
-      for (int bit = 0; bit < word_size; ++bit) {
-        word_q_nets[0][port][bit] = q_outputs_[port][bit]->getNet();
+  // with banks every word drives the read port's own net: a tristate
+  // bitline shared by every word, or one AND-OR tree over all of them
+  if (column_mux_ratio == 1 || banked_) {
+    for (int w = 0; w < column_mux_ratio; ++w) {
+      for (int port = 0; port < r_total; ++port) {
+        for (int bit = 0; bit < word_size; ++bit) {
+          word_q_nets[w][port][bit] = q_outputs_[port][bit]->getNet();
+        }
       }
     }
 
@@ -1990,10 +2119,10 @@ void RamGen::generate(const int mask_size,
   }
 
   // Word selects for column mux, placed before word creation
-  if (column_mux_ratio == 2) {
+  if (column_mux_ratio == 2 && !banked_) {
     word_sel_nets[0] = inv_addr_nets[0][0];
     word_sel_nets[1] = addr_inputs_[0][0]->getNet();
-  } else if (column_mux_ratio == 4) {
+  } else if (column_mux_ratio == 4 && !banked_) {
     for (int c = 0; c < 4; ++c) {
       word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
     }
@@ -2015,25 +2144,27 @@ void RamGen::generate(const int mask_size,
   // gate — all other word_idx reuse the existing net, reducing cell count
   // and horizontal routing congestion in storage rows.
 
+  // a port's select of the word at (row, word in the row): with banks a
+  // select per word, else per row
+  auto select_at
+      = [&](const vector<dbNet*>& selects, const int row, const int w) {
+          return banked_ ? selects[row * column_mux_ratio + w] : selects[row];
+        };
+
   // The AND-OR read path: every storage net named ahead, and every
   // bitline's tree planned, so each row's bit cells take their nodes.
   // Where the storage flop's output is QN, or the tree's root is
   // inverted, but not both, an inverter at the bottom row puts it right.
   if (and_or_read_) {
-    // The rows in the trees: where the storage output is inverted the
-    // final inverter assumes some row's term is the read's, so the zero
+    // The words in the trees: where the storage output is inverted the
+    // final inverter assumes some word's term is the read's, so the zero
     // word stays, its term a 1; otherwise its term would be a 0, and it
     // is left out.
-    vector<int> stored_rows;
     for (int row = 0; row < num_rows; ++row) {
-      if (row == zero_word_) {
-        if (storage_inverted_) {
-          stored_rows.push_back(row);
-        }
-        continue;
-      }
-      stored_rows.push_back(row);
       for (int w = 0; w < column_mux_ratio; ++w) {
+        if (wordAt(row, w) == zero_word_) {
+          continue;
+        }
         for (int bit = 0; bit < word_size; ++bit) {
           const std::string prefix = fmt::format(
               "storage_{}_{}_{}", row, w, (bit / mask_size) * mask_size);
@@ -2042,24 +2173,39 @@ void RamGen::generate(const int mask_size,
         }
       }
     }
-    const int stored = static_cast<int>(stored_rows.size());
-    const bool flip = treeInverted(0, stored) != storage_inverted_;
-    for (int w = 0; w < column_mux_ratio; ++w) {
+    // a read port's terms: with banks every word, a column at a time; else
+    // the words of column w
+    auto terms_of = [&](const int port, const int only_w) {
+      vector<Term> terms;
+      for (int w = 0; w < column_mux_ratio; ++w) {
+        if (!banked_ && w != only_w) {
+          continue;
+        }
+        for (int row = 0; row < num_rows; ++row) {
+          if (wordAt(row, w) == zero_word_ && !storage_inverted_) {
+            continue;
+          }
+          terms.push_back({row, w, select_at(read_select_nets[port], row, w)});
+        }
+      }
+      return terms;
+    };
+    for (int w = 0; w < (banked_ ? 1 : column_mux_ratio); ++w) {
       for (int port = 0; port < r_total; ++port) {
+        const vector<Term> terms = terms_of(port, w);
+        const int n = static_cast<int>(terms.size());
+        const bool flip = treeInverted(0, n) != storage_inverted_;
         for (int bit = 0; bit < word_size; ++bit) {
           const std::string prefix
-              = fmt::format("read_w{}_p{}_b{}", w, port, bit);
+              = banked_ ? fmt::format("read_p{}_b{}", port, bit)
+                        : fmt::format("read_w{}_p{}_b{}", w, port, bit);
           dbNet* out = word_q_nets[w][port][bit];
-          const TreeEnd root = planReadTree(prefix,
-                                            w,
-                                            bit,
-                                            stored_rows,
-                                            0,
-                                            stored,
-                                            read_select_nets[port],
-                                            flip ? nullptr : out);
+          const TreeEnd root
+              = planReadTree(prefix, bit, terms, 0, n, flip ? nullptr : out);
           if (flip) {
-            tree_nodes_[{num_rows - 1, w, bit}].push_back(
+            const Term& at
+                = banked_ ? terms.back() : Term{num_rows - 1, w, nullptr};
+            tree_nodes_[{at.row, at.word_idx, bit}].push_back(
                 {inv_cell_,
                  prefix,
                  "out_inv",
@@ -2074,7 +2220,7 @@ void RamGen::generate(const int mask_size,
   for (int row = 0; row < num_rows; ++row) {
     // one select_b_net per row for column_mux_ratio > 1
     vector<dbNet*> shared_select_b_nets(r_total);
-    if (column_mux_ratio > 1) {
+    if (column_mux_ratio > 1 && !banked_) {
       for (int i = 0; i < r_total; ++i) {
         shared_select_b_nets[i]
             = makeNet(fmt::format("row{}", row), fmt::format("select{}_b", i));
@@ -2085,10 +2231,11 @@ void RamGen::generate(const int mask_size,
       // the write ports' row selects, then the read ports'
       vector<dbNet*> row_selects(num_write + r_total);
       for (int p = 0; p < num_write; ++p) {
-        row_selects[p] = write_select_nets[p][row];
+        row_selects[p] = select_at(write_select_nets[p], row, word_idx);
       }
       for (int p = 0; p < r_total; ++p) {
-        row_selects[num_write + p] = read_select_nets[p][row];
+        row_selects[num_write + p]
+            = select_at(read_select_nets[p], row, word_idx);
       }
       vector<vector<dbNet*>> word_output_nets(r_total);
       for (int port = 0; port < r_total; ++port) {
@@ -2110,15 +2257,15 @@ void RamGen::generate(const int mask_size,
                write_enable,
                row_selects,
                shared_select_b_nets,
-               (word_idx == 0 || column_mux_ratio == 1),
+               (word_idx == 0 || column_mux_ratio == 1 || banked_),
                use_latch_ ? vector<vector<dbNet*>>{mid_nets} : D_nets,
                word_output_nets);
     }
   }
 
   // cell placement for mux made of AOI22 (and inverter if needed) for column
-  // muxing
-  if (column_mux_ratio > 1) {
+  // muxing (with banks each port's tree or bitline spans every word)
+  if (column_mux_ratio > 1 && !banked_) {
     for (int slice = 0; slice < slices_per_word; ++slice) {
       for (int bit = 0; bit < mask_size; ++bit) {
         const int global_bit = slice * mask_size + bit;
@@ -2305,26 +2452,37 @@ void RamGen::generate(const int mask_size,
       makeBufferColumn(fmt::format("sel_buf_rw_p{}", p),
                        num_rows,
                        decoder_output_nets[p],
-                       write_select_nets[w_buf_idx++]);
+                       write_select_nets[w_buf_idx++],
+                       banked_ ? column_mux_ratio : 1);
       ++r_buf_idx;  // so that next read port doesn't use the rw_select
     } else if (p < rw_ports + w_ports) {
       makeBufferColumn(fmt::format("sel_buf_w_p{}", p),
                        num_rows,
                        decoder_output_nets[p],
-                       write_select_nets[w_buf_idx++]);
+                       write_select_nets[w_buf_idx++],
+                       banked_ ? column_mux_ratio : 1);
     }
     if (p >= rw_ports + w_ports) {
       makeBufferColumn(fmt::format("sel_buf_r_p{}", p),
                        num_rows,
                        decoder_output_nets[p],
-                       read_select_nets[r_buf_idx++]);
+                       read_select_nets[r_buf_idx++],
+                       banked_ ? column_mux_ratio : 1);
     }
 
     // decoder column creation
-    makeDecoderColumn(fmt::format("decoder_p{}", p),
-                      num_rows,
-                      decoder_input_nets[p],
-                      decoder_output_nets[p]);
+    if (banked_) {
+      makeWordDecoderColumn(fmt::format("decoder_p{}", p),
+                            num_rows,
+                            column_mux_ratio,
+                            decoder_input_nets[p],
+                            decoder_output_nets[p]);
+    } else {
+      makeDecoderColumn(fmt::format("decoder_p{}", p),
+                        num_rows,
+                        decoder_input_nets[p],
+                        decoder_output_nets[p]);
+    }
   }
 
   if (num_row_bits > 0) {
@@ -2344,7 +2502,7 @@ void RamGen::generate(const int mask_size,
   std::unique_ptr<Cell> inv_sel_cell = std::make_unique<Cell>();
   std::vector<std::unique_ptr<Cell>> word_sel_cells(column_mux_ratio);
 
-  if (column_mux_ratio == 2) {
+  if (column_mux_ratio == 2 && !banked_) {
     // place inv_addr[0] inverter in sel column
     makeInst(
         inv_sel_cell.get(),
@@ -2353,7 +2511,7 @@ void RamGen::generate(const int mask_size,
         inv_cell_,
         {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
          {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
-  } else if (column_mux_ratio == 4) {
+  } else if (column_mux_ratio == 4 && !banked_) {
     for (int c = 0; c < 4; ++c) {
       word_sel_cells[c] = std::make_unique<Cell>();
     }
@@ -2407,9 +2565,9 @@ void RamGen::generate(const int mask_size,
 
   // moving column_mux select cells to the top row to be closer to connected
   // nets also removes extra column that sits to the right of decoders
-  if (column_mux_ratio == 2) {
+  if (column_mux_ratio == 2 && !banked_) {
     ram_grid_.addCell(std::move(inv_sel_cell), mask_size * column_mux_ratio);
-  } else if (column_mux_ratio == 4) {
+  } else if (column_mux_ratio == 4 && !banked_) {
     for (int c = 0; c < 4; ++c) {
       int sel_col = mask_size * column_mux_ratio + c;
       ram_grid_.addCell(std::move(word_sel_cells[c]), sel_col);
@@ -2417,7 +2575,7 @@ void RamGen::generate(const int mask_size,
   }
 
   // adding filler cells to ease congestion for multi-port
-  if (column_mux_ratio > 1 && total_ports > 1) {
+  if (column_mux_ratio > 1 && total_ports > 1 && !banked_) {
     int filler_spacing = num_rows / (column_mux_ratio - 1);
     if (filler_spacing > 0) {
       int filler_count = 0;

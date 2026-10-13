@@ -17,6 +17,7 @@ PASSFAIL_TESTS = [
     "and_or_read_asap7",
     "zero_word_asap7",
     "reset_asap7",
+    "banks_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -70,6 +71,10 @@ filegroup(
                 "//test:asap7_nldm_data",
             ],
             "reset_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "banks_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],

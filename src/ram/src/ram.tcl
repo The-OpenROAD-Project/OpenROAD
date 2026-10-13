@@ -10,6 +10,9 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-read_style tristate|and_or]
                                              [-zero_word word]
                                              [-reset_value value]
+                                             [-banks count]
+                                             [-bank_columns count]
+                                             [-bank_order contiguous|interleaved]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -22,7 +25,8 @@ proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
-      -write_behavioral_verilog -read_style -zero_word -reset_value } flags {}
+      -write_behavioral_verilog -read_style -zero_word -reset_value
+      -banks -bank_columns -bank_order } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -158,9 +162,27 @@ proc generate_ram_netlist { args } {
     set reset_value $keys(-reset_value)
   }
 
+  # Banks: the words in banks, contiguous or interleaved addresses,
+  # bank_columns of them side by side and the rest stacked.
+  set banks 1
+  if { [info exists keys(-banks)] } {
+    set banks $keys(-banks)
+  }
+  set bank_columns 1
+  if { [info exists keys(-bank_columns)] } {
+    set bank_columns $keys(-bank_columns)
+  }
+  set bank_order contiguous
+  if { [info exists keys(-bank_order)] } {
+    set bank_order $keys(-bank_order)
+    if { $bank_order ni {contiguous interleaved} } {
+      utl::error RAM 69 "-bank_order is contiguous or interleaved, not $bank_order."
+    }
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
-    $read_style $zero_word $reset_value
+    $read_style $zero_word $reset_value $banks $bank_columns $bank_order
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -194,7 +216,8 @@ proc generate_ram { args } {
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
-           -write_behavioral_verilog -read_style -zero_word -reset_value } flags {}
+           -write_behavioral_verilog -read_style -zero_word -reset_value
+           -banks -bank_columns -bank_order } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -241,6 +264,12 @@ proc generate_ram { args } {
 
   if { [info exists keys(-reset_value)] } {
     lappend ram_netlist_args -reset_value $keys(-reset_value)
+  }
+
+  foreach key {-banks -bank_columns -bank_order} {
+    if { [info exists keys($key)] } {
+      lappend ram_netlist_args $key $keys($key)
+    }
   }
 
   if { [info exists keys(-inv_cell)] } {

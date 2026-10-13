@@ -10,5 +10,6 @@ or_integration_tests(
     and_or_read_asap7
     zero_word_asap7
     reset_asap7
+    banks_asap7
 )
 

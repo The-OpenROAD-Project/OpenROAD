@@ -112,7 +112,10 @@ class RamGen
                 int max_tap_dist,
                 const std::string& read_style = "",
                 int zero_word = -1,
-                const std::string& reset_value = "");
+                const std::string& reset_value = "",
+                int banks = 1,
+                int bank_columns = 1,
+                const std::string& bank_order = "contiguous");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -158,15 +161,24 @@ class RamGen
     odb::dbNet* net;
     bool inverted;  // the net is the complement of the OR of the terms
   };
-  // the tree over rows[lo, hi): rows lists the rows that store a word
+  // one term of a read tree: the word at (row, word in the row) and its
+  // read select
+  struct Term
+  {
+    int row;
+    int word_idx;
+    odb::dbNet* select;
+  };
+  // the tree over terms[lo, hi), each node in the bit cell of a term it
+  // covers
   TreeEnd planReadTree(const std::string& prefix,
-                       int word_idx,
                        int bit,
-                       const std::vector<int>& rows,
+                       const std::vector<Term>& terms,
                        int lo,
                        int hi,
-                       const std::vector<odb::dbNet*>& selects,
                        odb::dbNet* out);
+  // the word at (row, word in the row)
+  int wordAt(int row, int word_idx) const;
   bool treeInverted(int lo, int hi) const;
   // -reset_value: the storage flop's data, clear and preset pins, the
   // reset's polarity, what a cleared flop reads, and the tie cell that
@@ -246,7 +258,16 @@ class RamGen
   void makeBufferColumn(const std::string& prefix,
                         int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
-                        const std::vector<odb::dbNet*>& select_nets);
+                        const std::vector<odb::dbNet*>& select_nets,
+                        int words_per_row = 1);
+  // banks: a decoder per word, an AND2 tree over all its address
+  // literals, the words of a row in that row's cell
+  void makeWordDecoderColumn(
+      const std::string& prefix,
+      int num_rows,
+      int words_per_row,
+      const std::vector<std::vector<odb::dbNet*>>& literals,
+      const std::vector<odb::dbNet*>& decoder_output_nets);
 
   std::unique_ptr<Layout> makeInverterColumn(
       int num_rows,
@@ -322,6 +343,17 @@ class RamGen
   std::string read_style_;
   bool storage_inverted_{false};  // the storage flop's output is QN
   int zero_word_{-1};  // the word that reads 0 and is not stored, or -1
+  // Banks: the words in `banks_` banks (contiguous or interleaved
+  // addresses), bank_columns_ of them side by side, the rest stacked.
+  // Each port decodes every word's whole address, so any placement of
+  // words reads and writes alike; a row holds bank_columns_ words, its
+  // bits interleaved as the column mux's.
+  bool banked_{false};
+  int banks_{1};
+  int bank_columns_{1};
+  bool bank_interleaved_{false};
+  int words_per_bank_{0};
+  int words_per_row_{1};
   // An asynchronous reset to reset_value_ (a word's value, every word):
   // each bit's flop is cleared or preset by the reset port, the other
   // pin held off. The pins come from the flop's ff group; clear_reads_
