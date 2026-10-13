@@ -126,7 +126,9 @@ class RamGen
                 const std::string& name = "",
                 const std::string& decoder = "row",
                 int bit_folds = 1,
-                const std::string& wrapper_verilog = "");
+                const std::string& wrapper_verilog = "",
+                int service_every = 0,
+                int service_sites = 0);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,

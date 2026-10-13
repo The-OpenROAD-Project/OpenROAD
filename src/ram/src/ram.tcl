@@ -24,6 +24,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-periphery placed|unplaced|verilog]
                                              [-wrapper_verilog file]
                                              [-pin_layer layer]
+                                             [-service_columns {every sites}]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -38,7 +39,7 @@ proc generate_ram_netlist { args } {
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
-      -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog } flags {}
+      -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -220,6 +221,17 @@ proc generate_ram_netlist { args } {
   # column mux selecting within it; or word, a balanced AND2 tree over
   # each word's whole address.
   # A word's mask slices in this many rows instead of side by side.
+  # Empty columns in the array for a parent's buffers: one `sites` sites
+  # wide after every `every` storage columns.
+  set service_every 0
+  set service_sites 0
+  if { [info exists keys(-service_columns)] } {
+    if { [llength $keys(-service_columns)] != 2 } {
+      utl::error RAM 89 "-service_columns is {every sites}."
+    }
+    lassign $keys(-service_columns) service_every service_sites
+  }
+
   set bit_folds 1
   if { [info exists keys(-bit_folds)] } {
     set bit_folds $keys(-bit_folds)
@@ -275,7 +287,7 @@ proc generate_ram_netlist { args } {
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
     $rb_ports $read_latency $write_style $write_priority $periphery $pin_layer $cells $name \
-    $decoder $bit_folds $wrapper_verilog
+    $decoder $bit_folds $wrapper_verilog $service_every $service_sites
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -311,7 +323,7 @@ proc generate_ram { args } {
            -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog -read_style -zero_word -reset_value
            -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
-           -cells -name -decoder -bit_folds } flags {}
+           -cells -name -decoder -bit_folds -service_columns } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -361,7 +373,7 @@ proc generate_ram { args } {
   }
 
   foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
-               -cells -name -decoder -bit_folds} {
+               -cells -name -decoder -bit_folds -service_columns} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }

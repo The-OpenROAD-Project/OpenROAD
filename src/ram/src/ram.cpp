@@ -1955,7 +1955,9 @@ void RamGen::generate(const int mask_size,
                       const std::string& name,
                       const std::string& decoder,
                       const int bit_folds,
-                      const std::string& wrapper_verilog)
+                      const std::string& wrapper_verilog,
+                      const int service_every,
+                      const int service_sites)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -3074,6 +3076,22 @@ void RamGen::generate(const int mask_size,
 
   ram_grid_.setOrigin(ram_origin);
   ram_grid_.gridInit();
+
+  // -service_columns {every sites}: after every `every` storage columns
+  // an empty column `sites` sites wide, room a parent's buffers can take
+  // inside the array
+  if (service_every > 0 && service_sites > 0) {
+    const int site_width
+        = (*(*db_->getLibs().begin())->getSites().begin())->getWidth();
+    for (int col = (col_cell_count - 1) / service_every * service_every;
+         col > 0;
+         col -= service_every) {
+      auto service = std::make_unique<Layout>(odb::vertical);
+      service->setMinWidth(service_sites * site_width);
+      ram_grid_.insertLayout(std::move(service), col);
+    }
+    ram_grid_.gridInit();
+  }
 
   if (tapcell_) {
     // max tap distance specified is greater than the length of ram
