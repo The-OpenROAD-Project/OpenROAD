@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -114,10 +114,8 @@ cc_library(
         "src/policy/SetupLastGaspPolicy.cc",
         "src/policy/SetupLastGaspPolicy.hh",
         "src/policy/SetupLegacyBase.cc",
-        "src/policy/SetupLegacyBase.hh",
         "src/policy/SetupLegacyMtPolicy.cc",
         "src/policy/SetupLegacyPolicy.cc",
-        "src/policy/SetupLegacyPolicy.hh",
         "src/policy/SetupMt1Policy.cc",
         "src/policy/SetupReroutePolicy.cc",
         "src/policy/SetupReroutePolicy.hh",
@@ -141,7 +139,9 @@ cc_library(
         "src/move/MoveCandidate.hh",
         "src/move/MoveGenerator.hh",
         "src/move/VtSwapMtCandidate.hh",
+        "src/policy/SetupLegacyBase.hh",
         "src/policy/SetupLegacyMtPolicy.hh",
+        "src/policy/SetupLegacyPolicy.hh",
         "src/policy/SetupMt1Policy.hh",
     ],
     includes = [
@@ -286,4 +286,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/rsz/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":rsz"],
 )

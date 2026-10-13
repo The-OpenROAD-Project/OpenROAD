@@ -87,3 +87,35 @@ Unit tests are C++ files located at `src/<module>/test/cpp`.
 ### Test Registration
 - CMake: `src/<module>/test/CMakeLists.txt`
 - Bazel: `src/<module>/test/BUILD` or `src/<module>/test/cpp/BUILD`
+
+## Python Unit Tests
+
+Python binding tests can be plain `unittest` modules run as Bazel `py_test`
+targets on the hermetic interpreter, one test method per behavior. The
+example is `python/openroad/openroad_test.py`:
+
+```starlark
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "openroad_test",
+    size = "small",
+    srcs = ["openroad_test.py"],
+    deps = ["//python/openroad:openroadpy"],
+)
+```
+
+`//python/openroad:openroadpy` provides `import openroad` and the per-tool
+modules (`import odb`, `import ant`, ...) from `python/modules`, the same
+names the wheel installs and `openroad -python` provides. Each tool module
+has only its own API, as under CMake; all of them load from one library,
+`_openroad.so`, so they share one copy of the C++ state. Keep each `Tech`
+alive while its `Design` or the module-level functions (`set_thread_count`,
+...) are in use.
+
+### The openroad wheel
+
+`bazelisk build //python/openroad:openroad_wheel` builds an abi3 wheel (CPython
+3.10 or later) that installs into any virtualenv with `pip install`.
+`//python/openroad:wheel_test` checks that it imports in a fresh interpreter
+without the Bazel runfiles.

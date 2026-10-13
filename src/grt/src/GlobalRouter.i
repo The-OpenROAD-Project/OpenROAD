@@ -114,6 +114,12 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
+set_cugr_via_demand(bool enabled)
+{
+  getGlobalRouter()->setCUGRViaDemand(enabled);
+}
+
+void
 set_res_aware_nets_percentage(float percentage)
 {
   getGlobalRouter()->setResAwareNetsPercentage(percentage);

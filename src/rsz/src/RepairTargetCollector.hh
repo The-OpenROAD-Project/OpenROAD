@@ -400,6 +400,8 @@ class RepairTargetCollector
   // Cached cone threshold for adaptive collection
   sta::Slack cached_cone_threshold_;
   bool needs_threshold_recompute_;
+  // Endpoint the cached threshold was computed for
+  sta::Vertex* cone_threshold_endpoint_ = nullptr;
 };
 
 }  // namespace rsz

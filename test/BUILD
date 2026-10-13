@@ -130,6 +130,7 @@ PASSFAIL_TESTS = [
     "db_option_quoting",
     "init_file_error",
     "upf_aes",
+    "est_placement_threads",
 ]
 
 COMPULSORY_TESTS = [

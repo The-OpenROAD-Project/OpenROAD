@@ -263,8 +263,14 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
     } else {
       viol_pins = target_collector_->collectViolators(1, -1, sort_type);
     }
+    // Cone collection gathers drivers across the endpoint's whole fanin
+    // cone, so each one is targeted on its own worst slack path. Pinning
+    // them to the endpoint's single worst path would drop every off-path
+    // driver and degenerate the cone into WNS_PATH.
     sta::Path* focus_path
-        = target_collector_->findWorstSlackPath(current_endpoint);
+        = use_cone_collection
+              ? nullptr
+              : target_collector_->findWorstSlackPath(current_endpoint);
 
     std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
     bool changed;
