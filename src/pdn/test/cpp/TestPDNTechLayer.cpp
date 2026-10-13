@@ -673,6 +673,40 @@ TEST_F(TestTechLayer, GetMinCutRulesBindsTheCutClassOnBothCutLayers)
   EXPECT_EQ(rules[1].cut_class, above);
 }
 
+// FROMABOVE covers only vias on the cut layer above, and FROMBELOW only those
+// on the cut layer below, so each binds the class on that cut layer alone.
+TEST_F(TestTechLayer, GetMinCutRulesBindsADirectedCutClassOnItsSideOnly)
+{
+  makeMetal(tech(), "m0", odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTechLayer* v0
+      = odb::dbTechLayer::create(tech(), "v0", odb::dbTechLayerType::CUT);
+  odb::dbTechLayer* m1 = makeMetal(tech(), "m1", odb::dbTechLayerDir::VERTICAL);
+  odb::dbTechLayer* v1
+      = odb::dbTechLayer::create(tech(), "v1", odb::dbTechLayerType::CUT);
+  makeMetal(tech(), "m2", odb::dbTechLayerDir::HORIZONTAL);
+  auto* below = odb::dbTechLayerCutClassRule::create(v0, "VC");
+  auto* above = odb::dbTechLayerCutClassRule::create(v1, "VC");
+
+  odb::dbTechLayerMinCutRule* from_above
+      = odb::dbTechLayerMinCutRule::create(m1);
+  from_above->setWidth(100);
+  from_above->setCutsPerCutClass("VC", 2);
+  from_above->setFromAbove(true);
+  odb::dbTechLayerMinCutRule* from_below
+      = odb::dbTechLayerMinCutRule::create(m1);
+  from_below->setWidth(100);
+  from_below->setCutsPerCutClass("VC", 3);
+  from_below->setFromBelow(true);
+
+  TechLayer tl(m1);
+  auto rules = tl.getMinCutRules();
+  ASSERT_EQ(rules.size(), 2u);
+  EXPECT_EQ(rules[0].cut_class, above);
+  EXPECT_EQ(rules[0].cuts, 2);
+  EXPECT_EQ(rules[1].cut_class, below);
+  EXPECT_EQ(rules[1].cuts, 3);
+}
+
 // The top routing layer has no cut layer above it; a class missing from the
 // one below gives no rule rather than a lookup on a missing layer.
 TEST_F(TestTechLayer, GetMinCutRulesSkipsACutLayerThatIsNotThere)

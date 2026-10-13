@@ -214,9 +214,13 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
                                  rule->getNumCuts()});
     }
     for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
-      // a class name can be defined on the cut layers both below and above
-      for (auto* cut_layer :
-           {layer_->getLowerLayer(), layer_->getUpperLayer()}) {
+      // a class name can be defined on the cut layers both below and above,
+      // but a FROMBELOW or FROMABOVE rule only covers the one on its side
+      odb::dbTechLayer* below
+          = rule->isFromAbove() ? nullptr : layer_->getLowerLayer();
+      odb::dbTechLayer* above
+          = rule->isFromBelow() ? nullptr : layer_->getUpperLayer();
+      for (auto* cut_layer : {below, above}) {
         if (cut_layer == nullptr) {
           continue;
         }

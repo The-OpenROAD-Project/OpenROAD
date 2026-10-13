@@ -1792,11 +1792,12 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
       // every axis with more than one cut has adjacent cuts along it
       if (rows > 1) {
         cut_pitch_y_ = cut.dy() + rule->getCutSpacing();
+        changed = true;
       }
       if (cols > 1) {
         cut_pitch_x_ = cut.dx() + rule->getCutSpacing();
+        changed = true;
       }
-      changed = true;
     }
   }
 
