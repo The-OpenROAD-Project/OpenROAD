@@ -88,11 +88,7 @@ Pin* Network::addPin(odb::dbITerm* term)
 
   auto node = getNode(term->getInst());
   if (node != nullptr) {
-    // The set of routing layers a pin touches depends only on the mterm
-    // geometry, which is identical for every instance of a master.  Compute
-    // the bitmask once per mterm and reuse it; previously this walked all pin
-    // geometry for every iterm, which scaled with total pins and dominated
-    // createNetwork() on large designs.
+    // The routing layers depend only on the mterm, so compute them once.
     auto cache_it = mterm_layers_.find(mTerm);
     uint8_t mask;
     if (cache_it != mterm_layers_.end()) {
@@ -148,10 +144,7 @@ void Network::addEdge(odb::dbNet* net)
   Edge* edge = uedge.get();
   ////////////////////////
   net_to_edge_idx_[net] = id;
-  // Record the backing net so the edge name can be derived lazily.  This is a
-  // cheap pointer append; materializing net->getName() up front (a std::string
-  // allocation per net) measurably dominated createNetwork() on large designs,
-  // and Network::getEdgeName() has no eager callers.
+  // The edge name is derived from the net on demand.
   if (static_cast<int>(edge_to_net_.size()) <= id) {
     edge_to_net_.resize(id + 1, nullptr);
   }

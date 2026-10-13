@@ -49,11 +49,7 @@ class Network
   Edge* getEdge(odb::dbNet* net) const;
   Edge* getEdge(int i) const { return edges_[i].get(); }
   void setEdgeName(int i, const std::string& name) { edgeNames_[i] = name; }
-  // Edge names are not materialized eagerly (that cost a std::string allocation
-  // per net during createNetwork()).  If an explicit name was set via
-  // setEdgeName() it is returned; otherwise the name is derived lazily from the
-  // backing dbNet.  Returns by value because the lazy path has no stored string
-  // to reference.
+  // Returns the name set by setEdgeName(), else the backing net's name.
   std::string getEdgeName(int i) const
   {
     auto it = edgeNames_.find(i);
@@ -83,9 +79,7 @@ class Network
   // For creating and adding edges.
   void addEdge(odb::dbNet* net);
 
-  // Reserve capacity for the netlist containers to avoid repeated reallocation
-  // of the unique_ptr vectors while the network is built.
-  void reserve(size_t num_nodes, size_t num_edges)
+  void reserveNodesAndEdges(size_t num_nodes, size_t num_edges)
   {
     nodes_.reserve(num_nodes);
     edges_.reserve(num_edges);
@@ -118,18 +112,14 @@ class Network
   std::vector<odb::Rect> blockages_;          // The placement blockages ..
 
   std::unordered_map<int, std::string> edgeNames_;  // Names of edges...
-  // Backing nets indexed by edge id, used to derive edge names lazily without
-  // allocating a std::string for every net up front.
+  // Backing nets indexed by edge id
   std::vector<odb::dbNet*> edge_to_net_;
 
   std::unordered_map<odb::dbInst*, int> inst_to_node_idx_;
   std::unordered_map<odb::dbBTerm*, int> term_to_node_idx_;
   std::unordered_map<odb::dbMaster*, int> master_to_idx_;
   std::unordered_map<odb::dbNet*, int> net_to_edge_idx_;
-  // Cache of the routing-layer bitmask used by each mterm.  The layer set
-  // depends only on the mterm geometry (shared across all instances of a
-  // master), so it is computed once and reused, avoiding a per-pin walk of the
-  // pin geometry for every iterm during createNetwork().
+  // Routing-layer bitmask used by each mterm
   std::unordered_map<odb::dbMTerm*, uint8_t> mterm_layers_;
   uint32_t cells_cnt_{0};
   uint32_t terminals_cnt_{0};
