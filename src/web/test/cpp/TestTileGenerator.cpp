@@ -623,17 +623,15 @@ class TileGeneratorTest : public tst::Nangate45Fixture
           = decodePng(tile_gen_->generateTile("_inst_labels", 2, 2, 2, vis),
                       right_w,
                       right_h);
+      constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
       // Both decoded tiles must fit the fixed-size stitched image.
-      if (left_w != static_cast<unsigned>(kTileSize)
-          || left_h != static_cast<unsigned>(kTileSize)
-          || right_w != static_cast<unsigned>(kTileSize)
-          || right_h != static_cast<unsigned>(kTileSize)
-          || left.size() != 4UL * kTileSize * kTileSize
-          || right.size() != 4UL * kTileSize * kTileSize) {
+      if (left_w != kSize || left_h != kSize || right_w != kSize
+          || right_h != kSize || left.size() != 4UL * kSize * kSize
+          || right.size() != 4UL * kSize * kSize) {
         ADD_FAILURE() << "invalid decoded tile dimensions";
         return std::vector<unsigned char>{};
       }
-      w = h = static_cast<unsigned>(kTileSize);
+      w = h = kSize;
       std::vector<unsigned char> out(8UL * w * h);
       for (unsigned y = 0; y < h; ++y) {
         std::memcpy(&out[8UL * y * w], &left[4UL * y * w], 4UL * w);
@@ -1470,10 +1468,9 @@ TEST_F(TileGeneratorTest, ObstructionsUseQtLighterColour)
   unsigned w = 0, h = 0;
   const auto px = decodePng(
       tile_gen_->generateTile("metal4", 0, 0, 0, TileVisibility{}), w, h);
+  constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
   // The fixed tile dimensions must match the decoded RGBA buffer.
-  if (w != static_cast<unsigned>(kTileSize)
-      || h != static_cast<unsigned>(kTileSize)
-      || px.size() != 4UL * kTileSize * kTileSize) {
+  if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
     ADD_FAILURE() << "invalid decoded tile dimensions";
     return;
   }
@@ -2241,14 +2238,13 @@ TEST_F(TileGeneratorTest, InstLabelsStayUprightInAMirroredChiplet)
     tile_gen_->eagerInit();
     unsigned w = 0, h = 0;
     const auto px = decodePng(labelsTile(TileVisibility{}), w, h);
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
     // The crop loops index a fixed-size tile decoded from the PNG.
-    if (w != static_cast<unsigned>(kTileSize)
-        || h != static_cast<unsigned>(kTileSize)
-        || px.size() != 4UL * kTileSize * kTileSize) {
+    if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
       ADD_FAILURE() << "invalid decoded tile dimensions";
       return std::pair{0U, std::vector<unsigned char>{}};
     }
-    w = h = static_cast<unsigned>(kTileSize);
+    w = h = kSize;
     unsigned x0 = w, y0 = h, x1 = 0, y1 = 0;
     for (unsigned y = 0; y < h; ++y) {
       for (unsigned x = 0; x < w; ++x) {
