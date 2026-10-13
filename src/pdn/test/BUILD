@@ -481,3 +481,25 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "pdn_shape_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNShape.cpp",
+        "cpp/stubs.cpp",
+    ],
+    data = ["cpp/wrong_direction_spacing.lef"],
+    # shape.h, grid.h, domain.h, grid_component.h are internal headers.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
