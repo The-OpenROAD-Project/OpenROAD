@@ -16,5 +16,6 @@ or_integration_tests(
     write_mux_asap7
     periphery_unplaced_asap7
     cells_name_asap7
+    decoder_word_asap7
 )
 

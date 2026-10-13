@@ -18,6 +18,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-write_style clock_gate|mux]
                                              [-cells {role master ...}]
                                              [-name name]
+                                             [-decoder row|word]
                                              [-periphery placed|unplaced]
                                              [-pin_layer layer]
                                              [-inv_cell name]
@@ -34,7 +35,7 @@ proc generate_ram_netlist { args } {
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -read_latency -write_style
-      -periphery -pin_layer -cells -name } flags {}
+      -periphery -pin_layer -cells -name -decoder } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -206,6 +207,17 @@ proc generate_ram_netlist { args } {
     set name $keys(-name)
   }
 
+  # The address decoders: row, a decoder per row (an AND2 chain), the
+  # column mux selecting within it; or word, a balanced AND2 tree over
+  # each word's whole address.
+  set decoder row
+  if { [info exists keys(-decoder)] } {
+    set decoder $keys(-decoder)
+    if { $decoder ni {row word} } {
+      utl::error RAM 82 "-decoder is row or word, not $decoder."
+    }
+  }
+
   # How a word holds its value between writes: a clock gate per word
   # (clock_gate), or a mux per bit (mux).
   set write_style clock_gate
@@ -238,7 +250,8 @@ proc generate_ram_netlist { args } {
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
-    $rb_ports $read_latency $write_style $periphery $pin_layer $cells $name
+    $rb_ports $read_latency $write_style $periphery $pin_layer $cells $name \
+    $decoder
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -274,7 +287,7 @@ proc generate_ram { args } {
            -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog -read_style -zero_word -reset_value
            -banks -bank_columns -bank_order -rb_ports -read_latency -write_style
-           -cells -name } flags {}
+           -cells -name -decoder } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -324,7 +337,7 @@ proc generate_ram { args } {
   }
 
   foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency -write_style
-               -cells -name} {
+               -cells -name -decoder} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }

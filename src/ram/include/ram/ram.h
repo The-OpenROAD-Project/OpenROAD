@@ -122,7 +122,8 @@ class RamGen
                 const std::string& periphery = "placed",
                 const std::string& pin_layer = "",
                 const std::string& cells = "",
-                const std::string& name = "");
+                const std::string& name = "",
+                const std::string& decoder = "row");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,

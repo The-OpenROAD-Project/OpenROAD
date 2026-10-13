@@ -1914,12 +1914,15 @@ void RamGen::generate(const int mask_size,
                       const std::string& periphery,
                       const std::string& pin_layer,
                       const std::string& cells,
-                      const std::string& name)
+                      const std::string& name,
+                      const std::string& decoder)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
   // without banks, the column mux as it was.
-  banked_ = banks > 1 || bank_columns > 1;
+  // -decoder word: each port decodes every word's whole address through
+  // a balanced AND2 tree per word, the banks' decoders, banks or none
+  banked_ = banks > 1 || bank_columns > 1 || decoder == "word";
   banks_ = std::max(banks, 1);
   bank_columns_ = std::max(bank_columns, 1);
   bank_interleaved_ = bank_order == "interleaved";
