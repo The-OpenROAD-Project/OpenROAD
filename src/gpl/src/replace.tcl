@@ -29,6 +29,10 @@ sta::define_cmd_args "global_placement" {\
     [-routability_max_density routability_max_density]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
+    [-routability_min_congestion_for_inflation routability_min_congestion_for_inflation]\
+    [-routability_max_inflation_total routability_max_inflation_total]\
+    [-routability_net_weight_max routability_net_weight_max]\
+    [-routability_congested_nets_percentage routability_congested_nets_percentage]\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-keep_resize_below_overflow keep_resize_below_overflow]\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
@@ -57,6 +61,10 @@ proc global_placement { args } {
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
+      -routability_min_congestion_for_inflation \
+      -routability_max_inflation_total \
+      -routability_net_weight_max \
+      -routability_congested_nets_percentage \
       -routability_rc_coefficients \
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
@@ -257,6 +265,31 @@ proc placement_cluster { args } {
   utl::info GPL 96 "Created placement cluster of [llength $insts] instances."
 
   gpl::placement_cluster_cmd $insts
+}
+
+sta::define_cmd_args "estimate_target_density" {\
+    [-bin_grid_count grid_count]\
+    [-overflow overflow]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+}
+
+proc estimate_target_density { args } {
+  sta::parse_key_args "estimate_target_density" args \
+    keys {-bin_grid_count -overflow \
+      -pad_left -pad_right} \
+    flags {}
+  sta::check_argc_eq0 "estimate_target_density" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 187 "No design block found."
+  }
+
+  set density_estimation [gpl::estimate_target_density_cmd \
+    [array get keys] [array get flags]]
+  gpl::replace_reset_cmd
+
+  return $density_estimation
 }
 
 namespace eval gpl {

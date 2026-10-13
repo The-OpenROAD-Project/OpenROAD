@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
+#include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
 #include "move/MoveGenerator.hh"
 #include "odb/db.h"
 #include "odb/defin.h"
+#include "policy/SetupLegacyPolicy.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -45,6 +51,40 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+class TestSetupLegacyPolicy : public SetupLegacyPolicy
+{
+ public:
+  using SetupLegacyBase::EndpointRepairState;
+  using SetupLegacyBase::refreshEndpointSlacks;
+  using SetupLegacyBase::repairBudget;
+  using SetupLegacyPolicy::MainRepairState;
+  using SetupLegacyPolicy::repairEndpoint;
+  using SetupLegacyPolicy::SetupLegacyPolicy;
+
+  void setRepairPathStep(std::function<bool()> step)
+  {
+    repair_path_step_ = std::move(step);
+  }
+
+  const std::vector<bool>& recordedForceSingleRepair() const
+  {
+    return recorded_force_single_repair_;
+  }
+
+ protected:
+  bool repairPath(sta::Path* /*path*/,
+                  sta::Slack /*path_slack*/,
+                  bool force_single_repair) override
+  {
+    recorded_force_single_repair_.push_back(force_single_repair);
+    return repair_path_step_ ? repair_path_step_() : false;
+  }
+
+ private:
+  std::function<bool()> repair_path_step_;
+  std::vector<bool> recorded_force_single_repair_;
 };
 
 class TestResizer : public tst::IntegratedFixture
@@ -225,6 +265,173 @@ class TestResizer : public tst::IntegratedFixture
   }
 };
 
+// Exclude non-timing drivers from GPL's slack ranking.
+TEST_F(TestResizer, ResizeSlacksExcludeNonTimingDrivers)
+{
+  readVerilogAndSetup("TestResizerResizeSlacks.v",
+                      /*init_default_sdc=*/false);
+  makeClock("vclk", nullptr);
+  setInputDelay("a", "vclk", 0.028);
+  setInputDelay("unused", "vclk", 0.270);
+  setInputDelay("loose_in", "vclk", 0.270);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clock = sdc->findClock("vclk");
+  sta::Pin* output = findTopPin("y");
+  ASSERT_NE(output, nullptr);
+  sta_->setOutputDelay(output,
+                       sta::RiseFallBoth::riseFall(),
+                       clock,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       true,
+                       staTime(1.0),
+                       sdc);
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const auto* max = sta::MinMax::max();
+  const float tolerance = staTime(1e-6);
+  sta::Vertex* constrained = loadVertex("a");
+  sta::Vertex* isolated = loadVertex("unused");
+  sta::Vertex* unconstrained = loadVertex("loose_in");
+  ASSERT_NE(constrained, nullptr);
+  ASSERT_NE(isolated, nullptr);
+  ASSERT_NE(unconstrained, nullptr);
+  ASSERT_TRUE(constrained->hasFanout());
+  ASSERT_FALSE(isolated->hasFanout());
+  ASSERT_TRUE(unconstrained->hasFanout());
+  const sta::Slack wns = sta_->worstSlack(max);
+  EXPECT_NEAR(wns, staTime(-0.028), tolerance);
+  EXPECT_NEAR(sta_->slack(isolated, max), staTime(-0.270), tolerance);
+  EXPECT_TRUE(sta::fuzzyInf(sta_->slack(unconstrained, max)));
+
+  const odb::dbNet* timed_net = db_network_->flatNet(constrained->pin());
+  const odb::dbNet* isolated_net = db_network_->flatNet(isolated->pin());
+  const odb::dbNet* unconstrained_net
+      = db_network_->flatNet(unconstrained->pin());
+  resizer_.findResizeSlacks1();
+  const auto timed_slack = resizer_.resizeNetSlack(timed_net);
+  ASSERT_TRUE(timed_slack.has_value());
+  EXPECT_NEAR(*timed_slack, wns, tolerance);
+  EXPECT_FALSE(resizer_.resizeNetSlack(isolated_net).has_value());
+  EXPECT_FALSE(resizer_.resizeNetSlack(unconstrained_net).has_value());
+
+  // Preserve constrained slack on nets with mixed fanout.
+  resizer_.setWorstSlackNetsPercent(100);
+  EXPECT_EQ(resizer_.resizeWorstSlackNets().size(), 1);
+
+  // Clear cached slack when the last output constraint is removed.
+  sta_->removeOutputDelay(output,
+                          sta::RiseFallBoth::riseFall(),
+                          clock,
+                          sta::RiseFall::rise(),
+                          sta::MinMaxAll::all(),
+                          sdc);
+  sta_->updateTiming(true);
+  resizer_.findResizeSlacks1();
+  EXPECT_FALSE(resizer_.resizeNetSlack(timed_net).has_value());
+  EXPECT_TRUE(resizer_.resizeWorstSlackNets().empty());
+}
+
+// Verify dont_touch preserves a hierarchical name and protects its flat net.
+TEST_F(TestResizer, HierarchicalNetDontTouch)
+{
+  readVerilogAndSetup("TestBufferRemoval3_feedthrough.v",
+                      /*init_default_sdc=*/false);
+
+  odb::dbModule* child_module = block_->findModule("child_mod");
+  ASSERT_NE(child_module, nullptr);
+  odb::dbModBTerm* input_port = child_module->findModBTerm("data_i");
+  ASSERT_NE(input_port, nullptr);
+  odb::dbModNet* mod_net = input_port->getModNet();
+  ASSERT_NE(mod_net, nullptr);
+  odb::dbNet* flat_net = mod_net->findRelatedNet();
+  ASSERT_NE(flat_net, nullptr);
+
+  // Compare addresses without dereferencing a potentially corrupted name.
+  const std::uintptr_t name_address
+      = reinterpret_cast<std::uintptr_t>(mod_net->getConstName());
+  const sta::Net* sta_net = db_network_->dbToSta(mod_net);
+  ASSERT_NE(sta_net, nullptr);
+
+  resizer_.setDontTouch(sta_net, true);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(mod_net->getConstName()),
+            name_address);
+  EXPECT_TRUE(flat_net->isDoNotTouch());
+  EXPECT_TRUE(resizer_.dontTouch(sta_net));
+
+  resizer_.setDontTouch(sta_net, false);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(mod_net->getConstName()),
+            name_address);
+  EXPECT_FALSE(flat_net->isDoNotTouch());
+}
+
+TEST_F(TestResizer, BufferRemovalPreservesCandidateAndSurvivorFlags)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* db_buffer = block_->findInst("b2");
+  odb::dbNet* db_survivor = block_->findNet("n1");
+  odb::dbNet* db_removed = block_->findNet("n2");
+  ASSERT_NE(db_buffer, nullptr);
+  ASSERT_NE(db_survivor, nullptr);
+  ASSERT_NE(db_removed, nullptr);
+  sta::Instance* buffer = db_network_->dbToSta(db_buffer);
+  ASSERT_NE(buffer, nullptr);
+
+  // Given a protected candidate, when queried, then all flags stay unchanged.
+  db_buffer->setDoNotTouch(true);
+  db_buffer->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  db_survivor->setDoNotTouch(true);
+  db_removed->setDoNotTouch(true);
+  EXPECT_FALSE(resizer_.canRemoveBuffer(buffer, true));
+  ASSERT_TRUE(resizer_.canRemoveBuffer(buffer, false));
+  EXPECT_TRUE(db_buffer->isDoNotTouch());
+  EXPECT_TRUE(db_buffer->isFixed());
+  EXPECT_TRUE(db_survivor->isDoNotTouch());
+  EXPECT_TRUE(db_removed->isDoNotTouch());
+
+  // Given an eligible candidate, when removed, then the survivor stays
+  // protected.
+  ASSERT_TRUE(resizer_.removeBuffer(buffer, /*honor_dont_touch_fixed=*/false));
+  EXPECT_EQ(block_->findInst("b2"), nullptr);
+  EXPECT_EQ(block_->findNet("n2"), nullptr);
+  EXPECT_TRUE(db_survivor->isDoNotTouch());
+  EXPECT_EQ(block_->findInst("b3")->findITerm("A")->getNet(), db_survivor);
+}
+
+TEST_F(TestResizer, BufferRemovalWithDisconnectedOutputPreservesInputNet)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* db_buffer = block_->findInst("b2");
+  odb::dbNet* db_input = block_->findNet("n1");
+  ASSERT_NE(db_buffer, nullptr);
+  ASSERT_NE(db_input, nullptr);
+  sta::Instance* buffer = db_network_->dbToSta(db_buffer);
+  ASSERT_NE(buffer, nullptr);
+  sta::Pin* output_pin = db_network_->dbToSta(db_buffer->findITerm("Z"));
+  ASSERT_NE(output_pin, nullptr);
+  sta_->disconnectPin(output_pin);
+
+  // Given an unconnected output, when removed, then the input net stays
+  // protected.
+  db_buffer->setDoNotTouch(true);
+  db_buffer->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  db_input->setDoNotTouch(true);
+  ASSERT_TRUE(resizer_.removeBuffer(buffer, /*honor_dont_touch_fixed=*/false));
+  EXPECT_EQ(block_->findInst("b2"), nullptr);
+  EXPECT_TRUE(db_input->isDoNotTouch());
+}
+
 TEST_F(TestResizer, WeakerCellFirstOrdersHigherDriveResistanceFirst)
 {
   const sta::LibertyCell* weaker_cell
@@ -394,6 +601,189 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "mid_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "deep_buf0/Z"));
+}
+
+TEST_F(TestResizer, RepairBudgetClampsToAtLeastOneWhenSlackImprovesPastMinViol)
+{
+  readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
+                      /*init_default_sdc=*/true,
+                      /*hierarchy=*/false);
+
+  sta::Pin* out1_pin = findTopPin("out1");
+  sta::Pin* out2_pin = findTopPin("out2");
+  ASSERT_NE(out1_pin, nullptr);
+  ASSERT_NE(out2_pin, nullptr);
+
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const sta::MinMax* max = sta::MinMax::max();
+  const sta::Slack out1_base_slack
+      = sta_->slack(sta_->graph()->pinLoadVertex(out1_pin), max);
+  const sta::Slack out2_base_slack
+      = sta_->slack(sta_->graph()->pinLoadVertex(out2_pin), max);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+
+  // Give out1 an initial violation of 0.20 ns (max_viol) and out2 an initial
+  // violation of 0.10 ns (min_viol).
+  sta_->setOutputDelay(out1_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out1_base_slack + staTime(0.20f),
+                       sdc);
+  sta_->setOutputDelay(out2_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out2_base_slack + staTime(0.10f),
+                       sdc);
+  sta_->updateTiming(true);
+
+  RepairTargetCollector collector(&resizer_);
+  collector.init(0.0f);
+  ASSERT_EQ(collector.getMaxEndpointCount(), 2);
+  collector.setToEndpoint(0);
+
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  setup_context.min_viol = 0.067f;
+  setup_context.max_viol = 0.256f;
+  setup_context.max_repairs_per_pass = 10;
+  const OptimizerRunConfig run_config;
+  const TestSetupLegacyPolicy policy(
+      resizer_, committer, setup_context, run_config);
+
+  // Once a path's violation (-path_slack) shrinks below the initial min_viol,
+  // repairBudget must still allow at least 1 repair per pass rather than
+  // returning 0 or a negative budget.
+  EXPECT_EQ(policy.repairBudget(-0.044f, /*force_single_repair=*/false), 1);
+  EXPECT_EQ(policy.repairBudget(-0.005f, /*force_single_repair=*/false), 1);
+
+  // Improve out1's violation to 0.05 ns (below the initial min_viol of 0.10 ns
+  // recorded in collector, while remaining negative-slack).
+  sta_->setOutputDelay(out1_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out1_base_slack + staTime(0.05f),
+                       sdc);
+  sta_->updateTiming(true);
+  ASSERT_LT(collector.getCurrentEndpointSlack(), 0.0f);
+  ASSERT_GT(collector.getCurrentEndpointSlack(),
+            collector.getViolatingEndpoints().back().second);
+  EXPECT_EQ(collector.repairsPerPass(10), 1);
+}
+
+TEST_F(TestResizer, SetupLegacyPolicyResetsForceSingleRepairAfterImprovingPass)
+{
+  readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
+                      /*init_default_sdc=*/true,
+                      /*hierarchy=*/false);
+
+  odb::dbInst* target_db = block_->findInst("target");
+  ASSERT_NE(target_db, nullptr);
+  sta::Instance* target_inst = db_network_->dbToSta(target_db);
+  ASSERT_NE(target_inst, nullptr);
+  sta::LibertyCell* or2_x1 = sta_->network()->findLibertyCell("OR2_X1");
+  sta::LibertyCell* or2_x4 = sta_->network()->findLibertyCell("OR2_X4");
+  ASSERT_NE(or2_x1, nullptr);
+  ASSERT_NE(or2_x4, nullptr);
+  ASSERT_TRUE(resizer_.replaceCell(target_inst, or2_x1));
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  sta::Pin* out1_pin = findTopPin("out1");
+  ASSERT_NE(out1_pin, nullptr);
+  sta::Port* out1_port = db_network_->port(out1_pin);
+  ASSERT_NE(out1_port, nullptr);
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+  const float ext_cap = sta_->units()->capacitanceUnit()->userToSta(50.0f);
+  sta_->setPortExtPinCap(out1_port,
+                         sta::RiseFallBoth::riseFall(),
+                         sta::MinMaxAll::all(),
+                         ext_cap,
+                         sdc);
+  sta_->updateTiming(true);
+
+  sta::Vertex* endpoint = sta_->graph()->pinLoadVertex(out1_pin);
+  ASSERT_NE(endpoint, nullptr);
+  const sta::Slack out1_base_slack = sta_->slack(endpoint, sta::MinMax::max());
+
+  sta_->setOutputDelay(out1_pin,
+                       sta::RiseFallBoth::riseFall(),
+                       clk,
+                       sta::RiseFall::rise(),
+                       nullptr,
+                       false,
+                       false,
+                       sta::MinMaxAll::all(),
+                       /*add=*/false,
+                       out1_base_slack + staTime(0.10f),
+                       sdc);
+  sta_->updateTiming(true);
+
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig run_config;
+  run_config.setup_slack_margin = 0.0f;
+  TestSetupLegacyPolicy policy(resizer_, committer, setup_context, run_config);
+  ASSERT_TRUE(policy.start());
+
+  TestSetupLegacyPolicy::EndpointRepairState endpoint_state;
+  endpoint_state.end = endpoint;
+  policy.refreshEndpointSlacks(endpoint_state);
+  ASSERT_LT(endpoint_state.end_slack, 0.0f);
+  endpoint_state.prev_end_slack = endpoint_state.end_slack;
+  endpoint_state.prev_worst_slack = endpoint_state.worst_slack;
+  // Simulate a prior non-improving pass that latched force_single_repair=true.
+  endpoint_state.force_single_repair = true;
+  endpoint_state.decreasing_slack_passes = 1;
+
+  TestSetupLegacyPolicy::MainRepairState main_state;
+  main_state.end_index = 2;
+  main_state.max_end_count = 2;
+  main_state.num_viols = 2;
+
+  int call_count = 0;
+  policy.setRepairPathStep([&]() {
+    ++call_count;
+    if (call_count == 1) {
+      // Pass 1 improves slack by upsizing target from OR2_X1 to OR2_X4.
+      return resizer_.replaceCell(target_inst, or2_x4);
+    }
+    return false;
+  });
+
+  {
+    est::IncrementalParasiticsGuard guard(&ep_);
+    policy.repairEndpoint(endpoint_state, main_state);
+  }
+
+  ASSERT_EQ(policy.recordedForceSingleRepair().size(), 2u);
+  EXPECT_TRUE(policy.recordedForceSingleRepair()[0]);
+  EXPECT_FALSE(policy.recordedForceSingleRepair()[1]);
+  EXPECT_FALSE(endpoint_state.force_single_repair);
 }
 
 }  // namespace rsz

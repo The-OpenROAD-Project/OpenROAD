@@ -35,12 +35,13 @@
 
 // ─── Opacity ────────────────────────────────────────────────────────────────
 //
-// Today each layer's opacity is applied by Leaflet to the layer's CONTAINER div,
-// not to the individual tile images: GridLayer._updateOpacity() calls
-// setOpacity(this._container, this.options.opacity).  The values differ per
-// layer — routing layers are created at 0.7, while _instances, _pins and
-// _modules are left at the default 1 — so the merge has to carry opacity
-// per item and cannot assume a single value.
+// Each layer's opacity is applied by Leaflet to the layer's CONTAINER div, not
+// to the individual tile images: GridLayer._updateOpacity() calls
+// setOpacity(this._container, this.options.opacity).  Every layer is created at
+// 1 — layer transparency lives in the tile pixels themselves, painted with the
+// palette alpha the Qt GUI uses — but the merge still carries opacity per item
+// rather than assuming one value, so a pane that does want partial opacity
+// composites correctly.
 //
 // Group opacity on a container is NOT generally the same thing as per-image
 // alpha: a group is rasterized at full alpha and then blended once, so anywhere
@@ -55,10 +56,10 @@
 // DO overlap.  That is pre-existing behaviour at the layer level and applies
 // equally to a merged pane, so it is not made worse here.)
 //
-// The trap: the merged result is itself a tile inside a pane.  If that pane also
-// carried opacity 0.7, every source would be multiplied by 0.7 twice — 0.49 —
-// and the view would wash out.  The per-layer opacities now live INSIDE the
-// canvas, so the pane holding it must be fully opaque.
+// The trap: the merged result is itself a tile inside a pane.  If that pane
+// carried a source's opacity too, every source would be multiplied by it twice
+// — 0.7 becomes 0.49 — and the view would wash out.  The per-layer opacities
+// live INSIDE the canvas, so the pane holding it must be fully opaque.
 export const MERGED_PANE_OPACITY = 1;
 
 // Build the Leaflet options for a merged pane, so a caller cannot forget the
@@ -152,15 +153,16 @@ export function setItemVisible(item, visible) {
 }
 
 // Panes that stay unmerged and so are not counted by the grouping, but do hold
-// a full grid of tiles each: _instances, _pins, and the always-on highlight
-// overlay.  (_modules and the heatmap are only mounted when enabled, so they are
-// not reserved for; they will push the total up when switched on.)
+// a full grid of tiles each: _instances, _pins, _inst_labels (on with the
+// instance names, the default) and the always-on highlight overlay.  (_modules
+// and the heatmap are only mounted when enabled, so they are not reserved for;
+// they will push the total up when switched on.)
 //
 // At dpr 1 these are ~6 MB each and hardly matter.  At dpr 3 a tile is 2.25 MB,
-// so a pane is ~54 MB and the three together are ~162 MB — enough that a budget
+// so a pane is ~54 MB and the four together are ~216 MB — enough that a budget
 // which ignored them would report a comfortable fit while the real total sat
 // above the ceiling.
-export const UNMERGED_PANE_COUNT = 3;
+export const UNMERGED_PANE_COUNT = 4;
 
 // Budget left for the merged panes once the unmerged ones are charged for.
 //

@@ -14,14 +14,16 @@
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 117 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
-total displacement        120.9 u
+legalizer            negotiation
+total moves                   0
+total displacement        115.4 u
 average displacement        1.0 u
-max displacement            2.3 u
+max displacement            2.1 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
-[INFO DPL-0001] Placed 19644 filler instances.
+[INFO DPL-0001] Placed 19647 filler instances.
 No differences found.

@@ -1291,11 +1291,6 @@ class dbBlock : public dbObject
   void clear();
 
   ///
-  /// get wire_updated nets
-  ///
-  void getWireUpdatedNets(std::vector<dbNet*>& nets);
-
-  ///
   /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
@@ -1320,6 +1315,24 @@ class dbBlock : public dbObject
                               = dbNameUniquifyType::ALWAYS);
 
   const char* getBaseName(const char* full_name) const;
+
+  ///
+  /// Split a hierarchical name into its path segments, using this block's
+  /// hierarchy delimiter and the same escaping rule as getBaseName(): a
+  /// delimiter preceded by an odd number of backslashes is escaped and
+  /// belongs to the local identifier rather than separating two levels.
+  ///
+  /// Segments are appended to `segments` after clearing it, and are views
+  /// into `full_name` -- the caller keeps that buffer alive.  Escapes are
+  /// left in place, so a segment reads exactly as it does in the full name.
+  ///
+  /// Splitting is purely textual: every unescaped delimiter separates two
+  /// segments, so "a//b" yields {"a", "", "b"} and "a/" yields {"a", ""}.
+  /// Callers that treat an empty segment as meaningless drop it themselves.
+  /// The last segment always equals getBaseName(full_name).
+  ///
+  void getPathSegments(const char* full_name,
+                       std::vector<std::string_view>& segments) const;
 
   ///
   /// return the regions of this design
@@ -1933,26 +1946,6 @@ class dbNet : public dbObject
   /// is created on this net.
   ///
   void setWireOrdered(bool value);
-
-  ///
-  /// Returns the disconnected flag value. This flag specified that the
-  /// wire are connected to all the iterms of this net.
-  ///
-  bool isDisconnected();
-
-  ///
-  /// Set the disconnected flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setDisconnected(bool value);
-
-  ///
-  /// wire_update flag to be used at when the wire is replaced with a new wire
-  /// NOTE: rcgraph, extracted, ordered, reduced all have to be reset
-  ///
-  void setWireAltered(bool value);
-  bool isWireAltered();
 
   ///
   /// rc_graph flag set when Rseg and CapNodes were created
@@ -5777,6 +5770,17 @@ class dbMTerm : public dbObject
   bool isSetMark();
 
   ///
+  /// Returns true if the router must connect to at least one shape of each port
+  /// of this terminal.
+  ///
+  bool isMustJoinAllPorts();
+
+  ///
+  /// Set the must-join-all-ports flag.
+  ///
+  void setMustJoinAllPorts(bool v);
+
+  ///
   /// Get the master this master-terminal belongs too.
   ///
   dbMaster* getMaster();
@@ -7540,6 +7544,8 @@ class dbChipNet : public dbObject
 
   dbSet<dbChipCapNode> getChipCapNodes() const;
 
+  float getTotalCapacitance() const;
+
   dbSet<dbChipRSeg> getChipRSegs() const;
 
   uint32_t getNumBumpInsts() const;
@@ -8838,6 +8844,18 @@ class dbModNet : public dbObject
   bool isConnected(const dbModNet* other) const;
 
   ///
+  /// Returns true if this dbModNet is connected to an INPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToInputPort() const;
+
+  ///
+  /// Returns true if this dbModNet is connected to an OUTPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToOutputPort() const;
+
+  ///
   /// Returns the next dbModNets in the fanin of this dbModNet.
   /// Traverses up to parent inputs or down to child outputs.
   ///
@@ -8966,10 +8984,13 @@ class dbPolygon : public dbObject
 
   int getDesignRuleWidth() const;
 
+  int getMinSpacing() const;
+
   // User Code Begin dbPolygon
   dbTechLayer* getTechLayer();
   dbSet<dbBox> getGeometry();
   void setDesignRuleWidth(int design_rule_width);
+  void setMinSpacing(int min_spacing);
 
   ///
   /// Add an obstruction to a master.

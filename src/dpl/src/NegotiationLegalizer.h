@@ -84,11 +84,6 @@ struct NegCell
   bool fixed{false};
   int fence_id{-1};   // -1 → default region
   bool legal{false};  // updated each negotiation iteration
-
-  [[nodiscard]] int displacement() const
-  {
-    return std::abs(x - init_x) + std::abs(y - init_y);
-  }
 };
 
 // ---------------------------------------------------------------------------
@@ -131,18 +126,48 @@ class NegotiationLegalizer
   {
     disable_window_extension_ = disable;
   }
+  // Suppresses the configuration and per-iteration progress output.  Warnings
+  // (stalls, non-convergence) are always reported.
+  void setQuiet(bool quiet) { quiet_ = quiet; }
 
-  // Metrics (valid after legalize())
+  // Metrics (valid after legalize()), in site widths on both axes.
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
+  [[nodiscard]] int totalMoves() const { return total_moves_; }
+  // Iterations actually executed by each phase.
+  [[nodiscard]] int phase1Iterations() const { return phase1_iterations_; }
+  [[nodiscard]] int phase2Iterations() const { return phase2_iterations_; }
+  [[nodiscard]] int totalIterations() const
+  {
+    return phase1_iterations_ + phase2_iterations_;
+  }
+  // Phase that drove the violation count to zero: 1 or 2.  -1 when the run
+  // ended without converging (phase-2 iteration limit, or a stall handed to
+  // the diamond search), 0 when negotiation never ran because every cell was
+  // already legal.
+  [[nodiscard]] int convergePhase() const;
+  [[nodiscard]] int diamondRecoveries() const { return diamond_recoveries_; }
+  [[nodiscard]] std::string finishDescription() const;
   [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
  private:
+  // How runNegotiation terminated.  Phase 1 falling back to the diamond
+  // search is not a terminal state: the run continues into phase 2.
+  enum class Finish
+  {
+    kNotRun,           // negotiation was never entered (no illegal cell)
+    kPhase1Converged,  // zero violations reached during phase 1
+    kPhase2Converged,  // zero violations reached during phase 2
+    kPhase2Recovery,   // phase 2 stalled, diamond search took over
+    kPhase2IterLimit   // phase-2 iteration limit exhausted
+  };
+
   // Initialisation
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
+  void initialSnap();
   void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
                                      // GUI updates)
   void pushNegotiationPixels();
@@ -166,6 +191,21 @@ class NegotiationLegalizer
                                        double abort_bound) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double targetCostFromDisp(int disp) const;
+  // A row is several site widths tall (7.4x on nangate45), so adding raw row
+  // and site counts would price a row jump like a single site step.
+  [[nodiscard]] int rowDispInSites(int y_from, int y_to) const
+  {
+    const int dy_dbu = std::abs(row_y_dbu_[y_to] - row_y_dbu_[y_from]);
+    return (dy_dbu + site_width_ / 2) / site_width_;
+  }
+  // The one definition of displacement: site widths on both axes. Pass the
+  // cell's own x/y for how far it has moved.
+  [[nodiscard]] int displacementInSites(const NegCell& cell,
+                                        int at_x,
+                                        int at_y) const
+  {
+    return std::abs(at_x - cell.init_x) + rowDispInSites(cell.init_y, at_y);
+  }
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
@@ -179,6 +219,11 @@ class NegotiationLegalizer
       int same_pos_count,
       const std::unordered_map<int, int>& no_cand_by_height,
       const std::unordered_map<int, int>& same_pos_by_height) const;
+
+  [[nodiscard]] bool shouldPrintIteration(int iter) const
+  {
+    return !quiet_ && (iter < 10 || iter % 10 == 0);
+  }
 
   // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);
@@ -268,6 +313,10 @@ class NegotiationLegalizer
   std::vector<FenceRegion> fences_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
+  // Per-row y origins from Grid::gridYToDbu, so hybrid (non-uniform) row
+  // heights are exact.  Monotone in y, which findBestLocation's wavefront
+  // relies on.  One extra entry for the core top edge (index grid_h_).
+  std::vector<int> row_y_dbu_;
 
   // Per-pixel "already bumped this call" marker for updateHistoryCosts().
   std::vector<uint32_t> hist_seen_stamp_;
@@ -290,6 +339,14 @@ class NegotiationLegalizer
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool disable_window_extension_{false};
+  bool quiet_{false};
+  int total_moves_{0};
+
+  // Convergence stats for the current runNegotiation call.
+  int phase1_iterations_{0};
+  int phase2_iterations_{0};
+  int diamond_recoveries_{0};
+  Finish finish_{Finish::kNotRun};
 
   // Stuck-cell tallies for the current runNegotiation call. Reset at the
   // start of runNegotiation and printed at the end. The per-height maps are

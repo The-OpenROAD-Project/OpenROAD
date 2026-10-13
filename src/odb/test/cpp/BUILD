@@ -106,6 +106,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGCellTileSize",
+    srcs = ["TestGCellTileSize.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGDSIn",
     srcs = ["TestGDSIn.cpp"],
     data = ["//src/odb/test:regression_resources"],
@@ -125,6 +136,7 @@ cc_test(
     srcs = ["TestGeom.cpp"],
     deps = [
         "//src/odb/src/db",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -158,6 +170,20 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestLefIn",
+    srcs = ["TestLefIn.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -272,6 +298,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestShapeDestroy",
+    srcs = ["TestShapeDestroy.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "Test3DBloxParser",
     srcs = [
         "Test3DBloxParser.cpp",
@@ -356,6 +393,19 @@ cc_test(
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSwapMasterLeaf",
+    srcs = [
+        "TestSwapMasterLeaf.cpp",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

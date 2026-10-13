@@ -7,4 +7,4 @@ check_placement
 
 set def_file [make_result_file aes.def]
 write_def $def_file
-diff_file aes.defok $def_file
+diff_files aes.defok $def_file

@@ -48,11 +48,11 @@ static constexpr int kDelayDigits = 3;
 void SetupDirectionalPolicy::iterate()
 {
   buildMainMoveSequence(/*log_sequence=*/false);
-  repairSetupDirectional(use_starts_,
+  repairSetupDirectional(use_startpoints_,
                          config_.setup_slack_margin,
                          config_.max_passes,
                          config_.verbose);
-  if (use_starts_) {
+  if (use_startpoints_) {
     committer_.printTrackerPhaseSummary(
         "STARTPOINT_FANOUT Phase Summary",
         "STARTPOINT_FANOUT Phase Startpoint Profiler",
@@ -98,7 +98,6 @@ void SetupDirectionalPolicy::repairSetupDirectional(
   target_collector_->collectViolatingPoints(use_startpoints);
   const int max_point_count
       = target_collector_->getMaxPointCount(use_startpoints);
-  printProgress(opto_iteration, false, phase_marker, use_startpoints);
   if (max_point_count == 0) {
     debugPrint(logger_,
                RSZ,
@@ -110,6 +109,12 @@ void SetupDirectionalPolicy::repairSetupDirectional(
                point_type);
     return;
   }
+
+  if (!use_startpoints) {
+    // ENDPOINT_FANIN uses both endpoint and startpoint TNS to accept a journal.
+    target_collector_->collectViolatingStartpoints();
+  }
+  printProgress(opto_iteration, false, phase_marker);
 
   debugPrint(logger_,
              RSZ,
@@ -216,7 +221,7 @@ void SetupDirectionalPolicy::repairSetupDirectional(
       point_pass_count++;
       opto_iteration++;
       if (verbose || opto_iteration % print_interval_ == 0) {
-        printProgress(opto_iteration, false, phase_marker, use_startpoints);
+        printProgress(opto_iteration, false, phase_marker);
       }
 
       std::vector<const sta::Pin*> viol_pins
@@ -278,7 +283,7 @@ void SetupDirectionalPolicy::repairSetupDirectional(
                  "repair_setup",
                  1,
                  "{}{} Phase: Threshold {}/3: {} slack {} -> {} (imp: {}), "
-                 "WNS {} -> {}, EnTNS {} -> {}, StTNS {} -> {}{}",
+                 "WNS {} -> {}, TNS {} -> {}, StTNS {} -> {}{}",
                  phase_name,
                  phase_marker,
                  point_pass_count,
@@ -321,7 +326,7 @@ void SetupDirectionalPolicy::repairSetupDirectional(
     points_processed++;
   }
 
-  printProgress(opto_iteration, true, phase_marker, use_startpoints);
+  printProgress(opto_iteration, true, phase_marker);
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;

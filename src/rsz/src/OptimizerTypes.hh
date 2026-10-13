@@ -276,7 +276,11 @@ struct Target
   const sta::Path* driver_path{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
+  // scene and min_max are captured at construction (while endpoint_path is
+  // valid) so later moves in a repair sequence can read them after earlier
+  // commits have invalidated endpoint_path.  Access via activeScene()/minMax().
   const sta::Scene* scene{nullptr};
+  const sta::MinMax* min_max{nullptr};
 
   // === Prepared data for MT generation/estimation ==========================
   std::optional<ArcDelayState> arc_delay;
@@ -419,6 +423,7 @@ struct OptimizerRunConfig
   bool skip_size_down_fanout{false};
   bool skip_buffering{false};
   bool skip_buffer_removal{false};
+  bool skip_buffer_to_inverters{false};
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
@@ -472,6 +477,8 @@ inline const char* moveName(const MoveType move_type)
       return "SplitLoadMove";
     case MoveType::kReroute:
       return "RerouteMove";
+    case MoveType::kBufferToInverters:
+      return "BufferToInvertersMove";
     case MoveType::kCount:
       break;
   }

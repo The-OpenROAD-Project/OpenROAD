@@ -26,6 +26,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/asio/ip/address.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -35,9 +36,6 @@
 #include "color.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -52,18 +50,22 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
+#include "web/web.h"
 
 namespace web {
 
 //------------------------------------------------------------------------------
-// ShapeCollector — a gui::Painter that collects rectangles, polygons and
+// ShapeCollector — a web::Painter that collects rectangles, polygons and
 // lines from descriptor->highlight() calls for use in tile rendering.
 // Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
 // NetWithSink sink path) is drawn as flight lines, which used to be
 // silently dropped here.
 //------------------------------------------------------------------------------
 
-class ShapeCollector : public gui::Painter
+class ShapeCollector : public web::Painter
 {
  public:
   ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
@@ -130,7 +132,7 @@ boost::json::array bboxArray(const odb::Rect& r)
 }
 
 // Build a JSON-array RGBA: [r, g, b, a].
-boost::json::array colorArray(const gui::Painter::Color& c)
+boost::json::array colorArray(const web::Painter::Color& c)
 {
   return boost::json::array{c.r, c.g, c.b, c.a};
 }
@@ -180,11 +182,11 @@ class [[nodiscard]] ScopedDbuFormat
 {
  public:
   ScopedDbuFormat(odb::dbDatabase* db, bool use_dbu)
-      : saved_to_string_(gui::Descriptor::Property::convert_dbu),
-        saved_to_dbu_(gui::Descriptor::Property::convert_string)
+      : saved_to_string_(web::Descriptor::Property::convert_dbu),
+        saved_to_dbu_(web::Descriptor::Property::convert_string)
   {
     if (use_dbu || db == nullptr || db->getDbuPerMicron() == 0) {
-      gui::Descriptor::Property::convert_string
+      web::Descriptor::Property::convert_string
           = [](const std::string& value, bool* ok) {
               return parseValue(value, /*dbu_per_micron=*/0.0, ok);
             };
@@ -192,7 +194,7 @@ class [[nodiscard]] ScopedDbuFormat
     }
     const double dbu_per_micron = db->getDbuPerMicron();
     const int precision = dbuPrecision(dbu_per_micron);
-    gui::Descriptor::Property::convert_dbu
+    web::Descriptor::Property::convert_dbu
         = [dbu_per_micron, precision](int value, bool add_units) {
             auto str = utl::to_numeric_string(
                 static_cast<double>(value) / dbu_per_micron, precision);
@@ -201,15 +203,15 @@ class [[nodiscard]] ScopedDbuFormat
             }
             return str;
           };
-    gui::Descriptor::Property::convert_string
+    web::Descriptor::Property::convert_string
         = [dbu_per_micron](const std::string& value, bool* ok) {
             return parseValue(value, dbu_per_micron, ok);
           };
   }
   ~ScopedDbuFormat()
   {
-    gui::Descriptor::Property::convert_dbu = saved_to_string_;
-    gui::Descriptor::Property::convert_string = saved_to_dbu_;
+    web::Descriptor::Property::convert_dbu = saved_to_string_;
+    web::Descriptor::Property::convert_string = saved_to_dbu_;
   }
   ScopedDbuFormat(const ScopedDbuFormat&) = delete;
   ScopedDbuFormat& operator=(const ScopedDbuFormat&) = delete;
@@ -249,8 +251,8 @@ class [[nodiscard]] ScopedDbuFormat
     }
   }
 
-  gui::DBUToString saved_to_string_;
-  gui::StringToDBU saved_to_dbu_;
+  web::DBUToString saved_to_string_;
+  web::StringToDBU saved_to_dbu_;
 };
 // Clamp + quantize the client's devicePixelRatio so the server renders tiles
 // at a stable 256*dpr and the tile cache has few buckets.  Snaps to the common
@@ -289,7 +291,7 @@ static double quantizeDpr(const double raw)
 // it will use, so it names the pixel count.
 //
 // Clamped so a malformed request cannot ask for a gigantic buffer — the render
-// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// allocates about tile_px squared.  0 (absent or unusable) means "not
 // specified"; the generator falls back to 256*dpr.
 static int quantizeTilePx(const double raw)
 {
@@ -320,6 +322,94 @@ std::string assetPathFromTarget(const std::string_view target)
     return "/index.html";
   }
   return path;
+}
+
+bool webSocketOriginAllowed(const std::string_view origin,
+                            const std::string_view host)
+{
+  // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
+  // forge its Origin, so a foreign page is rejected below.  A non-browser
+  // client controls every header (it can omit Origin or spoof any value), so
+  // this check cannot authenticate one — that requires binding to loopback
+  // (issue #11167, F-02), on which this guard depends.
+  //
+  // Absent Origin: browsers always send it on a WS handshake, so its absence
+  // is a non-browser client; allow it (F-02 is what keeps such a client local).
+  if (origin.empty()) {
+    return true;
+  }
+  // The authority is what follows "scheme://", up to the first '/'.  An Origin
+  // without a scheme (e.g. the opaque "null") has no authority and is rejected.
+  const size_t scheme = origin.find("://");
+  if (scheme == std::string_view::npos) {
+    return false;
+  }
+  std::string_view authority = origin.substr(scheme + 3);
+  const size_t slash = authority.find('/');
+  if (slash != std::string_view::npos) {
+    authority = authority.substr(0, slash);
+  }
+  // Strict same-origin: the page was served by this very viewer.  Nothing else
+  // is accepted — not even another localhost:<port>, which could be an XSS'd
+  // local service.  The server opens the browser at the same host:port it
+  // reports, so a legitimate viewer always matches; a user who manually swaps
+  // the loopback spelling (127.0.0.1 vs localhost) must use the reported one.
+  //
+  // The comparison ignores case: a host is case-insensitive (RFC 3986 3.2.2)
+  // and a proxy or non-browser client may vary it, which would otherwise 403 a
+  // legitimate handshake.  Hosts are ASCII (IDNs arrive punycoded), so lower
+  // without std::tolower and its locale.
+  const auto ascii_lower = [](const char c) {
+    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+  };
+  return std::equal(authority.begin(),
+                    authority.end(),
+                    host.begin(),
+                    host.end(),
+                    [&ascii_lower](const char a, const char b) {
+                      return ascii_lower(a) == ascii_lower(b);
+                    });
+}
+
+BindAddressKind classifyBindAddress(const std::string_view address)
+{
+  // make_address parses IP literals only — it never resolves a name, so
+  // "localhost" lands here as invalid rather than silently binding somewhere.
+  boost::system::error_code ec;
+  const auto parsed = boost::asio::ip::make_address(address, ec);
+  if (ec) {
+    return BindAddressKind::kInvalid;
+  }
+  // is_loopback() covers 127.0.0.0/8 and ::1, but not ::ffff:127.0.0.1 — an
+  // IPv4 bind wearing a v6 literal, which would otherwise be reported as
+  // exposed.  Unwrap those and judge them by their IPv4 half.  Everything
+  // else, the unspecified 0.0.0.0/:: included, is reachable off-machine.
+  bool loopback = parsed.is_loopback();
+  if (parsed.is_v6() && parsed.to_v6().is_v4_mapped()) {
+    loopback = boost::asio::ip::make_address_v4(boost::asio::ip::v4_mapped,
+                                                parsed.to_v6())
+                   .is_loopback();
+  }
+  return loopback ? BindAddressKind::kLoopback : BindAddressKind::kExposed;
+}
+
+std::string browserHostForBind(const boost::asio::ip::address& address)
+{
+  // "localhost" reads better than a literal, but it resolves to the canonical
+  // loopback only — naming it for the whole 127.0.0.0/8 range would send the
+  // browser to 127.0.0.1 while the listener sits on, say, 127.0.0.2.  The
+  // wildcard is not a destination at all, and localhost is inside it.
+  if (address.is_unspecified()
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v4::loopback())
+      || address
+             == boost::asio::ip::address(
+                 boost::asio::ip::address_v6::loopback())) {
+    return "localhost";
+  }
+  const std::string literal = address.to_string();
+  return address.is_v6() ? "[" + literal + "]" : literal;
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
@@ -383,22 +473,21 @@ bool parseTileCoords(const boost::json::object& json,
 // (moving an instance outside the block bbox, deleting an edge instance),
 // which shifts the tile georeference — clients must resync their
 // coordinate transforms or every later click/highlight lands offset.
-// Bounds use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
-// response.
+// Both rects use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
+// response, and mean the same things there: `bounds` georeferences the tile
+// grid, `fit_bounds` is what the client zooms to fit.
 static std::string refreshBroadcastPayload(const TileGenerator& gen)
 {
-  const odb::Rect bounds = gen.getBounds();
   boost::json::object o;
   o["type"] = "refresh";
-  o["bounds"]
-      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
-                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  o["bounds"] = boundsArray(gen.getBounds());
+  o["fit_bounds"] = boundsArray(gen.getFitBounds());
   return boost::json::serialize(o);
 }
 
 // Store a Selected in the clickables vector and return its index.
-static int storeSelectable(std::vector<gui::Selected>& selectables,
-                           const gui::Selected& sel)
+static int storeSelectable(std::vector<web::Selected>& selectables,
+                           const web::Selected& sel)
 {
   int id = static_cast<int>(selectables.size());
   selectables.push_back(sel);
@@ -408,10 +497,10 @@ static int storeSelectable(std::vector<gui::Selected>& selectables,
 static void serializeAnyValue(boost::json::object& out,
                               std::string_view field_name,
                               const std::any& value,
-                              std::vector<gui::Selected>& selectables,
+                              std::vector<web::Selected>& selectables,
                               bool short_name = false)
 {
-  if (auto* sel = std::any_cast<gui::Selected>(&value)) {
+  if (auto* sel = std::any_cast<web::Selected>(&value)) {
     if (*sel) {
       const std::string name
           = short_name ? sel->getShortName() : sel->getName();
@@ -421,7 +510,7 @@ static void serializeAnyValue(boost::json::object& out,
       return;
     }
   }
-  out[field_name] = gui::Descriptor::Property::toString(value);
+  out[field_name] = web::Descriptor::Property::toString(value);
 }
 
 // Describe a property's editor for the client.  Mirrors the Qt
@@ -430,7 +519,7 @@ static void serializeAnyValue(boost::json::object& out,
 // True/False choice; otherwise the input kind is inferred from the
 // property's current value type (getEditorType).
 static boost::json::object serializeEditor(
-    const gui::Descriptor::Editor& editor,
+    const web::Descriptor::Editor& editor,
     const std::any& value)
 {
   boost::json::object o;
@@ -464,7 +553,7 @@ static boost::json::object serializeEditor(
 template <typename Container>
 static boost::json::array serializeAnyList(
     const Container& values,
-    std::vector<gui::Selected>& selectables)
+    std::vector<web::Selected>& selectables)
 {
   boost::json::array children;
   children.reserve(values.size());
@@ -483,7 +572,7 @@ static boost::json::array serializeAnyList(
 // from server-generated markup.  Headers are kept separate from the cells so
 // the client can drop the header row or column when a table has none.
 static boost::json::object serializePropertyTable(
-    const gui::PropertyTable& table)
+    const web::PropertyTable& table)
 {
   boost::json::object out;
 
@@ -517,9 +606,9 @@ static boost::json::object serializePropertyTable(
 }
 
 static boost::json::object serializeProperty(
-    const gui::Descriptor::Property& prop,
-    std::vector<gui::Selected>& selectables,
-    const gui::Descriptor::Editors* editors = nullptr)
+    const web::Descriptor::Property& prop,
+    std::vector<web::Selected>& selectables,
+    const web::Descriptor::Editors* editors = nullptr)
 {
   boost::json::object o;
   o["name"] = prop.name;
@@ -530,7 +619,7 @@ static boost::json::object serializeProperty(
     }
   }
 
-  if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
+  if (auto* plist = std::any_cast<web::Descriptor::PropertyList>(&prop.value)) {
     boost::json::array children;
     children.reserve(plist->size());
     for (const auto& [key, val] : *plist) {
@@ -540,7 +629,7 @@ static boost::json::object serializeProperty(
       children.emplace_back(std::move(child));
     }
     o["children"] = std::move(children);
-  } else if (auto* sel_set = std::any_cast<gui::SelectionSet>(&prop.value)) {
+  } else if (auto* sel_set = std::any_cast<web::SelectionSet>(&prop.value)) {
     boost::json::array children;
     children.reserve(sel_set->size());
     for (const auto& sel : *sel_set) {
@@ -551,13 +640,13 @@ static boost::json::object serializeProperty(
       children.emplace_back(std::move(child));
     }
     o["children"] = std::move(children);
-  } else if (auto* table = std::any_cast<gui::PropertyTable>(&prop.value)) {
+  } else if (auto* table = std::any_cast<web::PropertyTable>(&prop.value)) {
     o["table"] = serializePropertyTable(*table);
   } else if (auto* vec = std::any_cast<std::vector<std::any>>(&prop.value)) {
     o["children"] = serializeAnyList(*vec, selectables);
   } else if (auto* set = std::any_cast<std::set<std::any>>(&prop.value)) {
     o["children"] = serializeAnyList(*set, selectables);
-  } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
+  } else if (auto* sel = std::any_cast<web::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
       o["value"] = sel->getName();
@@ -575,7 +664,7 @@ static boost::json::object serializeProperty(
 // (beyond this the fan is visual mush anyway).
 constexpr size_t kMaxFlywires = 4096;
 
-// Mirrors the flywire fallback of gui::NetDescriptor::highlight
+// Mirrors the flywire fallback of web::NetDescriptor::highlight
 // (dbDescriptors.cpp:1766-1825): straight driver->sink lines between the
 // net's placed terminals.  When `term_boxes` is non-null, the terminal
 // pin boxes are collected in the same pass (used by the flywires-only
@@ -686,10 +775,10 @@ static void collectNetFlightLines(odb::dbNet* net,
 //
 // Reproduced rather than delegated to DbNetDescriptor because the descriptor
 // cannot be made to honor the mode from here: its gate is
-// painter.getOptions()->isFlywireHighlightOnly(), and gui::Options is a private
-// Qt-dependent interface (QColor/QFont), so a non-Qt module has no way to
-// implement it — ShapeCollector's null Options resolves to DefaultOptions,
-// which answers false.  Going through Gui::getDescriptor<odb::dbSWire*>() for
+// painter.getOptions()->isFlywireHighlightOnly(), and ShapeCollector passes no
+// Options, so Painter::getOptions() resolves to the default web::Options
+// instance, which answers false.  Going through
+// Gui::getDescriptor<odb::dbSWire*>() for
 // just the tail is no better: an unregistered descriptor makes
 // DescriptorRegistry emit GUI-0053, which is fatal, and nothing registers the
 // odb descriptors in the web unit tests.
@@ -719,7 +808,7 @@ static void collectSpecialWireShapes(odb::dbNet* net,
 // toggle off, unrouted nets still get flywires (GUI fallback — the
 // descriptor emits them via painter.drawLine, which ShapeCollector
 // drops, so they are recomputed here).
-static void appendHighlightShapes(const gui::Selected& sel,
+static void appendHighlightShapes(const web::Selected& sel,
                                   std::vector<odb::Rect>& rects,
                                   std::vector<odb::Polygon>& polys,
                                   std::vector<FlightLine>& lines,
@@ -766,7 +855,7 @@ static void appendHighlightShapes(const gui::Selected& sel,
   }
 }
 
-static void collectHighlightShapes(const gui::Selected& sel,
+static void collectHighlightShapes(const web::Selected& sel,
                                    std::vector<odb::Rect>& rects,
                                    std::vector<odb::Polygon>& polys,
                                    std::vector<FlightLine>& lines,
@@ -781,8 +870,8 @@ static void collectHighlightShapes(const gui::Selected& sel,
 // Return the 0-based position of the iterator within the selection set,
 // or -1 if the set is empty.  Mirrors Qt GUI's
 // Inspector::getSelectedIteratorPosition().
-static int selectionIteratorPosition(const gui::SelectionSet& set,
-                                     gui::SelectionSet::const_iterator itr)
+static int selectionIteratorPosition(const web::SelectionSet& set,
+                                     web::SelectionSet::const_iterator itr)
 {
   if (set.empty() || itr == set.end()) {
     return -1;
@@ -791,7 +880,7 @@ static int selectionIteratorPosition(const gui::SelectionSet& set,
 }
 
 // Accumulate highlight shapes from all items in a selection set.
-static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
+static void collectMultiHighlightShapes(const web::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
                                         std::vector<odb::Polygon>& polys,
                                         std::vector<FlightLine>& lines,
@@ -809,7 +898,7 @@ static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
 // frontend context menu can enable/disable items by type (mirrors the Qt
 // LayoutViewer::updateContextMenuItems + Gui::anyObjectInSet).
 static void addSelectionTypeFlags(boost::json::object& root,
-                                  const gui::SelectionSet& selection)
+                                  const web::SelectionSet& selection)
 {
   bool has_inst = false;
   bool has_net = false;
@@ -835,7 +924,7 @@ static void addSelectionTypeFlags(boost::json::object& root,
 // instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
 // the plain net for input pins too: NetWithSink lives in a gui-private
 // header under CMake, so the driver->sink flight line is a follow-up.
-static int addConnectedNets(gui::SelectionSet& selection_set)
+static int addConnectedNets(web::SelectionSet& selection_set)
 {
   // Snapshot the instances first: nets are inserted into the same set,
   // and odb deletes std::less on db pointers so the selection set itself
@@ -850,7 +939,7 @@ static int addConnectedNets(gui::SelectionSet& selection_set)
       insts.push_back(*inst_ptr);
     }
   }
-  auto* registry = gui::DescriptorRegistry::instance();
+  auto* registry = web::DescriptorRegistry::instance();
   int added = 0;
   for (odb::dbInst* inst : insts) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -863,7 +952,7 @@ static int addConnectedNets(gui::SelectionSet& selection_set)
           && io != odb::dbIoType::INOUT) {
         continue;
       }
-      gui::Selected net_sel = registry->makeSelected(net);
+      web::Selected net_sel = registry->makeSelected(net);
       if (net_sel && selection_set.insert(net_sel).second) {
         ++added;
       }
@@ -873,14 +962,15 @@ static int addConnectedNets(gui::SelectionSet& selection_set)
 }
 
 // Descriptor actions that must not be surfaced in the web client:
-// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (guarded by
-//   ENABLE_QT in dbDescriptors.cpp); in a Qt-enabled binary running in
-//   web mode triggering them would crash — there is no QApplication.
-// - Focus / route-guide / zoom actions call global gui::Gui methods that
+// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (offered only
+//   when Gui::getDialogs() is set, which Gui::init() does in a Qt build);
+//   in a Qt-enabled binary running in web mode triggering them would
+//   crash — there is no QApplication.
+// - Focus / route-guide / zoom actions call global web::Gui methods that
 //   are stub no-ops in web builds; the web inspector already provides
 //   per-session equivalents in its toolbar.
 // - Tracks / timing-cone / timing actions have no web renderer yet
-//   (follow-ups); their gui::Gui calls are stub no-ops.
+//   (follow-ups); their web::Gui calls are stub no-ops.
 // Any new descriptor action not listed here appears automatically.
 static const std::set<std::string, std::less<>> kSuppressedActions = {
     "Insert Buffer",
@@ -902,8 +992,8 @@ static const std::set<std::string, std::less<>> kSuppressedActions = {
 // moves to a different object.  Mirrors Qt's Inspector::inspect().
 // Must be called under the STA lock, before current_inspected is
 // overwritten, and never with a stale (destroyed) old_sel.
-static void runDeselectAction(const gui::Selected& old_sel,
-                              const gui::Selected& new_sel)
+static void runDeselectAction(const web::Selected& old_sel,
+                              const web::Selected& new_sel)
 {
   if (!old_sel || old_sel == new_sel) {
     return;
@@ -913,7 +1003,7 @@ static void runDeselectAction(const gui::Selected& old_sel,
     // gui library (its "Zoom to" needs Gui::get()); the web only links
     // gui_descriptors and blocklists "Zoom to" anyway.
     for (const auto& action : old_sel.getDescriptorActions()) {
-      if (action.name == gui::Descriptor::kDeselectAction) {
+      if (action.name == web::Descriptor::kDeselectAction) {
         action.callback();
         return;
       }
@@ -926,12 +1016,12 @@ static void runDeselectAction(const gui::Selected& old_sel,
 // Returns the highlight group holding `sel`, or -1 when not highlighted.
 // Requires state.selection_mutex to be held.
 static int highlightGroupOfLocked(const SessionState& state,
-                                  const gui::Selected& sel)
+                                  const web::Selected& sel)
 {
   if (!sel) {
     return -1;
   }
-  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+  for (int group = 0; group < web::kNumHighlightSet; ++group) {
     const auto& members = state.highlight_groups[group];
     if (members.find(sel) != members.end()) {
       return group;
@@ -954,7 +1044,7 @@ static void clearSelectionHighlights(SessionState& state)
 }
 
 static void setSelectionHighlights(SessionState& state,
-                                   const gui::Selected& sel)
+                                   const web::Selected& sel)
 {
   collectHighlightShapes(sel,
                          state.highlight_rects,
@@ -978,7 +1068,7 @@ static void setSelectionSetHighlights(SessionState& state)
 }
 
 // Rebuild the per-group overlay shapes from the group members.  Colors
-// come from the Qt GUI's palette (gui::Painter::kHighlightColors,
+// come from the Qt GUI's palette (web::Painter::kHighlightColors,
 // translucent fill); filled=true reuses the DRC/timing colored-rect
 // rendering (blend fill + solid outline).  Goes through appendHighlightShapes,
 // not sel.highlight() directly, so a group member honours "Flywires only" the
@@ -989,11 +1079,11 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
   state.highlight_group_rects.clear();
   state.highlight_group_polys.clear();
   state.highlight_group_lines.clear();
-  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+  for (int group = 0; group < web::kNumHighlightSet; ++group) {
     if (state.highlight_groups[group].empty()) {
       continue;
     }
-    const auto& qt_color = gui::Painter::kHighlightColors[group];
+    const auto& qt_color = web::Painter::kHighlightColors[group];
     const Color color{.r = static_cast<uint8_t>(qt_color.r),
                       .g = static_cast<uint8_t>(qt_color.g),
                       .b = static_cast<uint8_t>(qt_color.b),
@@ -1026,7 +1116,7 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
 // Erase `sel` from every highlight group.  Returns true if it was a
 // member of any.  Requires state.selection_mutex to be held.
 static bool removeFromHighlightGroupsLocked(SessionState& state,
-                                            const gui::Selected& sel)
+                                            const web::Selected& sel)
 {
   bool removed = false;
   for (auto& members : state.highlight_groups) {
@@ -1042,7 +1132,7 @@ bool consumeStaleSelection(SessionState& state)
   }
   {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
-    state.current_inspected = gui::Selected();
+    state.current_inspected = web::Selected();
     state.navigation_history.clear();
     state.selection_set.clear();
     state.selection_itr = state.selection_set.end();
@@ -1071,8 +1161,8 @@ bool consumeStaleSelection(SessionState& state)
 // highlighted), computed by the caller under selection_mutex via
 // highlightGroupOfLocked — this function runs outside that lock.
 static void writeInspectPayload(boost::json::object& o,
-                                const gui::Selected& sel,
-                                std::vector<gui::Selected>& new_selectables,
+                                const web::Selected& sel,
+                                std::vector<web::Selected>& new_selectables,
                                 bool can_navigate_back,
                                 bool use_dbu,
                                 utl::Logger* logger,
@@ -1091,7 +1181,7 @@ static void writeInspectPayload(boost::json::object& o,
   o["name"] = sel.getName();
   o["type"] = sel.getTypeName();
   o["highlight_group"] = highlight_group;
-  const gui::Descriptor::Editors editors = sel.getEditors();
+  const web::Descriptor::Editors editors = sel.getEditors();
   boost::json::array prop_arr;
   prop_arr.reserve(props.size());
   for (const auto& prop : props) {
@@ -1101,7 +1191,7 @@ static void writeInspectPayload(boost::json::object& o,
 
   boost::json::array actions;
   for (const auto& action : sel.getDescriptorActions()) {
-    if (action.name == gui::Descriptor::kDeselectAction
+    if (action.name == web::Descriptor::kDeselectAction
         || kSuppressedActions.find(action.name) != kSuppressedActions.end()) {
       continue;
     }
@@ -1114,7 +1204,7 @@ static void writeInspectPayload(boost::json::object& o,
   odb::Rect bbox;
   const bool has_bbox = sel.getBBox(bbox);
   if (has_bbox) {
-    // A gui::Descriptor reports the bbox in the object's OWN block
+    // A web::Descriptor reports the bbox in the object's OWN block
     // coordinates, but the client draws in root/world space — the same space
     // selectAt already puts SelectionResult::bbox in.  Lift it through the
     // chiplet's local-to-root transform so an object inside a translated or
@@ -1132,7 +1222,7 @@ static void writeInspectPayload(boost::json::object& o,
   // attributed to the server side.
   if (has_bbox) {
     const auto len = [](const int dbu) {
-      return gui::Descriptor::Property::convert_dbu(dbu, /*add_units=*/false);
+      return web::Descriptor::Property::convert_dbu(dbu, /*add_units=*/false);
     };
     const char* unit = use_dbu ? "dbu" : "um";
     debugPrint(logger,
@@ -1185,7 +1275,7 @@ static void writeInspectPayload(boost::json::object& o,
 // ok/error/deleted fields around this call.
 static void writeInspectTrailer(boost::json::object& root,
                                 SessionState& state,
-                                const gui::Selected& sel,
+                                const web::Selected& sel,
                                 bool can_navigate_back,
                                 bool use_dbu,
                                 utl::Logger* logger,
@@ -1193,7 +1283,7 @@ static void writeInspectTrailer(boost::json::object& root,
                                 int sel_count,
                                 int sel_index)
 {
-  std::vector<gui::Selected> new_selectables;
+  std::vector<web::Selected> new_selectables;
   writeInspectPayload(
       root, sel, new_selectables, can_navigate_back, use_dbu, logger, hl_group);
   root["selection_count"] = static_cast<int64_t>(sel_count);
@@ -1203,20 +1293,20 @@ static void writeInspectTrailer(boost::json::object& root,
 }
 
 static boost::json::object serializeHeatMapOption(
-    const gui::HeatMapDataSource::MapSetting& option)
+    const web::HeatMapDataSource::MapSetting& option)
 {
   boost::json::object o;
-  if (std::holds_alternative<gui::HeatMapDataSource::MapSettingBoolean>(
+  if (std::holds_alternative<web::HeatMapDataSource::MapSettingBoolean>(
           option)) {
     const auto& setting
-        = std::get<gui::HeatMapDataSource::MapSettingBoolean>(option);
+        = std::get<web::HeatMapDataSource::MapSettingBoolean>(option);
     o["type"] = "bool";
     o["name"] = setting.name;
     o["label"] = setting.label;
     o["value"] = setting.getter();
   } else {
     const auto& setting
-        = std::get<gui::HeatMapDataSource::MapSettingMultiChoice>(option);
+        = std::get<web::HeatMapDataSource::MapSettingMultiChoice>(option);
     o["type"] = "choice";
     o["name"] = setting.name;
     o["label"] = setting.label;
@@ -1230,7 +1320,7 @@ static boost::json::object serializeHeatMapOption(
   return o;
 }
 
-static boost::json::object serializeHeatMap(gui::HeatMapDataSource& source,
+static boost::json::object serializeHeatMap(web::HeatMapDataSource& source,
                                             const bool active)
 {
   if (active) {
@@ -1269,6 +1359,11 @@ static boost::json::object serializeHeatMap(gui::HeatMapDataSource& source,
   o["alpha_min"] = source.getColorAlphaMinimum();
   o["alpha_max"] = source.getColorAlphaMaximum();
   o["bounds"] = bboxArray(source.getBounds());
+  // Qt's HeatMapSetup shows this checkbox only for sources that name it
+  // (getSelectionFilterLabel() non-empty), so the label doubles as the
+  // "offer the control" flag.
+  o["selection_filter_label"] = source.getSelectionFilterLabel();
+  o["use_selected_only"] = source.useSelectedOnly();
 
   boost::json::array options;
   for (const auto& option : source.getMapSettings()) {
@@ -1283,7 +1378,7 @@ static boost::json::object serializeHeatMap(gui::HeatMapDataSource& source,
     for (const auto& [color_index, color_value] : source.getLegendValues()) {
       boost::json::object entry;
       entry["value"] = source.formatValue(color_value, true);
-      const gui::Painter::Color color
+      const web::Painter::Color color
           = generator.getColor(100.0 * color_index / std::max(1, color_count),
                                source.getColorAlpha());
       entry["color"] = colorArray(color);
@@ -1317,6 +1412,16 @@ WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
   return resp;
 }
 
+WebSocketResponse TileHandler::serializeLayerExtents(const uint32_t id,
+                                                     const TileGenerator& gen)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kJson;
+  writePayload(resp, serializeLayerExtentsResponse(gen));
+  return resp;
+}
+
 WebSocketResponse TileHandler::serializeTech(const uint32_t id,
                                              const TileGenerator& gen)
 {
@@ -1326,6 +1431,27 @@ WebSocketResponse TileHandler::serializeTech(const uint32_t id,
   writePayload(resp, serializeTechResponse(gen));
   return resp;
 }
+
+// Send a tile the renderer drew nothing into as an empty response.  Most of
+// the tiles in a viewport are that: every layer with no geometry where the user
+// is looking, and the highlight overlay whenever nothing is selected.  The
+// transparent PNG they would otherwise carry still decodes to a full-size
+// bitmap on the client, which is what the decoded-image budget in tile-merge.js
+// is spent on.
+//
+// Applied in the handlers rather than in the generator so every other caller of
+// the tile entry points -- save_image, the GIF recorder, the tests -- keeps
+// getting an image back.
+namespace {
+void markEmptyIfBlank(WebSocketResponse& resp)
+{
+  if (resp.type == WebSocketResponse::kPng
+      && TileGenerator::isBlankTilePng(resp.payload)) {
+    resp.type = WebSocketResponse::kEmpty;
+    resp.payload.clear();
+  }
+}
+}  // namespace
 
 WebSocketResponse TileHandler::renderTile(
     const uint32_t id,
@@ -1562,20 +1688,20 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
 
     // Pick which result to inspect, cycling through overlapping objects.
     // If the currently inspected object is in the results, select the next one.
-    std::vector<gui::Selected> new_selectables;
-    auto* registry = gui::DescriptorRegistry::instance();
-    gui::Selected inspected_sel;
+    std::vector<web::Selected> new_selectables;
+    auto* registry = web::DescriptorRegistry::instance();
+    web::Selected inspected_sel;
     if (!results.empty()) {
       int pick = 0;
       if (results.size() > 1) {
-        gui::Selected current;
+        web::Selected current;
         {
           std::lock_guard<std::mutex> lock(state.selection_mutex);
           current = state.current_inspected;
         }
         if (current) {
           for (int i = 0; i < static_cast<int>(results.size()); ++i) {
-            gui::Selected candidate = registry->makeSelected(results[i].object);
+            web::Selected candidate = registry->makeSelected(results[i].object);
             if (candidate == current) {
               pick = (i + 1) % static_cast<int>(results.size());
               break;
@@ -1699,7 +1825,7 @@ bool isRepeaterInst(odb::dbInst* inst, sta::dbSta* sta, bool include_inverters)
 
 // Walk the buffer tree rooted at `net`, collecting every net and buffer inst
 // reachable by passing through buffer (optionally inverter) cells.  Mirrors
-// gui::BufferTree::populate without depending on the gui module's private
+// web::BufferTree::populate without depending on the gui module's private
 // BufferTree type.
 void collectBufferTree(odb::dbNet* net,
                        sta::dbSta* sta,
@@ -1726,15 +1852,15 @@ void collectBufferTree(odb::dbNet* net,
 }
 
 // Collect the objects connected to the current selection, per `action`.
-gui::SelectionSet computeConnectedSet(const std::string& action,
-                                      const gui::SelectionSet& selection,
+web::SelectionSet computeConnectedSet(const std::string& action,
+                                      const web::SelectionSet& selection,
                                       const bool output,
                                       const bool input,
                                       const bool include_inverters,
                                       sta::dbSta* sta)
 {
-  auto* registry = gui::DescriptorRegistry::instance();
-  gui::SelectionSet result;
+  auto* registry = web::DescriptorRegistry::instance();
+  web::SelectionSet result;
 
   const bool want_insts = action.find("insts") != std::string::npos;
   const bool want_buffer_trees
@@ -1809,7 +1935,7 @@ gui::SelectionSet computeConnectedSet(const std::string& action,
         collectBufferTree(net, sta, include_inverters, tree_nets, tree_insts);
       }
       // Select the tree's nets and buffer instances via their already
-      // registered dbNet/dbInst descriptors (no gui::BufferTree dependency).
+      // registered dbNet/dbInst descriptors (no web::BufferTree dependency).
       for (auto* tree_net : tree_nets) {
         result.insert(registry->makeSelected(tree_net));
       }
@@ -1836,7 +1962,7 @@ WebSocketResponse SelectHandler::handleContextAction(
     const bool input = jsonOr(req.json, "input", false);
     const bool include_inverters = jsonOr(req.json, "include_inverters", false);
     const int group = static_cast<int>(jsonOr(req.json, "group", int64_t{0}));
-    if (group < 0 || group >= gui::kNumHighlightSet) {
+    if (group < 0 || group >= web::kNumHighlightSet) {
       throw std::runtime_error("invalid highlight group");
     }
 
@@ -1849,7 +1975,7 @@ WebSocketResponse SelectHandler::handleContextAction(
     auto clearSelection = [&]() {
       state.selection_set.clear();
       state.selection_itr = state.selection_set.end();
-      state.current_inspected = gui::Selected();
+      state.current_inspected = web::Selected();
       state.navigation_history.clear();
       clearSelectionHighlights(state);
     };
@@ -1872,7 +1998,7 @@ WebSocketResponse SelectHandler::handleContextAction(
     if (action.starts_with("select_") || action.starts_with("highlight_")) {
       // Both branches resolve the same connected set (computeConnectedSet keys
       // off the "insts"/"nets"/"buffer_trees" substring, not the prefix).
-      const gui::SelectionSet connected
+      const web::SelectionSet connected
           = computeConnectedSet(action,
                                 state.selection_set,
                                 output,
@@ -1939,7 +2065,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
   resp.id = req.id;
   try {
     consumeStaleSelection(state);
-    gui::Selected sel;
+    web::Selected sel;
     {
       const int select_id
           = static_cast<int>(req.json.at("select_id").as_int64());
@@ -2019,7 +2145,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
   resp.id = req.id;
   try {
     consumeStaleSelection(state);
-    gui::Selected sel;
+    web::Selected sel;
     bool can_navigate_back = false;
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
@@ -2086,7 +2212,7 @@ static WebSocketResponse handleSelectionCycle(
   resp.id = req.id;
   try {
     consumeStaleSelection(state);
-    gui::Selected sel;
+    web::Selected sel;
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
@@ -2191,7 +2317,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     if (consumeStaleSelection(state)) {
       error = "selection invalidated by a design change; reselect and retry";
     }
-    gui::Selected sel;
+    web::Selected sel;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel = state.current_inspected;
@@ -2202,7 +2328,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     } else if (!sel) {
       error = "nothing is inspected";
     } else {
-      const gui::Descriptor::Editors editors = sel.getEditors();
+      const web::Descriptor::Editors editors = sel.getEditors();
       const auto editor_it = editors.find(name);
       if (editor_it == editors.end()) {
         error = "property is not editable: " + name;
@@ -2338,21 +2464,21 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     consumeStaleSelection(state);
-    gui::Selected sel;
+    web::Selected sel;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel = state.current_inspected;
     }
 
     std::string error;
-    gui::Selected next;
+    web::Selected next;
     if (!sel) {
       error = "nothing is inspected";
-    } else if (name == gui::Descriptor::kDeselectAction
+    } else if (name == web::Descriptor::kDeselectAction
                || kSuppressedActions.find(name) != kSuppressedActions.end()) {
       error = "action is not available: " + name;
     } else {
-      const gui::Descriptor::Action* action = nullptr;
+      const web::Descriptor::Action* action = nullptr;
       const auto actions = sel.getDescriptorActions();
       for (const auto& candidate : actions) {
         if (candidate.name == name) {
@@ -2424,7 +2550,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     // After a destroy, `sel` dangles — the payload must come from `next`.
-    const gui::Selected& payload_sel = (deleted || executed) ? next : sel;
+    const web::Selected& payload_sel = (deleted || executed) ? next : sel;
     writeInspectTrailer(root,
                         state,
                         payload_sel,
@@ -2483,7 +2609,7 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
     if (consumeStaleSelection(state)) {
       error = "selection invalidated by a design change; reselect and retry";
     }
-    gui::Selected sel;
+    web::Selected sel;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel = state.current_inspected;
@@ -2492,7 +2618,7 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
     bool ok = false;
     if (!error.empty()) {
       // fall through with the staleness error
-    } else if (group < 0 || group >= gui::kNumHighlightSet) {
+    } else if (group < 0 || group >= web::kNumHighlightSet) {
       error = "invalid highlight group";
     } else if (!sel) {
       error = "nothing is inspected";
@@ -2558,7 +2684,7 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
     if (consumeStaleSelection(state)) {
       error = "selection invalidated by a design change; reselect and retry";
     }
-    gui::Selected sel;
+    web::Selected sel;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel = state.current_inspected;
@@ -2632,7 +2758,7 @@ WebSocketResponse SelectHandler::handleClearHighlights(
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    if (group < -1 || group >= gui::kNumHighlightSet) {
+    if (group < -1 || group >= web::kNumHighlightSet) {
       root["ok"] = 0;
       root["error"] = "invalid highlight group";
       writePayload(resp, root);
@@ -2667,7 +2793,7 @@ WebSocketResponse SelectHandler::handleClearHighlights(
 
 // One selection-browser row: name, type, and (when available) bbox so the
 // client can zoom without a round-trip.  Runs descriptor code — STA lock.
-static boost::json::object browserRow(const gui::Selected& sel)
+static boost::json::object browserRow(const web::Selected& sel)
 {
   boost::json::object row;
   row["name"] = sel.getName();
@@ -2717,7 +2843,7 @@ WebSocketResponse SelectHandler::handleListSelection(
       root["selection"] = std::move(selection);
 
       boost::json::array groups;
-      for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+      for (int group = 0; group < web::kNumHighlightSet; ++group) {
         boost::json::array members;
         for (const auto& sel : state.highlight_groups[group]) {
           if (!sel) {
@@ -2768,14 +2894,14 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
     ScopedDbuFormat dbu_fmt(db, use_dbu);
     consumeStaleSelection(state);
 
-    gui::Selected sel;
+    web::Selected sel;
     bool can_navigate_back = false;
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
-      const gui::SelectionSet& set
+      const web::SelectionSet& set
           = browsing_group < 0 ? state.selection_set
                                : state.highlight_groups[browsing_group];
       if (index < 0 || index >= static_cast<int64_t>(set.size())) {
@@ -2850,7 +2976,7 @@ WebSocketResponse SelectHandler::handleInspectGroup(const WebSocketRequest& req,
                                                     SessionState& state)
 {
   const int64_t group = req.json.at("group").as_int64();
-  if (group < 0 || group >= gui::kNumHighlightSet) {
+  if (group < 0 || group >= web::kNumHighlightSet) {
     WebSocketResponse resp;
     resp.id = req.id;
     resp.type = WebSocketResponse::kJson;
@@ -2964,8 +3090,8 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
       throw std::runtime_error("Layer not found: " + layer_name);
     }
 
-    gui::Selected sel
-        = gui::DescriptorRegistry::instance()->makeSelected(layer);
+    web::Selected sel
+        = web::DescriptorRegistry::instance()->makeSelected(layer);
 
     // STA's getProperties() is not thread-safe; serialize with the other
     // STA callers (timing, clock tree, tcl eval).
@@ -2997,7 +3123,7 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
     }
 
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
+    std::vector<web::Selected> new_selectables;
     writeInspectPayload(root,
                         sel,
                         new_selectables,
@@ -3036,7 +3162,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
       const int select_id
           = static_cast<int>(req.json.at("select_id").as_int64());
       if (select_id >= 0) {
-        gui::Selected sel;
+        web::Selected sel;
         {
           std::lock_guard<std::mutex> slock(state.selectables_mutex);
           if (select_id < static_cast<int>(state.selectables.size())) {
@@ -3187,19 +3313,19 @@ void SelectHandler::selectMatchedNets(std::vector<odb::dbNet*>& matched,
     return;
   }
 
-  auto* registry = gui::DescriptorRegistry::instance();
-  gui::SelectionSet new_selection;
+  auto* registry = web::DescriptorRegistry::instance();
+  web::SelectionSet new_selection;
   for (auto* n : matched) {
     new_selection.insert(registry->makeSelected(n));
   }
-  gui::Selected first = registry->makeSelected(matched.front());
+  web::Selected first = registry->makeSelected(matched.front());
 
   int hl_group = -1;
   {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     hl_group = highlightGroupOfLocked(state, first);
   }
-  std::vector<gui::Selected> new_selectables;
+  std::vector<web::Selected> new_selectables;
   writeInspectPayload(root,
                       first,
                       new_selectables,
@@ -3313,8 +3439,8 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
       return name != nullptr && fnmatch(pattern.c_str(), name, fn_flags) == 0;
     };
 
-    auto* registry = gui::DescriptorRegistry::instance();
-    gui::SelectionSet found;
+    auto* registry = web::DescriptorRegistry::instance();
+    web::SelectionSet found;
     constexpr size_t kMaxFindSelection = 1000;
     int total = 0;
     auto collect = [&](auto&& range) {
@@ -3360,8 +3486,8 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
         root["bbox"] = std::move(bbox);
       }
 
-      const gui::Selected first = *found.begin();
-      std::vector<gui::Selected> new_selectables;
+      const web::Selected first = *found.begin();
+      std::vector<web::Selected> new_selectables;
       int hl_group = -1;
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
@@ -4028,66 +4154,56 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     boost::json::object root;
     boost::json::array chiplets;
 
-    auto processInst = [&](auto& self,
-                           odb::dbChipInst* inst,
-                           int offset_x,
-                           int offset_y,
-                           int offset_z,
-                           const std::string& parent_name) -> void {
-      odb::dbChip* master_chip = inst->getMasterChip();
-      if (master_chip && !master_chip->getChipInsts().empty()) {
-        for (odb::dbChipInst* child : master_chip->getChipInsts()) {
-          odb::Point3D loc = inst->getLoc();
-          self(self,
-               child,
-               offset_x + loc.x(),
-               offset_y + loc.y(),
-               offset_z + loc.z(),
-               parent_name + std::string(inst->getName()) + "/");
-        }
-      } else {
-        boost::json::object obj;
-        obj["name"] = parent_name + std::string(inst->getName());
+    // One box per leaf chiplet, placed by the same traversal the 2D viewer
+    // uses.  chiplets() carries each node's composed world transform (from
+    // ODB's unfolded model), so a rotated or flipped die lands where it
+    // belongs instead of at the sum of its ancestors' raw offsets.
+    constexpr int kDefaultChipWidth = 100000;
+    constexpr int kDefaultChipHeight = 100000;
+    constexpr int kDefaultChipThickness = 10000;
 
-        odb::Point3D loc = inst->getLoc();
-        obj["x"] = offset_x + loc.x();
-        obj["y"] = offset_y + loc.y();
-        obj["z"] = offset_z + loc.z();
+    for (const ChipletNode& node : gen_->chiplets()) {
+      // Leaves only: a chip that holds chip insts is a grouping node with no
+      // geometry of its own, and the root has no dbChipInst at all.
+      if (node.inst == nullptr || node.chip == nullptr
+          || !node.chip->getChipInsts().empty()) {
+        continue;
+      }
 
-        int w = 0;
-        int h = 0;
-        int thickness = 0;
-        if (master_chip) {
-          w = master_chip->getWidth();
-          h = master_chip->getHeight();
-          thickness = master_chip->getThickness();
-          // Fallback: use block bbox if chip has no explicit dimensions
-          if (w == 0 || h == 0) {
-            if (odb::dbBlock* block = master_chip->getBlock()) {
-              if (odb::dbBox* block_bbox = block->getBBox()) {
-                const odb::Rect bbox = block_bbox->getBox();
-                if (w == 0) {
-                  w = bbox.dx();
-                }
-                if (h == 0) {
-                  h = bbox.dy();
-                }
-              }
+      int w = node.chip->getWidth();
+      int h = node.chip->getHeight();
+      const int thickness = node.chip->getThickness();
+      // Fallback: use block bbox if chip has no explicit dimensions
+      if (w == 0 || h == 0) {
+        if (odb::dbBlock* block = node.chip->getBlock()) {
+          if (odb::dbBox* block_bbox = block->getBBox()) {
+            const odb::Rect bbox = block_bbox->getBox();
+            if (w == 0) {
+              w = bbox.dx();
+            }
+            if (h == 0) {
+              h = bbox.dy();
             }
           }
         }
-        constexpr int kDefaultChipWidth = 100000;
-        constexpr int kDefaultChipHeight = 100000;
-        constexpr int kDefaultChipThickness = 10000;
-        obj["width"] = w > 0 ? w : kDefaultChipWidth;
-        obj["height"] = h > 0 ? h : kDefaultChipHeight;
-        obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
-        chiplets.emplace_back(std::move(obj));
       }
-    };
+      w = w > 0 ? w : kDefaultChipWidth;
+      h = h > 0 ? h : kDefaultChipHeight;
 
-    for (odb::dbChipInst* inst : chip->getChipInsts()) {
-      processInst(processInst, inst, 0, 0, 0, "");
+      // The extent in world space: a 90° rotation swaps the die's width and
+      // height, which taking them straight off the master chip would miss.
+      odb::Rect extent(0, 0, w, h);
+      node.world_xfm.apply(extent);
+
+      boost::json::object obj;
+      obj["name"] = node.path;
+      obj["x"] = extent.xMin();
+      obj["y"] = extent.yMin();
+      obj["z"] = node.global_z;
+      obj["width"] = extent.dx();
+      obj["height"] = extent.dy();
+      obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
+      chiplets.emplace_back(std::move(obj));
     }
     root["chiplets"] = std::move(chiplets);
     writePayload(resp, root);
@@ -4121,7 +4237,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       throw std::runtime_error("Instance not found: " + inst_name);
     }
 
-    gui::Selected sel = gui::DescriptorRegistry::instance()->makeSelected(inst);
+    web::Selected sel = web::DescriptorRegistry::instance()->makeSelected(inst);
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
@@ -4143,7 +4259,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     }
 
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
+    std::vector<web::Selected> new_selectables;
     writeInspectPayload(root,
                         sel,
                         new_selectables,
@@ -4353,32 +4469,22 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(is_setup);
       if (path_index < static_cast<int>(paths.size())) {
-        odb::dbBlock* block = gen_->getBlock();
-        collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);
+        // chiplets() covers both cases: for a single-die design its root node
+        // carries the top block with an identity transform.
+        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+        collectTimingPathShapes(
+            chiplets, paths[path_index], new_rects, new_lines);
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm] = resolvePin(block, pin_name);
-
-          odb::dbNet* net = nullptr;
-          if (iterm) {
-            net = iterm->getNet();
-          } else if (bterm) {
-            net = bterm->getNet();
-          }
-
-          if (net) {
-            collectNetShapes(net,
-                             iterm,
-                             bterm,
-                             nullptr,
-                             nullptr,
-                             kStageColor,
-                             new_rects,
-                             new_lines);
-          }
+          collectTimingStageShapes(chiplets,
+                                   paths[path_index],
+                                   pin_name,
+                                   kStageColor,
+                                   new_rects,
+                                   new_lines);
         }
       }
     }
@@ -4403,7 +4509,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 namespace {
 
 // Center of a cone pin in DBU: ITerm average pin location (fallback: instance
-// center), or the first BPin box center for a BTerm.
+// center), or the first placed BPin box center for a BTerm.
 odb::Point conePinCenter(const TimingConeNode& node)
 {
   if (node.iterm) {
@@ -4416,9 +4522,10 @@ odb::Point conePinCenter(const TimingConeNode& node)
     return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
   }
   if (node.bterm) {
-    for (odb::dbBPin* bpin : node.bterm->getBPins()) {
-      const odb::Rect r = bpin->getBBox();
-      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+    int x = 0;
+    int y = 0;
+    if (node.bterm->getFirstPinLocation(x, y)) {
+      return {x, y};
     }
   }
   return {0, 0};
@@ -4619,8 +4726,7 @@ WebSocketResponse TimingHandler::handleFanoutHistogram(
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    odb::dbBlock* block = gen_->getBlock();
-    auto histogram = computeFanoutHistogram(block);
+    auto histogram = computeFanoutHistogram(gen_->blocks());
     writePayload(resp, serializeFanoutHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -4811,6 +4917,11 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  d.add("layer_extents",
+        WebSocketRequest::kLayerExtents,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
   d.add("tech",
         WebSocketRequest::kTech,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -4891,10 +5002,46 @@ void TileHandler::initializeHeatMaps(SessionState& state)
 {
   std::lock_guard<std::mutex> lock(state.heatmap_mutex);
   state.heatmaps.clear();
-  for (const auto& source_handle : gui::getRegisteredHeatMapSources()) {
-    auto source = source_handle->createInstance();
+  for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[source_handle->getShortName()] = std::move(source);
+    }
+  }
+}
+
+std::shared_ptr<web::HeatMapDataSource> TileHandler::createHeatMapInstance(
+    const web::HeatMapSourceRegistration& registration) const
+{
+  auto source = registration.createInstance();
+  // A chiplet heat map (web_load_chiplet_heatmap) binds itself to the one
+  // chiplet its data describes, so only default the un-bound built-ins to
+  // the root chip -- overriding here would drag the data back to the top.
+  if (source->getChip() == nullptr) {
+    // Built-ins read off dbBlock; a block-less root (3DBlox stack) has
+    // nothing for them to show, so leave them out instead of binding them
+    // to an invalid chip, where they'd show no data and log WEB-0098.
+    if (gen_->getBlock() == nullptr) {
+      return nullptr;
+    }
     source->setChip(gen_->getChip());
-    state.heatmaps[source_handle->getShortName()] = std::move(source);
+  }
+  return source;
+}
+
+// Sources can be registered after a session is built (web_load_chiplet_heatmap
+// from Tcl), so pick up anything missing before answering.  Existing entries
+// are left alone: their settings and the active selection are session state
+// the client expects to survive.
+void TileHandler::syncHeatMapsLocked(SessionState& state)
+{
+  for (const auto& source_handle : web::getRegisteredHeatMapSources()) {
+    const std::string& name = source_handle->getShortName();
+    if (state.heatmaps.find(name) != state.heatmaps.end()) {
+      continue;
+    }
+    if (auto source = createHeatMapInstance(*source_handle)) {
+      state.heatmaps[name] = std::move(source);
+    }
   }
 }
 
@@ -4906,6 +5053,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       return serializeBounds(req.id, *gen_);
     case WebSocketRequest::kTech:
       return serializeTech(req.id, *gen_);
+    case WebSocketRequest::kLayerExtents:
+      return serializeLayerExtents(req.id, *gen_);
     case WebSocketRequest::kTile:
       break;
     default: {
@@ -5020,7 +5169,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     if (gen_->tileCacheGet(cache_key, cached)) {
       WebSocketResponse resp;
       resp.id = req.id;
-      resp.type = WebSocketResponse::kPng;
+      // An empty cache entry is a tile the renderer drew nothing into; it is
+      // stored that way so a blank tile costs an LRU slot and not the bytes of
+      // a transparent PNG nobody will decode.
+      resp.type = cached.empty() ? WebSocketResponse::kEmpty
+                                 : WebSocketResponse::kPng;
       resp.payload = std::move(cached);
       debugPrint(gen_->getLogger(),
                  utl::WEB,
@@ -5056,7 +5209,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       nullptr,
                                       dpr,
                                       tile_px);
-  if (cacheable && resp.type == WebSocketResponse::kPng) {
+  markEmptyIfBlank(resp);
+  // An empty payload under kPng is a failed encode, not a blank tile; caching
+  // it would make the next hit read back as kEmpty and hide the failure.
+  const bool worth_caching
+      = resp.type == WebSocketResponse::kEmpty
+        || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
+  if (cacheable && worth_caching) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
 
@@ -5115,13 +5274,25 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     //    would redraw from live here, so they have to be rebuilt on this
     //    side or the highlight stays at the old placement;
     //  - debug renderers are active — instance positions change between
-    //    frames, so the highlight must track the moving instance.
+    //    frames, so the highlight must track the moving instance;
+    //  - Options > "Show polygon decomposition" flipped, which changes the
+    //    shapes an ITerm/MTerm highlight draws.  The setting is
+    //    server-global (it lives in web::Gui, where the descriptors read it)
+    //    but travels on the request like flywires_only, so this file stays
+    //    free of web::Gui -- the deliberate layering that lets the web
+    //    library link without the gui one.  The client is told the value by
+    //    the poly_decomp handler's reply and its broadcast, so a stale
+    //    request can only delay a re-derivation to the next tile, never
+    //    change what is drawn.
     const bool flywires_only = jsonOr(req.json, "flywires_only", false);
     const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+    const bool poly_decomp = jsonOr(req.json, "poly_decomp", false);
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
-      const bool flipped = (flywires_only != state.flywires_only);
+      const bool flipped = (flywires_only != state.flywires_only)
+                           || (poly_decomp != state.poly_decomp);
       state.flywires_only = flywires_only;
+      state.poly_decomp = poly_decomp;
       const bool live
           = state.highlight_source != SessionState::HighlightSource::kNone;
       // exchange() once: both the selection and the group shapes below are
@@ -5259,20 +5430,24 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
         = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
     resp.type = WebSocketResponse::kPng;
-    resp.payload = gen_->generateOverlayTile(z,
-                                             x,
-                                             y,
-                                             rects,
-                                             polys,
-                                             colored,
-                                             lines,
-                                             route_guide_ptr,
-                                             has_vis_layers,
-                                             vis_layers,
-                                             dpr,
-                                             tile_px,
-                                             colored_polys,
-                                             labels);
+    resp.payload
+        = gen_->generateOverlayTile(z,
+                                    x,
+                                    y,
+                                    rects,
+                                    polys,
+                                    colored,
+                                    lines,
+                                    route_guide_ptr,
+                                    has_vis_layers,
+                                    vis_layers,
+                                    dpr,
+                                    tile_px,
+                                    colored_polys,
+                                    labels,
+                                    debug_renderers,
+                                    jsonOr(req.json, "debug_live", false));
+    markEmptyIfBlank(resp);
 
     // The selection highlight the client draws over the layer tiles comes from
     // here, so the shape counts say whether a "missing" highlight was never
@@ -5346,12 +5521,17 @@ LabelFields parseLabelFields(const boost::json::object& obj)
   if (!isValidAnchor(anchor)) {
     throw std::runtime_error("anchor not recognized: " + anchor);
   }
-  return {.pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
-                            static_cast<int>(obj.at("y").as_int64())),
-          .text = std::string(obj.at("text").as_string()),
-          .size = static_cast<int>(jsonOr<int64_t>(obj, "size", 0)),
-          .anchor = anchor,
-          .color = parseLabelColor(obj)};
+  return {
+      .pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
+                        static_cast<int>(obj.at("y").as_int64())),
+      .text = std::string(obj.at("text").as_string()),
+      // Bounded by addLabel/updateLabel, which the Tcl entry point reaches
+      // too; narrowed here only so a colossal int64 does not wrap on the
+      // way.
+      .size = static_cast<int>(std::clamp<int64_t>(
+          jsonOr<int64_t>(obj, "size", 0), 0, TileGenerator::kMaxLabelSize)),
+      .anchor = std::move(anchor),
+      .color = parseLabelColor(obj)};
 }
 
 }  // namespace
@@ -5517,9 +5697,22 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
   resp.type = WebSocketResponse::kJson;
   try {
     odb::dbBlock* block = gen_->getBlock();
+    // Read before the walk, not after: an edit landing while it runs has to
+    // invalidate the mapping, and stamping afterwards would call it fresh.
+    const uint64_t revision = gen_->searchRevision();
     HierarchyReport report(block, gen_->getSta());
     auto result = report.getReport();
     writePayload(resp, serializeHierarchyResult(result));
+
+    // A flat design colors its overlay by synthesized groups rather than by
+    // dbModule, so the renderer needs the instance -> group mapping this walk
+    // produced.  Only installed in that mode; the module path needs nothing.
+    if (result.name_grouped) {
+      gen_->setInstGroups(block,
+                          std::make_shared<const std::vector<uint32_t>>(
+                              std::move(result.inst_group)),
+                          revision);
+    }
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -5584,6 +5777,8 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+    syncHeatMapsLocked(state);
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -5612,16 +5807,20 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
     }
 
     state.active_heatmap.clear();
+    web::HeatMapDataSource* shown = nullptr;
     if (!name.empty()) {
       auto next = state.heatmaps.find(name);
       if (next == state.heatmaps.end()) {
         throw std::runtime_error("invalid heat map");
       }
       state.active_heatmap = name;
-      next->second->onShow();
+      shown = next->second.get();
     }
 
     const std::string json = buildHeatMapsPayloadLocked(state);
+    if (shown != nullptr) {
+      shown->onShow();
+    }
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -5650,6 +5849,10 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
     if (option == "rebuild") {
       source.destroyMap();
       source.ensureMap();
+    } else if (option == "use_selected_only") {
+      // Not one of getSettings()' entries: Qt's dialog drives the setter
+      // directly, which invalidates the map on its own.
+      source.setUseSelectedOnly(req.json.at("value").as_bool());
     } else {
       auto settings = source.getSettings();
       auto setting_itr = settings.find(option);
@@ -5665,12 +5868,9 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
         // The frontend's addNumber control runs every value through
         // parseFloat, so int settings can arrive as JSON doubles.  Accept
         // either and round.
-        settings[option]
-            = value_v.is_int64()
-                  ? static_cast<int>(value_v.get_int64())
-                  : static_cast<int>(std::round(value_v.as_double()));
+        settings[option] = static_cast<int>(std::round(jsonToDouble(value_v)));
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[option] = value_v.as_double();
+        settings[option] = jsonToDouble(value_v);
       } else {
         settings[option] = std::string(value_v.as_string());
       }
@@ -5707,7 +5907,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
     const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
     const int tile_px
         = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
-    std::shared_ptr<gui::HeatMapDataSource> source;
+    std::shared_ptr<web::HeatMapDataSource> source;
     {
       std::lock_guard<std::mutex> lock(state.heatmap_mutex);
       const std::string name
@@ -5719,6 +5919,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       source = source_itr->second;
     }
     resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
+    markEmptyIfBlank(resp);
     debugPrint(gen_->getLogger(),
                utl::WEB,
                "tile",
@@ -5874,6 +6075,61 @@ std::pair<odb::dbBlock*, odb::dbChip*> DRCHandler::getBlockAndChip()
   return {block, chip};
 }
 
+namespace {
+
+// The chain of category names a DRC request addresses, from the top-level
+// category down to the target. A path is what identifies a subcategory,
+// because names are unique only among siblings: check_power_grid builds both
+// "PSM/VDD/Unconnected shape" and "PSM/VSS/Unconnected shape". `path` carries
+// the chain; `category` names a top-level category on its own.
+std::vector<std::string> categoryPathFromRequest(
+    const boost::json::object& json)
+{
+  std::vector<std::string> path;
+  if (const boost::json::value* val = json.if_contains("path")) {
+    for (const boost::json::value& elem : val->as_array()) {
+      path.emplace_back(elem.as_string());
+    }
+  }
+  if (path.empty()) {
+    if (const boost::json::value* val = json.if_contains("category")) {
+      std::string name(val->as_string());
+      if (!name.empty()) {
+        path.push_back(std::move(name));
+      }
+    }
+  }
+  return path;
+}
+
+odb::dbMarkerCategory* findCategoryByPath(odb::dbChip* chip,
+                                          const std::vector<std::string>& path)
+{
+  odb::dbMarkerCategory* category = nullptr;
+  for (const std::string& name : path) {
+    category = category ? category->findMarkerCategory(name.c_str())
+                        : chip->findMarkerCategory(name.c_str());
+    if (category == nullptr) {
+      return nullptr;
+    }
+  }
+  return category;
+}
+
+std::string joinCategoryPath(const std::vector<std::string>& path)
+{
+  std::string joined;
+  for (const std::string& name : path) {
+    if (!joined.empty()) {
+      joined += '/';
+    }
+    joined += name;
+  }
+  return joined;
+}
+
+}  // namespace
+
 odb::dbMarker* DRCHandler::findMarkerById(SessionState& state,
                                           odb::dbChip* chip,
                                           int marker_id)
@@ -6014,23 +6270,27 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
 
   try {
-    auto [block, chip] = getBlockAndChip();
+    // The viewer asks for categories as soon as it connects, so having no
+    // design yet is a normal state with no categories, not a failed request.
+    odb::dbChip* chip = gen_->getChip();
 
     boost::json::object root;
     boost::json::array categories;
-    for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
-      boost::json::object o;
-      o["name"] = std::string(category->getName());
-      o["count"] = category->getMarkerCount();
-      const std::string desc = category->getDescription();
-      if (!desc.empty()) {
-        o["description"] = desc;
+    if (chip != nullptr) {
+      for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
+        boost::json::object o;
+        o["name"] = std::string(category->getName());
+        o["count"] = category->getMarkerCount();
+        const std::string desc = category->getDescription();
+        if (!desc.empty()) {
+          o["description"] = desc;
+        }
+        const std::string source = category->getSource();
+        if (!source.empty()) {
+          o["source"] = source;
+        }
+        categories.emplace_back(std::move(o));
       }
-      const std::string source = category->getSource();
-      if (!source.empty()) {
-        o["source"] = source;
-      }
-      categories.emplace_back(std::move(o));
     }
     root["categories"] = std::move(categories);
     writePayload(resp, root);
@@ -6310,16 +6570,17 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const std::string cat_name
-        = std::string(req.json.at("category").as_string());
+    const std::vector<std::string> path = categoryPathFromRequest(req.json);
+    if (path.empty()) {
+      throw std::runtime_error("No category given");
+    }
     const bool visible = req.json.at("visible").as_bool();
     auto [block, chip] = getBlockAndChip();
 
     std::lock_guard<std::mutex> lock(state.drc_mutex);
-    odb::dbMarkerCategory* category
-        = chip->findMarkerCategory(cat_name.c_str());
+    odb::dbMarkerCategory* category = findCategoryByPath(chip, path);
     if (!category) {
-      throw std::runtime_error("Category not found: " + cat_name);
+      throw std::runtime_error("Category not found: " + joinCategoryPath(path));
     }
 
     int count = 0;
@@ -6329,9 +6590,15 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
     }
     refreshDRCOverlay(state);
 
+    boost::json::array path_arr;
+    for (const std::string& name : path) {
+      path_arr.emplace_back(name);
+    }
+
     boost::json::object root;
     root["ok"] = 1;
-    root["category"] = cat_name;
+    root["category"] = path.back();
+    root["path"] = std::move(path_arr);
     root["visible"] = visible;
     root["count"] = count;
     writePayload(resp, root);
@@ -6370,11 +6637,11 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       // the Inspector panel.  Mirrors handleSelect's pattern (replace
       // selectables, set current_inspected, clear navigation history) so
       // back-navigation behaves the same as for instances/nets.
-      gui::Selected sel;
+      web::Selected sel;
       int marker_select_id = -1;
-      std::vector<gui::Selected> new_selectables;
+      std::vector<web::Selected> new_selectables;
       if (open_inspector) {
-        sel = gui::DescriptorRegistry::instance()->makeSelected(target);
+        sel = web::DescriptorRegistry::instance()->makeSelected(target);
         if (sel) {
           marker_select_id = storeSelectable(new_selectables, sel);
         }
@@ -6425,6 +6692,360 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_highlight error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// ─── EditHandler: Global Connect + Insert Buffer ─────────────────────────────
+
+namespace {
+// Classify a net terminal as a driver, mirroring the Qt Insert Buffer dialog
+// (dbDescriptors.cpp): output/inout iterms and input/inout/feedthru bterms
+// drive the net.
+bool itermIsDriver(odb::dbITerm* iterm)
+{
+  const odb::dbIoType io = iterm->getIoType();
+  return io == odb::dbIoType::OUTPUT || io == odb::dbIoType::INOUT;
+}
+bool btermIsDriver(odb::dbBTerm* bterm)
+{
+  const odb::dbIoType io = bterm->getIoType();
+  return io == odb::dbIoType::INPUT || io == odb::dbIoType::INOUT
+         || io == odb::dbIoType::FEEDTHRU;
+}
+
+// Stable string id for a net pin, used to reference it across requests.
+std::string itermId(odb::dbITerm* it)
+{
+  return "I:" + it->getInst()->getName() + "/" + it->getMTerm()->getName();
+}
+std::string btermId(odb::dbBTerm* bt)
+{
+  return "B:" + bt->getName();
+}
+}  // namespace
+
+EditHandler::EditHandler(std::shared_ptr<TileGenerator> gen,
+                         std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)), tcl_eval_(std::move(tcl_eval))
+{
+}
+
+void EditHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("global_connect_info",
+        WebSocketRequest::kGlobalConnectInfo,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGlobalConnectInfo(req);
+        });
+  d.add("global_connect_delete",
+        WebSocketRequest::kGlobalConnectDelete,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGlobalConnectDelete(req);
+        });
+  d.add("global_connect_apply",
+        WebSocketRequest::kGlobalConnectApply,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGlobalConnectApply(req);
+        });
+  d.add("buffer_info",
+        WebSocketRequest::kBufferInfo,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleBufferInfo(req);
+        });
+  d.add("insert_buffer",
+        WebSocketRequest::kInsertBuffer,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleInsertBuffer(req);
+        });
+}
+
+WebSocketResponse EditHandler::handleGlobalConnectInfo(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    boost::json::object root;
+    boost::json::array rules;
+    boost::json::array nets;
+    boost::json::array regions;
+    if (block != nullptr) {
+      for (auto* gc : block->getGlobalConnects()) {
+        boost::json::object o;
+        o["inst"] = gc->getInstPattern();
+        o["pin"] = gc->getPinPattern();
+        odb::dbNet* net = gc->getNet();
+        o["net"] = net != nullptr ? net->getName() : std::string();
+        odb::dbRegion* region = gc->getRegion();
+        o["region"] = region != nullptr ? std::string(region->getName())
+                                        : std::string();
+        rules.emplace_back(std::move(o));
+      }
+      // Net combo lists only special (power/ground) nets, like the Qt dialog.
+      for (auto* net : block->getNets()) {
+        if (net->isSpecial()) {
+          nets.emplace_back(net->getName());
+        }
+      }
+      for (auto* region : block->getRegions()) {
+        regions.emplace_back(std::string(region->getName()));
+      }
+    }
+    root["rules"] = std::move(rules);
+    root["nets"] = std::move(nets);
+    root["regions"] = std::move(regions);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err
+        = std::string("global_connect_info error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleGlobalConnectDelete(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    // Identify the rule by its (inst, pin, net, region) fields rather than a
+    // positional index, so a concurrent add/delete can't shift indices and
+    // make us destroy the wrong rule.
+    const std::string inst = std::string(req.json.at("inst").as_string());
+    const std::string pin = std::string(req.json.at("pin").as_string());
+    const std::string net = std::string(req.json.at("net").as_string());
+    const std::string region = std::string(req.json.at("region").as_string());
+    boost::json::object root;
+    root["ok"] = 0;
+    if (block != nullptr) {
+      for (auto* gc : block->getGlobalConnects()) {
+        odb::dbNet* gc_net = gc->getNet();
+        odb::dbRegion* gc_region = gc->getRegion();
+        const std::string gc_net_name
+            = gc_net != nullptr ? gc_net->getName() : std::string();
+        const std::string gc_region_name
+            = gc_region != nullptr ? std::string(gc_region->getName())
+                                   : std::string();
+        if (gc->getInstPattern() == inst && gc->getPinPattern() == pin
+            && gc_net_name == net && gc_region_name == region) {
+          odb::dbGlobalConnect::destroy(gc);
+          root["ok"] = 1;
+          break;
+        }
+      }
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err
+        = std::string("global_connect_delete error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleGlobalConnectApply(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const bool force
+        = req.json.contains("force") && req.json.at("force").as_bool();
+    boost::json::object root;
+    // Guard the empty case ourselves so the client shows a friendly message
+    // instead of the raw ODB-0378 "Global connections are not set up." warning.
+    if (block == nullptr || block->getGlobalConnects().empty()) {
+      root["ok"] = true;
+      root["had_rules"] = false;
+      root["connected"] = 0;
+    } else {
+      const int connected = block->globalConnect(force, /*verbose=*/false);
+      root["ok"] = true;
+      root["had_rules"] = true;
+      root["connected"] = connected;
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err
+        = std::string("global_connect_apply error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleBufferInfo(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const std::string net_name = std::string(req.json.at("net").as_string());
+    boost::json::object root;
+    boost::json::array drivers;
+    boost::json::array loads;
+    odb::dbNet* net = block ? block->findNet(net_name.c_str()) : nullptr;
+    if (net == nullptr) {
+      root["can_buffer"] = false;
+      root["error"] = "Net not found: " + net_name;
+      writePayload(resp, root);
+      return resp;
+    }
+    for (auto* iterm : net->getITerms()) {
+      boost::json::object p;
+      const std::string id = itermId(iterm);
+      const bool drv = itermIsDriver(iterm);
+      p["id"] = id;
+      p["label"] = id.substr(2) + (drv ? " (Driver)" : " (Load)");
+      (drv ? drivers : loads).emplace_back(std::move(p));
+    }
+    for (auto* bterm : net->getBTerms()) {
+      boost::json::object p;
+      p["id"] = btermId(bterm);
+      const bool drv = btermIsDriver(bterm);
+      p["label"] = bterm->getName() + (drv ? " (Driver Port)" : " (Load Port)");
+      (drv ? drivers : loads).emplace_back(std::move(p));
+    }
+
+    // Buffer masters = db masters mapping to a Liberty buffer cell.
+    boost::json::array masters;
+    sta::dbSta* sta = gen_->getSta();
+    sta::dbNetwork* network = sta != nullptr ? sta->getDbNetwork() : nullptr;
+    if (network != nullptr) {
+      std::vector<std::string> names;
+      for (auto* lib : gen_->getDb()->getLibs()) {
+        for (auto* master : lib->getMasters()) {
+          sta::LibertyCell* cell
+              = network->libertyCell(network->dbToSta(master));
+          if (cell != nullptr && cell->isBuffer()) {
+            names.push_back(master->getName());
+          }
+        }
+      }
+      std::sort(names.begin(), names.end());
+      for (const auto& n : names) {
+        masters.emplace_back(n);
+      }
+    }
+
+    root["can_buffer"] = drivers.size() <= 1;
+    root["drivers"] = std::move(drivers);
+    root["loads"] = std::move(loads);
+    root["masters"] = std::move(masters);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("buffer_info error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleInsertBuffer(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    // Serialize this DB mutation against the Tcl write path and other edits.
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const std::string net_name = std::string(req.json.at("net").as_string());
+    const std::string mode = std::string(req.json.at("mode").as_string());
+    const std::string master_name
+        = std::string(req.json.at("master").as_string());
+    const std::string buf_name
+        = req.json.contains("buf_name")
+              ? std::string(req.json.at("buf_name").as_string())
+              : "";
+    const std::string new_net_name
+        = req.json.contains("net_name")
+              ? std::string(req.json.at("net_name").as_string())
+              : "";
+
+    odb::dbNet* net = block ? block->findNet(net_name.c_str()) : nullptr;
+    if (net == nullptr) {
+      throw std::runtime_error("Net not found: " + net_name);
+    }
+
+    // Resolve the master by name (odb searches across all libs).
+    odb::dbMaster* master = gen_->getDb()->findMaster(master_name.c_str());
+    if (master == nullptr) {
+      throw std::runtime_error("Buffer master not found: " + master_name);
+    }
+
+    // Build id → terminal map for this net (same ids as buffer_info).
+    std::map<std::string, odb::dbObject*> pin_map;
+    for (auto* iterm : net->getITerms()) {
+      pin_map[itermId(iterm)] = iterm;
+    }
+    for (auto* bterm : net->getBTerms()) {
+      pin_map[btermId(bterm)] = bterm;
+    }
+
+    const auto& pins = req.json.at("pins").as_array();
+    const char* buf_base
+        = buf_name.empty() ? kDefaultBufBaseName : buf_name.c_str();
+    const char* net_base
+        = new_net_name.empty() ? kDefaultNetBaseName : new_net_name.c_str();
+
+    odb::dbInst* inst = nullptr;
+    if (mode == "driver") {
+      if (pins.empty()) {
+        throw std::runtime_error("No driver pin selected.");
+      }
+      auto it = pin_map.find(std::string(pins.front().as_string()));
+      if (it == pin_map.end()) {
+        throw std::runtime_error("Driver pin not on net.");
+      }
+      inst = net->insertBufferAfterDriver(it->second,
+                                          master,
+                                          nullptr,
+                                          buf_base,
+                                          net_base,
+                                          odb::dbNameUniquifyType::IF_NEEDED);
+    } else {
+      std::vector<odb::dbObject*> loads;
+      for (const auto& pin : pins) {
+        auto it = pin_map.find(std::string(pin.as_string()));
+        if (it != pin_map.end()) {
+          loads.push_back(it->second);
+        }
+      }
+      if (loads.empty()) {
+        throw std::runtime_error("No load pins selected.");
+      }
+      inst = net->insertBufferBeforeLoads(loads,
+                                          master,
+                                          nullptr,
+                                          buf_base,
+                                          net_base,
+                                          odb::dbNameUniquifyType::IF_NEEDED);
+    }
+
+    // The buffer is left PLACED at the pin (insertBuffer*'s default) so it
+    // renders immediately — the web tile index only draws placed instances
+    // (search.cpp).  PLACED does not pin it: detailed_placement still
+    // legalizes/moves it (only LOCKED/FIRM are fixed).
+
+    boost::json::object root;
+    root["ok"] = inst != nullptr;
+    root["inst"] = inst != nullptr ? inst->getName() : std::string();
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("insert_buffer error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;

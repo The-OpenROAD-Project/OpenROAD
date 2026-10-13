@@ -12,10 +12,10 @@
 #include "db/obj/frMPin.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "pa/FlexPA_unique.h"
+#include "web/core.h"
 
 namespace odb {
 class dbDatabase;
@@ -38,7 +38,7 @@ class frPathSeg;
 class frConnFig;
 
 // This class draws debugging graphics on the layout
-class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
+class FlexPAGraphics : public web::Renderer, public AbstractPAGraphics
 {
  public:
   // Debug pin access
@@ -78,7 +78,7 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
   void status(const std::string& message);
 
   // From Renderer API
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
@@ -88,7 +88,7 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
   frDebugSettings* settings_;
   frInst* inst_;           // from settings_->pinName
   std::string term_name_;  // from settings_->pinName
-  gui::Gui* gui_;
+  web::Gui* gui_;
   frPin* pin_;
   frInstTerm* inst_term_;
   frBlock* top_block_;

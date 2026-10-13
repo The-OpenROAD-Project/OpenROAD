@@ -61,7 +61,7 @@ Initial-placement arguments
 
 Routability-driven arguments
 - They begin with `-routability`.
-- `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+- `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_min_congestion_for_inflation`, `-routability_rc_coefficients`
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
@@ -160,6 +160,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `3`, and the allowed values are floats. |
+| `-routability_min_congestion_for_inflation` | Tiles with a congestion value below this value will not be inflated. The default value is `0.95`, and the allowed values are floats `[0, 1]`. |
 | `-routability_rc_coefficients` | Set routability RC coefficients for calculating the averate routing congestion. They relate to the 0.5%, 1%, 2%, and 5% most congested tiles. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
 
 #### Timing-Driven Arguments
@@ -243,6 +244,29 @@ Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst 
 This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
 
 Debug mode requires the GUI. With ORFS, one way to arrange for showing the GUI when running the global placement step is by using `make global_place_issue` and then editing the created run-me.sh file to include the `-gui` flag when calling openroad.
+
+### Estimate Target Density
+
+This command estimates the target density needed to reach a given overflow for the current placement, without running global placement or otherwise modifying the design.
+
+The returned density is always between the design's uniform target density (the same value reported by `get_global_placement_uniform_density`) and `1.0`. A tighter (lower) `-overflow` value can only ask for a density closer to `1.0`, never lower than the uniform density.
+
+```tcl
+estimate_target_density
+    [-bin_grid_count grid_count]\
+    [-overflow overflow]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
+| `-overflow` | Set target overflow used to estimate the density. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
+| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 
 ## Useful Developer Commands
 

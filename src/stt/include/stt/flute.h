@@ -28,6 +28,10 @@ class Flute
                const std::vector<int>& x,
                const std::vector<int>& y,
                int acc);
+  // The lookup table is otherwise built as degrees are first seen. Once it
+  // is complete, flute() does not modify this object and may be called
+  // from several threads.
+  void completeLUT();
 
  private:
   struct Csoln;

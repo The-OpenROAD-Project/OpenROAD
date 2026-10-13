@@ -3,6 +3,10 @@ set(GUI_PASSFAIL_TESTS)
 
 if (Qt5_FOUND AND BUILD_GUI)
   list(APPEND GUI_PASSFAIL_TESTS dump_heatmap_headless)
+  list(APPEND GUI_PASSFAIL_TESTS clocktree_virtual_clock)
+  list(APPEND GUI_PASSFAIL_TESTS save_animated_gif_headless)
+  list(APPEND GUI_PASSFAIL_TESTS save_image_headless)
+  list(APPEND GUI_PASSFAIL_TESTS select_name_patterns)
 endif()
 
 if (GUI_PASSFAIL_TESTS)
