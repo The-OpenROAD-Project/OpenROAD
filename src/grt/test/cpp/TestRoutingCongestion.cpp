@@ -158,6 +158,38 @@ class RoutingCongestionTest : public tst::IntegratedFixture
   // sit on.  Far too large a change for RUDY to report the same number
   // afterwards, so a test that still sees the old value saw a stale cache
   // rather than a small numeric coincidence.  Returns how many moved.
+  // Every GCell of the core with its congestion, in a fixed order.
+  std::vector<RoutingCongestion::GCell> coreMap()
+  {
+    return congestion_->gcellsByCongestion(core(), core().center());
+  }
+
+  // The movable instance driving the most nets: moving it drags the most
+  // routing across the die, so the reroute touches a worthwhile number of
+  // tiles.
+  odb::dbInst* mostConnectedInst() const
+  {
+    odb::dbInst* best = nullptr;
+    int best_nets = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      if (inst->getPlacementStatus().isFixed()) {
+        continue;
+      }
+      int nets = 0;
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (net != nullptr && !net->isSpecial()) {
+          nets++;
+        }
+      }
+      if (nets > best_nets) {
+        best_nets = nets;
+        best = inst;
+      }
+    }
+    return best;
+  }
+
   int pileQuadrantOntoAPoint()
   {
     const odb::Point target = controlRegion().center();
@@ -405,6 +437,54 @@ TEST_F(RoutingCongestionTest, NetlistChangeLeavesTheRoutedMapAlone)
   ASSERT_GT(pileQuadrantOntoAPoint(), 0);
 
   EXPECT_FLOAT_EQ(meanCongestion(core()), before);
+}
+
+TEST_F(RoutingCongestionTest, IncrementalRerouteRefreshesTheTilesItTouched)
+{
+  // updateDirtyRoutes() now refreshes odb's congestion for the GCells the old
+  // and new routes ran over.  IncrementalGRoute is the path that matters:
+  // unlike endIncremental() it is not followed by a full rebuild, so what it
+  // writes is what a consumer reads.
+  runGlobalRoute();
+
+  odb::dbInst* inst = mostConnectedInst();
+  ASSERT_NE(inst, nullptr);
+  const odb::Point destination = controlRegion().center();
+  const float before = meanCongestion(core());
+
+  int x0 = 0, y0 = 0;
+  inst->getLocation(x0, y0);
+  float after_move = 0.0f;
+  {
+    IncrementalGRoute incr(&grt_, block_);
+    inst->setLocation(destination.x(), destination.y());
+    incr.updateRoutes(/*save_guides=*/false);
+    after_move = meanCongestion(core());
+    // Move it back so the second reroute vacates tiles the first one filled.
+    // Without this the old footprint is a subset of the new one and the
+    // equivalence check cannot tell whether old routes were tracked at all.
+    inst->setLocation(x0, y0);
+    incr.updateRoutes(/*save_guides=*/false);
+  }
+  const std::vector<RoutingCongestion::GCell> incremental = coreMap();
+
+  // A map that never moved would pass the equivalence check below against an
+  // equally stale reference, so pin that the first reroute showed up.
+  EXPECT_NE(after_move, before);
+
+  // Same routing, refreshed the expensive way: startIncremental with nothing
+  // dirty, then endIncremental, whose finishGlobalRouting() rewrites every
+  // tile.  The incremental write has to agree with it everywhere.
+  grt_.startIncremental();
+  grt_.endIncremental();
+  const std::vector<RoutingCongestion::GCell> full = coreMap();
+
+  ASSERT_EQ(incremental.size(), full.size());
+  for (size_t i = 0; i < incremental.size(); i++) {
+    EXPECT_FLOAT_EQ(incremental[i].congestion, full[i].congestion)
+        << "gcell " << i;
+    EXPECT_EQ(incremental[i].rect, full[i].rect) << "gcell " << i;
+  }
 }
 
 // The same service against the other routing engine. RoutingCongestion reads

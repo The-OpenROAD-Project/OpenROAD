@@ -545,6 +545,9 @@ class GlobalRouter
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Refresh odb's congestion only for the GCells the routing engine recorded
+  // as changed.  Clears the engine's list.
+  void updateDbCongestionTiles();
 
   // db functions
   void initGrid(int max_layer);
