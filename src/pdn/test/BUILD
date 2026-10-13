@@ -588,3 +588,24 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "pdn_grid_component_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNGridComponent.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # grid_component.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
