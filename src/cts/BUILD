@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -13,34 +13,7 @@ package(
 )
 
 cc_library(
-    name = "private_hdrs",
-    hdrs = [
-        "src/Clock.h",
-        "src/Clustering.h",
-        "src/CtsObserver.h",
-        "src/HTreeBuilder.h",
-        "src/LatencyBalancer.h",
-        "src/SinkClustering.h",
-        "src/TreeBuilder.h",
-        "src/Util.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        # TODO: we use headers provided by :cts, but that reveals cyclic dep
-        #":cts",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "@boost.container_hash",
-        "@boost.unordered",
-    ],
-)
-
-cc_library(
-    name = "cts",
+    name = "cts_impl",
     srcs = [
         "src/Clock.cpp",
         "src/Clustering.cpp",
@@ -54,15 +27,23 @@ cc_library(
     ],
     hdrs = [
         "include/cts/TritonCTS.h",
+        "src/Clock.h",
+        "src/Clustering.h",
+        "src/CtsObserver.h",
         "src/CtsOptions.h",
+        "src/HTreeBuilder.h",
+        "src/LatencyBalancer.h",
+        "src/SinkClustering.h",
         "src/TechChar.h",
+        "src/TreeBuilder.h",
+        "src/Util.h",
     ],
     includes = [
         "include",
         "src",
     ],
+    visibility = ["//src/cts:__subpackages__"],
     deps = [
-        ":private_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",
@@ -75,6 +56,22 @@ cc_library(
         "@boost.polygon",
         "@boost.unordered",
         "@coin-or-lemon//:lemon",
+    ],
+)
+
+cc_library(
+    name = "cts",
+    hdrs = [
+        "include/cts/TritonCTS.h",
+        "src/CtsOptions.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":cts_impl",
+        "//src/odb/src/db",
+        "//src/utl",
     ],
 )
 
@@ -95,12 +92,11 @@ cc_library(
         "src",
     ],
     deps = [
-        ":cts",
-        ":private_hdrs",
+        ":cts_impl",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -158,4 +154,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/cts/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":cts"],
 )

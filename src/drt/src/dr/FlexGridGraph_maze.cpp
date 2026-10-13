@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <bitset>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <limits>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "db/drObj/drPin.h"
@@ -17,6 +19,7 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
+#include "dr/WatermarkCost.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "odb/dbTypes.h"
@@ -141,17 +144,20 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     nextTLength = std::numeric_limits<frCoord>::max();
   }
 
-  FlexWavefrontGrid nextWavefrontGrid(gridX,
-                                      gridY,
-                                      gridZ,
-                                      nextVLengthX,
-                                      nextVLengthY,
-                                      nextIsPrevViaUp,
-                                      nextTLength,
-                                      currDist,
-                                      nextPathCost,
-                                      nextPathCost + nextEstCost,
-                                      currGrid.getBackTraceBuffer());
+  FlexWavefrontGrid nextWavefrontGrid(
+      gridX,
+      gridY,
+      gridZ,
+      nextVLengthX,
+      nextVLengthY,
+      nextIsPrevViaUp,
+      nextTLength,
+      currDist,
+      nextPathCost,
+      wrong_way_watermark_multiplier_ != 1.0f
+          ? addWatermarkCosts(nextPathCost, nextEstCost)
+          : nextPathCost + nextEstCost,
+      currGrid.getBackTraceBuffer());
   if (dir == frDirEnum::U || dir == frDirEnum::D) {
     nextWavefrontGrid.resetLength();
     if (dir == frDirEnum::U) {
@@ -376,10 +382,25 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
                                       const frDirEnum& dir,
                                       bool route_with_jumpers) const
 {
+  // One test per expansion decides which arithmetic the whole step uses.
+  if (wrong_way_watermark_multiplier_ != 1.0f) {
+    return getNextPathCostImpl<true>(currGrid, dir, route_with_jumpers);
+  }
+  return getNextPathCostImpl<false>(currGrid, dir, route_with_jumpers);
+}
+
+template <bool kWatermark>
+frCost FlexGridGraph::getNextPathCostImpl(const FlexWavefrontGrid& currGrid,
+                                          const frDirEnum& dir,
+                                          bool route_with_jumpers) const
+{
+  // The ordinary path keeps the router's 32-bit unsigned arithmetic exactly;
+  // the watermark path widens so a saturated edge cannot wrap the total.
+  using Cost = std::conditional_t<kWatermark, uint64_t, frCost>;
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
   frMIdx gridZ = currGrid.z();
-  frCost nextPathCost = currGrid.getPathCost();
+  Cost nextPathCost = currGrid.getPathCost();
   frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
   // bending cost
   auto currDir = currGrid.getLastDir();
@@ -464,9 +485,9 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
           std::cout << "isForbiddenVia2Via\n";
         }
         if (drWorker_->getDRIter() >= 3) {
-          nextPathCost += 2 * ggMarkerCost_ * edgeLength;
+          nextPathCost += Cost{2} * ggMarkerCost_ * edgeLength;
         } else {
-          nextPathCost += 2 * ggDRCCost_ * edgeLength;
+          nextPathCost += Cost{2} * ggDRCCost_ * edgeLength;
         }
       }
     }
@@ -518,22 +539,27 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
           std::cout << "isForbiddenTLen\n";
         }
         if (drWorker_->getDRIter() >= 3) {
-          nextPathCost += 2 * ggDRCCost_ * edgeLength;
+          nextPathCost += Cost{2} * ggDRCCost_ * edgeLength;
         } else {
-          nextPathCost += 2 * ggMarkerCost_ * edgeLength;
+          nextPathCost += Cost{2} * ggMarkerCost_ * edgeLength;
         }
       }
     }
   }
-  nextPathCost += getCosts(gridX,
-                           gridY,
-                           gridZ,
-                           dir,
-                           layer,
-                           useNDRCosts(currGrid),
-                           route_with_jumpers);
+  nextPathCost += getCostsImpl<kWatermark>(gridX,
+                                           gridY,
+                                           gridZ,
+                                           dir,
+                                           layer,
+                                           useNDRCosts(currGrid),
+                                           route_with_jumpers);
 
-  return nextPathCost;
+  if constexpr (kWatermark) {
+    // A saturated watermark edge must not wrap when added to the path.
+    return saturateWatermarkCost(nextPathCost);
+  } else {
+    return nextPathCost;
+  }
 }
 
 frCost FlexGridGraph::getCosts(frMIdx gridX,
@@ -543,6 +569,23 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
                                frLayer* layer,
                                bool considerNDR,
                                bool route_with_jumpers) const
+{
+  if (wrong_way_watermark_multiplier_ != 1.0f) {
+    return getCostsImpl<true>(
+        gridX, gridY, gridZ, dir, layer, considerNDR, route_with_jumpers);
+  }
+  return getCostsImpl<false>(
+      gridX, gridY, gridZ, dir, layer, considerNDR, route_with_jumpers);
+}
+
+template <bool kWatermark>
+frCost FlexGridGraph::getCostsImpl(frMIdx gridX,
+                                   frMIdx gridY,
+                                   frMIdx gridZ,
+                                   frDirEnum dir,
+                                   frLayer* layer,
+                                   bool considerNDR,
+                                   bool route_with_jumpers) const
 {
   bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
   bool apCost = hasApCost(gridX, gridY, gridZ, dir);
@@ -556,15 +599,48 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
   // increase cost when a net has jumper
   frUInt4 jumper_cost = route_with_jumpers ? 10 : 1;
 
-  // temporarily disable guideCost
-  return getEdgeLength(gridX, gridY, gridZ, dir)
-         + (gridCost || apCost ? router_cfg_->GRIDCOST * edgeLength : 0)
-         + (drcCost ? ggDRCCost_ * edgeLength : 0)
-         + (markerCost ? ggMarkerCost_ * edgeLength : 0)
-         + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
-         + (blockCost ? router_cfg_->BLOCKCOST * layer->getMinWidth() * 20 : 0)
-         + (!guideCost ? (router_cfg_->GUIDECOST * jumper_cost) * edgeLength
-                       : 0);
+  if constexpr (!kWatermark) {
+    // temporarily disable guideCost
+    return getEdgeLength(gridX, gridY, gridZ, dir)
+           + (gridCost || apCost ? router_cfg_->GRIDCOST * edgeLength : 0)
+           + (drcCost ? ggDRCCost_ * edgeLength : 0)
+           + (markerCost ? ggMarkerCost_ * edgeLength : 0)
+           + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
+           + (blockCost ? router_cfg_->BLOCKCOST * layer->getMinWidth() * 20
+                        : 0)
+           + (!guideCost ? (router_cfg_->GUIDECOST * jumper_cost) * edgeLength
+                         : 0);
+  } else {
+    // Routing watermark: the net being routed pays an inflated grid cost for
+    // every edge that runs against its layer's preferred direction, which is
+    // exactly the wiring the detector measures.  That includes the jogs the
+    // grid adds to reach an access point that has no track of its own: a jog
+    // that is the only way to a pin costs every path the same and changes
+    // nothing, and where an access with preferred-direction wiring exists the
+    // tagged net takes it.  Preferred-direction edges keep their ordinary
+    // cost even when they are off-track or on a worker border, so the mark
+    // does not depend on the worker tiling.
+    uint64_t gridCostVal = (gridCost || apCost)
+                               ? uint64_t{router_cfg_->GRIDCOST} * edgeLength
+                               : 0;
+    if (isWrongWayEdge(gridZ, dir)) {
+      gridCostVal
+          = scaledWatermarkCost(uint64_t{router_cfg_->GRIDCOST} * edgeLength,
+                                wrong_way_watermark_multiplier_);
+    }
+    const uint64_t cost
+        = static_cast<uint64_t>(edgeLength) + gridCostVal
+          + (drcCost ? uint64_t{ggDRCCost_} * edgeLength : 0)
+          + (markerCost ? uint64_t{ggMarkerCost_} * edgeLength : 0)
+          + (shapeCost ? uint64_t{ggFixedShapeCost_} * edgeLength : 0)
+          + (blockCost
+                 ? uint64_t{router_cfg_->BLOCKCOST} * layer->getMinWidth() * 20
+                 : 0)
+          + (!guideCost
+                 ? uint64_t{router_cfg_->GUIDECOST} * jumper_cost * edgeLength
+                 : 0);
+    return saturateWatermarkCost(cost);
+  }
 }
 
 bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const

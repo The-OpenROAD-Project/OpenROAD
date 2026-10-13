@@ -482,43 +482,51 @@ void FlexDR::init()
     logger_->info(DRT, 194, "Start detail routing.");
   }
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
-    if (net->hasInitialRouting()) {
-      for (const auto& via : net->getVias()) {
-        auto bottomBox = via->getLayer1BBox();
-        auto topBox = via->getLayer2BBox();
-        for (auto term : net->getInstTerms()) {
-          if (term->getBBox().intersects(bottomBox)) {
-            std::vector<frRect> shapes;
-            term->getShapes(shapes);
-            for (const auto& shape : shapes) {
-              if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
-                continue;
-              }
-              if (!shape.intersects(bottomBox)) {
-                continue;
-              }
-              via->setBottomConnected(true);
-              break;
+    if (!net->hasInitialRouting()) {
+      continue;
+    }
+    for (const auto& via : net->getVias()) {
+      const odb::Rect bottomBox = via->getLayer1BBox();
+      const odb::Rect topBox = via->getLayer2BBox();
+      // A via can land on an instance pin or on an IO pin.
+      auto mark_via_connected = [&via, &bottomBox, &topBox](auto* term) {
+        if (term->getBBox().intersects(bottomBox)) {
+          std::vector<frRect> shapes;
+          term->getShapes(shapes);
+          for (const auto& shape : shapes) {
+            if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
+              continue;
             }
-          }
-          if (via->isBottomConnected()) {
-            continue;
-          }
-          if (term->getBBox().intersects(topBox)) {
-            std::vector<frRect> shapes;
-            term->getShapes(shapes);
-            for (const auto& shape : shapes) {
-              if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
-                continue;
-              }
-              if (!shape.intersects(topBox)) {
-                continue;
-              }
-              via->setTopConnected(true);
-              break;
+            if (!shape.intersects(bottomBox)) {
+              continue;
             }
+            via->setBottomConnected(true);
+            break;
           }
         }
+        if (via->isBottomConnected()) {
+          return;
+        }
+        if (term->getBBox().intersects(topBox)) {
+          std::vector<frRect> shapes;
+          term->getShapes(shapes);
+          for (const auto& shape : shapes) {
+            if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
+              continue;
+            }
+            if (!shape.intersects(topBox)) {
+              continue;
+            }
+            via->setTopConnected(true);
+            break;
+          }
+        }
+      };
+      for (auto term : net->getInstTerms()) {
+        mark_via_connected(term);
+      }
+      for (auto term : net->getBTerms()) {
+        mark_via_connected(term);
       }
     }
   }

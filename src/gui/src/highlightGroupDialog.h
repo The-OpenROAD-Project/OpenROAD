@@ -21,6 +21,6 @@ class HighlightGroupDialog : public QDialog, private Ui::HighlightGroupDlg
   void accept() override;
 
  private:
-  void setButtonBackground(QRadioButton* button, Painter::Color color);
+  void setButtonBackground(QRadioButton* button, web::Painter::Color color);
 };  // namespace gui
 }  // namespace gui

@@ -14,11 +14,15 @@ jobs:
   create-tag:
     name: Create quarterly tag
     runs-on: ubuntu-latest
+    # Only create the tag on the canonical repo; mirrors pick it up via
+    # github-actions-cron-sync-fork-from-upstream*.yml instead of minting
+    # their own independent tag object for the same commit.
+    if: github.repository == 'The-OpenROAD-Project/OpenROAD'
     permissions:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Determine tag name
         id: tag

@@ -22,4 +22,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file pre_routed1.guideok $guide_file
+diff_files pre_routed1.guideok $guide_file

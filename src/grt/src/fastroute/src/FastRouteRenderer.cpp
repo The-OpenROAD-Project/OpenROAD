@@ -8,9 +8,9 @@
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "web/core.h"
 
 namespace grt {
 
@@ -22,7 +22,7 @@ FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech)
       x_corner_(0),
       y_corner_(0)
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void FastRouteRenderer::setGridVariables(int tile_size,
@@ -36,7 +36,7 @@ void FastRouteRenderer::setGridVariables(int tile_size,
 
 void FastRouteRenderer::redrawAndPause()
 {
-  auto* gui = gui::Gui::get();
+  auto* gui = web::Gui::get();
   gui->redraw();
   gui->pause();
 }
@@ -75,7 +75,7 @@ void FastRouteRenderer::drawLineObject(int x1,
                                        int x2,
                                        int y2,
                                        int layer2,
-                                       gui::Painter& painter)
+                                       web::Painter& painter)
 {
   if (layer1 == layer2) {
     if (is3DVisualization_) {
@@ -83,14 +83,14 @@ void FastRouteRenderer::drawLineObject(int x1,
       painter.setPen(layer);
       painter.setBrush(layer);
     } else {
-      painter.setPen(gui::Painter::kCyan);
-      painter.setBrush(gui::Painter::kCyan);
+      painter.setPen(web::Painter::kCyan);
+      painter.setBrush(web::Painter::kCyan);
     }
     painter.setPenWidth(700);
     painter.drawLine(x1, y1, x2, y2);
   }
 }
-void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
+void FastRouteRenderer::drawTreeEdges(web::Painter& painter)
 {
   int lastL = 0;
   for (const TreeEdge& treeEdge : treeEdges_) {
@@ -124,7 +124,7 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
     }
   }
 }
-void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
+void FastRouteRenderer::drawCircleObjects(web::Painter& painter)
 {
   painter.setPenWidth(700);
   for (auto i = 0; i < pinX_.size(); i++) {
@@ -138,11 +138,11 @@ void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
   }
 }
 
-void FastRouteRenderer::drawObjects(gui::Painter& painter)
+void FastRouteRenderer::drawObjects(web::Painter& painter)
 {
   if (treeStructure_ == TreeStructure::steinerTreeByStt) {
-    painter.setPen(gui::Painter::kWhite);
-    painter.setBrush(gui::Painter::kWhite);
+    painter.setPen(web::Painter::kWhite);
+    painter.setBrush(web::Painter::kWhite);
     painter.setPenWidth(700);
 
     for (int i = 0; i < stree_.branchCount(); i++) {

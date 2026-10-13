@@ -169,9 +169,12 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                2,
                "Processing driver {}",
                network_->pathName(drvr_pin));
-    // Always get the flat net for the top level port.
+    // Always get the flat net for the top level port: in a hierarchical
+    // netlist the port's term net is the top module's dbModNet, which
+    // gain buffering cannot insert buffers on.
     sta::Net* net = network_->isTopLevelPort(drvr_pin)
-                        ? network_->net(network_->term(drvr_pin))
+                        ? db_network_->dbToSta(
+                              db_network_->flatNet(network_->term(drvr_pin)))
                         : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (!net) {
       continue;
@@ -193,11 +196,15 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                  "  Net {} is eligible for repair.",
                  network_->pathName(net));
       float fanout, max_fanout, fanout_slack;
+      // Gain buffering takes max_fanout as the branching bound of the tree it
+      // builds, not as a violation limit, and relies on an unconstrained net
+      // reporting no limit so the gain criterion alone picks the branching.
+      // Feeding it the backstop would cap every net at that value instead.
       sta_->checkFanout(
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       bool repaired_net = false;
-      if (max_fanout <= 0) {
+      if (max_fanout <= 0 || max_fanout > 1e9) {
         max_fanout = 1e9;
       }
 
@@ -876,8 +883,10 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
   estimate_parasitics_->ensureWireParasitic(drvr_pin);
   load_cap = graph_delay_calc_->loadCap(drvr_pin, corner, max_);
 
-  if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst) && cell
-      && resizer_->isLogicStdCell(inst)) {
+  // A fixed driver keeps its master: a wider one would overlap the fixed
+  // cells around it, and nothing may move it. Buffering repairs the net.
+  if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst)
+      && !resizer_->isFixed(inst) && cell && resizer_->isLogicStdCell(inst)) {
     sta::LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
@@ -1013,7 +1022,7 @@ void RepairDesign::repairNet(sta::Net* net,
     // Fanout is addressed by creating region repeaters
     if (check_fanout) {
       float fanout, max_fanout, fanout_slack;
-      sta_->checkFanout(
+      resizer_->checkFanout(
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       if (max_fanout > 0.0 && fanout_slack < 0.0) {
@@ -1602,7 +1611,7 @@ void RepairDesign::repairNetWire(
       // the new repeater's input pin cap does not shrink the load the
       // driver sees). Two such iterations in a row terminate the loop.
       const double prev_ref_cap = ref_cap;
-      const bool zero_advance = (buf_dist <= 0.0);
+      const bool zero_advance = (buf_dist < 1.0);
       double dx = from_x - to_x;
       double dy = from_y - to_y;
       double d = (length == 0) ? 0.0 : buf_dist / length;

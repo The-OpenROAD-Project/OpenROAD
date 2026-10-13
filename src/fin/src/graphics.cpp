@@ -7,15 +7,15 @@
 #include <string>
 
 #include "boost/polygon/polygon.hpp"
-#include "gui/gui.h"
 #include "odb/geom.h"
 #include "polygon.h"
+#include "web/core.h"
 
 namespace fin {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void Graphics::drawPolygon90Set(const Polygon90Set& set)
@@ -24,14 +24,14 @@ void Graphics::drawPolygon90Set(const Polygon90Set& set)
   // than trying to have Qt draw the polygons directly.
   polygon_rects_.clear();
   get_rectangles(polygon_rects_, set);
-  gui::Gui::get()->redraw();
-  gui::Gui::get()->pause();
+  web::Gui::get()->redraw();
+  web::Gui::get()->pause();
 }
 
-void Graphics::drawObjects(gui::Painter& painter)
+void Graphics::drawObjects(web::Painter& painter)
 {
-  painter.setPen(gui::Painter::kTransparent);
-  auto color = gui::Painter::kYellow;
+  painter.setPen(web::Painter::kTransparent);
+  auto color = web::Painter::kYellow;
   color.a = 180;
   painter.setBrush(color);
 
@@ -43,13 +43,13 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 void Graphics::status(const std::string& message)
 {
-  gui::Gui::get()->status(message);
+  web::Gui::get()->status(message);
 }
 
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 }  // namespace fin

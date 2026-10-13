@@ -42,6 +42,7 @@ add_library(stt_lib
     ${FLUTE_HOME}/flute.cpp
     ${POWV9_CPP}
     ${POST9_CPP}
+    ${PDR_HOME}/src/neighbors.cpp
     ${PDR_HOME}/src/pd.cpp
 )
 
@@ -73,7 +74,7 @@ target_link_libraries(stt_lib
 target_link_libraries(stt
     stt_lib
     utl_lib
-    gui
+    gui_core
 )
 
 messages(

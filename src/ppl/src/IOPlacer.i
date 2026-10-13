@@ -243,7 +243,7 @@ void
 simulated_annealing_debug(int iters_between_paintings,
                           bool no_pause_mode)
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 

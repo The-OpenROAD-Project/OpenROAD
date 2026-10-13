@@ -11,7 +11,6 @@
 #include <map>
 #include <vector>
 
-#include "db/infra/frPoint.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
@@ -217,7 +216,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
     const auto layer = getTech()->getLayer(layerNum);
-    if (layerNum + 2 <= getTech()->getTopLayerNum()) {
+    if (layerNum + 2 <= router_cfg_->TOP_ROUTING_LAYER) {
       nonPrefLayerNum = layerNum + 2;
     } else if (layerNum - 2 >= getTech()->getBottomLayerNum()) {
       nonPrefLayerNum = layerNum - 2;
@@ -366,7 +365,7 @@ void FlexGridGraph::initEdges(const frDesign* design,
   // this creates via edges over each ap until reaching a default track or a
   // layer with normal routing; in this case it creates jogs connections to the
   // neighboring tracks
-  for (const Point3D& apPt : drWorker_->getSpecialAccessAPs()) {
+  for (const odb::Point3D& apPt : drWorker_->getSpecialAccessAPs()) {
     for (int i = 0; i < 2; i++) {  // down and up
       bool up = (bool) i;
       int inc = up ? 1 : -1;

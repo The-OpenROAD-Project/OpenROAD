@@ -8,6 +8,7 @@
 #include <fstream>
 #include <istream>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 
@@ -46,7 +47,9 @@ class OutStreamHandler
 {
  public:
   // Set binary to true to open in binary mode
-  OutStreamHandler(const char* filename, bool binary = false);
+  OutStreamHandler(const char* filename,
+                   bool binary = false,
+                   std::optional<int> compression_level = std::nullopt);
   ~OutStreamHandler();
   std::ostream& getStream();
   void close();

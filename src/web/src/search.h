@@ -4,10 +4,13 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <shared_mutex>
 #include <string>
@@ -75,21 +78,6 @@ class Search : public odb::dbBlockCallBackObj
   using SNetDBoxValue = std::pair<odb::dbSBox*, T>;
   ;
 
-  template <typename T>
-  struct BBoxIndexableGetter
-  {
-    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
-    odb::Rect operator()(T t) const { return t->getBBox()->getBox(); }
-    odb::Rect operator()(const SNetValue<T>& t) const
-    {
-      return std::get<0>(t)->getBox();
-    }
-    odb::Rect operator()(const SNetDBoxValue<T>& t) const
-    {
-      return std::get<0>(t)->getBox();
-    }
-  };
-
   struct FillIndexableGetter
   {
     using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
@@ -101,18 +89,23 @@ class Search : public odb::dbBlockCallBackObj
     }
   };
 
+  // Every tree below indexes on a Rect STORED IN THE TREE (the `first` of a
+  // RectValue pair), never on one derived from ODB by an indexable getter.
+  // Boost's rtree invokes the indexable getter on every element a query
+  // visits, and each derivation (inst->getBBox()->getBox(), sbox->getBox())
+  // is a chain of dbTable lookups whose cache behavior is far worse than the
+  // traversal itself.  At zoom-out the query box spans the whole design, so
+  // nothing prunes and the getter runs once per element per tile per layer —
+  // it dominated the web viewer's render time on large designs.  The extra 16
+  // bytes per entry buy that back.
   template <typename T>
   using RtreeRect = bgi::rtree<RectValue<T>, bgi::quadratic<16>>;
   template <typename T>
-  using RtreeDBox = bgi::rtree<T, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
-  template <typename T>
   using RtreeRoutingShapes = bgi::rtree<RouteBoxValue<T>, bgi::quadratic<16>>;
   template <typename T>
-  using RtreeSNetShapes
-      = bgi::rtree<SNetValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  using RtreeSNetShapes = RtreeRect<SNetValue<T>>;
   template <typename T>
-  using RtreeSNetDBoxShapes = bgi::
-      rtree<SNetDBoxValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  using RtreeSNetDBoxShapes = RtreeRect<SNetDBoxValue<T>>;
   using RtreeFill
       = bgi::rtree<odb::dbFill*, bgi::quadratic<16>, FillIndexableGetter>;
 
@@ -167,6 +160,17 @@ class Search : public odb::dbBlockCallBackObj
   // Qt's Search emits `modified()` on.  TileGenerator uses it to drop its PNG
   // tile cache and push a redraw to connected clients.  Pass `{}` to clear.
   void setOnModified(std::function<void()> cb);
+
+  // Counter bumped on every design edit this object hears about, whether or
+  // not setOnModified's callback fires for it.  That callback is deliberately
+  // debounced to a valid→invalid index transition so a batch of edits does not
+  // flood connected clients with redraws, which makes it unsuitable for
+  // invalidating a cache: an edit arriving while an index is already invalid
+  // is silent.  Caches poll this instead and rebuild when it moves.
+  uint64_t revision() const
+  {
+    return revision_.load(std::memory_order_acquire);
+  }
 
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -234,6 +238,27 @@ class Search : public odb::dbBlockCallBackObj
                                       int y_hi,
                                       int min_size = 0);
 
+  // Bounds of what is indexed on `layer` in `block`, nullopt when nothing is.
+  // Each builds the index it reads, like the searches do.
+  //
+  // shapeBounds: routing, via and BTerm boxes, special-net shapes, and the
+  // special-net vias indexed on it (their cut layer).
+  std::optional<odb::Rect> shapeBounds(odb::dbBlock* block,
+                                       odb::dbTechLayer* layer);
+  std::optional<odb::Rect> fillBounds(odb::dbBlock* block,
+                                      odb::dbTechLayer* layer);
+  std::optional<odb::Rect> obstructionBounds(odb::dbBlock* block,
+                                             odb::dbTechLayer* layer);
+
+  // Bounding box of the special-net vias indexed on `layer`.  A via is indexed
+  // on its cut layer, but its enclosures are drawn on the metal layers either
+  // side of it, so those layers' extents need this too.
+  std::optional<odb::Rect> snetViaBounds(odb::dbBlock* block,
+                                         odb::dbTechLayer* layer);
+
+  // Bounding box of every indexed instance in `block`.
+  std::optional<odb::Rect> instBounds(odb::dbBlock* block);
+
   // Find all rows in the given bounds with height of at least min_height.
   RowRange searchRows(odb::dbBlock* block,
                       int x_lo,
@@ -263,6 +288,31 @@ class Search : public odb::dbBlockCallBackObj
                                bool vertical,
                                const TileVisibility& vis,
                                const std::set<std::string>& visible_layers);
+
+  // ─── Name-group mapping (flat designs) ──────────────────────────────
+  //
+  // A flat design has no dbModule tree, so the web viewer's module overlay
+  // resolves each instance to a group synthesized from its name instead (see
+  // HierarchyReport).  The mapping is produced there and parked here, because
+  // Search is already what watches the db for the edits that invalidate it.
+  //
+  // Indexed by dbInst::getId(); the tile renderer reads it once per instance
+  // per tile, where a hash lookup would not pay.  Held by shared_ptr so a
+  // render in flight keeps reading one while another thread installs its
+  // replacement.
+
+  // `built_at_revision` is the revision() the mapping was built against,
+  // read BEFORE the walk that produced it -- stamping it here instead would
+  // call a mapping fresh that an edit invalidated while it was being built.
+  void setInstGroups(odb::dbBlock* block,
+                     std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+                     uint64_t built_at_revision);
+
+  // Null when nothing was installed for this block, or when the design has
+  // changed since.  Dropping it is deliberate: a stale mapping colors
+  // instances by a group they are no longer in, which reads as authoritative
+  // and is wrong.  The client installs a fresh one on its next update.
+  std::shared_ptr<const std::vector<uint32_t>> instGroups(odb::dbBlock* block);
 
   void clearShapes();
   void clearFills();
@@ -307,9 +357,10 @@ class Search : public odb::dbBlockCallBackObj
  private:
   struct BlockData;
 
-  void addSNet(odb::dbNet* net,
-               LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
-               LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>>& via_shapes);
+  void addSNet(
+      odb::dbNet* net,
+      LayerMap<std::vector<RectValue<SNetValue<odb::dbNet*>>>>& net_shapes,
+      LayerMap<std::vector<RectValue<SNetDBoxValue<odb::dbNet*>>>>& via_shapes);
   void addNet(odb::dbNet* net,
               LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>>& tree_shapes);
   void addVia(odb::dbNet* net,
@@ -344,10 +395,13 @@ class Search : public odb::dbBlockCallBackObj
   std::function<void()> on_modified_;
   mutable std::mutex on_modified_mutex_;
 
+  // See revision().  Bumped by every edit, undebounced.
+  std::atomic_uint64_t revision_{0};
+
   struct BlockData
   {
-    RtreeDBox<odb::dbInst*> insts;
-    RtreeDBox<odb::dbBlockage*> blockages;
+    RtreeRect<odb::dbInst*> insts;
+    RtreeRect<odb::dbBlockage*> blockages;
     RtreeRect<odb::dbRow*> rows;
 
     std::shared_mutex shapes_init_mutex;
@@ -365,7 +419,7 @@ class Search : public odb::dbBlockCallBackObj
     LayerMap<RtreeSNetDBoxShapes<odb::dbNet*>> snet_via_shapes;
     LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes;
     LayerMap<RtreeFill> fills;
-    LayerMap<RtreeDBox<odb::dbObstruction*>> obstructions;
+    LayerMap<RtreeRect<odb::dbObstruction*>> obstructions;
 
     std::atomic_bool shapes_init{false};
     std::atomic_bool fills_init{false};
@@ -373,6 +427,12 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool blockages_init{false};
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
+
+    // See setInstGroups().  Guarded by inst_groups_mutex; the revision is the
+    // one the mapping was built against, compared against revision() on read.
+    mutable std::shared_mutex inst_groups_mutex;
+    std::shared_ptr<const std::vector<uint32_t>> inst_groups;
+    uint64_t inst_groups_revision = 0;
   };
   // child_block_data_ is pre-populated in setTopChip().  After that,
   // getData() may still insert entries for blocks reached only via db

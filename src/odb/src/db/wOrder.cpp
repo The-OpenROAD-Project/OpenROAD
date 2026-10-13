@@ -16,7 +16,9 @@ void orderWires(utl::Logger* logger, dbBlock* block)
     if (net->getSigType().isSupply() || net->isWireOrdered()) {
       continue;
     }
-    conn.analyzeNet(net);
+
+    conn.setNet(net);
+    conn.analyzeNet();
   }
 }
 

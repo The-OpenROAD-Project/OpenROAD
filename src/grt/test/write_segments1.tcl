@@ -21,4 +21,4 @@ set_routing_layers -signal met1-met5 -clock met3-met5
 global_route -verbose
 
 write_global_route_segments $segs_file
-diff_file write_segments1.segsok $segs_file
+diff_files write_segments1.segsok $segs_file

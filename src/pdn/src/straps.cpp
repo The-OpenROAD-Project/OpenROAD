@@ -5,18 +5,19 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
@@ -24,7 +25,10 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
+#include "odb/isotropy.h"
 #include "pdn/PdnGen.hh"
+#include "polygon.h"
 #include "renderer.h"
 #include "shape.h"
 #include "techlayer.h"
@@ -99,8 +103,9 @@ void Straps::checkLayerSpecifications() const
       getLogger()->error(
           utl::PDN,
           175,
-          "Pitch {:.4f} is too small for, must be atleast {:.4f}",
+          "Pitch {:.4f} is too small for {}, must be at least {:.4f}",
           layer.dbuToMicron(pitch_),
+          layer_->getName(),
           layer.dbuToMicron(min_pitch));
     }
   }
@@ -144,8 +149,25 @@ bool Straps::checkLayerOffsetSpecification(bool error) const
   return true;
 }
 
-void Straps::setOffset(int offset)
+void Straps::setOffset(int offset, StrapOffsetType type)
 {
+  const int half_width = width_ / 2;
+  switch (type) {
+    case StrapOffsetType::kStart:
+      offset += half_width;
+      break;
+    case StrapOffsetType::kFirst:
+      break;
+    case StrapOffsetType::kCenter:
+      offset += half_width - getStrapGroupWidth() / 2;
+      break;
+    case StrapOffsetType::kLast:
+      offset += width_ - getStrapGroupWidth();
+      break;
+    case StrapOffsetType::kEnd:
+      offset += half_width - getStrapGroupWidth();
+      break;
+  }
   offset_ = offset;
 }
 
@@ -157,6 +179,14 @@ void Straps::setSnapToGrid(bool snap)
 void Straps::setExtend(ExtensionMode mode)
 {
   extend_mode_ = mode;
+
+  if (mode == kPadRing && !getDomain()->getPadRingInnerArea()) {
+    getLogger()->error(utl::PDN,
+                       242,
+                       "Unable to find any placed pads to extend straps on {} "
+                       "to.",
+                       layer_->getName());
+  }
 }
 
 void Straps::setStrapStartEnd(int start, int end)
@@ -181,19 +211,52 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const odb::Rect die = grid->getBlock()->getDieArea();
   odb::Rect boundary;
   const odb::Rect core = grid->getDomainArea();
+  // The area the straps may occupy, as an outline.  A strap is generated
+  // across the full extent of `boundary` and then clipped to this, which on a
+  // rectangular floorplan leaves it exactly as it was: the two describe the
+  // same area.  On a polygon one it is what keeps a strap off the part of the
+  // bounding box that is not there.
+  Region extent;
   switch (extend_mode_) {
     case kCore:
       boundary = grid->getDomainBoundary();
+      extent = grid->getDomainBoundaryRegion();
       break;
     case kRings:
       boundary = grid->getRingArea();
+      extent = Region(boundary);
       break;
     case kBoundary:
       boundary = grid->getGridBoundary();
+      extent = grid->getGridBoundaryRegion();
+      break;
+    case kPadRing:
+      boundary = grid->getPadRingArea();
+      extent = grid->getGridBoundaryRegion().intersect(boundary);
       break;
     case kFixed:
       boundary = odb::Rect(strap_start_, strap_start_, strap_end_, strap_end_);
+      // an explicit extent is the user's to place, wherever it lands
       break;
+  }
+
+  if (extend_distance_ > 0 && extend_mode_ != kFixed) {
+    // Run on past the target along the strap's own length, up to where
+    // -extend_to_boundary would have stopped, but never short of the target.
+    const int dist = extend_distance_;
+    const bool horizontal = isHorizontal();
+    odb::Rect grown = boundary
+                          .bloat(dist,
+                                 horizontal ? odb::Orientation2D::Horizontal
+                                            : odb::Orientation2D::Vertical)
+                          .intersect(grid->getGridBoundary());
+    grown.merge(boundary);
+    boundary = grown;
+    const Region::Margin grow = horizontal ? Region::Margin{dist, 0, dist, 0}
+                                           : Region::Margin{0, dist, 0, dist};
+    extent = extent.bloat(grow)
+                 .intersect(grid->getGridBoundaryRegion())
+                 .unite(extent);
   }
 
   TechLayer layer(layer_);
@@ -224,38 +287,40 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       Shape::getRectText(core, layer.getLefUnits()),
       Shape::getRectText(boundary, layer.getLefUnits()));
 
+  // On a flipped instance grid the offset is written against the macro as it
+  // was drawn, so it has to be measured from the mirrored edge and the sweep
+  // has to run towards the other one.
+  const bool mirror = honorsGridFlip()
+                      && (isHorizontal() ? grid->mirrorsY() : grid->mirrorsX());
+
   if (isHorizontal()) {
-    const int x_start = boundary.xMin();
-    const int x_end = boundary.xMax();
+    const int core_far = allow_out_of_core_ ? die.yMax() : core.yMax();
+    const int core_near = allow_out_of_core_ ? die.yMin() : core.yMin();
 
-    const int abs_min = die.yMin();
-    const int abs_max = die.yMax();
-
-    makeStraps(x_start,
-               core.yMin(),
-               x_end,
-               allow_out_of_core_ ? die.yMax() : core.yMax(),
-               abs_min,
-               abs_max,
+    makeStraps(boundary.xMin(),
+               boundary.xMax(),
+               mirror ? core.yMax() : core.yMin(),
+               mirror ? core_near : core_far,
+               die.yMin(),
+               die.yMax(),
                false,
                layer,
-               avoid);
+               avoid,
+               extent);
   } else {
-    const int y_start = boundary.yMin();
-    const int y_end = boundary.yMax();
+    const int core_far = allow_out_of_core_ ? die.xMax() : core.xMax();
+    const int core_near = allow_out_of_core_ ? die.xMin() : core.xMin();
 
-    const int abs_min = die.xMin();
-    const int abs_max = die.xMax();
-
-    makeStraps(core.xMin(),
-               y_start,
-               allow_out_of_core_ ? die.xMax() : core.xMax(),
-               y_end,
-               abs_min,
-               abs_max,
+    makeStraps(boundary.yMin(),
+               boundary.yMax(),
+               mirror ? core.xMax() : core.xMin(),
+               mirror ? core_near : core_far,
+               die.xMin(),
+               die.xMax(),
                true,
                layer,
-               avoid);
+               avoid,
+               extent);
   }
   debugPrint(getLogger(),
              utl::PDN,
@@ -266,50 +331,71 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
              layer_->getName());
 }
 
-void Straps::makeStraps(int x_start,
-                        int y_start,
-                        int x_end,
-                        int y_end,
-                        int abs_start,
-                        int abs_end,
-                        bool is_delta_x,
+void Straps::makeStraps(const int extent_start,
+                        const int extent_end,
+                        const int pos_origin,
+                        const int pos_limit,
+                        const int abs_start,
+                        const int abs_end,
+                        const bool is_delta_x,
                         const TechLayer& layer,
-                        const Shape::ObstructionTree& avoid)
+                        const Shape::ObstructionTree& avoid,
+                        const Region& extent)
 {
   const int half_width = width_ / 2;
   int strap_count = 0;
 
-  int pos = is_delta_x ? x_start : y_start;
-  const int pos_end = is_delta_x ? x_end : y_end;
+  // pos_limit sits on the far side of pos_origin, so which way the sweep runs
+  // falls out of the two bounds; when it runs backwards the pitch, the group
+  // pitch and therefore the net order inside a group all invert too
+  const bool mirror = pos_limit < pos_origin;
+  const int step = mirror ? -1 : 1;
 
   const auto nets = getNets();
 
   const int group_pitch = spacing_ + width_;
 
+  // true once pos has swept past pos_limit
+  auto beyond_limit = [mirror, pos_limit](const int pos) {
+    return mirror ? pos < pos_limit : pos > pos_limit;
+  };
+  // true once pos has reached pos_limit, so that a strap edge sitting exactly
+  // on the limit leaves no part of the strap inside it
+  auto at_or_beyond_limit = [mirror, pos_limit](const int pos) {
+    return mirror ? pos <= pos_limit : pos >= pos_limit;
+  };
+
   debugPrint(getLogger(),
              utl::PDN,
              "Straps",
              2,
-             "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, "
-             "{:.4f}) with an {}-offset of {:.4f} and must be within {:.4f} "
-             "and {:.4f}",
+             "Generating straps on {} along {} from {:.4f} with an offset of "
+             "{:.4f} towards {:.4f}, spanning {:.4f} to {:.4f} and must be "
+             "within {:.4f} and {:.4f}",
              layer_->getName(),
-             layer.dbuToMicron(x_start),
-             layer.dbuToMicron(y_start),
-             layer.dbuToMicron(x_end),
-             layer.dbuToMicron(y_end),
              is_delta_x ? "x" : "y",
+             layer.dbuToMicron(pos_origin),
              layer.dbuToMicron(offset_),
+             layer.dbuToMicron(pos_limit),
+             layer.dbuToMicron(extent_start),
+             layer.dbuToMicron(extent_end),
              layer.dbuToMicron(abs_start),
              layer.dbuToMicron(abs_end));
 
-  int next_minimum_track = std::numeric_limits<int>::lowest();
-  for (pos += offset_; pos <= pos_end; pos += pitch_) {
+  // the track already claimed by the previous net in the group, which the next
+  // one must stay clear of on whichever side the sweep is heading
+  int next_track = mirror ? std::numeric_limits<int>::max()
+                          : std::numeric_limits<int>::lowest();
+  for (int pos = pos_origin + step * offset_; !beyond_limit(pos);
+       pos += step * pitch_) {
     int group_pos = pos;
     for (auto* net : nets) {
       // snap to grid if needed
       const int org_group_pos = group_pos;
-      group_pos = layer.snapToGrid(org_group_pos, next_minimum_track);
+      group_pos = mirror ? layer.snapToGrid(org_group_pos,
+                                            std::numeric_limits<int>::lowest(),
+                                            next_track)
+                         : layer.snapToGrid(org_group_pos, next_track);
       const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
       debugPrint(getLogger(),
@@ -323,23 +409,25 @@ void Straps::makeStraps(int x_start,
                  layer.dbuToMicron(strap_start),
                  layer.dbuToMicron(strap_end));
 
-      if (strap_start >= pos_end) {
+      if (at_or_beyond_limit(mirror ? strap_end : strap_start)) {
         // no portion of the strap is inside the limit
         return;
       }
-      if (group_pos > pos_end) {
+      if (beyond_limit(group_pos)) {
         // strap center is outside of alotted area
         return;
       }
 
       odb::Rect strap_rect;
       if (is_delta_x) {
-        strap_rect = odb::Rect(strap_start, y_start, strap_end, y_end);
+        strap_rect
+            = odb::Rect(strap_start, extent_start, strap_end, extent_end);
       } else {
-        strap_rect = odb::Rect(x_start, strap_start, x_end, strap_end);
+        strap_rect
+            = odb::Rect(extent_start, strap_start, extent_end, strap_end);
       }
-      group_pos += group_pitch;
-      next_minimum_track = group_pos;
+      group_pos += step * group_pitch;
+      next_track = group_pos;
 
       if (avoid.qbegin(bgi::intersects(strap_rect)) != avoid.qend()) {
         // dont add this strap as it intersects an avoidance
@@ -356,8 +444,12 @@ void Straps::makeStraps(int x_start,
         }
       }
 
-      addShape(std::make_unique<Shape>(
-          layer_, net, strap_rect, odb::dbWireShapeType::STRIPE));
+      // A strap runs the length of the area it belongs to, which on a
+      // polygon outline can be several runs rather than one.
+      for (const odb::Rect& piece : clipToExtent(strap_rect, extent)) {
+        addShape(std::make_unique<Shape>(
+            layer_, net, piece, odb::dbWireShapeType::STRIPE));
+      }
     }
     strap_count++;
     if (number_of_straps_ != 0 && strap_count == number_of_straps_) {
@@ -365,6 +457,61 @@ void Straps::makeStraps(int x_start,
       return;
     }
   }
+}
+
+std::vector<odb::Rect> Straps::clipToExtent(const odb::Rect& strap,
+                                            const Region& extent) const
+{
+  if (extent.isEmpty()) {
+    return {strap};
+  }
+
+  const Region clipped = Region(strap).intersect(extent);
+  if (clipped.isEmpty()) {
+    // The strap does not sit in the area at all.  That is not this function's
+    // business to correct: where a strap sits is the sweep's decision, and
+    // -allow_out_of_core exists to put one outside the core deliberately.
+    return {strap};
+  }
+
+  const bool horizontal = isHorizontal();
+
+  // Only how far the strap runs is clipped, never how wide it is or where it
+  // sits, so the runs are projected onto the strap's own direction and the
+  // width is put back afterwards.  A strap that overhangs the area across its
+  // width -- the last one of a sweep, sitting half outside -- keeps the length
+  // it always had.
+  std::vector<std::pair<int, int>> runs;
+  for (const odb::Rect& piece : clipped.getRects()) {
+    if (horizontal) {
+      runs.emplace_back(piece.xMin(), piece.xMax());
+    } else {
+      runs.emplace_back(piece.yMin(), piece.yMax());
+    }
+  }
+  std::sort(runs.begin(), runs.end());
+
+  std::vector<odb::Rect> pieces;
+  for (const auto& [start, end] : runs) {
+    if (!pieces.empty()) {
+      // touching or overlapping runs are one run
+      const int last_end
+          = horizontal ? pieces.back().xMax() : pieces.back().yMax();
+      if (start <= last_end) {
+        if (horizontal) {
+          pieces.back().set_xhi(std::max(last_end, end));
+        } else {
+          pieces.back().set_yhi(std::max(last_end, end));
+        }
+        continue;
+      }
+    }
+    pieces.push_back(horizontal
+                         ? odb::Rect(start, strap.yMin(), end, strap.yMax())
+                         : odb::Rect(strap.xMin(), start, strap.xMax(), end));
+  }
+
+  return pieces;
 }
 
 void Straps::report() const
@@ -417,7 +564,7 @@ std::string Straps::getNetString() const
 ////
 
 FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
-    : Straps(grid, layer, width, 0)
+    : Straps(grid, layer, width, 0), row_height_(0)
 {
   if (getWidth() == 0) {
     // width not specified, so attempt to find it
@@ -425,22 +572,42 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 
   // set the pitch of the straps
-  auto rows = getDomain()->getRows();
-  if (!rows.empty()) {
-    auto* row = *rows.begin();
-    odb::Rect bbox = row->getBBox();
-    setPitch(2 * bbox.dy());
+  determinePitch();
+  if (getPitch() == 0 || row_height_ == 0) {
+    getLogger()->error(
+        utl::PDN, 190, "Unable to determine the pitch of the rows.");
+  }
+}
 
-    if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-      setDirection(odb::dbTechLayerDir::HORIZONTAL);
-    } else {
-      setDirection(odb::dbTechLayerDir::VERTICAL);
+void FollowPins::determinePitch()
+{
+  std::vector<odb::dbRow*> rows;
+  for (auto* row : getDomain()->getRows()) {
+    if (!row->getSite()->hasRowPattern()) {
+      rows.push_back(row);
     }
+  }
+  if (rows.empty()) {
+    return;
+  }
+
+  // find the row with the smallest height, as that is the standard cell row
+  const auto min_row = std::min_element(
+      rows.begin(), rows.end(), [](odb::dbRow* a, odb::dbRow* b) {
+        odb::dbSite* a_site = a->getSite();
+        odb::dbSite* b_site = b->getSite();
+        return a_site->getHeight() < b_site->getHeight();
+      });
+
+  auto* row = *min_row;
+  odb::Rect bbox = row->getBBox();
+  row_height_ = bbox.dy();
+  setPitch(2 * row_height_);
+
+  if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
+    setDirection(odb::dbTechLayerDir::HORIZONTAL);
   } else {
-    if (getPitch() == 0) {
-      getLogger()->error(
-          utl::PDN, 190, "Unable to determine the pitch of the rows.");
-    }
+    setDirection(odb::dbTechLayerDir::VERTICAL);
   }
 }
 
@@ -458,55 +625,142 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 
   auto* grid = getGrid();
 
-  const odb::Rect core = grid->getDomainArea();
-  odb::Rect boundary;
-  switch (getExtendMode()) {
-    case kCore:
-    case kFixed:
-      // use core area for follow pins
-      boundary = grid->getDomainArea();
-      break;
-    case kRings:
-      boundary = grid->getRingArea();
-      break;
-    case kBoundary:
-      boundary = grid->getGridBoundary();
-      break;
-  }
+  const Region domain = grid->getDomainRegion();
+
+  // How far a rail at `band` may be run out on the side `normal` points to.
+  // Every mode resolves this against what is actually beside the rail, so a
+  // rail in the tall leg of an L reaches that leg's ring or that leg's die
+  // edge and not the ones belonging to the wide leg.  On a rectangular core
+  // there is only one of each, and this is the boundary it always was.
+  const ExtensionMode mode = getExtendMode();
+  const int extend_distance = getExtendDistance();
+  const odb::Rect pad_ring
+      = mode == kPadRing ? grid->getPadRingArea() : odb::Rect();
+  const Region grid_boundary = grid->getGridBoundaryRegion();
+  const auto reach = [&](const odb::Rect& band, const odb::Point& normal) {
+    const bool high = normal.x() > 0;
+    // the boundary edge beside this band, which nothing may run past
+    const auto boundary = [&]() {
+      const int margin = grid_boundary.getMarginBeyond(band, normal);
+      return high ? band.xMax() + margin : band.xMin() - margin;
+    };
+    int target = high ? band.xMax() : band.xMin();
+    switch (mode) {
+      case kRings:
+        target = grid->getRingReach(band, normal);
+        break;
+      case kBoundary:
+        target = boundary();
+        break;
+      case kPadRing:
+        target = high ? std::min(pad_ring.xMax(), boundary())
+                      : std::max(pad_ring.xMin(), boundary());
+        break;
+      case kCore:
+      case kFixed:
+        // the core is where the row already ends
+        break;
+    }
+    if (extend_distance > 0) {
+      // run on past the target, but not past the boundary unless the target
+      // already was
+      target = high ? std::max(target,
+                               std::min(target + extend_distance, boundary()))
+                    : std::min(target,
+                               std::max(target - extend_distance, boundary()));
+    }
+    return target;
+  };
 
   odb::dbNet* power = getDomain()->getPower();
   odb::dbNet* ground = getDomain()->getGround();
 
-  const int x_start = boundary.xMin();
-  const int x_end = boundary.xMax();
+  const int double_height = 2 * row_height_;
+
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    odb::Rect bbox = row->getBBox();
-    const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
-
-    int x0 = bbox.xMin();
-    if (x0 == core.xMin()) {
-      x0 = x_start;
+    if (row->getSite()->hasRowPattern()) {
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Followpin",
+                 1,
+                 "Skipping row {} of hybrid site {}, its row pattern holds the "
+                 "rails",
+                 row->getName(),
+                 row->getSite()->getName());
+      continue;
     }
-    int x1 = bbox.xMax();
-    if (x1 == core.xMax()) {
-      x1 = x_end;
+
+    const int site_height = row->getSite()->getHeight();
+
+    // A row a whole number of standard cell rows tall has a rail at each of
+    // those internal boundaries as well as at its own two edges.  A row whose
+    // height is not a multiple of the standard cell row -- the 9-track row of
+    // a 9-track/7-track hybrid pattern, say -- has no internal boundary, so
+    // stepping through it would put rails over the cells and never reach its
+    // upper edge.
+    const bool spans_whole_rows = site_height % row_height_ == 0;
+    const int rail_pitch = spans_whole_rows ? row_height_ : site_height;
+
+    // Only MX ("FS") and R180 ("S") invert the master's y-axis and therefore
+    // swap the power and ground rails; R0 ("N") and MY ("FN") leave them
+    // alone.  A row spanning an even number of standard cell rows carries the
+    // same net at both of its edges, so its orientation says nothing about
+    // which net that is.
+    const odb::dbOrientType orient = row->getOrient();
+    const bool is_right_side_up
+        = orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY;
+    const bool even_height_row = (site_height % double_height) == 0;
+    const bool start_with_power = even_height_row ? false : !is_right_side_up;
+
+    const odb::Rect bbox = row->getBBox();
+
+    debugPrint(getLogger(),
+               utl::PDN,
+               "Followpin",
+               1,
+               "Row {} ({}): {:.3f} to {:.3f}um, rail pitch {:.3f}um, starting "
+               "with {}",
+               row->getName(),
+               row->getSite()->getName(),
+               getBlock()->dbuToMicrons(bbox.yMin()),
+               getBlock()->dbuToMicrons(bbox.yMax()),
+               getBlock()->dbuToMicrons(rail_pitch),
+               start_with_power ? "power" : "ground");
+
+    // A rail is extended off the end of its row when that end is on the edge
+    // of the core, which is where the ring or the boundary it is being
+    // extended to sits.  Asking the outline whether there is any core further
+    // along is what says so: comparing against the bounding box instead, as
+    // this did, only recognises the rows reaching the widest part of a polygon
+    // core and leaves every rail in a narrower leg short of the ring beside it.
+    const bool extend_low
+        = domain.getMarginBeyond(bbox, odb::Point(-1, 0)) == 0;
+    const bool extend_high
+        = domain.getMarginBeyond(bbox, odb::Point(1, 0)) == 0;
+
+    bool do_power = start_with_power;
+    for (int y = bbox.yMin(); y <= bbox.yMax(); y += rail_pitch) {
+      const int y_start = y - width / 2;
+      const odb::Rect band(bbox.xMin(), y_start, bbox.xMax(), y_start + width);
+
+      int x0 = bbox.xMin();
+      if (extend_low) {
+        x0 = std::min(x0, reach(band, odb::Point(-1, 0)));
+      }
+      int x1 = bbox.xMax();
+      if (extend_high) {
+        x1 = std::max(x1, reach(band, odb::Point(1, 0)));
+      }
+
+      auto strap = std::make_unique<FollowPinShape>(
+          layer,
+          do_power ? power : ground,
+          odb::Rect(x0, y_start, x1, y_start + width));
+      strap->addRow(row);
+      addShape(std::move(strap));
+      do_power = !do_power;
     }
-
-    const int power_y_bot
-        = (power_on_top ? bbox.yMax() : bbox.yMin()) - width / 2;
-    const int ground_y_bot
-        = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
-
-    auto power_strap = std::make_unique<FollowPinShape>(
-        layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
-    power_strap->addRow(row);
-    addShape(std::move(power_strap));
-
-    auto ground_strap = std::make_unique<FollowPinShape>(
-        layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
-    ground_strap->addRow(row);
-    addShape(std::move(ground_strap));
   }
 }
 
@@ -583,8 +837,12 @@ void FollowPins::checkLayerSpecifications() const
 PadDirectConnectionStraps::PadDirectConnectionStraps(
     Grid* grid,
     odb::dbITerm* iterm,
-    const std::vector<odb::dbTechLayer*>& connect_pad_layers)
-    : Straps(grid, nullptr, 0, 0), iterm_(iterm), layers_(connect_pad_layers)
+    const std::vector<odb::dbTechLayer*>& connect_pad_layers,
+    std::shared_ptr<odb::PtrMap<odb::dbNet, int>>& net_to_pin_count)
+    : Straps(grid, nullptr, 0, 0),
+      iterm_(iterm),
+      layers_(connect_pad_layers),
+      net_to_pin_count_(net_to_pin_count)
 {
   initialize(type_);
 }
@@ -949,7 +1207,7 @@ void PadDirectConnectionStraps::makeShapes(
       makeShapesFacingCore(other_shapes);
       break;
     case ConnectionType::kOverPads:
-      makeShapesOverPads(other_shapes);
+      // connections over the pads are built as a group in make()
       break;
   }
 }
@@ -1175,38 +1433,260 @@ PadDirectConnectionStraps::getAssociatedStraps() const
   return straps;
 }
 
-void PadDirectConnectionStraps::makeShapesOverPads(
-    const Shape::ShapeTreeMap& other_shapes)
+bool PadDirectConnectionStraps::make(Shape::ShapeTreeMap& shapes,
+                                     Shape::ObstructionTreeMap& obstructions)
 {
-  if (other_shapes.empty()) {
-    return;
+  if (type_ != ConnectionType::kOverPads) {
+    return GridComponent::make(shapes, obstructions);
   }
 
-  auto straps = getAssociatedStraps();
-  int index = std::distance(straps.begin(), std::ranges::find(straps, this));
+  // all the connections on a pad are built together, so if any of them
+  // already has a shape the group has been built
+  for (auto* member : getAssociatedStraps()) {
+    if (member->getShapeCount() != 0) {
+      return false;
+    }
+  }
+
+  if (group_attempts_ >= kMaxGroupBuildAttempts) {
+    return false;
+  }
+
+  return buildGroup(shapes, obstructions);
+}
+
+bool PadDirectConnectionStraps::buildGroup(
+    Shape::ShapeTreeMap& shapes,
+    Shape::ObstructionTreeMap& obstructions)
+{
+  const std::vector<PadDirectConnectionStraps*> members = getAssociatedStraps();
+  const int member_count = static_cast<int>(members.size());
+
+  int width = 0;
+  int spacing = 0;
+  if (!computeOverPadLanes(member_count, width, spacing)) {
+    for (auto* member : members) {
+      member->group_attempts_++;
+    }
+    return false;
+  }
+
+  for (auto* member : members) {
+    member->setWidth(width);
+    member->setSpacing(spacing);
+    member->Straps::checkLayerSpecifications();
+  }
+
+  // the connections compete for the same space on the pad, so hand out the
+  // positions one at a time to whichever net has made the fewest connections
+  // so far, which interleaves the nets across the pad instead of letting one
+  // net take every position
+  odb::PtrMap<odb::dbNet, int> connections;
+  for (auto* member : members) {
+    connections[member->iterm_->getNet()] = member->getNetConnectionCount();
+  }
+
+  std::vector<bool> handled(member_count, false);
+  for (int count = 0; count < member_count; count++) {
+    int next = -1;
+    for (int index = 0; index < member_count; index++) {
+      if (handled[index]) {
+        continue;
+      }
+      if (next == -1
+          || connections[members[index]->iterm_->getNet()]
+                 < connections[members[next]->iterm_->getNet()]) {
+        next = index;
+      }
+    }
+
+    handled[next] = true;
+    auto* member = members[next];
+    member->group_attempts_++;
+
+    if (!member->buildOverPad(next, shapes, obstructions)) {
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Pad",
+                 2,
+                 "Unable to connect {} to the ring.",
+                 member->getName());
+      continue;
+    }
+
+    // add the strap as soon as it is placed so the connections that follow
+    // are placed knowing where it ended up
+    member->addNetConnection();
+    member->getObstructions(obstructions);
+    member->getShapes(shapes);
+    connections[member->iterm_->getNet()]++;
+  }
+
+  return getShapeCount() != 0;
+}
+
+bool PadDirectConnectionStraps::buildOverPad(
+    int index,
+    const Shape::ShapeTreeMap& other_shapes,
+    const Shape::ObstructionTreeMap& obstructions)
+{
+  // the strap has to stay over the pin it is connecting to
+  const bool is_horizontal = isConnectHorizontal();
+  const odb::Rect pin_shape = getMergedPinShape();
+  const int lane_min
+      = (is_horizontal ? pin_shape.yMin() : pin_shape.xMin()) + getWidth() / 2;
+  const int lane_max
+      = (is_horizontal ? pin_shape.yMax() : pin_shape.xMax()) - getWidth() / 2;
+  if (lane_min > lane_max) {
+    return false;
+  }
+
+  // build the strap where it would historically have been placed, and if
+  // that does not work walk along the pad, staying as close to the original
+  // position as possible
+  const TechLayer layer(getLayer());
+  const int preferred = getDefaultLaneOffset(index, getWidth(), getSpacing());
+  const int step = layer.snapToManufacturingGrid(
+      std::max(layer.getMinIncrementStep(), getWidth() / 8), true);
+
+  std::vector<int> offsets;
+  for (int offset = layer.snapToManufacturingGrid(lane_min, true);
+       offset < lane_max;
+       offset += step) {
+    offsets.push_back(offset);
+  }
+  offsets.push_back(layer.snapToManufacturingGrid(lane_max, false));
+  std::ranges::sort(offsets, [preferred](int lhs, int rhs) {
+    return std::abs(lhs - preferred) < std::abs(rhs - preferred);
+  });
+  if (preferred >= lane_min && preferred <= lane_max) {
+    offsets.insert(offsets.begin(), preferred);
+  }
 
   debugPrint(getLogger(),
              utl::PDN,
              "Pad",
-             2,
-             "Pad connections for {} has {} connections and this one is at "
-             "index ({}), will use {} to connect.",
+             4,
+             "{} can be placed between {} and {} ({} positions)",
              getName(),
-             straps.size(),
-             index,
-             getLayer()->getName());
+             layer.dbuToMicron(lane_min),
+             layer.dbuToMicron(lane_max),
+             offsets.size());
 
+  for (const int offset : offsets) {
+    if (buildOverPadAt(offset, other_shapes, obstructions)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool PadDirectConnectionStraps::buildOverPadAt(
+    int offset,
+    const Shape::ShapeTreeMap& other_shapes,
+    const Shape::ObstructionTreeMap& obstructions)
+{
+  clearOverPadShapes();
+
+  if (!makeShapeOverPad(offset, other_shapes)) {
+    clearOverPadShapes();
+    return false;
+  }
+
+  cutShapes(obstructions);
+
+  if (!keepShapesReachingTarget(other_shapes)) {
+    clearOverPadShapes();
+    return false;
+  }
+
+  return true;
+}
+
+void PadDirectConnectionStraps::clearOverPadShapes()
+{
+  clearShapes();
+  target_shapes_.clear();
+  target_pin_shape_.clear();
+  target_ = nullptr;
+}
+
+bool PadDirectConnectionStraps::keepShapesReachingTarget(
+    const Shape::ShapeTreeMap& other_shapes)
+{
+  // cutting replaces the shapes, so rebuild the mapping to the shape being
+  // connected to and drop the fragments that no longer reach anything
+  target_shapes_.clear();
+  target_pin_shape_.clear();
+
+  std::vector<Shape*> remove_shapes;
+  for (const auto& [layer, layer_shapes] : getShapes()) {
+    for (const auto& shape : layer_shapes) {
+      Shape* target = findConnectableShape(shape->getRect(), other_shapes);
+      if (target == nullptr) {
+        remove_shapes.push_back(shape.get());
+        continue;
+      }
+
+      target_shapes_[shape.get()] = target;
+      target_pin_shape_[shape.get()] = target_pin_;
+    }
+  }
+
+  for (auto* shape : remove_shapes) {
+    removeShape(shape);
+  }
+
+  return !target_shapes_.empty();
+}
+
+Shape* PadDirectConnectionStraps::findConnectableShape(
+    const odb::Rect& rect,
+    const Shape::ShapeTreeMap& other_shapes) const
+{
+  // prefer the shape this strap was built to reach
+  if (target_ != nullptr && rect.intersects(target_->getRect())) {
+    return target_.get();
+  }
+
+  // cutting may have left the strap reaching a different shape on the net
+  for (const auto& [layer, layer_shapes] : other_shapes) {
+    for (auto itr = layer_shapes.qbegin(bgi::intersects(rect));
+         itr != layer_shapes.qend();
+         itr++) {
+      const ShapePtr& other = *itr;
+      if (other->getNet() == iterm_->getNet()) {
+        return other.get();
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+odb::Rect PadDirectConnectionStraps::getMergedPinShape() const
+{
+  odb::Rect pin_shape;
+  pin_shape.mergeInit();
+  for (auto* pin : pins_) {
+    pin_shape.merge(pin->getBox());
+  }
+  iterm_->getInst()->getTransform().apply(pin_shape);
+  return pin_shape;
+}
+
+bool PadDirectConnectionStraps::computeOverPadLanes(int group_size,
+                                                    int& width,
+                                                    int& spacing) const
+{
   const bool is_horizontal = isConnectHorizontal();
 
-  odb::dbInst* inst = iterm_->getInst();
-  const odb::Rect inst_rect = inst->getBBox()->getBox();
-  const odb::dbTransform transform = inst->getTransform();
-
+  const odb::Rect inst_rect = iterm_->getInst()->getBBox()->getBox();
   const int inst_width = is_horizontal ? inst_rect.dy() : inst_rect.dx();
-  const int inst_offset = is_horizontal ? inst_rect.yMin() : inst_rect.xMin();
 
-  const int max_width = inst_width / (2 * (straps.size() + 1));
-  TechLayer layer(getLayer());
+  const int max_width = inst_width / (2 * (group_size + 1));
+  const TechLayer layer(getLayer());
   const int target_width = layer.snapToManufacturingGrid(max_width, false, 2);
   if (target_width < layer.getMinWidth()) {
     // dont build anything
@@ -1218,23 +1698,44 @@ void PadDirectConnectionStraps::makeShapesOverPads(
         "Skipping because strap would be {} and needed to be atleast {}.",
         layer.dbuToMicron(target_width),
         layer.dbuToMicron(layer.getMinWidth()));
-    return;
+    return false;
   }
-  setWidth(std::min(target_width, layer.getMaxWidth()));
-  setSpacing(std::max(getWidth(), layer.getSpacing(getWidth())));
-  Straps::checkLayerSpecifications();
 
-  odb::Rect pin_shape;
-  pin_shape.mergeInit();
-  for (auto* pin : pins_) {
-    pin_shape.merge(pin->getBox());
+  width = std::min(target_width, layer.getMaxWidth());
+  spacing = std::max(width, layer.getSpacing(width));
+
+  return true;
+}
+
+int PadDirectConnectionStraps::getDefaultLaneOffset(int index,
+                                                    int width,
+                                                    int spacing) const
+{
+  const bool is_horizontal = isConnectHorizontal();
+
+  const odb::Rect inst_rect = iterm_->getInst()->getBBox()->getBox();
+  const int inst_offset = is_horizontal ? inst_rect.yMin() : inst_rect.xMin();
+
+  const TechLayer layer(getLayer());
+  const int target_offset
+      = layer.snapToManufacturingGrid(inst_offset + spacing + width / 2, false);
+
+  return target_offset + index * (spacing + width);
+}
+
+bool PadDirectConnectionStraps::makeShapeOverPad(
+    int offset,
+    const Shape::ShapeTreeMap& other_shapes)
+{
+  if (other_shapes.empty()) {
+    return false;
   }
-  transform.apply(pin_shape);
-  odb::Rect org_pin_shape = pin_shape;
 
-  const int target_offset = layer.snapToManufacturingGrid(
-      inst_offset + getSpacing() + getWidth() / 2, false);
-  const int offset = target_offset + index * (getSpacing() + getWidth());
+  const bool is_horizontal = isConnectHorizontal();
+  const TechLayer layer(getLayer());
+
+  odb::Rect pin_shape = getMergedPinShape();
+  const odb::Rect org_pin_shape = pin_shape;
 
   if (is_horizontal) {
     pin_shape.set_ylo(offset - getWidth() / 2);
@@ -1247,11 +1748,12 @@ void PadDirectConnectionStraps::makeShapesOverPads(
              utl::PDN,
              "Pad",
              3,
-             "Connecting using shape: {}",
+             "Connecting {} using shape: {}",
+             getName(),
              Shape::getRectText(pin_shape, layer.getLefUnits()));
 
   ShapePtr closest_shape = nullptr;
-  for (const auto& [layer, layer_shapes] : other_shapes) {
+  for (const auto& [search_layer, layer_shapes] : other_shapes) {
     ShapePtr layer_closest_shape
         = getClosestShape(layer_shapes, pin_shape, iterm_->getNet());
     if (layer_closest_shape != nullptr) {
@@ -1260,12 +1762,12 @@ void PadDirectConnectionStraps::makeShapesOverPads(
   }
   if (closest_shape == nullptr) {
     debugPrint(getLogger(), utl::PDN, "Pad", 3, "No connecting shape found.");
-    return;
+    return false;
   }
 
   odb::Rect shape_rect;
   if (!snapRectToClosestShape(closest_shape, pin_shape, shape_rect)) {
-    return;
+    return false;
   }
 
   auto shape = std::make_unique<Shape>(
@@ -1276,11 +1778,69 @@ void PadDirectConnectionStraps::makeShapesOverPads(
   }
   const auto added = addShape(std::move(shape));
   if (added == nullptr) {
-    return;
+    return false;
   }
 
   target_shapes_[added.get()] = closest_shape.get();
   target_pin_shape_[added.get()] = org_pin_shape;
+  target_ = std::move(closest_shape);
+  target_pin_ = org_pin_shape;
+
+  return true;
+}
+
+void PadDirectConnectionStraps::reportConnectionBalance(
+    const std::vector<GridComponent*>& components)
+{
+  odb::PtrMap<odb::dbNet, int> connections;
+  utl::Logger* logger = nullptr;
+  for (auto* component : components) {
+    if (component->type() != GridComponent::kPadConnect) {
+      continue;
+    }
+
+    auto* pad = static_cast<PadDirectConnectionStraps*>(component);
+    logger = pad->getLogger();
+    connections[pad->iterm_->getNet()] += pad->getShapeCount() != 0 ? 1 : 0;
+  }
+
+  if (logger == nullptr) {
+    // no pads are being connected
+    return;
+  }
+
+  std::string balance;
+  for (const auto& [net, count] : connections) {
+    if (!balance.empty()) {
+      balance += ", ";
+    }
+    balance += fmt::format("{} = {}", net->getName(), count);
+  }
+
+  logger->report("Pad connection balance: {}", balance);
+}
+
+int PadDirectConnectionStraps::getNetConnectionCount() const
+{
+  if (net_to_pin_count_ == nullptr) {
+    return 0;
+  }
+
+  const auto itr = net_to_pin_count_->find(iterm_->getNet());
+  if (itr == net_to_pin_count_->end()) {
+    return 0;
+  }
+
+  return itr->second;
+}
+
+void PadDirectConnectionStraps::addNetConnection()
+{
+  if (net_to_pin_count_ == nullptr) {
+    return;
+  }
+
+  (*net_to_pin_count_)[iterm_->getNet()]++;
 }
 
 bool PadDirectConnectionStraps::snapRectToClosestShape(
@@ -1338,14 +1898,69 @@ void PadDirectConnectionStraps::getConnectableShapes(
 void PadDirectConnectionStraps::cutShapes(
     const Shape::ObstructionTreeMap& obstructions)
 {
+  odb::dbInst* inst = iterm_->getInst();
+  const odb::Rect inst_shape = inst->getBBox()->getBox();
+
+  if (type_ == ConnectionType::kEdge) {
+    // An edge connection is its pin carried straight out of the pad and is no
+    // wider than the pin, so it comes no closer to anything behind the edge it
+    // leaves through than the pin already does.  The padframe there has
+    // nothing to say about it: its pins are drawn to be reached and its cells
+    // to abut.  It has to be left out rather than tolerated, since pads
+    // commonly draw one obstruction over the whole cell with the pins carved
+    // out of it, and the spacing owed to that, by the pad or by its
+    // neighbour, cuts the connection off its pin.
+    const auto is_behind_edge = [this, &inst_shape](const odb::Rect& rect) {
+      switch (pad_edge_) {
+        case odb::dbDirection::NORTH:
+          return rect.yMin() >= inst_shape.yMin();
+        case odb::dbDirection::SOUTH:
+          return rect.yMax() <= inst_shape.yMax();
+        case odb::dbDirection::EAST:
+          return rect.xMin() >= inst_shape.xMin();
+        case odb::dbDirection::WEST:
+          return rect.xMax() <= inst_shape.xMax();
+        default:
+          return false;
+      }
+    };
+    const Grid* grid = getGrid();
+    const auto obs_filter = [&is_behind_edge, grid](const ShapePtr& other) {
+      switch (other->shapeType()) {
+        case Shape::kPadObs:
+          return !is_behind_edge(other->getRect());
+        case Shape::kGridObs:
+          return !static_cast<GridObsShape*>(other.get())->belongsTo(grid);
+        default:
+          return true;
+      }
+    };
+
+    std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
+    for (const auto& [layer, layer_shapes] : getShapes()) {
+      auto it = obstructions.find(layer);
+      if (it == obstructions.end()) {
+        continue;
+      }
+      const auto& obs = it->second;
+      for (const auto& shape : layer_shapes) {
+        std::vector<std::unique_ptr<Shape>> replacements;
+        if (shape->cut(obs, replacements, obs_filter)) {
+          replacement_shapes[shape.get()] = std::move(replacements);
+        }
+      }
+    }
+    for (auto& [shape, replacements] : replacement_shapes) {
+      replaceShape(shape, replacements);
+    }
+    return;
+  }
+
   Straps::cutShapes(obstructions);
 
   if (type_ != ConnectionType::kOverPads) {
     return;
   }
-
-  odb::dbInst* inst = iterm_->getInst();
-  const odb::Rect inst_shape = inst->getBBox()->getBox();
 
   // filter out segments that are full enclosed by the pin shape (ie doesnt
   // connect to ring)
@@ -1627,6 +2242,650 @@ bool PadDirectConnectionStraps::isTargetShape(const Shape* shape) const
   return false;
 }
 
+///////////
+
+namespace {
+
+// A pin reaches further by getting longer, not by getting wider, so it grows
+// along its own length.  A square pin has no length to grow along and the
+// direction its layer prefers is all that is left to go on; where the layer
+// states none, there is nothing to go on and no answer to give.
+std::optional<bool> growsVertically(const odb::Rect& pin,
+                                    odb::dbTechLayer* layer)
+{
+  if (pin.dy() != pin.dx()) {
+    return pin.dy() > pin.dx();
+  }
+  switch (layer->getDirection().getValue()) {
+    case odb::dbTechLayerDir::VERTICAL:
+      return true;
+    case odb::dbTechLayerDir::HORIZONTAL:
+      return false;
+    case odb::dbTechLayerDir::NONE:
+      break;
+  }
+  return std::nullopt;
+}
+
+// True for a shape this pass has already grown out of some other pin of the
+// same macro.  One is on the right net and would serve, but it is also being
+// invented as the pass runs, so letting it be a target would make what each
+// pin connects to depend on the order the pins come out of the LEF.  A pin is
+// connected to the grid, not to another pin's way out of the macro.
+bool isMacroEdgeConnection(const Shape* shape)
+{
+  const GridComponent* component = shape->getGridComponent();
+  return component != nullptr
+         && component->type() == GridComponent::kMacroEdgeConnect;
+}
+
+// Whether a direction out of a macro runs along y.  Only the four compass
+// values ever reach here: odb's UP and DOWN are via directions and NONE is the
+// absence of one, and none of the three is a way out of a macro.
+bool isVertical(const odb::Direction2D direction)
+{
+  return direction == odb::north || direction == odb::south;
+}
+
+const char* directionToString(const odb::Direction2D direction)
+{
+  switch (direction) {
+    case odb::Direction2D::North:
+      return "North";
+    case odb::Direction2D::South:
+      return "South";
+    case odb::Direction2D::East:
+      return "East";
+    case odb::Direction2D::West:
+      return "West";
+  }
+  return "Unknown";
+}
+
+// The nearest shape off the face of pin that direction points out of, limited
+// to the ones a via could actually be dropped on: the same net, crossing the
+// pin rather than running alongside it, and covering the whole of its width.  A
+// shape that already overlaps the pin is not a candidate -- it has had its
+// chance at a via, and growing the pin cannot give it another.
+ShapePtr findLateralTarget(const Shape::ShapeTree& shapes,
+                           const odb::Rect& pin,
+                           const odb::Direction2D direction,
+                           const odb::Rect& die,
+                           odb::dbNet* net,
+                           int& distance)
+{
+  odb::Rect band = pin;
+  switch (direction) {
+    case odb::Direction2D::North:
+      band.set_yhi(die.yMax());
+      break;
+    case odb::Direction2D::South:
+      band.set_ylo(die.yMin());
+      break;
+    case odb::Direction2D::East:
+      band.set_xhi(die.xMax());
+      break;
+    case odb::Direction2D::West:
+      band.set_xlo(die.xMin());
+      break;
+  }
+
+  const bool is_vertical = isVertical(direction);
+
+  ShapePtr closest = nullptr;
+  distance = std::numeric_limits<int>::max();
+  for (auto it
+       = shapes.qbegin(bgi::intersects(band)
+                       && bgi::satisfies([net](const ShapePtr& other) {
+                            return other->getNet() == net
+                                   && !isMacroEdgeConnection(other.get());
+                          }));
+       it != shapes.qend();
+       it++) {
+    const ShapePtr& shape = *it;
+    const odb::Rect& rect = shape->getRect();
+
+    const odb::Rect overlap = rect.intersect(band);
+    if (is_vertical) {
+      if (rect.dx() < rect.dy() || overlap.dx() != band.dx()) {
+        continue;
+      }
+    } else {
+      if (rect.dy() < rect.dx() || overlap.dy() != band.dy()) {
+        continue;
+      }
+    }
+
+    int new_distance = 0;
+    switch (direction) {
+      case odb::Direction2D::North:
+        new_distance = rect.yMin() - pin.yMax();
+        break;
+      case odb::Direction2D::South:
+        new_distance = pin.yMin() - rect.yMax();
+        break;
+      case odb::Direction2D::East:
+        new_distance = rect.xMin() - pin.xMax();
+        break;
+      case odb::Direction2D::West:
+        new_distance = pin.xMin() - rect.xMax();
+        break;
+    }
+
+    if (new_distance <= 0 || new_distance >= distance) {
+      continue;
+    }
+
+    closest = shape;
+    distance = new_distance;
+  }
+
+  return closest;
+}
+
+// A way out of a pin: the end it leaves by and the nearest target off it.
+struct LateralCandidate
+{
+  odb::Direction2D direction;
+  int distance;
+  ShapePtr target;
+};
+
+// How much macro stands beyond the given end of a pin -- 0 when the pin ends
+// on a wall, so that end is the way out.  Region takes an outward normal as an
+// odb::Point, and this is the only thing that asks it anything, so it is also
+// the only place the four directions are written as offsets.
+int macroBeyond(const Region& outline,
+                const odb::Rect& pin,
+                const odb::Direction2D direction)
+{
+  switch (direction) {
+    case odb::Direction2D::North:
+      return outline.getMarginBeyond(pin, odb::Point(0, 1));
+    case odb::Direction2D::South:
+      return outline.getMarginBeyond(pin, odb::Point(0, -1));
+    case odb::Direction2D::East:
+      return outline.getMarginBeyond(pin, odb::Point(1, 0));
+    case odb::Direction2D::West:
+      return outline.getMarginBeyond(pin, odb::Point(-1, 0));
+  }
+
+  return 0;
+}
+
+// The supply pin geometry of an instance in placed coordinates, keeping the
+// iterm each rectangle came from.  This is InstanceGrid::getInstancePins split
+// per pin rather than per layer, because a connection is grown out of one
+// rectangle of one pin.
+struct InstancePinRect
+{
+  odb::dbITerm* iterm;
+  odb::dbTechLayer* layer;
+  odb::Rect rect;
+};
+
+std::vector<InstancePinRect> getPinRects(odb::dbITerm* iterm,
+                                         const odb::dbTransform& transform)
+{
+  std::vector<InstancePinRect> pins;
+
+  const auto add = [&pins, iterm, &transform](odb::dbTechLayer* layer,
+                                              const odb::Rect& rect,
+                                              const odb::dbTransform& local) {
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::ROUTING) {
+      return;
+    }
+    odb::Rect placed = rect;
+    local.apply(placed);
+    transform.apply(placed);
+    pins.push_back({iterm, layer, placed});
+  };
+
+  for (auto* mpin : iterm->getMTerm()->getMPins()) {
+    for (auto* box : mpin->getGeometry()) {
+      if (box->isVia()) {
+        // a pin drawn as a via still puts metal on the routing layers
+        odb::dbTechVia* tech_via = box->getTechVia();
+        if (tech_via == nullptr) {
+          odb::dbVia* via = box->getBlockVia();
+          if (via == nullptr) {
+            continue;
+          }
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : via->getBoxes()) {
+            add(via_box->getTechLayer(), via_box->getBox(), via_transform);
+          }
+          continue;
+        }
+        const odb::dbTransform via_transform(box->getViaXY());
+        for (auto* via_box : tech_via->getBoxes()) {
+          add(via_box->getTechLayer(), via_box->getBox(), via_transform);
+        }
+        continue;
+      }
+      add(box->getTechLayer(), box->getBox(), odb::dbTransform());
+    }
+  }
+
+  return pins;
+}
+
+}  // namespace
+
+MacroEdgeConnectionStraps::MacroEdgeConnectionStraps(
+    InstanceGrid* grid,
+    odb::dbITerm* iterm,
+    odb::dbTechLayer* layer,
+    const odb::Rect& pin,
+    const odb::Direction2D direction,
+    const ShapePtr& target,
+    std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions)
+    // A zero pitch is what keeps Straps from deriving a spacing from it, which
+    // it would do by asking for a net count this component does not have yet.
+    : Straps(grid, layer, pin.minDXDY(), /* pitch */ 0),
+      iterm_(iterm),
+      pin_(pin),
+      direction_(direction),
+      target_(target),
+      macro_obstructions_(std::move(macro_obstructions))
+{
+  // the wire runs the way the pin grows, whatever the layer prefers
+  setDirection(isVertical(direction_) ? odb::dbTechLayerDir::VERTICAL
+                                      : odb::dbTechLayerDir::HORIZONTAL);
+}
+
+std::string MacroEdgeConnectionStraps::getName() const
+{
+  return iterm_->getName();
+}
+
+std::vector<odb::dbNet*> MacroEdgeConnectionStraps::getNets() const
+{
+  return {iterm_->getNet()};
+}
+
+void MacroEdgeConnectionStraps::makeShapes(
+    const Shape::ShapeTreeMap& /* other_shapes */)
+{
+  // Land on the end of the pin the strap leaves by, and run from there to the
+  // far side of the target so the via has the whole of it to be placed in.
+  //
+  // The landing is one strap width, which is the least metal that is itself a
+  // legal piece of wire.  Covering the pin outright -- which is what a pad
+  // connection does, where a pin is a short stub on the edge of the cell --
+  // would connect the same two things, but on a macro pin that runs the width
+  // of the body it would draw a wire from one side of the macro to the other
+  // to do it.
+  //
+  // The landing always fits: it is the pin's shorter dimension, and the pin
+  // grows along its longer one.
+  const int landing = getWidth();
+  odb::Rect rect = pin_;
+  const odb::Rect& target = target_->getRect();
+  switch (direction_) {
+    case odb::Direction2D::North:
+      rect.set_ylo(pin_.yMax() - landing);
+      rect.set_yhi(target.yMax());
+      break;
+    case odb::Direction2D::South:
+      rect.set_yhi(pin_.yMin() + landing);
+      rect.set_ylo(target.yMin());
+      break;
+    case odb::Direction2D::East:
+      rect.set_xlo(pin_.xMax() - landing);
+      rect.set_xhi(target.xMax());
+      break;
+    case odb::Direction2D::West:
+      rect.set_xhi(pin_.xMin() + landing);
+      rect.set_xlo(target.xMin());
+      break;
+  }
+
+  auto* layer = getLayer();
+  if (layer->hasMaxWidth()) {
+    const int max_width = layer->getMaxWidth();
+    if (isHorizontal()) {
+      if (rect.dy() > max_width) {
+        rect.set_yhi(rect.yMin() + max_width);
+      }
+    } else {
+      if (rect.dx() > max_width) {
+        rect.set_xhi(rect.xMin() + max_width);
+      }
+    }
+  }
+
+  auto shape = std::make_unique<Shape>(
+      layer, iterm_->getNet(), rect, odb::dbWireShapeType::STRIPE);
+  // the landing, not the pin: this is what trimming may not take back, and
+  // the strap only ever reaches the end of the pin it leaves by
+  shape->addITermConnection(pin_.intersect(rect));
+
+  addShape(std::move(shape));
+}
+
+void MacroEdgeConnectionStraps::cutShapes(
+    const Shape::ObstructionTreeMap& obstructions)
+{
+  GridComponent::cutShapes(obstructions);
+
+  // The macro's own metal is published by this grid, so the pass above
+  // ignores it -- but a pin with the body of its own macro in the way cannot
+  // grow out of it, and that is the case this has to stop.
+  GridComponent::cutShapes(*macro_obstructions_);
+
+  // Whatever is left has to be one piece of metal joining the pin to the
+  // target: a fragment that reaches only one of them connects nothing.
+  std::vector<Shape*> remove;
+  for (const auto& [layer, layer_shapes] : getShapes()) {
+    for (const auto& shape : layer_shapes) {
+      const odb::Rect& rect = shape->getRect();
+      if (!rect.overlaps(pin_) || !rect.overlaps(target_->getRect())) {
+        remove.push_back(shape.get());
+      }
+    }
+  }
+  for (auto* shape : remove) {
+    debugPrint(getLogger(),
+               utl::PDN,
+               "MacroEdge",
+               2,
+               "{} cannot reach {} from {}",
+               getName(),
+               target_->getReportText(),
+               Shape::getRectText(pin_, getBlock()->getDbUnitsPerMicron()));
+    removeShape(shape);
+  }
+}
+
+bool MacroEdgeConnectionStraps::isConnected() const
+{
+  return getShapeCount() != 0;
+}
+
+bool MacroEdgeConnectionStraps::hasVias() const
+{
+  for (const auto& [layer, layer_shapes] : getShapes()) {
+    for (const auto& shape : layer_shapes) {
+      if (!shape->getVias().empty()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void MacroEdgeConnectionStraps::report() const
+{
+  auto* logger = getLogger();
+
+  logger->report("  Type: {}", typeToString(type()));
+  logger->report("    Pin: {}", getName());
+  logger->report("    Net: {}", iterm_->getNet()->getName());
+  logger->report("    Layer: {}", getLayer()->getName());
+  logger->report("    Direction: {}", directionToString(direction_));
+  logger->report("    Target: {}", target_->getReportText());
+}
+
+void MacroEdgeConnectionStraps::connectUnreachedPins(
+    InstanceGrid* grid,
+    const Shape::ShapeTreeMap& global_shapes,
+    Shape::ObstructionTreeMap& obstructions)
+{
+  odb::dbInst* inst = grid->getInstance();
+  if (!inst->getMaster()->isBlock()) {
+    // Only a hard macro has an edge to grow out of.  A pad is served by
+    // PadDirectConnectionStraps and a cover cell is reached from above.
+    return;
+  }
+
+  const std::vector<odb::dbNet*> grid_nets
+      = grid->getNets(grid->startsWithPower());
+  if (grid_nets.empty()) {
+    return;
+  }
+
+  std::vector<ViaPtr> vias;
+  grid->getVias(vias);
+
+  // What this grid can reach is its own shapes and those of the grids built
+  // before it.  The two are searched as they are rather than merged into one
+  // tree: the merge would be a copy of every shape on every layer of the
+  // design, per macro grid, and only the layers a pin has a connect rule to
+  // are ever looked at.
+  const Shape::ShapeTreeMap own_shapes = grid->getShapes();
+
+  const auto search_layer_pair
+      = [&own_shapes, &global_shapes](
+            odb::dbTechLayer* layer,
+            const std::function<void(const Shape::ShapeTree&)>& search) {
+          const auto own = own_shapes.find(layer);
+          if (own != own_shapes.end()) {
+            search(own->second);
+          }
+          const auto global = global_shapes.find(layer);
+          if (global != global_shapes.end()) {
+            search(global->second);
+          }
+        };
+
+  // The macro's own metal, built once for every pin of it.
+  // getPadObstructions attributes the metal coincident with a pin to that
+  // pin's net, so a pin being grown does not block itself.
+  auto macro_obstructions = std::make_shared<Shape::ObstructionTreeMap>();
+  for (const auto& [layer, shapes] : InstanceGrid::getPadObstructions(inst)) {
+    (*macro_obstructions)[layer]
+        = Shape::ObstructionTree(shapes.begin(), shapes.end());
+  }
+
+  const odb::Rect die = grid->getBlock()->getDieArea();
+  const odb::dbTransform transform = inst->getTransform();
+  // the real outline of the macro, so that the notch of an L, T or U shaped
+  // one is what it is -- free core area the pin beside it can grow into
+  const Region outline = getInstanceOutline(inst);
+
+  std::vector<MacroEdgeConnectionStraps*> added;
+  for (auto* iterm : inst->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (net == nullptr
+        || std::ranges::find(grid_nets, net) == grid_nets.end()) {
+      continue;
+    }
+
+    for (const auto& pin : getPinRects(iterm, transform)) {
+      // The connect rules are the whole of what this pin may reach: a pin on
+      // a layer with no rule out of it is not this grid's to connect.
+      const odb::PtrSet<odb::dbTechLayer> connectable
+          = grid->connectableLayers(pin.layer);
+      if (connectable.empty()) {
+        continue;
+      }
+
+      bool reached = std::ranges::any_of(vias, [&](const ViaPtr& via) {
+        if (via->getNet() != net) {
+          return false;
+        }
+        if (via->getLowerLayer() != pin.layer
+            && via->getUpperLayer() != pin.layer) {
+          return false;
+        }
+        return via->getArea().overlaps(pin.rect);
+      });
+      // A strap of the grid's own that lands on the pin is a connection too,
+      // made by the metal touching rather than by a via.  A macro grid with
+      // straps on the layer its pins are on routinely makes one, and growing
+      // a second way out of a pin that already has one would only draw a wire
+      // for the strap already there to cut back off.
+      if (!reached) {
+        search_layer_pair(pin.layer, [&](const Shape::ShapeTree& shapes) {
+          if (reached) {
+            return;
+          }
+          reached = shapes.qbegin(
+                        bgi::intersects(pin.rect)
+                        && bgi::satisfies([net, &pin](const ShapePtr& other) {
+                             return other->getNet() == net
+                                    && !isMacroEdgeConnection(other.get())
+                                    && other->getRect().overlaps(pin.rect);
+                           }))
+                    != shapes.qend();
+        });
+      }
+      if (reached) {
+        debugPrint(grid->getLogger(),
+                   utl::PDN,
+                   "MacroEdge",
+                   2,
+                   "{} on {} at {} is already connected",
+                   iterm->getName(),
+                   pin.layer->getName(),
+                   Shape::getRectText(pin.rect,
+                                      grid->getBlock()->getDbUnitsPerMicron()));
+        continue;
+      }
+
+      // The way out.  The pin grows along its own length, and of its two ends
+      // the one with less macro beyond it is the way out -- which on an L, T
+      // or U shaped macro is what sends a pin on the wall of a notch into the
+      // notch rather than back through the body behind it.  The other end is
+      // not a candidate at all: growing that way is growing into the macro,
+      // and a pin that cannot get out this way has no way out.
+      //
+      // Where the pin reaches the outline at both ends -- a stub laid across
+      // a narrow leg -- both are the way out, and below the nearer target
+      // decides between them.
+      const std::optional<bool> vertical = growsVertically(pin.rect, pin.layer);
+      if (!vertical.has_value()) {
+        debugPrint(grid->getLogger(),
+                   utl::PDN,
+                   "MacroEdge",
+                   1,
+                   "{} is square on {}, which states no direction, so there is "
+                   "no length to grow along",
+                   iterm->getName(),
+                   pin.layer->getName());
+        continue;
+      }
+      const std::array<odb::Direction2D, 2> ends
+          = *vertical ? std::array<odb::Direction2D, 2>{odb::Direction2D::North,
+                                                        odb::Direction2D::South}
+                      : std::array<odb::Direction2D, 2>{odb::Direction2D::East,
+                                                        odb::Direction2D::West};
+      const std::array<int, 2> margins
+          = {macroBeyond(outline, pin.rect, ends[0]),
+             macroBeyond(outline, pin.rect, ends[1])};
+      const int way_out = std::min(margins[0], margins[1]);
+
+      std::vector<odb::Direction2D> directions;
+      for (size_t i = 0; i < ends.size(); i++) {
+        if (margins[i] == way_out) {
+          directions.push_back(ends[i]);
+        }
+      }
+
+      std::vector<LateralCandidate> candidates;
+      for (const odb::Direction2D direction : directions) {
+        ShapePtr best_target = nullptr;
+        int best_distance = std::numeric_limits<int>::max();
+        for (auto* search_layer : connectable) {
+          search_layer_pair(search_layer, [&](const Shape::ShapeTree& shapes) {
+            int distance = 0;
+            const ShapePtr target = findLateralTarget(
+                shapes, pin.rect, direction, die, net, distance);
+            if (target == nullptr || distance >= best_distance) {
+              return;
+            }
+            best_target = target;
+            best_distance = distance;
+          });
+        }
+
+        if (best_target == nullptr) {
+          debugPrint(grid->getLogger(),
+                     utl::PDN,
+                     "MacroEdge",
+                     1,
+                     "No shape {} of {} on {} to reach",
+                     directionToString(direction),
+                     iterm->getName(),
+                     pin.layer->getName());
+          continue;
+        }
+
+        candidates.push_back(
+            {direction, best_distance, std::move(best_target)});
+      }
+
+      std::ranges::sort(candidates, [](const auto& lhs, const auto& rhs) {
+        return lhs.distance < rhs.distance;
+      });
+
+      for (const LateralCandidate& candidate : candidates) {
+        auto strap
+            = std::make_unique<MacroEdgeConnectionStraps>(grid,
+                                                          iterm,
+                                                          pin.layer,
+                                                          pin.rect,
+                                                          candidate.direction,
+                                                          candidate.target,
+                                                          macro_obstructions);
+        auto* strap_ptr = strap.get();
+        grid->addStrap(std::move(strap));
+
+        // make() adds what it built to the map it is handed; nothing reads it,
+        // because this pass never targets its own output.  The obstructions
+        // are the ones that matter and they are passed through.
+        Shape::ShapeTreeMap built;
+        strap_ptr->make(built, obstructions);
+        if (!strap_ptr->isConnected()) {
+          // Nothing survived.  Where the pin is out at both ends there is a
+          // second candidate to fall back on; otherwise this pin has no way
+          // out and is left alone.
+          grid->removeStrap(strap_ptr);
+          continue;
+        }
+
+        debugPrint(grid->getLogger(),
+                   utl::PDN,
+                   "MacroEdge",
+                   1,
+                   "Connecting {} on {} {} to {}",
+                   iterm->getName(),
+                   pin.layer->getName(),
+                   directionToString(candidate.direction),
+                   candidate.target->getReportText());
+        added.push_back(strap_ptr);
+        break;
+      }
+    }
+  }
+
+  if (added.empty()) {
+    return;
+  }
+
+  grid->makeVias(global_shapes, obstructions);
+
+  // A strap whose via was not built connects the pin to nothing, and nothing
+  // downstream will take it back: the landing on the pin counts as a
+  // connection, so the shape does not look floating and trimming keeps it.
+  // Withdraw it here, where it is still ours to withdraw.
+  for (auto* strap : added) {
+    if (strap->hasVias()) {
+      continue;
+    }
+    debugPrint(grid->getLogger(),
+               utl::PDN,
+               "MacroEdge",
+               1,
+               "Withdrawing {}: no via was built to {}",
+               strap->getName(),
+               strap->target_->getReportText());
+    strap->removeObstructions(obstructions);
+    grid->removeStrap(strap);
+  }
+}
+
 ////////
 
 RepairChannelStraps::RepairChannelStraps(
@@ -1732,22 +2991,57 @@ bool RepairChannelStraps::isAtEndOfRepairOptions() const
 void RepairChannelStraps::continueRepairs(
     const Shape::ObstructionTreeMap& other_shapes)
 {
+  if (isAtEndOfRepairOptions()) {
+    // every width and spacing has been tried, so there is nothing to continue
+    return;
+  }
+
   clearShapes();
-  const int next_width = getNextWidth();
-  debugPrint(
-      getLogger(),
-      utl::PDN,
-      "Channel",
-      1,
-      "Continue repair at {} on {} with straps on {} for {}: changing width "
-      "from {} um to {} um",
-      Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
-      connect_to_->getName(),
-      getLayer()->getName(),
-      getNetString(),
-      getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
-      next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
-  setWidth(next_width);
+
+  const TechLayer layer(getLayer());
+  const int min_width = layer.getMinWidth();
+
+  // isAtEndOfRepairOptions() reports the end of the width and spacing sequence
+  // that determineParameters() walks, so this must advance that sequence on
+  // every call or the end is never reached. determineParameters() alone is not
+  // enough: it keeps the current parameters when they already fit, which for a
+  // strap already at the minimum width leaves everything unchanged and makes
+  // repairGridChannels() rebuild the same strap forever.
+  if (getWidth() > min_width) {
+    const int next_width = getNextWidth();
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Continue repair at {} on {} with straps on {} for {}: changing width "
+        "from {} um to {} um",
+        Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+        connect_to_->getName(),
+        getLayer()->getName(),
+        getNetString(),
+        getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+        next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+    setWidth(next_width);
+  } else {
+    // the width is at the layer minimum, so the spacing is all that is left
+    const int next_spacing = layer.getSpacing(min_width, getMaxLength());
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Continue repair at {} on {} with straps on {} for {}: changing "
+        "spacing from {} um to {} um",
+        Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+        connect_to_->getName(),
+        getLayer()->getName(),
+        getNetString(),
+        getSpacing() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+        next_spacing / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+    setSpacing(next_spacing);
+  }
+
   determineParameters(other_shapes);
 }
 
@@ -2144,10 +3438,209 @@ odb::dbTechLayer* RepairChannelStraps::getHighestStrapLayer(Grid* grid)
   return highest_layer;
 }
 
+odb::dbTechLayer* RepairChannelStraps::getFeedLayer(
+    Grid* grid,
+    odb::dbTechLayer* layer,
+    odb::dbTechLayer* connect_to,
+    bool& is_above)
+{
+  odb::dbTechLayer* above = nullptr;
+  for (const auto& connect : grid->getConnect()) {
+    if (connect->getLowerLayer() != layer) {
+      continue;
+    }
+    auto* upper = connect->getUpperLayer();
+    if (above == nullptr || upper->getNumber() < above->getNumber()) {
+      above = upper;
+    }
+  }
+
+  if (above != nullptr) {
+    is_above = true;
+    return above;
+  }
+
+  // At the top of the stack nothing can feed the strap from above, and two
+  // parallel straps on the same layer never touch, so the only thing left to
+  // reach is a strap on the layer below that crosses it.
+  is_above = false;
+  return connect_to;
+}
+
+// A repair strap only carries power if it reaches the grid that feeds it. The
+// channel is derived from the shapes that need repairing, and for an isolated
+// pocket of rows that is smaller than the pitch of the feeding layer, so a
+// strap confined to it would connect the pocket to itself and to nothing else.
+// Grow the channel along the strap direction until every net reaches the
+// nearest shape of that same net that can power it, on both sides, so the
+// repair is fed symmetrically the way an ordinary strap of that length would
+// be.
+void RepairChannelStraps::extendChannelToFeed(Grid* grid,
+                                              RepairChannelArea& channel,
+                                              const odb::Rect& grid_core)
+{
+  bool feed_is_above = false;
+  odb::dbTechLayer* feed_layer = getFeedLayer(
+      grid, channel.target->getLayer(), channel.connect_to, feed_is_above);
+  if (feed_layer == nullptr) {
+    return;
+  }
+
+  const auto& all_shapes = grid->getShapes();
+  const auto feed_shapes = all_shapes.find(feed_layer);
+  if (feed_shapes == all_shapes.end()) {
+    return;
+  }
+
+  const bool is_horizontal = channel.target->isHorizontal();
+  // the strap runs along the length axis and is crossed by the shapes feeding
+  // it
+  const auto len_lo = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.xMin() : r.yMin();
+  };
+  const auto len_hi = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.xMax() : r.yMax();
+  };
+  const auto cross_lo = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.yMin() : r.xMin();
+  };
+  const auto cross_hi = [is_horizontal](const odb::Rect& r) {
+    return is_horizontal ? r.yMax() : r.xMax();
+  };
+
+  int extend_lo = len_lo(channel.area);
+  int extend_hi = len_hi(channel.area);
+
+  for (auto* net : channel.nets) {
+    bool net_is_fed = false;
+    int nearest_lo = std::numeric_limits<int>::min();
+    int nearest_hi = std::numeric_limits<int>::max();
+
+    for (const auto& shape : feed_shapes->second) {
+      if (shape->getNet() != net) {
+        // a strap can only be fed on its own net
+        continue;
+      }
+      if (!feed_is_above && shape->getNumberOfConnectionsAbove() == 0) {
+        // A strap below can only pass on power it already has, and one with
+        // nothing above it has none. This also excludes the shapes of the
+        // channel being repaired, which are on this layer and are exactly the
+        // ones that need feeding.
+        continue;
+      }
+      const odb::Rect& rect = shape->getRect();
+      if (cross_hi(rect) < cross_lo(channel.area)
+          || cross_lo(rect) > cross_hi(channel.area)) {
+        // does not cross the strap, so the strap can never reach it
+        continue;
+      }
+      if (len_hi(rect) >= len_lo(channel.area)
+          && len_lo(rect) <= len_hi(channel.area)) {
+        net_is_fed = true;
+        break;
+      }
+      if (len_hi(rect) < len_lo(channel.area)) {
+        nearest_lo = std::max(nearest_lo, len_lo(rect));
+      } else {
+        nearest_hi = std::min(nearest_hi, len_hi(rect));
+      }
+    }
+
+    if (net_is_fed) {
+      // leave channels that already reach the grid alone
+      continue;
+    }
+
+    // reach the far edge of the feeding shape so the whole of it is crossed
+    if (nearest_lo != std::numeric_limits<int>::min()
+        && nearest_lo >= len_lo(grid_core)) {
+      extend_lo = std::min(extend_lo, nearest_lo);
+    }
+    if (nearest_hi != std::numeric_limits<int>::max()
+        && nearest_hi <= len_hi(grid_core)) {
+      extend_hi = std::max(extend_hi, nearest_hi);
+    }
+  }
+
+  if (is_horizontal) {
+    channel.area.set_xlo(extend_lo);
+    channel.area.set_xhi(extend_hi);
+  } else {
+    channel.area.set_ylo(extend_lo);
+    channel.area.set_yhi(extend_hi);
+  }
+}
+
+// A via of one grid into an area another grid has claimed is rejected by
+// Grid::makeVias as obstructed, so a shape sitting inside such an area cannot
+// be connected upward by this grid no matter where it puts a strap: the grid
+// that owns the area is the one that connects it.  That is the ordinary
+// arrangement for a core repair strap that lands under the ring of an instance
+// grid -- the ring's own layers are in the way, and the instance grid, built
+// afterwards, straps across it and vias down.
+//
+// The claim has to cover the whole shape.  One that only clips an end leaves
+// the rest of it reachable, and that is a channel this grid can still repair.
+bool RepairChannelStraps::isRouteUpOwnedByAnotherGrid(
+    Grid* grid,
+    const Shape* shape,
+    odb::dbTechLayer* target,
+    const Shape::ObstructionTreeMap& obstructions)
+{
+  // the layers a via from the shape up to the target has to pass through
+  std::vector<odb::dbTechLayer*> layers;
+  for (const auto& connect : grid->getConnect()) {
+    if (connect->getLowerLayer() != shape->getLayer()
+        || connect->getUpperLayer() != target) {
+      continue;
+    }
+    const auto& intermediate = connect->getIntermediteRoutingLayers();
+    layers.insert(layers.end(), intermediate.begin(), intermediate.end());
+  }
+  layers.push_back(target);
+
+  // Layer by layer, because a via has to pass through every one of them: a
+  // layer another grid has covered end to end blocks every position the via
+  // could take, whichever layer it is.  The claims are taken together rather
+  // than one at a time -- a grid claims its area as the rectangles of a
+  // decomposition, and a shape alongside a rectilinear macro lies across
+  // several of them.
+  const odb::Rect& rect = shape->getRect();
+  for (auto* layer : layers) {
+    const auto find_layer = obstructions.find(layer);
+    if (find_layer == obstructions.end()) {
+      continue;
+    }
+
+    std::vector<odb::Rect> claimed;
+    for (auto itr = find_layer->second.qbegin(bgi::intersects(rect));
+         itr != find_layer->second.qend();
+         itr++) {
+      const auto& obs = *itr;
+      if (obs->shapeType() != Shape::kGridObs) {
+        continue;
+      }
+      const auto* grid_obs = static_cast<const GridObsShape*>(obs.get());
+      if (grid_obs->belongsTo(grid)) {
+        continue;
+      }
+      claimed.push_back(grid_obs->getRect());
+    }
+
+    if (!claimed.empty() && Region(claimed).contains(Region(rect))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 std::vector<RepairChannelStraps::RepairChannelArea>
-RepairChannelStraps::findRepairChannels(Grid* grid,
-                                        const Shape::ShapeTree& shapes,
-                                        odb::dbTechLayer* layer)
+RepairChannelStraps::findRepairChannels(
+    Grid* grid,
+    const Shape::ShapeTree& shapes,
+    odb::dbTechLayer* layer,
+    const Shape::ObstructionTreeMap& obstructions)
 {
   Straps* target = getTargetStrap(grid, layer);
   if (target == nullptr) {
@@ -2155,33 +3648,24 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     return {};
   }
 
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
   const auto grid_core = grid->getDomainBoundary();
 
   std::vector<Shape*> shapes_used;
-  Polygon90Set shape_set;
+  odb::geom::BoostPolygon90Set shape_set;
   for (const auto& shape : shapes) {
     if (shape->getNumberOfConnectionsAbove() != 0) {
       // shape already connected to something
       continue;
     }
     auto* grid_compomponent = shape->getGridComponent();
-    if (grid_compomponent->type() != GridComponent::kStrap
-        && grid_compomponent->type() != GridComponent::kFollowpin) {
-      // only attempt to repair straps and followpins
+    if (!grid_compomponent->checkForRepairChannels()) {
+      // only attempt to repair straps, followpins and earlier repairs
       continue;
     }
 
-    if (grid_compomponent->type() == GridComponent::kStrap) {
-      if (shape->getNumberOfConnections() == 0
-          || !shape->hasInternalConnections()) {
-        // strap is floating and will be removed
-        continue;
-      }
+    if (shape->isFloating()) {
+      // strap is floating and will be removed
+      continue;
     }
 
     auto* grid_strap = dynamic_cast<Straps*>(grid_compomponent);
@@ -2189,32 +3673,32 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
-    // determine bloat factor
-    const int bloat = grid_strap->getPitch();
-    const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
-    const int bloat_y = grid_strap->isHorizontal() ? bloat : 0;
+    if (isRouteUpOwnedByAnotherGrid(
+            grid, shape.get(), target->getLayer(), obstructions)) {
+      // not this grid's shape to connect
+      continue;
+    }
 
-    const auto& min_corner = shape->getRect().ll();
-    const auto& max_corner = shape->getRect().ur();
-    std::array<Pt, 4> pts
-        = {Pt(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, max_corner.y() + bloat_y),
-           Pt(min_corner.x() - bloat_x, max_corner.y() + bloat_y)};
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
+    // Bloat by the strap pitch across the strap, so neighboring straps merge
+    // and the gaps left between them are the channels. A strap with no pitch
+    // does not repeat, so the only distance that means anything is the one
+    // between the straps of its own group; without it each net of the group
+    // lands in a channel of its own and the repairs are then placed with no
+    // knowledge of each other instead of as a spaced pair.
+    int bloat = grid_strap->getPitch();
+    if (bloat == 0) {
+      bloat = grid_strap->getWidth() + grid_strap->getSpacing();
+    }
+    const odb::Rect bloated_shape = shape->getRect().bloat(
+        bloat, grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
 
     shapes_used.push_back(shape.get());
-    shape_set.insert(poly);
+    shape_set.insert(odb::geom::toPolygon90(bloated_shape));
   }
 
   // get all possible channel rects
   std::set<odb::Rect> channels_rects;
-  std::vector<Rectangle> channel_set;
-  shape_set.get_rectangles(channel_set);
-  for (const auto& channel : channel_set) {
-    const odb::Rect area(xl(channel), yl(channel), xh(channel), yh(channel));
-
+  for (const odb::Rect& area : odb::geom::extractRectangles(shape_set)) {
     if (area.intersects(grid_core)) {
       channels_rects.insert(area.intersect(grid_core));
     }
@@ -2228,6 +3712,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     int followpin_count = 0;
     int strap_count = 0;
+    int repair_count = 0;
     // find all the nets in a given repair area
     for (auto* shape : shapes_used) {
       const auto& shape_rect = shape->getRect();
@@ -2237,6 +3722,9 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
         channel.nets.insert(shape->getNet());
         if (shape->getType() == odb::dbWireShapeType::FOLLOWPIN) {
           followpin_count++;
+        } else if (shape->getGridComponent()->type()
+                   == GridComponent::kRepairChannel) {
+          repair_count++;
         } else {
           strap_count++;
         }
@@ -2245,9 +3733,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     // all followpins must be repaired
     const bool channel_has_followpin = followpin_count >= 1;
+    // an earlier repair that never reached the layer above leaves everything
+    // it connects floating, so it is a channel even on its own
+    const bool channel_has_repair = repair_count >= 1;
     // single straps can be skipped
     const bool channel_has_more_than_one_strap = strap_count > 1;
-    if (channel_has_followpin || channel_has_more_than_one_strap) {
+    if (channel_has_followpin || channel_has_repair
+        || channel_has_more_than_one_strap) {
       if (!channel.area.intersects(grid_core)) {
         // channel is not in the core
         continue;
@@ -2255,6 +3747,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
       // ensure areas are inside the core
       channel.area = channel.area.intersect(grid_core);
+
+      // a strap confined to the channel may not reach the grid above it
+      extendChannelToFeed(grid, channel, grid_core);
+
       channel.available_area = channel.area;
 
       // trim area of channel if it is partially covered by an exisiting shape
@@ -2296,11 +3792,69 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     }
   }
 
-  return channels;
+  // A run of unconnected straps that are not all the same length is not a
+  // rectangle, so it is described both as a whole and as pieces of itself cut
+  // along the run.  Repairing a piece first takes the rest of the run out of
+  // the pass as overlapping it, and what is left is repaired in later passes
+  // as separate straps, each stopping where its own piece did, which leaves
+  // holes in what should be one strap.  Offer the whole run ahead of its
+  // pieces, and keep the pieces behind it: a whole run that cannot be built
+  // adds nothing to areas_repaired, so they still get their turn.  Every
+  // channel here shares one target, which is what makes comparing them
+  // meaningful.
+  //
+  // A channel that is contained but reaches further across the strap is a
+  // different shape rather than a piece of one run -- the two halves of a jog,
+  // say -- and repairing those separately is right.  The two are told apart by
+  // the strap width, because a difference narrower than that cannot hold a
+  // strap of its own and so describes the same row: across the tests the
+  // difference is either none at all or several times the width, never in
+  // between.
+  const auto is_piece_of = [is_horizontal = target->isHorizontal(),
+                            strap_width = target->getWidth()](
+                               const RepairChannelArea& whole,
+                               const RepairChannelArea& piece) {
+    if (whole.area == piece.area || !whole.area.contains(piece.area)) {
+      return false;
+    }
+    // non-negative, the containment above has been checked
+    const int extra_low = is_horizontal ? piece.area.yMin() - whole.area.yMin()
+                                        : piece.area.xMin() - whole.area.xMin();
+    const int extra_high = is_horizontal
+                               ? whole.area.yMax() - piece.area.yMax()
+                               : whole.area.xMax() - piece.area.xMax();
+    return extra_low < strap_width && extra_high < strap_width;
+  };
+  std::vector<bool> is_whole_run(channels.size(), true);
+  for (std::size_t i = 0; i < channels.size(); i++) {
+    is_whole_run[i] = std::none_of(
+        channels.begin(),
+        channels.end(),
+        [&is_piece_of, &piece = channels[i]](const RepairChannelArea& whole) {
+          return is_piece_of(whole, piece);
+        });
+  }
+
+  std::vector<RepairChannelArea> ordered_channels;
+  ordered_channels.reserve(channels.size());
+  for (std::size_t i = 0; i < channels.size(); i++) {
+    if (is_whole_run[i]) {
+      ordered_channels.push_back(std::move(channels[i]));
+    }
+  }
+  for (std::size_t i = 0; i < channels.size(); i++) {
+    if (!is_whole_run[i]) {
+      ordered_channels.push_back(std::move(channels[i]));
+    }
+  }
+
+  return ordered_channels;
 }
 
 std::vector<RepairChannelStraps::RepairChannelArea>
-RepairChannelStraps::findRepairChannels(Grid* grid)
+RepairChannelStraps::findRepairChannels(
+    Grid* grid,
+    const Shape::ObstructionTreeMap& obstructions)
 {
   odb::dbTechLayer* highest_layer = getHighestStrapLayer(grid);
 
@@ -2316,7 +3870,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid)
       break;
     }
 
-    auto layerchannels = findRepairChannels(grid, shapes, layer);
+    auto layerchannels = findRepairChannels(grid, shapes, layer, obstructions);
     for (const auto& channel : layerchannels) {
       channels.push_back(channel);
     }
@@ -2346,7 +3900,7 @@ void RepairChannelStraps::repairGridChannels(
 
   std::set<odb::Rect> areas_repaired;
 
-  const auto channels = findRepairChannels(grid);
+  const auto channels = findRepairChannels(grid, obstructions);
   debugPrint(grid->getLogger(),
              utl::PDN,
              "Channel",
@@ -2356,7 +3910,8 @@ void RepairChannelStraps::repairGridChannels(
 
   if (!channels.empty() && renderer != nullptr) {
     renderer->update();
-    renderer->pause();
+    renderer->pause(fmt::format(
+        "{} channel(s) to repair in {}", channels.size(), grid->getLongName()));
   }
 
   if (channels.empty()) {
@@ -2375,6 +3930,8 @@ void RepairChannelStraps::repairGridChannels(
         if (repair_strap->getLayer() == channel.target->getLayer()
             && channel.area == repair_strap->getArea()) {
           if (!repair_strap->isAtEndOfRepairOptions()) {
+            const std::set<odb::Rect> prev_shapes = strap->getShapeRects();
+
             repair_strap->addNets(channel.nets);
             repair_strap->removeShapes(local_shapes);
             repair_strap->removeObstructions(obstructions);
@@ -2383,7 +3940,12 @@ void RepairChannelStraps::repairGridChannels(
             if (repair_strap->testBuild(local_shapes, obstructions)) {
               strap->getShapes(local_shapes);  // need new shapes
               strap->getObstructions(obstructions);
-              areas_repaired.insert(channel.area);
+              // a rebuild that reproduces the same shapes has not repaired
+              // anything, and counting it would make repairGridChannels()
+              // recurse on an unchanged grid
+              if (strap->getShapeRects() != prev_shapes) {
+                areas_repaired.insert(channel.area);
+              }
             }
           }
         }
@@ -2412,6 +3974,35 @@ void RepairChannelStraps::repairGridChannels(
                  "Channel",
                  1,
                  "Skipping repair at {} in {}.",
+                 Shape::getRectText(channel.area,
+                                    grid->getBlock()->getDbUnitsPerMicron()),
+                 channel.target->getLayer()->getName());
+      continue;
+    }
+
+    // A repair strap already at this channel that has run out of widths and
+    // spacings has tried everything a new strap would try. Building another
+    // one restarts that sequence and repairGridChannels() recurses on it, so
+    // leave the channel to be reported as remaining instead.
+    bool options_exhausted = false;
+    for (const auto& strap : grid->getStraps()) {
+      if (strap->type() != GridComponent::kRepairChannel) {
+        continue;
+      }
+      auto* repair_strap = static_cast<RepairChannelStraps*>(strap.get());
+      if (repair_strap->getLayer() == channel.target->getLayer()
+          && repair_strap->getArea() == channel.area
+          && repair_strap->isAtEndOfRepairOptions()) {
+        options_exhausted = true;
+        break;
+      }
+    }
+    if (options_exhausted) {
+      debugPrint(grid->getLogger(),
+                 utl::PDN,
+                 "Channel",
+                 1,
+                 "No repair options left at {} in {}.",
                  Shape::getRectText(channel.area,
                                     grid->getBlock()->getDbUnitsPerMicron()),
                  channel.target->getLayer()->getName());
@@ -2468,7 +4059,7 @@ void RepairChannelStraps::repairGridChannels(
     // channels changed so try again
     repairGridChannels(grid, global_shapes, obstructions, allow, renderer);
   } else {
-    const auto remaining_channels = findRepairChannels(grid);
+    const auto remaining_channels = findRepairChannels(grid, obstructions);
     if (!remaining_channels.empty()) {
       odb::dbMarkerCategory* tool_category
           = grid->getBlock()->findMarkerCategory("PDN");
