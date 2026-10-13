@@ -2248,6 +2248,7 @@ TEST_F(TileGeneratorTest, InstLabelsStayUprightInAMirroredChiplet)
       ADD_FAILURE() << "invalid decoded tile dimensions";
       return std::pair{0U, std::vector<unsigned char>{}};
     }
+    w = h = static_cast<unsigned>(kTileSize);
     unsigned x0 = w, y0 = h, x1 = 0, y1 = 0;
     for (unsigned y = 0; y < h; ++y) {
       for (unsigned x = 0; x < w; ++x) {
