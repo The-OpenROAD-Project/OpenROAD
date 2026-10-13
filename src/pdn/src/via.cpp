@@ -2468,7 +2468,7 @@ void ViaGenerator::determineCutSpacing()
       int rule_pitch_y;
       if (cut.dx() == cut.dy()) {
         rule_pitch_x = rule->getMaxSpacing(
-            cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MIN);
+            cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MAX);
         rule_pitch_y = rule_pitch_x;
       } else {
         const bool x_is_side = cut.dx() > cut.dy();
