@@ -22,6 +22,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
+#include "polygon.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"
@@ -98,6 +99,11 @@ Shape::ObstructionHalo Shape::getObstructionHalo() const
 odb::Rect Shape::getRectWithLargestObstructionHalo(
     const ObstructionHalo& halo) const
 {
+  if (die_absence_) {
+    // no spacing is owed to an absence of die
+    return rect_;
+  }
+
   const ObstructionHalo obs = getObstructionHalo();
   odb::Rect obs_rect = rect_;
   obs_rect.set_xlo(obs_rect.xMin() - std::max(obs.left, halo.left));
@@ -112,28 +118,50 @@ int Shape::getNumberOfConnections() const
   return vias_.size() + iterm_connections_.size() + bterm_connections_.size();
 }
 
+void Shape::clearVias()
+{
+  vias_.clear();
+  connections_above_ = 0;
+  connections_below_ = 0;
+}
+
+void Shape::removeVias(const std::set<Via*>& vias)
+{
+  std::erase_if(vias_, [this, &vias](const ViaPtr& via) {
+    if (!vias.contains(via.get())) {
+      return false;
+    }
+    if (via->getLowerLayer() == layer_) {
+      connections_above_--;
+    } else if (via->getUpperLayer() == layer_) {
+      connections_below_--;
+    }
+    return true;
+  });
+}
+
+void Shape::addVia(const ViaPtr& via)
+{
+  vias_.push_back(via);
+  // Count on the way in rather than by rescanning the via list on every
+  // query. RepairChannelStraps::findRepairChannels asks every strap and
+  // followpin shape for its connections above, and on a large die a rail
+  // carries thousands of vias: the rescan was over 90% of pdngen's runtime.
+  if (via->getLowerLayer() == layer_) {
+    connections_above_++;
+  } else if (via->getUpperLayer() == layer_) {
+    connections_below_++;
+  }
+}
+
 int Shape::getNumberOfConnectionsBelow() const
 {
-  int connections = 0;
-  for (const auto& via : vias_) {
-    if (via->getUpperLayer() == layer_) {
-      connections++;
-    }
-  }
-
-  return connections;
+  return connections_below_;
 }
 
 int Shape::getNumberOfConnectionsAbove() const
 {
-  int connections = 0;
-  for (const auto& via : vias_) {
-    if (via->getLowerLayer() == layer_) {
-      connections++;
-    }
-  }
-
-  return connections;
+  return connections_above_;
 }
 
 bool Shape::isValid() const
@@ -244,6 +272,17 @@ bool Shape::cut(const ObstructionTree& obstructions,
 
     if (other_shape->net_ != nullptr && net_ == other_shape->net_
         && other_shape->shapeType() != ShapeType::kShape) {
+      if (other_shape->shapeType() == ShapeType::kPadObs) {
+        // Pad metal on this shape's own net.  Touching it merges rather than
+        // shorts, and keeping a full spacing away from it is legal, so only
+        // the gap in between is a violation.  The query above is against the
+        // obstruction box of both shapes, so it is reached by pairs that are
+        // up to two spacings apart and cannot be trusted on its own.
+        if (rect_.intersects(other_shape->rect_)
+            || !rect_.intersects(other_shape->getObstruction())) {
+          continue;
+        }
+      }
       // obstruction is of the same net, so see if the violation is completely
       // inside the new strap and therefore is okay
       if (is_horizontal) {
@@ -389,15 +428,23 @@ std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
       objs.push_back(addBPinToDb(bterm, rect_));
     }
     const odb::Rect block_area = getGridComponent()->getBlock()->getDieArea();
+    const Region die_region
+        = Region(getGridComponent()->getBlock()->getDieAreaPolygon());
     for (const auto& bterm_rect : bterm_connections_) {
       odb::Rect bterm_shape = bterm_rect;
-      // Adjust width of shape when bterm is on the edge of the die area
+      // Adjust width of shape when bterm is on the edge of the die area.
+      // Against the outline, so that a pin on the wall of a notch is widened
+      // along the same axis as one on the bounding box would be.
       if (bterm_rect.xMin() == block_area.xMin()
-          || bterm_rect.xMax() == block_area.xMax()) {
+          || bterm_rect.xMax() == block_area.xMax()
+          || die_region.isOnInteriorWall(bterm_rect, odb::Point(-1, 0))
+          || die_region.isOnInteriorWall(bterm_rect, odb::Point(1, 0))) {
         bterm_shape.set_ylo(rect_.yMin());
         bterm_shape.set_yhi(rect_.yMax());
       } else if (bterm_rect.yMin() == block_area.yMin()
-                 || bterm_rect.yMax() == block_area.yMax()) {
+                 || bterm_rect.yMax() == block_area.yMax()
+                 || die_region.isOnInteriorWall(bterm_rect, odb::Point(0, -1))
+                 || die_region.isOnInteriorWall(bterm_rect, odb::Point(0, 1))) {
         bterm_shape.set_xlo(rect_.xMin());
         bterm_shape.set_xhi(rect_.xMax());
       }

@@ -21,4 +21,4 @@ set def_file [make_result_file add_constraint16.def]
 
 write_def $def_file
 
-diff_file add_constraint16.defok $def_file
+diff_files add_constraint16.defok $def_file

@@ -34,8 +34,10 @@ Negotiation phase 2: isolation point active, 1000 iterations.
 [WARNING DPL-0702] Negotiation phase 2: violations stuck at 467 for 3 consecutive iterations. Using diamond search for 31 remaining illegal cells.
 diamond recovery: recovered 31/31 stuck cells.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 31
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                 248
 total displacement         84.0 u
 average displacement        2.6 u
 max displacement           13.8 u

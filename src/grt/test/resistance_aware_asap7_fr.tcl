@@ -70,4 +70,4 @@ if { $wns >= $baseline_wns && $tns >= $baseline_tns } {
   puts "resistance-aware timing worse than baseline: FAIL"
 }
 
-diff_file resistance_aware_asap7_fr.guideok $guide_file
+diff_files resistance_aware_asap7_fr.guideok $guide_file

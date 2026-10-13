@@ -419,5 +419,32 @@ TEST_F(SaveReportTest, ZeroPathsReport)
   EXPECT_TRUE(contains(html, "\"paths\":[]"));
 }
 
+// A 3DBlox top chip owns no dbBlock, so the report's fanout histogram has to
+// pool the chiplets' nets rather than report on a single block.
+TEST_F(SaveReportTest, FanoutHistogramPoolsEveryBlock)
+{
+  odb::dbNet::create(block_, "n1");
+  odb::dbNet::create(block_, "n2");
+
+  odb::dbChip* other
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+  odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+  odb::dbNet::create(other_block, "m1");
+
+  const FanoutHistogramResult first = computeFanoutHistogram({block_});
+  const FanoutHistogramResult second = computeFanoutHistogram({other_block});
+  ASSERT_GT(first.total_nets, 0);
+  ASSERT_GT(second.total_nets, 0);
+
+  const FanoutHistogramResult pooled
+      = computeFanoutHistogram({block_, other_block});
+  EXPECT_EQ(pooled.total_nets, first.total_nets + second.total_nets);
+
+  // Null entries are skipped, not counted as an empty block.
+  const FanoutHistogramResult with_null
+      = computeFanoutHistogram({block_, nullptr});
+  EXPECT_EQ(with_null.total_nets, first.total_nets);
+}
+
 }  // namespace
 }  // namespace web

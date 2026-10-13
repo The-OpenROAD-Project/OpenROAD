@@ -20,6 +20,10 @@ function makeApp() {
     };
 }
 
+function buttons() {
+    return [...document.querySelectorAll('#toolbar .toolbar-button')];
+}
+
 describe('Toolbar', () => {
     beforeEach(() => {
         document.body.innerHTML = '<div id="toolbar"></div>';
@@ -33,7 +37,7 @@ describe('Toolbar', () => {
         ];
         createToolbar(app);
 
-        const btn = document.querySelector('#toolbar .toolbar-button');
+        const btn = buttons()[0];
         assert.ok(btn, 'button rendered');
         assert.equal(btn.title, 'Zoom fit', 'tooltip applied');
         assert.equal(btn.textContent, 'Fit');
@@ -54,7 +58,8 @@ describe('Toolbar', () => {
         ];
         createToolbar(app);
 
-        const icons = document.querySelectorAll('#toolbar .toolbar-icon');
+        const icons = buttons()
+            .map(b => b.querySelector('.toolbar-icon'));
         assert.equal(icons.length, 2);
         assert.equal(icons[0].textContent, '🔍', 'emoji icon as text');
         assert.ok(icons[1].querySelector('img'), 'data URI icon as <img>');
@@ -70,7 +75,7 @@ describe('Toolbar', () => {
         ];
         createToolbar(app);
 
-        const btn = document.querySelector('#toolbar .toolbar-button');
+        const btn = buttons()[0];
         assert.equal(btn.classList.contains('active'), false);
 
         btn.click();  // turn on
@@ -94,7 +99,7 @@ describe('Toolbar', () => {
               tooltip: '', toggle: false, script_off: '', echo: true },
         ];
         createToolbar(app);
-        document.querySelector('#toolbar .toolbar-button').click();
+        buttons()[0].click();
         assert.deepEqual(echoed, [{ script: 'report_checks', echo: true }]);
         // Should not fall back to the bare request path.
         assert.equal(app.requests.length, 0);
@@ -108,7 +113,7 @@ describe('Toolbar', () => {
         ];
         createToolbar(app);
         // Turn A on, then remove it and add a fresh B.
-        document.querySelector('.toolbar-button').click();
+        buttons()[0].click();
         assert.ok(app._toolbarToggleState.a);
 
         app.customToolbar = [
@@ -117,9 +122,9 @@ describe('Toolbar', () => {
         ];
         app.rebuildToolbar();
 
-        const buttons = document.querySelectorAll('.toolbar-button');
-        assert.equal(buttons.length, 1);
-        assert.equal(buttons[0].dataset.key, 'b');
+        const rebuilt = buttons();
+        assert.equal(rebuilt.length, 1);
+        assert.equal(rebuilt[0].dataset.key, 'b');
         assert.equal(app._toolbarToggleState.a, undefined,
                      'stale toggle state pruned');
     });

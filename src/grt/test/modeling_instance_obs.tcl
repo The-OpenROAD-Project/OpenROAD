@@ -11,4 +11,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file modeling_instance_obs.guideok $guide_file
+diff_files modeling_instance_obs.guideok $guide_file

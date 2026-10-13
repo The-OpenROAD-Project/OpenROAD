@@ -177,6 +177,13 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     }
   }
 
+  if (total_placeable_insts_ == 0) {
+    // initNesterovPlace() would hit this same condition and refuse to build
+    // np_, so bail out here instead of leaving every later np_ use guarded.
+    log_->warn(GPL, 139, "No placeable instances - skipping placement.");
+    return;
+  }
+
   log_->info(GPL, 154, "Identified {} placed instances", placed_cnt);
   log_->info(GPL, 155, "Identified {} not placed instances", unplaced_cnt);
 
@@ -189,20 +196,40 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     return;
   }
 
-  // Roughly place the unplaced objects (allow more overflow).
-  // Limit iterations to prevent objects drifting too far or
-  // non-convergence.
+  // Phase 1: place the unplaced (new) objects with everything else locked,
+  // capped at 600 iterations so it can't run away if it fails to converge.
   PlaceOptions locked_options = options;
-  locked_options.overflow = std::max(options.overflow, 0.2f);
-  locked_options.nesterovPlaceMaxIter = 300;
-
-  // Use uniform density for incremental runs to fill gaps effectively
-  if (!options.uniformTargetDensityMode) {
-    locked_options.uniformTargetDensityMode = true;
-  }
+  locked_options.nesterovPlaceMaxIter = 600;
 
   doInitialPlace(threads, locked_options);
-  const int iter = doNesterovPlace(threads, locked_options);
+
+  // Build NesterovBase now (instead of lazily in doNesterovPlace() below) so
+  // fillers can be redistributed before phase 1 sees its first iteration.
+  if (initNesterovPlace(locked_options, threads, true)) {
+    for (auto& nb : nbVec_) {
+      nb->redistributeFillerCells();
+    }
+  }
+
+  // Phase 1 is allowed to diverge and hand off to phase 2 instead of
+  // aborting the whole incremental run, so doNesterovPlace() must not throw
+  // (and log an ERROR) on a divergence it is expected to recover from; it
+  // reports one via divergedLastRun() instead. Any other error (a resizer or
+  // timing-driven failure, say) still throws and propagates normally -
+  // nothing here is set up to recover from those.
+  np_->setAllowDivergenceRecovery(true);
+  int iter = doNesterovPlace(threads, locked_options);
+  const bool phase1_diverged = np_->divergedLastRun();
+  if (phase1_diverged) {
+    log_->warn(GPL,
+               195,
+               "Phase 1 of incremental placement diverged before reaching "
+               "overflow {:.3f}; continuing to phase 2 anyway.",
+               locked_options.overflow);
+    np_->clearDivergence();
+  }
+  // Phase 2 has no further fallback, so a divergence there must fail loudly.
+  np_->setAllowDivergenceRecovery(false);
 
   // Finish the overflow resolution from the locked placement
   log_->info(GPL, 133, "Unlocking all instances");
@@ -210,12 +237,17 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     pb->unlockAll();
   }
 
-  if (options.overflow < locked_options.overflow) {
-    PlaceOptions final_options = options;
-    final_options.uniformTargetDensityMode = true;
-    final_options.initDensityPenaltyFactor = 1;
+  // Phase 1 may have run out of its iteration budget short of the real
+  // target even without diverging, so check the actual overflow reached
+  // rather than trusting the target alone.
+  const bool phase1_missed_target
+      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
 
-    doNesterovPlace(threads, final_options, iter + 1);
+  if (phase1_diverged || phase1_missed_target) {
+    // Enable phase 2's density-penalty controller to ramp the penalty up in
+    // place whenever overflow regresses, instead of backing off.
+    np_->enableIncrementalDensityPenaltyGuard();
+    doNesterovPlace(threads, options, iter + 1);
   }
 }
 
@@ -354,7 +386,10 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   }
 
   if (!np_) {
-    NesterovPlaceVars npVars(options);
+    // The controller's proportional band is set by referenceHpwl, so it has to
+    // be on the design's own scale. Resolve the default from the HPWL the
+    // initial placement produced.
+    NesterovPlaceVars npVars(options, nbc_->getHpwl());
 
     npVars.debug = gui_debug_;
     npVars.debug_pause_iterations = gui_debug_pause_iterations_;
@@ -442,6 +477,14 @@ void Replace::reportHpwlMetric()
   log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
 }
 
+NesterovBase* Replace::getTopLevelNB() const
+{
+  if (nbVec_.empty()) {
+    log_->error(GPL, 104, "Top-level NesterovBase is not initialized.");
+  }
+  return nbVec_[0].get();
+}
+
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
                                        const int threads)
 {
@@ -453,7 +496,7 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
 
   float density = 1.0f;
   if (initNesterovPlace(options_no_io, threads, false)) {
-    density = nbVec_[0]->getUniformTargetDensity();
+    density = getTopLevelNB()->getUniformTargetDensity();
   }
 
   log_->redirectStringEnd();  // discard output
@@ -484,6 +527,26 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_images_path_ = images_path;
 }
 
+float Replace::estimateTargetDensity(const PlaceOptions& options,
+                                     const int threads)
+{
+  log_->info(GPL, 98, "Initialize gpl and estimate target density.");
+  log_->redirectStringBegin();
+
+  PlaceOptions options_no_io = options;
+  options_no_io.skipIo();  // in case bterms are not placed
+
+  float density = 1.0f;
+  bool initialized = initNesterovPlace(options_no_io, threads, false);
+  log_->redirectStringEnd();  // discard output
+
+  if (initialized) {
+    density = getTopLevelNB()->estimateTargetDensity(options_no_io.overflow);
+  }
+
+  return density;
+}
+
 void PlaceOptions::validate(utl::Logger* logger)
 {
   utl::Validator val(logger, GPL);
@@ -497,7 +560,7 @@ void PlaceOptions::validate(utl::Logger* logger)
   val.check_range("overflow", overflow, 0.0f, 1.0f, 406);
   val.check_non_negative("pad_left", padLeft, 407);
   val.check_non_negative("pad_right", padRight, 408);
-  val.check_positive("reference_hpwl", referenceHpwl, 409);
+  val.check_non_negative("reference_hpwl", referenceHpwl, 409);
 
   val.check_non_negative("initial_place_max_iter", initialPlaceMaxIter, 410);
   val.check_positive("initial_place_max_fanout", initialPlaceMaxFanout, 411);
@@ -517,6 +580,15 @@ void PlaceOptions::validate(utl::Logger* logger)
       "routability_inflation_ratio_coef", routabilityInflationRatioCoef, 416);
   val.check_positive(
       "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
+  val.check_positive(
+      "routability_max_inflation_total", routabilityMaxInflationTotal, 426);
+  val.check_positive(
+      "routability_net_weight_max", routabilityNetWeightMax, 427);
+  val.check_range("routability_congested_nets_percentage",
+                  routabilityCongestedNetsPercentage,
+                  0.0f,
+                  100.0f,
+                  428);
   val.check_non_negative(
       "routability_rc_coefficients k1", routabilityRcK1, 418);
   val.check_non_negative(

@@ -602,6 +602,11 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
 
 void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 {
+  // Mirror the watermark property for both imported and reused nets so the
+  // maze router sees tag changes made after pin access, including removals.
+  auto* wm_prop = odb::dbBoolProperty::find(net, "watermark");
+  netIn->setIsWatermark(wm_prop != nullptr && wm_prop->getValue());
+
   for (auto term : net->getBTerms()) {
     if (term->getSigType().isSupply() && !net->getSigType().isSupply()) {
       logger_->error(DRT,

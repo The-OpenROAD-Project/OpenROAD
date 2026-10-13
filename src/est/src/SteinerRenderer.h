@@ -4,17 +4,17 @@
 #pragma once
 
 #include "AbstractSteinerRenderer.h"
-#include "gui/gui.h"
+#include "web/core.h"
 
 namespace est {
 
-class SteinerRenderer : public gui::Renderer, public AbstractSteinerRenderer
+class SteinerRenderer : public web::Renderer, public AbstractSteinerRenderer
 {
  public:
   SteinerRenderer();
 
   void highlight(SteinerTree* tree) override;
-  void drawObjects(gui::Painter& /* painter */) override;
+  void drawObjects(web::Painter& /* painter */) override;
 
  private:
   SteinerTree* tree_ = nullptr;

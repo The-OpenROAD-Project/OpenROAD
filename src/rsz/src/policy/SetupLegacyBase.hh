@@ -184,10 +184,7 @@ class SetupLegacyBase : public OptimizationPolicy
   int fanout(sta::Vertex* vertex) const;
 
   // === Progress reporting ===================================================
-  void printProgress(int iteration,
-                     bool force,
-                     char phase_marker,
-                     bool use_startpoint_metrics = false) const;
+  void printProgress(int iteration, bool force, char phase_marker) const;
   bool terminateProgress(int iteration,
                          float initial_tns,
                          float& prev_tns,
