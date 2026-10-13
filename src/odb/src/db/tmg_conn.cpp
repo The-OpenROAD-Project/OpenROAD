@@ -630,10 +630,6 @@ void tmg_conn::sliceBPinsOverlappingITerms()
 
 void tmg_conn::identifyShorts()
 {
-  if (wire_points_.empty()) {
-    return;
-  }
-
   // put wires in search
   for (size_t j = 0; j < wire_sections_.size(); j++) {
     WireSection::Shape* s = &(wire_sections_[j].shape);
@@ -869,11 +865,6 @@ void tmg_conn::removeShortLoops()
 void tmg_conn::removeWireLoops()
 {
   removeShortLoops();
-
-  // loops involving only shorts have already been handled
-  if (wire_sections_.empty()) {
-    return;
-  }
 
   // add all path edges
   for (size_t j = 0; j < wire_sections_.size(); j++) {
