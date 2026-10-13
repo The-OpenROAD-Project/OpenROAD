@@ -282,6 +282,7 @@ PASSFAIL_TESTS = [
     "remove_buffers_survivor_protected",
     "remove_buffers_survivor_unprotected",
     "remove_buffers_survivor_feedthrough",
+    "remove_buffers_survivor_unconnected_output",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -294,6 +295,7 @@ SELF_CHECKING_TESTS = [
     "remove_buffers_survivor_protected",
     "remove_buffers_survivor_unprotected",
     "remove_buffers_survivor_feedthrough",
+    "remove_buffers_survivor_unconnected_output",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by

@@ -2894,6 +2894,8 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
     return false;
   }
 
+  // A disconnected output is removable: removeBuffer() destroys the
+  // dangling buffer without merging nets. Do not reject that valid case.
   if (db_net_removed == nullptr) {
     return true;
   }

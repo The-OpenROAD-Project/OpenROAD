@@ -264,6 +264,7 @@ or_integration_tests(
     remove_buffers_survivor_protected
     remove_buffers_survivor_unprotected
     remove_buffers_survivor_feedthrough
+    remove_buffers_survivor_unconnected_output
     cpp_tests
 )
 
