@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "gpl/Replace.h"
 #include "gtest/gtest.h"
@@ -122,7 +123,7 @@ class EstimateTargetDensityTest : public ::testing::Test
     const NesterovBaseVars nb_vars(options);
     auto nbc = std::make_shared<NesterovBaseCommon>(
         nb_vars, pbc, &logger_, /* num_threads = */ 1, Clusters{});
-    NesterovBase nb(nb_vars, pb, nbc, &logger_);
+    NesterovBase nb(nb_vars, std::move(pb), std::move(nbc), &logger_);
 
     return nb.estimateTargetDensity(overflow);
   }

@@ -72,6 +72,7 @@ class LatencyBalancer
         network_(network),
         openSta_(sta),
         techChar_(techChar),
+        wireSegmentUnit_(techChar->getLengthUnit()),
         capPerDBU_(capPerDBU),
         resPerDBU_(resPerDBU),
         worseDelay_(std::numeric_limits<float>::min())

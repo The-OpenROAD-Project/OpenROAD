@@ -53,7 +53,6 @@ int LatencyBalancer::run()
                 33,
                 "Balancing latency for clock {}",
                 root_->getClock().getSdcName());
-  wireSegmentUnit_ = techChar_->getLengthUnit();
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());

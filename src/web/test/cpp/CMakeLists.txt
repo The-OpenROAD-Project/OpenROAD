@@ -30,6 +30,7 @@ set(WEB_TESTS
   TestLabels
   TestSaveDisplayControls
   TestGif
+  TestHeatMap
 )
 
 foreach(test IN LISTS WEB_TESTS)

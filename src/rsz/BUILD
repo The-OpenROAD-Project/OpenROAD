@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -13,25 +13,7 @@ package(
 )
 
 cc_library(
-    name = "rsz_private_hdrs",
-    hdrs = [
-        "src/BufferedNet.hh",
-        "src/ResizerObserver.hh",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "@spdlog",
-    ],
-)
-
-cc_library(
-    name = "rsz",
+    name = "rsz_impl",
     srcs = [
         "src/BufferedNet.cc",
         "src/ConcreteSwapArithModules.cc",
@@ -130,10 +112,8 @@ cc_library(
         "src/policy/SetupLastGaspPolicy.cc",
         "src/policy/SetupLastGaspPolicy.hh",
         "src/policy/SetupLegacyBase.cc",
-        "src/policy/SetupLegacyBase.hh",
         "src/policy/SetupLegacyMtPolicy.cc",
         "src/policy/SetupLegacyPolicy.cc",
-        "src/policy/SetupLegacyPolicy.hh",
         "src/policy/SetupMt1Policy.cc",
         "src/policy/SetupReroutePolicy.cc",
         "src/policy/SetupReroutePolicy.hh",
@@ -146,22 +126,20 @@ cc_library(
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
-        # The following are used in rsz tests, so we should have them
-        # as separate libraries and have tests depend on these (possibly with
-        # appropriate visibility only for the test and rsz lib).
-        # For now, since everything is somewhat entangled, make visible here
-        # in hdrs, which then is a good starting point to do the next
-        # transformations.
+        "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
         "src/MoveCommitter.hh",
         "src/MoveTracker.hh",
         "src/OptimizerTypes.hh",
         "src/RepairSetupContext.hh",
         "src/RepairTargetCollector.hh",
+        "src/ResizerObserver.hh",
         "src/move/MoveCandidate.hh",
         "src/move/MoveGenerator.hh",
         "src/move/VtSwapMtCandidate.hh",
+        "src/policy/SetupLegacyBase.hh",
         "src/policy/SetupLegacyMtPolicy.hh",
+        "src/policy/SetupLegacyPolicy.hh",
         "src/policy/SetupMt1Policy.hh",
     ],
     includes = [
@@ -171,8 +149,10 @@ cc_library(
         "src/policy",
     ],
     linkopts = ["-pthread"],
+    visibility = [
+        "//src/rsz:__subpackages__",
+    ],
     deps = [
-        ":rsz_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -188,6 +168,31 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
+    ],
+)
+
+cc_library(
+    name = "rsz",
+    hdrs = [
+        "include/rsz/GlobalSizingConfig.hh",
+        "include/rsz/OdbCallBack.hh",
+        "include/rsz/Resizer.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":rsz_impl",
+        "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
     ],
 )
 
@@ -208,8 +213,7 @@ cc_library(
         "src",
     ],
     deps = [
-        ":rsz",
-        ":rsz_private_hdrs",
+        ":rsz_impl",
         "//:ord",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
@@ -280,4 +284,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/rsz/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":rsz"],
 )

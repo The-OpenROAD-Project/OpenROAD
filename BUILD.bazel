@@ -8,9 +8,10 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel/gpu:archs.bzl", "CUDA_ARCHS")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -76,6 +77,25 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
+
+# CUDA code generation and the Kokkos configuration must use the same target.
+# "none" makes plain --config=gpu fail with an actionable message instead of
+# silently producing kernels for the wrong device.
+string_flag(
+    name = "cuda_arch",
+    build_setting_default = "none",
+    values = ["none"] + CUDA_ARCHS,
+    visibility = ["//visibility:public"],
+)
+
+[
+    config_setting(
+        name = "cuda_arch_" + arch,
+        flag_values = {":cuda_arch": arch},
+        visibility = ["//visibility:public"],
+    )
+    for arch in CUDA_ARCHS
+]
 
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
@@ -394,57 +414,11 @@ tcl_wrap_cc(
     ],
 )
 
-cc_binary(
-    name = "_openroadpy.so",
-    srcs = [":openroad_swig-py"],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        ":openroad_lib",
-        ":ord",
-        "//src/ant",
-        "//src/cgt",
-        "//src/cts",
-        "//src/dpl",
-        "//src/drt",
-        "//src/exa",
-        "//src/fin",
-        "//src/gpl",
-        "//src/grt",
-        "//src/gui",
-        "//src/ifp",
-        "//src/odb/src/db",
-        "//src/par",
-        "//src/pdn",
-        "//src/ppl",
-        "//src/psm",
-        "//src/rcx",
-        "//src/rsz",
-        "//src/stt",
-        "//src/tap",
-        "//src/utl",
-        "//src/web:core",
-        "//src/wmk",
-        "//src/wmk:hmac_sha256",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-py_library(
-    name = "openroad_py",
-    srcs = [":openroad_swig-py"],
-    data = [":_openroadpy.so"],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//src/gpl:gpl_py",
-        "//src/odb:odb_py",
-        "//src/utl:utl_py",
-    ],
-)
-
+# The Python bindings: every module (ord_py, odb, utl, ant_py, cts_py, ...)
+# keeps its own namespace, as in the CMake build, and all of them are linked
+# into one library, _openroad.so, so they share a single copy of the C++
+# state. python/modules/_openroad_loader.py loads each module's init
+# function from that library.
 python_wrap_cc(
     name = "openroad_swig-py",
     srcs = [
@@ -454,13 +428,63 @@ python_wrap_cc(
         "src/OpenRoad-py.i",
         ":error_swig-py",
     ],
-    module = "openroadpy",
+    module = "ord_py",
     root_swig_src = "src/OpenRoad-py.i",
     swig_includes = [
         "include",
         "src",
     ],
     deps = [
+        "//src/odb:swig-py",
+        "//src/utl:swig-py",
+    ],
+)
+
+python_wrap_library(
+    name = "ord_py_wrap",
+    local_defines = [],
+    wrapper = ":openroad_swig-py",
+    deps = [
+        ":openroad_lib",
+        ":ord",
+        "//src/ifp",
+    ],
+)
+
+cc_binary(
+    name = "_openroad.so",
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
+    linkshared = True,
+    deps = [
+        ":ord_py_wrap",
+        "//src/ant:py_wrap",
+        "//src/cgt:py_wrap",
+        "//src/cts:py_wrap",
+        "//src/dpl:py_wrap",
+        "//src/drt:py_wrap",
+        "//src/exa:py_wrap",
+        "//src/fin:py_wrap",
+        "//src/gpl:py_wrap",
+        "//src/grt:py_wrap",
+        "//src/ifp:py_wrap",
+        "//src/odb:py_wrap",
+        "//src/par:py_wrap",
+        "//src/pdn:py_wrap",
+        "//src/ppl:py_wrap",
+        "//src/psm:py_wrap",
+        "//src/rcx:py_wrap",
+        "//src/rmp:py_wrap",
+        "//src/rsz:py_wrap",
+        "//src/stt:py_wrap",
+        "//src/tap:py_wrap",
+        "//src/utl:py_wrap",
+        "//src/wmk:py_wrap",
+    ],
+)
+
+py_library(
+    name = "openroad_py",
+    srcs = [":openroad_swig-py"] + [
         "//src/ant:swig-py",
         "//src/cgt:swig-py",
         "//src/cts:swig-py",
@@ -477,12 +501,17 @@ python_wrap_cc(
         "//src/ppl:swig-py",
         "//src/psm:swig-py",
         "//src/rcx:swig-py",
+        "//src/rmp:swig-py",
         "//src/rsz:swig-py",
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
         "//src/wmk:swig-py",
     ],
+    data = [":_openroad.so"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = ["//python/modules"],
 )
 
 filegroup(

@@ -33,21 +33,22 @@ class dbModNet;
 
 struct _dbNetFlags
 {
+  // "unused" bits are free to use.
   dbSigType::Value sig_type : 4;
   dbWireType::Value wire_type : 4;
   uint32_t special : 1;
   uint32_t wild_connect : 1;
   uint32_t wire_ordered : 1;
-  uint32_t disable_auto_taper : 1;  // was unused2; free bit reused
-  uint32_t disconnected : 1;  // this flag is only valid if wire_ordered == true
+  uint32_t disable_auto_taper : 1;
+  uint32_t unused2 : 1;
   uint32_t spef : 1;
   uint32_t select : 1;
   uint32_t mark : 1;
   uint32_t mark_1 : 1;
-  uint32_t wire_altered : 1;
+  uint32_t unused3 : 1;
   uint32_t extracted : 1;
   uint32_t rc_graph : 1;
-  uint32_t unused : 1;  // free to reuse
+  uint32_t unused : 1;
   uint32_t set_io : 1;
   uint32_t io : 1;
   uint32_t dont_touch : 1;

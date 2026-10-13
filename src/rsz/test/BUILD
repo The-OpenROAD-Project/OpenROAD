@@ -53,6 +53,8 @@ TESTS = [
     "remove_buffers1",
     "remove_buffers2",
     "remove_buffers3",
+    "remove_buffers_dont_touch_rejected",
+    "remove_buffers_disconnected_input_rejected",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
@@ -149,6 +151,7 @@ TESTS = [
     "repair_setup_size_down_fanout_only",
     "repair_setup_sizeup_match_only",
     "repair_setup_split_load_hier_only",
+    "repair_setup_startpoint_fanout_input_port",
     "repair_setup_startpoint_fanout_only",
     "repair_setup_swap_pins_dont_touch_sequence",
     "repair_setup_tns",
@@ -271,11 +274,21 @@ PASSFAIL_TESTS = [
     # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
     # build directory structure not compatible with Bazel
     # "cpp_tests",
+    "repair_timing_fixed",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "repair_design_fixed_driver",
+    "gain_buffering_top_port_hier",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+# PASSFAIL tests that assert their own results and have no .ok to diff,
+# as CMake runs every PASSFAIL test.
+SELF_CHECKING_TESTS = [
+    "repair_design_fixed_driver",
+    "gain_buffering_top_port_hier",
+]
 
 # Hierarchical Verilog netlists reused as corpus input by
 # //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
@@ -335,6 +348,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_log = test_name not in SELF_CHECKING_TESTS,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )
@@ -506,11 +520,13 @@ cc_test(
         "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
+        "remove_buffers3.def",
     ],
     deps = [
+        "//src/est",
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/rsz",  # buildcleaner: keep provides the private headers
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -563,7 +579,7 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -585,7 +601,7 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
@@ -602,6 +618,29 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "gcd_nangate45_placed.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRepairHold",
+    srcs = ["cpp/TestRepairHold.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold_shared_driver.def",
     ],
     deps = [
         "//src/dbSta",

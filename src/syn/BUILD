@@ -28,6 +28,7 @@ cc_library(
         "src/flow/export.h",
         "src/flow/import.cc",
         "src/flow/liveness.cc",
+        "src/flow/loop_check.cc",
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
         "src/flow/sequential_mapper.cc",

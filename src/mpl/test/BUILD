@@ -25,7 +25,6 @@ COMPULSORY_TESTS = [
     "halos2",
     "halos3",
     "halos4",
-    "halos5",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -43,15 +42,23 @@ COMPULSORY_TESTS = [
     "macros_without_pins1",
     "mixed_ios1",
     "no_unfixed_macros",
+    "no_unfixed_macros_and_fixed_cells",
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "rerun1",
     "unfixed_cells_dont_fit_in_core",
+    "write_macro_placement",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
+
+# Self-checking: the script reports pass/fail, no golden log.
+PASSFAIL_TESTS = [
+    "rerun1",
+]
 
 filegroup(
     name = "regression_resources",
@@ -129,10 +136,6 @@ filegroup(
                     "testcases/orientation_improve1.lef",
                 ],
                 "halos4": [
-                    "testcases/halo3.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "halos5": [
                     "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
@@ -223,6 +226,10 @@ filegroup(
                     "testcases/macro_only.v",
                     "testcases/no_unfixed_macros.def",
                 ],
+                "no_unfixed_macros_and_fixed_cells": [
+                    "testcases/macro_only.lef",
+                    "testcases/no_unfixed_macros.def",
+                ],
                 "orientation_improve1": [
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
@@ -243,9 +250,17 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
+                "rerun1": [
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
+                ],
+                "write_macro_placement": [
+                    "testcases/io_constraints1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
             }.get(test_name, []),
         ),
@@ -256,6 +271,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],

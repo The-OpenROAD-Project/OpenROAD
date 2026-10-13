@@ -52,6 +52,7 @@ class RDLGui : public web::Renderer
   static constexpr const char* kDrawTargets = "Targets";
   static constexpr const char* kDrawRoutes = "Routes";
   static constexpr const char* kDrawRouteObstructions = "Route obstructions";
+  static constexpr const char* kDrawLegend = "Legend";
 
   static constexpr int kGuiTimeout = 100;
 };
