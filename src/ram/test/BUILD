@@ -20,6 +20,7 @@ PASSFAIL_TESTS = [
     "banks_asap7",
     "banked_read_ports_asap7",
     "read_latency_asap7",
+    "write_mux_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -85,6 +86,10 @@ filegroup(
                 "//test:asap7_nldm_data",
             ],
             "read_latency_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "write_mux_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],

@@ -13,5 +13,6 @@ or_integration_tests(
     banks_asap7
     banked_read_ports_asap7
     read_latency_asap7
+    write_mux_asap7
 )
 

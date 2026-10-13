@@ -117,7 +117,8 @@ class RamGen
                 int bank_columns = 1,
                 const std::string& bank_order = "contiguous",
                 int rb_ports = 0,
-                int read_latency = 0);
+                int read_latency = 0,
+                const std::string& write_style = "clock_gate");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -369,6 +370,9 @@ class RamGen
   // where the flop's output is inverted the complement is the flop's and
   // the inverter makes the true one.
   int read_latency_{0};
+  // -write_style mux: no clock gate; each bit's flop on the clock, its D
+  // the new data where the word is written and its own value elsewhere
+  bool write_mux_{false};
   odb::dbMaster* addr_flop_cell_{nullptr};
   std::string addr_flop_d_, addr_flop_clk_, addr_flop_q_;
   bool addr_flop_inverted_{false};

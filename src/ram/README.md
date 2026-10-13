@@ -51,6 +51,7 @@ generate_ram [-mask_size bits]
              [-bank_order contiguous|interleaved]
              [-rb_ports count]
              [-read_latency 0|1]
+             [-write_style clock_gate|mux]
              [-inv_cell name]
              [-power_net_name name]
              [-ground_net_name name]
@@ -82,6 +83,7 @@ generate_ram [-mask_size bits]
 | `-banks`, `-bank_columns`, `-bank_order` | The words in `banks` banks, contiguous or interleaved in the address, `bank_columns` of them side by side and the rest stacked. With banks each port decodes every word's whole address, so a bank need not be a power of two words. Not with `-column_mux_ratio` above 1 or `-use_latch`. Default: one bank. |
 | `-rb_ports` | Banked read ports, with `-banks`: each an address and a data output per bank (`addr_rb<k>_b<b>`, `Qrb<k>_b<b>`), the address the word's index in its bank, every bank read independently. Default: 0. |
 | `-read_latency` | `1` registers every read port's address, a plain positive-edge flop per address bit, so the data follows a cycle after the address. Not with `-column_mux_ratio` above 1 or read/write ports. Default: 0. |
+| `-write_style` | How a word holds its value between writes: `clock_gate`, a clock gate per word; or `mux`, every flop on the clock and a mux per bit taking the new data or the flop's own value. A clock gate saves a mux per bit; a mux keeps every flop on the plain clock. Not with `-use_latch`. Default: `clock_gate`. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |

@@ -370,9 +370,61 @@ void RamGen::makeSlice(const int slice_idx,
     select_b_nets = shared_select_b_nets;
   }
 
-  auto gclock_net = makeNet(prefix, "gclock");
+  // the flops' clock: the word's gated clock, or with -write_style mux
+  // the clock itself
+  auto gclock_net = write_mux_ ? clock : makeNet(prefix, "gclock");
   auto we_net = makeNet(prefix, "we");
   auto sel_cell = std::make_unique<Cell>();
+  // -write_style mux: the word's hold, where it is not written
+  dbNet* hold = nullptr;
+  if (write_mux_) {
+    hold = makeNet(prefix, "hold");
+    makeInst(sel_cell.get(),
+             prefix,
+             "hold_inv",
+             inv_cell_,
+             {{inv_ports_[{PortRoleType::DataIn, 0}], we_net},
+              {inv_ports_[{PortRoleType::DataOut, 0}], hold}});
+  }
+  // (sel0 & a) | (sel1 & b): an AO22, or the AOI22 and an inverter where
+  // the library has no AO22
+  auto ao22 = [&](Cell* cell,
+                  const std::string& name,
+                  const std::string& inst,
+                  dbNet* a1,
+                  dbNet* a2,
+                  dbNet* b1,
+                  dbNet* b2,
+                  dbNet* y) {
+    if (ao22_cell_) {
+      makeInst(cell,
+               name,
+               inst,
+               ao22_cell_,
+               {{ao22_in_[0], a1},
+                {ao22_in_[1], a2},
+                {ao22_in_[2], b1},
+                {ao22_in_[3], b2},
+                {ao22_out_, y}});
+      return;
+    }
+    auto y_b = makeNet(name, inst + "_b");
+    makeInst(cell,
+             name,
+             inst,
+             aoi22_cell_,
+             {{aoi22_in_a1_, a1},
+              {aoi22_in_a2_, a2},
+              {aoi22_in_b1_, b1},
+              {aoi22_in_b2_, b2},
+              {aoi22_out_, y_b}});
+    makeInst(cell,
+             name,
+             inst + "_inv",
+             inv_cell_,
+             {{inv_ports_[{PortRoleType::DataIn, 0}], y_b},
+              {inv_ports_[{PortRoleType::DataOut, 0}], y}});
+  };
 
   // -reset_value: one tie per word slice holds the flops' unused pins off
   dbNet* reset_off = nullptr;
@@ -442,25 +494,47 @@ void RamGen::makeSlice(const int slice_idx,
       outs[r_port] = data_output[r_port][local_bit];
     }
 
-    dbNet* d = data_input[0][local_bit];
+    // the written data, and the flop's D: the written data, or with
+    // -write_style mux the hold mux's output
+    dbNet* d_data = data_input[0][local_bit];
     if (num_write > 1) {
-      d = makeNet(name, "d");
+      d_data = makeNet(name, "d");
     }
+    dbNet* d = write_mux_ ? makeNet(name, "dhold") : d_data;
     const int bit = start_bit_idx + local_bit;
+    dbNet* storage
+        = and_or_read_ ? storage_nets_.at({row_idx, word_idx, bit}) : nullptr;
+    if (write_mux_ && storage == nullptr) {
+      storage = makeNet(name, "storage");
+    }
     const int reset_bit
         = reset_port_
               ? (bit < 64 ? static_cast<int>((reset_bits_ >> bit) & 1) : 0)
               : -1;
-    auto bit_cell = makeBit(
-        name,
-        and_or_read_ ? 0 : r_total,
-        gclock_net,
-        select_b_nets,
-        d,
-        outs,
-        and_or_read_ ? storage_nets_.at({row_idx, word_idx, bit}) : nullptr,
-        reset_bit,
-        reset_off);
+    auto bit_cell = makeBit(name,
+                            and_or_read_ ? 0 : r_total,
+                            gclock_net,
+                            select_b_nets,
+                            d,
+                            outs,
+                            storage,
+                            reset_bit,
+                            reset_off);
+    if (write_mux_) {
+      // the word's own value back where it is not written: the flop's
+      // output, through an inverter where that output is inverted
+      dbNet* old = storage;
+      if (storage_inverted_) {
+        old = makeNet(name, "q");
+        makeInst(bit_cell.get(),
+                 name,
+                 "qinv",
+                 inv_cell_,
+                 {{inv_ports_[{PortRoleType::DataIn, 0}], storage},
+                  {inv_ports_[{PortRoleType::DataOut, 0}], old}});
+      }
+      ao22(bit_cell.get(), name, "hold_mux", we_net, d_data, hold, old, d);
+    }
     if (and_or_read_) {
       for (const auto& node : tree_nodes_[{row_idx, word_idx, bit}]) {
         makeInst(
@@ -473,7 +547,7 @@ void RamGen::makeSlice(const int slice_idx,
       for (int w = 0; w < num_write; w += 2) {
         const bool last = w + 2 >= num_write;
         dbNet* out = last && acc == nullptr
-                         ? d
+                         ? d_data
                          : makeNet(name, fmt::format("d_pair{}", w / 2));
         if (w + 1 < num_write && !ao22_cell_) {
           // no AO22 in the library: the AOI22 and an inverter
@@ -514,7 +588,8 @@ void RamGen::makeSlice(const int slice_idx,
                     {and2_ports_[{PortRoleType::DataOut, 0}], out}});
         }
         if (acc != nullptr) {
-          dbNet* sum = last ? d : makeNet(name, fmt::format("d_or{}", w / 2));
+          dbNet* sum
+              = last ? d_data : makeNet(name, fmt::format("d_or{}", w / 2));
           makeInst(bit_cell.get(),
                    name,
                    fmt::format("dor{}", w / 2),
@@ -533,14 +608,16 @@ void RamGen::makeSlice(const int slice_idx,
     ram_grid_.addCell(std::move(bit_cell), bit_col);
   }
 
-  // Make clock gate
-  makeInst(sel_cell.get(),
-           prefix,
-           "cg",
-           clock_gate_cell_,
-           {{clock_gate_ports_[{PortRoleType::Clock, 0}], clock},
-            {clock_gate_ports_[{PortRoleType::DataIn, 0}], we_net},
-            {clock_gate_ports_[{PortRoleType::DataOut, 0}], gclock_net}});
+  // Make clock gate (with -write_style mux, none: the flops hold by mux)
+  if (!write_mux_) {
+    makeInst(sel_cell.get(),
+             prefix,
+             "cg",
+             clock_gate_cell_,
+             {{clock_gate_ports_[{PortRoleType::Clock, 0}], clock},
+              {clock_gate_ports_[{PortRoleType::DataIn, 0}], we_net},
+              {clock_gate_ports_[{PortRoleType::DataOut, 0}], gclock_net}});
+  }
 
   // Write path: this net is row_select AND with word_select so clock gate only
   // fires for the addressed word within the row. Read path handled by AOI mux.
@@ -1430,12 +1507,12 @@ void RamGen::findMasters()
 
   // More than one write port: the write data mux, an AO22 per pair of
   // ports, and an OR2 for the write enables and across pairs.
+  if ((num_write_ > 1 || write_mux_) && !ao22_cell_) {
+    // AO22 truth table: Y = A1&A2 | B1&B2
+    ao22_cell_
+        = findMaster4(0xF888, "ao22", ao22_in_, ao22_out_, /*required=*/false);
+  }
   if (num_write_ > 1) {
-    if (!ao22_cell_) {
-      // AO22 truth table: Y = A1&A2 | B1&B2
-      ao22_cell_ = findMaster4(
-          0xF888, "ao22", ao22_in_, ao22_out_, /*required=*/false);
-    }
     if (!or2_cell_) {
       or2_cell_ = findMaster(
           [](sta::LibertyPort* port) {
@@ -1797,7 +1874,8 @@ void RamGen::generate(const int mask_size,
                       const int bank_columns,
                       const std::string& bank_order,
                       const int rb_ports,
-                      const int read_latency)
+                      const int read_latency,
+                      const std::string& write_style)
 {
   // Banks: every port decodes every word's whole address, and a row holds
   // bank_columns words, laid out as the column mux lays out its words;
@@ -1827,6 +1905,11 @@ void RamGen::generate(const int mask_size,
   words_per_bank_ = num_words / banks_;
   rb_ports_ = rb_ports;
   read_latency_ = read_latency;
+  write_mux_ = write_style == "mux";
+  if (write_mux_ && use_latch) {
+    logger_->error(
+        RAM, 73, "-write_style mux is not supported with -use_latch.");
+  }
   if (read_latency_ > 0) {
     if (read_latency_ != 1) {
       logger_->error(RAM, 71, "-read_latency is 0 or 1.");
