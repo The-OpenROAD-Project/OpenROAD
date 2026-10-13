@@ -6,12 +6,14 @@
 #include <array>
 #include <atomic>
 #include <charconv>
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -45,6 +47,121 @@ class ClockTreeReport;
 // shutdown signal for the browser.
 inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
+// Error text for a request turned away while a script runs (see ScriptGate).
+inline constexpr const char* kScriptBusyMsg
+    = "The script is running; try again when it pauses or finishes.";
+
+// Server push announcing that the script started or stopped running, i.e.
+// that the ScriptGate closed or opened.
+inline std::string scriptRunningJson(bool running)
+{
+  return std::string(R"({"type":"script_running","running":)")
+         + (running ? "true" : "false") + "}";
+}
+
+// Keeps browser requests off the db while a -web startup script runs (see
+// WebServer::serveDuringStartupScripts).  Requests hold it shared and run
+// concurrently; the script thread closes it except inside debug pauses.
+// Requests on the io threads use tryEnter() and are answered with
+// kScriptBusyMsg while it is closed, so those threads stay free to stream logs
+// and pushes.  close() refuses new requests at once and waits out the
+// in-flight ones.
+class ScriptGate
+{
+ public:
+  // Gets the new state, under the gate's lock, whenever open()/close()
+  // change it.
+  using ChangeFn = std::function<void(bool closed)>;
+
+  // False, without waiting, while closed or shut down: skip the request.
+  bool tryEnter()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (closed_ || shutdown_) {
+      return false;
+    }
+    ++active_;
+    return true;
+  }
+
+  // Blocks while closed.  False once shut down: skip the work.  Only for
+  // threads of their own, never the io threads.
+  bool enter()
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return !closed_ || shutdown_; });
+    if (shutdown_) {
+      return false;
+    }
+    ++active_;
+    return true;
+  }
+
+  void leave()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (--active_ == 0) {
+      cv_.notify_all();
+    }
+  }
+
+  void close()
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    setClosed(true);
+    cv_.wait(lock, [this] { return active_ == 0; });
+  }
+
+  void open()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    setClosed(false);
+    cv_.notify_all();
+  }
+
+  // Refuse every waiting and future request, so the io threads can be
+  // joined when the process exits; undone by setShutdown(false).
+  void setShutdown(bool shutdown)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    shutdown_ = shutdown;
+    cv_.notify_all();
+  }
+
+  void setOnChange(ChangeFn on_change)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    on_change_ = std::move(on_change);
+  }
+
+  // Calls fn with the current state under the gate's lock, so every later
+  // change reaches the on-change callback after fn has run.
+  void withState(const ChangeFn& fn)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    fn(closed_);
+  }
+
+ private:
+  void setClosed(bool closed)
+  {
+    if (closed_ == closed) {
+      return;
+    }
+    closed_ = closed;
+    if (on_change_) {
+      on_change_(closed);
+    }
+  }
+
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  int active_ = 0;
+  bool closed_ = false;
+  bool shutdown_ = false;
+  ChangeFn on_change_;
+};
+
 // Thread-safe Tcl command evaluation.  Log output emitted while the
 // command runs is captured by WebLogSink (registered on the logger via
 // addSink) and pushed to clients as {"type":"log",...} messages — do
@@ -58,7 +175,24 @@ struct TclEvaluator
   Tcl_Interp* interp;
   utl::Logger* logger;
   std::mutex mutex;
+  // Shared by every request path; lives here because the evaluator is the
+  // one server object that outlives each serve()/stop() cycle.
+  ScriptGate script_gate;
   std::function<void()> drain_output;
+
+  // Debug renderers are drawn between commands and while one is paused, when
+  // the tools' state is stable (see the renderer hooks in web_serve.cpp).
+  // Such a draw holds renderer_mutex shared, so draws run side by side, and
+  // `running` and `paused_command` only change under it held exclusively, so
+  // a command cannot start, or resume from a pause, while one is in progress.
+  // After every command, command_done is told whether a draw was skipped
+  // because it was running, so the clients can be sent to pick the renderers
+  // up.
+  std::shared_mutex renderer_mutex;
+  bool running = false;
+  bool paused_command = false;
+  std::atomic<bool> draw_skipped{false};
+  std::function<void(bool draw_skipped)> command_done;
 
   struct Result
   {
@@ -74,7 +208,15 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
-    const int rc = Tcl_Eval(interp, cmd.c_str());
+    setRunning(true);
+    int rc;
+    try {
+      rc = Tcl_Eval(interp, cmd.c_str());
+    } catch (...) {
+      setRunning(false);
+      throw;
+    }
+    const bool skipped = setRunning(false);
     Result r;
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
@@ -91,7 +233,44 @@ struct TclEvaluator
     if (drain_output) {
       drain_output();
     }
+    if (command_done) {
+      command_done(skipped);
+    }
     return r;
+  }
+
+  // Returns whether a renderer draw was skipped since the last call.
+  bool setRunning(const bool value)
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    running = value;
+    return draw_skipped.exchange(false);
+  }
+
+  // Run on the pausing thread as a debugger pause begins and ends.  A paused
+  // command is stopped where its state is stable, so it does not count as
+  // running until it resumes.  Whatever is running when a pause begins is
+  // the command pausing: a startup script does not run through eval(), and
+  // the script gate keeps every eval out until the script pauses.  A command
+  // typed in the browser during a script's pause does count, so the paused
+  // draws stand aside until it is done.
+  void pauseBegin()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (running) {
+      running = false;
+      paused_command = true;
+    }
+  }
+
+  // Taking the lock also waits out a draw in progress, so the command does
+  // not resume under it.
+  void pauseEnd()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (std::exchange(paused_command, false)) {
+      running = true;
+    }
   }
 };
 

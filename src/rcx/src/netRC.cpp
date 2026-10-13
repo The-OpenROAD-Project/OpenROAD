@@ -1833,17 +1833,9 @@ void extMain::run()
     logger_->warn(
         RCX, 107, "Nothing is extracted out of {} nets!", numOfNet - 2);
   }
-  if (_allNet) {
-    for (dbNet* net : _block->getNets()) {
-      if (net->getSigType().isSupply()) {
-        continue;
-      }
-      net->setWireAltered(false);
-    }
-  } else {
+  if (!_allNet) {
     for (dbNet* net : inets) {
       net->setMark(false);
-      net->setWireAltered(false);
     }
   }
 

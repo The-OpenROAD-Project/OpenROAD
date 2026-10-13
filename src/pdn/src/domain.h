@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -87,6 +88,11 @@ class VoltageDomain
 
   void checkSetup() const;
 
+  std::optional<odb::Rect> getPadRingInnerArea() const
+  {
+    return pad_ring_inner_area_;
+  }
+
  private:
   std::string name_;
   PdnGen* pdngen_;
@@ -102,6 +108,8 @@ class VoltageDomain
 
   std::vector<std::unique_ptr<Grid>> grids_;
 
+  std::optional<odb::Rect> pad_ring_inner_area_;
+
   int getRegionRectCount(odb::dbRegion* region) const;
   odb::Rect getRegionBoundary(odb::dbRegion* region) const;
   // returns just the rows associated with the region
@@ -113,6 +121,7 @@ class VoltageDomain
   void determinePowerGroundNets();
 
   odb::dbNet* findDomainNet(const odb::dbSigType& type) const;
+  void populatePadRingInnerArea();
 };
 
 }  // namespace pdn

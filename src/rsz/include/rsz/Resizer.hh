@@ -880,7 +880,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                    float load_cap,
                                    bool revisiting_inst);
   bool removeBufferIfPossible(sta::Instance* buffer,
-                              bool honor_dont_touch_fixed);
+                              bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
@@ -893,8 +893,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       float delay_adjust,
       const rsz::SlackEstimatorParams& params,
       bool accept_if_slack_improves);
-  bool canRemoveBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed);
-  bool removeBuffer(sta::Instance* buffer);
+  bool canRemoveBuffer(sta::Instance* buffer,
+                       bool honor_dont_touch_fixed = true);
+  bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
   bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);

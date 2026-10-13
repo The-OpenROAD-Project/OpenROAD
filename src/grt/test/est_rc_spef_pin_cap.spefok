@@ -24,83 +24,73 @@ out O
 *P clk I
 *I clkbuf_0_clk:A I *D BUF_X4
 *CAP
-1 clk 0.057165
-2 clkbuf_0_clk:A 0.0281837
-3 clk:1 0.132942
-4 clk:2 0.0757768
-5 clk:3 0.074465
-6 clk:4 0.074465
-7 clk:5 0.151554
-8 clk:6 0.179737
+1 clk:1 0.132942
+2 clk:2 0.132942
+3 clk:3 0.074465
+4 clk:4 0.074465
+5 clk:5 0.179737
+6 clk:6 0.179737
 *RES
-1 clk:1 clk:2 0.0101786
+1 clk:1 clk:2 0.0178571
 2 clk:2 clk:3 0.005
 3 clk:3 clk:4 0.0101786
 4 clk:4 clk:5 0.005
-5 clk:5 clk:6 0.0203571
+5 clk:5 clk:6 0.0241429
 6 clk:6 clk:7 0.005
-7 clkbuf_0_clk:A clk:6 0.00878571
-8 clk clk:1 0.00767857
+7 clkbuf_0_clk:A clk:6 0.005
+8 clk clk:1 1e-06
 *END
 
-*D_NET in1 0.776778
+*D_NET in1 0.72626
 *CONN
 *I r1:D I *D DFF_X1
 *P in1 I
 *CAP
-1 r1:D 0.0289813
-2 in1 0.0576124
-3 in1:1 0.132077
-4 in1:2 0.074465
-5 in1:3 0.22733
-6 in1:4 0.256312
+1 in1:1 0.132077
+2 in1:2 0.132077
+3 in1:3 0.231053
+4 in1:4 0.231053
 *RES
-1 in1:1 in1:2 0.0101786
+1 in1:1 in1:2 0.0180536
 2 in1:2 in1:3 0.005
-3 in1:4 in1:3 0.0305357
+3 in1:4 in1:3 0.0310357
 4 in1:4 in1:5 0.005
-5 r1:D in1:4 0.00889286
-6 in1 in1:1 0.007875
+5 r1:D in1:4 0.005
+6 in1 in1:1 1e-06
 *END
 
-*D_NET in2 1.77096
+*D_NET in2 1.76943
 *CONN
 *P in2 I
 *I r2:D I *D DFF_X1
 *CAP
-1 in2 0.0901345
-2 r2:D 0.0441367
-3 in2:2 0.0441367
-4 in2:3 0.372325
-5 in2:4 0.372325
-6 in2:5 0.378884
-7 in2:6 0.469019
+1 in2:3 0.415698
+2 in2:4 0.415698
+3 in2:5 0.469019
+4 in2:6 0.469019
 *RES
 1 in2:1 in2:2 0.005
 2 in2:2 in2:3 0.005
-3 in2:3 in2:4 0.0508929
+3 in2:3 in2:4 0.0568214
 4 in2:4 in2:5 0.005
-5 in2:5 in2:6 0.0508929
-6 r2:D in2:2 0.0109286
-7 in2 in2:6 0.0121071
+5 in2:5 in2:6 0.063
+6 r2:D in2:2 0.005
+7 in2 in2:6 1e-06
 *END
 
-*D_NET out 0.958284
+*D_NET out 0.94244
 *CONN
 *P out O
 *I r3:Q O *D DFF_X1
 *CAP
-1 out 0.0868758
-2 r3:Q 0.0199413
-3 out:2 0.0199413
-4 out:3 0.372325
-5 out:4 0.459201
+1 out:3 0.47122
+2 out:4 0.47122
 *RES
 1 out:1 out:2 0.005
 2 out:2 out:3 0.005
-3 out:3 out:4 0.0508929
-4 r3:Q out:2 0.00767857
-5 out out:4 0.011875
+3 out:3 out:4 0.0644107
+4 r3:Q out:2 0.005
+5 out out:4 1e-06
 *END
 
 *D_NET r1q 0.15182
@@ -108,135 +98,115 @@ out O
 *I r1:Q O *D DFF_X1
 *I u2:A1 I *D AND2_X1
 *CAP
-1 r1:Q 0.0324378
-2 u2:A1 0.043472
+1 r1:Q 0.0454661
+2 u2:A1 0.0304437
 3 r1q:2 0.0759098
 *RES
 1 r1q:1 r1q:2 0.005
-2 u2:A1 r1q:2 0.0108393
-3 r1:Q r1q:2 0.00935714
+2 u2:A1 r1q:2 0.00908929
+3 r1:Q r1q:2 0.0111071
 *END
 
-*D_NET r2q 0.307131
+*D_NET r2q 0.228621
 *CONN
 *I r2:Q O *D DFF_X1
 *I u2:A2 I *D AND2_X1
 *CAP
-1 r2:Q 0.0305766
-2 u2:A2 0.0485238
-3 r2q:2 0.0485238
-4 r2q:3 0.074465
-5 r2q:4 0.074465
-6 r2q:5 0.0305766
+1 r2q:3 0.11431
+2 r2q:4 0.11431
 *RES
 1 r2q:1 r2q:2 0.005
 2 r2q:2 r2q:3 0.005
-3 r2q:3 r2q:4 0.0101786
+3 r2q:3 r2q:4 0.015625
 4 r2q:4 r2q:5 0.005
 5 r2q:5 r2q:6 0.005
-6 u2:A2 r2q:2 0.0115179
-7 r2:Q r2q:5 0.00910714
+6 u2:A2 r2q:2 0.005
+7 r2:Q r2q:5 0.005
 *END
 
-*D_NET clknet_0_clk 0.606019
+*D_NET clknet_0_clk 0.526161
 *CONN
 *I clkbuf_0_clk:Z O *D BUF_X4
 *I clkbuf_1_0_0_clk:A I *D CLKBUF_X1
 *I clkbuf_1_1_0_clk:A I *D CLKBUF_X1
 *CAP
-1 clkbuf_0_clk:Z 0.029646
-2 clkbuf_1_0_0_clk:A 0.0287154
-3 clkbuf_1_1_0_clk:A 0.0199413
-4 clknet_0_clk:2 0.105423
-5 clknet_0_clk:3 0.14893
-6 clknet_0_clk:4 0.14893
-7 clknet_0_clk:5 0.0199413
-8 clknet_0_clk:7 0.104492
+1 clknet_0_clk:2 0.134138
+2 clknet_0_clk:3 0.128942
+3 clknet_0_clk:4 0.128942
+4 clknet_0_clk:7 0.134138
 *RES
 1 clknet_0_clk:1 clknet_0_clk:2 0.005
 2 clknet_0_clk:2 clknet_0_clk:3 0.005
-3 clknet_0_clk:3 clknet_0_clk:4 0.0203571
+3 clknet_0_clk:3 clknet_0_clk:4 0.017625
 4 clknet_0_clk:4 clknet_0_clk:5 0.005
 5 clknet_0_clk:5 clknet_0_clk:6 0.005
-6 clknet_0_clk:2 clknet_0_clk:7 0.0101786
+6 clknet_0_clk:2 clknet_0_clk:7 0.0180179
 7 clknet_0_clk:7 clknet_0_clk:8 0.005
-8 clkbuf_1_1_0_clk:A clknet_0_clk:5 0.00767857
-9 clkbuf_1_0_0_clk:A clknet_0_clk:7 0.00885714
-10 clkbuf_0_clk:Z clknet_0_clk:2 0.00898214
+8 clkbuf_1_1_0_clk:A clknet_0_clk:5 0.005
+9 clkbuf_1_0_0_clk:A clknet_0_clk:7 0.005
+10 clkbuf_0_clk:Z clknet_0_clk:2 0.005
 *END
 
-*D_NET u2z 0.619012
+*D_NET u2z 0.461121
 *CONN
 *I r3:D I *D DFF_X1
 *I u2:ZN O *D AND2_X1
 *CAP
-1 r3:D 0.0164848
-2 u2:ZN 0.0670027
-3 u2z:2 0.218556
-4 u2z:3 0.151554
-5 u2z:4 0.074465
-6 u2z:5 0.074465
-7 u2z:6 0.0164848
+1 u2z:2 0.142248
+2 u2z:3 0.142248
+3 u2z:4 0.0883129
+4 u2z:5 0.0883129
 *RES
 1 u2z:1 u2z:2 0.005
-2 u2z:3 u2z:2 0.0203571
+2 u2z:3 u2z:2 0.0191071
 3 u2z:3 u2z:4 0.005
-4 u2z:4 u2z:5 0.0101786
+4 u2z:4 u2z:5 0.0120714
 5 u2z:5 u2z:6 0.005
 6 u2z:6 u2z:7 0.005
-7 u2:ZN u2z:2 0.014
-8 r3:D u2z:6 0.00721429
+7 u2:ZN u2z:2 0.005
+8 r3:D u2z:6 0.005
 *END
 
-*D_NET clknet_1_0_0_clk 0.39411
+*D_NET clknet_1_0_0_clk 0.324511
 *CONN
 *I r1:CK I *D DFF_X1
 *I r2:CK I *D DFF_X1
 *I clkbuf_1_0_0_clk:Z O *D CLKBUF_X1
 *CAP
-1 r1:CK 0.0162189
-2 r2:CK 0.0241954
-3 clkbuf_1_0_0_clk:Z 0.00771062
-4 clknet_1_0_0_clk:2 0.0162189
-5 clknet_1_0_0_clk:3 0.074465
-6 clknet_1_0_0_clk:4 0.14893
-7 clknet_1_0_0_clk:5 0.00771062
-8 clknet_1_0_0_clk:7 0.074465
-9 clknet_1_0_0_clk:8 0.0241954
+1 clknet_1_0_0_clk:3 0.0791681
+2 clknet_1_0_0_clk:4 0.162255
+3 clknet_1_0_0_clk:7 0.0830873
 *RES
 1 clknet_1_0_0_clk:1 clknet_1_0_0_clk:2 0.005
 2 clknet_1_0_0_clk:2 clknet_1_0_0_clk:3 0.005
-3 clknet_1_0_0_clk:3 clknet_1_0_0_clk:4 0.0101786
+3 clknet_1_0_0_clk:3 clknet_1_0_0_clk:4 0.0108214
 4 clknet_1_0_0_clk:4 clknet_1_0_0_clk:5 0.005
 5 clknet_1_0_0_clk:5 clknet_1_0_0_clk:6 0.005
-6 clknet_1_0_0_clk:4 clknet_1_0_0_clk:7 0.0101786
+6 clknet_1_0_0_clk:4 clknet_1_0_0_clk:7 0.0113571
 7 clknet_1_0_0_clk:7 clknet_1_0_0_clk:8 0.005
 8 clknet_1_0_0_clk:8 clknet_1_0_0_clk:9 0.005
-9 r1:CK clknet_1_0_0_clk:2 0.00717857
-10 r2:CK clknet_1_0_0_clk:8 0.00825
-11 clkbuf_1_0_0_clk:Z clknet_1_0_0_clk:5 0.00603571
+9 r1:CK clknet_1_0_0_clk:2 0.005
+10 r2:CK clknet_1_0_0_clk:8 0.005
+11 clkbuf_1_0_0_clk:Z clknet_1_0_0_clk:5 0.005
 *END
 
-*D_NET clknet_1_1_0_clk 0.37759
+*D_NET clknet_1_1_0_clk 0.31628
 *CONN
 *I r3:CK I *D DFF_X1
 *I clkbuf_1_1_0_clk:Z O *D CLKBUF_X1
 *CAP
-1 r3:CK 0.0340331
-2 clkbuf_1_1_0_clk:Z 0.00452002
-3 clknet_1_1_0_clk:2 0.10981
-4 clknet_1_1_0_clk:3 0.0757768
-5 clknet_1_1_0_clk:4 0.074465
-6 clknet_1_1_0_clk:5 0.074465
-7 clknet_1_1_0_clk:6 0.00452002
+1 clknet_1_1_0_clk:2 0.0792333
+2 clknet_1_1_0_clk:3 0.0792333
+3 clknet_1_1_0_clk:4 0.0789068
+4 clknet_1_1_0_clk:5 0.0789068
 *RES
 1 clknet_1_1_0_clk:1 clknet_1_1_0_clk:2 0.005
-2 clknet_1_1_0_clk:2 clknet_1_1_0_clk:3 0.0101786
+2 clknet_1_1_0_clk:2 clknet_1_1_0_clk:3 0.0106429
 3 clknet_1_1_0_clk:3 clknet_1_1_0_clk:4 0.005
-4 clknet_1_1_0_clk:4 clknet_1_1_0_clk:5 0.0101786
+4 clknet_1_1_0_clk:4 clknet_1_1_0_clk:5 0.0107857
 5 clknet_1_1_0_clk:5 clknet_1_1_0_clk:6 0.005
 6 clknet_1_1_0_clk:6 clknet_1_1_0_clk:7 0.005
-7 r3:CK clknet_1_1_0_clk:2 0.00957143
-8 clkbuf_1_1_0_clk:Z clknet_1_1_0_clk:6 0.00560714
+7 r3:CK clknet_1_1_0_clk:2 0.005
+8 clkbuf_1_1_0_clk:Z clknet_1_1_0_clk:6 0.005
 *END
 

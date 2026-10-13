@@ -295,7 +295,12 @@ export function createMenuBar(app) {
     }
 
     function render() {
-        bar.innerHTML = '';
+        // Replace only the menus: other children (the debug Continue button,
+        // the script-running badge) stay, after the menus.
+        for (const el of bar.querySelectorAll(':scope > .menu-label')) {
+            el.remove();
+        }
+        const firstOther = bar.firstChild;
         openMenu = null;
         // Rebuilt from scratch: a button removed from the registry must lose
         // its key too.
@@ -347,7 +352,7 @@ export function createMenuBar(app) {
                 }
             });
 
-            bar.appendChild(label);
+            bar.insertBefore(label, firstOther);
         }
     }
 

@@ -112,11 +112,11 @@
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-    final |       0 |     100 |        0 |      0 |     0 |    +1.1% |  -44.102 |     -520.9 |     41 | resp_msg[15]
+    final |       0 |     100 |        0 |      0 |     0 |    +1.1% |  -44.101 |     -521.1 |     41 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 100 instances: 14 up, 0 up match, 0 down, 86 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Pre-ECO:   WNS= -66.849   TNS=-1781.146   Area=      45 um^2   Power= 1.273356e-03 W
-Post-ECO:  WNS= -44.102   TNS=-520.900   Area=      46 um^2   Power= 1.386178e-03 W
-Delta:     WNS=  22.747   TNS=1260.247   Area=      +1 um^2   Power=+1.128220e-04 W
+Pre-ECO:   WNS= -66.849   TNS=-1781.197   Area=      45 um^2   Power= 1.273357e-03 W
+Post-ECO:  WNS= -44.101   TNS=-521.051   Area=      46 um^2   Power= 1.386179e-03 W
+Delta:     WNS=  22.748   TNS=1260.146   Area=      +1 um^2   Power=+1.128223e-04 W
 pass
