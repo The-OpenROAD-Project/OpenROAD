@@ -65,6 +65,14 @@ function updateStatus() {
     const pendingCount = app.websocketManager ? app.websocketManager.pendingCount : 0;
     
     if (!isConnected) {
+        // Checked before _shutdown, which the manager also sets in this case.
+        if (app.websocketManager?._sessionEnded) {
+            statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD '
+                + 'restarted with a new access token — open the URL it '
+                + 'printed</div>';
+            statusDiv.style.display = 'block';
+            return;
+        }
         // After an intentional shutdown the "Server stopped" banner is
         // already showing — don't overwrite it with the generic message.
         if (app.websocketManager?._shutdown) {
@@ -73,7 +81,8 @@ function updateStatus() {
         // Only show banner after a delay to avoid flashing on page load
         if (!disconnectTimeout) {
             disconnectTimeout = setTimeout(() => {
-                if (!app.websocketManager?.isConnected) {
+                if (!app.websocketManager?.isConnected
+                        && !app.websocketManager?._shutdown) {
                     statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
                     statusDiv.style.display = 'block';
                 }
@@ -1261,7 +1270,8 @@ if (staticCache) {
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
     const websocketUrl = websocketUrlFrom(window.location);
-    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    app.websocketManager = new WebSocketManager(
+        websocketUrl, updateStatus, { probeUrl: window.location.href });
     // Where each tech layer has shapes, so tiles that would come back empty
     // are never requested (see layer-extents.js).  Static reports have no
     // server to ask and keep requesting everything.
