@@ -418,6 +418,15 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
                                 (Net*) source_pin_flat_net,
                                 (Net*) source_db_mod_net);
         top_source_mod_net = source_db_mod_net;
+        // Loads in this module that were connected to the flat net while
+        // the source had no hierarchical net join the new one, or the
+        // hierarchical view leaves them undriven.
+        for (odb::dbITerm* iterm : source_pin_flat_net->getITerms()) {
+          if (iterm != source_pin && iterm->getModNet() == nullptr
+              && iterm->getInst()->getModule() == lowest_common_module) {
+            iterm->connect(source_db_mod_net);
+          }
+        }
       } else {
         top_dest_mod_iterm->connect(top_source_mod_net);
       }
@@ -445,6 +454,10 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
     // 3.8. During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
     cleanUnusedHierPins(source_parent_tree, dest_parent_tree);
+  } else if (source_db_mod_net && dest_pin->getModNet() != source_db_mod_net) {
+    // Same module: the dest joins the source's hierarchical net, or the
+    // hierarchical view leaves it undriven.
+    dest_pin->connect(source_db_mod_net);
   }
 
   dlogHierConnDone();
