@@ -376,11 +376,6 @@ void tmg_conn::splitBySj(const int j,
     if (sk->isVia()) {
       continue;
     }
-    dbTechLayer* tlayer = wire_points_[wire_sections_[k].from_idx].layer;
-    int nxmin = sk->xMin();
-    int nxmax = sk->xMax();
-    int nymin = sk->yMin();
-    int nymax = sk->yMax();
     int x;
     int y;
     if (wire_sections_[k].is_vertical) {
@@ -389,20 +384,6 @@ void tmg_conn::splitBySj(const int j,
       }
       if (sk->yMax() - sjyMax < wire_sections_[k].width) {
         continue;
-      }
-      if (wire_points_[wire_sections_[k].from_idx].y
-          > wire_points_[wire_sections_[k].to_idx].y) {
-        wire_sections_[k].shape.setYmin(
-            wire_points_[wire_sections_[j].from_idx].y
-            - (wire_sections_[k].width / 2));
-        nymax = wire_points_[wire_sections_[j].from_idx].y
-                + wire_sections_[k].width / 2;
-      } else {
-        wire_sections_[k].shape.setYmax(
-            wire_points_[wire_sections_[j].from_idx].y
-            + (wire_sections_[k].width / 2));
-        nymin = wire_points_[wire_sections_[j].from_idx].y
-                - wire_sections_[k].width / 2;
       }
       x = wire_points_[wire_sections_[k].from_idx].x;
       y = wire_points_[wire_sections_[j].from_idx].y;
@@ -413,43 +394,64 @@ void tmg_conn::splitBySj(const int j,
       if (sk->xMax() - sjxMax < wire_sections_[k].width) {
         continue;
       }
-      if (wire_points_[wire_sections_[k].from_idx].x
-          > wire_points_[wire_sections_[k].to_idx].x) {
-        wire_sections_[k].shape.setXmin(
-            wire_points_[wire_sections_[j].from_idx].x
-            - (wire_sections_[k].width / 2));
-        nxmax = wire_points_[wire_sections_[j].from_idx].x
-                + wire_sections_[k].width / 2;
-      } else {
-        wire_sections_[k].shape.setXmax(
-            wire_points_[wire_sections_[j].from_idx].x
-            + (wire_sections_[k].width / 2));
-        nxmin = wire_points_[wire_sections_[j].from_idx].x
-                - wire_sections_[k].width / 2;
-      }
       x = wire_points_[wire_sections_[j].from_idx].x;
       y = wire_points_[wire_sections_[k].from_idx].y;
     }
     klast = k;
 
-    addWirePoint(x, y, tlayer);
-
-    const int endTo = wire_sections_[k].to_idx;
-    wire_sections_[k].to_idx = wire_points_.size() - 1;
-    // create new WireSection
-    addWireSection(k,
-                   wire_sections_[k].shape,
-                   wire_points_.size() - 1,
-                   endTo,
-                   nxmin,
-                   nymin,
-                   nxmax,
-                   nymax);
-    shape_search_->addShape(rt,
-                            {nxmin, nymin, nxmax, nymax},
-                            ShapeSearch::Type::kWire,
-                            wire_sections_.size() - 1);
+    splitWireSection(k, Point(x, y));
   }
+}
+
+// The target section keeps the part up to the new point and
+// a new section takes the rest.
+void tmg_conn::splitWireSection(const int section_index, const Point& at)
+{
+  WireSection& wire_section = wire_sections_[section_index];
+  const WirePoint& from = wire_points_[wire_section.from_idx];
+  const WirePoint& to = wire_points_[wire_section.to_idx];
+  dbTechLayer* layer = from.layer;
+  const int end_to = wire_section.to_idx;
+  const int half_width = wire_section.width / 2;
+
+  int x_min = wire_section.shape.xMin();
+  int y_min = wire_section.shape.yMin();
+  int x_max = wire_section.shape.xMax();
+  int y_max = wire_section.shape.yMax();
+
+  if (wire_section.is_vertical) {
+    if (from.y < to.y) {
+      wire_section.shape.setYmax(at.y() + half_width);
+      y_min = at.y() - half_width;
+    } else {
+      wire_section.shape.setYmin(at.y() - half_width);
+      y_max = at.y() + half_width;
+    }
+  } else {
+    if (from.x < to.x) {
+      wire_section.shape.setXmax(at.x() + half_width);
+      x_min = at.x() - half_width;
+    } else {
+      wire_section.shape.setXmin(at.x() - half_width);
+      x_max = at.x() + half_width;
+    }
+  }
+
+  addWirePoint(at.x(), at.y(), layer);
+  wire_section.to_idx = wire_points_.size() - 1;
+  addWireSection(section_index,
+                 wire_section.shape,
+                 wire_section.to_idx,
+                 end_to,
+                 x_min,
+                 y_min,
+                 x_max,
+                 y_max);
+
+  shape_search_->addShape(layer->getRoutingLevel(),
+                          {x_min, y_min, x_max, y_max},
+                          ShapeSearch::Type::kWire,
+                          wire_sections_.size() - 1);
 }
 
 // Split the top of every T so that the junction becomes a wire point.
