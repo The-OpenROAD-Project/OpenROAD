@@ -22,4 +22,4 @@ foreach ndr [$block getNonDefaultRules] {
 puts "clk nondefault rule: [[$clk getNonDefaultRule] getName]"
 set def_file [make_result_file "ndr.def"]
 write_def $def_file
-diff_file $def_file ndr.defok
+diff_files $def_file ndr.defok

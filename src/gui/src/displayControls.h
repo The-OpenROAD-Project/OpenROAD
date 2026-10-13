@@ -54,8 +54,11 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
-namespace gui {
+namespace web {
 class DbInstDescriptor;
+}
+
+namespace gui {
 
 using CallbackFunction = std::function<void(bool)>;
 
@@ -136,10 +139,10 @@ class DisplayControlModel : public QStandardItemModel
 // controls are shown in a tree view to provide grouping of
 // related options.
 //
-// It also implements the Options interface so that other clients can
+// It also implements the QtOptions interface so that other clients can
 // access the data.
 class DisplayControls : public QDockWidget,
-                        public Options,
+                        public QtOptions,
                         public sta::dbNetworkObserver,
                         public odb::dbBlockCallBackObj
 {
@@ -163,7 +166,7 @@ class DisplayControls : public QDockWidget,
   void addTech(odb::dbTech* tech);
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
-  void setDBInstDescriptor(DbInstDescriptor* desciptor);
+  void setDBInstDescriptor(web::DbInstDescriptor* desciptor);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -174,15 +177,15 @@ class DisplayControls : public QDockWidget,
   void setControlByPath(const std::string& path, const QColor& color);
   bool checkControlByPath(const std::string& path, bool is_visible);
 
-  void registerRenderer(Renderer* renderer);
-  void unregisterRenderer(Renderer* renderer);
+  void registerRenderer(web::Renderer* renderer);
+  void unregisterRenderer(web::Renderer* renderer);
 
   void save();
   void restore();
 
   void restoreTclCommands(std::vector<std::string>& cmds);
 
-  // From the Options API
+  // From the web::Options API
   QColor background() override;
   QColor color(const odb::dbTechLayer* layer) override;
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
@@ -266,7 +269,7 @@ class DisplayControls : public QDockWidget,
   void colorChanged();
 
   // Emit a selected tech layer
-  void selected(const Selected& selected);
+  void selected(const web::Selected& selected);
 
  public slots:
   // Tells this widget that a new design is loaded and the
@@ -478,7 +481,7 @@ class DisplayControls : public QDockWidget,
                                const QStandardItem* parent,
                                const std::string& prefix = "");
 
-  void saveRendererState(Renderer* renderer);
+  void saveRendererState(web::Renderer* renderer);
 
   void setNameItemDoubleClickAction(ModelRow& row,
                                     const std::function<void()>& callback);
@@ -550,14 +553,14 @@ class DisplayControls : public QDockWidget,
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<const odb::dbSite*, ModelRow> site_controls_;
   int custom_controls_start_;
-  std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
-  std::map<std::string, Renderer::Settings> custom_controls_settings_;
+  std::map<web::Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<std::string, web::Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::PtrSet<odb::dbTech> techs_;
   utl::Logger* logger_;
   sta::dbSta* sta_;
-  DbInstDescriptor* inst_descriptor_;
+  web::DbInstDescriptor* inst_descriptor_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;

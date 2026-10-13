@@ -38,6 +38,7 @@ endif()
 add_library(utl_lib
   src/Metrics.cpp
   src/CFileUtils.cpp
+  src/CsvParser.cpp
   src/ScopedTemporaryFile.cpp
   src/ServiceRegistry.cpp
   src/SuppressStdout.cpp
@@ -47,6 +48,7 @@ add_library(utl_lib
   src/ThreadPool.cpp
   src/timer.cpp
   src/mem_stats.cpp
+  src/cpu_topology.cpp
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp

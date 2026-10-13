@@ -67,6 +67,11 @@ proc regression_main { } {
 proc regression_body { cmd_argv } {
   setup
   parse_args $cmd_argv
+  global app_options
+  # Tests run single threaded for determinism unless -threads is given.
+  if { ![info exists app_options] || [lsearch $app_options "-threads"] == -1 } {
+    lappend app_options "-threads" 1
+  }
   run_tests
   show_summary
   return [found_errors]

@@ -49,9 +49,9 @@ class Graph
   Graph& operator=(const Graph&) = delete;
 
   // Add an instance to the graph.
-  // Returns the output Bundle.
+  // Returns the output BundleView.
   template <typename T, typename... Args>
-  Bundle add(Args&&... args);
+  BundleView add(Args&&... args);
 
   // Resolve a Net to its owning Instance and bit offset.
   std::pair<const Instance*, uint32_t> resolve(Net net) const;
@@ -345,7 +345,7 @@ class Graph
 };
 
 template <typename T, typename... Args>
-Bundle Graph::add(Args&&... args)
+BundleView Graph::add(Args&&... args)
 {
   size_t inst_size;
   if constexpr (requires { T::plan(args...); }) {
@@ -376,9 +376,9 @@ Bundle Graph::add(Args&&... args)
       for (uint32_t i = 1; i < output_width; ++i) {
         new (table_.pointer(id + i)) PlaceholderEntry(inst, i);
       }
-      return Bundle(Net(id), output_width);
+      return BundleView(Net(id), output_width);
     }
-    return Bundle(Net(id));
+    return BundleView(Net(id));
   }
 
   // Heap path: allocate and construct on heap.
@@ -401,9 +401,9 @@ Bundle Graph::add(Args&&... args)
   }
 
   if (output_width > 1) {
-    return Bundle(Net(first), output_width);
+    return BundleView(Net(first), output_width);
   }
-  return Bundle(Net(first));
+  return BundleView(Net(first));
 }
 
 // Dump.cc

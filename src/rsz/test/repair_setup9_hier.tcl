@@ -38,12 +38,12 @@ repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning \
 set verilog_filename "repair_setup9_hier_out.v"
 set repaired_verilog_filename [make_result_file $verilog_filename]
 write_verilog $repaired_verilog_filename
-diff_file ${verilog_filename}ok $repaired_verilog_filename
+diff_files ${verilog_filename}ok $repaired_verilog_filename
 
 set def_filename "repair_setup9_hier_out.def"
 set repaired_def_filename [make_result_file $def_filename]
 write_def $repaired_def_filename
-diff_file ${def_filename}ok $repaired_def_filename
+diff_files ${def_filename}ok $repaired_def_filename
 
 # TODO: there is an issue that the new buffer input u_mid1/u_leaf2/split2/A input is floating.
 

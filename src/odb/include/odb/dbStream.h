@@ -3,17 +3,21 @@
 
 #pragma once
 
-#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
-
 #include <array>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <istream>
 #include <map>
 #include <ostream>
+#include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -28,103 +32,123 @@ class _dbDatabase;
 
 inline constexpr size_t kTemplateRecursionLimit = 16;
 
+template <typename T>
+concept MapContainer = requires(T m, const T cm) {
+  typename T::key_type;
+  typename T::mapped_type;
+  cm.size();
+  m.clear();
+  cm.begin();
+  cm.end();
+  // Ensure the container supports emplace_hint with an iterator
+  m.emplace_hint(m.end(),
+                 std::declval<typename T::key_type>(),
+                 std::declval<typename T::mapped_type>());
+};
+
 class dbOStream
 {
  public:
   using Position = std::ostream::pos_type;
 
   dbOStream(_dbDatabase* db, std::ostream& f);
+  ~dbOStream()
+  {
+    try {
+      flush();
+    } catch (...) {
+      // Ignore exceptions in destructor
+    }
+  }
+
+  template <typename T>
+    requires(std::is_trivially_copyable_v<T>)
+  void writeValueAsBytes(const T& val)
+  {
+    writeBytes(
+        std::span<const char>(reinterpret_cast<const char*>(&val), sizeof(T)));
+  }
+
+  void flush()
+  {
+    if (buffer_pos_ > 0) {
+      f_.write(buffer_.data(), static_cast<std::streamsize>(buffer_pos_));
+      buffer_pos_ = 0;
+    }
+  }
+
+  template <typename... Ts>
+    requires(... && std::is_trivially_copyable_v<Ts>)
+  void writeValues(const Ts&... vals)
+  {
+    constexpr size_t kTotal = (0 + ... + sizeof(Ts));
+    static_assert(kTotal <= kBufferSize);
+    if constexpr (kTotal > 0) {
+      if (buffer_pos_ + kTotal > kBufferSize) {
+        flush();
+      }
+      char* p = buffer_.data() + buffer_pos_;
+      ((std::memcpy(p, std::addressof(vals), sizeof(Ts)), p += sizeof(Ts)),
+       ...);
+      buffer_pos_ += kTotal;
+    }
+  }
 
   _dbDatabase* getDatabase() { return db_; }
 
+  void writeBytes(std::span<const char> bytes)
+  {
+    const char* data = bytes.data();
+    const size_t len = bytes.size();
+
+    if (len == 0) {
+      return;
+    }
+
+    // Flush buffer if new data won't fit
+    if (buffer_pos_ + len > kBufferSize) {
+      flush();
+    }
+
+    // If payload exceeds entire buffer size, bypass buffering
+    if (len > kBufferSize) {
+      f_.write(data, static_cast<std::streamsize>(len));
+    } else {
+      std::memcpy(buffer_.data() + buffer_pos_, data, len);
+      buffer_pos_ += len;
+    }
+  }
+
+  template <typename T>
+    requires(std::is_arithmetic_v<T>
+             && !std::is_same_v<std::remove_cvref_t<T>, bool>)
+  dbOStream& operator<<(const T& val)
+  {
+    writeValueAsBytes(val);
+    return *this;
+  }
+
   dbOStream& operator<<(bool c)
   {
-    unsigned char b = (c ? 1 : 0);
+    const unsigned char b = (c ? 1 : 0);
     return *this << b;
   }
 
-  dbOStream& operator<<(char c)
+  dbOStream& operator<<(std::string_view s)
   {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(unsigned char c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int16_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(uint16_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int64_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(uint64_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(unsigned int c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int8_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(float c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(double c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(long double c)
-  {
-    writeValueAsBytes(c);
+    *this << static_cast<uint32_t>(s.size() + 1);
+    writeBytes(s);
+    writeBytes({"\0", 1});
     return *this;
   }
 
   dbOStream& operator<<(const char* c)
   {
     if (c == nullptr) {
-      *this << 0;
+      *this << 0u;
     } else {
-      int l = strlen(c) + 1;
-      *this << l;
-      f_.write(c, l);
+      *this << std::string_view(c);
     }
-
     return *this;
   }
 
@@ -136,50 +160,19 @@ class dbOStream
     return *this;
   }
 
-  template <size_t I = 0, typename... Ts>
+  template <typename... Ts>
   constexpr dbOStream& operator<<(const std::tuple<Ts...>& tup)
   {
-    static_assert(I <= kTemplateRecursionLimit,
-                  "OpenROAD disallows of std::tuple larger than 16 "
-                  "elements. You should look into alternate solutions");
-    if constexpr (I == sizeof...(Ts)) {
-      return *this;
-    } else {
-      *this << std::get<I>(tup);
-      return ((*this).operator<< <I + 1>(tup));
-    }
-  }
-
-  template <class T1, class T2>
-  dbOStream& operator<<(const std::map<T1, T2>& m)
-  {
-    uint32_t sz = m.size();
-    *this << sz;
-    for (auto const& [key, val] : m) {
-      *this << key;
-      *this << val;
-    }
+    std::apply([this](const auto&... args) { ((*this << args), ...); }, tup);
     return *this;
   }
 
-  template <class T1, class T2>
-  dbOStream& operator<<(const boost::container::flat_map<T1, T2>& m)
+  template <MapContainer Map>
+  dbOStream& operator<<(const Map& m)
   {
-    uint32_t sz = m.size();
+    const uint32_t sz = m.size();
     *this << sz;
-    for (auto const& [key, val] : m) {
-      *this << key;
-      *this << val;
-    }
-    return *this;
-  }
-
-  template <class T1, class T2>
-  dbOStream& operator<<(const std::unordered_map<T1, T2>& m)
-  {
-    uint32_t sz = m.size();
-    *this << sz;
-    for (auto const& [key, val] : m) {
+    for (const auto& [key, val] : m) {
       *this << key;
       *this << val;
     }
@@ -191,7 +184,7 @@ class dbOStream
   {
     uint32_t sz = m.size();
     *this << sz;
-    for (auto val : m) {
+    for (const auto& val : m) {
       *this << val;
     }
     return *this;
@@ -208,10 +201,7 @@ class dbOStream
 
   dbOStream& operator<<(const std::string& s)
   {
-    char* tmp = strdup(s.c_str());
-    *this << tmp;
-    free((void*) tmp);
-    return *this;
+    return *this << std::string_view(s);
   }
 
   template <uint32_t I = 0, typename... Ts>
@@ -234,7 +224,11 @@ class dbOStream
   double lefarea(int value) { return ((double) value * lef_area_factor_); }
   double lefdist(int value) { return ((double) value * lef_dist_factor_); }
 
-  Position pos() const { return f_.tellp(); }
+  Position pos()
+  {
+    flush();
+    return f_.tellp();
+  }
 
   void pushScope(const std::string& name);
   void popScope();
@@ -246,20 +240,14 @@ class dbOStream
     Position start_pos;
   };
 
-  // By default values are written as their string ("255" vs 0xFF)
-  // representations when using the << stream method. In dbOstream we are
-  // primarly writing the byte representation which the below accomplishes.
-  template <typename T>
-  void writeValueAsBytes(T type)
-  {
-    f_.write(reinterpret_cast<char*>(&type), sizeof(T));
-  }
-
   _dbDatabase* db_;
   std::ostream& f_;
   double lef_area_factor_;
   double lef_dist_factor_;
   std::vector<Scope> scopes_;
+  static constexpr size_t kBufferSize = 65536;
+  std::array<char, kBufferSize> buffer_;
+  size_t buffer_pos_ = 0;
 };
 
 // RAII class for scoping ostream operations
@@ -277,12 +265,136 @@ class dbOStreamScope
   dbOStream& ostream_;
 };
 
+class ScopedExceptionToggle
+{
+ public:
+  explicit ScopedExceptionToggle(std::istream& is)
+      : is_(is), old_exceptions_(is.exceptions()), restored_(false)
+  {
+    std::ios_base::iostate mask
+        = std::ios_base::failbit | std::ios_base::eofbit;
+    toggled_ = (old_exceptions_ & mask) != 0;
+    if (toggled_) {
+      is_.exceptions(old_exceptions_ & ~mask);
+    }
+  }
+
+  // Explicitly restore exceptions so they can throw safely outside the
+  // destructor
+  void restore()
+  {
+    if (toggled_ && !restored_) {
+      restored_ = true;
+      is_.exceptions(old_exceptions_);
+    }
+  }
+
+  ~ScopedExceptionToggle()
+  {
+    if (toggled_ && !restored_) {
+      try {
+        is_.exceptions(old_exceptions_);
+      } catch (...) {
+        // Fallback: Ignore exceptions in destructor during stack unwinding
+        // to prevent std::terminate
+      }
+    }
+  }
+
+ private:
+  std::istream& is_;
+  std::ios_base::iostate old_exceptions_;
+  bool toggled_;
+  bool restored_;
+};
+
 class dbIStream
 {
  public:
   dbIStream(_dbDatabase* db, std::istream& f);
 
   _dbDatabase* getDatabase() { return db_; }
+
+  ~dbIStream()
+  {
+    size_t unread_bytes = buffer_size_ - buffer_pos_;
+    if (unread_bytes > 0) {
+      f_.clear(f_.rdstate()
+               & ~(std::ios_base::eofbit | std::ios_base::failbit));
+      f_.seekg(-static_cast<std::streamoff>(unread_bytes), std::ios_base::cur);
+    }
+  }
+
+  void read_bytes(std::span<char> bytes)
+  {
+    char* data = bytes.data();
+    size_t len = bytes.size();
+
+    // 1. Consume what is already in the buffer
+    if (buffer_pos_ < buffer_size_) {
+      size_t chunk = std::min(len, buffer_size_ - buffer_pos_);
+      std::memcpy(data, buffer_.data() + buffer_pos_, chunk);
+      data += chunk;
+      len -= chunk;
+      buffer_pos_ += chunk;
+    }
+
+    if (len == 0) {
+      return;
+    }
+
+    // 2. Read remaining payload
+    if (len >= kBufferSize) {
+      // Unbuffered fast-path
+      if (eof_reached_) {
+        f_.setstate(std::ios_base::eofbit | std::ios_base::failbit);
+        return;
+      }
+      ScopedExceptionToggle toggle(f_);
+      f_.read(data, static_cast<std::streamsize>(len));
+      if (f_.eof()) {
+        eof_reached_ = true;
+      }
+      toggle.restore();
+    } else {
+      // Buffered path
+      ScopedExceptionToggle toggle(f_);
+      if (!refill_buffer()) {
+        f_.setstate(std::ios_base::eofbit | std::ios_base::failbit);
+        toggle.restore();
+        return;
+      }
+
+      // Clear failbit/eofbit if we refilled enough to satisfy the current
+      // request
+      if (buffer_size_ >= len) {
+        std::ios_base::iostate mask
+            = std::ios_base::failbit | std::ios_base::eofbit;
+        f_.clear(f_.rdstate() & ~mask);
+      }
+
+      size_t chunk = std::min(len, buffer_size_);
+      std::memcpy(data, buffer_.data(), chunk);
+      buffer_pos_ = chunk;
+      toggle.restore();
+    }
+  }
+
+  template <typename... Ts>
+    requires(... && std::is_trivially_copyable_v<Ts>)
+  void readValues(Ts&... vals)
+  {
+    constexpr size_t kTotal = (0 + ... + sizeof(Ts));
+    static_assert(kTotal <= 1024,
+                  "readValues exceeds safe stack allocation limit");
+    if constexpr (kTotal > 0) {
+      char temp[kTotal];
+      read_bytes(std::span<char>(temp, kTotal));
+      const char* p = temp;
+      ((std::memcpy(std::addressof(vals), p, sizeof(Ts)), p += sizeof(Ts)),
+       ...);
+    }
+  }
 
   dbIStream& operator>>(bool& c)
   {
@@ -292,75 +404,12 @@ class dbIStream
     return *this;
   }
 
-  dbIStream& operator>>(char& c)
+  template <typename T>
+    requires(std::is_arithmetic_v<T>
+             && !std::is_same_v<std::remove_cvref_t<T>, bool>)
+  dbIStream& operator>>(T& val)
   {
-    f_.read(&c, sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(unsigned char& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int16_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(uint16_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int64_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(uint64_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(unsigned int& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int8_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(float& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(double& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(long double& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
+    readValueAsBytes(val);
     return *this;
   }
 
@@ -373,7 +422,7 @@ class dbIStream
       c = nullptr;
     } else {
       c = (char*) malloc(l);
-      f_.read(c, l);
+      read_bytes(std::span<char>(c, l));
     }
 
     return *this;
@@ -386,48 +435,18 @@ class dbIStream
     *this >> p.second;
     return *this;
   }
-  template <class T1, class T2>
-  dbIStream& operator>>(std::map<T1, T2>& m)
+  template <MapContainer Map>
+  dbIStream& operator>>(Map& m)
   {
-    uint32_t sz;
+    uint32_t sz = 0;
     *this >> sz;
     m.clear();
     for (uint32_t i = 0; i < sz; i++) {
-      T1 key;
-      T2 val;
+      typename Map::key_type key;
+      typename Map::mapped_type val;
       *this >> key;
       *this >> val;
-      m[key] = std::move(val);
-    }
-    return *this;
-  }
-  template <class T1, class T2>
-  dbIStream& operator>>(boost::container::flat_map<T1, T2>& m)
-  {
-    uint32_t sz;
-    *this >> sz;
-    m.clear();
-    for (uint32_t i = 0; i < sz; i++) {
-      T1 key;
-      T2 val;
-      *this >> key;
-      *this >> val;
-      m[key] = std::move(val);
-    }
-    return *this;
-  }
-  template <class T1, class T2>
-  dbIStream& operator>>(std::unordered_map<T1, T2>& m)
-  {
-    uint32_t sz;
-    *this >> sz;
-    m.clear();
-    for (uint32_t i = 0; i < sz; i++) {
-      T1 key;
-      T2 val;
-      *this >> key;
-      *this >> val;
-      m[key] = std::move(val);
+      m.emplace_hint(m.end(), std::move(key), std::move(val));
     }
     return *this;
   }
@@ -456,30 +475,24 @@ class dbIStream
     return *this;
   }
 
-  template <size_t I = 0, typename... Ts>
+  template <typename... Ts>
   constexpr dbIStream& operator>>(std::tuple<Ts...>& tup)
   {
-    static_assert(I <= kTemplateRecursionLimit,
-                  "OpenROAD disallows of std::tuple larger than 16 "
-                  "elements. You should look into alternate solutions");
-    if constexpr (I == sizeof...(Ts)) {
-      return *this;
-    } else {
-      *this >> std::get<I>(tup);
-      return ((*this).operator>> <I + 1>(tup));
-    }
+    std::apply([this](auto&... args) { ((*this >> args), ...); }, tup);
+    return *this;
   }
 
   dbIStream& operator>>(std::string& s)
   {
-    char* tmp;
-    *this >> tmp;
-    if (!tmp) {
-      s = "";
+    uint32_t len = 0;
+    *this >> len;
+    if (len == 0) {
+      s.clear();
       return *this;
     }
-    s = std::string(tmp);
-    free((void*) tmp);
+    s.resize(len);
+    read_bytes(std::span<char>(s.data(), len));
+    s.pop_back();  // Strip trailing '\0'
     return *this;
   }
 
@@ -496,6 +509,13 @@ class dbIStream
   double lefdist(int value) { return ((double) value * lef_dist_factor_); }
 
  private:
+  template <typename T>
+    requires(std::is_trivially_copyable_v<T>)
+  void readValueAsBytes(T& val)
+  {
+    read_bytes(std::span<char>(reinterpret_cast<char*>(&val), sizeof(T)));
+  }
+
   template <uint32_t I = 0, typename... Ts>
   dbIStream& variantHelper(uint32_t index, std::variant<Ts...>& v)
   {
@@ -514,10 +534,31 @@ class dbIStream
     }
   }
 
+  // Refills the internal buffer. Returns false if EOF is reached and no data
+  // was read.
+  bool refill_buffer()
+  {
+    if (eof_reached_) {
+      return false;
+    }
+    f_.read(buffer_.data(), kBufferSize);
+    buffer_size_ = f_.gcount();
+    buffer_pos_ = 0;
+    if (f_.eof()) {
+      eof_reached_ = true;
+    }
+    return buffer_size_ > 0;
+  }
+
   std::istream& f_;
   _dbDatabase* db_;
   double lef_area_factor_;
   double lef_dist_factor_;
+  static constexpr size_t kBufferSize = 65536;
+  std::array<char, kBufferSize> buffer_;
+  size_t buffer_pos_ = 0;
+  size_t buffer_size_ = 0;
+  bool eof_reached_ = false;
 };
 
 }  // namespace odb

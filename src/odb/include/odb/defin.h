@@ -25,10 +25,14 @@ class defin
  public:
   enum MODE
   {
-    DEFAULT,     // creates db from scratch (from def)
-    FLOORPLAN,   // update existing COMPONENTS PINS DIEAREA TRACKS ROWS NETS
-                 // SNETS
-    INCREMENTAL  // update existing COMPONENTS PINS
+    DEFAULT,      // creates db from scratch (from def)
+    FLOORPLAN,    // update existing COMPONENTS PINS DIEAREA TRACKS ROWS NETS
+                  // SNETS
+    INCREMENTAL,  // update existing COMPONENTS PINS
+    THREE_D_BLOX  // read DEF onto an existing 3DBlox block (created when the
+                  // chiplet definition was read); find-or-create
+                  // COMPONENTS/PINS/NETS and dedup data shared with the bump
+                  // map
   };
   defin(dbDatabase* db, utl::Logger* logger, MODE mode = DEFAULT);
   ~defin();
@@ -42,8 +46,9 @@ class defin
   void continueOnErrors();
   void useBlockName(const char* name);
 
-  /// Create a new chip
-  void readChip(std::vector<dbLib*>& search_libs,
+  /// Read a DEF onto a chip. Returns true on success, false if the DEF file
+  /// could not be read.
+  bool readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
                 dbChip* chip,
                 bool issue_callback = true);

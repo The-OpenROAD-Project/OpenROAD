@@ -11,8 +11,11 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "aes",
     "blockage01",
+    "blocked_via_layers",
+    "blocked_via_pins",
     "cell_on_block1",
     "cell_on_block2",
+    "centered_floorplan",
     "check1",
     "check2",
     "check3",
@@ -22,6 +25,10 @@ COMPULSORY_TESTS = [
     "check7",
     "check8",
     "check9",
+    "diamond01",
+    "diamond_multi_height",
+    "diamond_one_site_gap",
+    "diamond_regions",
     "fence01",
     "fence02",
     "fence03",
@@ -47,15 +54,15 @@ COMPULSORY_TESTS = [
     "hybrid_cells",
     "hybrid_cells2",
     "ibex",
+    "macro_placed_not_fixed",
     "max_disp1",
     "mirror1",
     "mirror2",
     "mirror3",
+    "mirror_edge_spacing",
     "multi_height_one_site_gap_disallow",
+    "multi_height_power_align",
     "multi_height_rows",
-    "negotiation01",
-    "negotiation_one_site_gap",
-    "negotiation_regions",
     "obstruction1",
     "obstruction2",
     "one_site_gap_disallow",
@@ -121,6 +128,14 @@ filegroup(
                 "sky130hd/sky130hd.tlef",
                 "sky130hd/sky130hd_std_cell.lef",
             ],
+            "blocked_via_layers": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
+            "blocked_via_pins": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
             "cell_on_block1": [
                 "block2.lef",
             ],
@@ -147,6 +162,19 @@ filegroup(
             ],
             "check9": [
                 "extra.lef",
+            ],
+            "diamond01": [
+                "gcd_replace.def",
+            ],
+            "diamond_multi_height": [
+                "Nangate45/fake_macros.lef",
+                "multi_height_rows.def",
+            ],
+            "diamond_one_site_gap": [
+                "one_site_gap_disallow.def",
+            ],
+            "diamond_regions": [
+                "regions1.def",
             ],
             "edge_spacing": [
                 "multi_height_rows.def",
@@ -223,6 +251,10 @@ filegroup(
             "low_util03": [
                 "ibex_core_replace.def",
             ],
+            "macro_placed_not_fixed": [
+                "block2.lef",
+                "cell_on_block1.def",
+            ],
             "max_disp1": [
                 "Nangate45/fakeram45_1024x32.lef",
             ],
@@ -245,15 +277,6 @@ filegroup(
             ],
             "multi_height_rows": [
                 "Nangate45/fake_macros.lef",
-            ],
-            "negotiation01": [
-                "gcd_replace.def",
-            ],
-            "negotiation_one_site_gap": [
-                "one_site_gap_disallow.def",
-            ],
-            "negotiation_regions": [
-                "regions1.def",
             ],
             "obstruction2": [
                 "Nangate45/fakeram45_64x7.lib",
@@ -322,7 +345,10 @@ py_test(
     name = "dpl_man_tcl_check",
     srcs = ["dpl_man_tcl_check.py"],
     data = ["//src/dpl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

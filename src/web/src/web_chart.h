@@ -8,14 +8,14 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
+#include "web/core.h"
 
 namespace web {
 
-// A gui::Chart implementation that accumulates points in memory so the
+// A web::Chart implementation that accumulates points in memory so the
 // web viewer can serialize them to the client.  Created via a factory
-// installed on gui::Gui (see WebViewerHook::installChartFactory).
-class WebChart : public gui::Chart
+// installed on web::Gui (see WebViewerHook::installChartFactory).
+class WebChart : public web::Chart
 {
  public:
   struct Point
@@ -27,7 +27,7 @@ class WebChart : public gui::Chart
   struct Marker
   {
     double x;
-    gui::Painter::Color color;
+    web::Painter::Color color;
   };
 
   WebChart(std::string name,
@@ -47,14 +47,14 @@ class WebChart : public gui::Chart
   std::vector<Point> points() const;
   std::vector<Marker> markers() const;
 
-  // --- gui::Chart overrides ---
+  // --- web::Chart overrides ---
 
   void setXAxisFormat(const std::string& format) override;
   void setYAxisFormats(const std::vector<std::string>& formats) override;
   void setYAxisMin(const std::vector<std::optional<double>>& mins) override;
   void addPoint(double x, const std::vector<double>& ys) override;
   void clearPoints() override;
-  void addVerticalMarker(double x, const gui::Painter::Color& color) override;
+  void addVerticalMarker(double x, const web::Painter::Color& color) override;
 
  private:
   const std::string name_;

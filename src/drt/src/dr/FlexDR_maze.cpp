@@ -25,7 +25,6 @@
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "db/infra/frBox.h"
-#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
@@ -1643,6 +1642,16 @@ void FlexDRWorker::mazeNetInit(drNet* net)
 {
   gridGraph_.resetStatus();
   gridGraph_.setNDR(net->getFrNet()->getNondefaultRule());
+  // Routing watermark: if this net is a watermark net, inflate the
+  // non-preferred-direction ("wrong-way") grid cost so that the maze
+  // strongly prefers preferred-direction edges, approximating the
+  // IC Craftsman "limit way = 1" rule used in Kahng et al. (ISPD'98).
+  if (net->getFrNet() && net->getFrNet()->isWatermark()) {
+    gridGraph_.setWrongWayWatermarkMultiplier(
+        router_cfg_->WATERMARK_WRONGWAY_MULT);
+  } else {
+    gridGraph_.setWrongWayWatermarkMultiplier(1.0f);
+  }
   // sub term / instterm cost when net is about to route
   initMazeCost_terms(net->getFrNetTerms(), false, true);
   // sub via access cost when net is about to route
@@ -1669,6 +1678,9 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   initMazeCost_boundary_helper(net, true);
   gridGraph_.setNDR(nullptr);
   gridGraph_.setDstTaperBox(nullptr);
+  // Reset watermark multiplier so subsequent non-watermark nets route
+  // with the router's default non-preferred-direction cost.
+  gridGraph_.setWrongWayWatermarkMultiplier(1.0f);
 }
 
 void FlexDRWorker::writeGCPatchesToDRWorker(
@@ -2229,7 +2241,7 @@ void FlexDRWorker::routeNet_prep(
     }
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
-      if (router_cfg_->AUTO_TAPER_NDR_NETS
+      if (net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)
           && pin->isInstPin()) {  // create a taper box for each pin
         auto [l, h] = pin->getAPBbox();
         frCoord pitch
@@ -2648,7 +2660,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
-        if (net->hasNDR() && router_cfg_->AUTO_TAPER_NDR_NETS) {
+        if (net->hasNDR()
+            && net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
           if (isInsideTaperBox(endX, endY, startZ, endZ, mazeIdx2TaperBox)) {
             currVia->setTapered(true);
           }
@@ -2697,9 +2710,9 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
                                      const FlexMazeIdx& ap_idx) const
 {
   frLayerNum layer_num = gridGraph_.getLayerNum(ap_idx.z());
-  Point3D real_point;
-  gridGraph_.getPoint(real_point, ap_idx.x(), ap_idx.y());
-  real_point.setZ(layer_num);
+  odb::Point real_point_xy;
+  gridGraph_.getPoint(real_point_xy, ap_idx.x(), ap_idx.y());
+  const odb::Point3D real_point(real_point_xy, layer_num);
   for (const auto& ext_obj : net->getExtConnFigs()) {
     if (ext_obj->typeId() == drcPathSeg) {
       const drPathSeg* path_seg = static_cast<const drPathSeg*>(ext_obj.get());
@@ -2708,12 +2721,12 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
         continue;
       }
       frSegStyle style = path_seg->getStyle();
-      if (bp == real_point) {
+      if (bp == real_point.xy()) {
         style.setBeginStyle(frcTruncateEndStyle, 0);
         net->updateExtFigStyle(real_point, style);
         return;
       }
-      if (ep == real_point) {
+      if (ep == real_point.xy()) {
         style.setEndStyle(frcTruncateEndStyle, 0);
         net->updateExtFigStyle(real_point, style);
         return;
@@ -2721,7 +2734,7 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
     } else if (ext_obj->typeId() == drcVia) {
       auto via = static_cast<const drVia*>(ext_obj.get());
       odb::Point via_point = via->getOrigin();
-      if (via_point != real_point) {
+      if (via_point != real_point.xy()) {
         continue;
       }
       auto via_def = via->getViaDef();
@@ -2818,7 +2831,8 @@ bool FlexDRWorker::splitPathSeg(frMIdx& midX,
                                 drNet* net)
 {
   taperFirstPiece = false;
-  if (!net->hasNDR() || !router_cfg_->AUTO_TAPER_NDR_NETS) {
+  if (!net->hasNDR()
+      || !net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
     return false;
   }
   frBox3D* bx = nullptr;

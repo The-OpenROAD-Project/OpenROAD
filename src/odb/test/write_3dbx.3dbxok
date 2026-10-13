@@ -13,6 +13,8 @@ ChipletInst:
     reference: SoC
   soc_inst:
     reference: SoC
+    external:
+      def_file: SoC.def
 Stack:
   soc_inst_duplicate:
     loc: [100, 200]

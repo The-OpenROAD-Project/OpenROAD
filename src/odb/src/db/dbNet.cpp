@@ -100,13 +100,13 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.special = 0;
   flags_.wild_connect = 0;
   flags_.wire_ordered = 0;
+  flags_.disable_auto_taper = 0;
   flags_.unused2 = 0;
-  flags_.disconnected = 0;
   flags_.spef = 0;
   flags_.select = 0;
   flags_.mark = 0;
   flags_.mark_1 = 0;
-  flags_.wire_altered = 0;
+  flags_.unused3 = 0;
   flags_.extracted = 0;
   flags_.rc_graph = 0;
   flags_.unused = 0;
@@ -218,7 +218,7 @@ bool _dbNet::operator==(const _dbNet& rhs) const
     return false;
   }
 
-  if (flags_.disconnected != rhs.flags_.disconnected) {
+  if (flags_.disable_auto_taper != rhs.flags_.disable_auto_taper) {
     return false;
   }
 
@@ -235,10 +235,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.mark_1 != rhs.flags_.mark_1) {
-    return false;
-  }
-
-  if (flags_.wire_altered != rhs.flags_.wire_altered) {
     return false;
   }
 
@@ -1047,67 +1043,6 @@ void dbNet::setWireOrdered(bool value)
   }
 }
 
-bool dbNet::isDisconnected()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->flags_.disconnected == 1;
-}
-
-void dbNet::setDisconnected(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint32_t prev_flags = flagsToUInt(net);
-
-  net->flags_.disconnected = (value) ? 1 : 0;
-
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_EDIT",
-             2,
-             "EDIT: {}, setDisconnected: {}",
-             net->getDebugName(),
-             value);
-
-  if (block->journal_) {
-    block->journal_->updateField(
-        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
-  }
-}
-
-void dbNet::setWireAltered(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint32_t prev_flags = flagsToUInt(net);
-
-  net->flags_.wire_altered = (value) ? 1 : 0;
-  if (value) {
-    net->flags_.wire_ordered = 0;
-  }
-
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_EDIT",
-             2,
-             "EDIT: {}, setWireAltered: {}",
-             net->getDebugName(),
-             value);
-
-  if (block->journal_) {
-    block->journal_->updateField(
-        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
-  }
-}
-
-bool dbNet::isWireAltered()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->flags_.wire_altered == 1;
-}
-
 void dbNet::setExtracted(bool value)
 {
   _dbNet* net = (_dbNet*) this;
@@ -1454,7 +1389,7 @@ bool dbNet::isConnected(const dbModNet* other) const
 
 bool dbNet::isConnectedByAbutment()
 {
-  if (getITermCount() > 2 || getBTermCount() > 0) {
+  if (getITerms().hasMoreThan(2) || !getBTerms().empty()) {
     return false;
   }
 
@@ -2438,6 +2373,18 @@ void dbNet::setJumpers(bool has_jumpers)
   if (db->isSchema(kSchemaHasJumpers)) {
     net->flags_.has_jumpers = has_jumpers ? 1 : 0;
   }
+}
+
+bool dbNet::isAutoTaperEnabled()
+{
+  _dbNet* net = (_dbNet*) this;
+  return net->flags_.disable_auto_taper == 0;
+}
+
+void dbNet::setAutoTaper(bool enable)
+{
+  _dbNet* net = (_dbNet*) this;
+  net->flags_.disable_auto_taper = enable ? 0 : 1;
 }
 
 void dbNet::checkSanity() const

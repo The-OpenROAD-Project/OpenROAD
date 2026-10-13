@@ -30,7 +30,7 @@ class BufRemTest2 : public tst::Nangate45Fixture
 {
  protected:
   BufRemTest2()
-      : stt_(db_.get(), &logger_),
+      : stt_(&logger_),
         service_registry_(&logger_),
         dp_(db_.get(), &logger_),
         ant_(db_.get(), &logger_),

@@ -114,6 +114,25 @@ NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
 void dbSdcNetwork::findNetsMatching1(const PatternMatch* pattern,
                                      NetSeq& nets) const
 {
+  std::string inst_path, net_name;
+  pathNameLast(pattern->pattern(), inst_path, net_name);
+  if (!inst_path.empty()) {
+    // A divider in the pattern names nets inside hierarchical instances,
+    // mirroring findPinsMatching.
+    PatternMatch inst_pattern(inst_path, pattern);
+    PatternMatch net_pattern(net_name, pattern);
+    InstanceSeq insts = findInstancesMatching(nullptr, &inst_pattern);
+    for (auto inst : insts) {
+      std::unique_ptr<NetIterator> net_iter{netIterator(inst)};
+      while (net_iter->hasNext()) {
+        Net* net = net_iter->next();
+        if (net_pattern.match(staToSdc(name(net)))) {
+          nets.push_back(net);
+        }
+      }
+    }
+  }
+  // Flat net names can contain path dividers; match them in the top scope.
   std::unique_ptr<NetIterator> net_iter{netIterator(topInstance())};
   while (net_iter->hasNext()) {
     Net* net = net_iter->next();

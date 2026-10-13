@@ -53,6 +53,9 @@ filegroup(
             "scan_architect_register_bank_no_clock_mix_sky130": [
                 "register_bank_top.v",
             ],
+            "scan_opt_sky130": [
+                "place_sort_sky130.v",
+            ],
             "scandef_core_sky130": [
                 "register_bank_cores.lef",
                 "scan_inserted_register_bank.v",
@@ -60,9 +63,6 @@ filegroup(
             "scandef_sky130": [
                 "scan_inserted_design_sky130.scandef",
                 "scan_inserted_design_sky130.v",
-            ],
-            "scan_opt_sky130": [
-                "place_sort_sky130.v",
             ],
         }.get(test_name, []),
     )
@@ -82,7 +82,6 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
@@ -94,7 +93,6 @@ cc_test(
 cc_test(
     name = "TestScanArchitect",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
@@ -111,7 +109,6 @@ cc_test(
         "cpp/TestScanArchitectHeuristic.cpp",
         "cpp/TestScanArchitectMaxChains.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/cells",
@@ -144,7 +141,10 @@ py_test(
     name = "dft_man_tcl_check",
     srcs = ["dft_man_tcl_check.py"],
     data = ["//src/dft:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

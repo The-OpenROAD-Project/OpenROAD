@@ -10,4 +10,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file upper_layer_net.guideok $guide_file
+diff_files upper_layer_net.guideok $guide_file

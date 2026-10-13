@@ -46,7 +46,7 @@ check "Density blockage is soft" {$b5 isSoft} 0
 puts "Test 6: Testing error handling..."
 if { [catch { create_blockage -region {200 200 100 100} } msg] } {
   puts "Expected error caught: $msg"
-  check "Invalid coordinates rejected" 1 [1]
+  check "Invalid coordinates rejected" {expr 1} 1
 } else {
   check "Invalid coordinates should have been rejected" 0 1
 }
@@ -54,7 +54,7 @@ if { [catch { create_blockage -region {200 200 100 100} } msg] } {
 # Test 7: Test error handling - coordinates outside die area
 if { [catch { create_blockage -region {1500 1500 1600 1600} } msg] } {
   puts "Expected error caught: $msg"
-  check "Out of bounds coordinates rejected" 1 [1]
+  check "Out of bounds coordinates rejected" {expr 1} 1
 } else {
   check "Out of bounds coordinates should have been rejected" 0 1
 }
@@ -62,7 +62,7 @@ if { [catch { create_blockage -region {1500 1500 1600 1600} } msg] } {
 # Test 8: Test error handling - invalid max density
 if { [catch { create_blockage -region {10 10 20 20} -max_density 150 } msg] } {
   puts "Expected error caught: $msg"
-  check "Invalid max density rejected" 1 [1]
+  check "Invalid max density rejected" {expr 1} 1
 } else {
   check "Invalid max density should have been rejected" 0 1
 }
@@ -70,7 +70,7 @@ if { [catch { create_blockage -region {10 10 20 20} -max_density 150 } msg] } {
 # Test 9: Test error handling - non-existent instance
 if { [catch { create_blockage -region {10 10 20 20} -inst "non_existent" } msg] } {
   puts "Expected error caught: $msg"
-  check "Non-existent instance rejected" 1 [1]
+  check "Non-existent instance rejected" {expr 1} 1
 } else {
   check "Non-existent instance should have been rejected" 0 1
 }

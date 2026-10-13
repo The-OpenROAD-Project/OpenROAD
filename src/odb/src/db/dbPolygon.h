@@ -43,6 +43,7 @@ class _dbPolygon : public _dbObject
   dbPolygonFlags flags_;
   Polygon polygon_;
   int design_rule_width_;
+  int min_spacing_;
   uint32_t owner_;
   dbId<_dbPolygon> next_pbox_;
   dbId<_dbBox> boxes_;

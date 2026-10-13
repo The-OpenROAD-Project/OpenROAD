@@ -5,6 +5,7 @@
 
 #include <map>
 #include <ostream>
+#include <string>
 
 #include "db_sta/dbSta.hh"
 #include "sta/Parasitics.hh"
@@ -30,6 +31,8 @@ class SpefWriter
                 Parasitics* parasitics);
 
  private:
+  std::string nodeName(Parasitics* parasitics, const ParasiticNode* node) const;
+
   utl::Logger* logger_;
   dbSta* sta_;
   dbNetwork* network_;

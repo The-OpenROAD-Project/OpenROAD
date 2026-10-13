@@ -43,6 +43,7 @@ bool _dbUnfoldedChipBumpInst::operator<(
 
 _dbUnfoldedChipBumpInst::_dbUnfoldedChipBumpInst(_dbDatabase* db)
 {
+  pad_for_pointer_tag_alignment_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipBumpInst& obj)

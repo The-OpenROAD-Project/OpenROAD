@@ -10,4 +10,4 @@ check_placement -verbose
 
 set def_file [make_result_file fragmented_row04.def]
 write_def $def_file
-diff_file fragmented_row04.defok $def_file
+diff_files fragmented_row04.defok $def_file

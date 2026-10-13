@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "boost/geometry/index/predicates.hpp"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -27,6 +26,7 @@
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace pad {
 
@@ -41,6 +41,12 @@ PadPlacer::PadPlacer(utl::Logger* logger,
   populateObstructions();
 
   addInstsOverlapCache(insts);
+}
+
+void PadPlacer::guiPause(const std::string& reason) const
+{
+  logger_->report("Pausing pad placement on {}: {}", row_->getName(), reason);
+  web::Gui::get()->pause();
 }
 
 void PadPlacer::populateInstWidths()
@@ -439,7 +445,7 @@ std::optional<odb::Polygon> PadPlacer::getMasterOutline(
     return odb::Polygon(master_obs.front());
   }
 
-  const auto overlaps = odb::Polygon::merge(master_obs);
+  const auto overlaps = odb::geom::mergePolygons(master_obs);
   if (overlaps.size() == 1) {
     return overlaps.front();
   }
@@ -621,7 +627,7 @@ UniformPadPlacer::UniformPadPlacer(utl::Logger* logger,
 void UniformPadPlacer::place()
 {
   const bool gui_debug
-      = getLogger()->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
+      = getLogger()->debugCheck(utl::PAD, "Place", 1) && web::Gui::enabled();
 
   float initial_target_spacing
       = static_cast<float>(getRowWidth() - getTotalInstWidths())
@@ -663,7 +669,7 @@ void UniformPadPlacer::place()
     offset += target_spacing;
 
     if (gui_debug) {
-      gui::Gui::get()->pause();
+      guiPause(fmt::format("placed {} with uniform spacing", inst->getName()));
     }
   }
 }
@@ -722,7 +728,7 @@ void BumpAlignedPadPlacer::place()
   int offset = getRowStart();
 
   const bool gui_debug
-      = getLogger()->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
+      = getLogger()->debugCheck(utl::PAD, "Place", 1) && web::Gui::enabled();
 
   auto& insts = getInsts();
 
@@ -798,7 +804,12 @@ void BumpAlignedPadPlacer::place()
       addInstanceObstructions(ginst);
 
       if (gui_debug) {
-        gui::Gui::get()->pause();
+        guiPause(
+            fmt::format("placed {} at {:.4f}um with a remaining spare gap "
+                        "of {:.4f}um",
+                        ginst->getName(),
+                        select_pos / dbus,
+                        max_travel / dbus));
       }
     }
 
@@ -1071,9 +1082,8 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::initialPoolMapping() const
 
 void PlacerPadPlacer::debugPause(const std::string& msg) const
 {
-  if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
-    debugPrint(getLogger(), utl::PAD, "Pause", 1, msg);
-    auto* gui = gui::Gui::get();
+  if (web::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
+    auto* gui = web::Gui::get();
     gui->clearHighlights();
     for (const auto& [inst, iterms] : iterm_connections_) {
       for (auto* iterm : iterms) {
@@ -1082,14 +1092,14 @@ void PlacerPadPlacer::debugPause(const std::string& msg) const
         }
       }
     }
-    gui::Gui::get()->pause();
+    guiPause(msg);
   }
 }
 
 void PlacerPadPlacer::place()
 {
-  if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Place", 1)) {
-    chart_ = gui::Gui::get()->addChart(
+  if (web::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Place", 1)) {
+    chart_ = web::Gui::get()->addChart(
         fmt::format("PAD ({})", getRow()->getName()),
         "Iteration",
         {"RDL Estimate (μm)", "Move (μm)"});
@@ -1823,7 +1833,7 @@ void PlacerPadPlacer::debugCheckPlacement() const
     return;
   }
 
-  bool pause = false;
+  std::vector<odb::dbInst*> invalid;
   for (auto* inst : getInsts()) {
     if (checkInstancePlacement(inst)) {
       debugPrint(getLogger(),
@@ -1832,13 +1842,12 @@ void PlacerPadPlacer::debugCheckPlacement() const
                  1,
                  "Invalid placement for {}",
                  inst->getName());
-      pause = true;
+      invalid.push_back(inst);
     }
   }
 
-  if (pause && gui::Gui::enabled()) {
-    getLogger()->report("Pausing GUI due to invalid positions of pads");
-    gui::Gui::get()->pause();
+  if (!invalid.empty() && web::Gui::enabled()) {
+    guiPause(fmt::format("invalid position(s) for {}", instNameList(invalid)));
   }
 }
 

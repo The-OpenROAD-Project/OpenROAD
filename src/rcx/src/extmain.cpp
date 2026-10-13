@@ -8,6 +8,7 @@
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
 using odb::dbBlock;
@@ -29,6 +30,20 @@ void extMain::init(odb::dbDatabase* db, utl::Logger* logger)
   _block = nullptr;
   _blockId = 0;
   logger_ = logger;
+}
+
+void extMain::setExtractionOptions(const ExtractOptions& options)
+{
+  _couplingFlag = options.cc_model;
+  _coupleThreshold = options.coupling_threshold;
+  _ccUp = options.cc_up;
+  _ccContextDepth = options.context_depth;
+  _mergeViaRes = !options.no_merge_via_res;
+  _mergeResBound = options.max_res;
+  _lef_res = options.lef_res;
+  _lefRC = options.lef_rc;
+  _dbgOption = options._dbg;
+  target_nets_names_ = options.net;
 }
 
 void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, utl::Logger* logger)
@@ -376,37 +391,28 @@ double extMain::getResistance(const uint32_t level,
   return getLefResistance(level, width, len, model);
 }
 
-void extMain::setBlockFromChip()
+void extMain::setBlockFromChip(odb::dbChip* chip)
 {
-  if (_db->getChip() == nullptr) {
+  if (!chip) {
     logger_->error(RCX, 497, "No design is loaded.");
   }
-  _tech = _db->getTech();
-  _block = _db->getChip()->getBlock();
-  _blockId = _block->getId();
-  _prevControl = _block->getExtControl();
-  _block->setExtmi(this);
 
-  if (_spef != nullptr) {
-    _spef = nullptr;
-    _extracted = false;
+  _tech = chip->getTech();
+  _block = chip->getBlock();
+
+  if (!_block) {
+    logger_->error(RCX, 18, "Could not get the block from the chip.");
   }
 
-  _bufSpefCnt = 0;
-  _origSpefFilePrefix = nullptr;
-  _newSpefFilePrefix = nullptr;
-}
-
-void extMain::setBlock(dbBlock* block)
-{
-  _block = block;
+  _blockId = _block->getId();
   _prevControl = _block->getExtControl();
   _block->setExtmi(this);
-  _blockId = _block->getId();
+
   if (_spef) {
     _spef = nullptr;
     _extracted = false;
   }
+
   _bufSpefCnt = 0;
   _origSpefFilePrefix = nullptr;
   _newSpefFilePrefix = nullptr;
@@ -684,7 +690,7 @@ void extMain::measureRC(CoupleOptions& options)
 
       _totCCcnt++;  // TO_TEST
 
-      if (m._rc[_minModelIndex]->coupling_ < _coupleThreshold) {  // TO_TEST
+      if (m._rc[0]->coupling_ < _coupleThreshold) {
         updateTotalCap(rseg1, &m, deltaFr, m._metRCTable.getCnt(), true);
         updateTotalCap(rseg2, &m, deltaFr, m._metRCTable.getCnt(), true);
 

@@ -8,6 +8,8 @@ Also provides doc_check_test for lightweight Python-only
 documentation tests that do not require the OpenROAD binary,
 and messages_txt for generating messages.txt from source files."""
 
+load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF")
+
 def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
@@ -21,8 +23,7 @@ def _regression_test_impl(ctx):
     # Generate the test script
     ctx.actions.write(
         output = test_script,
-        content = """
-#!/usr/bin/env bash
+        content = """#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
@@ -32,6 +33,7 @@ export REGRESSION_TEST={REGRESSION_TEST}
 export TEST_GOLDEN_FILE={TEST_GOLDEN_FILE}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
+export TEST_CHECK_METRICS={TEST_CHECK_METRICS}
 export TEST_EXPECTED_EXIT_CODE={TEST_EXPECTED_EXIT_CODE}
 exec "{bazel_test_sh}" "$@"
 """.format(
@@ -44,6 +46,7 @@ exec "{bazel_test_sh}" "$@"
             TEST_GOLDEN_FILE = ctx.file.golden_file.short_path if ctx.file.golden_file else "",
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
             TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
+            TEST_CHECK_METRICS = "True" if ctx.attr.check_metrics else "False",
             TEST_EXPECTED_EXIT_CODE = str(ctx.attr.expected_exit_code),
         ),
         is_executable = True,
@@ -65,12 +68,15 @@ exec "{bazel_test_sh}" "$@"
     if ctx.file.golden_file:
         runfiles_files.append(ctx.file.golden_file)
 
-    return DefaultInfo(
-        executable = test_script,
-        runfiles = ctx.runfiles(
-            files = runfiles_files,
-        ).merge_all(data_runfiles + [ctx.attr.openroad[DefaultInfo].default_runfiles]),
-    )
+    return [
+        DefaultInfo(
+            executable = test_script,
+            runfiles = ctx.runfiles(
+                files = runfiles_files,
+            ).merge_all(data_runfiles + [ctx.attr.openroad[DefaultInfo].default_runfiles]),
+        ),
+        RunEnvironmentInfo(environment = ctx.attr.env),
+    ]
 
 regression_rule_test = rule(
     implementation = _regression_test_impl,
@@ -83,6 +89,10 @@ regression_rule_test = rule(
             doc = "Diff the output log against <test_name>.ok",
             default = True,
         ),
+        "check_metrics": attr.bool(
+            doc = "Compare the flow result metrics against <test_name>.metrics_limits",
+            default = False,
+        ),
         "check_passfail": attr.bool(
             doc = "Check the output log contains pass or OK in the last line",
             default = False,
@@ -90,6 +100,12 @@ regression_rule_test = rule(
         "data": attr.label_list(
             doc = "Additional test files required for the test.",
             allow_files = True,
+        ),
+        "env": attr.string_dict(
+            doc = "Static environment variables for the test action " +
+                  "(RunEnvironmentInfo). --test_env on the command line " +
+                  "takes precedence.",
+            default = {},
         ),
         "expected_exit_code": attr.int(
             doc = "Expected command exit code for the regression.",
@@ -102,11 +118,8 @@ regression_rule_test = rule(
         "openroad": attr.label(
             doc = "The OpenROAD executable.",
             executable = True,
-            # Avoid building OpenROAD twice with "bazelisk test -c opt ..."
-            #
-            # OpenROAD is used to build more stuff in bazel-orfs,
-            # hence we want the "exec" (host) configuration.
-            cfg = "exec",
+            cfg = "target",
+            mandatory = True,
         ),
         "regression_test": attr.label(
             doc = "The regression test script.",
@@ -135,8 +148,7 @@ def _doc_check_test_impl(ctx):
 
     ctx.actions.write(
         output = test_script,
-        content = """
-#!/bin/bash
+        content = """#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
@@ -253,41 +265,72 @@ def doc_check_test(name, **kwargs):
         **kwargs
     )
 
-def messages_txt(name = "messages_txt", src_patterns = None, extra_srcs = None, visibility = None):
+# Extensions find_messages.py scans for logger calls. Keep in sync with the
+# regex in etc/find_messages.py: an extension missing here means every message
+# in those files is missing from messages.txt, and so from its man3 page.
+_MESSAGE_SRC_EXTENSIONS = [
+    "c",
+    "cc",
+    "cpp",
+    "cxx",
+    "h",
+    "hh",
+    "i",
+    "ll",
+    "tcl",
+    "yy",
+]
+
+def message_srcs(name = "message_srcs", visibility = None):
+    """Expose a sub-package's sources to its module's messages_txt target.
+
+    glob() never crosses a package boundary, so a module whose sources live in
+    sub-packages has to collect them through filegroups listed in its
+    messages_txt extra_srcs.
+
+    Args:
+        name: Target name (default: "message_srcs").
+        visibility: Bazel visibility; the owning module's package.
+    """
+    native.filegroup(
+        name = name,
+        srcs = native.glob(
+            ["**/*." + ext for ext in _MESSAGE_SRC_EXTENSIONS],
+            allow_empty = True,
+        ),
+        visibility = visibility,
+    )
+
+def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, extra_srcs = None, visibility = None):
     """Generate messages.txt from source files using find_messages.py.
 
     Replaces per-module genrule boilerplate with a single macro call.
 
     Args:
         name: Target name (default: "messages_txt").
-        src_patterns: Glob patterns for source files. Defaults to all
-            common C++/Tcl extensions. Override for modules with
-            non-standard layouts (e.g., recursive globs for odb).
-        extra_srcs: Additional source labels from other packages (e.g.,
-            filegroups in sub-packages). When provided, files are passed
-            directly to find_messages.py instead of directory walking.
+        src_patterns: Glob patterns for source files. Defaults to every
+            scanned extension under src/. Override for modules that keep
+            messages elsewhere, e.g. odb's public headers.
+        recursive: Whether the default patterns descend into src/
+            subdirectories. Several modules keep logger calls there, so this
+            is on by default; the top-level ORD messages turn it off to avoid
+            swallowing the modules, which have their own messages_txt.
+        extra_srcs: Additional source labels from other packages, i.e.
+            message_srcs filegroups in sub-packages, which glob() cannot reach.
         visibility: Bazel visibility.
     """
     if src_patterns == None:
-        src_patterns = [
-            "src/*.cc",
-            "src/*.cpp",
-            "src/*.h",
-            "src/*.hh",
-            "src/*.tcl",
-        ]
+        prefix = "src/**/*." if recursive else "src/*."
+        src_patterns = [prefix + ext for ext in _MESSAGE_SRC_EXTENSIONS]
 
     srcs = native.glob(src_patterns, allow_empty = True)
     if extra_srcs:
         srcs = srcs + extra_srcs
 
-    # When extra_srcs are present, sources span multiple directories so
-    # the dirname-of-first-src trick doesn't work.  Pass every file
-    # path as a positional arg to find_messages.py instead.
-    if extra_srcs:
-        cmd = "$(PYTHON3) $(location //etc:find_messages.py) $(SRCS) > $@"
-    else:
-        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@"
+    # Scan exactly the declared srcs. find_messages.py can also walk a
+    # directory, but the sources span several directories and the walk root
+    # would have to be guessed from them.
+    cmd = "$(PYTHON3) $(location //etc:find_messages.py) $(SRCS) > $@"
 
     native.genrule(
         name = name,
@@ -327,6 +370,15 @@ def regression_test(
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
+
+    # Default every regression test to the GPU_ENV_OFF pin: on a GPU build
+    # (--config=gpu) the runtime gate defaults on, and any test that runs
+    # the placer against CPU golden logs would otherwise diverge. On the
+    # default CPU build the select is empty, so nothing changes. GPU-only
+    # tests override with env = {"ENABLE_GPU": "1"}.
+    env = _pop(kwargs, "env", None)
+    if env == None:
+        env = GPU_ENV_OFF
     for test_file in test_files:
         ext = test_file.split(".")[-1]
 
@@ -354,6 +406,10 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = size,
-            tags = tags,
+            # Tag with the test language so a run can select or skip one of
+            # them, e.g. --test_tag_filters=-py for the sanitizer configs,
+            # which cannot load the instrumented Python extension modules.
+            tags = tags + [ext],
+            env = env,
             **kwargs
         )

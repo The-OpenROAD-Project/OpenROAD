@@ -600,6 +600,108 @@ TEST_F(GCFixture, min_enclosed_area)
              odb::Rect(50, 50, 150, 150));
 }
 
+using Lef58AreaFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaFixture, lef58_area)
+{
+  const bool legal = GetParam();
+  // The wire below provides 200 x 100 = 20000 DBU^2.  Require just under that
+  // when legal and just over it when illegal.
+  makeLef58AreaConstraint(2, /* area */ legal ? 20000 : 30000);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 150));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaSuite, Lef58AreaFixture, testing::Bool());
+
+// Check the LEF58 area EXCEPTRECTANGLE option: the rule is ignored for a
+// single-rectangle shape but still applies to a non-rectangular one.  The
+// required area is set high so both shapes are below it; only the shape
+// decides whether a marker is produced.
+using Lef58AreaExceptRectFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaExceptRectFixture, lef58_area_except_rectangle)
+{
+  const bool rectangular = GetParam();
+  makeLef58AreaConstraint(
+      2, /* area */ 100000, /* rect_width */ -1, /* except_rectangle */ true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});
+  if (!rectangular) {
+    // Add a stem to turn the wire into a (non-rectangular) T-shape.
+    makePathseg(n1, 2, {100, 50}, {100, 300});
+  }
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (rectangular) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 300));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaExceptRectSuite,
+                         Lef58AreaExceptRectFixture,
+                         testing::Bool());
+
+// Same rectangle below the required area, varying only EXCEPTRECTANGLE: with
+// it set the rectangle is excepted (no marker); without it the rule applies.
+using Lef58AreaExceptRectRectFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaExceptRectRectFixture, lef58_area_except_rectangle_rect)
+{
+  const bool except_rectangle = GetParam();
+  makeLef58AreaConstraint(
+      2, /* area */ 30000, /* rect_width */ -1, except_rectangle);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});  // rectangle, area 20000
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (except_rectangle) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 150));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaExceptRectRectSuite,
+                         Lef58AreaExceptRectRectFixture,
+                         testing::Bool());
+
 // Check for a spacing table influence violation.
 TEST_F(GCFixture, spacing_table_infl_vertical)
 {
@@ -1615,5 +1717,36 @@ INSTANTIATE_TEST_SUITE_P(WidthTblOrthSuite,
                          WidthTblOrthFixture,
                          testing::Combine(testing::Values(40, 50, 60),
                                           testing::Values(40, 50, 60)));
+
+// Macro OBS with SPACING 0 (minSpacing=0) must not produce a short/abutting
+// violation when a metal segment's edge exactly touches the OBS edge.
+// Verifies the rects_abut path in checkMetalSpacing_short_obs
+// (FlexGC_main.cpp): when rects_abut=true and reqSpcVal==0 the short check
+// is suppressed.  A layer spacing rule is required so that a plain OBS
+// (minSpacing=-1) yields reqSpcVal>0 and the baseline violation fires,
+// confirming the fix case (minSpacing=0 → reqSpcVal=0 → return) is the
+// only reason the check is suppressed.
+using ShortObsMinSpacingFixture = FixtureWithParam<bool>;
+TEST_P(ShortObsMinSpacingFixture, short_obs_min_spacing)
+{
+  const bool has_min_spacing = GetParam();
+  // Add spacing rule: width=100 + PRL=0 → reqSpcVal=100 for a plain OBS.
+  makeSpacingConstraint(2);
+  frNet* n1 = makeNet("n1");
+  // Horizontal path ending at x=500; OBS west face starts at x=500
+  // → shapes abut (distX=distY=0, prlX=0, prlY=100 → rects_abut=true).
+  makePathseg(n1, 2, {0, 0}, {500, 0});
+  auto [block, master] = makeMacro("OBS");
+  auto blk = makeMacroObs(block, 500, -50, 1000, 50, 2);
+  if (has_min_spacing) {
+    blk->setMinSpacing(0);  // SPACING 0 in LEF OBS → reqSpcVal=0 → suppressed
+  }
+  makeInst("i1", block, master);
+  runGC();
+  EXPECT_EQ(worker.getMarkers().size(), has_min_spacing ? 0u : 1u);
+}
+INSTANTIATE_TEST_SUITE_P(ShortObsMinSpacingSuite,
+                         ShortObsMinSpacingFixture,
+                         testing::Bool());
 
 }  // namespace drt

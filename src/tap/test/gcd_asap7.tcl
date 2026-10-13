@@ -12,4 +12,4 @@ tapcell \
 
 write_def $def_file
 
-diff_file gcd_asap7.defok $def_file
+diff_files gcd_asap7.defok $def_file

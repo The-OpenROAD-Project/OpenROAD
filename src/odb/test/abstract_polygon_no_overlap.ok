@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: abstract_polygon_no_overlap.lef, created 5 layers
+[INFO ODB-0128] Design: polygon_block
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[WARNING ODB-0033] No overlap layer found for obstructions.
+No differences found.
+[WARNING ODB-0033] No overlap layer found for obstructions.
+No differences found.

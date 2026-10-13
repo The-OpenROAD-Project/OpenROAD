@@ -7,11 +7,18 @@
 #include <QString>
 #include <QWidget>
 
+#include "gui/gui.h"
+
 namespace utl {
 class Logger;
 }
 
 namespace gui {
+
+inline QColor toQColor(const web::Painter::Color& color)
+{
+  return QColor(color.r, color.g, color.b, color.a);
+}
 
 class Utils
 {

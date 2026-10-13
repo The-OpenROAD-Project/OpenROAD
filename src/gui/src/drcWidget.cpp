@@ -104,13 +104,13 @@ void DRCWidget::focusIndex(const QModelIndex& focus_index)
   QVariant data = item->data();
   if (data.isValid()) {
     odb::dbMarker* marker = data.value<odb::dbMarker*>();
-    emit focus(Gui::get()->makeSelected(marker));
+    emit focus(web::Gui::get()->makeSelected(marker));
   }
 }
 
 void DRCWidget::defocus()
 {
-  emit focus(Selected());
+  emit focus(web::Selected());
 }
 
 void DRCWidget::setLogger(utl::Logger* logger)
@@ -201,7 +201,7 @@ void DRCWidget::showMarker(const QModelIndex& index, bool open_inspector)
     } else if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
       marker->setVisited(false);
     } else {
-      Selected t = Gui::get()->makeSelected(marker);
+      web::Selected t = web::Gui::get()->makeSelected(marker);
       emit selectDRC(t, open_inspector);
       focusIndex(index);
     }
@@ -253,11 +253,11 @@ void DRCWidget::hideEvent(QHideEvent* event)
 
 void DRCWidget::toggleRenderer(bool visible)
 {
-  if (!Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 
-  auto gui = Gui::get();
+  auto gui = web::Gui::get();
   if (visible) {
     gui->registerRenderer(renderer_.get());
   } else {
@@ -330,7 +330,7 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category,
        make_item(QString::number(category->getMarkerCount()) + " markers")});
 }
 
-void DRCWidget::updateSelection(const Selected& selection)
+void DRCWidget::updateSelection(const web::Selected& selection)
 {
   const std::any& object = selection.getObject();
   if (auto s = std::any_cast<odb::dbMarker*>(&object)) {
@@ -355,8 +355,8 @@ void DRCWidget::selectCategory(odb::dbMarkerCategory* category)
 
 void DRCWidget::loadReport(const QString& filename)
 {
-  Gui::get()->removeSelected<odb::dbMarker*>();
-  Gui::get()->removeSelected<odb::dbMarkerCategory*>();
+  web::Gui::get()->removeSelected<odb::dbMarker*>();
+  web::Gui::get()->removeSelected<odb::dbMarkerCategory*>();
 
   odb::dbMarkerCategory* category = nullptr;
   try {
@@ -477,21 +477,21 @@ DRCRenderer::DRCRenderer() : category_(nullptr)
 {
 }
 
-void DRCRenderer::drawObjects(Painter& painter)
+void DRCRenderer::drawObjects(web::Painter& painter)
 {
   if (category_ == nullptr) {
     return;
   }
 
-  DbMarkerDescriptor* desc
-      = (DbMarkerDescriptor*) Gui::get()->getDescriptor<odb::dbMarker*>();
+  web::DbMarkerDescriptor* desc = (web::DbMarkerDescriptor*) web::Gui::get()
+                                      ->getDescriptor<odb::dbMarker*>();
 
-  Painter::Color pen_color = Painter::kWhite;
-  Painter::Color brush_color = pen_color;
+  web::Painter::Color pen_color = web::Painter::kWhite;
+  web::Painter::Color brush_color = pen_color;
   brush_color.a = 50;
 
   painter.setPen(pen_color, true, 0);
-  painter.setBrush(brush_color, Painter::Brush::kDiagonal);
+  painter.setBrush(brush_color, web::Painter::Brush::kDiagonal);
   for (odb::dbMarker* marker : category_->getAllMarkers()) {
     if (!marker->isVisible()) {
       continue;
@@ -500,20 +500,20 @@ void DRCRenderer::drawObjects(Painter& painter)
   }
 }
 
-SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,
-                                 const odb::Rect& region)
+web::SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,
+                                      const odb::Rect& region)
 {
   if (category_ == nullptr) {
-    return SelectionSet();
+    return web::SelectionSet();
   }
 
   if (layer != nullptr) {
-    return SelectionSet();
+    return web::SelectionSet();
   }
 
-  auto gui = Gui::get();
+  auto gui = web::Gui::get();
 
-  SelectionSet selections;
+  web::SelectionSet selections;
   for (odb::dbMarker* marker : category_->getAllMarkers()) {
     if (!marker->isVisible()) {
       continue;

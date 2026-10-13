@@ -13,7 +13,7 @@
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "tst/fixture.h"
+#include "tst/db_fixture.h"
 
 namespace odb {
 namespace {
@@ -26,7 +26,7 @@ static std::string readFileContent(const std::string& path)
                      std::istreambuf_iterator<char>());
 }
 
-class VerilogWriterFixture : public tst::Fixture
+class VerilogWriterFixture : public tst::DbFixture
 {
  protected:
   VerilogWriterFixture()

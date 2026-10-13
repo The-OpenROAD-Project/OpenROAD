@@ -53,6 +53,7 @@ class ThreeDBlox
   void createRegion(const ChipletRegion& region, dbChip* chip);
   dbChip* createDesignTopChiplet(const DesignDef& design);
   void createChipInst(const ChipletInst& chip_inst);
+  void readDefForChip(dbChip* chip, const std::string& def_file);
   void createConnection(const Connection& connection);
   void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
   std::pair<dbInst*, dbBTerm*> createBump(const BumpMapEntry& entry,
@@ -69,5 +70,8 @@ class ThreeDBlox
   std::unordered_set<odb::dbTech*> written_techs_;
   std::unordered_set<odb::dbLib*> written_libs_;
   std::unordered_set<std::string> read_files_;
+  // Master chips that have already consumed their single allowed DEF file;
+  // see readDefForChip.
+  std::unordered_set<odb::dbChip*> chips_with_def_;
 };
 }  // namespace odb

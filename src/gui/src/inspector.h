@@ -78,7 +78,7 @@ class SelectedItemModel : public QStandardItemModel
   Q_OBJECT
 
  public:
-  SelectedItemModel(const Selected& object,
+  SelectedItemModel(const web::Selected& object,
                     const QColor& selectable,
                     const QColor& editable,
                     QObject* parent = nullptr);
@@ -95,7 +95,7 @@ class SelectedItemModel : public QStandardItemModel
   void updateObject();
 
  private:
-  void makePropertyItem(const Descriptor::Property& property,
+  void makePropertyItem(const web::Descriptor::Property& property,
                         QStandardItem*& name_item,
                         QStandardItem*& value_item);
   QStandardItem* makeItem(const QString& name);
@@ -110,17 +110,17 @@ class SelectedItemModel : public QStandardItemModel
                                   const Iterator& begin,
                                   const Iterator& end);
   QStandardItem* makePropertyTable(QStandardItem* name_item,
-                                   const PropertyTable& table);
+                                   const web::PropertyTable& table);
 
   void makeItemEditor(const std::string& name,
                       QStandardItem* item,
-                      const Selected& selected,
+                      const web::Selected& selected,
                       EditorItemDelegate::EditType type,
-                      const Descriptor::Editor& editor);
+                      const web::Descriptor::Editor& editor);
 
   const QColor selectable_item_;
   const QColor editable_item_;
-  const Selected& object_;
+  const web::Selected& object_;
 };
 
 class ActionLayout : public QLayout
@@ -176,8 +176,8 @@ class ObjectTree : public QTreeView
 };
 
 // The inspector is to allow a single object to have it properties displayed.
-// It is generic and builds on the Selected and Descriptor classes.
-// The inspector knows how to handle SelectionSet and Selected objects
+// It is generic and builds on the web::Selected and web::Descriptor classes.
+// The inspector knows how to handle web::SelectionSet and web::Selected objects
 // and will create links for them in the tree widget.  Simple properties,
 // like strings, are handled as well.
 class Inspector : public QDockWidget
@@ -185,30 +185,30 @@ class Inspector : public QDockWidget
   Q_OBJECT
 
  public:
-  Inspector(const SelectionSet& selected,
-            const HighlightSet& highlighted,
+  Inspector(const web::SelectionSet& selected,
+            const web::HighlightSet& highlighted,
             QWidget* parent = nullptr);
 
-  const Selected& getSelection() { return selection_; }
+  const web::Selected& getSelection() { return selection_; }
 
  signals:
-  void addSelected(const Selected& selected);
-  void removeSelected(const Selected& selected);
-  void selected(const Selected& selected, bool show_connectivity = false);
-  void selectedItemChanged(const Selected& selected);
-  void selection(const Selected& selected);
-  void focus(const Selected& selected);
+  void addSelected(const web::Selected& selected);
+  void removeSelected(const web::Selected& selected);
+  void selected(const web::Selected& selected, bool show_connectivity = false);
+  void selectedItemChanged(const web::Selected& selected);
+  void selection(const web::Selected& selected);
+  void focus(const web::Selected& selected);
 
-  void addHighlight(const SelectionSet& selection);
-  void removeHighlight(const QList<const Selected*>& selected);
+  void addHighlight(const web::SelectionSet& selection);
+  void removeHighlight(const QList<const web::Selected*>& selected);
 
   void setCommand(const QString& command);
 
  public slots:
-  void inspect(const Selected& object);
+  void inspect(const web::Selected& object);
   void clicked(const QModelIndex& index);
   void doubleClicked(const QModelIndex& index);
-  void update(const Selected& object = Selected());
+  void update(const web::Selected& object = web::Selected());
 
   int selectNext();
   int selectPrevious();
@@ -237,9 +237,9 @@ class Inspector : public QDockWidget
 
   int getSelectedIteratorPosition();
 
-  bool isHighlighted(const Selected& selected);
+  bool isHighlighted(const web::Selected& selected);
 
-  void makeAction(const Descriptor::Action& action);
+  void makeAction(const web::Descriptor::Action& action);
 
   void navigateBack();
 
@@ -257,9 +257,9 @@ class Inspector : public QDockWidget
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
   ActionLayout* action_layout_;
-  const SelectionSet& selected_;
-  SelectionSet::iterator selected_itr_;
-  Selected selection_;
+  const web::SelectionSet& selected_;
+  web::SelectionSet::iterator selected_itr_;
+  web::Selected selection_;
   QFrame* button_frame_;
   QPushButton* button_next_;
   QPushButton* button_prev_;
@@ -271,12 +271,12 @@ class Inspector : public QDockWidget
   std::string report_text_;
   bool readonly_;
 
-  const HighlightSet& highlighted_;
+  const web::HighlightSet& highlighted_;
 
-  std::vector<Selected> navigation_history_;
+  std::vector<web::Selected> navigation_history_;
 
-  std::map<QWidget*, Descriptor::ActionCallback> actions_;
-  Descriptor::ActionCallback deselect_action_;
+  std::map<QWidget*, web::Descriptor::ActionCallback> actions_;
+  web::Descriptor::ActionCallback deselect_action_;
 
   // used to finetune the double click interval
   static constexpr double kMouseDoubleClickScale = 0.75;

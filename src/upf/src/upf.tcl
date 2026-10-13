@@ -356,7 +356,7 @@ proc map_power_switch { args } {
       if { [llength $port] != 2 } {
         utl::error UPF 40 "The port map should be a list of exactly 2 elements"
       }
-      upf::set_power_switch_port $switch [lindex $port 0] [lindex $port 1]
+      upf::set_power_switch_port_map $switch [lindex $port 0] [lindex $port 1]
     }
   }
 }

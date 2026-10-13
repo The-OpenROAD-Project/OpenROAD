@@ -10,7 +10,6 @@ set_global_routing_layer_adjustment met2-met4 0.8
 set_routing_layers -signal met1-met5
 global_route
 
-
 check_antennas
 repair_antennas -diode_only
 check_antennas
@@ -18,8 +17,8 @@ check_placement
 
 set guide_file [make_result_file repair_antennas_only_diodes.guide]
 write_guides $guide_file
-diff_file repair_antennas_only_diodes.guideok $guide_file
+diff_files repair_antennas_only_diodes.guideok $guide_file
 
 set def_file [make_result_file repair_antennas_only_diodes.def]
 write_def $def_file
-diff_file repair_antennas_only_diodes.defok $def_file
+diff_files repair_antennas_only_diodes.defok $def_file

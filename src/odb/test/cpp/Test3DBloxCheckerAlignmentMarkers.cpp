@@ -93,7 +93,7 @@ class AlignmentMarkersFixture : public CheckerFixture
     auto* ri1 = inst1->findChipRegionInst("r1_fr");
     auto* ri2 = inst2->findChipRegionInst("r2_bk");
     auto* conn
-        = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+        = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
     conn->setThickness(0);
   }
 

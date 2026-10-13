@@ -43,51 +43,12 @@ if [ -e openroad.repo_mapping ]; then
     rm -rf openroad.repo_mapping
 fi
 
-# Clear Bazel runfiles env vars so the installed binary resolves its own
-# runfiles tree (not the test runner's).
-unset RUNFILES_DIR RUNFILES_MANIFEST_FILE TEST_SRCDIR
-
 # Verify CLI startup and trivial Tcl evaluation works.
 echo 'puts "install_test_ok"' > test_script.tcl
 if OUTPUT=$(./openroad -no_init -no_splash -exit test_script.tcl 2>&1) && echo "$OUTPUT" | grep -q "install_test_ok"; then
     echo "PASS: installed binary CLI startup works"
 else
     echo "FAIL: installed binary CLI startup failed or produced unexpected output"
-    echo "Output was: $OUTPUT"
-    exit 1
-fi
-
-# Verify Main.cc runfiles initialization: RUNFILES_DIR should be present even
-# though it was cleared in this test process.
-cat > runfiles_env_test.tcl <<'EOF'
-if {![info exists ::env(RUNFILES_DIR)]} {
-  puts "runfiles_env_missing"
-  exit 1
-}
-if {![file isdirectory $::env(RUNFILES_DIR)]} {
-  puts "runfiles_dir_not_found"
-  exit 1
-}
-puts "runfiles_env_ok"
-EOF
-
-if OUTPUT=$(./openroad -no_init -no_splash -exit runfiles_env_test.tcl 2>&1) && echo "$OUTPUT" | grep -q "runfiles_env_ok"; then
-    echo "PASS: RUNFILES_DIR initialized by openroad"
-else
-    echo "FAIL: RUNFILES_DIR was not initialized as expected"
-    echo "Output was: $OUTPUT"
-    exit 1
-fi
-
-# Verify runfiles resolution when launched via PATH from an unrelated working
-# directory. argv[0] is then just "openroad" (no path component); the binary
-# must resolve the runfiles tree next to the installed executable found on
-# PATH, not $PWD/openroad.runfiles. WORK_DIR deliberately has no runfiles tree.
-cp runfiles_env_test.tcl "$WORK_DIR"/
-if OUTPUT=$(cd "$WORK_DIR" && PATH="$DEST_DIR:$PATH" openroad -no_init -no_splash -exit runfiles_env_test.tcl 2>&1) && echo "$OUTPUT" | grep -q "runfiles_env_ok"; then
-    echo "PASS: RUNFILES_DIR initialized when launched via PATH from another dir"
-else
-    echo "FAIL: RUNFILES_DIR not initialized when launched via PATH from another dir"
     echo "Output was: $OUTPUT"
     exit 1
 fi

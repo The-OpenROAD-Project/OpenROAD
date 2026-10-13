@@ -3,13 +3,7 @@ import os
 import utl
 import re
 from openroad import Design
-
-if os.environ.get("BAZEL_TEST") == "1":
-    from openroad import PlaceOptions
-else:
-    import gpl
-
-    PlaceOptions = gpl.PlaceOptions
+from gpl import PlaceOptions
 
 
 def get_runfiles_path_to(path):
@@ -117,5 +111,19 @@ def make_design(tech):
     # suppress grt message with the suggested adjustment
     logger.suppressMessage(utl.GRT, 303)
     logger.suppressMessage(utl.GRT, 704)
+
+    # suppress elapsed time messages (non-deterministic)
+    logger.suppressMessage(utl.CTS, 500)
+    logger.suppressMessage(utl.DPL, 500)
+    logger.suppressMessage(utl.DRT, 501)
+    logger.suppressMessage(utl.GPL, 500)
+    logger.suppressMessage(utl.IFP, 500)
+    logger.suppressMessage(utl.IFP, 501)
+    logger.suppressMessage(utl.MPL, 500)
+    logger.suppressMessage(utl.RSZ, 504)
+    logger.suppressMessage(utl.RSZ, 505)
+    logger.suppressMessage(utl.RSZ, 506)
+    logger.suppressMessage(utl.RSZ, 507)
+    logger.suppressMessage(utl.PDN, 500)
 
     return design

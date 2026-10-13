@@ -8,4 +8,4 @@ set report_file [make_result_file ant_report.rpt]
 
 check_antennas -report_file $report_file
 
-diff_file ant_report.rptok $report_file
+diff_files ant_report.rptok $report_file

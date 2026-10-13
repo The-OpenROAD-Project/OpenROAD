@@ -7,6 +7,6 @@ package(default_visibility = ["//visibility:public"])
 
 native_binary(
     name = "clang_tidy",
-    src = "@llvm_toolchain_llvm//:bin/clang-tidy",
+    src = "@llvm//tools:clang-tidy",
     out = "clang_tidy",
 )

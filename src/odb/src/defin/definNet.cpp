@@ -142,7 +142,26 @@ void definNet::connection(const char* iname, const char* tname)
     return;
   }
 
-  inst->getITerm(mterm)->connect(_cur_net);
+  dbITerm* iterm = inst->getITerm(mterm);
+  if (_mode == defin::THREE_D_BLOX) {
+    // The pin may already be connected (e.g. a bump wired from the bump map);
+    // a different net is an error since reconnecting would leave the old net
+    // dangling (same policy as the PIN statement check in definPin).
+    dbNet* existing_net = iterm->getNet();
+    if (existing_net != nullptr && existing_net != _cur_net) {
+      _logger->warn(utl::ODB,
+                    551,
+                    "error: 3DBlox DEF connects pin ({}, {}) to net {} but it "
+                    "is already connected to net {}",
+                    iname,
+                    tname,
+                    _cur_net->getName(),
+                    existing_net->getName());
+      ++_errors;
+      return;
+    }
+  }
+  iterm->connect(_cur_net);
   _net_iterm_cnt++;
 }
 

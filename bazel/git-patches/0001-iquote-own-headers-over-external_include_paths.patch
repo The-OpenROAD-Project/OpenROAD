@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenROAD <openroad@openroad.tools>
+Date: Sat, 11 Jul 2026 00:00:00 +0000
+Subject: [PATCH] bazel: keep git's own -iquote precedence under
+ external_include_paths
+
+OpenROAD enables the external_include_paths toolchain feature globally to pass
+include paths into external/ deps as -isystem (silencing third-party header
+warnings pulled into our TUs). That feature also demotes a repo's own -iquote
+entries to -isystem. git relies on -iquote precedence for its quoted includes:
+builtin/get-tar-commit-id.c does #include "tar.h" and git ships its own tar.h
+(struct ustar_header, TYPEFLAG_GLOBAL_HEADER) at the repo root. Once demoted to
+-isystem, glibc's <tar.h> (injected earlier via the hermetic toolchain's
+sysroot -isystem) shadows git's, leaving the struct incomplete.
+
+Re-add the repo root (source and generated trees) as -iquote in GIT_COPTS so
+git's own quoted includes keep precedence. The feature stays on for git so its
+external deps (openssl, curl, ...) still resolve via -isystem.
+---
+diff --git a/contrib/bazel/defs.bzl b/contrib/bazel/defs.bzl
+--- a/contrib/bazel/defs.bzl
++++ b/contrib/bazel/defs.bzl
+@@ -82,7 +82,23 @@
+     "//conditions:default": [],
+ })
+ 
+-GIT_COPTS = _GIT_BASE_COPTS + _GIT_CPU_DEFINES + _GIT_OS_DEFINES
++# OpenROAD enables the external_include_paths toolchain feature globally
++# (see .bazelrc), which demotes this repo's own -iquote entries to -isystem.
++# git relies on -iquote precedence for its quoted includes: e.g.
++# builtin/get-tar-commit-id.c does #include "tar.h" and git ships its own
++# tar.h (struct ustar_header, TYPEFLAG_GLOBAL_HEADER) at the repo root, which
++# must win over glibc's <tar.h> (injected earlier as -isystem by the
++# hermetic toolchain sysroot). Re-add the repo root (source and generated
++# trees) as -iquote so those includes resolve to git's own headers. Same
++# class of fix as the bison/sed/gawk -I-over-isystem overrides.
++_GIT_IQUOTE_COPTS = [
++    "-iquote",
++    "external/git+",
++    "-iquote",
++    "$(BINDIR)/external/git+",
++]
++
++GIT_COPTS = _GIT_IQUOTE_COPTS + _GIT_BASE_COPTS + _GIT_CPU_DEFINES + _GIT_OS_DEFINES
+ 
+ GIT_LINKOPTS = ["-lpthread"] + select({
+     "@platforms//os:macos": [

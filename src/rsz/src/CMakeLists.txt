@@ -28,6 +28,7 @@ add_library(rsz_lib
     policy/MeasuredVtSwapPolicy.cc
     DelayEstimator.cc
     DelayEstimatorReporter.cc
+    LRSubproblem.cc
     policy/SetupCritVtSwapPolicy.cc
     policy/SetupDirectionalPolicy.cc
     policy/SetupLastGaspPolicy.cc
@@ -36,6 +37,7 @@ add_library(rsz_lib
     policy/SetupWnsPolicy.cc
     policy/SetupMt1Policy.cc
     policy/SetupReroutePolicy.cc
+    policy/GlobalSizingPolicy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
@@ -45,6 +47,8 @@ add_library(rsz_lib
     move/BufferGenerator.cc
     move/CloneCandidate.cc
     move/CloneGenerator.cc
+    move/BufferToInvertersCandidate.cc
+    move/BufferToInvertersGenerator.cc
     move/MeasuredVtSwapCandidate.cc
     move/MeasuredVtSwapGenerator.cc
     move/MoveCandidate.cc
@@ -117,7 +121,7 @@ target_link_libraries(rsz
     OpenSTA
     dbSta
     grt
-    gui
+    gui_core
     utl_lib
 )
 

@@ -65,8 +65,8 @@ Total            91834          2524            2.75%             0 /  0 /  0
 [INFO GRT-0014] Routed nets: 563
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.314-17.314
- Total capacitance: 47.290-50.552
+ Wire capacitance: 16.922-16.922
+ Total capacitance: 46.897-50.160
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

@@ -12,21 +12,21 @@
 #include <vector>
 
 #include "grt/GlobalRouter.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
 namespace grt {
 
-gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
+web::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
                                                    grt::GlobalRouter* grouter,
                                                    odb::dbDatabase* db)
 {
-  return gui::registerHeatMapSource(
+  return web::registerHeatMapSource(
       "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger, grouter, db]() {
         return std::make_shared<RUDYDataSource>(logger, grouter, db);
       });
@@ -66,14 +66,14 @@ void RUDYDataSource::combineMapData(bool base_has_value,
 void RUDYDataSource::populateXYGrid()
 {
   if (getBlock() == nullptr) {
-    gui::GlobalRoutingDataSource::populateXYGrid();
+    web::GlobalRoutingDataSource::populateXYGrid();
     return;
   }
 
   try {
     rudy_ = grouter_->getRudy();
   } catch (const std::runtime_error& e) {
-    gui::GlobalRoutingDataSource::populateXYGrid();
+    web::GlobalRoutingDataSource::populateXYGrid();
     return;
   }
   int tile_size = rudy_->getTileSize();
@@ -134,9 +134,9 @@ bool RUDYDataSource::populateMap()
     return false;
   }
 
-  if (selection_only_ && gui::Gui::enabled()) {
+  if (selection_only_ && web::Gui::enabled()) {
     odb::PtrSet<odb::dbNet> selection;
-    for (const gui::Selected& item : gui::Gui::get()->selection()) {
+    for (const web::Selected& item : web::Gui::get()->selection()) {
       if (item.isNet()) {
         selection.insert(std::any_cast<odb::dbNet*>(item.getObject()));
       }

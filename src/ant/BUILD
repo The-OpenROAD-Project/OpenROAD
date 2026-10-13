@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -17,6 +17,10 @@ cc_library(
     srcs = [
         "src/AntennaChecker.cc",
         "src/AntennaCheckerImpl.hh",
+        "src/AntennaReport.cc",
+        "src/AntennaReport.hh",
+        "src/AntennaRules.cc",
+        "src/AntennaRules.hh",
         "src/PinType.hh",
         "src/Polygon.cc",
         "src/Polygon.hh",
@@ -118,4 +122,9 @@ messages_txt(
         "//docs:__pkg__",
         "//src/ant/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    deps = [":ant"],
 )

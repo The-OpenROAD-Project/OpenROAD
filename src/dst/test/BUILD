@@ -23,17 +23,17 @@ cc_test(
         "cpp/TestBalancer.cc",
         "cpp/stubs.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst",
+        "//src/dst:dst_impl",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",
+        "@boost.scope_exit",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ] + select({
@@ -76,14 +76,13 @@ cc_test(
         "cpp/TestWorker.cc",
         "cpp/stubs.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     includes = [
         "../src",
     ],
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst",
+        "//src/dst:dst_impl",
         "//src/utl",
         "@boost.asio",
         "@boost.bind",

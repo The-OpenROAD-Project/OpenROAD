@@ -1,0 +1,45 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.2 ;
+  WIDTH 0.1 ;
+  SPACING 0.1 ;
+  AREA 0.02 ;
+END metal1
+
+LAYER via12
+  TYPE CUT ;
+  SPACING 0.1 ;
+  WIDTH 0.1 ;
+END via12
+
+LAYER metal2
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.2 ;
+  WIDTH 0.1 ;
+  SPACING 0.1 ;
+  AREA 0.02 ;
+END metal2
+
+# Compound via: metal1 has two rects whose union (0.15 x 0.15) is larger than
+# either alone. The via-demand model must union them, not take the last box.
+VIA VIA_C
+  LAYER metal1 ;
+    RECT -0.05 -0.075 0.05 0.075 ;
+    RECT -0.075 -0.05 0.075 0.05 ;
+  LAYER via12 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.075 -0.05 0.075 0.05 ;
+END VIA_C
+
+END LIBRARY

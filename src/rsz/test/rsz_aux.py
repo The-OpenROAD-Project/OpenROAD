@@ -46,6 +46,7 @@ def repair_design(
     max_utilization=None,
     pre_placement=False,
     match_cell_footprint=False,
+    reroute=False,
     verbose=False,
 ):
     resizer = design.getResizer()
@@ -57,6 +58,7 @@ def repair_design(
         float(cap_margin),
         1.0 if pre_placement else 0.0,
         match_cell_footprint,
+        reroute,
         verbose,
     )
 
@@ -88,6 +90,7 @@ def repair_timing(
     skip_size_down_fanout=False,
     skip_buffering=False,
     skip_buffer_removal=False,
+    skip_buffer_to_inverters=False,
     skip_last_gasp=False,
     skip_vt_swap=False,
     skip_crit_vt_swap=False,
@@ -144,6 +147,7 @@ def repair_timing(
             skip_size_down_fanout,
             skip_buffering,
             skip_buffer_removal,
+            skip_buffer_to_inverters,
             skip_last_gasp,
             skip_vt_swap,
             skip_crit_vt_swap,

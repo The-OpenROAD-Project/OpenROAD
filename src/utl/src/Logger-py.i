@@ -2,7 +2,7 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #ifdef BAZEL
-%module(package="src.utl") utl
+%module(package="src.utl") utl_py
 #else
 %module utl_py
 #endif

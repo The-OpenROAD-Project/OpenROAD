@@ -31,7 +31,14 @@ struct RepairSetupContext
   int violation_count{0};
   float initial_tns{0.0f};
   float previous_tns{0.0f};
+  // Remember the last progress layout so phase changes can update the header.
   bool progress_header_printed{false};
+  bool progress_header_show_startpoint_metrics{false};
+  // Design area for the progress table, and the committer's netlist edit
+  // count it was computed at; -1 means not yet computed. Reset to -1 at
+  // every phase start, since a phase can edit outside the committer.
+  double progress_design_area{0.0};
+  int progress_area_at_edit{-1};
 
   // Legacy-derived setup phases share one preamble per repair_setup run.
   bool legacy_preamble_done{false};

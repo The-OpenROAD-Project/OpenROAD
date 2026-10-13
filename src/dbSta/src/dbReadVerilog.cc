@@ -25,6 +25,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Property.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -398,7 +399,8 @@ void Verilog2db::makeDbModule(
     inst_pairs.emplace_back(inst, modinst);
 
     // Verilog attribute is on a cell not an instance
-    std::string impl_oper = network_->getAttribute(cell, "implements_operator");
+    std::string impl_oper
+        = network_->properties()->stringProperty(cell, "implements_operator");
     if (!impl_oper.empty()) {
       odb::dbStringProperty::create(
           modinst, "implements_operator", impl_oper.c_str());
@@ -572,10 +574,12 @@ void Verilog2db::makeChildInsts(Instance* inst,
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
       if (!omit_filename_prop_) {
-        storeLineInfo(network_->getAttribute(child, "src"), db_inst);
+        storeLineInfo(network_->properties()->stringProperty(child, "src"),
+                      db_inst);
       }
 
-      const auto dont_touch = network_->getAttribute(child, "dont_touch");
+      const auto dont_touch
+          = network_->properties()->stringProperty(child, "dont_touch");
       if (!dont_touch.empty()) {
         if (std::stoi(dont_touch)) {
           dont_touch_insts_.push_back(db_inst);
@@ -1113,7 +1117,8 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
         lib->cellIterator()};
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
-      std::string impl_oper = curr_cell->getAttribute("implements_operator");
+      std::string impl_oper = network_->properties()->stringProperty(
+          reinterpret_cast<const sta::Cell*>(curr_cell), "implements_operator");
       if (!impl_oper.empty() && !block_->findModule(curr_cell->name().c_str())
           && !verilog_network->isBlackBox(curr_cell)) {
         unused_cells_.emplace_back(curr_cell);

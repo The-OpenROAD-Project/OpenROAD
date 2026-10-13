@@ -26,5 +26,5 @@ set segs_file [make_result_file "remove_buffers2.segs"]
 write_def $def_file
 write_global_route_segments $segs_file
 
-diff_file remove_buffers2.defok $def_file
-diff_file remove_buffers2.segsok $segs_file
+diff_files remove_buffers2.defok $def_file
+diff_files remove_buffers2.segsok $segs_file

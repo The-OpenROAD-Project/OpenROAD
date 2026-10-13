@@ -36,6 +36,8 @@ body:
         ```
         Then copy and paste the ENTIRE output in the corresponding text fields below.
 
+        If you built OpenROAD yourself, also include the exact `bazelisk build` command you used (e.g. any `--config=` or `-c` flags).
+
   - type: textarea
     id: or-environment
     attributes:

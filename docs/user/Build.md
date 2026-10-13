@@ -1,5 +1,13 @@
 # Installing OpenROAD
 
+```{warning}
+**The CMake build is deprecated.** Bazel is the supported build system for
+OpenROAD. CMake support is no longer developed and will be removed in a
+future release. Building from source should use
+[Bazel](#build-and-install-with-bazel); see [Bazel](Bazel.md) for testing,
+profiling and build configurations.
+```
+
 ## Clone Repository
 
 The first step, independent of the build method, is to download the repository:
@@ -12,7 +20,9 @@ cd OpenROAD
 OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
 
 ```{note}
-There are three methods for building OpenROAD (in order of recommendation): prebuilt binaries, docker images, and finally, local build.  
+There are several methods for obtaining OpenROAD (in order of recommendation):
+prebuilt binaries, docker images, building from source with Bazel, and finally
+the deprecated CMake build.
 ```
 
 ## Build and install with Bazel
@@ -72,7 +82,14 @@ Now you are ready to install the prebuilt binaries.
 Please refer to the instructions for installing prebuilt binaries 
 [above](#build-with-prebuilt-binaries).
 
-## Build Locally
+## Build Locally with CMake (deprecated)
+
+```{warning}
+The CMake build is deprecated and will be removed in a future release. The
+CMake configure step prints the same warning. New users and new setups should
+use [Bazel](#build-and-install-with-bazel) instead; the instructions in this
+section are kept for existing CMake-based setups only.
+```
 
 The default build type is `RELEASE` to compile optimized code.
 The resulting executable is in `build/bin/openroad`.
@@ -133,10 +150,13 @@ To avoid this bahavior use -local flag or -prefix <PATH> argument.
 
 ### Build OpenROAD
 
+`./etc/Build.sh` builds with Bazel by default; the `-cmake-build` flag selects
+the deprecated CMake build used in the rest of this section.
+
 To build with the default options in release mode:
 
 ``` shell
-./etc/Build.sh
+./etc/Build.sh -cmake-build
 ```
 
 #### Custom Library Path
@@ -144,14 +164,14 @@ To build with the default options in release mode:
 To build with debug option enabled and if the Tcl library is not on the default path.
 
 ``` shell
-./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+./etc/Build.sh -cmake-build -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 #### Enable `manpages`
 
 To build the `manpages`:
 ``` shell
-./etc/Build.sh -build-man
+./etc/Build.sh -cmake-build -build-man
 ```
 
 #### LTO Options
@@ -186,7 +206,7 @@ The default install directory is `/usr/local`.
 To install in a different directory with CMake use:
 
 ``` shell
-./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
+./etc/Build.sh -cmake-build -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
 Alternatively, you can use the `DESTDIR` variable with make.

@@ -24,4 +24,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file clock_route_alpha.guideok $guide_file
+diff_files clock_route_alpha.guideok $guide_file

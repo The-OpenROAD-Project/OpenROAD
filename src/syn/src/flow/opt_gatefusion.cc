@@ -373,7 +373,7 @@ static CellIndex buildIndex(sta::Network* network,
     sta::LibertyCellIterator cell_iter(lib);
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
-      if (syn.dontUse(cell) || cell->hasSequentials()) {
+      if (syn.dontUse(cell) || cell->isSequential()) {
         continue;
       }
 

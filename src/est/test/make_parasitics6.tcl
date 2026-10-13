@@ -37,5 +37,5 @@ report_net r1/Q -corner ff
 report_net r1/Q -corner ss
 
 set spef_file_folder [file dirname $spef_file]
-diff_file make_parasitics6_ff.spefok $spef_file_folder/make_parasitics6-tcl_ff.spef
-diff_file make_parasitics6_ss.spefok $spef_file_folder/make_parasitics6-tcl_ss.spef
+diff_files make_parasitics6_ff.spefok $spef_file_folder/make_parasitics6-tcl_ff.spef
+diff_files make_parasitics6_ss.spefok $spef_file_folder/make_parasitics6-tcl_ss.spef

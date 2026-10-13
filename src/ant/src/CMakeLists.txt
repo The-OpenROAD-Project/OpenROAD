@@ -13,6 +13,8 @@ swig_lib(NAME      ant
 
 add_library(ant_lib
     AntennaChecker.cc
+    AntennaReport.cc
+    AntennaRules.cc
     Polygon.cc
     WireBuilder.cc
 )

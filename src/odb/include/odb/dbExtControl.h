@@ -16,14 +16,12 @@ class dbExtControl : public dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  bool _independentExtCorners;
   bool _foreign;
   bool _wireStamped;
   bool _rsegCoord;
   bool _overCell;
   bool _extracted;
   bool _lefRC;
-  uint32_t _cornerCnt;
   uint32_t _ccPreseveGeom;
   uint32_t _ccUp;
   uint32_t _couplingFlag;
@@ -38,12 +36,6 @@ class dbExtControl : public dbObject
   uint32_t _ccNoPowerTarget;
   bool _usingMetalPlanes;
   std::string _ruleFileName;
-  std::string _extractedCornerList;
-  std::string _derivedCornerList;
-  std::string _cornerIndexList;
-  std::string _resFactorList;
-  std::string _gndcFactorList;
-  std::string _ccFactorList;
 
   dbExtControl();
 };

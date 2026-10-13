@@ -116,6 +116,11 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       debug_(new DebugSetting()),
       detour_penalty_(0)
 {
+  graph2d_.setUsedGridCallbacks(
+      [this](int x, int y, EdgeDirection direction, bool added) {
+        updateUsedGrid3D(x, y, direction, added);
+      },
+      [this]() { invalidateOverflow3D(); });
 }
 
 FastRouteCore::~FastRouteCore()
@@ -534,6 +539,7 @@ void FastRouteCore::initEdges()
 
 void FastRouteCore::init3DEdges()
 {
+  invalidateOverflow3D();
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
@@ -559,6 +565,87 @@ void FastRouteCore::init3DEdges()
   }
 }
 
+void FastRouteCore::invalidateOverflow3D()
+{
+  overflow_3d_valid_ = false;
+  h_overflow_3d_ = {};
+  v_overflow_3d_ = {};
+}
+
+void FastRouteCore::rebuildOverflow3D()
+{
+  h_overflow_3d_ = {};
+  v_overflow_3d_ = {};
+  for (int layer = 0; layer < num_layers_; layer++) {
+    for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+      const auto& edge = h_edges_3D_[layer][y][x];
+      h_overflow_3d_.add(edge.usage, edge.cap);
+    }
+    for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+      const auto& edge = v_edges_3D_[layer][y][x];
+      v_overflow_3d_.add(edge.usage, edge.cap);
+    }
+  }
+  overflow_3d_valid_ = true;
+}
+
+void FastRouteCore::updateUsedGrid3D(int x,
+                                     int y,
+                                     EdgeDirection direction,
+                                     bool added)
+{
+  if (!overflow_3d_valid_) {
+    return;
+  }
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  const auto& edges = horizontal ? h_edges_3D_ : v_edges_3D_;
+  auto& totals = horizontal ? h_overflow_3d_ : v_overflow_3d_;
+  for (int layer = 0; layer < num_layers_; layer++) {
+    const auto& edge = edges[layer][y][x];
+    if (added) {
+      totals.add(edge.usage, edge.cap);
+    } else {
+      totals.remove(edge.usage, edge.cap);
+    }
+  }
+}
+
+void FastRouteCore::updateEdge3DUsage(int x,
+                                      int y,
+                                      int layer,
+                                      EdgeDirection direction,
+                                      int delta)
+{
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  auto& edge = horizontal ? h_edges_3D_[layer][y][x] : v_edges_3D_[layer][y][x];
+  const auto old_usage = edge.usage;
+  edge.usage += delta;
+  if (overflow_3d_valid_ && old_usage != edge.usage
+      && graph2d_.isUsedGrid(x, y, direction)) {
+    auto& totals = horizontal ? h_overflow_3d_ : v_overflow_3d_;
+    totals.remove(old_usage, edge.cap);
+    totals.add(edge.usage, edge.cap);
+  }
+}
+
+void FastRouteCore::setEdge3DCapacity(int x,
+                                      int y,
+                                      int layer,
+                                      EdgeDirection direction,
+                                      int cap)
+{
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  auto& edge = horizontal ? h_edges_3D_[layer][y][x] : v_edges_3D_[layer][y][x];
+  const auto old_cap = edge.cap;
+  edge.cap = cap;
+  if (overflow_3d_valid_ && old_cap != edge.cap
+      && graph2d_.isUsedGrid(x, y, direction)) {
+    auto& totals = horizontal ? h_overflow_3d_ : v_overflow_3d_;
+    totals.remove(edge.usage, old_cap);
+    totals.add(edge.usage, edge.cap);
+  }
+}
+
 void FastRouteCore::initLowerBoundCapacities()
 {
   const float LB = 0.9;
@@ -577,10 +664,10 @@ void FastRouteCore::setEdgeCapacity(int x1,
 
   if (y1 == y2) {
     graph2d_.addCapH(x1, y1, capacity);
-    h_edges_3D_[k][y1][x1].cap = capacity;
+    setEdge3DCapacity(x1, y1, k, EdgeDirection::Horizontal, capacity);
   } else if (x1 == x2) {
     graph2d_.addCapV(x1, y1, capacity);
-    v_edges_3D_[k][y1][x1].cap = capacity;
+    setEdge3DCapacity(x1, y1, k, EdgeDirection::Vertical, capacity);
   }
 }
 
@@ -646,7 +733,7 @@ void FastRouteCore::addAdjustment(int x1,
       reduce = cap - reducedCap;
     }
 
-    h_edges_3D_[k][y1][x1].cap = reducedCap;
+    setEdge3DCapacity(x1, y1, k, EdgeDirection::Horizontal, reducedCap);
 
     if (!isReduce) {
       const int increase = reducedCap - cap;
@@ -684,7 +771,7 @@ void FastRouteCore::addAdjustment(int x1,
       reduce = cap - reducedCap;
     }
 
-    v_edges_3D_[k][y1][x1].cap = reducedCap;
+    setEdge3DCapacity(x1, y1, k, EdgeDirection::Vertical, reducedCap);
 
     if (!isReduce) {
       int increase = reducedCap - cap;
@@ -841,6 +928,29 @@ void FastRouteCore::addHorizontalAdjustments(
   }
 }
 
+// Number of tracks to charge for the metal blocking one gcell edge.
+//
+// intervals holds disjoint intervals, so rounding each one up on its own would
+// charge a full track per fragment, making the total depend on how the blocked
+// region happens to be fragmented rather than on how much of it is covered.
+// That is also not monotonic: deleting metal that bridged two fragments splits
+// the span, each half is then rounded up separately, and the edge loses
+// capacity even though less of it is blocked. Summing the covered length and
+// rounding once keeps the charge a function of coverage alone.
+static int blockedTrackCount(const interval_set<int>& intervals,
+                             const int track_space)
+{
+  if (track_space <= 0) {
+    return 0;
+  }
+  int64_t blocked_length = 0;
+  for (const auto& interval_it : intervals) {
+    blocked_length += std::abs(interval_it.upper() - interval_it.lower());
+  }
+  return static_cast<int>(
+      std::ceil(static_cast<double>(blocked_length) / track_space));
+}
+
 void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 {
   // Calculate reduce for vertical tiles
@@ -852,11 +962,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
-        for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
-        }
+        reduce = blockedTrackCount(intervals, track_space[layer - 1]);
       }
       edge_cap -= reduce;
       edge_cap = std::max(edge_cap, 0);
@@ -873,11 +979,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
-        for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
-        }
+        reduce = blockedTrackCount(intervals, track_space[layer - 1]);
       }
       edge_cap -= reduce;
       edge_cap = std::max(edge_cap, 0);
@@ -952,11 +1054,11 @@ void FastRouteCore::incrementEdge3DUsage(int x1,
 
   if (y1 == y2) {  // horizontal edge
     for (int x = x1; x < x2; x++) {
-      h_edges_3D_[k][y1][x].usage++;
+      updateEdge3DUsage(x, y1, k, EdgeDirection::Horizontal, 1);
     }
   } else if (x1 == x2) {  // vertical edge
     for (int y = y1; y < y2; y++) {
-      v_edges_3D_[k][y][x1].usage++;
+      updateEdge3DUsage(x1, y, k, EdgeDirection::Vertical, 1);
     }
   }
 }
@@ -991,12 +1093,14 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   if (y1 == y2) {  // horizontal edge
     for (int x = x1; x < x2; x++) {
       graph2d_.updateUsageH(x, y1, net, used * edge_cost);
-      h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
+      updateEdge3DUsage(
+          x, y1, k, EdgeDirection::Horizontal, used * layer_edge_cost);
     }
   } else if (x1 == x2) {  // vertical edge
     for (int y = y1; y < y2; y++) {
       graph2d_.updateUsageV(x1, y, net, used * edge_cost);
-      v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
+      updateEdge3DUsage(
+          x1, y, k, EdgeDirection::Vertical, used * layer_edge_cost);
     }
   }
 }
@@ -1025,14 +1129,14 @@ void FastRouteCore::addTreeEdge(int x1,
   if (x1 == x2) {
     for (int y = y1; y < y2; y++) {
       graph2d_.updateUsageV(x1, y, net, edge_cost);
-      v_edges_3D_[k][y][x1].usage += layer_edge_cost;
+      updateEdge3DUsage(x1, y, k, EdgeDirection::Vertical, layer_edge_cost);
       new_edge.route.grids.push_back(GPoint3D(x1, y, k));
     }
     new_edge.route.grids.push_back(GPoint3D(x2, y2, k));
   } else if (y1 == y2) {
     for (int x = x1; x < x2; x++) {
       graph2d_.updateUsageH(x, y1, net, edge_cost);
-      h_edges_3D_[k][y1][x].usage += layer_edge_cost;
+      updateEdge3DUsage(x, y1, k, EdgeDirection::Horizontal, layer_edge_cost);
       new_edge.route.grids.push_back(GPoint3D(x, y1, k));
     }
     new_edge.route.grids.push_back(GPoint3D(x2, y1, k));
@@ -1226,6 +1330,8 @@ std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
   worker->congestion_file_name_ = congestion_file_name_;
   worker->layer_directions_ = layer_directions_;
   worker->db_layers_ = db_layers_;
+  worker->dbu_per_micron_ = dbu_per_micron_;
+  worker->layer_res_per_micron_ = layer_res_per_micron_;
   worker->en_estimate_parasitics_ = en_estimate_parasitics_;
   worker->resistance_aware_ = resistance_aware_;
   worker->enable_resistance_aware_ = enable_resistance_aware_;
@@ -1407,17 +1513,59 @@ void FastRouteCore::updateRouteGridsLayer(int x1,
     TreeEdge* treeedge = &(treeedges[edgeID]);
     // Only process edges that have actual routing
     if (treeedge->len > 0 || treeedge->route.routelen > 0) {
-      int routeLen = treeedge->route.routelen;
-      std::vector<GPoint3D>& grids = treeedge->route.grids;
+      const int routeLen = treeedge->route.routelen;
+      const std::vector<GPoint3D>& grids = treeedge->route.grids;
 
-      // If the point is within the specified rectangular region AND on the
-      // original layer
+      std::vector<GPoint3D> new_grids;
+      new_grids.reserve(grids.size() + 4);
+      bool modified = false;
+
       for (int i = 0; i <= routeLen; i++) {
-        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
-            && grids[i].y <= y2 && grids[i].layer == layer) {
-          // Update to the new layer
-          grids[i].layer = new_layer;
+        const bool in_region = grids[i].x >= x1 && grids[i].x <= x2
+                               && grids[i].y >= y1 && grids[i].y <= y2
+                               && grids[i].layer == layer;
+        if (!in_region) {
+          new_grids.push_back(grids[i]);
+          continue;
         }
+        modified = true;
+        // Check whether the previous/next grid point is outside the promoted
+        // region. When the first (or last) promoted point is adjacent to an
+        // unpromoted point we insert a via-transition copy on the old layer so
+        // that releaseNetResources sees a layer change (via) rather than a
+        // same-layer horizontal/vertical edge at the boundary. Without this,
+        // two back-to-back jumpers whose promoted endpoints are adjacent
+        // (e.g. right endpoint of jumper A at x=107 and left endpoint of
+        // jumper B at x=108) merge into a single same-layer chain and
+        // releaseNetResources under-decrements the edge that was never
+        // incremented.
+        const bool prev_outside = (i == 0) || grids[i - 1].x < x1
+                                  || grids[i - 1].x > x2 || grids[i - 1].y < y1
+                                  || grids[i - 1].y > y2
+                                  || grids[i - 1].layer != layer;
+        const bool next_outside = (i == routeLen) || grids[i + 1].x < x1
+                                  || grids[i + 1].x > x2 || grids[i + 1].y < y1
+                                  || grids[i + 1].y > y2
+                                  || grids[i + 1].layer != layer;
+
+        // Insert old-layer via point before the first promoted point
+        if (prev_outside && i > 0) {
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
+        }
+        GPoint3D promoted = grids[i];
+        promoted.layer = new_layer;
+        new_grids.push_back(promoted);
+        // Insert old-layer via point after the last promoted point
+        if (next_outside && i < routeLen) {
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
+        }
+      }
+
+      if (modified) {
+        treeedge->route.routelen = static_cast<int>(new_grids.size()) - 1;
+        treeedge->route.grids = std::move(new_grids);
       }
     }
   }
@@ -1894,11 +2042,12 @@ NetRouteMap FastRouteCore::run()
   const DebugScopedTimer total_timer(
       timings.total, logger_, GRT, "timer", 1, "FastRoute run: {}");
 
-  graph2d_.clearUsed();
-  // Rebuild used grids in graph2d during incremental GRT to account for
-  // segments created during merge nets.
+  // Reconcile used grids during incremental GRT to account for segments
+  // created during merge nets, preserving within-run congestion history.
   if (is_incremental_grt_) {
-    graph2d_.rebuildUsedGrids();
+    graph2d_.prepareForIncrementalRun();
+  } else {
+    graph2d_.clearUsed();
   }
   preProcessTechLayers();
 
@@ -1943,7 +2092,6 @@ NetRouteMap FastRouteCore::run()
   int max_adj;
   int long_edge_len = 40;
   int short_edge_len = 12;
-  const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
@@ -2098,8 +2246,14 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
+  // Soft-NDR demotion. When the overflow iterations fail to make progress --
+  // the minimum overflow stagnates for more than kSoftNdrStagnantTh iterations,
+  // or the loop runs past kSoftNdrMaxIter iterations -- demote every congested
+  // NDR net to soft-NDR and restart the overflow loop.
+  constexpr int kSoftNdrStagnantTh = 10;
+  constexpr int kSoftNdrMaxIter = 15;
   float overflow_reduction_percent = -1;
-  // Minimum overflow stagnation
+  // Iterations since the minimum overflow last improved.
   int minofl_stagnant = 0;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
@@ -2338,30 +2492,18 @@ NetRouteMap FastRouteCore::run()
             max_overflow_increases);
       }
 
-      // Try disabling NDR nets to fix congestion
+      // When the overflow iterations fail to make progress (the minimum
+      // overflow stagnates, or the loop runs past kSoftNdrMaxIter) demote every
+      // congested NDR net to soft-NDR and restart the loop.
       if (total_overflow_ > 0
-          && (i == overflow_iterations_
-              || overflow_increases == max_overflow_increases
-              || minofl_stagnant >= 10)) {
-        // Compute all the NDR nets involved in congestion
+          && (minofl_stagnant > kSoftNdrStagnantTh || i > kSoftNdrMaxIter)) {
+        // Recompute the NDR nets currently involved in congestion (nets already
+        // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
 
-        std::vector<int> net_ids;
+        std::vector<int> net_ids = graph2d_.getCongestedNDRnetsByFraction(1.0);
 
-        // If the congestion is not that high (note that the overflow is
-        // inflated by 100x when there is no capacity available for a NDR net in
-        // a specific edge)
-        if (total_overflow_ < soft_ndr_overflow_th) {
-          // Select one NDR net to be disabled
-          int net_id = graph2d_.getOneCongestedNDRnet();
-          if (net_id != -1) {
-            net_ids.push_back(net_id);
-          }
-        } else {  // Select multiple NDR nets
-          net_ids = graph2d_.getMultipleCongestedNDRnet();
-        }
-
-        // Only apply soft NDR if there is NDR nets involved in congestion
+        // Only apply soft NDR if there are NDR nets involved in congestion
         if (!net_ids.empty()) {
           // Apply the soft NDR to the selected list of nets
           applySoftNDR(net_ids);
@@ -2616,12 +2758,18 @@ void FastRouteCore::updateNet3DUsage(const int net_id, const int cost)
       const int8_t layer_cost = net->getLayerEdgeCost(grids[i].layer);
       if (grids[i].x == grids[i + 1].x) {  // vertical segment
         const int min_y = std::min(grids[i].y, grids[i + 1].y);
-        v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
-            += cost * layer_cost;
+        updateEdge3DUsage(grids[i].x,
+                          min_y,
+                          grids[i].layer,
+                          EdgeDirection::Vertical,
+                          cost * layer_cost);
       } else if (grids[i].y == grids[i + 1].y) {  // horizontal segment
         const int min_x = std::min(grids[i].x, grids[i + 1].x);
-        h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
-            += cost * layer_cost;
+        updateEdge3DUsage(min_x,
+                          grids[i].y,
+                          grids[i].layer,
+                          EdgeDirection::Horizontal,
+                          cost * layer_cost);
       }
     }
   }
@@ -2774,6 +2922,12 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
+}
+
+void FastRouteCore::setResAwareNetsPercentage(float percentage)
+{
+  res_aware_nets_percentage_ = percentage;
+  is_fixed_nets_percentage_ = true;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)

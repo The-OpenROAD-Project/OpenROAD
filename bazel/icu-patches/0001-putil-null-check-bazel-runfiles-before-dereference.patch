@@ -1,0 +1,24 @@
+--- a/icu4c/source/common/putil.cpp
++++ b/icu4c/source/common/putil.cpp
+@@ -1494,9 +1494,19 @@
+ #endif
+
+ #if defined(BAZEL_CURRENT_REPOSITORY) && defined(ICU_DATA_DIR_BAZEL)
++    // Runfiles::Create() returns nullptr when no runfiles tree is reachable,
++    // which is the case for a binary copied out of bazel-bin by an install
++    // step (its .runfiles directory is gone and $RUNFILES_DIR/
++    // $RUNFILES_MANIFEST_FILE are unset). The unconditional dereference below
++    // then segfaults the first time any locale-aware compare (QCollator,
++    // std::locale, ...) reaches this function. Fall through to the ""
++    // default instead.
+     std::unique_ptr<Runfiles> runfiles(Runfiles::Create("", BAZEL_CURRENT_REPOSITORY));
+-    std::string dat_path = runfiles->Rlocation(ICU_DATA_DIR_BAZEL);
+-    path = dat_path.c_str();
++    std::string dat_path = runfiles ? runfiles->Rlocation(ICU_DATA_DIR_BAZEL)
++                                     : std::string();
++    if (!dat_path.empty()) {
++        path = dat_path.c_str();
++    }
+ #endif
+
+     if(path==nullptr) {

@@ -193,6 +193,7 @@ class UniqueInsts
    * terminal.
    */
   bool isNDRInst(frInst* inst) const;
+  bool isNoAutoTaperNDRInst(frInst* inst) const;
   bool hasTrackPattern(frTrackPattern* tp, const odb::Rect& box) const;
 
   /**

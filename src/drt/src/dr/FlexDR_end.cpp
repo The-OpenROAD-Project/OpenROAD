@@ -8,7 +8,6 @@
 #include <utility>
 #include <vector>
 
-#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
@@ -515,16 +514,17 @@ void FlexDRWorker::endAddNets_merge(
   }
 }
 
-bool FlexDRWorker::endAddNets_updateExtFigs_pathSeg(drNet* net,
-                                                    const Point3D& update_pt,
-                                                    frPathSeg* path_seg)
+bool FlexDRWorker::endAddNets_updateExtFigs_pathSeg(
+    drNet* net,
+    const odb::Point3D& update_pt,
+    frPathSeg* path_seg)
 {
   frNet* fr_net = net->getFrNet();
   if (path_seg->getNet() != fr_net) {
     return false;
   }
   const auto [bp, ep] = path_seg->getPoints();
-  if (bp != update_pt && ep != update_pt) {
+  if (bp != update_pt.xy() && ep != update_pt.xy()) {
     return false;
   }
   // remove from rq before updating bbox
@@ -551,11 +551,11 @@ bool FlexDRWorker::endAddNets_updateExtFigs_pathSeg(drNet* net,
 }
 
 bool FlexDRWorker::endAddNets_updateExtFigs_via(drNet* net,
-                                                const Point3D& update_pt,
+                                                const odb::Point3D& update_pt,
                                                 frVia* via)
 {
   frNet* fr_net = net->getFrNet();
-  if (via->getNet() != fr_net || via->getOrigin() != update_pt) {
+  if (via->getNet() != fr_net || via->getOrigin() != update_pt.xy()) {
     return false;
   }
   // update via connections
@@ -573,11 +573,11 @@ bool FlexDRWorker::endAddNets_updateExtFigs_via(drNet* net,
 
 void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
 {
-  const std::vector<Point3D> locs = net->getExtFigsUpdatesLocs();
+  const std::vector<odb::Point3D> locs = net->getExtFigsUpdatesLocs();
   auto region_query = design_->getRegionQuery();
   for (const auto& pt : locs) {
     frRegionQuery::Objects<frBlockObject> result;
-    region_query->queryDRObj({pt, pt}, pt.z(), result);
+    region_query->queryDRObj({pt.xy(), pt.xy()}, pt.z(), result);
     const bool is_via = net->isExtFigUpdateVia(pt);
     for (const auto& [_, obj] : result) {
       if (is_via && obj->typeId() == frcVia) {

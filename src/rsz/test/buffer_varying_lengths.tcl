@@ -57,10 +57,11 @@ proc summarize_solution { } {
   puts "-------------------------------------------------------------"
   set micron2 [expr [ord::microns_to_dbu 1]**2]
   for { set i 1 } { $i <= 100 } { incr i } {
+    set i1i [get_pin i1-$i/A]
     set i1o [get_pin i1-$i/Z]
     set i2i [get_pin i2-$i/A]
 
-    set delay [expr [arrival [$i2i vertices]] - [arrival [$i1o vertices]]]
+    set delay [expr [arrival [$i2i vertices]] - [arrival [$i1i vertices]]]
 
     set area 0.0
     set sequence ""

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <climits>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <functional>
@@ -24,7 +25,7 @@ class dbIStream;
 class dbOStream;
 class Rect;
 
-class Point
+class Point final
 {
  public:
   Point() = default;
@@ -69,7 +70,7 @@ class Point
 
 std::ostream& operator<<(std::ostream& os, const Point& pIn);
 
-class Point3D
+class Point3D final
 {
  public:
   Point3D() = default;
@@ -95,6 +96,8 @@ class Point3D
     setZ(z);
   }
 
+  Point xy() const { return {x_, y_}; }
+
   friend dbIStream& operator>>(dbIStream& stream, Point3D& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point3D& p);
 
@@ -106,7 +109,7 @@ class Point3D
 
 std::ostream& operator<<(std::ostream& os, const Point3D& pIn);
 
-class Cuboid
+class Cuboid final
 {
  public:
   Cuboid() = default;
@@ -279,7 +282,7 @@ A = W/2
 B = [ceiling(W/(sqrt(2) * M) ) * M] - A
 where W is wire width and M is the manufacturing grid
 */
-class Oct
+class Oct final
 {
  public:
   enum OCT_DIR  // The direction of the higher octagon relative to the lower
@@ -325,7 +328,7 @@ class Oct
   int A_ = 0;
 };
 
-class Rect
+class Rect final
 {
  public:
   Rect() = default;
@@ -459,7 +462,7 @@ class Rect
   int yhi_ = 0;
 };
 
-class Polygon
+class Polygon final
 {
  public:
   Polygon() = default;
@@ -481,18 +484,6 @@ class Polygon
   int dx() const { return getEnclosingRect().dx(); }
   int dy() const { return getEnclosingRect().dy(); }
 
-  // returns a corrected Polygon with a closed form and counter-clockwise points
-  Polygon bloat(int margin) const;
-
-  // Merge a collection of shapes
-  static std::vector<Polygon> merge(const std::vector<Polygon>& polys);
-  static std::vector<Polygon> merge(const std::vector<Rect>& rects);
-  static std::vector<Polygon> merge(const std::vector<Oct>& octs);
-
-  // Returns the geometric difference between this polygon "a" and polygon "b"
-  // results in a vector of polygons.
-  std::vector<Polygon> difference(Polygon b) const;
-
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
 
@@ -500,7 +491,7 @@ class Polygon
   std::vector<Point> points_;
 };
 
-class Line
+class Line final
 {
  public:
   Line() = default;
@@ -1089,9 +1080,40 @@ inline Rect Polygon::getEnclosingRect() const
 
 inline bool Polygon::isRect() const
 {
-  // A polygon is a rect if and only if the polygon
-  // of its bounding box is equal to itself.
-  return *this == Polygon(getEnclosingRect());
+  // A polygon is a rect if it covers its enclosing rect exactly. The points
+  // are corrected to a common orientation, but can start at any corner and
+  // may hold extra points along the edges, so comparing against the points of
+  // the enclosing rect is not enough. This matters for polygons that come out
+  // of a set operation, since those keep a point wherever the inputs met.
+  // Instead, every edge has to run along one of the sides of the enclosing
+  // rect, which is only true of the rect itself.
+  if (points_.size() < 4) {
+    return false;
+  }
+
+  // a shape with no area, such as an unset die area, is still handled as a
+  // rect so it can be treated as its enclosing rect
+  const Rect rect = getEnclosingRect();
+
+  for (std::size_t i = 0; i < points_.size(); i++) {
+    const Point& pt0 = points_[i];
+    const Point& pt1 = points_[(i + 1) % points_.size()];
+
+    // an edge on a side of the enclosing rect is either horizontal and at the
+    // min or max y, or vertical and at the min or max x. Angled edges are
+    // neither, so they are rejected here too.
+    const bool on_horizontal_side
+        = pt0.y() == pt1.y()
+          && (pt0.y() == rect.yMin() || pt0.y() == rect.yMax());
+    const bool on_vertical_side
+        = pt0.x() == pt1.x()
+          && (pt0.x() == rect.xMin() || pt0.x() == rect.xMax());
+    if (!on_horizontal_side && !on_vertical_side) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 inline Line::Line(const Point& pt0, const Point& pt1) : pt0_(pt0), pt1_(pt1)

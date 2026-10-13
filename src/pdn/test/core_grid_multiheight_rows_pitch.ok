@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: multiheight_rows
+[INFO ODB-0131]     Created 48 components and 96 component-terminals.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: met1
+    Width: 0.4800
+    Spacing: 0.0000
+    Pitch: 5.4400
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: met4
+    Width: 1.6000
+    Spacing: 8.4000
+    Pitch: 20.0000
+    Offset: 10.0000
+    Snap to grid: false
+Connect:
+  Connect layers met1 -> met4
