@@ -181,11 +181,13 @@ ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
   // again.  The bounding-box comparison is kept as it was and the wall case
   // added beside it, which is why a rectangular die is untouched.
   const odb::Rect die_area = getBlock()->getDieArea();
-  const Region die_region = Region(getBlock()->getDieAreaPolygon());
+  const Region* die_region = getDieRegion();
   const odb::Rect& final_shape_rect = shape_ptr->getRect();
   const int min_width = shape_ptr->getLayer()->getMinWidth();
   const auto at_edge = [&](const odb::Point& normal, int face, int box) {
-    return face == box || die_region.isOnInteriorWall(final_shape_rect, normal);
+    return face == box
+           || (die_region != nullptr
+               && die_region->isOnInteriorWall(final_shape_rect, normal));
   };
   if (at_edge(odb::Point(-1, 0), final_shape_rect.xMin(), die_area.xMin())) {
     const int x = std::min(final_shape_rect.xMin() + min_width,
