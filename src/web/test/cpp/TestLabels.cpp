@@ -186,7 +186,7 @@ TEST_F(LabelTest, HandlerAddThenList)
 }
 
 // The spellings are shared with the Qt GUI's add_label, so pin them here
-// against gui::Painter::anchors() (src/gui/src/painter.cpp), which libweb
+// against web::Painter::anchors() (src/gui/src/painter.cpp), which libweb
 // cannot link and therefore cannot assert against at compile time.
 TEST_F(LabelTest, AnchorNamesMatchTheQtGui)
 {

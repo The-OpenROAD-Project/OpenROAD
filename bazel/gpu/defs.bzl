@@ -2,8 +2,8 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 """Shared select() helpers for targets that participate in the opt-in
-GPU build (--config=gpu). See bazel/gpu/system_gpu.bzl for the backing
-repositories and bazel/gpu/copts.bzl for the CUDA compile flags.
+GPU build (--config=gpu). See bazel/gpu/system_gpu.bzl for the system CUDA
+toolkit wrapper and bazel/gpu/copts.bzl for the CUDA compile flags.
 """
 
 # For target_compatible_with: the target only exists on a GPU build.

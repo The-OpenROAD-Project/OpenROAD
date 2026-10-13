@@ -2675,8 +2675,8 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
-  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && !isFixed(inst)
+      && cell && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
     if (hasMultipleOutputs(inst)) {
       revisiting_inst = resized_multi_output_insts_.contains(inst);
@@ -2745,8 +2745,8 @@ int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
-  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst)
+      && !isFixed(inst) && cell && isLogicStdCell(inst)) {
     float cin, load_cap;
     estimate_parasitics_->ensureWireParasitic(drvr_pin);
 
@@ -2818,7 +2818,7 @@ bool Resizer::removeBufferIfPossible(sta::Instance* buffer,
                                      const bool honor_dont_touch_fixed)
 {
   if (canRemoveBuffer(buffer, honor_dont_touch_fixed)) {
-    return removeBuffer(buffer);
+    return removeBuffer(buffer, honor_dont_touch_fixed);
   }
   return false;
 }
@@ -2840,17 +2840,8 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
-  if (db_inst->isDoNotTouch()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setDoNotTouch(false);
-  }
-  if (db_inst->isFixed()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  if (db_inst == nullptr) {
+    return false;
   }
 
   sta::LibertyPort* input_port = nullptr;
@@ -2862,19 +2853,12 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Net* output_net = db_network_->net(output_pin);
   odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
   odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
-  if ((input_db_net != nullptr && input_db_net->isDoNotTouch())
-      || (output_db_net != nullptr && output_db_net->isDoNotTouch())) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    if (input_db_net != nullptr) {
-      input_db_net->setDoNotTouch(false);
-    }
-    if (output_db_net != nullptr) {
-      output_db_net->setDoNotTouch(false);
-    }
+  if (honor_dont_touch_fixed
+      && (db_inst->isDoNotTouch() || db_inst->isFixed()
+          || (input_db_net != nullptr && input_db_net->isDoNotTouch())
+          || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
+    return false;
   }
-
   const bool out_net_ports = db_network_->hasPort(output_net);
   sta::Net* removed = nullptr;
   odb::dbNet* db_net_survivor = nullptr;
@@ -2890,18 +2874,137 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   }
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
-  if (!sdc->isConstrained(input_pin) && !sdc->isConstrained(output_pin)
-      && (removed == nullptr || !sdc->isConstrained(removed))
-      && !sdc->isConstrained(buffer)) {
-    return db_net_removed == nullptr
-           || (db_net_survivor != nullptr
-               && db_net_survivor->canMergeNet(db_net_removed));
+  if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
+      || (removed != nullptr && sdc->isConstrained(removed))
+      || sdc->isConstrained(buffer)) {
+    return false;
   }
 
-  return false;
+  if (db_net_removed == nullptr) {
+    return true;
+  }
+  if (db_net_survivor == nullptr) {
+    return false;
+  }
+  if (honor_dont_touch_fixed) {
+    return db_net_survivor->canMergeNet(db_net_removed);
+  }
+  // Explicit removal (remove_buffers <insts>) overrides protection on the
+  // buffer and its two nets only. mergeNet() still reconnects every other
+  // sink of the removed net, which OpenDB refuses for dont_touch instances,
+  // so those must keep rejecting the removal.
+  for (odb::dbITerm* iterm : db_net_removed->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (inst != db_inst && inst->isDoNotTouch()) {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool Resizer::removeBuffer(sta::Instance* buffer)
+namespace {
+
+// Temporarily unprotects a buffer and its nets, then restores the survivor.
+class BufferRemovalProtection
+{
+ public:
+  BufferRemovalProtection(odb::dbInst* db_inst,
+                          odb::dbNet* survivor,
+                          odb::dbNet* removed)
+      : survivor_(survivor), restore_survivor_(survivor->isDoNotTouch())
+  {
+    // Release the buffer's dont_touch for pin disconnect and deletion.
+    // OpenDB does not enforce a fixed placement status on either operation,
+    // so the placement status is left untouched.
+    if (db_inst->isDoNotTouch()) {
+      db_inst->setDoNotTouch(false);
+    }
+    // Restore the survivor on scope exit; the removed net, when present,
+    // stays unprotected because mergeNet() destroys it.
+    if (restore_survivor_) {
+      survivor_->setDoNotTouch(false);
+    }
+    if (removed != nullptr && removed->isDoNotTouch()) {
+      removed->setDoNotTouch(false);
+    }
+  }
+
+  BufferRemovalProtection(const BufferRemovalProtection&) = delete;
+  BufferRemovalProtection& operator=(const BufferRemovalProtection&) = delete;
+
+  ~BufferRemovalProtection()
+  {
+    if (restore_survivor_) {
+      survivor_->setDoNotTouch(true);
+    }
+  }
+
+ private:
+  odb::dbNet* survivor_;
+  const bool restore_survivor_;
+};
+
+struct BufferRemovalNames
+{
+  std::optional<std::string> net_name;
+  std::optional<std::string> modnet_name;
+};
+
+BufferRemovalNames chooseBufferRemovalNames(odb::dbNet* survivor,
+                                            odb::dbNet* removed,
+                                            odb::dbModNet* survivor_modnet,
+                                            odb::dbModNet* removed_modnet)
+{
+  BufferRemovalNames names;
+  if (!survivor->isDeeperThan(removed)) {
+    return names;
+  }
+
+  const bool preserve_port_name
+      = survivor_modnet != nullptr && survivor_modnet->isConnectedToInputPort();
+  if (!preserve_port_name) {
+    // Normally both names follow the shallower removed net.
+    names.net_name = removed->getName();
+    if (removed_modnet != nullptr) {
+      names.modnet_name = removed_modnet->getName();
+    }
+  } else {
+    // Keep input/inout port names so write_verilog retains required
+    // feedthrough assigns. Use the shallower flat name only if it remains
+    // represented after the ModNet merge.
+    const bool shallower_name_survives
+        = removed_modnet == nullptr
+          || removed_modnet->getHierarchicalName() != removed->getName();
+    if (shallower_name_survives) {
+      names.net_name = removed->getName();
+    }
+  }
+  return names;
+}
+
+odb::dbModNet* mergeBufferModNets(odb::dbModNet* survivor_modnet,
+                                  odb::dbModNet* removed_modnet,
+                                  odb::dbNet* db_survivor,
+                                  odb::dbNet* db_removed,
+                                  BufferRemovalNames& names)
+{
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    survivor_modnet->connectTermsOf(db_removed);
+  } else if (removed_modnet != nullptr) {
+    survivor_modnet = removed_modnet;
+    survivor_modnet->connectTermsOf(db_survivor);
+    names.modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
+  }
+  return survivor_modnet;
+}
+
+}  // namespace
+
+bool Resizer::removeBuffer(sta::Instance* buffer,
+                           const bool honor_dont_touch_fixed)
 {
   if (buffer == nullptr) {
     return false;
@@ -2934,8 +3037,13 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
     return false;
   }
 
+  odb::dbInst* db_inst = db_network_->staToDb(buffer);
   if (output_db_net == nullptr) {
-    odb::dbInst::destroy(db_network_->staToDb(buffer));
+    std::optional<BufferRemovalProtection> protection;
+    if (!honor_dont_touch_fixed) {
+      protection.emplace(db_inst, input_db_net, nullptr);
+    }
+    odb::dbInst::destroy(db_inst);
     return true;
   }
 
@@ -2971,60 +3079,30 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed_net);
-  std::optional<std::string> new_net_name;
-  std::optional<std::string> new_modnet_name;
-  if (db_survivor->isDeeperThan(db_removed)) {
-    const bool preserve_port_name
-        = survivor_modnet != nullptr
-          && survivor_modnet->isConnectedToInputPort();
-    if (!preserve_port_name) {
-      // Normally both names follow the shallower removed net.
-      new_net_name = db_removed->getName();
-      if (removed_modnet != nullptr) {
-        new_modnet_name = removed_modnet->getName();
-      }
-    } else {
-      // Keep input/inout port names so write_verilog retains required
-      // feedthrough assigns. Use the shallower flat name only if it remains
-      // represented after the ModNet merge.
-      const bool shallower_name_survives
-          = removed_modnet == nullptr
-            || removed_modnet->getHierarchicalName() != db_removed->getName();
-      if (shallower_name_survives) {
-        new_net_name = db_removed->getName();
-      }
-    }
+  BufferRemovalNames names = chooseBufferRemovalNames(
+      db_survivor, db_removed, survivor_modnet, removed_modnet);
+  std::optional<BufferRemovalProtection> protection;
+  if (!honor_dont_touch_fixed) {
+    protection.emplace(db_inst, db_survivor, db_removed);
   }
 
   sta_->disconnectPin(input_pin);
   sta_->disconnectPin(output_pin);
-  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
-    survivor_modnet->mergeModNet(removed_modnet);
-  } else if (survivor_modnet != nullptr) {
-    survivor_modnet->connectTermsOf(db_removed);
-  } else if (removed_modnet != nullptr) {
-    survivor_modnet = removed_modnet;
-    removed_modnet = nullptr;
-    survivor_modnet->connectTermsOf(db_survivor);
-    new_modnet_name
-        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
-  }
+  survivor_modnet = mergeBufferModNets(
+      survivor_modnet, removed_modnet, db_survivor, db_removed, names);
 
   db_survivor->mergeNet(db_removed);
   sta_->deleteInstance(buffer);
 
-  if (new_net_name.has_value()) {
-    db_survivor->rename(new_net_name->c_str());
+  if (names.net_name.has_value()) {
+    db_survivor->rename(names.net_name->c_str());
   }
-  if (survivor_modnet != nullptr && new_modnet_name.has_value()) {
-    survivor_modnet->rename(new_modnet_name->c_str());
+  if (survivor_modnet != nullptr && names.modnet_name.has_value()) {
+    survivor_modnet->rename(names.modnet_name->c_str());
   }
 
-  const bool removed_buffer = true;
-  if (removed_buffer) {
-    invalidateVertexOrdering();
-  }
-  return removed_buffer;
+  invalidateVertexOrdering();
+  return true;
 }
 
 sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
@@ -3214,6 +3292,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*skip_size_down=*/false,
         /*skip_buffering=*/false,
         /*skip_buffer_removal=*/false,
+        /*skip_buffer_to_inverters=*/false,
         /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
         /*skip_vt_swap=*/true,    // post-placement optimization
         /*skip_crit_vt_swap=*/true);
@@ -3238,6 +3317,10 @@ void Resizer::findResizeSlacks1()
   const sta::VertexSeq& drvrs = sta_->levelizedDrvrVertices();
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
+    // Skip loadless drivers, whose required times may be unset.
+    if (!drvr->hasFanout()) {
+      continue;
+    }
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
@@ -3245,7 +3328,11 @@ void Resizer::findResizeSlacks1()
         // Hands off special nets.
         && !db_network_->isSpecial(net)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())) {
-      net_slack_map_[net] = sta_->slack(drvr, max_);
+      const sta::Slack slack = sta_->slack(drvr, max_);
+      // Exclude unconstrained nets from ranking and weighting.
+      if (!sta::fuzzyInf(slack)) {
+        net_slack_map_[net] = slack;
+      }
     }
   }
 }
@@ -3631,6 +3718,12 @@ bool Resizer::dontTouch(const sta::Instance* inst) const
     return false;
   }
   return db_inst->isDoNotTouch();
+}
+
+bool Resizer::isFixed(const sta::Instance* inst) const
+{
+  dbInst* db_inst = db_network_->staToDb(inst);
+  return db_inst && db_inst->isFixed();
 }
 
 void Resizer::setDontTouch(const sta::Net* net, bool dont_touch)
@@ -5325,6 +5418,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
+                          bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
@@ -5346,6 +5440,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
+  config.skip_buffer_to_inverters = skip_buffer_to_inverters;
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
@@ -6533,6 +6628,9 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   }
   if (lower == "reroute") {
     return MoveType::kReroute;
+  }
+  if (lower == "buffer_to_inverters") {
+    return MoveType::kBufferToInverters;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }

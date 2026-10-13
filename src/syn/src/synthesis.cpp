@@ -400,6 +400,15 @@ void Synthesis::livenessOpt(bool replace_combinational)
   syn::livenessOpt(*graph_, logger_, replace_combinational);
 }
 
+void Synthesis::checkCombinationalLoops()
+{
+  if (!graph_) {
+    logger_->error(utl::SYN, 81, "No graph. Run syn::elaborate first.");
+    return;
+  }
+  syn::checkCombinationalLoops(*graph_, logger_);
+}
+
 void Synthesis::exportToOdb()
 {
   if (!graph_) {

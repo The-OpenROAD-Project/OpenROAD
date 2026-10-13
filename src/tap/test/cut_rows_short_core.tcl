@@ -10,4 +10,4 @@ cut_rows -endcap_master "TAPCELL_X1" -row_min_height 60
 
 set def_file [make_result_file cut_rows_short_core.def]
 write_def $def_file
-diff_file cut_rows_short_core.defok $def_file
+diff_files cut_rows_short_core.defok $def_file

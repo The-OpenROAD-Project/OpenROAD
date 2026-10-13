@@ -45,7 +45,7 @@ std::string getFullPathName(const std::vector<dbChipInst*>& path)
   std::string name;
   for (auto* p : path) {
     if (!name.empty()) {
-      name += '/';
+      name += kChipletPathDelimiter;
     }
     name += p->getName();
   }

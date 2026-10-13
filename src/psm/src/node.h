@@ -102,7 +102,7 @@ class TerminalNode : public Node
  public:
   TerminalNode(const odb::Rect& shape, odb::dbTechLayer* layer);
 
-  const odb::Rect& getShape() const { return shape_; }
+  const odb::Rect& getBBox() const { return shape_; }
 
  private:
   odb::Rect shape_;

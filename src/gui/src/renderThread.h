@@ -39,8 +39,8 @@ class RenderThread : public QThread
   void setLogger(utl::Logger* logger);
 
   void render(const QRect& draw_rect,
-              const SelectionSet& selected,
-              const HighlightSet& highlighted,
+              const web::SelectionSet& selected,
+              const web::HighlightSet& highlighted,
               const Rulers& rulers,
               const Labels& labels);
 
@@ -49,8 +49,8 @@ class RenderThread : public QThread
   // Only to be used by save_image for synchronous rendering
   void draw(QImage& image,
             const QRect& draw_bounds,
-            const SelectionSet& selected,
-            const HighlightSet& highlighted,
+            const web::SelectionSet& selected,
+            const web::HighlightSet& highlighted,
             const Rulers& rulers,
             const Labels& labels,
             qreal render_ratio,
@@ -128,28 +128,29 @@ class RenderThread : public QThread
   void drawGCellGrid(QPainter* painter,
                      odb::dbBlock* block,
                      const odb::Rect& bounds);
-  void drawSelected(Painter& painter, const SelectionSet& selected);
-  void drawHighlighted(Painter& painter, const HighlightSet& highlighted);
-  void drawIOPins(Painter& painter,
+  void drawSelected(web::Painter& painter, const web::SelectionSet& selected);
+  void drawHighlighted(web::Painter& painter,
+                       const web::HighlightSet& highlighted);
+  void drawIOPins(web::Painter& painter,
                   odb::dbBlock* block,
                   const odb::Rect& bounds,
                   odb::dbTechLayer* layer);
-  void drawAccessPoints(Painter& painter,
+  void drawAccessPoints(web::Painter& painter,
                         odb::dbBlock* block,
                         const odb::Rect& bounds,
                         const std::vector<odb::dbInst*>& insts);
-  void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
-  void drawNetsRouteGuides(Painter& painter,
+  void drawRouteGuides(web::Painter& painter, odb::dbTechLayer* layer);
+  void drawNetsRouteGuides(web::Painter& painter,
                            const odb::PtrSet<odb::dbNet>& nets,
                            odb::dbTechLayer* layer);
-  void drawNetRouteGuides(Painter& painter,
+  void drawNetRouteGuides(web::Painter& painter,
                           odb::dbNet* net,
                           odb::dbTechLayer* layer);
-  void drawNetTracks(Painter& painter, odb::dbTechLayer* layer);
+  void drawNetTracks(web::Painter& painter, odb::dbTechLayer* layer);
   void drawModuleView(QPainter* painter,
                       const std::vector<odb::dbInst*>& insts);
-  void drawRulers(Painter& painter, const Rulers& rulers);
-  void drawLabels(Painter& painter, const Labels& labels);
+  void drawRulers(web::Painter& painter, const Rulers& rulers);
+  void drawLabels(web::Painter& painter, const Labels& labels);
 
   bool instanceBelowMinSize(odb::dbInst* inst);
 
@@ -157,7 +158,7 @@ class RenderThread : public QThread
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
 
-  void drawDesignLoadingMessage(Painter& painter, const odb::Rect& bounds);
+  void drawDesignLoadingMessage(web::Painter& painter, const odb::Rect& bounds);
 
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
@@ -168,8 +169,8 @@ class RenderThread : public QThread
   // updates during drawing. These should not be accessed from any
   // drawing methods.
   QRect draw_rect_;
-  SelectionSet selected_;
-  HighlightSet highlighted_;
+  web::SelectionSet selected_;
+  web::HighlightSet highlighted_;
   Rulers rulers_;
   Labels labels_;
 
