@@ -8,6 +8,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-read_style tristate|and_or]
+                                             [-zero_word word]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -20,7 +21,7 @@ proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
-      -write_behavioral_verilog -read_style } flags {}
+      -write_behavioral_verilog -read_style -zero_word } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -144,9 +145,15 @@ proc generate_ram_netlist { args } {
     }
   }
 
+  # A word that reads 0 and drops its writes, as a RISC-V x0.
+  set zero_word -1
+  if { [info exists keys(-zero_word)] } {
+    set zero_word $keys(-zero_word)
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
-    $read_style
+    $read_style $zero_word
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -180,7 +187,7 @@ proc generate_ram { args } {
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
-           -write_behavioral_verilog -read_style } flags {}
+           -write_behavioral_verilog -read_style -zero_word } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -219,6 +226,10 @@ proc generate_ram { args } {
 
   if { [info exists keys(-read_style)] } {
     lappend ram_netlist_args -read_style $keys(-read_style)
+  }
+
+  if { [info exists keys(-zero_word)] } {
+    lappend ram_netlist_args -zero_word $keys(-zero_word)
   }
 
   if { [info exists keys(-inv_cell)] } {

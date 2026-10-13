@@ -7,5 +7,6 @@ record_tests {
   make_7x7_2r1w_nangate45
   write_ports_nangate45
   and_or_read_asap7
+  zero_word_asap7
   make_8x8_latch_sky130
 }

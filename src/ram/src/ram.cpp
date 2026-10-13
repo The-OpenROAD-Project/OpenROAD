@@ -181,6 +181,7 @@ bool RamGen::treeInverted(const int lo, const int hi) const
 RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
                                      const int word_idx,
                                      const int bit,
+                                     const vector<int>& rows,
                                      const int lo,
                                      const int hi,
                                      const vector<dbNet*>& selects,
@@ -192,31 +193,39 @@ RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
                  const vector<std::pair<std::string, dbNet*>>& conns) {
     tree_nodes_[{row, word_idx, bit}].push_back({master, prefix, name, conns});
   };
-  auto q
-      = [&](const int row) { return storage_nets_.at({row, word_idx, bit}); };
+  // the zero word's term, where the trees read inverted data: its own
+  // select, the inverted form of a stored 0 (the zero word is in the
+  // tree only then)
+  auto q = [&](const int row) {
+    return row == zero_word_ ? selects[row]
+                             : storage_nets_.at({row, word_idx, bit});
+  };
   auto net = [&](dbNet* given) {
     return given ? given : makeNet(prefix, fmt::format("t{}_{}", lo, hi));
   };
   const int n = hi - lo;
   if (n == 1) {
+    const int r = rows[lo];
     dbNet* y = net(out);
-    add(lo,
+    add(r,
         nand2_cell_,
-        fmt::format("nand_r{}", lo),
-        {{nand2_ports_[{PortRoleType::DataIn, 0}], selects[lo]},
-         {nand2_ports_[{PortRoleType::DataIn, 1}], q(lo)},
+        fmt::format("nand_r{}", r),
+        {{nand2_ports_[{PortRoleType::DataIn, 0}], selects[r]},
+         {nand2_ports_[{PortRoleType::DataIn, 1}], q(r)},
          {nand2_ports_[{PortRoleType::DataOut, 0}], y}});
     return {y, true};
   }
   if (n == 2) {
+    const int r0 = rows[lo];
+    const int r1 = rows[lo + 1];
     dbNet* y = net(out);
-    add(lo,
+    add(r0,
         aoi22_cell_,
-        fmt::format("aoi_r{}", lo),
-        {{aoi22_in_a1_, selects[lo]},
-         {aoi22_in_a2_, q(lo)},
-         {aoi22_in_b1_, selects[lo + 1]},
-         {aoi22_in_b2_, q(lo + 1)},
+        fmt::format("aoi_r{}", r0),
+        {{aoi22_in_a1_, selects[r0]},
+         {aoi22_in_a2_, q(r0)},
+         {aoi22_in_b1_, selects[r1]},
+         {aoi22_in_b2_, q(r1)},
          {aoi22_out_, y}});
     return {y, true};
   }
@@ -225,13 +234,14 @@ RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
     half *= 2;
   }
   const int mid = lo + half;
-  const int host = mid - 1;
+  const int host = rows[mid - 1];
   const TreeEnd a
-      = planReadTree(prefix, word_idx, bit, lo, mid, selects, nullptr);
-  TreeEnd b = planReadTree(prefix, word_idx, bit, mid, hi, selects, nullptr);
+      = planReadTree(prefix, word_idx, bit, rows, lo, mid, selects, nullptr);
+  TreeEnd b
+      = planReadTree(prefix, word_idx, bit, rows, mid, hi, selects, nullptr);
   if (b.inverted != a.inverted) {
     dbNet* nb = makeNet(prefix, fmt::format("t{}_{}_inv", mid, hi));
-    add(mid,
+    add(rows[mid],
         inv_cell_,
         fmt::format("inv_r{}_{}", mid, hi),
         {{inv_ports_[{PortRoleType::DataIn, 0}], b.net},
@@ -286,6 +296,31 @@ void RamGen::makeSlice(const int slice_idx,
   const int start_bit_idx = slice_idx * mask_size;
   std::string prefix
       = fmt::format("storage_{}_{}_{}", row_idx, word_idx, start_bit_idx);
+
+  // The zero word: no flops, no clock gate; its row's cells hold only
+  // the read trees' nodes planned there.
+  if (row_idx == zero_word_) {
+    for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
+      const int bit = start_bit_idx + local_bit;
+      std::unique_ptr<Cell> cell;
+      auto nodes = tree_nodes_.find({row_idx, word_idx, bit});
+      if (nodes != tree_nodes_.end() && !nodes->second.empty()) {
+        cell = std::make_unique<Cell>();
+        for (const auto& node : nodes->second) {
+          makeInst(cell.get(), node.prefix, node.name, node.master, node.conns);
+        }
+      }
+      ram_grid_.addCell(
+          std::move(cell),
+          slice_idx * (mask_size * column_mux_ratio + column_mux_ratio)
+              + local_bit * column_mux_ratio + word_idx);
+    }
+    ram_grid_.addCell(
+        nullptr,
+        slice_idx * (mask_size * column_mux_ratio + column_mux_ratio)
+            + mask_size * column_mux_ratio + word_idx);
+    return;
+  }
 
   int r_total = rw_ports + r_ports;
   vector<dbNet*> select_b_nets(r_total);
@@ -1524,7 +1559,8 @@ void RamGen::generate(const int mask_size,
                       dbMaster* inv_cell,
                       dbMaster* tapcell,
                       int max_tap_dist,
-                      const std::string& read_style)
+                      const std::string& read_style,
+                      const int zero_word)
 {
   if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
@@ -1572,6 +1608,7 @@ void RamGen::generate(const int mask_size,
   use_latch_ = use_latch;
   num_write_ = rw_ports + w_ports;
   read_style_ = read_style;
+  zero_word_ = zero_word;
   and_or_read_ = false;
   storage_inverted_ = false;
   storage_nets_.clear();
@@ -1615,6 +1652,21 @@ void RamGen::generate(const int mask_size,
   }
 
   findMasters();
+
+  // A zero word reads 0 and drops its writes, as a RISC-V x0: its row
+  // has no flops, and the read trees leave it out.
+  if (zero_word_ >= 0) {
+    if (zero_word_ >= num_words) {
+      logger_->error(
+          RAM, 59, "-zero_word {} is not a word of {}.", zero_word_, num_words);
+    }
+    if (!and_or_read_ || column_mux_ratio != 1) {
+      logger_->error(RAM,
+                     60,
+                     "-zero_word needs -read_style and_or and "
+                     "-column_mux_ratio 1.");
+    }
+  }
 
   auto chip = db_->getChip();
   if (!chip) {
@@ -1838,7 +1890,19 @@ void RamGen::generate(const int mask_size,
   // Where the storage flop's output is QN, or the tree's root is
   // inverted, but not both, an inverter at the bottom row puts it right.
   if (and_or_read_) {
+    // The rows in the trees: where the storage output is inverted the
+    // final inverter assumes some row's term is the read's, so the zero
+    // word stays, its term a 1; otherwise its term would be a 0, and it
+    // is left out.
+    vector<int> stored_rows;
     for (int row = 0; row < num_rows; ++row) {
+      if (row == zero_word_) {
+        if (storage_inverted_) {
+          stored_rows.push_back(row);
+        }
+        continue;
+      }
+      stored_rows.push_back(row);
       for (int w = 0; w < column_mux_ratio; ++w) {
         for (int bit = 0; bit < word_size; ++bit) {
           const std::string prefix = fmt::format(
@@ -1848,7 +1912,8 @@ void RamGen::generate(const int mask_size,
         }
       }
     }
-    const bool flip = treeInverted(0, num_rows) != storage_inverted_;
+    const int stored = static_cast<int>(stored_rows.size());
+    const bool flip = treeInverted(0, stored) != storage_inverted_;
     for (int w = 0; w < column_mux_ratio; ++w) {
       for (int port = 0; port < r_total; ++port) {
         for (int bit = 0; bit < word_size; ++bit) {
@@ -1858,8 +1923,9 @@ void RamGen::generate(const int mask_size,
           const TreeEnd root = planReadTree(prefix,
                                             w,
                                             bit,
+                                            stored_rows,
                                             0,
-                                            num_rows,
+                                            stored,
                                             read_select_nets[port],
                                             flip ? nullptr : out);
           if (flip) {
@@ -2448,12 +2514,24 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
     if (i > 0) {
       read_port_logic += "\n";
     }
-    read_port_logic += fmt::format(R"(  always @(*) begin
+    if (zero_word_ >= 0) {
+      read_port_logic += fmt::format(R"(  always @(*) begin
+    {} = {} == {} ? {}'d0 : mem[{}];
+  end
+)",
+                                     port_name,
+                                     addr_name,
+                                     zero_word_,
+                                     word_size_bit,
+                                     addr_name);
+    } else {
+      read_port_logic += fmt::format(R"(  always @(*) begin
     {} = mem[{}];
   end
 )",
-                                   port_name,
-                                   addr_name);
+                                     port_name,
+                                     addr_name);
+    }
   }
 
   // Write logic, the ports in order: where two write the same word in a
@@ -2468,20 +2546,23 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         += fmt::format("  input [{}:0] {};\n", word_size_bit - 1, wbus("D", w));
     enable_declarations += fmt::format(
         "  input [{}:0] {};\n", slices_per_word - 1, wbus("we", w));
-    write_logic += fmt::format(R"(    for (i = 0; i < {}; i = i + 1) begin
-      if ({}[i]) begin
+    write_logic += fmt::format(
+        R"(    for (i = 0; i < {}; i = i + 1) begin
+      if ({}[i]{}) begin
         mem[{}][i*{} +:{}] <= {}[i*{} +:{}];
       end
     end
 )",
-                               slices_per_word,
-                               wbus("we", w),
-                               write_addr,
-                               mask_size,
-                               mask_size,
-                               wbus("D", w),
-                               mask_size,
-                               mask_size);
+        slices_per_word,
+        wbus("we", w),
+        zero_word_ >= 0 ? fmt::format(" && {} != {}", write_addr, zero_word_)
+                        : std::string(),
+        write_addr,
+        mask_size,
+        mask_size,
+        wbus("D", w),
+        mask_size,
+        mask_size);
   }
 
   std::string verilog_code = fmt::format(R"(module {} ({}

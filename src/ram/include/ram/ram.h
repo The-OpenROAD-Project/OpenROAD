@@ -110,7 +110,8 @@ class RamGen
                 odb::dbMaster* inv_cell,
                 odb::dbMaster* tapcell,
                 int max_tap_dist,
-                const std::string& read_style = "");
+                const std::string& read_style = "",
+                int zero_word = -1);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -156,9 +157,11 @@ class RamGen
     odb::dbNet* net;
     bool inverted;  // the net is the complement of the OR of the terms
   };
+  // the tree over rows[lo, hi): rows lists the rows that store a word
   TreeEnd planReadTree(const std::string& prefix,
                        int word_idx,
                        int bit,
+                       const std::vector<int>& rows,
                        int lo,
                        int hi,
                        const std::vector<odb::dbNet*>& selects,
@@ -311,6 +314,7 @@ class RamGen
   bool and_or_read_{false};
   std::string read_style_;
   bool storage_inverted_{false};  // the storage flop's output is QN
+  int zero_word_{-1};  // the word that reads 0 and is not stored, or -1
   // per (row, word in the row, bit): the storage net, and the tree
   // cells placed in that bit's cell
   std::map<std::tuple<int, int, int>, odb::dbNet*> storage_nets_;
