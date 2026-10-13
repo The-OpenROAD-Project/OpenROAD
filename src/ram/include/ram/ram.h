@@ -119,6 +119,7 @@ class RamGen
                 int rb_ports = 0,
                 int read_latency = 0,
                 const std::string& write_style = "clock_gate",
+                const std::string& write_priority = "last",
                 const std::string& periphery = "placed",
                 const std::string& pin_layer = "",
                 const std::string& cells = "",
@@ -381,6 +382,9 @@ class RamGen
   // -write_style mux: no clock gate; each bit's flop on the clock, its D
   // the new data where the word is written and its own value elsewhere
   bool write_mux_{false};
+  // -write_priority or: where ports write the same word in a cycle, the
+  // word takes the OR of their data, not the last port's
+  bool write_or_{false};
   // -periphery unplaced: the periphery (address inverters and registers,
   // decoders, select buffers, each word's select cell, the input
   // buffers) left for a parent to place; the outline the placed core and

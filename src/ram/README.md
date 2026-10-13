@@ -52,6 +52,7 @@ generate_ram [-mask_size bits]
              [-rb_ports count]
              [-read_latency 0|1]
              [-write_style clock_gate|mux]
+             [-write_priority last|or]
              [-cells {role master ...}]
              [-name name]
              [-decoder row|word]
@@ -88,6 +89,7 @@ generate_ram [-mask_size bits]
 | `-rb_ports` | Banked read ports, with `-banks`: each an address and a data output per bank (`addr_rb<k>_b<b>`, `Qrb<k>_b<b>`), the address the word's index in its bank, every bank read independently. Default: 0. |
 | `-read_latency` | `1` registers every read port's address, a plain positive-edge flop per address bit, so the data follows a cycle after the address. Not with `-column_mux_ratio` above 1 or read/write ports. Default: 0. |
 | `-write_style` | How a word holds its value between writes: `clock_gate`, a clock gate per word; or `mux`, every flop on the clock and a mux per bit taking the new data or the flop's own value. A clock gate saves a mux per bit; a mux keeps every flop on the plain clock. Not with `-use_latch`. Default: `clock_gate`. |
+| `-write_priority` | Where two write ports write the same word in one cycle: `last`, the last port's data; or `or`, the OR of every writing port's data, as RTL that merges its writes with an OR describes it (firtool's register files). `or` drops a word's priority logic, an inverter and an AND2 per port but the last. Default: `last`. |
 | `-periphery`, `-pin_layer`, `-wrapper_verilog` | `generate_ram_netlist` only. `unplaced` leaves the periphery (address inverters and registers, decoders, select buffers, each word's select cell, the input buffers) for a parent to place, size and buffer; the outline is the placed core and a row, and each pin sits where its connections land, on `-pin_layer`'s tracks, for a macro placer before the parent dissolves the core into its rows. `verilog` makes the core a block of its own, `<name>_core`, and writes the periphery to `-wrapper_verilog` as a Verilog module, `<name>`, around it: assigns of the cells' functions, for synthesis to map with the parent. Default: `placed`. |
 | `-cells` | The cell for a role (`inv`, `and2`, `buffer`, `clock_gate`, `aoi22`, `ao22`, `or2`, `nand2`, `nor2`, `tie`, `addr_flop`), instead of the smallest the libraries have of its function. An AOI22 or AO22 given is checked by its truth table. Default: the smallest of each. |
 | `-name` | The block's and the behavioral model's name. Default: `RAM<words>x<bits>`. |

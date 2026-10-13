@@ -18,5 +18,6 @@ record_tests {
   decoder_word_asap7
   bit_folds_asap7
   periphery_verilog_asap7
+  write_priority_or_asap7
   make_8x8_latch_sky130
 }

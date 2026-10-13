@@ -453,8 +453,9 @@ void RamGen::makeSlice(const int slice_idx,
   // More than one write port: port w writes this word when its row select
   // and its write enable are both high (we{w}), and its data is taken
   // unless a later port writes the word in the same cycle (take{w}): the
-  // last port wins, as in the behavioral model. The clock gate opens for
-  // any of them.
+  // last port wins, as in the behavioral model. With -write_priority or
+  // every writing port's data is taken (take{w} is we{w}) and the word
+  // gets their OR. The clock gate opens for any of them.
   vector<dbNet*> take(num_write);
   if (shared) {
     take = word_write.take;
@@ -473,21 +474,25 @@ void RamGen::makeSlice(const int slice_idx,
     take[num_write - 1] = we[num_write - 1];
     dbNet* later = we[num_write - 1];
     for (int w = num_write - 2; w >= 0; --w) {
-      auto later_b = makeNet(prefix, fmt::format("later{}_b", w));
-      makeInst(sel_cell.get(),
-               prefix,
-               fmt::format("later_inv{}", w),
-               inv_cell_,
-               {{inv_ports_[{PortRoleType::DataIn, 0}], later},
-                {inv_ports_[{PortRoleType::DataOut, 0}], later_b}});
-      take[w] = makeNet(prefix, fmt::format("take{}", w));
-      makeInst(sel_cell.get(),
-               prefix,
-               fmt::format("take_and{}", w),
-               and2_cell_,
-               {{and2_ports_[{PortRoleType::DataIn, 0}], we[w]},
-                {and2_ports_[{PortRoleType::DataIn, 1}], later_b},
-                {and2_ports_[{PortRoleType::DataOut, 0}], take[w]}});
+      if (write_or_) {
+        take[w] = we[w];
+      } else {
+        auto later_b = makeNet(prefix, fmt::format("later{}_b", w));
+        makeInst(sel_cell.get(),
+                 prefix,
+                 fmt::format("later_inv{}", w),
+                 inv_cell_,
+                 {{inv_ports_[{PortRoleType::DataIn, 0}], later},
+                  {inv_ports_[{PortRoleType::DataOut, 0}], later_b}});
+        take[w] = makeNet(prefix, fmt::format("take{}", w));
+        makeInst(sel_cell.get(),
+                 prefix,
+                 fmt::format("take_and{}", w),
+                 and2_cell_,
+                 {{and2_ports_[{PortRoleType::DataIn, 0}], we[w]},
+                  {and2_ports_[{PortRoleType::DataIn, 1}], later_b},
+                  {and2_ports_[{PortRoleType::DataOut, 0}], take[w]}});
+      }
       // any port from w on writes: the next earlier port's later, and at
       // port 0 the clock gate's enable
       auto any = w == 0 ? we_net : makeNet(prefix, fmt::format("later{}", w));
@@ -1943,6 +1948,7 @@ void RamGen::generate(const int mask_size,
                       const int rb_ports,
                       const int read_latency,
                       const std::string& write_style,
+                      const std::string& write_priority,
                       const std::string& periphery,
                       const std::string& pin_layer,
                       const std::string& cells,
@@ -1982,6 +1988,7 @@ void RamGen::generate(const int mask_size,
   rb_ports_ = rb_ports;
   read_latency_ = read_latency;
   write_mux_ = write_style == "mux";
+  write_or_ = write_priority == "or";
   periphery_verilog_ = periphery == "verilog";
   periphery_unplaced_ = periphery == "unplaced" || periphery_verilog_;
   wrapper_verilog_ = wrapper_verilog;
@@ -3701,13 +3708,28 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   }
 
   // Write logic, the ports in order: where two write the same word in a
-  // cycle, the last one's data is kept.
+  // cycle, the last one's data is kept. With -write_priority or each
+  // port also writes the data of every earlier port writing the same
+  // slice, so the last one writes the OR of them all.
   std::string data_declarations;
   std::string enable_declarations;
   std::string write_logic;
   for (int w = 0; w < num_write; ++w) {
     const std::string write_addr
         = rw_ports > 0 ? std::string("addr_rw") : wbus("addr_w", w);
+    std::string write_data
+        = fmt::format("{}[i*{} +:{}]", wbus("D", w), mask_size, mask_size);
+    for (int v = 0; write_or_ && v < w; ++v) {
+      write_data += fmt::format(
+          "\n          | ({{{}{{{}[i] && {} == {}}}}} & {}[i*{} +:{}])",
+          mask_size,
+          wbus("we", v),
+          wbus("addr_w", v),
+          write_addr,
+          wbus("D", v),
+          mask_size,
+          mask_size);
+    }
     data_declarations
         += fmt::format("  input [{}:0] {};\n", word_size_bit - 1, wbus("D", w));
     enable_declarations += fmt::format(
@@ -3715,7 +3737,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
     write_logic += fmt::format(
         R"(    for (i = 0; i < {}; i = i + 1) begin
       if ({}[i]{}) begin
-        mem[{}][i*{} +:{}] <= {}[i*{} +:{}];
+        mem[{}][i*{} +:{}] <= {};
       end
     end
 )",
@@ -3726,9 +3748,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         write_addr,
         mask_size,
         mask_size,
-        wbus("D", w),
-        mask_size,
-        mask_size);
+        write_data);
   }
 
   std::string reset_declaration;

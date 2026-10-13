@@ -26,6 +26,7 @@ PASSFAIL_TESTS = [
     "decoder_word_asap7",
     "bit_folds_asap7",
     "periphery_verilog_asap7",
+    "write_priority_or_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -115,6 +116,10 @@ filegroup(
                 "//test:asap7_nldm_data",
             ],
             "periphery_verilog_asap7": [
+                "//test:asap7_data",
+                "//test:asap7_nldm_data",
+            ],
+            "write_priority_or_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
             ],

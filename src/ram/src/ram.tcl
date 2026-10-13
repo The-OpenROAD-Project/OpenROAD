@@ -16,6 +16,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-rb_ports count]
                                              [-read_latency 0|1]
                                              [-write_style clock_gate|mux]
+                                             [-write_priority last|or]
                                              [-cells {role master ...}]
                                              [-name name]
                                              [-decoder row|word]
@@ -36,7 +37,7 @@ proc generate_ram_netlist { args } {
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
-      -banks -bank_columns -bank_order -rb_ports -read_latency -write_style
+      -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
       -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog } flags {}
 
   set column_mux_ratio 1
@@ -241,6 +242,16 @@ proc generate_ram_netlist { args } {
     }
   }
 
+  # Where ports write the same word in a cycle: the last port's data
+  # (last), or the OR of every writing port's data (or).
+  set write_priority last
+  if { [info exists keys(-write_priority)] } {
+    set write_priority $keys(-write_priority)
+    if { $write_priority ni {last or} } {
+      utl::error RAM 87 "-write_priority is last or or, not $write_priority."
+    }
+  }
+
   # A read latency of 1: the read addresses registered.
   set read_latency 0
   if { [info exists keys(-read_latency)] } {
@@ -263,7 +274,7 @@ proc generate_ram_netlist { args } {
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
-    $rb_ports $read_latency $write_style $periphery $pin_layer $cells $name \
+    $rb_ports $read_latency $write_style $write_priority $periphery $pin_layer $cells $name \
     $decoder $bit_folds $wrapper_verilog
 }
 
@@ -299,7 +310,7 @@ proc generate_ram { args } {
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog -read_style -zero_word -reset_value
-           -banks -bank_columns -bank_order -rb_ports -read_latency -write_style
+           -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
            -cells -name -decoder -bit_folds } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
@@ -349,7 +360,7 @@ proc generate_ram { args } {
     lappend ram_netlist_args -reset_value $keys(-reset_value)
   }
 
-  foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency -write_style
+  foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
                -cells -name -decoder -bit_folds} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
