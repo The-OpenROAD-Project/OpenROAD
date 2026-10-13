@@ -567,3 +567,24 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "pdn_polygon_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNPolygon.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # polygon.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
