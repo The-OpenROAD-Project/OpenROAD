@@ -1170,7 +1170,7 @@ int ViaGenerator::getGeneratorWidth(bool bottom) const
   if (isCutArray()) {
     const int end_width = getCutsWidth(
         end_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
-    return array_core_y_ * core_width + (array_core_x_ - 1) * array_spacing_x_
+    return array_core_x_ * core_width + (array_core_x_ - 1) * array_spacing_x_
            + end_width;
   }
   return core_width;
