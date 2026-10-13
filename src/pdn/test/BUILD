@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -458,4 +459,25 @@ doc_check_test(
         "//src/pdn:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "pdn_techlayer_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNTechLayer.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # techlayer.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
