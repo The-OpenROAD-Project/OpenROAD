@@ -6,6 +6,7 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "tcl.h"
+#include "utl/OptionsRegistry.h"
 #include "utl/decode.h"
 
 extern "C" {
@@ -21,6 +22,8 @@ void initResizer(Tcl_Interp* tcl_interp)
   Rsz_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, rsz::rsz_tcl_inits);
+  utl::OptionsRegistry::get().add("repair_design",
+                                  RepairDesignOptions::schema());
 }
 
 }  // namespace rsz

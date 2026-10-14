@@ -1,0 +1,84 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 4 components and 16 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 8 connections.
+[INFO ODB-0133]     Created 5 nets and 8 connections.
+max_wire_length       1000 *
+slew_margin           0
+cap_margin            0
+max_utilization       none
+pre_placement         false
+match_cell_footprint  false
+reroute               false
+verbose               false
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         5
+    final |   +191.7% |       1 |       3 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0037] Found 1 long wires.
+[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
+Driver    length delay
+wire2/Z manhtn 986.9 steiner 986.9 0.13
+wire1/Z manhtn 712.7 steiner 712.7 0.07
+u2/Z manhtn 682.9 steiner 682.9 0.06
+wire3/Z manhtn 616.5 steiner 616.5 0.05
+u3/Z manhtn 1.1 steiner 1.1 0.00
+u4/Z manhtn 1.1 steiner 1.1 0.00
+in1 manhtn 0.7 steiner 0.7 0.00
+Startpoint: in1 (input port)
+Endpoint: out1 (output port)
+Path Group: unconstrained
+Path Type: max
+
+     Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------
+                     0.000    0.000 ^ input external delay
+   1.024    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X1)
+   1.454    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
+            0.007    0.000    0.018 ^ u2/A (CLKBUF_X3)
+  54.725    0.031    0.054    0.072 ^ u2/Z (CLKBUF_X3)
+            0.077    0.059    0.130 ^ wire3/A (BUF_X4)
+  49.738    0.021    0.045    0.175 ^ wire3/Z (BUF_X4)
+            0.061    0.047    0.223 ^ wire2/A (BUF_X4)
+  78.603    0.022    0.043    0.266 ^ wire2/Z (BUF_X4)
+            0.060    0.043    0.309 ^ u3/A (BUF_X1)
+   0.000    0.006    0.026    0.335 ^ u3/Z (BUF_X1)
+            0.006    0.000    0.335 ^ out1 (out)
+                              0.335   data arrival time
+---------------------------------------------------------------------------
+(Path is unconstrained)
+
+
+Startpoint: in1 (input port)
+Endpoint: out2 (output port)
+Path Group: unconstrained
+Path Type: max
+
+     Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------
+                     0.000    0.000 ^ input external delay
+   1.024    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X1)
+   1.454    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
+            0.007    0.000    0.018 ^ u2/A (CLKBUF_X3)
+  54.725    0.031    0.054    0.072 ^ u2/Z (CLKBUF_X3)
+            0.077    0.059    0.130 ^ wire3/A (BUF_X4)
+  49.738    0.021    0.045    0.175 ^ wire3/Z (BUF_X4)
+            0.061    0.047    0.223 ^ wire2/A (BUF_X4)
+  78.603    0.022    0.043    0.266 ^ wire2/Z (BUF_X4)
+            0.144    0.116    0.382 ^ wire1/A (BUF_X4)
+  54.538    0.025    0.049    0.431 ^ wire1/Z (BUF_X4)
+            0.072    0.056    0.487 ^ u4/A (BUF_X1)
+   0.000    0.006    0.027    0.514 ^ u4/Z (BUF_X1)
+            0.006    0.000    0.514 ^ out2 (out)
+                              0.514   data arrival time
+---------------------------------------------------------------------------
+(Path is unconstrained)
+
+

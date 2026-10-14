@@ -34,6 +34,7 @@
 #include "odb/geom.h"
 #include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
+#include "rsz/RepairDesignOptions.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -427,10 +428,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   ////////////////////////////////////////////////////////////////
 
   // Repair long wires, max fanout violations.
+  void repairDesign(const RepairDesignOptions& options);
   void repairDesign(
       double max_wire_length,  // max_wire_length zero for none (meters)
-      double slew_margin,      // 0.0-1.0
-      double cap_margin,       // 0.0-1.0
+      double slew_margin,      // percent
+      double cap_margin,       // percent
       double buffer_gain,
       bool match_cell_footprint,
       bool reroute,
@@ -508,9 +510,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
+  // repair_design runs with the options; a max_wire_length of 0 uses the
+  // length found by resizeSlackPreamble.
   void findResizeSlacks(bool run_journal_restore,
                         bool run_repair_timing = false,
-                        float repair_tns_end_percent = 0.01);
+                        float repair_tns_end_percent = 0.01,
+                        const RepairDesignOptions& repair_design = {});
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).

@@ -77,6 +77,77 @@ man clock_tree_synthesis
 man CTS-0005
 ```
 
+### Options Structs
+
+Commands that take their settings as an options struct (`global_placement`,
+`repair_design`, `global_route`) accept `-options options_dict`, a nested Tcl
+dict whose keys are the struct's fields.  A key may also be a dotted path.
+The same struct, with the same names, defaults and checks, is the Python
+class the command's module exports (e.g. `gpl.PlaceOptions`).
+
+<!-- checker: skip -->
+```tcl
+set opts {
+  density 0.72
+  timing {
+    enabled true
+    nets_percentage 15
+    repair_design { slew_margin 5 }
+  }
+}
+global_placement -options $opts
+global_placement -options {density 0.72 timing.nets_percentage 15}
+```
+
+The commands below work on any registered options struct.
+
+### describe_options
+
+Lists every option of a command with its type, default, limits and
+description.  `-markdown` prints the table used in the README.
+
+```tcl
+describe_options command [-markdown]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `command` | A command that takes `-options`, e.g. `global_placement`. |
+| `-markdown` | Print the options table in Markdown. |
+
+### default_options
+
+Returns the default options of a command as a dict, to be edited with
+`dict set` and passed back to the command.
+
+```tcl
+default_options command
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `command` | A command that takes `-options`. |
+
+### report_options
+
+Shows the values a command runs with for an options dict: every option, with
+a `*` on the values that differ from the defaults.
+
+```tcl
+report_options command [-options options_dict]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `command` | A command that takes `-options`. |
+| `-options` | The options dict to resolve; empty for the defaults. |
+
 ### tee
 
 Redirect a commands output to a file and standard out.

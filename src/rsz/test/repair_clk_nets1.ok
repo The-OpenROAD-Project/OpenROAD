@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 
 # Set CLOCK type for all nets in the target path.
-[WARNING RSZ-0065] max wire length less than 693u increases wire delays.
+[WARNING RSZ-0071] max wire length less than 693u increases wire delays.
 [INFO RSZ-0047] Found 1 long wires.
 [INFO RSZ-0048] Inserted 3 buffers in 1 nets.
 

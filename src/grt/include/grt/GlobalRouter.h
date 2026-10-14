@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "grt/GlobalRouteOptions.h"
 #include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
 #include "odb/PtrSetMap.h"
@@ -212,6 +213,10 @@ class GlobalRouter
   void endIncremental(bool save_guides = false);
   void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
+  // Applies the options to the router, then routes.
+  void globalRoute(const GlobalRouteOptions& options);
+  // Applies the options without routing, for an incremental bracket.
+  void applyOptions(const GlobalRouteOptions& options);
   void saveCongestion();
   NetRouteMap& getRoutes();
   NetRouteMap getPartialRoutes();
@@ -654,7 +659,7 @@ class GlobalRouter
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
   // variables congestion report file
-  const char* congestion_file_name_;
+  std::string congestion_file_name_;
 
   // incremental grt
   GRouteDbCbk* grouter_cbk_;

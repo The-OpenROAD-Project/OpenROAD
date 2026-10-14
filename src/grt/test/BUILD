@@ -52,6 +52,7 @@ TESTS = [
     "macro_obs_not_aligned",
     "modeling_instance_obs",
     "multiple_calls",
+    "global_route_options",
     "ndr_1w_3s",
     "ndr_1w_3s_cugr",
     "ndr_2w_3s",

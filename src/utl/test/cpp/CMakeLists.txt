@@ -79,3 +79,15 @@ gtest_discover_tests(TestCpuTopology
 add_dependencies(build_and_test
   TestCpuTopology
 )
+
+add_executable(TestValidate TestValidate.cpp)
+
+target_link_libraries(TestValidate ${TEST_LIBS})
+
+gtest_discover_tests(TestValidate
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_dependencies(build_and_test
+  TestValidate
+)

@@ -16,8 +16,14 @@ FastRoute4.1 algorithm.
 This command performs global routing with the option to use a `guide_file`.
 You may also choose to use incremental global routing using `-start_incremental`.
 
+The options can also be given as one dict with `-options`, whose keys are the
+fields of `grt::GlobalRouteOptions` (`describe_options global_route`); the
+switches below are aliases for those keys. The same dict is what
+`global_placement -options {routability {global_route {...}}}` takes.
+
 ```tcl
 global_route
+    [-options options_dict]
     [-guide_file out_file]
     [-congestion_iterations iterations]
     [-congestion_report_file file_name]
@@ -40,6 +46,7 @@ global_route
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-options` | A dict of the options below by field name, e.g. `{congestion_iterations 10 grid_origin {0 0}}`. See `describe_options global_route`. |
 | `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
 | `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
 | `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |

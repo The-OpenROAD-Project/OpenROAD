@@ -37,6 +37,7 @@ cc_library(
         "src/RecoverPower.hh",
         "src/RepairDesign.cc",
         "src/RepairDesign.hh",
+        "src/RepairDesignOptions.cc",
         "src/RepairHold.cc",
         "src/RepairHold.hh",
         "src/RepairTargetCollector.cc",
@@ -125,6 +126,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/RepairDesignOptions.hh",
         "include/rsz/Resizer.hh",
         "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
@@ -176,6 +178,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/RepairDesignOptions.hh",
         "include/rsz/Resizer.hh",
     ],
     includes = [
@@ -240,6 +243,7 @@ tcl_wrap_cc(
     srcs = [
         "src/Resizer.i",
         "//:error_swig",
+        "//:options_swig",
         "//src/sta:sta_swig_files",
     ],
     module = "rsz",
@@ -255,9 +259,11 @@ python_wrap_cc(
     name = "swig-py",
     srcs = [
         "include/rsz/GlobalSizingConfig.hh",
+        "include/rsz/RepairDesignOptions.hh",
         "include/rsz/Resizer.hh",
         "src/Resizer-py.i",
         "//:error_swig-py",
+        "//:options_swig-py",
     ],
     module = "rsz_py",
     root_swig_src = "src/Resizer-py.i",
@@ -265,6 +271,7 @@ python_wrap_cc(
         "include",
         "src",
     ],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//src/odb:swig-py",
     ],
@@ -289,5 +296,9 @@ messages_txt(
 python_wrap_library(
     name = "py_wrap",
     includes = ["src"],
-    deps = [":rsz"],
+    deps = [
+        ":rsz",
+        "//src/utl",
+        "@boost.json",
+    ],
 )

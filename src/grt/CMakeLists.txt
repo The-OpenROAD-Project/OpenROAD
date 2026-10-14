@@ -13,6 +13,7 @@ add_subdirectory(src/cugr)
 swig_lib(NAME      grt
          NAMESPACE grt
          I_FILE    src/GlobalRouter.i
+         SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src
          SCRIPTS   src/GlobalRouter.tcl
 )
 
@@ -22,6 +23,7 @@ add_library(grt_lib
   src/Pin.cpp
   src/RepairAntennas.cpp
   src/Rudy.cpp
+  src/GlobalRouteOptions.cpp
   src/GlobalRouter.cpp
 )
 

@@ -100,6 +100,7 @@ using rsz::Resizer;
 ////////////////////////////////////////////////////////////////
 
 %include "../../Exception.i"
+%include "../../options.i"
 %include "std_string.i"
 
 %inline %{
@@ -302,24 +303,43 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
   resizer->repairTieFanout(tie_port, separation, verbose);
 }
 
+// The legacy switches of repair_design, mapped onto RepairDesignOptions.
+static const utl::LegacyArgs kRepairDesignArgs = {
+    {"-max_wire_length", {"max_wire_length"}, "", {}},
+    {"-slew_margin", {"slew_margin"}, "", {}},
+    {"-cap_margin", {"cap_margin"}, "", {}},
+    {"-max_utilization", {"max_utilization"}, "", {}},
+    {"-pre_placement", {"pre_placement"}, "true", {}},
+    {"-buffer_gain", {"pre_placement"}, "", [](boost::json::object& o, const std::string&) {
+       o["pre_placement"] = true;
+     }},
+    {"-match_cell_footprint", {"match_cell_footprint"}, "true", {}},
+    {"-reroute", {"reroute"}, "true", {}},
+    {"-verbose", {"verbose"}, "true", {}},
+};
+
+// repair_design: the -options dict plus the legacy switches.  A
+// max_wire_length of 0 (the default) is replaced by the delay-optimal length
+// unless the user gave one.
 void
-repair_design_cmd(double max_length,
-                  double slew_margin,
-                  double cap_margin,
-                  bool pre_placement,
-                  bool match_cell_footprint,
-                  bool reroute,
-                  bool verbose)
+repair_design_cmd(Tcl_Obj* options,
+                  const std::map<std::string, std::string>& keys,
+                  const std::map<std::string, std::string>& flags,
+                  Tcl_Interp* interp)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length,
-                        slew_margin,
-                        cap_margin,
-                        pre_placement,
-                        match_cell_footprint,
-                        reroute,
-                        verbose);
+  rsz::RepairDesignOptions repair_options
+      = optionsFromTcl<rsz::RepairDesignOptions>(
+          interp, options, keys, flags, kRepairDesignArgs);
+  resizer->repairDesign(repair_options);
+}
+
+std::string
+repair_design_default_options(Tcl_Interp* interp)
+{
+  return utl::jsonToTclString(interp,
+                              rsz::RepairDesignOptions::schema().defaults());
 }
 
 int

@@ -12,6 +12,7 @@
 #include "heatMap.h"
 #include "heatMapRudy.h"
 #include "tcl.h"
+#include "utl/OptionsRegistry.h"
 #include "utl/decode.h"
 #include "web/heatMap.h"
 
@@ -58,6 +59,7 @@ void initTcl(Tcl_Interp* tcl_interp)
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, grt::grt_tcl_inits);
+  utl::OptionsRegistry::get().add("global_route", GlobalRouteOptions::schema());
 }
 
 }  // namespace grt

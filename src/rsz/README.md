@@ -144,8 +144,14 @@ When neither the liberty libraries nor the SDC constrain fanout,
 `repair_design` uses a default limit of 50 load pins to build a buffer tree
 for high-fanout nets. Use `set_max_fanout` to constrain fanout explicitly.
 
+The options can also be given as one dict with `-options`, whose keys are the
+fields of `rsz::RepairDesignOptions` (`describe_options repair_design`); the
+switches below are aliases for those keys. The same dict is what
+`global_placement -options {timing {repair_design {...}}}` takes.
+
 ```tcl
 repair_design 
+    [-options options_dict]
     [-max_wire_length max_length]
     [-slew_margin slew_margin]
     [-cap_margin cap_margin]
@@ -161,6 +167,7 @@ repair_design
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-options` | A dict of the options below by field name, e.g. `{max_wire_length 1000 slew_margin 5}`. See `describe_options repair_design`. |
 | `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
 | `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |

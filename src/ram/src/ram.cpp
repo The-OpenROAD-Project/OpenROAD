@@ -1126,12 +1126,8 @@ void RamGen::ramFiller(const vector<std::string>& filler_cells)
 void RamGen::ramRouting(int thread_count)
 {
   const odb::Rect& die_bounds = block_->getDieArea();
-  global_router_->setGridOrigin(die_bounds.xMin(), die_bounds.yMin());
-  global_router_->setCongestionIterations(50);
-  global_router_->setCongestionReportIterStep(0);
-  global_router_->setAllowCongestion(false);
-  global_router_->setResistanceAware(false);
-  global_router_->globalRoute(true);
+  global_router_->globalRoute(grt::GlobalRouteOptions{
+      .grid_origin = {die_bounds.xMin(), die_bounds.yMin()}});
   drt::ParamStruct params;
   params.verbose = 0;
   params.num_threads = thread_count;

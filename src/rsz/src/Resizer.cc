@@ -91,6 +91,7 @@
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/Validate.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
 #include "utl/timer.h"
@@ -3231,8 +3232,10 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore,
                                bool run_repair_timing,
-                               float repair_tns_end_percent)
+                               float repair_tns_end_percent,
+                               const RepairDesignOptions& repair_design)
 {
+  utl::validate(repair_design, logger_);
   initBlock();
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
@@ -3253,11 +3256,17 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
     global_router_->startIncremental();
   }
 
-  repair_design_->repairDesign(max_wire_length_,
-                               0.0,
-                               0.0,
-                               0.0,
-                               false,
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         repair_design.match_cell_footprint);
+  utl::SetAndRestore set_reroute(repair_design_->reroute_,
+                                 repair_design.reroute);
+  repair_design_->repairDesign(repair_design.max_wire_length > 0
+                                   ? repair_design.max_wire_length
+                                   : max_wire_length_,
+                               repair_design.slew_margin,
+                               repair_design.cap_margin,
+                               repair_design.pre_placement,
+                               repair_design.verbose,
                                repaired_net_count,
                                slew_violations,
                                cap_violations,
@@ -5134,6 +5143,41 @@ bool Resizer::isFuncOneZero(const sta::Pin* drvr_pin)
 
 ////////////////////////////////////////////////////////////////
 
+void Resizer::repairDesign(const RepairDesignOptions& options)
+{
+  utl::validate(options, logger_);
+  utl::Timer timer;
+  if (options.max_utilization) {
+    setMaxUtilization(*options.max_utilization / 100.0);
+  }
+  if (options.max_wire_length > 0
+      && estimate_parasitics_->wireSignalResistance(sta_->cmdScene()) > 0) {
+    const double min_delay_length = findMaxWireLength(false);
+    if (options.max_wire_length < min_delay_length) {
+      logger_->warn(RSZ,
+                    65,
+                    "max wire length less than {:.0f}u increases wire delays.",
+                    min_delay_length * 1e6);
+    }
+  }
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         options.match_cell_footprint);
+  resizePreamble();
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::kGlobalRouting
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::kDetailedRouting) {
+    opendp_->initMacrosAndGrid();
+  }
+  utl::SetAndRestore set_reroute(repair_design_->reroute_, options.reroute);
+  repair_design_->repairDesign(options.max_wire_length,
+                               options.slew_margin,
+                               options.cap_margin,
+                               options.pre_placement ? 1.0 : 0.0,
+                               options.verbose);
+  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
+}
+
 void Resizer::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
@@ -5142,20 +5186,13 @@ void Resizer::repairDesign(double max_wire_length,
                            bool reroute,
                            bool verbose)
 {
-  utl::Timer timer;
-  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
-                                         match_cell_footprint);
-  resizePreamble();
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
-    opendp_->initMacrosAndGrid();
-  }
-  utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
-  repair_design_->repairDesign(
-      max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
-  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
+  repairDesign(RepairDesignOptions{.max_wire_length = max_wire_length,
+                                   .slew_margin = slew_margin,
+                                   .cap_margin = cap_margin,
+                                   .pre_placement = buffer_gain != 0.0,
+                                   .match_cell_footprint = match_cell_footprint,
+                                   .reroute = reroute,
+                                   .verbose = verbose});
 }
 
 int Resizer::repairDesignBufferCount() const

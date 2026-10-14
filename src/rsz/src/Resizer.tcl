@@ -141,7 +141,10 @@ proc balance_row_usage { args } {
   rsz::balance_row_usage_cmd
 }
 
-sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
+# The options are declared in rsz::RepairDesignOptions (C++); see
+# `describe_options repair_design` for the dict keys, defaults and limits.
+sta::define_cmd_args "repair_design" {[-options options_dict] \
+                                      [-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
@@ -153,28 +156,21 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
-    keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
+    keys {-options -max_wire_length -max_utilization -slew_margin -cap_margin \
+          -buffer_gain} \
     flags {-match_cell_footprint -verbose -pre_placement -reroute}
 
-  set max_wire_length [rsz::parse_max_wire_length keys]
-  set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
-  set cap_margin [rsz::parse_percent_margin_arg "-cap_margin" keys]
-
-  set pre_placement [info exists flags(-pre_placement)]
   if { [info exists keys(-buffer_gain)] } {
-    set pre_placement true
     utl::warn "RSZ" 149 "-buffer_gain is deprecated"
   }
-  rsz::set_max_utilization [rsz::parse_max_util keys]
-
   sta::check_argc_eq0 "repair_design" $args
   est::check_parasitics
-  set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
-  set match_cell_footprint [info exists flags(-match_cell_footprint)]
-  set verbose [info exists flags(-verbose)]
-  set reroute [info exists flags(-reroute)]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $pre_placement $match_cell_footprint $reroute $verbose
+
+  set options {}
+  if { [info exists keys(-options)] } {
+    set options $keys(-options)
+  }
+  rsz::repair_design_cmd $options [array get keys] [array get flags]
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -1273,7 +1269,7 @@ proc check_max_wire_length { max_wire_length use_default } {
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {
         set wire_length_fmt [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]]
-        utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
+        utl::warn RSZ 71 "max wire length less than $wire_length_fmt increases wire delays."
       }
     } else {
       if { $use_default } {
