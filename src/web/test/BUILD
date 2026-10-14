@@ -73,6 +73,7 @@ test_suite(
         ":request_handler_test",
         ":save_display_controls_test",
         ":tile_generator_test",
+        ":web_assets_test",
     ],
 )
 
@@ -416,6 +417,16 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "web_assets_test",
+    srcs = ["cpp/TestWebAssets.cpp"],
+    deps = [
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

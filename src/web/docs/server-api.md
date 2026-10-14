@@ -17,6 +17,11 @@ binary framing with JSON or PNG payloads.
 - HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
   asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
   other than GET is supported.
+- The larger assets are stored gzipped. When `Accept-Encoding` allows
+  gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
+  wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
+  otherwise the server inflates them first. Every asset response carries
+  `Vary: Accept-Encoding` and `Cache-Control: no-store`.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
