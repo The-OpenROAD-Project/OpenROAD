@@ -42,38 +42,28 @@ web_server
 
 #### Access token
 
-The browser console evaluates Tcl on the server, so reaching the viewer means
-running commands as the user who started `openroad`. Every session mints a
-one-off access token and puts it in the url it reports:
+You never type the token. The browser `openroad` launches opens the viewer
+directly; when none is launched (ssh, batch jobs), open the url `WEB-0001`
+prints, which already carries it:
 
 ```
 [INFO WEB-0001] Server started on http://localhost:39217/?token=2f1c...
 To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
 ```
 
-Requests without that token are refused: the page itself, the image download,
-and the WebSocket the viewer runs on. Open the url as printed — a bookmark
-without the token, or one from a previous session, will not connect. The token
-is not a substitute for the loopback bind: it travels in clear text over HTTP.
+The token keeps other users of the machine out: they can all reach
+`127.0.0.1`, and the viewer's console runs Tcl as you. Without it the page, the
+image download and the WebSocket are refused, so a bookmark from an earlier
+session will not connect; every session mints a new one.
 
-The browser is launched with a single-use *ticket* instead of the token, and
-redirected to the token url once it redeems it. A command line is readable by
-every user of the machine (`ps`, `/proc`), so the ticket stops working as soon
-as the browser has used it, when the launch fails or is skipped, or after five
-minutes. `-no_browser` keeps it off every command line.
-
-For the few seconds between the launch and the redirect the ticket is still
-live, and whoever redeems it first gets the token. If the viewer opens on
-`Unauthorized` right after a launch that `WEB-0003` did not report as failed,
-assume someone else did: stop the server (`web_server -stop`, or quit
-`openroad`) and start it again, which mints a new token, rather than carry on
-with the printed url. Restarting ends their access, not what they already did
-with it: the viewer's console is a Tcl shell running as you.
-
-Against other users of the same machine the token is the barrier — they can
-all reach `127.0.0.1`; the loopback bind keeps out other machines. The url is
-reported through the logger, so a `-log` file holds the token and needs the
-same care. The token dies with the session that minted it.
+- The launched browser gets a single-use *ticket* instead, so the token never
+  appears on a command line (`ps`). The ticket stops working once used, when
+  the launch fails or is skipped, or after five minutes.
+- If the viewer opens on `Unauthorized` right after a launch that `WEB-0003` did
+  not report as failed, someone else may have used the ticket first: restart
+  the server, which mints a new token.
+- The url goes through the logger, so a `-log` file holds the token. It travels
+  in clear text over HTTP, so it does not replace the loopback bind.
 
 #### Running on a remote machine
 
