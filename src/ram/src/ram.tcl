@@ -337,6 +337,8 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-max_tap_dist value]
                                      [-use_latch value]
                                      [-write_behavioral_verilog filename]
+                                     [-periphery placed|verilog]
+                                     [-wrapper_verilog file]
                                      [-tracks file]
                                      }
 
@@ -352,9 +354,14 @@ proc generate_ram { args } {
            -banks -bank_columns -bank_order -rb_ports -register_read_address
            -write_style -write_priority
            -cells -name -decoder -bit_folds -service_columns
-           -bank_column_layout -tracks } flags {}
+           -bank_column_layout -periphery -wrapper_verilog -tracks } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
+
+  if { [info exists keys(-periphery)] && $keys(-periphery) == "unplaced" } {
+    utl::error RAM 98 "generate_ram routes the block; -periphery unplaced\
+      is generate_ram_netlist's, for a flow that places the periphery."
+  }
 
   if { [info exists keys(-tracks)] && ![file readable $keys(-tracks)] } {
     utl::error RAM 97 "-tracks file $keys(-tracks) is not readable."
@@ -408,10 +415,18 @@ proc generate_ram { args } {
   foreach key {-banks -bank_columns -bank_order -rb_ports -register_read_address
                -write_style -write_priority
                -cells -name -decoder -bit_folds -service_columns
-               -bank_column_layout} {
+               -bank_column_layout -periphery -wrapper_verilog} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }
+  }
+  # the netlist places a Verilog periphery's core pins on a layer of its
+  # own; generate_ram places them again on its edges
+  if {
+    [info exists keys(-periphery)] && $keys(-periphery) == "verilog"
+    && [info exists keys(-hor_layer)]
+  } {
+    lappend ram_netlist_args -pin_layer [lindex $keys(-hor_layer) 0]
   }
 
   if { [info exists keys(-inv_cell)] } {
@@ -520,6 +535,16 @@ proc generate_ram { args } {
     make_tracks -x_offset 0 -y_offset 0
   }
 
+  # -periphery verilog: the netlist put each of the core's pins where
+  # its connections land, for a macro placer to orient the core by;
+  # a routed core takes its pins on its edges instead
+  if { [info exists keys(-periphery)] && $keys(-periphery) == "verilog" } {
+    foreach bterm [[ord::get_db_block] getBTerms] {
+      foreach bpin [$bterm getBPins] {
+        odb::dbBPin_destroy $bpin
+      }
+    }
+  }
   ram::ram_pinplacer $ver_name $hor_name
 
   ram::ram_filler $filler_cells
