@@ -294,10 +294,6 @@ void ScanReplace::collectScanCellAvailable()
       }
 
       if (utils::IsScanCell(db_network, liberty_cell)) {
-        // Only skip user-configured or library dont_use cells as replacement
-        // targets. Non-scan cells that are already instantiated in the netlist
-        // should still be mapped to an allowed scan equivalent even if their
-        // non-scan library cell is marked dont_use.
         if (resizer_ && resizer_->dontUse(liberty_cell)) {
           continue;
         }
