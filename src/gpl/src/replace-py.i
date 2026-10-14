@@ -9,7 +9,9 @@
 
 %{
 #include "gpl/Replace.h"
+#include "grt/GlobalRouteOptions.h"
 #include "odb/db.h"
+#include "rsz/RepairDesignOptions.hh"
 
 namespace ord {
 gpl::Replace*
@@ -25,7 +27,19 @@ using gpl::Replace;
 %include "typemaps.i"
 %include "std_vector.i"
 %include "../../Exception-py.i"
+%include "../../options-py.i"
+
+// The embedded sub-tool options are classes of the rsz and grt modules.
+%import "rsz/RepairDesignOptions.hh"
+%import "grt/GlobalRouteOptions.h"
+
 %include "gpl/Replace.h"
+%options_struct(gpl::InitialPlaceOptions, InitialPlaceOptions)
+%options_struct(gpl::NesterovOptions, NesterovOptions)
+%options_struct(gpl::TimingOptions, TimingOptions)
+%options_struct(gpl::VirtualCtsOptions, VirtualCtsOptions)
+%options_struct(gpl::RoutabilityOptions, RoutabilityOptions)
+%options_struct(gpl::PlaceOptions, PlaceOptions)
 
 namespace std {
 #ifndef SWIG_VECTOR_INT

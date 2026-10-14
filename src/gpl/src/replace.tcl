@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2018-2025, The OpenROAD Authors
 
+# The options are declared in gpl::PlaceOptions (C++); see
+# `describe_options global_placement` for the dict keys, defaults and limits.
 sta::define_cmd_args "global_placement" {\
+    [-options options_dict]\
     [-skip_initial_place]\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
@@ -51,7 +54,7 @@ sta::define_cmd_args "global_placement" {\
 
 proc global_placement { args } {
   sta::parse_key_args "global_placement" args \
-    keys {-bin_grid_count -density \
+    keys {-options -bin_grid_count -density \
       -init_density_penalty -init_wirelength_coef \
       -min_phi_coef -max_phi_coef -overflow \
       -reference_hpwl \
@@ -92,10 +95,9 @@ proc global_placement { args } {
 
   sta::check_argc_eq0 "global_placement" $args
 
+  # The conflicts between options are checked by PlaceOptions; these two
+  # are conflicts with the way the command is run.
   if { [info exists flags(-place_ios)] } {
-    if { [info exists flags(-skip_io)] } {
-      utl::error GPL 169 "-place_ios cannot be used with -skip_io placement."
-    }
     if { [info exists flags(-incremental)] } {
       utl::error GPL 170 "-place_ios cannot be used with -incremental placement."
     }
@@ -104,13 +106,18 @@ proc global_placement { args } {
     }
   }
 
+  set options {}
+  if { [info exists keys(-options)] } {
+    set options $keys(-options)
+  }
+
   if { [info exists flags(-incremental)] } {
-    gpl::replace_incremental_place_cmd [array get keys] [array get flags]
+    gpl::replace_incremental_place_cmd $options [array get keys] [array get flags]
   } else {
-    gpl::replace_initial_place_cmd [array get keys] [array get flags]
+    gpl::replace_initial_place_cmd $options [array get keys] [array get flags]
 
     if { ![info exists flags(-skip_nesterov_place)] } {
-      gpl::replace_nesterov_place_cmd [array get keys] [array get flags]
+      gpl::replace_nesterov_place_cmd $options [array get keys] [array get flags]
     }
   }
   gpl::replace_reset_cmd

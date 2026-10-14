@@ -26,10 +26,10 @@ design.evalTclString("read_sdc convergence01.sdc")
 design.evalTclString("source asap7/setRC.tcl")
 
 options = helpers.PlaceOptions()
-options.padLeft = 2
-options.padRight = 2
+options.pad_left = 2
+options.pad_right = 2
 options.density = 0.5
-options.timingDrivenMode = True
+options.timing.enabled = True
 design.getReplace().doPlace(1, options)
 
 def_file = helpers.make_result_file("convergence01.def")

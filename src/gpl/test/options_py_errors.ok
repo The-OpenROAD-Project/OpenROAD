@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 294 components and 1656 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[ERROR GPL-0430] unknown option densty; valid options: density uniform_density bin_grid_count_x bin_grid_count_y pad_left pad_right skip_io place_ios pin_density_adjust routing_congestion initial nesterov timing virtual_cts routability
+GPL-0430
+[ERROR GPL-0424] timing.nets_percentage abc not a float
+GPL-0424
+[ERROR GPL-0401] density 1.5 not in [0, 1]
+GPL-0401
+[ERROR GPL-0418] routability.rc_coefficients {1 2 3} not a list of 4 values
+GPL-0418
+[ERROR GPL-0169] place_ios cannot be used with skip_io placement.
+GPL-0169
+[ERROR RSZ-0422] timing.repair_design.slew_margin 120 not in [0, 100]
+RSZ-0422
+[ERROR GRT-0055] routability.global_route.grid_origin {1 2 3} not a list of 2 values
+GRT-0055
+[ERROR GPL-0440] initial 5 not a dictionary
+GPL-0440
+[ERROR GPL-0401] density 1.5 not in [0, 1]
+GPL-0401
+PlaceOptions has no option 'densty'; valid options: density uniform_density bin_grid_count_x bin_grid_count_y pad_left pad_right skip_io place_ios pin_density_adjust routing_congestion initial nesterov timing virtual_cts routability

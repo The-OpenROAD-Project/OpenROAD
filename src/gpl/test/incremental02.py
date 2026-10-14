@@ -28,8 +28,8 @@ design.readDef("./incremental02.def")
 
 set_thread_count(4)
 options = gpl.PlaceOptions()
-options.padLeft = 2
-options.padRight = 2
+options.pad_left = 2
+options.pad_right = 2
 options.density = 0.3
 design.getReplace().doIncrementalPlace(1, options)
 

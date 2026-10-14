@@ -11,7 +11,7 @@ design = helpers.make_design(tech)
 design.readDef("./error01.def")
 
 options = gpl.PlaceOptions()
-options.initDensityPenaltyFactor = 0.01
+options.nesterov.init_density_penalty = 0.01
 options.density = 0.001
-options.initialPlaceMaxIter = 0
+options.initial.max_iter = 0
 design.getReplace().doPlace(1, options)

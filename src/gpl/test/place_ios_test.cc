@@ -213,8 +213,8 @@ class PlaceIos : public tst::Fixture
 
   void place(PlaceOptions options = {})
   {
-    options.placeIosMode = true;
-    options.initDensityPenaltyFactor = 0.01;
+    options.place_ios = true;
+    options.nesterov.init_density_penalty = 0.01;
     replace_.doPlace(1, options);
     replace_.reset();
   }
@@ -590,7 +590,7 @@ TEST_F(PlaceIos, TopLayerPinsStayInTheirRegion)
   setPinLayers({"metal1"}, {"metal2"});
 
   PlaceOptions options;
-  options.initialPlaceMaxIter = 0;
+  options.initial.max_iter = 0;
   place(options);
 
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
@@ -668,7 +668,7 @@ TEST_P(PlaceIosFewCells, CellsAndPinsEndPlaced)
 {
   setPinLayers({"metal5"}, {"metal6"});
   PlaceOptions options;
-  options.placeIosMode = true;
+  options.place_ios = true;
   replace_.doPlace(1, options);
 
   const odb::Rect core = block_->getCoreArea();

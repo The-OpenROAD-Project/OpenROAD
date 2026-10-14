@@ -8,6 +8,7 @@
 #include "graphicsNone.h"
 #include "tcl.h"
 #include "utl/Logger.h"
+#include "utl/OptionsRegistry.h"
 #include "utl/decode.h"
 #include "web/core.h"
 
@@ -23,6 +24,7 @@ void initReplace(Tcl_Interp* tcl_interp)
 {
   Gpl_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, gpl::gpl_tcl_inits);
+  utl::OptionsRegistry::get().add("global_placement", PlaceOptions::schema());
 }
 
 void initReplaceGraphics(Replace* replace, utl::Logger* log)

@@ -67,8 +67,14 @@ Timing-driven arguments
 - They begin with `-timing_driven`.
 - `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
+All of the options below can also be given as one nested dict with
+`-options`; see [Options Dict](#options-dict). The dict is the same structure
+as the Python `gpl.PlaceOptions` class, and it is the only way to reach the
+embedded `repair_design` and `global_route` settings.
+
 ```tcl
 global_placement
+    [-options options_dict]\
     [-skip_initial_place]\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
@@ -141,6 +147,119 @@ global_placement
 | `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
 | `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement to explore layout variations. Default is `1`. |
 | `-perturb_dist` | Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller. |
+
+#### Options Dict
+
+`-options` takes a nested Tcl dict whose keys are the fields of
+`gpl::PlaceOptions`; a key may also be a dotted path. The switches above are
+aliases for these keys and override the dict when both are given. The
+embedded `repair_design` and `global_route` dicts take the options of those
+commands (`describe_options repair_design`, `describe_options global_route`).
+
+<!-- checker: skip -->
+```tcl
+set opts {
+  density 0.72
+  timing {
+    enabled true
+    nets_percentage 15
+    repair_design { slew_margin 5 }
+  }
+  routability {
+    enabled true
+    global_route { congestion_iterations 5 }
+  }
+}
+global_placement -options $opts
+global_placement -options {density 0.72 timing.nets_percentage 15}
+```
+
+`describe_options global_placement` prints the table below (with
+`-markdown`), `default_options global_placement` returns the defaults as a
+dict, and `report_options global_placement -options $opts` shows the values
+a run would use.
+
+<!-- options-table: global_placement -->
+| Option | Type | Default | Description |
+| ----- | ----- | ----- | ----- |
+| `density` | float (in [0, 1]) | `0.7` | Target density; 0.7 is 70%. |
+| `uniform_density` | bool | `false` | Use the minimum feasible target density instead of density. |
+| `bin_grid_count_x` | int (>= 0) | `0` | Bin grid columns; 0 lets the placer choose. Powers of two from 64 work best. |
+| `bin_grid_count_y` | int (>= 0) | `0` | Bin grid rows; 0 lets the placer choose. |
+| `pad_left` | int (>= 0) | `0` | Left padding in sites. |
+| `pad_right` | int (>= 0) | `0` | Right padding in sites. |
+| `skip_io` | bool | `false` | Ignore the IO pins when computing wirelength. |
+| `place_ios` | bool | `false` | Place the movable IO pins concurrently with the cells, along the die perimeter. Not supported on a rectilinear die. |
+| `pin_density_adjust` | bool | `true` | Grow the area of pin-dense instances. |
+| `routing_congestion` | bool | `false` | Run the global router after placement, for the routing congestion heatmap. |
+| `initial` | group |  | Initial placement. |
+| `initial.max_iter` | int (>= 0) | `20` | Iterations of the quadratic (BiCGSTAB) initial placement; 0 skips it. Initial placement improves HPWL by ~5% on large designs. |
+| `initial.min_diff_length` | int (> 0) | `1500` | Minimum length change that counts as progress. |
+| `initial.max_solver_iter` | int (> 0) | `100` | Iterations of the linear solver per placement iteration. |
+| `initial.max_fanout` | int (> 0) | `200` | Nets with more pins are ignored. |
+| `initial.net_weight_scale` | float (> 0) | `800` | Scale of the net weights. |
+| `initial.force_center` | bool | `false` | Start from the core (or region) center even when the instances already have locations. |
+| `initial.perturbation_seed` | int (>= 0) | `1` | Seed of the random perturbation of the initial locations. |
+| `initial.perturbation_dist` | float | `-1` | Distance of the random perturbation in DBU; -1 for the internal default. |
+| `nesterov` | group |  | Nesterov placement. |
+| `nesterov.max_iter` | int (> 0) | `5000` | Maximum Nesterov iterations. |
+| `nesterov.target_overflow` | float (in [0, 1]) | `0.1` | Overflow at which the placement stops. |
+| `nesterov.init_density_penalty` | float (> 0) | `8e-05` | Initial density penalty. |
+| `nesterov.init_wirelength_coef` | float (> 0) | `0.25` | Initial wirelength coefficient. |
+| `nesterov.min_phi_coef` | float (> 0) | `0.95` | Lower bound of the step scaling (pcof_min); 0.95-1.05 works well. |
+| `nesterov.max_phi_coef` | float (> 0) | `1.05` | Upper bound of the step scaling (pcof_max); 1.00-1.20 works well. |
+| `nesterov.reference_hpwl` | float (>= 0) | `0` | Wirelength change the density penalty controller measures against, in DBU; 0 derives it from the design. |
+| `nesterov.revert_if_diverge` | bool | `true` | Keep snapshots and revert to the last one when the placement diverges. |
+| `timing` | group |  | Timing-driven placement. |
+| `timing.enabled` | bool | `false` | Reweight the nets with the worst slack, found by a virtual repair_design. |
+| `timing.reweight_overflows` | list of int (> 0) | `{64 20}` | Overflows at which the slacks are recomputed and the nets reweighted; fewer values cost less runtime. |
+| `timing.net_weight_max` | float (> 0) | `5` | Weight of the net with the worst slack; the weight falls to 1 at nets_percentage. |
+| `timing.nets_percentage` | float (in [0, 100]) | `10` | Share of the nets, from the worst slack, that are reweighted. |
+| `timing.keep_resize_below_overflow` | float (in [0, 1]) | `1` | Below this overflow the resizer's changes are kept (non-virtual repair_design). |
+| `timing.repair_timing` | bool | `false` | Also run a conservative repair_timing when finding the slacks. |
+| `timing.repair_tns_end_percent` | float (in [0, 100]) | `1` | TNS end percent of that repair_timing. |
+| `timing.repair_design` | group |  | The repair_design run that finds the slacks. |
+| `timing.repair_design.max_wire_length` | float, distance (>= 0) | `0` | Maximum wire length; 0 picks the length that minimizes the wire delay for the set_wire_rc values. |
+| `timing.repair_design.slew_margin` | float (in [0, 100]) | `0` | Slew margin in percent, to over-repair for the difference between estimated and routed parasitics. |
+| `timing.repair_design.cap_margin` | float (in [0, 100]) | `0` | Capacitance margin in percent. |
+| `timing.repair_design.max_utilization` | float (in [0, 100]) | `none` | Percentage of the core area that may be used. |
+| `timing.repair_design.pre_placement` | bool | `false` | Run an initial sizing and buffering round before placement. |
+| `timing.repair_design.match_cell_footprint` | bool | `false` | Obey the Liberty cell footprint when swapping gates. |
+| `timing.repair_design.reroute` | bool | `false` | Resistance-aware rerouting of nets with slew violations after global routing (experimental). |
+| `timing.repair_design.verbose` | bool | `false` | Report the repair progress. |
+| `virtual_cts` | group |  | Virtual clock tree for timing-driven placement. |
+| `virtual_cts.enabled` | bool | `false` | Model the clock insertion delay per sink with a lightweight clock tree before each timing-driven iteration. |
+| `virtual_cts.max_skew_fraction` | float (in [0, 1]) | `0.1` | Maximum clock insertion delay as a fraction of the clock period. |
+| `routability` | group |  | Routability-driven placement. |
+| `routability.enabled` | bool | `false` | Inflate the cells in congested tiles until the target RC metric is met. |
+| `routability.use_rudy` | bool | `true` | Estimate congestion with RUDY; otherwise run the global router (global_route below). |
+| `routability.check_overflow` | float (in [0, 1]) | `0.3` | Overflow below which congestion is checked. |
+| `routability.snapshot_overflow` | float (in [0, 1]) | `0.6` | Overflow at which the placement is saved for a revert. |
+| `routability.max_density` | float (in [0, 1]) | `0.99` | Maximum target density inflation may raise it to. |
+| `routability.target_rc_metric` | float (> 0) | `1.01` | Routing congestion metric to reach; raise it when routability iterations take too long. |
+| `routability.inflation_ratio_coef` | float (> 0) | `2` | Coefficient of the inflation ratio. |
+| `routability.max_inflation_ratio` | float (> 0) | `3` | Maximum inflation of one cell. |
+| `routability.min_congestion_for_inflation` | float (>= 0) | `0.95` | Minimum tile congestion for its cells to be inflated. |
+| `routability.max_inflation_total` | float (> 0) | `0.3` | Ceiling on the area inflation may add, as a fraction of the movable area. |
+| `routability.net_weight_max` | float (> 0) | `1` | Wirelength weight of the nets that put the most wire into congested tiles; 1 disables it. |
+| `routability.congested_nets_percentage` | float (in [0, 100]) | `1` | Share of those nets that is weighted. |
+| `routability.rc_coefficients` | list of 4 float (>= 0) | `{1 1 0 0}` | Coefficients {k1 k2 k3 k4} of the RC metric. |
+| `routability.global_route` | group |  | The global route run when not using RUDY, and for the congestion heatmap. |
+| `routability.global_route.allow_congestion` | bool | `true` | Finish with congestion left instead of failing. |
+| `routability.global_route.congestion_iterations` | int (>= 0) | `0` | Rip-up and reroute iterations to remove congestion; CUGR saturates around 5. |
+| `routability.global_route.congestion_report_iter_step` | int (>= 0) | `0` | Iterations between congestion reports; 0 for none. |
+| `routability.global_route.congestion_report_file` | string | `` | Congestion report file for the DRC viewer; empty for none. |
+| `routability.global_route.grid_origin` | list of 2 int | `{0 0}` | Origin {x y} of the routing grid in DBU. |
+| `routability.global_route.critical_nets_percentage` | float (in [0, 100]) | `0` | Share of the nets with the worst slack that get preference during congestion iterations; unset keeps the router's current setting. |
+| `routability.global_route.res_aware_nets_percentage` | float (in [0, 100]) | `none` | Share of the nets routed resistance-aware; needs resistance_aware. Unset keeps the router's default. |
+| `routability.global_route.resistance_aware` | bool | `false` | Resistance-aware layer assignment and 3D routing (experimental). |
+| `routability.global_route.snapshot_batched_width` | int (>= 0) | `0` | Batches per wave of snapshot-batched routing; 0 for the non-batched behavior (research use). |
+| `routability.global_route.skip_large_fanout_nets` | int (>= 0) | `2147483647` | Nets with more pins than this are not routed. |
+| `routability.global_route.infinite_capacity` | bool | `false` | Unlimited gcell capacity, for testing. |
+| `routability.global_route.verbose` | bool | `false` | Report the full routing log. |
+| `routability.global_route.use_cugr` | bool | `none` | Route with CUGR instead of FastRoute; unset keeps the engine selected earlier (not ready for production). |
+| `routability.global_route.save_guides` | bool | `false` | Write the routes to the database as guides. |
+<!-- end options-table -->
 
 #### Initial-Placement Arguments
 
@@ -358,33 +477,30 @@ Simply run the following script:
 ## Using the Python interface to gpl
 
 This API tries to stay close to the API defined in `C++` class `Replace`
-that is located [here](include/gpl/Replace.h).
-
-When initializing a design, a sequence of Python commands might look like
-the following:
+that is located [here](include/gpl/Replace.h). The options are the
+`gpl.PlaceOptions` class, the same struct the Tcl `-options` dict fills:
+nested dicts or keyword arguments, attribute access, and the same checks and
+messages as Tcl.
 
 ```python
 from openroad import Design, Tech
+import gpl
+
 tech = Tech()
 tech.readLef(...)
 design = Design(tech)
 design.readDef(...)
-gpl = design.getReplace()
-```    
 
-Here is an example of some options / configurations to the global placer.
-(See [Replace.h](include/gpl/Replace.h) for a complete list)
-
-```python
-gpl.setInitialPlaceMaxIter(iter)
-gpl.setSkipIoMode(skip_io)
-gpl.setTimingDrivenMode(timing_driven)
-gpl.setTimingNetWeightMax(weight)
+options = gpl.PlaceOptions(
+    density=0.72,
+    timing=dict(enabled=True, nets_percentage=15, repair_design=dict(slew_margin=5)),
+)
+options.initial.max_iter = 0            # attributes, nested
+options.update({"nesterov.init_density_penalty": 0.01})  # dotted keys
+print(options.to_dict(only_changed=True))
+print(gpl.PlaceOptions.describe())     # help, as describe_options
+design.getReplace().doPlace(threads=1, options=options)
 ```
-
-There are some useful Python functions located in the file
-[grt_aux.py](../grt/test/grt_aux.py) but these are not considered a part of the *final*
-API and they may change.
 
 ## References
 

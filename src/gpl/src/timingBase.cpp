@@ -136,7 +136,8 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
 
     rs_->findResizeSlacks(run_journal_restore,
                           (enable_repair_timing && repair_timing_),
-                          repair_tns_end_percent_);
+                          repair_tns_end_percent_,
+                          repair_design_);
   }
 
   // get worst resize nets

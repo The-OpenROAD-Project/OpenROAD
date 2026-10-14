@@ -217,20 +217,22 @@ const std::vector<Tile*>& TileGrid::tiles() const
 // RouteBaseVars
 
 RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
-    : useRudy(options.routabilityUseRudy),
-      targetRC(options.routabilityTargetRcMetric),
-      inflationRatioCoef(options.routabilityInflationRatioCoef),
-      maxInflationRatio(options.routabilityMaxInflationRatio),
-      maxDensity(options.routabilityMaxDensity),
+    : useRudy(options.routability.use_rudy),
+      targetRC(options.routability.target_rc_metric),
+      inflationRatioCoef(options.routability.inflation_ratio_coef),
+      maxInflationRatio(options.routability.max_inflation_ratio),
+      maxDensity(options.routability.max_density),
       ignoreEdgeRatio(0.8),
-      minCongestionForInflation(options.routabilityMinCongestionForInflation),
-      maxInflationTotal(options.routabilityMaxInflationTotal),
-      netWeightMax(options.routabilityNetWeightMax),
-      congestedNetsPercentage(options.routabilityCongestedNetsPercentage),
-      rcK1(options.routabilityRcK1),
-      rcK2(options.routabilityRcK2),
-      rcK3(options.routabilityRcK3),
-      rcK4(options.routabilityRcK4)
+      minCongestionForInflation(
+          options.routability.min_congestion_for_inflation),
+      maxInflationTotal(options.routability.max_inflation_total),
+      netWeightMax(options.routability.net_weight_max),
+      congestedNetsPercentage(options.routability.congested_nets_percentage),
+      rcK1(options.routability.rc_coefficients[0]),
+      rcK2(options.routability.rc_coefficients[1]),
+      rcK3(options.routability.rc_coefficients[2]),
+      rcK4(options.routability.rc_coefficients[3]),
+      globalRoute(options.routability.global_route)
 {
 }
 
@@ -315,24 +317,14 @@ void RouteBase::getGrtResult()
   // update gCells' location to DB for GR
   nbc_->updateDbGCells();
 
-  // these two options must be on
-  grouter_->setAllowCongestion(true);
-  grouter_->setCongestionIterations(0);
-
-  // this option must be off
-  grouter_->setCriticalNetsPercentage(0);
-
-  grouter_->globalRoute();
+  grouter_->globalRoute(rbVars_.globalRoute);
 
   updateGrtRoute();
 }
 
 void RouteBase::loadGrt()
 {
-  grouter_->setAllowCongestion(true);
-  grouter_->setCongestionIterations(0);
-  grouter_->setCriticalNetsPercentage(0);
-  grouter_->globalRoute();
+  grouter_->globalRoute(rbVars_.globalRoute);
 }
 
 std::vector<int64_t> RouteBase::inflatedAreaDelta() const

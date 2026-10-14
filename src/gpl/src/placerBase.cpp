@@ -728,11 +728,11 @@ int64_t Die::coreArea() const
 }
 
 PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
-    : padLeft(options.padLeft),
-      padRight(options.padRight),
-      skipIoMode(options.skipIoMode),
-      placeIosMode(options.placeIosMode),
-      disablePinDensityAdjust(options.disablePinDensityAdjust)
+    : padLeft(options.pad_left),
+      padRight(options.pad_right),
+      skipIoMode(options.skip_io),
+      placeIosMode(options.place_ios),
+      disablePinDensityAdjust(!options.pin_density_adjust)
 {
 }
 
