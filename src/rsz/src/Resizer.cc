@@ -285,6 +285,20 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
          && output_modnet->isConnectedToOutputPort();
 }
 
+// The eligibility check and removal must choose the same surviving flat net.
+// Preserve the input ModNet if removing the buffer creates a feedthrough.
+bool bufferRemovalKeepsOutputNet(const sta::dbNetwork* network,
+                                 const sta::Pin* input_pin,
+                                 const sta::Pin* output_pin)
+{
+  if (bufferRemovalCreatesFeedthrough(network->hierNet(input_pin),
+                                      network->hierNet(output_pin))) {
+    return false;
+  }
+  return !network->hasPort(network->dbToSta(network->flatNet(input_pin)))
+         && network->hasPort(network->dbToSta(network->flatNet(output_pin)));
+}
+
 float inputPinCapacitance(sta::Network* network,
                           sta::Pin* pin,
                           const sta::LibertyCell* cell,
@@ -2851,27 +2865,23 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
   sta::Net* input_net = db_network_->net(input_pin);
   sta::Net* output_net = db_network_->net(output_pin);
-  odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
-  odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
+  // Inspect the same flat nets that removeBuffer() will merge.
+  odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
+  odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
+  if (input_db_net == nullptr) {
+    return false;
+  }
   if (honor_dont_touch_fixed
       && (db_inst->isDoNotTouch() || db_inst->isFixed()
-          || (input_db_net != nullptr && input_db_net->isDoNotTouch())
+          || input_db_net->isDoNotTouch()
           || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
     return false;
   }
-  const bool out_net_ports = db_network_->hasPort(output_net);
-  sta::Net* removed = nullptr;
-  odb::dbNet* db_net_survivor = nullptr;
-  odb::dbNet* db_net_removed = nullptr;
-  if (out_net_ports) {
-    removed = input_net;
-    db_net_survivor = output_db_net;
-    db_net_removed = input_db_net;
-  } else {
-    removed = output_net;
-    db_net_survivor = input_db_net;
-    db_net_removed = output_db_net;
-  }
+  const bool keep_output_net
+      = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
+  sta::Net* removed = keep_output_net ? input_net : output_net;
+  odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
+  odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
   if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
@@ -2880,11 +2890,10 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
     return false;
   }
 
+  // A disconnected output is removable: removeBuffer() destroys the
+  // dangling buffer without merging nets. Do not reject that valid case.
   if (db_net_removed == nullptr) {
     return true;
-  }
-  if (db_net_survivor == nullptr) {
-    return false;
   }
   if (honor_dont_touch_fixed) {
     return db_net_survivor->canMergeNet(db_net_removed);
@@ -3055,12 +3064,9 @@ bool Resizer::removeBuffer(sta::Instance* buffer,
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
-  const bool creates_feedthrough
-      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!creates_feedthrough && !db_network_->hasPort(input_net)
-      && db_network_->hasPort(output_net)) {
+  if (bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
