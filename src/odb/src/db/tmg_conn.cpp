@@ -86,6 +86,8 @@ void tmg_conn::analyzeNet()
 
   if (!wire_points_.empty()) {
     loadTerminals();
+    sliceBPinsOverlappingITerms();
+
     populateShapeSearch();
 
     // Apparent performance trick from the original implementation.
@@ -1146,7 +1148,6 @@ void tmg_conn::identifyCandidateSections()
 
 void tmg_conn::identifyTerminalWirePoints()
 {
-  sliceBPinsOverlappingITerms();
   identifyCandidateSections();
 
   // Build circular linked lists for shorts.
