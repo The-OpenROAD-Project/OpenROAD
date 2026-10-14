@@ -62,7 +62,7 @@ build --remote_cache=
 Pass an empty `--remote_cache` flag to your build command:
 
 ```bash
-bazel build --remote_cache= //...
+bazelisk build --remote_cache= //...
 ```
 
 This will cause Bazel to fall back to using only the local on-disk cache for the build

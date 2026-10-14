@@ -567,7 +567,7 @@ web_server -port 8080
 There are a set of regression tests in `./test`.
 
 ```shell
-bazel test //src/web/test/...
+bazelisk test //src/web/test/...
 ```
 
 ## License
