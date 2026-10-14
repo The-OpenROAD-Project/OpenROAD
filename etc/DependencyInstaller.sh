@@ -986,6 +986,11 @@ _install_bazel_libs() {
             _execute "Installing bazel required libraries..." \
                 yum install -y \
                 glibc-devel libxml2 ncurses-libs zlib libstdc++
+            # RHEL 9 ships curl-minimal, which conflicts with the full curl
+            # package, so install curl only when no curl is present.
+            if ! _command_exists "curl"; then
+                _execute "Installing curl..." yum install -y curl ca-certificates
+            fi
         fi
         if [[ "${NO_GUI}" != "yes" ]]; then
             # Runtime xcb libraries only, no -dev/-devel: Qt comes from the
