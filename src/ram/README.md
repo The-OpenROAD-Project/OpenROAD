@@ -69,6 +69,9 @@ generate_ram [-mask_size bits]
              [-tapcell name]
              [-max_tap_dist value]
              [-write_behavioral_verilog filename]
+             [-periphery placed|verilog]
+             [-wrapper_verilog file]
+             [-tracks file]
 ```
 
 #### Options
