@@ -38,8 +38,11 @@ def find_license(pkg_dir):
 
 def source_url(meta):
     """Where the package's source can be obtained, as an https URL."""
-    repo = meta.get("repository") or meta.get("homepage") or ""
-    url = repo.get("url", "") if isinstance(repo, dict) else repo
+    repo = meta.get("repository") or {}
+    url = repo.get("url") if isinstance(repo, dict) else repo
+    url = url or meta.get("homepage")
+    if not url:
+        raise SystemExit(f"{meta['name']} names no repository or homepage")
     url = re.sub(r"^git\+", "", url)
     url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
     url = re.sub(r"^(?:git|ssh)://(?:git@)?", "https://", url)
