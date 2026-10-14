@@ -573,7 +573,7 @@ bool SetupLegacyBase::repairPins(
       sta_->findRequireds();
       timing_stale = false;
       if (focus_vertex != nullptr) {
-        focus_path = sta_->vertexWorstSlackPath(focus_vertex, max_);
+        focus_path = target_collector_->findWorstSlackPath(focus_vertex);
       }
     }
 
