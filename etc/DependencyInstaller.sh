@@ -1419,6 +1419,16 @@ main() {
     if [[ "${INSTALL_BAZEL}" == "no" && "${INSTALL_CMAKE}" == "no" ]]; then
         INSTALL_BAZEL="yes"
     fi
+    # -eqy and -ci only add to the CMake set, so tell the user when they are
+    # skipped instead of dropping them without a message.
+    if [[ "${INSTALL_CMAKE}" == "no" ]]; then
+        if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
+            warn "-eqy has no effect without -cmake. Add -cmake to install yosys, eqy and sby."
+        fi
+        if [[ "${CI}" == "yes" ]]; then
+            warn "-ci has no effect without -cmake. Add -cmake to install the CI dependencies."
+        fi
+    fi
 
     if [[ "${INSTALL_BAZEL}" == "yes" ]]; then
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
