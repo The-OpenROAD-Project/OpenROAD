@@ -35,8 +35,9 @@ struct AntennaModel
   double diff_metal_reduce_factor;
 };
 
-// Builds the model for tech_layer from its default antenna rule.  Warns
-// (ANT-13) when a routing layer has a side area rule but no thickness.
+// Builds the model for tech_layer from its default antenna rule.  A routing
+// layer with a side area rule but no thickness is an error (ANT-13): its
+// side area would be zero, so the side area rules could never fail.
 AntennaModel makeAntennaModel(odb::dbTechLayer* tech_layer,
                               utl::Logger* logger);
 

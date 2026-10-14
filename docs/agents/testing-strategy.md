@@ -112,6 +112,13 @@ The existing fixture stack already supports this:
   `RoutePath` (a fluent `dbWireEncoder` wrapper for routed wires) and
   `addGuide`. Use these instead of a checked-in LEF/DEF when a test needs a
   few routed nets or antenna rules.
+- **`tst/logger_checks.h`** (part of `db_fixture`) --
+  `EXPECT_LOGGER_ERROR(stmt, "ANT-0012")` checks that a statement raises a
+  `utl::Logger::error`, and `MetricsCapture` reads back `logger->metric`
+  values. There is deliberately no helper for asserting on printed
+  messages: if a test needs to read the log to learn a result, return the
+  result from the code instead (see `ant::AntennaChecker::check`, which
+  returns a `DesignCheck` that `checkAntennas` then reports).
 - **`tst::DbFixture`** also has odb-only `loadLibLef`, `loadTechAndLibLef`
   and `readDef` for tests that must start from existing LEF/DEF data without
   STA.
@@ -144,7 +151,11 @@ The existing fixture stack already supports this:
 
 - One smoke test per public Tcl command and per Python command, on a trivial
   design, asserting invocation + basic return marshaling. Convert to
-  `PASSFAIL_TESTS` where possible.
+  `PASSFAIL_TESTS` where possible. `test/helpers.tcl` provides `check`,
+  `check_error {description script ANT-0012}` and `exit_summary`;
+  a test built from them prints `pass` as its last line and needs no `.ok`
+  file. Python binding tests are `unittest` modules run as `py_test`
+  targets (see `testing.md`); `src/ant/test/ant_api.py` is an example.
 - Treat the C++ test as the source of truth for correctness; bindings prove
   plumbing only. Do **not** duplicate algorithm assertions across Tcl + Python.
 - A future linter (not yet implemented) could enumerate public commands from the

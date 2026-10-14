@@ -10,6 +10,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -22,7 +23,6 @@
 #include "PinType.hh"
 #include "Polygon.hh"
 #include "WireBuilder.hh"
-#include "absl/synchronization/mutex.h"
 #include "boost/pending/disjoint_sets.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "odb/PtrSetMap.h"
@@ -31,7 +31,6 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
-#include "omp.h"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 
@@ -57,6 +56,25 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   bool verbose)
 {
   return impl_->checkAntennas(net, num_threads, verbose);
+}
+
+int DesignCheck::violatingNets() const
+{
+  return std::ranges::count_if(nets, &NetCheck::violated);
+}
+
+int DesignCheck::violatingPins() const
+{
+  int count = 0;
+  for (const NetCheck& net : nets) {
+    count += std::ranges::count_if(net.pins, &PinCheck::violated);
+  }
+  return count;
+}
+
+DesignCheck AntennaChecker::check(odb::dbNet* net, int num_threads)
+{
+  return impl_->check(net, num_threads);
 }
 
 int AntennaChecker::antennaViolationCount() const
@@ -108,23 +126,17 @@ void AntennaChecker::Impl::initAntennaRules()
 {
   block_ = db_->getChip()->getBlock();
   odb::dbTech* tech = db_->getTech();
-  // initialize nets_to_report_ with all nets to avoid issues with
-  // multithreading
-  if (net_to_report_.empty()) {
-    for (odb::dbNet* net : block_->getNets()) {
-      if (!net->isSpecial()) {
-        net_to_report_[net];
-      }
-    }
-  }
-
   if (!layer_info_.empty()) {
     return;
   }
 
+  // Build the whole table before storing it: makeAntennaModel can raise
+  // ANT-13, and a partial table would be taken as complete next time.
+  odb::PtrMap<odb::dbTechLayer, AntennaModel> layer_info;
   for (odb::dbTechLayer* tech_layer : tech->getLayers()) {
-    layer_info_[tech_layer] = makeAntennaModel(tech_layer, logger_);
+    layer_info[tech_layer] = makeAntennaModel(tech_layer, logger_);
   }
+  layer_info_ = std::move(layer_info);
 }
 
 double AntennaChecker::Impl::gateArea(odb::dbMTerm* mterm)
@@ -694,34 +706,7 @@ LayerCheck AntennaChecker::Impl::checkRatioViolations(odb::dbTechLayer* layer,
   return check;
 }
 
-std::string AntennaChecker::Impl::formatReport(bool verbose)
-{
-  std::string report;
-  absl::MutexLock lock(&map_mutex_);
-  for (const auto& [net, violation_report] : net_to_report_) {
-    if (verbose || violation_report.violated) {
-      report += violation_report.report;
-    }
-  }
-  return report;
-}
-
-void AntennaChecker::Impl::printReport(odb::dbNet* db_net)
-{
-  if (db_net) {
-    logger_->report("{}", net_to_report_[db_net].report);
-  } else {
-    absl::MutexLock lock(&map_mutex_);
-    for (const auto& [net, violation_report] : net_to_report_) {
-      if (violation_report.violated) {
-        logger_->report("{}", violation_report.report);
-      }
-    }
-  }
-}
-
 int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
-                                     bool save_report,
                                      odb::dbMTerm* diode_mterm,
                                      float ratio_margin,
                                      GateToLayerToNodeInfo& gate_info,
@@ -754,15 +739,6 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
     }
     net_check.pins.push_back(std::move(pin_check));
   }
-  // Write report on map
-  if (save_report) {
-    ViolationReport net_report;
-    net_report.violated = net_check.violated;
-    net_report.report = formatNetCheck(net_check);
-    absl::MutexLock lock(&map_mutex_);
-    net_to_report_.at(db_net) = std::move(net_report);
-  }
-
   std::unordered_map<odb::dbITerm*, int> num_diodes_added;
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbITerm>> pin_added;
   // if checkGates is used by repair antennas
@@ -926,7 +902,6 @@ void AntennaChecker::Impl::buildLayerMaps(odb::dbNet* db_net,
 }
 
 int AntennaChecker::Impl::analyzeNet(odb::dbNet* db_net,
-                                     bool save_report,
                                      odb::dbMTerm* diode_mterm,
                                      float ratio_margin,
                                      Violations& antenna_violations,
@@ -946,7 +921,6 @@ int AntennaChecker::Impl::analyzeNet(odb::dbNet* db_net,
     calculateCAR(gate_info);
 
     pin_violations = checkGates(db_net,
-                                save_report,
                                 diode_mterm,
                                 ratio_margin,
                                 gate_info,
@@ -966,8 +940,7 @@ Violations AntennaChecker::Impl::getAntennaViolations(odb::dbNet* net,
   }
 
   NetCheck net_check;
-  analyzeNet(
-      net, false, diode_mterm, ratio_margin, antenna_violations, net_check);
+  analyzeNet(net, diode_mterm, ratio_margin, antenna_violations, net_check);
 
   return antenna_violations;
 }
@@ -982,7 +955,7 @@ NetCheck AntennaChecker::Impl::checkNet(odb::dbNet* net,
   }
   initAntennaRules();
   Violations antenna_violations;
-  analyzeNet(net, false, nullptr, ratio_margin, antenna_violations, net_check);
+  analyzeNet(net, nullptr, ratio_margin, antenna_violations, net_check);
   return net_check;
 }
 
@@ -1026,100 +999,110 @@ bool AntennaChecker::Impl::haveGuides()
   return true;
 }
 
-int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
-                                        const int num_threads,
-                                        bool verbose)
+namespace {
+
+// Wires built from the global route guides for the duration of a check.
+class GuideWires
 {
+ public:
+  GuideWires(odb::dbDatabase* db, utl::Logger* logger, odb::dbBlock* block)
+      : block_(block)
   {
-    absl::MutexLock lock(&map_mutex_);
-    net_to_report_.clear();
+    WireBuilder(db, logger).makeNetWiresFromGuides();
   }
+  ~GuideWires() { block_->destroyNetWires(); }
+
+  GuideWires(const GuideWires&) = delete;
+  GuideWires& operator=(const GuideWires&) = delete;
+
+ private:
+  odb::dbBlock* block_;
+};
+
+}  // namespace
+
+DesignCheck AntennaChecker::Impl::check(odb::dbNet* net, const int num_threads)
+{
   initAntennaRules();
 
-  std::ofstream report_file;
-  if (!report_file_name_.empty()) {
-    report_file.open(report_file_name_, std::ofstream::out);
-  }
-
-  bool drt_routes = haveRoutedNets();
-  bool grt_routes = false;
-  if (!drt_routes) {
-    grt_routes = haveGuides();
-  }
-  bool use_grt_routes = (grt_routes && !drt_routes);
+  const bool drt_routes = haveRoutedNets();
+  const bool grt_routes = !drt_routes && haveGuides();
   if (!grt_routes && !drt_routes) {
     logger_->error(utl::ANT,
                    8,
                    "No detailed or global routing found. Run global_route or "
                    "detailed_route first.");
   }
-
-  if (use_grt_routes) {
-    WireBuilder wire_builder(db_, logger_);
-    wire_builder.makeNetWiresFromGuides();
+  std::optional<GuideWires> guide_wires;
+  if (grt_routes) {
+    guide_wires.emplace(db_, logger_, block_);
   }
 
-  int net_violation_count = 0;
-  int pin_violation_count = 0;
-
+  std::vector<odb::dbNet*> nets;
   if (net) {
-    Violations antenna_violations;
-    if (!net->isSpecial()) {
-      NetCheck net_check;
-      pin_violation_count
-          += analyzeNet(net, true, nullptr, 0, antenna_violations, net_check);
-      if (pin_violation_count > 0) {
-        net_violation_count++;
-      }
-    } else {
+    if (net->isSpecial()) {
       logger_->error(utl::ANT,
                      14,
                      "Skipped net {} because it is special.",
                      net->getName());
     }
+    nets.push_back(net);
   } else {
-    nets_.clear();
-    for (odb::dbNet* net : block_->getNets()) {
-      if (!net->isSpecial()) {
-        nets_.push_back(net);
+    for (odb::dbNet* block_net : block_->getNets()) {
+      if (!block_net->isSpecial()) {
+        nets.push_back(block_net);
       }
     }
-    omp_set_num_threads(num_threads);
-#pragma omp parallel for schedule(dynamic)
-    for (auto net : nets_) {
-      Violations antenna_violations;
-      NetCheck net_check;
-      int pin_viol_count
-          = analyzeNet(net, true, nullptr, 0, antenna_violations, net_check);
-      if (pin_viol_count > 0) {
-        absl::MutexLock lock(&map_mutex_);
-        net_violation_count++;
-        pin_violation_count += pin_viol_count;
-      }
+    std::ranges::sort(nets, odb::ODBPtrLess());
+  }
+
+  // Each net's result goes to its own slot, so the threads share nothing.
+  std::vector<NetCheck> results(nets.size());
+  std::vector<char> routed(nets.size(), false);
+#pragma omp parallel for num_threads(num_threads) schedule(dynamic)
+  for (int i = 0; i < static_cast<int>(nets.size()); i++) {
+    routed[i] = nets[i]->getWire() != nullptr;
+    Violations antenna_violations;
+    analyzeNet(nets[i], nullptr, 0, antenna_violations, results[i]);
+  }
+
+  DesignCheck design;
+  for (size_t i = 0; i < nets.size(); i++) {
+    if (routed[i]) {
+      design.nets.push_back(std::move(results[i]));
     }
   }
+  return design;
+}
+
+int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
+                                        const int num_threads,
+                                        bool verbose)
+{
+  const DesignCheck design = check(net, num_threads);
 
   if (verbose) {
-    printReport(net);
+    // All nets: only the violating ones.  One net: that net in any case.
+    for (const NetCheck& net_check : design.nets) {
+      if (net != nullptr || net_check.violated) {
+        logger_->report("{}", formatNetCheck(net_check));
+      }
+    }
   }
 
-  logger_->info(utl::ANT, 2, "Found {} net violations.", net_violation_count);
-  logger_->metric("antenna__violating__nets", net_violation_count);
-  logger_->info(utl::ANT, 1, "Found {} pin violations.", pin_violation_count);
-  logger_->metric("antenna__violating__pins", pin_violation_count);
+  net_violation_count_ = design.violatingNets();
+  pin_violation_count_ = design.violatingPins();
+  logger_->info(utl::ANT, 2, "Found {} net violations.", net_violation_count_);
+  logger_->metric("antenna__violating__nets", net_violation_count_);
+  logger_->info(utl::ANT, 1, "Found {} pin violations.", pin_violation_count_);
+  logger_->metric("antenna__violating__pins", pin_violation_count_);
 
   if (!report_file_name_.empty()) {
-    report_file << formatReport(verbose);
-    report_file.close();
+    std::ofstream report_file(report_file_name_);
+    report_file << formatReport(design, verbose);
   }
 
-  if (use_grt_routes) {
-    block_->destroyNetWires();
-  }
-
-  net_violation_count_ = net_violation_count;
-  pin_violation_count_ = pin_violation_count;
-  return net_violation_count;
+  return net_violation_count_;
 }
 
 int AntennaChecker::Impl::antennaViolationCount() const
