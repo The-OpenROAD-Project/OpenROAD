@@ -1,0 +1,62 @@
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  chiplet_a:
+    type: die
+    design_area: [130, 130]
+    thickness: 100
+    shrink: 1  # means no size scaling
+    tsv: false # no tsv needed in the frontside 3d PDN
+
+    regions: # used to describe on which metal layer bumps of this chiplet will be placed
+      front_reg:  # front region
+        side: front
+        layer: metal5  # based on the bump lef
+        coords:
+          - [0, 0]
+          - [0, 130]
+          - [130, 130]
+          - [130, 0]
+        bmap: 3dic_frontside_a.bmap
+
+      back_reg:  # back region
+        side: back
+        coords:
+          - [0, 0]
+          - [0, 130]
+          - [130, 130]
+          - [130, 0]
+
+    external:
+        APR_tech_file: [../../../test/Nangate45/Nangate45_tech.lef]
+        LEF_file: [../../../test/Nangate45/Nangate45_stdcell.lef, ../../../test/Nangate45/fake_bumps.lef]
+        liberty_file: [../../../test/Nangate45/Nangate45_typ.lib]
+        DEF_file: [3dic_frontside_a.def]
+
+
+  chiplet_b:
+    type: die
+    design_area: [130, 130]
+    thickness: 100
+    shrink: 1
+    tsv: false
+
+    regions:
+      front_reg:
+        side: front
+        layer: metal5
+        coords:
+          - [0, 0]
+          - [0, 130]
+          - [130, 130]
+          - [130, 0]
+        bmap: 3dic_frontside_b.bmap
+
+    external:
+      APR_tech_file: [../../../test/Nangate45/Nangate45_tech.lef]
+      LEF_file: [../../../test/Nangate45/Nangate45_stdcell.lef, ../../../test/Nangate45/fake_bumps.lef]
+      # liberty_file: [../../../test/Nangate45/Nangate45_typ.lib]  #  this is already loaded during the chiplet a's run
+      DEF_file: [3dic_frontside_b.def]
