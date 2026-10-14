@@ -178,6 +178,7 @@ TESTS = [
     "repair_timing_path_group1",
     "repair_timing_path_group2",
     "repair_timing_path_group3",
+    "repair_timing_path_group4",
     "repair_slew1",
     "repair_slew10",
     "repair_slew11",

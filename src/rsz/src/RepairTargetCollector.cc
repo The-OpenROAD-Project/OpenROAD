@@ -1002,6 +1002,46 @@ sta::Path* RepairTargetCollector::findWorstSlackPath(
   return PathGroupFilter(resizer_).findWorstSlackPath(endpoint, max_);
 }
 
+sta::Slack RepairTargetCollector::endpointSlack(sta::Vertex* endpoint) const
+{
+  if (!restrictedToPathGroup()) {
+    return sta_->slack(endpoint, max_);
+  }
+  // An endpoint with no path in the group has nothing left to repair.
+  return PathGroupFilter(resizer_)
+      .groupSlack(endpoint, max_)
+      .value_or(sta::INF);
+}
+
+void RepairTargetCollector::worstSlack(sta::Slack& worst_slack,
+                                       sta::Vertex*& worst_vertex) const
+{
+  if (!restrictedToPathGroup()) {
+    sta_->worstSlack(max_, worst_slack, worst_vertex);
+    return;
+  }
+  const std::optional<PathGroupFilter::GroupWorst> worst
+      = PathGroupFilter(resizer_).groupWorst(max_);
+  worst_slack = worst.has_value() ? worst->slack : sta::Slack(sta::INF);
+  worst_vertex
+      = worst.has_value() ? graph_->pinLoadVertex(worst->endpoint) : nullptr;
+}
+
+sta::Slack RepairTargetCollector::totalNegativeSlack() const
+{
+  if (!restrictedToPathGroup()) {
+    return sta_->totalNegativeSlack(max_);
+  }
+  // Independent of group_slacks_ and the slack margin, so it is valid before
+  // init() and never reads a stale cache.
+  sta::Slack tns = 0.0;
+  for (const auto& [endpoint_pin, slack] :
+       PathGroupFilter(resizer_).groupEndpointSlacks(max_, 0.0)) {
+    tns = sta::delayAsFloat(tns) + sta::delayAsFloat(slack);
+  }
+  return tns;
+}
+
 void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* endpoint_path,
     const sta::PathExpanded& expanded,

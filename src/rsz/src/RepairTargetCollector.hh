@@ -190,6 +190,16 @@ class RepairTargetCollector
 
   // === Timing path target collection =======================================
   sta::Path* findWorstSlackPath(sta::Vertex* endpoint) const;
+
+  // STA slack queries scoped to what repair optimizes, for policies to judge
+  // their moves by. Under `repair_timing -path_group` they answer for the
+  // selected group: an endpoint's or the design's worst path may lie in a
+  // group repair leaves alone, and would hide every gain in the group.
+  // Otherwise they are the STA's own.
+  sta::Slack endpointSlack(sta::Vertex* endpoint) const;
+  void worstSlack(sta::Slack& worst_slack, sta::Vertex*& worst_vertex) const;
+  sta::Slack totalNegativeSlack() const;
+
   std::vector<Target> collectPathDriverTargets(sta::Path* path,
                                                sta::Slack path_slack) const;
   std::vector<Target> collectCritPathDriverPinTargets(

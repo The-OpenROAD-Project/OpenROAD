@@ -101,9 +101,10 @@ class PathGroupFilter
   std::optional<sta::Slack> groupSlack(sta::Vertex* endpoint,
                                        const sta::MinMax* min_max) const;
 
-  // The group's worst path to `endpoint`, falling back to the endpoint's
-  // worst path when no group is selected or the group has no path here, as
-  // happens mid run once the endpoint stops violating.
+  // The group's worst path to `endpoint`, met or not, falling back to the
+  // endpoint's worst path when no group is selected or `endpoint` hosts no
+  // path in the group. That fallback leaves the group, so callers restricted
+  // to one should only ask about endpoints in it.
   //
   // An endpoint qualifies by hosting *a* path in the group, so repairing its
   // worst path would optimize whatever group that one belongs to instead.

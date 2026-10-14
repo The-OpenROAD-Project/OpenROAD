@@ -48,7 +48,7 @@ namespace rsz {
 RepairSetupContext::RepairSetupContext(Resizer& resizer)
     : target_collector(&resizer),
       initial_design_area(resizer.computeDesignArea()),
-      initial_tns(resizer.sta()->totalNegativeSlack(resizer.maxAnalysisMode())),
+      initial_tns(target_collector.totalNegativeSlack()),
       previous_tns(initial_tns)
 {
 }
