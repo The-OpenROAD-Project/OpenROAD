@@ -27,6 +27,9 @@ useBazel=yes
 bazelGpu=no
 noGui=no
 installPrefix=""
+# Flags given that only the CMake build uses; warned about after parsing,
+# once we know whether -cmake-build came later on the command line.
+bazelIgnoredFlags=()
 
 _help() {
     cat <<EOF
@@ -134,12 +137,14 @@ while [ "$#" -gt 0 ]; do
             noGui=yes
             ;;
         -no-tests)
+            bazelIgnoredFlags+=("-no-tests")
             cmakeOptions+=("-DENABLE_TESTS=OFF")
             ;;
         -cpp20)
             echo "[WARNING] -cpp20 is deprecated and ignored: C++20 is already the default." >&2
             ;;
         -build-man)
+            bazelIgnoredFlags+=("-build-man")
             cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
@@ -147,14 +152,17 @@ while [ "$#" -gt 0 ]; do
             compilerSet=yes
             ;;
         -no-warnings )
+            bazelIgnoredFlags+=("-no-warnings")
             cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
+            bazelIgnoredFlags+=("-coverage")
             cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
             cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
             cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
+            bazelIgnoredFlags+=("-cmake=")
             # Use xargs to safely parse the quoted string into array elements without eval
             while IFS= read -r arg; do
                 if [[ -n "$arg" ]]; then
@@ -181,6 +189,7 @@ while [ "$#" -gt 0 ]; do
                 _help
             fi
             depsPrefixesFile="$file"
+            bazelIgnoredFlags+=("-deps-prefixes-file=")
             ;;
         -compiler | -cmake | -dir | -threads | -install | -deps-prefixes-file )
             echo "${1} requires an argument" >&2
@@ -206,31 +215,42 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
-if [[ -z "$depsPrefixesFile" ]]; then
-    if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
-        depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
-    elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
-        depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
-    fi
-fi
-if [[ -f "$depsPrefixesFile" ]]; then
-            while IFS= read -r arg; do
-                if [[ -n "$arg" ]]; then
-                    cmakeOptions+=("$arg")
-                fi
-            done < <(xargs printf '%s\n' < "$depsPrefixesFile")
-    echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
-else
-    echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
-fi
-
-# Bazel selects its own compiler toolchain, so the -compiler flag and the
-# CC/CXX resolution below only apply to CMake builds.
+# Bazel selects its own compiler toolchain and dependencies, so the -compiler
+# flag, the deps prefixes file, and the CC/CXX resolution below only apply to
+# CMake builds.
 if [[ "$useBazel" == "yes" ]]; then
     if [[ "$compilerSet" == "yes" ]]; then
         echo "[WARNING] -compiler is ignored with Bazel: Bazel manages its own toolchain." >&2
     fi
+    warnedFlags=" "
+    # ${arr[@]+...} keeps an empty array safe under set -u on bash < 4.4.
+    for flag in ${bazelIgnoredFlags[@]+"${bazelIgnoredFlags[@]}"}; do
+        # Warn once per flag, even when it is repeated on the command line.
+        case "$warnedFlags" in
+            *" ${flag} "*) continue ;;
+        esac
+        warnedFlags="${warnedFlags}${flag} "
+        echo "[WARNING] ${flag} is ignored with Bazel: it only applies to the deprecated CMake build (-cmake-build)." >&2
+    done
 else
+    if [[ -z "$depsPrefixesFile" ]]; then
+        if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
+            depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
+        elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
+            depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
+        fi
+    fi
+    if [[ -f "$depsPrefixesFile" ]]; then
+        while IFS= read -r arg; do
+            if [[ -n "$arg" ]]; then
+                cmakeOptions+=("$arg")
+            fi
+        done < <(xargs printf '%s\n' < "$depsPrefixesFile")
+        echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
+    else
+        echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
+    fi
+
     case "${compiler}" in
         "gcc" )
             if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
