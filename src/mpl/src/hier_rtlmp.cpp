@@ -309,11 +309,6 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, logger_, tritonpart_, graphics_.get());
-
-  // Set target structure
-  clustering_engine_->setTree(tree_.get());
   clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 
