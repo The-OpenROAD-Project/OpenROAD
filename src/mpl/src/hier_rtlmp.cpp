@@ -293,6 +293,8 @@ void HierRTLMP::init()
   block_ = db_->getChip()->getBlock();
   tree_ = std::make_unique<PhysicalHierarchy>();
   skip_macro_placement_ = false;
+  placement_blockages_.clear();
+  io_blockages_.clear();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, logger_, tritonpart_, graphics_.get());
 

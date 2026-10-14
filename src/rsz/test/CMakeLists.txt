@@ -44,11 +44,15 @@ or_integration_tests(
     remove_buffers1
     remove_buffers2
     remove_buffers3
+    remove_buffers_dont_touch_rejected
+    remove_buffers_disconnected_input_rejected
     remove_buffers4
     remove_buffers4_hier
     remove_buffers5
     remove_buffers5_hier
     remove_buffers6
+    remove_buffers_survivor_hier
+    remove_buffers_survivor_port_nets
     repair_cap1
     repair_cap2
     repair_cap3
@@ -105,6 +109,7 @@ or_integration_tests(
     repair_setup_size_down_fanout_only
     repair_setup_sizeup_match_only
     repair_setup_split_load_hier_only
+    repair_setup_startpoint_fanout_input_port
     repair_setup_startpoint_fanout_only
     repair_setup_swap_pins_dont_touch_sequence
     repair_setup_max_iter

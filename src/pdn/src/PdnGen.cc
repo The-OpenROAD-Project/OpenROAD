@@ -34,7 +34,6 @@
 #include "utl/Logger.h"
 #include "via.h"
 #include "via_repair.h"
-#include "web/core.h"
 
 namespace pdn {
 
@@ -744,25 +743,33 @@ void PdnGen::makeConnect(
 
 void PdnGen::setDebugRenderer(bool on)
 {
-  if (on && web::Gui::enabled()) {
+  if (on) {
     if (debug_renderer_ == nullptr) {
       debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
-  } else {
+  } else if (debug_renderer_ != nullptr) {
     debug_renderer_ = nullptr;
+    // The shapes were only kept for the renderer (see run_pdngen)
+    resetShapes();
   }
 }
 
 void PdnGen::rendererRedraw()
 {
-  if (debug_renderer_ != nullptr) {
-    try {
-      buildGrids(false);
-    } catch (const std::runtime_error& /* e */) {
-      // do nothing, dont want grid error to prevent debug renderer
-      debug_renderer_->update();
-    }
+  if (debug_renderer_ == nullptr) {
+    return;
+  }
+  // The renderer can be enabled before a design is loaded
+  odb::dbChip* chip = db_->getChip();
+  if (chip == nullptr || chip->getBlock() == nullptr) {
+    return;
+  }
+  try {
+    buildGrids(false);
+  } catch (const std::runtime_error& /* e */) {
+    // do nothing, dont want grid error to prevent debug renderer
+    debug_renderer_->update();
   }
 }
 

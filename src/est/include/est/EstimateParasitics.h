@@ -197,6 +197,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
       const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
       int threads,
       bool partial);
+  // Make the parasitic placeholders for every driver and net so threads
+  // only look up sta::Parasitics entries, which are not locked.
+  void ensureParasiticsForThreads();
   void clearParasitics();
 
   ////////////////////////////////////////////////////////////////
