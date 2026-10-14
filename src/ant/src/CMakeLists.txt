@@ -38,7 +38,6 @@ target_link_libraries(ant_lib
 
 target_link_libraries(ant
   PUBLIC
-    absl::synchronization
     ant_lib
     grt_lib
     utl_lib

@@ -62,4 +62,15 @@ std::string formatNetCheck(const NetCheck& net_check)
   return report;
 }
 
+std::string formatReport(const DesignCheck& design, bool include_clean_nets)
+{
+  std::string report;
+  for (const NetCheck& net_check : design.nets) {
+    if (include_clean_nets || net_check.violated) {
+      report += formatNetCheck(net_check);
+    }
+  }
+  return report;
+}
+
 }  // namespace ant
