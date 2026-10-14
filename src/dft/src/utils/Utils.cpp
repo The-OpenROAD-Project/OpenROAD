@@ -90,13 +90,34 @@ odb::dbInst* ReplaceCell(
     group->addInst(new_instance);
   }
 
-  // Carry the src attribute over to the scan cell so that paths through it
-  // can still be traced back to the source.
-  odb::dbStringProperty* src_prop
-      = odb::dbStringProperty::find(old_instance, "src");
-  if (src_prop) {
-    odb::dbStringProperty::create(
-        new_instance, "src", src_prop->getValue().c_str());
+  for (odb::dbProperty* prop : odb::dbProperty::getProperties(old_instance)) {
+    const std::string name = prop->getName();
+    switch (prop->getType()) {
+      case odb::dbProperty::STRING_PROP:
+        odb::dbStringProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbStringProperty*>(prop)->getValue().c_str());
+        break;
+      case odb::dbProperty::BOOL_PROP:
+        odb::dbBoolProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbBoolProperty*>(prop)->getValue());
+        break;
+      case odb::dbProperty::INT_PROP:
+        odb::dbIntProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbIntProperty*>(prop)->getValue());
+        break;
+      case odb::dbProperty::DOUBLE_PROP:
+        odb::dbDoubleProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbDoubleProperty*>(prop)->getValue());
+        break;
+    }
   }
 
   // Delete the old cell
