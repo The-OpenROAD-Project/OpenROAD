@@ -733,7 +733,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   float cin;
   float has_driver_cin = getLargestSizeCin(drvr_pin, cin);
-  static float gate_gain = 4.0f;  // use a fanout-of-4 rule for gates
+  const float gate_gain = resizer_->sizing_cap_ratio_;
   bool repaired_net = false;
 
   float load = 0.0;
