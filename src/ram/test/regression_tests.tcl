@@ -11,7 +11,7 @@ record_tests {
   reset_asap7
   banks_asap7
   banked_read_ports_asap7
-  read_latency_asap7
+  register_read_address_asap7
   write_mux_asap7
   periphery_unplaced_asap7
   cells_name_asap7

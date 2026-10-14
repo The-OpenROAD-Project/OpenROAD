@@ -944,7 +944,8 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
       const int a = num_word_bits + bit;
       dbNet* flop_out = addr_flop_out_[p][a];
       if (flop_out) {
-        // -read_latency 1: the address through a flop, beside its inverter
+        // -register_read_address 1: the address through a flop, beside its
+        // inverter
         makeInst(inv_grid_cell.get(),
                  fmt::format("decoder_p{}", p),
                  fmt::format("addr_reg_p{}_a{}", p, bit),
@@ -1940,7 +1941,7 @@ void RamGen::generate(const int mask_size,
                       const int bank_columns,
                       const std::string& bank_order,
                       const int rb_ports,
-                      const int read_latency,
+                      const int register_read_address,
                       const std::string& write_style,
                       const std::string& write_priority,
                       const std::string& periphery,
@@ -1996,7 +1997,7 @@ void RamGen::generate(const int mask_size,
   }
   words_per_bank_ = num_words / banks_;
   rb_ports_ = rb_ports;
-  read_latency_ = read_latency;
+  register_read_address_ = register_read_address;
   write_mux_ = write_style == "mux";
   write_or_ = write_priority == "or";
   periphery_verilog_ = periphery == "verilog";
@@ -2014,15 +2015,19 @@ void RamGen::generate(const int mask_size,
     logger_->error(
         RAM, 73, "-write_style mux is not supported with -use_latch.");
   }
-  if (read_latency_ != 0 && read_latency_ != 1) {
-    logger_->error(RAM, 71, "-read_latency is 0 or 1.");
+  if (register_read_address_ != 0 && register_read_address_ != 1) {
+    logger_->error(RAM,
+                   71,
+                   "-register_read_address is 0 or 1; more than one cycle is "
+                   "not supported.");
   }
-  if (read_latency_ > 0) {
+  if (register_read_address_ > 0) {
     if (column_mux_ratio_arg > 1 || rw_ports > 0) {
-      logger_->error(RAM,
-                     72,
-                     "-read_latency 1 is not supported with -column_mux_ratio "
-                     "above 1 or with read/write ports.");
+      logger_->error(
+          RAM,
+          72,
+          "-register_read_address 1 is not supported with -column_mux_ratio "
+          "above 1 or with read/write ports.");
     }
   }
   r_plain_ = rw_ports + r_ports;
@@ -2212,8 +2217,8 @@ void RamGen::generate(const int mask_size,
 
   findMasters();
 
-  // -read_latency 1: a plain positive-edge flop for the read addresses
-  if (read_latency_ > 0) {
+  // -register_read_address 1: a plain positive-edge flop for the read addresses
+  if (register_read_address_ > 0) {
     // a plain flop: positive-edge, no clear or preset
     auto plain = [](const sta::LibertyCell* cell) {
       for (const auto& seq : cell->sequentials()) {
@@ -2393,7 +2398,8 @@ void RamGen::generate(const int mask_size,
     inv_addr_nets[p].resize(port_inputs);
     addr_true_[p].resize(port_inputs);
     addr_flop_out_[p].assign(port_inputs, nullptr);
-    const bool registered = read_latency_ > 0 && p >= rw_ports + w_ports;
+    const bool registered
+        = register_read_address_ > 0 && p >= rw_ports + w_ports;
 
     for (int i = 0; i < port_inputs; ++i) {
       addr_inputs_[p][i]
@@ -3696,9 +3702,9 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
     }
   }
 
-  // -read_latency 1: every read address registered, the reads from the
+  // -register_read_address 1: every read address registered, the reads from the
   // registered ones (addr_r0 -> addr_r0_q)
-  if (read_latency_ > 0) {
+  if (register_read_address_ > 0) {
     std::string registers;
     auto registered = [&](const std::string& name, int width) {
       registers += fmt::format(

@@ -50,7 +50,7 @@ generate_ram [-mask_size bits]
              [-bank_columns count]
              [-bank_order contiguous|interleaved]
              [-rb_ports count]
-             [-read_latency 0|1]
+             [-register_read_address 0|1]
              [-write_style clock_gate|mux]
              [-write_priority last|or]
              [-service_columns {every sites}]
@@ -89,7 +89,7 @@ generate_ram [-mask_size bits]
 | `-reset_value` | Resets every word to `value` asynchronously, through a reset port at the storage flop's own polarity (`rst_n` or `rst`); each bit's flop is cleared or preset, the other pin held off. The storage cell has both an asynchronous clear and preset. A parent adapts a reset of another polarity, or a synchronous one, to it. Not with `-use_latch`. Default: no reset. |
 | `-banks`, `-bank_columns`, `-bank_order` | The words in `banks` banks, contiguous or interleaved in the address, `bank_columns` of them side by side and the rest stacked. With banks each port decodes every word's whole address, so a bank need not be a power of two words. Not with `-column_mux_ratio` above 1 or `-use_latch`. Default: one bank. |
 | `-rb_ports` | Banked read ports, with `-banks`: each an address and a data output per bank (`addr_rb<k>_b<b>`, `Qrb<k>_b<b>`), the address the word's index in its bank, every bank read independently. Default: 0. |
-| `-read_latency` | `1` registers every read port's address, a plain positive-edge flop per address bit, so the data follows a cycle after the address. Not with `-column_mux_ratio` above 1 or read/write ports. Default: 0. |
+| `-register_read_address` | `1` registers every read port's address, a plain positive-edge flop per address bit, so the decoders and read trees come after the flop and the data follows a cycle after the address. This is the read address register, not a register on the read data. 0 and 1 only. Not with `-column_mux_ratio` above 1 or read/write ports. Default: 0. |
 | `-write_style` | How a word holds its value between writes: `clock_gate`, a clock gate per word; or `mux`, every flop on the clock and a mux per bit taking the new data or the flop's own value. A clock gate saves a mux per bit; a mux keeps every flop on the plain clock. Not with `-use_latch`. Default: `clock_gate`. |
 | `-write_priority` | Where two write ports write the same word in one cycle: `last`, the last port's data; or `or`, the OR of every writing port's data, as RTL that merges its writes with an OR describes it (firtool's register files). `or` drops a word's priority logic, an inverter and an AND2 per port but the last. Default: `last`. |
 | `-service_columns {every sites}` | An empty column `sites` sites wide after every `every` storage columns: room inside the array for the buffers a parent flow inserts on the long nets that cross it, where the array is otherwise full. Default: none. |

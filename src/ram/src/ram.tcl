@@ -14,7 +14,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-bank_columns count]
                                              [-bank_order contiguous|interleaved]
                                              [-rb_ports count]
-                                             [-read_latency 0|1]
+                                             [-register_read_address 0|1]
                                              [-write_style clock_gate|mux]
                                              [-write_priority last|or]
                                              [-cells {role master ...}]
@@ -39,7 +39,7 @@ proc generate_ram_netlist { args } {
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
-      -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
+      -banks -bank_columns -bank_order -rb_ports -register_read_address -write_style -write_priority
       -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns
       -bank_column_layout } flags {}
 
@@ -289,9 +289,9 @@ proc generate_ram_netlist { args } {
   }
 
   # A read latency of 1: the read addresses registered.
-  set read_latency 0
-  if { [info exists keys(-read_latency)] } {
-    set read_latency $keys(-read_latency)
+  set register_read_address 0
+  if { [info exists keys(-register_read_address)] } {
+    set register_read_address $keys(-register_read_address)
   }
 
   # Banked read ports: an address and a data output per bank.
@@ -310,7 +310,8 @@ proc generate_ram_netlist { args } {
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
-    $rb_ports $read_latency $write_style $write_priority $periphery $pin_layer $cells $name \
+    $rb_ports $register_read_address $write_style $write_priority $periphery $pin_layer \
+    $cells $name \
     $decoder $bit_folds $wrapper_verilog $service_every $service_sites \
     $bank_column_layout
 }
@@ -347,7 +348,8 @@ proc generate_ram { args } {
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog -read_style -zero_word -reset_value
-           -banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
+           -banks -bank_columns -bank_order -rb_ports -register_read_address
+           -write_style -write_priority
            -cells -name -decoder -bit_folds -service_columns
            -bank_column_layout } flags {}
 
@@ -398,7 +400,8 @@ proc generate_ram { args } {
     lappend ram_netlist_args -reset_value $keys(-reset_value)
   }
 
-  foreach key {-banks -bank_columns -bank_order -rb_ports -read_latency -write_style -write_priority
+  foreach key {-banks -bank_columns -bank_order -rb_ports -register_read_address
+               -write_style -write_priority
                -cells -name -decoder -bit_folds -service_columns
                -bank_column_layout} {
     if { [info exists keys($key)] } {

@@ -117,7 +117,7 @@ class RamGen
                 int bank_columns = 1,
                 const std::string& bank_order = "contiguous",
                 int rb_ports = 0,
-                int read_latency = 0,
+                int register_read_address = 0,
                 const std::string& write_style = "clock_gate",
                 const std::string& write_priority = "last",
                 const std::string& periphery = "placed",
@@ -376,12 +376,12 @@ class RamGen
   // the bank of the word at (row, word in the row), and its index there
   int bankAt(int row, int word_idx) const;
   int indexInBank(int row) const;
-  // -read_latency 1: each read port's address through a flop (a plain
+  // -register_read_address 1: each read port's address through a flop (a plain
   // positive-edge one) in the address inverter's cell. The decoders read
   // addr_true_ (the address, or the flop's output) and its complement;
   // where the flop's output is inverted the complement is the flop's and
   // the inverter makes the true one.
-  int read_latency_{0};
+  int register_read_address_{0};
   // -write_style mux: no clock gate; each bit's flop on the clock, its D
   // the new data where the word is written and its own value elsewhere
   bool write_mux_{false};

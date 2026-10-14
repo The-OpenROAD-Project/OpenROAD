@@ -1,4 +1,4 @@
-# -read_latency 1: a read's data follows a clock after its address, and
+# -register_read_address 1: a read's data follows a clock after its address, and
 # does not follow an address change before that clock.
 source "helpers.tcl"
 source "ram_sim.tcl"
@@ -14,7 +14,7 @@ read_lef ../../../test/asap7/asap7sc7p5t_28_R_1x_220121a.lef
 
 generate_ram_netlist \
   -mask_size 8 -word_size 8 -num_words 8 -r_ports 2 -w_ports 1 \
-  -storage_cell DFFHQNx1_ASAP7_75t_R -read_latency 1
+  -storage_cell DFFHQNx1_ASAP7_75t_R -register_read_address 1
 
 ram_sim::load
 set mem [ram_sim::exercise {

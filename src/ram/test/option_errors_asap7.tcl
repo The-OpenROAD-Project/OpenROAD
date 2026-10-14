@@ -22,7 +22,7 @@ foreach {id options} {
   92 {-bank_columns -1}
   95 {-service_columns {0 10}}
   93 {-bit_folds 0}
-  71 {-read_latency -1}
+  71 {-register_read_address -1}
   94 {-banks 2 -rb_ports -1}
 } {
   set args [dict merge $base $options]
