@@ -241,6 +241,7 @@ class FastRouteCore
                              int layer,
                              odb::dbNet* db_net);
   void setVerbose(bool v);
+  void setAllowCongestion(bool allow_congestion);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
   void setResAwareNetsPercentage(float percentage);
@@ -653,6 +654,12 @@ class FastRouteCore
   void printEdge3D(int netID, int edgeID);
   void printTree3D(int netID);
   void check2DEdgesUsage();
+  void reportEdgeUsage(int id,
+                       const char* direction,
+                       int x,
+                       int y,
+                       int usage,
+                       int limit) const;
   /**
    * @brief Compares edges used by routing and usage in h/v edges of the routing
    * graph.
@@ -799,6 +806,7 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
+  bool allow_congestion_ = false;
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
   bool is_fixed_nets_percentage_ = false;

@@ -2008,6 +2008,39 @@ void FastRouteCore::verify3DEdgesUsage()
   }
 }
 
+// An edge used past the guard is an error that stops global route early,
+// unless the route accepts congestion (-allow_congestion), as the end of
+// routing does (GRT-0115/0116).
+void FastRouteCore::reportEdgeUsage(const int id,
+                                    const char* direction,
+                                    const int x,
+                                    const int y,
+                                    const int usage,
+                                    const int limit) const
+{
+  if (allow_congestion_) {
+    logger_->warn(GRT,
+                  id,
+                  "{} edge usage exceeds the maximum allowed. ({}, {}) "
+                  "usage={} limit={}",
+                  direction,
+                  x,
+                  y,
+                  usage,
+                  limit);
+  } else {
+    logger_->error(GRT,
+                   id,
+                   "{} edge usage exceeds the maximum allowed. ({}, {}) "
+                   "usage={} limit={}",
+                   direction,
+                   x,
+                   y,
+                   usage,
+                   limit);
+  }
+}
+
 void FastRouteCore::check2DEdgesUsage()
 {
   const int max_usage_multiplier = 100;
@@ -2023,28 +2056,16 @@ void FastRouteCore::check2DEdgesUsage()
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     if (graph2d_.getUsageH(x, y) > max_h_edge_usage) {
-      logger_->error(GRT,
-                     228,
-                     "Horizontal edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageH(x, y),
-                     max_h_edge_usage);
+      reportEdgeUsage(
+          228, "Horizontal", x, y, graph2d_.getUsageH(x, y), max_h_edge_usage);
     }
   }
 
   // check vertical edges
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     if (graph2d_.getUsageV(x, y) > max_v_edge_usage) {
-      logger_->error(GRT,
-                     229,
-                     "Vertical edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageV(x, y),
-                     max_v_edge_usage);
+      reportEdgeUsage(
+          229, "Vertical", x, y, graph2d_.getUsageV(x, y), max_v_edge_usage);
     }
   }
 }
