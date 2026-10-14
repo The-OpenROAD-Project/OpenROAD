@@ -53,6 +53,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "rsz/PlacementDensityMap.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
@@ -395,6 +396,17 @@ double Resizer::utilization()
 double Resizer::maxArea() const
 {
   return max_area_;
+}
+
+PlacementDensity Resizer::placementDensity(const odb::Rect& region)
+{
+  // A map whose block was destroyed has lost its owner.
+  if (density_map_ == nullptr || !density_map_->hasOwner()
+      || density_map_->getBlock() != block_) {
+    initBlock();
+    density_map_ = std::make_unique<PlacementDensityMap>(block_);
+  }
+  return density_map_->getDensity(region);
 }
 
 ////////////////////////////////////////////////////////////////

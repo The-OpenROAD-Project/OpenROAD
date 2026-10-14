@@ -29,6 +29,7 @@ cc_library(
         "src/Optimizer.cc",
         "src/Optimizer.hh",
         "src/OptimizerTypes.cc",
+        "src/PlacementDensityMap.cc",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
         "src/Rebuffer.cc",
@@ -125,6 +126,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/PlacementDensityMap.hh",
         "include/rsz/Resizer.hh",
         "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
@@ -176,6 +178,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/PlacementDensityMap.hh",
         "include/rsz/Resizer.hh",
     ],
     includes = [

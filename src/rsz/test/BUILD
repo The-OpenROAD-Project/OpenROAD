@@ -361,6 +361,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":TestBufRem1",
+        ":TestPlacementDensityMap",
         ":TestResizer",
     ],
 )
@@ -506,6 +507,18 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPlacementDensityMap",
+    srcs = ["cpp/TestPlacementDensityMap.cc"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

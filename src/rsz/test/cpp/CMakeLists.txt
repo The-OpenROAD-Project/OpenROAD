@@ -87,6 +87,22 @@ gtest_discover_tests(TestBufferRemoval3
 add_dependencies(build_and_test TestBufferRemoval3
 )
 
+add_executable(TestPlacementDensityMap TestPlacementDensityMap.cc)
+target_link_libraries(TestPlacementDensityMap
+        GTest::gtest
+        GTest::gtest_main
+        rsz_lib
+        odb
+        tst_base
+)
+
+gtest_discover_tests(TestPlacementDensityMap
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestPlacementDensityMap
+)
+
 add_executable(TestResizer TestResizer.cc)
 target_link_libraries(TestResizer
         OpenSTA

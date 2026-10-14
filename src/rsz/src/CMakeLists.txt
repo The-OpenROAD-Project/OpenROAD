@@ -40,6 +40,7 @@ add_library(rsz_lib
     policy/GlobalSizingPolicy.cc
     Resizer.cc
     OdbCallBack.cc
+    PlacementDensityMap.cc
     ConcreteSwapArithModules.cc
     RepairTargetCollector.cc
 
