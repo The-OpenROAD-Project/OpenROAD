@@ -302,6 +302,22 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestLatencyBalancerModes",
+    srcs = ["cpp/TestLatencyBalancerModes.cc"],
+    deps = [
+        "//src/cts:cts_impl",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "cts_man_tcl_check",
     srcs = ["cts_man_tcl_check.py"],

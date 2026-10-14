@@ -110,3 +110,32 @@ gtest_discover_tests(TestDelayBufList
 )
 
 add_dependencies(build_and_test TestDelayBufList)
+
+add_executable(TestLatencyBalancerModes cpp/TestLatencyBalancerModes.cc)
+target_include_directories(TestLatencyBalancerModes
+  PUBLIC
+    ${OPENROAD_HOME}/src/cts/src
+)
+
+target_link_libraries(TestLatencyBalancerModes
+    GTest::gtest
+    GTest::gtest_main
+    cts_lib
+    utl_lib
+    dbSta_lib
+    est_lib
+    rsz_lib
+    grt_lib
+    dpl_lib
+    stt_lib
+    OpenSTA
+    odb
+    tst_integrated_fixture
+    ${TCL_LIBRARY}
+)
+
+gtest_discover_tests(TestLatencyBalancerModes
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestLatencyBalancerModes)
