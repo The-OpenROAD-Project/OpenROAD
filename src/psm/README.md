@@ -22,7 +22,18 @@ Features:
 
 ### Analyze Power Grid
 
-This command analyzes power grid.
+This command analyzes power grid for 2D and 3D chips.
+
+The following 3D extensions are planned and are not included yet:
+
+- Export 3D IR and EM results in the JSON file.
+- EM CSV export through `-em_outfile`.
+- GUI IR-drop heatmaps.
+- Source generation through `-vsrc` and `-source_type FULL|BUMPS|STRAPS`.
+- Solution reuse through `-allow_reuse`.
+- SPICE export of the connected chiplet network through `write_pg_spice`.
+- Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
+
 
 ```tcl
 analyze_power_grid
@@ -43,10 +54,10 @@ analyze_power_grid
 | ----- | ----- |
 | `-net` | Name of the net to analyze, power or ground net name. |
 | `-corner` | Corner to use for analysis. |
-| `-error_file` | File to write power grid error to. |
+| `-error_file` | File to write power grid errors to. For 3D ICs, errors are grouped by chiplet. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
-| `-enable_em` | Report current per power grid segment. |
-| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
+| `-enable_em` | Reports maximum and average power-grid segment currents. |
+| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. Currently not supported for 3D ICs. |
 | `-voltage_file` | Write per-instance voltage into the file. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
 | `-allow_reuse` | Allow the analysis to reuse a previous solution, if one exists. |
@@ -69,8 +80,8 @@ check_power_grid
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
-| `-error_file` | File to write power grid errors to. |
-| `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. |
+| `-error_file` | File to write power grid errors to. For 3D, errors are grouped by chiplet, with coordinates in local microns. |
+| `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. For 3D, this applies to each chiplet. |
 
 ### Write Spice Power Grid
 
@@ -104,6 +115,8 @@ set_pdnsim_net_voltage
     -net net_name
     -voltage volt
     [-corner corner]
+    [-chiplet chipA]
+    [-port port]
 ```
 
 #### Options
@@ -113,6 +126,8 @@ set_pdnsim_net_voltage
 | `-net` | Name of the net to analyze. It must be a power or ground net name. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
 | `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
+| `-chiplet` | Required for 3D: placed chiplet name from the `.3dbx` whose source voltage is being set. |
+| `-port` | 3D chiplet boundary port receiving the external supply. Requires `-voltage`. |
 
 ### Set PDNSim Instance power
 
