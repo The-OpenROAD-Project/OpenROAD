@@ -48,10 +48,9 @@ class CpuWirelengthGradientBackend : public WirelengthGradientBackend
                         std::vector<FloatPoint>& out) override
   {
     assert(out.size() == gCells.size());
-    const auto space
-        = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+    const auto& kokkos_ctx = nbc_->getKokkosContext();
     Kokkos::parallel_for("gpl::wirelengthGradients",
-                         HostRange(space, 0, gCells.size()),
+                         HostRange(kokkos_ctx.space, 0, gCells.size()),
                          [&](std::size_t i) {
                            const GCell* gCell = gCells[i];
                            out[i] = nbc_->getWireLengthGradientWA(

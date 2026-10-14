@@ -18,4 +18,12 @@ void ensureKokkosInitialized();
 // pool.
 Kokkos::DefaultHostExecutionSpace hostExecutionSpace(int num_threads);
 
+// The minimal header with fwd decl of Kokkos::DefaultHostExecutionSpace
+// is Kokkos_Core_fwd.hpp and even this pulls cuda headers transitively.
+// Use fwd decl of KokkosContext in headers where cuda shouldn't be
+// pulled in and the full definition in source files
+struct KokkosContext {
+    Kokkos::DefaultHostExecutionSpace space;
+};
+
 }  // namespace gpl

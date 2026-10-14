@@ -753,7 +753,7 @@ static unsigned int roundDownToPowerOfTwo(unsigned int x)
   return x ^ (x >> 1);
 }
 
-void BinGrid::initBins()
+void BinGrid::initBins(const KokkosContext& kokkos_ctx)
 {
   int64_t totalBinArea
       = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
@@ -836,9 +836,8 @@ void BinGrid::initBins()
 
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
-  const auto space = hostExecutionSpace(num_threads_);
   Kokkos::parallel_for(
-      "gpl::initBins", HostRange(space, 0, binCntY_), [&](int idxY) {
+      "gpl::initBins", HostRange(kokkos_ctx.space, 0, binCntY_), [&](int idxY) {
         for (int idxX = 0; idxX < binCntX_; ++idxX) {
           const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
           const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
@@ -982,15 +981,14 @@ void BinGrid::updateBinsNonPlaceArea()
 // schedule(dynamic) because per-cell cost is its bin-overlap count, which
 // varies by an order of magnitude between a std cell and a macro.
 void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
-                                        int parallel_threads)
+                                        const KokkosContext& kokkos_ctx)
 {
-  const auto space = hostExecutionSpace(parallel_threads);
   Kokkos::parallel_for(
       "gpl::scatterDensityArea",
       Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace,
                           Kokkos::IndexType<std::size_t>,
                           Kokkos::Schedule<Kokkos::Dynamic>>(
-          space, 0, cells.size())
+          kokkos_ctx.space, 0, cells.size())
           .set_chunk_size(128),
       [&](std::size_t index) {
         const GCellHandle& cell = cells[index];
@@ -1028,7 +1026,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
 
 // Core Part
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
-                                         int parallel_threads)
+                                         const KokkosContext& kokkos_ctx)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
@@ -1042,17 +1040,16 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   // The device build keeps its pre-existing flat-buffer scatter for threaded
   // runs: that one is thread-order-dependent, and this change cannot
   // re-verify the device path.
-  if (parallel_threads > 1) {
+  if (kokkos_ctx.space.concurrency() > 1) {
     const int nbins = static_cast<int>(bins_.size());
     std::vector<float> inst_area(nbins, 0.0f);
     std::vector<float> filler_area(nbins, 0.0f);
-    const auto space = hostExecutionSpace(parallel_threads);
     Kokkos::parallel_for(
         "gpl::scatterDeviceMirrorDensity",
         Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace,
                             Kokkos::IndexType<std::size_t>,
                             Kokkos::Schedule<Kokkos::Dynamic>>(
-            space, 0, cells.size())
+            kokkos_ctx.space, 0, cells.size())
             .set_chunk_size(128),
         [&](std::size_t index) {
           const GCellHandle& cell = cells[index];
@@ -1087,16 +1084,16 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
           }
         });
     Kokkos::parallel_for("gpl::applyDeviceMirrorDensity",
-                         HostRange(space, 0, nbins),
+                         HostRange(kokkos_ctx.space, 0, nbins),
                          [&](int b) {
                            bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
                            bins_[b].setFillerArea(filler_area[b]);
                          });
   } else {
-    scatterDensityAreaInPlace(cells, 1);
+    scatterDensityAreaInPlace(cells, kokkos_ctx);
   }
 #else
-  scatterDensityAreaInPlace(cells, parallel_threads);
+  scatterDensityAreaInPlace(cells, kokkos_ctx);
 #endif
 
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
@@ -1104,10 +1101,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   sumOverflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-  const auto space = hostExecutionSpace(num_threads_);
   Kokkos::parallel_reduce(
       "gpl::updateBinDensity",
-      HostRange(space, 0, bins_.size()),
+      HostRange(hostExecutionSpace(1), 0, bins_.size()),
       [&](std::size_t index,
           int64_t& overflow_sum,
           int64_t& unscaled_overflow_sum) {
@@ -1254,7 +1250,9 @@ NesterovBaseCommon::NesterovBaseCommon(
     utl::Logger* log,
     int num_threads,
     const Clusters& clusters)
-    : nbVars_(nbVars), num_threads_{num_threads}
+    : nbVars_(nbVars),
+      kokkos_context_(std::make_unique<KokkosContext>(
+          hostExecutionSpace(num_threads)))
 {
   // hpwl_backend_ and device_state_ are constructed at the end of this ctor
   // body, after gCellStor_ / gPinStor_ / gNetStor_ are populated — the GPU
@@ -1351,9 +1349,9 @@ NesterovBaseCommon::NesterovBaseCommon(
   }
 
   // gCellStor_'s pins_ fill
-  const auto space = hostExecutionSpace(num_threads_);
+  const auto& kokkos_ctx = getKokkosContext();
   Kokkos::parallel_for("gpl::connectCellPins",
-                       HostRange(space, 0, gCellStor_.size()),
+                       HostRange(kokkos_ctx.space, 0, gCellStor_.size()),
                        [&](std::size_t index) {
                          auto it = gCellStor_.begin() + index;
                          auto& gCell
@@ -1372,7 +1370,7 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gPinStor_' GNet and GCell fill
   Kokkos::parallel_for("gpl::connectPins",
-                       HostRange(space, 0, gPinStor_.size()),
+                       HostRange(kokkos_ctx.space, 0, gPinStor_.size()),
                        [&](std::size_t index) {
                          auto it = gPinStor_.begin() + index;
                          auto& gPin
@@ -1384,7 +1382,7 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gNetStor_'s GPin fill
   Kokkos::parallel_for("gpl::connectNetPins",
-                       HostRange(space, 0, gNetStor_.size()),
+                       HostRange(kokkos_ctx.space, 0, gNetStor_.size()),
                        [&](std::size_t index) {
                          auto it = gNetStor_.begin() + index;
                          auto& gNet
@@ -1408,7 +1406,6 @@ NesterovBaseCommon::NesterovBaseCommon(
   BackendContext nbc_ctx;
   nbc_ctx.nbc = this;
   nbc_ctx.device_state = device_state_.get();
-  nbc_ctx.num_threads = num_threads_;
   nbc_ctx.place_ios_mode = nbVars_.placeIosMode;
   hpwl_backend_ = makeHpwlBackend(nbc_ctx);
   debugPrint(log_, GPL, "init", 1, "HPWL backend: {}", hpwl_backend_->name());
@@ -1480,9 +1477,9 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
                                                         float wlCoeffY)
 {
   // clear all WA variables.
-  const auto space = hostExecutionSpace(num_threads_);
+  const auto& kokkos_ctx = getKokkosContext();
   Kokkos::parallel_for("gpl::clearPinWirelength",
-                       HostRange(space, 0, gPinStor_.size()),
+                       HostRange(kokkos_ctx.space, 0, gPinStor_.size()),
                        [&](std::size_t index) {
                          auto gPin = gPinStor_.begin() + index;
                          // Host iteration over the placement data
@@ -1493,7 +1490,7 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
   bool debug_enabled = log_->debugCheck(GPL, "wlUpdateWA", 1);
   Kokkos::parallel_for(
       "gpl::updateWirelengthForce",
-      HostRange(space, 0, gNetStor_.size()),
+      HostRange(kokkos_ctx.space, 0, gNetStor_.size()),
       [&](std::size_t index) {
         auto gNet = gNetStor_.begin() + index;
         // Host iteration over the placement data
@@ -2320,7 +2317,7 @@ NesterovBase::NesterovBase(
   bg_.setBinTargetDensity(targetDensity_);
 
   // update binGrid info
-  bg_.initBins();
+  bg_.initBins(nbc_->getKokkosContext());
 
   // Publish the bin size so the GUI placement density heat map can default its
   // grid to the one the placer optimized on. Region groups cover only part of
@@ -3218,35 +3215,22 @@ void NesterovBase::updateGCellDensityCenterLocation(
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
 #ifdef ENABLE_GPU
-  int scatter_threads = 1;
   // Host coords changed — the device copy is no longer authoritative until
   // the next commitCoordsToDeviceState (sticky-freshness contract).
   if (nbc_->getDeviceState()) {
     nbc_->getDeviceState()->invalidateCoords();
   }
-  // Only the device build takes the flat-buffer scatter, which is
-  // thread-order-dependent; without a device it stays serial.
-  if (nb_device_ctx_ != nullptr) {
-    scatter_threads = static_cast<int>(nbc_->getNumThreads());
-  }
-#else
-  // Order-independent in place (integer accumulators, truncated addends), so
-  // threading it does not change the result. nbc_ is the thread count every
-  // other parallel loop in gpl uses; BinGrid::num_threads_ is not it --
-  // BinGrid::setNumThreads() has no callers, so it is always 1.
-  const int scatter_threads = static_cast<int>(nbc_->getNumThreads());
 #endif
-  bg_.updateBinsGCellDensityArea(nb_gcells_, scatter_threads);
+  bg_.updateBinsGCellDensityArea(nb_gcells_, nbc_->getKokkosContext());
 }
 
 void NesterovBase::setTargetDensity(float density)
 {
   targetDensity_ = density;
   bg_.setBinTargetDensity(density);
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for("gpl::setTargetDensity",
-                       HostRange(space, 0, getBins().size()),
+                       HostRange(kokkos_ctx.space, 0, getBins().size()),
                        [&](std::size_t index) {
                          auto bin = getBins().begin() + index;
                          // Host iteration over the placement data
@@ -3431,7 +3415,7 @@ float NesterovBase::estimateTargetDensity(float overflow)
 
   // Populates each bin's placed-instance area
   bg_.updateBinsGCellDensityArea(nb_gcells_,
-                                 static_cast<int>(nbc_->getNumThreads()));
+                                 nbc_->getKokkosContext());
 
   // Do a binary search to find the density value that results in the
   // target overflow.
@@ -3518,11 +3502,10 @@ float NesterovBase::getTargetDensity() const
 // update densitySize and densityScale in each gCell
 void NesterovBase::updateDensitySize()
 {
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
       "gpl::updateDensitySize",
-      HostRange(space, 0, nb_gcells_.size()),
+      HostRange(kokkos_ctx.space, 0, nb_gcells_.size()),
       [&](std::size_t index) {
         auto it = nb_gcells_.begin() + index;
         auto& gCell = *it;  // Host iteration over the placement data
@@ -3677,10 +3660,9 @@ void NesterovBase::fillFillerDensityGradients(
   // earlier this iteration) and each cell writes a distinct out[] slot, so the
   // loop is trivially parallel. Only fillers are computed; instance entries are
   // supplied by the caller from the device gather.
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for("gpl::fillFillerDensityGradients",
-                       HostRange(space, 0, gCells.size()),
+                       HostRange(kokkos_ctx.space, 0, gCells.size()),
                        [&](size_t i) {
                          if (gCells[i].isNesterovBaseCommon()) {
                            return;  // Instance already filled by the caller
@@ -3694,11 +3676,10 @@ void NesterovBase::fillFillerDensityGradients(
 void NesterovBase::updateDensityFieldBin()
 {
   // copy density to utilize FFT
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
       "gpl::copyFftDensity",
-      HostRange(space, 0, getBins().size()),
+      HostRange(kokkos_ctx.space, 0, getBins().size()),
       [&](std::size_t index) {
         auto it = getBins().begin() + index;
         auto& bin = *it;  // Host iteration over the placement data
@@ -3713,7 +3694,7 @@ void NesterovBase::updateDensityFieldBin()
   sumPhi_ = 0;
   Kokkos::parallel_reduce(
       "gpl::updateElectrostaticField",
-      HostRange(space, 0, getBins().size()),
+      HostRange(kokkos_ctx.space, 0, getBins().size()),
       [&](std::size_t index, float& phi_sum) {
         auto it = getBins().begin() + index;
         auto& bin = *it;  // Host iteration over the placement data
@@ -3759,11 +3740,10 @@ void NesterovBase::initDensity1()
   snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
   snapshotPrevSLPSumGrads_.resize(gCellSize, FloatPoint());
 
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
       "gpl::initDensityCoordinates",
-      HostRange(space, 0, nb_gcells_.size()),
+      HostRange(kokkos_ctx.space, 0, nb_gcells_.size()),
       [&](std::size_t index) {
         auto it = nb_gcells_.begin() + index;
         GCell* gCell = *it;  // Host iteration over the placement data
@@ -3865,10 +3845,9 @@ void NesterovBase::pullCoordsFromDevice()
   nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
   // Host GCell density centers follow the last scattered coords, which on
   // the CPU path are the curSLP coords after rotation.
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for("gpl::pullDeviceCoordinates",
-                       HostRange(space, 0, nb_gcells_.size()),
+                       HostRange(kokkos_ctx.space, 0, nb_gcells_.size()),
                        [&](size_t idx) {
                          nb_gcells_[idx]->setDensityCenterLocation(
                              curSLPCoordi_[idx].x, curSLPCoordi_[idx].y);
@@ -4059,10 +4038,9 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   }
 
   const size_t numGCells = nb_gcells_.size();
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
-      "gpl::updateGradients", HostRange(space, 0, numGCells), [&](size_t i) {
+      "gpl::updateGradients", HostRange(kokkos_ctx.space, 0, numGCells), [&](size_t i) {
         GCell* gCell = nb_gcells_[i];
 
         if (gCell->isIOPin()) {
@@ -4262,11 +4240,10 @@ void NesterovBase::updateInitialPrevSLPCoordi()
   }
 #endif
 
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
       "gpl::updateInitialCoordinates",
-      HostRange(space, 0, nb_gcells_.size()),
+      HostRange(kokkos_ctx.space, 0, nb_gcells_.size()),
       [&](size_t i) {
         GCell* curGCell = nb_gcells_[i];
 
@@ -4347,11 +4324,10 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
       "gpl::preserveLockedCoordinates",
-      HostRange(space, 0, nb_gcells_.size()),
+      HostRange(kokkos_ctx.space, 0, nb_gcells_.size()),
       [&](size_t k) {
         if (nb_gcells_[k]->isInstance() && nb_gcells_[k]->isLocked()) {
           nextSLPCoordi_[k] = curSLPCoordi_[k];
@@ -4535,10 +4511,9 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
   // parallel, bit-identical to the serial version.
   const size_t numGCells = nb_gcells_.size();
-  const auto space
-      = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
-      "gpl::updateCoordinates", HostRange(space, 0, numGCells), [&](size_t k) {
+      "gpl::updateCoordinates", HostRange(kokkos_ctx.space, 0, numGCells), [&](size_t k) {
         GCell* curGCell = nb_gcells_[k];
         if (curGCell->isLocked()) {
           nextCoordi_[k] = curCoordi_[k];
@@ -4731,10 +4706,9 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
                  uniformTargetDensity_);
     }
 
-    const auto space
-        = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+    const auto& kokkos_ctx = nbc_->getKokkosContext();
     Kokkos::parallel_for("gpl::lockConvergedCells",
-                         HostRange(space, 0, nb_gcells_.size()),
+                         HostRange(kokkos_ctx.space, 0, nb_gcells_.size()),
                          [&](std::size_t index) {
                            auto it = nb_gcells_.begin() + index;
                            auto& gCell

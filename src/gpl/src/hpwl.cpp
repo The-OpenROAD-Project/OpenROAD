@@ -31,12 +31,15 @@ namespace {
 class CpuHpwlBackend : public HpwlBackend
 {
  public:
-  explicit CpuHpwlBackend(int num_threads) : num_threads_(num_threads) {}
+  explicit CpuHpwlBackend(const BackendContext& ctx)
+      : host_space_(ctx.nbc->getKokkosContext().space)
+  {
+  }
 
   int64_t computeHpwl(std::vector<GNet>& nets) override
   {
     int64_t hpwl = 0;
-    const auto space = hostExecutionSpace(num_threads_);
+    const auto& space = host_space_;
     Kokkos::parallel_reduce(
         "gpl::hpwl",
         HostRange(space, 0, nets.size()),
@@ -52,7 +55,7 @@ class CpuHpwlBackend : public HpwlBackend
   const char* name() const override { return "CPU (Kokkos)"; }
 
  private:
-  int num_threads_;
+  const Kokkos::DefaultHostExecutionSpace& host_space_;
 };
 
 }  // namespace
@@ -64,10 +67,10 @@ std::unique_ptr<HpwlBackend> makeHpwlBackend(const BackendContext& ctx)
   // Force CPU backends to ensure IO pins receive valid gradients
   if (gpuEnabled() && !ctx.place_ios_mode) {
     ensureKokkosInitialized();
-    return std::make_unique<GpuHpwlBackend>(ctx.device_state, ctx.num_threads);
+    return std::make_unique<GpuHpwlBackend>(ctx);
   }
 #endif
-  return std::make_unique<CpuHpwlBackend>(ctx.num_threads);
+  return std::make_unique<CpuHpwlBackend>(ctx);
 }
 
 #ifdef ENABLE_GPU
@@ -78,12 +81,11 @@ void applyNetBoxesParallel(std::vector<GNet>& gNetStor,
                            const int* ly,
                            const int* ux,
                            const int* uy,
-                           const int num_threads)
+                           const KokkosContext& kokkos_ctx)
 {
   const int n_nets = static_cast<int>(gNetStor.size());
-  const auto space = hostExecutionSpace(num_threads);
   Kokkos::parallel_for(
-      "gpl::applyNetBoxes", HostRange(space, 0, n_nets), [&](int i) {
+      "gpl::applyNetBoxes", HostRange(kokkos_ctx.space, 0, n_nets), [&](int i) {
         gNetStor[i].setBox(lx[i], ly[i], ux[i], uy[i]);
       });
 }

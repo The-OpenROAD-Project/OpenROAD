@@ -1540,7 +1540,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     }
   }
 
-  const auto space = hostExecutionSpace(num_threads_);
+  const auto& space = kokkos_context_->space;
   Kokkos::parallel_for(
       "gpl::clusterSilhouettes", HostRange(space, 2, 9), [&](int k) {
         std::vector<std::vector<Flop>> k_clust;
@@ -1727,7 +1727,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
   std::vector<std::vector<std::pair<int, int>>> all_mappings(num_pointsets);
   std::vector<std::vector<Tray>> all_final_trays(num_pointsets);
 
-  const auto space = hostExecutionSpace(num_threads_);
+  const auto& space = kokkos_context_->space;
   Kokkos::parallel_reduce(
       "gpl::clusterFlops",
       HostRange(space, 0, num_pointsets),
@@ -2520,7 +2520,8 @@ MBFF::MBFF(odb::dbDatabase* db,
       graphics_(std::move(graphics)),
       log_(log),
       resizer_(resizer),
-      num_threads_(threads),
+      kokkos_context_(std::make_unique<KokkosContext>(
+          hostExecutionSpace(threads))),
       multistart_(multistart),
       num_paths_(num_paths),
       multiplier_(block_->getDbUnitsPerMicron()),

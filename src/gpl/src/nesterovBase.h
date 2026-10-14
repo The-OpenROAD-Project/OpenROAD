@@ -64,6 +64,8 @@ class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h
 enum class SlpSlot : int;         // gpu/nesterovDeviceContext.h
 enum class SumGradSlot : int;     // gpu/nesterovDeviceContext.h
 
+struct KokkosContext;
+
 class GCell
 {
  public:
@@ -734,12 +736,11 @@ class BinGrid
   void setBinCnt(int binCntX, int binCntY);
   void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
-                                  int parallel_threads = 1);
+                                  const KokkosContext& kokkos_ctx);
   void scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
-                                 int parallel_threads);
-  void setNumThreads(int num_threads) { num_threads_ = num_threads; }
+                                 const KokkosContext& kokkos_ctx);
 
-  void initBins();
+  void initBins(const KokkosContext& kokkos_ctx);
 
   // lx, ly, ux, uy will hold region area
   int lx() const;
@@ -796,7 +797,6 @@ class BinGrid
   int64_t sumOverflowArea_ = 0;
   int64_t sumOverflowAreaUnscaled_ = 0;
   bool isSetBinCnt_ = false;
-  int num_threads_ = 1;
 };
 
 inline std::vector<Bin>& BinGrid::getBins()
@@ -967,8 +967,10 @@ class NesterovBaseCommon
   // Raw gCellStor_ accessor for DeviceState init (index correspondence).
   const std::vector<GCell>& getGCellStor() const { return gCellStor_; }
 
-  // Number of threads of execution
-  size_t getNumThreads() { return num_threads_; }
+  const KokkosContext& getKokkosContext() const
+  {
+    return *kokkos_context_;
+  }
 
   GCell* getGCellByIndex(size_t i);
 
@@ -1052,7 +1054,7 @@ class NesterovBaseCommon
   std::deque<Net> pb_nets_stor_;
   std::deque<Pin> pb_pins_stor_;
 
-  int num_threads_;
+  std::unique_ptr<KokkosContext> kokkos_context_;
   // Device-resident state for GPU backends (pin coords + per-net/per-pin
   // buffers; HPWL, WL grad, density gather all read from this).
   // Constructed in the ctor body after gCellStor_ / gPinStor_ / gNetStor_

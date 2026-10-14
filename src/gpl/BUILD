@@ -33,6 +33,7 @@ cc_library(
         "//visibility:private",
     ],
     deps = [
+        "//bazel/kokkos",
         # TODO: we use headers provided by :gpl, but that reveals cyclic dep
         #":gpl",
         "//src/odb/src/db",

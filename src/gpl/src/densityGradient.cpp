@@ -33,10 +33,9 @@ class CpuDensityGradientBackend : public DensityGradientBackend
   void getCellGradients(const std::vector<GCellHandle>& gCells,
                         std::vector<FloatPoint>& out) override
   {
-    const auto space
-        = hostExecutionSpace(static_cast<int>(nb_->getNbc()->getNumThreads()));
+    const auto& kokkos_ctx = nb_->getNbc()->getKokkosContext();
     Kokkos::parallel_for("gpl::densityGradients",
-                         HostRange(space, 0, gCells.size()),
+                         HostRange(kokkos_ctx.space, 0, gCells.size()),
                          [&](std::size_t i) {
                            const GCell* c = gCells[i];
                            out[i] = nb_->getDensityGradient(c);
