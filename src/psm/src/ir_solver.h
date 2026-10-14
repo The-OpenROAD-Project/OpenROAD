@@ -4,11 +4,13 @@
 #pragma once
 
 #include <cstddef>
+#include <iosfwd>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Eigen/Sparse"
@@ -36,6 +38,20 @@ class EstimateParasitics;
 namespace psm {
 class IRNetwork;
 class IRShort;
+
+// Reuse function to read layer resistances for 2D analysis
+// and for each chiplet in 3D analysis.
+Connection::ResistanceMap getLayerResistanceMap(
+    odb::dbNet* net,
+    sta::Scene* corner,
+    est::EstimateParasitics* estimate_parasitics,
+    utl::Logger* logger);
+
+void writeVoltageHeader(std::ostream& report);
+void writeVoltageRow(std::ostream& report,
+                     const ITermNode* node,
+                     double voltage,
+                     const std::string& prefix = "");
 
 class IRSolver
 {
@@ -90,6 +106,15 @@ class IRSolver
 
   void report(sta::Scene* corner) const;
   void reportEM(sta::Scene* corner) const;
+  // Print the same IR and EM summaries for single-chip and assembly results.
+  static void report(const Results& results,
+                     const std::string& net_name,
+                     sta::Scene* corner,
+                     utl::Logger* logger);
+  static void reportEM(const EMResults& results,
+                       const std::string& net_name,
+                       sta::Scene* corner,
+                       utl::Logger* logger);
 
   Results getSolution(sta::Scene* corner) const;
   EMResults getEMSolution(sta::Scene* corner) const;
@@ -100,6 +125,7 @@ class IRSolver
   void enableGui(bool enable);
 
   void writeErrorFile(const std::string& error_file) const;
+  void writeErrorFile(std::ofstream& report) const;
   void writeInstanceVoltageFile(const std::string& voltage_file,
                                 sta::Scene* corner) const;
   void writeEMFile(const std::string& em_file, sta::Scene* corner) const;
@@ -122,11 +148,6 @@ class IRSolver
   Voltage getNetVoltage(sta::Scene* corner) const;
   std::optional<Voltage> getVoltage(sta::Scene* corner, Node* node) const;
 
-  std::optional<Voltage> getSDCVoltage(sta::Scene* corner,
-                                       odb::dbNet* net) const;
-  std::optional<Voltage> getPVTVoltage(sta::Scene* corner) const;
-  std::optional<Voltage> getUserVoltage(sta::Scene* corner,
-                                        odb::dbNet* net) const;
   std::optional<Voltage> getSolutionVoltage(sta::Scene* corner) const;
 
   odb::dbNet* getPowerNet() const;
@@ -136,9 +157,45 @@ class IRSolver
 
   IRNetwork* getNetwork() const { return network_.get(); }
 
- private:
   template <typename T>
   using ValueNodeMap = std::map<const Node*, T>;
+
+  using NodeConductances
+      = std::map<Node*,
+                 std::vector<std::pair<Connection*, Connection::Conductance>>>;
+  struct MatrixSource
+  {
+    std::size_t source_index;
+    std::size_t node_index;
+    Voltage voltage;
+  };
+
+  static odb::PtrMap<odb::dbInst, Power> buildNodeCurrentMap(
+      const odb::PtrMap<odb::dbInst, Node::NodeSet>& inst_nodes,
+      const odb::PtrMap<odb::dbInst, Power>& powers,
+      Voltage power_voltage,
+      ValueNodeMap<Current>& currents);
+  static void buildCondMatrixAndVoltages(
+      bool negate_currents,
+      const NodeConductances& node_connections,
+      const ValueNodeMap<Current>& currents,
+      const std::map<Node*, std::size_t>& node_index,
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector,
+      utl::Logger* logger);
+  static void addSourcesToMatrixAndVoltages(
+      const std::vector<MatrixSource>& sources,
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector,
+      utl::Logger* logger);
+  static Eigen::VectorXd solve(
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      const Eigen::VectorXd& j_vector,
+      utl::Logger* logger,
+      const std::map<Node*, std::size_t>& node_index,
+      IRNetwork* debug_network = nullptr);
+
+ private:
   using LayerPolygons
       = odb::PtrMap<odb::dbTechLayer, std::vector<odb::Polygon>>;
 
@@ -175,7 +232,6 @@ class IRSolver
   // shapes of the layer so it cannot be done per object checked against it.
   const IRNetwork::ShapeTree* getShortCheckTree(odb::dbTechLayer* layer) const;
 
-  odb::PtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner) const;
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
   Connection::ConnectionMap<Current> generateCurrentMap(
@@ -202,7 +258,7 @@ class IRSolver
   void reportMissingBTerm() const;
   void reportShortedNodes() const;
 
-  std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
+  NodeConductances getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)
       const;
   IRSolver::Power buildNodeCurrentMap(sta::Scene* corner,
@@ -211,26 +267,15 @@ class IRSolver
                                              std::size_t start = 0) const;
   std::map<Node*, std::size_t> assignNodeIDs(const SourceNodes& nodes,
                                              std::size_t start = 0) const;
-  void buildCondMatrixAndVoltages(
-      bool is_ground,
-      const std::map<Node*, Connection::ConnectionSet>& node_connections,
-      const ValueNodeMap<Current>& currents,
-      const Connection::ConnectionMap<Connection::Conductance>& conductance,
-      const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      Eigen::VectorXd& j_vector) const;
-  void addSourcesToMatrixAndVoltages(
-      Voltage src_voltage,
-      const SourceNodes& sources,
-      const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      Eigen::VectorXd& j_vector) const;
-
   std::string getMetricKey(const std::string& key, sta::Scene* corner) const;
 
-  void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
-  void dumpMatrix(const Eigen::SparseMatrix<Connection::Conductance>& matrix,
-                  const std::string& name) const;
+  static void dumpVector(const Eigen::VectorXd& vector,
+                         const std::string& name,
+                         utl::Logger* logger);
+  static void dumpMatrix(
+      const Eigen::SparseMatrix<Connection::Conductance>& matrix,
+      const std::string& name,
+      utl::Logger* logger);
   void dumpConductance(
       const Connection::ConnectionMap<Connection::Conductance>& cond,
       const std::string& name) const;
@@ -264,5 +309,15 @@ class IRSolver
   static constexpr size_t kMaxShortEntries = 10000;
   static constexpr const char* kMarkerCategory = "PSM";
 };
+
+double getNominalVoltage(odb::dbNet* net,
+                         sta::Scene* corner,
+                         sta::dbSta* sta,
+                         const IRSolver::UserVoltages& user_voltages,
+                         utl::Logger* logger);
+
+odb::PtrMap<odb::dbInst, float> getInstancePower(sta::dbSta* sta,
+                                                 sta::Scene* corner,
+                                                 utl::Logger* logger);
 
 }  // namespace psm

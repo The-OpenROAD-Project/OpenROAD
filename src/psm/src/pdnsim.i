@@ -3,7 +3,10 @@
 
 %include "../../Exception.i"
 %{
+#include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include <vector>
 #include "psm/pdnsim.h"
 #include "sta/Scene.hh"
 
@@ -44,8 +47,121 @@ using sta::Scene;
   }
 }
 
+%typemap(out) std::vector<odb::dbChipRSeg*> {
+  Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
+  for (auto* resistor : $1) {
+    Tcl_ListObjAppendElement(interp, list,
+        SWIG_NewPointerObj(resistor, $descriptor(odb::dbChipRSeg*), 0));
+  }
+  Tcl_SetObjResult(interp, list);
+}
+
 %inline %{
 
+bool
+is_3d_design(odb::dbChip* chip)
+{
+  return sta::dbNetwork::is3DicTopChip(chip);
+}
+
+// ODB's C++ collections are available even when its Tcl list wrappers are not.
+std::vector<odb::dbChipRSeg*>
+get_3d_chip_rsegs(odb::dbChipNet* net)
+{
+  std::vector<odb::dbChipRSeg*> resistors;
+  if (net) {
+    for (auto* resistor : net->getChipRSegs()) {
+      resistors.push_back(resistor);
+    }
+  }
+  return resistors;
+}
+
+// Internal regression helpers; these are not registered as user commands.
+void
+clear_3d_power_grid_cmd()
+{
+  getPDNSim()->clear3DPowerGrid();
+}
+
+bool
+check_3d_power_grid_cmd(const char* chip_net_name,
+                        bool floorplanning = false,
+                        const char* error_file = "",
+                        bool require_bterm = true)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->check3DPowerGrid(chip_net_name, floorplanning, error_file, require_bterm);
+}
+
+bool
+check_3d_g_matrix_cmd(const char* chip_net_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->check3DGMatrix(chip_net_name);
+}
+
+void
+add_3d_pdn_current_cmd(const char* chip_net_name,
+                       const char* chip_name,
+                       const char* port_name,
+                       double current)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->add3DPDNCurrent(chip_net_name, chip_name, port_name, current);
+}
+
+bool
+check_3d_j_vector_cmd(const char* chip_net_name, bool use_sta)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->check3DJVector(chip_net_name, use_sta);
+}
+
+void
+set_pdnsim_chiplet_voltage_cmd(const char* chip_net_name,
+                              const char* chip_name,
+                              const char* port_name,
+                              double voltage,
+                              Scene* corner,
+                              bool set_source = true,
+                              bool set_nominal = false,
+                              double nominal_voltage = 0.0)
+{
+  std::optional<double> source;
+  std::optional<double> nominal;
+  if (set_source) {
+    source = voltage;
+  }
+  if (set_nominal) {
+    nominal = nominal_voltage;
+  }
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->setChipletVoltage(
+      chip_net_name, chip_name, port_name, source, corner, nominal);
+}
+
+bool
+analyze_3d_power_grid_cmd(const char* chip_net_name,
+                          Scene* corner,
+                          bool use_sta = true,
+                          const char* error_file = "",
+                          const char* voltage_file = "",
+                          bool enable_em = false)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->analyze3DPowerGrid(chip_net_name, corner, use_sta,
+                                  error_file, voltage_file, enable_em);
+}
+
+double
+get_3d_pdn_voltage_cmd(const char* chip_net_name,
+                       const char* chip_name,
+                       const char* port_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->get3DPDNVoltage(chip_net_name, chip_name, port_name);
+}
 
 void 
 set_net_voltage_cmd(odb::dbNet* net, Scene* corner, double voltage)
