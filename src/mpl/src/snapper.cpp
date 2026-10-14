@@ -103,7 +103,7 @@ std::optional<Snapper::SiteGrid> Snapper::computeSiteGrid(
   odb::dbRow* base_row = nullptr;
   for (odb::dbRow* row : inst_->getBlock()->getRows()) {
     odb::dbSite* site = row->getSite();
-    if (site->getClass() != odb::dbSiteClass::CORE
+    if (site == nullptr || site->getClass() != odb::dbSiteClass::CORE
         || row->getDirection() != odb::dbRowDir::HORIZONTAL) {
       continue;
     }
@@ -197,11 +197,10 @@ bool Snapper::snapOnSiteGrid(const SiteGrid& site_grid,
       continue;
     }
     const odb::Rect other_box = other->getBBox()->getBox();
-    const bool shares_span
-        = along_x ? (other_box.yMax() > bbox.yMin()
-                     && other_box.yMin() < bbox.yMax())
-                  : (other_box.xMax() > bbox.xMin()
-                     && other_box.xMin() < bbox.xMax());
+    const bool shares_span = along_x ? (other_box.yMax() > bbox.yMin()
+                                        && other_box.yMin() < bbox.yMax())
+                                     : (other_box.xMax() > bbox.xMin()
+                                        && other_box.xMin() < bbox.xMax());
     if (shares_span && !other_box.overlaps(bbox)) {
       obstacles.push_back(other_box);
     }
@@ -225,13 +224,9 @@ bool Snapper::snapOnSiteGrid(const SiteGrid& site_grid,
   if (max_steps < min_steps) {
     return false;
   }
-  const int64_t reach = std::max(std::abs(min_steps), std::abs(max_steps));
-  const int first_side = nearest > origin ? -1 : 1;
-  for (int64_t i = 0; i <= 2 * reach; i++) {
-    const int64_t steps = (i % 2 == 1) ? first_side * ((i + 1) / 2)
-                                       : -first_side * (i / 2);
+  auto snaps_at = [&](const int64_t steps) {
     if (steps < min_steps || steps > max_steps) {
-      continue;
+      return false;
     }
     setOrigin(static_cast<int>(nearest + steps * pitch), target_direction);
 
@@ -239,9 +234,21 @@ bool Snapper::snapOnSiteGrid(const SiteGrid& site_grid,
     if (std::ranges::any_of(obstacles, [&](const odb::Rect& obstacle) {
           return obstacle.overlaps(candidate_box);
         })) {
-      continue;
+      return false;
     }
-    if (totalAlignedPins(layers_data_list, target_direction) == total_pins) {
+    return totalAlignedPins(layers_data_list, target_direction) == total_pins;
+  };
+
+  // Distances in steps from the nearest site position, from the first one
+  // within the bounds to the farthest.
+  const int64_t min_distance
+      = min_steps > 0 ? min_steps : (max_steps < 0 ? -max_steps : 0);
+  const int64_t max_distance
+      = std::max(std::abs(min_steps), std::abs(max_steps));
+  const int first_side = nearest > origin ? -1 : 1;
+  for (int64_t distance = min_distance; distance <= max_distance; distance++) {
+    if (snaps_at(first_side * distance)
+        || (distance != 0 && snaps_at(-first_side * distance))) {
       return true;
     }
   }
@@ -275,19 +282,19 @@ bool Snapper::siteGridCanAlignPins(const int pitch,
                               : data.track_grid->getNumGridPatternsY();
     for (int i = 0; i < count; i++) {
       Pattern pattern;
-      getTrackGridPattern(data.track_grid,
-                          i,
-                          pattern.origin,
-                          pattern.step,
-                          target_direction);
+      getTrackGridPattern(
+          data.track_grid, i, pattern.origin, pattern.step, target_direction);
       if (pattern.step <= 0) {
         // A single track doesn't repeat; leave it to the actual search.
         return true;
       }
-      period = std::lcm(period, static_cast<int64_t>(pattern.step));
-      if (period / pitch > max_site_steps) {
+      // Grow the period to lcm(period, step), giving up before it exceeds
+      // max_site_steps site pitches rather than risk overflowing.
+      const int64_t factor = period / std::gcd(period, int64_t{pattern.step});
+      if (factor > max_site_steps * pitch / pattern.step) {
         return true;
       }
+      period = factor * pattern.step;
       patterns.push_back(pattern);
     }
 
