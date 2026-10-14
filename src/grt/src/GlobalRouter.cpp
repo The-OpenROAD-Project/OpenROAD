@@ -6807,7 +6807,10 @@ void GlobalRouter::updateDbCongestionTiles()
   // reroute, a rip-up, a released wire and a removed net alike -- cases a
   // route-footprint diff cannot see, because the route it would compare
   // against is already gone.
-  const std::vector<odb::Point>& tiles
+  //
+  // Copied rather than referenced: the engine's list is cleared below, and
+  // the congestion service still needs it after that.
+  const std::vector<odb::Point> tiles
       = use_cugr_ ? cugr_->getCongestionDirtyTiles()
                   : fastroute_->getCongestionDirtyTiles();
   if (tiles.empty()) {
@@ -6836,7 +6839,10 @@ void GlobalRouter::updateDbCongestionTiles()
     heatmap_rudy_->invalidate();
   }
   if (routing_congestion_) {
-    routing_congestion_->invalidate();
+    // Patch just these GCells rather than dropping the map: rebuilding it
+    // means rescanning every tile on every layer, which dwarfs the reroute
+    // that triggered it.
+    routing_congestion_->refreshTiles(tiles);
   }
 }
 

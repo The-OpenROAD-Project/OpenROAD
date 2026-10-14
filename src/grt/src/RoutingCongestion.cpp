@@ -129,6 +129,47 @@ void RoutingCongestion::ensureBuilt()
              tile_size_);
 }
 
+// Congestion score for one GCell from odb's usage/capacity.  H and V are
+// separate budgets, so the layers are accumulated apart and combined at the
+// end.  Shared by the full build and the incremental patch so the two cannot
+// drift apart.
+float RoutingCongestion::tileScoreFromGrid(odb::dbGCellGrid* gcell_grid,
+                                           odb::dbTech* tech,
+                                           const int min_layer,
+                                           const int max_layer,
+                                           const int x,
+                                           const int y,
+                                           bool* any_capacity) const
+{
+  float usage[2] = {0.0f, 0.0f};
+  float capacity[2] = {0.0f, 0.0f};
+  for (int level = min_layer; level <= max_layer; level++) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(level);
+    if (layer == nullptr) {
+      continue;
+    }
+    const int dir
+        = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL ? 0 : 1;
+    usage[dir] += gcell_grid->getUsage(layer, x, y);
+    const float cap = gcell_grid->getCapacity(layer, x, y);
+    capacity[dir] += cap;
+    if (cap > 0.0f && any_capacity != nullptr) {
+      *any_capacity = true;
+    }
+  }
+
+  float score = 0.0f;
+  for (int dir = 0; dir < 2; dir++) {
+    if (capacity[dir] > 0.0f) {
+      score = std::max(score, usage[dir] / capacity[dir]);
+    } else if (usage[dir] > 0.0f) {
+      // Demand with no capacity at all is as bad as it gets.
+      score = 1.0f;
+    }
+  }
+  return std::clamp(score, 0.0f, 1.0f);
+}
+
 bool RoutingCongestion::buildFromGlobalRoutes()
 {
   if (block_ == nullptr) {
@@ -151,33 +192,12 @@ bool RoutingCongestion::buildFromGlobalRoutes()
 
   const size_t x_count = x_grid.size();
   const size_t y_count = y_grid.size();
-  // H and V are separate budgets; a GCell is only as good as its worse one,
-  // so they are accumulated apart and combined at the end.
-  std::vector<float> h_usage(x_count * y_count, 0.0f);
-  std::vector<float> h_capacity(x_count * y_count, 0.0f);
-  std::vector<float> v_usage(x_count * y_count, 0.0f);
-  std::vector<float> v_capacity(x_count * y_count, 0.0f);
   bool any_capacity = false;
-
-  for (int level = min_layer; level <= max_layer; level++) {
-    odb::dbTechLayer* layer = tech->findRoutingLayer(level);
-    if (layer == nullptr) {
-      continue;
-    }
-    const bool horizontal
-        = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-    std::vector<float>& usage = horizontal ? h_usage : v_usage;
-    std::vector<float>& capacity = horizontal ? h_capacity : v_capacity;
-    for (size_t x = 0; x < x_count; x++) {
-      for (size_t y = 0; y < y_count; y++) {
-        const size_t index = x * y_count + y;
-        usage[index] += gcell_grid->getUsage(layer, x, y);
-        const float cap = gcell_grid->getCapacity(layer, x, y);
-        capacity[index] += cap;
-        if (cap > 0.0f) {
-          any_capacity = true;
-        }
-      }
+  scores_.assign(x_count * y_count, 0.0f);
+  for (size_t x = 0; x < x_count; x++) {
+    for (size_t y = 0; y < y_count; y++) {
+      scores_[x * y_count + y] = tileScoreFromGrid(
+          gcell_grid, tech, min_layer, max_layer, x, y, &any_capacity);
     }
   }
   if (!any_capacity) {
@@ -185,25 +205,44 @@ bool RoutingCongestion::buildFromGlobalRoutes()
     return false;
   }
 
-  scores_.assign(x_count * y_count, 0.0f);
-  for (size_t index = 0; index < scores_.size(); index++) {
-    float score = 0.0f;
-    for (int dir = 0; dir < 2; dir++) {
-      const float usage = dir == 0 ? h_usage[index] : v_usage[index];
-      const float capacity = dir == 0 ? h_capacity[index] : v_capacity[index];
-      if (capacity > 0.0f) {
-        score = std::max(score, usage / capacity);
-      } else if (usage > 0.0f) {
-        // Demand with no capacity at all is as bad as it gets.
-        score = 1.0f;
-      }
-    }
-    scores_[index] = std::clamp(score, 0.0f, 1.0f);
-  }
   x_lines_ = std::move(x_grid);
   y_lines_ = std::move(y_grid);
   tile_size_ = x_lines_.size() > 1 ? x_lines_[1] - x_lines_[0] : 0;
   return true;
+}
+
+void RoutingCongestion::refreshTiles(const std::vector<odb::Point>& tiles)
+{
+  // Only a built global-route map can be patched: the RUDY estimate is not
+  // derived per GCell from odb, and an unbuilt map has nothing to patch.
+  if (!built_ || source_ != Source::kGlobalRoute) {
+    invalidate();
+    return;
+  }
+  odb::dbGCellGrid* gcell_grid
+      = block_ != nullptr ? block_->getGCellGrid() : nullptr;
+  if (gcell_grid == nullptr) {
+    invalidate();
+    return;
+  }
+
+  int min_layer, max_layer;
+  grouter_->getMinMaxLayer(min_layer, max_layer);
+  odb::dbTech* tech = block_->getTech();
+  const size_t x_count = x_lines_.size();
+  const size_t y_count = y_lines_.size();
+
+  for (const odb::Point& tile : tiles) {
+    const size_t x = tile.x();
+    const size_t y = tile.y();
+    if (tile.x() < 0 || tile.y() < 0 || x >= x_count || y >= y_count) {
+      // The grid was resized under us; a rebuild is the only safe answer.
+      invalidate();
+      return;
+    }
+    scores_[x * y_count + y]
+        = tileScoreFromGrid(gcell_grid, tech, min_layer, max_layer, x, y);
+  }
 }
 
 bool RoutingCongestion::buildFromRudy()

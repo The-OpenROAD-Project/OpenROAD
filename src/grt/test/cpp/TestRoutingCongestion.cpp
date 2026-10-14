@@ -487,6 +487,49 @@ TEST_F(RoutingCongestionTest, IncrementalRerouteRefreshesTheTilesItTouched)
   }
 }
 
+TEST_F(RoutingCongestionTest, PatchedCacheMatchesARebuiltOne)
+{
+  // refreshTiles() patches the cached scores for the GCells a reroute moved
+  // instead of dropping the map, which would cost a rescan of every tile on
+  // every layer.  The patch has to leave the cache identical to what a
+  // rebuild would produce, or queries drift further from the truth with
+  // every incremental round.
+  runGlobalRoute();
+
+  odb::dbInst* inst = mostConnectedInst();
+  ASSERT_NE(inst, nullptr);
+  const odb::Point destination = controlRegion().center();
+
+  // Build the map first: refreshTiles() only patches a map that exists and
+  // falls back to invalidate() otherwise, so without this the reroute would
+  // exercise the rebuild path instead of the patch path.
+  ASSERT_EQ(congestion_->source(), RoutingCongestion::Source::kGlobalRoute);
+  const float before = meanCongestion(core());
+
+  // One move, not there-and-back: the routing has to end up different from
+  // where the cache started, or a patch that did nothing would still agree
+  // with the rebuild.
+  {
+    IncrementalGRoute incr(&grt_, block_);
+    inst->setLocation(destination.x(), destination.y());
+    incr.updateRoutes(/*save_guides=*/false);
+  }
+
+  const std::vector<RoutingCongestion::GCell> patched = coreMap();
+  EXPECT_NE(meanCongestion(core()), before);
+
+  // Same odb grid, read through a map built from scratch.
+  congestion_->invalidate();
+  const std::vector<RoutingCongestion::GCell> rebuilt = coreMap();
+
+  ASSERT_EQ(patched.size(), rebuilt.size());
+  for (size_t i = 0; i < patched.size(); i++) {
+    EXPECT_FLOAT_EQ(patched[i].congestion, rebuilt[i].congestion)
+        << "gcell " << i;
+    EXPECT_EQ(patched[i].rect, rebuilt[i].rect) << "gcell " << i;
+  }
+}
+
 // The same service against the other routing engine. RoutingCongestion reads
 // odb's GCell grid rather than any engine's internals, so CUGR and FastRoute
 // reach it through the same path -- but only CUGR::updateDbCongestion()

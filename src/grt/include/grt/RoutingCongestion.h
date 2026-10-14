@@ -80,6 +80,11 @@ class RoutingCongestion
   // Drop the cached map; the next query rebuilds it.
   void invalidate();
 
+  // Patch the cached scores for `tiles` instead of dropping the whole map,
+  // for an incremental reroute that only changed those GCells.  Falls back
+  // to invalidate() when there is no global-route map to patch.
+  void refreshTiles(const std::vector<odb::Point>& tiles);
+
   // Tile size of the cached map in DBU, or 0 when there is no map.
   int tileSize();
 
@@ -94,6 +99,13 @@ class RoutingCongestion
   int xIndex(int x) const;
   int yIndex(int y) const;
   float tileScore(int x_idx, int y_idx) const;
+  float tileScoreFromGrid(odb::dbGCellGrid* gcell_grid,
+                          odb::dbTech* tech,
+                          int min_layer,
+                          int max_layer,
+                          int x,
+                          int y,
+                          bool* any_capacity = nullptr) const;
 
   GlobalRouter* grouter_;
   odb::dbBlock* block_;
