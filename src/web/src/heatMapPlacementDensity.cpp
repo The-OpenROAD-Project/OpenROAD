@@ -3,6 +3,7 @@
 
 #include "heatMapPlacementDensity.h"
 
+#include <cstdint>
 #include <set>
 #include <utility>
 #include <vector>
@@ -37,6 +38,60 @@ PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger)
       "Include IO:",
       [this]() { return include_io_; },
       [this](bool new_value) { include_io_ = new_value; });
+
+  placement_grid_x_ = getGridXSize();
+  placement_grid_y_ = getGridYSize();
+}
+
+std::optional<int> PlacementDensityDataSource::getPlacementBinSize(
+    const char* name) const
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return {};
+  }
+  auto* prop = odb::dbIntProperty::find(block, name);
+  if (prop == nullptr || prop->getValue() <= 0) {
+    return {};
+  }
+  return prop->getValue();
+}
+
+void PlacementDensityDataSource::restoreSettings(
+    const Renderer::Settings& settings)
+{
+  HeatMapDataSource::restoreSettings(settings);
+  // A grid saved by an earlier session, likely for another design, is not a
+  // choice made for this one: let global placement still set the default.
+  placement_grid_x_ = getGridXSize();
+  placement_grid_y_ = getGridYSize();
+}
+
+void PlacementDensityDataSource::populateXYGrid()
+{
+  // Default the grid to the global placement bins, but leave it adjustable
+  // (e.g. coarser to save memory on huge designs): once the user picks another
+  // size, keep it.
+  const auto bin_x = getPlacementBinSize("gpl_bin_size_x");
+  const auto bin_y = getPlacementBinSize("gpl_bin_size_y");
+  if (bin_x && bin_y && getGridXSize() == placement_grid_x_
+      && getGridYSize() == placement_grid_y_) {
+    // Upper limit
+    const odb::Rect bounds = getBounds();
+    int64_t size_x = *bin_x;
+    int64_t size_y = *bin_y;
+    while (bounds.dx() > kMaxDefaultBinsPerSide * size_x
+           || bounds.dy() > kMaxDefaultBinsPerSide * size_y) {
+      size_x *= 2;
+      size_y *= 2;
+    }
+    odb::dbBlock* block = getBlock();
+    updateGridSizes(block->dbuToMicrons(size_x), block->dbuToMicrons(size_y));
+    placement_grid_x_ = getGridXSize();
+    placement_grid_y_ = getGridYSize();
+  }
+
+  HeatMapDataSource::populateXYGrid();
 }
 
 bool PlacementDensityDataSource::populateMap()

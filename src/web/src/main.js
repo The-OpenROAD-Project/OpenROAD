@@ -31,7 +31,8 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { populateDisplayControls } from './display-controls.js';
+import { anyGroupOn, populateDisplayControls }
+    from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
 import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
@@ -154,10 +155,8 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
-    accessPointsLayer: null,
-    regionsLayer: null,
-    mfgGridLayer: null,
-    gcellGridLayer: null,
+    // [{ def, layer }] per overlay the tech response lists.
+    overlayLayers: [],
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -594,10 +593,8 @@ function redrawAllLayers() {
     const toggleableLayers = [
         [app.modulesLayer, visibility.module_view],   // Module view
         [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
+        ...app.overlayLayers.map(
+            ({ def, layer }) => [layer, anyGroupOn(def.shown_by, visibility)]),
     ];
     for (const [layer, visible] of toggleableLayers) {
         if (!layer) continue;
@@ -906,6 +903,46 @@ function createDisplayControls(container) {
     app.displayControlsEl = el;
 }
 
+// The Tcl console's output, carried across a reload the page makes itself
+// (reloadKeepingConsole) so the log of a running script is not lost.
+const CONSOLE_RESTORE_KEY = 'or_restore_console';
+// sessionStorage allows a few MB per origin; keep the newest output within
+// this many characters.
+const CONSOLE_RESTORE_MAX_CHARS = 1 << 20;
+
+function reloadKeepingConsole() {
+    try {
+        if (app.tclOutputEl) {
+            const entries = [...app.tclOutputEl.children].map(
+                (el) => [el.textContent, el.className]);
+            let start = entries.length;
+            let chars = 0;
+            while (start > 0
+                   && chars + entries[start - 1][0].length
+                      <= CONSOLE_RESTORE_MAX_CHARS) {
+                chars += entries[--start][0].length;
+            }
+            const kept = entries.slice(start);
+            if (start > 0) {
+                kept.unshift(['[earlier output not kept across reload]\n', '']);
+            }
+            sessionStorage.setItem(CONSOLE_RESTORE_KEY, JSON.stringify(kept));
+        }
+    } catch (_) { /* ignore: the reload just starts an empty console */ }
+    window.location.reload();
+}
+
+function restoreConsole() {
+    try {
+        const raw = sessionStorage.getItem(CONSOLE_RESTORE_KEY);
+        if (!raw) return;
+        sessionStorage.removeItem(CONSOLE_RESTORE_KEY);
+        for (const [text, className] of JSON.parse(raw)) {
+            tclAppend(text, className);
+        }
+    } catch (_) { /* ignore */ }
+}
+
 function tclAppend(text, className) {
     if (!app.tclOutputEl) return;
     const span = document.createElement('span');
@@ -963,6 +1000,7 @@ function createTclConsole(container) {
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+    restoreConsole();
 
     if (isStaticMode(app)) {
         el.querySelector('.tcl-input-row').style.display = 'none';
@@ -1486,8 +1524,8 @@ createToolbar(app);
 // Canvas right-click context menu ("Select →" connected objects).
 app.contextMenu = new ContextMenu(app);
 
-// Debug-graphics pause affordance: appended lazily when the first
-// debug_paused push arrives.  Clicking "Continue" tells the server to
+// Debug-graphics pause affordance: appended to the menu bar lazily when the
+// first debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
 function ensureDebugContinueButton() {
     let btn = document.getElementById('debug-continue-btn');
@@ -1503,7 +1541,9 @@ function ensureDebugContinueButton() {
         app.websocketManager.request({ type: 'debug_continue' })
             .catch(() => {});
     });
-    document.body.appendChild(btn);
+    // In the menu bar rather than floating over the page, so no panel or
+    // menu can cover it.  Falls back to body if the menu bar is absent.
+    (document.getElementById('menu-bar') || document.body).appendChild(btn);
     return btn;
 }
 
@@ -1622,28 +1662,78 @@ function refetchLayerExtents() {
     app.layerExtents.refetch((req) => app.websocketManager.request(req));
 }
 
+// The design changed (the "refresh" push).
+function applyDesignRefresh(msg) {
+    document.getElementById('loading-overlay').style.display = 'none';
+    // The design changed: drop the extents BEFORE the redraw below, so it
+    // cannot skip a layer on extents from before the edit.  It requests
+    // every layer until the fresh extents arrive.
+    refetchLayerExtents();
+    // An edit may have changed the design bounds (and with them the
+    // tile georeference); resync transforms before/along the redraw.
+    // resyncBounds already redraws when the bounds changed, so only
+    // redraw here when it didn't (same bounds, edited geometry).
+    resyncBounds(msg.bounds, msg.fit_bounds)
+        .then((redrew) => { if (!redrew) redrawAllLayers(); })
+        .catch(() => redrawAllLayers());
+    // The design may have been edited by another session's
+    // set_property; refresh the inspected object's properties.
+    if (app.refreshInspector) app.refreshInspector();
+}
+
+// "Script running" badge at the right end of the menu bar, shown while a
+// startup script runs and the server turns requests away as busy.
+function ensureScriptRunningBadge() {
+    let badge = document.getElementById('script-running-badge');
+    if (badge) return badge;
+    badge = document.createElement('span');
+    badge.id = 'script-running-badge';
+    badge.className = 'script-running-badge';
+    badge.textContent = 'Script running';
+    badge.title = 'The view updates when the script pauses or finishes';
+    (document.getElementById('menu-bar') || document.body).appendChild(badge);
+    return badge;
+}
+
+// A startup script started or stopped running (a debug pause, or the end of
+// the scripts).  While it runs every request is answered busy, so redraws
+// are held until it stops.
+function applyScriptRunning(running) {
+    app.scriptRunning = running;
+    ensureScriptRunningBadge().style.display = running ? 'block' : 'none';
+    if (running) return;
+    if (!app.booted || !app.designScale) {
+        // Boot was turned away, or found no design yet; run it now through
+        // the normal path, against whatever the script has loaded.
+        reloadKeepingConsole();
+        return;
+    }
+    if (app.refreshPending) {
+        app.refreshPending = false;
+        refetchLayerExtents();
+        if (app.refreshInspector) app.refreshInspector();
+    }
+    // Placement may have moved the bounds since the last redraw.
+    resyncBounds()
+        .then((redrew) => { if (!redrew) scheduleRedrawAllLayers(); })
+        .catch(() => scheduleRedrawAllLayers());
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
-        document.getElementById('loading-overlay').style.display = 'none';
-        // The design changed: drop the extents BEFORE the redraw below, so it
-        // cannot skip a layer on extents from before the edit.  It requests
-        // every layer until the fresh extents arrive.
-        refetchLayerExtents();
-        // An edit may have changed the design bounds (and with them the
-        // tile georeference); resync transforms before/along the redraw.
-        // resyncBounds already redraws when the bounds changed, so only
-        // redraw here when it didn't (same bounds, edited geometry).
-        resyncBounds(msg.bounds, msg.fit_bounds)
-            .then((redrew) => { if (!redrew) redrawAllLayers(); })
-            .catch(() => redrawAllLayers());
-        // The design may have been edited by another session's
-        // set_property; refresh the inspected object's properties.
-        if (app.refreshInspector) app.refreshInspector();
+        if (app.scriptRunning) {
+            app.refreshPending = true;
+            return;
+        }
+        applyDesignRefresh(msg);
+    } else if (msg.type === 'script_running') {
+        applyScriptRunning(!!msg.running);
     } else if (msg.type === 'renderer_controls_changed') {
-        // A control was toggled — by this client or another one.  This is the
-        // single trigger for both halves, so the sender does not also
-        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // A control was toggled — by this client or another one — or a
+        // renderer came or went.  This is the single trigger for both
+        // halves, so the sender does not also re-read.
+        // scheduleRedrawAllLayers, not redrawAllLayers: a group
         // toggle sends one message per row and the echoes must coalesce.
         if (app.refreshRendererControls) app.refreshRendererControls();
         scheduleRedrawAllLayers();
@@ -1658,6 +1748,14 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'heatmaps_changed') {
+        // A heat map was registered server-side after this client connected
+        // (web_load_chiplet_heatmap from Tcl).  The instance is per-session,
+        // so the push carries no data: re-request the set to have the server
+        // build ours and to redraw the control panel with the new entry.
+        app.websocketManager.request({ type: 'heatmaps' })
+            .then(updateHeatMaps)
+            .catch(err => console.error('Heat map refresh failed', err));
     } else if (msg.type === 'labels_changed') {
         // Labels live server-side and are shared, so another client's edit
         // (or a Tcl add_label) changes what this one should be drawing.
@@ -1696,6 +1794,8 @@ app.websocketManager.onPush = (msg) => {
         const btn = document.getElementById('debug-continue-btn');
         if (btn) btn.style.display = 'none';
     } else if (msg.type === 'debug_refresh') {
+        // Tiles would be turned away until the next pause, which redraws.
+        if (app.scriptRunning) return;
         // Instance positions changed — clear the stale Leaflet highlight
         // outline (the tile-based highlight updates automatically).
         if (app.highlightRect) {
@@ -2073,8 +2173,14 @@ app.websocketManager.readyPromise.then(async () => {
         // state, so save_display_controls works before any interaction
         // (otherwise it would warn or write a previous session's state).
         scheduleSyncDisplayState();
+        app.booted = true;
     } catch (err) {
-        console.error('Failed to load initial data from server:', err);
+        // While a script runs this is expected: the server turned the
+        // requests away, and the script_running push that ends the run
+        // reloads the page.
+        if (!app.scriptRunning) {
+            console.error('Failed to load initial data from server:', err);
+        }
     }
 });
 

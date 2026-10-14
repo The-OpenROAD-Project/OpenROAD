@@ -17,10 +17,11 @@ read_verilog ./mbff_hier.v
 link_design -hier mbff_hier
 
 set block [ord::get_db_block]
+set dbu [$block getDbUnitsPerMicron]
 set i 0
 foreach inst [$block getInsts] {
-  set x [expr 2000 + ($i % 4) * 2000]
-  set y [expr 2000 + ($i / 4) * 2000]
+  set x [expr 2 * $dbu + ($i % 4) * 2 * $dbu]
+  set y [expr 2 * $dbu + ($i / 4) * 2 * $dbu]
   $inst setLocation $x $y
   $inst setPlacementStatus PLACED
   incr i

@@ -127,6 +127,9 @@ struct Terminal
   Terminal(dbITerm* iterm) : iterm(iterm) {}
   Terminal(dbBTerm* bterm) : bterm(bterm) {}
 
+  void addPoint(WirePoint* point);
+  void removePoint(WirePoint* point);
+
   dbITerm* const iterm{nullptr};
   dbBTerm* const bterm{nullptr};
 
@@ -170,23 +173,20 @@ class tmg_conn
   tmg_conn(utl::Logger* logger);
   ~tmg_conn();
 
-  void analyzeNet(dbNet* net);
-  void loadNet(dbNet* net);
-  void loadWire(dbWire* wire);
-  void loadSWire(dbNet* net);
-  bool isConnected() { return connected_; }
+  void analyzeNet();
+  void setNet(dbNet* net);
+
+  const WirePoint& wirePoint(int point_index) const;
   int distance(int fr, int to) const;
-  const WirePoint& wirePoint(const int point_index) const
-  {
-    return wire_points_[point_index];
-  }
-  void checkConnOrdered();
 
  private:
-  WirePoint& wirePoint(const int point_index)
-  {
-    return wire_points_[point_index];
-  }
+  void clear();
+  void loadTerminals();
+  void loadWire();
+  void loadSWire(dbNet* net);
+
+  WirePoint& wirePoint(int point_index);
+
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void identifyShorts();
@@ -195,7 +195,6 @@ class tmg_conn
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
-  void checkVisited();
   WirePoint* addWirePoint(int x, int y, dbTechLayer* layer);
   void addWireSection(const dbShape& s,
                       int from_idx,
@@ -215,15 +214,11 @@ class tmg_conn
   void connectTerm(int terminal_index, bool soft);
   void connectTermSoft(int terminal_index, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
-  void relocateShorts();
   void setSring();
   void sliceBPinsOverlappingITerms();
 
   int getStartNode();
-  void dfsClear();
-  bool dfsStart(int& j);
-  bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
-  bool isVisited(int j) const;
+  void findDriver(dbITerm** iterm, dbBTerm** bterm);
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
   int getExtension(int ipt, const WireSection* wire_section);
   int addPoint(int ipt, const WireSection* wire_section);
@@ -263,9 +258,6 @@ class tmg_conn
   bool first_segment_after_via_{false};
   dbWireEncoder encoder_;
   dbWire* new_wire_{nullptr};
-
-  // Post-process connectivity check.
-  bool connected_{false};
 };
 
 }  // namespace odb

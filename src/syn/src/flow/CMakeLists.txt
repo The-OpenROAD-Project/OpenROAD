@@ -12,6 +12,7 @@ add_library(syn_flow
   export.cc
   import.cc
   liveness.cc
+  loop_check.cc
   constant_fold.cc
   opt_gatefusion.cc
   sequential_mapper.cc

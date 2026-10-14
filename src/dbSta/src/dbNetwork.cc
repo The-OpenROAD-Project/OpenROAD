@@ -2743,7 +2743,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
 // - It behaves differently to cope with the issue 9724.
 // - This redefinition may cause another issue later when
 // `Network::highestConnectedNet(Net *net)` is used elsewhere.
-const Net* dbNetwork::highestConnectedNet(Net* net) const
+const Net* dbNetwork::highestConnectedNet(const Net* net) const
 {
   const Net* flat = findFlatNet(net);
   return flat ? flat : net;
@@ -4247,11 +4247,11 @@ LibertyPort* dbNetwork::libertyPort(const Port* port) const
 
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
-  const Instance* cur_instance = instance(pin);
-  dbInst* db_inst = nullptr;
-  odb::dbModInst* mod_inst = nullptr;
-  staToDb(cur_instance, db_inst, mod_inst);
-  if (db_inst) {
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+  if (iterm) {
     LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
     return ret;
   }
@@ -5987,7 +5987,7 @@ bool dbNetwork::isPGSupply(dbNet* net) const
   return net->isSpecial() && net->getSigType().isSupply();
 }
 
-Net* dbNetwork::highestNetAbove(Net* net) const
+const Net* dbNetwork::highestNetAbove(const Net* net) const
 {
   if (net == nullptr) {
     return nullptr;

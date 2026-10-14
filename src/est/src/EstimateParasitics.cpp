@@ -34,6 +34,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -124,14 +125,15 @@ void EstimateParasitics::estimateRoutesInParallel(
   threads = std::min(threads, static_cast<int>(work.size()));
   // Each net is estimated and reduced on its own and stored by net and
   // driver pin, so the result does not depend on the thread count or the
-  // order the threads run in. The parasitics store locks its own writes;
-  // the reduction goes through one arc delay calculator per thread, as
-  // sta::GraphDelayCalc does for its threads.
+  // order the threads run in. The parasitics store is not locked, so its
+  // entries are made before the threads; the reduction goes through one arc
+  // delay calculator per thread, as sta::GraphDelayCalc does for its threads.
   std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
   calcs.reserve(threads);
   for (int i = 0; i < threads; ++i) {
     calcs.emplace_back(sta_->arcDelayCalc()->copy());
   }
+  ensureParasiticsForThreads();
   odb::dbTech* tech = block_->getTech();
 #pragma omp parallel for num_threads(threads) schedule(dynamic, 64)
   for (int i = 0; i < static_cast<int>(work.size()); ++i) {
@@ -149,6 +151,19 @@ void EstimateParasitics::estimateRoutesInParallel(
       builder.estimateParasitics(db_net, *route, nullptr);
     } else {
       builder.estimateParasitics(db_net, *route);
+    }
+  }
+}
+
+void EstimateParasitics::ensureParasiticsForThreads()
+{
+  std::set<sta::Parasitics*> done;
+  for (Scene* scene : sta_->scenes()) {
+    for (const sta::MinMax* min_max : sta::MinMax::range()) {
+      sta::Parasitics* parasitics = scene->parasitics(min_max);
+      if (parasitics && done.insert(parasitics).second) {
+        parasitics->ensureParasitics();
+      }
     }
   }
 }
@@ -786,10 +801,38 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
 
     sortClkAndSignalLayers();
 
-    odb::dbSet<odb::dbNet> nets = block_->getNets();
-    for (auto db_net : nets) {
-      sta::Net* cur_net = db_network_->dbToSta(db_net);
-      estimateWireParasitic(cur_net, spef_writer);
+    // Network::drivers fills a cache and the first isConstant per mode
+    // propagates constants: do both before the threads.
+    std::vector<std::pair<const sta::Pin*, const sta::Net*>> work;
+    for (odb::dbNet* db_net : block_->getNets()) {
+      const sta::Net* net = db_network_->dbToSta(db_net);
+      PinSet* drivers = network_->drivers(net);
+      if (drivers && !drivers->empty()) {
+        work.emplace_back(*drivers->begin(), net);
+      }
+    }
+    if (!work.empty()) {
+      (void) isSkipPin(work.front().first);
+    }
+    // SPEF and the debug reports are written per net, in net order.
+    const int threads
+        = spef_writer || logger_->debugCheck(EST, "estimate_parasitics", 1)
+                  || logger_->debugCheck(EST, "steiner", 1)
+              ? 1
+              : sta_->threadCount();
+    stt_builder_->prepareForThreads();
+    std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
+    calcs.reserve(threads);
+    for (int i = 0; i < threads; ++i) {
+      calcs.emplace_back(arc_delay_calc_->copy());
+    }
+    ensureParasiticsForThreads();
+#pragma omp parallel for num_threads(threads) \
+    schedule(dynamic, 64) if (threads > 1)
+    for (int i = 0; i < static_cast<int>(work.size()); ++i) {
+      auto [drvr_pin, net] = work[i];
+      estimateWireParasitic(
+          drvr_pin, net, spef_writer, calcs[omp_get_thread_num()].get());
     }
     parasitics_src_ = ParasiticsSrc::kPlacement;
     parasitics_invalid_.clear();
@@ -806,19 +849,24 @@ void EstimateParasitics::estimateWireParasitic(const sta::Net* net,
   }
 }
 
-void EstimateParasitics::estimateWireParasitic(const sta::Pin* drvr_pin,
-                                               const sta::Net* net,
-                                               sta::SpefWriter* spef_writer)
+void EstimateParasitics::estimateWireParasitic(
+    const sta::Pin* drvr_pin,
+    const sta::Net* net,
+    sta::SpefWriter* spef_writer,
+    sta::ArcDelayCalc* arc_delay_calc)
 {
+  if (arc_delay_calc == nullptr) {
+    arc_delay_calc = arc_delay_calc_;
+  }
   if (!network_->isPower(net) && !network_->isGround(net)
       && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net)) {
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
       // wire capacitance to prevent wireload model parasitics from being used.
-      makePadParasitic(net, spef_writer);
+      makePadParasitic(net, spef_writer, arc_delay_calc);
     } else {
-      estimateWireParasiticSteiner(drvr_pin, net, spef_writer);
+      estimateWireParasiticSteiner(drvr_pin, net, spef_writer, arc_delay_calc);
     }
   }
 }
@@ -864,7 +912,8 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
 }
 
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
-                                          sta::SpefWriter* spef_writer)
+                                          sta::SpefWriter* spef_writer,
+                                          sta::ArcDelayCalc* arc_delay_calc)
 {
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
@@ -882,8 +931,8 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
 
-    if (arc_delay_calc_->reduceSupported()) {
-      arc_delay_calc_->reduceParasitic(
+    if (arc_delay_calc->reduceSupported()) {
+      arc_delay_calc->reduceParasitic(
           parasitic, net, corner, sta::MinMaxAll::all());
       parasitics->deleteParasiticNetwork(net);
     }
@@ -893,7 +942,8 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
 void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Pin* drvr_pin,
     const sta::Net* net,
-    sta::SpefWriter* spef_writer)
+    sta::SpefWriter* spef_writer,
+    sta::ArcDelayCalc* arc_delay_calc)
 {
   if (isSkipPin(drvr_pin)) {
     return;
@@ -907,7 +957,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(
                "estimate wire {}",
                sdc_network_->pathName(net));
     for (sta::Scene* corner : sta_->scenes()) {
-      if (sta_->isIdealClock(drvr_pin, corner->mode())) {
+      if (hasIdealClocks(corner->mode())
+          && sta_->isIdealClock(drvr_pin, corner->mode())) {
         continue;
       }
       std::set<const Pin*> connected_pins;
@@ -1013,8 +1064,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(
         spef_writer->writeNet(corner, net, parasitic, parasitics);
       }
 
-      if (arc_delay_calc_->reduceSupported()) {
-        arc_delay_calc_->reduceParasitic(
+      if (arc_delay_calc->reduceSupported()) {
+        arc_delay_calc->reduceParasitic(
             parasitic, net, corner, sta::MinMaxAll::all());
         parasitics->deleteParasiticNetwork(net);
       }
@@ -1330,11 +1381,15 @@ bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
   bool is_clock = false;
   bool ideal_clock = true;
   bool irrelevant_in_all_modes = true;
+  // With no ideal clock in any mode, no pin is an ideal clock. Asking
+  // whether the pin is a clock would then only rebuild the clock network,
+  // which repair_clock_nets invalidates with every repeater it inserts.
+  const bool ideal_clocks = hasIdealClocks();
   for (sta::Mode* mode : sta_->modes()) {
     // In multi-mode designs, a pin may be an ideal clock only in a subset of
     // modes. Ignore modes where the pin is not a clock at all.
     // e.g., scan clock pin may not be defined as clock in function mode.
-    if (sta_->isClock(pin, mode)) {
+    if (ideal_clocks && sta_->isClock(pin, mode)) {
       is_clock = true;
       if (!sta_->isIdealClock(pin, mode)) {
         ideal_clock = false;
@@ -1358,6 +1413,35 @@ bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
     return true;
   }
 
+  return false;
+}
+
+bool EstimateParasitics::hasIdealClocks(const sta::Mode* mode) const
+{
+  // Mirrors ClkNetwork::findClkPins: ideal clock pins start only from leaf
+  // pins of non-propagated clocks that are not propagated themselves. A
+  // virtual clock has no leaf pins.
+  const sta::Sdc* sdc = mode->sdc();
+  for (const sta::Clock* clk : sdc->clocks()) {
+    if (clk->isPropagated()) {
+      continue;
+    }
+    for (const sta::Pin* pin : clk->leafPins()) {
+      if (!sdc->isPropagatedClock(pin)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool EstimateParasitics::hasIdealClocks() const
+{
+  for (const sta::Mode* mode : sta_->modes()) {
+    if (hasIdealClocks(mode)) {
+      return true;
+    }
+  }
   return false;
 }
 

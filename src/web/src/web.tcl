@@ -176,6 +176,13 @@ proc web_save_report { args } {
   web::save_report_cmd $path $max_setup $max_hold
 }
 
+sta::define_cmd_args "web_load_chiplet_heatmap" { file_path }
+
+proc web_load_chiplet_heatmap { args } {
+  sta::check_argc_eq1 "web_load_chiplet_heatmap" $args
+  return [web::load_chiplet_heatmap_cmd [lindex $args 0]]
+}
+
 # --- Viewer dispatch ---
 #
 # The Qt GUI defines add_label, create_toolbar_button, create_menu_item and
